@@ -1,0 +1,106 @@
+/*
+ * build.gradle
+ *
+ * Copyright (c) 2016 Auth0 (http://auth0.com)
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.2"
+
+    defaultConfig {
+        minSdkVersion 15
+        targetSdkVersion 23
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile 'com.android.support:appcompat-v7:23.4.0'
+    compile 'com.squareup.okhttp:okhttp:2.5.0'
+    compile "com.google.code.gson:gson:2.6.2"
+
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.hamcrest:java-hamcrest:2.0.0.0'
+    testCompile 'org.mockito:mockito-core:1.10.19'
+    testCompile 'com.squareup.okhttp:mockwebserver:2.5.0'
+    testCompile 'com.jayway.awaitility:awaitility:1.6.4'
+    testCompile 'org.robolectric:robolectric:3.0'
+}
+
+
+def semver = defineVersion()
+version = semver.stringVersion
+
+logger.lifecycle("Using version ${version} for ${name}")
+
+def defineVersion() {
+    def current = describeGit(false)
+    def snapshot = current == null
+    if (snapshot) {
+        current = describeGit(snapshot, "0.0.1")
+    }
+    return new Semver(snapshot: snapshot, version: current)
+}
+
+def describeGit(boolean snapshot, String defaultValue = null) {
+    def arguments = ['describe', '--tags']
+    arguments.add(snapshot ? '--abbrev=0' : '--exact-match')
+    def stdout = new ByteArrayOutputStream()
+    def string = defaultValue
+    try {
+        def result = project.exec {
+            executable = 'git'
+            args = arguments
+            standardOutput = stdout
+        }
+
+        result.assertNormalExitValue()
+
+        if (stdout.toByteArray().length > 0) {
+            string = stdout.toString().replace("\n", "")
+        }
+    } catch(Exception e) {
+        logger.debug("Failed git describe command", e)
+    } finally {
+        stdout.close()
+    }
+    return string
+}
+
+class Semver {
+    def version
+    def snapshot
+
+    def getStringVersion() {
+        return snapshot ? version + "-SNAPSHOT" : version
+    }
+}

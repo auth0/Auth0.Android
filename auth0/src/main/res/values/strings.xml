@@ -1,0 +1,36 @@
+<!--
+  ~ strings.xml
+  ~
+  ~ Copyright (c) 2016 Auth0 (http://auth0.com)
+  ~
+  ~ Permission is hereby granted, free of charge, to any person obtaining a copy
+  ~ of this software and associated documentation files (the "Software"), to deal
+  ~ in the Software without restriction, including without limitation the rights
+  ~ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  ~ copies of the Software, and to permit persons to whom the Software is
+  ~ furnished to do so, subject to the following conditions:
+  ~
+  ~ The above copyright notice and this permission notice shall be included in
+  ~ all copies or substantial portions of the Software.
+  ~
+  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  ~ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  ~ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  ~ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  ~ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  ~ THE SOFTWARE.
+  -->
+
+<resources>
+    <string name="com_auth0_lock_social_invalid_state">The received URI state is invalid.</string>
+    <string name="com_auth0_lock_social_error_message">The application isn\'t configured properly for the social connection. Please check your Auth0\'s application configuration</string>
+    <string name="com_auth0_lock_social_error_title">There was an error during authentication</string>
+    <string name="com_auth0_lock_social_invalid_authorize_url">Auth0 authorize url not properly set.</string>
+    <string name="com_auth0_lock_social_access_denied_message">Permissions were not granted. Try again.</string>
+    <string name="com_auth0_lock_permission_missing_title">Missing permissions</string>
+    <string name="com_auth0_lock_permission_missing_description">Some permissions required by this provider were not granted. You can try to authenticate again or go to the application\'s permission screen in the phone settings and grant them. The missing permissions are:\n%s</string>
+
+    <string name="com_auth0_lock_network_error">Network error</string>
+    <string name="com_auth0_lock_webview_loading_retry">Retry</string>
+</resources>
