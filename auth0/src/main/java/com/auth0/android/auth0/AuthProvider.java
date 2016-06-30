@@ -37,22 +37,18 @@ import java.util.List;
  * Class that can handle authentication flows for different cases, asking for the required
  * permissions before attempting to start the process.
  */
-public abstract class AuthProvider {
-    public static final String TAG = AuthProvider.class.getSimpleName();
+public abstract class AuthProvider implements PermissionProvider {
+    private static final String TAG = AuthProvider.class.getSimpleName();
 
+    private AuthCallback callback;
     @NonNull
-    protected AuthCallback callback;
-    @NonNull
-    protected final PermissionHandler handler;
+    private final PermissionHandler handler;
 
-    private String lastConnectionName;
-
-    public AuthProvider(@NonNull AuthCallback callback) {
-        this(callback, new PermissionHandler());
+    public AuthProvider() {
+        this(new PermissionHandler());
     }
 
-    AuthProvider(@NonNull AuthCallback callback, @NonNull PermissionHandler handler) {
-        this.callback = callback;
+    AuthProvider(@NonNull PermissionHandler handler) {
         this.handler = handler;
     }
 
@@ -63,34 +59,36 @@ public abstract class AuthProvider {
      * onRequestPermissionsResult method, from the ActivityCompat.OnRequestPermissionsResultCallback
      * interface.
      *
-     * @param activity       a valid activity context.
-     * @param connectionName the connection name to use.
-     * @param requestCode    the code to use for the Permissions Request.
+     * @param activity              a valid activity context.
+     * @param callback              the callback to notify the authentication result
+     * @param permissionRequestCode the code to use for the Permissions Request.
      */
-    public void start(Activity activity, String connectionName, int requestCode) {
+    @Override
+    public void start(@NonNull Activity activity, @NonNull AuthCallback callback, int permissionRequestCode) {
+        this.callback = callback;
         if (checkPermissions(activity)) {
             Log.v(TAG, "All permissions were already granted, the authentication flow is starting.");
-            requestAuth(activity, connectionName);
+            requestAuth(activity);
         } else {
             Log.d(TAG, "Some permissions were not previously granted, requesting them now.");
-            lastConnectionName = connectionName;
-            requestPermissions(activity, requestCode);
+            requestPermissions(activity, permissionRequestCode);
         }
     }
 
     /**
-     * Starts the authentication flow on the Identity Provider for the given connection name.
+     * Starts the authentication flow on the Identity Provider. The connection name is specified
+     * by the getConnectionName method.
      * All the required Android permissions had already been granted when Start was called, so
      * it's safe to use them directly.
      *
-     * @param activity       a valid activity context.
-     * @param connectionName the connection name to use.
+     * @param activity a valid activity context.
      */
-    protected abstract void requestAuth(Activity activity, String connectionName);
+    protected abstract void requestAuth(Activity activity);
 
     /**
      * Stops the authentication process (even if it's in progress).
      */
+    @Override
     @SuppressWarnings("unused")
     public void stop() {
     }
@@ -98,20 +96,11 @@ public abstract class AuthProvider {
     /**
      * Removes any session information stored in the object.
      */
+    @Override
     @SuppressWarnings("unused")
     public void clearSession() {
+        callback = null;
     }
-
-    /**
-     * Finishes the auth flow by parsing the AuthorizeResult. The authentication result
-     * will be notified to the callback.
-     *
-     * @param activity a valid activity context.
-     * @param result   the result received in the activity.
-     * @return if the result is valid or not. Please note, this does not means that the
-     * user is authenticated. The authentication result will be notified to the callback.
-     */
-    public abstract boolean authorize(Activity activity, @NonNull AuthorizeResult result);
 
     /**
      * Defines which Android Manifest Permissions are required by this Identity Provider to work.
@@ -119,6 +108,7 @@ public abstract class AuthProvider {
      *
      * @return the required Android Manifest.permissions
      */
+    @Override
     public abstract String[] getRequiredAndroidPermissions();
 
     /**
@@ -157,13 +147,14 @@ public abstract class AuthProvider {
      * @param grantResults the grant results for each permission
      */
     @SuppressWarnings("unused")
-    public void onRequestPermissionsResult(Activity activity, int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    @Override
+    public void onRequestPermissionsResult(@NonNull Activity activity, int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         List<String> declinedPermissions = handler.parseRequestResult(requestCode, permissions, grantResults);
 
         if (declinedPermissions.isEmpty()) {
             Log.v(TAG, "All permissions were granted!");
-            requestAuth(activity, lastConnectionName);
-        } else {
+            requestAuth(activity);
+        } else if (callback != null) {
             Log.e(TAG, "Permission Request failed. Some permissions were not granted!");
             String message = String.format(activity.getString(R.string.com_auth0_lock_permission_missing_description), declinedPermissions);
             Dialog permissionDialog = new AlertDialog.Builder(activity)
