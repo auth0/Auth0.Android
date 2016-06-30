@@ -1,6 +1,6 @@
 
 /*
- * OAuth2WebAuthProvider.java
+ * WebAuthProvider.java
  *
  * Copyright (c) 2016 Auth0 (http://auth0.com)
  *
@@ -44,9 +44,9 @@ import java.util.UUID;
  * using an external browser, sending {@link android.content.Intent#ACTION_VIEW} intent, or with {@link WebViewActivity}.
  * This behaviour is changed using {@link #setUseBrowser(boolean)}, and defaults to send {@link android.content.Intent#ACTION_VIEW} intent.
  */
-public class OAuth2WebAuthProvider extends AuthProvider {
+public class WebAuthProvider extends AuthProvider {
 
-    private static final String TAG = OAuth2WebAuthProvider.class.getName();
+    private static final String TAG = WebAuthProvider.class.getName();
 
     private static final int OAUTH2_REQUEST_CODE = 500;
 
@@ -81,7 +81,7 @@ public class OAuth2WebAuthProvider extends AuthProvider {
     private String lastState;
     private PKCE pkce;
 
-    public OAuth2WebAuthProvider(CallbackHelper helper, Auth0 account, @NonNull AuthCallback authCallback, boolean pkce) {
+    public WebAuthProvider(CallbackHelper helper, Auth0 account, @NonNull AuthCallback authCallback, boolean pkce) {
         super(authCallback);
         this.helper = helper;
         this.account = account;
