@@ -13,7 +13,6 @@ import com.auth0.android.auth0.lib.request.Request;
 public class TokenRequest implements Request<Credentials, AuthenticationException> {
 
     private static final String OAUTH_CODE_VERIFIER_KEY = "code_verifier";
-    private static final String OAUTH_CLIENT_SECRET_KEY = "client_secret";
 
     private final ParameterizableRequest<Credentials, AuthenticationException> request;
 
@@ -30,18 +29,6 @@ public class TokenRequest implements Request<Credentials, AuthenticationExceptio
     @SuppressWarnings("WeakerAccess")
     public TokenRequest setCodeVerifier(String codeVerifier) {
         this.request.addParameter(OAUTH_CODE_VERIFIER_KEY, codeVerifier);
-        return this;
-    }
-
-    /**
-     * Adds the client secret to the request (Private Clients)
-     *
-     * @param clientSecret the secret of the client used when making a request to /authorize
-     * @return iself
-     */
-    @SuppressWarnings("WeakerAccess")
-    public TokenRequest setClientSecret(String clientSecret) {
-        this.request.addParameter(OAUTH_CLIENT_SECRET_KEY, clientSecret);
         return this;
     }
 

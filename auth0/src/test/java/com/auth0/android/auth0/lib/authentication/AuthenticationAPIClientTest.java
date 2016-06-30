@@ -1237,30 +1237,6 @@ public class AuthenticationAPIClientTest {
         assertThat(callback, hasPayloadOfType(Credentials.class));
     }
 
-    @Test
-    public void shouldGetOAuthTokensUsingClientSecret() throws Exception {
-        mockAPI
-                .willReturnTokens()
-                .willReturnTokenInfo();
-
-        final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
-        client.token("code", "http://redirect.uri")
-                .setClientSecret("clientSecret")
-                .start(callback);
-
-        final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getPath(), equalTo("/oauth/token"));
-
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_AUTHORIZATION_CODE));
-        assertThat(body, hasEntry("client_id", CLIENT_ID));
-        assertThat(body, hasEntry("code", "code"));
-        assertThat(body, hasEntry("client_secret", "clientSecret"));
-        assertThat(body, hasEntry("redirect_uri", "http://redirect.uri"));
-
-        assertThat(callback, hasPayloadOfType(Credentials.class));
-    }
-
     private Map<String, String> bodyFromRequest(RecordedRequest request) throws java.io.IOException {
         final Type mapType = new TypeToken<Map<String, String>>() {
         }.getType();

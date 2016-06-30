@@ -711,7 +711,6 @@ public class AuthenticationAPIClient {
      * AuthenticationAPIClient client = new AuthenticationAPIClient(new Auth0("clientId", "domain"));
      * client
      *     .token("code", "redirect_uri")
-     *     .setClientSecret("client_secret")
      *     .start(new Callback<Credentials> {...});
      * }</pre>
      *
