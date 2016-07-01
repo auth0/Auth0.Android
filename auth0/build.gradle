@@ -24,6 +24,9 @@
 
 apply plugin: 'com.android.library'
 
+def semver = defineVersion()
+version = semver.stringVersion
+
 android {
     compileSdkVersion 23
     buildToolsVersion "23.0.2"
@@ -33,6 +36,9 @@ android {
         targetSdkVersion 23
         versionCode 1
         versionName "1.0"
+
+        buildConfigField "String", "VERSION", "\"" + version + "\""
+        buildConfigField "String", "NAME", "\"Auth0.Android\""
     }
     buildTypes {
         release {
@@ -56,9 +62,6 @@ dependencies {
     testCompile 'org.robolectric:robolectric:3.0'
 }
 
-
-def semver = defineVersion()
-version = semver.stringVersion
 
 logger.lifecycle("Using version ${version} for ${name}")
 
@@ -88,7 +91,7 @@ def describeGit(boolean snapshot, String defaultValue = null) {
         if (stdout.toByteArray().length > 0) {
             string = stdout.toString().replace("\n", "")
         }
-    } catch(Exception e) {
+    } catch (Exception e) {
         logger.debug("Failed git describe command", e)
     } finally {
         stdout.close()
