@@ -92,11 +92,6 @@ public class WebAuthProvider {
 
     private WebAuthProvider(@NonNull Auth0 account) {
         this.account = account;
-        this.useBrowser = true;
-        this.useFullscreen = false;
-        this.useCodeGrant = true;
-        this.parameters = new HashMap<>();
-        this.connectionName = DEFAULT_CONNECTION_NAME;
     }
 
     public static class Builder {
@@ -107,11 +102,20 @@ public class WebAuthProvider {
         private String state;
         private String scope;
         private boolean useCodeGrant;
-        private HashMap<String, Object> parameters;
+        private Map<String, Object> parameters;
         private String connectionName;
 
         Builder(Auth0 account) {
             this.account = account;
+
+            //Default values
+            this.useBrowser = true;
+            this.useFullscreen = false;
+            this.useCodeGrant = true;
+            this.parameters = new HashMap<>();
+            this.state = UUID.randomUUID().toString();
+            this.scope = SCOPE_TYPE_OPENID;
+            this.connectionName = DEFAULT_CONNECTION_NAME;
         }
 
         /**
@@ -170,7 +174,7 @@ public class WebAuthProvider {
          *
          * @param parameters to add
          */
-        public Builder withParameters(@Nullable HashMap<String, Object> parameters) {
+        public Builder withParameters(@Nullable Map<String, Object> parameters) {
             this.parameters = parameters != null ? new HashMap<>(parameters) : new HashMap<String, Object>();
             return this;
         }
@@ -235,7 +239,7 @@ public class WebAuthProvider {
         return this;
     }
 
-    private WebAuthProvider withParameters(@Nullable HashMap<String, Object> parameters) {
+    private WebAuthProvider withParameters(@Nullable Map<String, Object> parameters) {
         this.parameters = parameters != null ? new HashMap<>(parameters) : new HashMap<String, Object>();
         return this;
     }
@@ -368,7 +372,7 @@ public class WebAuthProvider {
         String redirectUri = helper.getCallbackURI(account.getDomainUrl());
 
         final Map<String, String> queryParameters = new HashMap<>();
-        queryParameters.put(KEY_SCOPE, scope != null ? scope : SCOPE_TYPE_OPENID);
+        queryParameters.put(KEY_SCOPE, scope);
         queryParameters.put(KEY_RESPONSE_TYPE, RESPONSE_TYPE_TOKEN);
 
         if (shouldUsePKCE()) {
@@ -396,10 +400,6 @@ public class WebAuthProvider {
             queryParameters.put(KEY_TELEMETRY, account.getTelemetry().getValue());
         }
 
-        if (state == null) {
-            state = UUID.randomUUID().toString();
-        }
-
         queryParameters.put(KEY_STATE, state);
         queryParameters.put(KEY_CONNECTION, connectionName);
         queryParameters.put(KEY_CLIENT_ID, account.getClientId());
@@ -412,5 +412,38 @@ public class WebAuthProvider {
         Uri uri = builder.build();
         Log.d(TAG, "The final Authorize Uri is " + uri.toString());
         return uri;
+    }
+
+    //Test helper methods (package local)
+    static WebAuthProvider getInstance() {
+        return providerInstance;
+    }
+
+    boolean useBrowser() {
+        return useBrowser;
+    }
+
+    boolean useFullscreen() {
+        return useFullscreen;
+    }
+
+    String getState() {
+        return state;
+    }
+
+    String getScope() {
+        return scope;
+    }
+
+    boolean useCodeGrant() {
+        return useCodeGrant;
+    }
+
+    Map<String, Object> getParameters() {
+        return parameters;
+    }
+
+    String getConnection() {
+        return connectionName;
     }
 }

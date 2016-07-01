@@ -25,7 +25,8 @@
 package com.auth0.android.auth0;
 
 import android.app.Activity;
-import android.support.annotation.NonNull;
+import android.content.Intent;
+import android.support.annotation.Nullable;
 import android.support.v4.content.PermissionChecker;
 
 import org.junit.Before;
@@ -55,7 +56,8 @@ public class AuthProviderTest {
     private AuthProvider provider;
     private boolean processAuthenticationCalled;
 
-    private static final int REQUEST_CODE = 10;
+    private static final int PERMISSION_REQUEST_CODE = 10;
+    private static final int AUTHENTICATION_REQUEST_CODE = 11;
     private static final String CONNECTION_NAME = "connectionName";
     private static final String[] PROVIDER_PERMISSIONS = new String[]{"PermissionX", "PermissionY"};
     private static final int[] PERMISSIONS_DENIED = new int[]{PermissionChecker.PERMISSION_DENIED, PermissionChecker.PERMISSION_DENIED};
@@ -65,9 +67,10 @@ public class AuthProviderTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         processAuthenticationCalled = false;
-        provider = new AuthProvider(callback, handler) {
+        provider = new AuthProvider(handler) {
+
             @Override
-            protected void requestAuth(Activity activity, String connectionName) {
+            protected void requestAuth(Activity activity, int requestCode) {
                 processAuthenticationCalled = true;
             }
 
@@ -80,7 +83,12 @@ public class AuthProviderTest {
             }
 
             @Override
-            public boolean authorize(Activity activity, @NonNull AuthorizeResult result) {
+            public boolean authorize(int requestCode, int resultCode, @Nullable Intent intent) {
+                return false;
+            }
+
+            @Override
+            public boolean authorize(@Nullable Intent intent) {
                 return false;
             }
 
@@ -94,7 +102,7 @@ public class AuthProviderTest {
     @Test
     public void shouldCallProcessAuthenticationIfPermissionsWereAlreadyGranted() throws Exception {
         Mockito.when(handler.areAllPermissionsGranted(activity, PROVIDER_PERMISSIONS)).thenReturn(true);
-        provider.start(activity, CONNECTION_NAME, REQUEST_CODE);
+        provider.start(activity, callback, PERMISSION_REQUEST_CODE, AUTHENTICATION_REQUEST_CODE);
 
         assertThat(processAuthenticationCalled, is(true));
     }
@@ -102,16 +110,16 @@ public class AuthProviderTest {
     @Test
     public void shouldCallProcessAuthenticationIfPermissionsAreGranted() throws Exception {
         Mockito.when(handler.areAllPermissionsGranted(activity, PROVIDER_PERMISSIONS)).thenReturn(false);
-        Mockito.when(handler.parseRequestResult(REQUEST_CODE, PROVIDER_PERMISSIONS, PERMISSIONS_GRANTED)).thenReturn(Collections.<String>emptyList());
-        provider.start(activity, CONNECTION_NAME, REQUEST_CODE);
-        provider.onRequestPermissionsResult(activity, REQUEST_CODE, PROVIDER_PERMISSIONS, PERMISSIONS_GRANTED);
+        Mockito.when(handler.parseRequestResult(PERMISSION_REQUEST_CODE, PROVIDER_PERMISSIONS, PERMISSIONS_GRANTED)).thenReturn(Collections.<String>emptyList());
+        provider.start(activity, callback, PERMISSION_REQUEST_CODE, AUTHENTICATION_REQUEST_CODE);
+        provider.onRequestPermissionsResult(activity, PERMISSION_REQUEST_CODE, PROVIDER_PERMISSIONS, PERMISSIONS_GRANTED);
 
         assertThat(processAuthenticationCalled, is(true));
     }
 
     @Test
     public void shouldCallCheckPermissionsOnHandler() throws Exception {
-        provider.start(activity, CONNECTION_NAME, REQUEST_CODE);
+        provider.start(activity, callback, PERMISSION_REQUEST_CODE, AUTHENTICATION_REQUEST_CODE);
 
         Mockito.verify(handler).areAllPermissionsGranted(activity, PROVIDER_PERMISSIONS);
     }
@@ -119,15 +127,15 @@ public class AuthProviderTest {
     @Test
     public void shouldCallRequestPermissionsOnHandlerIfPermissionsAreNotAlreadyGranted() throws Exception {
         Mockito.when(handler.areAllPermissionsGranted(activity, PROVIDER_PERMISSIONS)).thenReturn(false);
-        provider.start(activity, CONNECTION_NAME, REQUEST_CODE);
+        provider.start(activity, callback, PERMISSION_REQUEST_CODE, AUTHENTICATION_REQUEST_CODE);
 
-        Mockito.verify(handler).requestPermissions(activity, PROVIDER_PERMISSIONS, REQUEST_CODE);
+        Mockito.verify(handler).requestPermissions(activity, PROVIDER_PERMISSIONS, PERMISSION_REQUEST_CODE);
     }
 
     @Test
     public void shouldDeliverOnRequestPermissionsResultToHandler() throws Exception {
-        provider.onRequestPermissionsResult(activity, REQUEST_CODE, PROVIDER_PERMISSIONS, PERMISSIONS_GRANTED);
+        provider.onRequestPermissionsResult(activity, PERMISSION_REQUEST_CODE, PROVIDER_PERMISSIONS, PERMISSIONS_GRANTED);
 
-        Mockito.verify(handler).parseRequestResult(REQUEST_CODE, PROVIDER_PERMISSIONS, PERMISSIONS_GRANTED);
+        Mockito.verify(handler).parseRequestResult(PERMISSION_REQUEST_CODE, PROVIDER_PERMISSIONS, PERMISSIONS_GRANTED);
     }
 }
