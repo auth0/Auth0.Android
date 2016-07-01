@@ -27,7 +27,9 @@ package com.auth0.android.auth0;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.Intent;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.util.List;
@@ -37,12 +39,13 @@ import java.util.List;
  * Class that can handle authentication flows for different cases, asking for the required
  * permissions before attempting to start the process.
  */
-public abstract class AuthProvider implements PermissionProvider {
+public abstract class AuthProvider {
     private static final String TAG = AuthProvider.class.getSimpleName();
 
-    private AuthCallback callback;
     @NonNull
     private final PermissionHandler handler;
+    protected AuthCallback callback;
+    private int authenticationRequestCode;
 
     public AuthProvider() {
         this(new PermissionHandler());
@@ -59,16 +62,18 @@ public abstract class AuthProvider implements PermissionProvider {
      * onRequestPermissionsResult method, from the ActivityCompat.OnRequestPermissionsResultCallback
      * interface.
      *
-     * @param activity              a valid activity context.
-     * @param callback              the callback to notify the authentication result
-     * @param permissionRequestCode the code to use for the Permissions Request.
+     * @param activity                  a valid activity context.
+     * @param callback                  the callback to notify the authentication result
+     * @param permissionRequestCode     the code to use in the Permissions Request.
+     * @param authenticationRequestCode the code to use in the Authentication Request.
      */
-    @Override
-    public void start(@NonNull Activity activity, @NonNull AuthCallback callback, int permissionRequestCode) {
+    public void start(@NonNull Activity activity, @NonNull AuthCallback callback, int permissionRequestCode, int authenticationRequestCode) {
         this.callback = callback;
+        this.authenticationRequestCode = authenticationRequestCode;
+
         if (checkPermissions(activity)) {
             Log.v(TAG, "All permissions were already granted, the authentication flow is starting.");
-            requestAuth(activity);
+            requestAuth(activity, authenticationRequestCode);
         } else {
             Log.d(TAG, "Some permissions were not previously granted, requesting them now.");
             requestPermissions(activity, permissionRequestCode);
@@ -81,26 +86,43 @@ public abstract class AuthProvider implements PermissionProvider {
      * All the required Android permissions had already been granted when Start was called, so
      * it's safe to use them directly.
      *
-     * @param activity a valid activity context.
+     * @param activity    a valid activity context.
+     * @param requestCode to use in the Authentication request
      */
-    protected abstract void requestAuth(Activity activity);
+    protected abstract void requestAuth(Activity activity, int requestCode);
 
     /**
      * Stops the authentication process (even if it's in progress).
      */
-    @Override
-    @SuppressWarnings("unused")
     public void stop() {
     }
 
     /**
      * Removes any session information stored in the object.
      */
-    @Override
-    @SuppressWarnings("unused")
     public void clearSession() {
         callback = null;
     }
+
+    /**
+     * Finishes the authentication flow by passing the data received in the activity's onActivityResult() callback.
+     * The final authentication result will be delivered to the callback specified when calling start().
+     *
+     * @param requestCode the request code received on the onActivityResult() call
+     * @param resultCode  the result code received on the onActivityResult() call
+     * @param intent      the data received on the onActivityResult() call
+     * @return true if a result was expected and has a valid format, or false if not.
+     */
+    public abstract boolean authorize(int requestCode, int resultCode, @Nullable Intent intent);
+
+    /**
+     * Finishes the authentication flow by passing the data received in the activity's onNewIntent() callback.
+     * The final authentication result will be delivered to the callback specified when calling start().
+     *
+     * @param intent the data received on the onNewIntent() call
+     * @return true if a result was expected and has a valid format, or false if not.
+     */
+    public abstract boolean authorize(@Nullable Intent intent);
 
     /**
      * Defines which Android Manifest Permissions are required by this Identity Provider to work.
@@ -108,7 +130,6 @@ public abstract class AuthProvider implements PermissionProvider {
      *
      * @return the required Android Manifest.permissions
      */
-    @Override
     public abstract String[] getRequiredAndroidPermissions();
 
     /**
@@ -146,14 +167,12 @@ public abstract class AuthProvider implements PermissionProvider {
      * @param permissions  the requested permissions
      * @param grantResults the grant results for each permission
      */
-    @SuppressWarnings("unused")
-    @Override
     public void onRequestPermissionsResult(@NonNull Activity activity, int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         List<String> declinedPermissions = handler.parseRequestResult(requestCode, permissions, grantResults);
 
         if (declinedPermissions.isEmpty()) {
             Log.v(TAG, "All permissions were granted!");
-            requestAuth(activity);
+            requestAuth(activity, authenticationRequestCode);
         } else if (callback != null) {
             Log.e(TAG, "Permission Request failed. Some permissions were not granted!");
             String message = String.format(activity.getString(R.string.com_auth0_lock_permission_missing_description), declinedPermissions);

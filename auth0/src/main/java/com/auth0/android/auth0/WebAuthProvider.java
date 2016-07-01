@@ -41,15 +41,14 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Implementation of {@link BaseProvider} that handles auth with OAuth2 web flow
- * using an external browser, sending {@link android.content.Intent#ACTION_VIEW} intent, or with {@link WebViewActivity}.
- * This behaviour is changed using {@link #useBrowser(boolean)}, and defaults to send {@link android.content.Intent#ACTION_VIEW} intent.
+ * OAuth2 Web Authentication Provider.
+ * It can use an external browser by sending the {@link android.content.Intent#ACTION_VIEW} intent, or also the {@link WebViewActivity}.
+ * This behaviour is changed using {@link #useBrowser(boolean)}, and defaults to use browser.
  */
 public class WebAuthProvider {
 
     private static final String TAG = WebAuthProvider.class.getName();
 
-    private static final int OAUTH2_REQUEST_CODE = 500;
     private static final String DEFAULT_CONNECTION_NAME = "auth0";
 
     private static final String KEY_ERROR = "error";
@@ -77,6 +76,7 @@ public class WebAuthProvider {
     private CallbackHelper helper;
     private final Auth0 account;
     private AuthCallback callback;
+    private int requestCode;
     private AuthenticationAPIClient client;
     private PKCE pkce;
 
@@ -187,13 +187,14 @@ public class WebAuthProvider {
 
         /**
          * Begins the authentication flow.
-         * Make sure to override your activity's onActivityResult method,
-         * and call this provider's authorize method with the received parameters.
+         * Make sure to override your activity's onActivityResult() method,
+         * and call this provider's resume() method with the received parameters.
          *
-         * @param activity context to run the authentication
-         * @param callback to receive the parsed results
+         * @param activity    context to run the authentication
+         * @param callback    to receive the parsed results
+         * @param requestCode to use in the authentication request
          */
-        public void start(@NonNull Activity activity, @NonNull AuthCallback callback) {
+        public void start(@NonNull Activity activity, @NonNull AuthCallback callback, int requestCode) {
             providerInstance = new WebAuthProvider(account)
                     .useBrowser(useBrowser)
                     .useFullscreen(useFullscreen)
@@ -203,7 +204,7 @@ public class WebAuthProvider {
                     .withParameters(parameters)
                     .withConnection(connectionName);
 
-            providerInstance.start(activity, callback);
+            providerInstance.requestAuth(activity, callback, requestCode);
         }
     }
 
@@ -248,29 +249,55 @@ public class WebAuthProvider {
 
     // Public methods
 
+    /**
+     * Initialize the WebAuthProvider instance with an account. Additional settings can be configured
+     * in the Builder, like setting the connection name or authentication parameters.
+     *
+     * @param account to use for authentication
+     * @return a new Builder instance to customize.
+     */
     public static Builder init(@NonNull Auth0 account) {
         return new Builder(account);
     }
 
-    public static boolean resume(@NonNull AuthorizeResult data) {
+    /**
+     * Finishes the authentication flow by passing the data received in the activity's onActivityResult() callback.
+     * The final authentication result will be delivered to the callback specified when calling start().
+     *
+     * @param requestCode the request code received on the onActivityResult() call
+     * @param resultCode  the result code received on the onActivityResult() call
+     * @param intent      the data received on the onActivityResult() call
+     * @return true if a result was expected and has a valid format, or false if not.
+     */
+    public static boolean resume(int requestCode, int resultCode, @Nullable Intent intent) {
         if (providerInstance == null) {
             Log.w(TAG, "There is no previous instance of this provider.");
             return false;
         }
+        final AuthorizeResult data = new AuthorizeResult(requestCode, resultCode, intent);
+        return providerInstance.authorize(data);
+    }
+
+    /**
+     * Finishes the authentication flow by passing the data received in the activity's onNewIntent() callback.
+     * The final authentication result will be delivered to the callback specified when calling start().
+     *
+     * @param intent the data received on the onNewIntent() call
+     * @return true if a result was expected and has a valid format, or false if not.
+     */
+    public static boolean resume(@Nullable Intent intent) {
+        if (providerInstance == null) {
+            Log.w(TAG, "There is no previous instance of this provider.");
+            return false;
+        }
+        final AuthorizeResult data = new AuthorizeResult(intent);
         return providerInstance.authorize(data);
     }
 
     // End Public methods
 
-
-    private void start(@NonNull Activity activity, @NonNull AuthCallback callback) {
-        this.callback = callback;
-        this.client = useCodeGrant && PKCE.isAvailable() ? account.newAuthenticationAPIClient() : null;
-        requestAuth(activity);
-    }
-
     private boolean authorize(@NonNull AuthorizeResult data) {
-        if (!data.isValid(OAUTH2_REQUEST_CODE)) {
+        if (!data.isValid(requestCode)) {
             Log.w(TAG, "The Authorize Result is invalid.");
             return false;
         }
@@ -300,7 +327,10 @@ public class WebAuthProvider {
         return true;
     }
 
-    private void requestAuth(Activity activity) {
+    private void requestAuth(@NonNull Activity activity, @NonNull AuthCallback callback, int requestCode) {
+        this.callback = callback;
+        this.requestCode = requestCode;
+        this.client = useCodeGrant && PKCE.isAvailable() ? account.newAuthenticationAPIClient() : null;
         String pkgName = activity.getApplicationContext().getPackageName();
         helper = new CallbackHelper(pkgName);
 
@@ -309,10 +339,10 @@ public class WebAuthProvider {
             return;
         }
 
-        startAuthorization(activity, buildAuthorizeUri());
+        startAuthorization(activity, buildAuthorizeUri(), requestCode);
     }
 
-    private void startAuthorization(Activity activity, Uri authorizeUri) {
+    private void startAuthorization(Activity activity, Uri authorizeUri, int requestCode) {
         final Intent intent;
         if (this.useBrowser) {
             Log.d(TAG, "About to start the authorization using the Browser");
@@ -325,8 +355,7 @@ public class WebAuthProvider {
             intent.setData(authorizeUri);
             intent.putExtra(WebViewActivity.CONNECTION_NAME_EXTRA, connectionName);
             intent.putExtra(WebViewActivity.FULLSCREEN_EXTRA, useFullscreen);
-            //Improvement: let LockActivity set requestCode
-            activity.startActivityForResult(intent, OAUTH2_REQUEST_CODE);
+            activity.startActivityForResult(intent, requestCode);
         }
     }
 
