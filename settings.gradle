@@ -1,1 +1,2 @@
-include ':auth0'
+rootProject.name = 'auth0-android'
+include 'auth0'

@@ -1,0 +1,64 @@
+apply plugin: 'com.github.dcendents.android-maven'
+
+install {
+    repositories.mavenInstaller {
+        pom {
+            project {
+                packaging 'aar'
+                artifactId 'auth0'
+
+                name 'Auth0-Android'
+                description 'Android Java client library for the Auth0 platform'
+                url 'https://github.com/auth0/auth0.Android'
+
+                licenses {
+                    license {
+                        name 'The MIT License (MIT)'
+                        url 'https://raw.githubusercontent.com/auth0/auth0.Android/master/LICENSE'
+                        distribution 'repo'
+                    }
+                }
+                developers {
+                    developer {
+                        id 'hzalaz'
+                        name 'Hernan Zalazar'
+                        email 'hernan@auth0.com'
+                    }
+                }
+                scm {
+                    connection 'scm:git@github.com:auth0/auth0.Android.git'
+                    developerConnection 'scm:git@github.com:auth0/auth0.Android.git'
+                    url 'https://github.com/auth0/auth0.Android'
+
+                }
+            }
+        }
+    }
+}
+
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    exclude '**/BuildConfig.java'
+    exclude '**/R.java'
+    failOnError false
+}
+
+afterEvaluate {
+    javadoc.classpath += project.android.libraryVariants.toList().first().javaCompile.classpath
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives javadocJar
+    archives sourcesJar
+}

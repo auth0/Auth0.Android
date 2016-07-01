@@ -27,6 +27,8 @@ apply plugin: 'com.android.library'
 def semver = defineVersion()
 version = semver.stringVersion
 
+logger.lifecycle("Using version ${version} for ${name}")
+
 android {
     compileSdkVersion 23
     buildToolsVersion "23.0.2"
@@ -35,10 +37,7 @@ android {
         minSdkVersion 15
         targetSdkVersion 23
         versionCode 1
-        versionName "1.0"
-
-        buildConfigField "String", "VERSION", "\"" + version + "\""
-        buildConfigField "String", "NAME", "\"Auth0.Android\""
+        versionName semver.stringVersion
     }
     buildTypes {
         release {
@@ -61,9 +60,6 @@ dependencies {
     testCompile 'com.jayway.awaitility:awaitility:1.6.4'
     testCompile 'org.robolectric:robolectric:3.0'
 }
-
-
-logger.lifecycle("Using version ${version} for ${name}")
 
 def defineVersion() {
     def current = describeGit(false)
@@ -107,3 +103,5 @@ class Semver {
         return snapshot ? version + "-SNAPSHOT" : version
     }
 }
+
+apply from: 'maven.gradle'
