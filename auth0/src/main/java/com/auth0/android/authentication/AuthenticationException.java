@@ -141,6 +141,11 @@ public class AuthenticationException extends Auth0Exception {
         return "invalid_password".equals(code) && "PasswordHistoryError".equals(values.get(NAME_KEY));
     }
 
+    // When password used was reported to be leaked and a different one is required
+    public boolean isPasswordLeaked() {
+        return "password_leaked".equals(code);
+    }
+
     /// When Auth0 rule returns an error. The message returned by the rule will be in `description`
     public boolean isRuleError() {
         return "unauthorized".equals(code);
