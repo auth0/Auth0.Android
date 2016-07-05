@@ -105,6 +105,12 @@ public class RequestFactory {
         return request;
     }
 
+    public <T, U extends Auth0Exception> ParameterizableRequest<Void, U> DELETE(HttpUrl url, OkHttpClient client, Gson gson, ErrorBuilder<U> errorBuilder) {
+        final VoidRequest<U> request = new VoidRequest<>(url, client, gson, "DELETE", errorBuilder);
+        addMetrics(request);
+        return request;
+    }
+
     private <T, U extends Auth0Exception> void addMetrics(ParameterizableRequest<T, U> request) {
         if (this.clientInfo != null) {
             request.addHeader(Telemetry.HEADER_NAME, this.clientInfo);
