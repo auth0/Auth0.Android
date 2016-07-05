@@ -25,16 +25,18 @@
 package com.auth0.android.auth0.lib.management;
 
 import com.auth0.android.Auth0;
-import com.auth0.android.auth0.lib.result.UserProfile;
+import com.auth0.android.auth0.lib.result.UserIdentity;
 import com.auth0.android.authentication.ParameterBuilder;
 import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.Request;
 import com.auth0.android.request.internal.RequestFactory;
 import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.OkHttpClient;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -50,7 +52,8 @@ import java.util.Map;
 public class UsersAPIClient {
 
     private static final String LINK_WITH_KEY = "link_with";
-    private static final String API_V2_PATH = "api/v2";
+    private static final String API_PATH = "api";
+    private static final String V2_PATH = "v2";
     private static final String USERS_PATH = "users";
     private static final String IDENTITIES_PATH = "identities";
     private static final String AUTHORIZATION_HEADER = "Authorization";
@@ -106,7 +109,7 @@ public class UsersAPIClient {
      * Link a user identity calling <a href="https://auth0.com/docs/link-accounts#the-api">'/api/v2/users/:primaryUserId/identities'</a> endpoint
      * Example usage:
      * <pre><code>
-     * client.link("{auth0 primary user id}", "{user primary access token}", "{user secondary access token}")
+     * client.link("{auth0 primary user id}", "{user primary id token}", "{user secondary id token}")
      *      .start(new BaseCallback<Void>() {
      *          {@literal}Override
      *          public void onSuccess(Void payload) {}
@@ -116,34 +119,37 @@ public class UsersAPIClient {
      *      });
      * </code></pre>
      *
-     * @param primaryUserId  of the identity to link
-     * @param primaryToken   of the main identity obtained after login
-     * @param secondaryToken of the secondary identity obtained after login
+     * @param primaryUserId    of the identity to link
+     * @param primaryIdToken   of the main identity obtained after login
+     * @param secondaryIdToken of the secondary identity obtained after login
      * @return a request to start
      */
     @SuppressWarnings("WeakerAccess")
-    public Request<UserProfile, ManagementException> link(String primaryUserId, String primaryToken, String secondaryToken) {
+    public Request<List<UserIdentity>, ManagementException> link(String primaryUserId, String primaryIdToken, String secondaryIdToken) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
-                .addPathSegment(API_V2_PATH)
+                .addPathSegment(API_PATH)
+                .addPathSegment(V2_PATH)
                 .addPathSegment(USERS_PATH)
                 .addPathSegment(primaryUserId)
                 .addPathSegment(IDENTITIES_PATH)
                 .build();
 
         final Map<String, Object> parameters = ParameterBuilder.newBuilder()
-                .set(LINK_WITH_KEY, secondaryToken)
+                .set(LINK_WITH_KEY, secondaryIdToken)
                 .asDictionary();
 
-        return factory.POST(url, client, gson, UserProfile.class, mgmtErrorBuilder)
-                .addHeader(AUTHORIZATION_HEADER, "Bearer " + primaryToken)
+        TypeToken<List<UserIdentity>> typeToken = new TypeToken<List<UserIdentity>>() {
+        };
+        return factory.POST(url, client, gson, typeToken, mgmtErrorBuilder)
+                .addHeader(AUTHORIZATION_HEADER, "Bearer " + primaryIdToken)
                 .addParameters(parameters);
     }
 
     /**
-     * Unlink a user identity calling <a href="https://auth0.com/docs/link-accounts#unlinking-accounts">'/api/v2/users/:primaryToken/identities/secondaryProvider/secondaryUserId'</a> endpoint
+     * Unlink a user identity calling <a href="https://auth0.com/docs/link-accounts#unlinking-accounts">'/api/v2/users/:primaryIdToken/identities/secondaryProvider/secondaryUserId'</a> endpoint
      * Example usage:
      * <pre><code>
-     * client.unlink("{auth0 primary user id}", "{user primary access token}", {auth0 secondary user id}, "{secondary provider}")
+     * client.unlink("{auth0 primary user id}", "{user primary id token}", {auth0 secondary user id}, "{secondary provider}")
      *      .start(new BaseCallback<Void>() {
      *          {@literal}Override
      *          public void onSuccess(Void payload) {}
@@ -154,15 +160,16 @@ public class UsersAPIClient {
      * </code></pre>
      *
      * @param primaryUserId     of the primary identity to unlink
-     * @param primaryToken      of the main identity obtained after login
+     * @param primaryIdToken    of the main identity obtained after login
      * @param secondaryUserId   of the secondary identity you wish to unlink from the main one.
      * @param secondaryProvider of the secondary identity you wish to unlink from the main one.
      * @return a request to start
      */
     @SuppressWarnings("WeakerAccess")
-    public Request<UserProfile, ManagementException> unlink(String primaryUserId, String primaryToken, String secondaryUserId, String secondaryProvider) {
+    public Request<List<UserIdentity>, ManagementException> unlink(String primaryUserId, String primaryIdToken, String secondaryUserId, String secondaryProvider) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
-                .addPathSegment(API_V2_PATH)
+                .addPathSegment(API_PATH)
+                .addPathSegment(V2_PATH)
                 .addPathSegment(USERS_PATH)
                 .addPathSegment(primaryUserId)
                 .addPathSegment(IDENTITIES_PATH)
@@ -170,8 +177,10 @@ public class UsersAPIClient {
                 .addPathSegment(secondaryUserId)
                 .build();
 
-        return factory.DELETE(url, client, gson, UserProfile.class, mgmtErrorBuilder)
-                .addHeader(AUTHORIZATION_HEADER, "Bearer " + primaryToken);
+        TypeToken<List<UserIdentity>> typeToken = new TypeToken<List<UserIdentity>>() {
+        };
+        return factory.DELETE(url, client, gson, typeToken, mgmtErrorBuilder)
+                .addHeader(AUTHORIZATION_HEADER, "Bearer " + primaryIdToken);
     }
 
 }
