@@ -148,7 +148,7 @@ public class AuthenticationAPIClient {
      *          public void onSuccess(Credentials payload) { }
      *
      *          {@literal}Override
-     *          public void onFailure(Auth0Exception error) { }
+     *          public void onFailure(AuthenticationException error) { }
      *      });
      * </code></pre>
      *
@@ -177,7 +177,7 @@ public class AuthenticationAPIClient {
      *          public void onSuccess(Credentials payload) { }
      *
      *          {@literal}Override
-     *          public void onFailure(Auth0Exception error) { }
+     *          public void onFailure(AuthenticationException error) { }
      *      });
      * </code></pre>
      *
@@ -212,7 +212,7 @@ public class AuthenticationAPIClient {
      *          public void onSuccess(Credentials payload) { }
      *
      *          {@literal}@Override
-     *          public void onFailure(Auth0Exception error) { }
+     *          public void onFailure(AuthenticationException error) { }
      *      });
      * </code></pre>
      *
@@ -242,7 +242,7 @@ public class AuthenticationAPIClient {
      *          public void onSuccess(Credentials payload) { }
      *
      *          {@literal}@Override
-     *          public void onFailure(Auth0Exception error) { }
+     *          public void onFailure(AuthenticationException error) { }
      *      });
      * </code></pre>
      *
@@ -272,7 +272,7 @@ public class AuthenticationAPIClient {
      *          public void onSuccess(UserProfile payload) { }
      *
      *          {@literal}@Override
-     *          public void onFailure(Auth0Exception error) { }
+     *          public void onFailure(AuthenticationException error) { }
      *      });
      * </code></pre>
      *
@@ -296,7 +296,7 @@ public class AuthenticationAPIClient {
      *          public void onSuccess(DatabaseUser payload) { }
      *
      *          {@literal}@Override
-     *          public void onFailure(Auth0Exception error) { }
+     *          public void onFailure(AuthenticationException error) { }
      *      });
      * </code></pre>
      *
@@ -336,7 +336,7 @@ public class AuthenticationAPIClient {
      *          public void onSuccess(DatabaseUser payload) { }
      *
      *          {@literal}@Override
-     *          public void onFailure(Auth0Exception error) { }
+     *          public void onFailure(AuthenticationException error) { }
      *      });
      * </code></pre>
      *
@@ -361,7 +361,7 @@ public class AuthenticationAPIClient {
      *          public void onSuccess(Credentials payload) {}
      *
      *          {@literal}Override
-     *          public void onFailure(Auth0Exception error) {}
+     *          public void onFailure(AuthenticationException error) {}
      *      });
      * </code></pre>
      *
@@ -389,7 +389,7 @@ public class AuthenticationAPIClient {
      *          public void onSuccess(Credentials payload) {}
      *
      *          {@literal}Override
-     *          public void onFailure(Auth0Exception error) {}
+     *          public void onFailure(AuthenticationException error) {}
      *      });
      * </code></pre>
      *
@@ -414,7 +414,7 @@ public class AuthenticationAPIClient {
      *          public void onSuccess(Void payload) {}
      *
      *          {@literal}Override
-     *          public void onFailure(Auth0Exception error) {}
+     *          public void onFailure(AuthenticationException error) {}
      *      });
      * </code></pre>
      *
@@ -449,7 +449,7 @@ public class AuthenticationAPIClient {
      *          public void onSuccess(Delegation payload) {}
      *
      *          {@literal}Override
-     *          public void onFailure(Auth0Exception error) {}
+     *          public void onFailure(AuthenticationException error) {}
      *      });
      * </code></pre>
      *
@@ -476,7 +476,7 @@ public class AuthenticationAPIClient {
      *          public void onSuccess(Delegation payload) {}
      *
      *          {@literal}Override
-     *          public void onFailure(Auth0Exception error) {}
+     *          public void onFailure(AuthenticationException error) {}
      *      });
      * </code></pre>
      *
@@ -502,7 +502,7 @@ public class AuthenticationAPIClient {
      *          public void onSuccess(Map<String, Object> payload) {}
      *
      *          {@literal}Override
-     *          public void onFailure(Auth0Exception error) {}
+     *          public void onFailure(AuthenticationException error) {}
      *      });
      * </code></pre>
      *
@@ -529,7 +529,7 @@ public class AuthenticationAPIClient {
      *          public void onSuccess(Void payload) {}
      *
      *          {@literal}Override
-     *          public void onFailure(Auth0Exception error) {}
+     *          public void onFailure(AuthenticationException error) {}
      *      });
      * </code></pre>
      *
@@ -563,7 +563,7 @@ public class AuthenticationAPIClient {
      *          public void onSuccess(Void payload) {}
      *
      *          {@literal}Override
-     *          public void onFailure(Auth0Exception error) {}
+     *          public void onFailure(AuthenticationException error) {}
      *      });
      * </code></pre>
      *
@@ -593,7 +593,7 @@ public class AuthenticationAPIClient {
      *          public void onSuccess(Void payload) {}
      *
      *          {@literal}Override
-     *          public void onFailure(Auth0Exception error) {}
+     *          public void onFailure(AuthenticationException error) {}
      *      });
      * </code></pre>
      *
@@ -624,7 +624,7 @@ public class AuthenticationAPIClient {
      *          public void onSuccess(Map<String, Object> payload) {}
      *
      *          {@literal}Override
-     *          public void onFailure(Auth0Exception error) {}
+     *          public void onFailure(AuthenticationException error) {}
      *      });
      * </code></pre>
      *
