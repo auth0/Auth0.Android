@@ -25,6 +25,7 @@
 package com.auth0.android.auth0.lib.management;
 
 import com.auth0.android.Auth0;
+import com.auth0.android.auth0.lib.result.UserProfile;
 import com.auth0.android.authentication.ParameterBuilder;
 import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.Request;
@@ -121,7 +122,7 @@ public class UsersAPIClient {
      * @return a request to start
      */
     @SuppressWarnings("WeakerAccess")
-    public Request<Void, ManagementException> link(String primaryUserId, String primaryToken, String secondaryToken) {
+    public Request<UserProfile, ManagementException> link(String primaryUserId, String primaryToken, String secondaryToken) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(API_V2_PATH)
                 .addPathSegment(USERS_PATH)
@@ -133,7 +134,7 @@ public class UsersAPIClient {
                 .set(LINK_WITH_KEY, secondaryToken)
                 .asDictionary();
 
-        return factory.POST(url, client, gson, mgmtErrorBuilder)
+        return factory.POST(url, client, gson, UserProfile.class, mgmtErrorBuilder)
                 .addHeader(AUTHORIZATION_HEADER, "Bearer " + primaryToken)
                 .addParameters(parameters);
     }
@@ -159,7 +160,7 @@ public class UsersAPIClient {
      * @return a request to start
      */
     @SuppressWarnings("WeakerAccess")
-    public Request<Void, ManagementException> unlink(String primaryUserId, String primaryToken, String secondaryUserId, String secondaryProvider) {
+    public Request<UserProfile, ManagementException> unlink(String primaryUserId, String primaryToken, String secondaryUserId, String secondaryProvider) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(API_V2_PATH)
                 .addPathSegment(USERS_PATH)
@@ -169,7 +170,7 @@ public class UsersAPIClient {
                 .addPathSegment(secondaryUserId)
                 .build();
 
-        return factory.DELETE(url, client, gson, mgmtErrorBuilder)
+        return factory.DELETE(url, client, gson, UserProfile.class, mgmtErrorBuilder)
                 .addHeader(AUTHORIZATION_HEADER, "Bearer " + primaryToken);
     }
 
