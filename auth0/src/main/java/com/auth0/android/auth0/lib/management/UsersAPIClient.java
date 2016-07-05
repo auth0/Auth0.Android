@@ -70,8 +70,7 @@ public class UsersAPIClient {
      * @param auth0 account information
      */
     public UsersAPIClient(Auth0 auth0) {
-        //TODO: Use customized gson instance
-        this(auth0, new OkHttpClient(), new Gson());
+        this(auth0, new OkHttpClient(), GsonProvider.buildGson());
     }
 
     private UsersAPIClient(Auth0 auth0, OkHttpClient client, Gson gson) {
