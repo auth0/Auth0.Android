@@ -1,7 +1,7 @@
 package com.auth0.android.authentication;
 
+import com.auth0.android.auth0.lib.authentication.result.UserProfile;
 import com.auth0.android.auth0.lib.result.UserIdentity;
-import com.auth0.android.auth0.lib.result.UserProfile;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;

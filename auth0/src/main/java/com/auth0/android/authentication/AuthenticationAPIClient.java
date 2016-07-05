@@ -25,7 +25,7 @@
 package com.auth0.android.authentication;
 
 import com.auth0.android.Auth0;
-import com.auth0.android.auth0.lib.result.UserProfile;
+import com.auth0.android.auth0.lib.authentication.result.UserProfile;
 import com.auth0.android.authentication.request.DatabaseConnectionRequest;
 import com.auth0.android.authentication.request.DelegationRequest;
 import com.auth0.android.authentication.request.ProfileRequest;

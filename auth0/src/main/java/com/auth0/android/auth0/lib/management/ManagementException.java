@@ -35,7 +35,6 @@ public class ManagementException extends Auth0Exception {
     private static final String CODE_KEY = "code";
     private static final String DESCRIPTION_KEY = "description";
     private static final String ERROR_DESCRIPTION_KEY = "error_description";
-    private static final String NAME_KEY = "name";
 
     private static final String DEFAULT_MESSAGE = "An error occurred when trying to authenticate with the server.";
 

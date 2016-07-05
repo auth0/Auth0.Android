@@ -109,9 +109,9 @@ public class UsersAPIClient {
      * Example usage:
      * <pre><code>
      * client.link("{auth0 primary user id}", "{user primary id token}", "{user secondary id token}")
-     *      .start(new BaseCallback<Void>() {
+     *      .start(new BaseCallback<List<UserIdentity>>() {
      *          {@literal}Override
-     *          public void onSuccess(Void payload) {}
+     *          public void onSuccess(List<UserIdentity> payload) {}
      *
      *          {@literal}Override
      *          public void onFailure(ManagementException error) {}
@@ -149,9 +149,9 @@ public class UsersAPIClient {
      * Example usage:
      * <pre><code>
      * client.unlink("{auth0 primary user id}", "{user primary id token}", {auth0 secondary user id}, "{secondary provider}")
-     *      .start(new BaseCallback<Void>() {
+     *      .start(new BaseCallback<List<UserIdentity>>() {
      *          {@literal}Override
-     *          public void onSuccess(Void payload) {}
+     *          public void onSuccess(List<UserIdentity> payload) {}
      *
      *          {@literal}Override
      *          public void onFailure(ManagementException error) {}
