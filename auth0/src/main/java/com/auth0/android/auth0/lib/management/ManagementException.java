@@ -24,7 +24,7 @@
 
 package com.auth0.android.auth0.lib.management;
 
-import com.auth0.android.auth0.lib.Auth0Exception;
+import com.auth0.android.Auth0Exception;
 
 import java.util.HashMap;
 import java.util.Map;

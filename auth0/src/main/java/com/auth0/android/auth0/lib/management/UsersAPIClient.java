@@ -24,12 +24,12 @@
 
 package com.auth0.android.auth0.lib.management;
 
-import com.auth0.android.auth0.lib.Auth0;
-import com.auth0.android.auth0.lib.authentication.ParameterBuilder;
-import com.auth0.android.auth0.lib.request.ErrorBuilder;
-import com.auth0.android.auth0.lib.request.Request;
-import com.auth0.android.auth0.lib.request.internal.RequestFactory;
-import com.auth0.android.auth0.lib.util.Telemetry;
+import com.auth0.android.Auth0;
+import com.auth0.android.authentication.ParameterBuilder;
+import com.auth0.android.request.ErrorBuilder;
+import com.auth0.android.request.Request;
+import com.auth0.android.request.internal.RequestFactory;
+import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
 import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.OkHttpClient;

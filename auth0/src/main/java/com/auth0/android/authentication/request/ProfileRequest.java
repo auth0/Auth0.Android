@@ -25,10 +25,10 @@
 package com.auth0.android.authentication.request;
 
 import com.auth0.android.Auth0Exception;
+import com.auth0.android.auth0.lib.result.UserProfile;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.authentication.result.Authentication;
 import com.auth0.android.authentication.result.Credentials;
-import com.auth0.android.authentication.result.UserProfile;
 import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.request.ParameterizableRequest;

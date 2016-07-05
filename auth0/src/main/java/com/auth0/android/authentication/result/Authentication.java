@@ -25,7 +25,7 @@
 package com.auth0.android.authentication.result;
 
 
-import com.auth0.android.authentication.AuthenticationAPIClient;
+import com.auth0.android.auth0.lib.result.UserProfile;
 import com.auth0.android.request.AuthenticationRequest;
 
 import static com.auth0.android.util.CheckHelper.checkArgument;

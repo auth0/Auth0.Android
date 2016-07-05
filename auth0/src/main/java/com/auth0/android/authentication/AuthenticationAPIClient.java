@@ -25,6 +25,7 @@
 package com.auth0.android.authentication;
 
 import com.auth0.android.Auth0;
+import com.auth0.android.auth0.lib.result.UserProfile;
 import com.auth0.android.authentication.request.DatabaseConnectionRequest;
 import com.auth0.android.authentication.request.DelegationRequest;
 import com.auth0.android.authentication.request.ProfileRequest;
@@ -33,7 +34,6 @@ import com.auth0.android.authentication.request.TokenRequest;
 import com.auth0.android.authentication.result.Credentials;
 import com.auth0.android.authentication.result.DatabaseUser;
 import com.auth0.android.authentication.result.Delegation;
-import com.auth0.android.authentication.result.UserProfile;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.ParameterizableRequest;

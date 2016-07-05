@@ -1,7 +1,7 @@
 package com.auth0.android.auth0.lib.management;
 
-import com.auth0.android.auth0.lib.Auth0Exception;
-import com.auth0.android.auth0.lib.request.ErrorBuilder;
+import com.auth0.android.Auth0Exception;
+import com.auth0.android.request.ErrorBuilder;
 
 import java.util.Map;
 

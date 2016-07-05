@@ -1,6 +1,6 @@
 package com.auth0.android.authentication;
 
-import com.auth0.android.authentication.result.UserIdentity;
+import com.auth0.android.auth0.lib.result.UserIdentity;
 import com.google.gson.JsonParseException;
 
 import org.junit.Before;
@@ -9,7 +9,9 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import static com.auth0.android.util.UserIdentityMatcher.isUserIdentity;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsMapWithSize.anEmptyMap;
 import static org.junit.Assert.assertThat;
 
@@ -52,10 +54,10 @@ public class UserIdentityGsonTest extends GsonBaseTest {
     public void shouldBuildWithExtraValues() throws Exception {
         UserIdentity identity = pojoFrom(json(FACEBOOK), UserIdentity.class);
         assertThat(identity, isUserIdentity("999997950999976", "facebook", "facebook"));
-        assertThat(identity.getProfileInfo(), hasEntry("given_name", (Object)"John"));
-        assertThat(identity.getProfileInfo(), hasEntry("family_name", (Object)"Foobar"));
-        assertThat(identity.getProfileInfo(), hasEntry("email_verified", (Object)true));
-        assertThat(identity.getProfileInfo(), hasEntry("gender", (Object)"male"));
+        assertThat(identity.getProfileInfo(), hasEntry("given_name", (Object) "John"));
+        assertThat(identity.getProfileInfo(), hasEntry("family_name", (Object) "Foobar"));
+        assertThat(identity.getProfileInfo(), hasEntry("email_verified", (Object) true));
+        assertThat(identity.getProfileInfo(), hasEntry("gender", (Object) "male"));
     }
 
 }
