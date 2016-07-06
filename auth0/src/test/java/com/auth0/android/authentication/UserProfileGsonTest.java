@@ -3,6 +3,7 @@ package com.auth0.android.authentication;
 import com.auth0.android.authentication.result.UserProfile;
 import com.google.gson.JsonParseException;
 
+import org.hamcrest.Matcher;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -180,8 +181,9 @@ public class UserProfileGsonTest extends GsonBaseTest {
         UserProfile profile = pojoFrom(json(PROFILE_FULL), UserProfile.class);
         assertThat(profile, isNormalizedProfile(ID, NAME, NICKNAME));
         assertThat(profile.getExtraInfo(), hasEntry("multifactor", (Object) Collections.singletonList("google-authenticator")));
-        assertThat(profile.getExtraInfo(), not(anyOf(hasKey("user_id"), hasKey("name"), hasKey("nickname"), hasKey("picture"), hasKey("email"), hasKey("created_at"))));
-        assertThat(profile.getExtraInfo(), not(anyOf(hasKey("identities"), hasKey("user_metadata"), hasKey("app_metadata"))));
+        // FIXME: Weird classpath issue with hamcrest. Probably best to rewrite assets. (06/07/2016)
+        assertThat(profile.getExtraInfo(), not(anyOf(new Matcher[] {hasKey("user_id"), hasKey("name"), hasKey("nickname"), hasKey("picture"), hasKey("email"), hasKey("created_at")})));
+        assertThat(profile.getExtraInfo(), not(anyOf(new Matcher[]{hasKey("identities"), hasKey("user_metadata"), hasKey("app_metadata")})));
     }
 
     @Test
