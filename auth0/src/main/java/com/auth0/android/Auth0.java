@@ -41,7 +41,6 @@ public class Auth0 {
 
     private static final String AUTH0_US_CDN_URL = "https://cdn.auth0.com";
     private static final String DOT_AUTH0_DOT_COM = ".auth0.com";
-    public static final String LIBRARY_NAME = "Auth0.Android";
 
     private final String clientId;
     private final String domainUrl;
@@ -71,7 +70,7 @@ public class Auth0 {
         this.clientId = clientId;
         this.domainUrl = ensureUrlString(domain);
         this.configurationUrl = resolveConfiguration(configurationDomain, this.domainUrl);
-        this.telemetry = new Telemetry(LIBRARY_NAME, BuildConfig.VERSION_NAME);
+        this.telemetry = new Telemetry(BuildConfig.LIBRARY_NAME, BuildConfig.VERSION_NAME);
     }
 
     /**

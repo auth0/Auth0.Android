@@ -38,6 +38,7 @@ android {
         targetSdkVersion 23
         versionCode 1
         versionName semver.stringVersion
+        buildConfigField "String", "LIBRARY_NAME", "\"Auth0.Android\""
     }
     buildTypes {
         release {
