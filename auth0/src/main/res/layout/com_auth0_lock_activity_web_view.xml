@@ -26,7 +26,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".provider.WebViewActivity">
+    tools:context="com.auth0.android.provider.WebViewActivity">
 
     <WebView
         android:id="@+id/com_auth0_lock_webview"
