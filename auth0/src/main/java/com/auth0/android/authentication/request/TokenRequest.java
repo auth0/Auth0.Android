@@ -2,10 +2,10 @@ package com.auth0.android.authentication.request;
 
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.authentication.result.Credentials;
 import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.request.Request;
+import com.auth0.android.result.Credentials;
 
 /**
  * Auth Request to obtain tokens using OAuth2 {@literal /oauth/token} method

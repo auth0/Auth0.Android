@@ -22,10 +22,10 @@
  * THE SOFTWARE.
  */
 
-package com.auth0.android.auth0.lib.util;
+package com.auth0.android.util;
 
-import com.auth0.android.auth0.lib.callback.ManagementCallback;
-import com.auth0.android.auth0.lib.management.ManagementException;
+import com.auth0.android.callback.ManagementCallback;
+import com.auth0.android.management.ManagementException;
 import com.google.gson.reflect.TypeToken;
 import com.jayway.awaitility.core.ConditionTimeoutException;
 

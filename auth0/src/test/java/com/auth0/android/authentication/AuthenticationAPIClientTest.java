@@ -26,11 +26,11 @@ package com.auth0.android.authentication;
 
 
 import com.auth0.android.Auth0;
-import com.auth0.android.auth0.lib.authentication.result.UserProfile;
-import com.auth0.android.authentication.result.Authentication;
-import com.auth0.android.authentication.result.Credentials;
-import com.auth0.android.authentication.result.DatabaseUser;
-import com.auth0.android.authentication.result.Delegation;
+import com.auth0.android.result.Authentication;
+import com.auth0.android.result.Credentials;
+import com.auth0.android.result.DatabaseUser;
+import com.auth0.android.result.Delegation;
+import com.auth0.android.result.UserProfile;
 import com.auth0.android.util.AuthenticationAPI;
 import com.auth0.android.util.MockAuthenticationCallback;
 import com.google.gson.Gson;

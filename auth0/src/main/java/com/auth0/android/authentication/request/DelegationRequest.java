@@ -27,10 +27,10 @@ package com.auth0.android.authentication.request;
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.authentication.ParameterBuilder;
-import com.auth0.android.authentication.result.Delegation;
 import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.request.Request;
+import com.auth0.android.result.Delegation;
 
 import java.util.Map;
 

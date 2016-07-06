@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-package com.auth0.android.auth0.lib.result;
+package com.auth0.android.result;
 
 import com.auth0.android.util.JsonRequired;
 import com.google.gson.annotations.SerializedName;

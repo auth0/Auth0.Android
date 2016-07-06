@@ -1,6 +1,6 @@
 package com.auth0.android.authentication;
 
-import com.auth0.android.auth0.lib.authentication.result.UserProfile;
+import com.auth0.android.result.UserProfile;
 import com.auth0.android.util.JsonRequiredTypeAdapterFactory;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

@@ -28,7 +28,7 @@ import android.app.Dialog;
 import android.support.annotation.NonNull;
 import android.support.annotation.StringRes;
 
-import com.auth0.android.authentication.result.Credentials;
+import com.auth0.android.result.Credentials;
 
 /**
  * Callback called on success/failure of an Identity Provider authentication.

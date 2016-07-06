@@ -25,11 +25,11 @@
 package com.auth0.android.request.internal;
 
 import com.auth0.android.Auth0Exception;
-import com.auth0.android.authentication.result.Credentials;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.request.AuthorizableRequest;
 import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.ParameterizableRequest;
+import com.auth0.android.result.Credentials;
 import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;

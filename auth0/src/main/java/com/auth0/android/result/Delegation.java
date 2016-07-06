@@ -1,7 +1,7 @@
 /*
- * Token.java
+ * Delegation.java
  *
- * Copyright (c) 2015 Auth0 (http://auth0.com)
+ * Copyright (c) 2016 Auth0 (http://auth0.com)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,57 +22,58 @@
  * THE SOFTWARE.
  */
 
-package com.auth0.android.authentication.result;
+package com.auth0.android.result;
 
 
-import com.auth0.android.util.JsonRequired;
 import com.google.gson.annotations.SerializedName;
 
+import static com.auth0.android.util.CheckHelper.checkArgument;
+
 /**
- * Holds the user's credentials returned by Auth0.
- * <ul>
- * <li><i>idToken</i>: Identity Token with user information</li>
- * <li><i>accessToken</i>: Access Token for Auth0 API</li>
- * <li><i>refreshToken</i>: Refresh Token that can be used to request new tokens without signing in again</li>
- * </ul>
+ * The result of a successful delegation to an Auth0 application that contains a new Auth0 'id_token'
+ * See <a href="https://auth0.com/docs/auth-api#!#post--delegation">delegation</a> docs
  */
-public class Credentials {
-
-    @JsonRequired
-    @SerializedName("access_token")
-    private String accessToken;
-
-    @JsonRequired
-    @SerializedName("token_type")
-    private String type;
-
+public class Delegation {
     @SerializedName("id_token")
-    private String idToken;
+    private final String idToken;
+    @SerializedName("token_type")
+    private final String type;
+    @SerializedName("expires_in")
+    private final Long expiresIn;
 
-
-    @SerializedName("refresh_token")
-    private String refreshToken;
-
-    public Credentials(String idToken, String accessToken, String type, String refreshToken) {
+    public Delegation(String idToken, String type, Long expiresIn) {
+        checkArgument(idToken != null, "id_token must be non-null");
+        checkArgument(type != null, "token_type must be non-null");
+        checkArgument(expiresIn != null, "expires_in must be non-null");
         this.idToken = idToken;
-        this.accessToken = accessToken;
         this.type = type;
-        this.refreshToken = refreshToken;
+        this.expiresIn = expiresIn;
     }
 
+    /**
+     * Identity Token
+     *
+     * @return the 'id_token' value
+     */
     public String getIdToken() {
         return idToken;
     }
 
-    public String getAccessToken() {
-        return accessToken;
-    }
-
+    /**
+     * Token type
+     *
+     * @return the 'token_type' value
+     */
     public String getType() {
         return type;
     }
 
-    public String getRefreshToken() {
-        return refreshToken;
+    /**
+     * Token expire time in milliseconds since January 1, 1970, 00:00:00 GMT
+     *
+     * @return the 'expires_in' value
+     */
+    public Long getExpiresIn() {
+        return expiresIn;
     }
 }

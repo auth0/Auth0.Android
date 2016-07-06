@@ -1,6 +1,7 @@
 package com.auth0.android.authentication;
 
-import com.auth0.android.auth0.lib.authentication.result.UserProfile;
+import com.auth0.android.result.UserProfile;
+import com.auth0.android.request.internal.GsonProvider;
 import com.google.gson.JsonParseException;
 
 import org.hamcrest.Matcher;

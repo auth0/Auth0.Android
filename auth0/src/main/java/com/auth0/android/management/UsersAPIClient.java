@@ -22,14 +22,16 @@
  * THE SOFTWARE.
  */
 
-package com.auth0.android.auth0.lib.management;
+package com.auth0.android.management;
+
 
 import com.auth0.android.Auth0;
-import com.auth0.android.auth0.lib.result.UserIdentity;
 import com.auth0.android.authentication.ParameterBuilder;
 import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.Request;
+import com.auth0.android.request.internal.GsonProvider;
 import com.auth0.android.request.internal.RequestFactory;
+import com.auth0.android.result.UserIdentity;
 import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;

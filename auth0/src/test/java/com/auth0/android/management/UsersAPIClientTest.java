@@ -22,14 +22,14 @@
  * THE SOFTWARE.
  */
 
-package com.auth0.android.auth0.lib.management;
+package com.auth0.android.management;
 
 
 import com.auth0.android.Auth0;
-import com.auth0.android.auth0.lib.result.UserIdentity;
-import com.auth0.android.auth0.lib.util.MockManagementCallback;
-import com.auth0.android.auth0.lib.util.TypeTokenMatcher;
-import com.auth0.android.auth0.lib.util.UsersAPI;
+import com.auth0.android.result.UserIdentity;
+import com.auth0.android.util.MockManagementCallback;
+import com.auth0.android.util.TypeTokenMatcher;
+import com.auth0.android.util.UsersAPI;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -43,7 +43,7 @@ import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 
-import static com.auth0.android.auth0.lib.util.ManagementCallbackMatcher.hasPayloadOfType;
+import static com.auth0.android.util.ManagementCallbackMatcher.hasPayloadOfType;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;

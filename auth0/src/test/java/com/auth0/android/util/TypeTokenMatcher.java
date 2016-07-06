@@ -1,4 +1,4 @@
-package com.auth0.android.auth0.lib.util;
+package com.auth0.android.util;
 
 import com.google.gson.reflect.TypeToken;
 

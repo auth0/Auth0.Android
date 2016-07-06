@@ -1,4 +1,4 @@
-package com.auth0.android.auth0.lib.management;
+package com.auth0.android.management;
 
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.request.ErrorBuilder;
