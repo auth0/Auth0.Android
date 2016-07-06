@@ -31,8 +31,8 @@ import android.util.Log;
 import com.auth0.android.auth0.R;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.authentication.result.Credentials;
 import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.result.Credentials;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;

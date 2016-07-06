@@ -25,13 +25,14 @@
 package com.auth0.android.request.internal;
 
 import com.auth0.android.Auth0Exception;
-import com.auth0.android.authentication.result.Credentials;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.request.AuthorizableRequest;
 import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.ParameterizableRequest;
+import com.auth0.android.result.Credentials;
 import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.OkHttpClient;
 
@@ -64,6 +65,12 @@ public class RequestFactory {
 
     public <T, U extends Auth0Exception> ParameterizableRequest<T, U> POST(HttpUrl url, OkHttpClient client, Gson gson, Class<T> clazz, ErrorBuilder<U> errorBuilder) {
         final SimpleRequest<T, U> request = new SimpleRequest<>(url, client, gson, "POST", clazz, errorBuilder);
+        addMetrics(request);
+        return request;
+    }
+
+    public <T, U extends Auth0Exception> ParameterizableRequest<T, U> POST(HttpUrl url, OkHttpClient client, Gson gson, TypeToken<T> typeToken, ErrorBuilder<U> errorBuilder) {
+        final SimpleRequest<T, U> request = new SimpleRequest<>(url, client, gson, "POST", typeToken, errorBuilder);
         addMetrics(request);
         return request;
     }
@@ -101,6 +108,18 @@ public class RequestFactory {
 
     public <T, U extends Auth0Exception> ParameterizableRequest<T, U> DELETE(HttpUrl url, OkHttpClient client, Gson gson, Class<T> clazz, ErrorBuilder<U> errorBuilder) {
         final SimpleRequest<T, U> request = new SimpleRequest<>(url, client, gson, "DELETE", clazz, errorBuilder);
+        addMetrics(request);
+        return request;
+    }
+
+    public <T, U extends Auth0Exception> ParameterizableRequest<T, U> DELETE(HttpUrl url, OkHttpClient client, Gson gson, TypeToken<T> typeToken, ErrorBuilder<U> errorBuilder) {
+        final SimpleRequest<T, U> request = new SimpleRequest<>(url, client, gson, "DELETE", typeToken, errorBuilder);
+        addMetrics(request);
+        return request;
+    }
+
+    public <T, U extends Auth0Exception> ParameterizableRequest<Void, U> DELETE(HttpUrl url, OkHttpClient client, Gson gson, ErrorBuilder<U> errorBuilder) {
+        final VoidRequest<U> request = new VoidRequest<>(url, client, gson, "DELETE", errorBuilder);
         addMetrics(request);
         return request;
     }

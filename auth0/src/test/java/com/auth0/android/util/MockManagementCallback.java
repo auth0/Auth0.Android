@@ -1,5 +1,5 @@
 /*
- * DatabaseUser.java
+ * MockBaseCallback.java
  *
  * Copyright (c) 2015 Auth0 (http://auth0.com)
  *
@@ -22,44 +22,51 @@
  * THE SOFTWARE.
  */
 
-package com.auth0.android.authentication.result;
+package com.auth0.android.util;
 
+import com.auth0.android.callback.ManagementCallback;
+import com.auth0.android.management.ManagementException;
 
-import com.auth0.android.authentication.AuthenticationAPIClient;
-import com.auth0.android.util.JsonRequired;
-import com.google.gson.annotations.SerializedName;
+import java.util.concurrent.Callable;
 
-/**
- * Auth0 user created in a Database connection.
- *
- * @see AuthenticationAPIClient#signUp(String, String)
- * @see AuthenticationAPIClient#signUp(String, String, String)
- */
-public class DatabaseUser {
+public class MockManagementCallback<T> implements ManagementCallback<T> {
 
-    @SerializedName("email")
-    @JsonRequired
-    private final String email;
-    @SerializedName("username")
-    private final String username;
-    @SerializedName("email_verified")
-    private final boolean emailVerified;
+    private ManagementException error;
+    private T payload;
 
-    public DatabaseUser(String email, String username, boolean emailVerified) {
-        this.email = email;
-        this.username = username;
-        this.emailVerified = emailVerified;
+    @Override
+    public void onFailure(ManagementException error) {
+        this.error = error;
     }
 
-    public String getEmail() {
-        return email;
+    @Override
+    public void onSuccess(T payload) {
+        this.payload = payload;
     }
 
-    public String getUsername() {
-        return username;
+    public Callable<ManagementException> error() {
+        return new Callable<ManagementException>() {
+            @Override
+            public ManagementException call() throws Exception {
+                return error;
+            }
+        };
     }
 
-    public boolean isEmailVerified() {
-        return emailVerified;
+    public Callable<T> payload() {
+        return new Callable<T>() {
+            @Override
+            public T call() throws Exception {
+                return payload;
+            }
+        };
+    }
+
+    public ManagementException getError() {
+        return error;
+    }
+
+    public T getPayload() {
+        return payload;
     }
 }

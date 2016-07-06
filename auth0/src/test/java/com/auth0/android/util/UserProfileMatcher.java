@@ -1,6 +1,6 @@
 package com.auth0.android.util;
 
-import com.auth0.android.authentication.result.UserProfile;
+import com.auth0.android.result.UserProfile;
 
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;

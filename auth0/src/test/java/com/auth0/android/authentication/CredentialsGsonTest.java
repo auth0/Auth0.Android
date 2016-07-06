@@ -1,6 +1,6 @@
 package com.auth0.android.authentication;
 
-import com.auth0.android.authentication.result.Credentials;
+import com.auth0.android.result.Credentials;
 import com.google.gson.JsonParseException;
 
 import org.junit.Before;

@@ -1,7 +1,7 @@
 package com.auth0.android.request;
 
 import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.authentication.result.Credentials;
+import com.auth0.android.result.Credentials;
 
 import java.util.Map;
 
@@ -52,6 +52,7 @@ public interface AuthenticationRequest extends Request<Credentials, Authenticati
 
     /**
      * All all entries of the map as parameters of this request
+     *
      * @param parameters to be added to the request
      * @return itself
      */

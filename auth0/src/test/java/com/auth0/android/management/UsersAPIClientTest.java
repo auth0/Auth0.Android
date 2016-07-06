@@ -1,0 +1,192 @@
+/*
+ * AuthenticationAPIClientTest.java
+ *
+ * Copyright (c) 2015 Auth0 (http://auth0.com)
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+package com.auth0.android.management;
+
+
+import com.auth0.android.Auth0;
+import com.auth0.android.result.UserIdentity;
+import com.auth0.android.util.MockManagementCallback;
+import com.auth0.android.util.TypeTokenMatcher;
+import com.auth0.android.util.UsersAPI;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+import com.squareup.okhttp.mockwebserver.RecordedRequest;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.lang.reflect.Type;
+import java.util.List;
+import java.util.Map;
+
+import static com.auth0.android.util.ManagementCallbackMatcher.hasPayloadOfType;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertThat;
+
+public class UsersAPIClientTest {
+
+    private static final String CLIENT_ID = "CLIENTID";
+    private static final String DOMAIN = "samples.auth0.com";
+    private static final String USER_ID_PRIMARY = "primaryUserId";
+    private static final String USER_ID_SECONDARY = "secondaryUserId";
+    private static final String ID_TOKEN_PRIMARY = "primaryIdToken";
+    private static final String ID_TOKEN_SECONDARY = "secondaryIdToken";
+    private static final String PROVIDER = "provider";
+    private static final String HEADER_AUTHORIZATION = "Authorization";
+    private static final String BEARER = "Bearer ";
+    private static final String METHOD_POST = "POST";
+    private static final String METHOD_DELETE = "DELETE";
+    private static final String KEY_LINK_WITH = "link_with";
+
+    private UsersAPIClient client;
+    private Gson gson;
+
+    private UsersAPI mockAPI;
+
+    @Before
+    public void setUp() throws Exception {
+        mockAPI = new UsersAPI();
+        final String domain = mockAPI.getDomain();
+        Auth0 auth0 = new Auth0(CLIENT_ID, domain, domain);
+        client = new UsersAPIClient(auth0);
+        gson = new GsonBuilder().serializeNulls().create();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        mockAPI.shutdown();
+    }
+
+    @Test
+    public void shouldCreateClientWithAccountInfo() throws Exception {
+        UsersAPIClient client = new UsersAPIClient(new Auth0(CLIENT_ID, DOMAIN));
+        assertThat(client, is(notNullValue()));
+        assertThat(client.getClientId(), equalTo(CLIENT_ID));
+        assertThat(client.getBaseURL(), equalTo("https://" + DOMAIN));
+    }
+
+    @Test
+    public void shouldLinkAccount() throws Exception {
+        mockAPI.willReturnSuccessfulLink();
+
+        final MockManagementCallback<List<UserIdentity>> callback = new MockManagementCallback<>();
+        client.link(USER_ID_PRIMARY, ID_TOKEN_PRIMARY, ID_TOKEN_SECONDARY)
+                .start(callback);
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY + "/identities"));
+
+        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + ID_TOKEN_PRIMARY));
+        assertThat(request.getMethod(), equalTo(METHOD_POST));
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry(KEY_LINK_WITH, ID_TOKEN_SECONDARY));
+
+
+        TypeToken<List<UserIdentity>> typeToken = new TypeToken<List<UserIdentity>>() {
+        };
+        assertThat(callback, hasPayloadOfType(typeToken));
+        assertThat(callback.getPayload().size(), is(2));
+    }
+
+    @Test
+    public void shouldLinkAccountSync() throws Exception {
+        mockAPI.willReturnSuccessfulLink();
+
+        final List<UserIdentity> result = client.link(USER_ID_PRIMARY, ID_TOKEN_PRIMARY, ID_TOKEN_SECONDARY)
+                .execute();
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY + "/identities"));
+
+        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + ID_TOKEN_PRIMARY));
+        assertThat(request.getMethod(), equalTo(METHOD_POST));
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry(KEY_LINK_WITH, ID_TOKEN_SECONDARY));
+
+
+        TypeToken<List<UserIdentity>> typeToken = new TypeToken<List<UserIdentity>>() {
+        };
+        assertThat(result, TypeTokenMatcher.isA(typeToken));
+        assertThat(result.size(), is(2));
+    }
+
+    @Test
+    public void shouldUnlinkAccount() throws Exception {
+        mockAPI.willReturnSuccessfulUnlink();
+
+        final MockManagementCallback<List<UserIdentity>> callback = new MockManagementCallback<>();
+        client.unlink(USER_ID_PRIMARY, ID_TOKEN_PRIMARY, USER_ID_SECONDARY, PROVIDER)
+                .start(callback);
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY + "/identities/" + PROVIDER + "/" + USER_ID_SECONDARY));
+
+        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + ID_TOKEN_PRIMARY));
+        assertThat(request.getMethod(), equalTo(METHOD_DELETE));
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, is(nullValue()));
+
+
+        TypeToken<List<UserIdentity>> typeToken = new TypeToken<List<UserIdentity>>() {
+        };
+        assertThat(callback, hasPayloadOfType(typeToken));
+        assertThat(callback.getPayload().size(), is(1));
+    }
+
+    @Test
+    public void shouldUnlinkAccountSync() throws Exception {
+        mockAPI.willReturnSuccessfulUnlink();
+
+        final List<UserIdentity> result = client.unlink(USER_ID_PRIMARY, ID_TOKEN_PRIMARY, USER_ID_SECONDARY, PROVIDER)
+                .execute();
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY + "/identities/" + PROVIDER + "/" + USER_ID_SECONDARY));
+
+        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + ID_TOKEN_PRIMARY));
+        assertThat(request.getMethod(), equalTo(METHOD_DELETE));
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, is(nullValue()));
+
+
+        TypeToken<List<UserIdentity>> typeToken = new TypeToken<List<UserIdentity>>() {
+        };
+        assertThat(result, TypeTokenMatcher.isA(typeToken));
+        assertThat(result.size(), is(1));
+    }
+
+
+    private Map<String, String> bodyFromRequest(RecordedRequest request) throws java.io.IOException {
+        final Type mapType = new TypeToken<Map<String, String>>() {
+        }.getType();
+        return gson.fromJson(request.getBody().readUtf8(), mapType);
+    }
+}

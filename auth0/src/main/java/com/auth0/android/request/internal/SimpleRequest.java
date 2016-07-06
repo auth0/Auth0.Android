@@ -44,6 +44,11 @@ class SimpleRequest<T, U extends Auth0Exception> extends BaseRequest<T, U> imple
 
     private final String method;
 
+    public SimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, String httpMethod, TypeToken<T> typeToken, ErrorBuilder<U> errorBuilder) {
+        super(url, client, gson, gson.getAdapter(typeToken), errorBuilder);
+        this.method = httpMethod;
+    }
+
     public SimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, String httpMethod, Class<T> clazz, ErrorBuilder<U> errorBuilder) {
         super(url, client, gson, gson.getAdapter(clazz), errorBuilder);
         this.method = httpMethod;

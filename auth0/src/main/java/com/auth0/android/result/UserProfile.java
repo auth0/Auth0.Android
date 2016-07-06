@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-package com.auth0.android.authentication.result;
+package com.auth0.android.result;
 
 import java.io.Serializable;
 import java.util.*;

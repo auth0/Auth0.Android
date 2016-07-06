@@ -27,11 +27,11 @@ package com.auth0.android.authentication.request;
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.authentication.ParameterBuilder;
-import com.auth0.android.authentication.result.Credentials;
-import com.auth0.android.authentication.result.DatabaseUser;
 import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.request.Request;
+import com.auth0.android.result.Credentials;
+import com.auth0.android.result.DatabaseUser;
 
 import java.util.Map;
 
@@ -50,6 +50,7 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
 
     /**
      * Add additional parameters sent when creating a using.
+     *
      * @param parameters sent with the request and must be non-null
      * @return itself
      */
@@ -60,6 +61,7 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
 
     /**
      * Add additional parameters sent when logging the user in
+     *
      * @param parameters sent with the request and must be non-null
      * @return itself
      * @see ParameterBuilder
@@ -71,6 +73,7 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
 
     /**
      * Set the scope used to login the user
+     *
      * @param scope value
      * @return itself
      */
@@ -99,6 +102,7 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
 
     /**
      * Set the connection used to authenticate
+     *
      * @param connection name
      * @return itself
      */
@@ -110,6 +114,7 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
 
     /**
      * Starts to execute create user request and then logs the user in.
+     *
      * @param callback called on either success or failure.
      */
     @Override
@@ -129,6 +134,7 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
 
     /**
      * Execute the create user request and then logs the user in.
+     *
      * @return authentication object on success
      * @throws Auth0Exception on failure
      */

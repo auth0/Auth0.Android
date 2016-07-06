@@ -35,7 +35,7 @@ import android.util.Log;
 import com.auth0.android.auth0.R;
 import com.auth0.android.Auth0;
 import com.auth0.android.authentication.AuthenticationAPIClient;
-import com.auth0.android.authentication.result.Credentials;
+import com.auth0.android.result.Credentials;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -44,7 +44,7 @@ import java.util.UUID;
 /**
  * OAuth2 Web Authentication Provider.
  * It can use an external browser by sending the {@link android.content.Intent#ACTION_VIEW} intent, or also the {@link WebViewActivity}.
- * This behaviour is changed using {@link #useBrowser(boolean)}, and defaults to use browser.
+ * This behaviour is changed using {@link WebAuthProvider#useBrowser()}, and defaults to use browser.
  */
 public class WebAuthProvider {
 

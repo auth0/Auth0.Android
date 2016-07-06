@@ -1,7 +1,7 @@
 /*
- * Authentication.java
+ * DatabaseUser.java
  *
- * Copyright (c) 2016 Auth0 (http://auth0.com)
+ * Copyright (c) 2015 Auth0 (http://auth0.com)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,37 +22,44 @@
  * THE SOFTWARE.
  */
 
-package com.auth0.android.authentication.result;
+package com.auth0.android.result;
 
 
 import com.auth0.android.authentication.AuthenticationAPIClient;
-import com.auth0.android.request.AuthenticationRequest;
-
-import static com.auth0.android.util.CheckHelper.checkArgument;
+import com.auth0.android.util.JsonRequired;
+import com.google.gson.annotations.SerializedName;
 
 /**
- * The result of a successful authentication against Auth0
- * Contains the logged in user's {@link Credentials} and {@link UserProfile}.
+ * Auth0 user created in a Database connection.
  *
- * @see AuthenticationAPIClient#getProfileAfter(AuthenticationRequest)
+ * @see AuthenticationAPIClient#signUp(String, String)
+ * @see AuthenticationAPIClient#signUp(String, String, String)
  */
-public class Authentication {
+public class DatabaseUser {
 
-    private final UserProfile profile;
-    private final Credentials credentials;
+    @SerializedName("email")
+    @JsonRequired
+    private final String email;
+    @SerializedName("username")
+    private final String username;
+    @SerializedName("email_verified")
+    private final boolean emailVerified;
 
-    public Authentication(UserProfile profile, Credentials credentials) {
-        checkArgument(profile != null, "profile must be non-null");
-        checkArgument(credentials != null, "credentials must be non-null");
-        this.profile = profile;
-        this.credentials = credentials;
+    public DatabaseUser(String email, String username, boolean emailVerified) {
+        this.email = email;
+        this.username = username;
+        this.emailVerified = emailVerified;
     }
 
-    public UserProfile getProfile() {
-        return profile;
+    public String getEmail() {
+        return email;
     }
 
-    public Credentials getCredentials() {
-        return credentials;
+    public String getUsername() {
+        return username;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
     }
 }

@@ -1,6 +1,7 @@
 package com.auth0.android.authentication;
 
-import com.auth0.android.authentication.result.UserProfile;
+import com.auth0.android.result.UserProfile;
+import com.auth0.android.request.internal.GsonProvider;
 import com.google.gson.JsonParseException;
 
 import org.hamcrest.Matcher;
@@ -182,7 +183,7 @@ public class UserProfileGsonTest extends GsonBaseTest {
         assertThat(profile, isNormalizedProfile(ID, NAME, NICKNAME));
         assertThat(profile.getExtraInfo(), hasEntry("multifactor", (Object) Collections.singletonList("google-authenticator")));
         // FIXME: Weird classpath issue with hamcrest. Probably best to rewrite assets. (06/07/2016)
-        assertThat(profile.getExtraInfo(), not(anyOf(new Matcher[] {hasKey("user_id"), hasKey("name"), hasKey("nickname"), hasKey("picture"), hasKey("email"), hasKey("created_at")})));
+        assertThat(profile.getExtraInfo(), not(anyOf(new Matcher[]{hasKey("user_id"), hasKey("name"), hasKey("nickname"), hasKey("picture"), hasKey("email"), hasKey("created_at")})));
         assertThat(profile.getExtraInfo(), not(anyOf(new Matcher[]{hasKey("identities"), hasKey("user_metadata"), hasKey("app_metadata")})));
     }
 
@@ -190,12 +191,12 @@ public class UserProfileGsonTest extends GsonBaseTest {
     public void shouldReturnProfileWithMetadata() throws Exception {
         UserProfile profile = pojoFrom(json(PROFILE_FULL), UserProfile.class);
         assertThat(profile, isNormalizedProfile(ID, NAME, NICKNAME));
-        assertThat(profile.getUserMetadata(), hasEntry("first_name", (Object)"Info"));
-        assertThat(profile.getUserMetadata(), hasEntry("last_name", (Object)"Auth0"));
-        assertThat(profile.getUserMetadata(), hasEntry("first_name", (Object)"Info"));
-        assertThat(profile.getAppMetadata(), hasEntry("role", (Object)"admin"));
-        assertThat(profile.getAppMetadata(), hasEntry("tier", (Object)2.0));
-        assertThat(profile.getAppMetadata(), hasEntry("blocked", (Object)false));
+        assertThat(profile.getUserMetadata(), hasEntry("first_name", (Object) "Info"));
+        assertThat(profile.getUserMetadata(), hasEntry("last_name", (Object) "Auth0"));
+        assertThat(profile.getUserMetadata(), hasEntry("first_name", (Object) "Info"));
+        assertThat(profile.getAppMetadata(), hasEntry("role", (Object) "admin"));
+        assertThat(profile.getAppMetadata(), hasEntry("tier", (Object) 2.0));
+        assertThat(profile.getAppMetadata(), hasEntry("blocked", (Object) false));
     }
 
 }
