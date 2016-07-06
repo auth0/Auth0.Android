@@ -42,7 +42,7 @@ import java.security.SecureRandom;
 /**
  * Performs code exchange according to Proof Key for Code Exchange (PKCE) spec.
  */
-public class PKCE {
+class PKCE {
     private static final String TAG = PKCE.class.getSimpleName();
     private static final String US_ASCII = "US-ASCII";
     private static final String SHA_256 = "SHA-256";

@@ -200,57 +200,20 @@ public class WebAuthProvider {
          * @param requestCode to use in the authentication request
          */
         public void start(@NonNull Activity activity, @NonNull AuthCallback callback, int requestCode) {
-            providerInstance = new WebAuthProvider(account)
-                    .useBrowser(useBrowser)
-                    .useFullscreen(useFullscreen)
-                    .withState(state)
-                    .withScope(scope)
-                    .useCodeGrant(useCodeGrant)
-                    .withParameters(parameters)
-                    .withConnection(connectionName);
+            WebAuthProvider webAuth = new WebAuthProvider(account);
+            webAuth.useBrowser = useBrowser;
+            webAuth.useFullscreen = useFullscreen;
+            webAuth.state = state;
+            webAuth.scope = scope;
+            webAuth.useCodeGrant = useCodeGrant;
+            webAuth.parameters = parameters;
+            webAuth.connectionName = connectionName;
 
-            providerInstance.requestAuth(activity, callback, requestCode);
+            providerInstance = webAuth;
+
+            webAuth.requestAuth(activity, callback, requestCode);
         }
     }
-
-    //Begin Configuration
-
-    private WebAuthProvider useBrowser(boolean useBrowser) {
-        this.useBrowser = useBrowser;
-        return this;
-    }
-
-    private WebAuthProvider useFullscreen(boolean useFullscreen) {
-        this.useFullscreen = useFullscreen;
-        return this;
-    }
-
-    private WebAuthProvider withState(@NonNull String state) {
-        this.state = state;
-        return this;
-    }
-
-    private WebAuthProvider withScope(@NonNull String scope) {
-        this.scope = scope;
-        return this;
-    }
-
-    private WebAuthProvider useCodeGrant(boolean useCodeGrant) {
-        this.useCodeGrant = useCodeGrant;
-        return this;
-    }
-
-    private WebAuthProvider withParameters(@Nullable Map<String, Object> parameters) {
-        this.parameters = parameters != null ? new HashMap<>(parameters) : new HashMap<String, Object>();
-        return this;
-    }
-
-    private WebAuthProvider withConnection(@NonNull String connectionName) {
-        this.connectionName = connectionName;
-        return this;
-    }
-
-    //End Configuration
 
     // Public methods
 

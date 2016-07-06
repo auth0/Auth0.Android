@@ -22,9 +22,11 @@
  * THE SOFTWARE.
  */
 
-package com.auth0.android.authentication;
+package com.auth0.android.authentication.request;
 
 import com.auth0.android.Auth0Exception;
+import com.auth0.android.authentication.AuthenticationException;
+import com.auth0.android.authentication.ParameterBuilder;
 import com.auth0.android.authentication.result.Delegation;
 import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.request.ParameterizableRequest;
@@ -49,7 +51,7 @@ public class DelegationRequest<T> implements Request<T, AuthenticationException>
 
     private final ParameterizableRequest<T, AuthenticationException> request;
 
-    DelegationRequest(ParameterizableRequest<T, AuthenticationException> request) {
+    public DelegationRequest(ParameterizableRequest<T, AuthenticationException> request) {
         this.request = request;
     }
 

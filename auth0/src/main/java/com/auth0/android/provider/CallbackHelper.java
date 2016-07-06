@@ -31,7 +31,7 @@ import android.util.Log;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CallbackHelper {
+class CallbackHelper {
 
     private static final String TAG = CallbackHelper.class.getSimpleName();
     private static final String REDIRECT_URI_FORMAT = "%s/android/%s/callback";

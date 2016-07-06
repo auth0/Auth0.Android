@@ -1,7 +1,6 @@
 package com.auth0.android.request.internal;
 
 import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.authentication.AuthenticationErrorBuilder;
 import com.auth0.android.authentication.result.Credentials;
 import com.auth0.android.request.AuthenticationRequest;
 import com.google.gson.Gson;

@@ -35,7 +35,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class PermissionHandler {
+class PermissionHandler {
 
     private static final String TAG = PermissionHandler.class.getSimpleName();
     private int lastRequestCode = -100;

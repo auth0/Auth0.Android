@@ -25,6 +25,11 @@
 package com.auth0.android.authentication;
 
 import com.auth0.android.Auth0;
+import com.auth0.android.authentication.request.DatabaseConnectionRequest;
+import com.auth0.android.authentication.request.DelegationRequest;
+import com.auth0.android.authentication.request.ProfileRequest;
+import com.auth0.android.authentication.request.SignUpRequest;
+import com.auth0.android.authentication.request.TokenRequest;
 import com.auth0.android.authentication.result.Credentials;
 import com.auth0.android.authentication.result.DatabaseUser;
 import com.auth0.android.authentication.result.Delegation;
@@ -33,6 +38,7 @@ import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.request.Request;
+import com.auth0.android.request.internal.AuthenticationErrorBuilder;
 import com.auth0.android.request.internal.RequestFactory;
 import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;

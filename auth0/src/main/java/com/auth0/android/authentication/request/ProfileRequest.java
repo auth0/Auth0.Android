@@ -22,9 +22,10 @@
  * THE SOFTWARE.
  */
 
-package com.auth0.android.authentication;
+package com.auth0.android.authentication.request;
 
 import com.auth0.android.Auth0Exception;
+import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.authentication.result.Authentication;
 import com.auth0.android.authentication.result.Credentials;
 import com.auth0.android.authentication.result.UserProfile;
@@ -45,7 +46,7 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
     private final AuthenticationRequest credentialsRequest;
     private final ParameterizableRequest<UserProfile, AuthenticationException> tokenInfoRequest;
 
-    ProfileRequest(AuthenticationRequest credentialsRequest, ParameterizableRequest<UserProfile, AuthenticationException> tokenInfoRequest) {
+    public ProfileRequest(AuthenticationRequest credentialsRequest, ParameterizableRequest<UserProfile, AuthenticationException> tokenInfoRequest) {
         this.credentialsRequest = credentialsRequest;
         this.tokenInfoRequest = tokenInfoRequest;
     }

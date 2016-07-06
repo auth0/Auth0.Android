@@ -30,7 +30,7 @@ import android.net.Uri;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-public class AuthorizeResult {
+class AuthorizeResult {
 
     private static final String TAG = AuthorizeResult.class.getSimpleName();
     private static final int MISSING_REQUEST_CODE = -100;

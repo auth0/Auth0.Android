@@ -1,6 +1,7 @@
-package com.auth0.android.authentication;
+package com.auth0.android.authentication.request;
 
 import com.auth0.android.Auth0Exception;
+import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.authentication.result.Credentials;
 import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.request.ParameterizableRequest;
@@ -16,7 +17,7 @@ public class TokenRequest implements Request<Credentials, AuthenticationExceptio
 
     private final ParameterizableRequest<Credentials, AuthenticationException> request;
 
-    TokenRequest(ParameterizableRequest<Credentials, AuthenticationException> request) {
+    public TokenRequest(ParameterizableRequest<Credentials, AuthenticationException> request) {
         this.request = request;
     }
 
