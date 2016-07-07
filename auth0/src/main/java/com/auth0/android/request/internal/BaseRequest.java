@@ -124,8 +124,13 @@ abstract class BaseRequest<T, U extends Auth0Exception> implements Parameterizab
                 String stringPayload = response.body().string();
                 return errorBuilder.from(stringPayload, response.code());
             } catch (IOException e1) {
-                final Auth0Exception auth0Exception = new Auth0Exception("Error parsing the server response", e);
-                return errorBuilder.from("Request to " + url.toString() + " failed", auth0Exception);
+                String statusMessage = response.message();
+                if (statusMessage != null) {
+                    return errorBuilder.from(statusMessage, response.code());
+                } else {
+                    final Auth0Exception auth0Exception = new Auth0Exception("Error parsing the server response", e);
+                    return errorBuilder.from("Request to " + url.toString() + " failed", auth0Exception);
+                }
             }
         } catch (IOException e) {
             final Auth0Exception auth0Exception = new Auth0Exception("Error parsing the server response", e);

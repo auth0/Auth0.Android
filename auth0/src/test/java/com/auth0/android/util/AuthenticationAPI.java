@@ -155,6 +155,12 @@ public class AuthenticationAPI {
         return this;
     }
 
+    public AuthenticationAPI willReturnPlainTextUnauthorized() {
+        String json = "Unauthorized";
+        server.enqueue(responseWithJSON(json, 401));
+        return this;
+    }
+
     public AuthenticationAPI willReturnTokens() {
         String json = "{\"" +
                 "access_token\": \"" + ACCESS_TOKEN + "\"," +
