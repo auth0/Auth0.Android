@@ -1,6 +1,6 @@
 # Auth0.Android
 
-[![CI Status](http://img.shields.io/travis/auth0/auth0.android.svg?style=flat-square)](https://travis-ci.org/auth0/auth0.android)
+[![CI Status](http://img.shields.io/travis/auth0/Auth0.Android.svg?style=flat-square)](https://travis-ci.org/auth0/Auth0.Android)
 
 Android java toolkit for Auth0 API
 
@@ -163,6 +163,12 @@ apiClient
 ```
 
 ### Web-based Auth
+
+First go to [Auth0 Dashboard](https://manage.auth0.com/#/applications) and go to application's settings. Make sure you have in *Allowed Callback URLs* a URL with the following format:
+
+```
+https://{YOUR_AUTH0_DOMAIN}/android/{YOUR_APP_PACKAGE_NAME}/callback
+```
 
 In your application's `AndroidManifest.xml` file register the WebAuthActivity inside the `application` tag like
 
