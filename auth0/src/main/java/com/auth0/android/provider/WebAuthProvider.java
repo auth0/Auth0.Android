@@ -43,7 +43,7 @@ import java.util.UUID;
 
 /**
  * OAuth2 Web Authentication Provider.
- * It can use an external browser by sending the {@link android.content.Intent#ACTION_VIEW} intent, or also the {@link WebViewActivity}.
+ * It can use an external browser by sending the {@link android.content.Intent#ACTION_VIEW} intent, or also the {@link WebAuthActivity}.
  * This behaviour is changed using {@link WebAuthProvider#useBrowser()}, and defaults to use browser.
  */
 public class WebAuthProvider {
@@ -319,10 +319,10 @@ public class WebAuthProvider {
             activity.startActivity(intent);
         } else {
             Log.d(TAG, "About to start the authorization using the WebView");
-            intent = new Intent(activity, WebViewActivity.class);
+            intent = new Intent(activity, WebAuthActivity.class);
             intent.setData(authorizeUri);
-            intent.putExtra(WebViewActivity.CONNECTION_NAME_EXTRA, connectionName);
-            intent.putExtra(WebViewActivity.FULLSCREEN_EXTRA, useFullscreen);
+            intent.putExtra(WebAuthActivity.CONNECTION_NAME_EXTRA, connectionName);
+            intent.putExtra(WebAuthActivity.FULLSCREEN_EXTRA, useFullscreen);
             activity.startActivityForResult(intent, requestCode);
         }
     }

@@ -20,6 +20,17 @@ dependencies {
 }
 ```
 
+### Permissions 
+
+Open your app's `AndroidManifest.xml` file and add the following permissions.
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+```
+
+> The last one is not mandatory, but used by the `WebAuthActivity` to check for connection availability before making a request.
+
 ## Usage
 
 First create an instance of `Auth0` with your client information
@@ -170,7 +181,7 @@ First go to [Auth0 Dashboard](https://manage.auth0.com/#/applications) and go to
 https://{YOUR_AUTH0_DOMAIN}/android/{YOUR_APP_PACKAGE_NAME}/callback
 ```
 
-In your application's `AndroidManifest.xml` file register the WebAuthActivity inside the `application` tag like
+In your application's `AndroidManifest.xml` file register the WebAuthActivity with the intent filters inside the `application` tag like
 
 
 ```xml
@@ -179,8 +190,22 @@ In your application's `AndroidManifest.xml` file register the WebAuthActivity in
         <!-- ... -->
         
         <activity
-            android:name="com.auth0.android.provider.WebViewActivity"
-            android:theme="@style/MyAppTheme" />
+            android:name="com.auth0.android.provider.WebAuthActivity"
+            android:theme="@style/MyAppTheme">
+            
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="{YOUR_AUTH0_DOMAIN}"
+                    android:pathPrefix="/android/{YOUR_APP_PACKAGE_NAME}/callback"
+                    android:scheme="https" />
+            </intent-filter>
+            
+        </activity>
 
         <!-- ... -->
 
@@ -210,7 +235,6 @@ WebAuthProvider.init(account)
 
 ```java
 WebAuthProvider.init(account)
-                .useCodeGrant(true)
                 .useBrowser(true)
                 .start(MainActivity.this, authCallback, WEB_REQ_CODE);
 ```
@@ -231,6 +255,24 @@ WebAuthProvider.init(account)
                 .start(MainActivity.this, authCallback, WEB_REQ_CODE);
 ```
 
+
+## FAQ 
+
+A bug _may_ appear when trying to `build` the project, regarding an `invalid package` on the `okio` dependency. This can be fixed by adding in the module `build.gradle` file the following statement:
+
+```gradle
+android {
+    //...
+    lintOptions {
+       warning 'InvalidPackage'
+    }
+}
+```
+
+ref: https://github.com/square/okio/issues/58#issuecomment-72672263
+
+
+===========================================
 
 ## What is Auth0?
 

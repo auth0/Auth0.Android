@@ -50,9 +50,9 @@ import android.widget.TextView;
 
 import com.auth0.android.auth0.R;
 
-public class WebViewActivity extends AppCompatActivity {
+public class WebAuthActivity extends AppCompatActivity {
 
-    private static final String TAG = WebViewActivity.class.getSimpleName();
+    private static final String TAG = WebAuthActivity.class.getSimpleName();
     private static final String KEY_REDIRECT_URI = "redirect_uri";
 
     public static final String CONNECTION_NAME_EXTRA = "serviceName";
@@ -65,13 +65,13 @@ public class WebViewActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.v(TAG, "Creating a WebViewActivity for navigating to " + getIntent().getData().toString());
+        Log.v(TAG, "Creating a WebAuthActivity for navigating to " + getIntent().getData().toString());
         super.onCreate(savedInstanceState);
         if (getIntent().getBooleanExtra(FULLSCREEN_EXTRA, false)) {
             setFullscreenMode();
         }
 
-        setContentView(R.layout.com_auth0_lock_activity_web_view);
+        setContentView(R.layout.com_auth0_lock_activity_web_auth);
         final ActionBar bar = getSupportActionBar();
         if (bar != null) {
             String serviceName = getIntent().getStringExtra(CONNECTION_NAME_EXTRA);
