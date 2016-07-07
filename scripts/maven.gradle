@@ -9,12 +9,12 @@ install {
 
                 name 'Auth0-Android'
                 description 'Android Java client library for the Auth0 platform'
-                url 'https://github.com/auth0/auth0.Android'
+                url 'https://github.com/auth0/Auth0.Android'
 
                 licenses {
                     license {
                         name 'The MIT License (MIT)'
-                        url 'https://raw.githubusercontent.com/auth0/auth0.Android/master/LICENSE'
+                        url 'https://raw.githubusercontent.com/auth0/auth0.android/master/LICENSE'
                         distribution 'repo'
                     }
                 }
@@ -27,8 +27,8 @@ install {
                 }
                 scm {
                     connection 'scm:git@github.com:auth0/auth0.Android.git'
-                    developerConnection 'scm:git@github.com:auth0/auth0.Android.git'
-                    url 'https://github.com/auth0/auth0.Android'
+                    developerConnection 'scm:git@github.com:auth0/auth0.android.git'
+                    url 'https://github.com/auth0/auth0.android'
 
                 }
             }
