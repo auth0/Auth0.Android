@@ -1,0 +1,17 @@
+language: android
+sudo: false
+android:
+  components:
+  - tools
+  - build-tools-23.0.2
+  - android-22
+  - android-23
+  - extra-google-google_play_services
+  - extra-google-m2repository
+  - extra-android-m2repository
+  - addon-google_apis-google-23
+script:
+  - "./gradlew clean test --continue"
+branches:
+  only:
+  - master

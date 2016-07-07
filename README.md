@@ -16,14 +16,17 @@ Auth0.android is available through [Gradle](https://gradle.org/). To install it,
 
 ```gradle
 dependencies {
-    compile "com.auth0.android:auth0:1.0.0"
+    compile "com.auth0.android:auth0:1.0.0-beta.1"
 }
 ```
 
- > Replace version with the latest.
-
-
 ## Usage
+
+First create an instance of `Auth0` with your client information
+
+```java
+Auth0 account = new Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}");
+```
 
 ### Authentication API
 
@@ -32,20 +35,19 @@ The client provides methods to authenticate the user against Auth0 server.
  Create a new instance by passing the account:
  
  ```java
- Auth0 account = new Auth0("clientId", "domain");
- AuthenticationAPIClient apiClient = new AuthenticationAPIClient(account);
+AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
  ```
 
 #### Login with database connection
 
 ```java
-apiClient
-    .login("email@domain.com", "password123")
+authentication
+    .login("info@auth0.com", "a secret password")
     .setConnection("Username-Password-Authentication")
     .start(new BaseCallback<Credentials>() {
         @Override
         public void onSuccess(Credentials payload) {
-            //Got my credentials!
+            //Logged in!
         }
     
         @Override
@@ -58,12 +60,12 @@ apiClient
 #### Passwordless Login
 
 ```java
-apiClient
-    .loginWithEmail("email@domain.com", "password123")
+authentication
+    .loginWithEmail("info@auth0.com", "a secret password")
     .start(new BaseCallback<Credentials>() {
         @Override
         public void onSuccess(Credentials payload) {
-            //Got my credentials!
+            //Logged in!
         }
     
         @Override
@@ -76,13 +78,13 @@ apiClient
 
 #### Sign Up with database connection
 
-```swift
-apiClient
-    .signUp("email@domain.com", "password123")
+```java
+authentication
+    .signUp("info@auth0.com", "a secret password")
     .start(new BaseCallback<Credentials>() {
         @Override
         public void onSuccess(Credentials payload) {
-            //Got my credentials!
+            //Signed Up & Logged in!
         }
     
         @Override
@@ -96,7 +98,7 @@ apiClient
 #### Get user information
 
 ```java
-apiClient
+authentication
    .tokenInfo("user id_token")
    .start(new BaseCallback<Credentials>() {
        @Override
@@ -162,7 +164,7 @@ apiClient
 
 ### Web-based Auth
 
-In your application's `AndroidManifest.xml` file register the WebAuthActivity
+In your application's `AndroidManifest.xml` file register the WebAuthActivity inside the `application` tag like
 
 
 ```xml
@@ -173,37 +175,51 @@ In your application's `AndroidManifest.xml` file register the WebAuthActivity
         <activity
             android:name="com.auth0.android.provider.WebViewActivity"
             android:theme="@style/MyAppTheme" />
+
+        <!-- ... -->
+
     </application>
 ```
 
 
+And define a constant like `WEB_REQ_CODE` that holds the request code (an `int`), that will be sent back with the intent once the auth is finished in the browser/webview
+
 #### Authenticate with any Auth0 connection
 
 ```java
-Auth0 account = new Auth0("clientId", "domain");
 WebAuthProvider.init(account)
-                .useBrowser(true)
                 .withConnection("twitter")
                 .start(MainActivity.this, authCallback, WEB_REQ_CODE);
 ```
 
+#### Use Code grant with PKCE
+
+```java
+WebAuthProvider.init(account)
+                .useCodeGrant(true)
+                .start(MainActivity.this, authCallback, WEB_REQ_CODE);
+```
+
+#### Use browser instead of WebView
+
+```java
+WebAuthProvider.init(account)
+                .useCodeGrant(true)
+                .useBrowser(true)
+                .start(MainActivity.this, authCallback, WEB_REQ_CODE);
+```
 
 #### Specify scope
 
 ```java
-Auth0 account = new Auth0("clientId", "domain");
 WebAuthProvider.init(account)
-                .useBrowser(true)
                 .withScope("user openid")
-                .withState("123456")
-                .withConnection("twitter")
                 .start(MainActivity.this, authCallback, WEB_REQ_CODE);
 ```
 
 #### Authenticate with Auth0 hosted login page
 
 ```java
-Auth0 account = new Auth0("clientId", "domain");
 WebAuthProvider.init(account)
                 .useBrowser(true)
                 .start(MainActivity.this, authCallback, WEB_REQ_CODE);
