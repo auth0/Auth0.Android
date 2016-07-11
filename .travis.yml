@@ -11,7 +11,9 @@ android:
   - extra-android-m2repository
   - addon-google_apis-google-23
 script:
-  - "./gradlew clean test --continue"
+  - "./gradlew clean build test jacocoTestReport --continue"
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
 branches:
   only:
   - master
