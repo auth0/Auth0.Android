@@ -43,7 +43,6 @@ import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
@@ -113,25 +112,15 @@ abstract class BaseRequest<T, U extends Auth0Exception> implements Parameterizab
     }
 
     protected U parseUnsuccessfulResponse(Response response) {
+        String stringPayload = null;
         try {
-            final Reader charStream = response.body().charStream();
+            stringPayload = response.body().string();
             Type mapType = new TypeToken<Map<String, Object>>() {
             }.getType();
-            Map<String, Object> mapPayload = gson.fromJson(charStream, mapType);
+            Map<String, Object> mapPayload = gson.fromJson(stringPayload, mapType);
             return errorBuilder.from(mapPayload);
         } catch (JsonSyntaxException e) {
-            try {
-                String stringPayload = response.body().string();
-                return errorBuilder.from(stringPayload, response.code());
-            } catch (IOException e1) {
-                String statusMessage = response.message();
-                if (statusMessage != null) {
-                    return errorBuilder.from(statusMessage, response.code());
-                } else {
-                    final Auth0Exception auth0Exception = new Auth0Exception("Error parsing the server response", e);
-                    return errorBuilder.from("Request to " + url.toString() + " failed", auth0Exception);
-                }
-            }
+            return errorBuilder.from(stringPayload, response.code());
         } catch (IOException e) {
             final Auth0Exception auth0Exception = new Auth0Exception("Error parsing the server response", e);
             return errorBuilder.from("Request to " + url.toString() + " failed", auth0Exception);
