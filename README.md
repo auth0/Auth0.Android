@@ -67,9 +67,29 @@ authentication
 
 #### Passwordless Login
 
+Step 1: Request the code
+
 ```java
 authentication
-    .loginWithEmail("info@auth0.com", "a secret password")
+    .passwordlessWithEmail("info@auth0.com", PasswordlessType.CODE)
+    .start(new BaseCallback<Credentials>() {
+        @Override
+        public void onSuccess(Void payload) {
+            //Code sent!
+        }
+    
+        @Override
+        public void onFailure(AuthenticationException error) {
+            //Error!
+        }
+    });
+```
+
+Step 2: Input the code
+
+```java
+authentication
+    .loginWithEmail("info@auth0.com", "123456")
     .start(new BaseCallback<Credentials>() {
         @Override
         public void onSuccess(Credentials payload) {
@@ -247,8 +267,35 @@ Also register the intent filters inside your activity's tag, so you can receive 
     </application>
 ```
 
-Finally, define a constant like `WEB_REQ_CODE` that holds the request code (an `int`), that will be sent back with the intent once the authentication is finished in the browser.
+In your `Activity` class define a constant like `WEB_REQ_CODE` that holds the request code (an `int`), that will be sent back with the intent once the auth is finished in the browser/webview. To capture the response, override the `OnActivityResult` and the `onNewIntent` methods and call `WebAuthProvider.resume()` with the received parameters:
 
+```java
+public class MyActivity extends Activity {
+
+    private static final int WEB_REQ_CODE = 110;
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case WEB_REQ_CODE:
+                lockView.showProgress(false);
+                WebAuthProvider.resume(requestCode, resultCode, data);
+                break;
+            default:
+                super.onActivityResult(requestCode, resultCode, data);
+        }
+    }
+    
+    @Override
+    protected void onNewIntent(Intent intent) {
+        if (WebAuthProvider.resume(intent)) {
+            return;
+        }
+        super.onNewIntent(intent);
+    }
+}
+
+```
 
 #### Authenticate with any Auth0 connection
 
@@ -309,9 +356,6 @@ android {
 ```
 
 ref: https://github.com/square/okio/issues/58#issuecomment-72672263
-
-
-===========================================
 
 ## What is Auth0?
 
