@@ -62,8 +62,8 @@ public class UsersAPIClientTest {
     private static final String DOMAIN = "samples.auth0.com";
     private static final String USER_ID_PRIMARY = "primaryUserId";
     private static final String USER_ID_SECONDARY = "secondaryUserId";
-    private static final String ID_TOKEN_PRIMARY = "primaryIdToken";
-    private static final String ID_TOKEN_SECONDARY = "secondaryIdToken";
+    private static final String TOKEN_PRIMARY = "primaryToken";
+    private static final String TOKEN_SECONDARY = "secondaryToken";
     private static final String PROVIDER = "provider";
     private static final String HEADER_AUTHORIZATION = "Authorization";
     private static final String BEARER = "Bearer ";
@@ -83,7 +83,7 @@ public class UsersAPIClientTest {
         mockAPI = new UsersAPI();
         final String domain = mockAPI.getDomain();
         Auth0 auth0 = new Auth0(CLIENT_ID, domain, domain);
-        client = new UsersAPIClient(auth0);
+        client = new UsersAPIClient(auth0, TOKEN_PRIMARY);
         gson = new GsonBuilder().serializeNulls().create();
     }
 
@@ -94,7 +94,7 @@ public class UsersAPIClientTest {
 
     @Test
     public void shouldCreateClientWithAccountInfo() throws Exception {
-        UsersAPIClient client = new UsersAPIClient(new Auth0(CLIENT_ID, DOMAIN));
+        UsersAPIClient client = new UsersAPIClient(new Auth0(CLIENT_ID, DOMAIN), TOKEN_PRIMARY);
         assertThat(client, is(notNullValue()));
         assertThat(client.getClientId(), equalTo(CLIENT_ID));
         assertThat(client.getBaseURL(), equalTo("https://" + DOMAIN));
@@ -105,16 +105,16 @@ public class UsersAPIClientTest {
         mockAPI.willReturnSuccessfulLink();
 
         final MockManagementCallback<List<UserIdentity>> callback = new MockManagementCallback<>();
-        client.link(USER_ID_PRIMARY, ID_TOKEN_PRIMARY, ID_TOKEN_SECONDARY)
+        client.link(USER_ID_PRIMARY, TOKEN_SECONDARY)
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY + "/identities"));
 
-        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + ID_TOKEN_PRIMARY));
+        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + TOKEN_PRIMARY));
         assertThat(request.getMethod(), equalTo(METHOD_POST));
         Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry(KEY_LINK_WITH, ID_TOKEN_SECONDARY));
+        assertThat(body, hasEntry(KEY_LINK_WITH, TOKEN_SECONDARY));
 
 
         TypeToken<List<UserIdentity>> typeToken = new TypeToken<List<UserIdentity>>() {
@@ -127,16 +127,16 @@ public class UsersAPIClientTest {
     public void shouldLinkAccountSync() throws Exception {
         mockAPI.willReturnSuccessfulLink();
 
-        final List<UserIdentity> result = client.link(USER_ID_PRIMARY, ID_TOKEN_PRIMARY, ID_TOKEN_SECONDARY)
+        final List<UserIdentity> result = client.link(USER_ID_PRIMARY, TOKEN_SECONDARY)
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY + "/identities"));
 
-        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + ID_TOKEN_PRIMARY));
+        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + TOKEN_PRIMARY));
         assertThat(request.getMethod(), equalTo(METHOD_POST));
         Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry(KEY_LINK_WITH, ID_TOKEN_SECONDARY));
+        assertThat(body, hasEntry(KEY_LINK_WITH, TOKEN_SECONDARY));
 
 
         TypeToken<List<UserIdentity>> typeToken = new TypeToken<List<UserIdentity>>() {
@@ -150,13 +150,13 @@ public class UsersAPIClientTest {
         mockAPI.willReturnSuccessfulUnlink();
 
         final MockManagementCallback<List<UserIdentity>> callback = new MockManagementCallback<>();
-        client.unlink(USER_ID_PRIMARY, ID_TOKEN_PRIMARY, USER_ID_SECONDARY, PROVIDER)
+        client.unlink(USER_ID_PRIMARY, USER_ID_SECONDARY, PROVIDER)
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY + "/identities/" + PROVIDER + "/" + USER_ID_SECONDARY));
 
-        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + ID_TOKEN_PRIMARY));
+        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + TOKEN_PRIMARY));
         assertThat(request.getMethod(), equalTo(METHOD_DELETE));
         Map<String, String> body = bodyFromRequest(request);
         assertThat(body, is(nullValue()));
@@ -172,13 +172,13 @@ public class UsersAPIClientTest {
     public void shouldUnlinkAccountSync() throws Exception {
         mockAPI.willReturnSuccessfulUnlink();
 
-        final List<UserIdentity> result = client.unlink(USER_ID_PRIMARY, ID_TOKEN_PRIMARY, USER_ID_SECONDARY, PROVIDER)
+        final List<UserIdentity> result = client.unlink(USER_ID_PRIMARY, USER_ID_SECONDARY, PROVIDER)
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY + "/identities/" + PROVIDER + "/" + USER_ID_SECONDARY));
 
-        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + ID_TOKEN_PRIMARY));
+        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + TOKEN_PRIMARY));
         assertThat(request.getMethod(), equalTo(METHOD_DELETE));
         Map<String, String> body = bodyFromRequest(request);
         assertThat(body, is(nullValue()));
@@ -200,13 +200,13 @@ public class UsersAPIClientTest {
         metadata.put("list", Arrays.asList("my", "name", "is"));
 
         final MockManagementCallback<UserProfile> callback = new MockManagementCallback<>();
-        client.updateMetadata(USER_ID_PRIMARY, ID_TOKEN_PRIMARY, metadata)
+        client.updateMetadata(USER_ID_PRIMARY, metadata)
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY));
 
-        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + ID_TOKEN_PRIMARY));
+        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + TOKEN_PRIMARY));
         assertThat(request.getMethod(), equalTo(METHOD_PATCH));
         Map<String, Object> body = bodyFromRequest(request);
 
@@ -225,13 +225,13 @@ public class UsersAPIClientTest {
         metadata.put("name", "my_name");
         metadata.put("list", Arrays.asList("my", "name", "is"));
 
-        final UserProfile result = client.updateMetadata(USER_ID_PRIMARY, ID_TOKEN_PRIMARY, metadata)
+        final UserProfile result = client.updateMetadata(USER_ID_PRIMARY, metadata)
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY));
 
-        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + ID_TOKEN_PRIMARY));
+        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + TOKEN_PRIMARY));
         assertThat(request.getMethod(), equalTo(METHOD_PATCH));
         Map<String, Object> body = bodyFromRequest(request);
 

@@ -59,7 +59,6 @@ public class UsersAPIClient {
     private static final String V2_PATH = "v2";
     private static final String USERS_PATH = "users";
     private static final String IDENTITIES_PATH = "identities";
-    private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String USER_METADATA_KEY = "user_metadata";
 
     private final Auth0 auth0;
@@ -73,15 +72,15 @@ public class UsersAPIClient {
      *
      * @param auth0 account information
      */
-    public UsersAPIClient(Auth0 auth0) {
-        this(auth0, new OkHttpClient(), GsonProvider.buildGson());
+    public UsersAPIClient(Auth0 auth0, String token) {
+        this(auth0, token, new OkHttpClient(), GsonProvider.buildGson());
     }
 
-    private UsersAPIClient(Auth0 auth0, OkHttpClient client, Gson gson) {
+    private UsersAPIClient(Auth0 auth0, String token, OkHttpClient client, Gson gson) {
         this.auth0 = auth0;
         this.client = client;
         this.gson = gson;
-        this.factory = new RequestFactory();
+        this.factory = new RequestFactory(token);
         this.mgmtErrorBuilder = new ManagementErrorBuilder();
         final Telemetry telemetry = auth0.getTelemetry();
         if (telemetry != null) {
@@ -112,7 +111,7 @@ public class UsersAPIClient {
      * Link a user identity calling <a href="https://auth0.com/docs/link-accounts#the-api">'/api/v2/users/:primaryUserId/identities'</a> endpoint
      * Example usage:
      * <pre><code>
-     * client.link("{auth0 primary user id}", "{user primary id token}", "{user secondary id token}")
+     * client.link("{auth0 primary user id}", "{user secondary token}")
      *      .start(new BaseCallback<List<UserIdentity>>() {
      *          {@literal}Override
      *          public void onSuccess(List<UserIdentity> payload) {}
@@ -122,13 +121,12 @@ public class UsersAPIClient {
      *      });
      * </code></pre>
      *
-     * @param primaryUserId    of the identity to link
-     * @param primaryIdToken   of the main identity obtained after login
-     * @param secondaryIdToken of the secondary identity obtained after login
+     * @param primaryUserId  of the identity to link
+     * @param secondaryToken of the secondary identity obtained after login
      * @return a request to start
      */
     @SuppressWarnings("WeakerAccess")
-    public Request<List<UserIdentity>, ManagementException> link(String primaryUserId, String primaryIdToken, String secondaryIdToken) {
+    public Request<List<UserIdentity>, ManagementException> link(String primaryUserId, String secondaryToken) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(API_PATH)
                 .addPathSegment(V2_PATH)
@@ -138,21 +136,20 @@ public class UsersAPIClient {
                 .build();
 
         final Map<String, Object> parameters = ParameterBuilder.newBuilder()
-                .set(LINK_WITH_KEY, secondaryIdToken)
+                .set(LINK_WITH_KEY, secondaryToken)
                 .asDictionary();
 
         TypeToken<List<UserIdentity>> typeToken = new TypeToken<List<UserIdentity>>() {
         };
         return factory.POST(url, client, gson, typeToken, mgmtErrorBuilder)
-                .addHeader(AUTHORIZATION_HEADER, "Bearer " + primaryIdToken)
                 .addParameters(parameters);
     }
 
     /**
-     * Unlink a user identity calling <a href="https://auth0.com/docs/link-accounts#unlinking-accounts">'/api/v2/users/:primaryIdToken/identities/secondaryProvider/secondaryUserId'</a> endpoint
+     * Unlink a user identity calling <a href="https://auth0.com/docs/link-accounts#unlinking-accounts">'/api/v2/users/:primaryToken/identities/secondaryProvider/secondaryUserId'</a> endpoint
      * Example usage:
      * <pre><code>
-     * client.unlink("{auth0 primary user id}", "{user primary id token}", {auth0 secondary user id}, "{secondary provider}")
+     * client.unlink("{auth0 primary user id}", {auth0 secondary user id}, "{secondary provider}")
      *      .start(new BaseCallback<List<UserIdentity>>() {
      *          {@literal}Override
      *          public void onSuccess(List<UserIdentity> payload) {}
@@ -163,13 +160,12 @@ public class UsersAPIClient {
      * </code></pre>
      *
      * @param primaryUserId     of the primary identity to unlink
-     * @param primaryIdToken    of the main identity obtained after login
      * @param secondaryUserId   of the secondary identity you wish to unlink from the main one.
      * @param secondaryProvider of the secondary identity you wish to unlink from the main one.
      * @return a request to start
      */
     @SuppressWarnings("WeakerAccess")
-    public Request<List<UserIdentity>, ManagementException> unlink(String primaryUserId, String primaryIdToken, String secondaryUserId, String secondaryProvider) {
+    public Request<List<UserIdentity>, ManagementException> unlink(String primaryUserId, String secondaryUserId, String secondaryProvider) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(API_PATH)
                 .addPathSegment(V2_PATH)
@@ -182,15 +178,14 @@ public class UsersAPIClient {
 
         TypeToken<List<UserIdentity>> typeToken = new TypeToken<List<UserIdentity>>() {
         };
-        return factory.DELETE(url, client, gson, typeToken, mgmtErrorBuilder)
-                .addHeader(AUTHORIZATION_HEADER, "Bearer " + primaryIdToken);
+        return factory.DELETE(url, client, gson, typeToken, mgmtErrorBuilder);
     }
 
     /**
-     * Update the user_metadata calling <a href="https://auth0.com/docs/api/management/v2#!/Users/patch_users_by_id">'/api/v2/users/:idToken'</a> endpoint
+     * Update the user_metadata calling <a href="https://auth0.com/docs/api/management/v2#!/Users/patch_users_by_id">'/api/v2/users/:token'</a> endpoint
      * Example usage:
      * <pre><code>
-     * client.updateMetadata("{user id}", "{id token}", "{user metadata}")
+     * client.updateMetadata("{user id}", "{user metadata}")
      *      .start(new BaseCallback<UserProfile>() {
      *          {@literal}Override
      *          public void onSuccess(UserProfile payload) {}
@@ -201,12 +196,11 @@ public class UsersAPIClient {
      * </code></pre>
      *
      * @param userId       of the primary identity to unlink
-     * @param idToken      of the main identity obtained after login
      * @param userMetadata to merge with the existing one
      * @return a request to start
      */
     @SuppressWarnings("WeakerAccess")
-    public Request<UserProfile, ManagementException> updateMetadata(String userId, String idToken, Map<String, Object> userMetadata) {
+    public Request<UserProfile, ManagementException> updateMetadata(String userId, Map<String, Object> userMetadata) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(API_PATH)
                 .addPathSegment(V2_PATH)
@@ -215,7 +209,6 @@ public class UsersAPIClient {
                 .build();
 
         return factory.PATCH(url, client, gson, UserProfile.class, mgmtErrorBuilder)
-                .addHeader(AUTHORIZATION_HEADER, "Bearer " + idToken)
                 .addParameter(USER_METADATA_KEY, userMetadata);
     }
 

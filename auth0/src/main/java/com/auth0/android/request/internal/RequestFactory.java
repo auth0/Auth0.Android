@@ -24,6 +24,9 @@
 
 package com.auth0.android.request.internal;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.request.AuthorizableRequest;
@@ -36,19 +39,31 @@ import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.OkHttpClient;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class RequestFactory {
 
-    private String clientInfo;
-    private String userAgent;
+    private static final String AUTHORIZATION_HEADER = "Authorization";
+    private static final String USER_AGENT_HEADER = "User-Agent";
+
+    private final HashMap<String, String> headers;
+
+    public RequestFactory() {
+        headers = new HashMap<>();
+    }
+
+    public RequestFactory(@NonNull String bearerToken) {
+        this();
+        headers.put(AUTHORIZATION_HEADER, "Bearer " + bearerToken);
+    }
 
     public void setClientInfo(String clientInfo) {
-        this.clientInfo = clientInfo;
+        headers.put(Telemetry.HEADER_NAME, clientInfo);
     }
 
     public void setUserAgent(String userAgent) {
-        this.userAgent = userAgent;
+        headers.put(USER_AGENT_HEADER, userAgent);
     }
 
     public <T, U extends Auth0Exception> ParameterizableRequest<T, U> GET(HttpUrl url, OkHttpClient client, Gson gson, Class<T> clazz, ErrorBuilder<U> errorBuilder) {
@@ -88,7 +103,7 @@ public class RequestFactory {
     }
 
     public <U extends Auth0Exception> ParameterizableRequest<Void, U> POST(HttpUrl url, OkHttpClient client, Gson gson, String jwt, ErrorBuilder<U> errorBuilder) {
-        final AuthorizableRequest<Void, U> request = new VoidRequest<U>(url, client, gson, "POST", errorBuilder)
+        final AuthorizableRequest<Void, U> request = new VoidRequest<>(url, client, gson, "POST", errorBuilder)
                 .setBearer(jwt);
         addMetrics(request);
         return request;
@@ -125,11 +140,28 @@ public class RequestFactory {
     }
 
     private <T, U extends Auth0Exception> void addMetrics(ParameterizableRequest<T, U> request) {
-        if (this.clientInfo != null) {
-            request.addHeader(Telemetry.HEADER_NAME, this.clientInfo);
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            request.addHeader(entry.getKey(), entry.getValue());
         }
-        if (this.userAgent != null) {
-            request.addHeader("User-Agent", this.userAgent);
-        }
+    }
+
+    <T, U extends Auth0Exception> ParameterizableRequest<T, U> createSimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, String method, Class<T> clazz, ErrorBuilder<U> errorBuilder) {
+        return new SimpleRequest<>(url, client, gson, method, clazz, errorBuilder);
+    }
+
+    <T, U extends Auth0Exception> ParameterizableRequest<T, U> createSimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, String method, TypeToken<T> typeToken, ErrorBuilder<U> errorBuilder) {
+        return new SimpleRequest<>(url, client, gson, method, typeToken, errorBuilder);
+    }
+
+    ParameterizableRequest createAuthenticationRequest(HttpUrl url, OkHttpClient client, Gson gson, String method) {
+        return new BaseAuthenticationRequest(url, client, gson, method, Credentials.class);
+    }
+
+    <U extends Auth0Exception> ParameterizableRequest createVoidRequest(HttpUrl url, OkHttpClient client, Gson gson, String method, ErrorBuilder<U> errorBuilder) {
+        return new VoidRequest<>(url, client, gson, method, errorBuilder);
+    }
+
+    Map<String, String> getHeaders() {
+        return headers;
     }
 }
