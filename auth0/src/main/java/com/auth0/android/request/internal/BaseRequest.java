@@ -161,7 +161,7 @@ abstract class BaseRequest<T, U extends Auth0Exception> implements Parameterizab
     public void start(BaseCallback<T, U> callback) {
         setCallback(callback);
         try {
-            Request request = doBuildRequest(newBuilder());
+            Request request = doBuildRequest();
             client.newCall(request).enqueue(this);
         } catch (RequestBodyBuildException e) {
             final U exception = errorBuilder.from("Error parsing the request body", e);
@@ -169,5 +169,9 @@ abstract class BaseRequest<T, U extends Auth0Exception> implements Parameterizab
         }
     }
 
-    protected abstract Request doBuildRequest(Request.Builder builder);
+    Map<String, String> getHeaders() {
+        return headers;
+    }
+
+    protected abstract Request doBuildRequest();
 }

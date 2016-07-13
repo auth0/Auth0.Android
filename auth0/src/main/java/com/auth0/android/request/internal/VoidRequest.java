@@ -56,7 +56,7 @@ class VoidRequest<U extends Auth0Exception> extends BaseRequest<Void, U> impleme
     }
 
     @Override
-    protected Request doBuildRequest(Request.Builder builder) {
+    protected Request doBuildRequest() {
         RequestBody body = buildBody();
         return newBuilder()
                 .method(httpMethod, body)
@@ -65,7 +65,7 @@ class VoidRequest<U extends Auth0Exception> extends BaseRequest<Void, U> impleme
 
     @Override
     public Void execute() throws Auth0Exception {
-        Request request = doBuildRequest(newBuilder());
+        Request request = doBuildRequest();
 
         Response response;
         try {
