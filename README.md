@@ -190,6 +190,28 @@ apiClient
     });
 ```
 
+### Update User Metadata
+
+```java
+Map<String, Object> metadata = new HashMap<>();
+metadata.put("name", Arrays.asList("My", "Name", "Is"));
+metadata.put("phoneNumber", "1234567890");
+
+apiClient
+    .updateMetadata("user_id", "id_token", metadata)
+    .start(new BaseCallback<UserProfile, ManagementException>() {
+        @Override
+        public void onSuccess(UserProfile payload) {
+            //Metadata updated
+        }
+    
+        @Override
+        public void onFailure(ManagementException error) {
+            //Error!
+        }
+    });
+```
+
 ### Web-based Auth
 
 First go to [Auth0 Dashboard](https://manage.auth0.com/#/applications) and go to application's settings. Make sure you have in *Allowed Callback URLs* a URL with the following format:

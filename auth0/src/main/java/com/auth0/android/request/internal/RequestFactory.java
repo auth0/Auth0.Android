@@ -101,7 +101,7 @@ public class RequestFactory {
     }
 
     public <T, U extends Auth0Exception> ParameterizableRequest<T, U> PATCH(HttpUrl url, OkHttpClient client, Gson gson, Class<T> clazz, ErrorBuilder<U> errorBuilder) {
-        final SimpleRequest<T, U> request = new SimpleRequest<>(url, client, gson, "GET", clazz, errorBuilder);
+        final SimpleRequest<T, U> request = new SimpleRequest<>(url, client, gson, "PATCH", clazz, errorBuilder);
         addMetrics(request);
         return request;
     }

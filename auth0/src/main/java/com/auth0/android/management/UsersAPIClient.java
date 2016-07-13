@@ -32,6 +32,7 @@ import com.auth0.android.request.Request;
 import com.auth0.android.request.internal.GsonProvider;
 import com.auth0.android.request.internal.RequestFactory;
 import com.auth0.android.result.UserIdentity;
+import com.auth0.android.result.UserProfile;
 import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -43,7 +44,7 @@ import java.util.Map;
 
 /**
  * API client for Auth0 Management API.
- * <p/>
+ * <p>
  * <pre><code>
  * Auth0 auth0 = new Auth0("your_client_id", "your_domain");
  * UsersAPIClient client = new UsersAPIClient(auth0);
@@ -59,6 +60,7 @@ public class UsersAPIClient {
     private static final String USERS_PATH = "users";
     private static final String IDENTITIES_PATH = "identities";
     private static final String AUTHORIZATION_HEADER = "Authorization";
+    private static final String USER_METADATA_KEY = "user_metadata";
 
     private final Auth0 auth0;
     private final OkHttpClient client;
@@ -182,6 +184,39 @@ public class UsersAPIClient {
         };
         return factory.DELETE(url, client, gson, typeToken, mgmtErrorBuilder)
                 .addHeader(AUTHORIZATION_HEADER, "Bearer " + primaryIdToken);
+    }
+
+    /**
+     * Update the user_metadata calling <a href="https://auth0.com/docs/api/management/v2#!/Users/patch_users_by_id">'/api/v2/users/:idToken'</a> endpoint
+     * Example usage:
+     * <pre><code>
+     * client.updateMetadata("{user id}", "{id token}", "{user metadata}")
+     *      .start(new BaseCallback<UserProfile>() {
+     *          {@literal}Override
+     *          public void onSuccess(UserProfile payload) {}
+     *
+     *          {@literal}Override
+     *          public void onFailure(ManagementException error) {}
+     *      });
+     * </code></pre>
+     *
+     * @param userId       of the primary identity to unlink
+     * @param idToken      of the main identity obtained after login
+     * @param userMetadata to merge with the existing one
+     * @return a request to start
+     */
+    @SuppressWarnings("WeakerAccess")
+    public Request<UserProfile, ManagementException> updateMetadata(String userId, String idToken, Map<String, Object> userMetadata) {
+        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+                .addPathSegment(API_PATH)
+                .addPathSegment(V2_PATH)
+                .addPathSegment(USERS_PATH)
+                .addPathSegment(userId)
+                .build();
+
+        return factory.PATCH(url, client, gson, UserProfile.class, mgmtErrorBuilder)
+                .addHeader(AUTHORIZATION_HEADER, "Bearer " + idToken)
+                .addParameter(USER_METADATA_KEY, userMetadata);
     }
 
 }
