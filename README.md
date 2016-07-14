@@ -50,8 +50,7 @@ AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
 
 ```java
 authentication
-    .login("info@auth0.com", "a secret password")
-    .setConnection("Username-Password-Authentication")
+    .login("info@auth0.com", "a secret password", "my-database-connection")
     .start(new BaseCallback<Credentials>() {
         @Override
         public void onSuccess(Credentials payload) {
@@ -89,7 +88,7 @@ Step 2: Input the code
 
 ```java
 authentication
-    .loginWithEmail("info@auth0.com", "123456")
+    .loginWithEmail("info@auth0.com", "a secret password", "my-passwordless-connection")
     .start(new BaseCallback<Credentials>() {
         @Override
         public void onSuccess(Credentials payload) {
@@ -108,7 +107,7 @@ authentication
 
 ```java
 authentication
-    .signUp("info@auth0.com", "a secret password")
+    .signUp("info@auth0.com", "a secret password", "my-database-connection")
     .start(new BaseCallback<Credentials>() {
         @Override
         public void onSuccess(Credentials payload) {
@@ -190,9 +189,31 @@ apiClient
     });
 ```
 
+### Update User Metadata
+
+```java
+Map<String, Object> metadata = new HashMap<>();
+metadata.put("name", Arrays.asList("My", "Name", "Is"));
+metadata.put("phoneNumber", "1234567890");
+
+apiClient
+    .updateMetadata("user_id", "id_token", metadata)
+    .start(new BaseCallback<UserProfile, ManagementException>() {
+        @Override
+        public void onSuccess(UserProfile payload) {
+            //Metadata updated
+        }
+    
+        @Override
+        public void onFailure(ManagementException error) {
+            //Error!
+        }
+    });
+```
+
 ### Web-based Auth
 
-First go to [Auth0 Dashboard](https://manage.auth0.com/#/applications) and go to application's settings. Make sure you have in *Allowed Callback URLs* a URL with the following format:
+First go to [Auth0 Dashboard](https://manage.auth0.com/#/applications) and go to your application's settings. Make sure you have in *Allowed Callback URLs* a URL with the following format:
 
 ```
 https://{YOUR_AUTH0_DOMAIN}/android/{YOUR_APP_PACKAGE_NAME}/callback

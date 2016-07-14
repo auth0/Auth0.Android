@@ -69,11 +69,6 @@ public class AuthenticationAPI {
         return this;
     }
 
-    public AuthenticationAPI willReturnSuccessfulUnlinkAccount() {
-        server.enqueue(responseWithJSON("NOT REALLY A JSON", 200));
-        return this;
-    }
-
     public AuthenticationAPI willReturnGenericDelegationToken() {
         String json = "{\n" +
                 "  \"token\": \"" + GENERIC_TOKEN + "\"\n" +

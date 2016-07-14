@@ -31,9 +31,8 @@ public enum PasswordlessType {
     /**
      * Sends a link used to login
      */
-    LINK_WEB,
-    LINK_ANDROID,
-    LINK_IOS,
+    WEB_LINK,
+    ANDROID_LINK,
     CODE;
 
     public String getValue() {
@@ -41,12 +40,10 @@ public enum PasswordlessType {
             default:
             case CODE:
                 return "code";
-            case LINK_WEB:
+            case WEB_LINK:
                 return "link";
-            case LINK_ANDROID:
+            case ANDROID_LINK:
                 return "link_android";
-            case LINK_IOS:
-                return "link_ios";
         }
     }
 }

@@ -78,7 +78,7 @@ class SimpleRequest<T, U extends Auth0Exception> extends BaseRequest<T, U> imple
     }
 
     @Override
-    protected Request doBuildRequest(Request.Builder builder) throws RequestBodyBuildException {
+    protected Request doBuildRequest() throws RequestBodyBuildException {
         RequestBody body = buildBody();
         return newBuilder()
                 .method(method, body)
@@ -87,7 +87,7 @@ class SimpleRequest<T, U extends Auth0Exception> extends BaseRequest<T, U> imple
 
     @Override
     public T execute() throws Auth0Exception {
-        Request request = doBuildRequest(newBuilder());
+        Request request = doBuildRequest();
 
         Response response;
         try {

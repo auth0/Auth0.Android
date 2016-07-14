@@ -24,6 +24,8 @@
 
 package com.auth0.android.authentication;
 
+import android.support.annotation.NonNull;
+
 import com.auth0.android.Auth0;
 import com.auth0.android.authentication.request.DatabaseConnectionRequest;
 import com.auth0.android.authentication.request.DelegationRequest;
@@ -62,7 +64,6 @@ import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSW
  */
 public class AuthenticationAPIClient {
 
-    private static final String DEFAULT_DB_CONNECTION = "Username-Password-Authentication";
     private static final String SMS_CONNECTION = "sms";
     private static final String EMAIL_CONNECTION = "email";
     private static final String USERNAME_KEY = "username";
@@ -92,14 +93,13 @@ public class AuthenticationAPIClient {
     private final com.auth0.android.request.internal.RequestFactory factory;
     private final ErrorBuilder<AuthenticationException> authErrorBuilder;
 
-    private String defaultDatabaseConnection = DEFAULT_DB_CONNECTION;
 
     /**
      * Creates a new API client instance providing Auth0 account info.
      *
      * @param auth0 account information
      */
-    public AuthenticationAPIClient(Auth0 auth0) {
+    public AuthenticationAPIClient(@NonNull Auth0 auth0) {
         this(auth0, new OkHttpClient(), GsonProvider.buildGson());
     }
 
@@ -134,21 +134,10 @@ public class AuthenticationAPIClient {
     }
 
     /**
-     * Set the default Auth0 database connection name used. By default is 'Username-Password-Authentication'
-     *
-     * @param defaultDatabaseConnection name to use on every login with DB connection
-     */
-    @SuppressWarnings("unused")
-    public void setDefaultDatabaseConnection(String defaultDatabaseConnection) {
-        this.defaultDatabaseConnection = defaultDatabaseConnection;
-    }
-
-    /**
      * Log in a user with email/username and password using a DB connection.
      * Example usage:
      * <pre><code>
-     * client.login("{username or email}", "{password}")
-     *      .setConnection("{database connection name}")
+     * client.login("{username or email}", "{password}", "{database connection name}")
      *      .start(new BaseCallback<Credentials>() {
      *          {@literal}Override
      *          public void onSuccess(Credentials payload) { }
@@ -160,14 +149,16 @@ public class AuthenticationAPIClient {
      *
      * @param usernameOrEmail of the user depending of the type of DB connection
      * @param password        of the user
+     * @param connection      of the database to authenticate with
      * @return a request to configure and start that will yield {@link Credentials}
      */
     @SuppressWarnings("WeakerAccess")
-    public AuthenticationRequest login(String usernameOrEmail, String password) {
+    public AuthenticationRequest login(@NonNull String usernameOrEmail, @NonNull String password, @NonNull String connection) {
         Map<String, Object> requestParameters = ParameterBuilder.newAuthenticationBuilder()
                 .set(USERNAME_KEY, usernameOrEmail)
                 .set(PASSWORD_KEY, password)
                 .setGrantType(GRANT_TYPE_PASSWORD)
+                .setConnection(connection)
                 .asDictionary();
         return loginWithResourceOwner(requestParameters);
     }
@@ -177,7 +168,6 @@ public class AuthenticationAPIClient {
      * Example usage:
      * <pre><code>
      * client.loginWithOAuthAccessToken("{token}", "{connection name}")
-     *      .setConnection("second-database")
      *      .start(new BaseCallback<Credentials>() {
      *          {@literal}Override
      *          public void onSuccess(Credentials payload) { }
@@ -192,7 +182,7 @@ public class AuthenticationAPIClient {
      * @return a request to configure and start that will yield {@link Credentials}
      */
     @SuppressWarnings("WeakerAccess")
-    public AuthenticationRequest loginWithOAuthAccessToken(String token, String connection) {
+    public AuthenticationRequest loginWithOAuthAccessToken(@NonNull String token, @NonNull String connection) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(OAUTH_PATH)
                 .addPathSegment(ACCESS_TOKEN_PATH)
@@ -212,6 +202,38 @@ public class AuthenticationAPIClient {
      * Log in a user using a phone number and a verification code received via SMS (Part of passwordless login flow)
      * Example usage:
      * <pre><code>
+     * client.loginWithPhoneNumber("{phone number}", "{code}", "{passwordless connection name}")
+     *      .start(new BaseCallback<Credentials>() {
+     *          {@literal}Override
+     *          public void onSuccess(Credentials payload) { }
+     *
+     *          {@literal}@Override
+     *          public void onFailure(AuthenticationException error) { }
+     *      });
+     * </code></pre>
+     *
+     * @param phoneNumber      where the user received the verification code
+     * @param verificationCode sent by Auth0 via SMS
+     * @param connection       to end the passwordless authentication on
+     * @return a request to configure and start that will yield {@link Credentials}
+     */
+    @SuppressWarnings("WeakerAccess")
+    public AuthenticationRequest loginWithPhoneNumber(@NonNull String phoneNumber, @NonNull String verificationCode, @NonNull String connection) {
+        Map<String, Object> parameters = ParameterBuilder.newAuthenticationBuilder()
+                .set(USERNAME_KEY, phoneNumber)
+                .set(PASSWORD_KEY, verificationCode)
+                .setGrantType(GRANT_TYPE_PASSWORD)
+                .setClientId(getClientId())
+                .setConnection(connection)
+                .asDictionary();
+        return loginWithResourceOwner(parameters);
+    }
+
+    /**
+     * Log in a user using a phone number and a verification code received via SMS (Part of passwordless login flow).
+     * By default it will try to authenticate using the "sms" connection.
+     * Example usage:
+     * <pre><code>
      * client.loginWithPhoneNumber("{phone number}", "{code}")
      *      .start(new BaseCallback<Credentials>() {
      *          {@literal}Override
@@ -227,19 +249,44 @@ public class AuthenticationAPIClient {
      * @return a request to configure and start that will yield {@link Credentials}
      */
     @SuppressWarnings("WeakerAccess")
-    public AuthenticationRequest loginWithPhoneNumber(String phoneNumber, String verificationCode) {
+    public AuthenticationRequest loginWithPhoneNumber(@NonNull String phoneNumber, @NonNull String verificationCode) {
+        return loginWithPhoneNumber(phoneNumber, verificationCode, SMS_CONNECTION);
+    }
+
+    /**
+     * Log in a user using an email and a verification code received via Email (Part of passwordless login flow)
+     * Example usage:
+     * <pre><code>
+     * client.loginWithEmail("{email}", "{code}", "{passwordless connection name}")
+     *      .start(new BaseCallback<Credentials>() {
+     *          {@literal}Override
+     *          public void onSuccess(Credentials payload) { }
+     *
+     *          {@literal}@Override
+     *          public void onFailure(AuthenticationException error) { }
+     *      });
+     * </code></pre>
+     *
+     * @param email            where the user received the verification code
+     * @param verificationCode sent by Auth0 via Email
+     * @param connection       to end the passwordless authentication on
+     * @return a request to configure and start that will yield {@link Credentials}
+     */
+    @SuppressWarnings("WeakerAccess")
+    public AuthenticationRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode, @NonNull String connection) {
         Map<String, Object> parameters = ParameterBuilder.newAuthenticationBuilder()
-                .set(USERNAME_KEY, phoneNumber)
+                .set(USERNAME_KEY, email)
                 .set(PASSWORD_KEY, verificationCode)
                 .setGrantType(GRANT_TYPE_PASSWORD)
                 .setClientId(getClientId())
-                .setConnection(SMS_CONNECTION)
+                .setConnection(connection)
                 .asDictionary();
         return loginWithResourceOwner(parameters);
     }
 
     /**
      * Log in a user using an email and a verification code received via Email (Part of passwordless login flow)
+     * By default it will try to authenticate using the "email" connection.
      * Example usage:
      * <pre><code>
      * client.loginWithEmail("{email}", "{code}")
@@ -257,15 +304,8 @@ public class AuthenticationAPIClient {
      * @return a request to configure and start that will yield {@link Credentials}
      */
     @SuppressWarnings("WeakerAccess")
-    public AuthenticationRequest loginWithEmail(String email, String verificationCode) {
-        Map<String, Object> parameters = ParameterBuilder.newAuthenticationBuilder()
-                .set(USERNAME_KEY, email)
-                .set(PASSWORD_KEY, verificationCode)
-                .setGrantType(GRANT_TYPE_PASSWORD)
-                .setClientId(getClientId())
-                .setConnection(EMAIL_CONNECTION)
-                .asDictionary();
-        return loginWithResourceOwner(parameters);
+    public AuthenticationRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode) {
+        return loginWithEmail(email, verificationCode, EMAIL_CONNECTION);
     }
 
     /**
@@ -286,7 +326,7 @@ public class AuthenticationAPIClient {
      * @return a request to start
      */
     @SuppressWarnings("WeakerAccess")
-    public Request<UserProfile, AuthenticationException> tokenInfo(String idToken) {
+    public Request<UserProfile, AuthenticationException> tokenInfo(@NonNull String idToken) {
         return profileRequest()
                 .addParameter(ParameterBuilder.ID_TOKEN_KEY, idToken);
     }
@@ -295,8 +335,7 @@ public class AuthenticationAPIClient {
      * Creates a user in a DB connection using <a href="https://auth0.com/docs/auth-api#!#post--dbconnections-signup">'/dbconnections/signup' endpoint</a>
      * Example usage:
      * <pre><code>
-     * client.createUser("{email}", "{password}", "{username}")
-     *      .setConnection("{connection name}")
+     * client.createUser("{email}", "{password}", "{username}", "{database connection name}")
      *      .start(new BaseCallback<DatabaseUser>() {
      *          {@literal}Override
      *          public void onSuccess(DatabaseUser payload) { }
@@ -306,13 +345,14 @@ public class AuthenticationAPIClient {
      *      });
      * </code></pre>
      *
-     * @param email    of the user and must be non null
-     * @param password of the user and must be non null
-     * @param username of the user and must be non null
+     * @param email      of the user and must be non null
+     * @param password   of the user and must be non null
+     * @param username   of the user and must be non null
+     * @param connection of the database to create the user on
      * @return a request to start
      */
     @SuppressWarnings("WeakerAccess")
-    public DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUser(String email, String password, String username) {
+    public DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUser(@NonNull String email, @NonNull String password, @NonNull String username, @NonNull String connection) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(DB_CONNECTIONS_PATH)
                 .addPathSegment(SIGN_UP_PATH)
@@ -322,7 +362,7 @@ public class AuthenticationAPIClient {
                 .set(USERNAME_KEY, username)
                 .set(EMAIL_KEY, email)
                 .set(PASSWORD_KEY, password)
-                .setConnection(defaultDatabaseConnection)
+                .setConnection(connection)
                 .setClientId(getClientId())
                 .asDictionary();
 
@@ -335,8 +375,7 @@ public class AuthenticationAPIClient {
      * Creates a user in a DB connection using <a href="https://auth0.com/docs/auth-api#!#post--dbconnections-signup">'/dbconnections/signup' endpoint</a>
      * Example usage:
      * <pre><code>
-     * client.createUser("{email}", "{password}")
-     *      .setConnection("{connection name}")
+     * client.createUser("{email}", "{password}", "{database connection name}")
      *      .start(new BaseCallback<DatabaseUser>() {
      *          {@literal}Override
      *          public void onSuccess(DatabaseUser payload) { }
@@ -346,13 +385,15 @@ public class AuthenticationAPIClient {
      *      });
      * </code></pre>
      *
-     * @param email    of the user and must be non null
-     * @param password of the user and must be non null
+     * @param email      of the user and must be non null
+     * @param password   of the user and must be non null
+     * @param connection of the database to create the user on
      * @return a request to start
      */
     @SuppressWarnings("WeakerAccess")
-    public DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUser(String email, String password) {
-        return createUser(email, password, null);
+    public DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUser(@NonNull String email, @NonNull String password, @NonNull String connection) {
+        //noinspection ConstantConditions
+        return createUser(email, password, null, connection);
     }
 
     /**
@@ -360,8 +401,7 @@ public class AuthenticationAPIClient {
      * and then logs in
      * Example usage:
      * <pre><code>
-     * client.signUp("{email}", "{password}", "{username}")
-     *      .setConnection("{connection name}")
+     * client.signUp("{email}", "{password}", "{username}", "{database connection name}")
      *      .start(new BaseCallback<Credentials>() {
      *          {@literal}Override
      *          public void onSuccess(Credentials payload) {}
@@ -371,15 +411,16 @@ public class AuthenticationAPIClient {
      *      });
      * </code></pre>
      *
-     * @param email    of the user and must be non null
-     * @param password of the user and must be non null
-     * @param username of the user and must be non null
+     * @param email      of the user and must be non null
+     * @param password   of the user and must be non null
+     * @param username   of the user and must be non null
+     * @param connection of the database to sign up with
      * @return a request to configure and start that will yield {@link Credentials}
      */
     @SuppressWarnings("WeakerAccess")
-    public SignUpRequest signUp(String email, String password, String username) {
-        final DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUserRequest = createUser(email, password, username);
-        final AuthenticationRequest authenticationRequest = login(email, password);
+    public SignUpRequest signUp(@NonNull String email, @NonNull String password, @NonNull String username, @NonNull String connection) {
+        final DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUserRequest = createUser(email, password, username, connection);
+        final AuthenticationRequest authenticationRequest = login(email, password, connection);
         return new SignUpRequest(createUserRequest, authenticationRequest);
     }
 
@@ -388,8 +429,7 @@ public class AuthenticationAPIClient {
      * and then logs in
      * Example usage:
      * <pre><code>
-     * client.signUp("{email}", "{password}")
-     *      .setConnection("{connection name}")
+     * client.signUp("{email}", "{password}", "{database connection name}")
      *      .start(new BaseCallback<Credentials>() {
      *          {@literal}Override
      *          public void onSuccess(Credentials payload) {}
@@ -399,14 +439,15 @@ public class AuthenticationAPIClient {
      *      });
      * </code></pre>
      *
-     * @param email    of the user and must be non null
-     * @param password of the user and must be non null
+     * @param email      of the user and must be non null
+     * @param password   of the user and must be non null
+     * @param connection of the database to sign up with
      * @return a request to configure and start that will yield {@link Credentials}
      */
     @SuppressWarnings("WeakerAccess")
-    public SignUpRequest signUp(String email, String password) {
-        DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUserRequest = createUser(email, password);
-        final AuthenticationRequest authenticationRequest = login(email, password);
+    public SignUpRequest signUp(@NonNull String email, @NonNull String password, @NonNull String connection) {
+        DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUserRequest = createUser(email, password, connection);
+        final AuthenticationRequest authenticationRequest = login(email, password, connection);
         return new SignUpRequest(createUserRequest, authenticationRequest);
     }
 
@@ -414,7 +455,7 @@ public class AuthenticationAPIClient {
      * Request a change password using <a href="https://auth0.com/docs/auth-api#!#post--dbconnections-change_password">'/dbconnections/change_password'</a>
      * Example usage:
      * <pre><code>
-     * client.requestChangePassword("{email}")
+     * client.requestChangePassword("{email}", "{database connection name}")
      *      .start(new BaseCallback<Void>() {
      *          {@literal}Override
      *          public void onSuccess(Void payload) {}
@@ -424,11 +465,12 @@ public class AuthenticationAPIClient {
      *      });
      * </code></pre>
      *
-     * @param email of the user that changes the password. It's also where the email will be sent with the link to perform the change password.
+     * @param email      of the user that changes the password. It's also where the email will be sent with the link to perform the change password.
+     * @param connection of the database to request the change password on
      * @return a request to configure and start
      */
     @SuppressWarnings("WeakerAccess")
-    public DatabaseConnectionRequest<Void, AuthenticationException> requestChangePassword(String email) {
+    public DatabaseConnectionRequest<Void, AuthenticationException> requestChangePassword(@NonNull String email, @NonNull String connection) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(DB_CONNECTIONS_PATH)
                 .addPathSegment(CHANGE_PASSWORD_PATH)
@@ -437,7 +479,7 @@ public class AuthenticationAPIClient {
         final Map<String, Object> parameters = ParameterBuilder.newBuilder()
                 .set(EMAIL_KEY, email)
                 .setClientId(getClientId())
-                .setConnection(defaultDatabaseConnection)
+                .setConnection(connection)
                 .asDictionary();
 
         final ParameterizableRequest<Void, AuthenticationException> request = factory.POST(url, client, gson, authErrorBuilder)
@@ -463,7 +505,7 @@ public class AuthenticationAPIClient {
      * @return a request to configure and start
      */
     @SuppressWarnings("WeakerAccess")
-    public DelegationRequest<Delegation> delegationWithIdToken(String idToken) {
+    public DelegationRequest<Delegation> delegationWithIdToken(@NonNull String idToken) {
         ParameterizableRequest<Delegation, AuthenticationException> request = delegation(Delegation.class)
                 .addParameter(ParameterBuilder.ID_TOKEN_KEY, idToken);
 
@@ -490,7 +532,7 @@ public class AuthenticationAPIClient {
      * @return a request to configure and start
      */
     @SuppressWarnings("WeakerAccess")
-    public DelegationRequest<Delegation> delegationWithRefreshToken(String refreshToken) {
+    public DelegationRequest<Delegation> delegationWithRefreshToken(@NonNull String refreshToken) {
         ParameterizableRequest<Delegation, AuthenticationException> request = delegation(Delegation.class)
                 .addParameter(ParameterBuilder.REFRESH_TOKEN_KEY, refreshToken);
 
@@ -517,7 +559,7 @@ public class AuthenticationAPIClient {
      * @return a request to configure and start
      */
     @SuppressWarnings("WeakerAccess")
-    public DelegationRequest<Map<String, Object>> delegationWithIdToken(String idToken, String apiType) {
+    public DelegationRequest<Map<String, Object>> delegationWithIdToken(@NonNull String idToken, @NonNull String apiType) {
         ParameterizableRequest<Map<String, Object>, AuthenticationException> request = delegation()
                 .addParameter(ParameterBuilder.ID_TOKEN_KEY, idToken);
 
@@ -544,7 +586,7 @@ public class AuthenticationAPIClient {
      * @return a request to start
      */
     @SuppressWarnings("WeakerAccess")
-    public Request<Void, AuthenticationException> unlink(String userId, String accessToken) {
+    public Request<Void, AuthenticationException> unlink(@NonNull String userId, @NonNull String accessToken) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(UNLINK_PATH)
                 .build();
@@ -563,6 +605,37 @@ public class AuthenticationAPIClient {
      * Start a passwordless flow with <a href="https://auth0.com/docs/auth-api#!#post--with_email">Email</a>
      * Example usage:
      * <pre><code>
+     * client.passwordlessWithEmail("{email}", PasswordlessType.CODE, "{passwordless connection name}")
+     *      .start(new BaseCallback<Void>() {
+     *          {@literal}Override
+     *          public void onSuccess(Void payload) {}
+     *
+     *          {@literal}Override
+     *          public void onFailure(AuthenticationException error) {}
+     *      });
+     * </code></pre>
+     *
+     * @param email            that will receive a verification code to use for login
+     * @param passwordlessType indicate whether the email should contain a code, link or magic link (android & iOS)
+     * @return a request to configure and start
+     */
+    @SuppressWarnings("WeakerAccess")
+    public ParameterizableRequest<Void, AuthenticationException> passwordlessWithEmail(@NonNull String email, @NonNull PasswordlessType passwordlessType, @NonNull String connection) {
+        final Map<String, Object> parameters = ParameterBuilder.newBuilder()
+                .set(EMAIL_KEY, email)
+                .setSend(passwordlessType)
+                .setConnection(connection)
+                .asDictionary();
+
+        return passwordless()
+                .addParameters(parameters);
+    }
+
+    /**
+     * Start a passwordless flow with <a href="https://auth0.com/docs/auth-api#!#post--with_email">Email</a>
+     * By default it will try to authenticate using "email" connection.
+     * Example usage:
+     * <pre><code>
      * client.passwordlessWithEmail("{email}", PasswordlessType.CODE)
      *      .start(new BaseCallback<Void>() {
      *          {@literal}Override
@@ -578,19 +651,42 @@ public class AuthenticationAPIClient {
      * @return a request to configure and start
      */
     @SuppressWarnings("WeakerAccess")
-    public ParameterizableRequest<Void, AuthenticationException> passwordlessWithEmail(String email, PasswordlessType passwordlessType) {
-        final Map<String, Object> parameters = ParameterBuilder.newBuilder()
-                .set(EMAIL_KEY, email)
-                .setSend(passwordlessType)
-                .setConnection(EMAIL_CONNECTION)
-                .asDictionary();
+    public ParameterizableRequest<Void, AuthenticationException> passwordlessWithEmail(@NonNull String email, @NonNull PasswordlessType passwordlessType) {
+        return passwordlessWithEmail(email, passwordlessType, EMAIL_CONNECTION);
+    }
 
+    /**
+     * Start a passwordless flow with <a href="https://auth0.com/docs/auth-api#!#post--with_sms">SMS</a>
+     * Example usage:
+     * <pre><code>
+     * client.passwordlessWithSms("{phone number}", PasswordlessType.CODE, "{passwordless connection name}")
+     *      .start(new BaseCallback<Void>() {
+     *          {@literal}Override
+     *          public void onSuccess(Void payload) {}
+     *
+     *          {@literal}Override
+     *          public void onFailure(AuthenticationException error) {}
+     *      });
+     * </code></pre>
+     *
+     * @param phoneNumber      where an SMS with a verification code will be sent
+     * @param passwordlessType indicate whether the SMS should contain a code, link or magic link (android & iOS)
+     * @return a request to configure and start
+     */
+    @SuppressWarnings("WeakerAccess")
+    public ParameterizableRequest<Void, AuthenticationException> passwordlessWithSMS(@NonNull String phoneNumber, @NonNull PasswordlessType passwordlessType, @NonNull String connection) {
+        final Map<String, Object> parameters = ParameterBuilder.newBuilder()
+                .set(PHONE_NUMBER_KEY, phoneNumber)
+                .setSend(passwordlessType)
+                .setConnection(connection)
+                .asDictionary();
         return passwordless()
                 .addParameters(parameters);
     }
 
     /**
      * Start a passwordless flow with <a href="https://auth0.com/docs/auth-api#!#post--with_sms">SMS</a>
+     * By default it will try to authenticate using the "sms" connection.
      * Example usage:
      * <pre><code>
      * client.passwordlessWithSms("{phone number}", PasswordlessType.CODE)
@@ -608,14 +704,8 @@ public class AuthenticationAPIClient {
      * @return a request to configure and start
      */
     @SuppressWarnings("WeakerAccess")
-    public ParameterizableRequest<Void, AuthenticationException> passwordlessWithSMS(String phoneNumber, PasswordlessType passwordlessType) {
-        final Map<String, Object> parameters = ParameterBuilder.newBuilder()
-                .set(PHONE_NUMBER_KEY, phoneNumber)
-                .setSend(passwordlessType)
-                .setConnection(SMS_CONNECTION)
-                .asDictionary();
-        return passwordless()
-                .addParameters(parameters);
+    public ParameterizableRequest<Void, AuthenticationException> passwordlessWithSMS(@NonNull String phoneNumber, @NonNull PasswordlessType passwordlessType) {
+        return passwordlessWithSMS(phoneNumber, passwordlessType, SMS_CONNECTION);
     }
 
     /**
@@ -692,7 +782,7 @@ public class AuthenticationAPIClient {
      * @param authenticationRequest that will authenticate a user with Auth0 and return a {@link Credentials}
      * @return a {@link ProfileRequest} that first logins and the fetches the profile
      */
-    public ProfileRequest getProfileAfter(AuthenticationRequest authenticationRequest) {
+    public ProfileRequest getProfileAfter(@NonNull AuthenticationRequest authenticationRequest) {
         final ParameterizableRequest<UserProfile, AuthenticationException> profileRequest = profileRequest();
         return new ProfileRequest(authenticationRequest, profileRequest);
     }
@@ -725,7 +815,7 @@ public class AuthenticationAPIClient {
      * @return a request to obtain access_token by exchanging a authorization code.
      */
     @SuppressWarnings("WeakerAccess")
-    public TokenRequest token(String authorizationCode, String redirectUri) {
+    public TokenRequest token(@NonNull String authorizationCode, @NonNull String redirectUri) {
         Map<String, Object> parameters = ParameterBuilder.newBuilder()
                 .setClientId(getClientId())
                 .setGrantType(GRANT_TYPE_AUTHORIZATION_CODE)
@@ -751,7 +841,6 @@ public class AuthenticationAPIClient {
 
         final Map<String, Object> requestParameters = ParameterBuilder.newBuilder()
                 .setClientId(getClientId())
-                .setConnection(defaultDatabaseConnection)
                 .addAll(parameters)
                 .asDictionary();
         return factory.authenticationPOST(url, client, gson)

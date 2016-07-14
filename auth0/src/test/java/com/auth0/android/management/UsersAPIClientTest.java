@@ -27,6 +27,7 @@ package com.auth0.android.management;
 
 import com.auth0.android.Auth0;
 import com.auth0.android.result.UserIdentity;
+import com.auth0.android.result.UserProfile;
 import com.auth0.android.util.MockManagementCallback;
 import com.auth0.android.util.TypeTokenMatcher;
 import com.auth0.android.util.UsersAPI;
@@ -40,13 +41,17 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.lang.reflect.Type;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static com.auth0.android.util.ManagementCallbackMatcher.hasPayloadOfType;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
@@ -57,14 +62,16 @@ public class UsersAPIClientTest {
     private static final String DOMAIN = "samples.auth0.com";
     private static final String USER_ID_PRIMARY = "primaryUserId";
     private static final String USER_ID_SECONDARY = "secondaryUserId";
-    private static final String ID_TOKEN_PRIMARY = "primaryIdToken";
-    private static final String ID_TOKEN_SECONDARY = "secondaryIdToken";
+    private static final String TOKEN_PRIMARY = "primaryToken";
+    private static final String TOKEN_SECONDARY = "secondaryToken";
     private static final String PROVIDER = "provider";
     private static final String HEADER_AUTHORIZATION = "Authorization";
     private static final String BEARER = "Bearer ";
     private static final String METHOD_POST = "POST";
     private static final String METHOD_DELETE = "DELETE";
+    private static final String METHOD_PATCH = "PATCH";
     private static final String KEY_LINK_WITH = "link_with";
+    private static final String KEY_USER_METADATA = "user_metadata";
 
     private UsersAPIClient client;
     private Gson gson;
@@ -76,7 +83,7 @@ public class UsersAPIClientTest {
         mockAPI = new UsersAPI();
         final String domain = mockAPI.getDomain();
         Auth0 auth0 = new Auth0(CLIENT_ID, domain, domain);
-        client = new UsersAPIClient(auth0);
+        client = new UsersAPIClient(auth0, TOKEN_PRIMARY);
         gson = new GsonBuilder().serializeNulls().create();
     }
 
@@ -87,7 +94,7 @@ public class UsersAPIClientTest {
 
     @Test
     public void shouldCreateClientWithAccountInfo() throws Exception {
-        UsersAPIClient client = new UsersAPIClient(new Auth0(CLIENT_ID, DOMAIN));
+        UsersAPIClient client = new UsersAPIClient(new Auth0(CLIENT_ID, DOMAIN), TOKEN_PRIMARY);
         assertThat(client, is(notNullValue()));
         assertThat(client.getClientId(), equalTo(CLIENT_ID));
         assertThat(client.getBaseURL(), equalTo("https://" + DOMAIN));
@@ -98,16 +105,16 @@ public class UsersAPIClientTest {
         mockAPI.willReturnSuccessfulLink();
 
         final MockManagementCallback<List<UserIdentity>> callback = new MockManagementCallback<>();
-        client.link(USER_ID_PRIMARY, ID_TOKEN_PRIMARY, ID_TOKEN_SECONDARY)
+        client.link(USER_ID_PRIMARY, TOKEN_SECONDARY)
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY + "/identities"));
 
-        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + ID_TOKEN_PRIMARY));
+        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + TOKEN_PRIMARY));
         assertThat(request.getMethod(), equalTo(METHOD_POST));
         Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry(KEY_LINK_WITH, ID_TOKEN_SECONDARY));
+        assertThat(body, hasEntry(KEY_LINK_WITH, TOKEN_SECONDARY));
 
 
         TypeToken<List<UserIdentity>> typeToken = new TypeToken<List<UserIdentity>>() {
@@ -120,16 +127,16 @@ public class UsersAPIClientTest {
     public void shouldLinkAccountSync() throws Exception {
         mockAPI.willReturnSuccessfulLink();
 
-        final List<UserIdentity> result = client.link(USER_ID_PRIMARY, ID_TOKEN_PRIMARY, ID_TOKEN_SECONDARY)
+        final List<UserIdentity> result = client.link(USER_ID_PRIMARY, TOKEN_SECONDARY)
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY + "/identities"));
 
-        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + ID_TOKEN_PRIMARY));
+        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + TOKEN_PRIMARY));
         assertThat(request.getMethod(), equalTo(METHOD_POST));
         Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry(KEY_LINK_WITH, ID_TOKEN_SECONDARY));
+        assertThat(body, hasEntry(KEY_LINK_WITH, TOKEN_SECONDARY));
 
 
         TypeToken<List<UserIdentity>> typeToken = new TypeToken<List<UserIdentity>>() {
@@ -143,13 +150,13 @@ public class UsersAPIClientTest {
         mockAPI.willReturnSuccessfulUnlink();
 
         final MockManagementCallback<List<UserIdentity>> callback = new MockManagementCallback<>();
-        client.unlink(USER_ID_PRIMARY, ID_TOKEN_PRIMARY, USER_ID_SECONDARY, PROVIDER)
+        client.unlink(USER_ID_PRIMARY, USER_ID_SECONDARY, PROVIDER)
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY + "/identities/" + PROVIDER + "/" + USER_ID_SECONDARY));
 
-        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + ID_TOKEN_PRIMARY));
+        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + TOKEN_PRIMARY));
         assertThat(request.getMethod(), equalTo(METHOD_DELETE));
         Map<String, String> body = bodyFromRequest(request);
         assertThat(body, is(nullValue()));
@@ -165,13 +172,13 @@ public class UsersAPIClientTest {
     public void shouldUnlinkAccountSync() throws Exception {
         mockAPI.willReturnSuccessfulUnlink();
 
-        final List<UserIdentity> result = client.unlink(USER_ID_PRIMARY, ID_TOKEN_PRIMARY, USER_ID_SECONDARY, PROVIDER)
+        final List<UserIdentity> result = client.unlink(USER_ID_PRIMARY, USER_ID_SECONDARY, PROVIDER)
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY + "/identities/" + PROVIDER + "/" + USER_ID_SECONDARY));
 
-        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + ID_TOKEN_PRIMARY));
+        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + TOKEN_PRIMARY));
         assertThat(request.getMethod(), equalTo(METHOD_DELETE));
         Map<String, String> body = bodyFromRequest(request);
         assertThat(body, is(nullValue()));
@@ -183,9 +190,59 @@ public class UsersAPIClientTest {
         assertThat(result.size(), is(1));
     }
 
+    @Test
+    public void shouldUpdateUserMetadata() throws Exception {
+        mockAPI.willReturnUserProfile();
 
-    private Map<String, String> bodyFromRequest(RecordedRequest request) throws java.io.IOException {
-        final Type mapType = new TypeToken<Map<String, String>>() {
+        final Map<String, Object> metadata = new HashMap<>();
+        metadata.put("boolValue", true);
+        metadata.put("name", "my_name");
+        metadata.put("list", Arrays.asList("my", "name", "is"));
+
+        final MockManagementCallback<UserProfile> callback = new MockManagementCallback<>();
+        client.updateMetadata(USER_ID_PRIMARY, metadata)
+                .start(callback);
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY));
+
+        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + TOKEN_PRIMARY));
+        assertThat(request.getMethod(), equalTo(METHOD_PATCH));
+        Map<String, Object> body = bodyFromRequest(request);
+
+        assertThat(body, hasKey(KEY_USER_METADATA));
+        assertThat(((Map<String, Object>) body.get(KEY_USER_METADATA)), is(equalTo(metadata)));
+
+        assertThat(callback, hasPayloadOfType(UserProfile.class));
+    }
+
+    @Test
+    public void shouldUpdateUserMetadataSync() throws Exception {
+        mockAPI.willReturnUserProfile();
+
+        final Map<String, Object> metadata = new HashMap<>();
+        metadata.put("boolValue", true);
+        metadata.put("name", "my_name");
+        metadata.put("list", Arrays.asList("my", "name", "is"));
+
+        final UserProfile result = client.updateMetadata(USER_ID_PRIMARY, metadata)
+                .execute();
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY));
+
+        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + TOKEN_PRIMARY));
+        assertThat(request.getMethod(), equalTo(METHOD_PATCH));
+        Map<String, Object> body = bodyFromRequest(request);
+
+        assertThat(body, hasKey(KEY_USER_METADATA));
+        assertThat(((Map<String, Object>) body.get(KEY_USER_METADATA)), is(equalTo(metadata)));
+
+        assertThat(result, isA(UserProfile.class));
+    }
+
+    private <T> Map<String, T> bodyFromRequest(RecordedRequest request) throws java.io.IOException {
+        final Type mapType = new TypeToken<Map<String, T>>() {
         }.getType();
         return gson.fromJson(request.getBody().readUtf8(), mapType);
     }

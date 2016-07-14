@@ -105,7 +105,7 @@ public class BaseRequestTest {
             }
 
             @Override
-            protected Request doBuildRequest(Request.Builder builder) throws RequestBodyBuildException {
+            protected Request doBuildRequest() throws RequestBodyBuildException {
                 return null;
             }
         };

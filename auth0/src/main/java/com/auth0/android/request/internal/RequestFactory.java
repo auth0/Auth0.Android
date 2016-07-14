@@ -24,9 +24,10 @@
 
 package com.auth0.android.request.internal;
 
+import android.support.annotation.NonNull;
+
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.request.AuthenticationRequest;
-import com.auth0.android.request.AuthorizableRequest;
 import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.result.Credentials;
@@ -36,100 +37,104 @@ import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.OkHttpClient;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class RequestFactory {
 
-    private String clientInfo;
-    private String userAgent;
+    static final String AUTHORIZATION_HEADER = "Authorization";
+    static final String USER_AGENT_HEADER = "User-Agent";
+    static final String CLIENT_INFO_HEADER = Telemetry.HEADER_NAME;
+
+    private final HashMap<String, String> headers;
+
+    public RequestFactory() {
+        headers = new HashMap<>();
+    }
+
+    public RequestFactory(@NonNull String bearerToken) {
+        this();
+        headers.put(AUTHORIZATION_HEADER, "Bearer " + bearerToken);
+    }
 
     public void setClientInfo(String clientInfo) {
-        this.clientInfo = clientInfo;
+        headers.put(CLIENT_INFO_HEADER, clientInfo);
     }
 
     public void setUserAgent(String userAgent) {
-        this.userAgent = userAgent;
+        headers.put(USER_AGENT_HEADER, userAgent);
     }
 
-    public <T, U extends Auth0Exception> ParameterizableRequest<T, U> GET(HttpUrl url, OkHttpClient client, Gson gson, Class<T> clazz, ErrorBuilder<U> errorBuilder) {
-        final SimpleRequest<T, U> request = new SimpleRequest<>(url, client, gson, "GET", clazz, errorBuilder);
-        addMetrics(request);
-        return request;
-    }
 
     public AuthenticationRequest authenticationPOST(HttpUrl url, OkHttpClient client, Gson gson) {
-        final BaseAuthenticationRequest request = new BaseAuthenticationRequest(url, client, gson, "POST", Credentials.class);
-        addMetrics(request);
+        final AuthenticationRequest request = createAuthenticationRequest(url, client, gson, "POST");
+        addMetrics((ParameterizableRequest)request);
         return request;
     }
 
     public <T, U extends Auth0Exception> ParameterizableRequest<T, U> POST(HttpUrl url, OkHttpClient client, Gson gson, Class<T> clazz, ErrorBuilder<U> errorBuilder) {
-        final SimpleRequest<T, U> request = new SimpleRequest<>(url, client, gson, "POST", clazz, errorBuilder);
+        final ParameterizableRequest<T, U> request = createSimpleRequest(url, client, gson, "POST", clazz, errorBuilder);
         addMetrics(request);
         return request;
     }
 
     public <T, U extends Auth0Exception> ParameterizableRequest<T, U> POST(HttpUrl url, OkHttpClient client, Gson gson, TypeToken<T> typeToken, ErrorBuilder<U> errorBuilder) {
-        final SimpleRequest<T, U> request = new SimpleRequest<>(url, client, gson, "POST", typeToken, errorBuilder);
+        final ParameterizableRequest<T, U> request = createSimpleRequest(url, client, gson, "POST", typeToken, errorBuilder);
         addMetrics(request);
         return request;
     }
 
     public <U extends Auth0Exception> ParameterizableRequest<Map<String, Object>, U> rawPOST(HttpUrl url, OkHttpClient client, Gson gson, ErrorBuilder<U> errorBuilder) {
-        final SimpleRequest<Map<String, Object>, U> request = new SimpleRequest<>(url, client, gson, "POST", errorBuilder);
+        final ParameterizableRequest<Map<String, Object>, U> request = createSimpleRequest(url, client, gson, "POST", errorBuilder);
         addMetrics(request);
         return request;
     }
 
     public <U extends Auth0Exception> ParameterizableRequest<Void, U> POST(HttpUrl url, OkHttpClient client, Gson gson, ErrorBuilder<U> errorBuilder) {
-        final VoidRequest<U> request = new VoidRequest<>(url, client, gson, "POST", errorBuilder);
-        addMetrics(request);
-        return request;
-    }
-
-    public <U extends Auth0Exception> ParameterizableRequest<Void, U> POST(HttpUrl url, OkHttpClient client, Gson gson, String jwt, ErrorBuilder<U> errorBuilder) {
-        final AuthorizableRequest<Void, U> request = new VoidRequest<U>(url, client, gson, "POST", errorBuilder)
-                .setBearer(jwt);
-        addMetrics(request);
-        return request;
-    }
-
-    public <T, U extends Auth0Exception> ParameterizableRequest<T, U> PUT(HttpUrl url, OkHttpClient client, Gson gson, Class<T> clazz, ErrorBuilder<U> errorBuilder) {
-        final SimpleRequest<T, U> request = new SimpleRequest<>(url, client, gson, "PUT", clazz, errorBuilder);
+        final ParameterizableRequest<Void, U> request = createVoidRequest(url, client, gson, "POST", errorBuilder);
         addMetrics(request);
         return request;
     }
 
     public <T, U extends Auth0Exception> ParameterizableRequest<T, U> PATCH(HttpUrl url, OkHttpClient client, Gson gson, Class<T> clazz, ErrorBuilder<U> errorBuilder) {
-        final SimpleRequest<T, U> request = new SimpleRequest<>(url, client, gson, "GET", clazz, errorBuilder);
-        addMetrics(request);
-        return request;
-    }
-
-    public <T, U extends Auth0Exception> ParameterizableRequest<T, U> DELETE(HttpUrl url, OkHttpClient client, Gson gson, Class<T> clazz, ErrorBuilder<U> errorBuilder) {
-        final SimpleRequest<T, U> request = new SimpleRequest<>(url, client, gson, "DELETE", clazz, errorBuilder);
+        final ParameterizableRequest<T, U> request = createSimpleRequest(url, client, gson, "PATCH", clazz, errorBuilder);
         addMetrics(request);
         return request;
     }
 
     public <T, U extends Auth0Exception> ParameterizableRequest<T, U> DELETE(HttpUrl url, OkHttpClient client, Gson gson, TypeToken<T> typeToken, ErrorBuilder<U> errorBuilder) {
-        final SimpleRequest<T, U> request = new SimpleRequest<>(url, client, gson, "DELETE", typeToken, errorBuilder);
-        addMetrics(request);
-        return request;
-    }
-
-    public <T, U extends Auth0Exception> ParameterizableRequest<Void, U> DELETE(HttpUrl url, OkHttpClient client, Gson gson, ErrorBuilder<U> errorBuilder) {
-        final VoidRequest<U> request = new VoidRequest<>(url, client, gson, "DELETE", errorBuilder);
+        final ParameterizableRequest<T, U> request = createSimpleRequest(url, client, gson, "DELETE", typeToken, errorBuilder);
         addMetrics(request);
         return request;
     }
 
     private <T, U extends Auth0Exception> void addMetrics(ParameterizableRequest<T, U> request) {
-        if (this.clientInfo != null) {
-            request.addHeader(Telemetry.HEADER_NAME, this.clientInfo);
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            request.addHeader(entry.getKey(), entry.getValue());
         }
-        if (this.userAgent != null) {
-            request.addHeader("User-Agent", this.userAgent);
-        }
+    }
+
+    <T, U extends Auth0Exception> ParameterizableRequest<T, U> createSimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, String method, Class<T> clazz, ErrorBuilder<U> errorBuilder) {
+        return new SimpleRequest<>(url, client, gson, method, clazz, errorBuilder);
+    }
+
+    <T, U extends Auth0Exception> ParameterizableRequest<T, U> createSimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, String method, TypeToken<T> typeToken, ErrorBuilder<U> errorBuilder) {
+        return new SimpleRequest<>(url, client, gson, method, typeToken, errorBuilder);
+    }
+
+    <T, U extends Auth0Exception> ParameterizableRequest<T, U> createSimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, String method, ErrorBuilder<U> errorBuilder) {
+        return new SimpleRequest<>(url, client, gson, method, errorBuilder);
+    }
+
+    AuthenticationRequest createAuthenticationRequest(HttpUrl url, OkHttpClient client, Gson gson, String method) {
+        return new BaseAuthenticationRequest(url, client, gson, method, Credentials.class);
+    }
+
+    <U extends Auth0Exception> ParameterizableRequest<Void, U> createVoidRequest(HttpUrl url, OkHttpClient client, Gson gson, String method, ErrorBuilder<U> errorBuilder) {
+        return new VoidRequest<>(url, client, gson, method, errorBuilder);
+    }
+
+    Map<String, String> getHeaders() {
+        return headers;
     }
 }
