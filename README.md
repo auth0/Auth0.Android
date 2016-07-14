@@ -50,8 +50,7 @@ AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
 
 ```java
 authentication
-    .login("info@auth0.com", "a secret password")
-    .setConnection("Username-Password-Authentication")
+    .login("info@auth0.com", "a secret password", "my-database-connection")
     .start(new BaseCallback<Credentials>() {
         @Override
         public void onSuccess(Credentials payload) {
@@ -89,7 +88,7 @@ Step 2: Input the code
 
 ```java
 authentication
-    .loginWithEmail("info@auth0.com", "123456")
+    .loginWithEmail("info@auth0.com", "a secret password", "my-passwordless-connection")
     .start(new BaseCallback<Credentials>() {
         @Override
         public void onSuccess(Credentials payload) {
@@ -108,7 +107,7 @@ authentication
 
 ```java
 authentication
-    .signUp("info@auth0.com", "a secret password")
+    .signUp("info@auth0.com", "a secret password", "my-database-connection")
     .start(new BaseCallback<Credentials>() {
         @Override
         public void onSuccess(Credentials payload) {
