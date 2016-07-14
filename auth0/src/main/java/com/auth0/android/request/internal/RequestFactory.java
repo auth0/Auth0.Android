@@ -67,8 +67,8 @@ public class RequestFactory {
 
 
     public AuthenticationRequest authenticationPOST(HttpUrl url, OkHttpClient client, Gson gson) {
-        final BaseAuthenticationRequest request = createAuthenticationRequest(url, client, gson, "POST");
-        addMetrics(request);
+        final AuthenticationRequest request = createAuthenticationRequest(url, client, gson, "POST");
+        addMetrics((ParameterizableRequest)request);
         return request;
     }
 
@@ -126,7 +126,7 @@ public class RequestFactory {
         return new SimpleRequest<>(url, client, gson, method, errorBuilder);
     }
 
-    BaseAuthenticationRequest createAuthenticationRequest(HttpUrl url, OkHttpClient client, Gson gson, String method) {
+    AuthenticationRequest createAuthenticationRequest(HttpUrl url, OkHttpClient client, Gson gson, String method) {
         return new BaseAuthenticationRequest(url, client, gson, method, Credentials.class);
     }
 

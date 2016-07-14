@@ -169,9 +169,5 @@ abstract class BaseRequest<T, U extends Auth0Exception> implements Parameterizab
         }
     }
 
-    Map<String, String> getHeaders() {
-        return headers;
-    }
-
     protected abstract Request doBuildRequest();
 }
