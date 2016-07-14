@@ -83,7 +83,7 @@ public class AuthenticationCallbackMatcher<T> extends BaseMatcher<Authentication
         return new AuthenticationCallbackMatcher<>(is(nullValue(Void.class)), is(nullValue(AuthenticationException.class)));
     }
 
-    public static Matcher<AuthenticationCallback<Void>> hasError() {
-        return new AuthenticationCallbackMatcher<>(is(nullValue(Void.class)), is(notNullValue(AuthenticationException.class)));
+    public static <T> Matcher<AuthenticationCallback<T>> hasError(Class<T> tClazz) {
+        return new AuthenticationCallbackMatcher<>(is(nullValue(tClazz)), is(notNullValue(AuthenticationException.class)));
     }
 }

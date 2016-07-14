@@ -49,6 +49,7 @@ import java.util.Map;
 import static com.auth0.android.util.AuthenticationAPI.GENERIC_TOKEN;
 import static com.auth0.android.util.AuthenticationAPI.ID_TOKEN;
 import static com.auth0.android.util.AuthenticationAPI.REFRESH_TOKEN;
+import static com.auth0.android.util.AuthenticationCallbackMatcher.hasError;
 import static com.auth0.android.util.AuthenticationCallbackMatcher.hasNoError;
 import static com.auth0.android.util.AuthenticationCallbackMatcher.hasPayload;
 import static com.auth0.android.util.AuthenticationCallbackMatcher.hasPayloadOfType;
@@ -1236,6 +1237,31 @@ public class AuthenticationAPIClientTest {
 
         assertThat(callback, hasPayloadOfType(Credentials.class));
     }
+
+    @Test
+    public void shouldParseUnauthorizedPKCEError() throws Exception {
+        mockAPI
+                .willReturnPlainTextUnauthorized();
+
+        final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
+        client.token("code", "http://redirect.uri")
+                .setCodeVerifier("codeVerifier")
+                .start(callback);
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getPath(), equalTo("/oauth/token"));
+
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_AUTHORIZATION_CODE));
+        assertThat(body, hasEntry("client_id", CLIENT_ID));
+        assertThat(body, hasEntry("code", "code"));
+        assertThat(body, hasEntry("code_verifier", "codeVerifier"));
+        assertThat(body, hasEntry("redirect_uri", "http://redirect.uri"));
+
+        assertThat(callback, hasError(Credentials.class));
+        assertThat(callback.getError().getDescription(), is(equalTo("Unauthorized")));
+    }
+
 
     private Map<String, String> bodyFromRequest(RecordedRequest request) throws java.io.IOException {
         final Type mapType = new TypeToken<Map<String, String>>() {

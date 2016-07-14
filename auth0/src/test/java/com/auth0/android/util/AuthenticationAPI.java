@@ -155,6 +155,11 @@ public class AuthenticationAPI {
         return this;
     }
 
+    public AuthenticationAPI willReturnPlainTextUnauthorized() {
+        server.enqueue(responseWithPlainText("Unauthorized", 401));
+        return this;
+    }
+
     public AuthenticationAPI willReturnTokens() {
         String json = "{\"" +
                 "access_token\": \"" + ACCESS_TOKEN + "\"," +
@@ -173,6 +178,13 @@ public class AuthenticationAPI {
                 .setBody(body);
         server.enqueue(response);
         return this;
+    }
+
+    private MockResponse responseWithPlainText(String statusMessage, int statusCode){
+        return new MockResponse()
+                .setResponseCode(statusCode)
+                .addHeader("Content-Type", "text/plain")
+                .setBody(statusMessage);
     }
 
     private MockResponse responseWithJSON(String json, int statusCode) {

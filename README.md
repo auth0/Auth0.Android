@@ -22,14 +22,11 @@ dependencies {
 
 ### Permissions 
 
-Open your app's `AndroidManifest.xml` file and add the following permissions.
+Open your app's `AndroidManifest.xml` file and add the following permission.
 
 ```xml
 <uses-permission android:name="android.permission.INTERNET" />
-<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 ```
-
-> The last one is not mandatory, but used by the `WebAuthActivity` to check for connection availability before making a request.
 
 ## Usage
 
@@ -181,7 +178,18 @@ First go to [Auth0 Dashboard](https://manage.auth0.com/#/applications) and go to
 https://{YOUR_AUTH0_DOMAIN}/android/{YOUR_APP_PACKAGE_NAME}/callback
 ```
 
-In your application's `AndroidManifest.xml` file register the WebAuthActivity with the intent filters inside the `application` tag like
+#### Configuration: Using the WebView
+
+Open your app's `AndroidManifest.xml` file and add the following permissions.
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+```
+
+> The `ACCESS_NETWORK_STATE` permission it's not mandatory, but used by the WebAuthActivity to check for internet availability before executing a request.
+
+Also register the WebAuthActivity inside the `application` tag like
 
 
 ```xml
@@ -191,6 +199,33 @@ In your application's `AndroidManifest.xml` file register the WebAuthActivity wi
         
         <activity
             android:name="com.auth0.android.provider.WebAuthActivity"
+            android:theme="@style/MyAppTheme"/>
+            
+        <!-- ... -->
+
+    </application>
+```
+
+Finally, define a constant like `WEB_REQ_CODE` that holds the request code (an `int`), that will be sent back with the intent once the authentication is finished in the webview.
+
+
+#### Configuration: Using the Browser
+
+Open your app's `AndroidManifest.xml` file and add the following permission.
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+```
+
+Also register the intent filters inside your activity's tag, so you can receive the call in your activity. Note that you will have to specify the callback url inside the `data` tag.
+
+```xml
+    <application android:theme="@style/AppTheme">
+
+        <!-- ... -->
+        
+        <activity
+            android:name="com.mycompany.MainActivity"
             android:theme="@style/MyAppTheme">
             
             <intent-filter>
@@ -206,14 +241,14 @@ In your application's `AndroidManifest.xml` file register the WebAuthActivity wi
             </intent-filter>
             
         </activity>
-
+            
         <!-- ... -->
 
     </application>
 ```
 
+Finally, define a constant like `WEB_REQ_CODE` that holds the request code (an `int`), that will be sent back with the intent once the authentication is finished in the browser.
 
-And define a constant like `WEB_REQ_CODE` that holds the request code (an `int`), that will be sent back with the intent once the auth is finished in the browser/webview
 
 #### Authenticate with any Auth0 connection
 
@@ -224,6 +259,8 @@ WebAuthProvider.init(account)
 ```
 
 #### Use Code grant with PKCE
+
+Before you can use `Code Grant`, make sure to go to your application's [dashboard](https://manage.auth0.com/#/applications) and check in the Settings section that the `Token Endpoint Authentication Method` is set to `NONE`.
 
 ```java
 WebAuthProvider.init(account)
@@ -238,6 +275,8 @@ WebAuthProvider.init(account)
                 .useBrowser(true)
                 .start(MainActivity.this, authCallback, WEB_REQ_CODE);
 ```
+> Make sure to check the callback url and manifest configuration explained above.
+
 
 #### Specify scope
 
