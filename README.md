@@ -71,7 +71,7 @@ Step 1: Request the code
 
 ```java
 authentication
-    .passwordlessWithEmail("info@auth0.com", PasswordlessType.CODE)
+    .passwordlessWithEmail("info@auth0.com", PasswordlessType.CODE, "my-passwordless-connection")
     .start(new BaseCallback<Credentials>() {
         @Override
         public void onSuccess(Void payload) {
@@ -127,7 +127,7 @@ authentication
 
 ```java
 authentication
-   .tokenInfo("user id_token")
+   .tokenInfo("user token")
    .start(new BaseCallback<Credentials>() {
        @Override
        public void onSuccess(UserProfile payload) {
@@ -149,8 +149,8 @@ The client provides methods to link and unlink users account.
 Create a new instance by passing the account:
 
 ```java
-Auth0 account = new Auth0("clientId", "domain");
-UsersAPIClient apiClient = new UsersAPIClient(account);
+Auth0 account = new Auth0("client id", "domain");
+UsersAPIClient apiClient = new UsersAPIClient(account, "user token");
 ```
 
 
@@ -158,7 +158,7 @@ UsersAPIClient apiClient = new UsersAPIClient(account);
 
 ```java
 apiClient
-    .link("primary user_id", "primary id_token", "secondary id_token")
+    .link("primary user id", "secondary user token")
     .start(new BaseCallback<List<UserIdentity>>() {
         @Override
         public void onSuccess(List<UserIdentity> payload) {
@@ -176,7 +176,7 @@ apiClient
 
 ```java
 apiClient
-    .unlink("primary user_id", "primary id_token", "secondary user_id", "secondary provider")
+    .unlink("primary user id", "secondary user id", "secondary provider")
     .start(new BaseCallback<List<UserIdentity>>() {
         @Override
         public void onSuccess(List<UserIdentity> payload) {
@@ -198,7 +198,7 @@ metadata.put("name", Arrays.asList("My", "Name", "Is"));
 metadata.put("phoneNumber", "1234567890");
 
 apiClient
-    .updateMetadata("user_id", "id_token", metadata)
+    .updateMetadata("user id", metadata)
     .start(new BaseCallback<UserProfile, ManagementException>() {
         @Override
         public void onSuccess(UserProfile payload) {
@@ -366,7 +366,9 @@ WebAuthProvider.init(account)
 
 ## FAQ 
 
-A bug _may_ appear when trying to `build` the project, regarding an `invalid package` on the `okio` dependency. This can be fixed by adding in the module `build.gradle` file the following statement:
+* Why is the Android Lint _error_ `'InvalidPackage'` considered a _warning_? 
+
+When building the project with `build`, an error appeared regarding an `invalid package` on the `okio` dependency. This snippet is in the `build.gradle` file so that the build runs fine:
 
 ```gradle
 android {
