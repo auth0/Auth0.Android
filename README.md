@@ -65,6 +65,8 @@ authentication
     });
 ```
 
+> The default scope used is `openid`
+
 #### Passwordless Login
 
 Step 1: Request the code
@@ -84,6 +86,8 @@ authentication
         }
     });
 ```
+
+> The default scope used is `openid`
 
 Step 2: Input the code
 
@@ -327,6 +331,8 @@ WebAuthProvider.init(account)
                 .start(MainActivity.this, authCallback, WEB_REQ_CODE);
 ```
 
+> The default connection used is `Username-Password-Authentication`
+
 #### Use Code grant with PKCE
 
 Before you can use `Code Grant`, make sure to go to your application's [dashboard](https://manage.auth0.com/#/applications) and check in the Settings section that the `Token Endpoint Authentication Method` is set to `NONE`.
@@ -354,6 +360,8 @@ WebAuthProvider.init(account)
                 .withScope("user openid")
                 .start(MainActivity.this, authCallback, WEB_REQ_CODE);
 ```
+
+> The default scope used is `openid`
 
 #### Authenticate with Auth0 hosted login page
 
