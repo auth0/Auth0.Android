@@ -381,6 +381,13 @@ android {
 
 ref: https://github.com/square/okio/issues/58#issuecomment-72672263
 
+##Proguard
+In the [proguard directory](proguard) you can find the *Proguard* configuration
+By default you should at least use the following files:
+* `proguard-okio.pro`
+* `proguard-gson.pro`
+
+
 ## What is Auth0?
 
 Auth0 helps you to:
