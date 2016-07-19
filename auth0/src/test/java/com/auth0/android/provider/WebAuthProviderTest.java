@@ -42,7 +42,8 @@ public class WebAuthProviderTest {
     private static final String CONNECTION_NAME = "connection";
     private static final String SCOPE = "scope";
     private static final String STATE = "state";
-    private static final String DEFAULT_CONNECTION_NAME = "auth0";
+    private static final String USERNAME_PASSWORD_AUTHENTICATION_CONNECTION = "Username-Password-Authentication";
+    private static final String SCOPE_OPEN_ID = "openid";
 
     @Mock
     private AuthCallback callback;
@@ -74,11 +75,29 @@ public class WebAuthProviderTest {
         assertThat(instance.useBrowser(), is(true));
         assertThat(instance.useCodeGrant(), is(true));
         assertThat(instance.useFullscreen(), is(false));
-        assertThat(instance.getConnection(), is(DEFAULT_CONNECTION_NAME));
+        assertThat(instance.getConnection(), is(not(Matchers.isEmptyOrNullString())));
         assertThat(instance.getScope(), is(not(Matchers.isEmptyOrNullString())));
         assertThat(instance.getState(), is(not(Matchers.isEmptyOrNullString())));
         assertThat(instance.getParameters(), is(notNullValue()));
         assertThat(instance.getParameters().isEmpty(), is(true));
+    }
+
+    @Test
+    public void shouldHaveDefaultConnection() throws Exception {
+        WebAuthProvider.init(account)
+                .start(activity, callback, REQUEST_CODE);
+
+        final WebAuthProvider instance = WebAuthProvider.getInstance();
+        assertThat(instance.getConnection(), is(USERNAME_PASSWORD_AUTHENTICATION_CONNECTION));
+    }
+
+    @Test
+    public void shouldHaveDefaultScope() throws Exception {
+        WebAuthProvider.init(account)
+                .start(activity, callback, REQUEST_CODE);
+
+        final WebAuthProvider instance = WebAuthProvider.getInstance();
+        assertThat(instance.getScope(), is(SCOPE_OPEN_ID));
     }
 
     @Test
