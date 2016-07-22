@@ -135,6 +135,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Log in a user with email/username and password using a DB connection.
+     * The default scope used is 'openid'.
      * Example usage:
      * <pre><code>
      * client.login("{username or email}", "{password}", "{database connection name}")
@@ -165,6 +166,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Log in a user with a OAuth 'access_token' of a Identity Provider like Facebook or Twitter using <a href="https://auth0.com/docs/auth-api#!#post--oauth-access_token">'\oauth\access_token' endpoint</a>
+     * The default scope used is 'openid'.
      * Example usage:
      * <pre><code>
      * client.loginWithOAuthAccessToken("{token}", "{connection name}")
@@ -200,6 +202,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Log in a user using a phone number and a verification code received via SMS (Part of passwordless login flow)
+     * The default scope used is 'openid'.
      * Example usage:
      * <pre><code>
      * client.loginWithPhoneNumber("{phone number}", "{code}", "{passwordless connection name}")
@@ -254,7 +257,8 @@ public class AuthenticationAPIClient {
     }
 
     /**
-     * Log in a user using an email and a verification code received via Email (Part of passwordless login flow)
+     * Log in a user using an email and a verification code received via Email (Part of passwordless login flow).
+     * The default scope used is 'openid'.
      * Example usage:
      * <pre><code>
      * client.loginWithEmail("{email}", "{code}", "{passwordless connection name}")

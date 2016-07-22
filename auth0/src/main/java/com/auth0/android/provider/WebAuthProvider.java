@@ -50,7 +50,7 @@ public class WebAuthProvider {
 
     private static final String TAG = WebAuthProvider.class.getName();
 
-    private static final String DEFAULT_CONNECTION_NAME = "auth0";
+    private static final String DEFAULT_CONNECTION_NAME = "Username-Password-Authentication";
 
     private static final String KEY_ERROR = "error";
     private static final String KEY_ID_TOKEN = "id_token";
