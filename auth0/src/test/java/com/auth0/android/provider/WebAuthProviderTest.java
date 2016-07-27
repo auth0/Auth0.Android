@@ -5,8 +5,6 @@ import android.content.Intent;
 import android.net.Uri;
 
 import com.auth0.android.Auth0;
-import com.auth0.android.provider.AuthCallback;
-import com.auth0.android.provider.WebAuthProvider;
 
 import org.hamcrest.Matchers;
 import org.junit.Before;
@@ -73,7 +71,7 @@ public class WebAuthProviderTest {
 
         final WebAuthProvider instance = WebAuthProvider.getInstance();
         assertThat(instance.useBrowser(), is(true));
-        assertThat(instance.useCodeGrant(), is(true));
+        assertThat(instance.getResponseType(), is(WebAuthProvider.ResponseType.CODE));
         assertThat(instance.useFullscreen(), is(false));
         assertThat(instance.getConnection(), is(not(Matchers.isEmptyOrNullString())));
         assertThat(instance.getScope(), is(not(Matchers.isEmptyOrNullString())));
@@ -107,7 +105,7 @@ public class WebAuthProviderTest {
 
         WebAuthProvider.init(account)
                 .useBrowser(true)
-                .useCodeGrant(true)
+                .withResponseType(WebAuthProvider.ResponseType.ID_TOKEN)
                 .useFullscreen(true)
                 .withConnection(CONNECTION_NAME)
                 .withScope(SCOPE)
@@ -117,7 +115,7 @@ public class WebAuthProviderTest {
 
         final WebAuthProvider instance = WebAuthProvider.getInstance();
         assertThat(instance.useBrowser(), is(true));
-        assertThat(instance.useCodeGrant(), is(true));
+        assertThat(instance.getResponseType(), is(WebAuthProvider.ResponseType.ID_TOKEN));
         assertThat(instance.useFullscreen(), is(true));
         assertThat(instance.getConnection(), is(CONNECTION_NAME));
         assertThat(instance.getScope(), is(SCOPE));
@@ -146,7 +144,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldCleatInstanceAfterSuccessAuthentication() throws Exception {
+    public void shouldClearInstanceAfterSuccessAuthentication() throws Exception {
         WebAuthProvider.init(account)
                 .start(activity, callback, REQUEST_CODE);
 

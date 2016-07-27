@@ -28,18 +28,25 @@ package com.auth0.android.provider;
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
+import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import com.auth0.android.auth0.R;
 import com.auth0.android.Auth0;
+import com.auth0.android.auth0.R;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.result.Credentials;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import static com.auth0.android.provider.WebAuthProvider.ResponseType.CODE;
+import static com.auth0.android.provider.WebAuthProvider.ResponseType.ID_TOKEN;
+import static com.auth0.android.provider.WebAuthProvider.ResponseType.TOKEN;
 
 /**
  * OAuth2 Web Authentication Provider.
@@ -68,6 +75,7 @@ public class WebAuthProvider {
     private static final String ERROR_VALUE_ACCESS_DENIED = "access_denied";
     private static final String RESPONSE_TYPE_TOKEN = "token";
     private static final String RESPONSE_TYPE_CODE = "code";
+    private static final String RESPONSE_TYPE_ID_TOKEN = "id_token";
     private static final String SCOPE_TYPE_OPENID = "openid";
     private static final String KEY_CODE = "code";
     private static final String KEY_CODE_CHALLENGE = "code_challenge";
@@ -85,9 +93,18 @@ public class WebAuthProvider {
     private boolean useBrowser;
     private String state;
     private String scope;
-    private boolean useCodeGrant;
+    @ResponseType
+    private int responseType;
     private Map<String, Object> parameters;
     private String connectionName;
+
+    @IntDef({CODE, TOKEN, ID_TOKEN})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface ResponseType {
+        int CODE = 0;
+        int TOKEN = 1;
+        int ID_TOKEN = 2;
+    }
 
     private static WebAuthProvider providerInstance;
 
@@ -102,7 +119,8 @@ public class WebAuthProvider {
         private boolean useFullscreen;
         private String state;
         private String scope;
-        private boolean useCodeGrant;
+        @ResponseType
+        private int responseType;
         private Map<String, Object> parameters;
         private String connectionName;
 
@@ -112,7 +130,7 @@ public class WebAuthProvider {
             //Default values
             this.useBrowser = true;
             this.useFullscreen = false;
-            this.useCodeGrant = true;
+            this.responseType = CODE;
             this.parameters = new HashMap<>();
             this.state = UUID.randomUUID().toString();
             this.scope = SCOPE_TYPE_OPENID;
@@ -161,12 +179,12 @@ public class WebAuthProvider {
         }
 
         /**
-         * Choose the grant type for this request.
+         * Choose the response type for this request. Default response type is 'code'.
          *
-         * @param useCodeGrant whether use code or implicit grant type
+         * @param responseType whether to use 'code', 'token' or 'id_token'.
          */
-        public Builder useCodeGrant(boolean useCodeGrant) {
-            this.useCodeGrant = useCodeGrant;
+        public Builder withResponseType(@ResponseType int responseType) {
+            this.responseType = responseType;
             return this;
         }
 
@@ -205,7 +223,7 @@ public class WebAuthProvider {
             webAuth.useFullscreen = useFullscreen;
             webAuth.state = state;
             webAuth.scope = scope;
-            webAuth.useCodeGrant = useCodeGrant;
+            webAuth.responseType = responseType;
             webAuth.parameters = parameters;
             webAuth.connectionName = connectionName;
 
@@ -285,10 +303,19 @@ public class WebAuthProvider {
             callback.onFailure(R.string.com_auth0_lock_social_error_title, R.string.com_auth0_lock_social_invalid_state, null);
         } else {
             Log.d(TAG, "Authenticated using web flow");
-            if (shouldUsePKCE()) {
-                pkce.getToken(values.get(KEY_CODE), callback);
-            } else {
-                callback.onSuccess(new Credentials(values.get(KEY_ID_TOKEN), values.get(KEY_ACCESS_TOKEN), values.get(KEY_TOKEN_TYPE), values.get(KEY_REFRESH_TOKEN)));
+            switch (responseType) {
+                case ResponseType.CODE:
+                    if (shouldUsePKCE()) {
+                        pkce.getToken(values.get(KEY_CODE), callback);
+                        break;
+                    }
+                    //If can't use code grant type then default to TOKEN.
+                case ResponseType.TOKEN:
+                    callback.onSuccess(new Credentials(values.get(KEY_ID_TOKEN), values.get(KEY_ACCESS_TOKEN), values.get(KEY_TOKEN_TYPE), values.get(KEY_REFRESH_TOKEN)));
+                    break;
+                case ResponseType.ID_TOKEN:
+                    callback.onSuccess(new Credentials(values.get(KEY_ID_TOKEN), null, null, null));
+                    break;
             }
         }
         providerInstance = null;
@@ -298,7 +325,7 @@ public class WebAuthProvider {
     private void requestAuth(@NonNull Activity activity, @NonNull AuthCallback callback, int requestCode) {
         this.callback = callback;
         this.requestCode = requestCode;
-        this.client = useCodeGrant && PKCE.isAvailable() ? account.newAuthenticationAPIClient() : null;
+        this.client = responseType == ResponseType.CODE && PKCE.isAvailable() ? account.newAuthenticationAPIClient() : null;
         String pkgName = activity.getApplicationContext().getPackageName();
         helper = new CallbackHelper(pkgName);
 
@@ -337,19 +364,28 @@ public class WebAuthProvider {
 
         final Map<String, String> queryParameters = new HashMap<>();
         queryParameters.put(KEY_SCOPE, scope);
-        queryParameters.put(KEY_RESPONSE_TYPE, RESPONSE_TYPE_TOKEN);
 
-        if (shouldUsePKCE()) {
-            try {
-                pkce = new PKCE(client, redirectUri);
-                String codeChallenge = pkce.getCodeChallenge();
-                queryParameters.put(KEY_RESPONSE_TYPE, RESPONSE_TYPE_CODE);
-                queryParameters.put(KEY_CODE_CHALLENGE, codeChallenge);
-                queryParameters.put(KEY_CODE_CHALLENGE_METHOD, METHOD_SHA_256);
-                Log.v(TAG, "Using PKCE authentication flow");
-            } catch (IllegalStateException e) {
-                Log.e(TAG, "Some algorithms aren't available on this device and PKCE can't be used. Defaulting to token response_type.", e);
-            }
+        switch (responseType) {
+            case ResponseType.CODE:
+                if (shouldUsePKCE()) {
+                    try {
+                        pkce = new PKCE(client, redirectUri);
+                        String codeChallenge = pkce.getCodeChallenge();
+                        queryParameters.put(KEY_RESPONSE_TYPE, RESPONSE_TYPE_CODE);
+                        queryParameters.put(KEY_CODE_CHALLENGE, codeChallenge);
+                        queryParameters.put(KEY_CODE_CHALLENGE_METHOD, METHOD_SHA_256);
+                        Log.v(TAG, "Using PKCE authentication flow");
+                        break;
+                    } catch (IllegalStateException e) {
+                        Log.e(TAG, "Some algorithms aren't available on this device and PKCE can't be used. Defaulting to token response_type.", e);
+                    }
+                }
+            case ResponseType.TOKEN:
+                queryParameters.put(KEY_RESPONSE_TYPE, RESPONSE_TYPE_TOKEN);
+                break;
+            case ResponseType.ID_TOKEN:
+                queryParameters.put(KEY_RESPONSE_TYPE, RESPONSE_TYPE_ID_TOKEN);
+                break;
         }
 
         Log.v(TAG, String.format("Adding %d user parameters to the Authorize Uri", parameters.size()));
@@ -399,8 +435,9 @@ public class WebAuthProvider {
         return scope;
     }
 
-    boolean useCodeGrant() {
-        return useCodeGrant;
+    @ResponseType
+    int getResponseType() {
+        return responseType;
     }
 
     Map<String, Object> getParameters() {

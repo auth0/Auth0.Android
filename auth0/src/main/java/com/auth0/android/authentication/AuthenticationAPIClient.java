@@ -70,14 +70,11 @@ public class AuthenticationAPIClient {
     private static final String PASSWORD_KEY = "password";
     private static final String EMAIL_KEY = "email";
     private static final String PHONE_NUMBER_KEY = "phone_number";
-    private static final String USER_ID_KEY = "user_id";
-    private static final String CLIENT_ID_KEY = "clientID";
     private static final String DELEGATION_PATH = "delegation";
     private static final String ACCESS_TOKEN_PATH = "access_token";
     private static final String SIGN_UP_PATH = "signup";
     private static final String DB_CONNECTIONS_PATH = "dbconnections";
     private static final String CHANGE_PASSWORD_PATH = "change_password";
-    private static final String UNLINK_PATH = "unlink";
     private static final String PASSWORDLESS_PATH = "passwordless";
     private static final String START_PATH = "start";
     private static final String OAUTH_PATH = "oauth";
@@ -569,40 +566,6 @@ public class AuthenticationAPIClient {
 
         return new DelegationRequest<>(request)
                 .setApiType(apiType);
-    }
-
-    /**
-     * Unlink a user identity calling <a href="https://auth0.com/docs/auth-api#!#post--unlink">'/unlink'</a> endpoint
-     * Example usage:
-     * <pre><code>
-     * client.unlink("{auth0 user id}", "{user access token}")
-     *      .start(new BaseCallback<Void>() {
-     *          {@literal}Override
-     *          public void onSuccess(Void payload) {}
-     *
-     *          {@literal}Override
-     *          public void onFailure(AuthenticationException error) {}
-     *      });
-     * </code></pre>
-     *
-     * @param userId      of the identity to unlink
-     * @param accessToken of the main identity obtained after login
-     * @return a request to start
-     */
-    @SuppressWarnings("WeakerAccess")
-    public Request<Void, AuthenticationException> unlink(@NonNull String userId, @NonNull String accessToken) {
-        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
-                .addPathSegment(UNLINK_PATH)
-                .build();
-
-        final Map<String, Object> parameters = ParameterBuilder.newBuilder()
-                .setAccessToken(accessToken)
-                .set(CLIENT_ID_KEY, getClientId())
-                .set(USER_ID_KEY, userId)
-                .asDictionary();
-
-        return factory.POST(url, client, gson, authErrorBuilder)
-                .addParameters(parameters);
     }
 
     /**
