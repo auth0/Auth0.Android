@@ -24,6 +24,7 @@
 
 package com.auth0.android.provider;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
@@ -111,6 +112,7 @@ public class WebAuthActivity extends AppCompatActivity {
         }
     }
 
+    @SuppressLint("SetJavaScriptEnabled")
     private void startUrlLoading() {
         if (!isNetworkAvailable()) {
             renderLoadError(getString(R.string.com_auth0_lock_network_error));
