@@ -25,6 +25,9 @@
 package com.auth0.android;
 
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import com.auth0.android.auth0.BuildConfig;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.util.Telemetry;
@@ -43,8 +46,8 @@ public class Auth0 {
     private static final String DOT_AUTH0_DOT_COM = ".auth0.com";
 
     private final String clientId;
-    private final String domainUrl;
-    private final String configurationUrl;
+    private final HttpUrl domainUrl;
+    private final HttpUrl configurationUrl;
     private Telemetry telemetry;
 
     /**
@@ -53,7 +56,7 @@ public class Auth0 {
      * @param clientId of your Auth0 application
      * @param domain   of your Auth0 account
      */
-    public Auth0(String clientId, String domain) {
+    public Auth0(@NonNull String clientId, @NonNull String domain) {
         this(clientId, domain, null);
     }
 
@@ -66,9 +69,12 @@ public class Auth0 {
      * @param domain              of your Auth0 account
      * @param configurationDomain where Auth0's configuration will be fetched. By default is Auth0 public cloud
      */
-    public Auth0(String clientId, String domain, String configurationDomain) {
+    public Auth0(@NonNull String clientId, @NonNull String domain, @Nullable String configurationDomain) {
         this.clientId = clientId;
-        this.domainUrl = ensureUrlString(domain);
+        this.domainUrl = ensureValidUrl(domain);
+        if (this.domainUrl == null) {
+            throw new IllegalArgumentException(String.format("Invalid domain url: '%s'", domain));
+        }
         this.configurationUrl = resolveConfiguration(configurationDomain, this.domainUrl);
         this.telemetry = new Telemetry(BuildConfig.LIBRARY_NAME, BuildConfig.VERSION_NAME);
     }
@@ -84,14 +90,14 @@ public class Auth0 {
      * @return your Auth0 account domain url
      */
     public String getDomainUrl() {
-        return domainUrl;
+        return domainUrl.toString();
     }
 
     /**
      * @return your account configuration url
      */
     public String getConfigurationUrl() {
-        return configurationUrl;
+        return configurationUrl.toString();
     }
 
     /**
@@ -105,7 +111,7 @@ public class Auth0 {
      * @return Url to perform the web flow of OAuth
      */
     public String getAuthorizeUrl() {
-        return HttpUrl.parse(domainUrl).newBuilder()
+        return domainUrl.newBuilder()
                 .addEncodedPathSegment("authorize")
                 .build()
                 .toString();
@@ -135,17 +141,16 @@ public class Auth0 {
         this.telemetry = null;
     }
 
-    private String resolveConfiguration(String configurationDomain, String domainUrl) {
-        String url = ensureUrlString(configurationDomain);
-        if (configurationDomain == null && domainUrl != null) {
-            final HttpUrl domainUri = HttpUrl.parse(domainUrl);
-            final String host = domainUri.host();
+    private HttpUrl resolveConfiguration(@Nullable String configurationDomain, @NonNull HttpUrl domainUrl) {
+        HttpUrl url = ensureValidUrl(configurationDomain);
+        if (url == null) {
+            final String host = domainUrl.host();
             if (host.endsWith(DOT_AUTH0_DOT_COM)) {
                 String[] parts = host.split("\\.");
                 if (parts.length > 3) {
-                    url = "https://cdn." + parts[parts.length - 3] + DOT_AUTH0_DOT_COM;
+                    url = HttpUrl.parse("https://cdn." + parts[parts.length - 3] + DOT_AUTH0_DOT_COM);
                 } else {
-                    url = AUTH0_US_CDN_URL;
+                    url = HttpUrl.parse(AUTH0_US_CDN_URL);
                 }
             } else {
                 url = domainUrl;
@@ -154,12 +159,11 @@ public class Auth0 {
         return url;
     }
 
-    private String ensureUrlString(String url) {
-        String safeUrl = null;
-        if (url != null) {
-            safeUrl = url.startsWith("http") ? url : "https://" + url;
+    private HttpUrl ensureValidUrl(String url) {
+        if (url == null) {
+            return null;
         }
-        return safeUrl;
+        String safeUrl = url.startsWith("http") ? url : "https://" + url;
+        return HttpUrl.parse(safeUrl);
     }
-
 }

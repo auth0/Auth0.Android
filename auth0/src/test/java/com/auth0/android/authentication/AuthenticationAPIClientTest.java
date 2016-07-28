@@ -98,7 +98,7 @@ public class AuthenticationAPIClientTest {
         AuthenticationAPIClient client = new AuthenticationAPIClient(new Auth0(CLIENT_ID, DOMAIN));
         assertThat(client, is(notNullValue()));
         assertThat(client.getClientId(), equalTo(CLIENT_ID));
-        assertThat(client.getBaseURL(), equalTo("https://" + DOMAIN));
+        assertThat(client.getBaseURL(), equalTo("https://" + DOMAIN + "/"));
     }
 
     @Test
