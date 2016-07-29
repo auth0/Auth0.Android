@@ -38,18 +38,21 @@ import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.OkHttpClient;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public class RequestFactory {
 
     static final String AUTHORIZATION_HEADER = "Authorization";
     static final String USER_AGENT_HEADER = "User-Agent";
+    static final String ACCEPT_LANGUAGE_HEADER = "Accept-Language";
     static final String CLIENT_INFO_HEADER = Telemetry.HEADER_NAME;
 
     private final HashMap<String, String> headers;
 
     public RequestFactory() {
         headers = new HashMap<>();
+        headers.put(ACCEPT_LANGUAGE_HEADER, getDefaultLanguage());
     }
 
     public RequestFactory(@NonNull String bearerToken) {
@@ -68,7 +71,7 @@ public class RequestFactory {
 
     public AuthenticationRequest authenticationPOST(HttpUrl url, OkHttpClient client, Gson gson) {
         final AuthenticationRequest request = createAuthenticationRequest(url, client, gson, "POST");
-        addMetrics((ParameterizableRequest)request);
+        addMetrics((ParameterizableRequest) request);
         return request;
     }
 
@@ -136,5 +139,10 @@ public class RequestFactory {
 
     Map<String, String> getHeaders() {
         return headers;
+    }
+
+    static String getDefaultLanguage() {
+        String language = Locale.getDefault().getLanguage();
+        return language != null ? language : "en";
     }
 }

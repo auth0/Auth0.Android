@@ -9,6 +9,7 @@ import org.hamcrest.Description;
 public class RequestMatcher<T> extends BaseMatcher<MockRequest> {
 
     private final boolean checkHeaders;
+    private String acceptLanguageValue;
     private String clientInfoValue;
     private String userAgentValue;
     private String authorizationValue;
@@ -18,8 +19,9 @@ public class RequestMatcher<T> extends BaseMatcher<MockRequest> {
     private Class<T> clazz;
     private TypeToken<T> typeToken;
 
-    private RequestMatcher(String clientInfoValue, String userAgentValue, String authorizationValue) {
+    private RequestMatcher(String acceptLanguageValue, String clientInfoValue, String userAgentValue, String authorizationValue) {
         checkHeaders = true;
+        this.acceptLanguageValue = acceptLanguageValue;
         this.clientInfoValue = clientInfoValue;
         this.userAgentValue = userAgentValue;
         this.authorizationValue = authorizationValue;
@@ -37,12 +39,12 @@ public class RequestMatcher<T> extends BaseMatcher<MockRequest> {
         this.typeToken = typeToken;
     }
 
-    public static RequestMatcher hasHeaders(String clientInfoValue, String userAgentValue, String authorizationValue) {
-        return new RequestMatcher(clientInfoValue, userAgentValue, authorizationValue);
+    public static RequestMatcher hasHeaders(String acceptLanguageValue, String clientInfoValue, String userAgentValue, String authorizationValue) {
+        return new RequestMatcher(acceptLanguageValue, clientInfoValue, userAgentValue, authorizationValue);
     }
 
-    public static RequestMatcher hasHeaders(String clientInfoValue, String userAgentValue) {
-        return new RequestMatcher(clientInfoValue, userAgentValue, null);
+    public static RequestMatcher hasHeaders(String acceptLanguageValue, String clientInfoValue, String userAgentValue) {
+        return new RequestMatcher(acceptLanguageValue, clientInfoValue, userAgentValue, null);
     }
 
     public static <T> RequestMatcher hasArguments(HttpUrl url, String httpMethod, Class<T> clazz) {
@@ -60,8 +62,10 @@ public class RequestMatcher<T> extends BaseMatcher<MockRequest> {
     @Override
     public void describeTo(Description description) {
         if (checkHeaders) {
-            description.appendText(String.format("to have headers: (%s) with value (%s), (%s) with value (%s)",
-                    RequestFactory.CLIENT_INFO_HEADER, clientInfoValue, RequestFactory.USER_AGENT_HEADER, userAgentValue));
+            description.appendText(String.format("to have headers: (%s) with value (%s), (%s) with value (%s), (%s) with value (%s)",
+                    RequestFactory.ACCEPT_LANGUAGE_HEADER, acceptLanguageValue,
+                    RequestFactory.CLIENT_INFO_HEADER, clientInfoValue,
+                    RequestFactory.USER_AGENT_HEADER, userAgentValue));
             if (authorizationValue != null) {
                 description.appendText(String.format(", (%s) with value (%s)", RequestFactory.AUTHORIZATION_HEADER, authorizationValue));
             }
@@ -89,7 +93,8 @@ public class RequestMatcher<T> extends BaseMatcher<MockRequest> {
         }
 
         if (checkHeaders) {
-            description.appendText(String.format("header (%s) was (%s), (%s) was (%s)",
+            description.appendText(String.format("header (%s) was (%s), (%s) was (%s), (%s) was (%s)",
+                    RequestFactory.ACCEPT_LANGUAGE_HEADER, getHeaderValue(request, RequestFactory.ACCEPT_LANGUAGE_HEADER),
                     RequestFactory.CLIENT_INFO_HEADER, getHeaderValue(request, RequestFactory.CLIENT_INFO_HEADER),
                     RequestFactory.USER_AGENT_HEADER, getHeaderValue(request, RequestFactory.USER_AGENT_HEADER)));
             if (authorizationValue != null) {
@@ -119,10 +124,11 @@ public class RequestMatcher<T> extends BaseMatcher<MockRequest> {
 
         MockRequest mockRequest = (MockRequest) item;
         if (checkHeaders) {
+            final boolean acceptLanguage = hasAcceptLanguageHeader(mockRequest);
             final boolean clientInfo = hasClientInfoHeader(mockRequest);
             final boolean userAgent = hasUserAgentHeader(mockRequest);
             final boolean authorization = hasAuthorizationHeader(mockRequest);
-            return clientInfo && userAgent && authorization;
+            return acceptLanguage && clientInfo && userAgent && authorization;
         }
 
         final boolean url = objectEquals(mockRequest.url, this.url);
@@ -130,6 +136,10 @@ public class RequestMatcher<T> extends BaseMatcher<MockRequest> {
         final boolean clazz = sameClass(mockRequest.clazz, this.clazz);
         final boolean typeToken = sameTypeToken(mockRequest.typeToken, this.typeToken);
         return url && method && clazz && typeToken;
+    }
+
+    private boolean hasAcceptLanguageHeader(MockRequest request) {
+        return objectEquals(acceptLanguageValue, getHeaderValue(request, RequestFactory.ACCEPT_LANGUAGE_HEADER));
     }
 
     private boolean hasAuthorizationHeader(MockRequest request) {
