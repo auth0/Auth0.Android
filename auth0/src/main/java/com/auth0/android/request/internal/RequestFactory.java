@@ -52,7 +52,7 @@ public class RequestFactory {
 
     public RequestFactory() {
         headers = new HashMap<>();
-        headers.put(ACCEPT_LANGUAGE_HEADER, getDefaultLanguage());
+        headers.put(ACCEPT_LANGUAGE_HEADER, getDefaultLocale());
     }
 
     public RequestFactory(@NonNull String bearerToken) {
@@ -141,8 +141,8 @@ public class RequestFactory {
         return headers;
     }
 
-    static String getDefaultLanguage() {
-        String language = Locale.getDefault().getLanguage();
+    static String getDefaultLocale() {
+        String language = Locale.getDefault().toString();
         return language != null ? language : "en";
     }
 }

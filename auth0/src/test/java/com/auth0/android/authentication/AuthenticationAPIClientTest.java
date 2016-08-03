@@ -114,7 +114,7 @@ public class AuthenticationAPIClientTest {
         assertThat(callback, hasPayloadOfType(Credentials.class));
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         Map<String, String> body = bodyFromRequest(request);
         assertThat(body, hasEntry("connection", MY_CONNECTION));
     }
@@ -130,7 +130,7 @@ public class AuthenticationAPIClientTest {
         assertThat(credentials, is(notNullValue()));
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         Map<String, String> body = bodyFromRequest(request);
         assertThat(body, hasEntry("connection", MY_CONNECTION));
     }
@@ -146,7 +146,7 @@ public class AuthenticationAPIClientTest {
         assertThat(callback, hasPayloadOfType(UserProfile.class));
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/tokeninfo"));
     }
 
@@ -161,7 +161,7 @@ public class AuthenticationAPIClientTest {
         assertThat(profile, is(notNullValue()));
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/tokeninfo"));
     }
 
@@ -175,7 +175,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/oauth/access_token"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -195,7 +195,7 @@ public class AuthenticationAPIClientTest {
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/oauth/access_token"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -215,7 +215,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/oauth/ro"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -236,7 +236,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/oauth/ro"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -257,7 +257,7 @@ public class AuthenticationAPIClientTest {
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/oauth/ro"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -278,7 +278,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/oauth/ro"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -299,7 +299,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/oauth/ro"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -322,7 +322,7 @@ public class AuthenticationAPIClientTest {
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/oauth/ro"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -343,7 +343,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/dbconnections/signup"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -364,7 +364,7 @@ public class AuthenticationAPIClientTest {
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/dbconnections/signup"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -385,7 +385,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/dbconnections/signup"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -406,7 +406,7 @@ public class AuthenticationAPIClientTest {
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/dbconnections/signup"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -428,7 +428,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/dbconnections/signup"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -449,7 +449,7 @@ public class AuthenticationAPIClientTest {
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/dbconnections/signup"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -471,7 +471,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/dbconnections/signup"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -509,7 +509,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/dbconnections/signup"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -535,7 +535,7 @@ public class AuthenticationAPIClientTest {
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/dbconnections/signup"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -567,7 +567,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/dbconnections/signup"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -590,7 +590,7 @@ public class AuthenticationAPIClientTest {
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/dbconnections/signup"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -611,7 +611,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/dbconnections/change_password"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -630,7 +630,7 @@ public class AuthenticationAPIClientTest {
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/dbconnections/change_password"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -648,7 +648,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/dbconnections/change_password"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -668,7 +668,7 @@ public class AuthenticationAPIClientTest {
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/dbconnections/change_password"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -687,7 +687,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/delegation"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -708,7 +708,7 @@ public class AuthenticationAPIClientTest {
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/delegation"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -729,7 +729,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/delegation"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -750,7 +750,7 @@ public class AuthenticationAPIClientTest {
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/delegation"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -773,7 +773,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/delegation"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -796,7 +796,7 @@ public class AuthenticationAPIClientTest {
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/delegation"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -817,7 +817,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/delegation"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -838,7 +838,7 @@ public class AuthenticationAPIClientTest {
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/delegation"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -866,7 +866,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/passwordless/start"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -893,7 +893,7 @@ public class AuthenticationAPIClientTest {
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/passwordless/start"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -912,7 +912,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/passwordless/start"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -933,7 +933,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/passwordless/start"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -953,7 +953,7 @@ public class AuthenticationAPIClientTest {
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/passwordless/start"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -972,7 +972,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/passwordless/start"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -993,7 +993,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/passwordless/start"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -1013,7 +1013,7 @@ public class AuthenticationAPIClientTest {
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/passwordless/start"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -1032,7 +1032,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/passwordless/start"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -1053,7 +1053,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/passwordless/start"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -1073,7 +1073,7 @@ public class AuthenticationAPIClientTest {
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/passwordless/start"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -1092,7 +1092,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/passwordless/start"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -1113,7 +1113,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/passwordless/start"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -1133,7 +1133,7 @@ public class AuthenticationAPIClientTest {
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/passwordless/start"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -1152,7 +1152,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/passwordless/start"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -1173,7 +1173,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/passwordless/start"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -1193,7 +1193,7 @@ public class AuthenticationAPIClientTest {
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/passwordless/start"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -1212,7 +1212,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/passwordless/start"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -1233,7 +1233,7 @@ public class AuthenticationAPIClientTest {
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/passwordless/start"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -1253,7 +1253,7 @@ public class AuthenticationAPIClientTest {
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLanguage()));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/passwordless/start"));
 
         Map<String, String> body = bodyFromRequest(request);
@@ -1340,8 +1340,8 @@ public class AuthenticationAPIClientTest {
         return gson.fromJson(request.getBody().readUtf8(), mapType);
     }
 
-    private String getDefaultLanguage() {
-        String language = Locale.getDefault().getLanguage();
+    private String getDefaultLocale() {
+        String language = Locale.getDefault().toString();
         return language != null ? language : "en";
     }
 }
