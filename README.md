@@ -4,7 +4,7 @@
 [![Coverage Status](https://img.shields.io/codecov/c/github/auth0/Auth0.Android/master.svg?style=flat-square)](https://codecov.io/github/auth0/Auth0.Android)
 [![License](http://img.shields.io/:license-mit-blue.svg?style=flat)](http://doge.mit-license.org)
 [![Methods](https://img.shields.io/badge/Methods%20count-latest-e91e63.svg) ](http://www.methodscount.com/?lib=com.auth0.android%3Aauth0%3A%2B)
-[![Maven Central](https://img.shields.io/maven-central/v/com.auth0.android/lock.svg)](http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22com.auth0.android%22%20AND%20a%3A%22auth0%22)
+[![Maven Central](https://img.shields.io/maven-central/v/com.auth0.android/auth0.svg)](http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22com.auth0.android%22%20AND%20a%3A%22auth0%22)
 [![Bintray](https://api.bintray.com/packages/auth0/lock-android/Auth0.Android/images/download.svg) ](https://bintray.com/auth0/lock-android/Auth0.Android/_latestVersion)
 
 
