@@ -7,6 +7,10 @@ import org.hamcrest.Description;
 
 public class AuthenticationRequestMatcher<T> extends BaseMatcher<MockAuthenticationRequest> {
 
+    private static final String ACCEPT_LANGUAGE_HEADER = "Accept-Language";
+    private static final String CLIENT_INFO_HEADER = "Auth0-Client";
+    private static final String AUTHORIZATION_HEADER = "Authorization";
+    private static final String USER_AGENT_HEADER = "User-Agent";
     private final boolean checkHeaders;
     private String acceptLanguageValue;
     private String clientInfoValue;
@@ -46,11 +50,11 @@ public class AuthenticationRequestMatcher<T> extends BaseMatcher<MockAuthenticat
     public void describeTo(Description description) {
         if (checkHeaders) {
             description.appendText(String.format("to have headers: (%s) with value (%s), (%s) with value (%s), (%s) with value (%s)",
-                    RequestFactory.ACCEPT_LANGUAGE_HEADER, acceptLanguageValue,
-                    RequestFactory.CLIENT_INFO_HEADER, clientInfoValue,
-                    RequestFactory.USER_AGENT_HEADER, userAgentValue));
+                    ACCEPT_LANGUAGE_HEADER, acceptLanguageValue,
+                    CLIENT_INFO_HEADER, clientInfoValue,
+                    USER_AGENT_HEADER, userAgentValue));
             if (authorizationValue != null) {
-                description.appendText(String.format(", (%s) with value (%s)", RequestFactory.AUTHORIZATION_HEADER, authorizationValue));
+                description.appendText(String.format(", (%s) with value (%s)", AUTHORIZATION_HEADER, authorizationValue));
             }
             return;
         }
@@ -69,12 +73,12 @@ public class AuthenticationRequestMatcher<T> extends BaseMatcher<MockAuthenticat
 
         if (checkHeaders) {
             description.appendText(String.format("header (%s) was (%s), (%s) was (%s), (%s) was (%s)",
-                    RequestFactory.ACCEPT_LANGUAGE_HEADER, getHeaderValue(request, RequestFactory.ACCEPT_LANGUAGE_HEADER),
-                    RequestFactory.CLIENT_INFO_HEADER, getHeaderValue(request, RequestFactory.CLIENT_INFO_HEADER),
-                    RequestFactory.USER_AGENT_HEADER, getHeaderValue(request, RequestFactory.USER_AGENT_HEADER)));
+                    ACCEPT_LANGUAGE_HEADER, getHeaderValue(request, ACCEPT_LANGUAGE_HEADER),
+                    CLIENT_INFO_HEADER, getHeaderValue(request, CLIENT_INFO_HEADER),
+                    USER_AGENT_HEADER, getHeaderValue(request, USER_AGENT_HEADER)));
             if (authorizationValue != null) {
                 description.appendText(String.format(", (%s) was (%s)",
-                        RequestFactory.AUTHORIZATION_HEADER, getHeaderValue(request, RequestFactory.AUTHORIZATION_HEADER)));
+                        AUTHORIZATION_HEADER, getHeaderValue(request, AUTHORIZATION_HEADER)));
             }
             return;
         }
@@ -104,19 +108,19 @@ public class AuthenticationRequestMatcher<T> extends BaseMatcher<MockAuthenticat
     }
 
     private boolean hasAcceptLanguageHeader(MockAuthenticationRequest request) {
-        return objectEquals(acceptLanguageValue, getHeaderValue(request, RequestFactory.ACCEPT_LANGUAGE_HEADER));
+        return objectEquals(acceptLanguageValue, getHeaderValue(request, ACCEPT_LANGUAGE_HEADER));
     }
 
     private boolean hasAuthorizationHeader(MockAuthenticationRequest request) {
-        return objectEquals(authorizationValue, getHeaderValue(request, RequestFactory.AUTHORIZATION_HEADER));
+        return objectEquals(authorizationValue, getHeaderValue(request, AUTHORIZATION_HEADER));
     }
 
     private boolean hasUserAgentHeader(MockAuthenticationRequest request) {
-        return objectEquals(userAgentValue, getHeaderValue(request, RequestFactory.USER_AGENT_HEADER));
+        return objectEquals(userAgentValue, getHeaderValue(request, USER_AGENT_HEADER));
     }
 
     private boolean hasClientInfoHeader(MockAuthenticationRequest request) {
-        return objectEquals(clientInfoValue, getHeaderValue(request, RequestFactory.CLIENT_INFO_HEADER));
+        return objectEquals(clientInfoValue, getHeaderValue(request, CLIENT_INFO_HEADER));
     }
 
     private String getHeaderValue(MockAuthenticationRequest request, String name) {

@@ -43,10 +43,10 @@ import java.util.Map;
 
 public class RequestFactory {
 
-    static final String AUTHORIZATION_HEADER = "Authorization";
-    static final String USER_AGENT_HEADER = "User-Agent";
-    static final String ACCEPT_LANGUAGE_HEADER = "Accept-Language";
-    static final String CLIENT_INFO_HEADER = Telemetry.HEADER_NAME;
+    private static final String AUTHORIZATION_HEADER = "Authorization";
+    private static final String USER_AGENT_HEADER = "User-Agent";
+    private static final String ACCEPT_LANGUAGE_HEADER = "Accept-Language";
+    private static final String CLIENT_INFO_HEADER = Telemetry.HEADER_NAME;
 
     private final HashMap<String, String> headers;
 
@@ -143,6 +143,6 @@ public class RequestFactory {
 
     static String getDefaultLocale() {
         String language = Locale.getDefault().toString();
-        return language != null ? language : "en";
+        return !language.isEmpty() ? language : "en";
     }
 }

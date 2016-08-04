@@ -5,6 +5,7 @@ import com.auth0.android.Auth0Exception;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.ParameterizableRequest;
+import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.HttpUrl;
@@ -15,6 +16,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.Locale;
 import java.util.Map;
 
 import static com.auth0.android.request.internal.RequestMatcher.hasArguments;
@@ -29,10 +31,10 @@ public class RequestFactoryTest {
     private static final String METHOD_POST = "POST";
     private static final String METHOD_PATCH = "PATCH";
     private static final String METHOD_DELETE = "DELETE";
-    public static final String CLIENT_INFO = "client_info";
-    public static final String USER_AGENT = "user_agent";
-    public static final String TOKEN = "token";
-    public static final String BEARER_PREFIX = "Bearer ";
+    private static final String CLIENT_INFO = "client_info";
+    private static final String USER_AGENT = "user_agent";
+    private static final String TOKEN = "token";
+    private static final String BEARER_PREFIX = "Bearer ";
     private RequestFactory factory;
 
     @Mock
@@ -62,7 +64,7 @@ public class RequestFactoryTest {
         final RequestFactory factory = new RequestFactory();
 
         assertThat(factory.getHeaders().size(), is(1));
-        assertThat(factory.getHeaders().get(RequestFactory.ACCEPT_LANGUAGE_HEADER), is(equalTo(RequestFactory.getDefaultLocale())));
+        assertThat(factory.getHeaders().get("Accept-Language"), is(equalTo(RequestFactory.getDefaultLocale())));
     }
 
     @Test
@@ -71,7 +73,7 @@ public class RequestFactoryTest {
 
         factory.setClientInfo(CLIENT_INFO);
         assertThat(factory.getHeaders().size(), is(2));
-        assertThat(factory.getHeaders().get(RequestFactory.CLIENT_INFO_HEADER), is(equalTo(CLIENT_INFO)));
+        assertThat(factory.getHeaders().get("Auth0-Client"), is(equalTo(CLIENT_INFO)));
     }
 
     @Test
@@ -80,7 +82,7 @@ public class RequestFactoryTest {
 
         factory.setUserAgent(USER_AGENT);
         assertThat(factory.getHeaders().size(), is(2));
-        assertThat(factory.getHeaders().get(RequestFactory.USER_AGENT_HEADER), is(equalTo(USER_AGENT)));
+        assertThat(factory.getHeaders().get("User-Agent"), is(equalTo(USER_AGENT)));
     }
 
     @Test
@@ -88,7 +90,7 @@ public class RequestFactoryTest {
         final RequestFactory factory = new RequestFactory(TOKEN);
 
         assertThat(factory.getHeaders().size(), is(2));
-        assertThat(factory.getHeaders().get(RequestFactory.AUTHORIZATION_HEADER), is(equalTo(BEARER_PREFIX + TOKEN)));
+        assertThat(factory.getHeaders().get("Authorization"), is(equalTo(BEARER_PREFIX + TOKEN)));
     }
 
     @Test
