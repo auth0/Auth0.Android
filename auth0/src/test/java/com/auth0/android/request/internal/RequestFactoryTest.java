@@ -5,7 +5,6 @@ import com.auth0.android.Auth0Exception;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.ParameterizableRequest;
-import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.HttpUrl;
@@ -156,6 +155,17 @@ public class RequestFactoryTest {
         assertThat(request, is(notNullValue()));
         assertThat(request, hasHeaders(RequestFactory.getDefaultLocale(), CLIENT_INFO, USER_AGENT));
         assertThat(request, RequestMatcher.hasArguments(url, METHOD_DELETE, typeToken));
+    }
+
+    @Test
+    public void shouldGetDefaultLocale() throws Exception {
+        final Locale localeJP = new Locale("ja", "JP");
+        Locale.setDefault(localeJP);
+        assertThat(RequestFactory.getDefaultLocale(), is("ja_JP"));
+
+        final Locale localeCL = new Locale("es", "CL");
+        Locale.setDefault(localeCL);
+        assertThat(RequestFactory.getDefaultLocale(), is("es_CL"));
     }
 
     private <T> TypeToken<T> createTypeToken() {
