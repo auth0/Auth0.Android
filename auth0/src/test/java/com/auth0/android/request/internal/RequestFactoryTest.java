@@ -168,6 +168,13 @@ public class RequestFactoryTest {
         assertThat(RequestFactory.getDefaultLocale(), is("es_CL"));
     }
 
+    @Test
+    public void shouldAlwaysReturnValidLocale() throws Exception {
+        final Locale locale = new Locale("");
+        Locale.setDefault(locale);
+        assertThat(RequestFactory.getDefaultLocale(), is("en_US"));
+    }
+
     private <T> TypeToken<T> createTypeToken() {
         return new TypeToken<T>() {
         };

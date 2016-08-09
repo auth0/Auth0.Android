@@ -143,6 +143,6 @@ public class RequestFactory {
 
     static String getDefaultLocale() {
         String language = Locale.getDefault().toString();
-        return !language.isEmpty() ? language : "en";
+        return !language.isEmpty() ? language : "en_US";
     }
 }
