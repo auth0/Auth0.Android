@@ -36,6 +36,7 @@ import com.auth0.android.util.MockAuthenticationCallback;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import org.junit.After;
@@ -99,7 +100,11 @@ public class AuthenticationAPIClientTest {
         AuthenticationAPIClient client = new AuthenticationAPIClient(new Auth0(CLIENT_ID, DOMAIN));
         assertThat(client, is(notNullValue()));
         assertThat(client.getClientId(), equalTo(CLIENT_ID));
-        assertThat(client.getBaseURL(), equalTo("https://" + DOMAIN + "/"));
+        assertThat(HttpUrl.parse(client.getBaseURL()), notNullValue());
+        assertThat(HttpUrl.parse(client.getBaseURL()).scheme(), equalTo("https"));
+        assertThat(HttpUrl.parse(client.getBaseURL()).host(), equalTo(DOMAIN));
+        assertThat(HttpUrl.parse(client.getBaseURL()).pathSize(), is(1));
+        assertThat(HttpUrl.parse(client.getBaseURL()).encodedPath(), is("/"));
     }
 
     @Test

@@ -24,15 +24,19 @@
 
 package com.auth0.android.provider;
 
-import com.auth0.android.provider.CallbackHelper;
+import com.squareup.okhttp.HttpUrl;
 
-import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricGradleTestRunner;
 import org.robolectric.annotation.Config;
 
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.Assert.assertThat;
 
 @RunWith(RobolectricGradleTestRunner.class)
@@ -40,7 +44,9 @@ import static org.junit.Assert.assertThat;
 public class CallbackHelperTest {
 
     private static final String PACKAGE_NAME = "com.auth0.lock.android.app";
+    private static final String INVALID_DOMAIN = "not.-valid-domain";
     private static final String DOMAIN = "https://my-domain.auth0.com";
+    private static final String DOMAIN_WITH_TRAILING_SLASH = "https://my-domain.auth0.com/";
 
     private CallbackHelper helper;
 
@@ -51,8 +57,34 @@ public class CallbackHelperTest {
 
     @Test
     public void shouldGetCallbackURI() throws Exception {
-        String expected = DOMAIN + "/android/" + PACKAGE_NAME + "/callback";
-        String uri = helper.getCallbackURI(DOMAIN);
-        assertThat(uri, Matchers.equalTo(expected));
+        final HttpUrl expected = HttpUrl.parse(DOMAIN + "/android/" + PACKAGE_NAME + "/callback");
+        final HttpUrl result = HttpUrl.parse(helper.getCallbackURI(DOMAIN));
+
+        assertThat(result, notNullValue());
+        assertThat(result.scheme(), equalTo("https"));
+        assertThat(result.host(), equalTo("my-domain.auth0.com"));
+        assertThat(result.encodedPathSegments(), hasSize(3));
+        assertThat(result.encodedPathSegments(), contains("android", PACKAGE_NAME, "callback"));
+        assertThat(result, equalTo(expected));
     }
+
+    @Test
+    public void shouldGetCallbackURIIfDomainEndsWithSlash() throws Exception {
+        final HttpUrl expected = HttpUrl.parse(DOMAIN + "/android/" + PACKAGE_NAME + "/callback");
+        final HttpUrl result = HttpUrl.parse(helper.getCallbackURI(DOMAIN_WITH_TRAILING_SLASH));
+
+        assertThat(result, notNullValue());
+        assertThat(result.scheme(), equalTo("https"));
+        assertThat(result.host(), equalTo("my-domain.auth0.com"));
+        assertThat(result.encodedPathSegments(), hasSize(3));
+        assertThat(result.encodedPathSegments(), contains("android", PACKAGE_NAME, "callback"));
+        assertThat(result, equalTo(expected));
+    }
+
+    @Test
+    public void shouldGetNullCallbackURIIfInvalidDomain() throws Exception {
+        String uri = helper.getCallbackURI(INVALID_DOMAIN);
+        assertThat(uri, nullValue());
+    }
+
 }
