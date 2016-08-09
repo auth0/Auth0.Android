@@ -24,14 +24,19 @@
 
 package com.auth0.android.provider;
 
+import com.auth0.android.auth0.R;
 import com.auth0.android.authentication.AuthenticationAPIClient;
+import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.authentication.request.TokenRequest;
+import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.result.Credentials;
 
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -44,6 +49,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 
 @RunWith(RobolectricGradleTestRunner.class)
 @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 18, manifest = Config.NONE)
@@ -67,7 +74,7 @@ public class PKCETest {
     }
 
     @Test
-    public void shouldGenerateChallengeFromRandomVerfier() throws Exception {
+    public void shouldGenerateChallengeFromRandomVerifier() throws Exception {
         PKCE pkce = new PKCE(apiClient, REDIRECT_URI);
         assertThat(pkce.getCodeChallenge(), is(notNullValue()));
     }
@@ -90,12 +97,31 @@ public class PKCETest {
     }
 
     @Test
-    public void testGetToken() throws Exception {
+    public void shouldGetToken() throws Exception {
         TokenRequest tokenRequest = Mockito.mock(TokenRequest.class);
         Mockito.when(apiClient.token(AUTHORIZATION_CODE, REDIRECT_URI)).thenReturn(tokenRequest);
         Mockito.when(tokenRequest.setCodeVerifier(CODE_VERIFIER)).thenReturn(tokenRequest);
         pkce.getToken(AUTHORIZATION_CODE, callback);
         Mockito.verify(apiClient).token(AUTHORIZATION_CODE, REDIRECT_URI);
         Mockito.verify(tokenRequest).setCodeVerifier(CODE_VERIFIER);
+        ArgumentCaptor<BaseCallback> callbackCaptor = ArgumentCaptor.forClass(BaseCallback.class);
+        Mockito.verify(tokenRequest).start(callbackCaptor.capture());
+        Credentials credentials = Mockito.mock(Credentials.class);
+        callbackCaptor.getValue().onSuccess(credentials);
+        Mockito.verify(callback).onSuccess(credentials);
+    }
+
+    @Test
+    public void shouldFailToGetToken() throws Exception {
+        TokenRequest tokenRequest = Mockito.mock(TokenRequest.class);
+        Mockito.when(apiClient.token(AUTHORIZATION_CODE, REDIRECT_URI)).thenReturn(tokenRequest);
+        Mockito.when(tokenRequest.setCodeVerifier(CODE_VERIFIER)).thenReturn(tokenRequest);
+        pkce.getToken(AUTHORIZATION_CODE, callback);
+        Mockito.verify(apiClient).token(AUTHORIZATION_CODE, REDIRECT_URI);
+        Mockito.verify(tokenRequest).setCodeVerifier(CODE_VERIFIER);
+        ArgumentCaptor<BaseCallback> callbackCaptor = ArgumentCaptor.forClass(BaseCallback.class);
+        Mockito.verify(tokenRequest).start(callbackCaptor.capture());
+        callbackCaptor.getValue().onFailure(new AuthenticationException("Some error"));
+        Mockito.verify(callback).onFailure(eq(R.string.com_auth0_lock_social_error_title), eq(R.string.com_auth0_lock_social_access_denied_message), any(AuthenticationException.class));
     }
 }
