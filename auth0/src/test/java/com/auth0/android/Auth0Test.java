@@ -27,7 +27,9 @@ package com.auth0.android;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.util.Telemetry;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -36,6 +38,9 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 public class Auth0Test {
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     private static final String CLIENT_ID = "CLIENT_ID";
     private static final String CLIENT_SECRET = "CLIENT_SECRET";
@@ -50,48 +55,54 @@ public class Auth0Test {
     public void shouldBuildWithClientIdAndDomain() throws Exception {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         assertThat(auth0.getClientId(), equalTo(CLIENT_ID));
-        assertThat(auth0.getDomainUrl(), equalTo("https://samples.auth0.com"));
-        assertThat(auth0.getConfigurationUrl(), equalTo("https://cdn.auth0.com"));
+        assertThat(auth0.getDomainUrl(), equalTo("https://samples.auth0.com/"));
+        assertThat(auth0.getConfigurationUrl(), equalTo("https://cdn.auth0.com/"));
     }
 
     @Test
     public void shouldBuildWithConfigurationDomainToo() throws Exception {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN, CONFIG_DOMAIN_CUSTOM);
         assertThat(auth0.getClientId(), equalTo(CLIENT_ID));
-        assertThat(auth0.getDomainUrl(), equalTo("https://samples.auth0.com"));
-        assertThat(auth0.getConfigurationUrl(), equalTo("https://config.mydomain.com"));
+        assertThat(auth0.getDomainUrl(), equalTo("https://samples.auth0.com/"));
+        assertThat(auth0.getConfigurationUrl(), equalTo("https://config.mydomain.com/"));
     }
 
     @Test
     public void shouldHandleEUInstance() throws Exception {
         Auth0 auth0 = new Auth0(CLIENT_ID, EU_DOMAIN);
         assertThat(auth0.getClientId(), equalTo(CLIENT_ID));
-        assertThat(auth0.getDomainUrl(), equalTo("https://samples.eu.auth0.com"));
-        assertThat(auth0.getConfigurationUrl(), equalTo("https://cdn.eu.auth0.com"));
+        assertThat(auth0.getDomainUrl(), equalTo("https://samples.eu.auth0.com/"));
+        assertThat(auth0.getConfigurationUrl(), equalTo("https://cdn.eu.auth0.com/"));
     }
 
     @Test
     public void shouldHandleAUInstance() throws Exception {
         Auth0 auth0 = new Auth0(CLIENT_ID, AU_DOMAIN);
         assertThat(auth0.getClientId(), equalTo(CLIENT_ID));
-        assertThat(auth0.getDomainUrl(), equalTo("https://samples.au.auth0.com"));
-        assertThat(auth0.getConfigurationUrl(), equalTo("https://cdn.au.auth0.com"));
+        assertThat(auth0.getDomainUrl(), equalTo("https://samples.au.auth0.com/"));
+        assertThat(auth0.getConfigurationUrl(), equalTo("https://cdn.au.auth0.com/"));
     }
 
     @Test
     public void shouldHandleOtherInstance() throws Exception {
         Auth0 auth0 = new Auth0(CLIENT_ID, OTHER_DOMAIN);
         assertThat(auth0.getClientId(), equalTo(CLIENT_ID));
-        assertThat(auth0.getDomainUrl(), equalTo("https://samples-test.other-subdomain.other.auth0.com"));
-        assertThat(auth0.getConfigurationUrl(), equalTo("https://cdn.other.auth0.com"));
+        assertThat(auth0.getDomainUrl(), equalTo("https://samples-test.other-subdomain.other.auth0.com/"));
+        assertThat(auth0.getConfigurationUrl(), equalTo("https://cdn.other.auth0.com/"));
     }
 
     @Test
     public void shouldHandleNonAuth0Domain() throws Exception {
         Auth0 auth0 = new Auth0(CLIENT_ID, "mydomain.com");
         assertThat(auth0.getClientId(), equalTo(CLIENT_ID));
-        assertThat(auth0.getDomainUrl(), equalTo("https://mydomain.com"));
-        assertThat(auth0.getConfigurationUrl(), equalTo("https://mydomain.com"));
+        assertThat(auth0.getDomainUrl(), equalTo("https://mydomain.com/"));
+        assertThat(auth0.getConfigurationUrl(), equalTo("https://mydomain.com/"));
+    }
+
+    @Test
+    public void shouldThrowWhenInvalidDomain() throws Exception {
+        expectedException.expect(IllegalArgumentException.class);
+        new Auth0(CLIENT_ID, "some invalid domain.com");
     }
 
     @Test
@@ -99,7 +110,7 @@ public class Auth0Test {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         AuthenticationAPIClient client = auth0.newAuthenticationAPIClient();
         assertThat(client, is(notNullValue()));
-        assertThat(client.getBaseURL(), equalTo("https://samples.auth0.com"));
+        assertThat(client.getBaseURL(), equalTo("https://samples.auth0.com/"));
         assertThat(client.getClientId(), equalTo(CLIENT_ID));
     }
 
