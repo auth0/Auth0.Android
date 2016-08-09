@@ -15,6 +15,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.Locale;
 import java.util.Map;
 
 import static com.auth0.android.request.internal.RequestMatcher.hasArguments;
@@ -29,10 +30,10 @@ public class RequestFactoryTest {
     private static final String METHOD_POST = "POST";
     private static final String METHOD_PATCH = "PATCH";
     private static final String METHOD_DELETE = "DELETE";
-    public static final String CLIENT_INFO = "client_info";
-    public static final String USER_AGENT = "user_agent";
-    public static final String TOKEN = "token";
-    public static final String BEARER_PREFIX = "Bearer ";
+    private static final String CLIENT_INFO = "client_info";
+    private static final String USER_AGENT = "user_agent";
+    private static final String TOKEN = "token";
+    private static final String BEARER_PREFIX = "Bearer ";
     private RequestFactory factory;
 
     @Mock
@@ -58,12 +59,20 @@ public class RequestFactoryTest {
     }
 
     @Test
+    public void shouldHaveAcceptLanguageHeader() throws Exception {
+        final RequestFactory factory = new RequestFactory();
+
+        assertThat(factory.getHeaders().size(), is(1));
+        assertThat(factory.getHeaders().get("Accept-Language"), is(equalTo(RequestFactory.getDefaultLocale())));
+    }
+
+    @Test
     public void shouldHaveClientInfoHeader() throws Exception {
         final RequestFactory factory = new RequestFactory();
 
         factory.setClientInfo(CLIENT_INFO);
-        assertThat(factory.getHeaders().size(), is(1));
-        assertThat(factory.getHeaders().get(RequestFactory.CLIENT_INFO_HEADER), is(equalTo(CLIENT_INFO)));
+        assertThat(factory.getHeaders().size(), is(2));
+        assertThat(factory.getHeaders().get("Auth0-Client"), is(equalTo(CLIENT_INFO)));
     }
 
     @Test
@@ -71,16 +80,16 @@ public class RequestFactoryTest {
         final RequestFactory factory = new RequestFactory();
 
         factory.setUserAgent(USER_AGENT);
-        assertThat(factory.getHeaders().size(), is(1));
-        assertThat(factory.getHeaders().get(RequestFactory.USER_AGENT_HEADER), is(equalTo(USER_AGENT)));
+        assertThat(factory.getHeaders().size(), is(2));
+        assertThat(factory.getHeaders().get("User-Agent"), is(equalTo(USER_AGENT)));
     }
 
     @Test
     public void shouldHaveAuthorizationHeader() throws Exception {
         final RequestFactory factory = new RequestFactory(TOKEN);
 
-        assertThat(factory.getHeaders().size(), is(1));
-        assertThat(factory.getHeaders().get(RequestFactory.AUTHORIZATION_HEADER), is(equalTo(BEARER_PREFIX + TOKEN)));
+        assertThat(factory.getHeaders().size(), is(2));
+        assertThat(factory.getHeaders().get("Authorization"), is(equalTo(BEARER_PREFIX + TOKEN)));
     }
 
     @Test
@@ -88,7 +97,7 @@ public class RequestFactoryTest {
         final MockAuthenticationRequest request = (MockAuthenticationRequest) factory.authenticationPOST(url, client, gson);
 
         assertThat(request, is(notNullValue()));
-        assertThat(request, AuthenticationRequestMatcher.hasHeaders(CLIENT_INFO, USER_AGENT));
+        assertThat(request, AuthenticationRequestMatcher.hasHeaders(RequestFactory.getDefaultLocale(), CLIENT_INFO, USER_AGENT));
         assertThat(request, AuthenticationRequestMatcher.hasArguments(url, METHOD_POST));
     }
 
@@ -97,7 +106,7 @@ public class RequestFactoryTest {
         ParameterizableRequest<Auth0, Auth0Exception> request = factory.POST(url, client, gson, Auth0.class, builder);
 
         assertThat(request, is(notNullValue()));
-        assertThat(request, hasHeaders(CLIENT_INFO, USER_AGENT));
+        assertThat(request, hasHeaders(RequestFactory.getDefaultLocale(), CLIENT_INFO, USER_AGENT));
         assertThat(request, RequestMatcher.hasArguments(url, METHOD_POST, Auth0.class));
     }
 
@@ -107,7 +116,7 @@ public class RequestFactoryTest {
         final ParameterizableRequest<Auth0, Auth0Exception> request = factory.POST(url, client, gson, typeToken, builder);
 
         assertThat(request, is(notNullValue()));
-        assertThat(request, hasHeaders(CLIENT_INFO, USER_AGENT));
+        assertThat(request, hasHeaders(RequestFactory.getDefaultLocale(), CLIENT_INFO, USER_AGENT));
         assertThat(request, RequestMatcher.hasArguments(url, METHOD_POST, typeToken));
     }
 
@@ -116,7 +125,7 @@ public class RequestFactoryTest {
         final ParameterizableRequest<Void, Auth0Exception> request = factory.POST(url, client, gson, builder);
 
         assertThat(request, is(notNullValue()));
-        assertThat(request, hasHeaders(CLIENT_INFO, USER_AGENT));
+        assertThat(request, hasHeaders(RequestFactory.getDefaultLocale(), CLIENT_INFO, USER_AGENT));
         assertThat(request, hasArguments(url, METHOD_POST));
     }
 
@@ -125,7 +134,7 @@ public class RequestFactoryTest {
         final ParameterizableRequest<Map<String, Object>, Auth0Exception> request = factory.rawPOST(url, client, gson, builder);
 
         assertThat(request, is(notNullValue()));
-        assertThat(request, hasHeaders(CLIENT_INFO, USER_AGENT));
+        assertThat(request, hasHeaders(RequestFactory.getDefaultLocale(), CLIENT_INFO, USER_AGENT));
         assertThat(request, hasArguments(url, METHOD_POST));
     }
 
@@ -134,7 +143,7 @@ public class RequestFactoryTest {
         final ParameterizableRequest<Auth0, Auth0Exception> request = factory.PATCH(url, client, gson, Auth0.class, builder);
 
         assertThat(request, is(notNullValue()));
-        assertThat(request, hasHeaders(CLIENT_INFO, USER_AGENT));
+        assertThat(request, hasHeaders(RequestFactory.getDefaultLocale(), CLIENT_INFO, USER_AGENT));
         assertThat(request, RequestMatcher.hasArguments(url, METHOD_PATCH, Auth0.class));
     }
 
@@ -144,8 +153,26 @@ public class RequestFactoryTest {
         final ParameterizableRequest<Auth0, Auth0Exception> request = factory.DELETE(url, client, gson, typeToken, builder);
 
         assertThat(request, is(notNullValue()));
-        assertThat(request, hasHeaders(CLIENT_INFO, USER_AGENT));
+        assertThat(request, hasHeaders(RequestFactory.getDefaultLocale(), CLIENT_INFO, USER_AGENT));
         assertThat(request, RequestMatcher.hasArguments(url, METHOD_DELETE, typeToken));
+    }
+
+    @Test
+    public void shouldGetDefaultLocale() throws Exception {
+        final Locale localeJP = new Locale("ja", "JP");
+        Locale.setDefault(localeJP);
+        assertThat(RequestFactory.getDefaultLocale(), is("ja_JP"));
+
+        final Locale localeCL = new Locale("es", "CL");
+        Locale.setDefault(localeCL);
+        assertThat(RequestFactory.getDefaultLocale(), is("es_CL"));
+    }
+
+    @Test
+    public void shouldAlwaysReturnValidLocale() throws Exception {
+        final Locale locale = new Locale("");
+        Locale.setDefault(locale);
+        assertThat(RequestFactory.getDefaultLocale(), is("en_US"));
     }
 
     private <T> TypeToken<T> createTypeToken() {
