@@ -32,11 +32,11 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricGradleTestRunner;
 import org.robolectric.annotation.Config;
 
-import static org.hamcrest.CoreMatchers.notNullValue;
+import static com.auth0.android.util.HttpUrlMatcher.hasHost;
+import static com.auth0.android.util.HttpUrlMatcher.hasPath;
+import static com.auth0.android.util.HttpUrlMatcher.hasScheme;
 import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.Assert.assertThat;
 
 @RunWith(RobolectricGradleTestRunner.class)
@@ -60,11 +60,9 @@ public class CallbackHelperTest {
         final HttpUrl expected = HttpUrl.parse(DOMAIN + "/android/" + PACKAGE_NAME + "/callback");
         final HttpUrl result = HttpUrl.parse(helper.getCallbackURI(DOMAIN));
 
-        assertThat(result, notNullValue());
-        assertThat(result.scheme(), equalTo("https"));
-        assertThat(result.host(), equalTo("my-domain.auth0.com"));
-        assertThat(result.encodedPathSegments(), hasSize(3));
-        assertThat(result.encodedPathSegments(), contains("android", PACKAGE_NAME, "callback"));
+        assertThat(result, hasScheme("https"));
+        assertThat(result, hasHost("my-domain.auth0.com"));
+        assertThat(result, hasPath("android", PACKAGE_NAME, "callback"));
         assertThat(result, equalTo(expected));
     }
 
@@ -73,11 +71,9 @@ public class CallbackHelperTest {
         final HttpUrl expected = HttpUrl.parse(DOMAIN + "/android/" + PACKAGE_NAME + "/callback");
         final HttpUrl result = HttpUrl.parse(helper.getCallbackURI(DOMAIN_WITH_TRAILING_SLASH));
 
-        assertThat(result, notNullValue());
-        assertThat(result.scheme(), equalTo("https"));
-        assertThat(result.host(), equalTo("my-domain.auth0.com"));
-        assertThat(result.encodedPathSegments(), hasSize(3));
-        assertThat(result.encodedPathSegments(), contains("android", PACKAGE_NAME, "callback"));
+        assertThat(result, hasScheme("https"));
+        assertThat(result, hasHost("my-domain.auth0.com"));
+        assertThat(result, hasPath("android", PACKAGE_NAME, "callback"));
         assertThat(result, equalTo(expected));
     }
 

@@ -32,9 +32,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import static org.hamcrest.Matchers.contains;
+import static com.auth0.android.util.HttpUrlMatcher.hasHost;
+import static com.auth0.android.util.HttpUrlMatcher.hasPath;
+import static com.auth0.android.util.HttpUrlMatcher.hasScheme;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -110,12 +111,10 @@ public class Auth0Test {
     public void shouldBuildNewClient() throws Exception {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         AuthenticationAPIClient client = auth0.newAuthenticationAPIClient();
+        final HttpUrl url = HttpUrl.parse(client.getBaseURL());
         assertThat(client, is(notNullValue()));
-        assertThat(HttpUrl.parse(client.getBaseURL()), notNullValue());
-        assertThat(HttpUrl.parse(client.getBaseURL()).scheme(), equalTo("https"));
-        assertThat(HttpUrl.parse(client.getBaseURL()).host(), equalTo(DOMAIN));
-        assertThat(HttpUrl.parse(client.getBaseURL()).pathSize(), is(1));
-        assertThat(HttpUrl.parse(client.getBaseURL()).encodedPath(), is("/"));
+        assertThat(url, hasScheme("https"));
+        assertThat(url, hasHost(DOMAIN));
         assertThat(client.getClientId(), equalTo(CLIENT_ID));
     }
 
@@ -123,11 +122,10 @@ public class Auth0Test {
     public void shouldReturnAuthorizeUrl() throws Exception {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
 
-        assertThat(HttpUrl.parse(auth0.getAuthorizeUrl()), notNullValue());
-        assertThat(HttpUrl.parse(auth0.getAuthorizeUrl()).scheme(), equalTo("https"));
-        assertThat(HttpUrl.parse(auth0.getAuthorizeUrl()).host(), equalTo(DOMAIN));
-        assertThat(HttpUrl.parse(auth0.getAuthorizeUrl()).encodedPathSegments(), hasSize(1));
-        assertThat(HttpUrl.parse(auth0.getAuthorizeUrl()).encodedPathSegments(), contains("authorize"));
+        final HttpUrl url = HttpUrl.parse(auth0.getAuthorizeUrl());
+        assertThat(url, hasScheme("https"));
+        assertThat(url, hasHost(DOMAIN));
+        assertThat(url, hasPath("authorize"));
     }
 
     @Test
