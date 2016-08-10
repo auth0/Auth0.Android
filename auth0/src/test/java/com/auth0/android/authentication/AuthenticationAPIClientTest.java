@@ -612,7 +612,7 @@ public class AuthenticationAPIClientTest {
         mockAPI.willReturnSuccessfulChangePassword();
 
         final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
-        client.requestChangePassword(SUPPORT_AUTH0_COM, MY_CONNECTION)
+        client.resetPassword(SUPPORT_AUTH0_COM, MY_CONNECTION)
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
@@ -631,7 +631,7 @@ public class AuthenticationAPIClientTest {
     public void shouldChangePasswordSync() throws Exception {
         mockAPI.willReturnSuccessfulChangePassword();
 
-        client.requestChangePassword(SUPPORT_AUTH0_COM, MY_CONNECTION)
+        client.resetPassword(SUPPORT_AUTH0_COM, MY_CONNECTION)
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
@@ -649,7 +649,7 @@ public class AuthenticationAPIClientTest {
         mockAPI.willReturnSuccessfulChangePassword();
 
         final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
-        client.requestChangePassword(SUPPORT_AUTH0_COM, MY_CONNECTION)
+        client.resetPassword(SUPPORT_AUTH0_COM, MY_CONNECTION)
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
@@ -669,7 +669,7 @@ public class AuthenticationAPIClientTest {
     public void shouldRequestChangePasswordSync() throws Exception {
         mockAPI.willReturnSuccessfulChangePassword();
 
-        client.requestChangePassword(SUPPORT_AUTH0_COM, MY_CONNECTION)
+        client.resetPassword(SUPPORT_AUTH0_COM, MY_CONNECTION)
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
@@ -853,59 +853,6 @@ public class AuthenticationAPIClientTest {
         assertThat(body, hasEntry("refresh_token", REFRESH_TOKEN));
 
         assertThat(delegation, is(notNullValue()));
-    }
-
-    @Test
-    public void shouldStartPasswordless() throws Exception {
-        mockAPI.willReturnSuccessfulPasswordlessStart();
-
-        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
-        final Map<String, Object> parameters = ParameterBuilder.newBuilder()
-                .setConnection("email")
-                .set("send", "code")
-                .set("email", SUPPORT_AUTH0_COM)
-                .asDictionary();
-
-        client.passwordless()
-                .addParameters(parameters)
-                .start(callback);
-
-        final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
-        assertThat(request.getPath(), equalTo("/passwordless/start"));
-
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("client_id", CLIENT_ID));
-        assertThat(body, hasEntry("email", SUPPORT_AUTH0_COM));
-        assertThat(body, hasEntry("send", "code"));
-        assertThat(body, hasEntry("connection", "email"));
-
-        assertThat(callback, hasNoError());
-    }
-
-    @Test
-    public void shouldStartPasswordlessSync() throws Exception {
-        mockAPI.willReturnSuccessfulPasswordlessStart();
-
-        final Map<String, Object> parameters = ParameterBuilder.newBuilder()
-                .setConnection("email")
-                .set("send", "code")
-                .set("email", SUPPORT_AUTH0_COM)
-                .asDictionary();
-
-        client.passwordless()
-                .addParameters(parameters)
-                .execute();
-
-        final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
-        assertThat(request.getPath(), equalTo("/passwordless/start"));
-
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("client_id", CLIENT_ID));
-        assertThat(body, hasEntry("email", SUPPORT_AUTH0_COM));
-        assertThat(body, hasEntry("send", "code"));
-        assertThat(body, hasEntry("connection", "email"));
     }
 
     @Test
