@@ -32,8 +32,8 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import com.auth0.android.auth0.R;
 import com.auth0.android.Auth0;
+import com.auth0.android.auth0.R;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.result.Credentials;
 
@@ -298,7 +298,7 @@ public class WebAuthProvider {
     private void requestAuth(@NonNull Activity activity, @NonNull AuthCallback callback, int requestCode) {
         this.callback = callback;
         this.requestCode = requestCode;
-        this.client = useCodeGrant && PKCE.isAvailable() ? account.newAuthenticationAPIClient() : null;
+        this.client = useCodeGrant && PKCE.isAvailable() ? new AuthenticationAPIClient(account) : null;
         String pkgName = activity.getApplicationContext().getPackageName();
         helper = new CallbackHelper(pkgName);
 
