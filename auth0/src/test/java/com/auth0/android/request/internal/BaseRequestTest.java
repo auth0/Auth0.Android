@@ -61,6 +61,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 public class BaseRequestTest {
 
@@ -200,23 +201,18 @@ public class BaseRequestTest {
         final Response response = createJsonResponse(payload, 401);
         baseRequest.parseUnsuccessfulResponse(response);
 
-        ArgumentCaptor<String> stringCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Integer> integerCaptor = ArgumentCaptor.forClass(Integer.class);
-        verify(errorBuilder).from(stringCaptor.capture(), integerCaptor.capture());
+        verify(errorBuilder).from(eq("n=ot_a valid json {{]"), integerCaptor.capture());
         assertThat(integerCaptor.getValue(), is(401));
-        assertThat(stringCaptor.getValue(), is("n=ot_a valid json {{]"));
     }
 
     @Test
     public void shouldParseUnsuccessfulInvalidResponse() throws Exception {
-        byte[] invalidBytes = new byte[]{12,23,2,1,23,3,21,3,12};
+        byte[] invalidBytes = new byte[]{12, 23, 2, 1, 23, 3, 21, 3, 12};
         final Response response = createBytesResponse(invalidBytes, 401);
         response.body().string();    //force a IOException the next time this gets called
         baseRequest.parseUnsuccessfulResponse(response);
-
-        ArgumentCaptor<String> stringCaptor = ArgumentCaptor.forClass(String.class);
-        verify(errorBuilder).from(stringCaptor.capture(), any(Auth0Exception.class));
-        assertThat(stringCaptor.getValue(), is("Request to https://auth0.com/ failed"));
+        verify(errorBuilder).from(eq("Request to https://auth0.com/ failed"), any(Auth0Exception.class));
     }
 
     private Response createJsonResponse(String jsonPayload, int code) {
