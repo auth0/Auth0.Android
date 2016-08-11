@@ -64,6 +64,7 @@ dependencies {
     testCompile 'com.squareup.okhttp:mockwebserver:2.5.0'
     testCompile 'com.jayway.awaitility:awaitility:1.6.4'
     testCompile 'org.robolectric:robolectric:3.1'
+    testCompile 'com.android.support.test.espresso:espresso-intents:2.2.2'
 }
 
 def defineVersion() {

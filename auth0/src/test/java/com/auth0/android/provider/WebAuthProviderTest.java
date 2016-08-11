@@ -1,6 +1,8 @@
 package com.auth0.android.provider;
 
 import android.app.Activity;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.support.annotation.Nullable;
@@ -27,6 +29,16 @@ import org.robolectric.annotation.Config;
 import java.util.HashMap;
 import java.util.Map;
 
+import static android.support.test.espresso.intent.matcher.IntentMatchers.hasAction;
+import static android.support.test.espresso.intent.matcher.IntentMatchers.hasComponent;
+import static android.support.test.espresso.intent.matcher.IntentMatchers.hasData;
+import static android.support.test.espresso.intent.matcher.IntentMatchers.hasExtra;
+import static android.support.test.espresso.intent.matcher.IntentMatchers.hasFlag;
+import static android.support.test.espresso.intent.matcher.UriMatchers.hasHost;
+import static android.support.test.espresso.intent.matcher.UriMatchers.hasParamWithName;
+import static android.support.test.espresso.intent.matcher.UriMatchers.hasParamWithValue;
+import static android.support.test.espresso.intent.matcher.UriMatchers.hasPath;
+import static android.support.test.espresso.intent.matcher.UriMatchers.hasScheme;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -37,6 +49,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -144,6 +157,112 @@ public class WebAuthProviderTest {
 
         assertFalse(WebAuthProvider.resume(intentMock));
         assertFalse(WebAuthProvider.resume(0, 0, intentMock));
+    }
+
+    @Test
+    public void shouldBuildAuthorizeURI() throws Exception {
+        Activity activity = mock(Activity.class);
+        Context appContext = mock(Context.class);
+        when(activity.getApplicationContext()).thenReturn(appContext);
+        when(activity.getPackageName()).thenReturn("package");
+        when(appContext.getPackageName()).thenReturn("package");
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("custom_param_1", "custom_value_1");
+        parameters.put("custom_param_2", "custom_value_2");
+        WebAuthProvider.init(account)
+                .useCodeGrant(false)
+                .useBrowser(true)
+                .withConnection("my-connection")
+                .withState("a-state")
+                .withScope("super_scope")
+                .withParameters(parameters)
+                .start(activity, callback, REQUEST_CODE);
+
+        final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        verify(activity).startActivity(intentCaptor.capture());
+
+        Uri baseUriString = Uri.parse(account.getAuthorizeUrl());
+
+        assertThat(intentCaptor.getValue(), is(notNullValue()));
+        assertThat(intentCaptor.getValue(), hasData(hasScheme(baseUriString.getScheme())));
+        assertThat(intentCaptor.getValue().getData(), hasHost(baseUriString.getHost()));
+        assertThat(intentCaptor.getValue().getData(), hasPath(baseUriString.getPath()));
+        assertThat(intentCaptor.getValue().getData(), hasParamWithValue("connection", "my-connection"));
+        assertThat(intentCaptor.getValue().getData(), hasParamWithValue("state", "a-state"));
+        assertThat(intentCaptor.getValue().getData(), hasParamWithValue("scope", "super_scope"));
+        assertThat(intentCaptor.getValue().getData(), hasParamWithValue("custom_param_1", "custom_value_1"));
+        assertThat(intentCaptor.getValue().getData(), hasParamWithValue("custom_param_2", "custom_value_2"));
+        assertThat(intentCaptor.getValue().getData(), hasParamWithValue("client_id", account.getClientId()));
+        assertThat(intentCaptor.getValue().getData(), hasParamWithName("response_type"));
+        assertThat(intentCaptor.getValue().getData(), hasParamWithName("redirect_uri"));
+        assertThat(intentCaptor.getValue().getData(), hasParamWithName("auth0Client"));
+    }
+
+    @Test
+    public void shouldStartWithBrowser() throws Exception {
+        Activity activity = mock(Activity.class);
+        Context appContext = mock(Context.class);
+        when(activity.getApplicationContext()).thenReturn(appContext);
+        when(activity.getPackageName()).thenReturn("package");
+        when(appContext.getPackageName()).thenReturn("package");
+        WebAuthProvider.init(account)
+                .useBrowser(true)
+                .useCodeGrant(false)
+                .start(activity, callback, REQUEST_CODE);
+
+        final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        verify(activity).startActivity(intentCaptor.capture());
+
+        assertThat(intentCaptor.getValue(), is(notNullValue()));
+        assertThat(intentCaptor.getValue(), hasAction(Intent.ACTION_VIEW));
+        assertThat(intentCaptor.getValue(), hasFlag(Intent.FLAG_ACTIVITY_NO_HISTORY));
+    }
+
+    @Test
+    public void shouldStartWithWebViewAndDefaultConnection() throws Exception {
+        Activity activity = mock(Activity.class);
+        Context appContext = mock(Context.class);
+        when(activity.getApplicationContext()).thenReturn(appContext);
+        when(activity.getPackageName()).thenReturn("package");
+        when(appContext.getPackageName()).thenReturn("package");
+        WebAuthProvider.init(account)
+                .useBrowser(false)
+                .useCodeGrant(false)
+                .useFullscreen(false)
+                .start(activity, callback, REQUEST_CODE);
+
+        final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        verify(activity).startActivityForResult(intentCaptor.capture(), any(Integer.class));
+
+        final ComponentName expComponent = new ComponentName("package", WebAuthActivity.class.getName());
+        assertThat(intentCaptor.getValue(), is(notNullValue()));
+        assertThat(intentCaptor.getValue(), hasComponent(expComponent));
+        assertThat(intentCaptor.getValue(), hasExtra(WebAuthActivity.CONNECTION_NAME_EXTRA, "Username-Password-Authentication"));
+        assertThat(intentCaptor.getValue(), hasExtra(WebAuthActivity.FULLSCREEN_EXTRA, false));
+    }
+
+    @Test
+    public void shouldStartWithWebViewAndCustomConnection() throws Exception {
+        Activity activity = mock(Activity.class);
+        Context appContext = mock(Context.class);
+        when(activity.getApplicationContext()).thenReturn(appContext);
+        when(activity.getPackageName()).thenReturn("package");
+        when(appContext.getPackageName()).thenReturn("package");
+        WebAuthProvider.init(account)
+                .useBrowser(false)
+                .withConnection("my-connection")
+                .useCodeGrant(false)
+                .useFullscreen(true)
+                .start(activity, callback, REQUEST_CODE);
+
+        final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        verify(activity).startActivityForResult(intentCaptor.capture(), any(Integer.class));
+
+        final ComponentName expComponent = new ComponentName("package", WebAuthActivity.class.getName());
+        assertThat(intentCaptor.getValue(), is(notNullValue()));
+        assertThat(intentCaptor.getValue(), hasComponent(expComponent));
+        assertThat(intentCaptor.getValue(), hasExtra(WebAuthActivity.CONNECTION_NAME_EXTRA, "my-connection"));
+        assertThat(intentCaptor.getValue(), hasExtra(WebAuthActivity.FULLSCREEN_EXTRA, true));
     }
 
     @Test
