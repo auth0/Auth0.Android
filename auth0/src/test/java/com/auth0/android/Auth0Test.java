@@ -24,20 +24,28 @@
 
 package com.auth0.android;
 
+import android.content.Context;
+import android.content.res.Resources;
+
 import com.auth0.android.util.Telemetry;
 import com.squareup.okhttp.HttpUrl;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.mockito.Mockito;
 
 import static com.auth0.android.util.HttpUrlMatcher.hasHost;
 import static com.auth0.android.util.HttpUrlMatcher.hasPath;
 import static com.auth0.android.util.HttpUrlMatcher.hasScheme;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.when;
 
 public class Auth0Test {
 
@@ -50,6 +58,54 @@ public class Auth0Test {
     private static final String EU_DOMAIN = "samples.eu.auth0.com";
     private static final String AU_DOMAIN = "samples.au.auth0.com";
     private static final String OTHER_DOMAIN = "samples-test.other-subdomain.other.auth0.com";
+
+
+    @Test
+    public void shouldBuildFromResources() throws Exception {
+        Context context = Mockito.mock(Context.class);
+        Resources resources = Mockito.mock(Resources.class);
+        when(context.getResources()).thenReturn(resources);
+        when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), anyString())).thenReturn(222);
+        when(resources.getIdentifier(eq("com_auth0_domain"), eq("string"), anyString())).thenReturn(333);
+
+        when(context.getString(eq(222))).thenReturn(CLIENT_ID);
+        when(context.getString(eq(333))).thenReturn(DOMAIN);
+
+        Auth0 auth0 = Auth0.createFromResources(context);
+
+        assertThat(auth0, notNullValue());
+        assertThat(auth0.getClientId(), equalTo(CLIENT_ID));
+        assertThat(auth0.getDomainUrl(), equalTo("https://samples.auth0.com/"));
+        assertThat(auth0.getConfigurationUrl(), equalTo("https://cdn.auth0.com/"));
+    }
+
+    @Test
+    public void shouldFailToBuildFromResourcesWithoutClientID() throws Exception {
+        Context context = Mockito.mock(Context.class);
+        Resources resources = Mockito.mock(Resources.class);
+        when(context.getResources()).thenReturn(resources);
+        when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), anyString())).thenReturn(0);
+        when(resources.getIdentifier(eq("com_auth0_domain"), eq("string"), anyString())).thenReturn(333);
+
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("The 'R.string.com_auth0_client_id' value it's not defined in your project's resources file.");
+
+        Auth0.createFromResources(context);
+    }
+
+    @Test
+    public void shouldFailToBuildFromResourcesWithoutDomain() throws Exception {
+        Context context = Mockito.mock(Context.class);
+        Resources resources = Mockito.mock(Resources.class);
+        when(context.getResources()).thenReturn(resources);
+        when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), anyString())).thenReturn(222);
+        when(resources.getIdentifier(eq("com_auth0_domain"), eq("string"), anyString())).thenReturn(0);
+
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("The 'R.string.com_auth0_domain' value it's not defined in your project's resources file.");
+
+        Auth0.createFromResources(context);
+    }
 
     @Test
     public void shouldBuildWithClientIdAndDomain() throws Exception {

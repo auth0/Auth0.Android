@@ -25,6 +25,9 @@
 package com.auth0.android.authentication;
 
 
+import android.content.Context;
+import android.content.res.Resources;
+
 import com.auth0.android.Auth0;
 import com.auth0.android.result.Authentication;
 import com.auth0.android.result.Credentials;
@@ -42,6 +45,7 @@ import com.squareup.okhttp.mockwebserver.RecordedRequest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -62,6 +66,9 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.when;
 
 public class AuthenticationAPIClientTest {
 
@@ -105,6 +112,24 @@ public class AuthenticationAPIClientTest {
         assertThat(HttpUrl.parse(client.getBaseURL()).host(), equalTo(DOMAIN));
         assertThat(HttpUrl.parse(client.getBaseURL()).pathSize(), is(1));
         assertThat(HttpUrl.parse(client.getBaseURL()).encodedPath(), is("/"));
+    }
+
+    @Test
+    public void shouldCreateClientWithContextInfo() throws Exception {
+        Context context = Mockito.mock(Context.class);
+        Resources resources = Mockito.mock(Resources.class);
+        when(context.getResources()).thenReturn(resources);
+        when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), anyString())).thenReturn(222);
+        when(resources.getIdentifier(eq("com_auth0_domain"), eq("string"), anyString())).thenReturn(333);
+
+        when(context.getString(eq(222))).thenReturn(CLIENT_ID);
+        when(context.getString(eq(333))).thenReturn(DOMAIN);
+
+        AuthenticationAPIClient client = new AuthenticationAPIClient(context);
+
+        assertThat(client, is(notNullValue()));
+        assertThat(client.getClientId(), is(CLIENT_ID));
+        assertThat(client.getBaseURL(), equalTo("https://" + DOMAIN + "/"));
     }
 
     @Test

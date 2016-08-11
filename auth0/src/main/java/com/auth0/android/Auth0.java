@@ -25,6 +25,7 @@
 package com.auth0.android;
 
 
+import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -76,6 +77,27 @@ public class Auth0 {
         }
         this.configurationUrl = resolveConfiguration(configurationDomain, this.domainUrl);
         this.telemetry = new Telemetry(BuildConfig.LIBRARY_NAME, BuildConfig.VERSION_NAME);
+    }
+
+    /**
+     * Creates a new Auth0 instance with the 'com_auth0_client_id' and 'com_auth0_domain' values
+     * defined in the project String resources file.
+     * If the values are not found, IllegalArgumentException will raise.
+     *
+     * @param context a valid context
+     * @return a new Auth0 instance.
+     */
+    public static Auth0 createFromResources(@NonNull Context context) {
+        final int clientIdRes = context.getResources().getIdentifier("com_auth0_client_id", "string", context.getPackageName());
+        if (clientIdRes == 0) {
+            throw new IllegalArgumentException("The 'R.string.com_auth0_client_id' value it's not defined in your project's resources file.");
+        }
+        final int domainRes = context.getResources().getIdentifier("com_auth0_domain", "string", context.getPackageName());
+        if (domainRes == 0) {
+            throw new IllegalArgumentException("The 'R.string.com_auth0_domain' value it's not defined in your project's resources file.");
+        }
+
+        return new Auth0(context.getString(clientIdRes), context.getString(domainRes));
     }
 
     /**

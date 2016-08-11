@@ -24,6 +24,7 @@
 
 package com.auth0.android.authentication;
 
+import android.content.Context;
 import android.support.annotation.NonNull;
 
 import com.auth0.android.Auth0;
@@ -98,6 +99,16 @@ public class AuthenticationAPIClient {
      */
     public AuthenticationAPIClient(@NonNull Auth0 auth0) {
         this(auth0, new OkHttpClient(), GsonProvider.buildGson());
+    }
+
+    /**
+     * Creates a new API client instance using the 'com_auth0_client_id' and 'com_auth0_domain' values
+     * defined in the project String resources file.
+     *
+     * @param context a valid Context
+     */
+    public AuthenticationAPIClient(Context context) {
+        this(Auth0.createFromResources(context));
     }
 
     private AuthenticationAPIClient(Auth0 auth0, OkHttpClient client, Gson gson) {
