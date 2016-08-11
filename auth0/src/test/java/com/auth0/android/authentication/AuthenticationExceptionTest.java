@@ -57,7 +57,6 @@ public class AuthenticationExceptionTest {
         assertThat(ex.getCode(), is(equalTo("a_valid_error")));
     }
 
-
     @Test
     public void shouldGetPreferDescriptionOverErrorDescription() throws Exception {
         values.put(ERROR_DESCRIPTION_KEY, "a_valid_error_description");
@@ -164,6 +163,20 @@ public class AuthenticationExceptionTest {
         values.put(CODE_KEY, "access_denied");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.isAccessDenied(), is(true));
+    }
+
+    @Test
+    public void shouldHaveInvalidAuthorizeUrl() throws Exception {
+        values.put(CODE_KEY, "a0.invalid_authorize_url");
+        AuthenticationException ex = new AuthenticationException(values);
+        assertThat(ex.isInvalidAuthorizeURL(), is(true));
+    }
+
+    @Test
+    public void shouldHaveInvalidConfiguration() throws Exception {
+        values.put(CODE_KEY, "a0.invalid_configuration");
+        AuthenticationException ex = new AuthenticationException(values);
+        assertThat(ex.isInvalidConfiguration(), is(true));
     }
 
 }

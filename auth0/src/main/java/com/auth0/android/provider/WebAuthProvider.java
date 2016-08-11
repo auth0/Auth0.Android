@@ -36,6 +36,7 @@ import android.util.Log;
 import com.auth0.android.Auth0;
 import com.auth0.android.auth0.R;
 import com.auth0.android.authentication.AuthenticationAPIClient;
+import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.result.Credentials;
 
 import java.util.HashMap;
@@ -91,7 +92,8 @@ public class WebAuthProvider {
 
     private static WebAuthProvider providerInstance;
 
-    private WebAuthProvider(@NonNull Auth0 account) {
+    @VisibleForTesting
+    WebAuthProvider(@NonNull Auth0 account) {
         this.account = account;
     }
 
@@ -105,6 +107,7 @@ public class WebAuthProvider {
         private boolean useCodeGrant;
         private Map<String, Object> parameters;
         private String connectionName;
+        private PKCE pkce;
 
         Builder(Auth0 account) {
             this.account = account;
@@ -190,6 +193,12 @@ public class WebAuthProvider {
             return this;
         }
 
+        @VisibleForTesting
+        Builder withPKCE(PKCE pkce) {
+            this.pkce = pkce;
+            return this;
+        }
+
         /**
          * Begins the authentication flow.
          * Make sure to override your activity's onActivityResult() method,
@@ -208,6 +217,7 @@ public class WebAuthProvider {
             webAuth.useCodeGrant = useCodeGrant;
             webAuth.parameters = parameters;
             webAuth.connectionName = connectionName;
+            webAuth.pkce = pkce;
 
             providerInstance = webAuth;
 
@@ -278,11 +288,19 @@ public class WebAuthProvider {
 
         if (values.containsKey(KEY_ERROR)) {
             Log.e(TAG, "Error, access denied. Check that the required Permissions are granted and that the Application has this Connection configured in Auth0 Dashboard.");
-            final int message = ERROR_VALUE_ACCESS_DENIED.equalsIgnoreCase(values.get(KEY_ERROR)) ? R.string.com_auth0_lock_social_access_denied_message : R.string.com_auth0_lock_social_error_message;
-            callback.onFailure(R.string.com_auth0_lock_social_error_title, message, null);
+            final AuthenticationException ex;
+            if (ERROR_VALUE_ACCESS_DENIED.equalsIgnoreCase(values.get(KEY_ERROR))) {
+                //noinspection ThrowableInstanceNeverThrown
+                ex = new AuthenticationException("access_denied", "Permissions were not granted. Try again.");
+            } else {
+                //noinspection ThrowableInstanceNeverThrown
+                ex = new AuthenticationException("a0.invalid_configuration", "The application isn't configured properly for the social connection. Please check your Auth0's application configuration");
+            }
+            callback.onFailure(ex);
         } else if (values.containsKey(KEY_STATE) && !values.get(KEY_STATE).equals(state)) {
             Log.e(TAG, String.format("Received state doesn't match. Received %s but expected %s", values.get(KEY_STATE), state));
-            callback.onFailure(R.string.com_auth0_lock_social_error_title, R.string.com_auth0_lock_social_invalid_state, null);
+            final AuthenticationException ex = new AuthenticationException("access_denied", "The received state is invalid. Try again.");
+            callback.onFailure(ex);
         } else {
             Log.d(TAG, "Authenticated using web flow");
             if (shouldUsePKCE()) {
@@ -302,7 +320,9 @@ public class WebAuthProvider {
         helper = new CallbackHelper(pkgName);
 
         if (account.getAuthorizeUrl() == null) {
-            callback.onFailure(R.string.com_auth0_lock_social_error_title, R.string.com_auth0_lock_social_invalid_authorize_url, null);
+            final AuthenticationException ex = new AuthenticationException("a0.invalid_authorize_url", "Auth0 authorize URL not properly set. This can be related to an invalid domain.");
+            callback.onFailure(ex);
+            providerInstance = null;
             return;
         }
 
@@ -341,7 +361,7 @@ public class WebAuthProvider {
 
         if (shouldUsePKCE()) {
             try {
-                pkce = new PKCE(new AuthenticationAPIClient(account), redirectUri);
+                pkce = createPKCE(redirectUri);
                 String codeChallenge = pkce.getCodeChallenge();
                 queryParameters.put(KEY_RESPONSE_TYPE, RESPONSE_TYPE_CODE);
                 queryParameters.put(KEY_CODE_CHALLENGE, codeChallenge);
@@ -378,7 +398,11 @@ public class WebAuthProvider {
         return uri;
     }
 
-    //Test helper methods (package local)
+    private PKCE createPKCE(String redirectUri) {
+        return pkce == null ? new PKCE(new AuthenticationAPIClient(account), redirectUri) : pkce;
+    }
+
+    @VisibleForTesting
     static WebAuthProvider getInstance() {
         return providerInstance;
     }
