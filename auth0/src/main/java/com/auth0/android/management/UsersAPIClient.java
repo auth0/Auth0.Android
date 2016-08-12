@@ -30,6 +30,7 @@ import com.auth0.android.authentication.ParameterBuilder;
 import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.Request;
 import com.auth0.android.request.internal.GsonProvider;
+import com.auth0.android.request.internal.ManagementErrorBuilder;
 import com.auth0.android.request.internal.RequestFactory;
 import com.auth0.android.result.UserIdentity;
 import com.auth0.android.result.UserProfile;

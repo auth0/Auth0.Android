@@ -28,13 +28,14 @@ import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.squareup.okhttp.HttpUrl;
+
 import java.util.HashMap;
 import java.util.Map;
 
 class CallbackHelper {
 
     private static final String TAG = CallbackHelper.class.getSimpleName();
-    private static final String REDIRECT_URI_FORMAT = "%s/android/%s/callback";
     private final String packageName;
 
     public CallbackHelper(@NonNull String packageName) {
@@ -47,9 +48,19 @@ class CallbackHelper {
      * @return the callback URI.
      */
     public String getCallbackURI(@NonNull String domain) {
-        String uri = String.format(REDIRECT_URI_FORMAT, domain, packageName);
-        Log.v(TAG, "The Callback URI is: " + uri);
-        return uri;
+        HttpUrl url = HttpUrl.parse(domain);
+        if (url == null) {
+            Log.e(TAG, "The Domain is invalid and the Callback URI will not be set. You used: " + domain);
+            return null;
+        }
+        url = url.newBuilder()
+                .addPathSegment("android")
+                .addPathSegment(packageName)
+                .addPathSegment("callback")
+                .build();
+
+        Log.v(TAG, "The Callback URI is: " + url);
+        return url.toString();
     }
 
     public Map<String, String> getValuesFromUri(@NonNull Uri uri) {

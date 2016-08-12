@@ -24,6 +24,8 @@
 
 package com.auth0.android.request.internal;
 
+import android.support.annotation.VisibleForTesting;
+
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.RequestBodyBuildException;
 import com.auth0.android.authentication.ParameterBuilder;
@@ -53,10 +55,10 @@ abstract class BaseRequest<T, U extends Auth0Exception> implements Parameterizab
     protected final HttpUrl url;
     protected final OkHttpClient client;
     private final TypeAdapter<T> adapter;
-    private final Gson gson;
-    private final ParameterBuilder builder;
     private final ErrorBuilder<U> errorBuilder;
 
+    private final Gson gson;
+    private final ParameterBuilder builder;
     private BaseCallback<T, U> callback;
 
     protected BaseRequest(HttpUrl url, OkHttpClient client, Gson gson, TypeAdapter<T> adapter, ErrorBuilder<U> errorBuilder) {
@@ -64,13 +66,18 @@ abstract class BaseRequest<T, U extends Auth0Exception> implements Parameterizab
     }
 
     public BaseRequest(HttpUrl url, OkHttpClient client, Gson gson, TypeAdapter<T> adapter, ErrorBuilder<U> errorBuilder, BaseCallback<T, U> callback) {
+        this(url, client, gson, adapter, errorBuilder, callback, new HashMap<String, String>(), ParameterBuilder.newBuilder());
+    }
+
+    @VisibleForTesting
+    BaseRequest(HttpUrl url, OkHttpClient client, Gson gson, TypeAdapter<T> adapter, ErrorBuilder<U> errorBuilder, BaseCallback<T, U> callback, Map<String, String> headers, ParameterBuilder parameterBuilder) {
         this.url = url;
         this.client = client;
         this.gson = gson;
         this.adapter = adapter;
         this.callback = callback;
-        this.headers = new HashMap<>();
-        this.builder = ParameterBuilder.newBuilder();
+        this.headers = headers;
+        this.builder = parameterBuilder;
         this.errorBuilder = errorBuilder;
     }
 
@@ -101,6 +108,11 @@ abstract class BaseRequest<T, U extends Auth0Exception> implements Parameterizab
 
     protected ErrorBuilder<U> getErrorBuilder() {
         return errorBuilder;
+    }
+
+    @VisibleForTesting
+    BaseCallback<T, U> getCallback() {
+        return callback;
     }
 
     protected RequestBody buildBody() throws RequestBodyBuildException {

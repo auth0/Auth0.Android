@@ -1,6 +1,7 @@
-package com.auth0.android.management;
+package com.auth0.android.request.internal;
 
 import com.auth0.android.Auth0Exception;
+import com.auth0.android.management.ManagementException;
 import com.auth0.android.request.ErrorBuilder;
 
 import java.util.Map;
