@@ -122,6 +122,6 @@ public class PKCETest {
         ArgumentCaptor<BaseCallback> callbackCaptor = ArgumentCaptor.forClass(BaseCallback.class);
         Mockito.verify(tokenRequest).start(callbackCaptor.capture());
         callbackCaptor.getValue().onFailure(new AuthenticationException("Some error"));
-        Mockito.verify(callback).onFailure(eq(R.string.com_auth0_lock_social_error_title), eq(R.string.com_auth0_lock_social_access_denied_message), any(AuthenticationException.class));
+        Mockito.verify(callback).onFailure(any(AuthenticationException.class));
     }
 }

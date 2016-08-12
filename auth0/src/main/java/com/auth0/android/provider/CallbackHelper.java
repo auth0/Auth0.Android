@@ -26,6 +26,7 @@ package com.auth0.android.provider;
 
 import android.net.Uri;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.squareup.okhttp.HttpUrl;
@@ -67,7 +68,10 @@ class CallbackHelper {
         return asMap(uri.getQuery() != null ? uri.getQuery() : uri.getFragment());
     }
 
-    private Map<String, String> asMap(@NonNull String valueString) {
+    private Map<String, String> asMap(@Nullable String valueString) {
+        if (valueString == null) {
+            return new HashMap<>();
+        }
         final String[] entries = valueString.length() > 0 ? valueString.split("&") : new String[]{};
         Map<String, String> values = new HashMap<>(entries.length);
         for (String entry : entries) {

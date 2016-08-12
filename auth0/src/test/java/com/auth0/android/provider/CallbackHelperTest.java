@@ -40,10 +40,10 @@ import java.util.Map;
 import static com.auth0.android.util.HttpUrlMatcher.hasHost;
 import static com.auth0.android.util.HttpUrlMatcher.hasPath;
 import static com.auth0.android.util.HttpUrlMatcher.hasScheme;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.collection.IsMapWithSize.aMapWithSize;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
@@ -133,6 +133,33 @@ public class CallbackHelperTest {
         final Map<String, String> values = helper.getValuesFromUri(uri);
 
         assertThat(values, is(notNullValue()));
+        assertThat(values, IsMapWithSize.<String, String>anEmptyMap());
+    }
+
+    @Test
+    public void shouldGetEmptyValuesWhenQueryOrFragmentIsMissing() throws Exception {
+        String uriString = "https://my.website.com/some/page";
+        Uri uri = Uri.parse(uriString);
+        final Map<String, String> values = helper.getValuesFromUri(uri);
+        assertThat(values, notNullValue());
+        assertThat(values, IsMapWithSize.<String, String>anEmptyMap());
+    }
+
+    @Test
+    public void shouldGetEmptyValuesWhenQueryIsEmpty() throws Exception {
+        String uriString = "https://my.website.com/some/page?";
+        Uri uri = Uri.parse(uriString);
+        final Map<String, String> values = helper.getValuesFromUri(uri);
+        assertThat(values, notNullValue());
+        assertThat(values, IsMapWithSize.<String, String>anEmptyMap());
+    }
+
+    @Test
+    public void shouldGetEmptyValuesWhenFragmentIsEmpty() throws Exception {
+        String uriString = "https://my.website.com/some/page#";
+        Uri uri = Uri.parse(uriString);
+        final Map<String, String> values = helper.getValuesFromUri(uri);
+        assertThat(values, notNullValue());
         assertThat(values, IsMapWithSize.<String, String>anEmptyMap());
     }
 }

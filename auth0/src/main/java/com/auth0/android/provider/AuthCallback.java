@@ -26,8 +26,8 @@ package com.auth0.android.provider;
 
 import android.app.Dialog;
 import android.support.annotation.NonNull;
-import android.support.annotation.StringRes;
 
+import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.result.Credentials;
 
 /**
@@ -44,13 +44,11 @@ public interface AuthCallback {
     void onFailure(@NonNull Dialog dialog);
 
     /**
-     * Called with a title and message resource that describes the error. If a cause is available it will be sent or it will be {@code null}
+     * Called with an AuthenticationException that describes the error.
      *
-     * @param titleResource   title resource
-     * @param messageResource message resource
-     * @param cause           cause of the error
+     * @param exception cause of the error
      */
-    void onFailure(@StringRes int titleResource, @StringRes int messageResource, Throwable cause);
+    void onFailure(AuthenticationException exception);
 
     /**
      * Called when the authentication is successful using web authentication against Auth0

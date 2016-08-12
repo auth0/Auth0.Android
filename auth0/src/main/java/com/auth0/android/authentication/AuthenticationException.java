@@ -44,9 +44,14 @@ public class AuthenticationException extends Auth0Exception {
     private int statusCode;
     private Map<String, Object> values;
 
+    public AuthenticationException(String code, String description) {
+        this(DEFAULT_MESSAGE);
+        this.code = code;
+        this.description = description;
+    }
 
     public AuthenticationException(String message) {
-        this(message, null);
+        super(message);
     }
 
     public AuthenticationException(String message, Auth0Exception exception) {
@@ -114,6 +119,16 @@ public class AuthenticationException extends Auth0Exception {
             return null;
         }
         return values.get(key);
+    }
+
+    // When the Authorize URL is invalid
+    public boolean isInvalidAuthorizeURL() {
+        return "a0.invalid_authorize_url".equals(code);
+    }
+
+    // When a Social Provider Configuration is invalid
+    public boolean isInvalidConfiguration() {
+        return "a0.invalid_configuration".equals(code);
     }
 
     /// When MFA code is required to authenticate

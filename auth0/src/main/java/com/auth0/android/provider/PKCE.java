@@ -25,10 +25,10 @@
 package com.auth0.android.provider;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
 import android.util.Base64;
 import android.util.Log;
 
-import com.auth0.android.auth0.R;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.BaseCallback;
@@ -105,7 +105,7 @@ class PKCE {
                         if ("Unauthorized".equals(error.getDescription())) {
                             Log.e(TAG, "Please go to 'https://manage.auth0.com/#/applications/" + apiClient.getClientId() + "/settings' and set 'Client Type' to 'Native' to enable PKCE.");
                         }
-                        callback.onFailure(R.string.com_auth0_lock_social_error_title, R.string.com_auth0_lock_social_access_denied_message, error);
+                        callback.onFailure(error);
                     }
                 });
     }
