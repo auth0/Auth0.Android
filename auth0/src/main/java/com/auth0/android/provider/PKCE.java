@@ -52,12 +52,6 @@ class PKCE {
     private final String redirectUri;
     private final String codeChallenge;
 
-    @SuppressWarnings("unused")
-    @VisibleForTesting
-    PKCE() {
-        this(null, null);
-    }
-
     /**
      * Creates a new instance of this class with the given AuthenticationAPIClient.
      * The instance should be disposed after a call to getToken().

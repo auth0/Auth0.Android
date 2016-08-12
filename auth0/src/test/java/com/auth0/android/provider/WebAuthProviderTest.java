@@ -286,7 +286,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldResumeWithIntentWithCodeGrant() throws Exception {
         final Credentials credentials = Mockito.mock(Credentials.class);
-        final PKCE pkce = Mockito.spy(PKCE.class);
+        final PKCE pkce = Mockito.mock(PKCE.class);
         Mockito.doAnswer(new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
@@ -309,7 +309,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldClearInstanceAfterSuccessAuthentication() throws Exception {
         final Credentials credentials = Mockito.mock(Credentials.class);
-        final PKCE pkce = Mockito.spy(PKCE.class);
+        final PKCE pkce = Mockito.mock(PKCE.class);
         Mockito.doAnswer(new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
@@ -331,7 +331,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldResumeWithRequestCodeWithCodeGrant() throws Exception {
         final Credentials credentials = Mockito.mock(Credentials.class);
-        final PKCE pkce = Mockito.spy(PKCE.class);
+        final PKCE pkce = Mockito.mock(PKCE.class);
         Mockito.doAnswer(new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
