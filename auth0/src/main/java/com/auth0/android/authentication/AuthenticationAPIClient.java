@@ -108,7 +108,7 @@ public class AuthenticationAPIClient {
      * @param context a valid Context
      */
     public AuthenticationAPIClient(Context context) {
-        this(Auth0.createFromResources(context));
+        this(new Auth0(context));
     }
 
     private AuthenticationAPIClient(Auth0 auth0, OkHttpClient client, Gson gson) {

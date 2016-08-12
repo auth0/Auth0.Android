@@ -88,7 +88,7 @@ public class UsersAPIClient {
      * @param token   of the primary identity
      */
     public UsersAPIClient(Context context, String token) {
-        this(Auth0.createFromResources(context), token);
+        this(new Auth0(context), token);
     }
 
     private UsersAPIClient(Auth0 auth0, String token, OkHttpClient client, Gson gson) {

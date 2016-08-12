@@ -71,7 +71,7 @@ public class Auth0Test {
         when(context.getString(eq(222))).thenReturn(CLIENT_ID);
         when(context.getString(eq(333))).thenReturn(DOMAIN);
 
-        Auth0 auth0 = Auth0.createFromResources(context);
+        Auth0 auth0 = new Auth0(context);
 
         assertThat(auth0, notNullValue());
         assertThat(auth0.getClientId(), equalTo(CLIENT_ID));
@@ -90,7 +90,7 @@ public class Auth0Test {
         expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage("The 'R.string.com_auth0_client_id' value it's not defined in your project's resources file.");
 
-        Auth0.createFromResources(context);
+        new Auth0(context);
     }
 
     @Test
@@ -104,7 +104,7 @@ public class Auth0Test {
         expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage("The 'R.string.com_auth0_domain' value it's not defined in your project's resources file.");
 
-        Auth0.createFromResources(context);
+        new Auth0(context);
     }
 
     @Test

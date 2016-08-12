@@ -26,6 +26,7 @@
 package com.auth0.android.provider;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.support.annotation.NonNull;
@@ -236,6 +237,18 @@ public class WebAuthProvider {
      */
     public static Builder init(@NonNull Auth0 account) {
         return new Builder(account);
+    }
+
+
+    /**
+     * Initialize the WebAuthProvider instance with an Android Context. Additional settings can be configured
+     * in the Builder, like setting the connection name or authentication parameters.
+     *
+     * @param context a valid context.
+     * @return a new Builder instance to customize.
+     */
+    public static Builder init(@NonNull Context context) {
+        return new Builder(new Auth0(context));
     }
 
     /**
