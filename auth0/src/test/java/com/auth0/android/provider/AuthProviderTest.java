@@ -29,10 +29,6 @@ import android.content.Intent;
 import android.support.annotation.Nullable;
 import android.support.v4.content.PermissionChecker;
 
-import com.auth0.android.provider.AuthCallback;
-import com.auth0.android.provider.AuthProvider;
-import com.auth0.android.provider.PermissionHandler;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -62,9 +58,7 @@ public class AuthProviderTest {
 
     private static final int PERMISSION_REQUEST_CODE = 10;
     private static final int AUTHENTICATION_REQUEST_CODE = 11;
-    private static final String CONNECTION_NAME = "connectionName";
     private static final String[] PROVIDER_PERMISSIONS = new String[]{"PermissionX", "PermissionY"};
-    private static final int[] PERMISSIONS_DENIED = new int[]{PermissionChecker.PERMISSION_DENIED, PermissionChecker.PERMISSION_DENIED};
     private static final int[] PERMISSIONS_GRANTED = new int[]{PermissionChecker.PERMISSION_GRANTED, PermissionChecker.PERMISSION_GRANTED};
 
     @Before
