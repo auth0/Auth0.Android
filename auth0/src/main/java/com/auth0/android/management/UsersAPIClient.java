@@ -25,6 +25,8 @@
 package com.auth0.android.management;
 
 
+import android.content.Context;
+
 import com.auth0.android.Auth0;
 import com.auth0.android.authentication.ParameterBuilder;
 import com.auth0.android.request.ErrorBuilder;
@@ -45,7 +47,7 @@ import java.util.Map;
 
 /**
  * API client for Auth0 Management API.
- * <p>
+ * <p/>
  * <pre><code>
  * Auth0 auth0 = new Auth0("your_client_id", "your_domain");
  * UsersAPIClient client = new UsersAPIClient(auth0);
@@ -72,9 +74,21 @@ public class UsersAPIClient {
      * Creates a new API client instance providing Auth0 account info.
      *
      * @param auth0 account information
+     * @param token of the primary identity
      */
     public UsersAPIClient(Auth0 auth0, String token) {
         this(auth0, token, new OkHttpClient(), GsonProvider.buildGson());
+    }
+
+    /**
+     * Creates a new API client instance using the 'com_auth0_client_id' and 'com_auth0_domain' values
+     * defined in the project String resources file.
+     *
+     * @param context a valid Context
+     * @param token   of the primary identity
+     */
+    public UsersAPIClient(Context context, String token) {
+        this(new Auth0(context), token);
     }
 
     private UsersAPIClient(Auth0 auth0, String token, OkHttpClient client, Gson gson) {

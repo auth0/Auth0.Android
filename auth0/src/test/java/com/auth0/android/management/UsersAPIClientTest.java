@@ -25,6 +25,9 @@
 package com.auth0.android.management;
 
 
+import android.content.Context;
+import android.content.res.Resources;
+
 import com.auth0.android.Auth0;
 import com.auth0.android.result.UserIdentity;
 import com.auth0.android.result.UserProfile;
@@ -39,6 +42,7 @@ import com.squareup.okhttp.mockwebserver.RecordedRequest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.lang.reflect.Type;
 import java.util.Arrays;
@@ -55,6 +59,9 @@ import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.when;
 
 public class UsersAPIClientTest {
 
@@ -97,6 +104,24 @@ public class UsersAPIClientTest {
         UsersAPIClient client = new UsersAPIClient(new Auth0(CLIENT_ID, DOMAIN), TOKEN_PRIMARY);
         assertThat(client, is(notNullValue()));
         assertThat(client.getClientId(), equalTo(CLIENT_ID));
+        assertThat(client.getBaseURL(), equalTo("https://" + DOMAIN + "/"));
+    }
+
+    @Test
+    public void shouldCreateClientWithContextInfo() throws Exception {
+        Context context = Mockito.mock(Context.class);
+        Resources resources = Mockito.mock(Resources.class);
+        when(context.getResources()).thenReturn(resources);
+        when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), anyString())).thenReturn(222);
+        when(resources.getIdentifier(eq("com_auth0_domain"), eq("string"), anyString())).thenReturn(333);
+
+        when(context.getString(eq(222))).thenReturn(CLIENT_ID);
+        when(context.getString(eq(333))).thenReturn(DOMAIN);
+
+        UsersAPIClient client = new UsersAPIClient(context, TOKEN_PRIMARY);
+
+        assertThat(client, is(notNullValue()));
+        assertThat(client.getClientId(), is(CLIENT_ID));
         assertThat(client.getBaseURL(), equalTo("https://" + DOMAIN + "/"));
     }
 

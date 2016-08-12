@@ -41,15 +41,32 @@ First create an instance of `Auth0` with your client information
 Auth0 account = new Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}");
 ```
 
+Alternatively, you can save your client information in the `strings.xml` file using the following names:
+ 
+```xml
+<resources>
+    <string name="com_auth0_client_id">YOUR_CLIENT_ID</string>
+    <string name="com_auth0_domain">YOUR_DOMAIN</string>
+</resources>
+
+```
+
+And then create a new Auth0 instance by passing an Android Context:
+
+```java
+AuthenticationAPIClient authentication = new AuthenticationAPIClient(context);
+```
+  
+
 ### Authentication API
 
 The client provides methods to authenticate the user against Auth0 server.
  
- Create a new instance by passing the account:
+Create a new instance by passing the account:
  
- ```java
+```java
 AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
- ```
+```
 
 #### Login with database connection
 
@@ -154,14 +171,13 @@ authentication
 
 The client provides methods to link and unlink users account.
 
-Create a new instance by passing the account:
+Create a new instance by passing the account and the token:
 
 ```java
 Auth0 account = new Auth0("client id", "domain");
-UsersAPIClient apiClient = new UsersAPIClient(account, "user token");
+UsersAPIClient apiClient = new UsersAPIClient(account, "api token");
 ```
-
-
+ 
 #### Link users
 
 ```java

@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.net.Uri;
 import android.support.annotation.Nullable;
 
@@ -48,6 +49,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -84,8 +86,25 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldInit() throws Exception {
+    public void shouldInitWithAccount() throws Exception {
         WebAuthProvider.init(account)
+                .start(activity, callback, REQUEST_CODE);
+
+        assertNotNull(WebAuthProvider.getInstance());
+    }
+
+    @Test
+    public void shouldInitWithContext() throws Exception {
+        Context context = Mockito.mock(Context.class);
+        Resources resources = Mockito.mock(Resources.class);
+        when(context.getResources()).thenReturn(resources);
+        when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), anyString())).thenReturn(222);
+        when(resources.getIdentifier(eq("com_auth0_domain"), eq("string"), anyString())).thenReturn(333);
+
+        when(context.getString(eq(222))).thenReturn("clientId");
+        when(context.getString(eq(333))).thenReturn("domain");
+
+        WebAuthProvider.init(context)
                 .start(activity, callback, REQUEST_CODE);
 
         assertNotNull(WebAuthProvider.getInstance());
@@ -517,7 +536,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldHavePKCEEnabled() throws Exception{
+    public void shouldHavePKCEEnabled() throws Exception {
         WebAuthProvider.init(account)
                 .useCodeGrant(true)
                 .start(activity, callback, REQUEST_CODE);
@@ -527,7 +546,7 @@ public class WebAuthProviderTest {
 
 
     @Test
-    public void shouldHavePKCEDisabled() throws Exception{
+    public void shouldHavePKCEDisabled() throws Exception {
         WebAuthProvider.init(account)
                 .useCodeGrant(false)
                 .start(activity, callback, REQUEST_CODE);

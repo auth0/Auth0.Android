@@ -25,6 +25,7 @@
 package com.auth0.android;
 
 
+import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -48,6 +49,18 @@ public class Auth0 {
     private final HttpUrl domainUrl;
     private final HttpUrl configurationUrl;
     private Telemetry telemetry;
+
+
+    /**
+     * Creates a new Auth0 instance with the 'com_auth0_client_id' and 'com_auth0_domain' values
+     * defined in the project String resources file.
+     * If the values are not found, IllegalArgumentException will raise.
+     *
+     * @param context a valid context
+     */
+    public Auth0(@NonNull Context context) {
+        this(getResourceFromContext(context, "com_auth0_client_id"), getResourceFromContext(context, "com_auth0_domain"));
+    }
 
     /**
      * Creates a new object using clientId & domain
@@ -157,5 +170,13 @@ public class Auth0 {
         }
         String safeUrl = url.startsWith("http") ? url : "https://" + url;
         return HttpUrl.parse(safeUrl);
+    }
+
+    private static String getResourceFromContext(@NonNull Context context, String resName) {
+        final int stringRes = context.getResources().getIdentifier(resName, "string", context.getPackageName());
+        if (stringRes == 0) {
+            throw new IllegalArgumentException(String.format("The 'R.string.%s' value it's not defined in your project's resources file.", resName));
+        }
+        return context.getString(stringRes);
     }
 }
