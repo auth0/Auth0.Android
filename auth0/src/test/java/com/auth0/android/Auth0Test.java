@@ -24,7 +24,6 @@
 
 package com.auth0.android;
 
-import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.util.Telemetry;
 import com.squareup.okhttp.HttpUrl;
 
@@ -37,7 +36,6 @@ import static com.auth0.android.util.HttpUrlMatcher.hasPath;
 import static com.auth0.android.util.HttpUrlMatcher.hasScheme;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 
@@ -105,17 +103,6 @@ public class Auth0Test {
     public void shouldThrowWhenInvalidDomain() throws Exception {
         expectedException.expect(IllegalArgumentException.class);
         new Auth0(CLIENT_ID, "some invalid domain.com");
-    }
-
-    @Test
-    public void shouldBuildNewClient() throws Exception {
-        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
-        AuthenticationAPIClient client = auth0.newAuthenticationAPIClient();
-        final HttpUrl url = HttpUrl.parse(client.getBaseURL());
-        assertThat(client, is(notNullValue()));
-        assertThat(url, hasScheme("https"));
-        assertThat(url, hasHost(DOMAIN));
-        assertThat(client.getClientId(), equalTo(CLIENT_ID));
     }
 
     @Test

@@ -29,7 +29,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import com.auth0.android.auth0.BuildConfig;
-import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.util.Telemetry;
 import com.squareup.okhttp.HttpUrl;
 
@@ -98,13 +97,6 @@ public class Auth0 {
      */
     public String getConfigurationUrl() {
         return configurationUrl.toString();
-    }
-
-    /**
-     * @return a new Authentication API client using your account credentials
-     */
-    public AuthenticationAPIClient newAuthenticationAPIClient() {
-        return new AuthenticationAPIClient(this);
     }
 
     /**

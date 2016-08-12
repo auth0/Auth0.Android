@@ -146,7 +146,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldCleatInstanceAfterSuccessAuthentication() throws Exception {
+    public void shouldClearInstanceAfterSuccessAuthentication() throws Exception {
         WebAuthProvider.init(account)
                 .start(activity, callback, REQUEST_CODE);
 
@@ -155,11 +155,31 @@ public class WebAuthProviderTest {
         assertNull(WebAuthProvider.getInstance());
     }
 
+    @Test
+    public void shouldHavePKCEEnabled() throws Exception{
+        WebAuthProvider.init(account)
+                .useCodeGrant(true)
+                .start(activity, callback, REQUEST_CODE);
+
+        assertTrue(WebAuthProvider.getInstance().shouldUsePKCE());
+    }
+
+
+    @Test
+    public void shouldHavePKCEDisabled() throws Exception{
+        WebAuthProvider.init(account)
+                .useCodeGrant(false)
+                .start(activity, callback, REQUEST_CODE);
+
+        assertFalse(WebAuthProvider.getInstance().shouldUsePKCE());
+    }
+
+
+
     private Intent createValidAuthIntent() {
         Uri validUri = Uri.parse(CALLBACK_URL + SAMPLE_HASH);
         Intent intent = new Intent();
         intent.setData(validUri);
         return intent;
     }
-
 }

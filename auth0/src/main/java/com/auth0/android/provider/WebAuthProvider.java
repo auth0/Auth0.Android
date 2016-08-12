@@ -30,10 +30,11 @@ import android.content.Intent;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import android.util.Log;
 
-import com.auth0.android.auth0.R;
 import com.auth0.android.Auth0;
+import com.auth0.android.auth0.R;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.result.Credentials;
 
@@ -78,7 +79,6 @@ public class WebAuthProvider {
     private final Auth0 account;
     private AuthCallback callback;
     private int requestCode;
-    private AuthenticationAPIClient client;
     private PKCE pkce;
 
     private boolean useFullscreen;
@@ -298,7 +298,6 @@ public class WebAuthProvider {
     private void requestAuth(@NonNull Activity activity, @NonNull AuthCallback callback, int requestCode) {
         this.callback = callback;
         this.requestCode = requestCode;
-        this.client = useCodeGrant && PKCE.isAvailable() ? account.newAuthenticationAPIClient() : null;
         String pkgName = activity.getApplicationContext().getPackageName();
         helper = new CallbackHelper(pkgName);
 
@@ -327,8 +326,9 @@ public class WebAuthProvider {
         }
     }
 
-    private boolean shouldUsePKCE() {
-        return client != null;
+    @VisibleForTesting
+    boolean shouldUsePKCE() {
+        return useCodeGrant && PKCE.isAvailable();
     }
 
     private Uri buildAuthorizeUri() {
@@ -341,7 +341,7 @@ public class WebAuthProvider {
 
         if (shouldUsePKCE()) {
             try {
-                pkce = new PKCE(client, redirectUri);
+                pkce = new PKCE(new AuthenticationAPIClient(account), redirectUri);
                 String codeChallenge = pkce.getCodeChallenge();
                 queryParameters.put(KEY_RESPONSE_TYPE, RESPONSE_TYPE_CODE);
                 queryParameters.put(KEY_CODE_CHALLENGE, codeChallenge);

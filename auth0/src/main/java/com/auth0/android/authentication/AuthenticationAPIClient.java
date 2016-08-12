@@ -54,7 +54,7 @@ import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSW
 
 /**
  * API client for Auth0 Authentication API.
- * <p>
+ * <p/>
  * <pre><code>
  * Auth0 auth0 = new Auth0("your_client_id", "your_domain");
  * AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
@@ -453,10 +453,10 @@ public class AuthenticationAPIClient {
     }
 
     /**
-     * Request a change password using <a href="https://auth0.com/docs/auth-api#!#post--dbconnections-change_password">'/dbconnections/change_password'</a>
+     * Request a reset password using <a href="https://auth0.com/docs/auth-api#!#post--dbconnections-change_password">'/dbconnections/change_password'</a>
      * Example usage:
      * <pre><code>
-     * client.requestChangePassword("{email}", "{database connection name}")
+     * client.resetPassword("{email}", "{database connection name}")
      *      .start(new BaseCallback<Void>() {
      *          {@literal}Override
      *          public void onSuccess(Void payload) {}
@@ -466,12 +466,12 @@ public class AuthenticationAPIClient {
      *      });
      * </code></pre>
      *
-     * @param email      of the user that changes the password. It's also where the email will be sent with the link to perform the change password.
-     * @param connection of the database to request the change password on
+     * @param email      of the user to request the password reset. An email will be sent with the reset instructions.
+     * @param connection of the database to request the reset password on
      * @return a request to configure and start
      */
     @SuppressWarnings("WeakerAccess")
-    public DatabaseConnectionRequest<Void, AuthenticationException> requestChangePassword(@NonNull String email, @NonNull String connection) {
+    public DatabaseConnectionRequest<Void, AuthenticationException> resetPassword(@NonNull String email, @NonNull String connection) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(DB_CONNECTIONS_PATH)
                 .addPathSegment(CHANGE_PASSWORD_PATH)
@@ -728,7 +728,7 @@ public class AuthenticationAPIClient {
      * @return a request to configure and start
      */
     @SuppressWarnings("WeakerAccess")
-    public ParameterizableRequest<Void, AuthenticationException> passwordless() {
+    private ParameterizableRequest<Void, AuthenticationException> passwordless() {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(PASSWORDLESS_PATH)
                 .addPathSegment(START_PATH)
@@ -756,10 +756,10 @@ public class AuthenticationAPIClient {
 
     /**
      * Fetch the token information from Auth0, using the authorization_code grant type
-     * <p>
+     * <p/>
      * For Public Client, e.g. Android apps ,you need to provide the code_verifier
      * used to generate the challenge sent to Auth0 {@literal /authorize} method like:
-     * <p>
+     * <p/>
      * <pre>{@code
      * AuthenticationAPIClient client = new AuthenticationAPIClient(new Auth0("clientId", "domain"));
      * client
@@ -767,9 +767,9 @@ public class AuthenticationAPIClient {
      *     .setCodeVerifier("code_verifier")
      *     .start(new Callback<Credentials> {...});
      * }</pre>
-     * <p>
+     * <p/>
      * For the rest of clients, clients who can safely keep a {@literal client_secret}, you need to provide it instead like:
-     * <p>
+     * <p/>
      * <pre>{@code
      * AuthenticationAPIClient client = new AuthenticationAPIClient(new Auth0("clientId", "domain"));
      * client
