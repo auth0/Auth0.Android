@@ -46,7 +46,7 @@ public abstract class AuthProvider {
 
     @NonNull
     private final PermissionHandler handler;
-    protected AuthCallback callback;
+    private AuthCallback callback;
     private int authenticationRequestCode;
 
     public AuthProvider() {
