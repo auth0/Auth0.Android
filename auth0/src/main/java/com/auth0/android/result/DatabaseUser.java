@@ -32,7 +32,6 @@ import com.google.gson.annotations.SerializedName;
 /**
  * Auth0 user created in a Database connection.
  *
- * @see AuthenticationAPIClient#signUp(String, String)
  * @see AuthenticationAPIClient#signUp(String, String, String)
  */
 public class DatabaseUser {
