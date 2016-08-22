@@ -7,12 +7,11 @@ import android.support.annotation.Nullable;
 public interface AuthHandler {
 
     /**
-     * Get an AuthProvider that can handle a given strategy and connection name, or null if there are no
-     * providers to handle them.
+     * Tries to supply an AuthProvider for a given strategy and connection name. If it can't provide one it will return null.
      *
-     * @param strategy   to handle
-     * @param connection to handle
-     * @return an AuthProvider to handle the authentication or null if no providers are available.
+     * @param strategy   name of the strategy to provide an Auth handler for
+     * @param connection name of the connection to provide an Auth handler for
+     * @return an AuthProvider to handle the authentication or null.
      */
     @Nullable
     AuthProvider providerFor(@NonNull String strategy, @NonNull String connection);
