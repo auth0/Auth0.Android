@@ -1,0 +1,1 @@
+## [1.0.0](https://github.com/auth0/Auth0.Android/tree/1.0.0) (2015-09-15)
