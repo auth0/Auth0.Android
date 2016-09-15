@@ -54,7 +54,7 @@ Alternatively, you can save your client information in the `strings.xml` file us
 And then create a new Auth0 instance by passing an Android Context:
 
 ```java
-AuthenticationAPIClient authentication = new AuthenticationAPIClient(context);
+Auth0 account = new Auth0(context);
 ```
   
 
@@ -175,13 +175,13 @@ Create a new instance by passing the account and the token:
 
 ```java
 Auth0 account = new Auth0("client id", "domain");
-UsersAPIClient apiClient = new UsersAPIClient(account, "api token");
+UsersAPIClient users = new UsersAPIClient(account, "api token");
 ```
  
 #### Link users
 
 ```java
-apiClient
+users
     .link("primary user id", "secondary user token")
     .start(new BaseCallback<List<UserIdentity>>() {
         @Override
@@ -199,7 +199,7 @@ apiClient
 #### Unlink users
 
 ```java
-apiClient
+users
     .unlink("primary user id", "secondary user id", "secondary provider")
     .start(new BaseCallback<List<UserIdentity>>() {
         @Override
@@ -221,7 +221,7 @@ Map<String, Object> metadata = new HashMap<>();
 metadata.put("name", Arrays.asList("My", "Name", "Is"));
 metadata.put("phoneNumber", "1234567890");
 
-apiClient
+users
     .updateMetadata("user id", metadata)
     .start(new BaseCallback<UserProfile, ManagementException>() {
         @Override
