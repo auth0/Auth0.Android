@@ -23,9 +23,9 @@
   -->
 
 <resources>
-    <string name="com_auth0_lock_permission_missing_title">Missing permissions</string>
-    <string name="com_auth0_lock_permission_missing_description">Some permissions required by this provider were not granted. You can try to authenticate again or go to the application\'s permission screen in the phone settings and grant them. The missing permissions are:\n%s</string>
+    <string name="com_auth0_webauth_permission_missing_title">Missing permissions</string>
+    <string name="com_auth0_webauth_permission_missing_description">Some permissions required by this provider were not granted. You can try to authenticate again or go to the application\'s permission screen in the phone settings and grant them. The missing permissions are:\n%s</string>
 
-    <string name="com_auth0_lock_network_error">Network error</string>
-    <string name="com_auth0_lock_webview_loading_retry">Retry</string>
+    <string name="com_auth0_webauth_network_error">Network error</string>
+    <string name="com_auth0_webauth_webview_loading_retry">Retry</string>
 </resources>

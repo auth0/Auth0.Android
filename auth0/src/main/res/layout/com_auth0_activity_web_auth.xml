@@ -1,5 +1,5 @@
 <!--
-  ~ com_auth0_lock_activity_web_auth.xml
+  ~ com_auth0_activity_web_auth.xml
   ~
   ~ Copyright (c) 2016 Auth0 (http://auth0.com)
   ~
@@ -64,7 +64,7 @@
             android:layout_below="@id/com_auth0_lock_text"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="10dp"
-            android:text="@string/com_auth0_lock_webview_loading_retry" />
+            android:text="@string/com_auth0_webauth_webview_loading_retry" />
 
     </RelativeLayout>
 

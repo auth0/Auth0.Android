@@ -42,6 +42,7 @@ import android.view.WindowManager;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
@@ -71,7 +72,7 @@ public class WebAuthActivity extends AppCompatActivity {
             setFullscreenMode();
         }
 
-        setContentView(R.layout.com_auth0_lock_activity_web_auth);
+        setContentView(R.layout.com_auth0_activity_web_auth);
         final ActionBar bar = getSupportActionBar();
         if (bar != null) {
             String serviceName = getIntent().getStringExtra(CONNECTION_NAME_EXTRA);
@@ -113,7 +114,7 @@ public class WebAuthActivity extends AppCompatActivity {
 
     private void startUrlLoading() {
         if (!isNetworkAvailable()) {
-            renderLoadError(getString(R.string.com_auth0_lock_network_error));
+            renderLoadError(getString(R.string.com_auth0_webauth_network_error));
             return;
         }
 
@@ -178,9 +179,10 @@ public class WebAuthActivity extends AppCompatActivity {
             }
 
         });
-        webView.getSettings().setJavaScriptEnabled(true);
-        webView.getSettings().setSupportZoom(true);
-        webView.getSettings().setBuiltInZoomControls(true);
+        final WebSettings settings = webView.getSettings();
+        settings.setJavaScriptEnabled(true);
+        settings.setSupportZoom(true);
+        settings.setBuiltInZoomControls(true);
         webView.loadUrl(uri.toString());
     }
 

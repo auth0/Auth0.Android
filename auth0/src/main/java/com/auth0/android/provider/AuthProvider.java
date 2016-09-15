@@ -177,9 +177,9 @@ public abstract class AuthProvider {
             requestAuth(activity, authenticationRequestCode);
         } else if (callback != null) {
             Log.e(TAG, "Permission Request failed. Some permissions were not granted!");
-            String message = String.format(activity.getString(R.string.com_auth0_lock_permission_missing_description), declinedPermissions);
+            String message = String.format(activity.getString(R.string.com_auth0_webauth_permission_missing_description), declinedPermissions);
             Dialog permissionDialog = new AlertDialog.Builder(activity)
-                    .setTitle(R.string.com_auth0_lock_permission_missing_title)
+                    .setTitle(R.string.com_auth0_webauth_permission_missing_title)
                     .setMessage(message)
                     .setPositiveButton(android.R.string.ok, null)
                     .create();
