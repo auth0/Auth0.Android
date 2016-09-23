@@ -41,6 +41,7 @@ import org.robolectric.annotation.Config;
 import java.util.Collections;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 @RunWith(RobolectricGradleTestRunner.class)
@@ -65,19 +66,11 @@ public class AuthProviderTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         processAuthenticationCalled = false;
-        provider = new AuthProvider(handler) {
+        provider = new AuthProvider(handler){
 
             @Override
             protected void requestAuth(Activity activity, int requestCode) {
                 processAuthenticationCalled = true;
-            }
-
-            @Override
-            public void stop() {
-            }
-
-            @Override
-            public void clearSession() {
             }
 
             @Override
@@ -136,4 +129,29 @@ public class AuthProviderTest {
 
         Mockito.verify(handler).parseRequestResult(PERMISSION_REQUEST_CODE, PROVIDER_PERMISSIONS, PERMISSIONS_GRANTED);
     }
+
+    @Test
+    public void shouldReturnCallback() throws Exception {
+        Mockito.when(handler.areAllPermissionsGranted(activity, PROVIDER_PERMISSIONS)).thenReturn(true);
+        provider.start(activity, callback, PERMISSION_REQUEST_CODE, AUTHENTICATION_REQUEST_CODE);
+
+        assertThat(provider.getCallback(), is(callback));
+    }
+
+    @Test
+    public void shouldReturnNullCallbackIfNotStarted() throws Exception {
+        Mockito.when(handler.areAllPermissionsGranted(activity, PROVIDER_PERMISSIONS)).thenReturn(true);
+
+        assertThat(provider.getCallback(), is(nullValue()));
+    }
+
+    @Test
+    public void shouldReturnNullCallbackIfSessionCleared() throws Exception {
+        Mockito.when(handler.areAllPermissionsGranted(activity, PROVIDER_PERMISSIONS)).thenReturn(true);
+        provider.start(activity, callback, PERMISSION_REQUEST_CODE, AUTHENTICATION_REQUEST_CODE);
+        provider.clearSession();
+
+        assertThat(provider.getCallback(), is(nullValue()));
+    }
+
 }

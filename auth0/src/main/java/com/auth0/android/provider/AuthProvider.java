@@ -28,6 +28,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Intent;
+import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -83,6 +84,18 @@ public abstract class AuthProvider {
     }
 
     /**
+     * Returns the Authentication callback received in the start method to notify success and failures.
+     * The callback will be null if start was never called or if clearSession was called.
+     *
+     * @return the callback received in the start method or null if missing.
+     */
+    @Nullable
+    protected AuthCallback getCallback() {
+        return callback;
+    }
+
+
+    /**
      * Starts the authentication flow on the Identity Provider. The connection name is specified
      * by the getConnectionName method.
      * All the required Android permissions had already been granted when Start was called, so
@@ -102,6 +115,7 @@ public abstract class AuthProvider {
     /**
      * Removes any session information stored in the object.
      */
+    @CallSuper
     public void clearSession() {
         callback = null;
     }

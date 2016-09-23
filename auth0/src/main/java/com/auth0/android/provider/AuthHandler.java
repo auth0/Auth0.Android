@@ -14,5 +14,5 @@ public interface AuthHandler {
      * @return an AuthProvider to handle the authentication or null.
      */
     @Nullable
-    AuthProvider providerFor(@NonNull String strategy, @NonNull String connection);
+    AuthProvider providerFor(@Nullable String strategy, @NonNull String connection);
 }
