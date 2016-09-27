@@ -8,6 +8,8 @@ import com.auth0.android.result.Authentication;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.UserProfile;
 
+import org.hamcrest.CoreMatchers;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -49,20 +51,26 @@ public class ProfileRequestTest {
     @Test
     public void shouldAddParameters() throws Exception {
         final Map params = mock(Map.class);
-        profileRequest.addParameters(params);
+        final ProfileRequest req = profileRequest.addParameters(params);
         verify(credentialsMockRequest).addAuthenticationParameters(params);
+        Assert.assertThat(req, is(CoreMatchers.notNullValue()));
+        Assert.assertThat(req, is(profileRequest));
     }
 
     @Test
     public void shouldSetScope() throws Exception {
-        profileRequest.setScope("oauth2 offline_access profile");
+        final ProfileRequest req = profileRequest.setScope("oauth2 offline_access profile");
         verify(credentialsMockRequest).setScope("oauth2 offline_access profile");
+        Assert.assertThat(req, is(CoreMatchers.notNullValue()));
+        Assert.assertThat(req, is(profileRequest));
     }
 
     @Test
     public void shouldSetConnection() throws Exception {
-        profileRequest.setConnection("my-connection");
+        final ProfileRequest req = profileRequest.setConnection("my-connection");
         verify(credentialsMockRequest).setConnection("my-connection");
+        Assert.assertThat(req, is(CoreMatchers.notNullValue()));
+        Assert.assertThat(req, is(profileRequest));
     }
 
     @Test

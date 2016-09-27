@@ -6,6 +6,7 @@ import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.DatabaseUser;
 
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,34 +44,60 @@ public class SignUpRequestTest {
     @Test
     public void shouldAddSignUpParameters() throws Exception {
         final Map params = mock(Map.class);
-        signUpRequest.addSignUpParameters(params);
+        final SignUpRequest req = signUpRequest.addSignUpParameters(params);
         verify(dbMockRequest).addParameters(params);
+        Assert.assertThat(req, is(notNullValue()));
+        Assert.assertThat(req, is(signUpRequest));
     }
 
     @Test
     public void shouldAddAuthenticationParameters() throws Exception {
         final Map params = mock(Map.class);
-        signUpRequest.addAuthenticationParameters(params);
+        final SignUpRequest req = signUpRequest.addAuthenticationParameters(params);
         verify(authenticationMockRequest).addAuthenticationParameters(params);
+        Assert.assertThat(req, is(notNullValue()));
+        Assert.assertThat(req, is(signUpRequest));
     }
 
     @Test
     public void shouldSetScope() throws Exception {
-        signUpRequest.setScope("oauth2 offline_access profile");
+        final SignUpRequest req = signUpRequest.setScope("oauth2 offline_access profile");
         verify(authenticationMockRequest).setScope("oauth2 offline_access profile");
+        Assert.assertThat(req, is(notNullValue()));
+        Assert.assertThat(req, is(signUpRequest));
     }
 
     @Test
     public void shouldSetDevice() throws Exception {
-        signUpRequest.setDevice("nexus-5x");
+        final AuthenticationRequest req = signUpRequest.setDevice("nexus-5x");
         verify(authenticationMockRequest).setDevice("nexus-5x");
+        Assert.assertThat(req, is(notNullValue()));
+        Assert.assertThat(req, Matchers.<AuthenticationRequest>is(signUpRequest));
+    }
+
+    @Test
+    public void shouldSetGrantType() throws Exception {
+        final AuthenticationRequest req = signUpRequest.setGrantType("token");
+        verify(authenticationMockRequest).setGrantType("token");
+        Assert.assertThat(req, is(notNullValue()));
+        Assert.assertThat(req, Matchers.<AuthenticationRequest>is(signUpRequest));
+    }
+
+    @Test
+    public void shouldSetAccessToken() throws Exception {
+        final AuthenticationRequest req = signUpRequest.setAccessToken("super-access-token");
+        verify(authenticationMockRequest).setAccessToken("super-access-token");
+        Assert.assertThat(req, is(notNullValue()));
+        Assert.assertThat(req, Matchers.<AuthenticationRequest>is(signUpRequest));
     }
 
     @Test
     public void shouldSetConnection() throws Exception {
-        signUpRequest.setConnection("my-connection");
+        final SignUpRequest req = signUpRequest.setConnection("my-connection");
         verify(dbMockRequest).setConnection("my-connection");
         verify(authenticationMockRequest).setConnection("my-connection");
+        Assert.assertThat(req, is(notNullValue()));
+        Assert.assertThat(req, is(signUpRequest));
     }
 
     @Test
