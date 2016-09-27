@@ -26,7 +26,6 @@ package com.auth0.android.provider;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
-import android.util.Base64;
 import android.util.Log;
 
 import com.auth0.android.authentication.AuthenticationAPIClient;
@@ -34,18 +33,11 @@ import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.result.Credentials;
 
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-
 /**
  * Performs code exchange according to Proof Key for Code Exchange (PKCE) spec.
  */
 class PKCE {
     private static final String TAG = PKCE.class.getSimpleName();
-    private static final String US_ASCII = "US-ASCII";
-    private static final String SHA_256 = "SHA-256";
 
     private final AuthenticationAPIClient apiClient;
     private final String codeVerifier;
@@ -62,26 +54,24 @@ class PKCE {
      * @see #isAvailable()
      */
     public PKCE(@NonNull AuthenticationAPIClient apiClient, String redirectUri) {
-        this(apiClient, redirectUri, generateCodeVerifier());
+        this(apiClient, new AlgorithmHelper(), redirectUri);
     }
 
-    PKCE(@NonNull AuthenticationAPIClient apiClient, @NonNull String redirectUri, @NonNull String codeVerifier) {
+    @VisibleForTesting
+    PKCE(@NonNull AuthenticationAPIClient apiClient, @NonNull AlgorithmHelper algorithmHelper, @NonNull String redirectUri) {
         this.apiClient = apiClient;
         this.redirectUri = redirectUri;
-        this.codeVerifier = codeVerifier;
-        this.codeChallenge = generateCodeChallenge();
+        this.codeVerifier = algorithmHelper.generateCodeVerifier();
+        this.codeChallenge = algorithmHelper.generateCodeChallenge(codeVerifier);
     }
 
+    /**
+     * Returns the Code Challenge generated using a Code Verifier.
+     *
+     * @return the Code Challenge for this session.
+     */
     public String getCodeChallenge() {
         return codeChallenge;
-    }
-
-    private String generateCodeChallenge() {
-        byte[] input = asASCIIBytes(codeVerifier);
-        byte[] signature = SHA256(input);
-        String challenge = Base64.encodeToString(signature, Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
-        Log.d(TAG, "Generated code challenge is " + challenge);
-        return challenge;
     }
 
     /**
@@ -117,45 +107,17 @@ class PKCE {
      * @return if this device can use PKCE flow or not.
      */
     public static boolean isAvailable() {
+        return isAvailable(new AlgorithmHelper());
+    }
+
+    @VisibleForTesting
+    static boolean isAvailable(@NonNull AlgorithmHelper algorithmHelper) {
         try {
-            byte[] input = asASCIIBytes("test");
-            SHA256(input);
+            byte[] input = algorithmHelper.getASCIIBytes("test");
+            algorithmHelper.getSHA256(input);
         } catch (Exception ignored) {
             return false;
         }
         return true;
-    }
-
-    private static byte[] asASCIIBytes(String value) {
-        byte[] input;
-        try {
-            input = value.getBytes(US_ASCII);
-        } catch (UnsupportedEncodingException e) {
-            Log.e(TAG, "Could not convert string to an ASCII byte array", e);
-            throw new IllegalStateException("Could not convert string to an ASCII byte array", e);
-        }
-        return input;
-    }
-
-    private static byte[] SHA256(byte[] input) {
-        byte[] signature;
-        try {
-            MessageDigest md = MessageDigest.getInstance(SHA_256);
-            md.update(input, 0, input.length);
-            signature = md.digest();
-        } catch (NoSuchAlgorithmException e) {
-            Log.e(TAG, "Failed to get SHA-256 signature", e);
-            throw new IllegalStateException("Failed to get SHA-256 signature", e);
-        }
-        return signature;
-    }
-
-    private static String generateCodeVerifier() {
-        SecureRandom sr = new SecureRandom();
-        byte[] code = new byte[32];
-        sr.nextBytes(code);
-        String verifier = Base64.encodeToString(code, Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
-        Log.d(TAG, "Generated code verifier is " + verifier);
-        return verifier;
     }
 }

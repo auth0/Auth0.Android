@@ -1,5 +1,7 @@
 package com.auth0.android.authentication;
 
+import com.auth0.android.Auth0Exception;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -11,6 +13,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 @SuppressWarnings("ThrowableInstanceNeverThrown")
@@ -108,6 +111,18 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
+    public void shouldReturnNullIfMapDoesNotExist() throws Exception {
+        AuthenticationException ex1 = new AuthenticationException("code", "description");
+        AuthenticationException ex2 = new AuthenticationException("message");
+        AuthenticationException ex3 = new AuthenticationException("code", new Auth0Exception("message"));
+        AuthenticationException ex4 = new AuthenticationException("payload", 1);
+        assertThat(ex1.getValue("key"), is(nullValue()));
+        assertThat(ex2.getValue("key"), is(nullValue()));
+        assertThat(ex3.getValue("key"), is(nullValue()));
+        assertThat(ex4.getValue("key"), is(nullValue()));
+    }
+
+    @Test
     public void shouldRequireMultifactor() throws Exception {
         values.put(CODE_KEY, "a0.mfa_required");
         AuthenticationException ex = new AuthenticationException(values);
@@ -177,6 +192,13 @@ public class AuthenticationExceptionTest {
         values.put(CODE_KEY, "a0.invalid_configuration");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.isInvalidConfiguration(), is(true));
+    }
+
+    @Test
+    public void shouldHavePasswordLeaked() throws Exception {
+        values.put(CODE_KEY, "password_leaked");
+        AuthenticationException ex = new AuthenticationException(values);
+        assertThat(ex.isPasswordLeaked(), is(true));
     }
 
 }

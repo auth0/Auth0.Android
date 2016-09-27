@@ -24,7 +24,6 @@
 
 package com.auth0.android.provider;
 
-import com.auth0.android.auth0.R;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.authentication.request.TokenRequest;
@@ -40,19 +39,27 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.robolectric.RobolectricGradleTestRunner;
+import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+
+import java.io.UnsupportedEncodingException;
+import java.security.NoSuchAlgorithmException;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-@RunWith(RobolectricGradleTestRunner.class)
+@RunWith(RobolectricTestRunner.class)
 @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 18, manifest = Config.NONE)
 public class PKCETest {
 
@@ -70,7 +77,7 @@ public class PKCETest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        pkce = new PKCE(apiClient, REDIRECT_URI, CODE_VERIFIER);
+        pkce = new PKCE(apiClient, new AlgorithmHelperMock(CODE_VERIFIER), REDIRECT_URI);
     }
 
     @Test
@@ -98,30 +105,53 @@ public class PKCETest {
 
     @Test
     public void shouldGetToken() throws Exception {
-        TokenRequest tokenRequest = Mockito.mock(TokenRequest.class);
-        Mockito.when(apiClient.token(AUTHORIZATION_CODE, REDIRECT_URI)).thenReturn(tokenRequest);
-        Mockito.when(tokenRequest.setCodeVerifier(CODE_VERIFIER)).thenReturn(tokenRequest);
+        TokenRequest tokenRequest = mock(TokenRequest.class);
+        when(apiClient.token(AUTHORIZATION_CODE, REDIRECT_URI)).thenReturn(tokenRequest);
+        when(tokenRequest.setCodeVerifier(CODE_VERIFIER)).thenReturn(tokenRequest);
         pkce.getToken(AUTHORIZATION_CODE, callback);
-        Mockito.verify(apiClient).token(AUTHORIZATION_CODE, REDIRECT_URI);
-        Mockito.verify(tokenRequest).setCodeVerifier(CODE_VERIFIER);
+        verify(apiClient).token(AUTHORIZATION_CODE, REDIRECT_URI);
+        verify(tokenRequest).setCodeVerifier(CODE_VERIFIER);
         ArgumentCaptor<BaseCallback> callbackCaptor = ArgumentCaptor.forClass(BaseCallback.class);
-        Mockito.verify(tokenRequest).start(callbackCaptor.capture());
-        Credentials credentials = Mockito.mock(Credentials.class);
+        verify(tokenRequest).start(callbackCaptor.capture());
+        Credentials credentials = mock(Credentials.class);
         callbackCaptor.getValue().onSuccess(credentials);
-        Mockito.verify(callback).onSuccess(credentials);
+        verify(callback).onSuccess(credentials);
     }
 
     @Test
     public void shouldFailToGetToken() throws Exception {
-        TokenRequest tokenRequest = Mockito.mock(TokenRequest.class);
-        Mockito.when(apiClient.token(AUTHORIZATION_CODE, REDIRECT_URI)).thenReturn(tokenRequest);
-        Mockito.when(tokenRequest.setCodeVerifier(CODE_VERIFIER)).thenReturn(tokenRequest);
+        TokenRequest tokenRequest = mock(TokenRequest.class);
+        when(apiClient.token(AUTHORIZATION_CODE, REDIRECT_URI)).thenReturn(tokenRequest);
+        when(tokenRequest.setCodeVerifier(CODE_VERIFIER)).thenReturn(tokenRequest);
         pkce.getToken(AUTHORIZATION_CODE, callback);
-        Mockito.verify(apiClient).token(AUTHORIZATION_CODE, REDIRECT_URI);
-        Mockito.verify(tokenRequest).setCodeVerifier(CODE_VERIFIER);
+        verify(apiClient).token(AUTHORIZATION_CODE, REDIRECT_URI);
+        verify(tokenRequest).setCodeVerifier(CODE_VERIFIER);
         ArgumentCaptor<BaseCallback> callbackCaptor = ArgumentCaptor.forClass(BaseCallback.class);
-        Mockito.verify(tokenRequest).start(callbackCaptor.capture());
+        verify(tokenRequest).start(callbackCaptor.capture());
         callbackCaptor.getValue().onFailure(new AuthenticationException("Some error"));
-        Mockito.verify(callback).onFailure(any(AuthenticationException.class));
+        verify(callback).onFailure(any(AuthenticationException.class));
+    }
+
+    @Test
+    public void shouldNotHavePKCEAvailableIfSHA256IsNotAvailable() throws Exception {
+        AlgorithmHelper algorithmHelper = Mockito.mock(AlgorithmHelper.class);
+        when(algorithmHelper.getSHA256(any(byte[].class))).thenThrow(NoSuchAlgorithmException.class);
+        assertFalse(PKCE.isAvailable(algorithmHelper));
+    }
+
+    @Test
+    public void shouldNotHavePKCEAvailableIfASCIIIsNotAvailable() throws Exception {
+        AlgorithmHelper algorithmHelper = Mockito.mock(AlgorithmHelper.class);
+        when(algorithmHelper.getASCIIBytes(anyString())).thenThrow(UnsupportedEncodingException.class);
+        assertFalse(PKCE.isAvailable(algorithmHelper));
+    }
+
+    @Test
+    public void shouldHavePKCEAvailable() throws Exception {
+        AlgorithmHelper algorithmHelper = Mockito.mock(AlgorithmHelper.class);
+        when(algorithmHelper.getSHA256(any(byte[].class))).thenReturn(new byte[]{1, 2, 1, 2, 1, 2, 1, 2, 1});
+        when(algorithmHelper.getASCIIBytes(anyString())).thenReturn(new byte[]{1, 2, 1, 2, 1, 2, 1, 2, 1});
+
+        assertTrue(PKCE.isAvailable(algorithmHelper));
     }
 }

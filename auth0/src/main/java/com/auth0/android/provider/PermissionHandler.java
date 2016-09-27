@@ -26,6 +26,7 @@ package com.auth0.android.provider;
 
 import android.app.Activity;
 import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.PermissionChecker;
@@ -126,5 +127,10 @@ class PermissionHandler {
             Log.w(TAG, String.format("%d permissions were explicitly declined by the user.", declinedPermissions.size()));
         }
         return declinedPermissions;
+    }
+
+    @VisibleForTesting
+    int getLastRequestCode(){
+        return lastRequestCode;
     }
 }
