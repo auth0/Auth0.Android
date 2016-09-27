@@ -31,6 +31,7 @@ import android.content.Intent;
 import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import android.util.Log;
 
 import com.auth0.android.auth0.R;
@@ -171,6 +172,11 @@ public abstract class AuthProvider {
     private void requestPermissions(Activity activity, int requestCode) {
         String[] permissions = getRequiredAndroidPermissions();
         handler.requestPermissions(activity, permissions, requestCode);
+    }
+
+    @VisibleForTesting
+    PermissionHandler getPermissionHandler(){
+        return handler;
     }
 
     /**

@@ -26,6 +26,7 @@ package com.auth0.android.management;
 
 
 import android.content.Context;
+import android.support.annotation.VisibleForTesting;
 
 import com.auth0.android.Auth0;
 import com.auth0.android.authentication.ParameterBuilder;
@@ -77,7 +78,7 @@ public class UsersAPIClient {
      * @param token of the primary identity
      */
     public UsersAPIClient(Auth0 auth0, String token) {
-        this(auth0, token, new OkHttpClient(), GsonProvider.buildGson());
+        this(auth0, new RequestFactory(token), new OkHttpClient(), GsonProvider.buildGson());
     }
 
     /**
@@ -91,11 +92,16 @@ public class UsersAPIClient {
         this(new Auth0(context), token);
     }
 
-    private UsersAPIClient(Auth0 auth0, String token, OkHttpClient client, Gson gson) {
+    @VisibleForTesting
+    UsersAPIClient(Auth0 auth0, RequestFactory factory) {
+        this(auth0, factory, new OkHttpClient(), GsonProvider.buildGson());
+    }
+
+    private UsersAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClient client, Gson gson) {
         this.auth0 = auth0;
         this.client = client;
         this.gson = gson;
-        this.factory = new RequestFactory(token);
+        this.factory = factory;
         this.mgmtErrorBuilder = new ManagementErrorBuilder();
         final Telemetry telemetry = auth0.getTelemetry();
         if (telemetry != null) {
