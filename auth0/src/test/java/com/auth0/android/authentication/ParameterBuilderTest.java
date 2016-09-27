@@ -40,6 +40,7 @@ import static org.hamcrest.Matchers.equalToIgnoringCase;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.collection.IsMapWithSize.anEmptyMap;
 import static org.junit.Assert.assertThat;
 
 public class ParameterBuilderTest {
@@ -137,6 +138,16 @@ public class ParameterBuilderTest {
         parameters.put("null", null);
         assertThat(builder.addAll(parameters).asDictionary(), hasEntry("key", "value"));
         assertThat(builder.addAll(parameters).asDictionary(), not(hasEntry("null", null)));
+    }
+
+    @Test
+    public void shouldClearAllValues() throws Exception {
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("key", "value");
+        builder.addAll(parameters);
+        assertThat(builder.asDictionary(), hasEntry("key", "value"));
+        builder.clearAll();
+        assertThat(builder.asDictionary(), anEmptyMap());
     }
 
     @Test
