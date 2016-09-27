@@ -29,6 +29,7 @@ import android.content.Context;
 import android.content.res.Resources;
 
 import com.auth0.android.Auth0;
+import com.auth0.android.request.internal.RequestFactory;
 import com.auth0.android.result.Authentication;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.DatabaseUser;
@@ -36,6 +37,7 @@ import com.auth0.android.result.Delegation;
 import com.auth0.android.result.UserProfile;
 import com.auth0.android.util.AuthenticationAPI;
 import com.auth0.android.util.MockAuthenticationCallback;
+import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -66,8 +68,12 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class AuthenticationAPIClientTest {
@@ -100,6 +106,34 @@ public class AuthenticationAPIClientTest {
     @After
     public void tearDown() throws Exception {
         mockAPI.shutdown();
+    }
+
+    @Test
+    public void shouldSetUserAgent() throws Exception {
+        RequestFactory factory = mock(RequestFactory.class);
+        AuthenticationAPIClient client = new AuthenticationAPIClient(new Auth0(CLIENT_ID, DOMAIN), factory);
+        client.setUserAgent("nexus-5x");
+        verify(factory).setUserAgent("nexus-5x");
+    }
+
+    @Test
+    public void shouldSetTelemetryIfPresent() throws Exception {
+        final Telemetry telemetry = mock(Telemetry.class);
+        when(telemetry.getValue()).thenReturn("the-telemetry-data");
+        RequestFactory factory = mock(RequestFactory.class);
+        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
+        auth0.setTelemetry(telemetry);
+        new AuthenticationAPIClient(auth0, factory);
+        verify(factory).setClientInfo("the-telemetry-data");
+    }
+
+    @Test
+    public void shouldNotSetTelemetryIfMissing() throws Exception {
+        RequestFactory factory = mock(RequestFactory.class);
+        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
+        auth0.doNotSendTelemetry();
+        new AuthenticationAPIClient(auth0, factory);
+        verify(factory, never()).setClientInfo(any(String.class));
     }
 
     @Test

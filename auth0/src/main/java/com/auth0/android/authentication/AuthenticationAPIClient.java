@@ -26,6 +26,7 @@ package com.auth0.android.authentication;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
 
 import com.auth0.android.Auth0;
 import com.auth0.android.authentication.request.DatabaseConnectionRequest;
@@ -98,7 +99,7 @@ public class AuthenticationAPIClient {
      * @param auth0 account information
      */
     public AuthenticationAPIClient(@NonNull Auth0 auth0) {
-        this(auth0, new OkHttpClient(), GsonProvider.buildGson());
+        this(auth0, new RequestFactory(), new OkHttpClient(), GsonProvider.buildGson());
     }
 
     /**
@@ -111,11 +112,16 @@ public class AuthenticationAPIClient {
         this(new Auth0(context));
     }
 
-    private AuthenticationAPIClient(Auth0 auth0, OkHttpClient client, Gson gson) {
+    @VisibleForTesting
+    AuthenticationAPIClient(Auth0 auth0, RequestFactory factory) {
+        this(auth0, factory, new OkHttpClient(), GsonProvider.buildGson());
+    }
+
+    private AuthenticationAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClient client, Gson gson) {
         this.auth0 = auth0;
         this.client = client;
         this.gson = gson;
-        this.factory = new RequestFactory();
+        this.factory = factory;
         this.authErrorBuilder = new AuthenticationErrorBuilder();
         final Telemetry telemetry = auth0.getTelemetry();
         if (telemetry != null) {
