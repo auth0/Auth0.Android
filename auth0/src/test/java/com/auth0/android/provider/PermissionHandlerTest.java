@@ -30,7 +30,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 23)
+@Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 23, manifest = Config.NONE)
 public class PermissionHandlerTest {
 
     private PermissionHandler handler;

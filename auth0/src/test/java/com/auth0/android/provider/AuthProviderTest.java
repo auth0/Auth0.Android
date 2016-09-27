@@ -39,7 +39,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
-import org.robolectric.RobolectricGradleTestRunner;
+import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import java.util.Arrays;
@@ -53,7 +53,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 
-@RunWith(RobolectricGradleTestRunner.class)
+@RunWith(RobolectricTestRunner.class)
 @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 21, manifest = Config.NONE)
 public class AuthProviderTest {
 
@@ -133,6 +133,8 @@ public class AuthProviderTest {
 
     @Test
     public void shouldClearSession() throws Exception {
+        assertThat(provider.getCallback(), is(nullValue()));
+        provider.start(activity, callback, PERMISSION_REQUEST_CODE, AUTHENTICATION_REQUEST_CODE);
         assertThat(provider.getCallback(), is(notNullValue()));
         provider.clearSession();
         assertThat(provider.getCallback(), is(nullValue()));
