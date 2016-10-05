@@ -244,37 +244,6 @@ First go to [Auth0 Dashboard](https://manage.auth0.com/#/applications) and go to
 https://{YOUR_AUTH0_DOMAIN}/android/{YOUR_APP_PACKAGE_NAME}/callback
 ```
 
-#### Configuration: Using the WebView
-
-Open your app's `AndroidManifest.xml` file and add the following permissions.
-
-```xml
-<uses-permission android:name="android.permission.INTERNET" />
-<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-```
-
-> The `ACCESS_NETWORK_STATE` permission it's not mandatory, but used by the WebAuthActivity to check for internet availability before executing a request.
-
-Also register the WebAuthActivity inside the `application` tag like
-
-
-```xml
-    <application android:theme="@style/AppTheme">
-
-        <!-- ... -->
-        
-        <activity
-            android:name="com.auth0.android.provider.WebAuthActivity"
-            android:theme="@style/MyAppTheme"/>
-            
-        <!-- ... -->
-
-    </application>
-```
-
-Finally, define a constant like `WEB_REQ_CODE` that holds the request code (an `int`), that will be sent back with the intent once the authentication is finished in the webview.
-
-
 #### Configuration: Using the Browser
 
 Open your app's `AndroidManifest.xml` file and add the following permission.
@@ -343,6 +312,40 @@ public class MyActivity extends Activity {
 
 ```
 
+#### Configuration: Using the WebView [DEPRECATED]
+
+**NOTICE:** Using the WebView to perform a login has been [deprecated by Google](https://developers.googleblog.com/2016/08/modernizing-oauth-interactions-in-native-apps.html). Any methods related to this library's `WebViewActivity` had been annotated as deprecated and will be removed in a future release. Please, [use the Browser](#configuration-using-the-browser) for any web-based authentication.
+
+Open your app's `AndroidManifest.xml` file and add the following permissions.
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+```
+
+> The `ACCESS_NETWORK_STATE` permission it's not mandatory, but used by the WebAuthActivity to check for internet availability before executing a request.
+
+Also register the WebAuthActivity inside the `application` tag like
+
+
+```xml
+    <application android:theme="@style/AppTheme">
+
+        <!-- ... -->
+        
+        <activity
+            android:name="com.auth0.android.provider.WebAuthActivity"
+            android:theme="@style/MyAppTheme"/>
+            
+        <!-- ... -->
+
+    </application>
+```
+
+Finally, define a constant like `WEB_REQ_CODE` that holds the request code (an `int`), that will be sent back with the intent once the authentication is finished in the webview.
+
+
+
 #### Authenticate with any Auth0 connection
 
 ```java
@@ -363,14 +366,16 @@ WebAuthProvider.init(account)
                 .start(MainActivity.this, authCallback, WEB_REQ_CODE);
 ```
 
-#### Use browser instead of WebView
+#### Use WebView instead of Browser [DEPRECATED]
+
+**NOTICE:** Using the WebView to perform a login has been [deprecated by Google](https://developers.googleblog.com/2016/08/modernizing-oauth-interactions-in-native-apps.html). Any methods related to this library's `WebViewActivity` had been annotated as deprecated and will be removed in a future release. Please, [use the Browser](#configuration-using-the-browser) for any web-based authentication.
 
 ```java
 WebAuthProvider.init(account)
-                .useBrowser(true)
+                .useBrowser(false)
                 .start(MainActivity.this, authCallback, WEB_REQ_CODE);
 ```
-> Make sure to check the callback url and manifest configuration explained above.
+> The default behaviour for all authentications requested by the `WebAuthProvider` is to use Browser. Make sure to check the callback url and manifest configuration explained above.
 
 
 #### Specify scope
