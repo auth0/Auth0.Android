@@ -35,7 +35,6 @@ import android.support.annotation.VisibleForTesting;
 import android.util.Log;
 
 import com.auth0.android.Auth0;
-import com.auth0.android.auth0.R;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.result.Credentials;
@@ -46,8 +45,7 @@ import java.util.UUID;
 
 /**
  * OAuth2 Web Authentication Provider.
- * It can use an external browser by sending the {@link android.content.Intent#ACTION_VIEW} intent, or also the {@link WebAuthActivity}.
- * This behaviour is changed using {@link WebAuthProvider#useBrowser()}, and defaults to use browser.
+ * It will use an external Browser by sending the {@link android.content.Intent#ACTION_VIEW} intent.
  */
 public class WebAuthProvider {
 
@@ -127,7 +125,10 @@ public class WebAuthProvider {
          * If the class authenticates with an external browser or not.
          *
          * @param useBrowser if the authentication is handled in a Browser.
+         * @return the current Builder instance
+         * @deprecated This method has been deprecated since Google is no longer supporting WebViews to perform login.
          */
+        @Deprecated
         public Builder useBrowser(boolean useBrowser) {
             this.useBrowser = useBrowser;
             return this;
@@ -138,7 +139,10 @@ public class WebAuthProvider {
          * Browser authentication.
          *
          * @param useFullscreen if the activity should be fullscreen or not.
+         * @return the current Builder instance
+         * @deprecated This method has been deprecated since Google is no longer supporting WebViews to perform login.
          */
+        @Deprecated
         public Builder useFullscreen(boolean useFullscreen) {
             this.useFullscreen = useFullscreen;
             return this;
@@ -148,6 +152,7 @@ public class WebAuthProvider {
          * Use a custom state in the requests
          *
          * @param state to use in the requests
+         * @return the current Builder instance
          */
         public Builder withState(@NonNull String state) {
             this.state = state;
@@ -158,6 +163,7 @@ public class WebAuthProvider {
          * Give a scope for this request.
          *
          * @param scope to request.
+         * @return the current Builder instance
          */
         public Builder withScope(@NonNull String scope) {
             this.scope = scope;
@@ -168,6 +174,7 @@ public class WebAuthProvider {
          * Choose the grant type for this request.
          *
          * @param useCodeGrant whether use code or implicit grant type
+         * @return the current Builder instance
          */
         public Builder useCodeGrant(boolean useCodeGrant) {
             this.useCodeGrant = useCodeGrant;
@@ -178,6 +185,7 @@ public class WebAuthProvider {
          * Use extra parameters on the request
          *
          * @param parameters to add
+         * @return the current Builder instance
          */
         public Builder withParameters(@Nullable Map<String, Object> parameters) {
             this.parameters = parameters != null ? new HashMap<>(parameters) : new HashMap<String, Object>();
@@ -188,6 +196,7 @@ public class WebAuthProvider {
          * Use the given connection instead of the default 'auth0'.
          *
          * @param connectionName to use
+         * @return the current Builder instance
          */
         public Builder withConnection(@NonNull String connectionName) {
             this.connectionName = connectionName;
