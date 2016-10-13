@@ -244,39 +244,6 @@ First go to [Auth0 Dashboard](https://manage.auth0.com/#/applications) and go to
 https://{YOUR_AUTH0_DOMAIN}/android/{YOUR_APP_PACKAGE_NAME}/callback
 ```
 
-#### Configuration: Using the WebView
-
-Open your app's `AndroidManifest.xml` file and add the following permissions.
-
-```xml
-<uses-permission android:name="android.permission.INTERNET" />
-<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-```
-
-> The `ACCESS_NETWORK_STATE` permission it's not mandatory, but used by the WebAuthActivity to check for internet availability before executing a request.
-
-Also register the WebAuthActivity inside the `application` tag like
-
-
-```xml
-    <application android:theme="@style/AppTheme">
-
-        <!-- ... -->
-        
-        <activity
-            android:name="com.auth0.android.provider.WebAuthActivity"
-            android:theme="@style/MyAppTheme"/>
-            
-        <!-- ... -->
-
-    </application>
-```
-
-Finally, define a constant like `WEB_REQ_CODE` that holds the request code (an `int`), that will be sent back with the intent once the authentication is finished in the webview.
-
-
-#### Configuration: Using the Browser
-
 Open your app's `AndroidManifest.xml` file and add the following permission.
 
 ```xml
@@ -361,16 +328,6 @@ WebAuthProvider.init(account)
                 .start(MainActivity.this, authCallback, WEB_REQ_CODE);
 ```
 
-#### Use browser instead of WebView
-
-```java
-WebAuthProvider.init(account)
-                .useBrowser(true)
-                .start(MainActivity.this, authCallback, WEB_REQ_CODE);
-```
-> Make sure to check the callback url and manifest configuration explained above.
-
-
 #### Specify scope
 
 ```java
@@ -393,7 +350,6 @@ WebAuthProvider.init(account)
 
 ```java
 WebAuthProvider.init(account)
-                .useBrowser(true)
                 .start(MainActivity.this, authCallback, WEB_REQ_CODE);
 ```
 
