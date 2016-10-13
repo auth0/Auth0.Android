@@ -126,7 +126,9 @@ public class WebAuthProvider {
          *
          * @param useBrowser if the authentication is handled in a Browser.
          * @return the current builder instance
+         * @deprecated This method has been deprecated since Google is no longer supporting WebViews to perform login.
          */
+        @Deprecated
         public Builder useBrowser(boolean useBrowser) {
             this.useBrowser = useBrowser;
             return this;
@@ -138,7 +140,9 @@ public class WebAuthProvider {
          *
          * @param useFullscreen if the activity should be fullscreen or not.
          * @return the current builder instance
+         * @deprecated This method has been deprecated since it's only applied to WebView authentication and Google is no longer supporting them to perform login.
          */
+        @Deprecated
         public Builder useFullscreen(boolean useFullscreen) {
             this.useFullscreen = useFullscreen;
             return this;
