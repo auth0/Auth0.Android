@@ -31,6 +31,8 @@ import android.support.annotation.Nullable;
 import android.support.v4.content.PermissionChecker;
 import android.widget.TextView;
 
+import org.hamcrest.Matcher;
+import org.hamcrest.collection.IsMapContaining;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,14 +46,19 @@ import org.robolectric.annotation.Config;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 21, manifest = Config.NONE)
@@ -75,7 +82,7 @@ public class AuthProviderTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         processAuthenticationCalled = false;
-        provider = new AuthProvider(handler){
+        provider = new AuthProvider(handler) {
 
             @Override
             protected void requestAuth(Activity activity, int requestCode) {
@@ -84,11 +91,6 @@ public class AuthProviderTest {
 
             @Override
             public boolean authorize(int requestCode, int resultCode, @Nullable Intent intent) {
-                return false;
-            }
-
-            @Override
-            public boolean authorize(@Nullable Intent intent) {
                 return false;
             }
 
@@ -108,11 +110,6 @@ public class AuthProviderTest {
 
             @Override
             public boolean authorize(int requestCode, int resultCode, @Nullable Intent intent) {
-                return false;
-            }
-
-            @Override
-            public boolean authorize(@Nullable Intent intent) {
                 return false;
             }
 
@@ -196,7 +193,23 @@ public class AuthProviderTest {
         TextView messageTV = (TextView) dialog.findViewById(android.R.id.message);
         assertThat(messageTV.getText().toString(), containsString("Some permissions required by this provider were not granted. You can try to authenticate again or go to " +
                 "the application's permission screen in the phone settings and grant them. The missing permissions are:\n" + "[some, values]"));
+    }
 
+    @Test
+    public void shouldSetParameters() throws Exception {
+        Map<String, Object> params = new HashMap<>();
+        params.put("key", "value");
+        provider.setParameters(params);
+
+        final Map<String, Object> parameters = provider.getParameters();
+        assertThat(parameters, is(notNullValue()));
+        assertThat(parameters, hasEntry("key", (Object) "value"));
+    }
+
+    @Test
+    public void shouldReturnFalseWhenCalledWithIntentByDefault() throws Exception {
+        boolean authorizeResult = provider.authorize(new Intent());
+        assertFalse(authorizeResult);
     }
 
     @Test

@@ -36,7 +36,9 @@ import android.util.Log;
 
 import com.auth0.android.auth0.R;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -50,6 +52,7 @@ public abstract class AuthProvider {
     private final PermissionHandler handler;
     private AuthCallback callback;
     private int authenticationRequestCode;
+    private Map<String, Object> parameters;
 
     public AuthProvider() {
         this(new PermissionHandler());
@@ -57,6 +60,7 @@ public abstract class AuthProvider {
 
     AuthProvider(@NonNull PermissionHandler handler) {
         this.handler = handler;
+        this.parameters = new HashMap<>();
     }
 
     /**
@@ -135,11 +139,14 @@ public abstract class AuthProvider {
     /**
      * Finishes the authentication flow by passing the data received in the activity's onNewIntent() callback.
      * The final authentication result will be delivered to the callback specified when calling start().
+     * The default implementation will return false, you need to override it if you want to customize the logic.
      *
      * @param intent the data received on the onNewIntent() call
      * @return true if a result was expected and has a valid format, or false if not.
      */
-    public abstract boolean authorize(@Nullable Intent intent);
+    public boolean authorize(@Nullable Intent intent) {
+        return false;
+    }
 
     /**
      * Defines which Android Manifest Permissions are required by this Identity Provider to work.
@@ -148,6 +155,26 @@ public abstract class AuthProvider {
      * @return the required Android Manifest.permissions
      */
     public abstract String[] getRequiredAndroidPermissions();
+
+    /**
+     * Sets the parameters to send with the authentication request. The user is responsible of calling getParameters() and attaching them in the request.
+     * By default, this is an empty map.
+     *
+     * @param parameters the parameters to use.
+     */
+    public void setParameters(@NonNull Map<String, Object> parameters) {
+        this.parameters = new HashMap<>(parameters);
+    }
+
+    /**
+     * Getter for the parameters to send with the authentication request.
+     *
+     * @return the parameters to use.
+     */
+    @NonNull
+    protected Map<String, Object> getParameters() {
+        return parameters;
+    }
 
     /**
      * Checks if all the required Android Manifest.permissions have already been granted.
@@ -175,7 +202,7 @@ public abstract class AuthProvider {
     }
 
     @VisibleForTesting
-    PermissionHandler getPermissionHandler(){
+    PermissionHandler getPermissionHandler() {
         return handler;
     }
 
