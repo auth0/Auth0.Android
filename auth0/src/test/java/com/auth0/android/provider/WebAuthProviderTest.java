@@ -67,7 +67,6 @@ public class WebAuthProviderTest {
     private static final String SCOPE = "scope";
     private static final String CONNECTION_SCOPE = "connection_scope";
     private static final String STATE = "state";
-    private static final String USERNAME_PASSWORD_AUTHENTICATION_CONNECTION = "Username-Password-Authentication";
     private static final String SCOPE_OPEN_ID = "openid";
 
     @Mock
@@ -120,7 +119,7 @@ public class WebAuthProviderTest {
         assertThat(instance.useBrowser(), is(true));
         assertThat(instance.useCodeGrant(), is(true));
         assertThat(instance.useFullscreen(), is(false));
-        assertThat(instance.getConnection(), is(not(Matchers.isEmptyOrNullString())));
+        assertThat(instance.getConnection(), is(nullValue()));
         assertThat(instance.getScope(), is(not(Matchers.isEmptyOrNullString())));
         assertThat(instance.getConnectionScope(), is(nullValue()));
         assertThat(instance.getState(), is(not(Matchers.isEmptyOrNullString())));
@@ -129,12 +128,12 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldHaveDefaultConnection() throws Exception {
+    public void shouldNotHaveDefaultConnection() throws Exception {
         WebAuthProvider.init(account)
                 .start(activity, callback, REQUEST_CODE);
 
         final WebAuthProvider instance = WebAuthProvider.getInstance();
-        assertThat(instance.getConnection(), is(USERNAME_PASSWORD_AUTHENTICATION_CONNECTION));
+        assertThat(instance.getConnection(), is(nullValue()));
     }
 
     @Test
@@ -262,7 +261,7 @@ public class WebAuthProviderTest {
         final ComponentName expComponent = new ComponentName("package", WebAuthActivity.class.getName());
         assertThat(intentCaptor.getValue(), is(notNullValue()));
         assertThat(intentCaptor.getValue(), hasComponent(expComponent));
-        assertThat(intentCaptor.getValue(), hasExtra(WebAuthActivity.CONNECTION_NAME_EXTRA, "Username-Password-Authentication"));
+        assertThat(intentCaptor.getValue(), hasExtra(WebAuthActivity.CONNECTION_NAME_EXTRA, null));
         assertThat(intentCaptor.getValue(), hasExtra(WebAuthActivity.FULLSCREEN_EXTRA, false));
     }
 
