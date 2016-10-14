@@ -51,8 +51,6 @@ public class WebAuthProvider {
 
     private static final String TAG = WebAuthProvider.class.getName();
 
-    private static final String DEFAULT_CONNECTION_NAME = "Username-Password-Authentication";
-
     private static final String KEY_ERROR = "error";
     private static final String KEY_ID_TOKEN = "id_token";
     private static final String KEY_ACCESS_TOKEN = "access_token";
@@ -121,7 +119,6 @@ public class WebAuthProvider {
             this.parameters = new HashMap<>();
             this.state = UUID.randomUUID().toString();
             this.scope = SCOPE_TYPE_OPENID;
-            this.connectionName = DEFAULT_CONNECTION_NAME;
         }
 
         /**
@@ -210,7 +207,7 @@ public class WebAuthProvider {
         }
 
         /**
-         * Use the given connection instead of the default 'auth0'.
+         * Use the given connection. By default no connection is specified, so the hosted login page will be displayed.
          *
          * @param connectionName to use
          * @return the current builder instance

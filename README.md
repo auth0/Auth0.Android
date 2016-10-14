@@ -351,8 +351,6 @@ WebAuthProvider.init(account)
                 .start(MainActivity.this, authCallback, WEB_REQ_CODE);
 ```
 
-> The default connection used is `Username-Password-Authentication`
-
 #### Use Code grant with PKCE
 > Before you can use `Code Grant` in Android, make sure to go to your [client's section](https://manage.auth0.com/#/applications) in dashboard and check in the Settings that `Client Type` is `Native`.
 
