@@ -65,6 +65,7 @@ public class WebAuthProviderTest {
     private static final int REQUEST_CODE = 11;
     private static final String CONNECTION_NAME = "connection";
     private static final String SCOPE = "scope";
+    private static final String CONNECTION_SCOPE = "connection_scope";
     private static final String STATE = "state";
     private static final String USERNAME_PASSWORD_AUTHENTICATION_CONNECTION = "Username-Password-Authentication";
     private static final String SCOPE_OPEN_ID = "openid";
@@ -121,6 +122,7 @@ public class WebAuthProviderTest {
         assertThat(instance.useFullscreen(), is(false));
         assertThat(instance.getConnection(), is(not(Matchers.isEmptyOrNullString())));
         assertThat(instance.getScope(), is(not(Matchers.isEmptyOrNullString())));
+        assertThat(instance.getConnectionScope(), is(nullValue()));
         assertThat(instance.getState(), is(not(Matchers.isEmptyOrNullString())));
         assertThat(instance.getParameters(), is(notNullValue()));
         assertThat(instance.getParameters().isEmpty(), is(true));
@@ -155,6 +157,7 @@ public class WebAuthProviderTest {
                 .useFullscreen(true)
                 .withConnection(CONNECTION_NAME)
                 .withScope(SCOPE)
+                .withConnectionScope(CONNECTION_SCOPE)
                 .withState(STATE)
                 .withParameters(parameters)
                 .start(activity, callback, REQUEST_CODE);
@@ -165,6 +168,7 @@ public class WebAuthProviderTest {
         assertThat(instance.useFullscreen(), is(true));
         assertThat(instance.getConnection(), is(CONNECTION_NAME));
         assertThat(instance.getScope(), is(SCOPE));
+        assertThat(instance.getConnectionScope(), is(CONNECTION_SCOPE));
         assertThat(instance.getState(), is(STATE));
         assertThat(instance.getParameters(), is(notNullValue()));
         assertThat(instance.getParameters(), Matchers.hasEntry("key", (Object) "value"));
@@ -194,6 +198,7 @@ public class WebAuthProviderTest {
                 .withConnection("my-connection")
                 .withState("a-state")
                 .withScope("super_scope")
+                .withConnectionScope("first_connection_scope", "second_connection_scope")
                 .withParameters(parameters)
                 .start(activity, callback, REQUEST_CODE);
 
@@ -209,6 +214,7 @@ public class WebAuthProviderTest {
         assertThat(intentCaptor.getValue().getData(), hasParamWithValue("connection", "my-connection"));
         assertThat(intentCaptor.getValue().getData(), hasParamWithValue("state", "a-state"));
         assertThat(intentCaptor.getValue().getData(), hasParamWithValue("scope", "super_scope"));
+        assertThat(intentCaptor.getValue().getData(), hasParamWithValue("connection_scope", "first_connection_scope,second_connection_scope"));
         assertThat(intentCaptor.getValue().getData(), hasParamWithValue("custom_param_1", "custom_value_1"));
         assertThat(intentCaptor.getValue().getData(), hasParamWithValue("custom_param_2", "custom_value_2"));
         assertThat(intentCaptor.getValue().getData(), hasParamWithValue("client_id", account.getClientId()));

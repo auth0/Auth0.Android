@@ -383,6 +383,14 @@ WebAuthProvider.init(account)
 
 > The default scope used is `openid`
 
+#### Specify Connection scope
+
+```java
+WebAuthProvider.init(account)
+                .withConnectionScope("email", "profile", "calendar:read")
+                .start(MainActivity.this, authCallback, WEB_REQ_CODE);
+```
+
 #### Authenticate with Auth0 hosted login page
 
 ```java

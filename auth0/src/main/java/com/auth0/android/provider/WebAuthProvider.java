@@ -1,4 +1,3 @@
-
 /*
  * WebAuthProvider.java
  *
@@ -35,7 +34,6 @@ import android.support.annotation.VisibleForTesting;
 import android.util.Log;
 
 import com.auth0.android.Auth0;
-import com.auth0.android.auth0.R;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.result.Credentials;
@@ -66,6 +64,7 @@ public class WebAuthProvider {
     private static final String KEY_CLIENT_ID = "client_id";
     private static final String KEY_REDIRECT_URI = "redirect_uri";
     private static final String KEY_SCOPE = "scope";
+    private static final String KEY_CONNECTION_SCOPE = "connection_scope";
     private static final String KEY_TELEMETRY = "auth0Client";
 
     private static final String ERROR_VALUE_ACCESS_DENIED = "access_denied";
@@ -87,6 +86,7 @@ public class WebAuthProvider {
     private boolean useBrowser;
     private String state;
     private String scope;
+    private String connectionScope;
     private boolean useCodeGrant;
     private Map<String, Object> parameters;
     private String connectionName;
@@ -105,6 +105,7 @@ public class WebAuthProvider {
         private boolean useFullscreen;
         private String state;
         private String scope;
+        private String connectionScope;
         private boolean useCodeGrant;
         private Map<String, Object> parameters;
         private String connectionName;
@@ -127,6 +128,7 @@ public class WebAuthProvider {
          * If the class authenticates with an external browser or not.
          *
          * @param useBrowser if the authentication is handled in a Browser.
+         * @return the current builder instance
          */
         public Builder useBrowser(boolean useBrowser) {
             this.useBrowser = useBrowser;
@@ -138,6 +140,7 @@ public class WebAuthProvider {
          * Browser authentication.
          *
          * @param useFullscreen if the activity should be fullscreen or not.
+         * @return the current builder instance
          */
         public Builder useFullscreen(boolean useFullscreen) {
             this.useFullscreen = useFullscreen;
@@ -148,6 +151,7 @@ public class WebAuthProvider {
          * Use a custom state in the requests
          *
          * @param state to use in the requests
+         * @return the current builder instance
          */
         public Builder withState(@NonNull String state) {
             this.state = state;
@@ -158,6 +162,7 @@ public class WebAuthProvider {
          * Give a scope for this request.
          *
          * @param scope to request.
+         * @return the current builder instance
          */
         public Builder withScope(@NonNull String scope) {
             this.scope = scope;
@@ -165,9 +170,28 @@ public class WebAuthProvider {
         }
 
         /**
+         * Give a connection scope for this request.
+         *
+         * @param connectionScope to request.
+         * @return the current builder instance
+         */
+        public Builder withConnectionScope(@NonNull String... connectionScope) {
+            StringBuilder sb = new StringBuilder();
+            for (String s : connectionScope) {
+                sb.append(s.trim()).append(",");
+            }
+            if (sb.length() > 0) {
+                sb.deleteCharAt(sb.length() - 1);
+                this.connectionScope = sb.toString();
+            }
+            return this;
+        }
+
+        /**
          * Choose the grant type for this request.
          *
          * @param useCodeGrant whether use code or implicit grant type
+         * @return the current builder instance
          */
         public Builder useCodeGrant(boolean useCodeGrant) {
             this.useCodeGrant = useCodeGrant;
@@ -178,6 +202,7 @@ public class WebAuthProvider {
          * Use extra parameters on the request
          *
          * @param parameters to add
+         * @return the current builder instance
          */
         public Builder withParameters(@Nullable Map<String, Object> parameters) {
             this.parameters = parameters != null ? new HashMap<>(parameters) : new HashMap<String, Object>();
@@ -188,6 +213,7 @@ public class WebAuthProvider {
          * Use the given connection instead of the default 'auth0'.
          *
          * @param connectionName to use
+         * @return the current builder instance
          */
         public Builder withConnection(@NonNull String connectionName) {
             this.connectionName = connectionName;
@@ -215,6 +241,7 @@ public class WebAuthProvider {
             webAuth.useFullscreen = useFullscreen;
             webAuth.state = state;
             webAuth.scope = scope;
+            webAuth.connectionScope = connectionScope;
             webAuth.useCodeGrant = useCodeGrant;
             webAuth.parameters = parameters;
             webAuth.connectionName = connectionName;
@@ -370,6 +397,7 @@ public class WebAuthProvider {
 
         final Map<String, String> queryParameters = new HashMap<>();
         queryParameters.put(KEY_SCOPE, scope);
+        queryParameters.put(KEY_CONNECTION_SCOPE, connectionScope);
         queryParameters.put(KEY_RESPONSE_TYPE, RESPONSE_TYPE_TOKEN);
 
         if (shouldUsePKCE()) {
@@ -434,6 +462,10 @@ public class WebAuthProvider {
 
     String getScope() {
         return scope;
+    }
+
+    String getConnectionScope() {
+        return connectionScope;
     }
 
     boolean useCodeGrant() {
