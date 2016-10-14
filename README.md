@@ -387,7 +387,7 @@ WebAuthProvider.init(account)
 
 ```java
 WebAuthProvider.init(account)
-                .withConnectionScope("email profile calendar:read")
+                .withConnectionScope("email", "profile", "calendar:read")
                 .start(MainActivity.this, authCallback, WEB_REQ_CODE);
 ```
 

@@ -198,7 +198,7 @@ public class WebAuthProviderTest {
                 .withConnection("my-connection")
                 .withState("a-state")
                 .withScope("super_scope")
-                .withConnectionScope("super_connection_scope")
+                .withConnectionScope("first_connection_scope", "second_connection_scope")
                 .withParameters(parameters)
                 .start(activity, callback, REQUEST_CODE);
 
@@ -214,7 +214,7 @@ public class WebAuthProviderTest {
         assertThat(intentCaptor.getValue().getData(), hasParamWithValue("connection", "my-connection"));
         assertThat(intentCaptor.getValue().getData(), hasParamWithValue("state", "a-state"));
         assertThat(intentCaptor.getValue().getData(), hasParamWithValue("scope", "super_scope"));
-        assertThat(intentCaptor.getValue().getData(), hasParamWithValue("connection_scope", "super_connection_scope"));
+        assertThat(intentCaptor.getValue().getData(), hasParamWithValue("connection_scope", "first_connection_scope,second_connection_scope"));
         assertThat(intentCaptor.getValue().getData(), hasParamWithValue("custom_param_1", "custom_value_1"));
         assertThat(intentCaptor.getValue().getData(), hasParamWithValue("custom_param_2", "custom_value_2"));
         assertThat(intentCaptor.getValue().getData(), hasParamWithValue("client_id", account.getClientId()));

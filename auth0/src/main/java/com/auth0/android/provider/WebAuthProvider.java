@@ -175,8 +175,15 @@ public class WebAuthProvider {
          * @param connectionScope to request.
          * @return the current builder instance
          */
-        public Builder withConnectionScope(@NonNull String connectionScope) {
-            this.connectionScope = connectionScope;
+        public Builder withConnectionScope(@NonNull String... connectionScope) {
+            StringBuilder sb = new StringBuilder();
+            for (String s : connectionScope) {
+                sb.append(s.trim()).append(",");
+            }
+            if (sb.length() > 0) {
+                sb.deleteCharAt(sb.length() - 1);
+                this.connectionScope = sb.toString();
+            }
             return this;
         }
 
