@@ -1,5 +1,19 @@
 # Change Log
 
+## [1.1.0](https://github.com/auth0/Auth0.Android/tree/1.1.0) (2015-10-14)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.0.1...1.1.0)
+
+**Added**
+- Add connection_scope setter [\#31](https://github.com/auth0/Auth0.Android/pull/31) ([lbalmaceda](https://github.com/lbalmaceda))
+- Allow to set additional Parameters. [\#29](https://github.com/auth0/Auth0.Android/pull/29) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Deprecated**
+- Remove Deprecated WebView/Fullscreen options [\#32](https://github.com/auth0/Auth0.Android/pull/32) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Fixed**
+- Change default WebAuthProvider connection to null [\#33](https://github.com/auth0/Auth0.Android/pull/33) ([lbalmaceda](https://github.com/lbalmaceda))
+
+
 ## [1.0.1](https://github.com/auth0/Auth0.Android/tree/1.0.1) (2015-09-27)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.0.0...1.0.1)
 
