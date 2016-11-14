@@ -25,7 +25,7 @@ dependencies {
 }
 ```
 
-### Permissions 
+### Permissions
 
 Open your app's `AndroidManifest.xml` file and add the following permission.
 
@@ -42,7 +42,7 @@ Auth0 account = new Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}");
 ```
 
 Alternatively, you can save your client information in the `strings.xml` file using the following names:
- 
+
 ```xml
 <resources>
     <string name="com_auth0_client_id">YOUR_CLIENT_ID</string>
@@ -56,14 +56,14 @@ And then create a new Auth0 instance by passing an Android Context:
 ```java
 Auth0 account = new Auth0(context);
 ```
-  
+
 
 ### Authentication API
 
 The client provides methods to authenticate the user against Auth0 server.
- 
+
 Create a new instance by passing the account:
- 
+
 ```java
 AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
 ```
@@ -78,7 +78,7 @@ authentication
         public void onSuccess(Credentials payload) {
             //Logged in!
         }
-    
+
         @Override
         public void onFailure(AuthenticationException error) {
             //Error!
@@ -100,7 +100,7 @@ authentication
         public void onSuccess(Void payload) {
             //Code sent!
         }
-    
+
         @Override
         public void onFailure(AuthenticationException error) {
             //Error!
@@ -120,7 +120,7 @@ authentication
         public void onSuccess(Credentials payload) {
             //Logged in!
         }
-    
+
         @Override
         public void onFailure(AuthenticationException error) {
             //Error!
@@ -139,7 +139,7 @@ authentication
         public void onSuccess(Credentials payload) {
             //Signed Up & Logged in!
         }
-    
+
         @Override
         public void onFailure(AuthenticationException error) {
             //Error!
@@ -158,7 +158,7 @@ authentication
        public void onSuccess(UserProfile payload) {
            //Got the profile!
        }
-   
+
        @Override
        public void onFailure(AuthenticationException error) {
            //Error!
@@ -177,7 +177,7 @@ Create a new instance by passing the account and the token:
 Auth0 account = new Auth0("client id", "domain");
 UsersAPIClient users = new UsersAPIClient(account, "api token");
 ```
- 
+
 #### Link users
 
 ```java
@@ -228,7 +228,7 @@ users
         public void onSuccess(UserProfile payload) {
             //Metadata updated
         }
-    
+
         @Override
         public void onFailure(ManagementException error) {
             //Error!
@@ -256,11 +256,12 @@ Also register the intent filters inside your activity's tag, so you can receive 
     <application android:theme="@style/AppTheme">
 
         <!-- ... -->
-        
+
         <activity
             android:name="com.mycompany.MainActivity"
-            android:theme="@style/MyAppTheme">
-            
+            android:theme="@style/MyAppTheme"
+            android:launchMode="singleTask">
+
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -272,13 +273,15 @@ Also register the intent filters inside your activity's tag, so you can receive 
                     android:pathPrefix="/android/{YOUR_APP_PACKAGE_NAME}/callback"
                     android:scheme="https" />
             </intent-filter>
-            
+
         </activity>
-            
+
         <!-- ... -->
 
     </application>
 ```
+
+Make sure the Activity's **launchMode** is declared as "singleTask" or the result won't come back after the authentication.
 
 In your `Activity` class define a constant like `WEB_REQ_CODE` that holds the request code (an `int`), that will be sent back with the intent once the auth is finished in the browser/webview. To capture the response, override the `OnActivityResult` and the `onNewIntent` methods and call `WebAuthProvider.resume()` with the received parameters:
 
@@ -298,7 +301,7 @@ public class MyActivity extends Activity {
                 super.onActivityResult(requestCode, resultCode, data);
         }
     }
-    
+
     @Override
     protected void onNewIntent(Intent intent) {
         if (WebAuthProvider.resume(intent)) {
@@ -354,9 +357,9 @@ WebAuthProvider.init(account)
 ```
 
 
-## FAQ 
+## FAQ
 
-* Why is the Android Lint _error_ `'InvalidPackage'` considered a _warning_? 
+* Why is the Android Lint _error_ `'InvalidPackage'` considered a _warning_?
 
 When building the project with `build`, an error appeared regarding an `invalid package` on the `okio` dependency. This snippet is in the `build.gradle` file so that the build runs fine:
 
