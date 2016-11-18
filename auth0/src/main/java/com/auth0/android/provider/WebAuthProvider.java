@@ -433,7 +433,9 @@ public class WebAuthProvider {
 
         final Uri.Builder builder = authorizeUri.buildUpon();
         for (Map.Entry<String, String> entry : queryParameters.entrySet()) {
-            builder.appendQueryParameter(entry.getKey(), entry.getValue());
+            if (entry.getValue() != null) {
+                builder.appendQueryParameter(entry.getKey(), entry.getValue());
+            }
         }
         Uri uri = builder.build();
         Log.d(TAG, "The final Authorize Uri is " + uri.toString());
