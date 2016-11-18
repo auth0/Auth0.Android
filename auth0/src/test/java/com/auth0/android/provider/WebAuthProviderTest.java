@@ -29,6 +29,7 @@ import org.robolectric.annotation.Config;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import static android.support.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static android.support.test.espresso.intent.matcher.IntentMatchers.hasComponent;
@@ -182,7 +183,71 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldBuildAuthorizeURI() throws Exception {
+    public void shouldBuildAuthorizeURIWithoutNulls() throws Exception {
+        Activity activity = mock(Activity.class);
+        Context appContext = mock(Context.class);
+        when(activity.getApplicationContext()).thenReturn(appContext);
+        when(activity.getPackageName()).thenReturn("package");
+        when(appContext.getPackageName()).thenReturn("package");
+        WebAuthProvider.init(account)
+                .start(activity, callback, REQUEST_CODE);
+
+        final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        verify(activity).startActivity(intentCaptor.capture());
+
+        Uri baseUriString = Uri.parse(account.getAuthorizeUrl());
+
+        Intent intent = intentCaptor.getValue();
+        assertThat(intent, is(notNullValue()));
+        assertThat(intent, hasData(hasScheme(baseUriString.getScheme())));
+        assertThat(intent.getData(), hasHost(baseUriString.getHost()));
+        assertThat(intent.getData(), hasPath(baseUriString.getPath()));
+
+        Set<String> params = intent.getData().getQueryParameterNames();
+        for (String p : params) {
+            assertThat(intent.getData(), not(hasParamWithValue(p, null)));
+            assertThat(intent.getData(), not(hasParamWithValue(p, "null")));
+        }
+    }
+
+    @Test
+    public void shouldBuildAuthorizeURIWithDefaultValues() throws Exception {
+        Activity activity = mock(Activity.class);
+        Context appContext = mock(Context.class);
+        when(activity.getApplicationContext()).thenReturn(appContext);
+        when(activity.getPackageName()).thenReturn("package");
+        when(appContext.getPackageName()).thenReturn("package");
+        WebAuthProvider.init(account)
+                .start(activity, callback, REQUEST_CODE);
+
+        final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        verify(activity).startActivity(intentCaptor.capture());
+
+        Uri baseUriString = Uri.parse(account.getAuthorizeUrl());
+
+        Intent intent = intentCaptor.getValue();
+        assertThat(intent, is(notNullValue()));
+        assertThat(intent, hasData(hasScheme(baseUriString.getScheme())));
+        assertThat(intent.getData(), hasHost(baseUriString.getHost()));
+        assertThat(intent.getData(), hasPath(baseUriString.getPath()));
+
+        assertThat(intent.getData(), not(hasParamWithName("connection")));
+        assertThat(intent.getData(), not(hasParamWithValue("state", null)));
+        assertThat(intent.getData(), not(hasParamWithValue("state", "null")));
+        assertThat(intent.getData(), not(hasParamWithValue("code_challenge", null)));
+        assertThat(intent.getData(), not(hasParamWithValue("code_challenge", "null")));
+        assertThat(intent.getData(), not(hasParamWithValue("auth0Client", null)));
+        assertThat(intent.getData(), not(hasParamWithValue("auth0Client", "null")));
+
+        assertThat(intent.getData(), hasParamWithValue("scope", "openid"));
+        assertThat(intent.getData(), hasParamWithValue("client_id", "clientId"));
+        assertThat(intent.getData(), hasParamWithValue("response_type", "code"));
+        assertThat(intent.getData(), hasParamWithValue("code_challenge_method", "S256"));
+        assertThat(intent.getData(), hasParamWithValue("redirect_uri", "https://domain/android/package/callback"));
+    }
+
+    @Test
+    public void shouldBuildAuthorizeURIWithCustomParameters() throws Exception {
         Activity activity = mock(Activity.class);
         Context appContext = mock(Context.class);
         when(activity.getApplicationContext()).thenReturn(appContext);
@@ -194,6 +259,7 @@ public class WebAuthProviderTest {
         WebAuthProvider.init(account)
                 .useCodeGrant(false)
                 .useBrowser(true)
+                .useCodeGrant(false)
                 .withConnection("my-connection")
                 .withState("a-state")
                 .withScope("super_scope")
@@ -206,20 +272,26 @@ public class WebAuthProviderTest {
 
         Uri baseUriString = Uri.parse(account.getAuthorizeUrl());
 
-        assertThat(intentCaptor.getValue(), is(notNullValue()));
-        assertThat(intentCaptor.getValue(), hasData(hasScheme(baseUriString.getScheme())));
-        assertThat(intentCaptor.getValue().getData(), hasHost(baseUriString.getHost()));
-        assertThat(intentCaptor.getValue().getData(), hasPath(baseUriString.getPath()));
-        assertThat(intentCaptor.getValue().getData(), hasParamWithValue("connection", "my-connection"));
-        assertThat(intentCaptor.getValue().getData(), hasParamWithValue("state", "a-state"));
-        assertThat(intentCaptor.getValue().getData(), hasParamWithValue("scope", "super_scope"));
-        assertThat(intentCaptor.getValue().getData(), hasParamWithValue("connection_scope", "first_connection_scope,second_connection_scope"));
-        assertThat(intentCaptor.getValue().getData(), hasParamWithValue("custom_param_1", "custom_value_1"));
-        assertThat(intentCaptor.getValue().getData(), hasParamWithValue("custom_param_2", "custom_value_2"));
-        assertThat(intentCaptor.getValue().getData(), hasParamWithValue("client_id", account.getClientId()));
-        assertThat(intentCaptor.getValue().getData(), hasParamWithName("response_type"));
-        assertThat(intentCaptor.getValue().getData(), hasParamWithName("redirect_uri"));
-        assertThat(intentCaptor.getValue().getData(), hasParamWithName("auth0Client"));
+        Intent intent = intentCaptor.getValue();
+        assertThat(intent, is(notNullValue()));
+        assertThat(intent, hasData(hasScheme(baseUriString.getScheme())));
+        assertThat(intent.getData(), hasHost(baseUriString.getHost()));
+        assertThat(intent.getData(), hasPath(baseUriString.getPath()));
+
+        assertThat(intent.getData(), hasParamWithValue("connection", "my-connection"));
+        assertThat(intent.getData(), hasParamWithValue("state", "a-state"));
+        assertThat(intent.getData(), hasParamWithValue("scope", "super_scope"));
+        assertThat(intent.getData(), hasParamWithValue("connection_scope", "first_connection_scope,second_connection_scope"));
+        assertThat(intent.getData(), hasParamWithValue("client_id", "clientId"));
+        assertThat(intent.getData(), hasParamWithValue("response_type", "token"));
+        assertThat(intent.getData(), hasParamWithValue("redirect_uri", "https://domain/android/package/callback"));
+        assertThat(intent.getData(), hasParamWithValue("custom_param_1", "custom_value_1"));
+        assertThat(intent.getData(), hasParamWithValue("custom_param_2", "custom_value_2"));
+
+        assertThat(intent.getData(), not(hasParamWithName("code_challenge_method")));
+        assertThat(intent.getData(), not(hasParamWithName("code_challenge")));
+        assertThat(intent.getData(), not(hasParamWithValue("auth0Client", null)));
+        assertThat(intent.getData(), not(hasParamWithValue("auth0Client", "null")));
     }
 
     @Test
