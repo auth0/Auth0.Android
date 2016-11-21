@@ -44,7 +44,7 @@ import java.util.UUID;
 
 /**
  * OAuth2 Web Authentication Provider.
- * It can use an external browser by sending the {@link android.content.Intent#ACTION_VIEW} intent, or also the {@link WebAuthActivity}.
+ * It can use an external browser by sending the {@link android.content.Intent#ACTION_VIEW} intent or also the {@link WebAuthActivity}.
  * This behaviour is changed using {@link WebAuthProvider#useBrowser()}, and defaults to use browser.
  */
 public class WebAuthProvider {
@@ -126,7 +126,7 @@ public class WebAuthProvider {
          *
          * @param useBrowser if the authentication is handled in a Browser.
          * @return the current builder instance
-         * @deprecated This method has been deprecated since Google is no longer supporting WebViews to perform login.
+         * @deprecated This method has been deprecated since it only applied to WebView authentication and Google is no longer supporting it. You should use the default value (use browser).
          */
         @Deprecated
         public Builder useBrowser(boolean useBrowser) {
@@ -140,7 +140,7 @@ public class WebAuthProvider {
          *
          * @param useFullscreen if the activity should be fullscreen or not.
          * @return the current builder instance
-         * @deprecated This method has been deprecated since it's only applied to WebView authentication and Google is no longer supporting them to perform login.
+         * @deprecated This method has been deprecated since it only applied to WebView authentication and Google is no longer supporting it.
          */
         @Deprecated
         public Builder useFullscreen(boolean useFullscreen) {
@@ -179,7 +179,7 @@ public class WebAuthProvider {
         public Builder withConnectionScope(@NonNull String... connectionScope) {
             StringBuilder sb = new StringBuilder();
             for (String s : connectionScope) {
-                sb.append(s.trim()).append(",");
+                sb.append(s.trim()).append(" ");
             }
             if (sb.length() > 0) {
                 sb.deleteCharAt(sb.length() - 1);
@@ -229,13 +229,15 @@ public class WebAuthProvider {
 
         /**
          * Begins the authentication flow.
-         * Make sure to override your activity's onActivityResult() method,
+         * Make sure to override your activity's onNewIntent() and onActivityResult() methods,
          * and call this provider's resume() method with the received parameters.
          *
          * @param activity    context to run the authentication
          * @param callback    to receive the parsed results
          * @param requestCode to use in the authentication request
+         * @deprecated This method has been deprecated since it only applied to WebView authentication and Google is no longer supporting it. Please use {@link WebAuthProvider.Builder#start(Activity, AuthCallback)}
          */
+        @Deprecated
         public void start(@NonNull Activity activity, @NonNull AuthCallback callback, int requestCode) {
             WebAuthProvider webAuth = new WebAuthProvider(account);
             webAuth.useBrowser = useBrowser;
@@ -251,6 +253,17 @@ public class WebAuthProvider {
             providerInstance = webAuth;
 
             webAuth.requestAuth(activity, callback, requestCode);
+        }
+
+        /**
+         * Begins the authentication flow.
+         * Make sure to override your activity's onNewIntent() method and call this provider's resume() method with the received parameters.
+         *
+         * @param activity context to run the authentication
+         * @param callback to receive the parsed results
+         */
+        public void start(@NonNull Activity activity, @NonNull AuthCallback callback) {
+            this.start(activity, callback, 110);
         }
     }
 
@@ -287,7 +300,9 @@ public class WebAuthProvider {
      * @param resultCode  the result code received on the onActivityResult() call
      * @param intent      the data received on the onActivityResult() call
      * @return true if a result was expected and has a valid format, or false if not.
+     * @deprecated This method has been deprecated since it only applied to WebView authentication and Google is no longer supporting it. Please use {@link WebAuthProvider#requestAuth(Activity, AuthCallback, int)}
      */
+    @Deprecated
     public static boolean resume(int requestCode, int resultCode, @Nullable Intent intent) {
         if (providerInstance == null) {
             Log.w(TAG, "There is no previous instance of this provider.");
@@ -397,7 +412,6 @@ public class WebAuthProvider {
         String redirectUri = helper.getCallbackURI(account.getDomainUrl());
 
         final Map<String, String> queryParameters = new HashMap<>();
-        queryParameters.put(KEY_SCOPE, scope);
         queryParameters.put(KEY_CONNECTION_SCOPE, connectionScope);
         queryParameters.put(KEY_RESPONSE_TYPE, RESPONSE_TYPE_TOKEN);
 
@@ -424,6 +438,9 @@ public class WebAuthProvider {
 
         if (account.getTelemetry() != null) {
             queryParameters.put(KEY_TELEMETRY, account.getTelemetry().getValue());
+        }
+        if (scope != null) {
+            queryParameters.put(KEY_SCOPE, scope);
         }
 
         queryParameters.put(KEY_STATE, state);

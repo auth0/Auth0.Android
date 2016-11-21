@@ -66,7 +66,7 @@ public class WebAuthProviderTest {
     private static final int REQUEST_CODE = 11;
     private static final String CONNECTION_NAME = "connection";
     private static final String SCOPE = "scope";
-    private static final String CONNECTION_SCOPE = "connection_scope";
+    private static final String[] CONNECTION_SCOPE = new String[]{"some", "connection", "scope"};
     private static final String STATE = "state";
     private static final String SCOPE_OPEN_ID = "openid";
 
@@ -106,7 +106,7 @@ public class WebAuthProviderTest {
         when(context.getString(eq(333))).thenReturn("domain");
 
         WebAuthProvider.init(context)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
 
         assertNotNull(WebAuthProvider.getInstance());
     }
@@ -114,7 +114,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldHaveDefaultsOnInit() throws Exception {
         WebAuthProvider.init(account)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
 
         final WebAuthProvider instance = WebAuthProvider.getInstance();
         assertThat(instance.useBrowser(), is(true));
@@ -131,7 +131,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldNotHaveDefaultConnection() throws Exception {
         WebAuthProvider.init(account)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
 
         final WebAuthProvider instance = WebAuthProvider.getInstance();
         assertThat(instance.getConnection(), is(nullValue()));
@@ -140,7 +140,16 @@ public class WebAuthProviderTest {
     @Test
     public void shouldHaveDefaultScope() throws Exception {
         WebAuthProvider.init(account)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
+
+        final WebAuthProvider instance = WebAuthProvider.getInstance();
+        assertThat(instance.getScope(), is(SCOPE_OPEN_ID));
+    }
+
+    @Test
+    public void shouldCallStartWithRequestCode() throws Exception {
+        WebAuthProvider.init(account)
+                .start(activity, callback);
 
         final WebAuthProvider instance = WebAuthProvider.getInstance();
         assertThat(instance.getScope(), is(SCOPE_OPEN_ID));
@@ -160,7 +169,7 @@ public class WebAuthProviderTest {
                 .withConnectionScope(CONNECTION_SCOPE)
                 .withState(STATE)
                 .withParameters(parameters)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
 
         final WebAuthProvider instance = WebAuthProvider.getInstance();
         assertThat(instance.useBrowser(), is(true));
@@ -168,7 +177,7 @@ public class WebAuthProviderTest {
         assertThat(instance.useFullscreen(), is(true));
         assertThat(instance.getConnection(), is(CONNECTION_NAME));
         assertThat(instance.getScope(), is(SCOPE));
-        assertThat(instance.getConnectionScope(), is(CONNECTION_SCOPE));
+        assertThat(instance.getConnectionScope(), is("some connection scope"));
         assertThat(instance.getState(), is(STATE));
         assertThat(instance.getParameters(), is(notNullValue()));
         assertThat(instance.getParameters(), Matchers.hasEntry("key", (Object) "value"));
@@ -190,7 +199,7 @@ public class WebAuthProviderTest {
         when(activity.getPackageName()).thenReturn("package");
         when(appContext.getPackageName()).thenReturn("package");
         WebAuthProvider.init(account)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
 
         final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
         verify(activity).startActivity(intentCaptor.capture());
@@ -218,7 +227,7 @@ public class WebAuthProviderTest {
         when(activity.getPackageName()).thenReturn("package");
         when(appContext.getPackageName()).thenReturn("package");
         WebAuthProvider.init(account)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
 
         final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
         verify(activity).startActivity(intentCaptor.capture());
@@ -265,7 +274,7 @@ public class WebAuthProviderTest {
                 .withScope("super_scope")
                 .withConnectionScope("first_connection_scope", "second_connection_scope")
                 .withParameters(parameters)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
 
         final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
         verify(activity).startActivity(intentCaptor.capture());
@@ -281,7 +290,7 @@ public class WebAuthProviderTest {
         assertThat(intent.getData(), hasParamWithValue("connection", "my-connection"));
         assertThat(intent.getData(), hasParamWithValue("state", "a-state"));
         assertThat(intent.getData(), hasParamWithValue("scope", "super_scope"));
-        assertThat(intent.getData(), hasParamWithValue("connection_scope", "first_connection_scope,second_connection_scope"));
+        assertThat(intent.getData(), hasParamWithValue("connection_scope", "first_connection_scope second_connection_scope"));
         assertThat(intent.getData(), hasParamWithValue("client_id", "clientId"));
         assertThat(intent.getData(), hasParamWithValue("response_type", "token"));
         assertThat(intent.getData(), hasParamWithValue("redirect_uri", "https://domain/android/package/callback"));
@@ -295,6 +304,38 @@ public class WebAuthProviderTest {
     }
 
     @Test
+    public void shouldOverrideScopeSetWithAuthenticationParameters() throws Exception {
+        Activity activity = mock(Activity.class);
+        Context appContext = mock(Context.class);
+        when(activity.getApplicationContext()).thenReturn(appContext);
+        when(activity.getPackageName()).thenReturn("package");
+        when(appContext.getPackageName()).thenReturn("package");
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("custom_param_1", "custom_value_1");
+        parameters.put("custom_param_2", "custom_value_2");
+        parameters.put("scope", "default_scope");
+        WebAuthProvider.init(account)
+                .withScope("profile super_scope")
+                .withParameters(parameters)
+                .start(activity, callback);
+
+        final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        verify(activity).startActivity(intentCaptor.capture());
+
+        Uri baseUriString = Uri.parse(account.getAuthorizeUrl());
+
+        Intent intent = intentCaptor.getValue();
+        assertThat(intent, is(notNullValue()));
+        assertThat(intent, hasData(hasScheme(baseUriString.getScheme())));
+        assertThat(intent.getData(), hasHost(baseUriString.getHost()));
+        assertThat(intent.getData(), hasPath(baseUriString.getPath()));
+
+        assertThat(intent.getData(), hasParamWithValue("scope", "profile super_scope"));
+        assertThat(intent.getData(), hasParamWithValue("custom_param_1", "custom_value_1"));
+        assertThat(intent.getData(), hasParamWithValue("custom_param_2", "custom_value_2"));
+    }
+
+    @Test
     public void shouldStartWithBrowser() throws Exception {
         Activity activity = mock(Activity.class);
         Context appContext = mock(Context.class);
@@ -304,7 +345,7 @@ public class WebAuthProviderTest {
         WebAuthProvider.init(account)
                 .useBrowser(true)
                 .useCodeGrant(false)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
 
         final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
         verify(activity).startActivity(intentCaptor.capture());
@@ -349,7 +390,7 @@ public class WebAuthProviderTest {
                 .withConnection("my-connection")
                 .useCodeGrant(false)
                 .useFullscreen(true)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
 
         final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
         verify(activity).startActivityForResult(intentCaptor.capture(), any(Integer.class));
@@ -369,7 +410,7 @@ public class WebAuthProviderTest {
         WebAuthProvider.init(account)
                 .withState("abcdefghijk")
                 .useCodeGrant(false)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
 
         verify(callback).onFailure(authExceptionCaptor.capture());
 
@@ -377,6 +418,28 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getCode(), is("a0.invalid_authorize_url"));
         assertThat(authExceptionCaptor.getValue().getDescription(), is("Auth0 authorize URL not properly set. This can be related to an invalid domain."));
         assertThat(WebAuthProvider.getInstance(), is(nullValue()));
+    }
+
+    @Test
+    public void shouldStartWithValidRequestCode() throws Exception {
+        final Credentials credentials = Mockito.mock(Credentials.class);
+        final PKCE pkce = Mockito.mock(PKCE.class);
+        Mockito.doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                callback.onSuccess(credentials);
+                return null;
+            }
+        }).when(pkce).getToken(any(String.class), eq(callback));
+
+        WebAuthProvider.init(account)
+                .withState("1234567890")
+                .useCodeGrant(true)
+                .withPKCE(pkce)
+                .start(activity, callback);
+        final Intent intent = createAuthIntent(createHash("aToken", "iToken", "refresh_token", "1234567890", null));
+        final int DEFAULT_REQUEST_CODE = 110;
+        assertTrue(WebAuthProvider.resume(DEFAULT_REQUEST_CODE, Activity.RESULT_OK, intent));
     }
 
     @Test
@@ -395,7 +458,7 @@ public class WebAuthProviderTest {
                 .withState("1234567890")
                 .useCodeGrant(true)
                 .withPKCE(pkce)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
         final Intent intent = createAuthIntent(createHash("aToken", "iToken", "refresh_token", "1234567890", null));
         assertTrue(WebAuthProvider.resume(intent));
 
@@ -452,7 +515,7 @@ public class WebAuthProviderTest {
         WebAuthProvider.init(account)
                 .withState("1234567890")
                 .useCodeGrant(false)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
         final Intent intent = createAuthIntent(createHash("aToken", "iToken", "refresh_token", "1234567890", null));
         assertTrue(WebAuthProvider.resume(intent));
 
@@ -476,7 +539,7 @@ public class WebAuthProviderTest {
         WebAuthProvider.init(account)
                 .withState("1234567890")
                 .useCodeGrant(false)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
         final Intent intent = createAuthIntent(createHash("aToken", "iToken", "refresh_token", "1234567890", "access_denied"));
         assertTrue(WebAuthProvider.resume(intent));
 
@@ -508,7 +571,7 @@ public class WebAuthProviderTest {
         WebAuthProvider.init(account)
                 .withState("1234567890")
                 .useCodeGrant(false)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
         final Intent intent = createAuthIntent(createHash("aToken", "iToken", "refresh_token", "1234567890", "some other error"));
         assertTrue(WebAuthProvider.resume(intent));
 
@@ -540,7 +603,7 @@ public class WebAuthProviderTest {
         WebAuthProvider.init(account)
                 .withState("abcdefghijk")
                 .useCodeGrant(false)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
         final Intent intent = createAuthIntent(createHash("aToken", "iToken", "refresh_token", "1234567890", null));
         assertTrue(WebAuthProvider.resume(intent));
 
@@ -572,7 +635,7 @@ public class WebAuthProviderTest {
         verifyNoMoreInteractions(callback);
         WebAuthProvider.init(account)
                 .useCodeGrant(false)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
 
         final Intent intent = createAuthIntent(createHash("aToken", "iToken", "refresh_token", "1234567890", null));
         assertFalse(WebAuthProvider.resume(999, Activity.RESULT_OK, intent));
@@ -606,7 +669,7 @@ public class WebAuthProviderTest {
         WebAuthProvider.init(account)
                 .withState("abcdefghijk")
                 .useCodeGrant(false)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
 
         final Intent intent = createAuthIntent("");
         assertFalse(WebAuthProvider.resume(intent));
@@ -616,17 +679,16 @@ public class WebAuthProviderTest {
     public void shouldHavePKCEEnabled() throws Exception {
         WebAuthProvider.init(account)
                 .useCodeGrant(true)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
 
         assertTrue(WebAuthProvider.getInstance().shouldUsePKCE());
     }
-
 
     @Test
     public void shouldHavePKCEDisabled() throws Exception {
         WebAuthProvider.init(account)
                 .useCodeGrant(false)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
 
         assertFalse(WebAuthProvider.getInstance().shouldUsePKCE());
     }
@@ -659,7 +721,7 @@ public class WebAuthProviderTest {
         WebAuthProvider.init(account)
                 .withState("abcdefghijk")
                 .useCodeGrant(false)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
         assertFalse(WebAuthProvider.resume(null));
     }
 
@@ -675,7 +737,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldClearInstanceAfterSuccessAuthenticationWithIntent() throws Exception {
         WebAuthProvider.init(account)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
 
         assertThat(WebAuthProvider.getInstance(), is(notNullValue()));
         final Intent intent = createAuthIntent(createHash("aToken", "iToken", "refresh_token", "1234567890", null));

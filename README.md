@@ -114,7 +114,7 @@ Step 2: Input the code
 
 ```java
 authentication
-    .loginWithEmail("info@auth0.com", "a secret password", "my-passwordless-connection")
+    .loginWithEmail("info@auth0.com", "123456", "my-passwordless-connection")
     .start(new BaseCallback<Credentials>() {
         @Override
         public void onSuccess(Credentials payload) {
@@ -171,7 +171,7 @@ authentication
 
 The client provides methods to link and unlink users account.
 
-Create a new instance by passing the account and the token:
+Create a new instance by passing the account and the primary user token:
 
 ```java
 Auth0 account = new Auth0("client id", "domain");
@@ -236,6 +236,9 @@ users
     });
 ```
 
+> In all the cases, the `User ID` parameter is the unique identifier of the auth0 account instance. i.e. in `google-oauth2|123456789081523216417` it would be the part after the '|' pipe: `123456789081523216417`.
+
+
 ### Web-based Auth
 
 First go to [Auth0 Dashboard](https://manage.auth0.com/#/applications) and go to your application's settings. Make sure you have in *Allowed Callback URLs* a URL with the following format:
@@ -283,24 +286,10 @@ Also register the intent filters inside your activity's tag, so you can receive 
 
 Make sure the Activity's **launchMode** is declared as "singleTask" or the result won't come back after the authentication.
 
-In your `Activity` class define a constant like `WEB_REQ_CODE` that holds the request code (an `int`), that will be sent back with the intent once the auth is finished in the browser/webview. To capture the response, override the `OnActivityResult` and the `onNewIntent` methods and call `WebAuthProvider.resume()` with the received parameters:
+When you launch the WebAuthProvider you'll expect a result back. To capture the response override the `onNewIntent` method and call `WebAuthProvider.resume()` with the received parameters:
 
 ```java
 public class MyActivity extends Activity {
-
-    private static final int WEB_REQ_CODE = 110;
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        switch (requestCode) {
-            case WEB_REQ_CODE:
-                lockView.showProgress(false);
-                WebAuthProvider.resume(requestCode, resultCode, data);
-                break;
-            default:
-                super.onActivityResult(requestCode, resultCode, data);
-        }
-    }
 
     @Override
     protected void onNewIntent(Intent intent) {
@@ -318,7 +307,7 @@ public class MyActivity extends Activity {
 ```java
 WebAuthProvider.init(account)
                 .withConnection("twitter")
-                .start(MainActivity.this, authCallback, WEB_REQ_CODE);
+                .start(MainActivity.this, authCallback);
 ```
 
 #### Use Code grant with PKCE
@@ -328,7 +317,7 @@ WebAuthProvider.init(account)
 ```java
 WebAuthProvider.init(account)
                 .useCodeGrant(true)
-                .start(MainActivity.this, authCallback, WEB_REQ_CODE);
+                .start(MainActivity.this, authCallback);
 ```
 
 #### Specify scope
@@ -336,7 +325,7 @@ WebAuthProvider.init(account)
 ```java
 WebAuthProvider.init(account)
                 .withScope("user openid")
-                .start(MainActivity.this, authCallback, WEB_REQ_CODE);
+                .start(MainActivity.this, authCallback);
 ```
 
 > The default scope used is `openid`
@@ -346,14 +335,15 @@ WebAuthProvider.init(account)
 ```java
 WebAuthProvider.init(account)
                 .withConnectionScope("email", "profile", "calendar:read")
-                .start(MainActivity.this, authCallback, WEB_REQ_CODE);
+                .start(MainActivity.this, authCallback);
 ```
 
 #### Authenticate with Auth0 hosted login page
+Simply don't specify any custom connection and the Lock web widget will show.
 
 ```java
 WebAuthProvider.init(account)
-                .start(MainActivity.this, authCallback, WEB_REQ_CODE);
+                .start(MainActivity.this, authCallback);
 ```
 
 
