@@ -179,7 +179,7 @@ public class WebAuthProvider {
         public Builder withConnectionScope(@NonNull String... connectionScope) {
             StringBuilder sb = new StringBuilder();
             for (String s : connectionScope) {
-                sb.append(s.trim()).append(",");
+                sb.append(s.trim()).append(" ");
             }
             if (sb.length() > 0) {
                 sb.deleteCharAt(sb.length() - 1);
@@ -412,7 +412,6 @@ public class WebAuthProvider {
         String redirectUri = helper.getCallbackURI(account.getDomainUrl());
 
         final Map<String, String> queryParameters = new HashMap<>();
-        queryParameters.put(KEY_SCOPE, scope);
         queryParameters.put(KEY_CONNECTION_SCOPE, connectionScope);
         queryParameters.put(KEY_RESPONSE_TYPE, RESPONSE_TYPE_TOKEN);
 
@@ -439,6 +438,9 @@ public class WebAuthProvider {
 
         if (account.getTelemetry() != null) {
             queryParameters.put(KEY_TELEMETRY, account.getTelemetry().getValue());
+        }
+        if (scope != null) {
+            queryParameters.put(KEY_SCOPE, scope);
         }
 
         queryParameters.put(KEY_STATE, state);

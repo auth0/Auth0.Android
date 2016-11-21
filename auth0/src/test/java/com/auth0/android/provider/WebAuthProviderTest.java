@@ -66,7 +66,7 @@ public class WebAuthProviderTest {
     private static final int REQUEST_CODE = 11;
     private static final String CONNECTION_NAME = "connection";
     private static final String SCOPE = "scope";
-    private static final String CONNECTION_SCOPE = "connection_scope";
+    private static final String[] CONNECTION_SCOPE = new String[]{"some", "connection", "scope"};
     private static final String STATE = "state";
     private static final String SCOPE_OPEN_ID = "openid";
 
@@ -177,7 +177,7 @@ public class WebAuthProviderTest {
         assertThat(instance.useFullscreen(), is(true));
         assertThat(instance.getConnection(), is(CONNECTION_NAME));
         assertThat(instance.getScope(), is(SCOPE));
-        assertThat(instance.getConnectionScope(), is(CONNECTION_SCOPE));
+        assertThat(instance.getConnectionScope(), is("some connection scope"));
         assertThat(instance.getState(), is(STATE));
         assertThat(instance.getParameters(), is(notNullValue()));
         assertThat(instance.getParameters(), Matchers.hasEntry("key", (Object) "value"));
@@ -290,7 +290,7 @@ public class WebAuthProviderTest {
         assertThat(intent.getData(), hasParamWithValue("connection", "my-connection"));
         assertThat(intent.getData(), hasParamWithValue("state", "a-state"));
         assertThat(intent.getData(), hasParamWithValue("scope", "super_scope"));
-        assertThat(intent.getData(), hasParamWithValue("connection_scope", "first_connection_scope,second_connection_scope"));
+        assertThat(intent.getData(), hasParamWithValue("connection_scope", "first_connection_scope second_connection_scope"));
         assertThat(intent.getData(), hasParamWithValue("client_id", "clientId"));
         assertThat(intent.getData(), hasParamWithValue("response_type", "token"));
         assertThat(intent.getData(), hasParamWithValue("redirect_uri", "https://domain/android/package/callback"));
@@ -301,6 +301,38 @@ public class WebAuthProviderTest {
         assertThat(intent.getData(), not(hasParamWithName("code_challenge")));
         assertThat(intent.getData(), not(hasParamWithValue("auth0Client", null)));
         assertThat(intent.getData(), not(hasParamWithValue("auth0Client", "null")));
+    }
+
+    @Test
+    public void shouldOverrideScopeSetWithAuthenticationParameters() throws Exception {
+        Activity activity = mock(Activity.class);
+        Context appContext = mock(Context.class);
+        when(activity.getApplicationContext()).thenReturn(appContext);
+        when(activity.getPackageName()).thenReturn("package");
+        when(appContext.getPackageName()).thenReturn("package");
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("custom_param_1", "custom_value_1");
+        parameters.put("custom_param_2", "custom_value_2");
+        parameters.put("scope", "default_scope");
+        WebAuthProvider.init(account)
+                .withScope("profile super_scope")
+                .withParameters(parameters)
+                .start(activity, callback);
+
+        final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        verify(activity).startActivity(intentCaptor.capture());
+
+        Uri baseUriString = Uri.parse(account.getAuthorizeUrl());
+
+        Intent intent = intentCaptor.getValue();
+        assertThat(intent, is(notNullValue()));
+        assertThat(intent, hasData(hasScheme(baseUriString.getScheme())));
+        assertThat(intent.getData(), hasHost(baseUriString.getHost()));
+        assertThat(intent.getData(), hasPath(baseUriString.getPath()));
+
+        assertThat(intent.getData(), hasParamWithValue("scope", "profile super_scope"));
+        assertThat(intent.getData(), hasParamWithValue("custom_param_1", "custom_value_1"));
+        assertThat(intent.getData(), hasParamWithValue("custom_param_2", "custom_value_2"));
     }
 
     @Test
