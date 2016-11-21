@@ -1,5 +1,14 @@
 # Change Log
 
+## [1.1.1](https://github.com/auth0/Auth0.Android/tree/1.1.1) (2015-11-21)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.1.0...1.1.1)
+
+**Deprecated**
+- Deprecate WebView authentication flow [\#36](https://github.com/auth0/Auth0.Android/pull/36) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Fixed**
+- Avoid sending null parameters in the authorize URI [\#35](https://github.com/auth0/Auth0.Android/pull/35) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.1.0](https://github.com/auth0/Auth0.Android/tree/1.1.0) (2015-10-14)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.0.1...1.1.0)
 
