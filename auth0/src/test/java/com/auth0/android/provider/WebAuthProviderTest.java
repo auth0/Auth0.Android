@@ -10,6 +10,7 @@ import android.support.annotation.Nullable;
 
 import com.auth0.android.Auth0;
 import com.auth0.android.authentication.AuthenticationException;
+import com.auth0.android.authentication.ParameterBuilder;
 import com.auth0.android.result.Credentials;
 
 import org.hamcrest.Matchers;
@@ -25,6 +26,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricGradleTestRunner;
+import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import java.util.HashMap;
@@ -57,7 +59,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-@RunWith(RobolectricGradleTestRunner.class)
+@RunWith(RobolectricTestRunner.class)
 @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 18, manifest = Config.NONE)
 public class WebAuthProviderTest {
 
@@ -144,6 +146,17 @@ public class WebAuthProviderTest {
 
         final WebAuthProvider instance = WebAuthProvider.getInstance();
         assertThat(instance.getScope(), is(SCOPE_OPEN_ID));
+    }
+
+    @Test
+    public void shouldNotOverrideScopeValue() throws Exception {
+        Map<String, Object> parameters = ParameterBuilder.newBuilder().setScope("openid email picture").asDictionary();
+        WebAuthProvider.init(account)
+                .withParameters(parameters)
+                .start(activity, callback);
+
+        final WebAuthProvider instance = WebAuthProvider.getInstance();
+        assertThat(instance.getScope(), is("openid email picture"));
     }
 
     @Test
