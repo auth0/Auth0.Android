@@ -85,16 +85,9 @@ public class WebAuthProvider {
 
     private boolean useFullscreen;
     private boolean useBrowser;
-    private String state;
-    private String nonce;
-    private String scope;
-    private String connectionScope;
-    private Map<String, Object> parameters;
-    private String connectionName;
+    private Map<String, String> parameters;
 
     private static WebAuthProvider providerInstance;
-    @ResponseType
-    private String responseType;
 
     @VisibleForTesting
     WebAuthProvider(@NonNull Auth0 account) {
@@ -104,29 +97,22 @@ public class WebAuthProvider {
     public static class Builder {
 
         private final Auth0 account;
+        private final Map<String, String> values;
         private boolean useBrowser;
         private boolean useFullscreen;
-        private String state;
-        private String nonce;
-        private String scope;
-        private String connectionScope;
-        private Map<String, Object> parameters;
-        private String connectionName;
         private PKCE pkce;
-        @ResponseType
-        private String responseType;
 
         Builder(Auth0 account) {
             this.account = account;
+            this.values = new HashMap<>();
 
             //Default values
             this.useBrowser = true;
             this.useFullscreen = false;
-            this.responseType = ResponseType.CODE;
-            this.parameters = new HashMap<>();
-            this.state = UUID.randomUUID().toString();
-            this.nonce = UUID.randomUUID().toString();
-            this.scope = null;
+            withResponseType(ResponseType.CODE);
+            withState(UUID.randomUUID().toString());
+            withNonce(UUID.randomUUID().toString());
+            withScope(SCOPE_TYPE_OPENID);
         }
 
         /**
@@ -163,7 +149,7 @@ public class WebAuthProvider {
          * @return the current builder instance
          */
         public Builder withState(@NonNull String state) {
-            this.state = state;
+            this.values.put(KEY_STATE, state);
             return this;
         }
 
@@ -174,7 +160,7 @@ public class WebAuthProvider {
          * @return the current builder instance
          */
         public Builder withNonce(@NonNull String nonce) {
-            this.nonce = nonce;
+            this.values.put(KEY_NONCE, nonce);
             return this;
         }
 
@@ -185,7 +171,7 @@ public class WebAuthProvider {
          * @return the current builder instance
          */
         public Builder withScope(@NonNull String scope) {
-            this.scope = scope;
+            this.values.put(KEY_SCOPE, scope);
             return this;
         }
 
@@ -202,7 +188,7 @@ public class WebAuthProvider {
             }
             if (sb.length() > 0) {
                 sb.deleteCharAt(sb.length() - 1);
-                this.connectionScope = sb.toString();
+                this.values.put(KEY_CONNECTION_SCOPE, sb.toString());
             }
             return this;
         }
@@ -225,18 +211,22 @@ public class WebAuthProvider {
          * @return the current builder instance
          */
         public Builder withResponseType(@ResponseType String type) {
-            this.responseType = type;
+            this.values.put(KEY_RESPONSE_TYPE, type);
             return this;
         }
 
         /**
-         * Use extra parameters on the request
+         * Use extra parameters on the request.
          *
          * @param parameters to add
          * @return the current builder instance
          */
-        public Builder withParameters(@Nullable Map<String, Object> parameters) {
-            this.parameters = parameters != null ? new HashMap<>(parameters) : new HashMap<String, Object>();
+        public Builder withParameters(@NonNull Map<String, Object> parameters) {
+            for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+                if (entry.getValue() != null) {
+                    this.values.put(entry.getKey(), entry.getValue().toString());
+                }
+            }
             return this;
         }
 
@@ -247,7 +237,7 @@ public class WebAuthProvider {
          * @return the current builder instance
          */
         public Builder withConnection(@NonNull String connectionName) {
-            this.connectionName = connectionName;
+            this.values.put(KEY_CONNECTION, connectionName);
             return this;
         }
 
@@ -272,13 +262,7 @@ public class WebAuthProvider {
             WebAuthProvider webAuth = new WebAuthProvider(account);
             webAuth.useBrowser = useBrowser;
             webAuth.useFullscreen = useFullscreen;
-            webAuth.state = state;
-            webAuth.nonce = nonce;
-            webAuth.scope = scope;
-            webAuth.connectionScope = connectionScope;
-            webAuth.responseType = responseType;
-            webAuth.parameters = parameters;
-            webAuth.connectionName = connectionName;
+            webAuth.parameters = values;
             webAuth.pkce = pkce;
 
             providerInstance = webAuth;
@@ -384,11 +368,11 @@ public class WebAuthProvider {
                 ex = new AuthenticationException("a0.invalid_configuration", "The application isn't configured properly for the social connection. Please check your Auth0's application configuration");
             }
             callback.onFailure(ex);
-        } else if (values.containsKey(KEY_STATE) && !values.get(KEY_STATE).equals(state)) {
-            Log.e(TAG, String.format("Received state doesn't match. Received %s but expected %s", values.get(KEY_STATE), state));
+        } else if (values.containsKey(KEY_STATE) && !values.get(KEY_STATE).equals(getState())) {
+            Log.e(TAG, String.format("Received state doesn't match. Received %s but expected %s", values.get(KEY_STATE), getState()));
             final AuthenticationException ex = new AuthenticationException("access_denied", "The received state is invalid. Try again.");
             callback.onFailure(ex);
-        } else if (responseType.equals(ResponseType.ID_TOKEN) && !hasValidNonce(nonce, values.get(KEY_ID_TOKEN))) {
+        } else if (ResponseType.ID_TOKEN.equals(getResponseType()) && !hasValidNonce(getNonce(), values.get(KEY_ID_TOKEN))) {
             Log.e(TAG, "Received nonce doesn't match.");
             final AuthenticationException ex = new AuthenticationException("access_denied", "The received nonce is invalid. Try again.");
             callback.onFailure(ex);
@@ -431,7 +415,7 @@ public class WebAuthProvider {
             Log.d(TAG, "About to start the authorization using the WebView");
             intent = new Intent(activity, WebAuthActivity.class);
             intent.setData(authorizeUri);
-            intent.putExtra(WebAuthActivity.CONNECTION_NAME_EXTRA, connectionName);
+            intent.putExtra(WebAuthActivity.CONNECTION_NAME_EXTRA, getConnection());
             intent.putExtra(WebAuthActivity.FULLSCREEN_EXTRA, useFullscreen);
             activity.startActivityForResult(intent, requestCode);
         }
@@ -450,24 +434,21 @@ public class WebAuthProvider {
 
     @VisibleForTesting
     boolean shouldUsePKCE() {
-        return responseType.equals(ResponseType.CODE) && PKCE.isAvailable();
+        return ResponseType.CODE.equals(getResponseType()) && PKCE.isAvailable();
     }
 
     private Uri buildAuthorizeUri() {
         final Uri authorizeUri = Uri.parse(account.getAuthorizeUrl());
         String redirectUri = helper.getCallbackURI(account.getDomainUrl());
+        final Map<String, String> queryParameters = new HashMap<>(parameters);
 
-        final Map<String, String> queryParameters = new HashMap<>();
-        queryParameters.put(KEY_CONNECTION_SCOPE, connectionScope);
-        queryParameters.put(KEY_RESPONSE_TYPE, responseType);
-
-        if (responseType.equals(ResponseType.ID_TOKEN)) {
-            queryParameters.put(KEY_NONCE, nonce);
-        } else if (shouldUsePKCE()) {
+        if (!getResponseType().equals(ResponseType.ID_TOKEN)) {
+            queryParameters.remove(KEY_NONCE);
+        }
+        if (shouldUsePKCE()) {
             try {
                 pkce = createPKCE(redirectUri);
                 String codeChallenge = pkce.getCodeChallenge();
-                queryParameters.put(KEY_RESPONSE_TYPE, ResponseType.CODE);
                 queryParameters.put(KEY_CODE_CHALLENGE, codeChallenge);
                 queryParameters.put(KEY_CODE_CHALLENGE_METHOD, METHOD_SHA_256);
                 Log.v(TAG, "Using PKCE authentication flow");
@@ -476,29 +457,15 @@ public class WebAuthProvider {
             }
         }
 
-        Log.v(TAG, String.format("Adding %d user parameters to the Authorize Uri", parameters.size()));
-        for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-            Object value = entry.getValue();
-            if (value != null) {
-                queryParameters.put(entry.getKey(), value.toString());
-            }
-        }
-
         if (account.getTelemetry() != null) {
             queryParameters.put(KEY_TELEMETRY, account.getTelemetry().getValue());
         }
-
-        queryParameters.put(KEY_SCOPE, getScope());
-        queryParameters.put(KEY_STATE, state);
-        queryParameters.put(KEY_CONNECTION, connectionName);
         queryParameters.put(KEY_CLIENT_ID, account.getClientId());
         queryParameters.put(KEY_REDIRECT_URI, redirectUri);
 
         final Uri.Builder builder = authorizeUri.buildUpon();
         for (Map.Entry<String, String> entry : queryParameters.entrySet()) {
-            if (entry.getValue() != null) {
-                builder.appendQueryParameter(entry.getKey(), entry.getValue());
-            }
+            builder.appendQueryParameter(entry.getKey(), entry.getValue());
         }
         Uri uri = builder.build();
         Log.d(TAG, "The final Authorize Uri is " + uri.toString());
@@ -523,38 +490,34 @@ public class WebAuthProvider {
     }
 
     String getState() {
-        return state;
+        return parameters.get(KEY_STATE);
     }
 
     String getNonce() {
-        return nonce;
+        return parameters.get(KEY_NONCE);
     }
 
     String getScope() {
-        if (this.scope != null) {
-            return this.scope;
-        }
-        return this.parameters.get(KEY_SCOPE) != null ? (String) this.parameters.get(KEY_SCOPE) : SCOPE_TYPE_OPENID;
+        return this.parameters.get(KEY_SCOPE);
     }
 
     String getConnectionScope() {
-        return connectionScope;
+        return parameters.get(KEY_CONNECTION_SCOPE);
     }
 
-    @ResponseType
     String getResponseType() {
-        return responseType;
+        return parameters.get(KEY_RESPONSE_TYPE);
     }
 
     boolean useCodeGrant() {
-        return responseType.equals(ResponseType.CODE);
+        return ResponseType.CODE.equals(parameters.get(KEY_RESPONSE_TYPE));
     }
 
-    Map<String, Object> getParameters() {
+    Map<String, String> getParameters() {
         return parameters;
     }
 
     String getConnection() {
-        return connectionName;
+        return parameters.get(KEY_CONNECTION);
     }
 }

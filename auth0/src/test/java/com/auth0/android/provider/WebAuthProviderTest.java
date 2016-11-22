@@ -129,7 +129,6 @@ public class WebAuthProviderTest {
         assertThat(instance.getState(), is(not(Matchers.isEmptyOrNullString())));
         assertThat(instance.getNonce(), is(not(Matchers.isEmptyOrNullString())));
         assertThat(instance.getParameters(), is(notNullValue()));
-        assertThat(instance.getParameters().isEmpty(), is(true));
     }
 
     @Test
@@ -142,6 +141,15 @@ public class WebAuthProviderTest {
     }
 
     @Test
+    public void shouldNotHaveDefaultConnectionScope() throws Exception {
+        WebAuthProvider.init(account)
+                .start(activity, callback);
+
+        final WebAuthProvider instance = WebAuthProvider.getInstance();
+        assertThat(instance.getConnectionScope(), is(nullValue()));
+    }
+
+    @Test
     public void shouldHaveDefaultScope() throws Exception {
         WebAuthProvider.init(account)
                 .start(activity, callback);
@@ -151,23 +159,39 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldNotOverrideScopeValue() throws Exception {
-        Map<String, Object> parameters = ParameterBuilder.newBuilder().setScope("openid email picture").asDictionary();
+    public void shouldHaveDefaultState() throws Exception {
         WebAuthProvider.init(account)
-                .withParameters(parameters)
                 .start(activity, callback);
 
         final WebAuthProvider instance = WebAuthProvider.getInstance();
-        assertThat(instance.getScope(), is("openid email picture"));
+        assertThat(instance.getState(), is(notNullValue()));
     }
 
     @Test
-    public void shouldCallStartWithRequestCode() throws Exception {
+    public void shouldHaveDefaultNonce() throws Exception {
         WebAuthProvider.init(account)
                 .start(activity, callback);
 
         final WebAuthProvider instance = WebAuthProvider.getInstance();
-        assertThat(instance.getScope(), is(SCOPE_OPEN_ID));
+        assertThat(instance.getNonce(), is(notNullValue()));
+    }
+
+    @Test
+    public void shouldHaveDefaultResponseType() throws Exception {
+        WebAuthProvider.init(account)
+                .start(activity, callback);
+
+        final WebAuthProvider instance = WebAuthProvider.getInstance();
+        assertThat(instance.getResponseType(), is("code"));
+    }
+
+    @Test
+    public void shouldUseCodeGrantByDefault() throws Exception {
+        WebAuthProvider.init(account)
+                .start(activity, callback);
+
+        final WebAuthProvider instance = WebAuthProvider.getInstance();
+        assertThat(instance.useCodeGrant(), is(true));
     }
 
     @Test
@@ -206,6 +230,32 @@ public class WebAuthProviderTest {
 
         assertFalse(WebAuthProvider.resume(intentMock));
         assertFalse(WebAuthProvider.resume(0, 0, intentMock));
+    }
+
+    @Test
+    public void shouldNotSetAuthenticationParametersWithNullValue() throws Exception {
+        Activity activity = mock(Activity.class);
+        Context appContext = mock(Context.class);
+        when(activity.getApplicationContext()).thenReturn(appContext);
+        when(activity.getPackageName()).thenReturn("package");
+        when(appContext.getPackageName()).thenReturn("package");
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("a", "valid");
+        parameters.put("b", null);
+        parameters.put("scope", null);
+        WebAuthProvider.init(account)
+                .withParameters(parameters)
+                .start(activity, callback);
+
+        final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        verify(activity).startActivity(intentCaptor.capture());
+
+        Intent intent = intentCaptor.getValue();
+        assertThat(intent, is(notNullValue()));
+
+        assertThat(intent.getData(), hasParamWithValue("a", "valid"));
+        assertThat(intent.getData(), not(hasParamWithName("b")));
+        assertThat(intent.getData(), hasParamWithValue("scope", SCOPE_OPEN_ID));
     }
 
     @Test
@@ -340,6 +390,87 @@ public class WebAuthProviderTest {
     }
 
     @Test
+    public void shouldBuildAuthorizeURIWithCustomConnection() throws Exception {
+        Activity activity = mock(Activity.class);
+        Context appContext = mock(Context.class);
+        when(activity.getApplicationContext()).thenReturn(appContext);
+        when(activity.getPackageName()).thenReturn("package");
+        when(appContext.getPackageName()).thenReturn("package");
+        WebAuthProvider.init(account)
+                .withConnection("my-connection")
+                .start(activity, callback);
+
+        final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        verify(activity).startActivity(intentCaptor.capture());
+
+        Intent intent = intentCaptor.getValue();
+        assertThat(intent, is(notNullValue()));
+
+        assertThat(intent.getData(), hasParamWithValue("connection", "my-connection"));
+    }
+
+    @Test
+    public void shouldBuildAuthorizeURIWithCustomScope() throws Exception {
+        Activity activity = mock(Activity.class);
+        Context appContext = mock(Context.class);
+        when(activity.getApplicationContext()).thenReturn(appContext);
+        when(activity.getPackageName()).thenReturn("package");
+        when(appContext.getPackageName()).thenReturn("package");
+        WebAuthProvider.init(account)
+                .withScope("openid profile contacts")
+                .start(activity, callback);
+
+        final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        verify(activity).startActivity(intentCaptor.capture());
+
+        Intent intent = intentCaptor.getValue();
+        assertThat(intent, is(notNullValue()));
+
+        assertThat(intent.getData(), hasParamWithValue("scope", "openid profile contacts"));
+    }
+
+    @Test
+    public void shouldBuildAuthorizeURIWithCustomState() throws Exception {
+        Activity activity = mock(Activity.class);
+        Context appContext = mock(Context.class);
+        when(activity.getApplicationContext()).thenReturn(appContext);
+        when(activity.getPackageName()).thenReturn("package");
+        when(appContext.getPackageName()).thenReturn("package");
+        WebAuthProvider.init(account)
+                .withState("1234567890")
+                .start(activity, callback);
+
+        final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        verify(activity).startActivity(intentCaptor.capture());
+
+        Intent intent = intentCaptor.getValue();
+        assertThat(intent, is(notNullValue()));
+
+        assertThat(intent.getData(), hasParamWithValue("state", "1234567890"));
+    }
+
+    @Test
+    public void shouldBuildAuthorizeURIWithCustomNonce() throws Exception {
+        Activity activity = mock(Activity.class);
+        Context appContext = mock(Context.class);
+        when(activity.getApplicationContext()).thenReturn(appContext);
+        when(activity.getPackageName()).thenReturn("package");
+        when(appContext.getPackageName()).thenReturn("package");
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.ID_TOKEN) //requires nonce
+                .withNonce("1234567890")
+                .start(activity, callback);
+
+        final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        verify(activity).startActivity(intentCaptor.capture());
+
+        Intent intent = intentCaptor.getValue();
+        assertThat(intent, is(notNullValue()));
+
+        assertThat(intent.getData(), hasParamWithValue("nonce", "1234567890"));
+    }
+
+    @Test
     public void shouldBuildAuthorizeURIWithCustomParameters() throws Exception {
         Activity activity = mock(Activity.class);
         Context appContext = mock(Context.class);
@@ -379,6 +510,7 @@ public class WebAuthProviderTest {
         assertThat(intent.getData(), hasParamWithValue("custom_param_1", "custom_value_1"));
         assertThat(intent.getData(), hasParamWithValue("custom_param_2", "custom_value_2"));
 
+        assertThat(intent.getData(), not(hasParamWithName("nonce")));
         assertThat(intent.getData(), not(hasParamWithName("code_challenge_method")));
         assertThat(intent.getData(), not(hasParamWithName("code_challenge")));
         assertThat(intent.getData(), not(hasParamWithValue("auth0Client", null)));
@@ -430,25 +562,52 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldOverrideScopeSetWithAuthenticationParameters() throws Exception {
-        Activity activity = mock(Activity.class);
+    public void shouldRespectCallOrderWhenFirstSettingScope() throws Exception {
         Context appContext = mock(Context.class);
+        when(appContext.getPackageName()).thenReturn("package");
+        Activity activity = mock(Activity.class);
         when(activity.getApplicationContext()).thenReturn(appContext);
         when(activity.getPackageName()).thenReturn("package");
-        when(appContext.getPackageName()).thenReturn("package");
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put("custom_param_1", "custom_value_1");
-        parameters.put("custom_param_2", "custom_value_2");
+        parameters.put("custom_param", "custom_value");
         parameters.put("scope", "default_scope");
+        final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        Uri baseUriString = Uri.parse(account.getAuthorizeUrl());
+
         WebAuthProvider.init(account)
                 .withScope("profile super_scope")
                 .withParameters(parameters)
                 .start(activity, callback);
-
-        final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
         verify(activity).startActivity(intentCaptor.capture());
 
+        Intent intent = intentCaptor.getValue();
+        assertThat(intent, is(notNullValue()));
+        assertThat(intent, hasData(hasScheme(baseUriString.getScheme())));
+        assertThat(intent.getData(), hasHost(baseUriString.getHost()));
+        assertThat(intent.getData(), hasPath(baseUriString.getPath()));
+
+        assertThat(intent.getData(), hasParamWithValue("scope", "default_scope"));
+        assertThat(intent.getData(), hasParamWithValue("custom_param", "custom_value"));
+    }
+
+    @Test
+    public void shouldRespectCallOrderWhenFirstSettingParameters() throws Exception {
+        Context appContext = mock(Context.class);
+        when(appContext.getPackageName()).thenReturn("package");
+        Activity activity = mock(Activity.class);
+        when(activity.getApplicationContext()).thenReturn(appContext);
+        when(activity.getPackageName()).thenReturn("package");
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("custom_param", "custom_value");
+        parameters.put("scope", "default_scope");
+        final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
         Uri baseUriString = Uri.parse(account.getAuthorizeUrl());
+
+        WebAuthProvider.init(account)
+                .withParameters(parameters)
+                .withScope("profile super_scope")
+                .start(activity, callback);
+        verify(activity).startActivity(intentCaptor.capture());
 
         Intent intent = intentCaptor.getValue();
         assertThat(intent, is(notNullValue()));
@@ -457,8 +616,18 @@ public class WebAuthProviderTest {
         assertThat(intent.getData(), hasPath(baseUriString.getPath()));
 
         assertThat(intent.getData(), hasParamWithValue("scope", "profile super_scope"));
-        assertThat(intent.getData(), hasParamWithValue("custom_param_1", "custom_value_1"));
-        assertThat(intent.getData(), hasParamWithValue("custom_param_2", "custom_value_2"));
+        assertThat(intent.getData(), hasParamWithValue("custom_param", "custom_value"));
+    }
+
+    @Test
+    public void shouldNotOverrideScopeValueWithDefaultScope() throws Exception {
+        Map<String, Object> parameters = ParameterBuilder.newBuilder().setScope("openid email picture").asDictionary();
+        WebAuthProvider.init(account)
+                .withParameters(parameters)
+                .start(activity, callback);
+
+        final WebAuthProvider instance = WebAuthProvider.getInstance();
+        assertThat(instance.getScope(), is("openid email picture"));
     }
 
     @Test
