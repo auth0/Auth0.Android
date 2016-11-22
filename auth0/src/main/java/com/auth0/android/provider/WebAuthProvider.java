@@ -36,6 +36,10 @@ import android.util.Log;
 import com.auth0.android.Auth0;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
+import com.auth0.android.authentication.ResponseType;
+import com.auth0.android.jwt.Claim;
+import com.auth0.android.jwt.DecodeException;
+import com.auth0.android.jwt.JWT;
 import com.auth0.android.result.Credentials;
 
 import java.util.HashMap;
@@ -58,6 +62,7 @@ public class WebAuthProvider {
     private static final String KEY_REFRESH_TOKEN = "refresh_token";
     private static final String KEY_RESPONSE_TYPE = "response_type";
     private static final String KEY_STATE = "state";
+    private static final String KEY_NONCE = "nonce";
     private static final String KEY_CONNECTION = "connection";
     private static final String KEY_CLIENT_ID = "client_id";
     private static final String KEY_REDIRECT_URI = "redirect_uri";
@@ -66,8 +71,6 @@ public class WebAuthProvider {
     private static final String KEY_TELEMETRY = "auth0Client";
 
     private static final String ERROR_VALUE_ACCESS_DENIED = "access_denied";
-    private static final String RESPONSE_TYPE_TOKEN = "token";
-    private static final String RESPONSE_TYPE_CODE = "code";
     private static final String SCOPE_TYPE_OPENID = "openid";
     private static final String KEY_CODE = "code";
     private static final String KEY_CODE_CHALLENGE = "code_challenge";
@@ -83,13 +86,15 @@ public class WebAuthProvider {
     private boolean useFullscreen;
     private boolean useBrowser;
     private String state;
+    private String nonce;
     private String scope;
     private String connectionScope;
-    private boolean useCodeGrant;
     private Map<String, Object> parameters;
     private String connectionName;
 
     private static WebAuthProvider providerInstance;
+    @ResponseType
+    private String responseType;
 
     @VisibleForTesting
     WebAuthProvider(@NonNull Auth0 account) {
@@ -102,12 +107,14 @@ public class WebAuthProvider {
         private boolean useBrowser;
         private boolean useFullscreen;
         private String state;
+        private String nonce;
         private String scope;
         private String connectionScope;
-        private boolean useCodeGrant;
         private Map<String, Object> parameters;
         private String connectionName;
         private PKCE pkce;
+        @ResponseType
+        private String responseType;
 
         Builder(Auth0 account) {
             this.account = account;
@@ -115,9 +122,10 @@ public class WebAuthProvider {
             //Default values
             this.useBrowser = true;
             this.useFullscreen = false;
-            this.useCodeGrant = true;
+            this.responseType = ResponseType.CODE;
             this.parameters = new HashMap<>();
             this.state = UUID.randomUUID().toString();
+            this.nonce = UUID.randomUUID().toString();
             this.scope = null;
         }
 
@@ -160,6 +168,17 @@ public class WebAuthProvider {
         }
 
         /**
+         * Use a custom nonce in the requests
+         *
+         * @param nonce to use in the requests
+         * @return the current builder instance
+         */
+        public Builder withNonce(@NonNull String nonce) {
+            this.nonce = nonce;
+            return this;
+        }
+
+        /**
          * Give a scope for this request.
          *
          * @param scope to request.
@@ -195,7 +214,18 @@ public class WebAuthProvider {
          * @return the current builder instance
          */
         public Builder useCodeGrant(boolean useCodeGrant) {
-            this.useCodeGrant = useCodeGrant;
+            withResponseType(useCodeGrant ? ResponseType.CODE : ResponseType.TOKEN);
+            return this;
+        }
+
+        /**
+         * Choose the grant type for this request.
+         *
+         * @param type the ResponseType to request to the Authentication API.
+         * @return the current builder instance
+         */
+        public Builder withResponseType(@ResponseType String type) {
+            this.responseType = type;
             return this;
         }
 
@@ -243,9 +273,10 @@ public class WebAuthProvider {
             webAuth.useBrowser = useBrowser;
             webAuth.useFullscreen = useFullscreen;
             webAuth.state = state;
+            webAuth.nonce = nonce;
             webAuth.scope = scope;
             webAuth.connectionScope = connectionScope;
-            webAuth.useCodeGrant = useCodeGrant;
+            webAuth.responseType = responseType;
             webAuth.parameters = parameters;
             webAuth.connectionName = connectionName;
             webAuth.pkce = pkce;
@@ -357,6 +388,10 @@ public class WebAuthProvider {
             Log.e(TAG, String.format("Received state doesn't match. Received %s but expected %s", values.get(KEY_STATE), state));
             final AuthenticationException ex = new AuthenticationException("access_denied", "The received state is invalid. Try again.");
             callback.onFailure(ex);
+        } else if (responseType.equals(ResponseType.ID_TOKEN) && !hasValidNonce(nonce, values.get(KEY_ID_TOKEN))) {
+            Log.e(TAG, "Received nonce doesn't match.");
+            final AuthenticationException ex = new AuthenticationException("access_denied", "The received nonce is invalid. Try again.");
+            callback.onFailure(ex);
         } else {
             Log.d(TAG, "Authenticated using web flow");
             if (shouldUsePKCE()) {
@@ -403,8 +438,19 @@ public class WebAuthProvider {
     }
 
     @VisibleForTesting
+    static boolean hasValidNonce(String nonce, String token) {
+        try {
+            final JWT idToken = new JWT(token);
+            final Claim nonceClaim = idToken.getClaim(KEY_NONCE);
+            return !(nonceClaim == null || !nonce.equals(nonceClaim.asString()));
+        } catch (DecodeException e) {
+            return false;
+        }
+    }
+
+    @VisibleForTesting
     boolean shouldUsePKCE() {
-        return useCodeGrant && PKCE.isAvailable();
+        return responseType.equals(ResponseType.CODE) && PKCE.isAvailable();
     }
 
     private Uri buildAuthorizeUri() {
@@ -413,13 +459,15 @@ public class WebAuthProvider {
 
         final Map<String, String> queryParameters = new HashMap<>();
         queryParameters.put(KEY_CONNECTION_SCOPE, connectionScope);
-        queryParameters.put(KEY_RESPONSE_TYPE, RESPONSE_TYPE_TOKEN);
+        queryParameters.put(KEY_RESPONSE_TYPE, responseType);
 
-        if (shouldUsePKCE()) {
+        if (responseType.equals(ResponseType.ID_TOKEN)) {
+            queryParameters.put(KEY_NONCE, nonce);
+        } else if (shouldUsePKCE()) {
             try {
                 pkce = createPKCE(redirectUri);
                 String codeChallenge = pkce.getCodeChallenge();
-                queryParameters.put(KEY_RESPONSE_TYPE, RESPONSE_TYPE_CODE);
+                queryParameters.put(KEY_RESPONSE_TYPE, ResponseType.CODE);
                 queryParameters.put(KEY_CODE_CHALLENGE, codeChallenge);
                 queryParameters.put(KEY_CODE_CHALLENGE_METHOD, METHOD_SHA_256);
                 Log.v(TAG, "Using PKCE authentication flow");
@@ -478,6 +526,10 @@ public class WebAuthProvider {
         return state;
     }
 
+    String getNonce() {
+        return nonce;
+    }
+
     String getScope() {
         if (this.scope != null) {
             return this.scope;
@@ -489,8 +541,13 @@ public class WebAuthProvider {
         return connectionScope;
     }
 
+    @ResponseType
+    String getResponseType() {
+        return responseType;
+    }
+
     boolean useCodeGrant() {
-        return useCodeGrant;
+        return responseType.equals(ResponseType.CODE);
     }
 
     Map<String, Object> getParameters() {
