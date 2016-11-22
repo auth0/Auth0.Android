@@ -25,6 +25,7 @@
 package com.auth0.android.provider;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -378,10 +379,28 @@ public class WebAuthProvider {
             callback.onFailure(ex);
         } else {
             Log.d(TAG, "Authenticated using web flow");
+            final Credentials urlCredentials = new Credentials(values.get(KEY_ID_TOKEN), values.get(KEY_ACCESS_TOKEN), values.get(KEY_TOKEN_TYPE), values.get(KEY_REFRESH_TOKEN));
+            Log.d(TAG, String.format("URL Credentials > Id=%s, Acc=%s, Typ=%s, Ref=%s", urlCredentials.getIdToken(), urlCredentials.getAccessToken(), urlCredentials.getType(), urlCredentials.getRefreshToken()));
             if (shouldUsePKCE()) {
-                pkce.getToken(values.get(KEY_CODE), callback);
+                pkce.getToken(values.get(KEY_CODE), new AuthCallback() {
+                    @Override
+                    public void onFailure(@NonNull Dialog dialog) {
+                        callback.onFailure(dialog);
+                    }
+
+                    @Override
+                    public void onFailure(AuthenticationException exception) {
+                        callback.onFailure(exception);
+                    }
+
+                    @Override
+                    public void onSuccess(@NonNull Credentials codeCredentials) {
+                        Log.d(TAG, String.format("CODE Credentials > Id=%s, Acc=%s, Typ=%s, Ref=%s", codeCredentials.getIdToken(), codeCredentials.getAccessToken(), codeCredentials.getType(), codeCredentials.getRefreshToken()));
+                        callback.onSuccess(mergeCredentials(urlCredentials, codeCredentials));
+                    }
+                });
             } else {
-                callback.onSuccess(new Credentials(values.get(KEY_ID_TOKEN), values.get(KEY_ACCESS_TOKEN), values.get(KEY_TOKEN_TYPE), values.get(KEY_REFRESH_TOKEN)));
+                callback.onSuccess(urlCredentials);
             }
         }
         providerInstance = null;
@@ -419,6 +438,16 @@ public class WebAuthProvider {
             intent.putExtra(WebAuthActivity.FULLSCREEN_EXTRA, useFullscreen);
             activity.startActivityForResult(intent, requestCode);
         }
+    }
+
+    @VisibleForTesting
+    static Credentials mergeCredentials(Credentials urlCredentials, Credentials codeCredentials) {
+        final String idToken = urlCredentials.getIdToken() != null ? urlCredentials.getIdToken() : codeCredentials.getIdToken();
+        final String accessToken = codeCredentials.getAccessToken();
+        final String type = urlCredentials.getType() != null ? urlCredentials.getType() : codeCredentials.getType();
+        final String refreshToken = urlCredentials.getRefreshToken() != null ? urlCredentials.getRefreshToken() : codeCredentials.getRefreshToken();
+
+        return new Credentials(idToken, accessToken, type, refreshToken);
     }
 
     @VisibleForTesting
