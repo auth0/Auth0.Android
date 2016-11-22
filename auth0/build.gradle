@@ -21,11 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+import java.text.SimpleDateFormat
 
 apply plugin: 'com.android.library'
 apply from: '../scripts/jacoco.gradle'
 
-def semver = defineVersion()
+def semver = current()
 version = semver.stringVersion
 
 logger.lifecycle("Using version ${version} for ${name}")
@@ -69,25 +70,18 @@ dependencies {
     testCompile 'com.android.support.test.espresso:espresso-intents:2.2.2'
 }
 
-def defineVersion() {
-    def current = describeGit(false)
-    def snapshot = current == null
-    if (snapshot) {
-        current = describeGit(snapshot, "0.0.1")
-    }
-    return new Semver(snapshot: snapshot, version: current)
-}
-
 def describeGit(boolean snapshot, String defaultValue = null) {
     def arguments = ['describe', '--tags']
     arguments.add(snapshot ? '--abbrev=0' : '--exact-match')
     def stdout = new ByteArrayOutputStream()
+    def errout = new ByteArrayOutputStream()
     def string = defaultValue
     try {
         def result = project.exec {
             executable = 'git'
             args = arguments
             standardOutput = stdout
+            errorOutput = errout
         }
 
         result.assertNormalExitValue()
@@ -97,19 +91,94 @@ def describeGit(boolean snapshot, String defaultValue = null) {
         }
     } catch (Exception e) {
         logger.debug("Failed git describe command", e)
+        logger.debug(errout.toString())
     } finally {
         stdout.close()
+        errout.close()
     }
     return string
 }
 
+def current() {
+    def current = describeGit(false)
+    def snapshot = current == null
+    if (snapshot) {
+        current = describeGit(snapshot, "0.0.1")
+    }
+    return new Semver(snapshot: snapshot, version: current)
+}
 class Semver {
-    def version
+    String version
     def snapshot
 
     def getStringVersion() {
         return snapshot ? version + "-SNAPSHOT" : version
     }
+
+    def nextPatch() {
+        def parts = version.split("\\.")
+        def patch = Integer.parseInt(parts[2]) + 1
+        return "${parts[0]}.${parts[1]}.${patch}"
+    }
+
+    def nextMinor() {
+        def parts = version.split("\\.")
+        def minor = Integer.parseInt(parts[1]) + 1
+        return "${parts[0]}.${minor}.0"
+    }
+
+}
+
+class ChangeLogTask extends DefaultTask {
+
+    def repo
+    def current
+    def next
+
+    @TaskAction
+    def changelog() {
+        def file = new File('CHANGELOG.md')
+        def output = new File('CHANGELOG.md.release')
+        output.newWriter().withWriter { writer ->
+
+            file.eachLine { line, number ->
+                if (number == 0 && !line.startsWith("# Change Log")) {
+                    throw new StopExecutionException("Change Log file is not properly formatted")
+                }
+
+                writer.println(line)
+
+                if (number == 0 || number > 1) {
+                    return
+                }
+
+                def formatter = new SimpleDateFormat("yyyy-MM-dd")
+                writer.println()
+                writer.println("## [${next}](https://github.com/auth0/${repo}/tree/${next}) (${formatter.format(new Date())})")
+                writer.println("[Full Changelog](https://github.com/auth0/${repo}/compare/${current}...${next})")
+                def command = ["curl", "https://webtask.it.auth0.com/api/run/wt-hernan-auth0_com-0/oss-changelog.js?webtask_no_cache=1&repo=${repo}&milestone=${next}", "-f", "-s", "-H", "Accept: text/markdown"]
+                def content = command.execute()
+                content.consumeProcessOutputStream(writer)
+                if (content.waitFor() != 0) {
+                    throw new StopExecutionException("Failed to request changelog for version ${next}")
+                }
+            }
+        }
+        file.delete()
+        output.renameTo('CHANGELOG.md')
+    }
+}
+
+task changelogMinor(type: ChangeLogTask) {
+    repo = "Auth0.Android"
+    current = semver.version
+    next = semver.nextMinor()
+}
+
+task changelogPatch(type: ChangeLogTask) {
+    repo = "Auth0.Android"
+    current = semver.version
+    next = semver.nextPatch()
 }
 
 apply from: '../scripts/maven.gradle'
