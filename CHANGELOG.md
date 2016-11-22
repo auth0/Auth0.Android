@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.1.2](https://github.com/auth0/Auth0.Android/tree/1.1.2) (2015-11-22)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.1.1...1.1.2)
+
+**Fixed**
+- Fix scope being overriden during WebAuth [\#37](https://github.com/auth0/Auth0.Android/pull/37) ([hzalaz](https://github.com/hzalaz))
+
 ## [1.1.1](https://github.com/auth0/Auth0.Android/tree/1.1.1) (2015-11-21)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.1.0...1.1.1)
 
