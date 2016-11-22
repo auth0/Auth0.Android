@@ -118,7 +118,7 @@ public class WebAuthProvider {
             this.useCodeGrant = true;
             this.parameters = new HashMap<>();
             this.state = UUID.randomUUID().toString();
-            this.scope = SCOPE_TYPE_OPENID;
+            this.scope = null;
         }
 
         /**
@@ -439,10 +439,8 @@ public class WebAuthProvider {
         if (account.getTelemetry() != null) {
             queryParameters.put(KEY_TELEMETRY, account.getTelemetry().getValue());
         }
-        if (scope != null) {
-            queryParameters.put(KEY_SCOPE, scope);
-        }
 
+        queryParameters.put(KEY_SCOPE, getScope());
         queryParameters.put(KEY_STATE, state);
         queryParameters.put(KEY_CONNECTION, connectionName);
         queryParameters.put(KEY_CLIENT_ID, account.getClientId());
@@ -481,7 +479,10 @@ public class WebAuthProvider {
     }
 
     String getScope() {
-        return scope;
+        if (this.scope != null) {
+            return this.scope;
+        }
+        return this.parameters.get(KEY_SCOPE) != null ? (String) this.parameters.get(KEY_SCOPE) : SCOPE_TYPE_OPENID;
     }
 
     String getConnectionScope() {
