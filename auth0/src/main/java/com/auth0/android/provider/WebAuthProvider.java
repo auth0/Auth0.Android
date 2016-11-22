@@ -64,6 +64,7 @@ public class WebAuthProvider {
     private static final String KEY_RESPONSE_TYPE = "response_type";
     private static final String KEY_STATE = "state";
     private static final String KEY_NONCE = "nonce";
+    private static final String KEY_AUDIENCE = "audience";
     private static final String KEY_CONNECTION = "connection";
     private static final String KEY_CLIENT_ID = "client_id";
     private static final String KEY_REDIRECT_URI = "redirect_uri";
@@ -165,6 +166,17 @@ public class WebAuthProvider {
          */
         public Builder withNonce(@NonNull String nonce) {
             this.values.put(KEY_NONCE, nonce);
+            return this;
+        }
+
+        /**
+         * Use a custom audience in the requests
+         *
+         * @param audience to use in the requests
+         * @return the current builder instance
+         */
+        public Builder withAudience(@NonNull String audience) {
+            this.values.put(KEY_AUDIENCE, audience);
             return this;
         }
 

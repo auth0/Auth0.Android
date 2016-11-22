@@ -199,6 +199,72 @@ public class WebAuthProviderTest {
         assertThat(uri, hasParamWithValue("connection", "some-connection"));
     }
 
+    //audience
+
+    @Test
+    public void shouldNotHaveDefaultAudience() throws Exception {
+        WebAuthProvider.init(account)
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, not(hasParamWithName("audience")));
+    }
+
+    @Test
+    public void shouldSetAudienceFromParameters() throws Exception {
+        Map<String, Object> parameters = Collections.singletonMap("audience", "https://mydomain.auth0.com/myapi");
+        WebAuthProvider.init(account)
+                .withAudience("https://google.com/apis")
+                .withParameters(parameters)
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("audience", "https://mydomain.auth0.com/myapi"));
+    }
+
+    @Test
+    public void shouldSetAudienceFromSetter() throws Exception {
+        Map<String, Object> parameters = Collections.singletonMap("audience", "https://mydomain.auth0.com/myapi");
+        WebAuthProvider.init(account)
+                .withParameters(parameters)
+                .withAudience("https://google.com/apis")
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("audience", "https://google.com/apis"));
+    }
+
+    @Test
+    public void shouldNotOverrideAudienceValueWithDefaultAudience() throws Exception {
+        Map<String, Object> parameters = Collections.singletonMap("audience", "https://mydomain.auth0.com/myapi");
+        WebAuthProvider.init(account)
+                .withParameters(parameters)
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("audience", "https://mydomain.auth0.com/myapi"));
+    }
+
+    @Test
+    public void shouldSetAudience() throws Exception {
+        WebAuthProvider.init(account)
+                .withAudience("https://google.com/apis")
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("audience", "https://google.com/apis"));
+    }
+
 
     //scope
 
@@ -1288,8 +1354,8 @@ public class WebAuthProviderTest {
         assertFalse(WebAuthProvider.hasValidNonce("0987654321", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVC.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk"));
     }
 
-    //Test Helper Functions
 
+    //Test Helper Functions
     private Intent createAuthIntent(String hash) {
         Uri validUri = Uri.parse("https://domain.auth0.com/android/package/callback" + hash);
         Intent intent = new Intent();
