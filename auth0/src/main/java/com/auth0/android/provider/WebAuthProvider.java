@@ -49,7 +49,7 @@ import java.util.UUID;
 /**
  * OAuth2 Web Authentication Provider.
  * It can use an external browser by sending the {@link android.content.Intent#ACTION_VIEW} intent or also the {@link WebAuthActivity}.
- * This behaviour is changed using {@link WebAuthProvider#useBrowser()}, and defaults to use browser.
+ * This behaviour is changed using {@link WebAuthProvider.Builder#useBrowser(boolean)}, and defaults to use browser.
  */
 public class WebAuthProvider {
 
@@ -477,7 +477,8 @@ public class WebAuthProvider {
         return getResponseType().contains(RESPONSE_TYPE_CODE) && PKCE.isAvailable();
     }
 
-    private Uri buildAuthorizeUri() {
+    @VisibleForTesting
+    Uri buildAuthorizeUri() {
         final Uri authorizeUri = Uri.parse(account.getAuthorizeUrl());
         String redirectUri = helper.getCallbackURI(account.getDomainUrl());
         final Map<String, String> queryParameters = new HashMap<>(parameters);
@@ -521,43 +522,19 @@ public class WebAuthProvider {
         return providerInstance;
     }
 
-    boolean useBrowser() {
-        return useBrowser;
-    }
-
-    boolean useFullscreen() {
-        return useFullscreen;
-    }
-
-    String getState() {
+    private String getState() {
         return parameters.get(KEY_STATE);
     }
 
-    String getNonce() {
+    private String getNonce() {
         return parameters.get(KEY_NONCE);
     }
 
-    String getScope() {
-        return this.parameters.get(KEY_SCOPE);
-    }
-
-    String getConnectionScope() {
-        return parameters.get(KEY_CONNECTION_SCOPE);
-    }
-
-    String getResponseType() {
+    private String getResponseType() {
         return parameters.get(KEY_RESPONSE_TYPE);
     }
 
-    boolean useCodeGrant() {
-        return parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_CODE);
-    }
-
-    Map<String, String> getParameters() {
-        return parameters;
-    }
-
-    String getConnection() {
+    private String getConnection() {
         return parameters.get(KEY_CONNECTION);
     }
 }
