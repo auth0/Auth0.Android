@@ -11,9 +11,13 @@ android:
   - extra-google-m2repository
   - extra-android-m2repository
   - addon-google_apis-google-24
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
 cache:
   directories:
-  - $HOME/.m2
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/
 script:
   - "./gradlew clean test jacocoTestReport --continue"
 after_success:
