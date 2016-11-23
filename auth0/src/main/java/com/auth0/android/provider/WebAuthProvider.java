@@ -392,7 +392,6 @@ public class WebAuthProvider {
         } else {
             Log.d(TAG, "Authenticated using web flow");
             final Credentials urlCredentials = new Credentials(values.get(KEY_ID_TOKEN), values.get(KEY_ACCESS_TOKEN), values.get(KEY_TOKEN_TYPE), values.get(KEY_REFRESH_TOKEN));
-            Log.d(TAG, String.format("URL Credentials > Id=%s, Acc=%s, Typ=%s, Ref=%s", urlCredentials.getIdToken(), urlCredentials.getAccessToken(), urlCredentials.getType(), urlCredentials.getRefreshToken()));
             if (shouldUsePKCE()) {
                 pkce.getToken(values.get(KEY_CODE), new AuthCallback() {
                     @Override
@@ -407,7 +406,6 @@ public class WebAuthProvider {
 
                     @Override
                     public void onSuccess(@NonNull Credentials codeCredentials) {
-                        Log.d(TAG, String.format("CODE Credentials > Id=%s, Acc=%s, Typ=%s, Ref=%s", codeCredentials.getIdToken(), codeCredentials.getAccessToken(), codeCredentials.getType(), codeCredentials.getRefreshToken()));
                         callback.onSuccess(mergeCredentials(urlCredentials, codeCredentials));
                     }
                 });
@@ -454,10 +452,10 @@ public class WebAuthProvider {
 
     @VisibleForTesting
     static Credentials mergeCredentials(Credentials urlCredentials, Credentials codeCredentials) {
-        final String idToken = urlCredentials.getIdToken() != null ? urlCredentials.getIdToken() : codeCredentials.getIdToken();
-        final String accessToken = codeCredentials.getAccessToken();
-        final String type = urlCredentials.getType() != null ? urlCredentials.getType() : codeCredentials.getType();
-        final String refreshToken = urlCredentials.getRefreshToken() != null ? urlCredentials.getRefreshToken() : codeCredentials.getRefreshToken();
+        final String idToken = codeCredentials.getIdToken() != null ? codeCredentials.getIdToken() : urlCredentials.getIdToken();
+        final String accessToken = codeCredentials.getAccessToken() != null ? codeCredentials.getAccessToken() : urlCredentials.getAccessToken();
+        final String type = codeCredentials.getType() != null ? codeCredentials.getType() : urlCredentials.getType();
+        final String refreshToken = codeCredentials.getRefreshToken() != null ? codeCredentials.getRefreshToken() : urlCredentials.getRefreshToken();
 
         return new Credentials(idToken, accessToken, type, refreshToken);
     }

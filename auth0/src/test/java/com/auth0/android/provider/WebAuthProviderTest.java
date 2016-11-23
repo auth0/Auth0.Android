@@ -863,10 +863,10 @@ public class WebAuthProviderTest {
         verify(callback).onSuccess(credentialsCaptor.capture());
 
         assertThat(credentialsCaptor.getValue(), is(notNullValue()));
-        assertThat(credentialsCaptor.getValue().getIdToken(), is("urlId"));
+        assertThat(credentialsCaptor.getValue().getIdToken(), is("codeId"));
         assertThat(credentialsCaptor.getValue().getAccessToken(), is("codeAccess"));
-        assertThat(credentialsCaptor.getValue().getRefreshToken(), is("urlRefresh"));
-        assertThat(credentialsCaptor.getValue().getType(), is("urlType"));
+        assertThat(credentialsCaptor.getValue().getRefreshToken(), is("codeRefresh"));
+        assertThat(credentialsCaptor.getValue().getType(), is("codeType"));
     }
 
     @Test
@@ -893,10 +893,10 @@ public class WebAuthProviderTest {
         verify(callback).onSuccess(credentialsCaptor.capture());
 
         assertThat(credentialsCaptor.getValue(), is(notNullValue()));
-        assertThat(credentialsCaptor.getValue().getIdToken(), is("urlId"));
+        assertThat(credentialsCaptor.getValue().getIdToken(), is("codeId"));
         assertThat(credentialsCaptor.getValue().getAccessToken(), is("codeAccess"));
-        assertThat(credentialsCaptor.getValue().getRefreshToken(), is("urlRefresh"));
-        assertThat(credentialsCaptor.getValue().getType(), is("urlType"));
+        assertThat(credentialsCaptor.getValue().getRefreshToken(), is("codeRefresh"));
+        assertThat(credentialsCaptor.getValue().getType(), is("codeType"));
     }
 
     @Test
@@ -1211,23 +1211,22 @@ public class WebAuthProviderTest {
         Credentials codeCredentials = new Credentials("codeId", "codeAccess", "codeType", "codeRefresh");
         Credentials merged = WebAuthProvider.mergeCredentials(urlCredentials, codeCredentials);
 
-        assertThat(merged.getIdToken(), is(urlCredentials.getIdToken()));
+        assertThat(merged.getIdToken(), is(codeCredentials.getIdToken()));
         assertThat(merged.getAccessToken(), is(codeCredentials.getAccessToken()));
-        assertThat(merged.getType(), is(urlCredentials.getType()));
-        assertThat(merged.getRefreshToken(), is(urlCredentials.getRefreshToken()));
+        assertThat(merged.getType(), is(codeCredentials.getType()));
+        assertThat(merged.getRefreshToken(), is(codeCredentials.getRefreshToken()));
     }
 
     @Test
     public void shouldPreferNonNullValuesWhenMergingCredentials() throws Exception {
-        Credentials urlCredentials = new Credentials(null, "urlAccess", null, null);
-        Credentials codeCredentials = new Credentials("codeId", null, "codeType", "codeRefresh");
+        Credentials urlCredentials = new Credentials("urlId", "urlAccess", "urlType", "urlRefresh");
+        Credentials codeCredentials = new Credentials(null, null, null, null);
         Credentials merged = WebAuthProvider.mergeCredentials(urlCredentials, codeCredentials);
 
-        assertThat(merged.getIdToken(), is(codeCredentials.getIdToken()));
-        //Except URL AccessToken as it's short-lived
-        assertThat(merged.getAccessToken(), is(codeCredentials.getAccessToken()));
-        assertThat(merged.getType(), is(codeCredentials.getType()));
-        assertThat(merged.getRefreshToken(), is(codeCredentials.getRefreshToken()));
+        assertThat(merged.getIdToken(), is(urlCredentials.getIdToken()));
+        assertThat(merged.getAccessToken(), is(urlCredentials.getAccessToken()));
+        assertThat(merged.getType(), is(urlCredentials.getType()));
+        assertThat(merged.getRefreshToken(), is(urlCredentials.getRefreshToken()));
     }
 
     @Test
