@@ -126,21 +126,11 @@ public class WebAuthProviderTest {
     @Test
     public void shouldEnableLogging() throws Exception {
         WebAuthProvider.init(account)
-                .setLogging(true)
+                .enableLogging()
                 .start(activity, callback);
 
         final WebAuthProvider instance = WebAuthProvider.getInstance();
         assertTrue(instance.isLoggingEnabled());
-    }
-
-    @Test
-    public void shouldDisableLogging() throws Exception {
-        WebAuthProvider.init(account)
-                .setLogging(false)
-                .start(activity, callback);
-
-        final WebAuthProvider instance = WebAuthProvider.getInstance();
-        assertFalse(instance.isLoggingEnabled());
     }
 
     //connection

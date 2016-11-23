@@ -114,13 +114,11 @@ public class UsersAPIClient {
     }
 
     /**
-     * Whether to log every Request and Response or not.
+     * Log every Request and Response made by this client.
      * You shouldn't enable logging in release builds as it may leak sensitive information.
-     *
-     * @param enabled whether the logging is enabled or not.
      */
-    public void setLogging(boolean enabled) {
-        logInterceptor.setLevel(enabled ? HttpLoggingInterceptor.Level.BODY : HttpLoggingInterceptor.Level.NONE);
+    public void enableLogging() {
+        logInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
     }
 
     public String getClientId() {

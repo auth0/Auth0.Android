@@ -256,13 +256,11 @@ public class WebAuthProvider {
         }
 
         /**
-         * Whether to log every Request and Response or not.
+         * Log every Request and Response made by this provider.
          * You shouldn't enable logging in release builds as it may leak sensitive information.
-         *
-         * @param enabled whether the logging is enabled or not.
          */
-        public Builder setLogging(boolean enabled) {
-            this.loggingEnabled = enabled;
+        public Builder enableLogging() {
+            this.loggingEnabled = true;
             return this;
         }
 
@@ -533,7 +531,9 @@ public class WebAuthProvider {
     private PKCE createPKCE(String redirectUri) {
         if (pkce == null) {
             final AuthenticationAPIClient client = new AuthenticationAPIClient(account);
-            client.setLogging(loggingEnabled);
+            if (loggingEnabled) {
+                client.enableLogging();
+            }
             return new PKCE(client, redirectUri);
         } else {
             return pkce;

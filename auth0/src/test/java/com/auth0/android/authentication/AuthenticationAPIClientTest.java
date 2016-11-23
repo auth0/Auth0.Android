@@ -157,7 +157,7 @@ public class AuthenticationAPIClientTest {
 
         ArgumentCaptor<Interceptor> interceptorCaptor = ArgumentCaptor.forClass(Interceptor.class);
         AuthenticationAPIClient client = new AuthenticationAPIClient(account, factory, okClient);
-        client.setLogging(true);
+        client.enableLogging();
 
         verify(okClient).interceptors();
         verify(list).add(interceptorCaptor.capture());
@@ -165,27 +165,6 @@ public class AuthenticationAPIClientTest {
         assertThat(interceptorCaptor.getValue(), is(notNullValue()));
         assertThat(interceptorCaptor.getValue(), is(instanceOf(HttpLoggingInterceptor.class)));
         assertThat(((HttpLoggingInterceptor) interceptorCaptor.getValue()).getLevel(), is(HttpLoggingInterceptor.Level.BODY));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void shouldDisableHttpLogging() throws Exception {
-        Auth0 account = mock(Auth0.class);
-        RequestFactory factory = mock(RequestFactory.class);
-        OkHttpClient okClient = mock(OkHttpClient.class);
-        List list = mock(List.class);
-        when(okClient.interceptors()).thenReturn(list);
-
-        ArgumentCaptor<Interceptor> interceptorCaptor = ArgumentCaptor.forClass(Interceptor.class);
-        AuthenticationAPIClient client = new AuthenticationAPIClient(account, factory, okClient);
-        client.setLogging(false);
-
-        verify(okClient).interceptors();
-        verify(list).add(interceptorCaptor.capture());
-
-        assertThat(interceptorCaptor.getValue(), is(notNullValue()));
-        assertThat(interceptorCaptor.getValue(), is(instanceOf(HttpLoggingInterceptor.class)));
-        assertThat(((HttpLoggingInterceptor) interceptorCaptor.getValue()).getLevel(), is(HttpLoggingInterceptor.Level.NONE));
     }
 
     @SuppressWarnings("unchecked")
