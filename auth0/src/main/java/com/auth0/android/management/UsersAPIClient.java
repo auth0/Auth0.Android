@@ -42,6 +42,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.logging.HttpLoggingInterceptor;
 
 import java.util.List;
 import java.util.Map;
@@ -67,6 +68,7 @@ public class UsersAPIClient {
 
     private final Auth0 auth0;
     private final OkHttpClient client;
+    private final HttpLoggingInterceptor logInterceptor;
     private final Gson gson;
     private final RequestFactory factory;
     private final ErrorBuilder<ManagementException> mgmtErrorBuilder;
@@ -93,13 +95,15 @@ public class UsersAPIClient {
     }
 
     @VisibleForTesting
-    UsersAPIClient(Auth0 auth0, RequestFactory factory) {
-        this(auth0, factory, new OkHttpClient(), GsonProvider.buildGson());
+    UsersAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClient client) {
+        this(auth0, factory, client, GsonProvider.buildGson());
     }
 
     private UsersAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClient client, Gson gson) {
         this.auth0 = auth0;
         this.client = client;
+        this.logInterceptor = new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.NONE);
+        this.client.interceptors().add(logInterceptor);
         this.gson = gson;
         this.factory = factory;
         this.mgmtErrorBuilder = new ManagementErrorBuilder();
@@ -107,6 +111,16 @@ public class UsersAPIClient {
         if (telemetry != null) {
             factory.setClientInfo(telemetry.getValue());
         }
+    }
+
+    /**
+     * Whether to log every Request and Response or not.
+     * You shouldn't enable logging in release builds as it may leak sensitive information.
+     *
+     * @param enabled whether the logging is enabled or not.
+     */
+    public void setLogging(boolean enabled) {
+        logInterceptor.setLevel(enabled ? HttpLoggingInterceptor.Level.BODY : HttpLoggingInterceptor.Level.NONE);
     }
 
     public String getClientId() {
