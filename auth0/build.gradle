@@ -25,9 +25,7 @@ import java.text.SimpleDateFormat
 
 apply plugin: 'com.android.library'
 apply from: '../scripts/jacoco.gradle'
-
-def semver = current()
-version = semver.stringVersion
+apply plugin: ReleasePlugin
 
 logger.lifecycle("Using version ${version} for ${name}")
 
@@ -70,43 +68,6 @@ dependencies {
     testCompile 'com.android.support.test.espresso:espresso-intents:2.2.2'
 }
 
-def describeGit(boolean snapshot, String defaultValue = null) {
-    def arguments = ['describe', '--tags']
-    arguments.add(snapshot ? '--abbrev=0' : '--exact-match')
-    def stdout = new ByteArrayOutputStream()
-    def errout = new ByteArrayOutputStream()
-    def string = defaultValue
-    try {
-        def result = project.exec {
-            executable = 'git'
-            args = arguments
-            standardOutput = stdout
-            errorOutput = errout
-        }
-
-        result.assertNormalExitValue()
-
-        if (stdout.toByteArray().length > 0) {
-            string = stdout.toString().replace("\n", "")
-        }
-    } catch (Exception e) {
-        logger.debug("Failed git describe command", e)
-        logger.debug(errout.toString())
-    } finally {
-        stdout.close()
-        errout.close()
-    }
-    return string
-}
-
-def current() {
-    def current = describeGit(false)
-    def snapshot = current == null
-    if (snapshot) {
-        current = describeGit(snapshot, "0.0.1")
-    }
-    return new Semver(snapshot: snapshot, version: current)
-}
 class Semver {
     String version
     def snapshot
@@ -171,15 +132,48 @@ class ChangeLogTask extends DefaultTask {
 
 task changelogMinor(type: ChangeLogTask) {
     repo = "Auth0.Android"
-    current = semver.version
-    next = semver.nextMinor()
+    current = project.ext.semver.version
+    next = project.ext.semver.nextMinor()
 }
 
 task changelogPatch(type: ChangeLogTask) {
     repo = "Auth0.Android"
-    current = semver.version
-    next = semver.nextPatch()
+    current = project.ext.semver.version
+    next = project.ext.semver.nextPatch()
 }
 
 apply from: '../scripts/maven.gradle'
 apply from: '../scripts/bintray.gradle'
+
+class ReleasePlugin implements Plugin<Project> {
+    void apply(Project target) {
+        def semver = current()
+        target.version = semver.stringVersion
+        target.ext.semver = semver
+    }
+
+    def current() {
+        def current = describeGit(false)
+        def snapshot = current == null
+        if (snapshot) {
+            current = describeGit(snapshot, "0.0.1")
+        }
+        return new Semver(snapshot: snapshot, version: current)
+    }
+
+    def describeGit(boolean snapshot, String defaultValue = null) {
+        def command = ['git', 'describe', '--tags', (snapshot ? '--abbrev=0' : '--exact-match')].execute()
+        def stdout = new ByteArrayOutputStream()
+        def errout = new ByteArrayOutputStream()
+        command.consumeProcessOutput(stdout, errout)
+        if (command.waitFor() != 0) {
+            Logging.getLogger(ReleasePlugin.class).debug(errout.toString())
+            return defaultValue
+        }
+        if (stdout.toByteArray().length > 0) {
+            return stdout.toString().replace("\n", "")
+        }
+
+        return defaultValue
+    }
+}
