@@ -37,7 +37,6 @@ import android.util.Log;
 import com.auth0.android.Auth0;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.authentication.ResponseType;
 import com.auth0.android.jwt.Claim;
 import com.auth0.android.jwt.DecodeException;
 import com.auth0.android.jwt.JWT;
@@ -73,6 +72,9 @@ public class WebAuthProvider {
 
     private static final String ERROR_VALUE_ACCESS_DENIED = "access_denied";
     private static final String SCOPE_TYPE_OPENID = "openid";
+    private static final String RESPONSE_TYPE_ID_TOKEN = "id_token";
+    private static final String RESPONSE_TYPE_TOKEN = "token";
+    private static final String RESPONSE_TYPE_CODE = "code";
     private static final String KEY_CODE = "code";
     private static final String KEY_CODE_CHALLENGE = "code_challenge";
     private static final String KEY_CODE_CHALLENGE_METHOD = "code_challenge_method";
@@ -208,11 +210,21 @@ public class WebAuthProvider {
         /**
          * Choose the grant type for this request.
          *
-         * @param type the ResponseType to request to the Authentication API.
+         * @param type the ResponseType to request to the Authentication API. Multiple ResponseType's can be defined using a pipe. "CODE | TOKEN"
          * @return the current builder instance
          */
-        public Builder withResponseType(@ResponseType String type) {
-            this.values.put(KEY_RESPONSE_TYPE, type);
+        public Builder withResponseType(@ResponseType int type) {
+            StringBuilder sb = new StringBuilder();
+            if ((type & ResponseType.CODE) != 0) {
+                sb.append(RESPONSE_TYPE_CODE).append(" ");
+            }
+            if ((type & ResponseType.ID_TOKEN) != 0) {
+                sb.append(RESPONSE_TYPE_ID_TOKEN).append(" ");
+            }
+            if ((type & ResponseType.TOKEN) != 0) {
+                sb.append(RESPONSE_TYPE_TOKEN);
+            }
+            this.values.put(KEY_RESPONSE_TYPE, sb.toString().trim());
             return this;
         }
 
@@ -373,7 +385,7 @@ public class WebAuthProvider {
             Log.e(TAG, String.format("Received state doesn't match. Received %s but expected %s", values.get(KEY_STATE), getState()));
             final AuthenticationException ex = new AuthenticationException("access_denied", "The received state is invalid. Try again.");
             callback.onFailure(ex);
-        } else if (ResponseType.ID_TOKEN.equals(getResponseType()) && !hasValidNonce(getNonce(), values.get(KEY_ID_TOKEN))) {
+        } else if (getResponseType().contains(RESPONSE_TYPE_ID_TOKEN) && !hasValidNonce(getNonce(), values.get(KEY_ID_TOKEN))) {
             Log.e(TAG, "Received nonce doesn't match.");
             final AuthenticationException ex = new AuthenticationException("access_denied", "The received nonce is invalid. Try again.");
             callback.onFailure(ex);
@@ -461,9 +473,8 @@ public class WebAuthProvider {
         }
     }
 
-    @VisibleForTesting
-    boolean shouldUsePKCE() {
-        return ResponseType.CODE.equals(getResponseType()) && PKCE.isAvailable();
+    private boolean shouldUsePKCE() {
+        return getResponseType().contains(RESPONSE_TYPE_CODE) && PKCE.isAvailable();
     }
 
     private Uri buildAuthorizeUri() {
@@ -471,7 +482,7 @@ public class WebAuthProvider {
         String redirectUri = helper.getCallbackURI(account.getDomainUrl());
         final Map<String, String> queryParameters = new HashMap<>(parameters);
 
-        if (!getResponseType().equals(ResponseType.ID_TOKEN)) {
+        if (!getResponseType().contains(RESPONSE_TYPE_ID_TOKEN)) {
             queryParameters.remove(KEY_NONCE);
         }
         if (shouldUsePKCE()) {
@@ -539,7 +550,7 @@ public class WebAuthProvider {
     }
 
     boolean useCodeGrant() {
-        return ResponseType.CODE.equals(parameters.get(KEY_RESPONSE_TYPE));
+        return parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_CODE);
     }
 
     Map<String, String> getParameters() {

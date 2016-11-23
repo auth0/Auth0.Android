@@ -12,7 +12,6 @@ import android.support.annotation.Nullable;
 import com.auth0.android.Auth0;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.authentication.ParameterBuilder;
-import com.auth0.android.authentication.ResponseType;
 import com.auth0.android.result.Credentials;
 
 import org.hamcrest.Matchers;
@@ -1100,24 +1099,6 @@ public class WebAuthProviderTest {
         assertFalse(WebAuthProvider.hasValidNonce("0987654321", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk"));
     }
 
-    @Test
-    public void shouldHavePKCEEnabled() throws Exception {
-        WebAuthProvider.init(account)
-                .useCodeGrant(true)
-                .start(activity, callback);
-
-        assertTrue(WebAuthProvider.getInstance().shouldUsePKCE());
-    }
-
-    @Test
-    public void shouldHavePKCEDisabled() throws Exception {
-        WebAuthProvider.init(account)
-                .useCodeGrant(false)
-                .start(activity, callback);
-
-        assertFalse(WebAuthProvider.getInstance().shouldUsePKCE());
-    }
-
     public void shouldFailToResumeWithRequestCodeWithEmptyUriValues() throws Exception {
         verifyNoMoreInteractions(callback);
         WebAuthProvider.init(account)
@@ -1179,6 +1160,83 @@ public class WebAuthProviderTest {
         final Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null));
         WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent);
         assertThat(WebAuthProvider.getInstance(), is(nullValue()));
+    }
+
+    @Test
+    public void shouldSetResponseTypeToken() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.TOKEN)
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        assertThat(provider, is(notNullValue()));
+        assertThat(provider.getResponseType(), is("token"));
+    }
+
+    @Test
+    public void shouldSetResponseTypeIdToken() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.ID_TOKEN)
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        assertThat(provider, is(notNullValue()));
+        assertThat(provider.getResponseType(), is("id_token"));
+    }
+
+    @Test
+    public void shouldSetResponseTypeCode() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.CODE)
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        assertThat(provider, is(notNullValue()));
+        assertThat(provider.getResponseType(), is("code"));
+    }
+
+    @Test
+    public void shouldSetResponseTypeCodeToken() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.CODE | ResponseType.TOKEN)
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        assertThat(provider, is(notNullValue()));
+        assertThat(provider.getResponseType(), is("code token"));
+    }
+
+    @Test
+    public void shouldSetResponseTypeCodeIdToken() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.CODE | ResponseType.ID_TOKEN)
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        assertThat(provider, is(notNullValue()));
+        assertThat(provider.getResponseType(), is("code id_token"));
+    }
+
+    @Test
+    public void shouldSetResponseTypeIdTokenToken() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.ID_TOKEN | ResponseType.TOKEN)
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        assertThat(provider, is(notNullValue()));
+        assertThat(provider.getResponseType(), is("id_token token"));
+    }
+
+    @Test
+    public void shouldSetResponseTypeCodeIdTokenToken() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.CODE | ResponseType.ID_TOKEN | ResponseType.TOKEN)
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        assertThat(provider, is(notNullValue()));
+        assertThat(provider.getResponseType(), is("code id_token token"));
     }
 
     private Intent createAuthIntent(String hash) {
