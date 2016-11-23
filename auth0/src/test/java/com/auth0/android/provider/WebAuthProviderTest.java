@@ -114,6 +114,34 @@ public class WebAuthProviderTest {
         assertFalse(WebAuthProvider.resume(0, 0, intentMock));
     }
 
+    //logging
+    public void shouldHaveLoggingDisabledByDefault() throws Exception {
+        WebAuthProvider.init(account)
+                .start(activity, callback);
+
+        final WebAuthProvider instance = WebAuthProvider.getInstance();
+        assertFalse(instance.isLoggingEnabled());
+    }
+
+    @Test
+    public void shouldEnableLogging() throws Exception {
+        WebAuthProvider.init(account)
+                .setLogging(true)
+                .start(activity, callback);
+
+        final WebAuthProvider instance = WebAuthProvider.getInstance();
+        assertTrue(instance.isLoggingEnabled());
+    }
+
+    @Test
+    public void shouldDisableLogging() throws Exception {
+        WebAuthProvider.init(account)
+                .setLogging(false)
+                .start(activity, callback);
+
+        final WebAuthProvider instance = WebAuthProvider.getInstance();
+        assertFalse(instance.isLoggingEnabled());
+    }
 
     //connection
 

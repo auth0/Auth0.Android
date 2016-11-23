@@ -92,6 +92,7 @@ public class WebAuthProvider {
     private Map<String, String> parameters;
 
     private static WebAuthProvider providerInstance;
+    private boolean loggingEnabled;
 
     @VisibleForTesting
     WebAuthProvider(@NonNull Auth0 account) {
@@ -105,6 +106,7 @@ public class WebAuthProvider {
         private boolean useBrowser;
         private boolean useFullscreen;
         private PKCE pkce;
+        private boolean loggingEnabled;
 
         Builder(Auth0 account) {
             this.account = account;
@@ -253,6 +255,17 @@ public class WebAuthProvider {
             return this;
         }
 
+        /**
+         * Whether to log every Request and Response or not.
+         * You shouldn't enable logging in release builds as it may leak sensitive information.
+         *
+         * @param enabled whether the logging is enabled or not.
+         */
+        public Builder setLogging(boolean enabled) {
+            this.loggingEnabled = enabled;
+            return this;
+        }
+
         @VisibleForTesting
         Builder withPKCE(PKCE pkce) {
             this.pkce = pkce;
@@ -276,6 +289,7 @@ public class WebAuthProvider {
             webAuth.useFullscreen = useFullscreen;
             webAuth.parameters = values;
             webAuth.pkce = pkce;
+            webAuth.loggingEnabled = loggingEnabled;
 
             providerInstance = webAuth;
 
@@ -367,6 +381,9 @@ public class WebAuthProvider {
         if (values.isEmpty()) {
             Log.w(TAG, "The response didn't contain any of these values: code, state, id_token, access_token, token_type, refresh_token");
             return false;
+        }
+        if (loggingEnabled) {
+            Log.d(TAG, "The parsed CallbackURI contains the following values: " + values);
         }
 
         if (values.containsKey(KEY_ERROR)) {
@@ -507,12 +524,20 @@ public class WebAuthProvider {
             builder.appendQueryParameter(entry.getKey(), entry.getValue());
         }
         Uri uri = builder.build();
-        Log.d(TAG, "The final Authorize Uri is " + uri.toString());
+        if (loggingEnabled) {
+            Log.d(TAG, "Using the following AuthorizeURI: " + uri.toString());
+        }
         return uri;
     }
 
     private PKCE createPKCE(String redirectUri) {
-        return pkce == null ? new PKCE(new AuthenticationAPIClient(account), redirectUri) : pkce;
+        if (pkce == null) {
+            final AuthenticationAPIClient client = new AuthenticationAPIClient(account);
+            client.setLogging(loggingEnabled);
+            return new PKCE(client, redirectUri);
+        } else {
+            return pkce;
+        }
     }
 
     @VisibleForTesting
@@ -523,6 +548,14 @@ public class WebAuthProvider {
 
     private String getState() {
         return parameters.containsKey(KEY_STATE) ? parameters.get(KEY_STATE) : secureRandomString();
+    }
+
+    String getScope() {
+        return this.parameters.get(KEY_SCOPE) != null ? this.parameters.get(KEY_SCOPE) : SCOPE_TYPE_OPENID;
+    }
+
+    boolean isLoggingEnabled() {
+        return loggingEnabled;
     }
 
     private String getNonce() {

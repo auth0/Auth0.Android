@@ -44,20 +44,16 @@ class AlgorithmHelper {
         return signature;
     }
 
-    public String generateCodeVerifier() {
+    String generateCodeVerifier() {
         SecureRandom sr = new SecureRandom();
         byte[] code = new byte[32];
         sr.nextBytes(code);
-        String verifier = Base64.encodeToString(code, Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
-        Log.d(TAG, "Generated code verifier is " + verifier);
-        return verifier;
+        return Base64.encodeToString(code, Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
     }
 
-    public String generateCodeChallenge(@NonNull String codeVerifier) {
+    String generateCodeChallenge(@NonNull String codeVerifier) {
         byte[] input = getASCIIBytes(codeVerifier);
         byte[] signature = getSHA256(input);
-        String challenge = getBase64String(signature);
-        Log.d(TAG, "Generated code challenge is " + challenge);
-        return challenge;
+        return getBase64String(signature);
     }
 }
