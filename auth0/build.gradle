@@ -31,12 +31,12 @@ version = semver.stringVersion
 logger.lifecycle("Using version ${version} for ${name}")
 
 android {
-    compileSdkVersion 24
-    buildToolsVersion "24.0.2"
+    compileSdkVersion 25
+    buildToolsVersion '25.0.1'
 
     defaultConfig {
         minSdkVersion 15
-        targetSdkVersion 24
+        targetSdkVersion 25
         versionCode 1
         versionName semver.stringVersion
         buildConfigField "String", "LIBRARY_NAME", "\"Auth0.Android\""
@@ -54,9 +54,9 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:24.2.1'
+    compile 'com.android.support:appcompat-v7:25.0.1'
     compile 'com.squareup.okhttp:okhttp:2.5.0'
-    compile "com.google.code.gson:gson:2.6.2"
+    compile 'com.google.code.gson:gson:2.6.2'
 
     testCompile 'junit:junit:4.12'
     testCompile 'org.hamcrest:java-hamcrest:2.0.0.0'
