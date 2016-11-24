@@ -64,6 +64,7 @@ public class ParameterBuilder {
     public static final String CLIENT_ID_KEY = "client_id";
     public static final String GRANT_TYPE_KEY = "grant_type";
     public static final String DEVICE_KEY = "device";
+    public static final String AUDIENCE_KEY = "audience";
 
     private Map<String, Object> parameters;
 
@@ -110,6 +111,16 @@ public class ParameterBuilder {
      */
     public ParameterBuilder setScope(String scope) {
         return set(SCOPE_KEY, scope);
+    }
+
+    /**
+     * Sets the 'audience' parameter.
+     *
+     * @param audience an audience value
+     * @return itself
+     */
+    public ParameterBuilder setAudience(String audience) {
+        return set(AUDIENCE_KEY, audience);
     }
 
     /**

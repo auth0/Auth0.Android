@@ -54,6 +54,11 @@ public class AuthenticationRequestMock implements AuthenticationRequest {
     }
 
     @Override
+    public AuthenticationRequest setAudience(String audience) {
+        return this;
+    }
+
+    @Override
     public AuthenticationRequest setAccessToken(String accessToken) {
         return this;
     }

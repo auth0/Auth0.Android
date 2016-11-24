@@ -50,6 +50,11 @@ public class MockAuthenticationRequest implements ParameterizableRequest<Credent
     }
 
     @Override
+    public AuthenticationRequest setAudience(String audience) {
+        return null;
+    }
+
+    @Override
     public AuthenticationRequest setAccessToken(String accessToken) {
         return null;
     }

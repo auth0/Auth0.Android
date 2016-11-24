@@ -89,6 +89,12 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
     }
 
     @Override
+    public AuthenticationRequest setAudience(String audience) {
+        authenticationRequest.setAudience(audience);
+        return this;
+    }
+
+    @Override
     public AuthenticationRequest setAccessToken(String accessToken) {
         authenticationRequest.setAccessToken(accessToken);
         return this;

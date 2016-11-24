@@ -43,6 +43,14 @@ public interface AuthenticationRequest extends Request<Credentials, Authenticati
     AuthenticationRequest setDevice(String device);
 
     /**
+     * Sets the 'audience' parameter.
+     *
+     * @param audience an audience value
+     * @return itself
+     */
+    AuthenticationRequest setAudience(String audience);
+
+    /**
      * Sets the 'access_token' parameter
      *
      * @param accessToken a access token

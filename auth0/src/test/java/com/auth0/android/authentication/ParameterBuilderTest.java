@@ -93,6 +93,12 @@ public class ParameterBuilderTest {
     }
 
     @Test
+    public void shouldSetAudience() throws Exception {
+        Map<String, Object> parameters = builder.setAudience("https://domain.auth0.com/api").asDictionary();
+        assertThat(parameters, hasEntry("audience", "https://domain.auth0.com/api"));
+    }
+
+    @Test
     public void shouldSetDevice() throws Exception {
         Map<String, Object> parameters = builder.setDevice(DEVICE).asDictionary();
         assertThat(parameters, hasEntry("device", DEVICE));

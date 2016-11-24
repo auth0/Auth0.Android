@@ -68,6 +68,14 @@ public class SignUpRequestTest {
     }
 
     @Test
+    public void shouldSetAudience() throws Exception {
+        final AuthenticationRequest req = signUpRequest.setAudience("https://domain.auth0.com/api");
+        verify(authenticationMockRequest).setAudience("https://domain.auth0.com/api");
+        Assert.assertThat(req, is(notNullValue()));
+        Assert.assertThat(req, Matchers.<AuthenticationRequest>is(signUpRequest));
+    }
+
+    @Test
     public void shouldSetDevice() throws Exception {
         final AuthenticationRequest req = signUpRequest.setDevice("nexus-5x");
         verify(authenticationMockRequest).setDevice("nexus-5x");
