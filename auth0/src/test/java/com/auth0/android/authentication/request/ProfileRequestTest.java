@@ -146,6 +146,7 @@ public class ProfileRequestTest {
         });
         final UserProfile userProfile = mock(UserProfile.class);
         when(userInfoMockRequest.addParameter(anyString(), anyObject())).thenReturn(userInfoMockRequest);
+        when(userInfoMockRequest.addHeader(anyString(), anyString())).thenReturn(userInfoMockRequest);
         when(userInfoMockRequest.execute()).thenAnswer(new Answer<Object>() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {

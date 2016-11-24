@@ -1418,6 +1418,29 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
+    public void shouldFetchProfileSyncAfterLoginRequest() throws Exception {
+        mockAPI.willReturnSuccessfulLogin()
+                .willReturnTokenInfo();
+
+        Authentication authentication = client.getProfileAfter(client.login(SUPPORT_AUTH0_COM, "voidpassword", MY_CONNECTION))
+                .execute();
+
+        final RecordedRequest firstRequest = mockAPI.takeRequest();
+        assertThat(firstRequest.getPath(), equalTo("/oauth/ro"));
+
+        Map<String, String> body = bodyFromRequest(firstRequest);
+        assertThat(body, hasEntry("username", SUPPORT_AUTH0_COM));
+        assertThat(body, hasEntry("password", "voidpassword"));
+        assertThat(body, hasEntry("connection", MY_CONNECTION));
+
+        final RecordedRequest secondRequest = mockAPI.takeRequest();
+        assertThat(secondRequest.getHeader("Authorization"), is("Bearer " + AuthenticationAPI.ACCESS_TOKEN));
+        assertThat(secondRequest.getPath(), equalTo("/userinfo"));
+
+        assertThat(authentication, is(notNullValue()));
+    }
+
+    @Test
     public void shouldGetOAuthTokensUsingCodeVerifier() throws Exception {
         mockAPI.willReturnTokens()
                 .willReturnTokenInfo();

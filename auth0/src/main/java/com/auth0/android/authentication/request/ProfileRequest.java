@@ -97,7 +97,6 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
             public void onSuccess(final Credentials credentials) {
                 userInfoRequest
                         .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.getAccessToken())
-                        .addParameter(ACCESS_TOKEN_KEY, credentials.getAccessToken())
                         .start(new BaseCallback<UserProfile, AuthenticationException>() {
                             @Override
                             public void onSuccess(UserProfile profile) {
@@ -128,7 +127,7 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
     public Authentication execute() throws Auth0Exception {
         Credentials credentials = credentialsRequest.execute();
         UserProfile profile = userInfoRequest
-                .addParameter(ACCESS_TOKEN_KEY, credentials.getAccessToken())
+                .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.getAccessToken())
                 .execute();
         return new Authentication(profile, credentials);
     }
