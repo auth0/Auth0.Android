@@ -34,7 +34,7 @@ public class AuthenticationAPI {
 
     public static final String REFRESH_TOKEN = "REFRESH_TOKEN";
     public static final String ID_TOKEN = "ID_TOKEN";
-    private static final String ACCESS_TOKEN = "ACCESS_TOKEN";
+    public static final String ACCESS_TOKEN = "ACCESS_TOKEN";
     private static final String BEARER = "BEARER";
     public static final String GENERIC_TOKEN = "GENERIC_TOKEN";
     private static final String NEW_ID_TOKEN = "NEW_ID_TOKEN";

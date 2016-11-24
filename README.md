@@ -152,7 +152,7 @@ authentication
 
 ```java
 authentication
-   .tokenInfo("user token")
+   .userInfo("user access_token")
    .start(new BaseCallback<Credentials>() {
        @Override
        public void onSuccess(UserProfile payload) {

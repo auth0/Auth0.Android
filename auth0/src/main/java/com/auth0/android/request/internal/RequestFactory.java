@@ -111,6 +111,12 @@ public class RequestFactory {
         return request;
     }
 
+    public <T, U extends Auth0Exception> ParameterizableRequest<T, U> GET(HttpUrl url, OkHttpClient client, Gson gson, Class<T> clazz, ErrorBuilder<U> errorBuilder) {
+        final ParameterizableRequest<T, U> request = createSimpleRequest(url, client, gson, "GET", clazz, errorBuilder);
+        addMetrics(request);
+        return request;
+    }
+
     private <T, U extends Auth0Exception> void addMetrics(ParameterizableRequest<T, U> request) {
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             request.addHeader(entry.getKey(), entry.getValue());

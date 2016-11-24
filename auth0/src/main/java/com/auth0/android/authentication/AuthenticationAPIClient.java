@@ -53,6 +53,7 @@ import java.util.Map;
 
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_AUTHORIZATION_CODE;
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSWORD;
+import static com.auth0.android.authentication.ParameterBuilder.ID_TOKEN_KEY;
 
 /**
  * API client for Auth0 Authentication API.
@@ -83,8 +84,10 @@ public class AuthenticationAPIClient {
     private static final String TOKEN_PATH = "token";
     private static final String RESOURCE_OWNER_PATH = "ro";
     private static final String TOKEN_INFO_PATH = "tokeninfo";
+    private static final String USER_INFO_PATH = "userinfo";
     private static final String OAUTH_CODE_KEY = "code";
     private static final String REDIRECT_URI_KEY = "redirect_uri";
+    private static final String HEADER_AUTHORIZATION = "Authorization";
 
     private final Auth0 auth0;
     private final OkHttpClient client;
@@ -356,6 +359,29 @@ public class AuthenticationAPIClient {
     }
 
     /**
+     * Fetch the user profile associated with the given Auth0 access token.
+     * Example usage:
+     * <pre><code>
+     * client.userInfo("{access_token}")
+     *      .start(new BaseCallback<UserProfile>() {
+     *          {@literal}Override
+     *          public void onSuccess(UserProfile payload) { }
+     *
+     *          {@literal}@Override
+     *          public void onFailure(AuthenticationException error) { }
+     *      });
+     * </code></pre>
+     *
+     * @param accessToken used to fetch it's information
+     * @return a request to start
+     */
+    @SuppressWarnings("WeakerAccess")
+    public Request<UserProfile, AuthenticationException> userInfo(@NonNull String accessToken) {
+        return profileRequest()
+                .addHeader(HEADER_AUTHORIZATION, "Bearer " + accessToken);
+    }
+
+    /**
      * Fetch the token information from Auth0
      * Example usage:
      * <pre><code>
@@ -374,8 +400,12 @@ public class AuthenticationAPIClient {
      */
     @SuppressWarnings("WeakerAccess")
     public Request<UserProfile, AuthenticationException> tokenInfo(@NonNull String idToken) {
-        return profileRequest()
-                .addParameter(ParameterBuilder.ID_TOKEN_KEY, idToken);
+        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+                .addPathSegment(TOKEN_INFO_PATH)
+                .build();
+
+        return factory.POST(url, client, gson, UserProfile.class, authErrorBuilder)
+                .addParameter(ID_TOKEN_KEY, idToken);
     }
 
     /**
@@ -911,10 +941,10 @@ public class AuthenticationAPIClient {
 
     private ParameterizableRequest<UserProfile, AuthenticationException> profileRequest() {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
-                .addPathSegment(TOKEN_INFO_PATH)
+                .addPathSegment(USER_INFO_PATH)
                 .build();
 
-        return factory.POST(url, client, gson, UserProfile.class, authErrorBuilder);
+        return factory.GET(url, client, gson, UserProfile.class, authErrorBuilder);
     }
 
 }
