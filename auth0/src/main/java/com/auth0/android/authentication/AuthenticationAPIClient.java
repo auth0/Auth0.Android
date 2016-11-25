@@ -140,8 +140,15 @@ public class AuthenticationAPIClient {
      * Log every Request and Response made by this client.
      * You shouldn't enable logging in release builds as it may leak sensitive information.
      */
-    public void enableLogging() {
-        logInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+    public void setLoggingEnabled(boolean enabled) {
+        logInterceptor.setLevel(enabled ? HttpLoggingInterceptor.Level.BODY : HttpLoggingInterceptor.Level.NONE);
+    }
+
+    /**
+     * Getter for the current client logger enabled state.
+     */
+    public boolean isLoggingEnabled() {
+        return logInterceptor.getLevel() == HttpLoggingInterceptor.Level.BODY;
     }
 
     public String getClientId() {

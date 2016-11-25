@@ -531,9 +531,7 @@ public class WebAuthProvider {
     private PKCE createPKCE(String redirectUri) {
         if (pkce == null) {
             final AuthenticationAPIClient client = new AuthenticationAPIClient(account);
-            if (loggingEnabled) {
-                client.enableLogging();
-            }
+            client.setLoggingEnabled(loggingEnabled);
             return new PKCE(client, redirectUri);
         } else {
             return pkce;
