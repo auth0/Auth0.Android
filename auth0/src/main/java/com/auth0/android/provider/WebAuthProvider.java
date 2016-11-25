@@ -202,7 +202,9 @@ public class WebAuthProvider {
          *
          * @param useCodeGrant whether use code or implicit grant type
          * @return the current builder instance
+         * @deprecated Please use {@link WebAuthProvider.Builder#withResponseType(int)} to specify a custom Response Type
          */
+        @Deprecated
         public Builder useCodeGrant(boolean useCodeGrant) {
             withResponseType(useCodeGrant ? ResponseType.CODE : ResponseType.TOKEN);
             return this;
