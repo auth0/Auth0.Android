@@ -1265,6 +1265,11 @@ public class WebAuthProviderTest {
         assertFalse(WebAuthProvider.hasValidNonce("0987654321", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk"));
     }
 
+    @Test
+    public void shouldHaveInvalidNonceOnDecodeException() throws Exception {
+        assertFalse(WebAuthProvider.hasValidNonce("0987654321", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVC.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk"));
+    }
+
     //Test Helper Functions
 
     private Intent createAuthIntent(String hash) {

@@ -156,7 +156,7 @@ public class WebAuthProvider {
         }
 
         /**
-         * Use a custom nonce in the requests
+         * Specify a custom nonce value to avoid replay attacks. It will be sent in the auth request that will be returned back as a claim in the id_token
          *
          * @param nonce to use in the requests
          * @return the current builder instance
@@ -214,13 +214,13 @@ public class WebAuthProvider {
          */
         public Builder withResponseType(@ResponseType int type) {
             StringBuilder sb = new StringBuilder();
-            if ((type & ResponseType.CODE) != 0) {
+            if (FlagChecker.hasFlag(type, ResponseType.CODE)) {
                 sb.append(RESPONSE_TYPE_CODE).append(" ");
             }
-            if ((type & ResponseType.ID_TOKEN) != 0) {
+            if (FlagChecker.hasFlag(type, ResponseType.ID_TOKEN)) {
                 sb.append(RESPONSE_TYPE_ID_TOKEN).append(" ");
             }
-            if ((type & ResponseType.TOKEN) != 0) {
+            if (FlagChecker.hasFlag(type, ResponseType.TOKEN)) {
                 sb.append(RESPONSE_TYPE_TOKEN);
             }
             this.values.put(KEY_RESPONSE_TYPE, sb.toString().trim());
@@ -464,7 +464,7 @@ public class WebAuthProvider {
         try {
             final JWT idToken = new JWT(token);
             final Claim nonceClaim = idToken.getClaim(KEY_NONCE);
-            return !(nonceClaim == null || !nonce.equals(nonceClaim.asString()));
+            return nonceClaim != null && nonce.equals(nonceClaim.asString());
         } catch (DecodeException e) {
             return false;
         }
