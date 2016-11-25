@@ -32,6 +32,7 @@ import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
+import android.util.Base64;
 import android.util.Log;
 
 import com.auth0.android.Auth0;
@@ -42,9 +43,9 @@ import com.auth0.android.jwt.DecodeException;
 import com.auth0.android.jwt.JWT;
 import com.auth0.android.result.Credentials;
 
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * OAuth2 Web Authentication Provider.
@@ -113,8 +114,6 @@ public class WebAuthProvider {
             this.useBrowser = true;
             this.useFullscreen = false;
             withResponseType(ResponseType.CODE);
-            withState(UUID.randomUUID().toString());
-            withNonce(UUID.randomUUID().toString());
             withScope(SCOPE_TYPE_OPENID);
         }
 
@@ -481,9 +480,6 @@ public class WebAuthProvider {
         String redirectUri = helper.getCallbackURI(account.getDomainUrl());
         final Map<String, String> queryParameters = new HashMap<>(parameters);
 
-        if (!getResponseType().contains(RESPONSE_TYPE_ID_TOKEN)) {
-            queryParameters.remove(KEY_NONCE);
-        }
         if (shouldUsePKCE()) {
             try {
                 pkce = createPKCE(redirectUri);
@@ -496,9 +492,13 @@ public class WebAuthProvider {
             }
         }
 
+        if (getResponseType().contains(RESPONSE_TYPE_ID_TOKEN)) {
+            queryParameters.put(KEY_NONCE, getNonce());
+        }
         if (account.getTelemetry() != null) {
             queryParameters.put(KEY_TELEMETRY, account.getTelemetry().getValue());
         }
+        queryParameters.put(KEY_STATE, getState());
         queryParameters.put(KEY_CLIENT_ID, account.getClientId());
         queryParameters.put(KEY_REDIRECT_URI, redirectUri);
 
@@ -520,12 +520,13 @@ public class WebAuthProvider {
         return providerInstance;
     }
 
+
     private String getState() {
-        return parameters.get(KEY_STATE);
+        return parameters.containsKey(KEY_STATE) ? parameters.get(KEY_STATE) : secureRandomString();
     }
 
     private String getNonce() {
-        return parameters.get(KEY_NONCE);
+        return parameters.containsKey(KEY_NONCE) ? parameters.get(KEY_NONCE) : secureRandomString();
     }
 
     private String getResponseType() {
@@ -534,5 +535,12 @@ public class WebAuthProvider {
 
     private String getConnection() {
         return parameters.get(KEY_CONNECTION);
+    }
+
+    private String secureRandomString() {
+        final SecureRandom sr = new SecureRandom();
+        final byte[] randomBytes = new byte[32];
+        sr.nextBytes(randomBytes);
+        return Base64.encodeToString(randomBytes, Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
     }
 }

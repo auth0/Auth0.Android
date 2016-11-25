@@ -386,7 +386,7 @@ public class WebAuthProviderTest {
     //nonce
 
     @Test
-    public void shouldNotSetNonceIfResponseTypeIsCode() throws Exception {
+    public void shouldNotSetNonceByDefaultIfResponseTypeIsCode() throws Exception {
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.CODE)
                 .start(activity, callback);
@@ -398,7 +398,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldNotSetNonceIfResponseTypeIsToken() throws Exception {
+    public void shouldNotSetNonceByDefaultIfResponseTypeIsToken() throws Exception {
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.TOKEN)
                 .start(activity, callback);
@@ -419,6 +419,32 @@ public class WebAuthProviderTest {
         Uri uri = provider.buildAuthorizeUri();
 
         assertThat(uri, hasParamWithValue(is("nonce"), not(isEmptyOrNullString())));
+    }
+
+    @Test
+    public void shouldSetUserNonceIfResponseTypeIsToken() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.TOKEN)
+                .withNonce("1234567890")
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("nonce", "1234567890"));
+    }
+
+    @Test
+    public void shouldSetUserNonceIfResponseTypeIsCode() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.CODE)
+                .withNonce("1234567890")
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("nonce", "1234567890"));
     }
 
     @Test
