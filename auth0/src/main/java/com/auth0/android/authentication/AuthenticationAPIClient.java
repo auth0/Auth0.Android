@@ -359,7 +359,7 @@ public class AuthenticationAPIClient {
     }
 
     /**
-     * Fetch the user profile associated with the given Auth0 access token.
+     * Returns the information of the user associated with the given access_token.
      * Example usage:
      * <pre><code>
      * client.userInfo("{access_token}")
