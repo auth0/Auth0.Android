@@ -99,6 +99,12 @@ public class ParameterBuilderTest {
     }
 
     @Test
+    public void shouldSetRefreshToken() throws Exception {
+        Map<String, Object> parameters = builder.setRefreshToken(DEVICE).asDictionary();
+        assertThat(parameters, hasEntry("refresh_token", DEVICE));
+    }
+
+    @Test
     public void shouldSetScopeWithOfflineAccess() throws Exception {
         Map<String, Object> parameters = builder.setScope(ParameterBuilder.SCOPE_OFFLINE_ACCESS).asDictionary();
         assertThat(parameters, hasEntry("scope", ParameterBuilder.SCOPE_OFFLINE_ACCESS));

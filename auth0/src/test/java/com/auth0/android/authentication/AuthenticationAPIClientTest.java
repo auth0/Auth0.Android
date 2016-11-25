@@ -1298,6 +1298,45 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
+    public void shouldRenewAuth() throws Exception {
+        mockAPI.willReturnSuccessfulLogin();
+
+        final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
+        client.renewAuth("refreshToken")
+                .start(callback);
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+        assertThat(request.getPath(), equalTo("/oauth/token"));
+
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("client_id", CLIENT_ID));
+        assertThat(body, hasEntry("refresh_token", "refreshToken"));
+        assertThat(body, hasEntry("grant_type", "refresh_token"));
+
+        assertThat(callback, hasPayloadOfType(Credentials.class));
+    }
+
+    @Test
+    public void shouldRenewAuthSync() throws Exception {
+        mockAPI.willReturnSuccessfulLogin();
+
+        Credentials credentials = client.renewAuth("refreshToken")
+                .execute();
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+        assertThat(request.getPath(), equalTo("/oauth/token"));
+
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("client_id", CLIENT_ID));
+        assertThat(body, hasEntry("refresh_token", "refreshToken"));
+        assertThat(body, hasEntry("grant_type", "refresh_token"));
+
+        assertThat(credentials, is(notNullValue()));
+    }
+
+    @Test
     public void shouldGetOAuthTokensUsingCodeVerifier() throws Exception {
         mockAPI.willReturnTokens()
                 .willReturnTokenInfo();

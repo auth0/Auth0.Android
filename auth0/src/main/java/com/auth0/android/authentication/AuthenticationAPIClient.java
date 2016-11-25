@@ -506,6 +506,41 @@ public class AuthenticationAPIClient {
     }
 
     /**
+     * Requests new Credentials using a valid Refresh Token.
+     * Example usage:
+     * <pre><code>
+     * client.renewAuth("{refresh_token}")
+     *      .addParameter("scope", "openid profile email")
+     *      .start(new BaseCallback<Credentials>() {
+     *          {@literal}Override
+     *          public void onSuccess(Credentials payload) { }
+     *
+     *          {@literal}@Override
+     *          public void onFailure(AuthenticationException error) { }
+     *      });
+     * </code></pre>
+     *
+     * @param refreshToken used to fetch the new Credentials.
+     * @return a request to start
+     */
+    @SuppressWarnings("WeakerAccess")
+    public ParameterizableRequest<Credentials, AuthenticationException> renewAuth(@NonNull String refreshToken) {
+        final Map<String, Object> parameters = ParameterBuilder.newBuilder()
+                .setClientId(getClientId())
+                .setRefreshToken(refreshToken)
+                .setGrantType(ParameterBuilder.GRANT_TYPE_REFRESH_TOKEN)
+                .asDictionary();
+
+        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+                .addPathSegment(OAUTH_PATH)
+                .addPathSegment(TOKEN_PATH)
+                .build();
+
+        return factory.POST(url, client, gson, Credentials.class, authErrorBuilder)
+                .addParameters(parameters);
+    }
+
+    /**
      * Performs a <a href="https://auth0.com/docs/auth-api#!#post--delegation">delegation</a> request that will yield a new Auth0 'id_token'
      * Example usage:
      * <pre><code>

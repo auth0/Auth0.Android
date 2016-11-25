@@ -47,6 +47,7 @@ import java.util.Map;
  */
 public class ParameterBuilder {
 
+    public static final String GRANT_TYPE_REFRESH_TOKEN = "refresh_token";
     public static final String GRANT_TYPE_PASSWORD = "password";
     public static final String GRANT_TYPE_JWT = "urn:ietf:params:oauth:grant-type:jwt-bearer";
     public static final String GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code";
@@ -129,6 +130,16 @@ public class ParameterBuilder {
      */
     public ParameterBuilder setAccessToken(String accessToken) {
         return set(ACCESS_TOKEN_KEY, accessToken);
+    }
+
+    /**
+     * Sets the 'refresh_token' parameter
+     *
+     * @param refreshToken a access token
+     * @return itself
+     */
+    public ParameterBuilder setRefreshToken(String refreshToken) {
+        return set(REFRESH_TOKEN_KEY, refreshToken);
     }
 
     /**
