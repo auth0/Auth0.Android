@@ -48,6 +48,7 @@ import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
 import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.logging.HttpLoggingInterceptor;
 
 import java.util.Map;
 
@@ -91,6 +92,7 @@ public class AuthenticationAPIClient {
 
     private final Auth0 auth0;
     private final OkHttpClient client;
+    private final HttpLoggingInterceptor logInterceptor;
     private final Gson gson;
     private final com.auth0.android.request.internal.RequestFactory factory;
     private final ErrorBuilder<AuthenticationException> authErrorBuilder;
@@ -116,13 +118,15 @@ public class AuthenticationAPIClient {
     }
 
     @VisibleForTesting
-    AuthenticationAPIClient(Auth0 auth0, RequestFactory factory) {
-        this(auth0, factory, new OkHttpClient(), GsonProvider.buildGson());
+    AuthenticationAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClient client) {
+        this(auth0, factory, client, GsonProvider.buildGson());
     }
 
     private AuthenticationAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClient client, Gson gson) {
         this.auth0 = auth0;
         this.client = client;
+        this.logInterceptor = new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.NONE);
+        this.client.interceptors().add(logInterceptor);
         this.gson = gson;
         this.factory = factory;
         this.authErrorBuilder = new AuthenticationErrorBuilder();
@@ -130,6 +134,21 @@ public class AuthenticationAPIClient {
         if (telemetry != null) {
             factory.setClientInfo(telemetry.getValue());
         }
+    }
+
+    /**
+     * Log every Request and Response made by this client.
+     * You shouldn't enable logging in release builds as it may leak sensitive information.
+     */
+    public void setLoggingEnabled(boolean enabled) {
+        logInterceptor.setLevel(enabled ? HttpLoggingInterceptor.Level.BODY : HttpLoggingInterceptor.Level.NONE);
+    }
+
+    /**
+     * Getter for the current client logger enabled state.
+     */
+    public boolean isLoggingEnabled() {
+        return logInterceptor.getLevel() == HttpLoggingInterceptor.Level.BODY;
     }
 
     public String getClientId() {
