@@ -380,9 +380,7 @@ public class WebAuthProvider {
             Log.w(TAG, "The response didn't contain any of these values: code, state, id_token, access_token, token_type, refresh_token");
             return false;
         }
-        if (loggingEnabled) {
-            Log.d(TAG, "The parsed CallbackURI contains the following values: " + values);
-        }
+        logDebug("The parsed CallbackURI contains the following values: " + values);
 
         if (values.containsKey(KEY_ERROR)) {
             Log.e(TAG, "Error, access denied. Check that the required Permissions are granted and that the Application has this Connection configured in Auth0 Dashboard.");
@@ -522,9 +520,7 @@ public class WebAuthProvider {
             builder.appendQueryParameter(entry.getKey(), entry.getValue());
         }
         Uri uri = builder.build();
-        if (loggingEnabled) {
-            Log.d(TAG, "Using the following AuthorizeURI: " + uri.toString());
-        }
+        logDebug("The parsed CallbackURI contains the following values: " + "Using the following AuthorizeURI: " + uri.toString());
         return uri;
     }
 
@@ -573,5 +569,11 @@ public class WebAuthProvider {
         final byte[] randomBytes = new byte[32];
         sr.nextBytes(randomBytes);
         return Base64.encodeToString(randomBytes, Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
+    }
+
+    private void logDebug(String message) {
+        if (loggingEnabled) {
+            Log.d(TAG, message);
+        }
     }
 }
