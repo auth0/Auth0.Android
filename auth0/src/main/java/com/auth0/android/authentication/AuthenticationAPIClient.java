@@ -416,8 +416,10 @@ public class AuthenticationAPIClient {
      *
      * @param idToken used to fetch it's information
      * @return a request to start
+     * @deprecated Please use {@link AuthenticationAPIClient#userInfo(String)} instead.
      */
     @SuppressWarnings("WeakerAccess")
+    @Deprecated
     public Request<UserProfile, AuthenticationException> tokenInfo(@NonNull String idToken) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(TOKEN_INFO_PATH)
