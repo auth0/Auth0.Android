@@ -1,6 +1,7 @@
 package com.auth0.android.provider;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -10,10 +11,8 @@ import android.support.annotation.Nullable;
 
 import com.auth0.android.Auth0;
 import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.authentication.ParameterBuilder;
 import com.auth0.android.result.Credentials;
 
-import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,7 +24,6 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
-import org.robolectric.RobolectricGradleTestRunner;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
@@ -33,9 +31,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import edu.emory.mathcs.backport.java.util.Collections;
+
 import static android.support.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static android.support.test.espresso.intent.matcher.IntentMatchers.hasComponent;
-import static android.support.test.espresso.intent.matcher.IntentMatchers.hasData;
 import static android.support.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 import static android.support.test.espresso.intent.matcher.IntentMatchers.hasFlag;
 import static android.support.test.espresso.intent.matcher.UriMatchers.hasHost;
@@ -47,6 +46,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
@@ -63,14 +63,7 @@ import static org.mockito.Mockito.when;
 @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 18, manifest = Config.NONE)
 public class WebAuthProviderTest {
 
-    private static final String CALLBACK_URL = "https://my-domain.auth0.com/android/com.auth0.android.lock.app/callback";
-
     private static final int REQUEST_CODE = 11;
-    private static final String CONNECTION_NAME = "connection";
-    private static final String SCOPE = "scope";
-    private static final String[] CONNECTION_SCOPE = new String[]{"some", "connection", "scope"};
-    private static final String STATE = "state";
-    private static final String SCOPE_OPEN_ID = "openid";
 
     @Mock
     private AuthCallback callback;
@@ -114,238 +107,631 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldHaveDefaultsOnInit() throws Exception {
-        WebAuthProvider.init(account)
-                .start(activity, callback);
-
-        final WebAuthProvider instance = WebAuthProvider.getInstance();
-        assertThat(instance.useBrowser(), is(true));
-        assertThat(instance.useCodeGrant(), is(true));
-        assertThat(instance.useFullscreen(), is(false));
-        assertThat(instance.getConnection(), is(nullValue()));
-        assertThat(instance.getScope(), is(not(Matchers.isEmptyOrNullString())));
-        assertThat(instance.getConnectionScope(), is(nullValue()));
-        assertThat(instance.getState(), is(not(Matchers.isEmptyOrNullString())));
-        assertThat(instance.getParameters(), is(notNullValue()));
-        assertThat(instance.getParameters().isEmpty(), is(true));
-    }
-
-    @Test
-    public void shouldNotHaveDefaultConnection() throws Exception {
-        WebAuthProvider.init(account)
-                .start(activity, callback);
-
-        final WebAuthProvider instance = WebAuthProvider.getInstance();
-        assertThat(instance.getConnection(), is(nullValue()));
-    }
-
-    @Test
-    public void shouldHaveDefaultScope() throws Exception {
-        WebAuthProvider.init(account)
-                .start(activity, callback);
-
-        final WebAuthProvider instance = WebAuthProvider.getInstance();
-        assertThat(instance.getScope(), is(SCOPE_OPEN_ID));
-    }
-
-    @Test
-    public void shouldNotOverrideScopeValue() throws Exception {
-        Map<String, Object> parameters = ParameterBuilder.newBuilder().setScope("openid email picture").asDictionary();
-        WebAuthProvider.init(account)
-                .withParameters(parameters)
-                .start(activity, callback);
-
-        final WebAuthProvider instance = WebAuthProvider.getInstance();
-        assertThat(instance.getScope(), is("openid email picture"));
-    }
-
-    @Test
-    public void shouldCallStartWithRequestCode() throws Exception {
-        WebAuthProvider.init(account)
-                .start(activity, callback);
-
-        final WebAuthProvider instance = WebAuthProvider.getInstance();
-        assertThat(instance.getScope(), is(SCOPE_OPEN_ID));
-    }
-
-    @Test
-    public void shouldConfigureAfterInit() throws Exception {
-        Map<String, Object> parameters = new HashMap<>();
-        parameters.put("key", "value");
-
-        WebAuthProvider.init(account)
-                .useBrowser(true)
-                .useCodeGrant(true)
-                .useFullscreen(true)
-                .withConnection(CONNECTION_NAME)
-                .withScope(SCOPE)
-                .withConnectionScope(CONNECTION_SCOPE)
-                .withState(STATE)
-                .withParameters(parameters)
-                .start(activity, callback);
-
-        final WebAuthProvider instance = WebAuthProvider.getInstance();
-        assertThat(instance.useBrowser(), is(true));
-        assertThat(instance.useCodeGrant(), is(true));
-        assertThat(instance.useFullscreen(), is(true));
-        assertThat(instance.getConnection(), is(CONNECTION_NAME));
-        assertThat(instance.getScope(), is(SCOPE));
-        assertThat(instance.getConnectionScope(), is("some connection scope"));
-        assertThat(instance.getState(), is(STATE));
-        assertThat(instance.getParameters(), is(notNullValue()));
-        assertThat(instance.getParameters(), Matchers.hasEntry("key", (Object) "value"));
-    }
-
-    @Test
-    public void shouldBeInvalidWhenResumedButNeverInited() throws Exception {
+    public void shouldNotResumeWhenNotInit() throws Exception {
         Intent intentMock = Mockito.mock(Intent.class);
 
         assertFalse(WebAuthProvider.resume(intentMock));
         assertFalse(WebAuthProvider.resume(0, 0, intentMock));
     }
 
+
+    //connection
+
     @Test
-    public void shouldBuildAuthorizeURIWithoutNulls() throws Exception {
-        Activity activity = mock(Activity.class);
-        Context appContext = mock(Context.class);
-        when(activity.getApplicationContext()).thenReturn(appContext);
-        when(activity.getPackageName()).thenReturn("package");
-        when(appContext.getPackageName()).thenReturn("package");
+    public void shouldNotHaveDefaultConnection() throws Exception {
         WebAuthProvider.init(account)
                 .start(activity, callback);
 
-        final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
-        verify(activity).startActivity(intentCaptor.capture());
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
 
-        Uri baseUriString = Uri.parse(account.getAuthorizeUrl());
-
-        Intent intent = intentCaptor.getValue();
-        assertThat(intent, is(notNullValue()));
-        assertThat(intent, hasData(hasScheme(baseUriString.getScheme())));
-        assertThat(intent.getData(), hasHost(baseUriString.getHost()));
-        assertThat(intent.getData(), hasPath(baseUriString.getPath()));
-
-        Set<String> params = intent.getData().getQueryParameterNames();
-        for (String p : params) {
-            assertThat(intent.getData(), not(hasParamWithValue(p, null)));
-            assertThat(intent.getData(), not(hasParamWithValue(p, "null")));
-        }
+        assertThat(uri, not(hasParamWithName("connection")));
     }
 
     @Test
-    public void shouldBuildAuthorizeURIWithDefaultValues() throws Exception {
-        Activity activity = mock(Activity.class);
-        Context appContext = mock(Context.class);
-        when(activity.getApplicationContext()).thenReturn(appContext);
-        when(activity.getPackageName()).thenReturn("package");
-        when(appContext.getPackageName()).thenReturn("package");
+    public void shouldSetConnectionFromParameters() throws Exception {
+        Map<String, Object> parameters = Collections.singletonMap("connection", "my-connection");
         WebAuthProvider.init(account)
-                .start(activity, callback);
-
-        final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
-        verify(activity).startActivity(intentCaptor.capture());
-
-        Uri baseUriString = Uri.parse(account.getAuthorizeUrl());
-
-        Intent intent = intentCaptor.getValue();
-        assertThat(intent, is(notNullValue()));
-        assertThat(intent, hasData(hasScheme(baseUriString.getScheme())));
-        assertThat(intent.getData(), hasHost(baseUriString.getHost()));
-        assertThat(intent.getData(), hasPath(baseUriString.getPath()));
-
-        assertThat(intent.getData(), not(hasParamWithName("connection")));
-        assertThat(intent.getData(), not(hasParamWithValue("state", null)));
-        assertThat(intent.getData(), not(hasParamWithValue("state", "null")));
-        assertThat(intent.getData(), not(hasParamWithValue("code_challenge", null)));
-        assertThat(intent.getData(), not(hasParamWithValue("code_challenge", "null")));
-        assertThat(intent.getData(), not(hasParamWithValue("auth0Client", null)));
-        assertThat(intent.getData(), not(hasParamWithValue("auth0Client", "null")));
-
-        assertThat(intent.getData(), hasParamWithValue("scope", "openid"));
-        assertThat(intent.getData(), hasParamWithValue("client_id", "clientId"));
-        assertThat(intent.getData(), hasParamWithValue("response_type", "code"));
-        assertThat(intent.getData(), hasParamWithValue("code_challenge_method", "S256"));
-        assertThat(intent.getData(), hasParamWithValue("redirect_uri", "https://domain/android/package/callback"));
-    }
-
-    @Test
-    public void shouldBuildAuthorizeURIWithCustomParameters() throws Exception {
-        Activity activity = mock(Activity.class);
-        Context appContext = mock(Context.class);
-        when(activity.getApplicationContext()).thenReturn(appContext);
-        when(activity.getPackageName()).thenReturn("package");
-        when(appContext.getPackageName()).thenReturn("package");
-        Map<String, Object> parameters = new HashMap<>();
-        parameters.put("custom_param_1", "custom_value_1");
-        parameters.put("custom_param_2", "custom_value_2");
-        WebAuthProvider.init(account)
-                .useCodeGrant(false)
-                .useBrowser(true)
-                .useCodeGrant(false)
-                .withConnection("my-connection")
-                .withState("a-state")
-                .withScope("super_scope")
-                .withConnectionScope("first_connection_scope", "second_connection_scope")
+                .withConnection("some-connection")
                 .withParameters(parameters)
                 .start(activity, callback);
 
-        final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
-        verify(activity).startActivity(intentCaptor.capture());
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
 
-        Uri baseUriString = Uri.parse(account.getAuthorizeUrl());
-
-        Intent intent = intentCaptor.getValue();
-        assertThat(intent, is(notNullValue()));
-        assertThat(intent, hasData(hasScheme(baseUriString.getScheme())));
-        assertThat(intent.getData(), hasHost(baseUriString.getHost()));
-        assertThat(intent.getData(), hasPath(baseUriString.getPath()));
-
-        assertThat(intent.getData(), hasParamWithValue("connection", "my-connection"));
-        assertThat(intent.getData(), hasParamWithValue("state", "a-state"));
-        assertThat(intent.getData(), hasParamWithValue("scope", "super_scope"));
-        assertThat(intent.getData(), hasParamWithValue("connection_scope", "first_connection_scope second_connection_scope"));
-        assertThat(intent.getData(), hasParamWithValue("client_id", "clientId"));
-        assertThat(intent.getData(), hasParamWithValue("response_type", "token"));
-        assertThat(intent.getData(), hasParamWithValue("redirect_uri", "https://domain/android/package/callback"));
-        assertThat(intent.getData(), hasParamWithValue("custom_param_1", "custom_value_1"));
-        assertThat(intent.getData(), hasParamWithValue("custom_param_2", "custom_value_2"));
-
-        assertThat(intent.getData(), not(hasParamWithName("code_challenge_method")));
-        assertThat(intent.getData(), not(hasParamWithName("code_challenge")));
-        assertThat(intent.getData(), not(hasParamWithValue("auth0Client", null)));
-        assertThat(intent.getData(), not(hasParamWithValue("auth0Client", "null")));
+        assertThat(uri, hasParamWithValue("connection", "my-connection"));
     }
 
     @Test
-    public void shouldOverrideScopeSetWithAuthenticationParameters() throws Exception {
-        Activity activity = mock(Activity.class);
-        Context appContext = mock(Context.class);
-        when(activity.getApplicationContext()).thenReturn(appContext);
-        when(activity.getPackageName()).thenReturn("package");
-        when(appContext.getPackageName()).thenReturn("package");
-        Map<String, Object> parameters = new HashMap<>();
-        parameters.put("custom_param_1", "custom_value_1");
-        parameters.put("custom_param_2", "custom_value_2");
-        parameters.put("scope", "default_scope");
+    public void shouldSetConnectionFromSetter() throws Exception {
+        Map<String, Object> parameters = Collections.singletonMap("connection", "my-connection");
+        WebAuthProvider.init(account)
+                .withParameters(parameters)
+                .withConnection("some-connection")
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("connection", "some-connection"));
+    }
+
+    @Test
+    public void shouldNotOverrideConnectionValueWithDefaultConnection() throws Exception {
+        Map<String, Object> parameters = Collections.singletonMap("connection", "my-connection");
+        WebAuthProvider.init(account)
+                .withParameters(parameters)
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("connection", "my-connection"));
+    }
+
+    @Test
+    public void shouldSetConnection() throws Exception {
+        WebAuthProvider.init(account)
+                .withConnection("some-connection")
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("connection", "some-connection"));
+    }
+
+
+    //scope
+
+    @Test
+    public void shouldHaveDefaultScope() throws Exception {
+        WebAuthProvider.init(account)
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("scope", "openid"));
+    }
+
+    @Test
+    public void shouldSetScopeFromParameters() throws Exception {
+        Map<String, Object> parameters = Collections.singletonMap("scope", "openid email contacts");
         WebAuthProvider.init(account)
                 .withScope("profile super_scope")
                 .withParameters(parameters)
                 .start(activity, callback);
 
-        final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
-        verify(activity).startActivity(intentCaptor.capture());
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("scope", "openid email contacts"));
+    }
+
+    @Test
+    public void shouldSetScopeFromSetter() throws Exception {
+        Map<String, Object> parameters = Collections.singletonMap("scope", "openid email contacts");
+        WebAuthProvider.init(account)
+                .withParameters(parameters)
+                .withScope("profile super_scope")
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("scope", "profile super_scope"));
+    }
+
+    @Test
+    public void shouldNotOverrideScopeValueWithDefaultScope() throws Exception {
+        Map<String, Object> parameters = Collections.singletonMap("scope", "openid email contacts");
+        WebAuthProvider.init(account)
+                .withParameters(parameters)
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("scope", "openid email contacts"));
+    }
+
+    @Test
+    public void shouldSetScope() throws Exception {
+        WebAuthProvider.init(account)
+                .withScope("profile super_scope")
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("scope", "profile super_scope"));
+    }
+
+
+    //connection scope
+
+    @Test
+    public void shouldNotHaveDefaultConnectionScope() throws Exception {
+        WebAuthProvider.init(account)
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, not(hasParamWithName("connection_scope")));
+    }
+
+    @Test
+    public void shouldSetConnectionScopeFromParameters() throws Exception {
+        Map<String, Object> parameters = Collections.singletonMap("connection_scope", "openid email contacts");
+        WebAuthProvider.init(account)
+                .withConnectionScope("profile super_scope")
+                .withParameters(parameters)
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("connection_scope", "openid email contacts"));
+    }
+
+    @Test
+    public void shouldSetConnectionScopeFromSetter() throws Exception {
+        Map<String, Object> parameters = Collections.singletonMap("connection_scope", "openid email contacts");
+        WebAuthProvider.init(account)
+                .withParameters(parameters)
+                .withConnectionScope("profile super_scope")
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("connection_scope", "profile super_scope"));
+    }
+
+    @Test
+    public void shouldNotOverrideConnectionScopeValueWithDefaultConnectionScope() throws Exception {
+        Map<String, Object> parameters = Collections.singletonMap("connection_scope", "openid email contacts");
+        WebAuthProvider.init(account)
+                .withParameters(parameters)
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("connection_scope", "openid email contacts"));
+    }
+
+    @Test
+    public void shouldSetConnectionScope() throws Exception {
+        WebAuthProvider.init(account)
+                .withConnectionScope("the", "scope", "of", "my", "connection")
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("connection_scope", "the scope of my connection"));
+    }
+
+
+    //state
+
+    @Test
+    public void shouldHaveDefaultState() throws Exception {
+        WebAuthProvider.init(account)
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue(is("state"), not(isEmptyOrNullString())));
+    }
+
+    @Test
+    public void shouldSetStateFromParameters() throws Exception {
+        Map<String, Object> parameters = Collections.singletonMap("state", "1234567890");
+        WebAuthProvider.init(account)
+                .withState("abcdefg")
+                .withParameters(parameters)
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("state", "1234567890"));
+    }
+
+    @Test
+    public void shouldSetStateFromSetter() throws Exception {
+        Map<String, Object> parameters = Collections.singletonMap("state", "1234567890");
+        WebAuthProvider.init(account)
+                .withParameters(parameters)
+                .withState("abcdefg")
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("state", "abcdefg"));
+    }
+
+    @Test
+    public void shouldNotOverrideStateValueWithDefaultState() throws Exception {
+        Map<String, Object> parameters = Collections.singletonMap("state", "1234567890");
+        WebAuthProvider.init(account)
+                .withParameters(parameters)
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("state", "1234567890"));
+    }
+
+    @Test
+    public void shouldSetState() throws Exception {
+        WebAuthProvider.init(account)
+                .withState("abcdefg")
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("state", "abcdefg"));
+    }
+
+
+    //nonce
+
+    @Test
+    public void shouldNotSetNonceByDefaultIfResponseTypeIsCode() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.CODE)
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, not(hasParamWithName("nonce")));
+    }
+
+    @Test
+    public void shouldNotSetNonceByDefaultIfResponseTypeIsToken() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.TOKEN)
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, not(hasParamWithName("nonce")));
+    }
+
+    @Test
+    public void shouldHaveDefaultNonce() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.ID_TOKEN)
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue(is("nonce"), not(isEmptyOrNullString())));
+    }
+
+    @Test
+    public void shouldSetUserNonceIfResponseTypeIsToken() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.TOKEN)
+                .withNonce("1234567890")
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("nonce", "1234567890"));
+    }
+
+    @Test
+    public void shouldSetUserNonceIfResponseTypeIsCode() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.CODE)
+                .withNonce("1234567890")
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("nonce", "1234567890"));
+    }
+
+    @Test
+    public void shouldSetNonceFromParameters() throws Exception {
+        Map<String, Object> parameters = Collections.singletonMap("nonce", "1234567890");
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.ID_TOKEN)
+                .withNonce("abcdefg")
+                .withParameters(parameters)
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("nonce", "1234567890"));
+    }
+
+    @Test
+    public void shouldSetNonceFromSetter() throws Exception {
+        Map<String, Object> parameters = Collections.singletonMap("nonce", "1234567890");
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.ID_TOKEN)
+                .withParameters(parameters)
+                .withNonce("abcdefg")
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("nonce", "abcdefg"));
+    }
+
+    @Test
+    public void shouldNotOverrideNonceValueWithDefaultNonce() throws Exception {
+        Map<String, Object> parameters = Collections.singletonMap("nonce", "1234567890");
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.ID_TOKEN)
+                .withParameters(parameters)
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("nonce", "1234567890"));
+    }
+
+    @Test
+    public void shouldSetNonce() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.ID_TOKEN)
+                .withNonce("abcdefg")
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("nonce", "abcdefg"));
+    }
+
+
+    // auth0 related
+
+    @Test
+    public void shouldHaveClientId() throws Exception {
+        WebAuthProvider.init(account)
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("client_id", "clientId"));
+    }
+
+    @Test
+    public void shouldHaveTelemetryInfo() throws Exception {
+        WebAuthProvider.init(account)
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue(is("auth0Client"), not(isEmptyOrNullString())));
+    }
+
+    @Test
+    public void shouldHaveRedirectUri() throws Exception {
+        WebAuthProvider.init(account)
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("redirect_uri", "https://domain/android/com.auth0.android.auth0/callback"));
+    }
+
+    //response type
+
+    @Test
+    public void shouldHaveDefaultResponseType() throws Exception {
+        WebAuthProvider.init(account)
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("response_type", "code"));
+    }
+
+    @Test
+    public void shouldSetResponseTypeToken() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.TOKEN)
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("response_type", "token"));
+    }
+
+    @Test
+    public void shouldSetResponseTypeIdToken() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.ID_TOKEN)
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("response_type", "id_token"));
+    }
+
+    @Test
+    public void shouldSetResponseTypeCode() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.CODE)
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("response_type", "code"));
+    }
+
+    @Test
+    public void shouldSetResponseTypeCodeToken() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.CODE | ResponseType.TOKEN)
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("response_type", "code token"));
+    }
+
+    @Test
+    public void shouldSetResponseTypeCodeIdToken() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.CODE | ResponseType.ID_TOKEN)
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("response_type", "code id_token"));
+    }
+
+    @Test
+    public void shouldSetResponseTypeIdTokenToken() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.ID_TOKEN | ResponseType.TOKEN)
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("response_type", "id_token token"));
+    }
+
+    @Test
+    public void shouldSetResponseTypeCodeIdTokenToken() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.CODE | ResponseType.ID_TOKEN | ResponseType.TOKEN)
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("response_type", "code id_token token"));
+    }
+
+    @Test
+    public void shouldSetNonNullAuthenticationParameters() throws Exception {
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("a", "valid");
+        parameters.put("b", null);
+        WebAuthProvider.init(account)
+                .withParameters(parameters)
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("a", "valid"));
+        assertThat(uri, not(hasParamWithName("b")));
+    }
+
+    @Test
+    public void shouldBuildAuthorizeURIWithoutNulls() throws Exception {
+        WebAuthProvider.init(account)
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        Set<String> params = uri.getQueryParameterNames();
+        for (String name : params) {
+            assertThat(uri, not(hasParamWithValue(name, null)));
+            assertThat(uri, not(hasParamWithValue(name, "null")));
+        }
+    }
+
+    @Test
+    public void shouldBuildAuthorizeURIWithCorrectSchemeHostAndPath() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.ID_TOKEN)
+                .withState("a-state")
+                .withNonce("a-nonce")
+                .start(activity, callback);
 
         Uri baseUriString = Uri.parse(account.getAuthorizeUrl());
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
 
-        Intent intent = intentCaptor.getValue();
-        assertThat(intent, is(notNullValue()));
-        assertThat(intent, hasData(hasScheme(baseUriString.getScheme())));
-        assertThat(intent.getData(), hasHost(baseUriString.getHost()));
-        assertThat(intent.getData(), hasPath(baseUriString.getPath()));
+        assertThat(uri, hasScheme(baseUriString.getScheme()));
+        assertThat(uri, hasHost(baseUriString.getHost()));
+        assertThat(uri, hasPath(baseUriString.getPath()));
+    }
 
-        assertThat(intent.getData(), hasParamWithValue("scope", "profile super_scope"));
-        assertThat(intent.getData(), hasParamWithValue("custom_param_1", "custom_value_1"));
-        assertThat(intent.getData(), hasParamWithValue("custom_param_2", "custom_value_2"));
+    @Test
+    public void shouldBuildAuthorizeURIWithResponseTypeIdToken() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.ID_TOKEN)
+                .withState("a-state")
+                .withNonce("a-nonce")
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithValue("nonce", "a-nonce"));
+        assertThat(uri, not(hasParamWithName("code_challenge")));
+        assertThat(uri, not(hasParamWithName("code_challenge_method")));
+        assertThat(uri, hasParamWithValue("response_type", "id_token"));
+    }
+
+    @Test
+    public void shouldBuildAuthorizeURIWithResponseTypeToken() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.TOKEN)
+                .withState("a-state")
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, not(hasParamWithName("nonce")));
+        assertThat(uri, not(hasParamWithName("code_challenge")));
+        assertThat(uri, not(hasParamWithName("code_challenge_method")));
+        assertThat(uri, hasParamWithValue("response_type", "token"));
+    }
+
+    @Test
+    public void shouldBuildAuthorizeURIWithResponseTypeCode() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.CODE)
+                .withState("a-state")
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, not(hasParamWithName("nonce")));
+        assertThat(uri, hasParamWithValue(is("code_challenge"), not(isEmptyOrNullString())));
+        assertThat(uri, hasParamWithValue("code_challenge_method", "S256"));
+        assertThat(uri, hasParamWithValue("response_type", "code"));
     }
 
     @Test
@@ -434,6 +820,30 @@ public class WebAuthProviderTest {
     }
 
     @Test
+    public void shouldResumeWithRequestCodeWithResponseTypeIdToken() throws Exception {
+        WebAuthProvider.init(account)
+                .withNonce("1234567890")
+                .withResponseType(ResponseType.ID_TOKEN)
+                .start(activity, callback, REQUEST_CODE);
+        final Intent intent = createAuthIntent(createHash("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk", null, null, null, null, null));
+        assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
+
+        verify(callback).onSuccess(any(Credentials.class));
+    }
+
+    @Test
+    public void shouldResumeWithIntentWithResponseTypeIdToken() throws Exception {
+        WebAuthProvider.init(account)
+                .withNonce("1234567890")
+                .withResponseType(ResponseType.ID_TOKEN)
+                .start(activity, callback);
+        final Intent intent = createAuthIntent(createHash("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk", null, null, null, null, null));
+        assertTrue(WebAuthProvider.resume(intent));
+
+        verify(callback).onSuccess(any(Credentials.class));
+    }
+
+    @Test
     public void shouldStartWithValidRequestCode() throws Exception {
         final Credentials credentials = Mockito.mock(Credentials.class);
         final PKCE pkce = Mockito.mock(PKCE.class);
@@ -450,77 +860,69 @@ public class WebAuthProviderTest {
                 .useCodeGrant(true)
                 .withPKCE(pkce)
                 .start(activity, callback);
-        final Intent intent = createAuthIntent(createHash("aToken", "iToken", "refresh_token", "1234567890", null));
+        final Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null));
         final int DEFAULT_REQUEST_CODE = 110;
         assertTrue(WebAuthProvider.resume(DEFAULT_REQUEST_CODE, Activity.RESULT_OK, intent));
     }
 
     @Test
     public void shouldResumeWithIntentWithCodeGrant() throws Exception {
-        final Credentials credentials = Mockito.mock(Credentials.class);
+        final Credentials codeCredentials = new Credentials("codeId", "codeAccess", "codeType", "codeRefresh");
         final PKCE pkce = Mockito.mock(PKCE.class);
+        final ArgumentCaptor<AuthCallback> codeCallbackCaptor = ArgumentCaptor.forClass(AuthCallback.class);
         Mockito.doAnswer(new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
-                callback.onSuccess(credentials);
+                codeCallbackCaptor.getValue().onSuccess(codeCredentials);
                 return null;
             }
-        }).when(pkce).getToken(any(String.class), eq(callback));
-
+        }).when(pkce).getToken(any(String.class), codeCallbackCaptor.capture());
         WebAuthProvider.init(account)
                 .withState("1234567890")
                 .useCodeGrant(true)
                 .withPKCE(pkce)
                 .start(activity, callback);
-        final Intent intent = createAuthIntent(createHash("aToken", "iToken", "refresh_token", "1234567890", null));
+        final Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", "1234567890", null));
         assertTrue(WebAuthProvider.resume(intent));
 
-        verify(callback).onSuccess(any(Credentials.class));
-    }
+        final ArgumentCaptor<Credentials> credentialsCaptor = ArgumentCaptor.forClass(Credentials.class);
+        verify(callback).onSuccess(credentialsCaptor.capture());
 
-    @Test
-    public void shouldClearInstanceAfterSuccessAuthentication() throws Exception {
-        final Credentials credentials = Mockito.mock(Credentials.class);
-        final PKCE pkce = Mockito.mock(PKCE.class);
-        Mockito.doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                callback.onSuccess(credentials);
-                return null;
-            }
-        }).when(pkce).getToken(any(String.class), eq(callback));
-        WebAuthProvider.init(account)
-                .withState("1234567890")
-                .useCodeGrant(true)
-                .withPKCE(pkce)
-                .start(activity, callback, REQUEST_CODE);
-        final Intent intent = createAuthIntent(createHash("aToken", "iToken", "refresh_token", "1234567890", null));
-        assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
-
-        verify(callback).onSuccess(any(Credentials.class));
+        assertThat(credentialsCaptor.getValue(), is(notNullValue()));
+        assertThat(credentialsCaptor.getValue().getIdToken(), is("codeId"));
+        assertThat(credentialsCaptor.getValue().getAccessToken(), is("codeAccess"));
+        assertThat(credentialsCaptor.getValue().getRefreshToken(), is("codeRefresh"));
+        assertThat(credentialsCaptor.getValue().getType(), is("codeType"));
     }
 
     @Test
     public void shouldResumeWithRequestCodeWithCodeGrant() throws Exception {
-        final Credentials credentials = Mockito.mock(Credentials.class);
+        final Credentials codeCredentials = new Credentials("codeId", "codeAccess", "codeType", "codeRefresh");
         final PKCE pkce = Mockito.mock(PKCE.class);
+        final ArgumentCaptor<AuthCallback> codeCallbackCaptor = ArgumentCaptor.forClass(AuthCallback.class);
         Mockito.doAnswer(new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
-                callback.onSuccess(credentials);
+                codeCallbackCaptor.getValue().onSuccess(codeCredentials);
                 return null;
             }
-        }).when(pkce).getToken(any(String.class), eq(callback));
-
+        }).when(pkce).getToken(any(String.class), codeCallbackCaptor.capture());
         WebAuthProvider.init(account)
                 .withState("1234567890")
                 .useCodeGrant(true)
                 .withPKCE(pkce)
                 .start(activity, callback, REQUEST_CODE);
-        final Intent intent = createAuthIntent(createHash("aToken", "iToken", "refresh_token", "1234567890", null));
+        final Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", "1234567890", null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
-        verify(callback).onSuccess(any(Credentials.class));
+        final ArgumentCaptor<Credentials> credentialsCaptor = ArgumentCaptor.forClass(Credentials.class);
+        verify(callback).onSuccess(credentialsCaptor.capture());
+
+        assertThat(credentialsCaptor.getValue(), is(notNullValue()));
+        assertThat(credentialsCaptor.getValue().getIdToken(), is("codeId"));
+        assertThat(credentialsCaptor.getValue().getAccessToken(), is("codeAccess"));
+        assertThat(credentialsCaptor.getValue().getRefreshToken(), is("codeRefresh"));
+        assertThat(credentialsCaptor.getValue().getType(), is("codeType"));
     }
 
     @Test
@@ -529,7 +931,7 @@ public class WebAuthProviderTest {
                 .withState("1234567890")
                 .useCodeGrant(false)
                 .start(activity, callback);
-        final Intent intent = createAuthIntent(createHash("aToken", "iToken", "refresh_token", "1234567890", null));
+        final Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onSuccess(any(Credentials.class));
@@ -541,10 +943,56 @@ public class WebAuthProviderTest {
                 .withState("1234567890")
                 .useCodeGrant(false)
                 .start(activity, callback, REQUEST_CODE);
-        final Intent intent = createAuthIntent(createHash("aToken", "iToken", "refresh_token", "1234567890", null));
+        final Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         verify(callback).onSuccess(any(Credentials.class));
+    }
+
+    @Test
+    public void shouldReThrowAnyFailedCodeExchangeDialog() throws Exception {
+        final Dialog dialog = Mockito.mock(Dialog.class);
+        final PKCE pkce = Mockito.mock(PKCE.class);
+        final ArgumentCaptor<AuthCallback> codeCallbackCaptor = ArgumentCaptor.forClass(AuthCallback.class);
+        Mockito.doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                codeCallbackCaptor.getValue().onFailure(dialog);
+                return null;
+            }
+        }).when(pkce).getToken(any(String.class), codeCallbackCaptor.capture());
+        WebAuthProvider.init(account)
+                .withState("1234567890")
+                .useCodeGrant(true)
+                .withPKCE(pkce)
+                .start(activity, callback);
+        final Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", "1234567890", null));
+        assertTrue(WebAuthProvider.resume(intent));
+
+        verify(callback).onFailure(dialog);
+    }
+
+    @Test
+    public void shouldReThrowAnyFailedCodeExchangeException() throws Exception {
+        final AuthenticationException exception = Mockito.mock(AuthenticationException.class);
+        final PKCE pkce = Mockito.mock(PKCE.class);
+        final ArgumentCaptor<AuthCallback> codeCallbackCaptor = ArgumentCaptor.forClass(AuthCallback.class);
+        Mockito.doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                codeCallbackCaptor.getValue().onFailure(exception);
+                return null;
+            }
+        }).when(pkce).getToken(any(String.class), codeCallbackCaptor.capture());
+        WebAuthProvider.init(account)
+                .withState("1234567890")
+                .useCodeGrant(true)
+                .withPKCE(pkce)
+                .start(activity, callback);
+        final Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", "1234567890", null));
+        assertTrue(WebAuthProvider.resume(intent));
+
+        verify(callback).onFailure(exception);
     }
 
     @Test
@@ -553,7 +1001,7 @@ public class WebAuthProviderTest {
                 .withState("1234567890")
                 .useCodeGrant(false)
                 .start(activity, callback);
-        final Intent intent = createAuthIntent(createHash("aToken", "iToken", "refresh_token", "1234567890", "access_denied"));
+        final Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", "access_denied"));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -569,7 +1017,7 @@ public class WebAuthProviderTest {
                 .withState("1234567890")
                 .useCodeGrant(false)
                 .start(activity, callback, REQUEST_CODE);
-        final Intent intent = createAuthIntent(createHash("aToken", "iToken", "refresh_token", "1234567890", "access_denied"));
+        final Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", "access_denied"));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -585,7 +1033,7 @@ public class WebAuthProviderTest {
                 .withState("1234567890")
                 .useCodeGrant(false)
                 .start(activity, callback);
-        final Intent intent = createAuthIntent(createHash("aToken", "iToken", "refresh_token", "1234567890", "some other error"));
+        final Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", "some other error"));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -601,7 +1049,7 @@ public class WebAuthProviderTest {
                 .withState("1234567890")
                 .useCodeGrant(false)
                 .start(activity, callback, REQUEST_CODE);
-        final Intent intent = createAuthIntent(createHash("aToken", "iToken", "refresh_token", "1234567890", "some other error"));
+        final Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", "some other error"));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -617,7 +1065,7 @@ public class WebAuthProviderTest {
                 .withState("abcdefghijk")
                 .useCodeGrant(false)
                 .start(activity, callback);
-        final Intent intent = createAuthIntent(createHash("aToken", "iToken", "refresh_token", "1234567890", null));
+        final Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -633,7 +1081,7 @@ public class WebAuthProviderTest {
                 .withState("abcdefghijk")
                 .useCodeGrant(false)
                 .start(activity, callback, REQUEST_CODE);
-        final Intent intent = createAuthIntent(createHash("aToken", "iToken", "refresh_token", "1234567890", null));
+        final Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -644,13 +1092,45 @@ public class WebAuthProviderTest {
     }
 
     @Test
+    public void shouldFailToResumeWithIntentWithInvalidNonce() throws Exception {
+        WebAuthProvider.init(account)
+                .withNonce("0987654321")
+                .withResponseType(ResponseType.ID_TOKEN)
+                .start(activity, callback);
+        final Intent intent = createAuthIntent(createHash("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk", null, null, null, null, null));
+        assertTrue(WebAuthProvider.resume(intent));
+
+        verify(callback).onFailure(authExceptionCaptor.capture());
+
+        assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
+        assertThat(authExceptionCaptor.getValue().getCode(), is("access_denied"));
+        assertThat(authExceptionCaptor.getValue().getDescription(), is("The received nonce is invalid. Try again."));
+    }
+
+    @Test
+    public void shouldFailToResumeWithRequestCodeWithInvalidNonce() throws Exception {
+        WebAuthProvider.init(account)
+                .withNonce("0987654321")
+                .withResponseType(ResponseType.ID_TOKEN)
+                .start(activity, callback, REQUEST_CODE);
+        final Intent intent = createAuthIntent(createHash("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk", null, null, null, null, null));
+        assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
+
+        verify(callback).onFailure(authExceptionCaptor.capture());
+
+        assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
+        assertThat(authExceptionCaptor.getValue().getCode(), is("access_denied"));
+        assertThat(authExceptionCaptor.getValue().getDescription(), is("The received nonce is invalid. Try again."));
+    }
+
+    @Test
     public void shouldFailToResumeWithUnexpectedRequestCode() throws Exception {
         verifyNoMoreInteractions(callback);
         WebAuthProvider.init(account)
                 .useCodeGrant(false)
                 .start(activity, callback);
 
-        final Intent intent = createAuthIntent(createHash("aToken", "iToken", "refresh_token", "1234567890", null));
+        final Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null));
         assertFalse(WebAuthProvider.resume(999, Activity.RESULT_OK, intent));
     }
 
@@ -661,7 +1141,7 @@ public class WebAuthProviderTest {
                 .useCodeGrant(false)
                 .start(activity, callback, REQUEST_CODE);
 
-        final Intent intent = createAuthIntent(createHash("aToken", "iToken", "refresh_token", "1234567890", null));
+        final Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null));
         assertFalse(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_CANCELED, intent));
     }
 
@@ -672,7 +1152,7 @@ public class WebAuthProviderTest {
                 .useCodeGrant(false)
                 .start(activity, callback, REQUEST_CODE);
 
-        final Intent intent = createAuthIntent(createHash("aToken", "iToken", "refresh_token", "1234567890", null));
+        final Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null));
         assertFalse(WebAuthProvider.resume(REQUEST_CODE, 999, intent));
     }
 
@@ -686,24 +1166,6 @@ public class WebAuthProviderTest {
 
         final Intent intent = createAuthIntent("");
         assertFalse(WebAuthProvider.resume(intent));
-    }
-
-    @Test
-    public void shouldHavePKCEEnabled() throws Exception {
-        WebAuthProvider.init(account)
-                .useCodeGrant(true)
-                .start(activity, callback);
-
-        assertTrue(WebAuthProvider.getInstance().shouldUsePKCE());
-    }
-
-    @Test
-    public void shouldHavePKCEDisabled() throws Exception {
-        WebAuthProvider.init(account)
-                .useCodeGrant(false)
-                .start(activity, callback);
-
-        assertFalse(WebAuthProvider.getInstance().shouldUsePKCE());
     }
 
     public void shouldFailToResumeWithRequestCodeWithEmptyUriValues() throws Exception {
@@ -753,8 +1215,8 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         assertThat(WebAuthProvider.getInstance(), is(notNullValue()));
-        final Intent intent = createAuthIntent(createHash("aToken", "iToken", "refresh_token", "1234567890", null));
-        WebAuthProvider.resume(intent);
+        final Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null));
+        assertTrue(WebAuthProvider.resume(intent));
         assertThat(WebAuthProvider.getInstance(), is(nullValue()));
     }
 
@@ -764,19 +1226,60 @@ public class WebAuthProviderTest {
                 .start(activity, callback, REQUEST_CODE);
 
         assertThat(WebAuthProvider.getInstance(), is(notNullValue()));
-        final Intent intent = createAuthIntent(createHash("aToken", "iToken", "refresh_token", "1234567890", null));
-        WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent);
+        final Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null));
+        assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
         assertThat(WebAuthProvider.getInstance(), is(nullValue()));
     }
 
+    @Test
+    public void shouldMergeCredentials() throws Exception {
+        Credentials urlCredentials = new Credentials("urlId", "urlAccess", "urlType", "urlRefresh");
+        Credentials codeCredentials = new Credentials("codeId", "codeAccess", "codeType", "codeRefresh");
+        Credentials merged = WebAuthProvider.mergeCredentials(urlCredentials, codeCredentials);
+
+        assertThat(merged.getIdToken(), is(codeCredentials.getIdToken()));
+        assertThat(merged.getAccessToken(), is(codeCredentials.getAccessToken()));
+        assertThat(merged.getType(), is(codeCredentials.getType()));
+        assertThat(merged.getRefreshToken(), is(codeCredentials.getRefreshToken()));
+    }
+
+    @Test
+    public void shouldPreferNonNullValuesWhenMergingCredentials() throws Exception {
+        Credentials urlCredentials = new Credentials("urlId", "urlAccess", "urlType", "urlRefresh");
+        Credentials codeCredentials = new Credentials(null, null, null, null);
+        Credentials merged = WebAuthProvider.mergeCredentials(urlCredentials, codeCredentials);
+
+        assertThat(merged.getIdToken(), is(urlCredentials.getIdToken()));
+        assertThat(merged.getAccessToken(), is(urlCredentials.getAccessToken()));
+        assertThat(merged.getType(), is(urlCredentials.getType()));
+        assertThat(merged.getRefreshToken(), is(urlCredentials.getRefreshToken()));
+    }
+
+    @Test
+    public void shouldHaveValidNonce() throws Exception {
+        assertTrue(WebAuthProvider.hasValidNonce("1234567890", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk"));
+    }
+
+    @Test
+    public void shouldHaveInvalidNonce() throws Exception {
+        assertFalse(WebAuthProvider.hasValidNonce("0987654321", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk"));
+    }
+
+    @Test
+    public void shouldHaveInvalidNonceOnDecodeException() throws Exception {
+        assertFalse(WebAuthProvider.hasValidNonce("0987654321", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVC.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk"));
+    }
+
+    //Test Helper Functions
+
     private Intent createAuthIntent(String hash) {
-        Uri validUri = Uri.parse(CALLBACK_URL + hash);
+        Uri validUri = Uri.parse("https://domain.auth0.com/android/package/callback" + hash);
         Intent intent = new Intent();
         intent.setData(validUri);
         return intent;
     }
 
-    private String createHash(@Nullable String accessToken, @Nullable String idToken, @Nullable String tokenType, @Nullable String state, @Nullable String error) {
+    private String createHash(@Nullable String idToken, @Nullable String accessToken, @Nullable String refreshToken, @Nullable String tokenType, @Nullable String state, @Nullable String error) {
         String hash = "#";
         if (accessToken != null) {
             hash = hash.concat("access_token=" + accessToken);
@@ -786,6 +1289,12 @@ public class WebAuthProviderTest {
                 hash = hash.concat("&");
             }
             hash = hash.concat("id_token=" + idToken);
+        }
+        if (refreshToken != null) {
+            if (!hash.endsWith("&")) {
+                hash = hash.concat("&");
+            }
+            hash = hash.concat("refresh_token=" + refreshToken);
         }
         if (tokenType != null) {
             if (!hash.endsWith("&")) {
