@@ -1,5 +1,19 @@
 # Change Log
 
+## [1.2.0](https://github.com/auth0/Auth0.Android/tree/1.2.0) (2016-11-30)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.1.2...1.2.0)
+
+**Added**
+- Add userInfo method [\#44](https://github.com/auth0/Auth0.Android/pull/44) ([lbalmaceda](https://github.com/lbalmaceda))
+- Get new Credentials using a Refresh Token [\#43](https://github.com/auth0/Auth0.Android/pull/43) ([lbalmaceda](https://github.com/lbalmaceda))
+- Login with password grant using /oauth/token endpoint [\#42](https://github.com/auth0/Auth0.Android/pull/42) ([lbalmaceda](https://github.com/lbalmaceda))
+- Add Logging for Requests/Responses and Uri's. [\#40](https://github.com/auth0/Auth0.Android/pull/40) ([lbalmaceda](https://github.com/lbalmaceda))
+- Support multiple response_type values [\#38](https://github.com/auth0/Auth0.Android/pull/38) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Deprecated**
+- Deprecate useCodeGrant in the WebAuthProvider class [\#46](https://github.com/auth0/Auth0.Android/pull/46) ([lbalmaceda](https://github.com/lbalmaceda))
+- Deprecate tokenInfo method in favor of userInfo [\#45](https://github.com/auth0/Auth0.Android/pull/45) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.1.2](https://github.com/auth0/Auth0.Android/tree/1.1.2) (2015-11-22)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.1.1...1.1.2)
 
