@@ -34,7 +34,6 @@ import com.squareup.okhttp.Callback;
 import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
-import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
 
 import java.io.IOException;
@@ -79,9 +78,9 @@ class SimpleRequest<T, U extends Auth0Exception> extends BaseRequest<T, U> imple
 
     @Override
     protected Request doBuildRequest() throws RequestBodyBuildException {
-        RequestBody body = buildBody();
+        boolean sendBody = method.equals("HEAD") || method.equals("GET");
         return newBuilder()
-                .method(method, body)
+                .method(method, sendBody ? null : buildBody())
                 .build();
     }
 

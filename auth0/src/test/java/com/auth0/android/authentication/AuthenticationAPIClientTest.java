@@ -254,6 +254,9 @@ public class AuthenticationAPIClientTest {
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/tokeninfo"));
+
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("id_token", "ID_TOKEN"));
     }
 
     @Test
@@ -269,6 +272,41 @@ public class AuthenticationAPIClientTest {
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getPath(), equalTo("/tokeninfo"));
+
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("id_token", "ID_TOKEN"));
+    }
+
+    @Test
+    public void shouldFetchUserInfo() throws Exception {
+        mockAPI.willReturnTokenInfo();
+        final MockAuthenticationCallback<UserProfile> callback = new MockAuthenticationCallback<>();
+
+        client.userInfo("ACCESS_TOKEN")
+                .start(callback);
+
+        assertThat(callback, hasPayloadOfType(UserProfile.class));
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+        assertThat(request.getHeader("Authorization"), is("Bearer ACCESS_TOKEN"));
+        assertThat(request.getPath(), equalTo("/userinfo"));
+    }
+
+    @Test
+    public void shouldFetchUserInfoSync() throws Exception {
+        mockAPI.willReturnTokenInfo();
+
+        final UserProfile profile = client
+                .userInfo("ACCESS_TOKEN")
+                .execute();
+
+        assertThat(profile, is(notNullValue()));
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+        assertThat(request.getHeader("Authorization"), is("Bearer ACCESS_TOKEN"));
+        assertThat(request.getPath(), equalTo("/userinfo"));
     }
 
     @Test
@@ -1334,7 +1372,8 @@ public class AuthenticationAPIClientTest {
         assertThat(body, hasEntry("connection", MY_CONNECTION));
 
         final RecordedRequest secondRequest = mockAPI.takeRequest();
-        assertThat(secondRequest.getPath(), equalTo("/tokeninfo"));
+        assertThat(secondRequest.getHeader("Authorization"), is("Bearer " + AuthenticationAPI.ACCESS_TOKEN));
+        assertThat(secondRequest.getPath(), equalTo("/userinfo"));
 
         assertThat(callback, hasPayloadOfType(Authentication.class));
     }
@@ -1376,6 +1415,29 @@ public class AuthenticationAPIClientTest {
         assertThat(body, hasEntry("grant_type", "refresh_token"));
 
         assertThat(credentials, is(notNullValue()));
+    }
+
+    @Test
+    public void shouldFetchProfileSyncAfterLoginRequest() throws Exception {
+        mockAPI.willReturnSuccessfulLogin()
+                .willReturnTokenInfo();
+
+        Authentication authentication = client.getProfileAfter(client.login(SUPPORT_AUTH0_COM, "voidpassword", MY_CONNECTION))
+                .execute();
+
+        final RecordedRequest firstRequest = mockAPI.takeRequest();
+        assertThat(firstRequest.getPath(), equalTo("/oauth/ro"));
+
+        Map<String, String> body = bodyFromRequest(firstRequest);
+        assertThat(body, hasEntry("username", SUPPORT_AUTH0_COM));
+        assertThat(body, hasEntry("password", "voidpassword"));
+        assertThat(body, hasEntry("connection", MY_CONNECTION));
+
+        final RecordedRequest secondRequest = mockAPI.takeRequest();
+        assertThat(secondRequest.getHeader("Authorization"), is("Bearer " + AuthenticationAPI.ACCESS_TOKEN));
+        assertThat(secondRequest.getPath(), equalTo("/userinfo"));
+
+        assertThat(authentication, is(notNullValue()));
     }
 
     @Test

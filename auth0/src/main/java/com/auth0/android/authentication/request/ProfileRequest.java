@@ -41,14 +41,15 @@ import java.util.Map;
  */
 public class ProfileRequest implements Request<Authentication, AuthenticationException> {
 
-    private static final String ID_TOKEN_KEY = "id_token";
+    private static final String ACCESS_TOKEN_KEY = "access_token";
+    private static final String HEADER_AUTHORIZATION = "Authorization";
 
     private final AuthenticationRequest credentialsRequest;
-    private final ParameterizableRequest<UserProfile, AuthenticationException> tokenInfoRequest;
+    private final ParameterizableRequest<UserProfile, AuthenticationException> userInfoRequest;
 
-    public ProfileRequest(AuthenticationRequest credentialsRequest, ParameterizableRequest<UserProfile, AuthenticationException> tokenInfoRequest) {
+    public ProfileRequest(AuthenticationRequest credentialsRequest, ParameterizableRequest<UserProfile, AuthenticationException> userInfoRequest) {
         this.credentialsRequest = credentialsRequest;
-        this.tokenInfoRequest = tokenInfoRequest;
+        this.userInfoRequest = userInfoRequest;
     }
 
     /**
@@ -94,8 +95,8 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
         credentialsRequest.start(new BaseCallback<Credentials, AuthenticationException>() {
             @Override
             public void onSuccess(final Credentials credentials) {
-                tokenInfoRequest
-                        .addParameter(ID_TOKEN_KEY, credentials.getIdToken())
+                userInfoRequest
+                        .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.getAccessToken())
                         .start(new BaseCallback<UserProfile, AuthenticationException>() {
                             @Override
                             public void onSuccess(UserProfile profile) {
@@ -125,8 +126,8 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
     @Override
     public Authentication execute() throws Auth0Exception {
         Credentials credentials = credentialsRequest.execute();
-        UserProfile profile = tokenInfoRequest
-                .addParameter(ID_TOKEN_KEY, credentials.getIdToken())
+        UserProfile profile = userInfoRequest
+                .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.getAccessToken())
                 .execute();
         return new Authentication(profile, credentials);
     }

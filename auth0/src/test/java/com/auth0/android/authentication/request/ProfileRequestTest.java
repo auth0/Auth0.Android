@@ -38,14 +38,14 @@ import static org.mockito.Mockito.when;
 public class ProfileRequestTest {
 
     private AuthenticationRequest credentialsMockRequest;
-    private ParameterizableRequest tokenInfoMockRequest;
+    private ParameterizableRequest userInfoMockRequest;
     private ProfileRequest profileRequest;
 
     @Before
     public void setUp() throws Exception {
         credentialsMockRequest = mock(AuthenticationRequest.class);
-        tokenInfoMockRequest = mock(ParameterizableRequest.class);
-        profileRequest = new ProfileRequest(credentialsMockRequest, tokenInfoMockRequest);
+        userInfoMockRequest = mock(ParameterizableRequest.class);
+        profileRequest = new ProfileRequest(credentialsMockRequest, userInfoMockRequest);
     }
 
     @Test
@@ -145,8 +145,9 @@ public class ProfileRequestTest {
             }
         });
         final UserProfile userProfile = mock(UserProfile.class);
-        when(tokenInfoMockRequest.addParameter(anyString(), anyObject())).thenReturn(tokenInfoMockRequest);
-        when(tokenInfoMockRequest.execute()).thenAnswer(new Answer<Object>() {
+        when(userInfoMockRequest.addParameter(anyString(), anyObject())).thenReturn(userInfoMockRequest);
+        when(userInfoMockRequest.addHeader(anyString(), anyString())).thenReturn(userInfoMockRequest);
+        when(userInfoMockRequest.execute()).thenAnswer(new Answer<Object>() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
                 return userProfile;
@@ -155,7 +156,7 @@ public class ProfileRequestTest {
         final Authentication executeResult = profileRequest.execute();
 
         verify(credentialsMockRequest).execute();
-        verify(tokenInfoMockRequest).execute();
+        verify(userInfoMockRequest).execute();
         assertThat(executeResult, is(notNullValue()));
         assertThat(executeResult, is(instanceOf(Authentication.class)));
         assertThat(executeResult.getCredentials(), is(notNullValue()));
