@@ -38,7 +38,7 @@ class ChangeLogTask extends DefaultTask {
 
             file.eachLine { line, number ->
                 if (number == 0 && !line.startsWith('# Change Log')) {
-                    throw new StopExecutionException('Change Log file is not properly formatted')
+                    throw new GradleException('Change Log file is not properly formatted')
                 }
 
                 writer.println(line)
@@ -55,7 +55,7 @@ class ChangeLogTask extends DefaultTask {
                 def content = command.execute()
                 content.consumeProcessOutputStream(writer)
                 if (content.waitFor() != 0) {
-                    throw new StopExecutionException("Failed to request changelog for version ${next}")
+                    throw new GradleException("Failed to request changelog for version ${next}")
                 }
             }
         }
