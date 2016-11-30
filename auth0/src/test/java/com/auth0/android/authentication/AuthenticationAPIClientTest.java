@@ -200,6 +200,48 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
+    public void shouldLoginWithUserAndPasswordUsingOAuthTokenEndpoint() throws Exception {
+        mockAPI.willReturnSuccessfulLogin();
+        final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
+
+        client.login(SUPPORT_AUTH0_COM, "some-password")
+                .start(callback);
+        assertThat(callback, hasPayloadOfType(Credentials.class));
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("client_id", CLIENT_ID));
+        assertThat(body, hasEntry("grant_type", "password"));
+        assertThat(body, hasEntry("username", SUPPORT_AUTH0_COM));
+        assertThat(body, hasEntry("password", "some-password"));
+        assertThat(body, not(hasKey("connection")));
+        assertThat(body, not(hasKey("scope")));
+        assertThat(body, not(hasKey("audience")));
+    }
+
+    @Test
+    public void shouldLoginWithUserAndPasswordSyncUsingOAuthTokenEndpoint() throws Exception {
+        mockAPI.willReturnSuccessfulLogin();
+
+        final Credentials credentials = client
+                .login(SUPPORT_AUTH0_COM, "some-password")
+                .execute();
+        assertThat(credentials, is(notNullValue()));
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("client_id", CLIENT_ID));
+        assertThat(body, hasEntry("grant_type", "password"));
+        assertThat(body, hasEntry("username", SUPPORT_AUTH0_COM));
+        assertThat(body, hasEntry("password", "some-password"));
+        assertThat(body, not(hasKey("connection")));
+        assertThat(body, not(hasKey("scope")));
+        assertThat(body, not(hasKey("audience")));
+    }
+
+    @Test
     public void shouldFetchTokenInfo() throws Exception {
         mockAPI.willReturnTokenInfo();
         final MockAuthenticationCallback<UserProfile> callback = new MockAuthenticationCallback<>();

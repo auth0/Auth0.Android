@@ -148,7 +148,7 @@ public class AuthenticationAPIClient {
     }
 
     /**
-     * Log in a user with email/username and password using a DB connection.
+     * Log in a user with email/username and password using a DB connection and the /oauth/ro endpoint.
      * The default scope used is 'openid'.
      * Example usage:
      * <pre><code>
@@ -176,6 +176,35 @@ public class AuthenticationAPIClient {
                 .setConnection(connection)
                 .asDictionary();
         return loginWithResourceOwner(requestParameters);
+    }
+
+    /**
+     * Log in a user with email/username and password using the /oauth/token endpoint.
+     * Example usage:
+     * <pre><code>
+     * client.login("{username or email}", "{password}")
+     *      .start(new BaseCallback<Credentials>() {
+     *          {@literal}Override
+     *          public void onSuccess(Credentials payload) { }
+     *
+     *          {@literal}Override
+     *          public void onFailure(AuthenticationException error) { }
+     *      });
+     * </code></pre>
+     *
+     * @param usernameOrEmail of the user
+     * @param password        of the user
+     * @return a request to configure and start that will yield {@link Credentials}
+     */
+    @SuppressWarnings("WeakerAccess")
+    public AuthenticationRequest login(@NonNull String usernameOrEmail, @NonNull String password) {
+        Map<String, Object> requestParameters = ParameterBuilder.newBuilder()
+                .set(USERNAME_KEY, usernameOrEmail)
+                .set(PASSWORD_KEY, password)
+                .setGrantType(GRANT_TYPE_PASSWORD)
+                .asDictionary();
+
+        return loginWithToken(requestParameters);
     }
 
     /**
@@ -850,6 +879,20 @@ public class AuthenticationAPIClient {
         ParameterizableRequest<Credentials, AuthenticationException> request = factory.POST(url, client, gson, Credentials.class, authErrorBuilder);
         request.addParameters(parameters);
         return new TokenRequest(request);
+    }
+
+    private AuthenticationRequest loginWithToken(Map<String, Object> parameters) {
+        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+                .addPathSegment(OAUTH_PATH)
+                .addPathSegment(TOKEN_PATH)
+                .build();
+
+        final Map<String, Object> requestParameters = ParameterBuilder.newBuilder()
+                .setClientId(getClientId())
+                .addAll(parameters)
+                .asDictionary();
+        return factory.authenticationPOST(url, client, gson)
+                .addAuthenticationParameters(requestParameters);
     }
 
     private AuthenticationRequest loginWithResourceOwner(Map<String, Object> parameters) {
