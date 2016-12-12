@@ -7,7 +7,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.net.Uri;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Base64;
 
 import com.auth0.android.Auth0;
 import com.auth0.android.authentication.AuthenticationException;
@@ -27,6 +29,7 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -42,6 +45,7 @@ import static android.support.test.espresso.intent.matcher.UriMatchers.hasParamW
 import static android.support.test.espresso.intent.matcher.UriMatchers.hasParamWithValue;
 import static android.support.test.espresso.intent.matcher.UriMatchers.hasPath;
 import static android.support.test.espresso.intent.matcher.UriMatchers.hasScheme;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -64,6 +68,8 @@ import static org.mockito.Mockito.when;
 public class WebAuthProviderTest {
 
     private static final int REQUEST_CODE = 11;
+    private static final String KEY_STATE = "state";
+    private static final String KEY_NONCE = "nonce";
 
     @Mock
     private AuthCallback callback;
@@ -466,7 +472,6 @@ public class WebAuthProviderTest {
         assertThat(uri, hasParamWithValue("state", "abcdefg"));
     }
 
-
     //nonce
 
     @Test
@@ -586,6 +591,29 @@ public class WebAuthProviderTest {
         Uri uri = provider.buildAuthorizeUri();
 
         assertThat(uri, hasParamWithValue("nonce", "abcdefg"));
+    }
+
+    @Test
+    public void shouldGenerateRandomStringIfDefaultValueMissing() throws Exception {
+        WebAuthProvider.init(account)
+                .start(activity, callback);
+        String random1 = WebAuthProvider.getInstance().getRandomString(null);
+        String random2 = WebAuthProvider.getInstance().getRandomString(null);
+
+        assertThat(random1, is(notNullValue()));
+        assertThat(random2, is(notNullValue()));
+        assertThat(random1, is(not(equalTo(random2))));
+    }
+
+    @Test
+    public void shouldNotGenerateRandomStringIfDefaultValuePresent() throws Exception {
+        WebAuthProvider.init(account)
+                .start(activity, callback);
+        String random1 = WebAuthProvider.getInstance().getRandomString("some");
+        String random2 = WebAuthProvider.getInstance().getRandomString("some");
+
+        assertThat(random1, is("some"));
+        assertThat(random2, is("some"));
     }
 
 
@@ -906,10 +934,14 @@ public class WebAuthProviderTest {
     @Test
     public void shouldResumeWithRequestCodeWithResponseTypeIdToken() throws Exception {
         WebAuthProvider.init(account)
-                .withNonce("1234567890")
                 .withResponseType(ResponseType.ID_TOKEN)
                 .start(activity, callback, REQUEST_CODE);
-        final Intent intent = createAuthIntent(createHash("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk", null, null, null, null, null));
+
+        String sentState = WebAuthProvider.getInstance().getParameters().get(KEY_STATE);
+        String sentNonce = WebAuthProvider.getInstance().getParameters().get(KEY_NONCE);
+        assertThat(sentState, is(not(isEmptyOrNullString())));
+        assertThat(sentNonce, is(not(isEmptyOrNullString())));
+        final Intent intent = createAuthIntent(createHash(customNonceJWT(sentNonce), null, null, null, sentState, null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         verify(callback).onSuccess(any(Credentials.class));
@@ -918,10 +950,15 @@ public class WebAuthProviderTest {
     @Test
     public void shouldResumeWithIntentWithResponseTypeIdToken() throws Exception {
         WebAuthProvider.init(account)
-                .withNonce("1234567890")
                 .withResponseType(ResponseType.ID_TOKEN)
                 .start(activity, callback);
-        final Intent intent = createAuthIntent(createHash("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk", null, null, null, null, null));
+
+        String sentState = WebAuthProvider.getInstance().getParameters().get(KEY_STATE);
+
+        String sentNonce = WebAuthProvider.getInstance().getParameters().get(KEY_NONCE);
+        assertThat(sentState, is(not(isEmptyOrNullString())));
+        assertThat(sentNonce, is(not(isEmptyOrNullString())));
+        final Intent intent = createAuthIntent(createHash(customNonceJWT(sentNonce), null, null, null, sentState, null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onSuccess(any(Credentials.class));
@@ -940,7 +977,6 @@ public class WebAuthProviderTest {
         }).when(pkce).getToken(any(String.class), eq(callback));
 
         WebAuthProvider.init(account)
-                .withState("1234567890")
                 .useCodeGrant(true)
                 .withPKCE(pkce)
                 .start(activity, callback);
@@ -962,11 +998,14 @@ public class WebAuthProviderTest {
             }
         }).when(pkce).getToken(any(String.class), codeCallbackCaptor.capture());
         WebAuthProvider.init(account)
-                .withState("1234567890")
                 .useCodeGrant(true)
                 .withPKCE(pkce)
                 .start(activity, callback);
-        final Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", "1234567890", null));
+
+        String sentState = WebAuthProvider.getInstance().getParameters().get(KEY_STATE);
+
+        assertThat(sentState, is(not(isEmptyOrNullString())));
+        final Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", sentState, null));
         assertTrue(WebAuthProvider.resume(intent));
 
         final ArgumentCaptor<Credentials> credentialsCaptor = ArgumentCaptor.forClass(Credentials.class);
@@ -992,11 +1031,14 @@ public class WebAuthProviderTest {
             }
         }).when(pkce).getToken(any(String.class), codeCallbackCaptor.capture());
         WebAuthProvider.init(account)
-                .withState("1234567890")
                 .useCodeGrant(true)
                 .withPKCE(pkce)
                 .start(activity, callback, REQUEST_CODE);
-        final Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", "1234567890", null));
+
+        String sentState = WebAuthProvider.getInstance().getParameters().get(KEY_STATE);
+
+        assertThat(sentState, is(not(isEmptyOrNullString())));
+        final Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", sentState, null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         final ArgumentCaptor<Credentials> credentialsCaptor = ArgumentCaptor.forClass(Credentials.class);
@@ -1012,10 +1054,13 @@ public class WebAuthProviderTest {
     @Test
     public void shouldResumeWithIntentWithImplicitGrant() throws Exception {
         WebAuthProvider.init(account)
-                .withState("1234567890")
                 .useCodeGrant(false)
                 .start(activity, callback);
-        final Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null));
+
+        String sentState = WebAuthProvider.getInstance().getParameters().get(KEY_STATE);
+
+        assertThat(sentState, is(not(isEmptyOrNullString())));
+        final Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", sentState, null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onSuccess(any(Credentials.class));
@@ -1024,10 +1069,13 @@ public class WebAuthProviderTest {
     @Test
     public void shouldResumeWithRequestCodeWithImplicitGrant() throws Exception {
         WebAuthProvider.init(account)
-                .withState("1234567890")
                 .useCodeGrant(false)
                 .start(activity, callback, REQUEST_CODE);
-        final Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null));
+
+        String sentState = WebAuthProvider.getInstance().getParameters().get(KEY_STATE);
+
+        assertThat(sentState, is(not(isEmptyOrNullString())));
+        final Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", sentState, null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         verify(callback).onSuccess(any(Credentials.class));
@@ -1399,5 +1447,23 @@ public class WebAuthProviderTest {
             hash = hash.concat("error=" + error);
         }
         return hash.length() == 1 ? "" : hash;
+    }
+
+    private String customNonceJWT(@NonNull String nonce) {
+        String header = encodeString("{}");
+        String bodyBuilder = "{\"nonce\":\"" + nonce + "\"}";
+        String body = encodeString(bodyBuilder);
+        String signature = "sign";
+        return String.format("%s.%s.%s", header, body, signature);
+    }
+
+    private String encodeString(String source) {
+        byte[] bytes = Base64.encode(source.getBytes(), Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
+        String res = "";
+        try {
+            res = new String(bytes, "UTF-8");
+        } catch (UnsupportedEncodingException ignored) {
+        }
+        return res;
     }
 }

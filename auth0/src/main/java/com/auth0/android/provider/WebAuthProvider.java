@@ -407,11 +407,11 @@ public class WebAuthProvider {
                 ex = new AuthenticationException("a0.invalid_configuration", "The application isn't configured properly for the social connection. Please check your Auth0's application configuration");
             }
             callback.onFailure(ex);
-        } else if (values.containsKey(KEY_STATE) && !values.get(KEY_STATE).equals(getState())) {
-            Log.e(TAG, String.format("Received state doesn't match. Received %s but expected %s", values.get(KEY_STATE), getState()));
+        } else if (values.containsKey(KEY_STATE) && !values.get(KEY_STATE).equals(parameters.get(KEY_STATE))) {
+            Log.e(TAG, String.format("Received state doesn't match. Received %s but expected %s", values.get(KEY_STATE), parameters.get(KEY_STATE)));
             final AuthenticationException ex = new AuthenticationException("access_denied", "The received state is invalid. Try again.");
             callback.onFailure(ex);
-        } else if (getResponseType().contains(RESPONSE_TYPE_ID_TOKEN) && !hasValidNonce(getNonce(), values.get(KEY_ID_TOKEN))) {
+        } else if (getResponseType().contains(RESPONSE_TYPE_ID_TOKEN) && !hasValidNonce(parameters.get(KEY_NONCE), values.get(KEY_ID_TOKEN))) {
             Log.e(TAG, "Received nonce doesn't match.");
             final AuthenticationException ex = new AuthenticationException("access_denied", "The received nonce is invalid. Try again.");
             callback.onFailure(ex);
@@ -487,11 +487,11 @@ public class WebAuthProvider {
     }
 
     @VisibleForTesting
-    static boolean hasValidNonce(String nonce, String token) {
+    static boolean hasValidNonce(@Nullable String nonce, @NonNull String token) {
         try {
             final JWT idToken = new JWT(token);
             final Claim nonceClaim = idToken.getClaim(KEY_NONCE);
-            return nonceClaim != null && nonce.equals(nonceClaim.asString());
+            return nonce != null && nonceClaim != null && nonce.equals(nonceClaim.asString());
         } catch (DecodeException e) {
             return false;
         }
@@ -520,12 +520,17 @@ public class WebAuthProvider {
         }
 
         if (getResponseType().contains(RESPONSE_TYPE_ID_TOKEN)) {
-            queryParameters.put(KEY_NONCE, getNonce());
+            final String nonce = getRandomString(parameters.get(KEY_NONCE));
+            parameters.put(KEY_NONCE, nonce);
+            queryParameters.put(KEY_NONCE, nonce);
         }
         if (account.getTelemetry() != null) {
             queryParameters.put(KEY_TELEMETRY, account.getTelemetry().getValue());
         }
-        queryParameters.put(KEY_STATE, getState());
+
+        final String state = getRandomString(parameters.get(KEY_STATE));
+        parameters.put(KEY_STATE, state);
+        queryParameters.put(KEY_STATE, state);
         queryParameters.put(KEY_CLIENT_ID, account.getClientId());
         queryParameters.put(KEY_REDIRECT_URI, redirectUri);
 
@@ -534,7 +539,7 @@ public class WebAuthProvider {
             builder.appendQueryParameter(entry.getKey(), entry.getValue());
         }
         Uri uri = builder.build();
-        logDebug("The parsed CallbackURI contains the following values: " + "Using the following AuthorizeURI: " + uri.toString());
+        logDebug("Using the following AuthorizeURI: " + uri.toString());
         return uri;
     }
 
@@ -553,21 +558,19 @@ public class WebAuthProvider {
         return providerInstance;
     }
 
-
-    private String getState() {
-        return parameters.containsKey(KEY_STATE) ? parameters.get(KEY_STATE) : secureRandomString();
+    @VisibleForTesting
+    String getRandomString(@Nullable String defaultValue) {
+        return defaultValue != null ? defaultValue : secureRandomString();
     }
 
-    String getScope() {
-        return this.parameters.get(KEY_SCOPE) != null ? this.parameters.get(KEY_SCOPE) : SCOPE_TYPE_OPENID;
+    @VisibleForTesting
+    Map<String, String> getParameters() {
+        return parameters;
     }
 
+    @VisibleForTesting
     boolean isLoggingEnabled() {
         return loggingEnabled;
-    }
-
-    private String getNonce() {
-        return parameters.containsKey(KEY_NONCE) ? parameters.get(KEY_NONCE) : secureRandomString();
     }
 
     private String getResponseType() {
