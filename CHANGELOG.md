@@ -1,5 +1,14 @@
 # Change Log
 
+## [1.3.0](https://github.com/auth0/Auth0.Android/tree/1.3.0) (2016-12-12)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.2.0...1.3.0)
+
+**Added**
+- Allow to specify Audience parameter in the WebAuthProvider [\#49](https://github.com/auth0/Auth0.Android/pull/49) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Fixed**
+- Generate and save State and Nonce variables for WebAuthProvider [\#50](https://github.com/auth0/Auth0.Android/pull/50) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.2.0](https://github.com/auth0/Auth0.Android/tree/1.2.0) (2016-11-30)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.1.2...1.2.0)
 
