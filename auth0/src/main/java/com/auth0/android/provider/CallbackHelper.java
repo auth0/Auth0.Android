@@ -29,8 +29,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import com.squareup.okhttp.HttpUrl;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -49,19 +47,22 @@ class CallbackHelper {
      * @return the callback URI.
      */
     public String getCallbackURI(@NonNull String domain) {
-        HttpUrl url = HttpUrl.parse(domain);
-        if (url == null) {
+        Uri uri = Uri.parse(domain);
+
+        if (uri == null) {
             Log.e(TAG, "The Domain is invalid and the Callback URI will not be set. You used: " + domain);
             return null;
         }
-        url = url.newBuilder()
-                .addPathSegment("android")
-                .addPathSegment(packageName)
-                .addPathSegment("callback")
-                .build();
 
-        Log.v(TAG, "The Callback URI is: " + url);
-        return url.toString();
+        uri = uri.buildUpon()
+            .appendPath("android")
+            .appendPath(packageName)
+            .appendEncodedPath("callback")
+            .scheme(packageName)
+            .build();
+
+        Log.v(TAG, "The Callback URI is: " + uri);
+        return uri.toString();
     }
 
     public Map<String, String> getValuesFromUri(@NonNull Uri uri) {
