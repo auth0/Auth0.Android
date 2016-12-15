@@ -28,8 +28,7 @@ import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
-
-import com.squareup.okhttp.HttpUrl;
+import android.webkit.URLUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -38,9 +37,11 @@ class CallbackHelper {
 
     private static final String TAG = CallbackHelper.class.getSimpleName();
     private final String packageName;
+    private final String scheme;
 
-    public CallbackHelper(@NonNull String packageName) {
+    public CallbackHelper(@NonNull String packageName, @NonNull String scheme) {
         this.packageName = packageName;
+        this.scheme = scheme;
     }
 
     /**
@@ -49,15 +50,17 @@ class CallbackHelper {
      * @return the callback URI.
      */
     public String getCallbackURI(@NonNull String domain) {
-        HttpUrl url = HttpUrl.parse(domain);
-        if (url == null) {
+        if (!URLUtil.isValidUrl(domain)) {
             Log.e(TAG, "The Domain is invalid and the Callback URI will not be set. You used: " + domain);
             return null;
         }
-        url = url.newBuilder()
-                .addPathSegment("android")
-                .addPathSegment(packageName)
-                .addPathSegment("callback")
+
+        Uri url = Uri.parse(domain);
+        url = url.buildUpon()
+                .scheme(scheme)
+                .appendPath("android")
+                .appendPath(packageName)
+                .appendPath("callback")
                 .build();
 
         Log.v(TAG, "The Callback URI is: " + url);

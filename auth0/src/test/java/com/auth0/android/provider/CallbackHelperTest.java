@@ -26,20 +26,18 @@ package com.auth0.android.provider;
 
 import android.net.Uri;
 
-import com.squareup.okhttp.HttpUrl;
-
 import org.hamcrest.collection.IsMapWithSize;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricGradleTestRunner;
+import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
+import java.util.List;
 import java.util.Map;
 
-import static com.auth0.android.util.HttpUrlMatcher.hasHost;
-import static com.auth0.android.util.HttpUrlMatcher.hasPath;
-import static com.auth0.android.util.HttpUrlMatcher.hasScheme;
+import static android.support.test.espresso.intent.matcher.UriMatchers.hasHost;
+import static android.support.test.espresso.intent.matcher.UriMatchers.hasScheme;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
@@ -48,7 +46,7 @@ import static org.hamcrest.collection.IsMapWithSize.aMapWithSize;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 
-@RunWith(RobolectricGradleTestRunner.class)
+@RunWith(RobolectricTestRunner.class)
 @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 21, manifest = Config.NONE)
 public class CallbackHelperTest {
 
@@ -56,33 +54,55 @@ public class CallbackHelperTest {
     private static final String INVALID_DOMAIN = "not.-valid-domain";
     private static final String DOMAIN = "https://my-domain.auth0.com";
     private static final String DOMAIN_WITH_TRAILING_SLASH = "https://my-domain.auth0.com/";
+    private static final String DEFAULT_SCHEME = "https";
 
     private CallbackHelper helper;
 
     @Before
     public void setUp() throws Exception {
-        helper = new CallbackHelper(PACKAGE_NAME);
+        helper = new CallbackHelper(PACKAGE_NAME, DEFAULT_SCHEME);
     }
 
     @Test
     public void shouldGetCallbackURI() throws Exception {
-        final HttpUrl expected = HttpUrl.parse(DOMAIN + "/android/" + PACKAGE_NAME + "/callback");
-        final HttpUrl result = HttpUrl.parse(helper.getCallbackURI(DOMAIN));
+        final Uri expected = Uri.parse(DOMAIN + "/android/" + PACKAGE_NAME + "/callback");
+        final Uri result = Uri.parse(helper.getCallbackURI(DOMAIN));
 
         assertThat(result, hasScheme("https"));
         assertThat(result, hasHost("my-domain.auth0.com"));
-        assertThat(result, hasPath("android", PACKAGE_NAME, "callback"));
+        List<String> path = result.getPathSegments();
+        assertThat(path.get(0), is("android"));
+        assertThat(path.get(1), is(PACKAGE_NAME));
+        assertThat(path.get(2), is("callback"));
+        assertThat(result, equalTo(expected));
+    }
+
+    @Test
+    public void shouldGetCallbackURIWithCustomScheme() throws Exception {
+        CallbackHelper helper = new CallbackHelper(PACKAGE_NAME, "myapp");
+        final Uri expected = Uri.parse("myapp://" + "my-domain.auth0.com" + "/android/" + PACKAGE_NAME + "/callback");
+        final Uri result = Uri.parse(helper.getCallbackURI(DOMAIN));
+
+        assertThat(result, hasScheme("myapp"));
+        assertThat(result, hasHost("my-domain.auth0.com"));
+        List<String> path = result.getPathSegments();
+        assertThat(path.get(0), is("android"));
+        assertThat(path.get(1), is(PACKAGE_NAME));
+        assertThat(path.get(2), is("callback"));
         assertThat(result, equalTo(expected));
     }
 
     @Test
     public void shouldGetCallbackURIIfDomainEndsWithSlash() throws Exception {
-        final HttpUrl expected = HttpUrl.parse(DOMAIN + "/android/" + PACKAGE_NAME + "/callback");
-        final HttpUrl result = HttpUrl.parse(helper.getCallbackURI(DOMAIN_WITH_TRAILING_SLASH));
+        final Uri expected = Uri.parse(DOMAIN + "/android/" + PACKAGE_NAME + "/callback");
+        final Uri result = Uri.parse(helper.getCallbackURI(DOMAIN_WITH_TRAILING_SLASH));
 
         assertThat(result, hasScheme("https"));
         assertThat(result, hasHost("my-domain.auth0.com"));
-        assertThat(result, hasPath("android", PACKAGE_NAME, "callback"));
+        List<String> path = result.getPathSegments();
+        assertThat(path.get(0), is("android"));
+        assertThat(path.get(1), is(PACKAGE_NAME));
+        assertThat(path.get(2), is("callback"));
         assertThat(result, equalTo(expected));
     }
 

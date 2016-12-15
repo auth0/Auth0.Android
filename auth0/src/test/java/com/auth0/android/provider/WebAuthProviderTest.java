@@ -139,6 +139,35 @@ public class WebAuthProviderTest {
         assertTrue(instance.isLoggingEnabled());
     }
 
+    //scheme
+
+    @Test
+    public void shouldHaveDefaultScheme() throws Exception {
+        WebAuthProvider.init(account)
+                .start(activity, callback);
+
+        final WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithName("redirect_uri"));
+        Uri redirectUri = Uri.parse(uri.getQueryParameter("redirect_uri"));
+        assertThat(redirectUri, hasScheme("https"));
+    }
+
+    @Test
+    public void shouldSetScheme() throws Exception {
+        WebAuthProvider.init(account)
+                .withScheme("myapp")
+                .start(activity, callback);
+
+        WebAuthProvider provider = WebAuthProvider.getInstance();
+        Uri uri = provider.buildAuthorizeUri();
+
+        assertThat(uri, hasParamWithName("redirect_uri"));
+        Uri redirectUri = Uri.parse(uri.getQueryParameter("redirect_uri"));
+        assertThat(redirectUri, hasScheme("myapp"));
+    }
+
     //connection
 
     @Test
