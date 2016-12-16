@@ -265,7 +265,7 @@ Also register the intent filters inside your activity's tag, so you can receive 
             android:theme="@style/MyAppTheme"
             android:launchMode="singleTask">
 
-            <intent-filter>
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
@@ -300,6 +300,20 @@ public class MyActivity extends Activity {
     }
 }
 
+```
+
+##### A note about App Deep Linking:
+
+Currently, the default scheme used in the Callback Uri is `https`. This works best for Android API 23 or newer if you're using [Android App Links](https://developer.android.com/training/app-links/index.html), but in previous Android versions this may show the intent chooser dialog prompting the user to chose either your application or the browser. You can change this behaviour by using a custom unique scheme, so that the OS opens directly the link with your app.
+1) Update the intent filter in the Android Manifest and change the custom scheme.
+2) Update the allowed callback urls in your [Auth0 Dashboard](https://manage.auth0.com/#/applications) client's settings.
+3) Call `withScheme()` passing the scheme you want to use.
+
+
+```java
+WebAuthProvider.init(account)
+                .withScheme("myapp")
+                .start(MainActivity.this, authCallback);
 ```
 
 #### Authenticate with any Auth0 connection

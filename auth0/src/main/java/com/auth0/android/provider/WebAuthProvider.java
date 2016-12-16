@@ -62,6 +62,7 @@ public class WebAuthProvider {
     private static final String KEY_TOKEN_TYPE = "token_type";
     private static final String KEY_REFRESH_TOKEN = "refresh_token";
     private static final String KEY_RESPONSE_TYPE = "response_type";
+    private static final String KEY_SCHEME = "scheme";
     private static final String KEY_STATE = "state";
     private static final String KEY_NONCE = "nonce";
     private static final String KEY_AUDIENCE = "audience";
@@ -94,6 +95,7 @@ public class WebAuthProvider {
 
     private static WebAuthProvider providerInstance;
     private boolean loggingEnabled;
+    private String scheme;
 
     @VisibleForTesting
     WebAuthProvider(@NonNull Auth0 account) {
@@ -108,12 +110,14 @@ public class WebAuthProvider {
         private boolean useFullscreen;
         private PKCE pkce;
         private boolean loggingEnabled;
+        private String scheme;
 
         Builder(Auth0 account) {
             this.account = account;
             this.values = new HashMap<>();
 
             //Default values
+            this.scheme = "https";
             this.useBrowser = true;
             this.useFullscreen = false;
             withResponseType(ResponseType.CODE);
@@ -177,6 +181,17 @@ public class WebAuthProvider {
          */
         public Builder withAudience(@NonNull String audience) {
             this.values.put(KEY_AUDIENCE, audience);
+            return this;
+        }
+
+        /**
+         * Specify a custom Scheme to use on the Callback Uri. Default scheme is 'https'.
+         *
+         * @param scheme to use in the Callback Uri.
+         * @return the current builder instance
+         */
+        public Builder withScheme(@NonNull String scheme) {
+            this.scheme = scheme;
             return this;
         }
 
@@ -302,6 +317,7 @@ public class WebAuthProvider {
             webAuth.parameters = values;
             webAuth.pkce = pkce;
             webAuth.loggingEnabled = loggingEnabled;
+            webAuth.scheme = scheme;
 
             providerInstance = webAuth;
 
@@ -447,7 +463,7 @@ public class WebAuthProvider {
         this.callback = callback;
         this.requestCode = requestCode;
         String pkgName = activity.getApplicationContext().getPackageName();
-        helper = new CallbackHelper(pkgName);
+        helper = new CallbackHelper(pkgName, scheme);
 
         if (account.getAuthorizeUrl() == null) {
             final AuthenticationException ex = new AuthenticationException("a0.invalid_authorize_url", "Auth0 authorize URL not properly set. This can be related to an invalid domain.");
