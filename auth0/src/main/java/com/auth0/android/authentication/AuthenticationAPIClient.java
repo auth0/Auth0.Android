@@ -97,7 +97,7 @@ public class AuthenticationAPIClient {
     private final Gson gson;
     private final com.auth0.android.request.internal.RequestFactory factory;
     private final ErrorBuilder<AuthenticationException> authErrorBuilder;
-    private boolean useOAuth2;
+    private boolean oauth2Preferred;
 
 
     /**
@@ -143,10 +143,17 @@ public class AuthenticationAPIClient {
      * This setting affects the methods {@link AuthenticationAPIClient#login(String, String, String)}, {@link AuthenticationAPIClient#tokenInfo(String)}, {@link AuthenticationAPIClient#signUp(String, String, String)} and {@link AuthenticationAPIClient#signUp(String, String, String, String)}.
      * Default is {@code false}.
      *
-     * @param use if Lock will use the OAuth 2.0 API or the legacy one.
+     * @param preferred if Lock will use the OAuth 2.0 API or the legacy one.
      */
-    public void useOAuth2(boolean use) {
-        this.useOAuth2 = use;
+    public void setOAuth2Preferred(boolean preferred) {
+        this.oauth2Preferred = preferred;
+    }
+
+    /**
+     * Getter for the OAuth 2.0 preferred current value.
+     */
+    public boolean isOAuth2Preferred() {
+        return oauth2Preferred;
     }
 
     /**
@@ -184,6 +191,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Log in a user with email/username and password using a DB connection and the /oauth/ro endpoint.
+     * If {@link AuthenticationAPIClient#setOAuth2Preferred} is set to true, the /oauth/token endpoint will be used instead.
      * The default scope used is 'openid'.
      * Example usage:
      * <pre><code>
@@ -204,7 +212,7 @@ public class AuthenticationAPIClient {
      */
     @SuppressWarnings("WeakerAccess")
     public AuthenticationRequest login(@NonNull String usernameOrEmail, @NonNull String password, @NonNull String connection) {
-        if (useOAuth2) {
+        if (oauth2Preferred) {
             AuthenticationRequest login = login(usernameOrEmail, password);
             login.setRealm(connection);
             return login;
@@ -421,7 +429,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Fetch the token information from Auth0.
-     * If {@link AuthenticationAPIClient#useOAuth2} is set to true, userInfo endpoint will be used instead.
+     * If {@link AuthenticationAPIClient#setOAuth2Preferred} is set to true, userInfo endpoint will be used instead.
      * <p>
      * Example usage:
      * <pre><code>
@@ -442,7 +450,7 @@ public class AuthenticationAPIClient {
     @SuppressWarnings("WeakerAccess")
     @Deprecated
     public Request<UserProfile, AuthenticationException> tokenInfo(@NonNull String idToken) {
-        if (useOAuth2) {
+        if (oauth2Preferred) {
             return userInfo(idToken);
         }
 
@@ -521,7 +529,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Creates a user in a DB connection using <a href="https://auth0.com/docs/auth-api#!#post--dbconnections-signup">'/dbconnections/signup' endpoint</a>
-     * and then logs in using the /oauth/ro endpoint. If {@link AuthenticationAPIClient#useOAuth2} is set to true, the /oauth/token endpoint will be used instead.
+     * and then logs in using the /oauth/ro endpoint. If {@link AuthenticationAPIClient#setOAuth2Preferred} is set to true, the /oauth/token endpoint will be used instead.
      * Example usage:
      * <pre><code>
      * client.signUp("{email}", "{password}", "{username}", "{database connection name}")
@@ -544,7 +552,7 @@ public class AuthenticationAPIClient {
     public SignUpRequest signUp(@NonNull String email, @NonNull String password, @NonNull String username, @NonNull String connection) {
         final DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUserRequest = createUser(email, password, username, connection);
         final AuthenticationRequest authenticationRequest;
-        if (useOAuth2) {
+        if (oauth2Preferred) {
             authenticationRequest = login(email, password);
             authenticationRequest.setRealm(connection);
         } else {
@@ -556,7 +564,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Creates a user in a DB connection using <a href="https://auth0.com/docs/auth-api#!#post--dbconnections-signup">'/dbconnections/signup' endpoint</a>
-     * and then logs in using the /oauth/ro endpoint. If {@link AuthenticationAPIClient#useOAuth2} is set to true, the /oauth/token endpoint will be used instead.
+     * and then logs in using the /oauth/ro endpoint. If {@link AuthenticationAPIClient#setOAuth2Preferred} is set to true, the /oauth/token endpoint will be used instead.
      * Example usage:
      * <pre><code>
      * client.signUp("{email}", "{password}", "{database connection name}")
@@ -578,7 +586,7 @@ public class AuthenticationAPIClient {
     public SignUpRequest signUp(@NonNull String email, @NonNull String password, @NonNull String connection) {
         final DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUserRequest = createUser(email, password, connection);
         final AuthenticationRequest authenticationRequest;
-        if (useOAuth2) {
+        if (oauth2Preferred) {
             authenticationRequest = login(email, password);
             authenticationRequest.setRealm(connection);
         } else {

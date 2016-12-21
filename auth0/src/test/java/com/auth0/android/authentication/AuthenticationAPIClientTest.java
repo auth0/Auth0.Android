@@ -62,6 +62,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import static android.R.id.list;
 import static com.auth0.android.util.AuthenticationAPI.GENERIC_TOKEN;
 import static com.auth0.android.util.AuthenticationAPI.ID_TOKEN;
 import static com.auth0.android.util.AuthenticationAPI.REFRESH_TOKEN;
@@ -150,6 +151,31 @@ public class AuthenticationAPIClientTest {
         auth0.doNotSendTelemetry();
         new AuthenticationAPIClient(auth0, factory, okClient);
         verify(factory, never()).setClientInfo(any(String.class));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void shouldPreferOAuth2() throws Exception {
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
+        client.setOAuth2Preferred(true);
+
+        assertThat(client.isOAuth2Preferred(), is(true));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void shouldNotPreferOAuth2() throws Exception {
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
+        client.setOAuth2Preferred(false);
+
+        assertThat(client.isOAuth2Preferred(), is(false));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void shouldNotPreferOAuth2ByDefault() throws Exception {
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
+        assertThat(client.isOAuth2Preferred(), is(false));
     }
 
     @SuppressWarnings("unchecked")
@@ -288,7 +314,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
 
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-        client.useOAuth2(true);
+        client.setOAuth2Preferred(true);
         client.login(SUPPORT_AUTH0_COM, "some-password", MY_CONNECTION)
                 .start(callback);
         assertThat(callback, hasPayloadOfType(Credentials.class));
@@ -394,7 +420,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<UserProfile> callback = new MockAuthenticationCallback<>();
 
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-        client.useOAuth2(true);
+        client.setOAuth2Preferred(true);
         client.tokenInfo("ACCESS_TOKEN")
                 .start(callback);
 
@@ -773,7 +799,7 @@ public class AuthenticationAPIClientTest {
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-        client.useOAuth2(true);
+        client.setOAuth2Preferred(true);
         client.signUp(SUPPORT_AUTH0_COM, PASSWORD, SUPPORT, MY_CONNECTION)
                 .start(callback);
 
@@ -904,7 +930,7 @@ public class AuthenticationAPIClientTest {
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-        client.useOAuth2(true);
+        client.setOAuth2Preferred(true);
         client.signUp(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
                 .start(callback);
 
