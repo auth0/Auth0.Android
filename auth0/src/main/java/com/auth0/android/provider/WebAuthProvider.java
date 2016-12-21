@@ -191,7 +191,12 @@ public class WebAuthProvider {
          * @return the current builder instance
          */
         public Builder withScheme(@NonNull String scheme) {
-            this.scheme = scheme;
+            String lowerCase = scheme.toLowerCase();
+            if (!scheme.equals(lowerCase)) {
+                Log.w(TAG, String.format("The scheme must be lower case! The provider will use '%s' instead of '%s', please check that you expect the same value in your application.",
+                        lowerCase, scheme));
+            }
+            this.scheme = lowerCase;
             return this;
         }
 
