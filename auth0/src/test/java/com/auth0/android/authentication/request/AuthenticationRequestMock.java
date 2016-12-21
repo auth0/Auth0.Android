@@ -44,6 +44,11 @@ public class AuthenticationRequestMock implements AuthenticationRequest {
     }
 
     @Override
+    public AuthenticationRequest setRealm(String realm) {
+        return this;
+    }
+
+    @Override
     public AuthenticationRequest setScope(String scope) {
         return this;
     }

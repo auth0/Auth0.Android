@@ -14,6 +14,7 @@ import static com.auth0.android.authentication.ParameterBuilder.AUDIENCE_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.CONNECTION_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.DEVICE_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_KEY;
+import static com.auth0.android.authentication.ParameterBuilder.REALM_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.SCOPE_KEY;
 
 class BaseAuthenticationRequest extends SimpleRequest<Credentials, AuthenticationException> implements AuthenticationRequest {
@@ -43,6 +44,18 @@ class BaseAuthenticationRequest extends SimpleRequest<Credentials, Authenticatio
     @Override
     public AuthenticationRequest setConnection(String connection) {
         addParameter(CONNECTION_KEY, connection);
+        return this;
+    }
+
+    /**
+     * Sets the 'realm' parameter
+     *
+     * @param realm name of the realm
+     * @return itself
+     */
+    @Override
+    public AuthenticationRequest setRealm(String realm) {
+        addParameter(REALM_KEY, realm);
         return this;
     }
 

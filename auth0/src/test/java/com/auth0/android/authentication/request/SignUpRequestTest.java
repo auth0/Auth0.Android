@@ -109,6 +109,15 @@ public class SignUpRequestTest {
     }
 
     @Test
+    public void shouldSetRealm() throws Exception {
+        final SignUpRequest req = signUpRequest.setRealm("users");
+        verify(dbMockRequest).setConnection("users");
+        verify(authenticationMockRequest).setRealm("users");
+        Assert.assertThat(req, is(notNullValue()));
+        Assert.assertThat(req, is(signUpRequest));
+    }
+
+    @Test
     public void shouldReturnCredentialsAfterStartingTheRequest() throws Exception {
         final DatabaseUser user = mock(DatabaseUser.class);
         final Credentials credentials = mock(Credentials.class);

@@ -27,6 +27,14 @@ public interface AuthenticationRequest extends Request<Credentials, Authenticati
     AuthenticationRequest setConnection(String connection);
 
     /**
+     * Sets the 'realm' parameter
+     *
+     * @param realm name of the realm to use.
+     * @return itself
+     */
+    AuthenticationRequest setRealm(String realm);
+
+    /**
      * Sets the 'scope' parameter.
      *
      * @param scope a scope value

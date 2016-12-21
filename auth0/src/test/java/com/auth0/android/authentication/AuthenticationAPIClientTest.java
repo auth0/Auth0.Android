@@ -287,7 +287,7 @@ public class AuthenticationAPIClientTest {
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         Map<String, String> body = bodyFromRequest(request);
         assertThat(body, hasEntry("client_id", CLIENT_ID));
-        assertThat(body, hasEntry("grant_type", "password"));
+        assertThat(body, hasEntry("grant_type", "http://auth0.com/oauth/grant-type/password-realm"));
         assertThat(body, hasEntry("username", SUPPORT_AUTH0_COM));
         assertThat(body, hasEntry("password", "some-password"));
         assertThat(body, not(hasKey("connection")));
@@ -308,7 +308,7 @@ public class AuthenticationAPIClientTest {
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         Map<String, String> body = bodyFromRequest(request);
         assertThat(body, hasEntry("client_id", CLIENT_ID));
-        assertThat(body, hasEntry("grant_type", "password"));
+        assertThat(body, hasEntry("grant_type", "http://auth0.com/oauth/grant-type/password-realm"));
         assertThat(body, hasEntry("username", SUPPORT_AUTH0_COM));
         assertThat(body, hasEntry("password", "some-password"));
         assertThat(body, not(hasKey("connection")));

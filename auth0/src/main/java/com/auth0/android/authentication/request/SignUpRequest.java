@@ -83,25 +83,25 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
     }
 
     @Override
-    public AuthenticationRequest setDevice(String device) {
+    public SignUpRequest setDevice(String device) {
         authenticationRequest.setDevice(device);
         return this;
     }
 
     @Override
-    public AuthenticationRequest setAudience(String audience) {
+    public SignUpRequest setAudience(String audience) {
         authenticationRequest.setAudience(audience);
         return this;
     }
 
     @Override
-    public AuthenticationRequest setAccessToken(String accessToken) {
+    public SignUpRequest setAccessToken(String accessToken) {
         authenticationRequest.setAccessToken(accessToken);
         return this;
     }
 
     @Override
-    public AuthenticationRequest setGrantType(String grantType) {
+    public SignUpRequest setGrantType(String grantType) {
         authenticationRequest.setGrantType(grantType);
         return this;
     }
@@ -115,6 +115,13 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
     public SignUpRequest setConnection(String connection) {
         signUpRequest.setConnection(connection);
         authenticationRequest.setConnection(connection);
+        return this;
+    }
+
+    @Override
+    public SignUpRequest setRealm(String realm) {
+        signUpRequest.setConnection(realm);
+        authenticationRequest.setRealm(realm);
         return this;
     }
 

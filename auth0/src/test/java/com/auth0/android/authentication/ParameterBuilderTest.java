@@ -48,6 +48,7 @@ public class ParameterBuilderTest {
     public static final String CLIENT_ID = "CLIENT ID";
     public static final String GRANT_TYPE = "password";
     public static final String CONNECTION = "AD";
+    public static final String REALM = "users";
     public static final String DEVICE = "ANDROID TEST DEVICE";
 
     @Rule
@@ -124,6 +125,11 @@ public class ParameterBuilderTest {
     @Test
     public void shouldSetConnection() throws Exception {
         assertThat(builder.setConnection(CONNECTION).asDictionary(), hasEntry("connection", CONNECTION));
+    }
+
+    @Test
+    public void shouldSetRealm() throws Exception {
+        assertThat(builder.setRealm(REALM).asDictionary(), hasEntry("realm", REALM));
     }
 
     @Test
