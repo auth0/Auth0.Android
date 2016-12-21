@@ -101,6 +101,7 @@ public class AuthenticationAPIClientTest {
     private static final String OPENID = "openid";
 
     private AuthenticationAPIClient client;
+    private Auth0 auth0;
     private Gson gson;
 
     private AuthenticationAPI mockAPI;
@@ -109,7 +110,7 @@ public class AuthenticationAPIClientTest {
     public void setUp() throws Exception {
         mockAPI = new AuthenticationAPI();
         final String domain = mockAPI.getDomain();
-        Auth0 auth0 = new Auth0(CLIENT_ID, domain, domain);
+        auth0 = new Auth0(CLIENT_ID, domain, domain);
         client = new AuthenticationAPIClient(auth0);
         gson = new GsonBuilder().serializeNulls().create();
     }
@@ -261,6 +262,7 @@ public class AuthenticationAPIClientTest {
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         Map<String, String> body = bodyFromRequest(request);
         assertThat(body, hasEntry("connection", MY_CONNECTION));
+        assertThat(body, not(hasKey("realm")));
     }
 
     @Test
@@ -277,6 +279,33 @@ public class AuthenticationAPIClientTest {
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         Map<String, String> body = bodyFromRequest(request);
         assertThat(body, hasEntry("connection", MY_CONNECTION));
+        assertThat(body, not(hasKey("realm")));
+    }
+
+    @Test
+    public void shouldLoginWithUserAndPasswordUsingOAuthTokenEndpointIfOAuth2IsEnabled() throws Exception {
+        mockAPI.willReturnSuccessfulLogin();
+        final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
+
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
+        client.useOAuth2(true);
+        client.login(SUPPORT_AUTH0_COM, "some-password", MY_CONNECTION)
+                .start(callback);
+        assertThat(callback, hasPayloadOfType(Credentials.class));
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+        Map<String, String> body = bodyFromRequest(request);
+
+        assertThat(request.getPath(), equalTo("/oauth/token"));
+        assertThat(body, hasEntry("client_id", CLIENT_ID));
+        assertThat(body, hasEntry("grant_type", "http://auth0.com/oauth/grant-type/password-realm"));
+        assertThat(body, hasEntry("username", SUPPORT_AUTH0_COM));
+        assertThat(body, hasEntry("password", "some-password"));
+        assertThat(body, hasEntry("realm", MY_CONNECTION));
+        assertThat(body, not(hasKey("connection")));
+        assertThat(body, not(hasKey("scope")));
+        assertThat(body, not(hasKey("audience")));
     }
 
     @Test
@@ -295,6 +324,7 @@ public class AuthenticationAPIClientTest {
         assertThat(body, hasEntry("grant_type", "http://auth0.com/oauth/grant-type/password-realm"));
         assertThat(body, hasEntry("username", SUPPORT_AUTH0_COM));
         assertThat(body, hasEntry("password", "some-password"));
+        assertThat(body, not(hasKey("realm")));
         assertThat(body, not(hasKey("connection")));
         assertThat(body, not(hasKey("scope")));
         assertThat(body, not(hasKey("audience")));
@@ -316,6 +346,7 @@ public class AuthenticationAPIClientTest {
         assertThat(body, hasEntry("grant_type", "http://auth0.com/oauth/grant-type/password-realm"));
         assertThat(body, hasEntry("username", SUPPORT_AUTH0_COM));
         assertThat(body, hasEntry("password", "some-password"));
+        assertThat(body, not(hasKey("realm")));
         assertThat(body, not(hasKey("connection")));
         assertThat(body, not(hasKey("scope")));
         assertThat(body, not(hasKey("audience")));
@@ -355,6 +386,24 @@ public class AuthenticationAPIClientTest {
 
         Map<String, String> body = bodyFromRequest(request);
         assertThat(body, hasEntry("id_token", "ID_TOKEN"));
+    }
+
+    @Test
+    public void shouldFetchUserInfoIfOAuth2IsEnabled() throws Exception {
+        mockAPI.willReturnTokenInfo();
+        final MockAuthenticationCallback<UserProfile> callback = new MockAuthenticationCallback<>();
+
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
+        client.useOAuth2(true);
+        client.tokenInfo("ACCESS_TOKEN")
+                .start(callback);
+
+        assertThat(callback, hasPayloadOfType(UserProfile.class));
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+        assertThat(request.getHeader("Authorization"), is("Bearer ACCESS_TOKEN"));
+        assertThat(request.getPath(), equalTo("/userinfo"));
     }
 
     @Test
@@ -714,6 +763,41 @@ public class AuthenticationAPIClientTest {
         assertThat(loginBody, hasEntry("password", PASSWORD));
         assertThat(loginBody, hasEntry("connection", MY_CONNECTION));
         assertThat(loginBody, hasEntry("scope", OPENID));
+        assertThat(loginBody, not(hasKey("realm")));
+    }
+
+    @Test
+    public void shouldSignUpUserUsingOAuthTokenEndpointIfOAuth2IsEnabled() throws Exception {
+        mockAPI.willReturnSuccessfulSignUp()
+                .willReturnSuccessfulLogin();
+
+        final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
+        client.useOAuth2(true);
+        client.signUp(SUPPORT_AUTH0_COM, PASSWORD, SUPPORT, MY_CONNECTION)
+                .start(callback);
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+        assertThat(request.getPath(), equalTo("/dbconnections/signup"));
+
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("email", SUPPORT_AUTH0_COM));
+        assertThat(body, hasEntry("username", SUPPORT));
+        assertThat(body, hasEntry("password", PASSWORD));
+        assertThat(body, hasEntry("connection", MY_CONNECTION));
+
+        assertThat(callback, hasPayloadOfType(Credentials.class));
+
+        final RecordedRequest loginRequest = mockAPI.takeRequest();
+        assertThat(loginRequest.getPath(), equalTo("/oauth/token"));
+
+        Map<String, String> loginBody = bodyFromRequest(loginRequest);
+        assertThat(loginBody, hasEntry("username", SUPPORT_AUTH0_COM));
+        assertThat(loginBody, hasEntry("password", PASSWORD));
+        assertThat(loginBody, hasEntry("realm", MY_CONNECTION));
+        assertThat(loginBody, not(hasKey("scope")));
+        assertThat(loginBody, not(hasKey("connection")));
     }
 
     @Test
@@ -796,11 +880,55 @@ public class AuthenticationAPIClientTest {
 
         Map<String, String> body = bodyFromRequest(request);
         assertThat(body, hasEntry("email", SUPPORT_AUTH0_COM));
+        assertThat(body, hasEntry("password", PASSWORD));
+        assertThat(body, hasEntry("connection", MY_CONNECTION));
+
+        assertThat(callback, hasPayloadOfType(Credentials.class));
+
+        final RecordedRequest loginRequest = mockAPI.takeRequest();
+        assertThat(loginRequest.getPath(), equalTo("/oauth/ro"));
+
+        Map<String, String> loginBody = bodyFromRequest(loginRequest);
+        assertThat(loginBody, hasEntry("username", SUPPORT_AUTH0_COM));
+        assertThat(loginBody, hasEntry("password", PASSWORD));
+        assertThat(loginBody, hasEntry("connection", MY_CONNECTION));
+        assertThat(loginBody, hasEntry("scope", OPENID));
+        assertThat(loginBody, not(hasKey("realm")));
+    }
+
+    @Test
+    public void shouldSignUpUserWithoutUsernameUsingOAuthTokenEndpointIfOAuth2IsEnabled() throws Exception {
+        mockAPI.willReturnSuccessfulSignUp()
+                .willReturnSuccessfulLogin()
+                .willReturnTokenInfo();
+
+        final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
+        client.useOAuth2(true);
+        client.signUp(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
+                .start(callback);
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+        assertThat(request.getPath(), equalTo("/dbconnections/signup"));
+
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("email", SUPPORT_AUTH0_COM));
         assertThat(body, not(hasKey("username")));
         assertThat(body, hasEntry("password", PASSWORD));
         assertThat(body, hasEntry("connection", MY_CONNECTION));
 
         assertThat(callback, hasPayloadOfType(Credentials.class));
+
+        final RecordedRequest loginRequest = mockAPI.takeRequest();
+        assertThat(loginRequest.getPath(), equalTo("/oauth/token"));
+
+        Map<String, String> loginBody = bodyFromRequest(loginRequest);
+        assertThat(loginBody, hasEntry("username", SUPPORT_AUTH0_COM));
+        assertThat(loginBody, hasEntry("password", PASSWORD));
+        assertThat(loginBody, hasEntry("realm", MY_CONNECTION));
+        assertThat(loginBody, not(hasKey("scope")));
+        assertThat(loginBody, not(hasKey("connection")));
     }
 
     @Test
@@ -824,6 +952,16 @@ public class AuthenticationAPIClientTest {
         assertThat(body, hasEntry("connection", MY_CONNECTION));
 
         assertThat(credentials, is(notNullValue()));
+
+        final RecordedRequest loginRequest = mockAPI.takeRequest();
+        assertThat(loginRequest.getPath(), equalTo("/oauth/ro"));
+
+        Map<String, String> loginBody = bodyFromRequest(loginRequest);
+        assertThat(loginBody, hasEntry("username", SUPPORT_AUTH0_COM));
+        assertThat(loginBody, hasEntry("password", PASSWORD));
+        assertThat(loginBody, hasEntry("connection", MY_CONNECTION));
+        assertThat(loginBody, hasEntry("scope", OPENID));
+        assertThat(loginBody, not(hasKey("realm")));
     }
 
     @Test
