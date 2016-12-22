@@ -414,24 +414,6 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldFetchUserInfoIfLegacyModeIsDisabled() throws Exception {
-        mockAPI.willReturnTokenInfo();
-        final MockAuthenticationCallback<UserProfile> callback = new MockAuthenticationCallback<>();
-
-        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-        client.setLegacyModeEnabled(false);
-        client.tokenInfo("ACCESS_TOKEN")
-                .start(callback);
-
-        assertThat(callback, hasPayloadOfType(UserProfile.class));
-
-        final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
-        assertThat(request.getHeader("Authorization"), is("Bearer ACCESS_TOKEN"));
-        assertThat(request.getPath(), equalTo("/userinfo"));
-    }
-
-    @Test
     public void shouldFetchUserInfo() throws Exception {
         mockAPI.willReturnTokenInfo();
         final MockAuthenticationCallback<UserProfile> callback = new MockAuthenticationCallback<>();

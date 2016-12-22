@@ -430,7 +430,6 @@ public class AuthenticationAPIClient {
 
     /**
      * Fetch the token information from Auth0.
-     * If {@link AuthenticationAPIClient#setLegacyModeEnabled} is set to false, userInfo endpoint will be used instead.
      * <p>
      * Example usage:
      * <pre><code>
@@ -451,10 +450,6 @@ public class AuthenticationAPIClient {
     @SuppressWarnings("WeakerAccess")
     @Deprecated
     public Request<UserProfile, AuthenticationException> tokenInfo(@NonNull String idToken) {
-        if (!useLegacyMode) {
-            return userInfo(idToken);
-        }
-
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(TOKEN_INFO_PATH)
                 .build();
