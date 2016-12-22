@@ -62,7 +62,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import static android.R.id.list;
 import static com.auth0.android.util.AuthenticationAPI.GENERIC_TOKEN;
 import static com.auth0.android.util.AuthenticationAPI.ID_TOKEN;
 import static com.auth0.android.util.AuthenticationAPI.REFRESH_TOKEN;
@@ -155,27 +154,27 @@ public class AuthenticationAPIClientTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void shouldPreferOAuth2() throws Exception {
+    public void shouldUseLegacyMode() throws Exception {
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-        client.setOAuth2Preferred(true);
+        client.setLegacyModeEnabled(true);
 
-        assertThat(client.isOAuth2Preferred(), is(true));
+        assertThat(client.isLegacyModeEnabled(), is(true));
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void shouldNotPreferOAuth2() throws Exception {
+    public void shouldNotUseLegacyMode() throws Exception {
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-        client.setOAuth2Preferred(false);
+        client.setLegacyModeEnabled(false);
 
-        assertThat(client.isOAuth2Preferred(), is(false));
+        assertThat(client.isLegacyModeEnabled(), is(false));
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void shouldNotPreferOAuth2ByDefault() throws Exception {
+    public void shouldUseLegacyModeByDefault() throws Exception {
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-        assertThat(client.isOAuth2Preferred(), is(false));
+        assertThat(client.isLegacyModeEnabled(), is(true));
     }
 
     @SuppressWarnings("unchecked")
@@ -309,12 +308,12 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldLoginWithUserAndPasswordUsingOAuthTokenEndpointIfOAuth2IsEnabled() throws Exception {
+    public void shouldLoginWithUserAndPasswordUsingOAuthTokenEndpointIfLegacyModeIsDisabled() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
 
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-        client.setOAuth2Preferred(true);
+        client.setLegacyModeEnabled(false);
         client.login(SUPPORT_AUTH0_COM, "some-password", MY_CONNECTION)
                 .start(callback);
         assertThat(callback, hasPayloadOfType(Credentials.class));
@@ -415,12 +414,12 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldFetchUserInfoIfOAuth2IsEnabled() throws Exception {
+    public void shouldFetchUserInfoIfLegacyModeIsDisabled() throws Exception {
         mockAPI.willReturnTokenInfo();
         final MockAuthenticationCallback<UserProfile> callback = new MockAuthenticationCallback<>();
 
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-        client.setOAuth2Preferred(true);
+        client.setLegacyModeEnabled(false);
         client.tokenInfo("ACCESS_TOKEN")
                 .start(callback);
 
@@ -793,13 +792,13 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldSignUpUserUsingOAuthTokenEndpointIfOAuth2IsEnabled() throws Exception {
+    public void shouldSignUpUserUsingOAuthTokenEndpointIfLegacyModeIsDisabled() throws Exception {
         mockAPI.willReturnSuccessfulSignUp()
                 .willReturnSuccessfulLogin();
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-        client.setOAuth2Preferred(true);
+        client.setLegacyModeEnabled(false);
         client.signUp(SUPPORT_AUTH0_COM, PASSWORD, SUPPORT, MY_CONNECTION)
                 .start(callback);
 
@@ -923,14 +922,14 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldSignUpUserWithoutUsernameUsingOAuthTokenEndpointIfOAuth2IsEnabled() throws Exception {
+    public void shouldSignUpUserWithoutUsernameUsingOAuthTokenEndpointIfLegacyModeIsDisabled() throws Exception {
         mockAPI.willReturnSuccessfulSignUp()
                 .willReturnSuccessfulLogin()
                 .willReturnTokenInfo();
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-        client.setOAuth2Preferred(true);
+        client.setLegacyModeEnabled(false);
         client.signUp(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
                 .start(callback);
 

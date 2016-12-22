@@ -97,7 +97,7 @@ public class AuthenticationAPIClient {
     private final Gson gson;
     private final com.auth0.android.request.internal.RequestFactory factory;
     private final ErrorBuilder<AuthenticationException> authErrorBuilder;
-    private boolean oauth2Preferred;
+    private boolean useLegacyMode;
 
 
     /**
@@ -132,6 +132,7 @@ public class AuthenticationAPIClient {
         this.gson = gson;
         this.factory = factory;
         this.authErrorBuilder = new AuthenticationErrorBuilder();
+        this.useLegacyMode = true;
         final Telemetry telemetry = auth0.getTelemetry();
         if (telemetry != null) {
             factory.setClientInfo(telemetry.getValue());
@@ -139,21 +140,21 @@ public class AuthenticationAPIClient {
     }
 
     /**
-     * Use OAuth 2.0 Authorization API on legacy authentication endpoints. You will need to enable this setting in the Auth0 Dashboard first: Go to Account (top right), Account Settings, click Advanced and check the toggle at the bottom.
+     * Use Legacy Authorization API instead of the new OAuth 2.0 Authorization API on authentication endpoints. You will need to enable this setting in the Auth0 Dashboard first: Go to Account (top right), Account Settings, click Advanced and check the toggle at the bottom.
      * This setting affects the methods {@link AuthenticationAPIClient#login(String, String, String)}, {@link AuthenticationAPIClient#tokenInfo(String)}, {@link AuthenticationAPIClient#signUp(String, String, String)} and {@link AuthenticationAPIClient#signUp(String, String, String, String)}.
-     * Default is {@code false}.
+     * Default is {@code true}.
      *
-     * @param preferred if Lock will use the OAuth 2.0 API or the legacy one.
+     * @param enabled if Lock will use the Legacy Authorization API or the new OAuth 2.0 Authorization API.
      */
-    public void setOAuth2Preferred(boolean preferred) {
-        this.oauth2Preferred = preferred;
+    public void setLegacyModeEnabled(boolean enabled) {
+        this.useLegacyMode = enabled;
     }
 
     /**
-     * Getter for the OAuth 2.0 preferred current value.
+     * Getter for the Legacy Authorization API mode current value.
      */
-    public boolean isOAuth2Preferred() {
-        return oauth2Preferred;
+    public boolean isLegacyModeEnabled() {
+        return useLegacyMode;
     }
 
     /**
@@ -191,7 +192,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Log in a user with email/username and password using a DB connection and the /oauth/ro endpoint.
-     * If {@link AuthenticationAPIClient#setOAuth2Preferred} is set to true, the /oauth/token endpoint will be used instead.
+     * If {@link AuthenticationAPIClient#setLegacyModeEnabled} is set to false, the /oauth/token endpoint will be used instead.
      * The default scope used is 'openid'.
      * Example usage:
      * <pre><code>
@@ -212,7 +213,7 @@ public class AuthenticationAPIClient {
      */
     @SuppressWarnings("WeakerAccess")
     public AuthenticationRequest login(@NonNull String usernameOrEmail, @NonNull String password, @NonNull String connection) {
-        if (oauth2Preferred) {
+        if (!useLegacyMode) {
             AuthenticationRequest login = login(usernameOrEmail, password);
             login.setRealm(connection);
             return login;
@@ -429,7 +430,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Fetch the token information from Auth0.
-     * If {@link AuthenticationAPIClient#setOAuth2Preferred} is set to true, userInfo endpoint will be used instead.
+     * If {@link AuthenticationAPIClient#setLegacyModeEnabled} is set to false, userInfo endpoint will be used instead.
      * <p>
      * Example usage:
      * <pre><code>
@@ -450,7 +451,7 @@ public class AuthenticationAPIClient {
     @SuppressWarnings("WeakerAccess")
     @Deprecated
     public Request<UserProfile, AuthenticationException> tokenInfo(@NonNull String idToken) {
-        if (oauth2Preferred) {
+        if (!useLegacyMode) {
             return userInfo(idToken);
         }
 
@@ -529,7 +530,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Creates a user in a DB connection using <a href="https://auth0.com/docs/auth-api#!#post--dbconnections-signup">'/dbconnections/signup' endpoint</a>
-     * and then logs in using the /oauth/ro endpoint. If {@link AuthenticationAPIClient#setOAuth2Preferred} is set to true, the /oauth/token endpoint will be used instead.
+     * and then logs in using the /oauth/ro endpoint. If {@link AuthenticationAPIClient#setLegacyModeEnabled} is set to false, the /oauth/token endpoint will be used instead.
      * Example usage:
      * <pre><code>
      * client.signUp("{email}", "{password}", "{username}", "{database connection name}")
@@ -552,11 +553,11 @@ public class AuthenticationAPIClient {
     public SignUpRequest signUp(@NonNull String email, @NonNull String password, @NonNull String username, @NonNull String connection) {
         final DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUserRequest = createUser(email, password, username, connection);
         final AuthenticationRequest authenticationRequest;
-        if (oauth2Preferred) {
+        if (useLegacyMode) {
+            authenticationRequest = login(email, password, connection);
+        } else {
             authenticationRequest = login(email, password);
             authenticationRequest.setRealm(connection);
-        } else {
-            authenticationRequest = login(email, password, connection);
         }
 
         return new SignUpRequest(createUserRequest, authenticationRequest);
@@ -564,7 +565,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Creates a user in a DB connection using <a href="https://auth0.com/docs/auth-api#!#post--dbconnections-signup">'/dbconnections/signup' endpoint</a>
-     * and then logs in using the /oauth/ro endpoint. If {@link AuthenticationAPIClient#setOAuth2Preferred} is set to true, the /oauth/token endpoint will be used instead.
+     * and then logs in using the /oauth/ro endpoint. If {@link AuthenticationAPIClient#setLegacyModeEnabled} is set to false, the /oauth/token endpoint will be used instead.
      * Example usage:
      * <pre><code>
      * client.signUp("{email}", "{password}", "{database connection name}")
@@ -586,11 +587,11 @@ public class AuthenticationAPIClient {
     public SignUpRequest signUp(@NonNull String email, @NonNull String password, @NonNull String connection) {
         final DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUserRequest = createUser(email, password, connection);
         final AuthenticationRequest authenticationRequest;
-        if (oauth2Preferred) {
+        if (useLegacyMode) {
+            authenticationRequest = login(email, password, connection);
+        } else {
             authenticationRequest = login(email, password);
             authenticationRequest.setRealm(connection);
-        } else {
-            authenticationRequest = login(email, password, connection);
         }
         return new SignUpRequest(createUserRequest, authenticationRequest);
     }
