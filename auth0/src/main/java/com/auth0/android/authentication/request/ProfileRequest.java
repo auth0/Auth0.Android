@@ -41,7 +41,6 @@ import java.util.Map;
  */
 public class ProfileRequest implements Request<Authentication, AuthenticationException> {
 
-    private static final String ACCESS_TOKEN_KEY = "access_token";
     private static final String HEADER_AUTHORIZATION = "Authorization";
 
     private final AuthenticationRequest credentialsRequest;

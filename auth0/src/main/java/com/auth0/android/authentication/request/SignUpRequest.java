@@ -49,9 +49,10 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
     }
 
     /**
-     * Add additional parameters sent when creating a using.
+     * Add additional parameters sent when creating a user.
      *
      * @param parameters sent with the request and must be non-null
+     * @see ParameterBuilder
      * @return itself
      */
     public SignUpRequest addSignUpParameters(Map<String, Object> parameters) {
@@ -66,17 +67,13 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
      * @return itself
      * @see ParameterBuilder
      */
+    @Override
     public SignUpRequest addAuthenticationParameters(Map<String, Object> parameters) {
         authenticationRequest.addAuthenticationParameters(parameters);
         return this;
     }
 
-    /**
-     * Set the scope used to login the user
-     *
-     * @param scope value
-     * @return itself
-     */
+    @Override
     public SignUpRequest setScope(String scope) {
         authenticationRequest.setScope(scope);
         return this;
@@ -106,12 +103,7 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
         return this;
     }
 
-    /**
-     * Set the connection used to authenticate
-     *
-     * @param connection name
-     * @return itself
-     */
+    @Override
     public SignUpRequest setConnection(String connection) {
         signUpRequest.setConnection(connection);
         authenticationRequest.setConnection(connection);

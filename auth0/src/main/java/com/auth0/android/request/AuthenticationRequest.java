@@ -27,7 +27,7 @@ public interface AuthenticationRequest extends Request<Credentials, Authenticati
     AuthenticationRequest setConnection(String connection);
 
     /**
-     * Sets the 'realm' parameter
+     * Sets the 'realm' parameter. A realm identifies the host against which the authentication will be made, and usually helps to know which username and password to use.
      *
      * @param realm name of the realm to use.
      * @return itself
