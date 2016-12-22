@@ -343,10 +343,11 @@ public class AuthenticationAPIClientTest {
         assertThat(callback, hasPayloadOfType(Credentials.class));
 
         final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getPath(), is("/oauth/token"));
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         Map<String, String> body = bodyFromRequest(request);
         assertThat(body, hasEntry("client_id", CLIENT_ID));
-        assertThat(body, hasEntry("grant_type", "http://auth0.com/oauth/grant-type/password-realm"));
+        assertThat(body, hasEntry("grant_type", "password"));
         assertThat(body, hasEntry("username", SUPPORT_AUTH0_COM));
         assertThat(body, hasEntry("password", "some-password"));
         assertThat(body, not(hasKey("realm")));
@@ -365,10 +366,11 @@ public class AuthenticationAPIClientTest {
         assertThat(credentials, is(notNullValue()));
 
         final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getPath(), is("/oauth/token"));
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         Map<String, String> body = bodyFromRequest(request);
         assertThat(body, hasEntry("client_id", CLIENT_ID));
-        assertThat(body, hasEntry("grant_type", "http://auth0.com/oauth/grant-type/password-realm"));
+        assertThat(body, hasEntry("grant_type", "password"));
         assertThat(body, hasEntry("username", SUPPORT_AUTH0_COM));
         assertThat(body, hasEntry("password", "some-password"));
         assertThat(body, not(hasKey("realm")));

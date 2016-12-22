@@ -141,7 +141,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Use Legacy Authorization API instead of the new OAuth 2.0 Authorization API on authentication endpoints. You will need to enable this setting in the Auth0 Dashboard first: Go to Account (top right), Account Settings, click Advanced and check the toggle at the bottom.
-     * This setting affects the methods {@link AuthenticationAPIClient#login(String, String, String)}, {@link AuthenticationAPIClient#tokenInfo(String)}, {@link AuthenticationAPIClient#signUp(String, String, String)} and {@link AuthenticationAPIClient#signUp(String, String, String, String)}.
+     * This setting affects the methods {@link AuthenticationAPIClient#login(String, String, String)}, {@link AuthenticationAPIClient#signUp(String, String, String)} and {@link AuthenticationAPIClient#signUp(String, String, String, String)}.
      * Default is {@code true}.
      *
      * @param enabled if Lock will use the Legacy Authorization API or the new OAuth 2.0 Authorization API.
@@ -191,9 +191,7 @@ public class AuthenticationAPIClient {
     }
 
     /**
-     * Log in a user with email/username and password using a DB connection and the /oauth/ro endpoint.
-     * If {@link AuthenticationAPIClient#setLegacyModeEnabled} is set to false, the /oauth/token endpoint will be used instead.
-     * The default scope used is 'openid'.
+     * Log in a user with email/username and password. If {@link AuthenticationAPIClient#setLegacyModeEnabled} is set to false password realm and the /oauth/token endpoint will be used. If the flag instead is set to true, it will use a DB connection and the /oauth/ro endpoint with default scope of 'openid'.
      * Example usage:
      * <pre><code>
      * client.login("{username or email}", "{password}", "{database connection name}")
@@ -206,24 +204,28 @@ public class AuthenticationAPIClient {
      *      });
      * </code></pre>
      *
-     * @param usernameOrEmail of the user depending of the type of DB connection
-     * @param password        of the user
-     * @param connection      of the database to authenticate with
+     * @param usernameOrEmail   of the user depending of the type of DB connection
+     * @param password          of the user
+     * @param realmOrConnection realm to use in the authorize flow or the name of the database to authenticate with.
      * @return a request to configure and start that will yield {@link Credentials}
      */
     @SuppressWarnings("WeakerAccess")
-    public AuthenticationRequest login(@NonNull String usernameOrEmail, @NonNull String password, @NonNull String connection) {
+    public AuthenticationRequest login(@NonNull String usernameOrEmail, @NonNull String password, @NonNull String realmOrConnection) {
         if (!useLegacyMode) {
-            AuthenticationRequest login = login(usernameOrEmail, password);
-            login.setRealm(connection);
-            return login;
+            Map<String, Object> requestParameters = ParameterBuilder.newBuilder()
+                    .set(USERNAME_KEY, usernameOrEmail)
+                    .set(PASSWORD_KEY, password)
+                    .setGrantType(GRANT_TYPE_PASSWORD_REALM)
+                    .setRealm(realmOrConnection)
+                    .asDictionary();
+            return loginWithToken(requestParameters);
         }
 
         Map<String, Object> requestParameters = ParameterBuilder.newAuthenticationBuilder()
                 .set(USERNAME_KEY, usernameOrEmail)
                 .set(PASSWORD_KEY, password)
                 .setGrantType(GRANT_TYPE_PASSWORD)
-                .setConnection(connection)
+                .setConnection(realmOrConnection)
                 .asDictionary();
         return loginWithResourceOwner(requestParameters);
     }
@@ -251,7 +253,7 @@ public class AuthenticationAPIClient {
         Map<String, Object> requestParameters = ParameterBuilder.newBuilder()
                 .set(USERNAME_KEY, usernameOrEmail)
                 .set(PASSWORD_KEY, password)
-                .setGrantType(GRANT_TYPE_PASSWORD_REALM)
+                .setGrantType(GRANT_TYPE_PASSWORD)
                 .asDictionary();
 
         return loginWithToken(requestParameters);
