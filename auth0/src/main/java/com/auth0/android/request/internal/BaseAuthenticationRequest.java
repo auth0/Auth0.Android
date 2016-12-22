@@ -29,7 +29,7 @@ class BaseAuthenticationRequest extends SimpleRequest<Credentials, Authenticatio
     }
 
     private boolean hasLegacyPath() {
-        return url.encodedPath().equals("/oauth/ro");
+        return !url.encodedPath().equals("/oauth/token");
     }
 
     /**
