@@ -156,25 +156,25 @@ public class AuthenticationAPIClientTest {
     @Test
     public void shouldUseLegacyMode() throws Exception {
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-        client.setLegacyModeEnabled(true);
+        client.setOIDCConformant(true);
 
-        assertThat(client.isLegacyModeEnabled(), is(true));
+        assertThat(client.isOIDCConformant(), is(true));
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void shouldNotUseLegacyMode() throws Exception {
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-        client.setLegacyModeEnabled(false);
+        client.setOIDCConformant(false);
 
-        assertThat(client.isLegacyModeEnabled(), is(false));
+        assertThat(client.isOIDCConformant(), is(false));
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void shouldUseLegacyModeByDefault() throws Exception {
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-        assertThat(client.isLegacyModeEnabled(), is(true));
+        assertThat(client.isOIDCConformant(), is(false));
     }
 
     @SuppressWarnings("unchecked")
@@ -308,12 +308,12 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldLoginWithUserAndPasswordUsingOAuthTokenEndpointIfLegacyModeIsDisabled() throws Exception {
+    public void shouldLoginWithPasswordReamGrant() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
 
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-        client.setLegacyModeEnabled(false);
+        client.setOIDCConformant(true);
         client.login(SUPPORT_AUTH0_COM, "some-password", MY_CONNECTION)
                 .start(callback);
         assertThat(callback, hasPayloadOfType(Credentials.class));
@@ -776,13 +776,13 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldSignUpUserUsingOAuthTokenEndpointIfLegacyModeIsDisabled() throws Exception {
+    public void shouldLoginWithUsernameSignedUpUserWithPasswordReamGrant() throws Exception {
         mockAPI.willReturnSuccessfulSignUp()
                 .willReturnSuccessfulLogin();
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-        client.setLegacyModeEnabled(false);
+        client.setOIDCConformant(true);
         client.signUp(SUPPORT_AUTH0_COM, PASSWORD, SUPPORT, MY_CONNECTION)
                 .start(callback);
 
@@ -906,14 +906,14 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldSignUpUserWithoutUsernameUsingOAuthTokenEndpointIfLegacyModeIsDisabled() throws Exception {
+    public void shouldLoginSignedUpUserWithPasswordRealmGrant() throws Exception {
         mockAPI.willReturnSuccessfulSignUp()
                 .willReturnSuccessfulLogin()
                 .willReturnTokenInfo();
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-        client.setLegacyModeEnabled(false);
+        client.setOIDCConformant(true);
         client.signUp(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
                 .start(callback);
 
@@ -946,6 +946,7 @@ public class AuthenticationAPIClientTest {
                 .willReturnSuccessfulLogin()
                 .willReturnTokenInfo();
 
+        client.setOIDCConformant(false);
         final Credentials credentials = client
                 .signUp(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
                 .execute();
