@@ -33,23 +33,16 @@ import android.webkit.URLUtil;
 import java.util.HashMap;
 import java.util.Map;
 
-class CallbackHelper {
+abstract class CallbackHelper {
 
     private static final String TAG = CallbackHelper.class.getSimpleName();
-    private final String packageName;
-    private final String scheme;
-
-    public CallbackHelper(@NonNull String packageName, @NonNull String scheme) {
-        this.packageName = packageName;
-        this.scheme = scheme;
-    }
 
     /**
      * Generates the callback URI for the given domain.
      *
      * @return the callback URI.
      */
-    public String getCallbackURI(@NonNull String domain) {
+    public static String getCallbackURI(@NonNull String scheme, @NonNull String packageName, @NonNull String domain) {
         if (!URLUtil.isValidUrl(domain)) {
             Log.e(TAG, "The Domain is invalid and the Callback URI will not be set. You used: " + domain);
             return null;
@@ -67,11 +60,11 @@ class CallbackHelper {
         return url.toString();
     }
 
-    public Map<String, String> getValuesFromUri(@NonNull Uri uri) {
+    public static Map<String, String> getValuesFromUri(@NonNull Uri uri) {
         return asMap(uri.getQuery() != null ? uri.getQuery() : uri.getFragment());
     }
 
-    private Map<String, String> asMap(@Nullable String valueString) {
+    private static Map<String, String> asMap(@Nullable String valueString) {
         if (valueString == null) {
             return new HashMap<>();
         }
