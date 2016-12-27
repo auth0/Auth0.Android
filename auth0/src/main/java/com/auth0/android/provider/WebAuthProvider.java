@@ -191,6 +191,10 @@ public class WebAuthProvider {
          * @return the current builder instance
          */
         public Builder withScheme(@NonNull String scheme) {
+            String lowerCase = scheme.toLowerCase();
+            if (!scheme.equals(lowerCase)) {
+                Log.w(TAG, "Please provide the scheme in lowercase and make sure it's the same configured in the intent filter. Android expects the scheme in lowercase");
+            }
             this.scheme = scheme;
             return this;
         }
