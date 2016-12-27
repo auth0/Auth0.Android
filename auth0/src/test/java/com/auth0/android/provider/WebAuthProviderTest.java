@@ -648,8 +648,8 @@ public class WebAuthProviderTest {
     public void shouldGenerateRandomStringIfDefaultValueMissing() throws Exception {
         WebAuthProvider.init(account)
                 .start(activity, callback);
-        String random1 = WebAuthProvider.Builder.getRandomString(null);
-        String random2 = WebAuthProvider.Builder.getRandomString(null);
+        String random1 = OAuthManager.getRandomString(null);
+        String random2 = OAuthManager.getRandomString(null);
 
         assertThat(random1, is(notNullValue()));
         assertThat(random2, is(notNullValue()));
@@ -660,8 +660,8 @@ public class WebAuthProviderTest {
     public void shouldNotGenerateRandomStringIfDefaultValuePresent() throws Exception {
         WebAuthProvider.init(account)
                 .start(activity, callback);
-        String random1 = WebAuthProvider.Builder.getRandomString("some");
-        String random2 = WebAuthProvider.Builder.getRandomString("some");
+        String random1 = OAuthManager.getRandomString("some");
+        String random2 = OAuthManager.getRandomString("some");
 
         assertThat(random1, is("some"));
         assertThat(random2, is("some"));
@@ -1475,46 +1475,6 @@ public class WebAuthProviderTest {
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
         assertThat(WebAuthProvider.getInstance(), is(nullValue()));
     }
-
-    @Test
-    public void shouldMergeCredentials() throws Exception {
-        Credentials urlCredentials = new Credentials("urlId", "urlAccess", "urlType", "urlRefresh");
-        Credentials codeCredentials = new Credentials("codeId", "codeAccess", "codeType", "codeRefresh");
-        Credentials merged = WebAuthProvider.mergeCredentials(urlCredentials, codeCredentials);
-
-        assertThat(merged.getIdToken(), is(codeCredentials.getIdToken()));
-        assertThat(merged.getAccessToken(), is(codeCredentials.getAccessToken()));
-        assertThat(merged.getType(), is(codeCredentials.getType()));
-        assertThat(merged.getRefreshToken(), is(codeCredentials.getRefreshToken()));
-    }
-
-    @Test
-    public void shouldPreferNonNullValuesWhenMergingCredentials() throws Exception {
-        Credentials urlCredentials = new Credentials("urlId", "urlAccess", "urlType", "urlRefresh");
-        Credentials codeCredentials = new Credentials(null, null, null, null);
-        Credentials merged = WebAuthProvider.mergeCredentials(urlCredentials, codeCredentials);
-
-        assertThat(merged.getIdToken(), is(urlCredentials.getIdToken()));
-        assertThat(merged.getAccessToken(), is(urlCredentials.getAccessToken()));
-        assertThat(merged.getType(), is(urlCredentials.getType()));
-        assertThat(merged.getRefreshToken(), is(urlCredentials.getRefreshToken()));
-    }
-
-    @Test
-    public void shouldHaveValidNonce() throws Exception {
-        assertTrue(WebAuthProvider.hasValidNonce("1234567890", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk"));
-    }
-
-    @Test
-    public void shouldHaveInvalidNonce() throws Exception {
-        assertFalse(WebAuthProvider.hasValidNonce("0987654321", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk"));
-    }
-
-    @Test
-    public void shouldHaveInvalidNonceOnDecodeException() throws Exception {
-        assertFalse(WebAuthProvider.hasValidNonce("0987654321", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVC.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk"));
-    }
-
 
     //Test Helper Functions
     private Intent createAuthIntent(String hash) {

@@ -38,26 +38,26 @@ abstract class CallbackHelper {
     private static final String TAG = CallbackHelper.class.getSimpleName();
 
     /**
-     * Generates the callback URI for the given domain.
+     * Generates the callback Uri for the given domain.
      *
-     * @return the callback URI.
+     * @return the callback Uri.
      */
-    public static String getCallbackURI(@NonNull String scheme, @NonNull String packageName, @NonNull String domain) {
+    public static String getCallbackUri(@NonNull String scheme, @NonNull String packageName, @NonNull String domain) {
         if (!URLUtil.isValidUrl(domain)) {
             Log.e(TAG, "The Domain is invalid and the Callback URI will not be set. You used: " + domain);
             return null;
         }
 
-        Uri url = Uri.parse(domain);
-        url = url.buildUpon()
+        Uri uri = Uri.parse(domain)
+                .buildUpon()
                 .scheme(scheme)
                 .appendPath("android")
                 .appendPath(packageName)
                 .appendPath("callback")
                 .build();
 
-        Log.v(TAG, "The Callback URI is: " + url);
-        return url.toString();
+        Log.v(TAG, "The Callback URI is: " + uri);
+        return uri.toString();
     }
 
     public static Map<String, String> getValuesFromUri(@NonNull Uri uri) {

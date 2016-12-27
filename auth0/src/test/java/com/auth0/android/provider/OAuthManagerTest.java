@@ -1,0 +1,93 @@
+package com.auth0.android.provider;
+
+import com.auth0.android.Auth0;
+import com.auth0.android.result.Credentials;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
+
+import java.util.HashMap;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+
+
+@RunWith(RobolectricTestRunner.class)
+@Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 18, manifest = Config.NONE)
+public class OAuthManagerTest {
+
+    @Test
+    public void shouldUseBrowserByDefault() throws Exception {
+        Auth0 account = Mockito.mock(Auth0.class);
+        OAuthManager manager = new OAuthManager(account, new HashMap<String, String>());
+        assertTrue(manager.useBrowser());
+    }
+
+    @Test
+    public void shouldNotUseBrowser() throws Exception {
+        Auth0 account = Mockito.mock(Auth0.class);
+        OAuthManager manager = new OAuthManager(account, new HashMap<String, String>());
+        manager.useBrowser(false);
+        assertFalse(manager.useBrowser());
+    }
+
+    @Test
+    public void shouldNotUseFullScreenByDefault() throws Exception {
+        Auth0 account = Mockito.mock(Auth0.class);
+        OAuthManager manager = new OAuthManager(account, new HashMap<String, String>());
+        assertFalse(manager.useFullScreen());
+    }
+
+    @Test
+    public void shouldUseFullScreen() throws Exception {
+        Auth0 account = Mockito.mock(Auth0.class);
+        OAuthManager manager = new OAuthManager(account, new HashMap<String, String>());
+        manager.useFullScreen(true);
+        assertTrue(manager.useFullScreen());
+    }
+
+    @Test
+    public void shouldMergeCredentials() throws Exception {
+        Credentials urlCredentials = new Credentials("urlId", "urlAccess", "urlType", "urlRefresh");
+        Credentials codeCredentials = new Credentials("codeId", "codeAccess", "codeType", "codeRefresh");
+        Credentials merged = OAuthManager.mergeCredentials(urlCredentials, codeCredentials);
+
+        assertThat(merged.getIdToken(), is(codeCredentials.getIdToken()));
+        assertThat(merged.getAccessToken(), is(codeCredentials.getAccessToken()));
+        assertThat(merged.getType(), is(codeCredentials.getType()));
+        assertThat(merged.getRefreshToken(), is(codeCredentials.getRefreshToken()));
+    }
+
+    @Test
+    public void shouldPreferNonNullValuesWhenMergingCredentials() throws Exception {
+        Credentials urlCredentials = new Credentials("urlId", "urlAccess", "urlType", "urlRefresh");
+        Credentials codeCredentials = new Credentials(null, null, null, null);
+        Credentials merged = OAuthManager.mergeCredentials(urlCredentials, codeCredentials);
+
+        assertThat(merged.getIdToken(), is(urlCredentials.getIdToken()));
+        assertThat(merged.getAccessToken(), is(urlCredentials.getAccessToken()));
+        assertThat(merged.getType(), is(urlCredentials.getType()));
+        assertThat(merged.getRefreshToken(), is(urlCredentials.getRefreshToken()));
+    }
+
+    @Test
+    public void shouldHaveValidNonce() throws Exception {
+        assertTrue(OAuthManager.hasValidNonce("1234567890", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk"));
+    }
+
+    @Test
+    public void shouldHaveInvalidNonce() throws Exception {
+        assertFalse(OAuthManager.hasValidNonce("0987654321", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk"));
+    }
+
+    @Test
+    public void shouldHaveInvalidNonceOnDecodeException() throws Exception {
+        assertFalse(OAuthManager.hasValidNonce("0987654321", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVC.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk"));
+    }
+
+}

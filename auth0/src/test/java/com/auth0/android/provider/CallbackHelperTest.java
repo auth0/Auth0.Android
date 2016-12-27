@@ -27,7 +27,6 @@ package com.auth0.android.provider;
 import android.net.Uri;
 
 import org.hamcrest.collection.IsMapWithSize;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -59,7 +58,7 @@ public class CallbackHelperTest {
     @Test
     public void shouldGetCallbackURI() throws Exception {
         final Uri expected = Uri.parse(DOMAIN + "/android/" + PACKAGE_NAME + "/callback");
-        final Uri result = Uri.parse(CallbackHelper.getCallbackURI(DEFAULT_SCHEME, PACKAGE_NAME, DOMAIN));
+        final Uri result = Uri.parse(CallbackHelper.getCallbackUri(DEFAULT_SCHEME, PACKAGE_NAME, DOMAIN));
 
         assertThat(result, hasScheme("https"));
         assertThat(result, hasHost("my-domain.auth0.com"));
@@ -73,7 +72,7 @@ public class CallbackHelperTest {
     @Test
     public void shouldGetCallbackURIWithCustomScheme() throws Exception {
         final Uri expected = Uri.parse("myapp://" + "my-domain.auth0.com" + "/android/" + PACKAGE_NAME + "/callback");
-        final Uri result = Uri.parse(CallbackHelper.getCallbackURI("myapp", PACKAGE_NAME, DOMAIN));
+        final Uri result = Uri.parse(CallbackHelper.getCallbackUri("myapp", PACKAGE_NAME, DOMAIN));
 
         assertThat(result, hasScheme("myapp"));
         assertThat(result, hasHost("my-domain.auth0.com"));
@@ -87,7 +86,7 @@ public class CallbackHelperTest {
     @Test
     public void shouldGetCallbackURIIfDomainEndsWithSlash() throws Exception {
         final Uri expected = Uri.parse(DOMAIN + "/android/" + PACKAGE_NAME + "/callback");
-        final Uri result = Uri.parse(CallbackHelper.getCallbackURI(DEFAULT_SCHEME, PACKAGE_NAME, DOMAIN_WITH_TRAILING_SLASH));
+        final Uri result = Uri.parse(CallbackHelper.getCallbackUri(DEFAULT_SCHEME, PACKAGE_NAME, DOMAIN_WITH_TRAILING_SLASH));
 
         assertThat(result, hasScheme("https"));
         assertThat(result, hasHost("my-domain.auth0.com"));
@@ -100,7 +99,7 @@ public class CallbackHelperTest {
 
     @Test
     public void shouldGetNullCallbackURIIfInvalidDomain() throws Exception {
-        String uri = CallbackHelper.getCallbackURI(DEFAULT_SCHEME, PACKAGE_NAME, INVALID_DOMAIN);
+        String uri = CallbackHelper.getCallbackUri(DEFAULT_SCHEME, PACKAGE_NAME, INVALID_DOMAIN);
         assertThat(uri, nullValue());
     }
 
