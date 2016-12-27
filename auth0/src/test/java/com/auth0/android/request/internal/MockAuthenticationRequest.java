@@ -40,6 +40,11 @@ public class MockAuthenticationRequest implements ParameterizableRequest<Credent
     }
 
     @Override
+    public AuthenticationRequest setRealm(String realm) {
+        return null;
+    }
+
+    @Override
     public AuthenticationRequest setScope(String scope) {
         return null;
     }

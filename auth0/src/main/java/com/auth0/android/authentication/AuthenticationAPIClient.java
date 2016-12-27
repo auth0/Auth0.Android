@@ -54,6 +54,7 @@ import java.util.Map;
 
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_AUTHORIZATION_CODE;
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSWORD;
+import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSWORD_REALM;
 import static com.auth0.android.authentication.ParameterBuilder.ID_TOKEN_KEY;
 
 /**
@@ -223,7 +224,7 @@ public class AuthenticationAPIClient {
         Map<String, Object> requestParameters = ParameterBuilder.newBuilder()
                 .set(USERNAME_KEY, usernameOrEmail)
                 .set(PASSWORD_KEY, password)
-                .setGrantType(GRANT_TYPE_PASSWORD)
+                .setGrantType(GRANT_TYPE_PASSWORD_REALM)
                 .asDictionary();
 
         return loginWithToken(requestParameters);
@@ -496,7 +497,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Creates a user in a DB connection using <a href="https://auth0.com/docs/auth-api#!#post--dbconnections-signup">'/dbconnections/signup' endpoint</a>
-     * and then logs in
+     * and then logs in using the /oauth/ro endpoint.
      * Example usage:
      * <pre><code>
      * client.signUp("{email}", "{password}", "{username}", "{database connection name}")
@@ -524,7 +525,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Creates a user in a DB connection using <a href="https://auth0.com/docs/auth-api#!#post--dbconnections-signup">'/dbconnections/signup' endpoint</a>
-     * and then logs in
+     * and then logs in using the /oauth/ro endpoint.
      * Example usage:
      * <pre><code>
      * client.signUp("{email}", "{password}", "{database connection name}")

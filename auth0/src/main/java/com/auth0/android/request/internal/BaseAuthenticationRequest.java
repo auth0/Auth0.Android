@@ -1,5 +1,7 @@
 package com.auth0.android.request.internal;
 
+import android.util.Log;
+
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.result.Credentials;
@@ -7,6 +9,7 @@ import com.google.gson.Gson;
 import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.OkHttpClient;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.auth0.android.authentication.ParameterBuilder.ACCESS_TOKEN_KEY;
@@ -14,12 +17,19 @@ import static com.auth0.android.authentication.ParameterBuilder.AUDIENCE_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.CONNECTION_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.DEVICE_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_KEY;
+import static com.auth0.android.authentication.ParameterBuilder.REALM_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.SCOPE_KEY;
 
 class BaseAuthenticationRequest extends SimpleRequest<Credentials, AuthenticationException> implements AuthenticationRequest {
 
+    private static final String TAG = BaseAuthenticationRequest.class.getSimpleName();
+
     public BaseAuthenticationRequest(HttpUrl url, OkHttpClient client, Gson gson, String httpMethod, Class<Credentials> clazz) {
         super(url, client, gson, httpMethod, clazz, new AuthenticationErrorBuilder());
+    }
+
+    private boolean hasLegacyPath() {
+        return !url.encodedPath().equals("/oauth/token");
     }
 
     /**
@@ -35,14 +45,34 @@ class BaseAuthenticationRequest extends SimpleRequest<Credentials, Authenticatio
     }
 
     /**
-     * Sets the 'connection' parameter
+     * Sets the 'connection' parameter.
      *
      * @param connection name of the connection
      * @return itself
      */
     @Override
     public AuthenticationRequest setConnection(String connection) {
+        if (!hasLegacyPath()) {
+            Log.w(TAG, "Not setting the 'connection' parameter as the request is using a OAuth 2.0 API Authorization endpoint that doesn't support it.");
+            return this;
+        }
         addParameter(CONNECTION_KEY, connection);
+        return this;
+    }
+
+    /**
+     * Sets the 'realm' parameter. A realm identifies the host against which the authentication will be made, and usually helps to know which username and password to use.
+     *
+     * @param realm name of the realm
+     * @return itself
+     */
+    @Override
+    public AuthenticationRequest setRealm(String realm) {
+        if (hasLegacyPath()) {
+            Log.w(TAG, "Not setting the 'realm' parameter as the request is using a Legacy Authorization API endpoint that doesn't support it.");
+            return this;
+        }
+        addParameter(REALM_KEY, realm);
         return this;
     }
 
@@ -93,7 +123,14 @@ class BaseAuthenticationRequest extends SimpleRequest<Credentials, Authenticatio
 
     @Override
     public AuthenticationRequest addAuthenticationParameters(Map<String, Object> parameters) {
-        addParameters(parameters);
+        final HashMap<String, Object> params = new HashMap<>(parameters);
+        if (parameters.containsKey(CONNECTION_KEY)) {
+            setConnection((String) params.remove(CONNECTION_KEY));
+        }
+        if (parameters.containsKey(REALM_KEY)) {
+            setRealm((String) params.remove(REALM_KEY));
+        }
+        addParameters(params);
         return this;
     }
 }

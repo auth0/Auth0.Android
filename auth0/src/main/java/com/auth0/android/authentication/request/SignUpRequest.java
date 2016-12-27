@@ -49,9 +49,10 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
     }
 
     /**
-     * Add additional parameters sent when creating a using.
+     * Add additional parameters sent when creating a user.
      *
      * @param parameters sent with the request and must be non-null
+     * @see ParameterBuilder
      * @return itself
      */
     public SignUpRequest addSignUpParameters(Map<String, Object> parameters) {
@@ -66,55 +67,53 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
      * @return itself
      * @see ParameterBuilder
      */
+    @Override
     public SignUpRequest addAuthenticationParameters(Map<String, Object> parameters) {
         authenticationRequest.addAuthenticationParameters(parameters);
         return this;
     }
 
-    /**
-     * Set the scope used to login the user
-     *
-     * @param scope value
-     * @return itself
-     */
+    @Override
     public SignUpRequest setScope(String scope) {
         authenticationRequest.setScope(scope);
         return this;
     }
 
     @Override
-    public AuthenticationRequest setDevice(String device) {
+    public SignUpRequest setDevice(String device) {
         authenticationRequest.setDevice(device);
         return this;
     }
 
     @Override
-    public AuthenticationRequest setAudience(String audience) {
+    public SignUpRequest setAudience(String audience) {
         authenticationRequest.setAudience(audience);
         return this;
     }
 
     @Override
-    public AuthenticationRequest setAccessToken(String accessToken) {
+    public SignUpRequest setAccessToken(String accessToken) {
         authenticationRequest.setAccessToken(accessToken);
         return this;
     }
 
     @Override
-    public AuthenticationRequest setGrantType(String grantType) {
+    public SignUpRequest setGrantType(String grantType) {
         authenticationRequest.setGrantType(grantType);
         return this;
     }
 
-    /**
-     * Set the connection used to authenticate
-     *
-     * @param connection name
-     * @return itself
-     */
+    @Override
     public SignUpRequest setConnection(String connection) {
         signUpRequest.setConnection(connection);
         authenticationRequest.setConnection(connection);
+        return this;
+    }
+
+    @Override
+    public SignUpRequest setRealm(String realm) {
+        signUpRequest.setConnection(realm);
+        authenticationRequest.setRealm(realm);
         return this;
     }
 

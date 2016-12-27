@@ -49,6 +49,7 @@ public class ParameterBuilder {
 
     public static final String GRANT_TYPE_REFRESH_TOKEN = "refresh_token";
     public static final String GRANT_TYPE_PASSWORD = "password";
+    public static final String GRANT_TYPE_PASSWORD_REALM = "http://auth0.com/oauth/grant-type/password-realm";
     public static final String GRANT_TYPE_JWT = "urn:ietf:params:oauth:grant-type:jwt-bearer";
     public static final String GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code";
 
@@ -59,6 +60,7 @@ public class ParameterBuilder {
     public static final String SCOPE_KEY = "scope";
     public static final String REFRESH_TOKEN_KEY = "refresh_token";
     public static final String CONNECTION_KEY = "connection";
+    public static final String REALM_KEY = "realm";
     public static final String ACCESS_TOKEN_KEY = "access_token";
     public static final String SEND_KEY = "send";
     public static final String CLIENT_ID_KEY = "client_id";
@@ -101,6 +103,16 @@ public class ParameterBuilder {
      */
     public ParameterBuilder setConnection(String connection) {
         return set(CONNECTION_KEY, connection);
+    }
+
+    /**
+     * Sets the 'realm' parameter. A realm identifies the host against which the authentication will be made, and usually helps to know which username and password to use.
+     *
+     * @param realm name of the realm
+     * @return itself
+     */
+    public ParameterBuilder setRealm(String realm) {
+        return set(REALM_KEY, realm);
     }
 
     /**
