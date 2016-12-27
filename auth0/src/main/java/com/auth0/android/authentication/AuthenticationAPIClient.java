@@ -56,6 +56,7 @@ import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_AUTHO
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSWORD;
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSWORD_REALM;
 import static com.auth0.android.authentication.ParameterBuilder.ID_TOKEN_KEY;
+import static com.auth0.android.authentication.ParameterBuilder.SCOPE_OPENID;
 
 /**
  * API client for Auth0 Authentication API.
@@ -97,6 +98,7 @@ public class AuthenticationAPIClient {
     private final Gson gson;
     private final com.auth0.android.request.internal.RequestFactory factory;
     private final ErrorBuilder<AuthenticationException> authErrorBuilder;
+    private boolean oidcConformant;
 
 
     /**
@@ -131,10 +133,35 @@ public class AuthenticationAPIClient {
         this.gson = gson;
         this.factory = factory;
         this.authErrorBuilder = new AuthenticationErrorBuilder();
+        this.oidcConformant = false;
         final Telemetry telemetry = auth0.getTelemetry();
         if (telemetry != null) {
             factory.setClientInfo(telemetry.getValue());
         }
+    }
+
+    /**
+     * Defines if the client uses OIDC conformant authentication endpoints. By default is {@code false}
+     *
+     * You will need to enable this setting in the Auth0 Dashboard first: Go to Account (top right), Account Settings, click Advanced and check the toggle at the bottom.
+     * This setting affects how authentication is performed in the following methods:
+     * <ul>
+     *     <li>{@link AuthenticationAPIClient#login(String, String, String)}</li>
+     *     <li>{@link AuthenticationAPIClient#signUp(String, String, String)}</li>
+     *     <li>{@link AuthenticationAPIClient#signUp(String, String, String, String)}</li>
+     * </ul>
+     *
+     * @param enabled if Lock will use the Legacy Auth API or the new OIDC Conformant Auth API.
+     */
+    public void setOIDCConformant(boolean enabled) {
+        this.oidcConformant = enabled;
+    }
+
+    /**
+     * If the clients works in OIDC conformant mode or not
+     */
+    public boolean isOIDCConformant() {
+        return oidcConformant;
     }
 
     /**
@@ -171,11 +198,15 @@ public class AuthenticationAPIClient {
     }
 
     /**
-     * Log in a user with email/username and password using a DB connection and the /oauth/ro endpoint.
-     * The default scope used is 'openid'.
-     * Example usage:
+     * Log in a user with email/username and password for a connection/realm.
+     *
+     * In OIDC conformant mode ({@link AuthenticationAPIClient#isOIDCConformant()}) it will use the password-realm grant type for the {@code /oauth/token} endpoint
+     * otherwise it will use {@code /oauth/ro}
+     *
+     * Example:
      * <pre><code>
-     * client.login("{username or email}", "{password}", "{database connection name}")
+     * client
+     *      .login("{username or email}", "{password}", "{database connection name}")
      *      .start(new BaseCallback<Credentials>() {
      *          {@literal}Override
      *          public void onSuccess(Credentials payload) { }
@@ -185,24 +216,36 @@ public class AuthenticationAPIClient {
      *      });
      * </code></pre>
      *
-     * @param usernameOrEmail of the user depending of the type of DB connection
-     * @param password        of the user
-     * @param connection      of the database to authenticate with
+     * @param usernameOrEmail   of the user depending of the type of DB connection
+     * @param password          of the user
+     * @param realmOrConnection realm to use in the authorize flow or the name of the database to authenticate with.
      * @return a request to configure and start that will yield {@link Credentials}
      */
     @SuppressWarnings("WeakerAccess")
-    public AuthenticationRequest login(@NonNull String usernameOrEmail, @NonNull String password, @NonNull String connection) {
-        Map<String, Object> requestParameters = ParameterBuilder.newAuthenticationBuilder()
+    public AuthenticationRequest login(@NonNull String usernameOrEmail, @NonNull String password, @NonNull String realmOrConnection) {
+
+        ParameterBuilder builder = ParameterBuilder.newBuilder()
                 .set(USERNAME_KEY, usernameOrEmail)
-                .set(PASSWORD_KEY, password)
-                .setGrantType(GRANT_TYPE_PASSWORD)
-                .setConnection(connection)
-                .asDictionary();
-        return loginWithResourceOwner(requestParameters);
+                .set(PASSWORD_KEY, password);
+
+        if (oidcConformant) {
+            final Map<String, Object> parameters = builder
+                    .setGrantType(GRANT_TYPE_PASSWORD_REALM)
+                    .setRealm(realmOrConnection)
+                    .asDictionary();
+            return  loginWithToken(parameters);
+        } else {
+            final Map<String, Object> parameters = builder
+                    .setGrantType(GRANT_TYPE_PASSWORD)
+                    .setScope(SCOPE_OPENID)
+                    .setConnection(realmOrConnection)
+                    .asDictionary();
+            return loginWithResourceOwner(parameters);
+        }
     }
 
     /**
-     * Log in a user with email/username and password using the /oauth/token endpoint.
+     * Log in a user with email/username and password using the password grant and the default directory
      * Example usage:
      * <pre><code>
      * client.login("{username or email}", "{password}")
@@ -224,7 +267,7 @@ public class AuthenticationAPIClient {
         Map<String, Object> requestParameters = ParameterBuilder.newBuilder()
                 .set(USERNAME_KEY, usernameOrEmail)
                 .set(PASSWORD_KEY, password)
-                .setGrantType(GRANT_TYPE_PASSWORD_REALM)
+                .setGrantType(GRANT_TYPE_PASSWORD)
                 .asDictionary();
 
         return loginWithToken(requestParameters);
@@ -402,7 +445,8 @@ public class AuthenticationAPIClient {
     }
 
     /**
-     * Fetch the token information from Auth0
+     * Fetch the token information from Auth0.
+     * <p>
      * Example usage:
      * <pre><code>
      * client.tokenInfo("{id_token}")
@@ -497,7 +541,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Creates a user in a DB connection using <a href="https://auth0.com/docs/auth-api#!#post--dbconnections-signup">'/dbconnections/signup' endpoint</a>
-     * and then logs in using the /oauth/ro endpoint.
+     * and then logs in the user. How the user is logged in depends on the {@link AuthenticationAPIClient#isOIDCConformant()} flag.
      * Example usage:
      * <pre><code>
      * client.signUp("{email}", "{password}", "{username}", "{database connection name}")
@@ -520,12 +564,13 @@ public class AuthenticationAPIClient {
     public SignUpRequest signUp(@NonNull String email, @NonNull String password, @NonNull String username, @NonNull String connection) {
         final DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUserRequest = createUser(email, password, username, connection);
         final AuthenticationRequest authenticationRequest = login(email, password, connection);
+
         return new SignUpRequest(createUserRequest, authenticationRequest);
     }
 
     /**
      * Creates a user in a DB connection using <a href="https://auth0.com/docs/auth-api#!#post--dbconnections-signup">'/dbconnections/signup' endpoint</a>
-     * and then logs in using the /oauth/ro endpoint.
+     * and then logs in the user. How the user is logged in depends on the {@link AuthenticationAPIClient#isOIDCConformant()} flag.
      * Example usage:
      * <pre><code>
      * client.signUp("{email}", "{password}", "{database connection name}")
@@ -545,7 +590,7 @@ public class AuthenticationAPIClient {
      */
     @SuppressWarnings("WeakerAccess")
     public SignUpRequest signUp(@NonNull String email, @NonNull String password, @NonNull String connection) {
-        DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUserRequest = createUser(email, password, connection);
+        final DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUserRequest = createUser(email, password, connection);
         final AuthenticationRequest authenticationRequest = login(email, password, connection);
         return new SignUpRequest(createUserRequest, authenticationRequest);
     }
