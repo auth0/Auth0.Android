@@ -71,7 +71,18 @@ public class AuthenticationException extends Auth0Exception {
 
         String codeValue = (String) (this.values.containsKey(ERROR_KEY) ? this.values.get(ERROR_KEY) : this.values.get(CODE_KEY));
         this.code = codeValue != null ? codeValue : UNKNOWN_ERROR;
-        this.description = (String) (this.values.containsKey(DESCRIPTION_KEY) ? this.values.get(DESCRIPTION_KEY) : this.values.get(ERROR_DESCRIPTION_KEY));
+        if (!this.values.containsKey(DESCRIPTION_KEY)) {
+            this.description = (String) this.values.get(ERROR_DESCRIPTION_KEY);
+            return;
+        }
+
+        Object description = this.values.get(DESCRIPTION_KEY);
+        if (description instanceof String) {
+            this.description = (String) description;
+        } else if (isPasswordNotStrongEnough()) {
+            PasswordStrengthErrorParser pwStrengthParser = new PasswordStrengthErrorParser((Map<String, Object>) description);
+            this.description = pwStrengthParser.getDescription();
+        }
     }
 
     /**

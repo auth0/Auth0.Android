@@ -1,10 +1,19 @@
 package com.auth0.android.authentication;
 
 import com.auth0.android.Auth0Exception;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
+import java.io.FileReader;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,8 +26,14 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 @SuppressWarnings("ThrowableInstanceNeverThrown")
+@RunWith(RobolectricTestRunner.class)
+@Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 21, manifest = Config.NONE)
 public class AuthenticationExceptionTest {
 
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
+
+    private static final String PASSWORD_STRENGTH_ERROR_RESPONSE = "src/test/resources/password_strength_error.json";
     private static final String CODE_KEY = "code";
     private static final String NAME_KEY = "name";
     private static final String ERROR_KEY = "error";
@@ -149,6 +164,20 @@ public class AuthenticationExceptionTest {
         values.put(NAME_KEY, "PasswordStrengthError");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.isPasswordNotStrongEnough(), is(true));
+    }
+
+    @Test
+    public void shouldHaveNotStrongPasswordWithDetailedDescription() throws Exception {
+        Gson gson = GsonProvider.buildGson();
+        FileReader fr = new FileReader(PASSWORD_STRENGTH_ERROR_RESPONSE);
+        Type mapType = new TypeToken<Map<String, Object>>() {}.getType();
+        Map<String, Object> mapPayload = gson.fromJson(fr, mapType);
+
+        AuthenticationException ex = new AuthenticationException(mapPayload);
+        assertThat(ex.isPasswordNotStrongEnough(), is(true));
+
+        String expectedDescription = "At least 10 characters in length; Contain at least 3 of the following 4 types of characters: lower case letters (a-z), upper case letters (A-Z), numbers (i.e. 0-9), special characters (e.g. !@#$%^&*); Should contain: lower case letters (a-z), upper case letters (A-Z), numbers (i.e. 0-9), special characters (e.g. !@#$%^&*); No more than 2 identical characters in a row (e.g., \"aaa\" not allowed)";
+        assertThat(ex.getDescription(), is(expectedDescription));
     }
 
     @Test
