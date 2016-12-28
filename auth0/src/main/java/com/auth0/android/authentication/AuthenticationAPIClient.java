@@ -39,6 +39,7 @@ import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.request.Request;
 import com.auth0.android.request.internal.AuthenticationErrorBuilder;
+import com.auth0.android.request.internal.GsonProvider;
 import com.auth0.android.request.internal.RequestFactory;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.DatabaseUser;

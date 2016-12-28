@@ -1,6 +1,5 @@
-package com.auth0.android.authentication;
+package com.auth0.android.request.internal;
 
-import com.auth0.android.request.internal.GsonProvider;
 import com.auth0.android.result.UserIdentity;
 import com.google.gson.JsonParseException;
 
