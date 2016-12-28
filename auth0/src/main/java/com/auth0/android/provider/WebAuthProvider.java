@@ -38,6 +38,13 @@ import com.auth0.android.authentication.AuthenticationException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.auth0.android.provider.OAuthManager.KEY_CONNECTION;
+import static com.auth0.android.provider.OAuthManager.KEY_NONCE;
+import static com.auth0.android.provider.OAuthManager.KEY_RESPONSE_TYPE;
+import static com.auth0.android.provider.OAuthManager.KEY_STATE;
+import static com.auth0.android.provider.OAuthManager.RESPONSE_TYPE_CODE;
+import static com.auth0.android.provider.OAuthManager.RESPONSE_TYPE_ID_TOKEN;
+
 /**
  * OAuth2 Web Authentication Provider.
  * It can use an external browser by sending the {@link android.content.Intent#ACTION_VIEW} intent or also the {@link WebAuthActivity}.
@@ -47,23 +54,13 @@ public class WebAuthProvider {
 
     private static final String TAG = WebAuthProvider.class.getName();
 
-    private static final String KEY_RESPONSE_TYPE = "response_type";
-    private static final String KEY_STATE = "state";
-    private static final String KEY_NONCE = "nonce";
     private static final String KEY_AUDIENCE = "audience";
     private static final String KEY_SCOPE = "scope";
     private static final String KEY_CONNECTION_SCOPE = "connection_scope";
-    private static final String KEY_CONNECTION = "connection";
-
     private static final String SCOPE_TYPE_OPENID = "openid";
-    private static final String RESPONSE_TYPE_ID_TOKEN = "id_token";
     private static final String RESPONSE_TYPE_TOKEN = "token";
-    private static final String RESPONSE_TYPE_CODE = "code";
 
-    private AuthCallback callback;
-    private OAuthManager manager;
-
-    private static WebAuthProvider providerInstance;
+    private static OAuthManager managerInstance;
 
 
     public static class Builder {
@@ -253,7 +250,6 @@ public class WebAuthProvider {
 
         @VisibleForTesting
         Builder withPKCE(PKCE pkce) {
-            //FIXME: THIS IS BROKEN!
             this.pkce = pkce;
             return this;
         }
@@ -271,21 +267,18 @@ public class WebAuthProvider {
         @Deprecated
         public void start(@NonNull Activity activity, @NonNull AuthCallback callback, int requestCode) {
             if (account.getAuthorizeUrl() == null) {
-                providerInstance = null;
+                managerInstance = null;
                 final AuthenticationException ex = new AuthenticationException("a0.invalid_authorize_url", "Auth0 authorize URL not properly set. This can be related to an invalid domain.");
                 callback.onFailure(ex);
                 return;
             }
 
-            OAuthManager manager = new OAuthManager(account, values);
+            OAuthManager manager = new OAuthManager(account, callback, values);
             manager.useFullScreen(useFullscreen);
             manager.useBrowser(useBrowser);
             manager.setPKCE(pkce);
 
-            WebAuthProvider webAuth = new WebAuthProvider();
-            webAuth.callback = callback;
-            webAuth.manager = manager;
-            providerInstance = webAuth;
+            managerInstance = manager;
 
             String redirectUri = CallbackHelper.getCallbackUri(scheme, activity.getPackageName(), account.getDomainUrl());
             manager.startAuthorization(activity, redirectUri, requestCode);
@@ -340,14 +333,14 @@ public class WebAuthProvider {
      */
     @Deprecated
     public static boolean resume(int requestCode, int resultCode, @Nullable Intent intent) {
-        if (providerInstance == null) {
+        if (managerInstance == null) {
             Log.w(TAG, "There is no previous instance of this provider.");
             return false;
         }
         final AuthorizeResult data = new AuthorizeResult(requestCode, resultCode, intent);
-        boolean result = providerInstance.manager.resumeAuthorization(data, providerInstance.callback);
+        boolean result = managerInstance.resumeAuthorization(data);
         if (result) {
-            providerInstance = null;
+            managerInstance = null;
         }
         return result;
     }
@@ -360,15 +353,14 @@ public class WebAuthProvider {
      * @return true if a result was expected and has a valid format, or false if not.
      */
     public static boolean resume(@Nullable Intent intent) {
-        if (providerInstance == null) {
+        if (managerInstance == null) {
             Log.w(TAG, "There is no previous instance of this provider.");
             return false;
         }
         final AuthorizeResult data = new AuthorizeResult(intent);
-
-        boolean result = providerInstance.manager.resumeAuthorization(data, providerInstance.callback);
+        boolean result = managerInstance.resumeAuthorization(data);
         if (result) {
-            providerInstance = null;
+            managerInstance = null;
         }
         return result;
     }
@@ -376,7 +368,7 @@ public class WebAuthProvider {
     // End Public methods
 
     @VisibleForTesting
-    static WebAuthProvider getInstance() {
-        return providerInstance;
+    static OAuthManager getInstance() {
+        return managerInstance;
     }
 }

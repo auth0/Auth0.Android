@@ -26,20 +26,20 @@ class OAuthManager {
 
     private static final String TAG = OAuthManager.class.getSimpleName();
 
-    private static final String RESPONSE_TYPE_ID_TOKEN = "id_token";
-    private static final String RESPONSE_TYPE_CODE = "code";
+    static final String KEY_RESPONSE_TYPE = "response_type";
+    static final String KEY_STATE = "state";
+    static final String KEY_NONCE = "nonce";
+    static final String KEY_CONNECTION = "connection";
+    static final String RESPONSE_TYPE_ID_TOKEN = "id_token";
+    static final String RESPONSE_TYPE_CODE = "code";
+
+    private static final String ERROR_VALUE_ACCESS_DENIED = "access_denied";
     private static final String METHOD_SHA_256 = "S256";
     private static final String KEY_CODE_CHALLENGE = "code_challenge";
     private static final String KEY_CODE_CHALLENGE_METHOD = "code_challenge_method";
     private static final String KEY_CLIENT_ID = "client_id";
     private static final String KEY_REDIRECT_URI = "redirect_uri";
     private static final String KEY_TELEMETRY = "auth0Client";
-    private static final String KEY_RESPONSE_TYPE = "response_type";
-    private static final String KEY_STATE = "state";
-    private static final String KEY_NONCE = "nonce";
-    private static final String KEY_CONNECTION = "connection";
-
-    private static final String ERROR_VALUE_ACCESS_DENIED = "access_denied";
     private static final String KEY_ERROR = "error";
     private static final String KEY_ID_TOKEN = "id_token";
     private static final String KEY_ACCESS_TOKEN = "access_token";
@@ -48,6 +48,7 @@ class OAuthManager {
     private static final String KEY_CODE = "code";
 
     private final Auth0 account;
+    private final AuthCallback callback;
     private final Map<String, String> parameters;
 
     private boolean useFullScreen;
@@ -55,8 +56,9 @@ class OAuthManager {
     private int requestCode;
     private PKCE pkce;
 
-    public OAuthManager(Auth0 account, Map<String, String> parameters) {
+    public OAuthManager(Auth0 account, AuthCallback callback, Map<String, String> parameters) {
         this.account = account;
+        this.callback = callback;
         this.parameters = new HashMap<>(parameters);
     }
 
@@ -96,7 +98,7 @@ class OAuthManager {
         }
     }
 
-    public boolean resumeAuthorization(AuthorizeResult data, final AuthCallback callback) {
+    public boolean resumeAuthorization(AuthorizeResult data) {
         if (!data.isValid(requestCode)) {
             Log.w(TAG, "The Authorize Result is invalid.");
             return false;
@@ -115,32 +117,37 @@ class OAuthManager {
             checkNonceValue(values.get(KEY_NONCE), values.get(KEY_ID_TOKEN));
         } catch (AuthenticationException e) {
             callback.onFailure(e);
+            return true;
         }
 
         Log.d(TAG, "Authenticated using web flow");
         final Credentials urlCredentials = new Credentials(values.get(KEY_ID_TOKEN), values.get(KEY_ACCESS_TOKEN), values.get(KEY_TOKEN_TYPE), values.get(KEY_REFRESH_TOKEN));
-        if (shouldUsePKCE()) {
-            pkce.getToken(values.get(KEY_CODE), new AuthCallback() {
-                @Override
-                public void onFailure(@NonNull Dialog dialog) {
-                    callback.onFailure(dialog);
-                }
-
-                @Override
-                public void onFailure(AuthenticationException exception) {
-                    callback.onFailure(exception);
-                }
-
-                @Override
-                public void onSuccess(@NonNull Credentials codeCredentials) {
-                    callback.onSuccess(mergeCredentials(urlCredentials, codeCredentials));
-                }
-            });
-        } else {
+        if (!shouldUsePKCE()) {
             callback.onSuccess(urlCredentials);
+            return true;
         }
+
+        //Finish Code Exchange
+        pkce.getToken(values.get(KEY_CODE), new AuthCallback() {
+            @Override
+            public void onFailure(@NonNull Dialog dialog) {
+                callback.onFailure(dialog);
+            }
+
+            @Override
+            public void onFailure(AuthenticationException exception) {
+                callback.onFailure(exception);
+            }
+
+            @Override
+            public void onSuccess(@NonNull Credentials codeCredentials) {
+                callback.onSuccess(mergeCredentials(urlCredentials, codeCredentials));
+            }
+        });
         return true;
     }
+
+    //Helper Methods
 
     private void checkErrorValue(String errorValue) throws AuthenticationException {
         if (errorValue == null) {
@@ -169,9 +176,6 @@ class OAuthManager {
             throw new AuthenticationException(ERROR_VALUE_ACCESS_DENIED, "The received nonce is invalid. Try again.");
         }
     }
-
-
-    //helper methods
 
     private Uri buildAuthorizeUri() {
         Uri authorizeUri = Uri.parse(account.getAuthorizeUrl());
@@ -203,11 +207,10 @@ class OAuthManager {
         String state = getRandomString(parameters.get(KEY_STATE));
         parameters.put(KEY_STATE, state);
 
-        if (!parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_ID_TOKEN)) {
-            return;
+        if (parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_ID_TOKEN)) {
+            String nonce = getRandomString(parameters.get(KEY_NONCE));
+            parameters.put(KEY_NONCE, nonce);
         }
-        String nonce = getRandomString(parameters.get(KEY_NONCE));
-        parameters.put(KEY_NONCE, nonce);
     }
 
     private void addClientParameters(Map<String, String> parameters, String redirectUri) {

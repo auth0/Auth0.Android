@@ -3,9 +3,11 @@ package com.auth0.android.provider;
 import com.auth0.android.Auth0;
 import com.auth0.android.result.Credentials;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
@@ -21,32 +23,38 @@ import static org.junit.Assert.assertTrue;
 @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 18, manifest = Config.NONE)
 public class OAuthManagerTest {
 
+    @Mock
+    Auth0 account;
+    @Mock
+    AuthCallback callback;
+
+    @Before
+    public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+    }
+
     @Test
     public void shouldUseBrowserByDefault() throws Exception {
-        Auth0 account = Mockito.mock(Auth0.class);
-        OAuthManager manager = new OAuthManager(account, new HashMap<String, String>());
+        OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>());
         assertTrue(manager.useBrowser());
     }
 
     @Test
     public void shouldNotUseBrowser() throws Exception {
-        Auth0 account = Mockito.mock(Auth0.class);
-        OAuthManager manager = new OAuthManager(account, new HashMap<String, String>());
+        OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>());
         manager.useBrowser(false);
         assertFalse(manager.useBrowser());
     }
 
     @Test
     public void shouldNotUseFullScreenByDefault() throws Exception {
-        Auth0 account = Mockito.mock(Auth0.class);
-        OAuthManager manager = new OAuthManager(account, new HashMap<String, String>());
+        OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>());
         assertFalse(manager.useFullScreen());
     }
 
     @Test
     public void shouldUseFullScreen() throws Exception {
-        Auth0 account = Mockito.mock(Auth0.class);
-        OAuthManager manager = new OAuthManager(account, new HashMap<String, String>());
+        OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>());
         manager.useFullScreen(true);
         assertTrue(manager.useFullScreen());
     }
