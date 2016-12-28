@@ -17,7 +17,7 @@ import java.util.Map;
 class UserProfileDeserializer implements JsonDeserializer<UserProfile> {
     @Override
     public UserProfile deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
-        if (!json.isJsonObject() || json.isJsonNull()) {
+        if (!json.isJsonObject() || json.isJsonNull() || json.getAsJsonObject().entrySet().isEmpty()) {
             throw new JsonParseException("user profile json is not a valid json object");
         }
 
