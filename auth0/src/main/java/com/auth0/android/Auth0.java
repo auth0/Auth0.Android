@@ -30,6 +30,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import com.auth0.android.auth0.BuildConfig;
+import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.util.Telemetry;
 import com.squareup.okhttp.HttpUrl;
 
@@ -49,7 +50,7 @@ public class Auth0 {
     private final HttpUrl domainUrl;
     private final HttpUrl configurationUrl;
     private Telemetry telemetry;
-
+    private boolean oidcConformant;
 
     /**
      * Creates a new Auth0 instance with the 'com_auth0_client_id' and 'com_auth0_domain' values
@@ -144,6 +145,30 @@ public class Auth0 {
      */
     public void doNotSendTelemetry() {
         this.telemetry = null;
+    }
+
+    /**
+     * Defines if the client uses OIDC conformant authentication endpoints. By default is {@code false}
+     * <p>
+     * You will need to enable this setting in the Auth0 Dashboard first: Go to Account (top right), Account Settings, click Advanced and check the toggle at the bottom.
+     * This setting affects how authentication is performed in the following methods:
+     * <ul>
+     * <li>{@link AuthenticationAPIClient#login(String, String, String)}</li>
+     * <li>{@link AuthenticationAPIClient#signUp(String, String, String)}</li>
+     * <li>{@link AuthenticationAPIClient#signUp(String, String, String, String)}</li>
+     * </ul>
+     *
+     * @param enabled if Lock will use the Legacy Auth API or the new OIDC Conformant Auth API.
+     */
+    public void setOIDCConformant(boolean enabled) {
+        this.oidcConformant = enabled;
+    }
+
+    /**
+     * If the clients works in OIDC conformant mode or not
+     */
+    public boolean isOIDCConformant() {
+        return oidcConformant;
     }
 
     private HttpUrl resolveConfiguration(@Nullable String configurationDomain, @NonNull HttpUrl domainUrl) {
