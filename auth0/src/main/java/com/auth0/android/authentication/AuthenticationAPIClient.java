@@ -94,7 +94,6 @@ public class AuthenticationAPIClient {
 
     private final Auth0 auth0;
     private final OkHttpClient client;
-    private final HttpLoggingInterceptor logInterceptor;
     private final Gson gson;
     private final RequestFactory factory;
     private final ErrorBuilder<AuthenticationException> authErrorBuilder;
@@ -127,8 +126,9 @@ public class AuthenticationAPIClient {
     private AuthenticationAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClient client, Gson gson) {
         this.auth0 = auth0;
         this.client = client;
-        this.logInterceptor = new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.NONE);
-        this.client.interceptors().add(logInterceptor);
+        if (auth0.isLoggingEnabled()) {
+            this.client.interceptors().add(new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY));
+        }
         this.gson = gson;
         this.factory = factory;
         this.authErrorBuilder = new AuthenticationErrorBuilder();
@@ -137,22 +137,7 @@ public class AuthenticationAPIClient {
             factory.setClientInfo(telemetry.getValue());
         }
     }
-
-    /**
-     * Log every Request and Response made by this client.
-     * You shouldn't enable logging in release builds as it may leak sensitive information.
-     */
-    public void setLoggingEnabled(boolean enabled) {
-        logInterceptor.setLevel(enabled ? HttpLoggingInterceptor.Level.BODY : HttpLoggingInterceptor.Level.NONE);
-    }
-
-    /**
-     * Getter for the current client logger enabled state.
-     */
-    public boolean isLoggingEnabled() {
-        return logInterceptor.getLevel() == HttpLoggingInterceptor.Level.BODY;
-    }
-
+    
     public String getClientId() {
         return auth0.getClientId();
     }

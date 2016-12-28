@@ -51,6 +51,7 @@ public class Auth0 {
     private final HttpUrl configurationUrl;
     private Telemetry telemetry;
     private boolean oidcConformant;
+    private boolean loggingEnabled;
 
     /**
      * Creates a new Auth0 instance with the 'com_auth0_client_id' and 'com_auth0_domain' values
@@ -130,7 +131,6 @@ public class Auth0 {
         return telemetry;
     }
 
-
     /**
      * Setter for the Telemetry to send in every request to Auth0.
      *
@@ -169,6 +169,23 @@ public class Auth0 {
      */
     public boolean isOIDCConformant() {
         return oidcConformant;
+    }
+
+    /**
+     * @return if every Request, Response and other sensitive information should be logged.
+     */
+    public boolean isLoggingEnabled() {
+        return loggingEnabled;
+    }
+
+    /**
+     * Log every Request, Response and other sensitive information exchanged using the Auth0 APIs.
+     * You shouldn't enable logging in release builds as it may leak sensitive information.
+     *
+     * @param enabled if every Request, Response and other sensitive information should be logged.
+     */
+    public void setLoggingEnabled(boolean enabled) {
+        loggingEnabled = enabled;
     }
 
     private HttpUrl resolveConfiguration(@Nullable String configurationDomain, @NonNull HttpUrl domainUrl) {
