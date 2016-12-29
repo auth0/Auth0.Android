@@ -21,14 +21,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-apply plugin: 'com.android.library'
-apply from: '../scripts/jacoco.gradle'
-apply from: '../scripts/release.gradle'
+
+apply plugin: 'com.auth0.gradle.oss-library.android'
 
 logger.lifecycle("Using version ${version} for ${name}")
 
-auth0Release {
-    library = "Auth0.Android"
+oss {
+    name 'Auth0.Android'
+    repository 'Auth0.Android'
+    organization 'auth0'
+    description 'Android toolkit for Auth0 API'
+
+    developers {
+        auth0 {
+            displayName = 'Auth0'
+            email = 'oss@auth0.com'
+        }
+        lbalmaceda {
+            displayName = 'Luciano Balmaceda'
+            email = 'luciano.balmaceda@auth0.com'
+        }
+    }
 }
 
 android {
@@ -40,7 +53,7 @@ android {
         targetSdkVersion 25
         versionCode 1
         versionName project.version
-        buildConfigField "String", "LIBRARY_NAME", "\"Auth0.Android\""
+        buildConfigField "String", "LIBRARY_NAME", "\"$project.rootProject.name\""
         consumerProguardFiles '../proguard/proguard-gson.pro', '../proguard/proguard-okio.pro'
     }
     lintOptions {
@@ -64,6 +77,3 @@ dependencies {
     testCompile 'org.robolectric:robolectric:3.1.2'
     testCompile 'com.android.support.test.espresso:espresso-intents:2.2.2'
 }
-
-apply from: '../scripts/maven.gradle'
-apply from: '../scripts/bintray.gradle'
