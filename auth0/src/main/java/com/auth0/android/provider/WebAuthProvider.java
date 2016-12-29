@@ -280,7 +280,7 @@ public class WebAuthProvider {
 
             managerInstance = manager;
 
-            String redirectUri = CallbackHelper.getCallbackUri(scheme, activity.getPackageName(), account.getDomainUrl());
+            String redirectUri = CallbackHelper.getCallbackUri(scheme, activity.getApplicationContext().getPackageName(), account.getDomainUrl());
             manager.startAuthorization(activity, redirectUri, requestCode);
         }
 
