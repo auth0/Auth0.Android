@@ -1,4 +1,4 @@
-package com.auth0.android.authentication;
+package com.auth0.android.request.internal;
 
 import com.google.gson.Gson;
 

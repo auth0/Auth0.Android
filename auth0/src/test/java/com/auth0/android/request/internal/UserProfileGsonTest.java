@@ -1,7 +1,6 @@
-package com.auth0.android.authentication;
+package com.auth0.android.request.internal;
 
 import com.auth0.android.result.UserProfile;
-import com.auth0.android.request.internal.GsonProvider;
 import com.google.gson.JsonParseException;
 
 import org.hamcrest.Matcher;
@@ -25,6 +24,8 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.collection.IsMapWithSize.aMapWithSize;
 import static org.hamcrest.collection.IsMapWithSize.anEmptyMap;
 import static org.junit.Assert.assertThat;
 
@@ -32,6 +33,7 @@ public class UserProfileGsonTest extends GsonBaseTest {
     private static final String NICKNAME = "a0";
     private static final String NAME = "info @ auth0";
     private static final String ID = "auth0|1234567890";
+    private static final String PROFILE_OAUTH = "src/test/resources/profile_oauth.json";
     private static final String PROFILE_FULL = "src/test/resources/profile_full.json";
     private static final String PROFILE_BASIC = "src/test/resources/profile_basic.json";
     private static final String PROFILE = "src/test/resources/profile.json";
@@ -57,9 +59,8 @@ public class UserProfileGsonTest extends GsonBaseTest {
     }
 
     @Test
-    public void shouldRequireUserId() throws Exception {
-        expectedException.expect(JsonParseException.class);
-        pojoFrom(new StringReader("{\n" +
+    public void shouldNotRequireUserId() throws Exception {
+        UserProfile userProfile = pojoFrom(new StringReader("{\n" +
                 "  \"picture\": \"https://secure.gravatar.com/avatar/cfacbe113a96fdfc85134534771d88b4?s=480&r=pg&d=https%3A%2F%2Fssl.gstatic.com%2Fs2%2Fprofiles%2Fimages%2Fsilhouette80.png\",\n" +
                 "  \"name\": \"info @ auth0\",\n" +
                 "  \"nickname\": \"a0\",\n" +
@@ -74,12 +75,12 @@ public class UserProfileGsonTest extends GsonBaseTest {
                 "  \"created_at\": \"2014-07-06T18:33:49.005Z\"\n" +
                 "}"
         ), UserProfile.class);
+        assertThat(userProfile, is(notNullValue()));
     }
 
     @Test
-    public void shouldRequireName() throws Exception {
-        expectedException.expect(JsonParseException.class);
-        pojoFrom(new StringReader("{\n" +
+    public void shouldNotRequireName() throws Exception {
+        UserProfile userProfile = pojoFrom(new StringReader("{\n" +
                 "  \"picture\": \"https://secure.gravatar.com/avatar/cfacbe113a96fdfc85134534771d88b4?s=480&r=pg&d=https%3A%2F%2Fssl.gstatic.com%2Fs2%2Fprofiles%2Fimages%2Fsilhouette80.png\",\n" +
                 "  \"nickname\": \"a0\",\n" +
                 "  \"user_id\": \"auth0|1234567890\",\n" +
@@ -94,12 +95,12 @@ public class UserProfileGsonTest extends GsonBaseTest {
                 "  \"created_at\": \"2014-07-06T18:33:49.005Z\"\n" +
                 "}"
         ), UserProfile.class);
+        assertThat(userProfile, is(notNullValue()));
     }
 
     @Test
-    public void shouldRequireNickname() throws Exception {
-        expectedException.expect(JsonParseException.class);
-        pojoFrom(new StringReader("{\n" +
+    public void shouldNotRequireNickname() throws Exception {
+        UserProfile userProfile = pojoFrom(new StringReader("{\n" +
                 "  \"picture\": \"https://secure.gravatar.com/avatar/cfacbe113a96fdfc85134534771d88b4?s=480&r=pg&d=https%3A%2F%2Fssl.gstatic.com%2Fs2%2Fprofiles%2Fimages%2Fsilhouette80.png\",\n" +
                 "  \"name\": \"info @ auth0\",\n" +
                 "  \"user_id\": \"auth0|1234567890\",\n" +
@@ -114,12 +115,12 @@ public class UserProfileGsonTest extends GsonBaseTest {
                 "  \"created_at\": \"2014-07-06T18:33:49.005Z\"\n" +
                 "}"
         ), UserProfile.class);
+        assertThat(userProfile, is(notNullValue()));
     }
 
     @Test
-    public void shouldRequirePicture() throws Exception {
-        expectedException.expect(JsonParseException.class);
-        pojoFrom(new StringReader("{\n" +
+    public void shouldNotRequirePicture() throws Exception {
+        UserProfile userProfile = pojoFrom(new StringReader("{\n" +
                 "  \"name\": \"info @ auth0\",\n" +
                 "  \"nickname\": \"a0\",\n" +
                 "  \"user_id\": \"auth0|1234567890\",\n" +
@@ -134,6 +135,21 @@ public class UserProfileGsonTest extends GsonBaseTest {
                 "  \"created_at\": \"2014-07-06T18:33:49.005Z\"\n" +
                 "}"
         ), UserProfile.class);
+        assertThat(userProfile, is(notNullValue()));
+    }
+
+    @Test
+    public void shouldReturnOAuthProfile() throws Exception {
+        UserProfile profile = pojoFrom(json(PROFILE_OAUTH), UserProfile.class);
+        assertThat(profile.getId(), is(nullValue()));
+        assertThat(profile.getName(), is(nullValue()));
+        assertThat(profile.getNickname(), is(nullValue()));
+        assertThat(profile.getPictureURL(), is(nullValue()));
+        assertThat(profile.getIdentities(), is(nullValue()));
+        assertThat(profile.getUserMetadata(), anEmptyMap());
+        assertThat(profile.getAppMetadata(), anEmptyMap());
+        assertThat(profile.getExtraInfo(), aMapWithSize(1));
+        assertThat(profile.getExtraInfo(), hasEntry("sub", (Object) "google-oauth2|9883254263433883220"));
     }
 
     @Test

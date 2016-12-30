@@ -1,6 +1,7 @@
 package com.auth0.android.authentication;
 
 import com.auth0.android.Auth0Exception;
+import com.auth0.android.request.internal.GsonProvider;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
