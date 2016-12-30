@@ -68,7 +68,6 @@ public class UsersAPIClient {
 
     private final Auth0 auth0;
     private final OkHttpClient client;
-    private final HttpLoggingInterceptor logInterceptor;
     private final Gson gson;
     private final RequestFactory factory;
     private final ErrorBuilder<ManagementException> mgmtErrorBuilder;
@@ -102,8 +101,9 @@ public class UsersAPIClient {
     private UsersAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClient client, Gson gson) {
         this.auth0 = auth0;
         this.client = client;
-        this.logInterceptor = new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.NONE);
-        this.client.interceptors().add(logInterceptor);
+        if (auth0.isLoggingEnabled()) {
+            this.client.interceptors().add(new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY));
+        }
         this.gson = gson;
         this.factory = factory;
         this.mgmtErrorBuilder = new ManagementErrorBuilder();
@@ -111,14 +111,6 @@ public class UsersAPIClient {
         if (telemetry != null) {
             factory.setClientInfo(telemetry.getValue());
         }
-    }
-
-    /**
-     * Log every Request and Response made by this client.
-     * You shouldn't enable logging in release builds as it may leak sensitive information.
-     */
-    public void enableLogging() {
-        logInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
     }
 
     public String getClientId() {

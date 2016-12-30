@@ -120,25 +120,6 @@ public class WebAuthProviderTest {
         assertFalse(WebAuthProvider.resume(0, 0, intentMock));
     }
 
-    //logging
-    public void shouldHaveLoggingDisabledByDefault() throws Exception {
-        WebAuthProvider.init(account)
-                .start(activity, callback);
-
-        final WebAuthProvider instance = WebAuthProvider.getInstance();
-        assertFalse(instance.isLoggingEnabled());
-    }
-
-    @Test
-    public void shouldEnableLogging() throws Exception {
-        WebAuthProvider.init(account)
-                .enableLogging()
-                .start(activity, callback);
-
-        final WebAuthProvider instance = WebAuthProvider.getInstance();
-        assertTrue(instance.isLoggingEnabled());
-    }
-
     //scheme
 
     @Test

@@ -94,7 +94,6 @@ public class WebAuthProvider {
     private Map<String, String> parameters;
 
     private static WebAuthProvider providerInstance;
-    private boolean loggingEnabled;
     private String scheme;
 
     @VisibleForTesting
@@ -109,7 +108,6 @@ public class WebAuthProvider {
         private boolean useBrowser;
         private boolean useFullscreen;
         private PKCE pkce;
-        private boolean loggingEnabled;
         private String scheme;
 
         Builder(Auth0 account) {
@@ -288,15 +286,6 @@ public class WebAuthProvider {
             return this;
         }
 
-        /**
-         * Log every Request and Response made by this provider.
-         * You shouldn't enable logging in release builds as it may leak sensitive information.
-         */
-        public Builder enableLogging() {
-            this.loggingEnabled = true;
-            return this;
-        }
-
         @VisibleForTesting
         Builder withPKCE(PKCE pkce) {
             this.pkce = pkce;
@@ -320,7 +309,6 @@ public class WebAuthProvider {
             webAuth.useFullscreen = useFullscreen;
             webAuth.parameters = values;
             webAuth.pkce = pkce;
-            webAuth.loggingEnabled = loggingEnabled;
             webAuth.scheme = scheme;
 
             providerInstance = webAuth;
@@ -564,13 +552,7 @@ public class WebAuthProvider {
     }
 
     private PKCE createPKCE(String redirectUri) {
-        if (pkce == null) {
-            final AuthenticationAPIClient client = new AuthenticationAPIClient(account);
-            client.setLoggingEnabled(loggingEnabled);
-            return new PKCE(client, redirectUri);
-        } else {
-            return pkce;
-        }
+        return pkce != null ? pkce : new PKCE(new AuthenticationAPIClient(account), redirectUri);
     }
 
     @VisibleForTesting
@@ -586,11 +568,6 @@ public class WebAuthProvider {
     @VisibleForTesting
     Map<String, String> getParameters() {
         return parameters;
-    }
-
-    @VisibleForTesting
-    boolean isLoggingEnabled() {
-        return loggingEnabled;
     }
 
     private String getResponseType() {
@@ -609,7 +586,7 @@ public class WebAuthProvider {
     }
 
     private void logDebug(String message) {
-        if (loggingEnabled) {
+        if (account.isLoggingEnabled()) {
             Log.d(TAG, message);
         }
     }

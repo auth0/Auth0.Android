@@ -156,50 +156,7 @@ public class AuthenticationAPIClientTest {
     @Test
     public void shouldEnableHttpLogging() throws Exception {
         Auth0 account = mock(Auth0.class);
-        RequestFactory factory = mock(RequestFactory.class);
-        OkHttpClient okClient = mock(OkHttpClient.class);
-        List list = mock(List.class);
-        when(okClient.interceptors()).thenReturn(list);
-
-        ArgumentCaptor<Interceptor> interceptorCaptor = ArgumentCaptor.forClass(Interceptor.class);
-        AuthenticationAPIClient client = new AuthenticationAPIClient(account, factory, okClient);
-        client.setLoggingEnabled(true);
-
-        verify(okClient).interceptors();
-        verify(list).add(interceptorCaptor.capture());
-
-        assertThat(interceptorCaptor.getValue(), is(notNullValue()));
-        assertThat(interceptorCaptor.getValue(), is(instanceOf(HttpLoggingInterceptor.class)));
-        assertThat(((HttpLoggingInterceptor) interceptorCaptor.getValue()).getLevel(), is(HttpLoggingInterceptor.Level.BODY));
-        assertThat(client.isLoggingEnabled(), is(true));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void shouldDisableHttpLogging() throws Exception {
-        Auth0 account = mock(Auth0.class);
-        RequestFactory factory = mock(RequestFactory.class);
-        OkHttpClient okClient = mock(OkHttpClient.class);
-        List list = mock(List.class);
-        when(okClient.interceptors()).thenReturn(list);
-
-        ArgumentCaptor<Interceptor> interceptorCaptor = ArgumentCaptor.forClass(Interceptor.class);
-        AuthenticationAPIClient client = new AuthenticationAPIClient(account, factory, okClient);
-        client.setLoggingEnabled(false);
-
-        verify(okClient).interceptors();
-        verify(list).add(interceptorCaptor.capture());
-
-        assertThat(interceptorCaptor.getValue(), is(notNullValue()));
-        assertThat(interceptorCaptor.getValue(), is(instanceOf(HttpLoggingInterceptor.class)));
-        assertThat(((HttpLoggingInterceptor) interceptorCaptor.getValue()).getLevel(), is(HttpLoggingInterceptor.Level.NONE));
-        assertThat(client.isLoggingEnabled(), is(false));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void shouldHaveHttpLoggingDisabledByDefault() throws Exception {
-        Auth0 account = mock(Auth0.class);
+        when(account.isLoggingEnabled()).thenReturn(true);
         RequestFactory factory = mock(RequestFactory.class);
         OkHttpClient okClient = mock(OkHttpClient.class);
         List list = mock(List.class);
@@ -213,8 +170,38 @@ public class AuthenticationAPIClientTest {
 
         assertThat(interceptorCaptor.getValue(), is(notNullValue()));
         assertThat(interceptorCaptor.getValue(), is(instanceOf(HttpLoggingInterceptor.class)));
-        assertThat(((HttpLoggingInterceptor) interceptorCaptor.getValue()).getLevel(), is(HttpLoggingInterceptor.Level.NONE));
-        assertThat(client.isLoggingEnabled(), is(false));
+        assertThat(((HttpLoggingInterceptor) interceptorCaptor.getValue()).getLevel(), is(HttpLoggingInterceptor.Level.BODY));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void shouldDisableHttpLogging() throws Exception {
+        Auth0 account = mock(Auth0.class);
+        when(account.isLoggingEnabled()).thenReturn(false);
+        RequestFactory factory = mock(RequestFactory.class);
+        OkHttpClient okClient = mock(OkHttpClient.class);
+        List list = mock(List.class);
+        when(okClient.interceptors()).thenReturn(list);
+
+        new AuthenticationAPIClient(account, factory, okClient);
+
+        verify(okClient, never()).interceptors();
+        verify(list, never()).add(any(Interceptor.class));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void shouldHaveHttpLoggingDisabledByDefault() throws Exception {
+        Auth0 account = mock(Auth0.class);
+        RequestFactory factory = mock(RequestFactory.class);
+        OkHttpClient okClient = mock(OkHttpClient.class);
+        List list = mock(List.class);
+        when(okClient.interceptors()).thenReturn(list);
+
+        new AuthenticationAPIClient(account, factory, okClient);
+
+        verify(okClient, never()).interceptors();
+        verify(list, never()).add(any(Interceptor.class));
     }
 
     @Test

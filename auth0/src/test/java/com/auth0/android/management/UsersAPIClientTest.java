@@ -145,27 +145,7 @@ public class UsersAPIClientTest {
     @Test
     public void shouldEnableHttpLogging() throws Exception {
         Auth0 account = mock(Auth0.class);
-        RequestFactory factory = mock(RequestFactory.class);
-        OkHttpClient okClient = mock(OkHttpClient.class);
-        List list = mock(List.class);
-        when(okClient.interceptors()).thenReturn(list);
-
-        ArgumentCaptor<Interceptor> interceptorCaptor = ArgumentCaptor.forClass(Interceptor.class);
-        UsersAPIClient client = new UsersAPIClient(account, factory, okClient);
-        client.enableLogging();
-
-        verify(okClient).interceptors();
-        verify(list).add(interceptorCaptor.capture());
-
-        assertThat(interceptorCaptor.getValue(), is(notNullValue()));
-        assertThat(interceptorCaptor.getValue(), is(instanceOf(HttpLoggingInterceptor.class)));
-        assertThat(((HttpLoggingInterceptor) interceptorCaptor.getValue()).getLevel(), is(HttpLoggingInterceptor.Level.BODY));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void shouldHaveHttpLoggingDisabledByDefault() throws Exception {
-        Auth0 account = mock(Auth0.class);
+        when(account.isLoggingEnabled()).thenReturn(true);
         RequestFactory factory = mock(RequestFactory.class);
         OkHttpClient okClient = mock(OkHttpClient.class);
         List list = mock(List.class);
@@ -179,7 +159,38 @@ public class UsersAPIClientTest {
 
         assertThat(interceptorCaptor.getValue(), is(notNullValue()));
         assertThat(interceptorCaptor.getValue(), is(instanceOf(HttpLoggingInterceptor.class)));
-        assertThat(((HttpLoggingInterceptor) interceptorCaptor.getValue()).getLevel(), is(HttpLoggingInterceptor.Level.NONE));
+        assertThat(((HttpLoggingInterceptor) interceptorCaptor.getValue()).getLevel(), is(HttpLoggingInterceptor.Level.BODY));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void shouldDisableHttpLogging() throws Exception {
+        Auth0 account = mock(Auth0.class);
+        when(account.isLoggingEnabled()).thenReturn(false);
+        RequestFactory factory = mock(RequestFactory.class);
+        OkHttpClient okClient = mock(OkHttpClient.class);
+        List list = mock(List.class);
+        when(okClient.interceptors()).thenReturn(list);
+
+        new UsersAPIClient(account, factory, okClient);
+
+        verify(okClient, never()).interceptors();
+        verify(list, never()).add(any(Interceptor.class));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void shouldHaveHttpLoggingDisabledByDefault() throws Exception {
+        Auth0 account = mock(Auth0.class);
+        RequestFactory factory = mock(RequestFactory.class);
+        OkHttpClient okClient = mock(OkHttpClient.class);
+        List list = mock(List.class);
+        when(okClient.interceptors()).thenReturn(list);
+
+        new UsersAPIClient(account, factory, okClient);
+
+        verify(okClient, never()).interceptors();
+        verify(list, never()).add(any(Interceptor.class));
     }
 
     @Test
