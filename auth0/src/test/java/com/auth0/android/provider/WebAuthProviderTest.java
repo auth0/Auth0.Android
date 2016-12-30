@@ -458,6 +458,19 @@ public class WebAuthProviderTest {
     }
 
     @Test
+    public void shouldSetNonNullState() throws Exception {
+        WebAuthProvider.init(account)
+                .withState(null)
+                .start(activity, callback);
+
+        verify(activity).startActivity(intentCaptor.capture());
+        Uri uri = intentCaptor.getValue().getData();
+        assertThat(uri, is(notNullValue()));
+
+        assertThat(uri, hasParamWithValue(is("state"), not(isEmptyOrNullString())));
+    }
+
+    @Test
     public void shouldSetStateFromParameters() throws Exception {
         Map<String, Object> parameters = Collections.singletonMap("state", (Object) "1234567890");
         WebAuthProvider.init(account)
@@ -545,6 +558,20 @@ public class WebAuthProviderTest {
     @Test
     public void shouldHaveDefaultNonce() throws Exception {
         WebAuthProvider.init(account)
+                .withResponseType(ResponseType.ID_TOKEN)
+                .start(activity, callback);
+
+        verify(activity).startActivity(intentCaptor.capture());
+        Uri uri = intentCaptor.getValue().getData();
+        assertThat(uri, is(notNullValue()));
+
+        assertThat(uri, hasParamWithValue(is("nonce"), not(isEmptyOrNullString())));
+    }
+
+    @Test
+    public void shouldSetNonNullNonce() throws Exception {
+        WebAuthProvider.init(account)
+                .withNonce(null)
                 .withResponseType(ResponseType.ID_TOKEN)
                 .start(activity, callback);
 
@@ -1328,10 +1355,11 @@ public class WebAuthProviderTest {
     @Test
     public void shouldFailToResumeWithIntentWithInvalidNonce() throws Exception {
         WebAuthProvider.init(account)
+                .withState("state")
                 .withNonce("0987654321")
                 .withResponseType(ResponseType.ID_TOKEN)
                 .start(activity, callback);
-        Intent intent = createAuthIntent(createHash("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk", null, null, null, null, null));
+        Intent intent = createAuthIntent(createHash("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk", null, null, null, "state", null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -1345,10 +1373,11 @@ public class WebAuthProviderTest {
     @Test
     public void shouldFailToResumeWithRequestCodeWithInvalidNonce() throws Exception {
         WebAuthProvider.init(account)
+                .withState("state")
                 .withNonce("0987654321")
                 .withResponseType(ResponseType.ID_TOKEN)
                 .start(activity, callback, REQUEST_CODE);
-        Intent intent = createAuthIntent(createHash("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk", null, null, null, null, null));
+        Intent intent = createAuthIntent(createHash("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk", null, null, null, "state", null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());

@@ -112,44 +112,44 @@ class OAuthManager {
         logDebug("The parsed CallbackURI contains the following values: " + values);
 
         try {
-            checkErrorValue(values.get(KEY_ERROR));
-            checkStateValue(values.get(KEY_STATE));
-            checkNonceValue(values.get(KEY_NONCE), values.get(KEY_ID_TOKEN));
+            assertNoError(values.get(KEY_ERROR));
+            assertValidState(parameters.get(KEY_STATE), values.get(KEY_STATE));
+            if (parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_ID_TOKEN)) {
+                assertValidNonce(parameters.get(KEY_NONCE), values.get(KEY_ID_TOKEN));
+            }
+
+            Log.d(TAG, "Authenticated using web flow");
+            final Credentials urlCredentials = new Credentials(values.get(KEY_ID_TOKEN), values.get(KEY_ACCESS_TOKEN), values.get(KEY_TOKEN_TYPE), values.get(KEY_REFRESH_TOKEN));
+            if (!shouldUsePKCE()) {
+                callback.onSuccess(urlCredentials);
+            } else {
+                //Finish Code Exchange
+                pkce.getToken(values.get(KEY_CODE), new AuthCallback() {
+                    @Override
+                    public void onFailure(@NonNull Dialog dialog) {
+                        callback.onFailure(dialog);
+                    }
+
+                    @Override
+                    public void onFailure(AuthenticationException exception) {
+                        callback.onFailure(exception);
+                    }
+
+                    @Override
+                    public void onSuccess(@NonNull Credentials codeCredentials) {
+                        callback.onSuccess(mergeCredentials(urlCredentials, codeCredentials));
+                    }
+                });
+            }
         } catch (AuthenticationException e) {
             callback.onFailure(e);
-            return true;
         }
-
-        Log.d(TAG, "Authenticated using web flow");
-        final Credentials urlCredentials = new Credentials(values.get(KEY_ID_TOKEN), values.get(KEY_ACCESS_TOKEN), values.get(KEY_TOKEN_TYPE), values.get(KEY_REFRESH_TOKEN));
-        if (!shouldUsePKCE()) {
-            callback.onSuccess(urlCredentials);
-            return true;
-        }
-
-        //Finish Code Exchange
-        pkce.getToken(values.get(KEY_CODE), new AuthCallback() {
-            @Override
-            public void onFailure(@NonNull Dialog dialog) {
-                callback.onFailure(dialog);
-            }
-
-            @Override
-            public void onFailure(AuthenticationException exception) {
-                callback.onFailure(exception);
-            }
-
-            @Override
-            public void onSuccess(@NonNull Credentials codeCredentials) {
-                callback.onSuccess(mergeCredentials(urlCredentials, codeCredentials));
-            }
-        });
         return true;
     }
 
     //Helper Methods
 
-    private void checkErrorValue(String errorValue) throws AuthenticationException {
+    private void assertNoError(String errorValue) throws AuthenticationException {
         if (errorValue == null) {
             return;
         }
@@ -161,18 +161,26 @@ class OAuthManager {
         }
     }
 
-    private void checkStateValue(String receivedState) throws AuthenticationException {
-        String sentState = parameters.get(KEY_STATE);
-        if (receivedState != null && sentState != null && !receivedState.equals(sentState)) {
-            Log.e(TAG, String.format("Received state doesn't match. Received %s but expected %s", receivedState, sentState));
+    @VisibleForTesting
+    static void assertValidState(@NonNull String requestState, @Nullable String responseState) throws AuthenticationException {
+        if (!requestState.equals(responseState)) {
+            Log.e(TAG, String.format("Received state doesn't match. Received %s but expected %s", responseState, requestState));
             throw new AuthenticationException(ERROR_VALUE_ACCESS_DENIED, "The received state is invalid. Try again.");
         }
     }
 
-    private void checkNonceValue(String receivedNonce, String idToken) throws AuthenticationException {
-        String sentNonce = parameters.get(KEY_NONCE);
-        if (parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_ID_TOKEN) && (idToken == null || !hasValidNonce(sentNonce, idToken))) {
-            Log.e(TAG, String.format("Received nonce doesn't match. Received %s but expected %s", receivedNonce, sentNonce));
+    @VisibleForTesting
+    static void assertValidNonce(@NonNull String requestNonce, @NonNull String idToken) throws AuthenticationException {
+        boolean valid = false;
+        try {
+            final JWT token = new JWT(idToken);
+            final Claim nonceClaim = token.getClaim(KEY_NONCE);
+            valid = requestNonce.equals(nonceClaim.asString());
+        } catch (DecodeException e) {
+            Log.e(TAG, "An exception occurred when trying to validate the token's 'nonce' claim. " + e.getMessage(), e);
+        }
+        if (!valid) {
+            Log.e(TAG, "Received nonce doesn't match.");
             throw new AuthenticationException(ERROR_VALUE_ACCESS_DENIED, "The received nonce is invalid. Try again.");
         }
     }
@@ -193,7 +201,7 @@ class OAuthManager {
             return;
         }
         try {
-            pkce = createPKCE(redirectUri);
+            createPKCE(redirectUri);
             String codeChallenge = pkce.getCodeChallenge();
             parameters.put(KEY_CODE_CHALLENGE, codeChallenge);
             parameters.put(KEY_CODE_CHALLENGE_METHOD, METHOD_SHA_256);
@@ -221,11 +229,10 @@ class OAuthManager {
         parameters.put(KEY_REDIRECT_URI, redirectUri);
     }
 
-    private PKCE createPKCE(String redirectUri) {
-        if (pkce != null) {
-            return pkce;
+    private void createPKCE(String redirectUri) {
+        if (pkce == null) {
+            pkce = new PKCE(new AuthenticationAPIClient(account), redirectUri);
         }
-        return new PKCE(new AuthenticationAPIClient(account), redirectUri);
     }
 
     private boolean shouldUsePKCE() {
@@ -250,17 +257,6 @@ class OAuthManager {
         final String refreshToken = codeCredentials.getRefreshToken() != null ? codeCredentials.getRefreshToken() : urlCredentials.getRefreshToken();
 
         return new Credentials(idToken, accessToken, type, refreshToken);
-    }
-
-    @VisibleForTesting
-    static boolean hasValidNonce(@Nullable String nonce, @NonNull String token) {
-        try {
-            final JWT idToken = new JWT(token);
-            final Claim nonceClaim = idToken.getClaim(KEY_NONCE);
-            return nonce != null && nonceClaim != null && nonce.equals(nonceClaim.asString());
-        } catch (DecodeException e) {
-            return false;
-        }
     }
 
     @VisibleForTesting

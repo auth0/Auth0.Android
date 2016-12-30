@@ -338,11 +338,11 @@ public class WebAuthProvider {
             return false;
         }
         final AuthorizeResult data = new AuthorizeResult(requestCode, resultCode, intent);
-        boolean result = managerInstance.resumeAuthorization(data);
-        if (result) {
+        boolean success = managerInstance.resumeAuthorization(data);
+        if (success) {
             managerInstance = null;
         }
-        return result;
+        return success;
     }
 
     /**
@@ -358,11 +358,11 @@ public class WebAuthProvider {
             return false;
         }
         final AuthorizeResult data = new AuthorizeResult(intent);
-        boolean result = managerInstance.resumeAuthorization(data);
-        if (result) {
+        boolean success = managerInstance.resumeAuthorization(data);
+        if (success) {
             managerInstance = null;
         }
-        return result;
+        return success;
     }
 
     // End Public methods

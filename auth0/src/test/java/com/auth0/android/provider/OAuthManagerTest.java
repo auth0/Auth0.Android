@@ -1,10 +1,13 @@
 package com.auth0.android.provider;
 
 import com.auth0.android.Auth0;
+import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.result.Credentials;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -22,6 +25,9 @@ import static org.junit.Assert.assertTrue;
 @RunWith(RobolectricTestRunner.class)
 @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 18, manifest = Config.NONE)
 public class OAuthManagerTest {
+
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
 
     @Mock
     Auth0 account;
@@ -84,18 +90,37 @@ public class OAuthManagerTest {
     }
 
     @Test
+    public void shouldHaveValidState() throws Exception {
+        OAuthManager.assertValidState("1234567890", "1234567890");
+    }
+
+    @Test
+    public void shouldHaveInvalidState() throws Exception {
+        exception.expect(AuthenticationException.class);
+        OAuthManager.assertValidState("0987654321", "1234567890");
+    }
+
+    @Test
+    public void shouldHaveInvalidStateWhenOneIsNull() throws Exception {
+        exception.expect(AuthenticationException.class);
+        OAuthManager.assertValidState("0987654321", null);
+    }
+
+    @Test
     public void shouldHaveValidNonce() throws Exception {
-        assertTrue(OAuthManager.hasValidNonce("1234567890", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk"));
+        OAuthManager.assertValidNonce("1234567890", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk");
     }
 
     @Test
     public void shouldHaveInvalidNonce() throws Exception {
-        assertFalse(OAuthManager.hasValidNonce("0987654321", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk"));
+        exception.expect(AuthenticationException.class);
+        OAuthManager.assertValidNonce("0987654321", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk");
     }
 
     @Test
     public void shouldHaveInvalidNonceOnDecodeException() throws Exception {
-        assertFalse(OAuthManager.hasValidNonce("0987654321", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVC.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk"));
+        exception.expect(AuthenticationException.class);
+        OAuthManager.assertValidNonce("0987654321", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVC.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk");
     }
 
 }
