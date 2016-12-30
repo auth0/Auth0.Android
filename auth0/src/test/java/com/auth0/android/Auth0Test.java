@@ -30,10 +30,13 @@ import android.content.res.Resources;
 import com.auth0.android.util.Telemetry;
 import com.squareup.okhttp.HttpUrl;
 
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 
 import static com.auth0.android.util.HttpUrlMatcher.hasHost;
 import static com.auth0.android.util.HttpUrlMatcher.hasPath;
@@ -51,6 +54,8 @@ public class Auth0Test {
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
+    @Mock
+    public Context context;
 
     private static final String CLIENT_ID = "CLIENT_ID";
     private static final String DOMAIN = "samples.auth0.com";
@@ -59,10 +64,35 @@ public class Auth0Test {
     private static final String AU_DOMAIN = "samples.au.auth0.com";
     private static final String OTHER_DOMAIN = "samples-test.other-subdomain.other.auth0.com";
 
+    @Before
+    public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+    }
+
+    @Test
+    public void shouldBeOIDCConformant() throws Exception {
+        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
+        auth0.setOIDCConformant(true);
+
+        assertThat(auth0.isOIDCConformant(), is(true));
+    }
+
+    @Test
+    public void shouldNotBeOIDCConformant() throws Exception {
+        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
+        auth0.setOIDCConformant(false);
+
+        assertThat(auth0.isOIDCConformant(), is(false));
+    }
+
+    @Test
+    public void shouldNotBeOIDCConformantByDefault() throws Exception {
+        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
+        assertThat(auth0.isOIDCConformant(), is(false));
+    }
 
     @Test
     public void shouldBuildFromResources() throws Exception {
-        Context context = Mockito.mock(Context.class);
         Resources resources = Mockito.mock(Resources.class);
         when(context.getResources()).thenReturn(resources);
         when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), anyString())).thenReturn(222);
@@ -81,7 +111,6 @@ public class Auth0Test {
 
     @Test
     public void shouldFailToBuildFromResourcesWithoutClientID() throws Exception {
-        Context context = Mockito.mock(Context.class);
         Resources resources = Mockito.mock(Resources.class);
         when(context.getResources()).thenReturn(resources);
         when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), anyString())).thenReturn(0);
@@ -95,7 +124,6 @@ public class Auth0Test {
 
     @Test
     public void shouldFailToBuildFromResourcesWithoutDomain() throws Exception {
-        Context context = Mockito.mock(Context.class);
         Resources resources = Mockito.mock(Resources.class);
         when(context.getResources()).thenReturn(resources);
         when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), anyString())).thenReturn(222);

@@ -154,31 +154,6 @@ public class AuthenticationAPIClientTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void shouldUseLegacyMode() throws Exception {
-        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-        client.setOIDCConformant(true);
-
-        assertThat(client.isOIDCConformant(), is(true));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void shouldNotUseLegacyMode() throws Exception {
-        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-        client.setOIDCConformant(false);
-
-        assertThat(client.isOIDCConformant(), is(false));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void shouldUseLegacyModeByDefault() throws Exception {
-        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-        assertThat(client.isOIDCConformant(), is(false));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
     public void shouldEnableHttpLogging() throws Exception {
         Auth0 account = mock(Auth0.class);
         RequestFactory factory = mock(RequestFactory.class);
@@ -312,8 +287,9 @@ public class AuthenticationAPIClientTest {
         mockAPI.willReturnSuccessfulLogin();
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
 
+        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        auth0.setOIDCConformant(true);
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-        client.setOIDCConformant(true);
         client.login(SUPPORT_AUTH0_COM, "some-password", MY_CONNECTION)
                 .start(callback);
         assertThat(callback, hasPayloadOfType(Credentials.class));
@@ -781,8 +757,9 @@ public class AuthenticationAPIClientTest {
                 .willReturnSuccessfulLogin();
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
+        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        auth0.setOIDCConformant(true);
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-        client.setOIDCConformant(true);
         client.signUp(SUPPORT_AUTH0_COM, PASSWORD, SUPPORT, MY_CONNECTION)
                 .start(callback);
 
@@ -912,8 +889,9 @@ public class AuthenticationAPIClientTest {
                 .willReturnTokenInfo();
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
+        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        auth0.setOIDCConformant(true);
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-        client.setOIDCConformant(true);
         client.signUp(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
                 .start(callback);
 
@@ -946,7 +924,9 @@ public class AuthenticationAPIClientTest {
                 .willReturnSuccessfulLogin()
                 .willReturnTokenInfo();
 
-        client.setOIDCConformant(false);
+        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        auth0.setOIDCConformant(false);
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
         final Credentials credentials = client
                 .signUp(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
                 .execute();

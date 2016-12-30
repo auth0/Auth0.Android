@@ -96,9 +96,8 @@ public class AuthenticationAPIClient {
     private final OkHttpClient client;
     private final HttpLoggingInterceptor logInterceptor;
     private final Gson gson;
-    private final com.auth0.android.request.internal.RequestFactory factory;
+    private final RequestFactory factory;
     private final ErrorBuilder<AuthenticationException> authErrorBuilder;
-    private boolean oidcConformant;
 
 
     /**
@@ -133,35 +132,10 @@ public class AuthenticationAPIClient {
         this.gson = gson;
         this.factory = factory;
         this.authErrorBuilder = new AuthenticationErrorBuilder();
-        this.oidcConformant = false;
         final Telemetry telemetry = auth0.getTelemetry();
         if (telemetry != null) {
             factory.setClientInfo(telemetry.getValue());
         }
-    }
-
-    /**
-     * Defines if the client uses OIDC conformant authentication endpoints. By default is {@code false}
-     *
-     * You will need to enable this setting in the Auth0 Dashboard first: Go to Account (top right), Account Settings, click Advanced and check the toggle at the bottom.
-     * This setting affects how authentication is performed in the following methods:
-     * <ul>
-     *     <li>{@link AuthenticationAPIClient#login(String, String, String)}</li>
-     *     <li>{@link AuthenticationAPIClient#signUp(String, String, String)}</li>
-     *     <li>{@link AuthenticationAPIClient#signUp(String, String, String, String)}</li>
-     * </ul>
-     *
-     * @param enabled if Lock will use the Legacy Auth API or the new OIDC Conformant Auth API.
-     */
-    public void setOIDCConformant(boolean enabled) {
-        this.oidcConformant = enabled;
-    }
-
-    /**
-     * If the clients works in OIDC conformant mode or not
-     */
-    public boolean isOIDCConformant() {
-        return oidcConformant;
     }
 
     /**
@@ -199,10 +173,10 @@ public class AuthenticationAPIClient {
 
     /**
      * Log in a user with email/username and password for a connection/realm.
-     *
-     * In OIDC conformant mode ({@link AuthenticationAPIClient#isOIDCConformant()}) it will use the password-realm grant type for the {@code /oauth/token} endpoint
+     * <p>
+     * In OIDC conformant mode ({@link Auth0#isOIDCConformant()}) it will use the password-realm grant type for the {@code /oauth/token} endpoint
      * otherwise it will use {@code /oauth/ro}
-     *
+     * <p>
      * Example:
      * <pre><code>
      * client
@@ -228,12 +202,12 @@ public class AuthenticationAPIClient {
                 .set(USERNAME_KEY, usernameOrEmail)
                 .set(PASSWORD_KEY, password);
 
-        if (oidcConformant) {
+        if (auth0.isOIDCConformant()) {
             final Map<String, Object> parameters = builder
                     .setGrantType(GRANT_TYPE_PASSWORD_REALM)
                     .setRealm(realmOrConnection)
                     .asDictionary();
-            return  loginWithToken(parameters);
+            return loginWithToken(parameters);
         } else {
             final Map<String, Object> parameters = builder
                     .setGrantType(GRANT_TYPE_PASSWORD)
@@ -541,7 +515,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Creates a user in a DB connection using <a href="https://auth0.com/docs/auth-api#!#post--dbconnections-signup">'/dbconnections/signup' endpoint</a>
-     * and then logs in the user. How the user is logged in depends on the {@link AuthenticationAPIClient#isOIDCConformant()} flag.
+     * and then logs in the user. How the user is logged in depends on the {@link Auth0#isOIDCConformant()} flag.
      * Example usage:
      * <pre><code>
      * client.signUp("{email}", "{password}", "{username}", "{database connection name}")
@@ -570,7 +544,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Creates a user in a DB connection using <a href="https://auth0.com/docs/auth-api#!#post--dbconnections-signup">'/dbconnections/signup' endpoint</a>
-     * and then logs in the user. How the user is logged in depends on the {@link AuthenticationAPIClient#isOIDCConformant()} flag.
+     * and then logs in the user. How the user is logged in depends on the {@link Auth0#isOIDCConformant()} flag.
      * Example usage:
      * <pre><code>
      * client.signUp("{email}", "{password}", "{database connection name}")
