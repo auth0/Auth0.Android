@@ -14,7 +14,7 @@ public class TelemetryTest {
 
     @Before
     public void setUp() throws Exception {
-        telemetry = new Telemetry("auth0-java", "1.0.0");
+        telemetry = new Telemetry("auth0-java", "1.0.0", "1.2.3");
     }
 
     @Test
@@ -26,5 +26,20 @@ public class TelemetryTest {
     public void shouldReturnNullWhenNoInfoIsProvided() throws Exception {
         telemetry = new Telemetry(null, null);
         assertThat(telemetry.getValue(), is(nullValue()));
+    }
+
+    @Test
+    public void shouldGetName() throws Exception {
+        assertThat(telemetry.getName(), is("auth0-java"));
+    }
+
+    @Test
+    public void shouldGetVersion() throws Exception {
+        assertThat(telemetry.getVersion(), is("1.0.0"));
+    }
+
+    @Test
+    public void shouldGetLibraryVersion() throws Exception {
+        assertThat(telemetry.getLibraryVersion(), is("1.2.3"));
     }
 }

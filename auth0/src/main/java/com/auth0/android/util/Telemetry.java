@@ -26,6 +26,18 @@ public class Telemetry {
         this.libraryVersion = libraryVersion;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public String getLibraryVersion() {
+        return libraryVersion;
+    }
+
     public String getValue() {
         Map<String, String> values = new HashMap<>();
         if (name != null) {
