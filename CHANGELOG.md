@@ -1,5 +1,26 @@
 # Change Log
 
+## [1.4.0](https://github.com/auth0/Auth0.Android/tree/1.4.0) (2017-01-02)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.3.0...1.4.0)
+
+**Added**
+- Update Proguard rules and include them on the packaging [\#66](https://github.com/auth0/Auth0.Android/pull/66) ([lbalmaceda](https://github.com/lbalmaceda))
+- Add base values getters for the Telemetry class [\#63](https://github.com/auth0/Auth0.Android/pull/63) ([lbalmaceda](https://github.com/lbalmaceda))
+- Add warning log message when custom scheme is not lower case [\#58](https://github.com/auth0/Auth0.Android/pull/58) ([lbalmaceda](https://github.com/lbalmaceda))
+- Add flag to authenticate with OIDC mode [\#57](https://github.com/auth0/Auth0.Android/pull/57) ([lbalmaceda](https://github.com/lbalmaceda))
+- Customize the Scheme used in the redirect_uri parameter [\#54](https://github.com/auth0/Auth0.Android/pull/54) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Changed**
+- Remove required fields check on UserProfile deserializing [\#65](https://github.com/auth0/Auth0.Android/pull/65) ([lbalmaceda](https://github.com/lbalmaceda))
+- Migrate OIDCConformant flag into Auth0 class [\#62](https://github.com/auth0/Auth0.Android/pull/62) ([lbalmaceda](https://github.com/lbalmaceda))
+- Use password-realm grant for /oauth/token endpoint [\#56](https://github.com/auth0/Auth0.Android/pull/56) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Fixed**
+- Fix bug when parsing PasswordStrength errors into AuthenticationException [\#60](https://github.com/auth0/Auth0.Android/pull/60) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Breaking changes**
+- Migrate loggingEnabled flag to Auth0 class [\#64](https://github.com/auth0/Auth0.Android/pull/64) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.3.0](https://github.com/auth0/Auth0.Android/tree/1.3.0) (2016-12-12)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.2.0...1.3.0)
 
