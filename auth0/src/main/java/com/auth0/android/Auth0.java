@@ -156,6 +156,7 @@ public class Auth0 {
      * <li>{@link AuthenticationAPIClient#login(String, String, String)}</li>
      * <li>{@link AuthenticationAPIClient#signUp(String, String, String)}</li>
      * <li>{@link AuthenticationAPIClient#signUp(String, String, String, String)}</li>
+     * <li>{@link AuthenticationAPIClient#renewAuth(String)}</li>
      * </ul>
      *
      * @param enabled if Lock will use the Legacy Auth API or the new OIDC Conformant Auth API.
