@@ -592,7 +592,9 @@ public class AuthenticationAPIClient {
     }
 
     /**
-     * Requests new Credentials using a valid Refresh Token. How the new Credentials are requested depends on the {@link Auth0#isOIDCConformant()} flag.
+     * Requests new Credentials using a valid Refresh Token. The received token will have the same audience and scope as first requested. How the new Credentials are requested depends on the {@link Auth0#isOIDCConformant()} flag.
+     * - If the instance is OIDC Conformant the endpoint will be /oauth/token with 'refresh_token' grant, and the response will include an id_token and an access_token if 'openid' scope was requested when the refresh_token was obtained.
+     * - If the instance is not OIDC Conformant the endpoint will be /delegation with 'urn:ietf:params:oauth:grant-type:jwt-bearer' grant, and the response will include an id_token.
      * <p>
      * Example usage:
      * <pre><code>
