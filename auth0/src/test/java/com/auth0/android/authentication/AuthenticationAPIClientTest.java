@@ -1574,9 +1574,12 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldRenewAuth() throws Exception {
-        mockAPI.willReturnSuccessfulLogin();
+    public void shouldRenewAuthWithOAuthTokenIfOIDCConformant() throws Exception {
+        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        auth0.setOIDCConformant(true);
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
 
+        mockAPI.willReturnSuccessfulLogin();
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         client.renewAuth("refreshToken")
                 .start(callback);
@@ -1594,9 +1597,12 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldRenewAuthSync() throws Exception {
-        mockAPI.willReturnSuccessfulLogin();
+    public void shouldRenewAuthWithOAuthTokenIfOIDCConformantSync() throws Exception {
+        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        auth0.setOIDCConformant(true);
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
 
+        mockAPI.willReturnSuccessfulLogin();
         Credentials credentials = client.renewAuth("refreshToken")
                 .execute();
 
@@ -1611,6 +1617,52 @@ public class AuthenticationAPIClientTest {
 
         assertThat(credentials, is(notNullValue()));
     }
+
+    @Test
+    public void shouldRenewAuthWithDelegationIfNotOIDCConformant() throws Exception {
+        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        auth0.setOIDCConformant(false);
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
+
+        mockAPI.willReturnSuccessfulLogin();
+        final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
+        client.renewAuth("refreshToken")
+                .start(callback);
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+        assertThat(request.getPath(), equalTo("/delegation"));
+
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("client_id", CLIENT_ID));
+        assertThat(body, hasEntry("refresh_token", "refreshToken"));
+        assertThat(body, hasEntry("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer"));
+
+        assertThat(callback, hasPayloadOfType(Credentials.class));
+    }
+
+    @Test
+    public void shouldRenewAuthWithDelegationIfNotOIDCConformantSync() throws Exception {
+        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        auth0.setOIDCConformant(false);
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
+
+        mockAPI.willReturnSuccessfulLogin();
+        Credentials credentials = client.renewAuth("refreshToken")
+                .execute();
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+        assertThat(request.getPath(), equalTo("/delegation"));
+
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("client_id", CLIENT_ID));
+        assertThat(body, hasEntry("refresh_token", "refreshToken"));
+        assertThat(body, hasEntry("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer"));
+
+        assertThat(credentials, is(notNullValue()));
+    }
+
 
     @Test
     public void shouldFetchProfileSyncAfterLoginRequest() throws Exception {

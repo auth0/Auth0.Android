@@ -138,7 +138,7 @@ public class AuthenticationAPIClient {
             factory.setClientInfo(telemetry.getValue());
         }
     }
-    
+
     public String getClientId() {
         return auth0.getClientId();
     }
@@ -592,7 +592,10 @@ public class AuthenticationAPIClient {
     }
 
     /**
-     * Requests new Credentials using a valid Refresh Token.
+     * Requests new Credentials using a valid Refresh Token. The received token will have the same audience and scope as first requested. How the new Credentials are requested depends on the {@link Auth0#isOIDCConformant()} flag.
+     * - If the instance is OIDC Conformant the endpoint will be /oauth/token with 'refresh_token' grant, and the response will include an id_token and an access_token if 'openid' scope was requested when the refresh_token was obtained.
+     * - If the instance is not OIDC Conformant the endpoint will be /delegation with 'urn:ietf:params:oauth:grant-type:jwt-bearer' grant, and the response will include an id_token.
+     * <p>
      * Example usage:
      * <pre><code>
      * client.renewAuth("{refresh_token}")
@@ -614,13 +617,20 @@ public class AuthenticationAPIClient {
         final Map<String, Object> parameters = ParameterBuilder.newBuilder()
                 .setClientId(getClientId())
                 .setRefreshToken(refreshToken)
-                .setGrantType(ParameterBuilder.GRANT_TYPE_REFRESH_TOKEN)
+                .setGrantType(auth0.isOIDCConformant() ? ParameterBuilder.GRANT_TYPE_REFRESH_TOKEN : ParameterBuilder.GRANT_TYPE_JWT)
                 .asDictionary();
 
-        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
-                .addPathSegment(OAUTH_PATH)
-                .addPathSegment(TOKEN_PATH)
-                .build();
+        HttpUrl url;
+        if (auth0.isOIDCConformant()) {
+            url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+                    .addPathSegment(OAUTH_PATH)
+                    .addPathSegment(TOKEN_PATH)
+                    .build();
+        } else {
+            url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+                    .addPathSegment(DELEGATION_PATH)
+                    .build();
+        }
 
         return factory.POST(url, client, gson, Credentials.class, authErrorBuilder)
                 .addParameters(parameters);
