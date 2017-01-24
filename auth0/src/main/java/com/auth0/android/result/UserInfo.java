@@ -1,7 +1,7 @@
 /*
- * Authentication.java
+ * UserProfile.java
  *
- * Copyright (c) 2016 Auth0 (http://auth0.com)
+ * Copyright (c) 2015 Auth0 (http://auth0.com)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,35 +24,29 @@
 
 package com.auth0.android.result;
 
-
-import com.auth0.android.authentication.AuthenticationAPIClient;
-import com.auth0.android.request.AuthenticationRequest;
-
-import static com.auth0.android.util.CheckHelper.checkArgument;
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * The result of a successful authentication against Auth0
- * Contains the logged in user's {@link Credentials} and {@link UserInfo}.
- *
- * @see AuthenticationAPIClient#getProfileAfter(AuthenticationRequest)
+ * Class that holds the information of an Auth0 User
  */
-public class Authentication {
+public class UserInfo implements Serializable {
 
-    private final UserInfo info;
-    private final Credentials credentials;
+    private Map<String, Object> values;
 
-    public Authentication(UserInfo info, Credentials credentials) {
-        checkArgument(info != null, "info must be non-null");
-        checkArgument(credentials != null, "credentials must be non-null");
-        this.info = info;
-        this.credentials = credentials;
+    public UserInfo(Map<String, Object> values) {
+        this.values = values;
     }
 
-    public UserInfo getUserInfo() {
-        return info;
+    /**
+     * Returns information contained in the user
+     *
+     * @return a map with user's information
+     */
+    public Map<String, Object> getValues() {
+        return values != null ? new HashMap<>(values) : Collections.<String, Object>emptyMap();
     }
 
-    public Credentials getCredentials() {
-        return credentials;
-    }
 }

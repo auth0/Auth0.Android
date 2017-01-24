@@ -9,7 +9,7 @@ import static org.junit.Assert.assertThat;
 
 public class AuthenticationTest {
 
-    private UserProfile profile;
+    private UserInfo info;
     private Credentials credentials;
 
     private Authentication authentication;
@@ -17,13 +17,13 @@ public class AuthenticationTest {
     @Before
     public void setUp() throws Exception {
         credentials = Mockito.mock(Credentials.class);
-        profile = Mockito.mock(UserProfile.class);
-        authentication = new Authentication(profile, credentials);
+        info = Mockito.mock(UserInfo.class);
+        authentication = new Authentication(info, credentials);
     }
 
     @Test
-    public void getProfile() throws Exception {
-        assertThat(authentication.getProfile(), is(profile));
+    public void getUserInfo() throws Exception {
+        assertThat(authentication.getUserInfo(), is(info));
     }
 
     @Test

@@ -44,6 +44,7 @@ import com.auth0.android.request.internal.RequestFactory;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.DatabaseUser;
 import com.auth0.android.result.Delegation;
+import com.auth0.android.result.UserInfo;
 import com.auth0.android.result.UserProfile;
 import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
@@ -386,9 +387,9 @@ public class AuthenticationAPIClient {
      * Example usage:
      * <pre><code>
      * client.userInfo("{access_token}")
-     *      .start(new BaseCallback<UserProfile>() {
+     *      .start(new BaseCallback<UserInfo>() {
      *          {@literal}Override
-     *          public void onSuccess(UserProfile payload) { }
+     *          public void onSuccess(UserInfo payload) { }
      *
      *          {@literal}@Override
      *          public void onFailure(AuthenticationException error) { }
@@ -399,7 +400,7 @@ public class AuthenticationAPIClient {
      * @return a request to start
      */
     @SuppressWarnings("WeakerAccess")
-    public Request<UserProfile, AuthenticationException> userInfo(@NonNull String accessToken) {
+    public Request<UserInfo, AuthenticationException> userInfo(@NonNull String accessToken) {
         return profileRequest()
                 .addHeader(HEADER_AUTHORIZATION, "Bearer " + accessToken);
     }
@@ -898,7 +899,7 @@ public class AuthenticationAPIClient {
      * @return a {@link ProfileRequest} that first logins and the fetches the profile
      */
     public ProfileRequest getProfileAfter(@NonNull AuthenticationRequest authenticationRequest) {
-        final ParameterizableRequest<UserProfile, AuthenticationException> profileRequest = profileRequest();
+        final ParameterizableRequest<UserInfo, AuthenticationException> profileRequest = profileRequest();
         return new ProfileRequest(authenticationRequest, profileRequest);
     }
 
@@ -976,12 +977,12 @@ public class AuthenticationAPIClient {
                 .addAuthenticationParameters(requestParameters);
     }
 
-    private ParameterizableRequest<UserProfile, AuthenticationException> profileRequest() {
+    private ParameterizableRequest<UserInfo, AuthenticationException> profileRequest() {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(USER_INFO_PATH)
                 .build();
 
-        return factory.GET(url, client, gson, UserProfile.class, authErrorBuilder);
+        return factory.GET(url, client, gson, UserInfo.class, authErrorBuilder);
     }
 
 }

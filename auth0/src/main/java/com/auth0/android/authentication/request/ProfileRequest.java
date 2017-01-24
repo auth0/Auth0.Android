@@ -32,7 +32,7 @@ import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.request.Request;
 import com.auth0.android.result.Authentication;
 import com.auth0.android.result.Credentials;
-import com.auth0.android.result.UserProfile;
+import com.auth0.android.result.UserInfo;
 
 import java.util.Map;
 
@@ -44,9 +44,9 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
     private static final String HEADER_AUTHORIZATION = "Authorization";
 
     private final AuthenticationRequest credentialsRequest;
-    private final ParameterizableRequest<UserProfile, AuthenticationException> userInfoRequest;
+    private final ParameterizableRequest<UserInfo, AuthenticationException> userInfoRequest;
 
-    public ProfileRequest(AuthenticationRequest credentialsRequest, ParameterizableRequest<UserProfile, AuthenticationException> userInfoRequest) {
+    public ProfileRequest(AuthenticationRequest credentialsRequest, ParameterizableRequest<UserInfo, AuthenticationException> userInfoRequest) {
         this.credentialsRequest = credentialsRequest;
         this.userInfoRequest = userInfoRequest;
     }
@@ -96,10 +96,10 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
             public void onSuccess(final Credentials credentials) {
                 userInfoRequest
                         .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.getAccessToken())
-                        .start(new BaseCallback<UserProfile, AuthenticationException>() {
+                        .start(new BaseCallback<UserInfo, AuthenticationException>() {
                             @Override
-                            public void onSuccess(UserProfile profile) {
-                                callback.onSuccess(new Authentication(profile, credentials));
+                            public void onSuccess(UserInfo info) {
+                                callback.onSuccess(new Authentication(info, credentials));
                             }
 
                             @Override
@@ -125,9 +125,9 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
     @Override
     public Authentication execute() throws Auth0Exception {
         Credentials credentials = credentialsRequest.execute();
-        UserProfile profile = userInfoRequest
+        UserInfo info = userInfoRequest
                 .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.getAccessToken())
                 .execute();
-        return new Authentication(profile, credentials);
+        return new Authentication(info, credentials);
     }
 }

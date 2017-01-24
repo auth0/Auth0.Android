@@ -34,6 +34,7 @@ import com.auth0.android.result.Authentication;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.DatabaseUser;
 import com.auth0.android.result.Delegation;
+import com.auth0.android.result.UserInfo;
 import com.auth0.android.result.UserProfile;
 import com.auth0.android.util.AuthenticationAPI;
 import com.auth0.android.util.MockAuthenticationCallback;
@@ -381,12 +382,12 @@ public class AuthenticationAPIClientTest {
     @Test
     public void shouldFetchUserInfo() throws Exception {
         mockAPI.willReturnTokenInfo();
-        final MockAuthenticationCallback<UserProfile> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<UserInfo> callback = new MockAuthenticationCallback<>();
 
         client.userInfo("ACCESS_TOKEN")
                 .start(callback);
 
-        assertThat(callback, hasPayloadOfType(UserProfile.class));
+        assertThat(callback, hasPayloadOfType(UserInfo.class));
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -398,7 +399,7 @@ public class AuthenticationAPIClientTest {
     public void shouldFetchUserInfoSync() throws Exception {
         mockAPI.willReturnTokenInfo();
 
-        final UserProfile profile = client
+        final UserInfo profile = client
                 .userInfo("ACCESS_TOKEN")
                 .execute();
 
