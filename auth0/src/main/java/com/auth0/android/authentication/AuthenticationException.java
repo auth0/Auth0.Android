@@ -24,6 +24,8 @@
 
 package com.auth0.android.authentication;
 
+import android.util.Log;
+
 import com.auth0.android.Auth0Exception;
 
 import java.util.HashMap;
@@ -73,6 +75,7 @@ public class AuthenticationException extends Auth0Exception {
         this.code = codeValue != null ? codeValue : UNKNOWN_ERROR;
         if (!this.values.containsKey(DESCRIPTION_KEY)) {
             this.description = (String) this.values.get(ERROR_DESCRIPTION_KEY);
+            warnIfOIDCError();
             return;
         }
 
@@ -82,6 +85,12 @@ public class AuthenticationException extends Auth0Exception {
         } else if (isPasswordNotStrongEnough()) {
             PasswordStrengthErrorParser pwStrengthParser = new PasswordStrengthErrorParser((Map<String, Object>) description);
             this.description = pwStrengthParser.getDescription();
+        }
+    }
+
+    private void warnIfOIDCError() {
+        if ("invalid_request".equals(getCode()) && getDescription().startsWith("OIDC conformant clients cannot use")) {
+            Log.w(AuthenticationAPIClient.class.getSimpleName(), "Your Auth0 Client is configured as 'OIDC Conformant' but this instance it's not. To authenticate you will need to enable the flag by calling Auth0#setOIDCConformant(true) on the Auth0 instance you used in the setup.");
         }
     }
 
