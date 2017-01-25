@@ -37,7 +37,7 @@ public class UserInfo implements Serializable {
     private Map<String, Object> values;
 
     public UserInfo(Map<String, Object> values) {
-        this.values = values;
+        this.values = values != null ? new HashMap<>(values) : Collections.<String, Object>emptyMap();
     }
 
     /**
@@ -46,7 +46,7 @@ public class UserInfo implements Serializable {
      * @return a map with user's information
      */
     public Map<String, Object> getValues() {
-        return values != null ? new HashMap<>(values) : Collections.<String, Object>emptyMap();
+        return values;
     }
 
 }

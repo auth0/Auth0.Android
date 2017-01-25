@@ -6,7 +6,6 @@ import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.result.Authentication;
 import com.auth0.android.result.Credentials;
-import com.auth0.android.result.UserInfo;
 import com.auth0.android.result.UserProfile;
 
 import org.hamcrest.CoreMatchers;
@@ -76,11 +75,11 @@ public class ProfileRequestTest {
 
     @Test
     public void shouldReturnAuthenticationAfterStartingTheRequest() throws Exception {
-        final UserInfo userInfo = mock(UserInfo.class);
+        final UserProfile userProfile = mock(UserProfile.class);
         final Credentials credentials = mock(Credentials.class);
 
         final AuthenticationRequestMock authenticationRequestMock = new AuthenticationRequestMock(credentials, null);
-        final ParameterizableRequestMock tokenInfoRequestMock = new ParameterizableRequestMock(userInfo, null);
+        final ParameterizableRequestMock tokenInfoRequestMock = new ParameterizableRequestMock(userProfile, null);
         final BaseCallback callback = mock(BaseCallback.class);
 
         profileRequest = new ProfileRequest(authenticationRequestMock, tokenInfoRequestMock);
@@ -96,8 +95,8 @@ public class ProfileRequestTest {
         assertThat(authenticationCaptor.getValue(), is(instanceOf(Authentication.class)));
         assertThat(authenticationCaptor.getValue().getCredentials(), is(notNullValue()));
         assertThat(authenticationCaptor.getValue().getCredentials(), is(credentials));
-        assertThat(authenticationCaptor.getValue().getUserInfo(), is(notNullValue()));
-        assertThat(authenticationCaptor.getValue().getUserInfo(), is(userInfo));
+        assertThat(authenticationCaptor.getValue().getUserProfile(), is(notNullValue()));
+        assertThat(authenticationCaptor.getValue().getUserProfile(), is(userProfile));
     }
 
     @Test
@@ -145,13 +144,13 @@ public class ProfileRequestTest {
                 return credentials;
             }
         });
-        final UserInfo userInfo = mock(UserInfo.class);
+        final UserProfile userProfile = mock(UserProfile.class);
         when(userInfoMockRequest.addParameter(anyString(), anyObject())).thenReturn(userInfoMockRequest);
         when(userInfoMockRequest.addHeader(anyString(), anyString())).thenReturn(userInfoMockRequest);
         when(userInfoMockRequest.execute()).thenAnswer(new Answer<Object>() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
-                return userInfo;
+                return userProfile;
             }
         });
         final Authentication executeResult = profileRequest.execute();
@@ -162,8 +161,8 @@ public class ProfileRequestTest {
         assertThat(executeResult, is(instanceOf(Authentication.class)));
         assertThat(executeResult.getCredentials(), is(notNullValue()));
         assertThat(executeResult.getCredentials(), is(credentials));
-        assertThat(executeResult.getUserInfo(), is(notNullValue()));
-        assertThat(executeResult.getUserInfo(), is(userInfo));
+        assertThat(executeResult.getUserProfile(), is(notNullValue()));
+        assertThat(executeResult.getUserProfile(), is(userProfile));
     }
 
 }

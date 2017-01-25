@@ -401,8 +401,12 @@ public class AuthenticationAPIClient {
      */
     @SuppressWarnings("WeakerAccess")
     public Request<UserInfo, AuthenticationException> userInfo(@NonNull String accessToken) {
-        return profileRequest()
-                .addHeader(HEADER_AUTHORIZATION, "Bearer " + accessToken);
+        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+                .addPathSegment(USER_INFO_PATH)
+                .build();
+
+        ParameterizableRequest<UserInfo, AuthenticationException> request = factory.GET(url, client, gson, UserInfo.class, authErrorBuilder);
+        return request.addHeader(HEADER_AUTHORIZATION, "Bearer " + accessToken);
     }
 
     /**
@@ -899,7 +903,11 @@ public class AuthenticationAPIClient {
      * @return a {@link ProfileRequest} that first logins and the fetches the profile
      */
     public ProfileRequest getProfileAfter(@NonNull AuthenticationRequest authenticationRequest) {
-        final ParameterizableRequest<UserInfo, AuthenticationException> profileRequest = profileRequest();
+        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+                .addPathSegment(USER_INFO_PATH)
+                .build();
+
+        ParameterizableRequest<UserProfile, AuthenticationException> profileRequest = factory.GET(url, client, gson, UserProfile.class, authErrorBuilder);
         return new ProfileRequest(authenticationRequest, profileRequest);
     }
 
@@ -975,14 +983,6 @@ public class AuthenticationAPIClient {
                 .asDictionary();
         return factory.authenticationPOST(url, client, gson)
                 .addAuthenticationParameters(requestParameters);
-    }
-
-    private ParameterizableRequest<UserInfo, AuthenticationException> profileRequest() {
-        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
-                .addPathSegment(USER_INFO_PATH)
-                .build();
-
-        return factory.GET(url, client, gson, UserInfo.class, authErrorBuilder);
     }
 
 }
