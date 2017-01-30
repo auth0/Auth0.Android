@@ -49,11 +49,12 @@ import java.util.Map;
 
 /**
  * API client for Auth0 Management API.
- * <p/>
- * <pre><code>
+ * <pre>
+ * {@code
  * Auth0 auth0 = new Auth0("your_client_id", "your_domain");
  * UsersAPIClient client = new UsersAPIClient(auth0);
- * </code></pre>
+ * }
+ * </pre>
  *
  * @see <a href="https://auth0.com/docs/api/management/v2">Auth API docs</a>
  */
@@ -135,7 +136,8 @@ public class UsersAPIClient {
     /**
      * Link a user identity calling <a href="https://auth0.com/docs/link-accounts#the-api">'/api/v2/users/:primaryUserId/identities'</a> endpoint
      * Example usage:
-     * <pre><code>
+     * <pre>
+     * {@code
      * client.link("{auth0 primary user id}", "{user secondary token}")
      *      .start(new BaseCallback<List<UserIdentity>>() {
      *          {@literal}Override
@@ -144,7 +146,8 @@ public class UsersAPIClient {
      *          {@literal}Override
      *          public void onFailure(ManagementException error) {}
      *      });
-     * </code></pre>
+     * }
+     * </pre>
      *
      * @param primaryUserId  of the identity to link
      * @param secondaryToken of the secondary identity obtained after login
@@ -173,7 +176,8 @@ public class UsersAPIClient {
     /**
      * Unlink a user identity calling <a href="https://auth0.com/docs/link-accounts#unlinking-accounts">'/api/v2/users/:primaryToken/identities/secondaryProvider/secondaryUserId'</a> endpoint
      * Example usage:
-     * <pre><code>
+     * <pre>
+     * {@code
      * client.unlink("{auth0 primary user id}", {auth0 secondary user id}, "{secondary provider}")
      *      .start(new BaseCallback<List<UserIdentity>>() {
      *          {@literal}Override
@@ -182,7 +186,8 @@ public class UsersAPIClient {
      *          {@literal}Override
      *          public void onFailure(ManagementException error) {}
      *      });
-     * </code></pre>
+     * }
+     * </pre>
      *
      * @param primaryUserId     of the primary identity to unlink
      * @param secondaryUserId   of the secondary identity you wish to unlink from the main one.
@@ -209,7 +214,8 @@ public class UsersAPIClient {
     /**
      * Update the user_metadata calling <a href="https://auth0.com/docs/api/management/v2#!/Users/patch_users_by_id">'/api/v2/users/:token'</a> endpoint
      * Example usage:
-     * <pre><code>
+     * <pre>
+     * {@code
      * client.updateMetadata("{user id}", "{user metadata}")
      *      .start(new BaseCallback<UserProfile>() {
      *          {@literal}Override
@@ -218,7 +224,8 @@ public class UsersAPIClient {
      *          {@literal}Override
      *          public void onFailure(ManagementException error) {}
      *      });
-     * </code></pre>
+     * }
+     * </pre>
      *
      * @param userId       of the primary identity to unlink
      * @param userMetadata to merge with the existing one

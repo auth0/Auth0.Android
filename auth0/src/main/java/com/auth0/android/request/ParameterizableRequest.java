@@ -31,12 +31,14 @@ import java.util.Map;
 /**
  * Defines a request that can be configured (payload and headers)
  *
- * @param <T>
+ * @param <T> the type this request will return on success.
+ * @param <U> the {@link Auth0Exception} type this request will return on failure.
  */
 public interface ParameterizableRequest<T, U extends Auth0Exception> extends Request<T, U> {
 
     /**
      * Add parameters to the request as a Map of Object with the keys as String
+     *
      * @param parameters to send with the request
      * @return itself
      */
@@ -44,7 +46,8 @@ public interface ParameterizableRequest<T, U extends Auth0Exception> extends Req
 
     /**
      * Add parameter to the request with a given name
-     * @param name of the parameter
+     *
+     * @param name  of the parameter
      * @param value of the parameter
      * @return itself
      */

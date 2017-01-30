@@ -35,7 +35,7 @@ import com.auth0.android.util.Telemetry;
 import com.squareup.okhttp.HttpUrl;
 
 /**
- * Represents your Auth0 account information (clientId & domain),
+ * Represents your Auth0 account information (clientId {@literal &} domain),
  * and it's used to obtain clients for Auth0's APIs.
  * <pre>{@code
  * Auth0 auth0 = new Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN");
@@ -65,7 +65,7 @@ public class Auth0 {
     }
 
     /**
-     * Creates a new object using clientId & domain
+     * Creates a new object using clientId {@literal &} domain
      *
      * @param clientId of your Auth0 application
      * @param domain   of your Auth0 account
@@ -167,13 +167,17 @@ public class Auth0 {
 
     /**
      * If the clients works in OIDC conformant mode or not
+     *
+     * @return whether the android client is OIDC conformant or not.
      */
     public boolean isOIDCConformant() {
         return oidcConformant;
     }
 
     /**
-     * @return if every Request, Response and other sensitive information should be logged.
+     * Getter for the HTTP logger is enabled or not.
+     *
+     * @return whether every Request, Response and other sensitive information should be logged or not.
      */
     public boolean isLoggingEnabled() {
         return loggingEnabled;

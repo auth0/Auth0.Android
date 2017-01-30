@@ -29,18 +29,22 @@ import com.auth0.android.callback.BaseCallback;
 
 /**
  * Defines a request that can be started
- * @param <T>
+ *
+ * @param <T> the type this request will return on success.
+ * @param <U> the {@link Auth0Exception} type this request will return on failure.
  */
 public interface Request<T, U extends Auth0Exception> {
 
     /**
      * Performs an async HTTP request against Auth0 API
+     *
      * @param callback called either on success or failure
      */
     void start(BaseCallback<T, U> callback);
 
     /**
      * Executes the HTTP request against Auth0 API (blocking the current thread)
+     *
      * @return the response on success
      * @throws Auth0Exception on failure
      */
