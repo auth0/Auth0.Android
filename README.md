@@ -95,7 +95,7 @@ Step 1: Request the code
 ```java
 authentication
     .passwordlessWithEmail("info@auth0.com", PasswordlessType.CODE, "my-passwordless-connection")
-    .start(new BaseCallback<Credentials>() {
+    .start(new BaseCallback<Void>() {
         @Override
         public void onSuccess(Void payload) {
             //Code sent!
@@ -153,10 +153,10 @@ authentication
 ```java
 authentication
    .userInfo("user access_token")
-   .start(new BaseCallback<Credentials>() {
+   .start(new BaseCallback<UserInfo>() {
        @Override
-       public void onSuccess(UserProfile payload) {
-           //Got the profile!
+       public void onSuccess(UserInfo payload) {
+           //Got the info!
        }
 
        @Override
@@ -304,11 +304,11 @@ public class MyActivity extends Activity {
 
 ##### A note about App Deep Linking:
 
-Currently, the default scheme used in the Callback Uri is `https`. This works best for Android API 23 or newer if you're using [Android App Links](https://developer.android.com/training/app-links/index.html), but in previous Android versions this may show the intent chooser dialog prompting the user to chose either your application or the browser. You can change this behaviour by using a custom unique scheme, so that the OS opens directly the link with your app.
+Currently, the default scheme used in the Callback Uri is `https`. This works best for Android Marshmallow (API 23) or newer if you're using [Android App Links](https://developer.android.com/training/app-links/index.html), but in previous Android versions this may show the intent chooser dialog prompting the user to chose either your application or the browser. You can change this behaviour by using a custom unique scheme, so that the OS opens the link directly with your app.
 
-1. Update the intent filter in the Android Manifest and change the custom scheme.
+1. Update the intent filter in the `AndroidManifest.xml` file and change the current scheme to the custom one.
 2. Update the allowed callback urls in your [Auth0 Dashboard](https://manage.auth0.com/#/applications) client's settings.
-3. Call `withScheme()` passing the scheme you want to use.
+3. Call `withScheme()` on the WebAuthProvider.Builder instance passing the scheme you want to use.
 
 
 ```java
@@ -326,7 +326,7 @@ WebAuthProvider.init(account)
 ```
 
 #### Use Code grant with PKCE
-> Before you can use `Code Grant` in Android, make sure to go to your [client's section](https://manage.auth0.com/#/applications) in dashboard and check in the Settings that `Client Type` is `Native`.
+> Before you can use `Code Grant` in Android, make sure to go to your [client's section](https://manage.auth0.com/#/clients) in dashboard and check in the Settings that the `Client Type` is set to `Native`.
 
 
 ```java
@@ -408,7 +408,7 @@ If you have found a bug or if you have a feature request, please report them at 
 
 ## Author
 
-[Auth0](auth0.com)
+[Auth0](https://auth0.com)
 
 ## License
 
