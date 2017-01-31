@@ -1,5 +1,15 @@
 # Change Log
 
+## [1.5.0](https://github.com/auth0/Auth0.Android/tree/1.5.0) (2017-01-31)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.4.0...1.5.0)
+
+**Added**
+- Log a warning message when using non-OIDC endpoints in OIDC mode [\#70](https://github.com/auth0/Auth0.Android/pull/70) ([lbalmaceda](https://github.com/lbalmaceda))
+- Refresh auth using /oauth/token refresh_token grant (OIDC mode) [\#68](https://github.com/auth0/Auth0.Android/pull/68) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Fixed**
+- Fix JavaDoc errors and warnings [\#72](https://github.com/auth0/Auth0.Android/pull/72) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.4.0](https://github.com/auth0/Auth0.Android/tree/1.4.0) (2017-01-02)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.3.0...1.4.0)
 
