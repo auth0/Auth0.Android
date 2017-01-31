@@ -89,7 +89,7 @@ public class AuthenticationException extends Auth0Exception {
     }
 
     private void warnIfOIDCError() {
-        if ("invalid_request".equals(getCode()) && getDescription().startsWith("OIDC conformant clients cannot use")) {
+        if ("invalid_request".equals(getCode())) {
             Log.w(AuthenticationAPIClient.class.getSimpleName(), "Your Auth0 Client is configured as 'OIDC Conformant' but this instance it's not. To authenticate you will need to enable the flag by calling Auth0#setOIDCConformant(true) on the Auth0 instance you used in the setup.");
         }
     }
