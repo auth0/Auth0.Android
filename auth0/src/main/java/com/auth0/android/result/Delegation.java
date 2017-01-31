@@ -31,7 +31,7 @@ import static com.auth0.android.util.CheckHelper.checkArgument;
 
 /**
  * The result of a successful delegation to an Auth0 application that contains a new Auth0 'id_token'
- * See <a href="https://auth0.com/docs/auth-api#!#post--delegation">delegation</a> docs
+ * See <a href="https://auth0.com/docs/api/authentication#delegation">delegation</a> docs
  */
 public class Delegation {
     @SerializedName("id_token")

@@ -32,15 +32,16 @@ import java.util.Map;
 
 /**
  * Builder for Auth0 Authentication API parameters
- * <p/>
  * You can build your parameters like this
- * <pre><code>
- *     Map<String, Object> parameters = ParameterBuilder.newBuilder()
- *                                                      .setClientId("{CLIENT_ID}")
- *                                                      .setConnection("{CONNECTION}")
- *                                                      .set("{PARAMETER_NAME}", "{PARAMETER_VALUE}")
- *                                                      .asDictionary();
- * </code></pre>
+ * <pre>
+ * {@code
+ * Map<String, Object> parameters = ParameterBuilder.newBuilder()
+ *      .setClientId("{CLIENT_ID}")
+ *      .setConnection("{CONNECTION}")
+ *      .set("{PARAMETER_NAME}", "{PARAMETER_VALUE}")
+ *      .asDictionary();
+ * }
+ * </pre>
  *
  * @see ParameterBuilder#newBuilder()
  * @see ParameterBuilder#newAuthenticationBuilder()
