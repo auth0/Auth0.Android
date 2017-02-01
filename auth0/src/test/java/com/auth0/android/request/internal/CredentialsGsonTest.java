@@ -32,8 +32,7 @@ public class CredentialsGsonTest extends GsonBaseTest {
     }
 
     @Test
-    public void shouldFailWithEmptyJson() throws Exception {
-        expectedException.expect(JsonParseException.class);
+    public void shouldNotFailWithEmptyJson() throws Exception {
         buildCredentialsFrom(json(EMPTY_OBJECT));
     }
 
@@ -44,14 +43,12 @@ public class CredentialsGsonTest extends GsonBaseTest {
     }
 
     @Test
-    public void shouldRequireAccessToken() throws Exception {
-        expectedException.expect(JsonParseException.class);
+    public void shouldNotRequireAccessToken() throws Exception {
         buildCredentialsFrom(new StringReader("{\"token_type\": \"bearer\"}"));
     }
 
     @Test
-    public void shouldRequireTokenType() throws Exception {
-        expectedException.expect(JsonParseException.class);
+    public void shouldNotRequireTokenType() throws Exception {
         buildCredentialsFrom(new StringReader("{\"access_token\": \"some token\"}"));
     }
 
