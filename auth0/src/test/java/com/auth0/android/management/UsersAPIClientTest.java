@@ -87,6 +87,7 @@ public class UsersAPIClientTest {
     private static final String METHOD_POST = "POST";
     private static final String METHOD_DELETE = "DELETE";
     private static final String METHOD_PATCH = "PATCH";
+    private static final String METHOD_GET = "GET";
     private static final String KEY_LINK_WITH = "link_with";
     private static final String KEY_USER_METADATA = "user_metadata";
 
@@ -356,6 +357,40 @@ public class UsersAPIClientTest {
 
         assertThat(body, hasKey(KEY_USER_METADATA));
         assertThat(((Map<String, Object>) body.get(KEY_USER_METADATA)), is(equalTo(metadata)));
+
+        assertThat(result, isA(UserProfile.class));
+    }
+
+
+    @Test
+    public void shouldGetUserProfile() throws Exception {
+        mockAPI.willReturnUserProfile();
+
+        final MockManagementCallback<UserProfile> callback = new MockManagementCallback<>();
+        client.getProfile(USER_ID_PRIMARY)
+                .start(callback);
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY));
+
+        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + TOKEN_PRIMARY));
+        assertThat(request.getMethod(), equalTo(METHOD_GET));
+
+        assertThat(callback, hasPayloadOfType(UserProfile.class));
+    }
+
+    @Test
+    public void shouldGetUserProfileSync() throws Exception {
+        mockAPI.willReturnUserProfile();
+
+        final UserProfile result = client.getProfile(USER_ID_PRIMARY)
+                .execute();
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY));
+
+        assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + TOKEN_PRIMARY));
+        assertThat(request.getMethod(), equalTo(METHOD_GET));
 
         assertThat(result, isA(UserProfile.class));
     }
