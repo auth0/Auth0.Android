@@ -141,7 +141,7 @@ public class UserProfileGsonTest extends GsonBaseTest {
     @Test
     public void shouldReturnOAuthProfile() throws Exception {
         UserProfile profile = pojoFrom(json(PROFILE_OAUTH), UserProfile.class);
-        assertThat(profile.getId(), is(nullValue()));
+        assertThat(profile.getId(), is("google-oauth2|9883254263433883220"));
         assertThat(profile.getName(), is(nullValue()));
         assertThat(profile.getNickname(), is(nullValue()));
         assertThat(profile.getPictureURL(), is(nullValue()));

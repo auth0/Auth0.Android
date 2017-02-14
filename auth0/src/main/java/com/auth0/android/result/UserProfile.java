@@ -25,10 +25,15 @@
 package com.auth0.android.result;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
- * Class that holds the information of a user's profile in Auth0
+ * Class that holds the information of a user's profile in Auth0.
+ * Used both in {@link com.auth0.android.management.UsersAPIClient} and {@link com.auth0.android.authentication.AuthenticationAPIClient}.
  */
 public class UserProfile implements Serializable {
     private String id;
@@ -63,8 +68,17 @@ public class UserProfile implements Serializable {
         this.extraInfo = extraInfo;
     }
 
+    /**
+     * Getter for the unique Identifier of the user. If this represents a Full User Profile (Management API) the 'id' field will be returned.
+     * If the value is not present, it will be considered a User Information and the id will be obtained from the 'sub' claim.
+     *
+     * @return the unique identifier of the user.
+     */
     public String getId() {
-        return id;
+        if (id != null) {
+            return id;
+        }
+        return getExtraInfo().containsKey("sub") ? (String) getExtraInfo().get("sub") : null;
     }
 
     public String getName() {

@@ -8,6 +8,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import edu.emory.mathcs.backport.java.util.Collections;
+
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
@@ -33,6 +36,21 @@ public class UserProfileTest {
     @Test
     public void getId() throws Exception {
         assertThat(userProfile.getId(), is("id"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void shouldReturnSubIfMissingId() throws Exception {
+        Map<String, Object> extraInfo = Collections.singletonMap("sub", "fromSub");
+        userProfile = new UserProfile(null, null, null, null, null, false, null, null, null, extraInfo, null, null, null);
+        assertThat(userProfile.getId(), is("fromSub"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void shouldGetNullIdIfMissing() throws Exception {
+        userProfile = new UserProfile(null, null, null, null, null, false, null, null, null, null, null, null, null);
+        assertThat(userProfile.getId(), is(nullValue()));
     }
 
     @Test
