@@ -12,7 +12,7 @@ public class CredentialsTest {
 
     @Before
     public void setUp() throws Exception {
-        credentials = new Credentials("idToken", "accessToken", "type", "refreshToken");
+        credentials = new Credentials("idToken", "accessToken", "type", "refreshToken", 999999L);
     }
 
     @Test
@@ -33,6 +33,11 @@ public class CredentialsTest {
     @Test
     public void getRefreshToken() throws Exception {
         assertThat(credentials.getRefreshToken(), is("refreshToken"));
+    }
+
+    @Test
+    public void getExpiresIn() throws Exception {
+        assertThat(credentials.getExpiresIn(), is(999999L));
     }
 
 }

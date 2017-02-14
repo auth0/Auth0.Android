@@ -45,6 +45,7 @@ class OAuthManager {
     private static final String KEY_ACCESS_TOKEN = "access_token";
     private static final String KEY_TOKEN_TYPE = "token_type";
     private static final String KEY_REFRESH_TOKEN = "refresh_token";
+    private static final String KEY_EXPIRES_IN = "expires_in";
     private static final String KEY_CODE = "code";
 
     private final Auth0 account;
@@ -119,7 +120,11 @@ class OAuthManager {
             }
 
             Log.d(TAG, "Authenticated using web flow");
-            final Credentials urlCredentials = new Credentials(values.get(KEY_ID_TOKEN), values.get(KEY_ACCESS_TOKEN), values.get(KEY_TOKEN_TYPE), values.get(KEY_REFRESH_TOKEN));
+            Long expiresIn = null;
+            if (values.containsKey(KEY_EXPIRES_IN)) {
+                expiresIn = Long.valueOf(values.get(KEY_EXPIRES_IN));
+            }
+            final Credentials urlCredentials = new Credentials(values.get(KEY_ID_TOKEN), values.get(KEY_ACCESS_TOKEN), values.get(KEY_TOKEN_TYPE), values.get(KEY_REFRESH_TOKEN), expiresIn);
             if (!shouldUsePKCE()) {
                 callback.onSuccess(urlCredentials);
             } else {
@@ -255,8 +260,9 @@ class OAuthManager {
         final String accessToken = codeCredentials.getAccessToken() != null ? codeCredentials.getAccessToken() : urlCredentials.getAccessToken();
         final String type = codeCredentials.getType() != null ? codeCredentials.getType() : urlCredentials.getType();
         final String refreshToken = codeCredentials.getRefreshToken() != null ? codeCredentials.getRefreshToken() : urlCredentials.getRefreshToken();
+        final Long expiresIn = codeCredentials.getExpiresIn() != null ? codeCredentials.getExpiresIn() : urlCredentials.getExpiresIn();
 
-        return new Credentials(idToken, accessToken, type, refreshToken);
+        return new Credentials(idToken, accessToken, type, refreshToken, expiresIn);
     }
 
     @VisibleForTesting

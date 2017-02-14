@@ -12,7 +12,7 @@ public class DelegationTest {
 
     @Before
     public void setUp() throws Exception {
-        delegation = new Delegation("idToken", "type", 1234567890l);
+        delegation = new Delegation("idToken", "type", 1234567890L);
     }
 
     @Test
@@ -27,6 +27,6 @@ public class DelegationTest {
 
     @Test
     public void getExpiresIn() throws Exception {
-        assertThat(delegation.getExpiresIn(), is(1234567890l));
+        assertThat(delegation.getExpiresIn(), is(1234567890L));
     }
 }
