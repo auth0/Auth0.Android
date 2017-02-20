@@ -25,7 +25,8 @@
 package com.auth0.android.result;
 
 
-import com.auth0.android.util.JsonRequired;
+import android.support.annotation.Nullable;
+
 import com.google.gson.annotations.SerializedName;
 
 /**
@@ -34,21 +35,19 @@ import com.google.gson.annotations.SerializedName;
  * <li><i>idToken</i>: Identity Token with user information</li>
  * <li><i>accessToken</i>: Access Token for Auth0 API</li>
  * <li><i>refreshToken</i>: Refresh Token that can be used to request new tokens without signing in again</li>
+ * <li><i>type</i>: The type of the received Token.</li>
  * </ul>
  */
 public class Credentials {
 
-    @JsonRequired
     @SerializedName("access_token")
     private String accessToken;
 
-    @JsonRequired
     @SerializedName("token_type")
     private String type;
 
     @SerializedName("id_token")
     private String idToken;
-
 
     @SerializedName("refresh_token")
     private String refreshToken;
@@ -60,18 +59,42 @@ public class Credentials {
         this.refreshToken = refreshToken;
     }
 
+    /**
+     * Getter for the Identity Token with user information.
+     *
+     * @return the Identity Token.
+     */
+    @Nullable
     public String getIdToken() {
         return idToken;
     }
 
+    /**
+     * Getter for the Access Token for Auth0 API.
+     *
+     * @return the Access Token.
+     */
+    @Nullable
     public String getAccessToken() {
         return accessToken;
     }
 
+    /**
+     * Getter for the type of the received Token.
+     *
+     * @return the token type.
+     */
+    @Nullable
     public String getType() {
         return type;
     }
 
+    /**
+     * Getter for the Refresh Token that can be used to request new tokens without signing in again.
+     *
+     * @return the Refresh Token.
+     */
+    @Nullable
     public String getRefreshToken() {
         return refreshToken;
     }
