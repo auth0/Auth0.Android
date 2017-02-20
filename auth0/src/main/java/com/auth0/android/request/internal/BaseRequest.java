@@ -131,7 +131,7 @@ abstract class BaseRequest<T, U extends Auth0Exception> implements Parameterizab
             stringPayload = body.string();
             Type mapType = new TypeToken<Map<String, Object>>() {
             }.getType();
-            Map<String, Object> mapPayload = gson.fromJson(body.charStream(), mapType);
+            Map<String, Object> mapPayload = gson.fromJson(stringPayload, mapType);
             return errorBuilder.from(mapPayload);
         } catch (JsonSyntaxException e) {
             return errorBuilder.from(stringPayload, response.code());
