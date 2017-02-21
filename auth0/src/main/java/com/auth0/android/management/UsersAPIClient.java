@@ -139,7 +139,7 @@ public class UsersAPIClient {
      * <pre>
      * {@code
      * client.link("{auth0 primary user id}", "{user secondary token}")
-     *      .start(new BaseCallback<List<UserIdentity>>() {
+     *      .start(new BaseCallback<List<UserIdentity>, ManagementException>() {
      *          {@literal}Override
      *          public void onSuccess(List<UserIdentity> payload) {}
      *
@@ -179,7 +179,7 @@ public class UsersAPIClient {
      * <pre>
      * {@code
      * client.unlink("{auth0 primary user id}", {auth0 secondary user id}, "{secondary provider}")
-     *      .start(new BaseCallback<List<UserIdentity>>() {
+     *      .start(new BaseCallback<List<UserIdentity>, ManagementException>() {
      *          {@literal}Override
      *          public void onSuccess(List<UserIdentity> payload) {}
      *
@@ -212,12 +212,12 @@ public class UsersAPIClient {
     }
 
     /**
-     * Update the user_metadata calling <a href="https://auth0.com/docs/api/management/v2#!/Users/patch_users_by_id">'/api/v2/users/:token'</a> endpoint
+     * Update the user_metadata calling <a href="https://auth0.com/docs/api/management/v2#!/Users/patch_users_by_id">'/api/v2/users/:userId'</a> endpoint
      * Example usage:
      * <pre>
      * {@code
      * client.updateMetadata("{user id}", "{user metadata}")
-     *      .start(new BaseCallback<UserProfile>() {
+     *      .start(new BaseCallback<UserProfile, ManagementException>() {
      *          {@literal}Override
      *          public void onSuccess(UserProfile payload) {}
      *
@@ -242,6 +242,37 @@ public class UsersAPIClient {
 
         return factory.PATCH(url, client, gson, UserProfile.class, mgmtErrorBuilder)
                 .addParameter(USER_METADATA_KEY, userMetadata);
+    }
+
+    /**
+     * Get the User Profile calling <a href="https://auth0.com/docs/api/management/v2#!/Users/get_users_by_id">'/api/v2/users/:userId'</a> endpoint
+     * Example usage:
+     * <pre>
+     * {@code
+     * client.getProfile("{user id}")
+     *      .start(new BaseCallback<UserProfile, ManagementException>() {
+     *          {@literal}Override
+     *          public void onSuccess(UserProfile payload) {}
+     *
+     *          {@literal}Override
+     *          public void onFailure(ManagementException error) {}
+     *      });
+     * }
+     * </pre>
+     *
+     * @param userId identity of the user
+     * @return a request to start
+     */
+    @SuppressWarnings("WeakerAccess")
+    public Request<UserProfile, ManagementException> getProfile(String userId) {
+        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+                .addPathSegment(API_PATH)
+                .addPathSegment(V2_PATH)
+                .addPathSegment(USERS_PATH)
+                .addPathSegment(userId)
+                .build();
+
+        return factory.GET(url, client, gson, UserProfile.class, mgmtErrorBuilder);
     }
 
 }

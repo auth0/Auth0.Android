@@ -214,6 +214,24 @@ users
     });
 ```
 
+### Get User Profile
+
+```java
+users
+    .getProfile("user id")
+    .start(new BaseCallback<UserProfile, ManagementException>() {
+        @Override
+        public void onSuccess(UserProfile payload) {
+            //Profile
+        }
+
+        @Override
+        public void onFailure(ManagementException error) {
+            //Error!
+        }
+    });
+```
+
 ### Update User Metadata
 
 ```java
