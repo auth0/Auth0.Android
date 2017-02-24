@@ -52,11 +52,15 @@ public class Credentials {
     @SerializedName("refresh_token")
     private String refreshToken;
 
-    public Credentials(String idToken, String accessToken, String type, String refreshToken) {
+    @SerializedName("expires_in")
+    private Long expiresIn;
+
+    public Credentials(String idToken, String accessToken, String type, String refreshToken, Long expiresIn) {
         this.idToken = idToken;
         this.accessToken = accessToken;
         this.type = type;
         this.refreshToken = refreshToken;
+        this.expiresIn = expiresIn;
     }
 
     /**
@@ -97,5 +101,9 @@ public class Credentials {
     @Nullable
     public String getRefreshToken() {
         return refreshToken;
+    }
+
+    public Long getExpiresIn() {
+        return expiresIn;
     }
 }

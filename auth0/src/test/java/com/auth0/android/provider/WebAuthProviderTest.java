@@ -1096,7 +1096,7 @@ public class WebAuthProviderTest {
     @SuppressWarnings("deprecation")
     @Test
     public void shouldResumeWithIntentWithCodeGrant() throws Exception {
-        final Credentials codeCredentials = new Credentials("codeId", "codeAccess", "codeType", "codeRefresh");
+        final Credentials codeCredentials = new Credentials("codeId", "codeAccess", "codeType", "codeRefresh", 9999L);
         PKCE pkce = Mockito.mock(PKCE.class);
         Mockito.doAnswer(new Answer() {
             @Override
@@ -1127,12 +1127,13 @@ public class WebAuthProviderTest {
         assertThat(credentialsCaptor.getValue().getAccessToken(), is("codeAccess"));
         assertThat(credentialsCaptor.getValue().getRefreshToken(), is("codeRefresh"));
         assertThat(credentialsCaptor.getValue().getType(), is("codeType"));
+        assertThat(credentialsCaptor.getValue().getExpiresIn(), is(9999L));
     }
 
     @SuppressWarnings("deprecation")
     @Test
     public void shouldResumeWithRequestCodeWithCodeGrant() throws Exception {
-        final Credentials codeCredentials = new Credentials("codeId", "codeAccess", "codeType", "codeRefresh");
+        final Credentials codeCredentials = new Credentials("codeId", "codeAccess", "codeType", "codeRefresh", 9999L);
         PKCE pkce = Mockito.mock(PKCE.class);
         Mockito.doAnswer(new Answer() {
             @Override
@@ -1163,6 +1164,7 @@ public class WebAuthProviderTest {
         assertThat(credentialsCaptor.getValue().getAccessToken(), is("codeAccess"));
         assertThat(credentialsCaptor.getValue().getRefreshToken(), is("codeRefresh"));
         assertThat(credentialsCaptor.getValue().getType(), is("codeType"));
+        assertThat(credentialsCaptor.getValue().getExpiresIn(), is(9999L));
     }
 
     @SuppressWarnings("deprecation")
