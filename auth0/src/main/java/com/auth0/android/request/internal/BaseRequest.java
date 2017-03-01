@@ -50,6 +50,8 @@ import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.auth0.android.request.internal.ResponseUtils.closeStream;
+
 abstract class BaseRequest<T, U extends Auth0Exception> implements ParameterizableRequest<T, U>, AuthorizableRequest<T, U>, Callback {
 
     private final Map<String, String> headers;
@@ -139,10 +141,7 @@ abstract class BaseRequest<T, U extends Auth0Exception> implements Parameterizab
             final Auth0Exception auth0Exception = new Auth0Exception("Error parsing the server response", e);
             return errorBuilder.from("Request to " + url.toString() + " failed", auth0Exception);
         } finally {
-            try {
-                body.close();
-            } catch (IOException ignored) {
-            }
+            closeStream(body);
         }
     }
 
