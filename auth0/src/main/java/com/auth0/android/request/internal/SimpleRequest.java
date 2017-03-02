@@ -35,9 +35,12 @@ import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
+import com.squareup.okhttp.ResponseBody;
 
 import java.io.IOException;
 import java.io.Reader;
+
+import static com.auth0.android.request.internal.ResponseUtils.closeStream;
 
 class SimpleRequest<T, U extends Auth0Exception> extends BaseRequest<T, U> implements ParameterizableRequest<T, U>, Callback {
 
@@ -66,13 +69,16 @@ class SimpleRequest<T, U extends Auth0Exception> extends BaseRequest<T, U> imple
             return;
         }
 
+        ResponseBody body = response.body();
         try {
-            Reader charStream = response.body().charStream();
+            Reader charStream = body.charStream();
             T payload = getAdapter().fromJson(charStream);
             postOnSuccess(payload);
         } catch (IOException e) {
             final Auth0Exception auth0Exception = new Auth0Exception("Failed to parse response to request to " + url, e);
             postOnFailure(getErrorBuilder().from("Failed to parse a successful response", auth0Exception));
+        } finally {
+            closeStream(body);
         }
     }
 
@@ -99,11 +105,14 @@ class SimpleRequest<T, U extends Auth0Exception> extends BaseRequest<T, U> imple
             throw parseUnsuccessfulResponse(response);
         }
 
+        ResponseBody body = response.body();
         try {
-            Reader charStream = response.body().charStream();
+            Reader charStream = body.charStream();
             return getAdapter().fromJson(charStream);
         } catch (IOException e) {
             throw new Auth0Exception("Failed to parse response to request to " + url, e);
+        } finally {
+            closeStream(body);
         }
     }
 }

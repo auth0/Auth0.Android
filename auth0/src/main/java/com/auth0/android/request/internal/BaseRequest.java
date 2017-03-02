@@ -43,11 +43,14 @@ import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
+import com.squareup.okhttp.ResponseBody;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.auth0.android.request.internal.ResponseUtils.closeStream;
 
 abstract class BaseRequest<T, U extends Auth0Exception> implements ParameterizableRequest<T, U>, AuthorizableRequest<T, U>, Callback {
 
@@ -125,8 +128,9 @@ abstract class BaseRequest<T, U extends Auth0Exception> implements Parameterizab
 
     protected U parseUnsuccessfulResponse(Response response) {
         String stringPayload = null;
+        ResponseBody body = response.body();
         try {
-            stringPayload = response.body().string();
+            stringPayload = body.string();
             Type mapType = new TypeToken<Map<String, Object>>() {
             }.getType();
             Map<String, Object> mapPayload = gson.fromJson(stringPayload, mapType);
@@ -136,6 +140,8 @@ abstract class BaseRequest<T, U extends Auth0Exception> implements Parameterizab
         } catch (IOException e) {
             final Auth0Exception auth0Exception = new Auth0Exception("Error parsing the server response", e);
             return errorBuilder.from("Request to " + url.toString() + " failed", auth0Exception);
+        } finally {
+            closeStream(body);
         }
     }
 
