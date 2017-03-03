@@ -1,5 +1,20 @@
 # Change Log
 
+## [1.6.0](https://github.com/auth0/Auth0.Android/tree/1.6.0) (2017-03-02)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.5.0...1.6.0)
+
+**Added**
+- Add expires_in field to the Credentials class [\#78](https://github.com/auth0/Auth0.Android/pull/78) ([lbalmaceda](https://github.com/lbalmaceda))
+- Added: GET UserProfile endpoint for UsersAPIClient [\#76](https://github.com/auth0/Auth0.Android/pull/76) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Changed**
+- Extract the user id from the 'sub' claim if present [\#77](https://github.com/auth0/Auth0.Android/pull/77) ([lbalmaceda](https://github.com/lbalmaceda))
+- Strictly compare the OIDC invalid_request message [\#75](https://github.com/auth0/Auth0.Android/pull/75) ([lbalmaceda](https://github.com/lbalmaceda))
+- Credentials fields are not guaranteed to be present [\#74](https://github.com/auth0/Auth0.Android/pull/74) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Fixed**
+- Ensure closing the response body after it was parsed [\#79](https://github.com/auth0/Auth0.Android/pull/79) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.5.0](https://github.com/auth0/Auth0.Android/tree/1.5.0) (2017-01-31)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.4.0...1.5.0)
 
