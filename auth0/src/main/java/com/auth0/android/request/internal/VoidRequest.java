@@ -48,12 +48,6 @@ class VoidRequest<U extends Auth0Exception> extends BaseRequest<Void, U> impleme
     }
 
     @Override
-    public void onFailure(Call call, IOException e) {
-        //TODO: implement error check
-        e.printStackTrace();
-    }
-
-    @Override
     public void onResponse(Call call, Response response) throws IOException {
         if (!response.isSuccessful()) {
             postOnFailure(parseUnsuccessfulResponse(response));
