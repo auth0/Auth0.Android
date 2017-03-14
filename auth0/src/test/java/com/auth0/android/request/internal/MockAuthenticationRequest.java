@@ -7,11 +7,12 @@ import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.result.Credentials;
 import com.google.gson.Gson;
-import com.squareup.okhttp.HttpUrl;
-import com.squareup.okhttp.OkHttpClient;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
 
 public class MockAuthenticationRequest implements ParameterizableRequest<Credentials, AuthenticationException>, AuthenticationRequest {
 

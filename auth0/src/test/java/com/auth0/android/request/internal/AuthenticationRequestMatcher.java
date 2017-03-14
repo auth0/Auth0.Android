@@ -1,9 +1,10 @@
 package com.auth0.android.request.internal;
 
-import com.squareup.okhttp.HttpUrl;
 
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
+
+import okhttp3.HttpUrl;
 
 public class AuthenticationRequestMatcher<T> extends BaseMatcher<MockAuthenticationRequest> {
 

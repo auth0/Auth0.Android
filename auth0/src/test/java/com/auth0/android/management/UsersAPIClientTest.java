@@ -39,10 +39,6 @@ import com.auth0.android.util.UsersAPI;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import com.squareup.okhttp.Interceptor;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.logging.HttpLoggingInterceptor;
-import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import org.junit.After;
 import org.junit.Before;
@@ -54,6 +50,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
+import okhttp3.mockwebserver.RecordedRequest;
 
 import static com.auth0.android.util.ManagementCallbackMatcher.hasPayloadOfType;
 import static org.hamcrest.Matchers.equalTo;

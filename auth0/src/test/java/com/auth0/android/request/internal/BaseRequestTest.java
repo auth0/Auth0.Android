@@ -32,13 +32,6 @@ import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.request.ErrorBuilder;
 import com.google.gson.Gson;
 import com.google.gson.TypeAdapter;
-import com.squareup.okhttp.HttpUrl;
-import com.squareup.okhttp.MediaType;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Protocol;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
-import com.squareup.okhttp.ResponseBody;
 
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.collection.IsMapContaining;
@@ -54,6 +47,15 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import okhttp3.Call;
+import okhttp3.HttpUrl;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Protocol;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
+
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
@@ -61,7 +63,6 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 
 public class BaseRequestTest {
 
@@ -91,13 +92,14 @@ public class BaseRequestTest {
         parameterBuilder = ParameterBuilder.newBuilder();
 
         baseRequest = new BaseRequest<String, Auth0Exception>(url, client, new Gson(), adapter, errorBuilder, callback, headers, parameterBuilder) {
+
             @Override
             public String execute() throws Auth0Exception {
                 return null;
             }
 
             @Override
-            public void onResponse(Response response) throws IOException {
+            public void onResponse(Call call, Response response) throws IOException {
 
             }
 

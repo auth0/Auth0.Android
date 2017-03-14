@@ -28,7 +28,6 @@ import android.content.Context;
 import android.content.res.Resources;
 
 import com.auth0.android.util.Telemetry;
-import com.squareup.okhttp.HttpUrl;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -37,6 +36,8 @@ import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+
+import okhttp3.HttpUrl;
 
 import static com.auth0.android.util.HttpUrlMatcher.hasHost;
 import static com.auth0.android.util.HttpUrlMatcher.hasPath;

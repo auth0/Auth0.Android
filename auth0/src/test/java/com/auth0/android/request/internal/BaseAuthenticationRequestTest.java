@@ -5,9 +5,6 @@ import com.auth0.android.result.Credentials;
 import com.auth0.android.util.AuthenticationAPI;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.squareup.okhttp.HttpUrl;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import org.junit.After;
 import org.junit.Before;
@@ -21,6 +18,10 @@ import org.robolectric.annotation.Config;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
+
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.mockwebserver.RecordedRequest;
 
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.hasEntry;
