@@ -32,7 +32,8 @@ import android.support.annotation.Nullable;
 import com.auth0.android.auth0.BuildConfig;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.util.Telemetry;
-import com.squareup.okhttp.HttpUrl;
+
+import okhttp3.HttpUrl;
 
 /**
  * Represents your Auth0 account information (clientId {@literal &} domain),

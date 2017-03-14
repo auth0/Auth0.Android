@@ -27,14 +27,16 @@ package com.auth0.android.request.internal;
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.request.ErrorBuilder;
 import com.google.gson.Gson;
-import com.squareup.okhttp.Callback;
-import com.squareup.okhttp.HttpUrl;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.RequestBody;
-import com.squareup.okhttp.Response;
 
 import java.io.IOException;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 class VoidRequest<U extends Auth0Exception> extends BaseRequest<Void, U> implements Callback {
 
@@ -46,7 +48,13 @@ class VoidRequest<U extends Auth0Exception> extends BaseRequest<Void, U> impleme
     }
 
     @Override
-    public void onResponse(Response response) throws IOException {
+    public void onFailure(Call call, IOException e) {
+        //TODO: implement error check
+        e.printStackTrace();
+    }
+
+    @Override
+    public void onResponse(Call call, Response response) throws IOException {
         if (!response.isSuccessful()) {
             postOnFailure(parseUnsuccessfulResponse(response));
             return;

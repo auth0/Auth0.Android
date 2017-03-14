@@ -22,31 +22,27 @@
  * THE SOFTWARE.
  */
 
-apply plugin: 'com.auth0.gradle.oss-library.android'
+apply plugin: "com.android.library"
 
 logger.lifecycle("Using version ${version} for ${name}")
 
-oss {
-    name 'Auth0.Android'
-    repository 'Auth0.Android'
-    organization 'auth0'
-    description 'Android toolkit for Auth0 API'
-
-    developers {
-        auth0 {
-            displayName = 'Auth0'
-            email = 'oss@auth0.com'
+buildscript {
+    repositories {
+        jcenter()
+        maven {
+            url "https://plugins.gradle.org/m2/"
         }
-        lbalmaceda {
-            displayName = 'Luciano Balmaceda'
-            email = 'luciano.balmaceda@auth0.com'
-        }
+    }
+    dependencies {
+        classpath 'com.dicedmelon.gradle:jacoco-android:0.1.1'
+        classpath 'com.android.tools.build:gradle:2.2.2'
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7'
     }
 }
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion '25.0.2'
+    compileSdkVersion appSdkVersion
+    buildToolsVersion appBuildToolsVersion
 
     defaultConfig {
         minSdkVersion 15
@@ -63,16 +59,17 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:25.0.1'
-    compile 'com.squareup.okhttp:okhttp:2.7.5'
-    compile 'com.squareup.okhttp:logging-interceptor:2.7.5'
-    compile 'com.google.code.gson:gson:2.6.2'
+    compile "com.android.support:appcompat-v7:$supportLibVersion"
+    compile "com.squareup.okio:okio:$okioVersion"
+    compile "com.squareup.okhttp3:okhttp:$okhttpVersion"
+    compile "com.squareup.okhttp3:logging-interceptor:$okhttpVersion"
+    compile "com.google.code.gson:gson:$gsonVersion"
     compile 'com.auth0.android:jwtdecode:1.1.0'
 
-    testCompile 'junit:junit:4.12'
+    testCompile "junit:junit:$junitVersion"
     testCompile 'org.hamcrest:java-hamcrest:2.0.0.0'
-    testCompile 'org.mockito:mockito-core:1.10.19'
-    testCompile 'com.squareup.okhttp:mockwebserver:2.7.5'
+    testCompile "org.mockito:mockito-core:$mockitoVersion"
+    testCompile "com.squareup.okhttp3:mockwebserver:$okhttpVersion"
     testCompile 'com.jayway.awaitility:awaitility:1.6.4'
     testCompile 'org.robolectric:robolectric:3.1.2'
     testCompile 'com.android.support.test.espresso:espresso-intents:2.2.2'

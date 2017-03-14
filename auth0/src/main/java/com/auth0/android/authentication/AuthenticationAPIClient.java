@@ -47,11 +47,12 @@ import com.auth0.android.result.Delegation;
 import com.auth0.android.result.UserProfile;
 import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
-import com.squareup.okhttp.HttpUrl;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.logging.HttpLoggingInterceptor;
 
 import java.util.Map;
+
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
 
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_AUTHORIZATION_CODE;
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSWORD;
