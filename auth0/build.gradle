@@ -63,10 +63,10 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:25.0.1'
-    compile 'com.squareup.okhttp:okhttp:2.7.5'
+    compile 'com.android.support:appcompat-v7:25.2.0'
+    compile 'com.squareup.okhttp:okhttp:3.6.0'
     compile 'com.squareup.okhttp:logging-interceptor:2.7.5'
-    compile 'com.google.code.gson:gson:2.6.2'
+    compile 'com.google.code.gson:gson:2.7'
     compile 'com.auth0.android:jwtdecode:1.1.0'
 
     testCompile 'junit:junit:4.12'
