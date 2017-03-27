@@ -1,11 +1,10 @@
 # Auth0.Android
 
-[![CI Status](http://img.shields.io/travis/auth0/Auth0.Android.svg?style=flat-square)](https://travis-ci.org/auth0/Auth0.Android)
+[![CircleCI](https://img.shields.io/circleci/project/github/auth0/Auth0.Android.svg?style=flat-square)](https://circleci.com/gh/auth0/Auth0.Android/tree/master)
 [![Coverage Status](https://img.shields.io/codecov/c/github/auth0/Auth0.Android/master.svg?style=flat-square)](https://codecov.io/github/auth0/Auth0.Android)
 [![License](http://img.shields.io/:license-mit-blue.svg?style=flat)](http://doge.mit-license.org)
 [![Maven Central](https://img.shields.io/maven-central/v/com.auth0.android/auth0.svg)](http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22com.auth0.android%22%20AND%20a%3A%22auth0%22)
-[![Bintray](https://api.bintray.com/packages/auth0/lock-android/Auth0.Android/images/download.svg) ](https://bintray.com/auth0/lock-android/Auth0.Android/_latestVersion)
-
+[![Bintray](https://api.bintray.com/packages/auth0/android/auth0/images/download.svg)](https://bintray.com/auth0/android/auth0/_latestVersion)
 
 Android java toolkit for Auth0 API
 
