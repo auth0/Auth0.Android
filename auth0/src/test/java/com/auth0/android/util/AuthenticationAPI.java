@@ -106,6 +106,12 @@ public class AuthenticationAPI {
         return this;
     }
 
+    public AuthenticationAPI willReturnSuccessfulEmptyBody() {
+        String json = "{}";
+        server.enqueue(responseWithJSON(json, 200));
+        return this;
+    }
+
     public AuthenticationAPI willReturnSuccessfulLogin() {
         String json = "{\n" +
                 "  \"refresh_token\": \"" + REFRESH_TOKEN + "\",\n" +
