@@ -34,6 +34,7 @@ class OAuthManager {
     static final String RESPONSE_TYPE_CODE = "code";
 
     private static final String ERROR_VALUE_ACCESS_DENIED = "access_denied";
+    private static final String ERROR_VALUE_UNAUTHORIZED = "unauthorized";
     private static final String METHOD_SHA_256 = "S256";
     private static final String KEY_CODE_CHALLENGE = "code_challenge";
     private static final String KEY_CODE_CHALLENGE_METHOD = "code_challenge_method";
@@ -41,6 +42,7 @@ class OAuthManager {
     private static final String KEY_REDIRECT_URI = "redirect_uri";
     private static final String KEY_TELEMETRY = "auth0Client";
     private static final String KEY_ERROR = "error";
+    private static final String KEY_ERROR_DESCRIPTION = "error_description";
     private static final String KEY_ID_TOKEN = "id_token";
     private static final String KEY_ACCESS_TOKEN = "access_token";
     private static final String KEY_TOKEN_TYPE = "token_type";
@@ -113,7 +115,7 @@ class OAuthManager {
         logDebug("The parsed CallbackURI contains the following values: " + values);
 
         try {
-            assertNoError(values.get(KEY_ERROR));
+            assertNoError(values.get(KEY_ERROR), values.get(KEY_ERROR_DESCRIPTION));
             assertValidState(parameters.get(KEY_STATE), values.get(KEY_STATE));
             if (parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_ID_TOKEN)) {
                 assertValidNonce(parameters.get(KEY_NONCE), values.get(KEY_ID_TOKEN));
@@ -154,13 +156,15 @@ class OAuthManager {
 
     //Helper Methods
 
-    private void assertNoError(String errorValue) throws AuthenticationException {
+    private void assertNoError(String errorValue, String errorDescription) throws AuthenticationException {
         if (errorValue == null) {
             return;
         }
         Log.e(TAG, "Error, access denied. Check that the required Permissions are granted and that the Application has this Connection configured in Auth0 Dashboard.");
         if (ERROR_VALUE_ACCESS_DENIED.equalsIgnoreCase(errorValue)) {
             throw new AuthenticationException(ERROR_VALUE_ACCESS_DENIED, "Permissions were not granted. Try again.");
+        } else if (ERROR_VALUE_UNAUTHORIZED.equalsIgnoreCase(errorValue)) {
+            throw new AuthenticationException(ERROR_VALUE_UNAUTHORIZED, errorDescription);
         } else {
             throw new AuthenticationException("a0.invalid_configuration", "The application isn't configured properly for the social connection. Please check your Auth0's application configuration");
         }
