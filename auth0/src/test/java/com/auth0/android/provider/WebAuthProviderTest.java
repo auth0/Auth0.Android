@@ -1552,43 +1552,42 @@ public class WebAuthProviderTest {
     private String createHash(@Nullable String idToken, @Nullable String accessToken, @Nullable String refreshToken, @Nullable String tokenType, @Nullable String state, @Nullable String error, @Nullable String errorDescription) {
         String hash = "#";
         if (accessToken != null) {
-            hash = hash.concat("access_token=" + accessToken);
+            hash = hash.concat("access_token=")
+                    .concat(accessToken)
+                    .concat("&");
         }
         if (idToken != null) {
-            if (!hash.endsWith("&")) {
-                hash = hash.concat("&");
-            }
-            hash = hash.concat("id_token=" + idToken);
+            hash = hash.concat("id_token=")
+                    .concat(idToken)
+                    .concat("&");
         }
         if (refreshToken != null) {
-            if (!hash.endsWith("&")) {
-                hash = hash.concat("&");
-            }
-            hash = hash.concat("refresh_token=" + refreshToken);
+            hash = hash.concat("refresh_token=")
+                    .concat(refreshToken)
+                    .concat("&");
         }
         if (tokenType != null) {
-            if (!hash.endsWith("&")) {
-                hash = hash.concat("&");
-            }
-            hash = hash.concat("token_type=" + tokenType);
+            hash = hash.concat("token_type=")
+                    .concat(tokenType)
+                    .concat("&");
         }
         if (state != null) {
-            if (!hash.endsWith("&")) {
-                hash = hash.concat("&");
-            }
-            hash = hash.concat("state=" + state);
+            hash = hash.concat("state=")
+                    .concat(state)
+                    .concat("&");
         }
         if (error != null) {
-            if (!hash.endsWith("&")) {
-                hash = hash.concat("&");
-            }
-            hash = hash.concat("error=" + error);
+            hash = hash.concat("error=")
+                    .concat(error)
+                    .concat("&");
         }
         if (errorDescription != null) {
-            if (!hash.endsWith("&")) {
-                hash = hash.concat("&");
-            }
-            hash = hash.concat("error_description=" + errorDescription);
+            hash = hash.concat("error_description=")
+                    .concat(errorDescription)
+                    .concat("&");
+        }
+        if (hash.endsWith("&")) {
+            hash = hash.substring(0, hash.length() - 1);
         }
         return hash.length() == 1 ? "" : hash;
     }
