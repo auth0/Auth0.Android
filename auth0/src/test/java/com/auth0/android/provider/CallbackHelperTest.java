@@ -166,8 +166,26 @@ public class CallbackHelperTest {
     }
 
     @Test
+    public void shouldGetEmptyValuesWhenQueryBeginsWithAmpersand() throws Exception {
+        String uriString = "https://my.website.com/some/page?&key_without_value";
+        Uri uri = Uri.parse(uriString);
+        final Map<String, String> values = CallbackHelper.getValuesFromUri(uri);
+        assertThat(values, notNullValue());
+        assertThat(values, IsMapWithSize.<String, String>anEmptyMap());
+    }
+
+    @Test
     public void shouldGetEmptyValuesWhenFragmentIsEmpty() throws Exception {
         String uriString = "https://my.website.com/some/page#";
+        Uri uri = Uri.parse(uriString);
+        final Map<String, String> values = CallbackHelper.getValuesFromUri(uri);
+        assertThat(values, notNullValue());
+        assertThat(values, IsMapWithSize.<String, String>anEmptyMap());
+    }
+
+    @Test
+    public void shouldGetEmptyValuesWhenFragmentBeginsWithAmpersand() throws Exception {
+        String uriString = "https://my.website.com/some/page#&key_without_value";
         Uri uri = Uri.parse(uriString);
         final Map<String, String> values = CallbackHelper.getValuesFromUri(uri);
         assertThat(values, notNullValue());
