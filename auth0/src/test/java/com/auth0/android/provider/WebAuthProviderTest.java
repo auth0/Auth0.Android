@@ -1045,7 +1045,7 @@ public class WebAuthProviderTest {
         String sentNonce = uri.getQueryParameter(KEY_NONCE);
         assertThat(sentState, is(not(isEmptyOrNullString())));
         assertThat(sentNonce, is(not(isEmptyOrNullString())));
-        Intent intent = createAuthIntent(createHash(customNonceJWT(sentNonce), null, null, null, sentState, null));
+        Intent intent = createAuthIntent(createHash(customNonceJWT(sentNonce), null, null, null, sentState, null, null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         verify(callback).onSuccess(any(Credentials.class));
@@ -1065,7 +1065,7 @@ public class WebAuthProviderTest {
         String sentNonce = uri.getQueryParameter(KEY_NONCE);
         assertThat(sentState, is(not(isEmptyOrNullString())));
         assertThat(sentNonce, is(not(isEmptyOrNullString())));
-        Intent intent = createAuthIntent(createHash(customNonceJWT(sentNonce), null, null, null, sentState, null));
+        Intent intent = createAuthIntent(createHash(customNonceJWT(sentNonce), null, null, null, sentState, null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onSuccess(any(Credentials.class));
@@ -1088,7 +1088,7 @@ public class WebAuthProviderTest {
                 .useCodeGrant(true)
                 .withPKCE(pkce)
                 .start(activity, callback);
-        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null));
+        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null, null));
         int DEFAULT_REQUEST_CODE = 110;
         assertTrue(WebAuthProvider.resume(DEFAULT_REQUEST_CODE, Activity.RESULT_OK, intent));
     }
@@ -1116,7 +1116,7 @@ public class WebAuthProviderTest {
 
         String sentState = uri.getQueryParameter(KEY_STATE);
         assertThat(sentState, is(not(isEmptyOrNullString())));
-        Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", sentState, null));
+        Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", sentState, null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
         ArgumentCaptor<Credentials> credentialsCaptor = ArgumentCaptor.forClass(Credentials.class);
@@ -1153,7 +1153,7 @@ public class WebAuthProviderTest {
 
         String sentState = uri.getQueryParameter(KEY_STATE);
         assertThat(sentState, is(not(isEmptyOrNullString())));
-        Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", sentState, null));
+        Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", sentState, null, null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         ArgumentCaptor<Credentials> credentialsCaptor = ArgumentCaptor.forClass(Credentials.class);
@@ -1180,7 +1180,7 @@ public class WebAuthProviderTest {
 
         String sentState = uri.getQueryParameter(KEY_STATE);
         assertThat(sentState, is(not(isEmptyOrNullString())));
-        Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", sentState, null));
+        Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", sentState, null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onSuccess(any(Credentials.class));
@@ -1199,7 +1199,7 @@ public class WebAuthProviderTest {
 
         String sentState = uri.getQueryParameter(KEY_STATE);
         assertThat(sentState, is(not(isEmptyOrNullString())));
-        Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", sentState, null));
+        Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", sentState, null, null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         verify(callback).onSuccess(any(Credentials.class));
@@ -1222,7 +1222,7 @@ public class WebAuthProviderTest {
                 .useCodeGrant(true)
                 .withPKCE(pkce)
                 .start(activity, callback);
-        Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", "1234567890", null));
+        Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", "1234567890", null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(dialog);
@@ -1245,7 +1245,7 @@ public class WebAuthProviderTest {
                 .useCodeGrant(true)
                 .withPKCE(pkce)
                 .start(activity, callback);
-        Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", "1234567890", null));
+        Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", "1234567890", null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(exception);
@@ -1258,7 +1258,7 @@ public class WebAuthProviderTest {
                 .withState("1234567890")
                 .useCodeGrant(false)
                 .start(activity, callback);
-        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", "access_denied"));
+        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", "access_denied", null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -1275,7 +1275,7 @@ public class WebAuthProviderTest {
                 .withState("1234567890")
                 .useCodeGrant(false)
                 .start(activity, callback, REQUEST_CODE);
-        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", "access_denied"));
+        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", "access_denied", null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -1287,12 +1287,46 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings({"deprecation", "ThrowableResultOfMethodCallIgnored"})
     @Test
+    public void shouldFailToResumeWithIntentWithRuleError() throws Exception {
+        WebAuthProvider.init(account)
+                .withState("1234567890")
+                .useCodeGrant(false)
+                .start(activity, callback);
+        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", "unauthorized", "Custom Rule Error"));
+        assertTrue(WebAuthProvider.resume(intent));
+
+        verify(callback).onFailure(authExceptionCaptor.capture());
+
+        assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
+        assertThat(authExceptionCaptor.getValue().getCode(), is("unauthorized"));
+        assertThat(authExceptionCaptor.getValue().getDescription(), is("Custom Rule Error"));
+    }
+
+    @SuppressWarnings({"deprecation", "ThrowableResultOfMethodCallIgnored"})
+    @Test
+    public void shouldFailToResumeWithRequestCodeWithRuleError() throws Exception {
+        WebAuthProvider.init(account)
+                .withState("1234567890")
+                .useCodeGrant(false)
+                .start(activity, callback, REQUEST_CODE);
+        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", "unauthorized", "Custom Rule Error"));
+        assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
+
+        verify(callback).onFailure(authExceptionCaptor.capture());
+
+        assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
+        assertThat(authExceptionCaptor.getValue().getCode(), is("unauthorized"));
+        assertThat(authExceptionCaptor.getValue().getDescription(), is("Custom Rule Error"));
+    }
+
+    @SuppressWarnings({"deprecation", "ThrowableResultOfMethodCallIgnored"})
+    @Test
     public void shouldFailToResumeWithIntentWithConfigurationInvalid() throws Exception {
         WebAuthProvider.init(account)
                 .withState("1234567890")
                 .useCodeGrant(false)
                 .start(activity, callback);
-        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", "some other error"));
+        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", "some other error", null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -1309,7 +1343,7 @@ public class WebAuthProviderTest {
                 .withState("1234567890")
                 .useCodeGrant(false)
                 .start(activity, callback, REQUEST_CODE);
-        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", "some other error"));
+        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", "some other error", null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -1326,7 +1360,7 @@ public class WebAuthProviderTest {
                 .withState("abcdefghijk")
                 .useCodeGrant(false)
                 .start(activity, callback);
-        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null));
+        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -1343,7 +1377,7 @@ public class WebAuthProviderTest {
                 .withState("abcdefghijk")
                 .useCodeGrant(false)
                 .start(activity, callback, REQUEST_CODE);
-        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null));
+        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null, null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -1361,7 +1395,7 @@ public class WebAuthProviderTest {
                 .withNonce("0987654321")
                 .withResponseType(ResponseType.ID_TOKEN)
                 .start(activity, callback);
-        Intent intent = createAuthIntent(createHash("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk", null, null, null, "state", null));
+        Intent intent = createAuthIntent(createHash("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk", null, null, null, "state", null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -1379,7 +1413,7 @@ public class WebAuthProviderTest {
                 .withNonce("0987654321")
                 .withResponseType(ResponseType.ID_TOKEN)
                 .start(activity, callback, REQUEST_CODE);
-        Intent intent = createAuthIntent(createHash("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk", null, null, null, "state", null));
+        Intent intent = createAuthIntent(createHash("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk", null, null, null, "state", null, null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -1397,7 +1431,7 @@ public class WebAuthProviderTest {
                 .useCodeGrant(false)
                 .start(activity, callback);
 
-        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null));
+        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null, null));
         assertFalse(WebAuthProvider.resume(999, Activity.RESULT_OK, intent));
     }
 
@@ -1409,7 +1443,7 @@ public class WebAuthProviderTest {
                 .useCodeGrant(false)
                 .start(activity, callback, REQUEST_CODE);
 
-        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null));
+        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null, null));
         assertFalse(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_CANCELED, intent));
     }
 
@@ -1421,7 +1455,7 @@ public class WebAuthProviderTest {
                 .useCodeGrant(false)
                 .start(activity, callback, REQUEST_CODE);
 
-        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null));
+        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null, null));
         assertFalse(WebAuthProvider.resume(REQUEST_CODE, 999, intent));
     }
 
@@ -1490,7 +1524,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         assertThat(WebAuthProvider.getInstance(), is(notNullValue()));
-        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null));
+        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null, null));
         assertTrue(WebAuthProvider.resume(intent));
         assertThat(WebAuthProvider.getInstance(), is(nullValue()));
     }
@@ -1502,7 +1536,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback, REQUEST_CODE);
 
         assertThat(WebAuthProvider.getInstance(), is(notNullValue()));
-        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null));
+        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", "1234567890", null, null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
         assertThat(WebAuthProvider.getInstance(), is(nullValue()));
     }
@@ -1515,40 +1549,45 @@ public class WebAuthProviderTest {
         return intent;
     }
 
-    private String createHash(@Nullable String idToken, @Nullable String accessToken, @Nullable String refreshToken, @Nullable String tokenType, @Nullable String state, @Nullable String error) {
+    private String createHash(@Nullable String idToken, @Nullable String accessToken, @Nullable String refreshToken, @Nullable String tokenType, @Nullable String state, @Nullable String error, @Nullable String errorDescription) {
         String hash = "#";
         if (accessToken != null) {
-            hash = hash.concat("access_token=" + accessToken);
+            hash = hash.concat("access_token=")
+                    .concat(accessToken)
+                    .concat("&");
         }
         if (idToken != null) {
-            if (!hash.endsWith("&")) {
-                hash = hash.concat("&");
-            }
-            hash = hash.concat("id_token=" + idToken);
+            hash = hash.concat("id_token=")
+                    .concat(idToken)
+                    .concat("&");
         }
         if (refreshToken != null) {
-            if (!hash.endsWith("&")) {
-                hash = hash.concat("&");
-            }
-            hash = hash.concat("refresh_token=" + refreshToken);
+            hash = hash.concat("refresh_token=")
+                    .concat(refreshToken)
+                    .concat("&");
         }
         if (tokenType != null) {
-            if (!hash.endsWith("&")) {
-                hash = hash.concat("&");
-            }
-            hash = hash.concat("token_type=" + tokenType);
+            hash = hash.concat("token_type=")
+                    .concat(tokenType)
+                    .concat("&");
         }
         if (state != null) {
-            if (!hash.endsWith("&")) {
-                hash = hash.concat("&");
-            }
-            hash = hash.concat("state=" + state);
+            hash = hash.concat("state=")
+                    .concat(state)
+                    .concat("&");
         }
         if (error != null) {
-            if (!hash.endsWith("&")) {
-                hash = hash.concat("&");
-            }
-            hash = hash.concat("error=" + error);
+            hash = hash.concat("error=")
+                    .concat(error)
+                    .concat("&");
+        }
+        if (errorDescription != null) {
+            hash = hash.concat("error_description=")
+                    .concat(errorDescription)
+                    .concat("&");
+        }
+        if (hash.endsWith("&")) {
+            hash = hash.substring(0, hash.length() - 1);
         }
         return hash.length() == 1 ? "" : hash;
     }
