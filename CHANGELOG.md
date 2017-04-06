@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.7.0](https://github.com/auth0/Auth0.Android/tree/1.7.0) (2017-04-06)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.6.0...1.7.0)
+
+**Added**
+- Add WebAuthProvider Rule error message parsing [\#89](https://github.com/auth0/Auth0.Android/pull/89) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.6.0](https://github.com/auth0/Auth0.Android/tree/1.6.0) (2017-03-02)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.5.0...1.6.0)
 
