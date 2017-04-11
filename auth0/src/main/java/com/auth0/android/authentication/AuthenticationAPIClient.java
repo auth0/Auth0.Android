@@ -224,8 +224,10 @@ public class AuthenticationAPIClient {
      * @param usernameOrEmail of the user
      * @param password        of the user
      * @return a request to configure and start that will yield {@link Credentials}
+     * @deprecated Using Password grant with Default Directory restricts its use to a single connection. This method has been deprecated in favor of {@link AuthenticationAPIClient#login(String, String, String)}.
      */
     @SuppressWarnings("WeakerAccess")
+    @Deprecated
     public AuthenticationRequest login(@NonNull String usernameOrEmail, @NonNull String password) {
         Map<String, Object> requestParameters = ParameterBuilder.newBuilder()
                 .set(USERNAME_KEY, usernameOrEmail)
