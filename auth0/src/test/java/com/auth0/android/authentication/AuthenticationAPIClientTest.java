@@ -1573,6 +1573,46 @@ public class AuthenticationAPIClientTest {
         assertThat(callback, hasPayloadOfType(Authentication.class));
     }
 
+
+    @Test
+    public void shouldRevokeToken() throws Exception {
+        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
+
+        mockAPI.willReturnSuccessfulEmptyBody();
+        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
+        client.revokeToken("refreshToken")
+                .start(callback);
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+        assertThat(request.getPath(), equalTo("/oauth/revoke"));
+
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("client_id", CLIENT_ID));
+        assertThat(body, hasEntry("token", "refreshToken"));
+
+        assertThat(callback, hasNoError());
+    }
+
+    @Test
+    public void shouldRevokeTokenSync() throws Exception {
+        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
+
+        mockAPI.willReturnSuccessfulEmptyBody();
+        client.revokeToken("refreshToken")
+                .execute();
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+        assertThat(request.getPath(), equalTo("/oauth/revoke"));
+
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("client_id", CLIENT_ID));
+        assertThat(body, hasEntry("token", "refreshToken"));
+    }
+
     @Test
     public void shouldRenewAuthWithOAuthTokenIfOIDCConformant() throws Exception {
         Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());

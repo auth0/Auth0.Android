@@ -78,6 +78,9 @@ public class AuthenticationAPIClient {
     private static final String PASSWORD_KEY = "password";
     private static final String EMAIL_KEY = "email";
     private static final String PHONE_NUMBER_KEY = "phone_number";
+    private static final String OAUTH_CODE_KEY = "code";
+    private static final String REDIRECT_URI_KEY = "redirect_uri";
+    private static final String TOKEN_KEY = "token";
     private static final String DELEGATION_PATH = "delegation";
     private static final String ACCESS_TOKEN_PATH = "access_token";
     private static final String SIGN_UP_PATH = "signup";
@@ -90,8 +93,7 @@ public class AuthenticationAPIClient {
     private static final String RESOURCE_OWNER_PATH = "ro";
     private static final String TOKEN_INFO_PATH = "tokeninfo";
     private static final String USER_INFO_PATH = "userinfo";
-    private static final String OAUTH_CODE_KEY = "code";
-    private static final String REDIRECT_URI_KEY = "redirect_uri";
+    private static final String REVOKE_PATH = "revoke";
     private static final String HEADER_AUTHORIZATION = "Authorization";
 
     private final Auth0 auth0;
@@ -615,6 +617,43 @@ public class AuthenticationAPIClient {
         final ParameterizableRequest<Void, AuthenticationException> request = factory.POST(url, client, gson, authErrorBuilder)
                 .addParameters(parameters);
         return new DatabaseConnectionRequest<>(request);
+    }
+
+    /**
+     * Request the revoke of a given refresh_token. Once revoked, the refresh_token cannot be used to obtain new tokens.
+     * The client must be of type 'Native' or have the 'Token Endpoint Authentication Method' set to 'none' for this endpoint to work.
+     * 
+     * Example usage:
+     * <pre>
+     * {@code
+     * client.revokeToken("{refresh_token}")
+     *      .start(new BaseCallback<Void>() {
+     *          {@literal}Override
+     *          public void onSuccess(Void payload) {}
+     *
+     *          {@literal}Override
+     *          public void onFailure(AuthenticationException error) {}
+     *      });
+     * }
+     * </pre>
+     *
+     * @param refreshToken the token to revoke
+     * @return a request to start
+     */
+    @SuppressWarnings("WeakerAccess")
+    public Request<Void, AuthenticationException> revokeToken(@NonNull String refreshToken) {
+        final Map<String, Object> parameters = ParameterBuilder.newBuilder()
+                .setClientId(getClientId())
+                .set(TOKEN_KEY, refreshToken)
+                .asDictionary();
+
+        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+                .addPathSegment(OAUTH_PATH)
+                .addPathSegment(REVOKE_PATH)
+                .build();
+
+        return factory.POST(url, client, gson, authErrorBuilder)
+                .addParameters(parameters);
     }
 
     /**
