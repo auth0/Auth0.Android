@@ -107,8 +107,7 @@ public class AuthenticationAPI {
     }
 
     public AuthenticationAPI willReturnSuccessfulEmptyBody() {
-        String json = "{}";
-        server.enqueue(responseWithJSON(json, 200));
+        server.enqueue(responseEmpty(200));
         return this;
     }
 
@@ -181,7 +180,12 @@ public class AuthenticationAPI {
         return this;
     }
 
-    private MockResponse responseWithPlainText(String statusMessage, int statusCode){
+    private MockResponse responseEmpty(int statusCode) {
+        return new MockResponse()
+                .setResponseCode(statusCode);
+    }
+
+    private MockResponse responseWithPlainText(String statusMessage, int statusCode) {
         return new MockResponse()
                 .setResponseCode(statusCode)
                 .addHeader("Content-Type", "text/plain")

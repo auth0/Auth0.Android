@@ -1598,7 +1598,6 @@ public class AuthenticationAPIClientTest {
     @Test
     public void shouldRevokeTokenSync() throws Exception {
         Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
-        auth0.setOIDCConformant(true);
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
 
         mockAPI.willReturnSuccessfulEmptyBody();

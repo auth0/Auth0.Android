@@ -638,10 +638,10 @@ public class AuthenticationAPIClient {
      * </pre>
      *
      * @param refreshToken the token to revoke
-     * @return a request to configure and start
+     * @return a request to start
      */
     @SuppressWarnings("WeakerAccess")
-    public ParameterizableRequest<Void, AuthenticationException> revokeToken(@NonNull String refreshToken) {
+    public Request<Void, AuthenticationException> revokeToken(@NonNull String refreshToken) {
         final Map<String, Object> parameters = ParameterBuilder.newBuilder()
                 .setClientId(getClientId())
                 .set(TOKEN_KEY, refreshToken)
