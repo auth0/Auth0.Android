@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.8.0](https://github.com/auth0/Auth0.Android/tree/1.8.0) (2017-04-27)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.7.0...1.8.0)
+
+**Added**
+- Add method to revoke a refresh_token [\#86](https://github.com/auth0/Auth0.Android/pull/86) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.7.0](https://github.com/auth0/Auth0.Android/tree/1.7.0) (2017-04-06)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.6.0...1.7.0)
 
