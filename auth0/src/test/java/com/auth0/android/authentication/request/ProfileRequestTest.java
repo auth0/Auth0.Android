@@ -95,8 +95,8 @@ public class ProfileRequestTest {
         assertThat(authenticationCaptor.getValue(), is(instanceOf(Authentication.class)));
         assertThat(authenticationCaptor.getValue().getCredentials(), is(notNullValue()));
         assertThat(authenticationCaptor.getValue().getCredentials(), is(credentials));
-        assertThat(authenticationCaptor.getValue().getProfile(), is(notNullValue()));
-        assertThat(authenticationCaptor.getValue().getProfile(), is(userProfile));
+        assertThat(authenticationCaptor.getValue().getUserProfile(), is(notNullValue()));
+        assertThat(authenticationCaptor.getValue().getUserProfile(), is(userProfile));
     }
 
     @Test
@@ -161,8 +161,8 @@ public class ProfileRequestTest {
         assertThat(executeResult, is(instanceOf(Authentication.class)));
         assertThat(executeResult.getCredentials(), is(notNullValue()));
         assertThat(executeResult.getCredentials(), is(credentials));
-        assertThat(executeResult.getProfile(), is(notNullValue()));
-        assertThat(executeResult.getProfile(), is(userProfile));
+        assertThat(executeResult.getUserProfile(), is(notNullValue()));
+        assertThat(executeResult.getUserProfile(), is(userProfile));
     }
 
 }

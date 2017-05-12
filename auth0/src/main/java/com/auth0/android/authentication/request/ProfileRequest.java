@@ -44,11 +44,11 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
     private static final String HEADER_AUTHORIZATION = "Authorization";
 
     private final AuthenticationRequest credentialsRequest;
-    private final ParameterizableRequest<UserProfile, AuthenticationException> userInfoRequest;
+    private final ParameterizableRequest<UserProfile, AuthenticationException> userProfileRequest;
 
-    public ProfileRequest(AuthenticationRequest credentialsRequest, ParameterizableRequest<UserProfile, AuthenticationException> userInfoRequest) {
+    public ProfileRequest(AuthenticationRequest credentialsRequest, ParameterizableRequest<UserProfile, AuthenticationException> userProfileRequest) {
         this.credentialsRequest = credentialsRequest;
-        this.userInfoRequest = userInfoRequest;
+        this.userProfileRequest = userProfileRequest;
     }
 
     /**
@@ -94,7 +94,7 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
         credentialsRequest.start(new BaseCallback<Credentials, AuthenticationException>() {
             @Override
             public void onSuccess(final Credentials credentials) {
-                userInfoRequest
+                userProfileRequest
                         .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.getAccessToken())
                         .start(new BaseCallback<UserProfile, AuthenticationException>() {
                             @Override
@@ -125,7 +125,7 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
     @Override
     public Authentication execute() throws Auth0Exception {
         Credentials credentials = credentialsRequest.execute();
-        UserProfile profile = userInfoRequest
+        UserProfile profile = userProfileRequest
                 .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.getAccessToken())
                 .execute();
         return new Authentication(profile, credentials);
