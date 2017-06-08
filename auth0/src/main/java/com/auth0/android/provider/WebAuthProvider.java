@@ -266,8 +266,8 @@ public class WebAuthProvider {
          */
         @Deprecated
         public void start(@NonNull Activity activity, @NonNull AuthCallback callback, int requestCode) {
+            managerInstance = null;
             if (account.getAuthorizeUrl() == null) {
-                managerInstance = null;
                 final AuthenticationException ex = new AuthenticationException("a0.invalid_authorize_url", "Auth0 authorize URL not properly set. This can be related to an invalid domain.");
                 callback.onFailure(ex);
                 return;
@@ -309,7 +309,6 @@ public class WebAuthProvider {
         return new Builder(account);
     }
 
-
     /**
      * Initialize the WebAuthProvider instance with an Android Context. Additional settings can be configured
      * in the Builder, like setting the connection name or authentication parameters.
@@ -318,7 +317,7 @@ public class WebAuthProvider {
      * @return a new Builder instance to customize.
      */
     public static Builder init(@NonNull Context context) {
-        return new Builder(new Auth0(context));
+        return init(new Auth0(context));
     }
 
     /**

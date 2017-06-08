@@ -2,7 +2,6 @@ package com.auth0.android.provider;
 
 import android.app.Activity;
 import android.app.Dialog;
-import android.content.Intent;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -63,7 +62,7 @@ class OAuthManager {
     private PKCE pkce;
     private Long currentTimeInMillis;
 
-    OAuthManager(Auth0 account, AuthCallback callback, Map<String, String> parameters) {
+    OAuthManager(@NonNull Auth0 account, @NonNull AuthCallback callback, @NonNull Map<String, String> parameters) {
         this.account = account;
         this.callback = callback;
         this.parameters = new HashMap<>(parameters);
@@ -87,21 +86,12 @@ class OAuthManager {
         addClientParameters(parameters, redirectUri);
         addValidationParameters(parameters);
         Uri uri = buildAuthorizeUri();
-
         this.requestCode = requestCode;
-        final Intent intent;
-        if (this.useBrowser) {
-            Log.d(TAG, "About to start the authorization using the Browser");
-            intent = new Intent(Intent.ACTION_VIEW, uri);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-            activity.startActivity(intent);
+
+        if (useBrowser) {
+            AuthenticationActivity.authenticateUsingBrowser(activity, uri);
         } else {
-            Log.d(TAG, "About to start the authorization using the WebView");
-            intent = new Intent(activity, WebAuthActivity.class);
-            intent.setData(uri);
-            intent.putExtra(WebAuthActivity.CONNECTION_NAME_EXTRA, parameters.get(KEY_CONNECTION));
-            intent.putExtra(WebAuthActivity.FULLSCREEN_EXTRA, useFullScreen);
-            activity.startActivityForResult(intent, requestCode);
+            AuthenticationActivity.authenticateUsingWebView(activity, uri, requestCode, parameters.get(KEY_CONNECTION), useFullScreen);
         }
     }
 
@@ -121,7 +111,7 @@ class OAuthManager {
         try {
             assertNoError(values.get(KEY_ERROR), values.get(KEY_ERROR_DESCRIPTION));
             assertValidState(parameters.get(KEY_STATE), values.get(KEY_STATE));
-            if (parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_ID_TOKEN)) {
+            if (parameters.containsKey(KEY_RESPONSE_TYPE) && parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_ID_TOKEN)) {
                 assertValidNonce(parameters.get(KEY_NONCE), values.get(KEY_ID_TOKEN));
             }
 
@@ -234,7 +224,7 @@ class OAuthManager {
         String state = getRandomString(parameters.get(KEY_STATE));
         parameters.put(KEY_STATE, state);
 
-        if (parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_ID_TOKEN)) {
+        if (parameters.containsKey(KEY_RESPONSE_TYPE) && parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_ID_TOKEN)) {
             String nonce = getRandomString(parameters.get(KEY_NONCE));
             parameters.put(KEY_NONCE, nonce);
         }
@@ -255,7 +245,7 @@ class OAuthManager {
     }
 
     private boolean shouldUsePKCE() {
-        return parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_CODE) && PKCE.isAvailable();
+        return parameters.containsKey(KEY_RESPONSE_TYPE) && parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_CODE) && PKCE.isAvailable();
     }
 
     @VisibleForTesting

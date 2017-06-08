@@ -17,7 +17,6 @@ import org.robolectric.annotation.Config;
 import java.util.Date;
 import java.util.HashMap;
 
-import static org.cyberneko.html.HTMLElements.HEAD;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
