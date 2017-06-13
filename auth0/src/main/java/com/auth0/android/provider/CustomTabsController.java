@@ -20,6 +20,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("WeakerAccess")
 class CustomTabsController extends CustomTabsServiceConnection {
 
     private static final String TAG = CustomTabsController.class.getSimpleName();
@@ -68,6 +69,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
     public void onServiceDisconnected(ComponentName componentName) {
         Log.d(TAG, "CustomTabs Service disconnected");
         session = null;
+        isBound = false;
     }
 
     /**
@@ -82,7 +84,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
         if (!isBound && context != null) {
             success = CustomTabsClient.bindCustomTabsService(context, preferredPackage, this);
         }
-        Log.d(TAG, "Bound: " + success);
+        Log.v(TAG, "Bind request result: " + success);
         return success;
     }
 
@@ -92,11 +94,10 @@ class CustomTabsController extends CustomTabsServiceConnection {
     public void unbindService() {
         Log.v(TAG, "Trying to unbind the service");
         Context context = this.context.get();
-        if (isBound && context != null) {
+        if (context != null) {
             context.unbindService(this);
         }
-        this.isBound = false;
-        this.nextUri = null;
+        nextUri = null;
     }
 
     /**
@@ -106,7 +107,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
      * @return true if the request to bind the service was successful, false if the service was already bound or it couldn't be bound.
      */
     public boolean bindServiceAndLaunchUri(@NonNull Uri uri) {
-        this.nextUri = uri;
+        nextUri = uri;
         boolean boundRequestSuccess = bindService();
         if (isBound || !boundRequestSuccess) {
             launchUri(uri);

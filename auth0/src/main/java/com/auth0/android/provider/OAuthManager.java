@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+@SuppressWarnings("WeakerAccess")
 class OAuthManager {
 
     private static final String TAG = OAuthManager.class.getSimpleName();

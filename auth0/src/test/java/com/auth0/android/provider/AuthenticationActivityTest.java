@@ -24,6 +24,7 @@ import static android.support.test.espresso.intent.matcher.IntentMatchers.hasCom
 import static android.support.test.espresso.intent.matcher.IntentMatchers.hasData;
 import static android.support.test.espresso.intent.matcher.IntentMatchers.hasFlag;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
@@ -172,6 +173,7 @@ public class AuthenticationActivityTest {
 
         assertThat(webViewIntent.intent, hasComponent(WebAuthActivity.class.getName()));
         assertThat(webViewIntent.intent, hasData(uri));
+        assertThat(webViewIntent.requestCode, is(greaterThan(0)));
         assertThat(activity.getDeliveredIntent(), is(nullValue()));
         activityController.pause();
         //WebViewActivity is shown
@@ -208,6 +210,7 @@ public class AuthenticationActivityTest {
 
         assertThat(webViewIntent.intent, hasComponent(WebAuthActivity.class.getName()));
         assertThat(webViewIntent.intent, hasData(uri));
+        assertThat(webViewIntent.requestCode, is(greaterThan(0)));
         assertThat(activity.getDeliveredIntent(), is(nullValue()));
         //WebViewActivity is shown
         //Memory needed. Let's kill the activity
@@ -243,6 +246,7 @@ public class AuthenticationActivityTest {
 
         assertThat(webViewIntent.intent, hasComponent(WebAuthActivity.class.getName()));
         assertThat(webViewIntent.intent, hasData(uri));
+        assertThat(webViewIntent.requestCode, is(greaterThan(0)));
         assertThat(activity.getDeliveredIntent(), is(nullValue()));
         activityController.pause().stop();
         //WebViewActivity is shown

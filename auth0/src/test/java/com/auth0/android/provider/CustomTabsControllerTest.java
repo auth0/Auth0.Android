@@ -137,12 +137,6 @@ public class CustomTabsControllerTest {
     }
 
     @Test
-    public void shouldNotUnbindIfNeverBound() throws Exception {
-        controller.unbindService();
-        verify(context, never()).unbindService(serviceConnectionCaptor.capture());
-    }
-
-    @Test
     public void shouldUnbind() throws Exception {
         bindService(true, false);
         connectBoundService();

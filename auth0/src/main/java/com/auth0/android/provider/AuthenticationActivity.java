@@ -8,16 +8,14 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
-import android.util.Log;
 
 public class AuthenticationActivity extends Activity {
-
-    private static final String TAG = AuthenticationActivity.class.getSimpleName();
 
     static final String EXTRA_USE_BROWSER = "com.auth0.android.EXTRA_USE_BROWSER";
     static final String EXTRA_USE_FULL_SCREEN = "com.auth0.android.EXTRA_USE_FULL_SCREEN";
     static final String EXTRA_CONNECTION_NAME = "com.auth0.android.EXTRA_CONNECTION_NAME";
     private static final String EXTRA_INTENT_LAUNCHED = "com.auth0.android.EXTRA_INTENT_LAUNCHED";
+
     private boolean intentLaunched;
     private CustomTabsController customTabsController;
 
@@ -47,13 +45,11 @@ public class AuthenticationActivity extends Activity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        Log.e(TAG, "Activity result");
         if (resultCode == RESULT_OK) {
             deliverSuccessfulAuthenticationResult(data);
         }
         finish();
     }
-
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
@@ -72,19 +68,14 @@ public class AuthenticationActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        Log.e(TAG, "onResume: intentLaunched = " + intentLaunched);
         if (!intentLaunched) {
-            Log.e(TAG, "OnResume: Launching authentication intent");
             intentLaunched = true;
             launchAuthenticationIntent();
             return;
         }
 
         if (getIntent().getData() != null) {
-            Log.e(TAG, "OnResume: Passing result to the WebAuthProvider");
             deliverSuccessfulAuthenticationResult(getIntent());
-        } else {
-            Log.e(TAG, "OnResume: The authentication was canceled");
         }
         finish();
     }
@@ -102,16 +93,15 @@ public class AuthenticationActivity extends Activity {
         Bundle extras = getIntent().getExtras();
         final Uri authorizeUri = getIntent().getData();
         if (!extras.getBoolean(EXTRA_USE_BROWSER, true)) {
-            Log.e(TAG, "OnCreate: Launching WebAuthActivity intent for result");
             Intent intent = new Intent(this, WebAuthActivity.class);
             intent.setData(authorizeUri);
             intent.putExtra(WebAuthActivity.CONNECTION_NAME_EXTRA, extras.getString(EXTRA_CONNECTION_NAME));
             intent.putExtra(WebAuthActivity.FULLSCREEN_EXTRA, extras.getBoolean(EXTRA_USE_FULL_SCREEN));
-            startActivityForResult(intent, -1);
+            //The request code value can be ignored
+            startActivityForResult(intent, 33);
             return;
         }
 
-        Log.e(TAG, "OnCreate: Launching Intent.VIEW intent");
         customTabsController = createCustomTabsController(this);
         customTabsController.bindServiceAndLaunchUri(authorizeUri);
     }
