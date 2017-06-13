@@ -255,9 +255,7 @@ public class WebAuthProvider {
         }
 
         /**
-         * Begins the authentication flow.
-         * Make sure to override your activity's onNewIntent() and onActivityResult() methods,
-         * and call this provider's resume() method with the received parameters.
+         * Request user Authentication. The result will be received in the callback.
          *
          * @param activity    context to run the authentication
          * @param callback    to receive the parsed results
@@ -285,8 +283,7 @@ public class WebAuthProvider {
         }
 
         /**
-         * Begins the authentication flow.
-         * Make sure to override your activity's onNewIntent() method and call this provider's resume() method with the received parameters.
+         * Request user Authentication. The result will be received in the callback.
          *
          * @param activity context to run the authentication
          * @param callback to receive the parsed results
@@ -323,6 +320,8 @@ public class WebAuthProvider {
     /**
      * Finishes the authentication flow by passing the data received in the activity's onActivityResult() callback.
      * The final authentication result will be delivered to the callback specified when calling start().
+     * <p>
+     * This is no longer required to be called, the authentication is handled internally as long as you've correctly setup the intent-filter.
      *
      * @param requestCode the request code received on the onActivityResult() call
      * @param resultCode  the result code received on the onActivityResult() call
@@ -347,6 +346,8 @@ public class WebAuthProvider {
     /**
      * Finishes the authentication flow by passing the data received in the activity's onNewIntent() callback.
      * The final authentication result will be delivered to the callback specified when calling start().
+     * <p>
+     * This is no longer required to be called, the authentication is handled internally as long as you've correctly setup the intent-filter.
      *
      * @param intent the data received on the onNewIntent() call
      * @return true if a result was expected and has a valid format, or false if not.

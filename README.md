@@ -14,7 +14,7 @@ Android API version 15 or newer
 
 ## Installation
 
-###Gradle
+### Gradle
 
 Auth0.android is available through [Gradle](https://gradle.org/). To install it, simply add the following line to your `build.gradle` file:
 
@@ -269,13 +269,33 @@ First go to [Auth0 Dashboard](https://manage.auth0.com/#/applications) and go to
 https://{YOUR_AUTH0_DOMAIN}/android/{YOUR_APP_PACKAGE_NAME}/callback
 ```
 
-Open your app's `AndroidManifest.xml` file and add the following permission.
+Remember to replace `{YOUR_APP_PACKAGE_NAME}` with your actual application's package name.
 
-```xml
-<uses-permission android:name="android.permission.INTERNET" />
+
+Next, define placeholders for the Auth0 Domain and Scheme which are going to be used internally by the library to register an **intent-filter**. Go to your application's `build.gradle` file and add the `manifestPlaceholders` line as shown below:
+
+```groovy
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 25
+    defaultConfig {
+        applicationId "com.auth0.samples"
+        minSdkVersion 15
+        targetSdkVersion 25
+        //...
+        
+        //---> Add the next line
+        manifestPlaceholders = [auth0Domain: "@string/auth0_domain", auth0Scheme: "https"]
+        //<---
+    }
+    //...
+}
 ```
 
-Also register the intent filters inside your activity's tag, so you can receive the call in your activity. Note that you will have to specify the callback url inside the `data` tag.
+It's a good practice to define reusable resources like `@string/auth0_domain` but you can also hard code the value. In case you're using a [custom scheme](#a-note-about-app-deep-linking) you must update the `auth0Scheme` property.
+
+Alternatively you can define your own **intent-filter** for the `RedirectActivity` in the `AndroidManifest.xml` file replacing the one defined by the library. If you choose to do this, the `manifestPlaceholders` don't need to be set. In your manifest inside your application's tag add the `RedirectActivity` declaration:
 
 ```xml
     <application android:theme="@style/AppTheme">
@@ -283,22 +303,18 @@ Also register the intent filters inside your activity's tag, so you can receive 
         <!-- ... -->
 
         <activity
-            android:name="com.mycompany.MainActivity"
-            android:theme="@style/MyAppTheme"
-            android:launchMode="singleTask">
-
-            <intent-filter android:autoVerify="true">
+            android:name="com.auth0.android.provider.RedirectActivity">
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:host="{YOUR_AUTH0_DOMAIN}"
+                    android:host="@string/auth0_domain"
                     android:pathPrefix="/android/{YOUR_APP_PACKAGE_NAME}/callback"
                     android:scheme="https" />
             </intent-filter>
-
         </activity>
 
         <!-- ... -->
@@ -306,23 +322,17 @@ Also register the intent filters inside your activity's tag, so you can receive 
     </application>
 ```
 
-Make sure the Activity's **launchMode** is declared as "singleTask" or the result won't come back after the authentication.
+Remember to replace `{YOUR_APP_PACKAGE_NAME}` with your actual application's package name.
 
-When you launch the WebAuthProvider you'll expect a result back. To capture the response override the `onNewIntent` method and call `WebAuthProvider.resume()` with the received parameters:
+Finally, don't forget to add the internet permission.
 
-```java
-public class MyActivity extends Activity {
-
-    @Override
-    protected void onNewIntent(Intent intent) {
-        if (WebAuthProvider.resume(intent)) {
-            return;
-        }
-        super.onNewIntent(intent);
-    }
-}
-
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
 ```
+
+
+> In versions 1.8.0 and before you had to define the **intent-filter** in your own activity to capture the result in the `onNewIntent` method and call `WebAuthProvider.resume()` with the received intent. This call is no longer required for versions greater than 1.8.0 as it's done for you by the library.
+
 
 ##### A note about App Deep Linking:
 
@@ -451,7 +461,7 @@ android {
 
 ref: https://github.com/square/okio/issues/58#issuecomment-72672263
 
-##Proguard
+## Proguard
 The rules should be applied automatically if your application is using `minifyEnabled = true`. If you want to include them manually check the [proguard directory](proguard).
 By default you should at least use the following files:
 * `proguard-okio.pro`

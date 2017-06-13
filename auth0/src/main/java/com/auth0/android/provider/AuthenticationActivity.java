@@ -10,7 +10,7 @@ import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.util.Log;
 
-class AuthenticationActivity extends Activity {
+public class AuthenticationActivity extends Activity {
 
     private static final String TAG = AuthenticationActivity.class.getSimpleName();
 
@@ -21,7 +21,7 @@ class AuthenticationActivity extends Activity {
     private boolean intentLaunched;
     private CustomTabsController customTabsController;
 
-    public static void authenticateUsingBrowser(Context context, Uri authorizeUri) {
+    static void authenticateUsingBrowser(Context context, Uri authorizeUri) {
         Intent intent = new Intent(context, AuthenticationActivity.class);
         intent.setData(authorizeUri);
         intent.putExtra(AuthenticationActivity.EXTRA_USE_BROWSER, true);
@@ -29,7 +29,7 @@ class AuthenticationActivity extends Activity {
         context.startActivity(intent);
     }
 
-    public static void authenticateUsingWebView(Activity activity, Uri authorizeUri, int requestCode, String connection, boolean useFullScreen) {
+    static void authenticateUsingWebView(Activity activity, Uri authorizeUri, int requestCode, String connection, boolean useFullScreen) {
         Intent intent = new Intent(activity, AuthenticationActivity.class);
         intent.setData(authorizeUri);
         intent.putExtra(AuthenticationActivity.EXTRA_USE_BROWSER, false);
@@ -117,12 +117,12 @@ class AuthenticationActivity extends Activity {
     }
 
     @VisibleForTesting
-    protected CustomTabsController createCustomTabsController(@NonNull Context context) {
+    CustomTabsController createCustomTabsController(@NonNull Context context) {
         return new CustomTabsController(context);
     }
 
     @VisibleForTesting
-    protected void deliverSuccessfulAuthenticationResult(Intent result) {
+    void deliverSuccessfulAuthenticationResult(Intent result) {
         WebAuthProvider.resume(result);
     }
 
