@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.util.Log;
@@ -111,13 +112,13 @@ class AuthenticationActivity extends Activity {
         }
 
         Log.e(TAG, "OnCreate: Launching Intent.VIEW intent");
-        customTabsController = createCustomTabsController();
+        customTabsController = createCustomTabsController(this);
         customTabsController.bindServiceAndLaunchUri(authorizeUri);
     }
 
     @VisibleForTesting
-    protected CustomTabsController createCustomTabsController() {
-        return new CustomTabsController(this);
+    protected CustomTabsController createCustomTabsController(@NonNull Context context) {
+        return new CustomTabsController(context);
     }
 
     @VisibleForTesting

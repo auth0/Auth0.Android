@@ -11,7 +11,9 @@ public class RedirectActivity extends Activity {
         super.onCreate(savedInstanceBundle);
         Intent intent = new Intent(this, AuthenticationActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        intent.setData(getIntent().getData());
+        if (getIntent() != null) {
+            intent.setData(getIntent().getData());
+        }
         startActivity(intent);
         finish();
     }

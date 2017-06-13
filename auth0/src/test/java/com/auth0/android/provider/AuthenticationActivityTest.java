@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowActivity;
 import org.robolectric.util.ActivityController;
@@ -78,13 +79,41 @@ public class AuthenticationActivityTest {
         assertThat(uriCaptor.getValue(), is(notNullValue()));
         assertThat(uriCaptor.getValue(), is(uri));
         assertThat(activity.getDeliveredIntent(), is(nullValue()));
-        activityController.pause();
+        activityController.pause().stop();
         //Browser is shown
 
         Intent authenticationResultIntent = new Intent();
         authenticationResultIntent.setData(resultUri);
         activityController.newIntent(authenticationResultIntent);
-        activityController.resume();
+        activityController.start().resume();
+
+        assertThat(activity.getDeliveredIntent(), is(notNullValue()));
+        assertThat(activity.getDeliveredIntent().getData(), is(resultUri));
+
+        assertThat(activity.isFinishing(), is(true));
+
+        activityController.destroy();
+        verify(customTabsController).unbindService();
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void shouldAuthenticateAfterRecreatedUsingBrowser() throws Exception {
+        AuthenticationActivity.authenticateUsingBrowser(callerActivity, uri);
+        verify(callerActivity).startActivity(intentCaptor.capture());
+
+        createActivity(intentCaptor.getValue());
+        activityController.create().start().resume();
+
+        verify(customTabsController).bindServiceAndLaunchUri(uriCaptor.capture());
+        assertThat(uriCaptor.getValue(), is(notNullValue()));
+        assertThat(uriCaptor.getValue(), is(uri));
+        assertThat(activity.getDeliveredIntent(), is(nullValue()));
+        //Browser is shown
+        //Memory needed. Let's kill the activity
+        Intent authenticationResultIntent = new Intent();
+        authenticationResultIntent.setData(resultUri);
+        recreateAndCallNewIntent(authenticationResultIntent);
 
         assertThat(activity.getDeliveredIntent(), is(notNullValue()));
         assertThat(activity.getDeliveredIntent().getData(), is(resultUri));
@@ -108,13 +137,13 @@ public class AuthenticationActivityTest {
         assertThat(uriCaptor.getValue(), is(notNullValue()));
         assertThat(uriCaptor.getValue(), is(uri));
         assertThat(activity.getDeliveredIntent(), is(nullValue()));
-        activityController.pause();
+        activityController.pause().stop();
         //Browser is shown
 
         Intent authenticationResultIntent = new Intent();
         authenticationResultIntent.setData(null);
         activityController.newIntent(authenticationResultIntent);
-        activityController.resume();
+        activityController.start().resume();
 
         assertThat(activity.getDeliveredIntent(), is(nullValue()));
         assertThat(activity.isFinishing(), is(true));
@@ -161,6 +190,41 @@ public class AuthenticationActivityTest {
 
     @SuppressWarnings("deprecation")
     @Test
+    public void shouldAuthenticateAfterRecreatedUsingWebView() throws Exception {
+        verifyNoMoreInteractions(customTabsController);
+
+        AuthenticationActivity.authenticateUsingWebView(callerActivity, uri, 123, "facebook", true);
+        verify(callerActivity).startActivityForResult(intentCaptor.capture(), eq(123));
+
+        createActivity(intentCaptor.getValue());
+        activityController.create().start().resume();
+        final ShadowActivity.IntentForResult webViewIntent = activityShadow.getNextStartedActivityForResult();
+
+        Bundle extras = webViewIntent.intent.getExtras();
+        assertThat(extras.containsKey(WebAuthActivity.CONNECTION_NAME_EXTRA), is(true));
+        assertThat(extras.getString(WebAuthActivity.CONNECTION_NAME_EXTRA), is("facebook"));
+        assertThat(extras.containsKey(WebAuthActivity.FULLSCREEN_EXTRA), is(true));
+        assertThat(extras.getBoolean(WebAuthActivity.FULLSCREEN_EXTRA), is(true));
+
+        assertThat(webViewIntent.intent, hasComponent(WebAuthActivity.class.getName()));
+        assertThat(webViewIntent.intent, hasData(uri));
+        assertThat(activity.getDeliveredIntent(), is(nullValue()));
+        //WebViewActivity is shown
+        //Memory needed. Let's kill the activity
+        Intent authenticationResultIntent = new Intent();
+        authenticationResultIntent.setData(resultUri);
+        recreateAndCallActivityResult(123, authenticationResultIntent);
+
+        assertThat(activity.getDeliveredIntent(), is(notNullValue()));
+        assertThat(activity.getDeliveredIntent().getData(), is(resultUri));
+
+        assertThat(activity.isFinishing(), is(true));
+
+        activityController.destroy();
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
     public void shouldCancelAuthenticationUsingWebView() throws Exception {
         verifyNoMoreInteractions(customTabsController);
 
@@ -180,7 +244,7 @@ public class AuthenticationActivityTest {
         assertThat(webViewIntent.intent, hasComponent(WebAuthActivity.class.getName()));
         assertThat(webViewIntent.intent, hasData(uri));
         assertThat(activity.getDeliveredIntent(), is(nullValue()));
-        activityController.pause();
+        activityController.pause().stop();
         //WebViewActivity is shown
 
         Intent authenticationResultIntent = new Intent();
@@ -233,4 +297,31 @@ public class AuthenticationActivityTest {
         Assert.assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(false));
     }
 
+    @Test
+    public void shouldCreateCustomTabsController() throws Exception {
+        final AuthenticationActivity authenticationActivity = new AuthenticationActivity();
+        final CustomTabsController controller = authenticationActivity.createCustomTabsController(RuntimeEnvironment.application);
+
+        assertThat(controller, is(notNullValue()));
+    }
+
+    private void recreateAndCallNewIntent(Intent data) {
+        Bundle outState = new Bundle();
+        activityController.saveInstanceState(outState);
+        activityController.pause().stop().destroy();
+        createActivity(null);
+        activityController.create(outState).start().restoreInstanceState(outState);
+        activityController.newIntent(data);
+        activityController.resume();
+    }
+
+    private void recreateAndCallActivityResult(int reqCode, Intent data) {
+        Bundle outState = new Bundle();
+        activityController.saveInstanceState(outState);
+        activityController.pause().stop().destroy();
+        createActivity(null);
+        activityController.create(outState).start().restoreInstanceState(outState);
+        activity.onActivityResult(reqCode, Activity.RESULT_OK, data);
+        activityController.resume();
+    }
 }
