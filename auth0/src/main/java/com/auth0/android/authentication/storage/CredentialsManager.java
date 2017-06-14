@@ -1,6 +1,7 @@
 package com.auth0.android.authentication.storage;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
 
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
@@ -52,7 +53,7 @@ public class CredentialsManager {
 
         long expiresIn = credentials.getExpiresIn() == null ? 0 : credentials.getExpiresIn();
         storage.store(KEY_EXPIRES_IN, Long.toString(expiresIn));
-        long expirationTime = System.currentTimeMillis() + (expiresIn * 1000);
+        long expirationTime = getCurrentTimeInMillis() + (expiresIn * 1000);
         storage.store(KEY_EXPIRATION_TIME, Long.toString(expirationTime));
     }
 
@@ -78,7 +79,7 @@ public class CredentialsManager {
             return;
         }
         long expirationTime = expirationTimeValue == null ? 0 : Long.parseLong(expirationTimeValue);
-        if (expirationTime > System.currentTimeMillis()) {
+        if (expirationTime > getCurrentTimeInMillis()) {
             callback.onSuccess(new Credentials(idToken, accessToken, tokenType, refreshToken, expiresIn));
             return;
         }
@@ -98,6 +99,11 @@ public class CredentialsManager {
                 callback.onFailure(new CredentialsManagerException("An error occurred while trying to use the refresh_token to renew the credentials.", error));
             }
         });
+    }
+
+    @VisibleForTesting
+    long getCurrentTimeInMillis() {
+        return System.currentTimeMillis();
     }
 
 }
