@@ -60,7 +60,7 @@ public class Credentials {
     @SerializedName("scope")
     private String scope;
 
-    public Credentials(String idToken, String accessToken, String type, String refreshToken, Long expiresIn, String scope) {
+    public Credentials(@Nullable String idToken, @Nullable String accessToken, @Nullable String type, @Nullable String refreshToken, @Nullable Long expiresIn, @Nullable String scope) {
         this.idToken = idToken;
         this.accessToken = accessToken;
         this.type = type;
@@ -70,7 +70,7 @@ public class Credentials {
     }
 
     //TODO: Deprecate this constructor
-    public Credentials(String idToken, String accessToken, String type, String refreshToken, Long expiresIn) {
+    public Credentials(@Nullable String idToken, @Nullable String accessToken, @Nullable String type, @Nullable String refreshToken, @Nullable Long expiresIn) {
         this(idToken, accessToken, type, refreshToken, expiresIn, null);
     }
 
@@ -114,6 +114,13 @@ public class Credentials {
         return refreshToken;
     }
 
+    /**
+     * Getter for the amount of seconds since the tokens were issued in which they will be deemed invalid.
+     * To know precisely when this is going to happen you need to save the time every time you request a new pair of tokens.
+     *
+     * @return the seconds since the tokens where issued in which they will be deemed invalid.
+     */
+    @Nullable
     public Long getExpiresIn() {
         return expiresIn;
     }
