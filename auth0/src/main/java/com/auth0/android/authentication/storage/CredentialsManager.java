@@ -10,6 +10,10 @@ import com.auth0.android.result.Credentials;
 
 import static android.text.TextUtils.isEmpty;
 
+/**
+ * Class that handles credentials and allows to save and retrieve them.
+ */
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class CredentialsManager {
     private static final String KEY_ACCESS_TOKEN = "com.auth0.access_token";
     private static final String KEY_REFRESH_TOKEN = "com.auth0.refresh_token";
@@ -21,11 +25,22 @@ public class CredentialsManager {
     private final AuthenticationAPIClient authClient;
     private final Storage storage;
 
+    /**
+     * Creates a new instance of the manager that will store the credentials in the given Storage.
+     *
+     * @param authenticationClient the Auth0 Authentication client to refresh credentials with.
+     * @param storage              the storage to use for the credentials.
+     */
     public CredentialsManager(@NonNull AuthenticationAPIClient authenticationClient, @NonNull Storage storage) {
         this.authClient = authenticationClient;
         this.storage = storage;
     }
 
+    /**
+     * Saves the given credentials in the storage. Must have an access_token or id_token and a expires_in value.
+     *
+     * @param credentials the credentials to save in the storage.
+     */
     public void setCredentials(@NonNull Credentials credentials) {
         if ((credentials.getAccessToken() == null && credentials.getIdToken() == null) || credentials.getExpiresIn() == null) {
             throw new CredentialsManagerException("Credentials must have a valid expires_in value and a valid access_token or id_token value.");
@@ -41,6 +56,13 @@ public class CredentialsManager {
         storage.save(KEY_EXPIRATION_TIME, Long.toString(expirationTime));
     }
 
+    /**
+     * Retrieves the credentials from the storage and refresh them if they have already expired.
+     * It will fail with {@link CredentialsManagerException} if the saved access_token or id_token is null,
+     * or if the tokens have already expired and the refresh_token is null.
+     *
+     * @param callback the callback that will receive a valid {@link Credentials} or the {@link CredentialsManagerException}.
+     */
     public void getCredentials(@NonNull final BaseCallback<Credentials, CredentialsManagerException> callback) {
         String accessToken = storage.retrieve(KEY_ACCESS_TOKEN);
         String refreshToken = storage.retrieve(KEY_REFRESH_TOKEN);
