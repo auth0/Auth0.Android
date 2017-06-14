@@ -37,7 +37,7 @@ public class CredentialsManager {
     }
 
     /**
-     * Saves the given credentials in the storage. Must have an access_token or id_token and a expires_in value.
+     * Stores the given credentials in the storage. Must have an access_token or id_token and a expires_in value.
      *
      * @param credentials the credentials to save in the storage.
      */
@@ -45,15 +45,15 @@ public class CredentialsManager {
         if ((credentials.getAccessToken() == null && credentials.getIdToken() == null) || credentials.getExpiresIn() == null) {
             throw new CredentialsManagerException("Credentials must have a valid expires_in value and a valid access_token or id_token value.");
         }
-        storage.save(KEY_ACCESS_TOKEN, credentials.getAccessToken());
-        storage.save(KEY_REFRESH_TOKEN, credentials.getRefreshToken());
-        storage.save(KEY_ID_TOKEN, credentials.getIdToken());
-        storage.save(KEY_TOKEN_TYPE, credentials.getType());
+        storage.store(KEY_ACCESS_TOKEN, credentials.getAccessToken());
+        storage.store(KEY_REFRESH_TOKEN, credentials.getRefreshToken());
+        storage.store(KEY_ID_TOKEN, credentials.getIdToken());
+        storage.store(KEY_TOKEN_TYPE, credentials.getType());
 
         long expiresIn = credentials.getExpiresIn() == null ? 0 : credentials.getExpiresIn();
-        storage.save(KEY_EXPIRES_IN, Long.toString(expiresIn));
+        storage.store(KEY_EXPIRES_IN, Long.toString(expiresIn));
         long expirationTime = System.currentTimeMillis() + (expiresIn * 1000);
-        storage.save(KEY_EXPIRATION_TIME, Long.toString(expirationTime));
+        storage.store(KEY_EXPIRATION_TIME, Long.toString(expirationTime));
     }
 
     /**
