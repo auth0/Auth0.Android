@@ -384,6 +384,46 @@ WebAuthProvider.init(account)
 ```
 
 
+## Credentials Manager
+This library ships with a `CredentialsManager` class to easily store and retrieve fresh Credentials from a given `Storage`.
+
+### Usage
+1. **Instantiate the manager**
+
+```java
+AuthenticationAPIClient authClient = //create auth client
+Storage storage = //create new storage
+CredentialsManager manager = new CredentialsManager(authClient, storage);
+```
+
+2. **Save credentials**
+The credentials **must have** `expires_in` and at least an `access_token` or `id_token` value. If one of the values is missing when trying to set the credentials, the method will throw a `CredentialsManagerException`. 
+
+```java
+Credentials credentials = //login to Auth0, i.e. by using the authClient
+manager.setCredentials(credentials);
+```
+
+3. **Retrieve credentials**
+ Existing credentials will be returned if they are still valid, otherwise the `refresh_token` will be used to attempt to renew them. If the `expires_in` or both the `access_token` and `id_token` values are missing, the method will throw a `CredentialsManagerException`. The same will happen if the credentials have expired and there's no `refresh_token` available.
+
+```java
+manager.getCredentials(new BaseCallback<Credentials, CredentialsManagerException>(){
+   public void onSuccess(Credentials credentials){
+      //success
+   }
+
+    public void onFailure(CredentialsManagerException error){
+      //error
+   }
+});
+```
+
+### Customize the Storage
+
+The storage implementation is up to you. We provide a `SharedPreferencesStorage` that uses `SharedPreferences` to create a file in the application directory with Context.MODE_PRIVATE mode.
+
+
 ## FAQ
 
 * Why is the Android Lint _error_ `'InvalidPackage'` considered a _warning_?
