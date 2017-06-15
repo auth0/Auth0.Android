@@ -20,7 +20,6 @@ public class CredentialsManager {
     private static final String KEY_REFRESH_TOKEN = "com.auth0.refresh_token";
     private static final String KEY_ID_TOKEN = "com.auth0.id_token";
     private static final String KEY_TOKEN_TYPE = "com.auth0.token_type";
-    private static final String KEY_EXPIRES_IN = "com.auth0.expires_in";
     private static final String KEY_EXPIRATION_TIME = "com.auth0.expiration_time";
 
     private final AuthenticationAPIClient authClient;
@@ -51,9 +50,7 @@ public class CredentialsManager {
         storage.store(KEY_ID_TOKEN, credentials.getIdToken());
         storage.store(KEY_TOKEN_TYPE, credentials.getType());
 
-        Long expiresIn = credentials.getExpiresIn();
-        storage.store(KEY_EXPIRES_IN, Long.toString(expiresIn));
-        long expirationTime = getCurrentTimeInMillis() + (expiresIn * 1000);
+        long expirationTime = getCurrentTimeInMillis() + (credentials.getExpiresIn() * 1000);
         storage.store(KEY_EXPIRATION_TIME, Long.toString(expirationTime));
     }
 
@@ -69,21 +66,20 @@ public class CredentialsManager {
         String refreshToken = storage.retrieve(KEY_REFRESH_TOKEN);
         String idToken = storage.retrieve(KEY_ID_TOKEN);
         String tokenType = storage.retrieve(KEY_TOKEN_TYPE);
-        String expiresInValue = storage.retrieve(KEY_EXPIRES_IN);
         String expirationTimeValue = storage.retrieve(KEY_EXPIRATION_TIME);
 
-        if (isEmpty(accessToken) && isEmpty(idToken) || isEmpty(expiresInValue) || isEmpty(expirationTimeValue)) {
+        if (isEmpty(accessToken) && isEmpty(idToken) || isEmpty(expirationTimeValue)) {
             callback.onFailure(new CredentialsManagerException("No Credentials were previously set."));
             return;
         }
         long expirationTime = Long.parseLong(expirationTimeValue);
         if (expirationTime > getCurrentTimeInMillis()) {
-            Long expiresIn = Long.parseLong(expiresInValue);
+            long expiresIn = (expirationTime - getCurrentTimeInMillis()) / 1000;
             callback.onSuccess(new Credentials(idToken, accessToken, tokenType, refreshToken, expiresIn));
             return;
         }
         if (refreshToken == null) {
-            callback.onFailure(new CredentialsManagerException("No Refresh Token available."));
+            callback.onFailure(new CredentialsManagerException("Credentials have expired and no Refresh Token was available to renew them."));
             return;
         }
 
@@ -95,7 +91,7 @@ public class CredentialsManager {
 
             @Override
             public void onFailure(AuthenticationException error) {
-                callback.onFailure(new CredentialsManagerException("An error occurred while trying to use the refresh_token to renew the credentials.", error));
+                callback.onFailure(new CredentialsManagerException("An error occurred while trying to use the Refresh Token to renew the Credentials.", error));
             }
         });
     }

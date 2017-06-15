@@ -71,7 +71,6 @@ public class CredentialsManagerTest {
         verify(storage).store("com.auth0.access_token", "accessToken");
         verify(storage).store("com.auth0.refresh_token", "refreshToken");
         verify(storage).store("com.auth0.token_type", "type");
-        verify(storage).store("com.auth0.expires_in", "123456");
         long expirationTime = CURRENT_TIME_MS + (123456 * 1000);
         verify(storage).store("com.auth0.expiration_time", Long.toString(expirationTime));
     }
@@ -114,27 +113,6 @@ public class CredentialsManagerTest {
         when(storage.retrieve("com.auth0.access_token")).thenReturn(null);
         when(storage.retrieve("com.auth0.refresh_token")).thenReturn("refreshToken");
         when(storage.retrieve("com.auth0.token_type")).thenReturn("type");
-        when(storage.retrieve("com.auth0.expires_in")).thenReturn("123456");
-        String expirationTime = Long.toString(CURRENT_TIME_MS + (123456L * 1000));
-        when(storage.retrieve("com.auth0.expiration_time")).thenReturn(expirationTime);
-
-        manager.getCredentials(callback);
-
-        verify(callback).onFailure(exceptionCaptor.capture());
-        CredentialsManagerException exception = exceptionCaptor.getValue();
-        assertThat(exception, is(notNullValue()));
-        assertThat(exception.getMessage(), is("No Credentials were previously set."));
-    }
-
-    @Test
-    public void shouldFailOnGetCredentialsWhenNoExpiresInWasSaved() throws Exception {
-        verifyNoMoreInteractions(client);
-
-        when(storage.retrieve("com.auth0.id_token")).thenReturn("idToken");
-        when(storage.retrieve("com.auth0.access_token")).thenReturn("accessToken");
-        when(storage.retrieve("com.auth0.refresh_token")).thenReturn("refreshToken");
-        when(storage.retrieve("com.auth0.token_type")).thenReturn("type");
-        when(storage.retrieve("com.auth0.expires_in")).thenReturn(null);
         String expirationTime = Long.toString(CURRENT_TIME_MS + (123456L * 1000));
         when(storage.retrieve("com.auth0.expiration_time")).thenReturn(expirationTime);
 
@@ -154,7 +132,6 @@ public class CredentialsManagerTest {
         when(storage.retrieve("com.auth0.access_token")).thenReturn("accessToken");
         when(storage.retrieve("com.auth0.refresh_token")).thenReturn("refreshToken");
         when(storage.retrieve("com.auth0.token_type")).thenReturn("type");
-        when(storage.retrieve("com.auth0.expires_in")).thenReturn("123456");
         when(storage.retrieve("com.auth0.expiration_time")).thenReturn(null);
 
         manager.getCredentials(callback);
@@ -173,7 +150,6 @@ public class CredentialsManagerTest {
         when(storage.retrieve("com.auth0.access_token")).thenReturn("accessToken");
         when(storage.retrieve("com.auth0.refresh_token")).thenReturn(null);
         when(storage.retrieve("com.auth0.token_type")).thenReturn("type");
-        when(storage.retrieve("com.auth0.expires_in")).thenReturn("123456");
         String expirationTime = Long.toString(CURRENT_TIME_MS); //Same as current time --> expired
         when(storage.retrieve("com.auth0.expiration_time")).thenReturn(expirationTime);
 
@@ -182,7 +158,7 @@ public class CredentialsManagerTest {
         verify(callback).onFailure(exceptionCaptor.capture());
         CredentialsManagerException exception = exceptionCaptor.getValue();
         assertThat(exception, is(notNullValue()));
-        assertThat(exception.getMessage(), is("No Refresh Token available."));
+        assertThat(exception.getMessage(), is("Credentials have expired and no Refresh Token was available to renew them."));
     }
 
     @Test
@@ -193,7 +169,6 @@ public class CredentialsManagerTest {
         when(storage.retrieve("com.auth0.access_token")).thenReturn("accessToken");
         when(storage.retrieve("com.auth0.refresh_token")).thenReturn("refreshToken");
         when(storage.retrieve("com.auth0.token_type")).thenReturn("type");
-        when(storage.retrieve("com.auth0.expires_in")).thenReturn("123456");
         String expirationTime = Long.toString(CURRENT_TIME_MS + (123456L * 1000));
         when(storage.retrieve("com.auth0.expiration_time")).thenReturn(expirationTime);
 
@@ -217,7 +192,6 @@ public class CredentialsManagerTest {
         when(storage.retrieve("com.auth0.access_token")).thenReturn(null);
         when(storage.retrieve("com.auth0.refresh_token")).thenReturn("refreshToken");
         when(storage.retrieve("com.auth0.token_type")).thenReturn("type");
-        when(storage.retrieve("com.auth0.expires_in")).thenReturn("123456");
         String expirationTime = Long.toString(CURRENT_TIME_MS + (123456L * 1000));
         when(storage.retrieve("com.auth0.expiration_time")).thenReturn(expirationTime);
 
@@ -241,7 +215,6 @@ public class CredentialsManagerTest {
         when(storage.retrieve("com.auth0.access_token")).thenReturn("accessToken");
         when(storage.retrieve("com.auth0.refresh_token")).thenReturn("refreshToken");
         when(storage.retrieve("com.auth0.token_type")).thenReturn("type");
-        when(storage.retrieve("com.auth0.expires_in")).thenReturn("123456");
         String expirationTime = Long.toString(CURRENT_TIME_MS + (123456L * 1000));
         when(storage.retrieve("com.auth0.expiration_time")).thenReturn(expirationTime);
 
@@ -263,7 +236,6 @@ public class CredentialsManagerTest {
         when(storage.retrieve("com.auth0.access_token")).thenReturn("accessToken");
         when(storage.retrieve("com.auth0.refresh_token")).thenReturn("refreshToken");
         when(storage.retrieve("com.auth0.token_type")).thenReturn("type");
-        when(storage.retrieve("com.auth0.expires_in")).thenReturn("123456");
         String expirationTime = Long.toString(CURRENT_TIME_MS); //Same as current time --> expired
         when(storage.retrieve("com.auth0.expiration_time")).thenReturn(expirationTime);
         when(client.renewAuth("refreshToken")).thenReturn(request);
@@ -287,7 +259,6 @@ public class CredentialsManagerTest {
         when(storage.retrieve("com.auth0.access_token")).thenReturn("accessToken");
         when(storage.retrieve("com.auth0.refresh_token")).thenReturn("refreshToken");
         when(storage.retrieve("com.auth0.token_type")).thenReturn("type");
-        when(storage.retrieve("com.auth0.expires_in")).thenReturn("123456");
         String expirationTime = Long.toString(CURRENT_TIME_MS); //Same as current time --> expired
         when(storage.retrieve("com.auth0.expiration_time")).thenReturn(expirationTime);
         when(client.renewAuth("refreshToken")).thenReturn(request);
@@ -303,6 +274,6 @@ public class CredentialsManagerTest {
         CredentialsManagerException exception = exceptionCaptor.getValue();
         assertThat(exception, is(notNullValue()));
         assertThat(exception.getCause(), Is.<Throwable>is(authenticationException));
-        assertThat(exception.getMessage(), is("An error occurred while trying to use the refresh_token to renew the credentials."));
+        assertThat(exception.getMessage(), is("An error occurred while trying to use the Refresh Token to renew the Credentials."));
     }
 }
