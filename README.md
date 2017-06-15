@@ -272,7 +272,7 @@ https://{YOUR_AUTH0_DOMAIN}/android/{YOUR_APP_PACKAGE_NAME}/callback
 Remember to replace `{YOUR_APP_PACKAGE_NAME}` with your actual application's package name.
 
 
-Next, define placeholders for the Auth0 Domain and Scheme which are going to be used internally by the library to register an **intent-filter**. Go to your application's `build.gradle` file and add the `manifestPlaceholders` line as shown below:
+Next, define a placeholder for the Auth0 Domain which is going to be used internally by the library to register an **intent-filter**. Go to your application's `build.gradle` file and add the `manifestPlaceholders` line as shown below:
 
 ```groovy
 apply plugin: 'com.android.application'
@@ -286,16 +286,18 @@ android {
         //...
         
         //---> Add the next line
-        manifestPlaceholders = [auth0Domain: "@string/auth0_domain", auth0Scheme: "https"]
+        manifestPlaceholders = [auth0Domain: "@string/auth0_domain"]
         //<---
     }
     //...
 }
 ```
 
-It's a good practice to define reusable resources like `@string/auth0_domain` but you can also hard code the value. In case you're using a [custom scheme](#a-note-about-app-deep-linking) you must update the `auth0Scheme` property.
+It's a good practice to define reusable resources like `@string/auth0_domain` but you can also hard code the value in the file.
 
-Alternatively you can define your own **intent-filter** for the `RedirectActivity` in the `AndroidManifest.xml` file replacing the one defined by the library. If you choose to do this, the `manifestPlaceholders` don't need to be set. In your manifest inside your application's tag add the `RedirectActivity` declaration:
+Alternatively, you can declare the `RedirectActivity` in the `AndroidManifest.xml` file with your own **intent-filter** so it overrides the library's default. If you do this then the `manifestPlaceholders` don't need to be set. If you choose to use a [custom scheme](#a-note-about-app-deep-linking) you must define your own intent-filter as explained below. 
+
+In your manifest inside your application's tag add the `RedirectActivity` declaration:
 
 ```xml
     <application android:theme="@style/AppTheme">
@@ -322,7 +324,7 @@ Alternatively you can define your own **intent-filter** for the `RedirectActivit
     </application>
 ```
 
-Remember to replace `{YOUR_APP_PACKAGE_NAME}` with your actual application's package name.
+If you request a different scheme you must replace the `android:scheme` property. Remember to also replace `{YOUR_APP_PACKAGE_NAME}` with your actual application's package name.
 
 Finally, don't forget to add the internet permission.
 
@@ -331,7 +333,7 @@ Finally, don't forget to add the internet permission.
 ```
 
 
-> In versions 1.8.0 and before you had to define the **intent-filter** in your own activity to capture the result in the `onNewIntent` method and call `WebAuthProvider.resume()` with the received intent. This call is no longer required for versions greater than 1.8.0 as it's done for you by the library.
+> In versions 1.8.0 and before you had to define the **intent-filter** inside your activity to capture the result in the `onNewIntent` method and call `WebAuthProvider.resume()` with the received intent. This call is no longer required for versions greater than 1.8.0 as it's now done for you by the library.
 
 
 ##### A note about App Deep Linking:

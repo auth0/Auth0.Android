@@ -46,7 +46,7 @@
                 <data
                     android:host="${auth0Domain}"
                     android:pathPrefix="/android/${applicationId}/callback"
-                    android:scheme="${auth0Scheme}" />
+                    android:scheme="https" />
             </intent-filter>
         </activity>
 
