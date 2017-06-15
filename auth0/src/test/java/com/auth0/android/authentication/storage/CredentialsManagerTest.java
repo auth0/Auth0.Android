@@ -20,6 +20,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.doReturn;
@@ -106,7 +107,7 @@ public class CredentialsManagerTest {
     }
 
     @Test
-    public void shouldThrowOnGetCredentialsWhenNoAccessTokenOrIdTokenWasSaved() throws Exception {
+    public void shouldFailOnGetCredentialsWhenNoAccessTokenOrIdTokenWasSaved() throws Exception {
         verifyNoMoreInteractions(client);
 
         when(storage.retrieve("com.auth0.id_token")).thenReturn(null);
@@ -122,11 +123,50 @@ public class CredentialsManagerTest {
         verify(callback).onFailure(exceptionCaptor.capture());
         CredentialsManagerException exception = exceptionCaptor.getValue();
         assertThat(exception, is(notNullValue()));
-        assertThat(exception.getMessage(), is("No Credentials where previously set."));
+        assertThat(exception.getMessage(), is("No Credentials were previously set."));
     }
 
     @Test
-    public void shouldThrowOnGetCredentialsWhenExpiredAndNoRefreshTokenWasSaved() throws Exception {
+    public void shouldFailOnGetCredentialsWhenNoExpiresInWasSaved() throws Exception {
+        verifyNoMoreInteractions(client);
+
+        when(storage.retrieve("com.auth0.id_token")).thenReturn("idToken");
+        when(storage.retrieve("com.auth0.access_token")).thenReturn("accessToken");
+        when(storage.retrieve("com.auth0.refresh_token")).thenReturn("refreshToken");
+        when(storage.retrieve("com.auth0.token_type")).thenReturn("type");
+        when(storage.retrieve("com.auth0.expires_in")).thenReturn(null);
+        String expirationTime = Long.toString(CURRENT_TIME_MS + (123456L * 1000));
+        when(storage.retrieve("com.auth0.expiration_time")).thenReturn(expirationTime);
+
+        manager.getCredentials(callback);
+
+        verify(callback).onFailure(exceptionCaptor.capture());
+        CredentialsManagerException exception = exceptionCaptor.getValue();
+        assertThat(exception, is(notNullValue()));
+        assertThat(exception.getMessage(), is("No Credentials were previously set."));
+    }
+
+    @Test
+    public void shouldFailOnGetCredentialsWhenNoExpirationTimeWasSaved() throws Exception {
+        verifyNoMoreInteractions(client);
+
+        when(storage.retrieve("com.auth0.id_token")).thenReturn("idToken");
+        when(storage.retrieve("com.auth0.access_token")).thenReturn("accessToken");
+        when(storage.retrieve("com.auth0.refresh_token")).thenReturn("refreshToken");
+        when(storage.retrieve("com.auth0.token_type")).thenReturn("type");
+        when(storage.retrieve("com.auth0.expires_in")).thenReturn("123456");
+        when(storage.retrieve("com.auth0.expiration_time")).thenReturn(null);
+
+        manager.getCredentials(callback);
+
+        verify(callback).onFailure(exceptionCaptor.capture());
+        CredentialsManagerException exception = exceptionCaptor.getValue();
+        assertThat(exception, is(notNullValue()));
+        assertThat(exception.getMessage(), is("No Credentials were previously set."));
+    }
+
+    @Test
+    public void shouldFailOnGetCredentialsWhenExpiredAndNoRefreshTokenWasSaved() throws Exception {
         verifyNoMoreInteractions(client);
 
         when(storage.retrieve("com.auth0.id_token")).thenReturn("idToken");
@@ -164,6 +204,54 @@ public class CredentialsManagerTest {
         assertThat(retrievedCredentials, is(notNullValue()));
         assertThat(retrievedCredentials.getAccessToken(), is("accessToken"));
         assertThat(retrievedCredentials.getIdToken(), is("idToken"));
+        assertThat(retrievedCredentials.getRefreshToken(), is("refreshToken"));
+        assertThat(retrievedCredentials.getType(), is("type"));
+        assertThat(retrievedCredentials.getExpiresIn(), is(123456L));
+    }
+
+    @Test
+    public void shouldGetNonExpiredCredentialsFromStorageWhenOnlyIdTokenIsAvailable() throws Exception {
+        verifyNoMoreInteractions(client);
+
+        when(storage.retrieve("com.auth0.id_token")).thenReturn("idToken");
+        when(storage.retrieve("com.auth0.access_token")).thenReturn(null);
+        when(storage.retrieve("com.auth0.refresh_token")).thenReturn("refreshToken");
+        when(storage.retrieve("com.auth0.token_type")).thenReturn("type");
+        when(storage.retrieve("com.auth0.expires_in")).thenReturn("123456");
+        String expirationTime = Long.toString(CURRENT_TIME_MS + (123456L * 1000));
+        when(storage.retrieve("com.auth0.expiration_time")).thenReturn(expirationTime);
+
+        manager.getCredentials(callback);
+        verify(callback).onSuccess(credentialsCaptor.capture());
+        Credentials retrievedCredentials = credentialsCaptor.getValue();
+
+        assertThat(retrievedCredentials, is(notNullValue()));
+        assertThat(retrievedCredentials.getAccessToken(), is(nullValue()));
+        assertThat(retrievedCredentials.getIdToken(), is("idToken"));
+        assertThat(retrievedCredentials.getRefreshToken(), is("refreshToken"));
+        assertThat(retrievedCredentials.getType(), is("type"));
+        assertThat(retrievedCredentials.getExpiresIn(), is(123456L));
+    }
+
+    @Test
+    public void shouldGetNonExpiredCredentialsFromStorageWhenOnlyAccessTokenIsAvailable() throws Exception {
+        verifyNoMoreInteractions(client);
+
+        when(storage.retrieve("com.auth0.id_token")).thenReturn(null);
+        when(storage.retrieve("com.auth0.access_token")).thenReturn("accessToken");
+        when(storage.retrieve("com.auth0.refresh_token")).thenReturn("refreshToken");
+        when(storage.retrieve("com.auth0.token_type")).thenReturn("type");
+        when(storage.retrieve("com.auth0.expires_in")).thenReturn("123456");
+        String expirationTime = Long.toString(CURRENT_TIME_MS + (123456L * 1000));
+        when(storage.retrieve("com.auth0.expiration_time")).thenReturn(expirationTime);
+
+        manager.getCredentials(callback);
+        verify(callback).onSuccess(credentialsCaptor.capture());
+        Credentials retrievedCredentials = credentialsCaptor.getValue();
+
+        assertThat(retrievedCredentials, is(notNullValue()));
+        assertThat(retrievedCredentials.getAccessToken(), is("accessToken"));
+        assertThat(retrievedCredentials.getIdToken(), is(nullValue()));
         assertThat(retrievedCredentials.getRefreshToken(), is("refreshToken"));
         assertThat(retrievedCredentials.getType(), is("type"));
         assertThat(retrievedCredentials.getExpiresIn(), is(123456L));

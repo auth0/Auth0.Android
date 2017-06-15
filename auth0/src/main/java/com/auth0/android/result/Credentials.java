@@ -115,10 +115,10 @@ public class Credentials {
     }
 
     /**
-     * Getter for the amount of seconds since the tokens were issued in which they will be deemed invalid.
-     * To know precisely when this is going to happen you need to save the time every time you request a new pair of tokens.
+     * Getter for the token lifetime in seconds.
+     * Once expired, the token can no longer be used to access an API and a new token needs to be obtained.
      *
-     * @return the seconds since the tokens where issued in which they will be deemed invalid.
+     * @return the token lifetime in seconds.
      */
     @Nullable
     public Long getExpiresIn() {

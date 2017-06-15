@@ -43,7 +43,7 @@ public class CredentialsManager {
      * @param credentials the credentials to save in the storage.
      */
     public void setCredentials(@NonNull Credentials credentials) {
-        if ((credentials.getAccessToken() == null && credentials.getIdToken() == null) || credentials.getExpiresIn() == null) {
+        if ((isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken())) || credentials.getExpiresIn() == null) {
             throw new CredentialsManagerException("Credentials must have a valid expires_in value and a valid access_token or id_token value.");
         }
         storage.store(KEY_ACCESS_TOKEN, credentials.getAccessToken());
@@ -51,7 +51,7 @@ public class CredentialsManager {
         storage.store(KEY_ID_TOKEN, credentials.getIdToken());
         storage.store(KEY_TOKEN_TYPE, credentials.getType());
 
-        long expiresIn = credentials.getExpiresIn() == null ? 0 : credentials.getExpiresIn();
+        Long expiresIn = credentials.getExpiresIn();
         storage.store(KEY_EXPIRES_IN, Long.toString(expiresIn));
         long expirationTime = getCurrentTimeInMillis() + (expiresIn * 1000);
         storage.store(KEY_EXPIRATION_TIME, Long.toString(expirationTime));
@@ -71,15 +71,14 @@ public class CredentialsManager {
         String tokenType = storage.retrieve(KEY_TOKEN_TYPE);
         String expiresInValue = storage.retrieve(KEY_EXPIRES_IN);
         String expirationTimeValue = storage.retrieve(KEY_EXPIRATION_TIME);
-        Long expiresIn = Long.parseLong(expiresInValue);
 
-        boolean invalidTokens = isEmpty(accessToken) && isEmpty(idToken);
-        if (invalidTokens) {
-            callback.onFailure(new CredentialsManagerException("No Credentials where previously set."));
+        if (isEmpty(accessToken) && isEmpty(idToken) || isEmpty(expiresInValue) || isEmpty(expirationTimeValue)) {
+            callback.onFailure(new CredentialsManagerException("No Credentials were previously set."));
             return;
         }
-        long expirationTime = expirationTimeValue == null ? 0 : Long.parseLong(expirationTimeValue);
+        long expirationTime = Long.parseLong(expirationTimeValue);
         if (expirationTime > getCurrentTimeInMillis()) {
+            Long expiresIn = Long.parseLong(expiresInValue);
             callback.onSuccess(new Credentials(idToken, accessToken, tokenType, refreshToken, expiresIn));
             return;
         }
