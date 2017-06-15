@@ -12,7 +12,7 @@ public class CredentialsTest {
 
     @Before
     public void setUp() throws Exception {
-        credentials = new Credentials("idToken", "accessToken", "type", "refreshToken", 999999L);
+        credentials = new Credentials("idToken", "accessToken", "type", "refreshToken", 999999L, "openid profile");
     }
 
     @Test
@@ -40,4 +40,8 @@ public class CredentialsTest {
         assertThat(credentials.getExpiresIn(), is(999999L));
     }
 
+    @Test
+    public void getScope() throws Exception {
+        assertThat(credentials.getScope(), is("openid profile"));
+    }
 }

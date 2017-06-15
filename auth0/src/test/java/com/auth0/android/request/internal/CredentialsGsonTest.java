@@ -61,6 +61,7 @@ public class CredentialsGsonTest extends GsonBaseTest {
         assertThat(credentials.getType(), equalTo("bearer"));
         assertThat(credentials.getRefreshToken(), is(nullValue()));
         assertThat(credentials.getExpiresIn(), is(86000L));
+        assertThat(credentials.getScope(), is(nullValue()));
     }
 
     @Test
@@ -72,6 +73,7 @@ public class CredentialsGsonTest extends GsonBaseTest {
         assertThat(credentials.getType(), equalTo("bearer"));
         assertThat(credentials.getRefreshToken(), is(nullValue()));
         assertThat(credentials.getExpiresIn(), is(86000L));
+        assertThat(credentials.getScope(), is("openid profile"));
     }
 
     @Test
@@ -83,6 +85,7 @@ public class CredentialsGsonTest extends GsonBaseTest {
         assertThat(credentials.getType(), equalTo("bearer"));
         assertThat(credentials.getRefreshToken(), is(notNullValue()));
         assertThat(credentials.getExpiresIn(), is(86000L));
+        assertThat(credentials.getScope(), is("openid profile"));
     }
 
     private Credentials buildCredentialsFrom(Reader json) throws IOException {
