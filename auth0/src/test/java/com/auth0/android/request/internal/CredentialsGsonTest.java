@@ -32,14 +32,15 @@ public class CredentialsGsonTest extends GsonBaseTest {
     }
 
     @Test
-    public void shouldNotFailWithEmptyJson() throws Exception {
-        buildCredentialsFrom(json(EMPTY_OBJECT));
-    }
-
-    @Test
     public void shouldFailWithInvalidJson() throws Exception {
         expectedException.expect(JsonParseException.class);
         buildCredentialsFrom(json(INVALID));
+    }
+
+    @Test
+    public void shouldFailWithEmptyJson() throws Exception {
+        expectedException.expect(JsonParseException.class);
+        buildCredentialsFrom(json(EMPTY_OBJECT));
     }
 
     @Test
@@ -61,6 +62,7 @@ public class CredentialsGsonTest extends GsonBaseTest {
         assertThat(credentials.getType(), equalTo("bearer"));
         assertThat(credentials.getRefreshToken(), is(nullValue()));
         assertThat(credentials.getExpiresIn(), is(86000L));
+        assertThat(credentials.getExpiresAt(), is(notNullValue()));
         assertThat(credentials.getScope(), is(nullValue()));
     }
 
@@ -73,6 +75,7 @@ public class CredentialsGsonTest extends GsonBaseTest {
         assertThat(credentials.getType(), equalTo("bearer"));
         assertThat(credentials.getRefreshToken(), is(nullValue()));
         assertThat(credentials.getExpiresIn(), is(86000L));
+        assertThat(credentials.getExpiresAt(), is(notNullValue()));
         assertThat(credentials.getScope(), is("openid profile"));
     }
 
@@ -85,6 +88,7 @@ public class CredentialsGsonTest extends GsonBaseTest {
         assertThat(credentials.getType(), equalTo("bearer"));
         assertThat(credentials.getRefreshToken(), is(notNullValue()));
         assertThat(credentials.getExpiresIn(), is(86000L));
+        assertThat(credentials.getExpiresAt(), is(notNullValue()));
         assertThat(credentials.getScope(), is("openid profile"));
     }
 
