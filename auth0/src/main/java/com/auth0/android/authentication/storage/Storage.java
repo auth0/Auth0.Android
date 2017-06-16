@@ -12,21 +12,51 @@ public interface Storage {
     /**
      * Store a given value in the Storage.
      *
-     * @param name   the name of the value to store.
-     * @param value  the value to store. Can be null.
-     * @param tClazz the class of the value to store.
-     * @param <T>    the type of the value to store.
+     * @param name  the name of the value to store.
+     * @param value the value to store. Can be null.
      */
-    <T> void store(@NonNull String name, @Nullable T value, @NonNull Class<T> tClazz);
+    void store(@NonNull String name, @Nullable Long value);
+
+    /**
+     * Store a given value in the Storage.
+     *
+     * @param name  the name of the value to store.
+     * @param value the value to store. Can be null.
+     */
+    void store(@NonNull String name, @Nullable Integer value);
+
+    /**
+     * Store a given value in the Storage.
+     *
+     * @param name  the name of the value to store.
+     * @param value the value to store. Can be null.
+     */
+    void store(@NonNull String name, @Nullable String value);
 
     /**
      * Retrieve a value from the Storage.
      *
-     * @param name   the name of the value to retrieve.
-     * @param tClazz the class of the value to retrieve.
-     * @param <T>    the type of the value to retrieve.
+     * @param name the name of the value to retrieve.
      * @return the value that was previously saved. Can be null.
      */
     @Nullable
-    <T> T retrieve(@NonNull String name, @NonNull Class<T> tClazz);
+    Long retrieveLong(@NonNull String name);
+
+    /**
+     * Retrieve a value from the Storage.
+     *
+     * @param name the name of the value to retrieve.
+     * @return the value that was previously saved. Can be null.
+     */
+    @Nullable
+    String retrieveString(@NonNull String name);
+
+    /**
+     * Retrieve a value from the Storage.
+     *
+     * @param name the name of the value to retrieve.
+     * @return the value that was previously saved. Can be null.
+     */
+    @Nullable
+    Integer retrieveInteger(@NonNull String name);
 }

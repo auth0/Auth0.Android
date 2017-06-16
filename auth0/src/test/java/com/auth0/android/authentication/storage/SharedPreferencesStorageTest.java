@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -15,12 +14,9 @@ import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
-import java.util.Map;
-
-import edu.emory.mathcs.backport.java.util.Collections;
-
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyFloat;
 import static org.mockito.Matchers.anyInt;
@@ -82,18 +78,32 @@ public class SharedPreferencesStorageTest {
 
     //Store
 
+    @SuppressWarnings("ConstantConditions")
     @Test
-    public void shouldThrowOnStoreUnsupportedType() throws Exception {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("The class type is not supported. Supported types are: String, Boolean, Long, Float and Integer.");
+    public void shouldRemovePreferencesKeyOnNullStringValue() throws Exception {
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
-        storage.store("name", Collections.emptyMap(), Map.class);
+        String value = null;
+        storage.store("name", value);
+        verify(sharedPreferencesEditor).remove("name");
+        verify(sharedPreferencesEditor).apply();
     }
 
+    @SuppressWarnings("ConstantConditions")
     @Test
-    public void shouldRemovePreferencesKeyOnNullValue() throws Exception {
+    public void shouldRemovePreferencesKeyOnNullLongValue() throws Exception {
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
-        storage.store("name", null, String.class);
+        Long value = null;
+        storage.store("name", value);
+        verify(sharedPreferencesEditor).remove("name");
+        verify(sharedPreferencesEditor).apply();
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    @Test
+    public void shouldRemovePreferencesKeyOnNullIntegerValue() throws Exception {
+        SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
+        Integer value = null;
+        storage.store("name", value);
         verify(sharedPreferencesEditor).remove("name");
         verify(sharedPreferencesEditor).apply();
     }
@@ -101,39 +111,23 @@ public class SharedPreferencesStorageTest {
     @Test
     public void shouldStoreStringValueOnPreferences() throws Exception {
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
-        storage.store("name", "value", String.class);
+        storage.store("name", "value");
         verify(sharedPreferencesEditor).putString("name", "value");
-        verify(sharedPreferencesEditor).apply();
-    }
-
-    @Test
-    public void shouldStoreBooleanValueOnPreferences() throws Exception {
-        SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
-        storage.store("name", true, Boolean.class);
-        verify(sharedPreferencesEditor).putBoolean("name", true);
         verify(sharedPreferencesEditor).apply();
     }
 
     @Test
     public void shouldStoreLongValueOnPreferences() throws Exception {
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
-        storage.store("name", 123L, Long.class);
+        storage.store("name", 123L);
         verify(sharedPreferencesEditor).putLong("name", 123L);
-        verify(sharedPreferencesEditor).apply();
-    }
-
-    @Test
-    public void shouldStoreFloatValueOnPreferences() throws Exception {
-        SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
-        storage.store("name", 123F, Float.class);
-        verify(sharedPreferencesEditor).putFloat("name", 123F);
         verify(sharedPreferencesEditor).apply();
     }
 
     @Test
     public void shouldStoreIntegerValueOnPreferences() throws Exception {
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
-        storage.store("name", 123, Integer.class);
+        storage.store("name", 123);
         verify(sharedPreferencesEditor).putInt("name", 123);
         verify(sharedPreferencesEditor).apply();
     }
@@ -142,59 +136,54 @@ public class SharedPreferencesStorageTest {
     //Retrieve
 
     @Test
-    public void shouldRetrieveNullValueIfMissingKeyFromPreferences() throws Exception {
+    public void shouldRetrieveNullStringValueIfMissingKeyFromPreferences() throws Exception {
         when(sharedPreferences.contains("name")).thenReturn(false);
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
-        Boolean value = storage.retrieve("name", Boolean.class);
-        Assert.assertThat(value, is(nullValue()));
+        String value = storage.retrieveString("name");
+        assertThat(value, is(nullValue()));
+    }
+
+    @Test
+    public void shouldRetrieveNullLongValueIfMissingKeyFromPreferences() throws Exception {
+        when(sharedPreferences.contains("name")).thenReturn(false);
+        SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
+        Long value = storage.retrieveLong("name");
+        assertThat(value, is(nullValue()));
+    }
+
+    @Test
+    public void shouldRetrieveNullIntegerValueIfMissingKeyFromPreferences() throws Exception {
+        when(sharedPreferences.contains("name")).thenReturn(false);
+        SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
+        Integer value = storage.retrieveInteger("name");
+        assertThat(value, is(nullValue()));
     }
 
     @Test
     public void shouldRetrieveStringValueFromPreferences() throws Exception {
         when(sharedPreferences.contains("name")).thenReturn(true);
+        when(sharedPreferences.getString("name", null)).thenReturn("value");
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
-        storage.retrieve("name", String.class);
-        verify(sharedPreferences).getString("name", null);
-    }
-
-    @Test
-    public void shouldRetrieveBooleanValueFromPreferences() throws Exception {
-        when(sharedPreferences.contains("name")).thenReturn(true);
-        SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
-        storage.retrieve("name", Boolean.class);
-        verify(sharedPreferences).getBoolean("name", false);
+        String value = storage.retrieveString("name");
+        assertThat(value, is("value"));
     }
 
     @Test
     public void shouldRetrieveLongValueFromPreferences() throws Exception {
         when(sharedPreferences.contains("name")).thenReturn(true);
+        when(sharedPreferences.getLong("name", 0)).thenReturn(1234567890L);
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
-        storage.retrieve("name", Long.class);
-        verify(sharedPreferences).getLong("name", 0);
-    }
-
-    @Test
-    public void shouldRetrieveFloatValueFromPreferences() throws Exception {
-        when(sharedPreferences.contains("name")).thenReturn(true);
-        SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
-        storage.retrieve("name", Float.class);
-        verify(sharedPreferences).getFloat("name", 0);
+        Long value = storage.retrieveLong("name");
+        assertThat(value, is(1234567890L));
     }
 
     @Test
     public void shouldRetrieveIntegerValueFromPreferences() throws Exception {
         when(sharedPreferences.contains("name")).thenReturn(true);
+        when(sharedPreferences.getInt("name", 0)).thenReturn(123);
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
-        storage.retrieve("name", Integer.class);
-        verify(sharedPreferences).getInt("name", 0);
+        Integer value = storage.retrieveInteger("name");
+        assertThat(value, is(123));
     }
 
-    @Test
-    public void shouldThrowOnRetrieveUnsupportedType() throws Exception {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("The class type is not supported. Supported types are: String, Boolean, Long, Float and Integer.");
-        when(sharedPreferences.contains("name")).thenReturn(true);
-        SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
-        storage.retrieve("name", Map.class);
-    }
 }

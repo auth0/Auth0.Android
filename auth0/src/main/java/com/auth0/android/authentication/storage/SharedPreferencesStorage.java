@@ -39,66 +39,57 @@ public class SharedPreferencesStorage implements Storage {
         sp = context.getSharedPreferences(sharedPreferencesName, Context.MODE_PRIVATE);
     }
 
-    /**
-     * Store a given value in the Storage.
-     * Supported value types are: {@link String}, {@link Boolean}, {@link Long}, {@link Float} and {@link Integer}.
-     *
-     * @param name   the name of the value to store.
-     * @param value  the value to store. Can be null.
-     * @param tClazz the class of the value to store.
-     * @param <T>    the type of the value to store.
-     * @throws IllegalArgumentException if the given class type is not supported
-     */
-    @SuppressWarnings("unchecked")
     @Override
-    public <T> void store(@NonNull String name, @Nullable T value, @NonNull Class<T> tClazz) throws IllegalArgumentException {
+    public void store(@NonNull String name, @Nullable Long value) {
         if (value == null) {
             sp.edit().remove(name).apply();
-        } else if (tClazz.isAssignableFrom(String.class)) {
-            sp.edit().putString(name, (String) value).apply();
-        } else if (tClazz.isAssignableFrom(Boolean.class)) {
-            sp.edit().putBoolean(name, (Boolean) value).apply();
-        } else if (tClazz.isAssignableFrom(Long.class)) {
-            sp.edit().putLong(name, (Long) value).apply();
-        } else if (tClazz.isAssignableFrom(Float.class)) {
-            sp.edit().putFloat(name, (Float) value).apply();
-        } else if (tClazz.isAssignableFrom(Integer.class)) {
-            sp.edit().putInt(name, (Integer) value).apply();
         } else {
-            throw new IllegalArgumentException("The class type is not supported. Supported types are: String, Boolean, Long, Float and Integer.");
+            sp.edit().putLong(name, value).apply();
         }
     }
 
-    /**
-     * Retrieve a value from the Storage.
-     * Supported value types are: {@link String}, {@link Boolean}, {@link Long}, {@link Float} and {@link Integer}.
-     *
-     * @param name   the name of the value to retrieve.
-     * @param tClazz the class of the value to retrieve.
-     * @param <T>    the type of the value to retrieve.
-     * @return the value that was previously saved. Can be null.
-     * @throws IllegalArgumentException if the given class type is not supported
-     */
+    @Override
+    public void store(@NonNull String name, @Nullable Integer value) {
+        if (value == null) {
+            sp.edit().remove(name).apply();
+        } else {
+            sp.edit().putInt(name, value).apply();
+        }
+    }
+
+    @Override
+    public void store(@NonNull String name, @Nullable String value) {
+        if (value == null) {
+            sp.edit().remove(name).apply();
+        } else {
+            sp.edit().putString(name, value).apply();
+        }
+    }
+
     @Nullable
     @Override
-    public <T> T retrieve(@NonNull String name, @NonNull Class<T> tClazz) throws IllegalArgumentException {
+    public Long retrieveLong(@NonNull String name) {
         if (!sp.contains(name)) {
             return null;
         }
-        Object value;
-        if (tClazz.isAssignableFrom(String.class)) {
-            value = sp.getString(name, null);
-        } else if (tClazz.isAssignableFrom(Boolean.class)) {
-            value = sp.getBoolean(name, false);
-        } else if (tClazz.isAssignableFrom(Long.class)) {
-            value = sp.getLong(name, 0);
-        } else if (tClazz.isAssignableFrom(Float.class)) {
-            value = sp.getFloat(name, 0);
-        } else if (tClazz.isAssignableFrom(Integer.class)) {
-            value = sp.getInt(name, 0);
-        } else {
-            throw new IllegalArgumentException("The class type is not supported. Supported types are: String, Boolean, Long, Float and Integer.");
+        return sp.getLong(name, 0);
+    }
+
+    @Nullable
+    @Override
+    public String retrieveString(@NonNull String name) {
+        if (!sp.contains(name)) {
+            return null;
         }
-        return tClazz.cast(value);
+        return sp.getString(name, null);
+    }
+
+    @Nullable
+    @Override
+    public Integer retrieveInteger(@NonNull String name) {
+        if (!sp.contains(name)) {
+            return null;
+        }
+        return sp.getInt(name, 0);
     }
 }

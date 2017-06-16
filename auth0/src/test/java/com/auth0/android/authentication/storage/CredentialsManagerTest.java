@@ -88,12 +88,12 @@ public class CredentialsManagerTest {
         Credentials credentials = new CredentialsMock("idToken", "accessToken", "type", "refreshToken", new Date(expirationTime), "scope");
         manager.saveCredentials(credentials);
 
-        verify(storage).store("com.auth0.id_token", "idToken", String.class);
-        verify(storage).store("com.auth0.access_token", "accessToken", String.class);
-        verify(storage).store("com.auth0.refresh_token", "refreshToken", String.class);
-        verify(storage).store("com.auth0.token_type", "type", String.class);
-        verify(storage).store("com.auth0.expires_at", expirationTime, Long.class);
-        verify(storage).store("com.auth0.scope", "scope", String.class);
+        verify(storage).store("com.auth0.id_token", "idToken");
+        verify(storage).store("com.auth0.access_token", "accessToken");
+        verify(storage).store("com.auth0.refresh_token", "refreshToken");
+        verify(storage).store("com.auth0.token_type", "type");
+        verify(storage).store("com.auth0.expires_at", expirationTime);
+        verify(storage).store("com.auth0.scope", "scope");
     }
 
     @Test
@@ -132,13 +132,13 @@ public class CredentialsManagerTest {
     public void shouldFailOnGetCredentialsWhenNoAccessTokenOrIdTokenWasSaved() throws Exception {
         verifyNoMoreInteractions(client);
 
-        when(storage.retrieve("com.auth0.id_token", String.class)).thenReturn(null);
-        when(storage.retrieve("com.auth0.access_token", String.class)).thenReturn(null);
-        when(storage.retrieve("com.auth0.refresh_token", String.class)).thenReturn("refreshToken");
-        when(storage.retrieve("com.auth0.token_type", String.class)).thenReturn("type");
+        when(storage.retrieveString("com.auth0.id_token")).thenReturn(null);
+        when(storage.retrieveString("com.auth0.access_token")).thenReturn(null);
+        when(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken");
+        when(storage.retrieveString("com.auth0.token_type")).thenReturn("type");
         long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456L * 1000;
-        when(storage.retrieve("com.auth0.expires_at", Long.class)).thenReturn(expirationTime);
-        when(storage.retrieve("com.auth0.scope", String.class)).thenReturn("scope");
+        when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveString("com.auth0.scope")).thenReturn("scope");
 
         manager.getCredentials(callback);
 
@@ -152,12 +152,12 @@ public class CredentialsManagerTest {
     public void shouldFailOnGetCredentialsWhenNoExpirationTimeWasSaved() throws Exception {
         verifyNoMoreInteractions(client);
 
-        when(storage.retrieve("com.auth0.id_token", String.class)).thenReturn("idToken");
-        when(storage.retrieve("com.auth0.access_token", String.class)).thenReturn("accessToken");
-        when(storage.retrieve("com.auth0.refresh_token", String.class)).thenReturn("refreshToken");
-        when(storage.retrieve("com.auth0.token_type", String.class)).thenReturn("type");
-        when(storage.retrieve("com.auth0.expires_at", Long.class)).thenReturn(null);
-        when(storage.retrieve("com.auth0.scope", String.class)).thenReturn("scope");
+        when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
+        when(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken");
+        when(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken");
+        when(storage.retrieveString("com.auth0.token_type")).thenReturn("type");
+        when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(null);
+        when(storage.retrieveString("com.auth0.scope")).thenReturn("scope");
 
         manager.getCredentials(callback);
 
@@ -172,13 +172,13 @@ public class CredentialsManagerTest {
     public void shouldFailOnGetCredentialsWhenExpiredAndNoRefreshTokenWasSaved() throws Exception {
         verifyNoMoreInteractions(client);
 
-        when(storage.retrieve("com.auth0.id_token", String.class)).thenReturn("idToken");
-        when(storage.retrieve("com.auth0.access_token", String.class)).thenReturn("accessToken");
-        when(storage.retrieve("com.auth0.refresh_token", String.class)).thenReturn(null);
-        when(storage.retrieve("com.auth0.token_type", String.class)).thenReturn("type");
+        when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
+        when(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken");
+        when(storage.retrieveString("com.auth0.refresh_token")).thenReturn(null);
+        when(storage.retrieveString("com.auth0.token_type")).thenReturn("type");
         long expirationTime = CredentialsMock.CURRENT_TIME_MS; //Same as current time --> expired
-        when(storage.retrieve("com.auth0.expires_at", Long.class)).thenReturn(expirationTime);
-        when(storage.retrieve("com.auth0.scope", String.class)).thenReturn("scope");
+        when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveString("com.auth0.scope")).thenReturn("scope");
 
         manager.getCredentials(callback);
 
@@ -192,13 +192,13 @@ public class CredentialsManagerTest {
     public void shouldGetNonExpiredCredentialsFromStorage() throws Exception {
         verifyNoMoreInteractions(client);
 
-        when(storage.retrieve("com.auth0.id_token", String.class)).thenReturn("idToken");
-        when(storage.retrieve("com.auth0.access_token", String.class)).thenReturn("accessToken");
-        when(storage.retrieve("com.auth0.refresh_token", String.class)).thenReturn("refreshToken");
-        when(storage.retrieve("com.auth0.token_type", String.class)).thenReturn("type");
+        when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
+        when(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken");
+        when(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken");
+        when(storage.retrieveString("com.auth0.token_type")).thenReturn("type");
         long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456L * 1000;
-        when(storage.retrieve("com.auth0.expires_at", Long.class)).thenReturn(expirationTime);
-        when(storage.retrieve("com.auth0.scope", String.class)).thenReturn("scope");
+        when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveString("com.auth0.scope")).thenReturn("scope");
 
         manager.getCredentials(callback);
         verify(callback).onSuccess(credentialsCaptor.capture());
@@ -219,13 +219,13 @@ public class CredentialsManagerTest {
     public void shouldGetNonExpiredCredentialsFromStorageWhenOnlyIdTokenIsAvailable() throws Exception {
         verifyNoMoreInteractions(client);
 
-        when(storage.retrieve("com.auth0.id_token", String.class)).thenReturn("idToken");
-        when(storage.retrieve("com.auth0.access_token", String.class)).thenReturn(null);
-        when(storage.retrieve("com.auth0.refresh_token", String.class)).thenReturn("refreshToken");
-        when(storage.retrieve("com.auth0.token_type", String.class)).thenReturn("type");
+        when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
+        when(storage.retrieveString("com.auth0.access_token")).thenReturn(null);
+        when(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken");
+        when(storage.retrieveString("com.auth0.token_type")).thenReturn("type");
         long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456L * 1000;
-        when(storage.retrieve("com.auth0.expires_at", Long.class)).thenReturn(expirationTime);
-        when(storage.retrieve("com.auth0.scope", String.class)).thenReturn("scope");
+        when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveString("com.auth0.scope")).thenReturn("scope");
 
         manager.getCredentials(callback);
         verify(callback).onSuccess(credentialsCaptor.capture());
@@ -246,13 +246,13 @@ public class CredentialsManagerTest {
     public void shouldGetNonExpiredCredentialsFromStorageWhenOnlyAccessTokenIsAvailable() throws Exception {
         verifyNoMoreInteractions(client);
 
-        when(storage.retrieve("com.auth0.id_token", String.class)).thenReturn(null);
-        when(storage.retrieve("com.auth0.access_token", String.class)).thenReturn("accessToken");
-        when(storage.retrieve("com.auth0.refresh_token", String.class)).thenReturn("refreshToken");
-        when(storage.retrieve("com.auth0.token_type", String.class)).thenReturn("type");
+        when(storage.retrieveString("com.auth0.id_token")).thenReturn(null);
+        when(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken");
+        when(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken");
+        when(storage.retrieveString("com.auth0.token_type")).thenReturn("type");
         Long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456L * 1000;
-        when(storage.retrieve("com.auth0.expires_at", Long.class)).thenReturn(expirationTime);
-        when(storage.retrieve("com.auth0.scope", String.class)).thenReturn("scope");
+        when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveString("com.auth0.scope")).thenReturn("scope");
 
         manager.getCredentials(callback);
         verify(callback).onSuccess(credentialsCaptor.capture());
@@ -272,13 +272,13 @@ public class CredentialsManagerTest {
     @SuppressWarnings("UnnecessaryLocalVariable")
     @Test
     public void shouldGetAndSuccessfullyRenewExpiredCredentials() throws Exception {
-        when(storage.retrieve("com.auth0.id_token", String.class)).thenReturn("idToken");
-        when(storage.retrieve("com.auth0.access_token", String.class)).thenReturn("accessToken");
-        when(storage.retrieve("com.auth0.refresh_token", String.class)).thenReturn("refreshToken");
-        when(storage.retrieve("com.auth0.token_type", String.class)).thenReturn("type");
+        when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
+        when(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken");
+        when(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken");
+        when(storage.retrieveString("com.auth0.token_type")).thenReturn("type");
         long expirationTime = CredentialsMock.CURRENT_TIME_MS; //Same as current time --> expired
-        when(storage.retrieve("com.auth0.expires_at", Long.class)).thenReturn(expirationTime);
-        when(storage.retrieve("com.auth0.scope", String.class)).thenReturn("scope");
+        when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveString("com.auth0.scope")).thenReturn("scope");
         when(client.renewAuth("refreshToken")).thenReturn(request);
 
         manager.getCredentials(callback);
@@ -297,13 +297,13 @@ public class CredentialsManagerTest {
     @SuppressWarnings("UnnecessaryLocalVariable")
     @Test
     public void shouldGetAndFailToRenewExpiredCredentials() throws Exception {
-        when(storage.retrieve("com.auth0.id_token", String.class)).thenReturn("idToken");
-        when(storage.retrieve("com.auth0.access_token", String.class)).thenReturn("accessToken");
-        when(storage.retrieve("com.auth0.refresh_token", String.class)).thenReturn("refreshToken");
-        when(storage.retrieve("com.auth0.token_type", String.class)).thenReturn("type");
+        when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
+        when(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken");
+        when(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken");
+        when(storage.retrieveString("com.auth0.token_type")).thenReturn("type");
         long expirationTime = CredentialsMock.CURRENT_TIME_MS; //Same as current time --> expired
-        when(storage.retrieve("com.auth0.expires_at", Long.class)).thenReturn(expirationTime);
-        when(storage.retrieve("com.auth0.scope", String.class)).thenReturn("scope");
+        when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveString("com.auth0.scope")).thenReturn("scope");
         when(client.renewAuth("refreshToken")).thenReturn(request);
 
         manager.getCredentials(callback);

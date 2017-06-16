@@ -48,12 +48,12 @@ public class CredentialsManager {
         if ((isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken())) || credentials.getExpiresAt() == null) {
             throw new CredentialsManagerException("Credentials must have a valid date of expiration and a valid access_token or id_token value.");
         }
-        storage.store(KEY_ACCESS_TOKEN, credentials.getAccessToken(), String.class);
-        storage.store(KEY_REFRESH_TOKEN, credentials.getRefreshToken(), String.class);
-        storage.store(KEY_ID_TOKEN, credentials.getIdToken(), String.class);
-        storage.store(KEY_TOKEN_TYPE, credentials.getType(), String.class);
-        storage.store(KEY_EXPIRES_AT, credentials.getExpiresAt().getTime(), Long.class);
-        storage.store(KEY_SCOPE, credentials.getScope(), String.class);
+        storage.store(KEY_ACCESS_TOKEN, credentials.getAccessToken());
+        storage.store(KEY_REFRESH_TOKEN, credentials.getRefreshToken());
+        storage.store(KEY_ID_TOKEN, credentials.getIdToken());
+        storage.store(KEY_TOKEN_TYPE, credentials.getType());
+        storage.store(KEY_EXPIRES_AT, credentials.getExpiresAt().getTime());
+        storage.store(KEY_SCOPE, credentials.getScope());
     }
 
     /**
@@ -64,12 +64,12 @@ public class CredentialsManager {
      * @param callback the callback that will receive a valid {@link Credentials} or the {@link CredentialsManagerException}.
      */
     public void getCredentials(@NonNull final BaseCallback<Credentials, CredentialsManagerException> callback) {
-        String accessToken = storage.retrieve(KEY_ACCESS_TOKEN, String.class);
-        String refreshToken = storage.retrieve(KEY_REFRESH_TOKEN, String.class);
-        String idToken = storage.retrieve(KEY_ID_TOKEN, String.class);
-        String tokenType = storage.retrieve(KEY_TOKEN_TYPE, String.class);
-        Long expiresAt = storage.retrieve(KEY_EXPIRES_AT, Long.class);
-        String scope = storage.retrieve(KEY_SCOPE, String.class);
+        String accessToken = storage.retrieveString(KEY_ACCESS_TOKEN);
+        String refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN);
+        String idToken = storage.retrieveString(KEY_ID_TOKEN);
+        String tokenType = storage.retrieveString(KEY_TOKEN_TYPE);
+        Long expiresAt = storage.retrieveLong(KEY_EXPIRES_AT);
+        String scope = storage.retrieveString(KEY_SCOPE);
 
         if (isEmpty(accessToken) && isEmpty(idToken) || expiresAt == null) {
             callback.onFailure(new CredentialsManagerException("No Credentials were previously set."));
