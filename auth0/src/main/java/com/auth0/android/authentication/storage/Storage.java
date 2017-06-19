@@ -4,7 +4,8 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 /**
- * Represents a Storage of generic key-value data.
+ * Represents a Storage of key-value data.
+ * Supported classes are String, Long and Integer.
  */
 @SuppressWarnings("WeakerAccess")
 public interface Storage {
