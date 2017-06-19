@@ -76,7 +76,8 @@ public class AuthenticationActivityTest {
         createActivity(intentCaptor.getValue());
         activityController.create().start().resume();
 
-        verify(customTabsController).bindServiceAndLaunchUri(uriCaptor.capture());
+        verify(customTabsController).bindService();
+        verify(customTabsController).launchUri(uriCaptor.capture());
         assertThat(uriCaptor.getValue(), is(notNullValue()));
         assertThat(uriCaptor.getValue(), is(uri));
         assertThat(activity.getDeliveredIntent(), is(nullValue()));
@@ -106,7 +107,8 @@ public class AuthenticationActivityTest {
         createActivity(intentCaptor.getValue());
         activityController.create().start().resume();
 
-        verify(customTabsController).bindServiceAndLaunchUri(uriCaptor.capture());
+        verify(customTabsController).bindService();
+        verify(customTabsController).launchUri(uriCaptor.capture());
         assertThat(uriCaptor.getValue(), is(notNullValue()));
         assertThat(uriCaptor.getValue(), is(uri));
         assertThat(activity.getDeliveredIntent(), is(nullValue()));
@@ -134,7 +136,8 @@ public class AuthenticationActivityTest {
         createActivity(intentCaptor.getValue());
         activityController.create().start().resume();
 
-        verify(customTabsController).bindServiceAndLaunchUri(uriCaptor.capture());
+        verify(customTabsController).bindService();
+        verify(customTabsController).launchUri(uriCaptor.capture());
         assertThat(uriCaptor.getValue(), is(notNullValue()));
         assertThat(uriCaptor.getValue(), is(uri));
         assertThat(activity.getDeliveredIntent(), is(nullValue()));

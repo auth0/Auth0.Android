@@ -103,7 +103,8 @@ public class AuthenticationActivity extends Activity {
         }
 
         customTabsController = createCustomTabsController(this);
-        customTabsController.bindServiceAndLaunchUri(authorizeUri);
+        customTabsController.bindService();
+        customTabsController.launchUri(authorizeUri);
     }
 
     @VisibleForTesting
