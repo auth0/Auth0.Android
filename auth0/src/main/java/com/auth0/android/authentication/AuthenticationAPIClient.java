@@ -163,7 +163,7 @@ public class AuthenticationAPIClient {
     /**
      * Log in a user with email/username and password for a connection/realm.
      * In OIDC conformant mode ({@link Auth0#isOIDCConformant()}) it will use the password-realm grant type for the {@code /oauth/token} endpoint
-     * otherwise it will use {@code /oauth/ro}
+     * otherwise it will use {@code /oauth/ro}, which requires your client to have the <b>Resource Owner</b> Legacy Grant Type enabled. See <a href="https://auth0.com/docs/clients/client-grant-types">Client Grant Types</a> to learn how to enable it.
      * Example:
      * <pre>
      * {@code
@@ -279,6 +279,7 @@ public class AuthenticationAPIClient {
     /**
      * Log in a user using a phone number and a verification code received via SMS (Part of passwordless login flow)
      * The default scope used is 'openid'.
+     * Requires your client to have the <b>Resource Owner</b> Legacy Grant Type enabled. See <a href="https://auth0.com/docs/clients/client-grant-types">Client Grant Types</a> to learn how to enable it.
      * Example usage:
      * <pre>
      * {@code
@@ -339,6 +340,7 @@ public class AuthenticationAPIClient {
     /**
      * Log in a user using an email and a verification code received via Email (Part of passwordless login flow).
      * The default scope used is 'openid'.
+     * Requires your client to have the <b>Resource Owner</b> Legacy Grant Type enabled. See <a href="https://auth0.com/docs/clients/client-grant-types">Client Grant Types</a> to learn how to enable it.
      * Example usage:
      * <pre>
      * {@code
@@ -622,7 +624,6 @@ public class AuthenticationAPIClient {
     /**
      * Request the revoke of a given refresh_token. Once revoked, the refresh_token cannot be used to obtain new tokens.
      * The client must be of type 'Native' or have the 'Token Endpoint Authentication Method' set to 'none' for this endpoint to work.
-     * 
      * Example usage:
      * <pre>
      * {@code
@@ -790,6 +791,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Start a passwordless flow with an <a href="https://auth0.com/docs/api/authentication#get-code-or-link">Email</a>
+     * Requires your client to have the <b>Resource Owner</b> Legacy Grant Type enabled. See <a href="https://auth0.com/docs/clients/client-grant-types">Client Grant Types</a> to learn how to enable it.
      * Example usage:
      * <pre>
      * {@code
@@ -824,6 +826,7 @@ public class AuthenticationAPIClient {
     /**
      * Start a passwordless flow with an <a href="https://auth0.com/docs/api/authentication#get-code-or-link">Email</a>
      * By default it will try to authenticate using "email" connection.
+     * Requires your client to have the <b>Resource Owner</b> Legacy Grant Type enabled. See <a href="https://auth0.com/docs/clients/client-grant-types">Client Grant Types</a> to learn how to enable it.
      * Example usage:
      * <pre>
      * {@code
@@ -849,6 +852,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Start a passwordless flow with a <a href="https://auth0.com/docs/api/authentication#get-code-or-link">SMS</a>
+     * Requires your client to have the <b>Resource Owner</b> Legacy Grant Type enabled. See <a href="https://auth0.com/docs/clients/client-grant-types">Client Grant Types</a> to learn how to enable it.
      * Example usage:
      * <pre>
      * {@code
@@ -882,6 +886,7 @@ public class AuthenticationAPIClient {
     /**
      * Start a passwordless flow with a <a href="https://auth0.com/docs/api/authentication#get-code-or-link">SMS</a>
      * By default it will try to authenticate using the "sms" connection.
+     * Requires your client to have the <b>Resource Owner</b> Legacy Grant Type enabled. See <a href="https://auth0.com/docs/clients/client-grant-types">Client Grant Types</a> to learn how to enable it.
      * Example usage:
      * <pre>
      * {@code

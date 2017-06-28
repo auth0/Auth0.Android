@@ -69,6 +69,8 @@ AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
 
 #### Login with database connection
 
+If the `Auth0` instance wasn't configured as "OIDC conformant", this call requires the client to have the *Resource Owner* Client Grant Type enabled. Check [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
+
 ```java
 authentication
     .login("info@auth0.com", "a secret password", "my-database-connection")
@@ -88,6 +90,10 @@ authentication
 > The default scope used is `openid`
 
 #### Passwordless Login
+
+This feature requires your client to have the *Resource Owner* Legacy Grant Type enabled. Check [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
+
+Passwordless it's a 2 steps flow:
 
 Step 1: Request the code
 
@@ -114,7 +120,6 @@ Step 2: Input the code
 ```java
 authentication
     .loginWithEmail("info@auth0.com", "123456", "my-passwordless-connection")
-    .start(new BaseCallback<Credentials>() {
         @Override
         public void onSuccess(Credentials payload) {
             //Logged in!
