@@ -269,7 +269,7 @@ First go to [Auth0 Dashboard](https://manage.auth0.com/#/applications) and go to
 https://{YOUR_AUTH0_DOMAIN}/android/{YOUR_APP_PACKAGE_NAME}/callback
 ```
 
-Remember to replace `{YOUR_APP_PACKAGE_NAME}` with your actual application's package name.
+Remember to replace `{YOUR_APP_PACKAGE_NAME}` with your actual application's package name, available in your `app/build.gradle` file as the `applicationId` value.
 
 
 Next, define a placeholder for the Auth0 Domain which is going to be used internally by the library to register an **intent-filter**. Go to your application's `build.gradle` file and add the `manifestPlaceholders` line as shown below:
@@ -314,7 +314,7 @@ In your manifest inside your application's tag add the `RedirectActivity` declar
 
                 <data
                     android:host="@string/auth0_domain"
-                    android:pathPrefix="/android/{YOUR_APP_PACKAGE_NAME}/callback"
+                    android:pathPrefix="/android/${applicationId}/callback"
                     android:scheme="https" />
             </intent-filter>
         </activity>
@@ -324,9 +324,7 @@ In your manifest inside your application's tag add the `RedirectActivity` declar
     </application>
 ```
 
-If you request a different scheme you must replace the `android:scheme` property. Remember to also replace `{YOUR_APP_PACKAGE_NAME}` with your actual application's package name.
-
-Finally, don't forget to add the internet permission.
+If you request a different scheme you must replace the `android:scheme` property. Finally, don't forget to add the internet permission.
 
 ```xml
 <uses-permission android:name="android.permission.INTERNET" />
