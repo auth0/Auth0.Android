@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
+import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 
@@ -49,6 +50,7 @@ class OAuthManager {
     private static final String KEY_REFRESH_TOKEN = "refresh_token";
     private static final String KEY_EXPIRES_IN = "expires_in";
     private static final String KEY_CODE = "code";
+    private static final String KEY_SCOPE = "scope";
 
     private final Auth0 account;
     private final AuthCallback callback;
@@ -126,7 +128,7 @@ class OAuthManager {
             if (values.containsKey(KEY_EXPIRES_IN)) {
                 expiresIn = Long.valueOf(values.get(KEY_EXPIRES_IN));
             }
-            final Credentials urlCredentials = new Credentials(values.get(KEY_ID_TOKEN), values.get(KEY_ACCESS_TOKEN), values.get(KEY_TOKEN_TYPE), values.get(KEY_REFRESH_TOKEN), expiresIn);
+            final Credentials urlCredentials = new Credentials(values.get(KEY_ID_TOKEN), values.get(KEY_ACCESS_TOKEN), values.get(KEY_TOKEN_TYPE), values.get(KEY_REFRESH_TOKEN), expiresIn, values.get(KEY_SCOPE));
             if (!shouldUsePKCE()) {
                 callback.onSuccess(urlCredentials);
             } else {
@@ -260,13 +262,14 @@ class OAuthManager {
 
     @VisibleForTesting
     static Credentials mergeCredentials(Credentials urlCredentials, Credentials codeCredentials) {
-        final String idToken = codeCredentials.getIdToken() != null ? codeCredentials.getIdToken() : urlCredentials.getIdToken();
-        final String accessToken = codeCredentials.getAccessToken() != null ? codeCredentials.getAccessToken() : urlCredentials.getAccessToken();
-        final String type = codeCredentials.getType() != null ? codeCredentials.getType() : urlCredentials.getType();
-        final String refreshToken = codeCredentials.getRefreshToken() != null ? codeCredentials.getRefreshToken() : urlCredentials.getRefreshToken();
+        final String idToken = TextUtils.isEmpty(codeCredentials.getIdToken()) ? urlCredentials.getIdToken() : codeCredentials.getIdToken();
+        final String accessToken = TextUtils.isEmpty(codeCredentials.getAccessToken()) ? urlCredentials.getAccessToken() : codeCredentials.getAccessToken();
+        final String type = TextUtils.isEmpty(codeCredentials.getType()) ? urlCredentials.getType() : codeCredentials.getType();
+        final String refreshToken = TextUtils.isEmpty(codeCredentials.getRefreshToken()) ? urlCredentials.getRefreshToken() : codeCredentials.getRefreshToken();
         final Long expiresIn = codeCredentials.getExpiresIn() != null ? codeCredentials.getExpiresIn() : urlCredentials.getExpiresIn();
+        final String scope = TextUtils.isEmpty(codeCredentials.getScope()) ? urlCredentials.getScope() : codeCredentials.getScope();
 
-        return new Credentials(idToken, accessToken, type, refreshToken, expiresIn);
+        return new Credentials(idToken, accessToken, type, refreshToken, expiresIn, scope);
     }
 
     @VisibleForTesting

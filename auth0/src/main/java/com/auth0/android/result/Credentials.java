@@ -36,6 +36,8 @@ import com.google.gson.annotations.SerializedName;
  * <li><i>accessToken</i>: Access Token for Auth0 API</li>
  * <li><i>refreshToken</i>: Refresh Token that can be used to request new tokens without signing in again</li>
  * <li><i>type</i>: The type of the received Token.</li>
+ * <li><i>expiresIn</i>: The token lifetime in seconds.</li>
+ * <li><i>scope</i>: The token's granted scope.</li>
  * </ul>
  */
 public class Credentials {
@@ -55,12 +57,21 @@ public class Credentials {
     @SerializedName("expires_in")
     private Long expiresIn;
 
-    public Credentials(String idToken, String accessToken, String type, String refreshToken, Long expiresIn) {
+    @SerializedName("scope")
+    private String scope;
+
+    public Credentials(String idToken, String accessToken, String type, String refreshToken, Long expiresIn, String scope) {
         this.idToken = idToken;
         this.accessToken = accessToken;
         this.type = type;
         this.refreshToken = refreshToken;
         this.expiresIn = expiresIn;
+        this.scope = scope;
+    }
+
+    //TODO: Deprecate this constructor
+    public Credentials(String idToken, String accessToken, String type, String refreshToken, Long expiresIn) {
+        this(idToken, accessToken, type, refreshToken, expiresIn, null);
     }
 
     /**
@@ -105,5 +116,15 @@ public class Credentials {
 
     public Long getExpiresIn() {
         return expiresIn;
+    }
+
+    /**
+     * Getter for the token's granted scope. Only available if the requested scope differs from the granted one.
+     *
+     * @return the granted scope.
+     */
+    @Nullable
+    public String getScope() {
+        return scope;
     }
 }

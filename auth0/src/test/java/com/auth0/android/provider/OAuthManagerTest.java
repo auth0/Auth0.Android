@@ -67,8 +67,8 @@ public class OAuthManagerTest {
 
     @Test
     public void shouldMergeCredentials() throws Exception {
-        Credentials urlCredentials = new Credentials("urlId", "urlAccess", "urlType", "urlRefresh", 9999L);
-        Credentials codeCredentials = new Credentials("codeId", "codeAccess", "codeType", "codeRefresh", 9999L);
+        Credentials urlCredentials = new Credentials("urlId", "urlAccess", "urlType", "urlRefresh", 9999L, "urlScope");
+        Credentials codeCredentials = new Credentials("codeId", "codeAccess", "codeType", "codeRefresh", 9999L, "codeScope");
         Credentials merged = OAuthManager.mergeCredentials(urlCredentials, codeCredentials);
 
         assertThat(merged.getIdToken(), is(codeCredentials.getIdToken()));
@@ -76,12 +76,13 @@ public class OAuthManagerTest {
         assertThat(merged.getType(), is(codeCredentials.getType()));
         assertThat(merged.getRefreshToken(), is(codeCredentials.getRefreshToken()));
         assertThat(merged.getExpiresIn(), is(codeCredentials.getExpiresIn()));
+        assertThat(merged.getScope(), is(codeCredentials.getScope()));
     }
 
     @Test
     public void shouldPreferNonNullValuesWhenMergingCredentials() throws Exception {
-        Credentials urlCredentials = new Credentials("urlId", "urlAccess", "urlType", "urlRefresh", 9999L);
-        Credentials codeCredentials = new Credentials(null, null, null, null, null);
+        Credentials urlCredentials = new Credentials("urlId", "urlAccess", "urlType", "urlRefresh", 9999L, "urlScope");
+        Credentials codeCredentials = new Credentials(null, null, null, null, null, null);
         Credentials merged = OAuthManager.mergeCredentials(urlCredentials, codeCredentials);
 
         assertThat(merged.getIdToken(), is(urlCredentials.getIdToken()));
@@ -89,6 +90,7 @@ public class OAuthManagerTest {
         assertThat(merged.getType(), is(urlCredentials.getType()));
         assertThat(merged.getRefreshToken(), is(urlCredentials.getRefreshToken()));
         assertThat(merged.getExpiresIn(), is(urlCredentials.getExpiresIn()));
+        assertThat(merged.getScope(), is(urlCredentials.getScope()));
     }
 
     @Test
