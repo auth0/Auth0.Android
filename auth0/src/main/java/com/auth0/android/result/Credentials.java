@@ -26,8 +26,11 @@ package com.auth0.android.result;
 
 
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 
 import com.google.gson.annotations.SerializedName;
+
+import java.util.Date;
 
 /**
  * Holds the user's credentials returned by Auth0.
@@ -37,6 +40,7 @@ import com.google.gson.annotations.SerializedName;
  * <li><i>refreshToken</i>: Refresh Token that can be used to request new tokens without signing in again</li>
  * <li><i>type</i>: The type of the received Token.</li>
  * <li><i>expiresIn</i>: The token lifetime in seconds.</li>
+ * <li><i>expiresAt</i>: The token expiration date.</li>
  * <li><i>scope</i>: The token's granted scope.</li>
  * </ul>
  */
@@ -60,18 +64,36 @@ public class Credentials {
     @SerializedName("scope")
     private String scope;
 
-    public Credentials(String idToken, String accessToken, String type, String refreshToken, Long expiresIn, String scope) {
+    private Date expiresAt;
+
+    //TODO: Deprecate this constructor
+    public Credentials(@Nullable String idToken, @Nullable String accessToken, @Nullable String type, @Nullable String refreshToken, @Nullable Long expiresIn) {
+        this(idToken, accessToken, type, refreshToken, expiresIn, null, null);
+    }
+
+    public Credentials(@Nullable String idToken, @Nullable String accessToken, @Nullable String type, @Nullable String refreshToken, @Nullable Date expiresAt, @Nullable String scope) {
+        this(idToken, accessToken, type, refreshToken, null, expiresAt, scope);
+    }
+
+    private Credentials(@Nullable String idToken, @Nullable String accessToken, @Nullable String type, @Nullable String refreshToken, @Nullable Long expiresIn, @Nullable Date expiresAt, @Nullable String scope) {
         this.idToken = idToken;
         this.accessToken = accessToken;
         this.type = type;
         this.refreshToken = refreshToken;
         this.expiresIn = expiresIn;
         this.scope = scope;
+        this.expiresAt = expiresAt;
+        if (expiresAt == null && expiresIn != null) {
+            this.expiresAt = new Date(getCurrentTimeInMillis() + expiresIn * 1000);
+        }
+        if (expiresIn == null && expiresAt != null) {
+            this.expiresIn = (expiresAt.getTime() - getCurrentTimeInMillis()) / 1000;
+        }
     }
 
-    //TODO: Deprecate this constructor
-    public Credentials(String idToken, String accessToken, String type, String refreshToken, Long expiresIn) {
-        this(idToken, accessToken, type, refreshToken, expiresIn, null);
+    @VisibleForTesting
+    long getCurrentTimeInMillis() {
+        return System.currentTimeMillis();
     }
 
     /**
@@ -114,6 +136,13 @@ public class Credentials {
         return refreshToken;
     }
 
+    /**
+     * Getter for the token lifetime in seconds.
+     * Once expired, the token can no longer be used to access an API and a new token needs to be obtained.
+     *
+     * @return the token lifetime in seconds.
+     */
+    @Nullable
     public Long getExpiresIn() {
         return expiresIn;
     }
@@ -126,5 +155,16 @@ public class Credentials {
     @Nullable
     public String getScope() {
         return scope;
+    }
+
+    /**
+     * Getter for the expiration date of this token.
+     * Once expired, the token can no longer be used to access an API and a new token needs to be obtained.
+     *
+     * @return the expiration date of this token
+     */
+    @Nullable
+    public Date getExpiresAt() {
+        return expiresAt;
     }
 }

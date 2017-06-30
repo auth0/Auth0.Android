@@ -20,6 +20,7 @@ import com.auth0.android.jwt.JWT;
 import com.auth0.android.result.Credentials;
 
 import java.security.SecureRandom;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -60,18 +61,19 @@ class OAuthManager {
     private boolean useBrowser = true;
     private int requestCode;
     private PKCE pkce;
+    private Long currentTimeInMillis;
 
-    public OAuthManager(Auth0 account, AuthCallback callback, Map<String, String> parameters) {
+    OAuthManager(Auth0 account, AuthCallback callback, Map<String, String> parameters) {
         this.account = account;
         this.callback = callback;
         this.parameters = new HashMap<>(parameters);
     }
 
-    public void useFullScreen(boolean useFullScreen) {
+    void useFullScreen(boolean useFullScreen) {
         this.useFullScreen = useFullScreen;
     }
 
-    public void useBrowser(boolean useBrowser) {
+    void useBrowser(boolean useBrowser) {
         this.useBrowser = useBrowser;
     }
 
@@ -80,7 +82,7 @@ class OAuthManager {
         this.pkce = pkce;
     }
 
-    public void startAuthorization(Activity activity, String redirectUri, int requestCode) {
+    void startAuthorization(Activity activity, String redirectUri, int requestCode) {
         addPKCEParameters(parameters, redirectUri);
         addClientParameters(parameters, redirectUri);
         addValidationParameters(parameters);
@@ -103,7 +105,7 @@ class OAuthManager {
         }
     }
 
-    public boolean resumeAuthorization(AuthorizeResult data) {
+    boolean resumeAuthorization(AuthorizeResult data) {
         if (!data.isValid(requestCode)) {
             Log.w(TAG, "The Authorize Result is invalid.");
             return false;
@@ -124,11 +126,8 @@ class OAuthManager {
             }
 
             Log.d(TAG, "Authenticated using web flow");
-            Long expiresIn = null;
-            if (values.containsKey(KEY_EXPIRES_IN)) {
-                expiresIn = Long.valueOf(values.get(KEY_EXPIRES_IN));
-            }
-            final Credentials urlCredentials = new Credentials(values.get(KEY_ID_TOKEN), values.get(KEY_ACCESS_TOKEN), values.get(KEY_TOKEN_TYPE), values.get(KEY_REFRESH_TOKEN), expiresIn, values.get(KEY_SCOPE));
+            final Date expiresAt = !values.containsKey(KEY_EXPIRES_IN) ? null : new Date(getCurrentTimeInMillis() + Long.valueOf(values.get(KEY_EXPIRES_IN)) * 1000);
+            final Credentials urlCredentials = new Credentials(values.get(KEY_ID_TOKEN), values.get(KEY_ACCESS_TOKEN), values.get(KEY_TOKEN_TYPE), values.get(KEY_REFRESH_TOKEN), expiresAt, values.get(KEY_SCOPE));
             if (!shouldUsePKCE()) {
                 callback.onSuccess(urlCredentials);
             } else {
@@ -154,6 +153,15 @@ class OAuthManager {
             callback.onFailure(e);
         }
         return true;
+    }
+
+    private long getCurrentTimeInMillis() {
+        return currentTimeInMillis != null ? currentTimeInMillis : System.currentTimeMillis();
+    }
+
+    @VisibleForTesting
+    void setCurrentTimeInMillis(long currentTimeInMillis) {
+        this.currentTimeInMillis = currentTimeInMillis;
     }
 
     //Helper Methods
@@ -266,10 +274,10 @@ class OAuthManager {
         final String accessToken = TextUtils.isEmpty(codeCredentials.getAccessToken()) ? urlCredentials.getAccessToken() : codeCredentials.getAccessToken();
         final String type = TextUtils.isEmpty(codeCredentials.getType()) ? urlCredentials.getType() : codeCredentials.getType();
         final String refreshToken = TextUtils.isEmpty(codeCredentials.getRefreshToken()) ? urlCredentials.getRefreshToken() : codeCredentials.getRefreshToken();
-        final Long expiresIn = codeCredentials.getExpiresIn() != null ? codeCredentials.getExpiresIn() : urlCredentials.getExpiresIn();
+        final Date expiresAt = codeCredentials.getExpiresAt() != null ? codeCredentials.getExpiresAt() : urlCredentials.getExpiresAt();
         final String scope = TextUtils.isEmpty(codeCredentials.getScope()) ? urlCredentials.getScope() : codeCredentials.getScope();
 
-        return new Credentials(idToken, accessToken, type, refreshToken, expiresIn, scope);
+        return new Credentials(idToken, accessToken, type, refreshToken, expiresAt, scope);
     }
 
     @VisibleForTesting

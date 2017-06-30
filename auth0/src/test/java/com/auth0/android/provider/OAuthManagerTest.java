@@ -14,8 +14,10 @@ import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
+import java.util.Date;
 import java.util.HashMap;
 
+import static org.cyberneko.html.HTMLElements.HEAD;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -67,8 +69,9 @@ public class OAuthManagerTest {
 
     @Test
     public void shouldMergeCredentials() throws Exception {
-        Credentials urlCredentials = new Credentials("urlId", "urlAccess", "urlType", "urlRefresh", 9999L, "urlScope");
-        Credentials codeCredentials = new Credentials("codeId", "codeAccess", "codeType", "codeRefresh", 9999L, "codeScope");
+        Date expiresAt = new Date();
+        Credentials urlCredentials = new Credentials("urlId", "urlAccess", "urlType", "urlRefresh", expiresAt, "urlScope");
+        Credentials codeCredentials = new Credentials("codeId", "codeAccess", "codeType", "codeRefresh", expiresAt, "codeScope");
         Credentials merged = OAuthManager.mergeCredentials(urlCredentials, codeCredentials);
 
         assertThat(merged.getIdToken(), is(codeCredentials.getIdToken()));
@@ -76,12 +79,15 @@ public class OAuthManagerTest {
         assertThat(merged.getType(), is(codeCredentials.getType()));
         assertThat(merged.getRefreshToken(), is(codeCredentials.getRefreshToken()));
         assertThat(merged.getExpiresIn(), is(codeCredentials.getExpiresIn()));
+        assertThat(merged.getExpiresAt(), is(expiresAt));
+        assertThat(merged.getExpiresAt(), is(codeCredentials.getExpiresAt()));
         assertThat(merged.getScope(), is(codeCredentials.getScope()));
     }
 
     @Test
+    @SuppressWarnings("ConstantConditions")
     public void shouldPreferNonNullValuesWhenMergingCredentials() throws Exception {
-        Credentials urlCredentials = new Credentials("urlId", "urlAccess", "urlType", "urlRefresh", 9999L, "urlScope");
+        Credentials urlCredentials = new Credentials("urlId", "urlAccess", "urlType", "urlRefresh", new Date(), "urlScope");
         Credentials codeCredentials = new Credentials(null, null, null, null, null, null);
         Credentials merged = OAuthManager.mergeCredentials(urlCredentials, codeCredentials);
 
@@ -91,6 +97,7 @@ public class OAuthManagerTest {
         assertThat(merged.getRefreshToken(), is(urlCredentials.getRefreshToken()));
         assertThat(merged.getExpiresIn(), is(urlCredentials.getExpiresIn()));
         assertThat(merged.getScope(), is(urlCredentials.getScope()));
+        assertThat(merged.getExpiresAt(), is(urlCredentials.getExpiresAt()));
     }
 
     @Test

@@ -384,6 +384,56 @@ WebAuthProvider.init(account)
 ```
 
 
+## Credentials Manager
+This library ships with a `CredentialsManager` class to easily store and retrieve fresh Credentials from a given `Storage`.
+
+### Usage
+1. **Instantiate the manager**
+You'll need an `AuthenticationAPIClient` instance used to renew the credentials when they expire and a `Storage`. The Storage implementation is up to you. We provide a `SharedPreferencesStorage` that uses `SharedPreferences` to create a file in the application's directory with Context.MODE_PRIVATE mode. This implementation is thread safe and can either be obtained through a Singleton like method or be created every time it's needed.
+
+```java
+AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
+Storage storage = new SharedPreferencesStorage(this);
+CredentialsManager manager = new CredentialsManager(authentication, storage);
+```
+
+2. **Save credentials**
+The credentials to save **must have** `expires_in` and at least an `access_token` or `id_token` value. If one of the values is missing when trying to set the credentials, the method will throw a `CredentialsManagerException`. If you want the manager to successfully renew the credentials when expired you must also request the `offline_access` scope when logging in in order to receive a `refresh_token` value along with the rest of the tokens. i.e. Logging in with a database connection and saving the credentials:
+
+```java
+authentication
+    .login("info@auth0.com", "a secret password", "my-database-connection")
+    .setScope("openid offline_access")
+    .start(new BaseCallback<Credentials>() {
+        @Override
+        public void onSuccess(Credentials credentials) {
+            //Save the credentials
+            manager.saveCredentials(credentials);
+        }
+
+        @Override
+        public void onFailure(AuthenticationException error) {
+            //Error!
+        }
+    });
+```
+
+3. **Retrieve credentials**
+ Existing credentials will be returned if they are still valid, otherwise the `refresh_token` will be used to attempt to renew them. If the `expires_in` or both the `access_token` and `id_token` values are missing, the method will throw a `CredentialsManagerException`. The same will happen if the credentials have expired and there's no `refresh_token` available.
+
+```java
+manager.getCredentials(new BaseCallback<Credentials, CredentialsManagerException>(){
+   public void onSuccess(Credentials credentials){
+      //Use the Credentials
+   }
+
+    public void onFailure(CredentialsManagerException error){
+      //Error!
+   }
+});
+```
+
+
 ## FAQ
 
 * Why is the Android Lint _error_ `'InvalidPackage'` considered a _warning_?
