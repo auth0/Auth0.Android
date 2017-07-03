@@ -2,11 +2,12 @@ package com.auth0.android.provider;
 
 import android.app.Activity;
 import android.app.Dialog;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.res.Resources;
 import android.net.Uri;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Base64;
@@ -36,9 +37,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static android.support.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static android.support.test.espresso.intent.matcher.IntentMatchers.hasComponent;
-import static android.support.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 import static android.support.test.espresso.intent.matcher.IntentMatchers.hasFlag;
 import static android.support.test.espresso.intent.matcher.UriMatchers.hasHost;
 import static android.support.test.espresso.intent.matcher.UriMatchers.hasParamWithName;
@@ -56,9 +55,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -91,6 +91,10 @@ public class WebAuthProviderTest {
         MockitoAnnotations.initMocks(this);
         activity = spy(Robolectric.buildActivity(Activity.class).get());
         account = new Auth0("clientId", "domain");
+
+        //Next line is needed to avoid CustomTabService from being bound to Test environment
+        //noinspection WrongConstant
+        doReturn(false).when(activity).bindService(any(Intent.class), any(ServiceConnection.class), anyInt());
     }
 
     @SuppressWarnings("deprecation")
@@ -946,56 +950,55 @@ public class WebAuthProviderTest {
     @SuppressWarnings("deprecation")
     @Test
     public void shouldStartWithBrowser() throws Exception {
-        Activity activity = mock(Activity.class);
-        Context appContext = mock(Context.class);
-        when(activity.getApplicationContext()).thenReturn(appContext);
-        when(activity.getPackageName()).thenReturn("package");
-        when(appContext.getPackageName()).thenReturn("package");
         WebAuthProvider.init(account)
                 .useBrowser(true)
                 .useCodeGrant(false)
                 .start(activity, callback);
 
-        ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
         verify(activity).startActivity(intentCaptor.capture());
 
-        assertThat(intentCaptor.getValue(), is(notNullValue()));
-        assertThat(intentCaptor.getValue(), hasAction(Intent.ACTION_VIEW));
-        assertThat(intentCaptor.getValue(), hasFlag(Intent.FLAG_ACTIVITY_NO_HISTORY));
+        Intent intent = intentCaptor.getValue();
+        assertThat(intent, is(notNullValue()));
+        assertThat(intent, hasComponent(AuthenticationActivity.class.getName()));
+        assertThat(intent, hasFlag(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+        assertThat(intent.getData(), is(notNullValue()));
+
+        Bundle extras = intentCaptor.getValue().getExtras();
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(false));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(false));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
+        assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
     }
 
     @SuppressWarnings("deprecation")
     @Test
     public void shouldStartWithWebViewAndDefaultConnection() throws Exception {
-        Activity activity = mock(Activity.class);
-        Context appContext = mock(Context.class);
-        when(activity.getApplicationContext()).thenReturn(appContext);
-        when(activity.getPackageName()).thenReturn("package");
-        when(appContext.getPackageName()).thenReturn("package");
         WebAuthProvider.init(account)
                 .useBrowser(false)
                 .useCodeGrant(false)
                 .useFullscreen(false)
                 .start(activity, callback, REQUEST_CODE);
 
-        ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
         verify(activity).startActivityForResult(intentCaptor.capture(), any(Integer.class));
 
-        ComponentName expComponent = new ComponentName("package", WebAuthActivity.class.getName());
-        assertThat(intentCaptor.getValue(), is(notNullValue()));
-        assertThat(intentCaptor.getValue(), hasComponent(expComponent));
-        assertThat(intentCaptor.getValue(), hasExtra(WebAuthActivity.CONNECTION_NAME_EXTRA, null));
-        assertThat(intentCaptor.getValue(), hasExtra(WebAuthActivity.FULLSCREEN_EXTRA, false));
+        Intent intent = intentCaptor.getValue();
+        assertThat(intent, is(notNullValue()));
+        assertThat(intent, hasComponent(AuthenticationActivity.class.getName()));
+        assertThat(intent, hasFlag(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+        assertThat(intent.getData(), is(notNullValue()));
+
+        Bundle extras = intentCaptor.getValue().getExtras();
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(true));
+        assertThat(extras.getString(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(nullValue()));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(true));
+        assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(false));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
+        assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(false));
     }
 
     @SuppressWarnings("deprecation")
     @Test
     public void shouldStartWithWebViewAndCustomConnection() throws Exception {
-        Activity activity = mock(Activity.class);
-        Context appContext = mock(Context.class);
-        when(activity.getApplicationContext()).thenReturn(appContext);
-        when(activity.getPackageName()).thenReturn("package");
-        when(appContext.getPackageName()).thenReturn("package");
         WebAuthProvider.init(account)
                 .useBrowser(false)
                 .withConnection("my-connection")
@@ -1003,14 +1006,21 @@ public class WebAuthProviderTest {
                 .useFullscreen(true)
                 .start(activity, callback);
 
-        ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
         verify(activity).startActivityForResult(intentCaptor.capture(), any(Integer.class));
 
-        ComponentName expComponent = new ComponentName("package", WebAuthActivity.class.getName());
-        assertThat(intentCaptor.getValue(), is(notNullValue()));
-        assertThat(intentCaptor.getValue(), hasComponent(expComponent));
-        assertThat(intentCaptor.getValue(), hasExtra(WebAuthActivity.CONNECTION_NAME_EXTRA, "my-connection"));
-        assertThat(intentCaptor.getValue(), hasExtra(WebAuthActivity.FULLSCREEN_EXTRA, true));
+        Intent intent = intentCaptor.getValue();
+        assertThat(intent, is(notNullValue()));
+        assertThat(intent, hasComponent(AuthenticationActivity.class.getName()));
+        assertThat(intent, hasFlag(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+        assertThat(intent.getData(), is(notNullValue()));
+
+        Bundle extras = intent.getExtras();
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(true));
+        assertThat(extras.getString(AuthenticationActivity.EXTRA_CONNECTION_NAME), is("my-connection"));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(true));
+        assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(true));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
+        assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(false));
     }
 
     @SuppressWarnings({"deprecation", "ThrowableResultOfMethodCallIgnored"})
@@ -1070,6 +1080,7 @@ public class WebAuthProviderTest {
         Intent intent = createAuthIntent(createHash(customNonceJWT(sentNonce), null, null, null, null, sentState, null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
+
         verify(callback).onSuccess(any(Credentials.class));
     }
 
@@ -1119,7 +1130,7 @@ public class WebAuthProviderTest {
 
         String sentState = uri.getQueryParameter(KEY_STATE);
         assertThat(sentState, is(not(isEmptyOrNullString())));
-        Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", null, sentState, null, null));
+        Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", 1111L, sentState, null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
         ArgumentCaptor<Credentials> credentialsCaptor = ArgumentCaptor.forClass(Credentials.class);
@@ -1158,7 +1169,7 @@ public class WebAuthProviderTest {
 
         String sentState = uri.getQueryParameter(KEY_STATE);
         assertThat(sentState, is(not(isEmptyOrNullString())));
-        Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", null, sentState, null, null));
+        Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", 1111L, sentState, null, null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         ArgumentCaptor<Credentials> credentialsCaptor = ArgumentCaptor.forClass(Credentials.class);
@@ -1186,10 +1197,18 @@ public class WebAuthProviderTest {
 
         String sentState = uri.getQueryParameter(KEY_STATE);
         assertThat(sentState, is(not(isEmptyOrNullString())));
-        Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", null, sentState, null, null));
+        Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", 1111L, sentState, null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
-        verify(callback).onSuccess(any(Credentials.class));
+        ArgumentCaptor<Credentials> credentialsCaptor = ArgumentCaptor.forClass(Credentials.class);
+        verify(callback).onSuccess(credentialsCaptor.capture());
+
+        assertThat(credentialsCaptor.getValue(), is(notNullValue()));
+        assertThat(credentialsCaptor.getValue().getIdToken(), is("urlId"));
+        assertThat(credentialsCaptor.getValue().getAccessToken(), is("urlAccess"));
+        assertThat(credentialsCaptor.getValue().getRefreshToken(), is("urlRefresh"));
+        assertThat(credentialsCaptor.getValue().getType(), is("urlType"));
+        assertThat(credentialsCaptor.getValue().getExpiresIn(), is(1111L));
     }
 
     @SuppressWarnings("deprecation")
@@ -1205,10 +1224,18 @@ public class WebAuthProviderTest {
 
         String sentState = uri.getQueryParameter(KEY_STATE);
         assertThat(sentState, is(not(isEmptyOrNullString())));
-        Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", null, sentState, null, null));
+        Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", 1111L, sentState, null, null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
-        verify(callback).onSuccess(any(Credentials.class));
+        ArgumentCaptor<Credentials> credentialsCaptor = ArgumentCaptor.forClass(Credentials.class);
+        verify(callback).onSuccess(credentialsCaptor.capture());
+
+        assertThat(credentialsCaptor.getValue(), is(notNullValue()));
+        assertThat(credentialsCaptor.getValue().getIdToken(), is("urlId"));
+        assertThat(credentialsCaptor.getValue().getAccessToken(), is("urlAccess"));
+        assertThat(credentialsCaptor.getValue().getRefreshToken(), is("urlRefresh"));
+        assertThat(credentialsCaptor.getValue().getType(), is("urlType"));
+        assertThat(credentialsCaptor.getValue().getExpiresIn(), is(1111L));
     }
 
     @Test
@@ -1253,7 +1280,7 @@ public class WebAuthProviderTest {
                 .useCodeGrant(true)
                 .withPKCE(pkce)
                 .start(activity, callback);
-        Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", null, "1234567890", null, null));
+        Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", 1111L, "1234567890", null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(dialog);
@@ -1276,7 +1303,7 @@ public class WebAuthProviderTest {
                 .useCodeGrant(true)
                 .withPKCE(pkce)
                 .start(activity, callback);
-        Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", null, "1234567890", null, null));
+        Intent intent = createAuthIntent(createHash("urlId", "urlAccess", "urlRefresh", "urlType", 1111L, "1234567890", null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(exception);
