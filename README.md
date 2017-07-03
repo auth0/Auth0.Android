@@ -295,17 +295,21 @@ android {
 
 It's a good practice to define reusable resources like `@string/auth0_domain` but you can also hard code the value in the file.
 
-Alternatively, you can declare the `RedirectActivity` in the `AndroidManifest.xml` file with your own **intent-filter** so it overrides the library's default. If you do this then the `manifestPlaceholders` don't need to be set. If you choose to use a [custom scheme](#a-note-about-app-deep-linking) you must define your own intent-filter as explained below. 
+Alternatively, you can declare the `RedirectActivity` in the `AndroidManifest.xml` file with your own **intent-filter** so it overrides the library's default. If you do this then the `manifestPlaceholders` don't need to be set as long as the activity contains the `tools:node="replace"` like in the snippet below. If you choose to use a [custom scheme](#a-note-about-app-deep-linking) you must define your own intent-filter as explained below. 
 
 In your manifest inside your application's tag add the `RedirectActivity` declaration:
 
 ```xml
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="your.app.package">
     <application android:theme="@style/AppTheme">
 
         <!-- ... -->
 
         <activity
-            android:name="com.auth0.android.provider.RedirectActivity">
+            android:name="com.auth0.android.provider.RedirectActivity"
+            tools:node="replace">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -322,9 +326,10 @@ In your manifest inside your application's tag add the `RedirectActivity` declar
         <!-- ... -->
 
     </application>
+</manifest>
 ```
 
-If you request a different scheme you must replace the `android:scheme` property. Finally, don't forget to add the internet permission.
+If you request a different scheme you must replace the `android:scheme` property value. Finally, don't forget to add the internet permission.
 
 ```xml
 <uses-permission android:name="android.permission.INTERNET" />
