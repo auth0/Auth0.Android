@@ -319,4 +319,16 @@ public class CredentialsManagerTest {
         assertThat(exception.getCause(), Is.<Throwable>is(authenticationException));
         assertThat(exception.getMessage(), is("An error occurred while trying to use the Refresh Token to renew the Credentials."));
     }
+
+    @Test
+    public void shouldClearCredentials() throws Exception {
+        manager.clearCredentials();
+
+        verify(storage).remove("com.auth0.id_token");
+        verify(storage).remove("com.auth0.access_token");
+        verify(storage).remove("com.auth0.refresh_token");
+        verify(storage).remove("com.auth0.token_type");
+        verify(storage).remove("com.auth0.expires_at");
+        verify(storage).remove("com.auth0.scope");
+    }
 }

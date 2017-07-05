@@ -97,6 +97,18 @@ public class CredentialsManager {
         });
     }
 
+    /**
+     * Removes the credentials from the storage if present.
+     */
+    public void clearCredentials() {
+        storage.remove(KEY_ACCESS_TOKEN);
+        storage.remove(KEY_REFRESH_TOKEN);
+        storage.remove(KEY_ID_TOKEN);
+        storage.remove(KEY_TOKEN_TYPE);
+        storage.remove(KEY_EXPIRES_AT);
+        storage.remove(KEY_SCOPE);
+    }
+
     @VisibleForTesting
     Credentials recreateCredentials(String idToken, String accessToken, String tokenType, String refreshToken, Date expiresAt, String scope) {
         return new Credentials(idToken, accessToken, tokenType, refreshToken, expiresAt, scope);

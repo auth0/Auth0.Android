@@ -469,7 +469,7 @@ authentication
 ```
 
 3. **Retrieve credentials**
- Existing credentials will be returned if they are still valid, otherwise the `refresh_token` will be used to attempt to renew them. If the `expires_in` or both the `access_token` and `id_token` values are missing, the method will throw a `CredentialsManagerException`. The same will happen if the credentials have expired and there's no `refresh_token` available.
+Existing credentials will be returned if they are still valid, otherwise the `refresh_token` will be used to attempt to renew them. If the `expires_in` or both the `access_token` and `id_token` values are missing, the method will throw a `CredentialsManagerException`. The same will happen if the credentials have expired and there's no `refresh_token` available.
 
 ```java
 manager.getCredentials(new BaseCallback<Credentials, CredentialsManagerException>(){
@@ -483,6 +483,12 @@ manager.getCredentials(new BaseCallback<Credentials, CredentialsManagerException
 });
 ```
 
+4. **Clear credentials**
+Whenever you need to remove the credentials from the storage and make sure that the next call to `getCredentials` fails, you must clear them from the manager:
+
+```java
+manager.clearCredentials();
+```
 
 ## FAQ
 
