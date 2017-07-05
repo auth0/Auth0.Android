@@ -98,6 +98,18 @@ public class CredentialsManager {
     }
 
     /**
+     * Checks if a valid pair of credentials can be obtained from this manager.
+     */
+    public boolean hasCredentials() {
+        String accessToken = storage.retrieveString(KEY_ACCESS_TOKEN);
+        String refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN);
+        String idToken = storage.retrieveString(KEY_ID_TOKEN);
+        Long expiresAt = storage.retrieveLong(KEY_EXPIRES_AT);
+
+        return !(isEmpty(accessToken) && isEmpty(idToken) || expiresAt == null || expiresAt <= getCurrentTimeInMillis() && refreshToken == null);
+    }
+
+    /**
      * Removes the credentials from the storage if present.
      */
     public void clearCredentials() {
