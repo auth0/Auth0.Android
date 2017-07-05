@@ -56,6 +56,19 @@ And then create a new Auth0 instance by passing an Android Context:
 Auth0 account = new Auth0(context);
 ```
 
+## OIDC Conformant Mode
+
+It is strongly encouraged that this SDK be used in OIDC Conformant mode. When this mode is enabled, it will force the SDK to use Auth0's current authentication pipeline and will prevent it from reaching legacy endpoints. By default is `false`
+
+```java
+Auth0 account = new Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}");
+//Configure the account in OIDC conformant mode
+account.setOIDCConformant(true);
+//Use the account in the API clients
+```
+
+For more information, please see the [OIDC adoption guide](https://auth0.com/docs/api-auth/tutorials/adoption).
+
 
 ### Authentication API
 

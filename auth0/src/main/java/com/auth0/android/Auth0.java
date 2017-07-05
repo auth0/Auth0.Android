@@ -40,6 +40,15 @@ import com.squareup.okhttp.HttpUrl;
  * <pre>{@code
  * Auth0 auth0 = new Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN");
  * }</pre>
+ * It is strongly encouraged that this SDK be used in OIDC Conformant mode.
+ * When this mode is enabled, it will force the SDK to use Auth0's current authentication pipeline
+ * and will prevent it from reaching legacy endpoints. By default is `false`
+ * <pre>{@code
+ * auth0.setOIDCConformant(true);
+ * }</pre>
+ * For more information, please see the <a href="https://auth0.com/docs/api-auth/tutorials/adoption">OIDC adoption guide</a>.
+ *
+ * @see Auth0#setOIDCConformant(boolean)
  */
 public class Auth0 {
 
@@ -148,9 +157,11 @@ public class Auth0 {
     }
 
     /**
-     * Defines if the client uses OIDC conformant authentication endpoints. By default is {@code false}
+     * It is strongly encouraged that this SDK be used in OIDC Conformant mode.
+     * When this mode is enabled, it will force the SDK to use Auth0's current authentication pipeline
+     * and will prevent it from reaching legacy endpoints. By default is {@code false}
+     * For more information, please see the <a href="https://auth0.com/docs/api-auth/tutorials/adoption">OIDC adoption guide</a>.
      * <p>
-     * You will need to enable this setting in the Auth0 Dashboard first: Go to Account (top right), Account Settings, click Advanced and check the toggle at the bottom.
      * This setting affects how authentication is performed in the following methods:
      * <ul>
      * <li>{@link AuthenticationAPIClient#login(String, String, String)}</li>
@@ -159,7 +170,7 @@ public class Auth0 {
      * <li>{@link AuthenticationAPIClient#renewAuth(String)}</li>
      * </ul>
      *
-     * @param enabled if Lock will use the Legacy Auth API or the new OIDC Conformant Auth API.
+     * @param enabled if Lock will use the Legacy Authentication API or the new OIDC Conformant Authentication API.
      */
     public void setOIDCConformant(boolean enabled) {
         this.oidcConformant = enabled;
