@@ -284,7 +284,7 @@ android {
         minSdkVersion 15
         targetSdkVersion 25
         //...
-        
+
         //---> Add the next line
         manifestPlaceholders = [auth0Domain: "@string/auth0_domain"]
         //<---
@@ -295,7 +295,7 @@ android {
 
 It's a good practice to define reusable resources like `@string/auth0_domain` but you can also hard code the value in the file.
 
-Alternatively, you can declare the `RedirectActivity` in the `AndroidManifest.xml` file with your own **intent-filter** so it overrides the library's default. If you do this then the `manifestPlaceholders` don't need to be set as long as the activity contains the `tools:node="replace"` like in the snippet below. If you choose to use a [custom scheme](#a-note-about-app-deep-linking) you must define your own intent-filter as explained below. 
+Alternatively, you can declare the `RedirectActivity` in the `AndroidManifest.xml` file with your own **intent-filter** so it overrides the library's default. If you do this then the `manifestPlaceholders` don't need to be set as long as the activity contains the `tools:node="replace"` like in the snippet below. If you choose to use a [custom scheme](#a-note-about-app-deep-linking) you must define your own intent-filter as explained below.
 
 In your manifest inside your application's tag add the `RedirectActivity` declaration:
 
@@ -354,6 +354,16 @@ WebAuthProvider.init(account)
                 .start(MainActivity.this, authCallback);
 ```
 
+
+#### Authenticate with Auth0 "Hosted Login Page"
+
+Simply don't specify any custom connection and the Lock web widget will show.
+
+```java
+WebAuthProvider.init(account)
+                .start(MainActivity.this, authCallback);
+```
+
 #### Authenticate with any Auth0 connection
 
 ```java
@@ -363,6 +373,7 @@ WebAuthProvider.init(account)
 ```
 
 #### Use Code grant with PKCE
+
 > Before you can use `Code Grant` in Android, make sure to go to your [client's section](https://manage.auth0.com/#/applications) in dashboard and check in the Settings that `Client Type` is `Native`.
 
 
@@ -372,11 +383,23 @@ WebAuthProvider.init(account)
                 .start(MainActivity.this, authCallback);
 ```
 
+#### Specify audience
+
+The snippet below requests the "userinfo" audience in order to guarantee OIDC compliant responses from the server. This can also be achieved by flipping the "OIDC Conformant" switch on in the OAuth Advanced Settings of your client. For more information check [this documentation](https://auth0.com/docs/api-auth/intro#how-to-use-the-new-flows).
+
+```java
+WebAuthProvider.init(account)
+                .withAudience("https://{YOUR_AUTH0_DOMAIN}/userinfo")
+                .start(MainActivity.this, authCallback);
+```
+
+> Replace `{YOUR_AUTH0_DOMAIN}` with your actual Auth0 domain (i.e. `mytenant.auth0.com`).
+
 #### Specify scope
 
 ```java
 WebAuthProvider.init(account)
-                .withScope("user openid")
+                .withScope("openid profile email")
                 .start(MainActivity.this, authCallback);
 ```
 
@@ -387,14 +410,6 @@ WebAuthProvider.init(account)
 ```java
 WebAuthProvider.init(account)
                 .withConnectionScope("email", "profile", "calendar:read")
-                .start(MainActivity.this, authCallback);
-```
-
-#### Authenticate with Auth0 hosted login page
-Simply don't specify any custom connection and the Lock web widget will show.
-
-```java
-WebAuthProvider.init(account)
                 .start(MainActivity.this, authCallback);
 ```
 
