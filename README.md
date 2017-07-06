@@ -67,7 +67,7 @@ account.setOIDCConformant(true);
 //Use the account in the API clients
 ```
 
-For more information, please see the [OIDC adoption guide](https://auth0.com/docs/api-auth/tutorials/adoption).
+Passwordless authentication *cannot be used* with this flag set to `true`. For more information, please see the [OIDC adoption guide](https://auth0.com/docs/api-auth/tutorials/adoption).
 
 
 ### Authentication API
@@ -104,7 +104,7 @@ authentication
 
 #### Passwordless Login
 
-This feature requires your client to have the *Resource Owner* Legacy Grant Type enabled. Check [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
+This feature requires your client to have the *Resource Owner* Legacy Grant Type enabled. Check [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it. Note that Passwordless authentication *cannot be used* with the [OIDC Conformant Mode](/oidc-conformant-mode) enabled.
 
 Passwordless it's a 2 steps flow:
 
