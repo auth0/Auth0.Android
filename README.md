@@ -148,6 +148,16 @@ If you request a different scheme you must replace the `android:scheme` property
 > In versions 1.8.0 and before you had to define the **intent-filter** inside your activity to capture the result in the `onNewIntent` method and call `WebAuthProvider.resume()` with the received intent. This call is no longer required for versions greater than 1.8.0 as it's now done for you by the library.
 
 
+Finally, authenticate by showing the **Auth0 Hosted Login Page**:
+
+```java
+WebAuthProvider.init(account)
+                .start(MainActivity.this, authCallback);
+```
+
+If you've followed the configuration steps, the authentication result will be redirected from the browser to your application and you'll receive it in the Callback.
+
+
 ##### A note about App Deep Linking:
 
 Currently, the default scheme used in the Callback Uri is `https`. This works best for Android API 23 or newer if you're using [Android App Links](https://developer.android.com/training/app-links/index.html), but in previous Android versions this may show the intent chooser dialog prompting the user to chose either your application or the browser. You can change this behaviour by using a custom unique scheme, so that the OS opens directly the link with your app.
@@ -163,15 +173,6 @@ WebAuthProvider.init(account)
                 .start(MainActivity.this, authCallback);
 ```
 
-
-#### Authenticate without an specific connection
-
-Simply don't specify any custom connection and the Lock web widget will show.
-
-```java
-WebAuthProvider.init(account)
-                .start(MainActivity.this, authCallback);
-```
 
 #### Authenticate with any Auth0 connection
 
