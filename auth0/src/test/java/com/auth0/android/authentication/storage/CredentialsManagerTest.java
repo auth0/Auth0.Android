@@ -29,7 +29,6 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doAnswer;
@@ -96,6 +95,7 @@ public class CredentialsManagerTest {
         verify(storage).store("com.auth0.token_type", "type");
         verify(storage).store("com.auth0.expires_at", expirationTime);
         verify(storage).store("com.auth0.scope", "scope");
+        verifyNoMoreInteractions(storage);
     }
 
     @Test
@@ -332,6 +332,7 @@ public class CredentialsManagerTest {
         verify(storage).remove("com.auth0.token_type");
         verify(storage).remove("com.auth0.expires_at");
         verify(storage).remove("com.auth0.scope");
+        verifyNoMoreInteractions(storage);
     }
 
     @Test
@@ -341,11 +342,11 @@ public class CredentialsManagerTest {
 
         when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
         when(storage.retrieveString("com.auth0.access_token")).thenReturn(null);
-        assertTrue(manager.hasCredentials());
+        assertThat(manager.hasCredentials(), is(true));
 
         when(storage.retrieveString("com.auth0.id_token")).thenReturn(null);
         when(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken");
-        assertTrue(manager.hasCredentials());
+        assertThat(manager.hasCredentials(), is(true));
     }
 
     @Test
@@ -371,11 +372,11 @@ public class CredentialsManagerTest {
 
         when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
         when(storage.retrieveString("com.auth0.access_token")).thenReturn(null);
-        assertTrue(manager.hasCredentials());
+        assertThat(manager.hasCredentials(), is(true));
 
         when(storage.retrieveString("com.auth0.id_token")).thenReturn(null);
         when(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken");
-        assertTrue(manager.hasCredentials());
+        assertThat(manager.hasCredentials(), is(true));
     }
 
     @Test

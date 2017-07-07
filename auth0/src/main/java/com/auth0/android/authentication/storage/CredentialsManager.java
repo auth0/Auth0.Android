@@ -106,7 +106,9 @@ public class CredentialsManager {
         String idToken = storage.retrieveString(KEY_ID_TOKEN);
         Long expiresAt = storage.retrieveLong(KEY_EXPIRES_AT);
 
-        return !(isEmpty(accessToken) && isEmpty(idToken) || expiresAt == null || expiresAt <= getCurrentTimeInMillis() && refreshToken == null);
+        return !(isEmpty(accessToken) && isEmpty(idToken) ||
+                expiresAt == null ||
+                expiresAt <= getCurrentTimeInMillis() && refreshToken == null);
     }
 
     /**
