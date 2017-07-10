@@ -342,11 +342,11 @@ public class CredentialsManagerTest {
 
         when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
         when(storage.retrieveString("com.auth0.access_token")).thenReturn(null);
-        assertThat(manager.hasCredentials(), is(true));
+        assertThat(manager.hasValidCredentials(), is(true));
 
         when(storage.retrieveString("com.auth0.id_token")).thenReturn(null);
         when(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken");
-        assertThat(manager.hasCredentials(), is(true));
+        assertThat(manager.hasValidCredentials(), is(true));
     }
 
     @Test
@@ -357,11 +357,11 @@ public class CredentialsManagerTest {
 
         when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
         when(storage.retrieveString("com.auth0.access_token")).thenReturn(null);
-        assertFalse(manager.hasCredentials());
+        assertFalse(manager.hasValidCredentials());
 
         when(storage.retrieveString("com.auth0.id_token")).thenReturn(null);
         when(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken");
-        assertFalse(manager.hasCredentials());
+        assertFalse(manager.hasValidCredentials());
     }
 
     @Test
@@ -372,11 +372,11 @@ public class CredentialsManagerTest {
 
         when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
         when(storage.retrieveString("com.auth0.access_token")).thenReturn(null);
-        assertThat(manager.hasCredentials(), is(true));
+        assertThat(manager.hasValidCredentials(), is(true));
 
         when(storage.retrieveString("com.auth0.id_token")).thenReturn(null);
         when(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken");
-        assertThat(manager.hasCredentials(), is(true));
+        assertThat(manager.hasValidCredentials(), is(true));
     }
 
     @Test
@@ -384,6 +384,6 @@ public class CredentialsManagerTest {
         when(storage.retrieveString("com.auth0.id_token")).thenReturn(null);
         when(storage.retrieveString("com.auth0.access_token")).thenReturn(null);
 
-        assertFalse(manager.hasCredentials());
+        assertFalse(manager.hasValidCredentials());
     }
 }

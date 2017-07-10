@@ -469,10 +469,10 @@ authentication
 ```
 
 3. **Check credentials existence**
-There are cases were you just want to check if a user session is still valid (i.e. to know if you should present the login screen or the main screen). For convenience we include a `hasCredentials` method that can let you know in advance if a valid token is available or if it has expired but it could be refreshed, without making an additional network call. The same rules of the `getCredentials` method apply:
+There are cases were you just want to check if a user session is still valid (i.e. to know if you should present the login screen or the main screen). For convenience we include a `hasValidCredentials` method that can let you know in advance if a non-expired token is available without making an additional network call. The same rules of the `getCredentials` method apply:
 
 ```java
-boolean authenticated = manager.hasCredentials();
+boolean authenticated = manager.hasValidCredentials();
 ```
 
 4. **Retrieve credentials**

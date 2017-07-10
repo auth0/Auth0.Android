@@ -98,9 +98,9 @@ public class CredentialsManager {
     }
 
     /**
-     * Checks if a valid pair of credentials can be obtained from this manager.
+     * Checks if a non-expired pair of credentials can be obtained from this manager.
      */
-    public boolean hasCredentials() {
+    public boolean hasValidCredentials() {
         String accessToken = storage.retrieveString(KEY_ACCESS_TOKEN);
         String refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN);
         String idToken = storage.retrieveString(KEY_ID_TOKEN);
