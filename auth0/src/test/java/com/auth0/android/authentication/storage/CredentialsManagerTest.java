@@ -27,6 +27,7 @@ import java.util.Date;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -94,6 +95,7 @@ public class CredentialsManagerTest {
         verify(storage).store("com.auth0.token_type", "type");
         verify(storage).store("com.auth0.expires_at", expirationTime);
         verify(storage).store("com.auth0.scope", "scope");
+        verifyNoMoreInteractions(storage);
     }
 
     @Test
@@ -318,5 +320,70 @@ public class CredentialsManagerTest {
         assertThat(exception, is(notNullValue()));
         assertThat(exception.getCause(), Is.<Throwable>is(authenticationException));
         assertThat(exception.getMessage(), is("An error occurred while trying to use the Refresh Token to renew the Credentials."));
+    }
+
+    @Test
+    public void shouldClearCredentials() throws Exception {
+        manager.clearCredentials();
+
+        verify(storage).remove("com.auth0.id_token");
+        verify(storage).remove("com.auth0.access_token");
+        verify(storage).remove("com.auth0.refresh_token");
+        verify(storage).remove("com.auth0.token_type");
+        verify(storage).remove("com.auth0.expires_at");
+        verify(storage).remove("com.auth0.scope");
+        verifyNoMoreInteractions(storage);
+    }
+
+    @Test
+    public void shouldHaveCredentialsWhenTokenHasNotExpired() throws Exception {
+        long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456L * 1000;
+        when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
+
+        when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
+        when(storage.retrieveString("com.auth0.access_token")).thenReturn(null);
+        assertThat(manager.hasValidCredentials(), is(true));
+
+        when(storage.retrieveString("com.auth0.id_token")).thenReturn(null);
+        when(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken");
+        assertThat(manager.hasValidCredentials(), is(true));
+    }
+
+    @Test
+    public void shouldNotHaveCredentialsWhenTokenHasExpiredAndNoRefreshTokenIsAvailable() throws Exception {
+        long expirationTime = CredentialsMock.CURRENT_TIME_MS; //Same as current time --> expired
+        when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveString("com.auth0.refresh_token")).thenReturn(null);
+
+        when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
+        when(storage.retrieveString("com.auth0.access_token")).thenReturn(null);
+        assertFalse(manager.hasValidCredentials());
+
+        when(storage.retrieveString("com.auth0.id_token")).thenReturn(null);
+        when(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken");
+        assertFalse(manager.hasValidCredentials());
+    }
+
+    @Test
+    public void shouldHaveCredentialsWhenTokenHasExpiredButRefreshTokenIsAvailable() throws Exception {
+        long expirationTime = CredentialsMock.CURRENT_TIME_MS; //Same as current time --> expired
+        when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken");
+
+        when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
+        when(storage.retrieveString("com.auth0.access_token")).thenReturn(null);
+        assertThat(manager.hasValidCredentials(), is(true));
+
+        when(storage.retrieveString("com.auth0.id_token")).thenReturn(null);
+        when(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken");
+        assertThat(manager.hasValidCredentials(), is(true));
+    }
+
+    @Test
+    public void shouldNotHaveCredentialsWhenAccessTokenAndIdTokenAreMissing() throws Exception {
+        when(storage.retrieveString("com.auth0.id_token")).thenReturn(null);
+        when(storage.retrieveString("com.auth0.access_token")).thenReturn(null);
+
+        assertFalse(manager.hasValidCredentials());
     }
 }

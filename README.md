@@ -468,8 +468,15 @@ authentication
     });
 ```
 
-3. **Retrieve credentials**
- Existing credentials will be returned if they are still valid, otherwise the `refresh_token` will be used to attempt to renew them. If the `expires_in` or both the `access_token` and `id_token` values are missing, the method will throw a `CredentialsManagerException`. The same will happen if the credentials have expired and there's no `refresh_token` available.
+3. **Check credentials existence**
+There are cases were you just want to check if a user session is still valid (i.e. to know if you should present the login screen or the main screen). For convenience we include a `hasValidCredentials` method that can let you know in advance if a non-expired token is available without making an additional network call. The same rules of the `getCredentials` method apply:
+
+```java
+boolean authenticated = manager.hasValidCredentials();
+```
+
+4. **Retrieve credentials**
+Existing credentials will be returned if they are still valid, otherwise the `refresh_token` will be used to attempt to renew them. If the `expires_in` or both the `access_token` and `id_token` values are missing, the method will throw a `CredentialsManagerException`. The same will happen if the credentials have expired and there's no `refresh_token` available.
 
 ```java
 manager.getCredentials(new BaseCallback<Credentials, CredentialsManagerException>(){
@@ -483,6 +490,13 @@ manager.getCredentials(new BaseCallback<Credentials, CredentialsManagerException
 });
 ```
 
+
+5. **Clear credentials**
+When you want to log the user out:
+
+```java
+manager.clearCredentials();
+```
 
 ## FAQ
 

@@ -60,4 +60,11 @@ public interface Storage {
      */
     @Nullable
     Integer retrieveInteger(@NonNull String name);
+
+    /**
+     * Removes a value from the storage.
+     *
+     * @param name the name of the value to remove.
+     */
+    void remove(@NonNull String name);
 }

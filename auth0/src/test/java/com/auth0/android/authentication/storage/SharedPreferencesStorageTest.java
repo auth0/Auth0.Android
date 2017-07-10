@@ -186,4 +186,16 @@ public class SharedPreferencesStorageTest {
         assertThat(value, is(123));
     }
 
+
+    //Remove
+
+    @SuppressWarnings("ConstantConditions")
+    @Test
+    public void shouldRemovePreferencesKey() throws Exception {
+        SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
+        storage.remove("name");
+        verify(sharedPreferencesEditor).remove("name");
+        verify(sharedPreferencesEditor).apply();
+    }
+
 }

@@ -92,4 +92,9 @@ public class SharedPreferencesStorage implements Storage {
         }
         return sp.getInt(name, 0);
     }
+
+    @Override
+    public void remove(@NonNull String name) {
+        sp.edit().remove(name).apply();
+    }
 }
