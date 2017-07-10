@@ -1,5 +1,16 @@
 # Change Log
 
+## [1.9.0](https://github.com/auth0/Auth0.Android/tree/1.9.0) (2017-07-10)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.8.0...1.9.0)
+
+**Added**
+- Add hasValidCredentials and clearCredentials to CredentialsManager [\#102](https://github.com/auth0/Auth0.Android/pull/102) ([lbalmaceda](https://github.com/lbalmaceda))
+- Add granted scope to the Credentials object [\#97](https://github.com/auth0/Auth0.Android/pull/97) ([lbalmaceda](https://github.com/lbalmaceda))
+- Add CredentialsManager and generic Storage [\#96](https://github.com/auth0/Auth0.Android/pull/96) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Changed**
+- Use Chrome Custom Tabs when possible [\#95](https://github.com/auth0/Auth0.Android/pull/95) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.8.0](https://github.com/auth0/Auth0.Android/tree/1.8.0) (2017-04-27)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.7.0...1.8.0)
 
