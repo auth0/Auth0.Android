@@ -210,7 +210,7 @@ public class AuthenticationAPIClient {
     }
 
     private String concatScopes(final String... scopes) {
-        if(scopes.length > 0) {
+        if(scopes != null && scopes.length > 0) {
             return SCOPE_OPENID.concat(" ").concat(TextUtils.join(" ", scopes));
         } else {
             return SCOPE_OPENID;
