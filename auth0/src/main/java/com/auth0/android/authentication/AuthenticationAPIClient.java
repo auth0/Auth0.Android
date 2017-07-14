@@ -200,7 +200,7 @@ public class AuthenticationAPIClient {
         } else {
             final Map<String, Object> parameters = builder
                     .setGrantType(GRANT_TYPE_PASSWORD)
-                    .setScope(SCOPE_OPENID)
+                    .setScope("openid profile")
                     .setConnection(realmOrConnection)
                     .asDictionary();
             return loginWithResourceOwner(parameters);
