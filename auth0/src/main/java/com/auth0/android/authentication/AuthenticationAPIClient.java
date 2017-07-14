@@ -27,6 +27,7 @@ package com.auth0.android.authentication;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
+import android.text.TextUtils;
 
 import com.auth0.android.Auth0;
 import com.auth0.android.authentication.request.DatabaseConnectionRequest;
@@ -168,7 +169,7 @@ public class AuthenticationAPIClient {
      * <pre>
      * {@code
      * client
-     *      .login("{username or email}", "{password}", "{database connection name}")
+     *      .login("{username or email}", "{password}", "{database connection name}", {scopes...})
      *      .start(new BaseCallback<Credentials>() {
      *          {@literal}Override
      *          public void onSuccess(Credentials payload) { }
@@ -182,10 +183,11 @@ public class AuthenticationAPIClient {
      * @param usernameOrEmail   of the user depending of the type of DB connection
      * @param password          of the user
      * @param realmOrConnection realm to use in the authorize flow or the name of the database to authenticate with.
+     * @param scopes            additional scopes
      * @return a request to configure and start that will yield {@link Credentials}
      */
     @SuppressWarnings("WeakerAccess")
-    public AuthenticationRequest login(@NonNull String usernameOrEmail, @NonNull String password, @NonNull String realmOrConnection) {
+    public AuthenticationRequest login(@NonNull String usernameOrEmail, @NonNull String password, @NonNull String realmOrConnection, String... scopes) {
 
         ParameterBuilder builder = ParameterBuilder.newBuilder()
                 .set(USERNAME_KEY, usernameOrEmail)
@@ -200,10 +202,18 @@ public class AuthenticationAPIClient {
         } else {
             final Map<String, Object> parameters = builder
                     .setGrantType(GRANT_TYPE_PASSWORD)
-                    .setScope(SCOPE_OPENID)
+                    .setScope(concatScopes(scopes))
                     .setConnection(realmOrConnection)
                     .asDictionary();
             return loginWithResourceOwner(parameters);
+        }
+    }
+
+    private String concatScopes(final String... scopes) {
+        if(scopes != null && scopes.length > 0) {
+            return SCOPE_OPENID.concat(" ").concat(TextUtils.join(" ", scopes));
+        } else {
+            return SCOPE_OPENID;
         }
     }
 
@@ -529,7 +539,7 @@ public class AuthenticationAPIClient {
      * Example usage:
      * <pre>
      * {@code
-     * client.signUp("{email}", "{password}", "{username}", "{database connection name}")
+     * client.signUp("{email}", "{password}", "{username}", "{database connection name}", "{scopes...}")
      *      .start(new BaseCallback<Credentials>() {
      *          {@literal}Override
      *          public void onSuccess(Credentials payload) {}
@@ -544,12 +554,13 @@ public class AuthenticationAPIClient {
      * @param password   of the user and must be non null
      * @param username   of the user and must be non null
      * @param connection of the database to sign up with
+     * @param scopes     additional scopes
      * @return a request to configure and start that will yield {@link Credentials}
      */
     @SuppressWarnings("WeakerAccess")
-    public SignUpRequest signUp(@NonNull String email, @NonNull String password, @NonNull String username, @NonNull String connection) {
+    public SignUpRequest signUp(@NonNull String email, @NonNull String password, @NonNull String username, @NonNull String connection, String... scopes) {
         final DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUserRequest = createUser(email, password, username, connection);
-        final AuthenticationRequest authenticationRequest = login(email, password, connection);
+        final AuthenticationRequest authenticationRequest = login(email, password, connection, scopes);
 
         return new SignUpRequest(createUserRequest, authenticationRequest);
     }
@@ -578,8 +589,35 @@ public class AuthenticationAPIClient {
      */
     @SuppressWarnings("WeakerAccess")
     public SignUpRequest signUp(@NonNull String email, @NonNull String password, @NonNull String connection) {
+        return signUp(email, password, connection, null);
+    }
+
+    /**
+     * Creates a user in a DB connection using <a href="https://auth0.com/docs/api/authentication#signup">'/dbconnections/signup' endpoint</a>
+     * and then logs in the user. How the user is logged in depends on the {@link Auth0#isOIDCConformant()} flag.
+     * Example usage:
+     * <pre>
+     * {@code
+     * client.signUp("{email}", "{password}", "{database connection name}", {scopes...})
+     *      .start(new BaseCallback<Credentials>() {
+     *          {@literal}Override
+     *          public void onSuccess(Credentials payload) {}
+     *
+     *          {@literal}Override
+     *          public void onFailure(AuthenticationException error) {}
+     *      });
+     * }
+     * </pre>
+     *
+     * @param email      of the user and must be non null
+     * @param password   of the user and must be non null
+     * @param connection of the database to sign up with
+     * @param scopes     additional scopes
+     * @return a request to configure and start that will yield {@link Credentials}
+     */
+    public SignUpRequest signUp(@NonNull String email, @NonNull String password, @NonNull String connection, String[] scopes) {
         final DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUserRequest = createUser(email, password, connection);
-        final AuthenticationRequest authenticationRequest = login(email, password, connection);
+        final AuthenticationRequest authenticationRequest = login(email, password, connection, scopes);
         return new SignUpRequest(createUserRequest, authenticationRequest);
     }
 
