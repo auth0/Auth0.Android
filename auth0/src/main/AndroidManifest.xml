@@ -37,7 +37,7 @@
         <activity
             android:name="com.auth0.android.provider.RedirectActivity"
             android:exported="true">
-            <intent-filter>
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
@@ -46,7 +46,7 @@
                 <data
                     android:host="${auth0Domain}"
                     android:pathPrefix="/android/${applicationId}/callback"
-                    android:scheme="https" />
+                    android:scheme="${auth0Scheme}" />
             </intent-filter>
         </activity>
 
