@@ -37,6 +37,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
@@ -163,6 +164,8 @@ public class CustomTabsControllerTest {
         Intent intent = launchIntentCaptor.getValue();
         assertThat(intent.getAction(), is(Intent.ACTION_VIEW));
         assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_SESSION), is(true));
+        assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE), is(true));
+        assertThat(intent.getIntExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE, CustomTabsIntent.NO_TITLE), is(not(CustomTabsIntent.NO_TITLE)));
         assertThat(intent.getData(), is(uri));
         assertThat(intent, not(hasFlag(Intent.FLAG_ACTIVITY_NO_HISTORY)));
     }
@@ -203,12 +206,15 @@ public class CustomTabsControllerTest {
         assertThat(customTabIntent.getData(), is(uri));
         assertThat(customTabIntent, not(hasFlag(Intent.FLAG_ACTIVITY_NO_HISTORY)));
         assertThat(customTabIntent.hasExtra(CustomTabsIntent.EXTRA_SESSION), is(true));
+        assertThat(customTabIntent.hasExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE), is(true));
+        assertThat(customTabIntent.getIntExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE, CustomTabsIntent.NO_TITLE), is(not(CustomTabsIntent.NO_TITLE)));
 
         Intent fallbackIntent = intents.get(1);
         assertThat(fallbackIntent.getAction(), is(Intent.ACTION_VIEW));
         assertThat(fallbackIntent.getData(), is(uri));
         assertThat(fallbackIntent, hasFlag(Intent.FLAG_ACTIVITY_NO_HISTORY));
         assertThat(fallbackIntent.hasExtra(CustomTabsIntent.EXTRA_SESSION), is(false));
+        assertThat(fallbackIntent.hasExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE), is(false));
     }
 
     //Helper Methods

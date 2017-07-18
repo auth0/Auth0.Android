@@ -124,6 +124,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
                 Log.d(TAG, "Launching URI. Custom Tabs available: " + available);
 
                 final Intent intent = new CustomTabsIntent.Builder(session.get())
+                        .setShowTitle(true)
                         .build()
                         .intent;
                 intent.setData(uri);
