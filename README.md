@@ -81,7 +81,7 @@ https://{YOUR_AUTH0_DOMAIN}/android/{YOUR_APP_PACKAGE_NAME}/callback
 Remember to replace `{YOUR_APP_PACKAGE_NAME}` with your actual application's package name, available in your `app/build.gradle` file as the `applicationId` value.
 
 
-Next, define a placeholder for the Auth0 Domain which is going to be used internally by the library to register an **intent-filter**. Go to your application's `build.gradle` file and add the `manifestPlaceholders` line as shown below:
+Next, define the Manifest Placeholders for the Auth0 Domain and Scheme which are going to be used internally by the library to register an **intent-filter**. Go to your application's `build.gradle` file and add the `manifestPlaceholders` line as shown below:
 
 ```groovy
 apply plugin: 'com.android.application'
@@ -95,16 +95,16 @@ android {
         //...
 
         //---> Add the next line
-        manifestPlaceholders = [auth0Domain: "@string/auth0_domain"]
+        manifestPlaceholders = [auth0Domain: "@string/auth0_domain", auth0Scheme: "https"]
         //<---
     }
     //...
 }
 ```
 
-It's a good practice to define reusable resources like `@string/auth0_domain` but you can also hard code the value in the file.
+It's a good practice to define reusable resources like `@string/auth0_domain` but you can also hard code the value in the file. The scheme value can be either `https` or a [custom scheme](#a-note-about-app-deep-linking).  
 
-Alternatively, you can declare the `RedirectActivity` in the `AndroidManifest.xml` file with your own **intent-filter** so it overrides the library's default. If you do this then the `manifestPlaceholders` don't need to be set as long as the activity contains the `tools:node="replace"` like in the snippet below. If you choose to use a [custom scheme](#a-note-about-app-deep-linking) you must define your own intent-filter as explained below.
+Alternatively, you can declare the `RedirectActivity` in the `AndroidManifest.xml` file with your own **intent-filter** so it overrides the library's default. If you do this then the `manifestPlaceholders` don't need to be set as long as the activity contains the `tools:node="replace"` like in the snippet below.
 
 In your manifest inside your application's tag add the `RedirectActivity` declaration:
 
@@ -160,11 +160,11 @@ If you've followed the configuration steps, the authentication result will be re
 
 ##### A note about App Deep Linking:
 
-Currently, the default scheme used in the Callback Uri is `https`. This works best for Android API 23 or newer if you're using [Android App Links](https://developer.android.com/training/app-links/index.html), but in previous Android versions this may show the intent chooser dialog prompting the user to chose either your application or the browser. You can change this behaviour by using a custom unique scheme, so that the OS opens directly the link with your app.
+If you've followed this document configuration steps you've noticed that the default scheme used in the Callback Uri is `https`. This works best for Android API 23 or newer if you're using [Android App Links](https://developer.android.com/training/app-links/index.html), but in previous Android versions this may show the intent chooser dialog prompting the user to chose either your application or the browser. You can change this behaviour by using a custom unique scheme so that the OS opens directly the link with your app.
 
-1. Update the intent filter in the Android Manifest and change the custom scheme.
+1. Update the `auth0Scheme` Manifest Placeholder on the `app/build.gradle` file or update the intent-filter declaration in the `AndroidManifest.xml` to use the new scheme.
 2. Update the allowed callback urls in your [Auth0 Dashboard](https://manage.auth0.com/#/applications) client's settings.
-3. Call `withScheme()` passing the scheme you want to use.
+3. Call `withScheme()` passing the custom scheme you want to use.
 
 
 ```java

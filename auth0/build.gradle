@@ -62,7 +62,7 @@ android {
     buildTypes {
         debug {
             //Helps tests. buildTypes values are not included in the merged manifest
-            manifestPlaceholders = [auth0Domain: "auth0.test.domain"]
+            manifestPlaceholders = [auth0Domain: "auth0.test.domain", auth0Scheme: "https"]
         }
     }
 }
