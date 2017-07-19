@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.10.0](https://github.com/auth0/Auth0.Android/tree/1.10.0) (2017-07-19)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.9.0...1.10.0)
+
+**Changed**
+- Add a manifest placeholder for configuring the scheme [\#110](https://github.com/auth0/Auth0.Android/pull/110) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.9.0](https://github.com/auth0/Auth0.Android/tree/1.9.0) (2017-07-10)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.8.0...1.9.0)
 
