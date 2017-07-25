@@ -79,6 +79,9 @@ public class AuthenticationAPIClient {
     private static final String PASSWORD_KEY = "password";
     private static final String EMAIL_KEY = "email";
     private static final String PHONE_NUMBER_KEY = "phone_number";
+    private static final String OAUTH_CODE_KEY = "code";
+    private static final String REDIRECT_URI_KEY = "redirect_uri";
+    private static final String TOKEN_KEY = "token";
     private static final String DELEGATION_PATH = "delegation";
     private static final String ACCESS_TOKEN_PATH = "access_token";
     private static final String SIGN_UP_PATH = "signup";
@@ -91,8 +94,7 @@ public class AuthenticationAPIClient {
     private static final String RESOURCE_OWNER_PATH = "ro";
     private static final String TOKEN_INFO_PATH = "tokeninfo";
     private static final String USER_INFO_PATH = "userinfo";
-    private static final String OAUTH_CODE_KEY = "code";
-    private static final String REDIRECT_URI_KEY = "redirect_uri";
+    private static final String REVOKE_PATH = "revoke";
     private static final String HEADER_AUTHORIZATION = "Authorization";
 
     private final Auth0 auth0;
@@ -162,7 +164,7 @@ public class AuthenticationAPIClient {
     /**
      * Log in a user with email/username and password for a connection/realm.
      * In OIDC conformant mode ({@link Auth0#isOIDCConformant()}) it will use the password-realm grant type for the {@code /oauth/token} endpoint
-     * otherwise it will use {@code /oauth/ro}
+     * otherwise it will use {@code /oauth/ro}, which requires your client to have the <b>Resource Owner</b> Legacy Grant Type enabled. See <a href="https://auth0.com/docs/clients/client-grant-types">Client Grant Types</a> to learn how to enable it.
      * Example:
      * <pre>
      * {@code
@@ -278,6 +280,7 @@ public class AuthenticationAPIClient {
     /**
      * Log in a user using a phone number and a verification code received via SMS (Part of passwordless login flow)
      * The default scope used is 'openid'.
+     * Requires your client to have the <b>Resource Owner</b> Legacy Grant Type enabled. See <a href="https://auth0.com/docs/clients/client-grant-types">Client Grant Types</a> to learn how to enable it.
      * Example usage:
      * <pre>
      * {@code
@@ -338,6 +341,7 @@ public class AuthenticationAPIClient {
     /**
      * Log in a user using an email and a verification code received via Email (Part of passwordless login flow).
      * The default scope used is 'openid'.
+     * Requires your client to have the <b>Resource Owner</b> Legacy Grant Type enabled. See <a href="https://auth0.com/docs/clients/client-grant-types">Client Grant Types</a> to learn how to enable it.
      * Example usage:
      * <pre>
      * {@code
@@ -619,6 +623,42 @@ public class AuthenticationAPIClient {
     }
 
     /**
+     * Request the revoke of a given refresh_token. Once revoked, the refresh_token cannot be used to obtain new tokens.
+     * The client must be of type 'Native' or have the 'Token Endpoint Authentication Method' set to 'none' for this endpoint to work.
+     * Example usage:
+     * <pre>
+     * {@code
+     * client.revokeToken("{refresh_token}")
+     *      .start(new BaseCallback<Void>() {
+     *          {@literal}Override
+     *          public void onSuccess(Void payload) {}
+     *
+     *          {@literal}Override
+     *          public void onFailure(AuthenticationException error) {}
+     *      });
+     * }
+     * </pre>
+     *
+     * @param refreshToken the token to revoke
+     * @return a request to start
+     */
+    @SuppressWarnings("WeakerAccess")
+    public Request<Void, AuthenticationException> revokeToken(@NonNull String refreshToken) {
+        final Map<String, Object> parameters = ParameterBuilder.newBuilder()
+                .setClientId(getClientId())
+                .set(TOKEN_KEY, refreshToken)
+                .asDictionary();
+
+        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+                .addPathSegment(OAUTH_PATH)
+                .addPathSegment(REVOKE_PATH)
+                .build();
+
+        return factory.POST(url, client, gson, authErrorBuilder)
+                .addParameters(parameters);
+    }
+
+    /**
      * Requests new Credentials using a valid Refresh Token. The received token will have the same audience and scope as first requested. How the new Credentials are requested depends on the {@link Auth0#isOIDCConformant()} flag.
      * - If the instance is OIDC Conformant the endpoint will be /oauth/token with 'refresh_token' grant, and the response will include an id_token and an access_token if 'openid' scope was requested when the refresh_token was obtained.
      * - If the instance is not OIDC Conformant the endpoint will be /delegation with 'urn:ietf:params:oauth:grant-type:jwt-bearer' grant, and the response will include an id_token.
@@ -752,6 +792,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Start a passwordless flow with an <a href="https://auth0.com/docs/api/authentication#get-code-or-link">Email</a>
+     * Requires your client to have the <b>Resource Owner</b> Legacy Grant Type enabled. See <a href="https://auth0.com/docs/clients/client-grant-types">Client Grant Types</a> to learn how to enable it.
      * Example usage:
      * <pre>
      * {@code
@@ -786,6 +827,7 @@ public class AuthenticationAPIClient {
     /**
      * Start a passwordless flow with an <a href="https://auth0.com/docs/api/authentication#get-code-or-link">Email</a>
      * By default it will try to authenticate using "email" connection.
+     * Requires your client to have the <b>Resource Owner</b> Legacy Grant Type enabled. See <a href="https://auth0.com/docs/clients/client-grant-types">Client Grant Types</a> to learn how to enable it.
      * Example usage:
      * <pre>
      * {@code
@@ -811,6 +853,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Start a passwordless flow with a <a href="https://auth0.com/docs/api/authentication#get-code-or-link">SMS</a>
+     * Requires your client to have the <b>Resource Owner</b> Legacy Grant Type enabled. See <a href="https://auth0.com/docs/clients/client-grant-types">Client Grant Types</a> to learn how to enable it.
      * Example usage:
      * <pre>
      * {@code
@@ -844,6 +887,7 @@ public class AuthenticationAPIClient {
     /**
      * Start a passwordless flow with a <a href="https://auth0.com/docs/api/authentication#get-code-or-link">SMS</a>
      * By default it will try to authenticate using the "sms" connection.
+     * Requires your client to have the <b>Resource Owner</b> Legacy Grant Type enabled. See <a href="https://auth0.com/docs/clients/client-grant-types">Client Grant Types</a> to learn how to enable it.
      * Example usage:
      * <pre>
      * {@code

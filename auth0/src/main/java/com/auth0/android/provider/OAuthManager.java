@@ -2,11 +2,11 @@ package com.auth0.android.provider;
 
 import android.app.Activity;
 import android.app.Dialog;
-import android.content.Intent;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
+import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 
@@ -19,9 +19,11 @@ import com.auth0.android.jwt.JWT;
 import com.auth0.android.result.Credentials;
 
 import java.security.SecureRandom;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+@SuppressWarnings("WeakerAccess")
 class OAuthManager {
 
     private static final String TAG = OAuthManager.class.getSimpleName();
@@ -34,6 +36,7 @@ class OAuthManager {
     static final String RESPONSE_TYPE_CODE = "code";
 
     private static final String ERROR_VALUE_ACCESS_DENIED = "access_denied";
+    private static final String ERROR_VALUE_UNAUTHORIZED = "unauthorized";
     private static final String METHOD_SHA_256 = "S256";
     private static final String KEY_CODE_CHALLENGE = "code_challenge";
     private static final String KEY_CODE_CHALLENGE_METHOD = "code_challenge_method";
@@ -41,12 +44,14 @@ class OAuthManager {
     private static final String KEY_REDIRECT_URI = "redirect_uri";
     private static final String KEY_TELEMETRY = "auth0Client";
     private static final String KEY_ERROR = "error";
+    private static final String KEY_ERROR_DESCRIPTION = "error_description";
     private static final String KEY_ID_TOKEN = "id_token";
     private static final String KEY_ACCESS_TOKEN = "access_token";
     private static final String KEY_TOKEN_TYPE = "token_type";
     private static final String KEY_REFRESH_TOKEN = "refresh_token";
     private static final String KEY_EXPIRES_IN = "expires_in";
     private static final String KEY_CODE = "code";
+    private static final String KEY_SCOPE = "scope";
 
     private final Auth0 account;
     private final AuthCallback callback;
@@ -56,18 +61,19 @@ class OAuthManager {
     private boolean useBrowser = true;
     private int requestCode;
     private PKCE pkce;
+    private Long currentTimeInMillis;
 
-    public OAuthManager(Auth0 account, AuthCallback callback, Map<String, String> parameters) {
+    OAuthManager(@NonNull Auth0 account, @NonNull AuthCallback callback, @NonNull Map<String, String> parameters) {
         this.account = account;
         this.callback = callback;
         this.parameters = new HashMap<>(parameters);
     }
 
-    public void useFullScreen(boolean useFullScreen) {
+    void useFullScreen(boolean useFullScreen) {
         this.useFullScreen = useFullScreen;
     }
 
-    public void useBrowser(boolean useBrowser) {
+    void useBrowser(boolean useBrowser) {
         this.useBrowser = useBrowser;
     }
 
@@ -76,30 +82,21 @@ class OAuthManager {
         this.pkce = pkce;
     }
 
-    public void startAuthorization(Activity activity, String redirectUri, int requestCode) {
+    void startAuthorization(Activity activity, String redirectUri, int requestCode) {
         addPKCEParameters(parameters, redirectUri);
         addClientParameters(parameters, redirectUri);
         addValidationParameters(parameters);
         Uri uri = buildAuthorizeUri();
-
         this.requestCode = requestCode;
-        final Intent intent;
-        if (this.useBrowser) {
-            Log.d(TAG, "About to start the authorization using the Browser");
-            intent = new Intent(Intent.ACTION_VIEW, uri);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-            activity.startActivity(intent);
+
+        if (useBrowser) {
+            AuthenticationActivity.authenticateUsingBrowser(activity, uri);
         } else {
-            Log.d(TAG, "About to start the authorization using the WebView");
-            intent = new Intent(activity, WebAuthActivity.class);
-            intent.setData(uri);
-            intent.putExtra(WebAuthActivity.CONNECTION_NAME_EXTRA, parameters.get(KEY_CONNECTION));
-            intent.putExtra(WebAuthActivity.FULLSCREEN_EXTRA, useFullScreen);
-            activity.startActivityForResult(intent, requestCode);
+            AuthenticationActivity.authenticateUsingWebView(activity, uri, requestCode, parameters.get(KEY_CONNECTION), useFullScreen);
         }
     }
 
-    public boolean resumeAuthorization(AuthorizeResult data) {
+    boolean resumeAuthorization(AuthorizeResult data) {
         if (!data.isValid(requestCode)) {
             Log.w(TAG, "The Authorize Result is invalid.");
             return false;
@@ -113,18 +110,15 @@ class OAuthManager {
         logDebug("The parsed CallbackURI contains the following values: " + values);
 
         try {
-            assertNoError(values.get(KEY_ERROR));
+            assertNoError(values.get(KEY_ERROR), values.get(KEY_ERROR_DESCRIPTION));
             assertValidState(parameters.get(KEY_STATE), values.get(KEY_STATE));
-            if (parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_ID_TOKEN)) {
+            if (parameters.containsKey(KEY_RESPONSE_TYPE) && parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_ID_TOKEN)) {
                 assertValidNonce(parameters.get(KEY_NONCE), values.get(KEY_ID_TOKEN));
             }
 
             Log.d(TAG, "Authenticated using web flow");
-            Long expiresIn = null;
-            if (values.containsKey(KEY_EXPIRES_IN)) {
-                expiresIn = Long.valueOf(values.get(KEY_EXPIRES_IN));
-            }
-            final Credentials urlCredentials = new Credentials(values.get(KEY_ID_TOKEN), values.get(KEY_ACCESS_TOKEN), values.get(KEY_TOKEN_TYPE), values.get(KEY_REFRESH_TOKEN), expiresIn);
+            final Date expiresAt = !values.containsKey(KEY_EXPIRES_IN) ? null : new Date(getCurrentTimeInMillis() + Long.valueOf(values.get(KEY_EXPIRES_IN)) * 1000);
+            final Credentials urlCredentials = new Credentials(values.get(KEY_ID_TOKEN), values.get(KEY_ACCESS_TOKEN), values.get(KEY_TOKEN_TYPE), values.get(KEY_REFRESH_TOKEN), expiresAt, values.get(KEY_SCOPE));
             if (!shouldUsePKCE()) {
                 callback.onSuccess(urlCredentials);
             } else {
@@ -152,15 +146,26 @@ class OAuthManager {
         return true;
     }
 
+    private long getCurrentTimeInMillis() {
+        return currentTimeInMillis != null ? currentTimeInMillis : System.currentTimeMillis();
+    }
+
+    @VisibleForTesting
+    void setCurrentTimeInMillis(long currentTimeInMillis) {
+        this.currentTimeInMillis = currentTimeInMillis;
+    }
+
     //Helper Methods
 
-    private void assertNoError(String errorValue) throws AuthenticationException {
+    private void assertNoError(String errorValue, String errorDescription) throws AuthenticationException {
         if (errorValue == null) {
             return;
         }
         Log.e(TAG, "Error, access denied. Check that the required Permissions are granted and that the Application has this Connection configured in Auth0 Dashboard.");
         if (ERROR_VALUE_ACCESS_DENIED.equalsIgnoreCase(errorValue)) {
             throw new AuthenticationException(ERROR_VALUE_ACCESS_DENIED, "Permissions were not granted. Try again.");
+        } else if (ERROR_VALUE_UNAUTHORIZED.equalsIgnoreCase(errorValue)) {
+            throw new AuthenticationException(ERROR_VALUE_UNAUTHORIZED, errorDescription);
         } else {
             throw new AuthenticationException("a0.invalid_configuration", "The application isn't configured properly for the social connection. Please check your Auth0's application configuration");
         }
@@ -220,7 +225,7 @@ class OAuthManager {
         String state = getRandomString(parameters.get(KEY_STATE));
         parameters.put(KEY_STATE, state);
 
-        if (parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_ID_TOKEN)) {
+        if (parameters.containsKey(KEY_RESPONSE_TYPE) && parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_ID_TOKEN)) {
             String nonce = getRandomString(parameters.get(KEY_NONCE));
             parameters.put(KEY_NONCE, nonce);
         }
@@ -241,7 +246,7 @@ class OAuthManager {
     }
 
     private boolean shouldUsePKCE() {
-        return parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_CODE) && PKCE.isAvailable();
+        return parameters.containsKey(KEY_RESPONSE_TYPE) && parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_CODE) && PKCE.isAvailable();
     }
 
     @VisibleForTesting
@@ -256,13 +261,14 @@ class OAuthManager {
 
     @VisibleForTesting
     static Credentials mergeCredentials(Credentials urlCredentials, Credentials codeCredentials) {
-        final String idToken = codeCredentials.getIdToken() != null ? codeCredentials.getIdToken() : urlCredentials.getIdToken();
-        final String accessToken = codeCredentials.getAccessToken() != null ? codeCredentials.getAccessToken() : urlCredentials.getAccessToken();
-        final String type = codeCredentials.getType() != null ? codeCredentials.getType() : urlCredentials.getType();
-        final String refreshToken = codeCredentials.getRefreshToken() != null ? codeCredentials.getRefreshToken() : urlCredentials.getRefreshToken();
-        final Long expiresIn = codeCredentials.getExpiresIn() != null ? codeCredentials.getExpiresIn() : urlCredentials.getExpiresIn();
+        final String idToken = TextUtils.isEmpty(codeCredentials.getIdToken()) ? urlCredentials.getIdToken() : codeCredentials.getIdToken();
+        final String accessToken = TextUtils.isEmpty(codeCredentials.getAccessToken()) ? urlCredentials.getAccessToken() : codeCredentials.getAccessToken();
+        final String type = TextUtils.isEmpty(codeCredentials.getType()) ? urlCredentials.getType() : codeCredentials.getType();
+        final String refreshToken = TextUtils.isEmpty(codeCredentials.getRefreshToken()) ? urlCredentials.getRefreshToken() : codeCredentials.getRefreshToken();
+        final Date expiresAt = codeCredentials.getExpiresAt() != null ? codeCredentials.getExpiresAt() : urlCredentials.getExpiresAt();
+        final String scope = TextUtils.isEmpty(codeCredentials.getScope()) ? urlCredentials.getScope() : codeCredentials.getScope();
 
-        return new Credentials(idToken, accessToken, type, refreshToken, expiresIn);
+        return new Credentials(idToken, accessToken, type, refreshToken, expiresAt, scope);
     }
 
     @VisibleForTesting

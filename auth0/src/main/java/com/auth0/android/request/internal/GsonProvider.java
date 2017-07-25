@@ -1,5 +1,6 @@
 package com.auth0.android.request.internal;
 
+import com.auth0.android.result.Credentials;
 import com.auth0.android.result.UserProfile;
 import com.auth0.android.util.JsonRequiredTypeAdapterFactory;
 import com.google.gson.Gson;
@@ -11,6 +12,7 @@ public abstract class GsonProvider {
         return new GsonBuilder()
                 .registerTypeAdapterFactory(new JsonRequiredTypeAdapterFactory())
                 .registerTypeAdapter(UserProfile.class, new UserProfileDeserializer())
+                .registerTypeAdapter(Credentials.class, new CredentialsDeserializer())
                 .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
                 .create();
     }

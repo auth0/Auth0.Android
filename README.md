@@ -14,13 +14,13 @@ Android API version 15 or newer
 
 ## Installation
 
-###Gradle
+### Gradle
 
 Auth0.android is available through [Gradle](https://gradle.org/). To install it, simply add the following line to your `build.gradle` file:
 
 ```gradle
 dependencies {
-    compile 'com.auth0.android:auth0:1.6.0'
+    compile 'com.auth0.android:auth0:1.10.0'
 }
 ```
 
@@ -56,6 +56,179 @@ And then create a new Auth0 instance by passing an Android Context:
 Auth0 account = new Auth0(context);
 ```
 
+### OIDC Conformant Mode
+
+It is strongly encouraged that this SDK be used in OIDC Conformant mode. When this mode is enabled, it will force the SDK to use Auth0's current authentication pipeline and will prevent it from reaching legacy endpoints. By default is `false`
+
+```java
+Auth0 account = new Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}");
+//Configure the account in OIDC conformant mode
+account.setOIDCConformant(true);
+//Use the account in the API clients
+```
+
+Passwordless authentication *cannot be used* with this flag set to `true`. For more information, please see the [OIDC adoption guide](https://auth0.com/docs/api-auth/tutorials/adoption).
+
+
+### Authentication with Hosted Login Page
+
+First go to [Auth0 Dashboard](https://manage.auth0.com/#/applications) and go to your application's settings. Make sure you have in *Allowed Callback URLs* a URL with the following format:
+
+```
+https://{YOUR_AUTH0_DOMAIN}/android/{YOUR_APP_PACKAGE_NAME}/callback
+```
+
+Remember to replace `{YOUR_APP_PACKAGE_NAME}` with your actual application's package name, available in your `app/build.gradle` file as the `applicationId` value.
+
+
+Next, define the Manifest Placeholders for the Auth0 Domain and Scheme which are going to be used internally by the library to register an **intent-filter**. Go to your application's `build.gradle` file and add the `manifestPlaceholders` line as shown below:
+
+```groovy
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 25
+    defaultConfig {
+        applicationId "com.auth0.samples"
+        minSdkVersion 15
+        targetSdkVersion 25
+        //...
+
+        //---> Add the next line
+        manifestPlaceholders = [auth0Domain: "@string/auth0_domain", auth0Scheme: "https"]
+        //<---
+    }
+    //...
+}
+```
+
+It's a good practice to define reusable resources like `@string/auth0_domain` but you can also hard code the value in the file. The scheme value can be either `https` or a [custom scheme](#a-note-about-app-deep-linking).  
+
+Alternatively, you can declare the `RedirectActivity` in the `AndroidManifest.xml` file with your own **intent-filter** so it overrides the library's default. If you do this then the `manifestPlaceholders` don't need to be set as long as the activity contains the `tools:node="replace"` like in the snippet below.
+
+In your manifest inside your application's tag add the `RedirectActivity` declaration:
+
+```xml
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="your.app.package">
+    <application android:theme="@style/AppTheme">
+
+        <!-- ... -->
+
+        <activity
+            android:name="com.auth0.android.provider.RedirectActivity"
+            tools:node="replace">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="@string/auth0_domain"
+                    android:pathPrefix="/android/${applicationId}/callback"
+                    android:scheme="https" />
+            </intent-filter>
+        </activity>
+
+        <!-- ... -->
+
+    </application>
+</manifest>
+```
+
+If you request a different scheme you must replace the `android:scheme` property value. Finally, don't forget to add the internet permission.
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+```
+
+
+> In versions 1.8.0 and before you had to define the **intent-filter** inside your activity to capture the result in the `onNewIntent` method and call `WebAuthProvider.resume()` with the received intent. This call is no longer required for versions greater than 1.8.0 as it's now done for you by the library.
+
+
+Finally, authenticate by showing the **Auth0 Hosted Login Page**:
+
+```java
+WebAuthProvider.init(account)
+                .start(MainActivity.this, authCallback);
+```
+
+If you've followed the configuration steps, the authentication result will be redirected from the browser to your application and you'll receive it in the Callback.
+
+
+##### A note about App Deep Linking:
+
+If you've followed this document configuration steps you've noticed that the default scheme used in the Callback Uri is `https`. This works best for Android API 23 or newer if you're using [Android App Links](https://developer.android.com/training/app-links/index.html), but in previous Android versions this may show the intent chooser dialog prompting the user to chose either your application or the browser. You can change this behaviour by using a custom unique scheme so that the OS opens directly the link with your app.
+
+1. Update the `auth0Scheme` Manifest Placeholder on the `app/build.gradle` file or update the intent-filter declaration in the `AndroidManifest.xml` to use the new scheme.
+2. Update the allowed callback urls in your [Auth0 Dashboard](https://manage.auth0.com/#/applications) client's settings.
+3. Call `withScheme()` passing the custom scheme you want to use.
+
+
+```java
+WebAuthProvider.init(account)
+                .withScheme("myapp")
+                .start(MainActivity.this, authCallback);
+```
+
+
+#### Authenticate with any Auth0 connection
+
+```java
+WebAuthProvider.init(account)
+                .withConnection("twitter")
+                .start(MainActivity.this, authCallback);
+```
+
+#### Use Code grant with PKCE
+
+> Before you can use `Code Grant` in Android, make sure to go to your [client's section](https://manage.auth0.com/#/applications) in dashboard and check in the Settings that `Client Type` is `Native`.
+
+
+```java
+WebAuthProvider.init(account)
+                .useCodeGrant(true)
+                .start(MainActivity.this, authCallback);
+```
+
+#### Specify audience
+
+The snippet below requests the "userinfo" audience in order to guarantee OIDC compliant responses from the server. This can also be achieved by flipping the "OIDC Conformant" switch on in the OAuth Advanced Settings of your client. For more information check [this documentation](https://auth0.com/docs/api-auth/intro#how-to-use-the-new-flows).
+
+```java
+WebAuthProvider.init(account)
+                .withAudience("https://{YOUR_AUTH0_DOMAIN}/userinfo")
+                .start(MainActivity.this, authCallback);
+```
+
+> Replace `{YOUR_AUTH0_DOMAIN}` with your actual Auth0 domain (i.e. `mytenant.auth0.com`).
+
+#### Specify scope
+
+```java
+WebAuthProvider.init(account)
+                .withScope("openid profile email")
+                .start(MainActivity.this, authCallback);
+```
+
+> The default scope used is `openid`
+
+#### Specify Connection scope
+
+```java
+WebAuthProvider.init(account)
+                .withConnectionScope("email", "profile", "calendar:read")
+                .start(MainActivity.this, authCallback);
+```
+
+
+## Next steps
+
+### Learning resources
+
+Check out the [Android QuickStart Guide](https://auth0.com/docs/quickstart/native/android) to find out more about the Auth0.Android toolkit and explore our tutorials and sample projects.
 
 ### Authentication API
 
@@ -68,6 +241,8 @@ AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
 ```
 
 #### Login with database connection
+
+If the `Auth0` instance wasn't configured as "OIDC conformant", this call requires the client to have the *Resource Owner* Client Grant Type enabled. Check [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
 
 ```java
 authentication
@@ -88,6 +263,10 @@ authentication
 > The default scope used is `openid`
 
 #### Passwordless Login
+
+This feature requires your client to have the *Resource Owner* Legacy Grant Type enabled. Check [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it. Note that Passwordless authentication *cannot be used* with the [OIDC Conformant Mode](#oidc-conformant-mode) enabled.
+
+Passwordless it's a 2 steps flow:
 
 Step 1: Request the code
 
@@ -114,7 +293,6 @@ Step 2: Input the code
 ```java
 authentication
     .loginWithEmail("info@auth0.com", "123456", "my-passwordless-connection")
-    .start(new BaseCallback<Credentials>() {
         @Override
         public void onSuccess(Credentials payload) {
             //Logged in!
@@ -213,7 +391,7 @@ users
     });
 ```
 
-### Get User Profile
+#### Get User Profile
 
 ```java
 users
@@ -231,7 +409,7 @@ users
     });
 ```
 
-### Update User Metadata
+#### Update User Metadata
 
 ```java
 Map<String, Object> metadata = new HashMap<>();
@@ -256,128 +434,69 @@ users
 > In all the cases, the `User ID` parameter is the unique identifier of the auth0 account instance. i.e. in `google-oauth2|123456789081523216417` it would be the part after the '|' pipe: `123456789081523216417`.
 
 
-### Web-based Auth
+### Credentials Manager
+This library ships with a `CredentialsManager` class to easily store and retrieve fresh Credentials from a given `Storage`.
 
-First go to [Auth0 Dashboard](https://manage.auth0.com/#/applications) and go to your application's settings. Make sure you have in *Allowed Callback URLs* a URL with the following format:
-
-```
-https://{YOUR_AUTH0_DOMAIN}/android/{YOUR_APP_PACKAGE_NAME}/callback
-```
-
-Open your app's `AndroidManifest.xml` file and add the following permission.
-
-```xml
-<uses-permission android:name="android.permission.INTERNET" />
-```
-
-Also register the intent filters inside your activity's tag, so you can receive the call in your activity. Note that you will have to specify the callback url inside the `data` tag.
-
-```xml
-    <application android:theme="@style/AppTheme">
-
-        <!-- ... -->
-
-        <activity
-            android:name="com.mycompany.MainActivity"
-            android:theme="@style/MyAppTheme"
-            android:launchMode="singleTask">
-
-            <intent-filter android:autoVerify="true">
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data
-                    android:host="{YOUR_AUTH0_DOMAIN}"
-                    android:pathPrefix="/android/{YOUR_APP_PACKAGE_NAME}/callback"
-                    android:scheme="https" />
-            </intent-filter>
-
-        </activity>
-
-        <!-- ... -->
-
-    </application>
-```
-
-Make sure the Activity's **launchMode** is declared as "singleTask" or the result won't come back after the authentication.
-
-When you launch the WebAuthProvider you'll expect a result back. To capture the response override the `onNewIntent` method and call `WebAuthProvider.resume()` with the received parameters:
+#### Usage
+1. **Instantiate the manager**
+You'll need an `AuthenticationAPIClient` instance used to renew the credentials when they expire and a `Storage`. The Storage implementation is up to you. We provide a `SharedPreferencesStorage` that uses `SharedPreferences` to create a file in the application's directory with Context.MODE_PRIVATE mode. This implementation is thread safe and can either be obtained through a Singleton like method or be created every time it's needed.
 
 ```java
-public class MyActivity extends Activity {
+AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
+Storage storage = new SharedPreferencesStorage(this);
+CredentialsManager manager = new CredentialsManager(authentication, storage);
+```
 
-    @Override
-    protected void onNewIntent(Intent intent) {
-        if (WebAuthProvider.resume(intent)) {
-            return;
+2. **Save credentials**
+The credentials to save **must have** `expires_in` and at least an `access_token` or `id_token` value. If one of the values is missing when trying to set the credentials, the method will throw a `CredentialsManagerException`. If you want the manager to successfully renew the credentials when expired you must also request the `offline_access` scope when logging in in order to receive a `refresh_token` value along with the rest of the tokens. i.e. Logging in with a database connection and saving the credentials:
+
+```java
+authentication
+    .login("info@auth0.com", "a secret password", "my-database-connection")
+    .setScope("openid offline_access")
+    .start(new BaseCallback<Credentials>() {
+        @Override
+        public void onSuccess(Credentials credentials) {
+            //Save the credentials
+            manager.saveCredentials(credentials);
         }
-        super.onNewIntent(intent);
-    }
-}
 
+        @Override
+        public void onFailure(AuthenticationException error) {
+            //Error!
+        }
+    });
 ```
 
-##### A note about App Deep Linking:
-
-Currently, the default scheme used in the Callback Uri is `https`. This works best for Android API 23 or newer if you're using [Android App Links](https://developer.android.com/training/app-links/index.html), but in previous Android versions this may show the intent chooser dialog prompting the user to chose either your application or the browser. You can change this behaviour by using a custom unique scheme, so that the OS opens directly the link with your app.
-
-1. Update the intent filter in the Android Manifest and change the custom scheme.
-2. Update the allowed callback urls in your [Auth0 Dashboard](https://manage.auth0.com/#/applications) client's settings.
-3. Call `withScheme()` passing the scheme you want to use.
-
+3. **Check credentials existence**
+There are cases were you just want to check if a user session is still valid (i.e. to know if you should present the login screen or the main screen). For convenience we include a `hasValidCredentials` method that can let you know in advance if a non-expired token is available without making an additional network call. The same rules of the `getCredentials` method apply:
 
 ```java
-WebAuthProvider.init(account)
-                .withScheme("myapp")
-                .start(MainActivity.this, authCallback);
+boolean authenticated = manager.hasValidCredentials();
 ```
 
-#### Authenticate with any Auth0 connection
+4. **Retrieve credentials**
+Existing credentials will be returned if they are still valid, otherwise the `refresh_token` will be used to attempt to renew them. If the `expires_in` or both the `access_token` and `id_token` values are missing, the method will throw a `CredentialsManagerException`. The same will happen if the credentials have expired and there's no `refresh_token` available.
 
 ```java
-WebAuthProvider.init(account)
-                .withConnection("twitter")
-                .start(MainActivity.this, authCallback);
+manager.getCredentials(new BaseCallback<Credentials, CredentialsManagerException>(){
+   public void onSuccess(Credentials credentials){
+      //Use the Credentials
+   }
+
+    public void onFailure(CredentialsManagerException error){
+      //Error!
+   }
+});
 ```
 
-#### Use Code grant with PKCE
-> Before you can use `Code Grant` in Android, make sure to go to your [client's section](https://manage.auth0.com/#/applications) in dashboard and check in the Settings that `Client Type` is `Native`.
 
+5. **Clear credentials**
+When you want to log the user out:
 
 ```java
-WebAuthProvider.init(account)
-                .useCodeGrant(true)
-                .start(MainActivity.this, authCallback);
+manager.clearCredentials();
 ```
-
-#### Specify scope
-
-```java
-WebAuthProvider.init(account)
-                .withScope("user openid")
-                .start(MainActivity.this, authCallback);
-```
-
-> The default scope used is `openid`
-
-#### Specify Connection scope
-
-```java
-WebAuthProvider.init(account)
-                .withConnectionScope("email", "profile", "calendar:read")
-                .start(MainActivity.this, authCallback);
-```
-
-#### Authenticate with Auth0 hosted login page
-Simply don't specify any custom connection and the Lock web widget will show.
-
-```java
-WebAuthProvider.init(account)
-                .start(MainActivity.this, authCallback);
-```
-
 
 ## FAQ
 
@@ -396,7 +515,7 @@ android {
 
 ref: https://github.com/square/okio/issues/58#issuecomment-72672263
 
-##Proguard
+## Proguard
 The rules should be applied automatically if your application is using `minifyEnabled = true`. If you want to include them manually check the [proguard directory](proguard).
 By default you should at least use the following files:
 * `proguard-okio.pro`

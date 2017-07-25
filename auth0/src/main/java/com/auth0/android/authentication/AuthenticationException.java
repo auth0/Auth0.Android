@@ -24,6 +24,7 @@
 
 package com.auth0.android.authentication;
 
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.auth0.android.Auth0Exception;
@@ -122,7 +123,7 @@ public class AuthenticationException extends Auth0Exception {
      * @return the error description.
      */
     public String getDescription() {
-        if (description != null) {
+        if (!TextUtils.isEmpty(description)) {
             return description;
         }
         if (UNKNOWN_ERROR.equals(getCode())) {

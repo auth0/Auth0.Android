@@ -1,5 +1,34 @@
 # Change Log
 
+## [1.10.0](https://github.com/auth0/Auth0.Android/tree/1.10.0) (2017-07-19)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.9.0...1.10.0)
+
+**Changed**
+- Add a manifest placeholder for configuring the scheme [\#110](https://github.com/auth0/Auth0.Android/pull/110) ([lbalmaceda](https://github.com/lbalmaceda))
+
+## [1.9.0](https://github.com/auth0/Auth0.Android/tree/1.9.0) (2017-07-10)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.8.0...1.9.0)
+
+**Added**
+- Add hasValidCredentials and clearCredentials to CredentialsManager [\#102](https://github.com/auth0/Auth0.Android/pull/102) ([lbalmaceda](https://github.com/lbalmaceda))
+- Add granted scope to the Credentials object [\#97](https://github.com/auth0/Auth0.Android/pull/97) ([lbalmaceda](https://github.com/lbalmaceda))
+- Add CredentialsManager and generic Storage [\#96](https://github.com/auth0/Auth0.Android/pull/96) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Changed**
+- Use Chrome Custom Tabs when possible [\#95](https://github.com/auth0/Auth0.Android/pull/95) ([lbalmaceda](https://github.com/lbalmaceda))
+
+## [1.8.0](https://github.com/auth0/Auth0.Android/tree/1.8.0) (2017-04-27)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.7.0...1.8.0)
+
+**Added**
+- Add method to revoke a refresh_token [\#86](https://github.com/auth0/Auth0.Android/pull/86) ([lbalmaceda](https://github.com/lbalmaceda))
+
+## [1.7.0](https://github.com/auth0/Auth0.Android/tree/1.7.0) (2017-04-06)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.6.0...1.7.0)
+
+**Added**
+- Add WebAuthProvider Rule error message parsing [\#89](https://github.com/auth0/Auth0.Android/pull/89) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.6.0](https://github.com/auth0/Auth0.Android/tree/1.6.0) (2017-03-02)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.5.0...1.6.0)
 

@@ -106,6 +106,11 @@ public class AuthenticationAPI {
         return this;
     }
 
+    public AuthenticationAPI willReturnSuccessfulEmptyBody() {
+        server.enqueue(responseEmpty(200));
+        return this;
+    }
+
     public AuthenticationAPI willReturnSuccessfulLogin() {
         String json = "{\n" +
                 "  \"refresh_token\": \"" + REFRESH_TOKEN + "\",\n" +
@@ -175,7 +180,12 @@ public class AuthenticationAPI {
         return this;
     }
 
-    private MockResponse responseWithPlainText(String statusMessage, int statusCode){
+    private MockResponse responseEmpty(int statusCode) {
+        return new MockResponse()
+                .setResponseCode(statusCode);
+    }
+
+    private MockResponse responseWithPlainText(String statusMessage, int statusCode) {
         return new MockResponse()
                 .setResponseCode(statusCode)
                 .addHeader("Content-Type", "text/plain")

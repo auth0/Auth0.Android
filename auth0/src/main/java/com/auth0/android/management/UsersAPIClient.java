@@ -135,7 +135,7 @@ public class UsersAPIClient {
 
 
     /**
-     * Link a user identity calling <a href="https://auth0.com/docs/link-accounts#the-api">'/api/v2/users/:primaryUserId/identities'</a> endpoint
+     * Link a user identity calling <a href="https://auth0.com/docs/link-accounts#the-management-api">'/api/v2/users/:primaryUserId/identities'</a> endpoint
      * Example usage:
      * <pre>
      * {@code
