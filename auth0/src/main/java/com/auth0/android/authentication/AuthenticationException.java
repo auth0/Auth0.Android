@@ -200,4 +200,8 @@ public class AuthenticationException extends Auth0Exception {
         return "access_denied".equals(code);
     }
 
+    //When the password has expired and must be changed before logging in
+    public boolean isPasswordExpired() {
+        return "expired_password".equals(code);
+    }
 }

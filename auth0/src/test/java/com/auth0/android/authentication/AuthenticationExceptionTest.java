@@ -204,6 +204,14 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
+    public void shouldHaveExpiredPassword() throws Exception {
+        values.put(ERROR_KEY, "expired_password");
+        values.put(ERROR_DESCRIPTION_KEY, "Password expired.");
+        AuthenticationException ex = new AuthenticationException(values);
+        assertThat(ex.isPasswordExpired(), is(true));
+    }
+
+    @Test
     public void shouldHaveAccessDenied() throws Exception {
         values.put(CODE_KEY, "access_denied");
         AuthenticationException ex = new AuthenticationException(values);
