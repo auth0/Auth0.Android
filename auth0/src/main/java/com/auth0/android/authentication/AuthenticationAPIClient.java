@@ -619,7 +619,6 @@ public class AuthenticationAPIClient {
                 .set(USERNAME_KEY, usernameOrEmail)
                 .set(OLD_PASSWORD_KEY, oldPassword)
                 .set(NEW_PASSWORD_KEY, newPassword)
-                .setClientId(getClientId())
                 .setConnection(connection)
                 .asDictionary();
 

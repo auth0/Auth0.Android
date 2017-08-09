@@ -995,7 +995,7 @@ public class AuthenticationAPIClientTest {
         assertThat(request.getPath(), equalTo("/dbconnections/self_change_password"));
 
         Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("client_id", CLIENT_ID));
+        assertThat(body, not(hasKey("client_id")));
         assertThat(body, hasEntry("username", SUPPORT_AUTH0_COM));
         assertThat(body, hasEntry("old_password", "very-old-password"));
         assertThat(body, hasEntry("new_password", "my-new-password"));
@@ -1016,7 +1016,7 @@ public class AuthenticationAPIClientTest {
         assertThat(request.getPath(), equalTo("/dbconnections/self_change_password"));
 
         Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("client_id", CLIENT_ID));
+        assertThat(body, not(hasKey("client_id")));
         assertThat(body, hasEntry("username", SUPPORT_AUTH0_COM));
         assertThat(body, hasEntry("old_password", "very-old-password"));
         assertThat(body, hasEntry("new_password", "my-new-password"));
