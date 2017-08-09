@@ -76,6 +76,8 @@ public class AuthenticationAPIClient {
     private static final String EMAIL_CONNECTION = "email";
     private static final String USERNAME_KEY = "username";
     private static final String PASSWORD_KEY = "password";
+    private static final String OLD_PASSWORD_KEY = "old_password";
+    private static final String NEW_PASSWORD_KEY = "new_password";
     private static final String EMAIL_KEY = "email";
     private static final String PHONE_NUMBER_KEY = "phone_number";
     private static final String OAUTH_CODE_KEY = "code";
@@ -86,6 +88,7 @@ public class AuthenticationAPIClient {
     private static final String SIGN_UP_PATH = "signup";
     private static final String DB_CONNECTIONS_PATH = "dbconnections";
     private static final String CHANGE_PASSWORD_PATH = "change_password";
+    private static final String SELF_CHANGE_PASSWORD_PATH = "self_change_password";
     private static final String PASSWORDLESS_PATH = "passwordless";
     private static final String START_PATH = "start";
     private static final String OAUTH_PATH = "oauth";
@@ -581,6 +584,48 @@ public class AuthenticationAPIClient {
         final DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUserRequest = createUser(email, password, connection);
         final AuthenticationRequest authenticationRequest = login(email, password, connection);
         return new SignUpRequest(createUserRequest, authenticationRequest);
+    }
+
+    /**
+     * Request the server a DB connection Password Change using <a href="https://auth0.com/docs/api/authentication#change-password">'/dbconnections/self_change_password' endpoint</a>.
+     * Example usage:
+     * <pre>
+     * {@code
+     * client.changePassword("{emailOrUsername}", "{oldPassword}", "{newPassword}", "{database connection name}")
+     *      .start(new BaseCallback<Void>() {
+     *          {@literal}Override
+     *          public void onSuccess(Void payload) {}
+     *
+     *          {@literal}Override
+     *          public void onFailure(AuthenticationException error) {}
+     *      });
+     * }
+     * </pre>
+     *
+     * @param usernameOrEmail of the user depending of the type of DB connection
+     * @param oldPassword     to authenticate the user with
+     * @param newPassword     the new password to set for the user
+     * @param connection      the name of the database to authenticate with
+     * @return a request to configure and start
+     */
+    @SuppressWarnings("unused")
+    public DatabaseConnectionRequest<Void, AuthenticationException> changePassword(@NonNull String usernameOrEmail, @NonNull String oldPassword, @NonNull String newPassword, @NonNull String connection) {
+        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+                .addPathSegment(DB_CONNECTIONS_PATH)
+                .addPathSegment(SELF_CHANGE_PASSWORD_PATH)
+                .build();
+
+        final Map<String, Object> parameters = ParameterBuilder.newBuilder()
+                .set(USERNAME_KEY, usernameOrEmail)
+                .set(OLD_PASSWORD_KEY, oldPassword)
+                .set(NEW_PASSWORD_KEY, newPassword)
+                .setClientId(getClientId())
+                .setConnection(connection)
+                .asDictionary();
+
+        final ParameterizableRequest<Void, AuthenticationException> request = factory.POST(url, client, gson, authErrorBuilder)
+                .addParameters(parameters);
+        return new DatabaseConnectionRequest<>(request);
     }
 
     /**

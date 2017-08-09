@@ -64,8 +64,13 @@ public class AuthenticationAPI {
         return willReturnApplicationResponseWithBody("Auth0.setClient({\"id\":\"CLIENTID\",\"tenant\":\"overmind\",\"subscription\":\"free\",\"authorize\":\"https://samples.auth0.com/authorize\",\"callback\":\"http://localhost:3000/\",\"hasAllowedOrigins\":true,\"strategies\":[{\"name\":\"twitter\",\"connections\":[{\"name\":\"twitter\"}]}]});", 200);
     }
 
-    public AuthenticationAPI willReturnSuccessfulChangePassword() {
+    public AuthenticationAPI willReturnSuccessfulResetPassword() {
         server.enqueue(responseWithJSON("NOT REALLY A JSON", 200));
+        return this;
+    }
+
+    public AuthenticationAPI willReturnSuccessfulChangePassword() {
+        server.enqueue(responseEmpty(204));
         return this;
     }
 

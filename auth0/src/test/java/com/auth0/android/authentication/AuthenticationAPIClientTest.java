@@ -942,8 +942,8 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldChangePassword() throws Exception {
-        mockAPI.willReturnSuccessfulChangePassword();
+    public void shouldResetPassword() throws Exception {
+        mockAPI.willReturnSuccessfulResetPassword();
 
         final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
         client.resetPassword(SUPPORT_AUTH0_COM, MY_CONNECTION)
@@ -954,8 +954,51 @@ public class AuthenticationAPIClientTest {
         assertThat(request.getPath(), equalTo("/dbconnections/change_password"));
 
         Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("client_id", CLIENT_ID));
         assertThat(body, hasEntry("email", SUPPORT_AUTH0_COM));
         assertThat(body, not(hasKey("username")));
+        assertThat(body, not(hasKey("password")));
+        assertThat(body, hasEntry("connection", MY_CONNECTION));
+
+        assertThat(callback, hasNoError());
+    }
+
+    @Test
+    public void shouldResetPasswordSync() throws Exception {
+        mockAPI.willReturnSuccessfulResetPassword();
+
+        client.resetPassword(SUPPORT_AUTH0_COM, MY_CONNECTION)
+                .execute();
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+        assertThat(request.getPath(), equalTo("/dbconnections/change_password"));
+
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("client_id", CLIENT_ID));
+        assertThat(body, hasEntry("email", SUPPORT_AUTH0_COM));
+        assertThat(body, not(hasKey("username")));
+        assertThat(body, not(hasKey("password")));
+        assertThat(body, hasEntry("connection", MY_CONNECTION));
+    }
+
+    @Test
+    public void shouldChangePassword() throws Exception {
+        mockAPI.willReturnSuccessfulChangePassword();
+
+        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
+        client.changePassword(SUPPORT_AUTH0_COM, "very-old-password", "my-new-password", MY_CONNECTION)
+                .start(callback);
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+        assertThat(request.getPath(), equalTo("/dbconnections/self_change_password"));
+
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("client_id", CLIENT_ID));
+        assertThat(body, hasEntry("username", SUPPORT_AUTH0_COM));
+        assertThat(body, hasEntry("old_password", "very-old-password"));
+        assertThat(body, hasEntry("new_password", "my-new-password"));
         assertThat(body, hasEntry("connection", MY_CONNECTION));
 
         assertThat(callback, hasNoError());
@@ -965,55 +1008,18 @@ public class AuthenticationAPIClientTest {
     public void shouldChangePasswordSync() throws Exception {
         mockAPI.willReturnSuccessfulChangePassword();
 
-        client.resetPassword(SUPPORT_AUTH0_COM, MY_CONNECTION)
+        client.changePassword(SUPPORT_AUTH0_COM, "very-old-password", "my-new-password", MY_CONNECTION)
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
-        assertThat(request.getPath(), equalTo("/dbconnections/change_password"));
+        assertThat(request.getPath(), equalTo("/dbconnections/self_change_password"));
 
         Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("email", SUPPORT_AUTH0_COM));
-        assertThat(body, not(hasKey("username")));
-        assertThat(body, hasEntry("connection", MY_CONNECTION));
-    }
-
-    @Test
-    public void shouldRequestChangePassword() throws Exception {
-        mockAPI.willReturnSuccessfulChangePassword();
-
-        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
-        client.resetPassword(SUPPORT_AUTH0_COM, MY_CONNECTION)
-                .start(callback);
-
-        final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
-        assertThat(request.getPath(), equalTo("/dbconnections/change_password"));
-
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("email", SUPPORT_AUTH0_COM));
-        assertThat(body, not(hasKey("username")));
-        assertThat(body, not(hasKey("password")));
-        assertThat(body, hasEntry("connection", MY_CONNECTION));
-
-        assertThat(callback, hasNoError());
-    }
-
-    @Test
-    public void shouldRequestChangePasswordSync() throws Exception {
-        mockAPI.willReturnSuccessfulChangePassword();
-
-        client.resetPassword(SUPPORT_AUTH0_COM, MY_CONNECTION)
-                .execute();
-
-        final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
-        assertThat(request.getPath(), equalTo("/dbconnections/change_password"));
-
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("email", SUPPORT_AUTH0_COM));
-        assertThat(body, not(hasKey("username")));
-        assertThat(body, not(hasKey("password")));
+        assertThat(body, hasEntry("client_id", CLIENT_ID));
+        assertThat(body, hasEntry("username", SUPPORT_AUTH0_COM));
+        assertThat(body, hasEntry("old_password", "very-old-password"));
+        assertThat(body, hasEntry("new_password", "my-new-password"));
         assertThat(body, hasEntry("connection", MY_CONNECTION));
     }
 
