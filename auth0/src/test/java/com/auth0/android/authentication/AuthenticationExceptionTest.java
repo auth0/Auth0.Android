@@ -35,6 +35,7 @@ public class AuthenticationExceptionTest {
     public ExpectedException exception = ExpectedException.none();
 
     private static final String PASSWORD_STRENGTH_ERROR_RESPONSE = "src/test/resources/password_strength_error.json";
+    private static final String CHANGE_PASSWORD_STRENGTH_ERROR_RESPONSE = "src/test/resources/change_password_strength_error.json";
     private static final String CODE_KEY = "code";
     private static final String NAME_KEY = "name";
     private static final String ERROR_KEY = "error";
@@ -160,14 +161,6 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
-    public void shouldHaveNotStrongPassword() throws Exception {
-        values.put(CODE_KEY, "invalid_password");
-        values.put(NAME_KEY, "PasswordStrengthError");
-        AuthenticationException ex = new AuthenticationException(values);
-        assertThat(ex.isPasswordNotStrongEnough(), is(true));
-    }
-
-    @Test
     public void shouldHaveNotStrongPasswordWithDetailedDescription() throws Exception {
         Gson gson = GsonProvider.buildGson();
         FileReader fr = new FileReader(PASSWORD_STRENGTH_ERROR_RESPONSE);
@@ -178,6 +171,20 @@ public class AuthenticationExceptionTest {
         assertThat(ex.isPasswordNotStrongEnough(), is(true));
 
         String expectedDescription = "At least 10 characters in length; Contain at least 3 of the following 4 types of characters: lower case letters (a-z), upper case letters (A-Z), numbers (i.e. 0-9), special characters (e.g. !@#$%^&*); Should contain: lower case letters (a-z), upper case letters (A-Z), numbers (i.e. 0-9), special characters (e.g. !@#$%^&*); No more than 2 identical characters in a row (e.g., \"aaa\" not allowed)";
+        assertThat(ex.getDescription(), is(expectedDescription));
+    }
+
+    @Test
+    public void shouldHaveNotStrongChangePasswordWithDetailedDescription() throws Exception {
+        Gson gson = GsonProvider.buildGson();
+        FileReader fr = new FileReader(CHANGE_PASSWORD_STRENGTH_ERROR_RESPONSE);
+        Type mapType = new TypeToken<Map<String, Object>>() {}.getType();
+        Map<String, Object> mapPayload = gson.fromJson(fr, mapType);
+
+        AuthenticationException ex = new AuthenticationException(mapPayload);
+        assertThat(ex.isPasswordNotStrongEnough(), is(true));
+
+        String expectedDescription = "At least 6 characters in length";
         assertThat(ex.getDescription(), is(expectedDescription));
     }
 

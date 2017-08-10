@@ -20,18 +20,18 @@ class PasswordStrengthErrorParser {
     private static final String KEY_ITEMS = "items";
     private static final String KEY_MESSAGE = "message";
 
-    private String description;
+    private final String description;
 
     PasswordStrengthErrorParser(Map<String, Object> descriptionMap) {
         List<Map<String, Object>> rules = (List<Map<String, Object>>) descriptionMap.get(KEY_RULES);
-        parseRules(rules);
+        this.description = parseRules(rules);
     }
 
     public String getDescription() {
         return description;
     }
 
-    private void parseRules(List<Map<String, Object>> rules) {
+    private String parseRules(List<Map<String, Object>> rules) {
         List<String> items = new ArrayList<>();
         for (Map<String, Object> rule : rules) {
             boolean isVerified = (boolean) rule.get(KEY_VERIFIED);
@@ -53,7 +53,7 @@ class PasswordStrengthErrorParser {
             }
         }
 
-        this.description = TextUtils.join("; ", items);
+        return TextUtils.join("; ", items);
     }
 
     private String asLengthAtLeast(Map<String, Object> rule) {

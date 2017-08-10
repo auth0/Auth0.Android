@@ -77,19 +77,16 @@ public class AuthenticationException extends Auth0Exception {
 
         String codeValue = (String) (this.values.containsKey(ERROR_KEY) ? this.values.get(ERROR_KEY) : this.values.get(CODE_KEY));
         this.code = codeValue != null ? codeValue : UNKNOWN_ERROR;
-        if (!this.values.containsKey(DESCRIPTION_KEY)) {
-            this.description = (String) this.values.get(ERROR_DESCRIPTION_KEY);
-            warnIfOIDCError();
-            return;
-        }
 
-        Object description = this.values.get(DESCRIPTION_KEY);
+        Object description = this.values.containsKey(DESCRIPTION_KEY) ? this.values.get(DESCRIPTION_KEY) : this.values.get(ERROR_DESCRIPTION_KEY);
+
         if (description instanceof String) {
             this.description = (String) description;
         } else if (isPasswordNotStrongEnough()) {
             PasswordStrengthErrorParser pwStrengthParser = new PasswordStrengthErrorParser((Map<String, Object>) description);
             this.description = pwStrengthParser.getDescription();
         }
+        warnIfOIDCError();
     }
 
     private void warnIfOIDCError() {
@@ -172,7 +169,7 @@ public class AuthenticationException extends Auth0Exception {
 
     /// When password used for SignUp does not match connection's strength requirements.
     public boolean isPasswordNotStrongEnough() {
-        return "invalid_password".equals(code) && "PasswordStrengthError".equals(values.get(NAME_KEY));
+        return "change_password_error".equals(code) || "invalid_password".equals(code) && "PasswordStrengthError".equals(values.get(NAME_KEY));
     }
 
     /// When password used for SignUp was already used before (Reported when password history feature is enabled).
