@@ -192,7 +192,7 @@ public class AuthenticationException extends Auth0Exception {
 
     /// When username and/or password used for authentication are invalid
     public boolean isInvalidCredentials() {
-        return "invalid_user_password".equals(code);
+        return "invalid_user_password".equals(code) || "invalid_grant".equals(code) && "Wrong email or password.".equals(description);
     }
 
     /// When authenticating with web-based authentication and the resource server denied access per OAuth2 spec
