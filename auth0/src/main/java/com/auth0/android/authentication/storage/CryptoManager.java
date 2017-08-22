@@ -1,13 +1,16 @@
 package com.auth0.samples;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.KeyguardManager;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Build;
 import android.security.KeyPairGeneratorSpec;
+import android.security.keystore.KeyGenParameterSpec;
+import android.security.keystore.KeyProperties;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
+import android.support.annotation.VisibleForTesting;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
@@ -19,81 +22,86 @@ import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.result.Credentials;
 import com.google.gson.Gson;
 
+import java.io.IOException;
 import java.math.BigInteger;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
+import java.security.UnrecoverableEntryException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.Calendar;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.x500.X500Principal;
 
+import static android.text.TextUtils.isEmpty;
+
+@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class CryptoManager {
 
     private static final String TAG = CryptoManager.class.getSimpleName();
-    private static final String ANDROID_KEY_STORE = "AndroidKeyStore";
-    private static final String KEY_ALIAS = CryptoManager.class.getSimpleName();
     private static final int DEF_REQ_CODE = 4;
-    private static final String KEY_CREDENTIALS = "credentials";
-    private static final String KEY_AES_KEY = "aes";
-    private static final String KEY_AES_IV = "aes_iv";
-    private static final int MAX_RSA_INPUT_SIZE_BYTES = 256;
 
-    // Transformations available for API 18 and UP
+    private static final String KEY_ALIAS = CryptoManager.class.getSimpleName();
+    private static final String KEY_CREDENTIALS = "com.auth0.credentials";
+    private static final String KEY_EXPIRES_AT = "com.auth0.credentials_expires_at";
+    private static final String KEY_CAN_REFRESH = "com.auth0.credentials_can_refresh";
+    private static final String KEY_AES = "com.auth0.enc_aes";
+    private static final String KEY_AES_IV = "com.auth0.enc_aes_iv";
+
+    // Transformations encryptionAvailable for API 18 and UP
     // https://developer.android.com/training/articles/keystore.html#SupportedCiphers
     private static final String RSA_TRANSFORMATION = "RSA/ECB/PKCS1Padding";
+    // https://developer.android.com/reference/javax/crypto/Cipher.html
+    @SuppressWarnings("SpellCheckingInspection")
     private static final String AES_TRANSFORMATION = "AES/GCM/NOPADDING";
-
-    private static final int AUTHENTICATION_WINDOW = 30;
+    private static final String ALGORITHM_RSA = "RSA";
+    private static final String ALGORITHM_AES = "AES";
+    private static final String ANDROID_KEY_STORE = "AndroidKeyStore";
+    private static final int RSA_MAX_INPUT_SIZE = 256;
+    private static final int ONE_MINUTE = 60;
 
 
     private final Activity activity;
     private final Gson gson;
-    private final boolean available;
-    //    private final Intent authIntent;
+    private final boolean encryptionAvailable;
+    private final boolean authenticateBeforeDecrypt;
     private final Storage storage;
 
     //State for retrying operations
-    private Credentials credentials;
-    private boolean wasEncrypting;
-    private BaseCallback<Void, CredentialsManagerException> encryptCallback;
     private BaseCallback<Credentials, CredentialsManagerException> decryptCallback;
+    private Intent authIntent;
 
     public CryptoManager(@NonNull Activity activity, @NonNull AuthenticationAPIClient apiClient, @NonNull Storage storage) {
         this.activity = activity;
         this.gson = new Gson();
         this.storage = storage;
+        this.encryptionAvailable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2;
         KeyguardManager kManager = (KeyguardManager) activity.getSystemService(Context.KEYGUARD_SERVICE);
-//        this.authIntent = kManager.createConfirmDeviceCredentialIntent(null, null);
-        this.available = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2 && kManager.isKeyguardSecure();
-        if (!available) {
-            Log.w(TAG, "This device lacks a configured LockScreen.");
+        this.authenticateBeforeDecrypt = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && kManager.isDeviceSecure() || Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && kManager.isKeyguardSecure();
+        if (!authenticateBeforeDecrypt) {
+            Log.w(TAG, "This device lacks a configured LockScreen. Data will be encrypted but not protected.");
+            return;
         }
+        authIntent = kManager.createConfirmDeviceCredentialIntent(null, null);
     }
 
-    public boolean checkAuthenticationResult(int requestCode, int resultCode) {
-        if (requestCode != DEF_REQ_CODE) {
-            //FIXME: Allow to customize the request code
-            return false;
-        }
-        if (resultCode == Activity.RESULT_OK) {
-            if (wasEncrypting) {
-                saveCredentials(credentials, encryptCallback);
-            } else {
-                getCredentials(decryptCallback);
-            }
-        }
-        return true;
-    }
 
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
-    private KeyStore.PrivateKeyEntry getRSAKeyEntry() throws RuntimeException {
+    private KeyStore.PrivateKeyEntry getRSAKeyEntry() throws CredentialsManagerException {
         try {
             KeyStore keyStore = KeyStore.getInstance(ANDROID_KEY_STORE);
             keyStore.load(null);
@@ -102,24 +110,66 @@ public class CryptoManager {
                 return (KeyStore.PrivateKeyEntry) keyStore.getEntry(KEY_ALIAS, null);
             }
 
-            //Generate new RSA KeyPair and save it on the KeyStore
             Calendar start = Calendar.getInstance();
             Calendar end = Calendar.getInstance();
             end.add(Calendar.YEAR, 25);
-            KeyPairGeneratorSpec spec = new KeyPairGeneratorSpec.Builder(activity)
-                    .setAlias(KEY_ALIAS)
-                    .setSubject(new X500Principal("CN=Auth0.Android, O=Auth0"))
-                    .setSerialNumber(BigInteger.ONE)
-                    .setStartDate(start.getTime())
-                    .setEndDate(end.getTime())
-                    .build();
-            KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA", ANDROID_KEY_STORE);
+            AlgorithmParameterSpec spec;
+            X500Principal principal = new X500Principal("CN=Auth0.Android, O=Auth0");
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                //Following code is for API 23+
+                spec = new KeyGenParameterSpec.Builder(KEY_ALIAS, KeyProperties.PURPOSE_DECRYPT | KeyProperties.PURPOSE_ENCRYPT)
+                        .setCertificateSubject(principal)
+                        .setCertificateSerialNumber(BigInteger.ONE)
+                        .setCertificateNotBefore(start.getTime())
+                        .setCertificateNotAfter(end.getTime())
+                        .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_RSA_PKCS1)
+                        .setBlockModes(KeyProperties.BLOCK_MODE_ECB)
+                        .setUserAuthenticationRequired(authenticateBeforeDecrypt)
+                        .setUserAuthenticationValidityDurationSeconds(ONE_MINUTE)
+                        .build();
+            } else {
+                //Following code is for API 18-22
+                //Generate new RSA KeyPair and save it on the KeyStore
+                KeyPairGeneratorSpec.Builder specBuilder = new KeyPairGeneratorSpec.Builder(activity)
+                        .setAlias(KEY_ALIAS)
+                        .setSubject(principal)
+                        .setSerialNumber(BigInteger.ONE)
+                        .setStartDate(start.getTime())
+                        .setEndDate(end.getTime());
+                if (authenticateBeforeDecrypt) {
+                    //If a ScreenLock is setup, protect this key pair.
+                    specBuilder.setEncryptionRequired();
+                }
+                spec = specBuilder.build();
+            }
+
+            KeyPairGenerator generator = KeyPairGenerator.getInstance(ALGORITHM_RSA, ANDROID_KEY_STORE);
             generator.initialize(spec);
             generator.generateKeyPair();
             return (KeyStore.PrivateKeyEntry) keyStore.getEntry(KEY_ALIAS, null);
-        } catch (Exception e) {
-            Log.e(TAG, "Error creating/obtaining AndroidKeyStore key", e);
-            throw new RuntimeException("Error creating/obtaining AndroidKeyStore key", e);
+        } catch (KeyStoreException | IOException | NoSuchProviderException | InvalidAlgorithmParameterException | NoSuchAlgorithmException | CertificateException e) {
+            Log.e(TAG, "Error creating or obtaining the RSA Key Entry from the Android KeyStore.", e);
+            throw new CredentialsManagerException("Error creating or obtaining the RSA Key Entry from the Android KeyStore.", e);
+        } catch (UnrecoverableEntryException e) {
+            //Remove and Retry
+            Log.w(TAG, "RSA Key was deemed unrecoverable. Deleting the KeyEntry and recreating it.");
+            deleteKeys();
+            return getRSAKeyEntry();
+        }
+    }
+
+    //Used to delete recreate the key pair in case of error
+    private void deleteKeys() {
+        try {
+            KeyStore keyStore = KeyStore.getInstance(ANDROID_KEY_STORE);
+            keyStore.load(null);
+            keyStore.deleteEntry(KEY_ALIAS);
+            storage.remove(KEY_AES);
+            storage.remove(KEY_AES_IV);
+            clearCredentials();
+        } catch (KeyStoreException | CertificateException | IOException | NoSuchAlgorithmException e) {
+            Log.e(TAG, "Something happened when trying to remove the RSA Key Entry from the Android KeyStore.", e);
         }
     }
 
@@ -130,9 +180,12 @@ public class CryptoManager {
             Cipher cipher = Cipher.getInstance(RSA_TRANSFORMATION);
             cipher.init(Cipher.DECRYPT_MODE, privateKey);
             return cipher.doFinal(encryptedInput);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException e) {
+            throw new CredentialsManagerException("Reading the Key resulted in an error when decrypting the input.", e);
+        } catch (BadPaddingException | IllegalBlockSizeException e) {
+            deleteKeys();
+            Log.e(TAG, "Reading the Key resulted in an error when decrypting the input. Keys have been deleted.", e);
+            return new byte[]{};
         }
     }
 
@@ -143,104 +196,182 @@ public class CryptoManager {
             Cipher cipher = Cipher.getInstance(RSA_TRANSFORMATION);
             cipher.init(Cipher.ENCRYPT_MODE, certificate);
             return cipher.doFinal(decryptedInput);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException e) {
+            throw new CredentialsManagerException("Reading the Key resulted in an error when encrypting the input.", e);
+        } catch (BadPaddingException | IllegalBlockSizeException e) {
+            deleteKeys();
+            Log.e(TAG, "Reading the Key resulted in an error when encrypting the input. Keys have been deleted.", e);
+            return new byte[]{};
         }
     }
 
     private byte[] getAESKey() throws NoSuchAlgorithmException {
-        final String encodedEncryptedAES = storage.retrieveString(KEY_AES_KEY);
+        final String encodedEncryptedAES = storage.retrieveString(KEY_AES);
         if (encodedEncryptedAES != null) {
             //Return existing key
             byte[] encryptedAES = Base64.decode(encodedEncryptedAES, Base64.DEFAULT);
             return RSADecrypt(encryptedAES);
         }
         //Key doesn't exist. Generate new AES
-        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-        keyGen.init(MAX_RSA_INPUT_SIZE_BYTES);
+        KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM_AES);
+        keyGen.init(RSA_MAX_INPUT_SIZE);
         byte[] aes = keyGen.generateKey().getEncoded();
         //Save encrypted encoded version
-        final byte[] encryptedAES = RSAEncrypt(aes);
+        byte[] encryptedAES = RSAEncrypt(aes);
         String encodedEncryptedAESText = new String(Base64.encode(encryptedAES, Base64.DEFAULT));
-        storage.store(KEY_AES_KEY, encodedEncryptedAESText);
+        storage.store(KEY_AES, encodedEncryptedAESText);
         return aes;
     }
 
     //Only used to decrypt final DATA
-    private byte[] AESDecrypt(byte[] encryptedInput) {
+    private byte[] AESDecrypt(byte[] encryptedInput) throws CredentialsManagerException {
         try {
-            SecretKey key = new SecretKeySpec(getAESKey(), "AES");
+            SecretKey key = new SecretKeySpec(getAESKey(), ALGORITHM_AES);
             Cipher cipher = Cipher.getInstance(AES_TRANSFORMATION);
             String encodedIV = storage.retrieveString(KEY_AES_IV);
             if (TextUtils.isEmpty(encodedIV)) {
-                throw new IllegalArgumentException("The IV was never stored.");
+                throw new IllegalArgumentException("The AES IV was never stored.");
             }
             byte[] iv = Base64.decode(encodedIV, Base64.DEFAULT);
             cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(iv));
             return cipher.doFinal(encryptedInput);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
+        } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException | BadPaddingException | IllegalBlockSizeException | InvalidAlgorithmParameterException e) {
+            Log.e(TAG, "Error while decrypting the input.", e);
+            throw new CredentialsManagerException("Error while decrypting the input.", e);
         }
     }
 
     //Only used to encrypt final DATA
     private byte[] AESEncrypt(byte[] decryptedInput) {
         try {
-            SecretKey key = new SecretKeySpec(getAESKey(), "AES");
+            SecretKey key = new SecretKeySpec(getAESKey(), ALGORITHM_AES);
             Cipher cipher = Cipher.getInstance(AES_TRANSFORMATION);
             cipher.init(Cipher.ENCRYPT_MODE, key);
-            final byte[] encrypted = cipher.doFinal(decryptedInput);
-            final byte[] encodedIV = Base64.encode(cipher.getIV(), Base64.DEFAULT);
-            //Save IV for next Decrypt step
+            byte[] encrypted = cipher.doFinal(decryptedInput);
+            byte[] encodedIV = Base64.encode(cipher.getIV(), Base64.DEFAULT);
+            //Save IV for Decrypt stage
             storage.store(KEY_AES_IV, new String(encodedIV));
             return encrypted;
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
+        } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException | BadPaddingException | IllegalBlockSizeException e) {
+            Log.e(TAG, "Error while encrypting the input.", e);
+            return new byte[]{};
         }
     }
 
 
-    @SuppressLint("NewApi")
-    public void saveCredentials(Credentials credentials, BaseCallback<Void, CredentialsManagerException> callback) {
-        String json = gson.toJson(credentials);
-        if (!available || json == null) {
+    /**
+     * Checks the result after showing the LockScreen to the user.
+     * Must be called from the {@link Activity#onActivityResult(int, int, Intent)} method with the received parameters.
+     *
+     * @param requestCode the request code of the authentication.
+     * @param resultCode  the result code of the authentication.
+     * @return true if the result was handled. False otherwise. If no LockScreen result is expected by this class it will return false.
+     */
+    public boolean checkAuthenticationResult(int requestCode, int resultCode) {
+        if (requestCode != DEF_REQ_CODE || decryptCallback == null) {
+            //FIXME: Allow to customize the request code
+            return false;
+        }
+        if (resultCode == Activity.RESULT_OK) {
+            continueGetCredentials(decryptCallback);
+        }
+        return true;
+    }
+
+    /**
+     * Saves the given credentials in the Storage.
+     *
+     * @param credentials the credentials to save.
+     * @throws CredentialsManagerException if the credentials couldn't be encrypted.
+     */
+    public void saveCredentials(Credentials credentials) throws CredentialsManagerException {
+        if ((isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken())) || credentials.getExpiresAt() == null) {
+            throw new CredentialsManagerException("Credentials must have a valid date of expiration and a valid access_token or id_token value.");
+        }
+
+        String rawJson = gson.toJson(credentials);
+        String json = TextUtils.isEmpty(rawJson) ? null : rawJson;
+        long expiresAt = credentials.getExpiresAt().getTime();
+        boolean canRefresh = !isEmpty(credentials.getRefreshToken());
+        if (!encryptionAvailable || json == null) {
             storage.store(KEY_CREDENTIALS, json);
-            callback.onSuccess(null);
+            storage.store(KEY_EXPIRES_AT, expiresAt);
+            storage.store(KEY_CAN_REFRESH, canRefresh ? 1 : null);
             return;
         }
 
         Log.e(TAG, "Trying to encrypt the given data using the private key.");
         try {
-            final byte[] encrypted = AESEncrypt(json.getBytes());
+            byte[] encrypted = AESEncrypt(json.getBytes());
             String encryptedEncoded = Base64.encodeToString(encrypted, Base64.DEFAULT);
             storage.store(KEY_CREDENTIALS, encryptedEncoded);
-            callback.onSuccess(null);
+            storage.store(KEY_EXPIRES_AT, expiresAt);
+            storage.store(KEY_CAN_REFRESH, canRefresh ? 1 : null);
         } catch (Exception e) {
-            callback.onFailure(new CredentialsManagerException("Couldn't encrypt the credentials", e));
+            throw new CredentialsManagerException("Couldn't encrypt the credentials", e);
         }
     }
 
-    @SuppressLint("NewApi")
+    /**
+     * Tries to obtain the credentials from the Storage.
+     * If a LockScreen is setup the user will be asked to authenticate before accessing the credentials. Your activity must override the
+     * {@link Activity#onActivityResult(int, int, Intent)} method and call {@link #checkAuthenticationResult(int, int)} with the received values.
+     *
+     * @param callback the callback to receive the result in.
+     */
     public void getCredentials(BaseCallback<Credentials, CredentialsManagerException> callback) {
         String encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS);
         //FIXME: Refresh credentials when expired
-        if (!available || encryptedEncoded == null) {
+        if (!encryptionAvailable || encryptedEncoded == null) {
             callback.onSuccess(gson.fromJson(encryptedEncoded, Credentials.class));
             return;
         }
 
-        //FIXME: If was not available but now it is, data should be re-encrypted or it will fail
-        Log.e(TAG, "Trying to decrypt the given data using the public key.");
+        if (authenticateBeforeDecrypt) {
+            decryptCallback = callback;
+            activity.startActivityForResult(authIntent, DEF_REQ_CODE);
+            return;
+        }
+        //FIXME: If was not encryptionAvailable but now it is, data should be re-encrypted or it will fail
+        continueGetCredentials(callback);
+    }
+
+    /**
+     * Delete the stored credentials
+     */
+    public void clearCredentials() {
+        storage.remove(KEY_CREDENTIALS);
+        storage.remove(KEY_EXPIRES_AT);
+        storage.remove(KEY_CAN_REFRESH);
+    }
+
+    public boolean hasValidCredentials() {
+        String encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS);
+        Long expiresAt = storage.retrieveLong(KEY_EXPIRES_AT);
+        //FIXME: Should I add Storage#retrieveBoolean(String) ?
+        Integer canRefresh = storage.retrieveInteger(KEY_CAN_REFRESH);
+        return !(isEmpty(encryptedEncoded) ||
+                expiresAt == null ||
+                expiresAt <= getCurrentTimeInMillis() && canRefresh == null);
+    }
+
+
+    private void continueGetCredentials(BaseCallback<Credentials, CredentialsManagerException> callback) {
+        Log.e(TAG, "Trying to decrypt the stored data using the public key.");
+        String encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS);
+        byte[] encrypted = Base64.decode(encryptedEncoded, Base64.DEFAULT);
         try {
-            byte[] encrypted = Base64.decode(encryptedEncoded, Base64.DEFAULT);
             String json = new String(AESDecrypt(encrypted));
             callback.onSuccess(gson.fromJson(json, Credentials.class));
-        } catch (Exception e) {
-            callback.onFailure(new CredentialsManagerException("Couldn't encrypt the credentials", e));
+        } catch (CredentialsManagerException e) {
+            callback.onFailure(e);
         }
+        decryptCallback = null;
+    }
+
+    @VisibleForTesting
+    long getCurrentTimeInMillis() {
+        return System.currentTimeMillis();
     }
 
 }
