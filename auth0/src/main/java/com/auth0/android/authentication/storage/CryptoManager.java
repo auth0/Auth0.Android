@@ -1,4 +1,4 @@
-package com.auth0.samples;
+package com.auth0.android.authentication.storage;
 
 import android.app.Activity;
 import android.app.KeyguardManager;
@@ -16,8 +16,8 @@ import android.util.Base64;
 import android.util.Log;
 
 import com.auth0.android.authentication.AuthenticationAPIClient;
-import com.auth0.android.authentication.storage.CredentialsManagerException;
-import com.auth0.android.authentication.storage.Storage;
+import com.auth0.android.authentication.AuthenticationException;
+import com.auth0.android.callback.AuthenticationCallback;
 import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.result.Credentials;
 import com.google.gson.Gson;
@@ -50,6 +50,7 @@ import javax.security.auth.x500.X500Principal;
 
 import static android.text.TextUtils.isEmpty;
 
+@SuppressWarnings({"WeakerAccess", "unused"})
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class CryptoManager {
 
@@ -73,31 +74,49 @@ public class CryptoManager {
     private static final String ALGORITHM_AES = "AES";
     private static final String ANDROID_KEY_STORE = "AndroidKeyStore";
     private static final int RSA_MAX_INPUT_SIZE = 256;
-    private static final int ONE_MINUTE = 60;
 
 
     private final Activity activity;
-    private final Gson gson;
-    private final boolean encryptionAvailable;
-    private final boolean authenticateBeforeDecrypt;
     private final Storage storage;
+    private final AuthenticationAPIClient apiClient;
+    private final Gson gson;
+    private final boolean authenticateBeforeDecrypt;
 
     //State for retrying operations
     private BaseCallback<Credentials, CredentialsManagerException> decryptCallback;
     private Intent authIntent;
+    private int authenticationRequestCode = DEF_REQ_CODE;
 
-    public CryptoManager(@NonNull Activity activity, @NonNull AuthenticationAPIClient apiClient, @NonNull Storage storage) {
+    /**
+     * Creates a new CryptoManager to handle Credentials
+     * @param activity a valid activity context
+     * @param apiClient the Auth0 Authentication API Client to handle token refreshment when needed.
+     * @param storage the storage implementation to use
+     *                @param requireAuthentication whether the user must authenticate using the LockScreen before accessing the credentials.
+     */
+    public CryptoManager(@NonNull Activity activity, @NonNull AuthenticationAPIClient apiClient, @NonNull Storage storage, boolean requireAuthentication) {
         this.activity = activity;
-        this.gson = new Gson();
+        this.apiClient = apiClient;
         this.storage = storage;
-        this.encryptionAvailable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2;
+        this.gson = new Gson();
         KeyguardManager kManager = (KeyguardManager) activity.getSystemService(Context.KEYGUARD_SERVICE);
-        this.authenticateBeforeDecrypt = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && kManager.isDeviceSecure() || Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && kManager.isKeyguardSecure();
+        //TODO: Allow to customize the title and description
+        this.authIntent = kManager.createConfirmDeviceCredentialIntent(null, null);
+        this.authenticateBeforeDecrypt = requireAuthentication &&
+                (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && kManager.isDeviceSecure()
+                        || Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && kManager.isKeyguardSecure() && authIntent != null);
         if (!authenticateBeforeDecrypt) {
             Log.w(TAG, "This device lacks a configured LockScreen. Data will be encrypted but not protected.");
-            return;
         }
-        authIntent = kManager.createConfirmDeviceCredentialIntent(null, null);
+    }
+
+    /**
+     * Creates a new CryptoManager to handle Credentials
+     * @param activity a valid activity context
+     * @param apiClient the Auth0 Authentication API Client to handle token refreshment when needed.
+     */
+    public CryptoManager(@NonNull Activity activity, @NonNull AuthenticationAPIClient apiClient) {
+        this(activity, apiClient, new SharedPreferencesStorage(activity), true);
     }
 
 
@@ -125,8 +144,6 @@ public class CryptoManager {
                         .setCertificateNotAfter(end.getTime())
                         .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_RSA_PKCS1)
                         .setBlockModes(KeyProperties.BLOCK_MODE_ECB)
-                        .setUserAuthenticationRequired(authenticateBeforeDecrypt)
-                        .setUserAuthenticationValidityDurationSeconds(ONE_MINUTE)
                         .build();
             } else {
                 //Following code is for API 18-22
@@ -174,7 +191,7 @@ public class CryptoManager {
     }
 
     //Only used to decrypt AES key
-    private byte[] RSADecrypt(byte[] encryptedInput) {
+    private byte[] RSADecrypt(byte[] encryptedInput) throws CredentialsManagerException {
         final PrivateKey privateKey = getRSAKeyEntry().getPrivateKey();
         try {
             Cipher cipher = Cipher.getInstance(RSA_TRANSFORMATION);
@@ -190,7 +207,7 @@ public class CryptoManager {
     }
 
     //Only used to encrypt AES key
-    private byte[] RSAEncrypt(byte[] decryptedInput) {
+    private byte[] RSAEncrypt(byte[] decryptedInput) throws CredentialsManagerException {
         final Certificate certificate = getRSAKeyEntry().getCertificate();
         try {
             Cipher cipher = Cipher.getInstance(RSA_TRANSFORMATION);
@@ -242,7 +259,7 @@ public class CryptoManager {
     }
 
     //Only used to encrypt final DATA
-    private byte[] AESEncrypt(byte[] decryptedInput) {
+    private byte[] AESEncrypt(byte[] decryptedInput) throws CredentialsManagerException {
         try {
             SecretKey key = new SecretKeySpec(getAESKey(), ALGORITHM_AES);
             Cipher cipher = Cipher.getInstance(AES_TRANSFORMATION);
@@ -254,8 +271,58 @@ public class CryptoManager {
             return encrypted;
         } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException | BadPaddingException | IllegalBlockSizeException e) {
             Log.e(TAG, "Error while encrypting the input.", e);
-            return new byte[]{};
+            throw new CredentialsManagerException("Error while decrypting the input.", e);
         }
+    }
+
+    private void continueGetCredentials(final BaseCallback<Credentials, CredentialsManagerException> callback) {
+        Log.e(TAG, "Trying to decrypt the stored data using the public key.");
+        String encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS);
+        byte[] encrypted = Base64.decode(encryptedEncoded, Base64.DEFAULT);
+
+        String json;
+        try {
+            json = new String(AESDecrypt(encrypted));
+        } catch (CredentialsManagerException e) {
+            callback.onFailure(e);
+            return;
+        }
+        Credentials credentials = gson.fromJson(json, Credentials.class);
+        if (isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken()) || credentials.getExpiresAt() == null) {
+            callback.onFailure(new CredentialsManagerException("No Credentials were previously set."));
+            decryptCallback = null;
+            return;
+        }
+        if (credentials.getExpiresAt().getTime() > getCurrentTimeInMillis()) {
+            callback.onSuccess(credentials);
+            decryptCallback = null;
+            return;
+        }
+        if (credentials.getRefreshToken() == null) {
+            callback.onFailure(new CredentialsManagerException("Credentials have expired and no Refresh Token was available to renew them."));
+            decryptCallback = null;
+            return;
+        }
+
+        Log.d(TAG, "Credentials have expired. Renewing them now...");
+        apiClient.renewAuth(credentials.getRefreshToken()).start(new AuthenticationCallback<Credentials>() {
+            @Override
+            public void onSuccess(Credentials refreshedCredentials) {
+                callback.onSuccess(refreshedCredentials);
+                decryptCallback = null;
+            }
+
+            @Override
+            public void onFailure(AuthenticationException error) {
+                callback.onFailure(new CredentialsManagerException("An error occurred while trying to use the Refresh Token to renew the Credentials.", error));
+                decryptCallback = null;
+            }
+        });
+    }
+
+    @VisibleForTesting
+    long getCurrentTimeInMillis() {
+        return System.currentTimeMillis();
     }
 
 
@@ -268,14 +335,27 @@ public class CryptoManager {
      * @return true if the result was handled. False otherwise. If no LockScreen result is expected by this class it will return false.
      */
     public boolean checkAuthenticationResult(int requestCode, int resultCode) {
-        if (requestCode != DEF_REQ_CODE || decryptCallback == null) {
-            //FIXME: Allow to customize the request code
+        if (requestCode != authenticationRequestCode || decryptCallback == null) {
             return false;
         }
         if (resultCode == Activity.RESULT_OK) {
             continueGetCredentials(decryptCallback);
+        } else {
+            decryptCallback = null;
         }
         return true;
+    }
+
+    /**
+     * Changes the request code used to prompt the user for Authentication.
+     *
+     * @param requestCode the new request code to use. Must be between 1 and 100.
+     */
+    public void setAuthenticationRequestCode(int requestCode) {
+        if (requestCode < 1 || requestCode > 100) {
+            throw new IllegalArgumentException("The new request code must have a value between 1 and 100");
+        }
+        this.authenticationRequestCode = requestCode;
     }
 
     /**
@@ -284,21 +364,14 @@ public class CryptoManager {
      * @param credentials the credentials to save.
      * @throws CredentialsManagerException if the credentials couldn't be encrypted.
      */
-    public void saveCredentials(Credentials credentials) throws CredentialsManagerException {
+    public void saveCredentials(@NonNull Credentials credentials) throws CredentialsManagerException {
         if ((isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken())) || credentials.getExpiresAt() == null) {
             throw new CredentialsManagerException("Credentials must have a valid date of expiration and a valid access_token or id_token value.");
         }
 
-        String rawJson = gson.toJson(credentials);
-        String json = TextUtils.isEmpty(rawJson) ? null : rawJson;
+        String json = gson.toJson(credentials);
         long expiresAt = credentials.getExpiresAt().getTime();
         boolean canRefresh = !isEmpty(credentials.getRefreshToken());
-        if (!encryptionAvailable || json == null) {
-            storage.store(KEY_CREDENTIALS, json);
-            storage.store(KEY_EXPIRES_AT, expiresAt);
-            storage.store(KEY_CAN_REFRESH, canRefresh ? 1 : null);
-            return;
-        }
 
         Log.e(TAG, "Trying to encrypt the given data using the private key.");
         try {
@@ -306,7 +379,7 @@ public class CryptoManager {
             String encryptedEncoded = Base64.encodeToString(encrypted, Base64.DEFAULT);
             storage.store(KEY_CREDENTIALS, encryptedEncoded);
             storage.store(KEY_EXPIRES_AT, expiresAt);
-            storage.store(KEY_CAN_REFRESH, canRefresh ? 1 : null);
+            storage.store(KEY_CAN_REFRESH, canRefresh);
         } catch (Exception e) {
             throw new CredentialsManagerException("Couldn't encrypt the credentials", e);
         }
@@ -319,22 +392,21 @@ public class CryptoManager {
      *
      * @param callback the callback to receive the result in.
      */
-    public void getCredentials(BaseCallback<Credentials, CredentialsManagerException> callback) {
-        String encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS);
-        //FIXME: Refresh credentials when expired
-        if (!encryptionAvailable || encryptedEncoded == null) {
-            callback.onSuccess(gson.fromJson(encryptedEncoded, Credentials.class));
+    public void getCredentials(@NonNull BaseCallback<Credentials, CredentialsManagerException> callback) {
+        if (!hasValidCredentials()) {
+            callback.onFailure(new CredentialsManagerException("No Credentials were previously set."));
             return;
         }
 
         if (authenticateBeforeDecrypt) {
+            Log.d(TAG, "Authentication is required to read the Credentials. Showing the LockScreen.");
             decryptCallback = callback;
-            activity.startActivityForResult(authIntent, DEF_REQ_CODE);
+            activity.startActivityForResult(authIntent, authenticationRequestCode);
             return;
         }
-        //FIXME: If was not encryptionAvailable but now it is, data should be re-encrypted or it will fail
         continueGetCredentials(callback);
     }
+
 
     /**
      * Delete the stored credentials
@@ -343,35 +415,21 @@ public class CryptoManager {
         storage.remove(KEY_CREDENTIALS);
         storage.remove(KEY_EXPIRES_AT);
         storage.remove(KEY_CAN_REFRESH);
+        Log.d(TAG, "Credentials were removed from the storage");
     }
 
+    /**
+     * Returns whether this manager contains a valid non-expired pair of credentials.
+     *
+     * @return whether this manager contains a valid non-expired pair of credentials or not.
+     */
     public boolean hasValidCredentials() {
         String encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS);
         Long expiresAt = storage.retrieveLong(KEY_EXPIRES_AT);
-        //FIXME: Should I add Storage#retrieveBoolean(String) ?
-        Integer canRefresh = storage.retrieveInteger(KEY_CAN_REFRESH);
+        Boolean canRefresh = storage.retrieveBoolean(KEY_CAN_REFRESH);
         return !(isEmpty(encryptedEncoded) ||
                 expiresAt == null ||
-                expiresAt <= getCurrentTimeInMillis() && canRefresh == null);
-    }
-
-
-    private void continueGetCredentials(BaseCallback<Credentials, CredentialsManagerException> callback) {
-        Log.e(TAG, "Trying to decrypt the stored data using the public key.");
-        String encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS);
-        byte[] encrypted = Base64.decode(encryptedEncoded, Base64.DEFAULT);
-        try {
-            String json = new String(AESDecrypt(encrypted));
-            callback.onSuccess(gson.fromJson(json, Credentials.class));
-        } catch (CredentialsManagerException e) {
-            callback.onFailure(e);
-        }
-        decryptCallback = null;
-    }
-
-    @VisibleForTesting
-    long getCurrentTimeInMillis() {
-        return System.currentTimeMillis();
+                expiresAt <= getCurrentTimeInMillis() && (canRefresh == null || !canRefresh));
     }
 
 }
