@@ -66,6 +66,15 @@ public class SharedPreferencesStorage implements Storage {
         }
     }
 
+    @Override
+    public void store(@NonNull String name, @Nullable Boolean value) {
+        if (value == null) {
+            sp.edit().remove(name).apply();
+        } else {
+            sp.edit().putBoolean(name, value).apply();
+        }
+    }
+
     @Nullable
     @Override
     public Long retrieveLong(@NonNull String name) {
@@ -91,6 +100,15 @@ public class SharedPreferencesStorage implements Storage {
             return null;
         }
         return sp.getInt(name, 0);
+    }
+
+    @Nullable
+    @Override
+    public Boolean retrieveBoolean(@NonNull String name) {
+        if (!sp.contains(name)) {
+            return null;
+        }
+        return sp.getBoolean(name, false);
     }
 
     @Override
