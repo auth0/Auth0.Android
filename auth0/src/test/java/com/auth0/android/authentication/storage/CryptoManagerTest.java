@@ -82,7 +82,7 @@ public class CryptoManagerTest {
         KeyguardManager kManager = mock(KeyguardManager.class);
         when(activityContext.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kManager);
 
-        CryptoManager cryptoManager = new CryptoManager(activityContext, client, storage, false, crypto);
+        CryptoManager cryptoManager = new CryptoManager(client, storage, crypto);
         manager = spy(cryptoManager);
         doReturn(CredentialsMock.CURRENT_TIME_MS).when(manager).getCurrentTimeInMillis();
         gson = new Gson();

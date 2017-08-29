@@ -43,7 +43,6 @@ import javax.security.auth.x500.X500Principal;
 /**
  * Created by lbalmaceda on 8/24/17.
  */
-//19 and up
 @SuppressWarnings("WeakerAccess")
 @RequiresApi(api = Build.VERSION_CODES.KITKAT)
 class CryptoUtil {
