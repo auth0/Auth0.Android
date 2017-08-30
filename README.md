@@ -505,9 +505,9 @@ manager.clearCredentials();
 ```
 
 
-### Encryption enforced (Min API 19)
+### Encryption enforced (Min API 21)
 
-The enhanced version contains the same methods as the _Basic_ manager but encrypts the data before storing it, and in _some devices_ it can require the user authentication before letting them obtain the stored credentials. The class is called `CryptoManager`. 
+The enhanced version contains the same methods as the _Basic_ manager but encrypts the data before storing it, and in those devices where a Secure LockScreen has been configured it can require the user authentication before letting them obtain the stored credentials. The class is called `CryptoManager`. 
   
   
 #### Usage
@@ -519,9 +519,9 @@ Storage storage = new SharedPreferencesStorage(this);
 CryptoManager manager = new CryptoManager(this, authentication, storage);
 ```
 
-#### Requiring Authentication (Min API 21)
+#### Requiring Authentication
 
-You can require the user authentication to obtain credentials. This will make the manager prompt the user with the device's configured LockScreen, which they must pass correctly in order to obtain the credentials. **This feature is only available on devices with API 21 or up where the user have setup a secured LockScreen** (PIN, Pattern, Password or Fingerprint).
+You can require the user authentication to obtain credentials. This will make the manager prompt the user with the device's configured LockScreen, which they must pass correctly in order to obtain the credentials. **This feature is only available on devices where the user has setup a secured LockScreen** (PIN, Pattern, Password or Fingerprint).
 
 To enable authentication you must call the `requireAuthentication` method passing a valid _Activity_ context, a Request Code that represents the authentication call, and the title and description to display in the LockScreen. As seen in the snippet below, you can leave these last two parameters with `null` to use the system default resources.
 

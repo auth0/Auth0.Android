@@ -154,8 +154,6 @@ class CryptoUtil {
             keyStore.deleteEntry(KEY_ALIAS);
             storage.remove(KEY_ALIAS);
             storage.remove(KEY_IV_ALIAS);
-            //FIXME: After a call to this method it should clear the credentials from the storage
-//            clearCredentials();
         } catch (KeyStoreException | CertificateException | IOException | NoSuchAlgorithmException e) {
             Log.e(TAG, "Failed to remove the RSA KeyEntry from the Android KeyStore.", e);
         }

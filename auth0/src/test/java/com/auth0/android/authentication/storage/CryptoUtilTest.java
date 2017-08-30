@@ -102,6 +102,7 @@ public class CryptoUtilTest {
     //Android KeyStore not accessible using Robolectric
     //Must test using white-box approach
     //Ref: https://github.com/robolectric/robolectric/issues/1518
+
     @Before
     public void setUp() throws Exception {
         PowerMockito.mockStatic(Log.class);
@@ -128,7 +129,7 @@ public class CryptoUtilTest {
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Test
     @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 19, manifest = Config.NONE)
-    public void shouldNotCreateProtectedRSAKeyPairIfMissingAndLockScreenEnabledOnAPI20() throws Exception {
+    public void shouldNotCreateProtectedRSAKeyPairIfMissingAndLockScreenEnabledOnAPI19() throws Exception {
         ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 19);
 
         PowerMockito.when(keyStore.containsAlias(KEY_ALIAS)).thenReturn(false);
@@ -143,7 +144,7 @@ public class CryptoUtilTest {
         ArgumentCaptor<Date> startDateCaptor = ArgumentCaptor.forClass(Date.class);
         ArgumentCaptor<Date> endDateCaptor = ArgumentCaptor.forClass(Date.class);
 
-        //Set LockScreen as Disabled
+        //Set LockScreen as Enabled
         KeyguardManager kService = PowerMockito.mock(KeyguardManager.class);
         PowerMockito.when(context.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService);
         PowerMockito.when(kService.isKeyguardSecure()).thenReturn(true);

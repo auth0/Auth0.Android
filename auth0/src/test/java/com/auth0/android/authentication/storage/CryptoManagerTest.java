@@ -3,10 +3,12 @@ package com.auth0.android.authentication.storage;
 import android.app.Activity;
 import android.app.KeyguardManager;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.util.Base64;
 
+import com.auth0.android.Auth0;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.BaseCallback;
@@ -28,6 +30,7 @@ import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+import org.robolectric.util.ReflectionHelpers;
 
 import java.util.Date;
 
@@ -40,6 +43,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -86,6 +90,15 @@ public class CryptoManagerTest {
         manager = spy(cryptoManager);
         doReturn(CredentialsMock.CURRENT_TIME_MS).when(manager).getCurrentTimeInMillis();
         gson = new Gson();
+    }
+
+    @Test
+    public void shouldCreateAManagerInstance() throws Exception {
+        Context context = Robolectric.buildActivity(Activity.class).create().start().resume().get();
+        AuthenticationAPIClient apiClient = new AuthenticationAPIClient(new Auth0("clientId", "domain"));
+        Storage storage = new SharedPreferencesStorage(context);
+        final CryptoManager manager = new CryptoManager(context, apiClient, storage);
+        assertThat(manager, is(notNullValue()));
     }
 
     @Test
@@ -138,6 +151,17 @@ public class CryptoManagerTest {
         assertThat(storedCredentials.getExpiresAt(), is(notNullValue()));
         assertThat(storedCredentials.getExpiresAt().getTime(), is(expirationTime));
         assertThat(storedCredentials.getScope(), is("scope"));
+    }
+
+    @Test
+    public void shouldThrowOnSetIfCryptoError() throws Exception {
+        exception.expect(CredentialsManagerException.class);
+        exception.expectMessage("An error occurred while encrypting the credentials.");
+
+        long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456 * 1000;
+        Credentials credentials = new CredentialsMock("idToken", "accessToken", "type", "refreshToken", new Date(expirationTime), "scope");
+        when(crypto.encrypt(any(byte[].class))).thenThrow(new CryptoException("something", new Throwable("happened")));
+        manager.saveCredentials(credentials);
     }
 
     @Test
@@ -419,5 +443,169 @@ public class CryptoManagerTest {
         when(storage.retrieveString("com.auth0.credentials")).thenReturn("{\"token_type\":\"type\", \"refresh_token\":\"refreshToken\"}");
 
         assertFalse(manager.hasValidCredentials());
+    }
+
+    @Test
+    public void shouldThrowOnInvalidAuthenticationRequestCode() throws Exception {
+        exception.expect(IllegalArgumentException.class);
+        exception.expectMessage("Request code must a value between 1 and 255.");
+        Activity activity = Robolectric.buildActivity(Activity.class).create().start().resume().get();
+
+        manager.requireAuthentication(activity, 256, null, null);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    @Test
+    @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 21, manifest = Config.NONE)
+    public void shouldNotRequireAuthenticationIfAPI21AndLockScreenDisabled() throws Exception {
+        ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 21);
+        Activity activity = spy(Robolectric.buildActivity(Activity.class).create().start().resume().get());
+
+        //Set LockScreen as Disabled
+        KeyguardManager kService = mock(KeyguardManager.class);
+        when(activity.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService);
+        when(kService.isKeyguardSecure()).thenReturn(false);
+        when(kService.createConfirmDeviceCredentialIntent("title", "description")).thenReturn(null);
+
+        boolean willAskAuthentication = manager.requireAuthentication(activity, 123, "title", "description");
+
+        assertThat(willAskAuthentication, is(false));
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    @Test
+    @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 23, manifest = Config.NONE)
+    public void shouldNotRequireAuthenticationIfAPI23AndLockScreenDisabled() throws Exception {
+        ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 23);
+        Activity activity = spy(Robolectric.buildActivity(Activity.class).create().start().resume().get());
+
+        //Set LockScreen as Disabled
+        KeyguardManager kService = mock(KeyguardManager.class);
+        when(activity.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService);
+        when(kService.isDeviceSecure()).thenReturn(false);
+        when(kService.createConfirmDeviceCredentialIntent("title", "description")).thenReturn(null);
+
+        boolean willAskAuthentication = manager.requireAuthentication(activity, 123, "title", "description");
+
+        assertThat(willAskAuthentication, is(false));
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    @Test
+    @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 21, manifest = Config.NONE)
+    public void shouldRequireAuthenticationIfAPI21AndLockScreenEnabled() throws Exception {
+        ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 21);
+        Activity activity = spy(Robolectric.buildActivity(Activity.class).create().start().resume().get());
+
+        //Set LockScreen as Enabled
+        KeyguardManager kService = mock(KeyguardManager.class);
+        when(activity.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService);
+        when(kService.isKeyguardSecure()).thenReturn(true);
+        when(kService.createConfirmDeviceCredentialIntent("title", "description")).thenReturn(new Intent());
+
+        boolean willAskAuthentication = manager.requireAuthentication(activity, 123, "title", "description");
+
+        assertThat(willAskAuthentication, is(true));
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    @Test
+    @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 23, manifest = Config.NONE)
+    public void shouldRequireAuthenticationIfAPI23AndLockScreenEnabled() throws Exception {
+        ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 23);
+        Activity activity = spy(Robolectric.buildActivity(Activity.class).create().start().resume().get());
+
+        //Set LockScreen as Enabled
+        KeyguardManager kService = mock(KeyguardManager.class);
+        when(activity.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService);
+        when(kService.isDeviceSecure()).thenReturn(true);
+        when(kService.createConfirmDeviceCredentialIntent("title", "description")).thenReturn(new Intent());
+
+        boolean willAskAuthentication = manager.requireAuthentication(activity, 123, "title", "description");
+
+        assertThat(willAskAuthentication, is(true));
+    }
+
+    @Test
+    public void shouldGetCredentialsAfterAuthentication() throws Exception {
+        Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456L * 1000);
+        Credentials storedCredentials = new Credentials("idToken", "accessToken", "type", "refreshToken", expiresAt, "scope");
+        String storedJson = gson.toJson(storedCredentials);
+        String encoded = new String(Base64.encode(storedJson.getBytes(), Base64.DEFAULT));
+        when(crypto.decrypt(storedJson.getBytes())).thenReturn(storedJson.getBytes());
+        when(storage.retrieveString("com.auth0.credentials")).thenReturn(encoded);
+        when(storage.retrieveLong("com.auth0.credentials_expires_at")).thenReturn(expiresAt.getTime());
+        when(storage.retrieveBoolean("com.auth0.credentials_can_refresh")).thenReturn(false);
+
+        //Require authentication
+        Activity activity = spy(Robolectric.buildActivity(Activity.class).create().start().resume().get());
+        KeyguardManager kService = mock(KeyguardManager.class);
+        when(activity.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService);
+        when(kService.isKeyguardSecure()).thenReturn(true);
+        Intent confirmCredentialsIntent = mock(Intent.class);
+        when(kService.createConfirmDeviceCredentialIntent("theTitle", "theDescription")).thenReturn(confirmCredentialsIntent);
+        boolean willRequireAuthentication = manager.requireAuthentication(activity, 123, "theTitle","theDescription");
+        assertThat(willRequireAuthentication, is(true));
+
+        manager.getCredentials(callback);
+
+        ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        verify(activity).startActivityForResult(intentCaptor.capture(), eq(123));
+        assertThat(intentCaptor.getValue(), is(confirmCredentialsIntent));
+
+
+        //Continue after successful authentication
+        final boolean processed = manager.checkAuthenticationResult(123, Activity.RESULT_OK);
+        assertThat(processed, is(true));
+
+        verify(callback).onSuccess(credentialsCaptor.capture());
+        Credentials retrievedCredentials = credentialsCaptor.getValue();
+        assertThat(retrievedCredentials, is(notNullValue()));
+        assertThat(retrievedCredentials.getAccessToken(), is("accessToken"));
+        assertThat(retrievedCredentials.getIdToken(), is("idToken"));
+        assertThat(retrievedCredentials.getRefreshToken(), is("refreshToken"));
+        assertThat(retrievedCredentials.getType(), is("type"));
+        assertThat(retrievedCredentials.getExpiresAt(), is(notNullValue()));
+        assertThat(retrievedCredentials.getExpiresAt().getTime(), is(expiresAt.getTime()));
+        assertThat(retrievedCredentials.getScope(), is("scope"));
+    }
+
+    @Test
+    public void shouldNotGetCredentialsAfterCanceledAuthentication() throws Exception {
+        Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456L * 1000);
+        Credentials storedCredentials = new Credentials("idToken", "accessToken", "type", "refreshToken", expiresAt, "scope");
+        String storedJson = gson.toJson(storedCredentials);
+        String encoded = new String(Base64.encode(storedJson.getBytes(), Base64.DEFAULT));
+        when(crypto.decrypt(storedJson.getBytes())).thenReturn(storedJson.getBytes());
+        when(storage.retrieveString("com.auth0.credentials")).thenReturn(encoded);
+        when(storage.retrieveLong("com.auth0.credentials_expires_at")).thenReturn(expiresAt.getTime());
+        when(storage.retrieveBoolean("com.auth0.credentials_can_refresh")).thenReturn(false);
+
+        //Require authentication
+        Activity activity = spy(Robolectric.buildActivity(Activity.class).create().start().resume().get());
+        KeyguardManager kService = mock(KeyguardManager.class);
+        when(activity.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService);
+        when(kService.isKeyguardSecure()).thenReturn(true);
+        Intent confirmCredentialsIntent = mock(Intent.class);
+        when(kService.createConfirmDeviceCredentialIntent("theTitle", "theDescription")).thenReturn(confirmCredentialsIntent);
+        boolean willRequireAuthentication = manager.requireAuthentication(activity, 123, "theTitle","theDescription");
+        assertThat(willRequireAuthentication, is(true));
+
+        manager.getCredentials(callback);
+
+        ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        verify(activity).startActivityForResult(intentCaptor.capture(), eq(123));
+        assertThat(intentCaptor.getValue(), is(confirmCredentialsIntent));
+
+
+        //Continue after canceled authentication
+        final boolean processed = manager.checkAuthenticationResult(123, Activity.RESULT_CANCELED);
+        assertThat(processed, is(true));
+
+        verify(callback, never()).onSuccess(any(Credentials.class));
+        verify(callback).onFailure(exceptionCaptor.capture());
+
+        assertThat(exceptionCaptor.getValue(), is(notNullValue()));
+        assertThat(exceptionCaptor.getValue().getMessage(), is("The user didn't pass the authentication challenge."));
     }
 }

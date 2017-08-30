@@ -21,8 +21,13 @@ import com.google.gson.Gson;
 
 import static android.text.TextUtils.isEmpty;
 
+/**
+ * A safer alternative to the {@link CredentialsManager} class. A combination of RSA and AES keys is used to keep the values secure.
+ * On devices running Android API 21 or up with a Secure LockScreen configured (PIN, Pattern, Password or Fingerprint) an extra
+ * authentication step can be required.
+ */
 @SuppressWarnings({"WeakerAccess", "unused"})
-@RequiresApi(api = Build.VERSION_CODES.KITKAT)
+@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class CryptoManager {
 
     private static final String TAG = CryptoManager.class.getSimpleName();
@@ -81,13 +86,12 @@ public class CryptoManager {
      * @param description the text to use as description in the authentication screen. On some Android versions it might not be shown.
      * @return whether this device supports requiring authentication or not.
      */
-    @RequiresApi(value = Build.VERSION_CODES.LOLLIPOP)
     public boolean requireAuthentication(@NonNull Activity activity, int requestCode, @Nullable String title, @Nullable String description) {
-        if (requestCode < 1 || requestCode > 200) {
-            throw new IllegalArgumentException("Request code must a value between 1 and 200.");
+        if (requestCode < 1 || requestCode > 255) {
+            throw new IllegalArgumentException("Request code must a value between 1 and 255.");
         }
         KeyguardManager kManager = (KeyguardManager) activity.getSystemService(Context.KEYGUARD_SERVICE);
-        this.authIntent = kManager.createConfirmDeviceCredentialIntent(title, description);
+        this.authIntent = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ? kManager.createConfirmDeviceCredentialIntent(title, description) : null;
         this.authenticateBeforeDecrypt = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && kManager.isDeviceSecure()
                 || Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && kManager.isKeyguardSecure()) && authIntent != null;
         if (authenticateBeforeDecrypt) {
@@ -105,7 +109,6 @@ public class CryptoManager {
      * @param resultCode  the result code received in the onActivityResult call.
      * @return true if the result was handled, false otherwise.
      */
-    @RequiresApi(value = Build.VERSION_CODES.LOLLIPOP)
     public boolean checkAuthenticationResult(int requestCode, int resultCode) {
         if (requestCode != authenticationRequestCode || decryptCallback == null) {
             return false;
@@ -113,6 +116,7 @@ public class CryptoManager {
         if (resultCode == Activity.RESULT_OK) {
             continueGetCredentials(decryptCallback);
         } else {
+            decryptCallback.onFailure(new CredentialsManagerException("The user didn't pass the authentication challenge."));
             decryptCallback = null;
         }
         return true;
