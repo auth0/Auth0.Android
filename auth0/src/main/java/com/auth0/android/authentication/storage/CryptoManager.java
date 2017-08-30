@@ -105,6 +105,7 @@ public class CryptoManager {
      * @param resultCode  the result code received in the onActivityResult call.
      * @return true if the result was handled, false otherwise.
      */
+    @RequiresApi(value = Build.VERSION_CODES.LOLLIPOP)
     public boolean checkAuthenticationResult(int requestCode, int resultCode) {
         if (requestCode != authenticationRequestCode || decryptCallback == null) {
             return false;

@@ -434,12 +434,18 @@ users
 > In all the cases, the `User ID` parameter is the unique identifier of the auth0 account instance. i.e. in `google-oauth2|123456789081523216417` it would be the part after the '|' pipe: `123456789081523216417`.
 
 
-### Credentials Manager
-This library ships with a `CredentialsManager` class to easily store and retrieve fresh Credentials from a given `Storage`.
+
+## Credentials Manager
+
+This library ships with two additional classes that help you store and retrieve the `Credentials` received in authentication calls. Depending on the minimum API level that your application is targeting you'd like to use a different implementation.
+
+### Basic (Min API 15)
+
+The basic version supports asking for `Credentials` existence, storing them and getting them back. If the credentials have expired and a refresh_token was saved, they are automatically refreshed. The class is called `CredentialsManager`.
 
 #### Usage
-1. **Instantiate the manager**
-You'll need an `AuthenticationAPIClient` instance used to renew the credentials when they expire and a `Storage`. The Storage implementation is up to you. We provide a `SharedPreferencesStorage` that uses `SharedPreferences` to create a file in the application's directory with Context.MODE_PRIVATE mode. This implementation is thread safe and can either be obtained through a Singleton like method or be created every time it's needed.
+1. **Instantiate the manager:**
+You'll need an `AuthenticationAPIClient` instance used to renew the credentials when they expire and a `Storage`. The Storage implementation is up to you. We provide a `SharedPreferencesStorage` that uses `SharedPreferences` to create a file in the application's directory with **Context.MODE_PRIVATE** mode. This implementation is thread safe and can either be obtained through a Singleton method or be created every time it's needed.
 
 ```java
 AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
@@ -447,7 +453,7 @@ Storage storage = new SharedPreferencesStorage(this);
 CredentialsManager manager = new CredentialsManager(authentication, storage);
 ```
 
-2. **Save credentials**
+2. **Save credentials:**
 The credentials to save **must have** `expires_in` and at least an `access_token` or `id_token` value. If one of the values is missing when trying to set the credentials, the method will throw a `CredentialsManagerException`. If you want the manager to successfully renew the credentials when expired you must also request the `offline_access` scope when logging in in order to receive a `refresh_token` value along with the rest of the tokens. i.e. Logging in with a database connection and saving the credentials:
 
 ```java
@@ -468,14 +474,14 @@ authentication
     });
 ```
 
-3. **Check credentials existence**
+3. **Check credentials existence:**
 There are cases were you just want to check if a user session is still valid (i.e. to know if you should present the login screen or the main screen). For convenience we include a `hasValidCredentials` method that can let you know in advance if a non-expired token is available without making an additional network call. The same rules of the `getCredentials` method apply:
 
 ```java
 boolean authenticated = manager.hasValidCredentials();
 ```
 
-4. **Retrieve credentials**
+4. **Retrieve credentials:**
 Existing credentials will be returned if they are still valid, otherwise the `refresh_token` will be used to attempt to renew them. If the `expires_in` or both the `access_token` and `id_token` values are missing, the method will throw a `CredentialsManagerException`. The same will happen if the credentials have expired and there's no `refresh_token` available.
 
 ```java
@@ -491,12 +497,55 @@ manager.getCredentials(new BaseCallback<Credentials, CredentialsManagerException
 ```
 
 
-5. **Clear credentials**
+5. **Clear credentials:**
 When you want to log the user out:
 
 ```java
 manager.clearCredentials();
 ```
+
+
+### Encryption enforced (Min API 19)
+
+The enhanced version contains the same methods as the _Basic_ manager but encrypts the data before storing it, and in _some devices_ it can require the user authentication before letting them obtain the stored credentials. The class is called `CryptoManager`. 
+  
+  
+#### Usage
+The usage is the same as in the _Basic_ version. What changes is the way you instantiate the manager as it now requires a valid `Context`.
+
+```java
+AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
+Storage storage = new SharedPreferencesStorage(this);
+CryptoManager manager = new CryptoManager(this, authentication, storage);
+```
+
+#### Requiring Authentication (Min API 21)
+
+You can require the user authentication to obtain credentials. This will make the manager prompt the user with the device's configured LockScreen, which they must pass correctly in order to obtain the credentials. **This feature is only available on devices with API 21 or up where the user have setup a secured LockScreen** (PIN, Pattern, Password or Fingerprint).
+
+To enable authentication you must call the `requireAuthentication` method passing a valid _Activity_ context, a Request Code that represents the authentication call, and the title and description to display in the LockScreen. As seen in the snippet below, you can leave these last two parameters with `null` to use the system default resources.
+
+```java
+//You might want to define a constant with the Request Code
+private static final int AUTH_REQ_CODE = 11;
+
+manager.requireAuthentication(this, AUTH_REQ_CODE, null, null);
+```
+
+When the above conditions are met and the manager requires the user authentication, it will use the activity context to launch a new activity for result. The outcome of getting approved or rejected by the LockScreen is given back to the activity in the `onActivityResult` method, which your activity must override to redirect the data to the manager using the `checkAuthenticationResult` method.
+  
+```java
+@Override
+protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    if (manager.checkAuthenticationResult(requestCode, resultCode)) {
+        return;
+    }
+    super.onActivityResult(requestCode, resultCode, data);
+}
+```
+
+The `checkAuthenticationResult` method will continue the retrieval of credentials on a successful authentication, and the decrypted credentials will be delivered to the callback passed on the `getCredentials` call. 
+
 
 ## FAQ
 
