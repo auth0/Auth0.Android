@@ -135,7 +135,7 @@ class CryptoUtil {
             generator.generateKeyPair();
             return (KeyStore.PrivateKeyEntry) keyStore.getEntry(KEY_ALIAS, null);
         } catch (KeyStoreException | IOException | NoSuchProviderException | InvalidAlgorithmParameterException | NoSuchAlgorithmException | CertificateException e) {
-            Log.e(TAG, "An error occurred while trying to obtain the RSA Key Entry from the Android KeyStore.", e);
+            Log.e(TAG, "An error occurred while trying to obtain the RSA KeyPair Entry from the Android KeyStore.", e);
             throw new KeyException("An error occurred while trying to obtain the RSA KeyPair Entry from the Android KeyStore.", e);
         } catch (UnrecoverableEntryException e) {
             //Remove keys and Retry
@@ -233,7 +233,7 @@ class CryptoUtil {
             byte[] iv = Base64.decode(encodedIV, Base64.DEFAULT);
             cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(iv));
             return cipher.doFinal(encryptedInput);
-        } catch (KeyException | NoSuchAlgorithmException | InvalidAlgorithmParameterException | BadPaddingException | NoSuchPaddingException | IllegalBlockSizeException e) {
+        } catch (KeyException | NoSuchAlgorithmException | NoSuchPaddingException | InvalidAlgorithmParameterException | BadPaddingException | IllegalBlockSizeException e) {
             Log.e(TAG, "Error while decrypting the input.", e);
             throw new CryptoException("Error while decrypting the input.", e);
         }

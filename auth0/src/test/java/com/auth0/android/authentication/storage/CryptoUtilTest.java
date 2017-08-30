@@ -28,12 +28,21 @@ import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 import org.robolectric.util.ReflectionHelpers;
 
+import java.io.IOException;
 import java.math.BigInteger;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.Key;
+import java.security.KeyException;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
+import java.security.UnrecoverableEntryException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -41,6 +50,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.security.auth.x500.X500Principal;
@@ -115,11 +125,11 @@ public class CryptoUtilTest {
         new CryptoUtil(RuntimeEnvironment.application, storage, " ");
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Test
-    @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 20, manifest = Config.NONE)
+    @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 19, manifest = Config.NONE)
     public void shouldNotCreateProtectedRSAKeyPairIfMissingAndLockScreenEnabledOnAPI20() throws Exception {
-        ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 20);
+        ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 19);
 
         PowerMockito.when(keyStore.containsAlias(KEY_ALIAS)).thenReturn(false);
         KeyStore.PrivateKeyEntry expectedEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
@@ -329,6 +339,106 @@ public class CryptoUtilTest {
     }
 
     @Test
+    public void shouldDeleteKeysOnUnrecoverableErrorWhenTryingToObtainRSAKeys() throws Exception {
+        KeyStore.PrivateKeyEntry entry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
+        PowerMockito.when(keyStore.containsAlias(KEY_ALIAS)).thenReturn(true);
+        PowerMockito.when(keyStore.getEntry(KEY_ALIAS, null))
+                .thenThrow(new UnrecoverableEntryException())
+                .thenReturn(entry);
+
+        cryptoUtil.getRSAKeyEntry();
+
+        Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
+    }
+
+    @Test
+    public void shouldThrowOnKeyStoreErrorWhenTryingToObtainRSAKeys() throws Exception {
+        exception.expect(KeyException.class);
+        exception.expectMessage("An error occurred while trying to obtain the RSA KeyPair Entry from the Android KeyStore.");
+
+        PowerMockito.mockStatic(KeyStore.class);
+        PowerMockito.when(KeyStore.getInstance(anyString()))
+                .thenThrow(new KeyStoreException());
+
+        cryptoUtil.getRSAKeyEntry();
+    }
+
+    @Test
+    public void shouldThrowOnCertificateErrorWhenTryingToObtainRSAKeys() throws Exception {
+        exception.expect(KeyException.class);
+        exception.expectMessage("An error occurred while trying to obtain the RSA KeyPair Entry from the Android KeyStore.");
+
+        doThrow(new CertificateException()).when(keyStore).load(any(KeyStore.LoadStoreParameter.class));
+
+        cryptoUtil.getRSAKeyEntry();
+    }
+
+    @Test
+    public void shouldThrowOnIOErrorWhenTryingToObtainRSAKeys() throws Exception {
+        exception.expect(KeyException.class);
+        exception.expectMessage("An error occurred while trying to obtain the RSA KeyPair Entry from the Android KeyStore.");
+
+        doThrow(new IOException()).when(keyStore).load(any(KeyStore.LoadStoreParameter.class));
+
+        cryptoUtil.getRSAKeyEntry();
+    }
+
+
+    @Test
+    public void shouldThrowOnNoSuchProviderErrorWhenTryingToObtainRSAKeys() throws Exception {
+        ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 19);
+        exception.expect(KeyException.class);
+        exception.expectMessage("An error occurred while trying to obtain the RSA KeyPair Entry from the Android KeyStore.");
+
+        PowerMockito.when(keyStore.containsAlias(KEY_ALIAS)).thenReturn(false);
+        KeyPairGeneratorSpec spec = PowerMockito.mock(KeyPairGeneratorSpec.class);
+        KeyPairGeneratorSpec.Builder builder = newKeyPairGeneratorSpecBuilder(spec);
+        PowerMockito.whenNew(KeyPairGeneratorSpec.Builder.class).withAnyArguments().thenReturn(builder);
+
+        PowerMockito.mockStatic(KeyPairGenerator.class);
+        PowerMockito.when(KeyPairGenerator.getInstance(ALGORITHM_RSA, ANDROID_KEY_STORE))
+                .thenThrow(new NoSuchProviderException());
+
+        cryptoUtil.getRSAKeyEntry();
+    }
+
+    @Test
+    public void shouldThrowOnNoSuchAlgorithmErrorWhenTryingToObtainRSAKeys() throws Exception {
+        ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 19);
+        exception.expect(KeyException.class);
+        exception.expectMessage("An error occurred while trying to obtain the RSA KeyPair Entry from the Android KeyStore.");
+
+        PowerMockito.when(keyStore.containsAlias(KEY_ALIAS)).thenReturn(false);
+        KeyPairGeneratorSpec spec = PowerMockito.mock(KeyPairGeneratorSpec.class);
+        KeyPairGeneratorSpec.Builder builder = newKeyPairGeneratorSpecBuilder(spec);
+        PowerMockito.whenNew(KeyPairGeneratorSpec.Builder.class).withAnyArguments().thenReturn(builder);
+
+        PowerMockito.mockStatic(KeyPairGenerator.class);
+        PowerMockito.when(KeyPairGenerator.getInstance(ALGORITHM_RSA, ANDROID_KEY_STORE))
+                .thenThrow(new NoSuchAlgorithmException());
+
+        cryptoUtil.getRSAKeyEntry();
+    }
+
+    @Test
+    public void shouldThrowOnInvalidAlgorithmParameterErrorWhenTryingToObtainRSAKeys() throws Exception {
+        ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 19);
+        exception.expect(KeyException.class);
+        exception.expectMessage("An error occurred while trying to obtain the RSA KeyPair Entry from the Android KeyStore.");
+
+        PowerMockito.when(keyStore.containsAlias(KEY_ALIAS)).thenReturn(false);
+        KeyPairGeneratorSpec spec = PowerMockito.mock(KeyPairGeneratorSpec.class);
+        KeyPairGeneratorSpec.Builder builder = newKeyPairGeneratorSpecBuilder(spec);
+        PowerMockito.whenNew(KeyPairGeneratorSpec.Builder.class).withAnyArguments().thenReturn(builder);
+
+        doThrow(new InvalidAlgorithmParameterException()).when(keyPairGenerator).initialize(any(AlgorithmParameterSpec.class));
+
+        cryptoUtil.getRSAKeyEntry();
+    }
+
+    @Test
     public void shouldCreateAESKeyIfMissing() throws Exception {
         byte[] sampleBytes = new byte[]{0, 1, 2, 3, 4, 5};
         PowerMockito.mockStatic(Base64.class);
@@ -365,6 +475,32 @@ public class CryptoUtilTest {
     }
 
     @Test
+    public void shouldThrowOnInvalidProviderErrorWhenCreatingAESKey() throws Exception {
+        exception.expect(KeyException.class);
+        exception.expectMessage("Error while creating the AES key.");
+
+        PowerMockito.when(storage.retrieveString(KEY_ALIAS)).thenReturn(null);
+        PowerMockito.mockStatic(KeyGenerator.class);
+        PowerMockito.when(KeyGenerator.getInstance(ALGORITHM_AES, ANDROID_KEY_STORE))
+                .thenThrow(new NoSuchProviderException());
+
+        cryptoUtil.getAESKey();
+    }
+
+    @Test
+    public void shouldThrowOnInvalidAlgorithmErrorWhenCreatingAESKey() throws Exception {
+        exception.expect(KeyException.class);
+        exception.expectMessage("Error while creating the AES key.");
+
+        PowerMockito.when(storage.retrieveString(KEY_ALIAS)).thenReturn(null);
+        PowerMockito.mockStatic(KeyGenerator.class);
+        PowerMockito.when(KeyGenerator.getInstance(ALGORITHM_AES, ANDROID_KEY_STORE))
+                .thenThrow(new NoSuchAlgorithmException());
+
+        cryptoUtil.getAESKey();
+    }
+
+    @Test
     public void shouldRSAEncryptData() throws Exception {
         byte[] sampleInput = new byte[]{0, 1, 2, 3, 4, 5};
         byte[] sampleOutput = new byte[]{99, 33, 11};
@@ -382,20 +518,100 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldRSADecryptData() throws Exception {
-        byte[] sampleInput = new byte[]{0, 1, 2, 3, 4, 5};
-        byte[] sampleOutput = new byte[]{99, 33, 11};
+    public void shouldThrowOnKeyErrorWhenTryingToRSAEncrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("Couldn't encrypt the input using the RSA Key.");
+
+        doThrow(new KeyException()).when(cryptoUtil).getRSAKeyEntry();
+
+        cryptoUtil.RSAEncrypt(new byte[0]);
+    }
+
+    @Test
+    public void shouldThrowOnNoSuchAlgorithmErrorWhenTryingToRSAEncrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("Couldn't encrypt the input using the RSA Key.");
 
         Certificate certificate = PowerMockito.mock(Certificate.class);
         KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
         doReturn(certificate).when(privateKeyEntry).getCertificate();
         doReturn(privateKeyEntry).when(cryptoUtil).getRSAKeyEntry();
+        PowerMockito.mockStatic(Cipher.class);
+        PowerMockito.when(Cipher.getInstance(RSA_TRANSFORMATION)).thenThrow(new NoSuchAlgorithmException());
+
+        cryptoUtil.RSAEncrypt(new byte[0]);
+    }
+
+    @Test
+    public void shouldThrowOnNoSuchPaddingErrorWhenTryingToRSAEncrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("Couldn't encrypt the input using the RSA Key.");
+
+        Certificate certificate = PowerMockito.mock(Certificate.class);
+        KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
+        doReturn(certificate).when(privateKeyEntry).getCertificate();
+        doReturn(privateKeyEntry).when(cryptoUtil).getRSAKeyEntry();
+        PowerMockito.mockStatic(Cipher.class);
+        PowerMockito.when(Cipher.getInstance(RSA_TRANSFORMATION)).thenThrow(new NoSuchPaddingException());
+
+        cryptoUtil.RSAEncrypt(new byte[0]);
+    }
+
+    @Test
+    public void shouldRSADecryptData() throws Exception {
+        byte[] sampleInput = new byte[]{0, 1, 2, 3, 4, 5};
+        byte[] sampleOutput = new byte[]{99, 33, 11};
+
+        PrivateKey privateKey = PowerMockito.mock(PrivateKey.class);
+        KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
+        doReturn(privateKey).when(privateKeyEntry).getPrivateKey();
+        doReturn(privateKeyEntry).when(cryptoUtil).getRSAKeyEntry();
         doReturn(sampleOutput).when(rsaCipher).doFinal(sampleInput);
 
-        final byte[] output = cryptoUtil.RSAEncrypt(sampleInput);
+        final byte[] output = cryptoUtil.RSADecrypt(sampleInput);
 
-        Mockito.verify(rsaCipher).init(Cipher.ENCRYPT_MODE, certificate);
+        Mockito.verify(rsaCipher).init(Cipher.DECRYPT_MODE, privateKey);
         assertThat(output, is(sampleOutput));
+    }
+
+    @Test
+    public void shouldThrowOnKeyErrorWhenTryingToRSADecrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("Couldn't decrypt the input using the RSA Key.");
+
+        doThrow(new KeyException()).when(cryptoUtil).getRSAKeyEntry();
+
+        cryptoUtil.RSADecrypt(new byte[0]);
+    }
+
+    @Test
+    public void shouldThrowOnNoSuchAlgorithmErrorWhenTryingToRSADecrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("Couldn't decrypt the input using the RSA Key.");
+
+        PrivateKey privateKey = PowerMockito.mock(PrivateKey.class);
+        KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
+        doReturn(privateKey).when(privateKeyEntry).getPrivateKey();
+        doReturn(privateKeyEntry).when(cryptoUtil).getRSAKeyEntry();
+        PowerMockito.mockStatic(Cipher.class);
+        PowerMockito.when(Cipher.getInstance(RSA_TRANSFORMATION)).thenThrow(new NoSuchAlgorithmException());
+
+        cryptoUtil.RSADecrypt(new byte[0]);
+    }
+
+    @Test
+    public void shouldThrowOnNoSuchPaddingErrorWhenTryingToRSADecrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("Couldn't decrypt the input using the RSA Key.");
+
+        PrivateKey privateKey = PowerMockito.mock(PrivateKey.class);
+        KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
+        doReturn(privateKey).when(privateKeyEntry).getPrivateKey();
+        doReturn(privateKeyEntry).when(cryptoUtil).getRSAKeyEntry();
+        PowerMockito.mockStatic(Cipher.class);
+        PowerMockito.when(Cipher.getInstance(RSA_TRANSFORMATION)).thenThrow(new NoSuchPaddingException());
+
+        cryptoUtil.RSADecrypt(new byte[0]);
     }
 
     @Test
@@ -410,7 +626,6 @@ public class CryptoUtilTest {
         doThrow(new IllegalBlockSizeException()).when(rsaCipher).doFinal(any(byte[].class));
         cryptoUtil.RSADecrypt(new byte[0]);
 
-        Mockito.verify(keyStore, Mockito.times(2)).load(null);
         Mockito.verify(keyStore, Mockito.times(2)).deleteEntry(KEY_ALIAS);
         Mockito.verify(storage, Mockito.times(2)).remove(KEY_ALIAS);
         Mockito.verify(storage, Mockito.times(2)).remove(KEY_ALIAS + "_iv");
@@ -428,7 +643,6 @@ public class CryptoUtilTest {
         doThrow(new IllegalBlockSizeException()).when(rsaCipher).doFinal(any(byte[].class));
         cryptoUtil.RSAEncrypt(new byte[0]);
 
-        Mockito.verify(keyStore, Mockito.times(2)).load(null);
         Mockito.verify(keyStore, Mockito.times(2)).deleteEntry(KEY_ALIAS);
         Mockito.verify(storage, Mockito.times(2)).remove(KEY_ALIAS);
         Mockito.verify(storage, Mockito.times(2)).remove(KEY_ALIAS + "_iv");
@@ -463,6 +677,66 @@ public class CryptoUtilTest {
     }
 
     @Test
+    public void shouldThrowOnKeyErrorWhenTryingToAESEncrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("Error while encrypting the input.");
+
+        doThrow(new KeyException()).when(cryptoUtil).getAESKey();
+
+        cryptoUtil.encrypt(new byte[0]);
+    }
+
+    @Test
+    public void shouldThrowOnNoSuchPaddingErrorWhenTryingToAESEncrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("Error while encrypting the input.");
+
+        doReturn(new byte[]{11, 22, 33}).when(cryptoUtil).getAESKey();
+
+        PowerMockito.mockStatic(Cipher.class);
+        PowerMockito.when(Cipher.getInstance(anyString())).thenThrow(new NoSuchPaddingException());
+
+        cryptoUtil.encrypt(new byte[0]);
+    }
+
+    @Test
+    public void shouldThrowOnNoSuchAlgorithmErrorWhenTryingToAESEncrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("Error while encrypting the input.");
+
+        doReturn(new byte[]{11, 22, 33}).when(cryptoUtil).getAESKey();
+
+        PowerMockito.mockStatic(Cipher.class);
+        PowerMockito.when(Cipher.getInstance(anyString())).thenThrow(new NoSuchAlgorithmException());
+
+        cryptoUtil.encrypt(new byte[0]);
+    }
+
+    @Test
+    public void shouldThrowOnBadPaddingErrorWhenTryingToAESEncrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("Error while encrypting the input.");
+
+        doReturn(new byte[]{11, 22, 33}).when(cryptoUtil).getAESKey();
+        doThrow(new BadPaddingException()).when(aesCipher)
+                .doFinal(any(byte[].class));
+
+        cryptoUtil.encrypt(new byte[0]);
+    }
+
+    @Test
+    public void shouldThrowOnIllegalBlockSizeErrorWhenTryingToAESEncrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("Error while encrypting the input.");
+
+        doReturn(new byte[]{11, 22, 33}).when(cryptoUtil).getAESKey();
+        doThrow(new IllegalBlockSizeException()).when(aesCipher)
+                .doFinal(any(byte[].class));
+
+        cryptoUtil.encrypt(new byte[0]);
+    }
+
+    @Test
     public void shouldAESDecryptData() throws Exception {
         ArgumentCaptor<SecretKey> secretKeyCaptor = ArgumentCaptor.forClass(SecretKey.class);
         ArgumentCaptor<IvParameterSpec> ivParameterSpecCaptor = ArgumentCaptor.forClass(IvParameterSpec.class);
@@ -489,6 +763,78 @@ public class CryptoUtilTest {
         assertThat(ivParameterSpecCaptor.getValue().getIV(), is(encodedIv.getBytes()));
 
         assertThat(decrypted, is(decryptedData));
+    }
+
+    @Test
+    public void shouldThrowOnKeyErrorWhenTryingToAESDecrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("Error while decrypting the input.");
+
+        doThrow(new KeyException()).when(cryptoUtil).getAESKey();
+
+        cryptoUtil.decrypt(new byte[0]);
+    }
+
+    @Test
+    public void shouldThrowOnNoSuchPaddingErrorWhenTryingToAESDecrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("Error while decrypting the input.");
+
+        doReturn(new byte[]{11, 22, 33}).when(cryptoUtil).getAESKey();
+
+        PowerMockito.mockStatic(Cipher.class);
+        PowerMockito.when(Cipher.getInstance(anyString())).thenThrow(new NoSuchPaddingException());
+
+        cryptoUtil.decrypt(new byte[0]);
+    }
+
+    @Test
+    public void shouldThrowOnNoSuchAlgorithmErrorWhenTryingToAESDecrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("Error while decrypting the input.");
+
+        doReturn(new byte[]{11, 22, 33}).when(cryptoUtil).getAESKey();
+
+        PowerMockito.mockStatic(Cipher.class);
+        PowerMockito.when(Cipher.getInstance(anyString())).thenThrow(new NoSuchAlgorithmException());
+
+        cryptoUtil.decrypt(new byte[0]);
+    }
+
+    @Test
+    public void shouldThrowOnInvalidAlgorithmParameterTryingToAESDecrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("Error while decrypting the input.");
+
+        doReturn(new byte[]{11, 22, 33}).when(cryptoUtil).getAESKey();
+        doThrow(new InvalidAlgorithmParameterException()).when(aesCipher)
+                .init(any(int.class), any(Key.class), any(AlgorithmParameterSpec.class));
+
+        cryptoUtil.decrypt(new byte[0]);
+    }
+
+    @Test
+    public void shouldThrowOnBadPaddingErrorWhenTryingToAESDecrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("Error while decrypting the input.");
+
+        doReturn(new byte[]{11, 22, 33}).when(cryptoUtil).getAESKey();
+        doThrow(new BadPaddingException()).when(aesCipher)
+                .doFinal(any(byte[].class));
+
+        cryptoUtil.decrypt(new byte[0]);
+    }
+
+    @Test
+    public void shouldThrowOnIllegalBlockSizeErrorWhenTryingToAESDecrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("Error while decrypting the input.");
+
+        doReturn(new byte[]{11, 22, 33}).when(cryptoUtil).getAESKey();
+        doThrow(new IllegalBlockSizeException()).when(aesCipher)
+                .doFinal(any(byte[].class));
+
+        cryptoUtil.decrypt(new byte[0]);
     }
 
 
