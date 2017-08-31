@@ -476,26 +476,13 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldThrowOnInvalidProviderErrorWhenCreatingAESKey() throws Exception {
-        exception.expect(KeyException.class);
-        exception.expectMessage("Error while creating the AES key.");
-
-        PowerMockito.when(storage.retrieveString(KEY_ALIAS)).thenReturn(null);
-        PowerMockito.mockStatic(KeyGenerator.class);
-        PowerMockito.when(KeyGenerator.getInstance(ALGORITHM_AES, ANDROID_KEY_STORE))
-                .thenThrow(new NoSuchProviderException());
-
-        cryptoUtil.getAESKey();
-    }
-
-    @Test
     public void shouldThrowOnInvalidAlgorithmErrorWhenCreatingAESKey() throws Exception {
         exception.expect(KeyException.class);
         exception.expectMessage("Error while creating the AES key.");
 
         PowerMockito.when(storage.retrieveString(KEY_ALIAS)).thenReturn(null);
         PowerMockito.mockStatic(KeyGenerator.class);
-        PowerMockito.when(KeyGenerator.getInstance(ALGORITHM_AES, ANDROID_KEY_STORE))
+        PowerMockito.when(KeyGenerator.getInstance(ALGORITHM_AES))
                 .thenThrow(new NoSuchAlgorithmException());
 
         cryptoUtil.getAESKey();
@@ -876,7 +863,7 @@ public class CryptoUtilTest {
         PowerMockito.mockStatic(KeyPairGenerator.class);
         PowerMockito.when(KeyPairGenerator.getInstance(ALGORITHM_RSA, ANDROID_KEY_STORE)).thenReturn(keyPairGenerator);
         PowerMockito.mockStatic(KeyGenerator.class);
-        PowerMockito.when(KeyGenerator.getInstance(ALGORITHM_AES, ANDROID_KEY_STORE)).thenReturn(keyGenerator);
+        PowerMockito.when(KeyGenerator.getInstance(ALGORITHM_AES)).thenReturn(keyGenerator);
         PowerMockito.mockStatic(Cipher.class);
         PowerMockito.when(Cipher.getInstance(anyString())).then(new Answer<Cipher>() {
             @Override

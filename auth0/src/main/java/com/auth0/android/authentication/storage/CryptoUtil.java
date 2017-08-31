@@ -205,7 +205,7 @@ class CryptoUtil {
         }
         //Key doesn't exist. Generate new AES
         try {
-            KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM_AES, ANDROID_KEY_STORE);
+            KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM_AES);
             keyGen.init(AES_KEY_SIZE);
             byte[] aes = keyGen.generateKey().getEncoded();
             //Save encrypted encoded version
@@ -213,7 +213,7 @@ class CryptoUtil {
             String encodedEncryptedAESText = new String(Base64.encode(encryptedAES, Base64.DEFAULT));
             storage.store(KEY_ALIAS, encodedEncryptedAESText);
             return aes;
-        } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
+        } catch (NoSuchAlgorithmException e) {
             Log.e(TAG, "Error while creating the AES key.", e);
             throw new KeyException("Error while creating the AES key.", e);
         }
