@@ -437,7 +437,7 @@ users
 
 ## Credentials Manager
 
-This library ships with two additional classes that help you store and retrieve the `Credentials` received in authentication calls. Depending on the minimum API level that your application is targeting you'd like to use a different implementation.
+This library ships with two additional classes that help you manage the Credentials received during authentication. Depending on the minimum API level that your application is targeting you'd like to use a different implementation.
 
 ### Basic (Min API 15)
 
@@ -445,7 +445,7 @@ The basic version supports asking for `Credentials` existence, storing them and 
 
 #### Usage
 1. **Instantiate the manager:**
-You'll need an `AuthenticationAPIClient` instance used to renew the credentials when they expire and a `Storage`. The Storage implementation is up to you. We provide a `SharedPreferencesStorage` that uses `SharedPreferences` to create a file in the application's directory with **Context.MODE_PRIVATE** mode. This implementation is thread safe and can either be obtained through a Singleton method or be created every time it's needed.
+You'll need an `AuthenticationAPIClient` instance to renew the credentials when they expire and a `Storage`. We provide a `SharedPreferencesStorage` that uses `SharedPreferences` to create a file in the application's directory with **Context.MODE_PRIVATE** mode. This implementation is thread safe and can either be obtained through a shared method or on demand.
 
 ```java
 AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
@@ -507,11 +507,11 @@ manager.clearCredentials();
 
 ### Encryption enforced (Min API 21)
 
-The enhanced version contains the same methods as the _Basic_ manager but encrypts the data before storing it, and in those devices where a Secure LockScreen has been configured it can require the user authentication before letting them obtain the stored credentials. The class is called `CryptoManager`. 
-  
-  
+This version expands the minimum version and adds encryption to the data storage. In those devices where a Secure LockScreen has been configured it can require the user authentication before letting them obtain the stored credentials. The class is called `CryptoManager`.
+
+
 #### Usage
-The usage is the same as in the _Basic_ version. What changes is the way you instantiate the manager as it now requires a valid `Context`.
+The usage is similar to the previous version, with the slight difference that the manager now requires a valid `Context` as shown below:
 
 ```java
 AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
@@ -533,7 +533,7 @@ manager.requireAuthentication(this, AUTH_REQ_CODE, null, null);
 ```
 
 When the above conditions are met and the manager requires the user authentication, it will use the activity context to launch a new activity for result. The outcome of getting approved or rejected by the LockScreen is given back to the activity in the `onActivityResult` method, which your activity must override to redirect the data to the manager using the `checkAuthenticationResult` method.
-  
+
 ```java
 @Override
 protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -544,7 +544,7 @@ protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 }
 ```
 
-The `checkAuthenticationResult` method will continue the retrieval of credentials on a successful authentication, and the decrypted credentials will be delivered to the callback passed on the `getCredentials` call. 
+The `checkAuthenticationResult` method will continue the retrieval of credentials on a successful authentication, and the decrypted credentials will be delivered to the callback passed on the `getCredentials` call.
 
 
 ## FAQ
