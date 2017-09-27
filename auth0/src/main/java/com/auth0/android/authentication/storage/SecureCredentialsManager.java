@@ -18,6 +18,7 @@ import com.auth0.android.callback.AuthenticationCallback;
 import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.result.Credentials;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import static android.text.TextUtils.isEmpty;
 
@@ -206,7 +207,7 @@ public class SecureCredentialsManager {
             callback.onFailure(new CredentialsManagerException("An error occurred while decrypting the existing credentials.", e));
             return;
         }
-        Credentials credentials = gson.fromJson(json, Credentials.class);
+        final Credentials credentials = gson.fromJson(json, Credentials.class);
         if (isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken()) || credentials.getExpiresAt() == null) {
             callback.onFailure(new CredentialsManagerException("No Credentials were previously set."));
             decryptCallback = null;
@@ -226,8 +227,11 @@ public class SecureCredentialsManager {
         Log.d(TAG, "Credentials have expired. Renewing them now...");
         apiClient.renewAuth(credentials.getRefreshToken()).start(new AuthenticationCallback<Credentials>() {
             @Override
-            public void onSuccess(Credentials refreshedCredentials) {
-                callback.onSuccess(refreshedCredentials);
+            public void onSuccess(Credentials fresh) {
+                //RefreshTokens don't expire. It should remain the same
+                Credentials refreshed = new Credentials(fresh.getIdToken(), fresh.getAccessToken(), fresh.getType(), credentials.getRefreshToken(), fresh.getExpiresAt(), fresh.getScope());
+                saveCredentials(refreshed);
+                callback.onSuccess(refreshed);
                 decryptCallback = null;
             }
 

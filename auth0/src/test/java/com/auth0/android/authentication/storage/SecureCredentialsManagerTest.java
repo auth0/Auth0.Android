@@ -40,6 +40,10 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -356,13 +360,41 @@ public class SecureCredentialsManagerTest {
         verify(request).start(requestCallbackCaptor.capture());
 
         //Trigger success
-        Credentials renewedCredentials = mock(Credentials.class);
+        Date newDate = new Date(123412341234L);
+        Credentials renewedCredentials = new Credentials("newId", "newAccess", "newType", null, newDate, "newScope");
+        Credentials expectedCredentials = new Credentials("newId", "newAccess", "newType", "refreshToken", newDate, "newScope");
+        String expectedJson = gson.toJson(expectedCredentials);
+        when(crypto.encrypt(expectedJson.getBytes())).thenReturn(expectedJson.getBytes());
         requestCallbackCaptor.getValue().onSuccess(renewedCredentials);
         verify(callback).onSuccess(credentialsCaptor.capture());
+        verify(storage).store(eq("com.auth0.credentials"), stringCaptor.capture());
+        verify(storage).store("com.auth0.credentials_expires_at", newDate.getTime());
+        verify(storage).store("com.auth0.credentials_can_refresh", true);
+        verify(storage, never()).remove(anyString());
 
+        // Verify the returned credentials are the latest
         Credentials retrievedCredentials = credentialsCaptor.getValue();
         assertThat(retrievedCredentials, is(notNullValue()));
-        assertThat(retrievedCredentials, is(renewedCredentials));
+        assertThat(retrievedCredentials.getIdToken(), is("newId"));
+        assertThat(retrievedCredentials.getAccessToken(), is("newAccess"));
+        assertThat(retrievedCredentials.getType(), is("newType"));
+        assertThat(retrievedCredentials.getRefreshToken(), is("refreshToken"));
+        assertThat(retrievedCredentials.getExpiresAt(), is(newDate));
+        assertThat(retrievedCredentials.getScope(), is("newScope"));
+
+        // Verify the credentials are property stored
+        String encodedJson = stringCaptor.getValue();
+        assertThat(encodedJson, is(notNullValue()));
+        final byte[] decoded = Base64.decode(encodedJson, Base64.DEFAULT);
+        Credentials renewedStoredCredentials = gson.fromJson(new String(decoded), Credentials.class);
+        assertThat(renewedStoredCredentials.getIdToken(), is("newId"));
+        assertThat(renewedStoredCredentials.getAccessToken(), is("newAccess"));
+        assertThat(renewedStoredCredentials.getRefreshToken(), is("refreshToken"));
+        assertThat(renewedStoredCredentials.getType(), is("newType"));
+        assertThat(renewedStoredCredentials.getExpiresAt(), is(notNullValue()));
+        //Gson serializes to String dates and strips a few millis. Nothing critical..
+        assertThat(renewedStoredCredentials.getExpiresAt().toString(), is(newDate.toString()));
+        assertThat(renewedStoredCredentials.getScope(), is("newScope"));
     }
 
     @SuppressWarnings("UnnecessaryLocalVariable")
@@ -385,6 +417,11 @@ public class SecureCredentialsManagerTest {
         AuthenticationException authenticationException = mock(AuthenticationException.class);
         requestCallbackCaptor.getValue().onFailure(authenticationException);
         verify(callback).onFailure(exceptionCaptor.capture());
+        verify(storage, never()).store(anyString(), anyLong());
+        verify(storage, never()).store(anyString(), anyInt());
+        verify(storage, never()).store(anyString(), anyString());
+        verify(storage, never()).store(anyString(), anyBoolean());
+        verify(storage, never()).remove(anyString());
 
         CredentialsManagerException exception = exceptionCaptor.getValue();
         assertThat(exception, is(notNullValue()));

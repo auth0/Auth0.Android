@@ -30,10 +30,14 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -287,13 +291,32 @@ public class CredentialsManagerTest {
         verify(request).start(requestCallbackCaptor.capture());
 
         //Trigger success
-        Credentials renewedCredentials = mock(Credentials.class);
+        Date newDate = new Date();
+        String newRefresh = null;
+        Credentials renewedCredentials = new Credentials("newId", "newAccess", "newType", newRefresh, newDate, "newScope");
         requestCallbackCaptor.getValue().onSuccess(renewedCredentials);
         verify(callback).onSuccess(credentialsCaptor.capture());
 
+        // Verify the credentials are property stored
+        verify(storage).store("com.auth0.id_token", renewedCredentials.getIdToken());
+        verify(storage).store("com.auth0.access_token", renewedCredentials.getAccessToken());
+        //RefreshToken should not be replaced
+        verify(storage, never()).store("com.auth0.refresh_token", newRefresh);
+        verify(storage).store("com.auth0.refresh_token", "refreshToken");
+        verify(storage).store("com.auth0.token_type", renewedCredentials.getType());
+        verify(storage).store("com.auth0.expires_at", renewedCredentials.getExpiresAt().getTime());
+        verify(storage).store("com.auth0.scope", renewedCredentials.getScope());
+        verify(storage, never()).remove(anyString());
+
+        //// Verify the returned credentials are the latest
         Credentials retrievedCredentials = credentialsCaptor.getValue();
         assertThat(retrievedCredentials, is(notNullValue()));
-        assertThat(retrievedCredentials, is(renewedCredentials));
+        assertThat(retrievedCredentials.getIdToken(), is("newId"));
+        assertThat(retrievedCredentials.getAccessToken(), is("newAccess"));
+        assertThat(retrievedCredentials.getType(), is("newType"));
+        assertThat(retrievedCredentials.getRefreshToken(), is("refreshToken"));
+        assertThat(retrievedCredentials.getExpiresAt(), is(newDate));
+        assertThat(retrievedCredentials.getScope(), is("newScope"));
     }
 
     @SuppressWarnings("UnnecessaryLocalVariable")
@@ -309,6 +332,11 @@ public class CredentialsManagerTest {
         when(client.renewAuth("refreshToken")).thenReturn(request);
 
         manager.getCredentials(callback);
+        verify(storage, never()).store(anyString(), anyInt());
+        verify(storage, never()).store(anyString(), anyLong());
+        verify(storage, never()).store(anyString(), anyString());
+        verify(storage, never()).store(anyString(), anyBoolean());
+        verify(storage, never()).remove(anyString());
         verify(request).start(requestCallbackCaptor.capture());
 
         //Trigger failure
