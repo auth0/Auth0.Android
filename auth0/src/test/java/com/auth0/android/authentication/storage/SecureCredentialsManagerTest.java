@@ -52,7 +52,7 @@ import static org.mockito.Mockito.when;
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 @RunWith(RobolectricTestRunner.class)
 @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 21, manifest = Config.NONE)
-public class CryptoManagerTest {
+public class SecureCredentialsManagerTest {
 
     @Mock
     private AuthenticationAPIClient client;
@@ -75,7 +75,7 @@ public class CryptoManagerTest {
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
-    private CryptoManager manager;
+    private SecureCredentialsManager manager;
     private Gson gson;
 
     @Before
@@ -86,8 +86,8 @@ public class CryptoManagerTest {
         KeyguardManager kManager = mock(KeyguardManager.class);
         when(activityContext.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kManager);
 
-        CryptoManager cryptoManager = new CryptoManager(client, storage, crypto);
-        manager = spy(cryptoManager);
+        SecureCredentialsManager secureCredentialsManager = new SecureCredentialsManager(client, storage, crypto);
+        manager = spy(secureCredentialsManager);
         doReturn(CredentialsMock.CURRENT_TIME_MS).when(manager).getCurrentTimeInMillis();
         gson = new Gson();
     }
@@ -97,7 +97,7 @@ public class CryptoManagerTest {
         Context context = Robolectric.buildActivity(Activity.class).create().start().resume().get();
         AuthenticationAPIClient apiClient = new AuthenticationAPIClient(new Auth0("clientId", "domain"));
         Storage storage = new SharedPreferencesStorage(context);
-        final CryptoManager manager = new CryptoManager(context, apiClient, storage);
+        final SecureCredentialsManager manager = new SecureCredentialsManager(context, apiClient, storage);
         assertThat(manager, is(notNullValue()));
     }
 

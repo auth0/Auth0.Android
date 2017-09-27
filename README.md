@@ -507,7 +507,7 @@ manager.clearCredentials();
 
 ### Encryption enforced (Min API 21)
 
-This version expands the minimum version and adds encryption to the data storage. In those devices where a Secure LockScreen has been configured it can require the user authentication before letting them obtain the stored credentials. The class is called `CryptoManager`.
+This version expands the minimum version and adds encryption to the data storage. In those devices where a Secure LockScreen has been configured it can require the user authentication before letting them obtain the stored credentials. The class is called `SecureCredentialsManager`.
 
 
 #### Usage
@@ -516,7 +516,7 @@ The usage is similar to the previous version, with the slight difference that th
 ```java
 AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
 Storage storage = new SharedPreferencesStorage(this);
-CryptoManager manager = new CryptoManager(this, authentication, storage);
+SecureCredentialsManager manager = new SecureCredentialsManager(this, authentication, storage);
 ```
 
 #### Requiring Authentication

@@ -28,9 +28,9 @@ import static android.text.TextUtils.isEmpty;
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-public class CryptoManager {
+public class SecureCredentialsManager {
 
-    private static final String TAG = CryptoManager.class.getSimpleName();
+    private static final String TAG = SecureCredentialsManager.class.getSimpleName();
 
     private static final String KEY_CREDENTIALS = "com.auth0.credentials";
     private static final String KEY_EXPIRES_AT = "com.auth0.credentials_expires_at";
@@ -53,7 +53,7 @@ public class CryptoManager {
 
 
     @VisibleForTesting
-    CryptoManager(@NonNull AuthenticationAPIClient apiClient, @NonNull Storage storage, @NonNull CryptoUtil crypto) {
+    SecureCredentialsManager(@NonNull AuthenticationAPIClient apiClient, @NonNull Storage storage, @NonNull CryptoUtil crypto) {
         this.apiClient = apiClient;
         this.storage = storage;
         this.crypto = crypto;
@@ -62,13 +62,13 @@ public class CryptoManager {
     }
 
     /**
-     * Creates a new CryptoManager to handle Credentials
+     * Creates a new SecureCredentialsManager to handle Credentials
      *
      * @param context   a valid context
      * @param apiClient the Auth0 Authentication API Client to handle token refreshment when needed.
      * @param storage   the storage implementation to use
      */
-    public CryptoManager(@NonNull Context context, @NonNull AuthenticationAPIClient apiClient, @NonNull Storage storage) {
+    public SecureCredentialsManager(@NonNull Context context, @NonNull AuthenticationAPIClient apiClient, @NonNull Storage storage) {
         this(apiClient, storage, new CryptoUtil(context, storage, KEY_ALIAS));
     }
 
@@ -78,7 +78,7 @@ public class CryptoManager {
      * has configured a secure LockScreen (PIN, Pattern, Password or Fingerprint).
      * <p>
      * The activity passed as first argument here must override the {@link Activity#onActivityResult(int, int, Intent)} method and
-     * call {@link CryptoManager#checkAuthenticationResult(int, int)} with the received parameters.
+     * call {@link SecureCredentialsManager#checkAuthenticationResult(int, int)} with the received parameters.
      *
      * @param activity    a valid activity context. Will be used in the authentication request to launch a LockScreen intent.
      * @param requestCode the request code to use in the authentication request. Must be a value between 1 and 200.
