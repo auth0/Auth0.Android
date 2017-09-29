@@ -3,7 +3,7 @@ coverage:
   round: down
   range: "70...100"
   ignore:
-    - "com/auth0/android/authentication/storage/CryptoUtil.java"
+    - "auth0/src/main/java/com/auth0/android/authentication/storage/CryptoUtil.java"
   status:
     patch:
       default:
