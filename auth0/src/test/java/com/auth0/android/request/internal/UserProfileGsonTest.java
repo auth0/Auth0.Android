@@ -182,7 +182,7 @@ public class UserProfileGsonTest extends GsonBaseTest {
         assertThat(profile.getGivenName(), equalTo("John"));
         assertThat(profile.getFamilyName(), equalTo("Foobar"));
         assertThat(profile.isEmailVerified(), is(false));
-        assertThat(profile.getCreatedAt(), equalTo(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").parse("2014-07-06T18:33:49.005Z")));
+        assertThat(profile.getCreatedAt(), equalTo(new SimpleDateFormat(GsonProvider.DATE_FORMAT).parse("2014-07-06T18:33:49.005Z")));
     }
 
     @Test

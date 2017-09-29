@@ -64,6 +64,7 @@ public class Credentials {
     @SerializedName("scope")
     private String scope;
 
+    @SerializedName("expires_at")
     private Date expiresAt;
 
     //TODO: Deprecate this constructor

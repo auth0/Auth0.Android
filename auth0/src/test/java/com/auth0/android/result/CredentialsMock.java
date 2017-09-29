@@ -2,12 +2,14 @@ package com.auth0.android.result;
 
 import android.support.annotation.Nullable;
 
+import java.util.Calendar;
 import java.util.Date;
+import java.util.TimeZone;
 
 @SuppressWarnings("WeakerAccess")
 public class CredentialsMock extends Credentials {
 
-    public static final long CURRENT_TIME_MS = 1234567890000L;
+    public static final long CURRENT_TIME_MS = 1234567891234L;
 
     public CredentialsMock(@Nullable String idToken, @Nullable String accessToken, @Nullable String type, @Nullable String refreshToken, @Nullable Long expiresIn) {
         super(idToken, accessToken, type, refreshToken, expiresIn);
@@ -19,6 +21,9 @@ public class CredentialsMock extends Credentials {
 
     @Override
     long getCurrentTimeInMillis() {
-        return CURRENT_TIME_MS;
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeZone(TimeZone.getTimeZone("UTC"));
+        cal.setTimeInMillis(CURRENT_TIME_MS);
+        return cal.getTimeInMillis();
     }
 }

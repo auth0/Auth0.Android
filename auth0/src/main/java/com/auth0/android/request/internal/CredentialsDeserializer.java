@@ -27,12 +27,23 @@ class CredentialsDeserializer implements JsonDeserializer<Credentials> {
         final String refreshToken = context.deserialize(object.remove("refresh_token"), String.class);
         final Long expiresIn = context.deserialize(object.remove("expires_in"), Long.class);
         final String scope = context.deserialize(object.remove("scope"), String.class);
-        final Date expiresAt = expiresIn == null ? null : new Date(getCurrentTimeInMillis() + expiresIn * 1000);
-        return new Credentials(idToken, accessToken, type, refreshToken, expiresAt, scope);
+        Date expiresAt = context.deserialize(object.remove("expires_at"), Date.class);
+        if (expiresAt == null && expiresIn != null) {
+            expiresAt = new Date(getCurrentTimeInMillis() + expiresIn * 1000);
+        }
+
+        return createCredentials(idToken, accessToken, type, refreshToken, expiresAt, scope);
     }
 
     @VisibleForTesting
     long getCurrentTimeInMillis() {
         return System.currentTimeMillis();
     }
+
+    @VisibleForTesting
+    Credentials createCredentials(String idToken, String accessToken, String type, String refreshToken, Date expiresAt, String scope) {
+        return new Credentials(idToken, accessToken, type, refreshToken, expiresAt, scope);
+    }
 }
+
+

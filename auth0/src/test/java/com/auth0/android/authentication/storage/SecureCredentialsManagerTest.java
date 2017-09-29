@@ -13,6 +13,7 @@ import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.request.ParameterizableRequest;
+import com.auth0.android.request.internal.GsonProvider;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.CredentialsMock;
 import com.google.gson.Gson;
@@ -93,7 +94,7 @@ public class SecureCredentialsManagerTest {
         SecureCredentialsManager secureCredentialsManager = new SecureCredentialsManager(client, storage, crypto);
         manager = spy(secureCredentialsManager);
         doReturn(CredentialsMock.CURRENT_TIME_MS).when(manager).getCurrentTimeInMillis();
-        gson = new Gson();
+        gson = GsonProvider.buildGson();
     }
 
     @Test
@@ -392,8 +393,7 @@ public class SecureCredentialsManagerTest {
         assertThat(renewedStoredCredentials.getRefreshToken(), is("refreshToken"));
         assertThat(renewedStoredCredentials.getType(), is("newType"));
         assertThat(renewedStoredCredentials.getExpiresAt(), is(notNullValue()));
-        //Gson serializes to String dates and strips a few millis. Nothing critical..
-        assertThat(renewedStoredCredentials.getExpiresAt().toString(), is(newDate.toString()));
+        assertThat(renewedStoredCredentials.getExpiresAt().getTime(), is(newDate.getTime()));
         assertThat(renewedStoredCredentials.getScope(), is("newScope"));
     }
 
@@ -581,7 +581,7 @@ public class SecureCredentialsManagerTest {
         when(kService.isKeyguardSecure()).thenReturn(true);
         Intent confirmCredentialsIntent = mock(Intent.class);
         when(kService.createConfirmDeviceCredentialIntent("theTitle", "theDescription")).thenReturn(confirmCredentialsIntent);
-        boolean willRequireAuthentication = manager.requireAuthentication(activity, 123, "theTitle","theDescription");
+        boolean willRequireAuthentication = manager.requireAuthentication(activity, 123, "theTitle", "theDescription");
         assertThat(willRequireAuthentication, is(true));
 
         manager.getCredentials(callback);
@@ -625,7 +625,7 @@ public class SecureCredentialsManagerTest {
         when(kService.isKeyguardSecure()).thenReturn(true);
         Intent confirmCredentialsIntent = mock(Intent.class);
         when(kService.createConfirmDeviceCredentialIntent("theTitle", "theDescription")).thenReturn(confirmCredentialsIntent);
-        boolean willRequireAuthentication = manager.requireAuthentication(activity, 123, "theTitle","theDescription");
+        boolean willRequireAuthentication = manager.requireAuthentication(activity, 123, "theTitle", "theDescription");
         assertThat(willRequireAuthentication, is(true));
 
         manager.getCredentials(callback);

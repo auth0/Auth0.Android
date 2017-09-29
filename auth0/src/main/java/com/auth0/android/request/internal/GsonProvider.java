@@ -8,12 +8,14 @@ import com.google.gson.GsonBuilder;
 
 public abstract class GsonProvider {
 
+    static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
+
     public static Gson buildGson() {
         return new GsonBuilder()
                 .registerTypeAdapterFactory(new JsonRequiredTypeAdapterFactory())
                 .registerTypeAdapter(UserProfile.class, new UserProfileDeserializer())
                 .registerTypeAdapter(Credentials.class, new CredentialsDeserializer())
-                .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                .setDateFormat(DATE_FORMAT)
                 .create();
     }
 }

@@ -16,6 +16,7 @@ import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.AuthenticationCallback;
 import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.request.internal.GsonProvider;
 import com.auth0.android.result.Credentials;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -58,7 +59,7 @@ public class SecureCredentialsManager {
         this.apiClient = apiClient;
         this.storage = storage;
         this.crypto = crypto;
-        this.gson = new Gson();
+        this.gson = GsonProvider.buildGson();
         this.authenticateBeforeDecrypt = false;
     }
 
