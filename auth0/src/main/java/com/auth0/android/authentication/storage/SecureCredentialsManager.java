@@ -19,7 +19,6 @@ import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.request.internal.GsonProvider;
 import com.auth0.android.result.Credentials;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 import static android.text.TextUtils.isEmpty;
 
@@ -94,8 +93,9 @@ public class SecureCredentialsManager {
         }
         KeyguardManager kManager = (KeyguardManager) activity.getSystemService(Context.KEYGUARD_SERVICE);
         this.authIntent = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ? kManager.createConfirmDeviceCredentialIntent(title, description) : null;
-        this.authenticateBeforeDecrypt = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && kManager.isDeviceSecure()
-                || Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && kManager.isKeyguardSecure()) && authIntent != null;
+        this.authenticateBeforeDecrypt = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && kManager.isDeviceSecure())
+                || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && kManager.isKeyguardSecure()))
+                && authIntent != null;
         if (authenticateBeforeDecrypt) {
             this.activity = activity;
             this.authenticationRequestCode = requestCode;

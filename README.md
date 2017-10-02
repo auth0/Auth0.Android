@@ -441,11 +441,11 @@ This library ships with two additional classes that help you manage the Credenti
 
 ### Basic (Min API 15)
 
-The basic version supports asking for `Credentials` existence, storing them and getting them back. If the credentials have expired and a refresh_token was saved, they are automatically refreshed. The class is called `CredentialsManager`.
+The basic version supports asking for `Credentials` existence, storing them and getting them back. If the credentials have expired and a refresh_token was saved, they are automatically refreshed. The class is called `CredentialsManager` and requires at minimum Android API 15.
 
 #### Usage
 1. **Instantiate the manager:**
-You'll need an `AuthenticationAPIClient` instance to renew the credentials when they expire and a `Storage`. We provide a `SharedPreferencesStorage` that uses `SharedPreferences` to create a file in the application's directory with **Context.MODE_PRIVATE** mode. This implementation is thread safe and can either be obtained through a shared method or on demand.
+You'll need an `AuthenticationAPIClient` instance to renew the credentials when they expire and a `Storage` object. We provide a `SharedPreferencesStorage` class that makes use of `SharedPreferences` to create a file in the application's directory with **Context.MODE_PRIVATE** mode. This implementation is thread safe and can either be obtained through a shared method or on demand.
 
 ```java
 AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
@@ -507,7 +507,7 @@ manager.clearCredentials();
 
 ### Encryption enforced (Min API 21)
 
-This version expands the minimum version and adds encryption to the data storage. In those devices where a Secure LockScreen has been configured it can require the user authentication before letting them obtain the stored credentials. The class is called `SecureCredentialsManager`.
+This version expands the minimum version and adds encryption to the data storage. In those devices where a Secure LockScreen has been configured it can require the user authentication before letting them obtain the stored credentials. The class is called `SecureCredentialsManager` and requires at minimum Android API 21.
 
 
 #### Usage
