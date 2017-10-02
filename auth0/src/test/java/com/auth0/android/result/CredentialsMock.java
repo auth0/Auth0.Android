@@ -9,7 +9,7 @@ import java.util.TimeZone;
 @SuppressWarnings("WeakerAccess")
 public class CredentialsMock extends Credentials {
 
-    public static final long CURRENT_TIME_MS = 1234567891234L;
+    public static final long CURRENT_TIME_MS = calculateCurrentTime();
 
     public CredentialsMock(@Nullable String idToken, @Nullable String accessToken, @Nullable String type, @Nullable String refreshToken, @Nullable Long expiresIn) {
         super(idToken, accessToken, type, refreshToken, expiresIn);
@@ -21,9 +21,12 @@ public class CredentialsMock extends Credentials {
 
     @Override
     long getCurrentTimeInMillis() {
+        return CURRENT_TIME_MS;
+    }
+
+    private static long calculateCurrentTime() {
         Calendar cal = Calendar.getInstance();
         cal.setTimeZone(TimeZone.getTimeZone("UTC"));
-        cal.setTimeInMillis(CURRENT_TIME_MS);
         return cal.getTimeInMillis();
     }
 }
