@@ -23,6 +23,7 @@ import org.robolectric.util.ActivityController;
 import static android.support.test.espresso.intent.matcher.IntentMatchers.hasComponent;
 import static android.support.test.espresso.intent.matcher.IntentMatchers.hasData;
 import static android.support.test.espresso.intent.matcher.IntentMatchers.hasFlag;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.notNullValue;
@@ -144,9 +145,6 @@ public class AuthenticationActivityTest {
         activityController.pause().stop();
         //Browser is shown
 
-        Intent authenticationResultIntent = new Intent();
-        authenticationResultIntent.setData(null);
-        activityController.newIntent(authenticationResultIntent);
         activityController.start().resume();
 
         assertThat(activity.getDeliveredIntent(), is(nullValue()));
@@ -254,9 +252,7 @@ public class AuthenticationActivityTest {
         activityController.pause().stop();
         //WebViewActivity is shown
 
-        Intent authenticationResultIntent = new Intent();
-        authenticationResultIntent.setData(resultUri);
-        activityShadow.receiveResult(webViewIntent.intent, Activity.RESULT_CANCELED, authenticationResultIntent);
+        activityShadow.receiveResult(webViewIntent.intent, Activity.RESULT_CANCELED, null);
 
         assertThat(activity.getDeliveredIntent(), is(nullValue()));
         assertThat(activity.isFinishing(), is(true));
@@ -274,9 +270,10 @@ public class AuthenticationActivityTest {
         Assert.assertThat(intent, is(notNullValue()));
         Assert.assertThat(intent, hasComponent(AuthenticationActivity.class.getName()));
         Assert.assertThat(intent, hasFlag(Intent.FLAG_ACTIVITY_CLEAR_TOP));
-        Assert.assertThat(intent, hasData(uri));
+        Assert.assertThat(intent, not(hasData(uri)));
 
         Bundle extras = intent.getExtras();
+        Assert.assertThat((Uri) extras.getParcelable(AuthenticationActivity.EXTRA_AUTHORIZE_URI), is(uri));
         Assert.assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(false));
         Assert.assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(false));
         Assert.assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
@@ -293,9 +290,10 @@ public class AuthenticationActivityTest {
         Assert.assertThat(intent, is(notNullValue()));
         Assert.assertThat(intent, hasComponent(AuthenticationActivity.class.getName()));
         Assert.assertThat(intent, hasFlag(Intent.FLAG_ACTIVITY_CLEAR_TOP));
-        Assert.assertThat(intent, hasData(uri));
+        Assert.assertThat(intent, not(hasData(uri)));
 
         Bundle extras = intentCaptor.getValue().getExtras();
+        Assert.assertThat((Uri) extras.getParcelable(AuthenticationActivity.EXTRA_AUTHORIZE_URI), is(uri));
         Assert.assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(true));
         Assert.assertThat(extras.getString(AuthenticationActivity.EXTRA_CONNECTION_NAME), is("facebook"));
         Assert.assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(true));

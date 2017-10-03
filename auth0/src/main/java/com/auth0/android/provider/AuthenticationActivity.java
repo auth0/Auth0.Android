@@ -14,6 +14,7 @@ public class AuthenticationActivity extends Activity {
     static final String EXTRA_USE_BROWSER = "com.auth0.android.EXTRA_USE_BROWSER";
     static final String EXTRA_USE_FULL_SCREEN = "com.auth0.android.EXTRA_USE_FULL_SCREEN";
     static final String EXTRA_CONNECTION_NAME = "com.auth0.android.EXTRA_CONNECTION_NAME";
+    static final String EXTRA_AUTHORIZE_URI = "com.auth0.android.EXTRA_AUTHORIZE_URI";
     private static final String EXTRA_INTENT_LAUNCHED = "com.auth0.android.EXTRA_INTENT_LAUNCHED";
 
     private boolean intentLaunched;
@@ -21,7 +22,7 @@ public class AuthenticationActivity extends Activity {
 
     static void authenticateUsingBrowser(Context context, Uri authorizeUri) {
         Intent intent = new Intent(context, AuthenticationActivity.class);
-        intent.setData(authorizeUri);
+        intent.putExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI, authorizeUri);
         intent.putExtra(AuthenticationActivity.EXTRA_USE_BROWSER, true);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         context.startActivity(intent);
@@ -29,7 +30,7 @@ public class AuthenticationActivity extends Activity {
 
     static void authenticateUsingWebView(Activity activity, Uri authorizeUri, int requestCode, String connection, boolean useFullScreen) {
         Intent intent = new Intent(activity, AuthenticationActivity.class);
-        intent.setData(authorizeUri);
+        intent.putExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI, authorizeUri);
         intent.putExtra(AuthenticationActivity.EXTRA_USE_BROWSER, false);
         intent.putExtra(AuthenticationActivity.EXTRA_USE_FULL_SCREEN, useFullScreen);
         intent.putExtra(AuthenticationActivity.EXTRA_CONNECTION_NAME, connection);
@@ -77,6 +78,7 @@ public class AuthenticationActivity extends Activity {
         if (getIntent().getData() != null) {
             deliverSuccessfulAuthenticationResult(getIntent());
         }
+        setResult(RESULT_CANCELED);
         finish();
     }
 
@@ -91,7 +93,7 @@ public class AuthenticationActivity extends Activity {
 
     private void launchAuthenticationIntent() {
         Bundle extras = getIntent().getExtras();
-        final Uri authorizeUri = getIntent().getData();
+        Uri authorizeUri = extras.getParcelable(EXTRA_AUTHORIZE_URI);
         if (!extras.getBoolean(EXTRA_USE_BROWSER, true)) {
             Intent intent = new Intent(this, WebAuthActivity.class);
             intent.setData(authorizeUri);
