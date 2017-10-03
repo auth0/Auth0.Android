@@ -50,6 +50,7 @@ import static com.auth0.android.provider.OAuthManager.RESPONSE_TYPE_ID_TOKEN;
  * It can use an external browser by sending the {@link android.content.Intent#ACTION_VIEW} intent or also the {@link WebAuthActivity}.
  * This behaviour is changed using {@link WebAuthProvider.Builder#useBrowser(boolean)}, and defaults to use browser.
  */
+@SuppressWarnings("WeakerAccess")
 public class WebAuthProvider {
 
     private static final String TAG = WebAuthProvider.class.getName();
