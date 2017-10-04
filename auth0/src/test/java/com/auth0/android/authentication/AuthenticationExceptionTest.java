@@ -204,6 +204,14 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
+    public void shouldHaveOIDCInvalidCredentials() throws Exception {
+        values.put(CODE_KEY, "invalid_grant");
+        values.put(ERROR_DESCRIPTION_KEY, "Wrong email or password.");
+        AuthenticationException ex = new AuthenticationException(values);
+        assertThat(ex.isInvalidCredentials(), is(true));
+    }
+
+    @Test
     public void shouldHaveAccessDenied() throws Exception {
         values.put(CODE_KEY, "access_denied");
         AuthenticationException ex = new AuthenticationException(values);
