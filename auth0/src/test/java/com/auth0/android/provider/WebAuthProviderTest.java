@@ -139,7 +139,7 @@ public class WebAuthProviderTest {
         WebAuthProvider.init(account)
                 .start(activity, callback);
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithName("redirect_uri"));
@@ -154,7 +154,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithName("redirect_uri"));
@@ -170,7 +170,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, not(hasParamWithName("connection")));
@@ -185,7 +185,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("connection", "my-connection"));
@@ -200,7 +200,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("connection", "some-connection"));
@@ -214,7 +214,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("connection", "my-connection"));
@@ -227,7 +227,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("connection", "some-connection"));
@@ -241,7 +241,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, not(hasParamWithName("audience")));
@@ -256,7 +256,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("audience", "https://mydomain.auth0.com/myapi"));
@@ -271,7 +271,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("audience", "https://google.com/apis"));
@@ -285,7 +285,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("audience", "https://mydomain.auth0.com/myapi"));
@@ -298,7 +298,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("audience", "https://google.com/apis"));
@@ -313,7 +313,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("scope", "openid"));
@@ -328,7 +328,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("scope", "openid email contacts"));
@@ -343,7 +343,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("scope", "profile super_scope"));
@@ -357,7 +357,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("scope", "openid email contacts"));
@@ -370,7 +370,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("scope", "profile super_scope"));
@@ -385,7 +385,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, not(hasParamWithName("connection_scope")));
@@ -400,7 +400,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("connection_scope", "openid email contacts"));
@@ -415,7 +415,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("connection_scope", "profile super_scope"));
@@ -429,7 +429,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("connection_scope", "openid email contacts"));
@@ -442,7 +442,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("connection_scope", "the scope of my connection"));
@@ -457,7 +457,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue(is("state"), not(isEmptyOrNullString())));
@@ -470,7 +470,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue(is("state"), not(isEmptyOrNullString())));
@@ -485,7 +485,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("state", "1234567890"));
@@ -500,7 +500,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("state", "abcdefg"));
@@ -514,7 +514,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("state", "1234567890"));
@@ -527,7 +527,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("state", "abcdefg"));
@@ -542,7 +542,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, not(hasParamWithName("nonce")));
@@ -555,7 +555,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, not(hasParamWithName("nonce")));
@@ -568,7 +568,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue(is("nonce"), not(isEmptyOrNullString())));
@@ -582,7 +582,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue(is("nonce"), not(isEmptyOrNullString())));
@@ -596,7 +596,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("nonce", "1234567890"));
@@ -610,7 +610,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("nonce", "1234567890"));
@@ -626,7 +626,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("nonce", "1234567890"));
@@ -642,7 +642,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("nonce", "abcdefg"));
@@ -657,7 +657,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("nonce", "1234567890"));
@@ -671,7 +671,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("nonce", "abcdefg"));
@@ -709,7 +709,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("client_id", "clientId"));
@@ -721,7 +721,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue(is("auth0Client"), not(isEmptyOrNullString())));
@@ -733,7 +733,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("redirect_uri", "https://domain/android/com.auth0.android.auth0/callback"));
@@ -747,7 +747,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("response_type", "code"));
@@ -760,7 +760,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("response_type", "token"));
@@ -773,7 +773,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("response_type", "id_token"));
@@ -786,7 +786,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("response_type", "code"));
@@ -799,7 +799,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("response_type", "code token"));
@@ -812,7 +812,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("response_type", "code id_token"));
@@ -825,7 +825,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("response_type", "id_token token"));
@@ -838,7 +838,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("response_type", "code id_token token"));
@@ -854,7 +854,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("a", "valid"));
@@ -867,7 +867,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         Set<String> params = uri.getQueryParameterNames();
@@ -887,7 +887,7 @@ public class WebAuthProviderTest {
 
         Uri baseUriString = Uri.parse(account.getAuthorizeUrl());
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasScheme(baseUriString.getScheme()));
@@ -904,7 +904,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, hasParamWithValue("nonce", "a-nonce"));
@@ -921,7 +921,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, not(hasParamWithName("nonce")));
@@ -938,7 +938,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri, not(hasParamWithName("nonce")));
@@ -961,9 +961,10 @@ public class WebAuthProviderTest {
         assertThat(intent, is(notNullValue()));
         assertThat(intent, hasComponent(AuthenticationActivity.class.getName()));
         assertThat(intent, hasFlag(Intent.FLAG_ACTIVITY_CLEAR_TOP));
-        assertThat(intent.getData(), is(notNullValue()));
+        assertThat(intent.getData(), is(nullValue()));
 
         Bundle extras = intentCaptor.getValue().getExtras();
+        assertThat(extras.getParcelable(AuthenticationActivity.EXTRA_AUTHORIZE_URI), is(notNullValue()));
         assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(false));
         assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(false));
         assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
@@ -985,9 +986,10 @@ public class WebAuthProviderTest {
         assertThat(intent, is(notNullValue()));
         assertThat(intent, hasComponent(AuthenticationActivity.class.getName()));
         assertThat(intent, hasFlag(Intent.FLAG_ACTIVITY_CLEAR_TOP));
-        assertThat(intent.getData(), is(notNullValue()));
+        assertThat(intent.getData(), is(nullValue()));
 
         Bundle extras = intentCaptor.getValue().getExtras();
+        assertThat(extras.getParcelable(AuthenticationActivity.EXTRA_AUTHORIZE_URI), is(notNullValue()));
         assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(true));
         assertThat(extras.getString(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(nullValue()));
         assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(true));
@@ -1012,9 +1014,10 @@ public class WebAuthProviderTest {
         assertThat(intent, is(notNullValue()));
         assertThat(intent, hasComponent(AuthenticationActivity.class.getName()));
         assertThat(intent, hasFlag(Intent.FLAG_ACTIVITY_CLEAR_TOP));
-        assertThat(intent.getData(), is(notNullValue()));
+        assertThat(intent.getData(), is(nullValue()));
 
         Bundle extras = intent.getExtras();
+        assertThat(extras.getParcelable(AuthenticationActivity.EXTRA_AUTHORIZE_URI), is(notNullValue()));
         assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(true));
         assertThat(extras.getString(AuthenticationActivity.EXTRA_CONNECTION_NAME), is("my-connection"));
         assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(true));
@@ -1050,7 +1053,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback, REQUEST_CODE);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         String sentState = uri.getQueryParameter(KEY_STATE);
@@ -1070,7 +1073,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         String sentState = uri.getQueryParameter(KEY_STATE);
@@ -1125,7 +1128,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         String sentState = uri.getQueryParameter(KEY_STATE);
@@ -1164,7 +1167,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback, REQUEST_CODE);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         String sentState = uri.getQueryParameter(KEY_STATE);
@@ -1192,7 +1195,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         String sentState = uri.getQueryParameter(KEY_STATE);
@@ -1219,7 +1222,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback, REQUEST_CODE);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         String sentState = uri.getQueryParameter(KEY_STATE);
@@ -1246,7 +1249,7 @@ public class WebAuthProviderTest {
         WebAuthProvider.getInstance().setCurrentTimeInMillis(CURRENT_TIME_MS);
 
         verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getData();
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
         String sentState = uri.getQueryParameter(KEY_STATE);
