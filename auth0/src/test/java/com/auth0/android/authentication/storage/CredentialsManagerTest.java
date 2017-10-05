@@ -386,4 +386,18 @@ public class CredentialsManagerTest {
 
         assertFalse(manager.hasValidCredentials());
     }
+
+    @Test
+    public void shouldRecreateTheCredentials() throws Exception {
+        CredentialsManager credentialsManager = new CredentialsManager(client, storage);
+        Date now = new Date();
+        final Credentials credentials = credentialsManager.recreateCredentials("idTOKEN", "accessTOKEN", "tokenTYPE", "refreshTOKEN", now, "openid profile");
+        assertThat(credentials, is(notNullValue()));
+        assertThat(credentials.getIdToken(), is("idTOKEN"));
+        assertThat(credentials.getAccessToken(), is("accessTOKEN"));
+        assertThat(credentials.getType(), is("tokenTYPE"));
+        assertThat(credentials.getRefreshToken(), is("refreshTOKEN"));
+        assertThat(credentials.getExpiresAt(), is(now));
+        assertThat(credentials.getScope(), is("openid profile"));
+    }
 }

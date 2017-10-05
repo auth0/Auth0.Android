@@ -35,6 +35,14 @@ public interface Storage {
     void store(@NonNull String name, @Nullable String value);
 
     /**
+     * Store a given value in the Storage.
+     *
+     * @param name  the name of the value to store.
+     * @param value the value to store. Can be null.
+     */
+    void store(@NonNull String name, @Nullable Boolean value);
+
+    /**
      * Retrieve a value from the Storage.
      *
      * @param name the name of the value to retrieve.
@@ -60,6 +68,15 @@ public interface Storage {
      */
     @Nullable
     Integer retrieveInteger(@NonNull String name);
+
+    /**
+     * Retrieve a value from the Storage.
+     *
+     * @param name the name of the value to retrieve.
+     * @return the value that was previously saved. Can be null.
+     */
+    @Nullable
+    Boolean retrieveBoolean(@NonNull String name);
 
     /**
      * Removes a value from the storage.

@@ -92,6 +92,28 @@ public class Auth0Test {
     }
 
     @Test
+    public void shouldHaveLoggingEnabled() throws Exception {
+        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
+        auth0.setLoggingEnabled(true);
+
+        assertThat(auth0.isLoggingEnabled(), is(true));
+    }
+
+    @Test
+    public void shouldNotHaveLoggingEnabled() throws Exception {
+        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
+        auth0.setLoggingEnabled(false);
+
+        assertThat(auth0.isLoggingEnabled(), is(false));
+    }
+
+    @Test
+    public void shouldNotHaveLoggingEnabledByDefault() throws Exception {
+        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
+        assertThat(auth0.isLoggingEnabled(), is(false));
+    }
+
+    @Test
     public void shouldBuildFromResources() throws Exception {
         Resources resources = Mockito.mock(Resources.class);
         when(context.getResources()).thenReturn(resources);

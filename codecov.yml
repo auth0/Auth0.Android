@@ -3,14 +3,22 @@ coverage:
   round: down
   range: "70...100"
   ignore:
-    - Auth0Tests/*
+    - "auth0/src/main/java/com/auth0/android/authentication/storage/CryptoUtil.java"
   status:
-    patch:
-      default:
-        if_no_uploads: error
-    changes: true
     project:
       default:
+        enabled: true
         target: auto
+        threshold: 1%
+        if_no_uploads: error
+    patch:
+      default:
+        enabled: true
+        target: 80%
+        threshold: 10%
+        if_no_uploads: error
+    changes:
+      default:
+        enabled: true
         if_no_uploads: error
 comment: false
