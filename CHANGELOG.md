@@ -1,5 +1,13 @@
 # Change Log
 
+## [1.10.1](https://github.com/auth0/Auth0.Android/tree/1.10.1) (2017-10-05)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.10.0...1.10.1)
+
+**Fixed**
+- Make CCT stay alive when activity is paused [\#121](https://github.com/auth0/Auth0.Android/pull/121) ([lbalmaceda](https://github.com/lbalmaceda))
+- Fix bug when canceling WebAuth flow [\#120](https://github.com/auth0/Auth0.Android/pull/120) ([lbalmaceda](https://github.com/lbalmaceda))
+- Capture invalid_credentials error for OIDC endpoints [\#114](https://github.com/auth0/Auth0.Android/pull/114) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.10.0](https://github.com/auth0/Auth0.Android/tree/1.10.0) (2017-07-19)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.9.0...1.10.0)
 
