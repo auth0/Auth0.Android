@@ -126,7 +126,6 @@ class CustomTabsController extends CustomTabsServiceConnection {
                 final Intent intent = new CustomTabsIntent.Builder(session.get())
                         .build()
                         .intent;
-                intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
                 intent.setData(uri);
                 try {
                     context.startActivity(intent);

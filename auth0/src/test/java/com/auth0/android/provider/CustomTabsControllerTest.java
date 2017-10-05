@@ -32,7 +32,9 @@ import org.robolectric.annotation.Config;
 import java.util.ArrayList;
 import java.util.List;
 
+import static android.support.test.espresso.intent.matcher.IntentMatchers.hasFlag;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -162,7 +164,7 @@ public class CustomTabsControllerTest {
         assertThat(intent.getAction(), is(Intent.ACTION_VIEW));
         assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_SESSION), is(true));
         assertThat(intent.getData(), is(uri));
-        assertThat(intent.getFlags() & Intent.FLAG_ACTIVITY_NO_HISTORY, is(Intent.FLAG_ACTIVITY_NO_HISTORY));
+        assertThat(intent, not(hasFlag(Intent.FLAG_ACTIVITY_NO_HISTORY)));
     }
 
     @Test
@@ -174,7 +176,8 @@ public class CustomTabsControllerTest {
         Intent intent = launchIntentCaptor.getValue();
         assertThat(intent.getAction(), is(Intent.ACTION_VIEW));
         assertThat(intent.getData(), is(uri));
-        assertThat(intent.getFlags() & Intent.FLAG_ACTIVITY_NO_HISTORY, is(Intent.FLAG_ACTIVITY_NO_HISTORY));
+        assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_SESSION), is(true));
+        assertThat(intent, not(hasFlag(Intent.FLAG_ACTIVITY_NO_HISTORY)));
     }
 
     @Test
@@ -198,13 +201,13 @@ public class CustomTabsControllerTest {
         Intent customTabIntent = intents.get(0);
         assertThat(customTabIntent.getAction(), is(Intent.ACTION_VIEW));
         assertThat(customTabIntent.getData(), is(uri));
-        assertThat(customTabIntent.getFlags() & Intent.FLAG_ACTIVITY_NO_HISTORY, is(Intent.FLAG_ACTIVITY_NO_HISTORY));
+        assertThat(customTabIntent, not(hasFlag(Intent.FLAG_ACTIVITY_NO_HISTORY)));
         assertThat(customTabIntent.hasExtra(CustomTabsIntent.EXTRA_SESSION), is(true));
 
         Intent fallbackIntent = intents.get(1);
         assertThat(fallbackIntent.getAction(), is(Intent.ACTION_VIEW));
         assertThat(fallbackIntent.getData(), is(uri));
-        assertThat(fallbackIntent.getFlags() & Intent.FLAG_ACTIVITY_NO_HISTORY, is(Intent.FLAG_ACTIVITY_NO_HISTORY));
+        assertThat(fallbackIntent, hasFlag(Intent.FLAG_ACTIVITY_NO_HISTORY));
         assertThat(fallbackIntent.hasExtra(CustomTabsIntent.EXTRA_SESSION), is(false));
     }
 
