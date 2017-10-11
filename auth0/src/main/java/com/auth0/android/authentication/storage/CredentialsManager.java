@@ -65,7 +65,7 @@ public class CredentialsManager {
      */
     public void getCredentials(@NonNull final BaseCallback<Credentials, CredentialsManagerException> callback) {
         String accessToken = storage.retrieveString(KEY_ACCESS_TOKEN);
-        String refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN);
+        final String refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN);
         String idToken = storage.retrieveString(KEY_ID_TOKEN);
         String tokenType = storage.retrieveString(KEY_TOKEN_TYPE);
         Long expiresAt = storage.retrieveLong(KEY_EXPIRES_AT);
@@ -86,8 +86,11 @@ public class CredentialsManager {
 
         authClient.renewAuth(refreshToken).start(new AuthenticationCallback<Credentials>() {
             @Override
-            public void onSuccess(Credentials freshCredentials) {
-                callback.onSuccess(freshCredentials);
+            public void onSuccess(Credentials fresh) {
+                //RefreshTokens don't expire. It should remain the same
+                Credentials credentials = new Credentials(fresh.getIdToken(), fresh.getAccessToken(), fresh.getType(), refreshToken, fresh.getExpiresAt(), fresh.getScope());
+                saveCredentials(credentials);
+                callback.onSuccess(credentials);
             }
 
             @Override

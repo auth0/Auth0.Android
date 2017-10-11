@@ -16,6 +16,7 @@ import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.AuthenticationCallback;
 import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.request.internal.GsonProvider;
 import com.auth0.android.result.Credentials;
 import com.google.gson.Gson;
 
@@ -57,7 +58,7 @@ public class SecureCredentialsManager {
         this.apiClient = apiClient;
         this.storage = storage;
         this.crypto = crypto;
-        this.gson = new Gson();
+        this.gson = GsonProvider.buildGson();
         this.authenticateBeforeDecrypt = false;
     }
 
@@ -92,8 +93,9 @@ public class SecureCredentialsManager {
         }
         KeyguardManager kManager = (KeyguardManager) activity.getSystemService(Context.KEYGUARD_SERVICE);
         this.authIntent = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ? kManager.createConfirmDeviceCredentialIntent(title, description) : null;
-        this.authenticateBeforeDecrypt = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && kManager.isDeviceSecure()
-                || Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && kManager.isKeyguardSecure()) && authIntent != null;
+        this.authenticateBeforeDecrypt = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && kManager.isDeviceSecure())
+                || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && kManager.isKeyguardSecure()))
+                && authIntent != null;
         if (authenticateBeforeDecrypt) {
             this.activity = activity;
             this.authenticationRequestCode = requestCode;
@@ -206,7 +208,7 @@ public class SecureCredentialsManager {
             callback.onFailure(new CredentialsManagerException("An error occurred while decrypting the existing credentials.", e));
             return;
         }
-        Credentials credentials = gson.fromJson(json, Credentials.class);
+        final Credentials credentials = gson.fromJson(json, Credentials.class);
         if (isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken()) || credentials.getExpiresAt() == null) {
             callback.onFailure(new CredentialsManagerException("No Credentials were previously set."));
             decryptCallback = null;
@@ -226,8 +228,11 @@ public class SecureCredentialsManager {
         Log.d(TAG, "Credentials have expired. Renewing them now...");
         apiClient.renewAuth(credentials.getRefreshToken()).start(new AuthenticationCallback<Credentials>() {
             @Override
-            public void onSuccess(Credentials refreshedCredentials) {
-                callback.onSuccess(refreshedCredentials);
+            public void onSuccess(Credentials fresh) {
+                //RefreshTokens don't expire. It should remain the same
+                Credentials refreshed = new Credentials(fresh.getIdToken(), fresh.getAccessToken(), fresh.getType(), credentials.getRefreshToken(), fresh.getExpiresAt(), fresh.getScope());
+                saveCredentials(refreshed);
+                callback.onSuccess(refreshed);
                 decryptCallback = null;
             }
 
