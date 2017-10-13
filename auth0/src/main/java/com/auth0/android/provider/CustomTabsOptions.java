@@ -74,6 +74,7 @@ public class CustomTabsOptions implements Parcelable {
     };
 
 
+    @SuppressWarnings("WeakerAccess")
     public static class Builder {
         @ColorRes
         private int toolbarColor;
