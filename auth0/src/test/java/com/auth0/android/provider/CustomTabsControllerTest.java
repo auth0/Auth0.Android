@@ -1,5 +1,6 @@
 package com.auth0.android.provider;
 
+import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
@@ -7,6 +8,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.graphics.Color;
 import android.net.Uri;
 import android.support.customtabs.CustomTabsCallback;
 import android.support.customtabs.CustomTabsClient;
@@ -26,6 +28,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.internal.verification.VerificationModeFactory;
 import org.mockito.verification.Timeout;
+import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
@@ -37,7 +40,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
@@ -45,6 +47,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -62,7 +65,6 @@ public class CustomTabsControllerTest {
     private static final String CUSTOM_TABS_BROWSER_2 = "com.browser.customtabs2";
     private static final long MAX_TEST_WAIT_TIME_MS = 2000;
 
-    @Mock
     private Context context;
     @Mock
     private Uri uri;
@@ -83,7 +85,23 @@ public class CustomTabsControllerTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
+        Activity activity = Robolectric.setupActivity(Activity.class);
+        context = spy(activity);
         controller = new CustomTabsController(context, DEFAULT_BROWSER_PACKAGE);
+    }
+
+    @Test
+    public void shouldNotHaveCustomizationOptionsSetByDefault() throws Exception {
+        controller = new CustomTabsController(context, DEFAULT_BROWSER_PACKAGE);
+        assertThat(controller.getCustomizationOptions(), is(nullValue()));
+    }
+
+    @Test
+    public void shouldChangeCustomizationOptions() throws Exception {
+        CustomTabsOptions options = mock(CustomTabsOptions.class);
+        controller = new CustomTabsController(context, DEFAULT_BROWSER_PACKAGE);
+        controller.setCustomizationOptions(options);
+        assertThat(controller.getCustomizationOptions(), is(options));
     }
 
     @Test
@@ -164,8 +182,33 @@ public class CustomTabsControllerTest {
         Intent intent = launchIntentCaptor.getValue();
         assertThat(intent.getAction(), is(Intent.ACTION_VIEW));
         assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_SESSION), is(true));
+        assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR), is(false));
         assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE), is(true));
-        assertThat(intent.getIntExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE, CustomTabsIntent.NO_TITLE), is(not(CustomTabsIntent.NO_TITLE)));
+        assertThat(intent.getIntExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE, CustomTabsIntent.NO_TITLE), is(CustomTabsIntent.NO_TITLE));
+        assertThat(intent.getData(), is(uri));
+        assertThat(intent, not(hasFlag(Intent.FLAG_ACTIVITY_NO_HISTORY)));
+    }
+
+    @Test
+    public void shouldBindAndLaunchUriWithCustomization() throws Exception {
+        CustomTabsOptions options = CustomTabsOptions.newBuilder()
+                .showTitle(true)
+                .withToolbarColor(android.R.color.black)
+                .build();
+
+        bindService(true);
+        controller.setCustomizationOptions(options);
+        controller.launchUri(uri);
+        connectBoundService();
+
+        verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
+        Intent intent = launchIntentCaptor.getValue();
+        assertThat(intent.getAction(), is(Intent.ACTION_VIEW));
+        assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_SESSION), is(true));
+        assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE), is(true));
+        assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR), is(true));
+        assertThat(intent.getIntExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE, CustomTabsIntent.NO_TITLE), is(CustomTabsIntent.SHOW_PAGE_TITLE));
+        assertThat(intent.getIntExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR, 0), is(Color.BLACK));
         assertThat(intent.getData(), is(uri));
         assertThat(intent, not(hasFlag(Intent.FLAG_ACTIVITY_NO_HISTORY)));
     }
@@ -207,7 +250,8 @@ public class CustomTabsControllerTest {
         assertThat(customTabIntent, not(hasFlag(Intent.FLAG_ACTIVITY_NO_HISTORY)));
         assertThat(customTabIntent.hasExtra(CustomTabsIntent.EXTRA_SESSION), is(true));
         assertThat(customTabIntent.hasExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE), is(true));
-        assertThat(customTabIntent.getIntExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE, CustomTabsIntent.NO_TITLE), is(not(CustomTabsIntent.NO_TITLE)));
+        assertThat(customTabIntent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR), is(false));
+        assertThat(customTabIntent.getIntExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE, CustomTabsIntent.NO_TITLE), is(CustomTabsIntent.NO_TITLE));
 
         Intent fallbackIntent = intents.get(1);
         assertThat(fallbackIntent.getAction(), is(Intent.ACTION_VIEW));

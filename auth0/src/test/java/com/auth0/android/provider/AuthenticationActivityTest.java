@@ -45,6 +45,8 @@ public class AuthenticationActivityTest {
     private Uri resultUri;
     @Mock
     private CustomTabsController customTabsController;
+    @Mock
+    private CustomTabsOptions customTabsOptions;
     @Captor
     private ArgumentCaptor<Intent> intentCaptor;
     @Captor
@@ -71,7 +73,7 @@ public class AuthenticationActivityTest {
     @SuppressWarnings("deprecation")
     @Test
     public void shouldAuthenticateUsingBrowser() throws Exception {
-        AuthenticationActivity.authenticateUsingBrowser(callerActivity, uri);
+        AuthenticationActivity.authenticateUsingBrowser(callerActivity, uri, customTabsOptions);
         verify(callerActivity).startActivity(intentCaptor.capture());
 
         createActivity(intentCaptor.getValue());
@@ -102,7 +104,7 @@ public class AuthenticationActivityTest {
     @SuppressWarnings("deprecation")
     @Test
     public void shouldAuthenticateAfterRecreatedUsingBrowser() throws Exception {
-        AuthenticationActivity.authenticateUsingBrowser(callerActivity, uri);
+        AuthenticationActivity.authenticateUsingBrowser(callerActivity, uri, customTabsOptions);
         verify(callerActivity).startActivity(intentCaptor.capture());
 
         createActivity(intentCaptor.getValue());
@@ -131,7 +133,7 @@ public class AuthenticationActivityTest {
     @SuppressWarnings("deprecation")
     @Test
     public void shouldCancelAuthenticationUsingBrowser() throws Exception {
-        AuthenticationActivity.authenticateUsingBrowser(callerActivity, uri);
+        AuthenticationActivity.authenticateUsingBrowser(callerActivity, uri, customTabsOptions);
         verify(callerActivity).startActivity(intentCaptor.capture());
 
         createActivity(intentCaptor.getValue());
@@ -263,7 +265,7 @@ public class AuthenticationActivityTest {
     @SuppressWarnings("deprecation")
     @Test
     public void shouldLaunchForBrowserAuthentication() throws Exception {
-        AuthenticationActivity.authenticateUsingBrowser(callerActivity, uri);
+        AuthenticationActivity.authenticateUsingBrowser(callerActivity, uri, customTabsOptions);
         verify(callerActivity).startActivity(intentCaptor.capture());
 
         Intent intent = intentCaptor.getValue();
@@ -278,6 +280,7 @@ public class AuthenticationActivityTest {
         Assert.assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(false));
         Assert.assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
         Assert.assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
+        Assert.assertThat((CustomTabsOptions) extras.getParcelable(AuthenticationActivity.EXTRA_CT_OPTIONS), is(customTabsOptions));
     }
 
     @SuppressWarnings("deprecation")
@@ -300,6 +303,7 @@ public class AuthenticationActivityTest {
         Assert.assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(true));
         Assert.assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
         Assert.assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(false));
+        Assert.assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_CT_OPTIONS), is(false));
     }
 
     @Test

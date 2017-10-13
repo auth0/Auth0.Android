@@ -9,9 +9,9 @@ import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.support.customtabs.CustomTabsClient;
-import android.support.customtabs.CustomTabsIntent;
 import android.support.customtabs.CustomTabsServiceConnection;
 import android.support.customtabs.CustomTabsSession;
 import android.util.Log;
@@ -40,6 +40,8 @@ class CustomTabsController extends CustomTabsServiceConnection {
     private final CountDownLatch sessionLatch;
     private final String preferredPackage;
 
+    @Nullable
+    private CustomTabsOptions customTabsOptions;
 
     @VisibleForTesting
     CustomTabsController(@NonNull Context context, @NonNull String browserPackage) {
@@ -56,6 +58,15 @@ class CustomTabsController extends CustomTabsServiceConnection {
     @VisibleForTesting
     void clearContext() {
         this.context.clear();
+    }
+
+    void setCustomizationOptions(@Nullable CustomTabsOptions options) {
+        this.customTabsOptions = options;
+    }
+
+    @VisibleForTesting
+    CustomTabsOptions getCustomizationOptions() {
+        return this.customTabsOptions;
     }
 
     @Override
@@ -113,6 +124,10 @@ class CustomTabsController extends CustomTabsServiceConnection {
             return;
         }
 
+        if (customTabsOptions == null) {
+            customTabsOptions = CustomTabsOptions.newBuilder().build();
+        }
+
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -123,10 +138,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
                 }
                 Log.d(TAG, "Launching URI. Custom Tabs available: " + available);
 
-                final Intent intent = new CustomTabsIntent.Builder(session.get())
-                        .setShowTitle(true)
-                        .build()
-                        .intent;
+                final Intent intent = customTabsOptions.toIntent(context, session.get());
                 intent.setData(uri);
                 try {
                     context.startActivity(intent);
@@ -183,5 +195,4 @@ class CustomTabsController extends CustomTabsServiceConnection {
             return defaultBrowser;
         }
     }
-
 }

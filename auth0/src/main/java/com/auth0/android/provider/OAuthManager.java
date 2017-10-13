@@ -62,6 +62,7 @@ class OAuthManager {
     private int requestCode;
     private PKCE pkce;
     private Long currentTimeInMillis;
+    private CustomTabsOptions ctOptions;
 
     OAuthManager(@NonNull Auth0 account, @NonNull AuthCallback callback, @NonNull Map<String, String> parameters) {
         this.account = account;
@@ -77,6 +78,10 @@ class OAuthManager {
         this.useBrowser = useBrowser;
     }
 
+    public void setCustomTabsOptions(@Nullable CustomTabsOptions options) {
+        this.ctOptions = options;
+    }
+
     @VisibleForTesting
     void setPKCE(PKCE pkce) {
         this.pkce = pkce;
@@ -90,7 +95,7 @@ class OAuthManager {
         this.requestCode = requestCode;
 
         if (useBrowser) {
-            AuthenticationActivity.authenticateUsingBrowser(activity, uri);
+            AuthenticationActivity.authenticateUsingBrowser(activity, uri, ctOptions);
         } else {
             AuthenticationActivity.authenticateUsingWebView(activity, uri, requestCode, parameters.get(KEY_CONNECTION), useFullScreen);
         }
@@ -257,6 +262,11 @@ class OAuthManager {
     @VisibleForTesting
     boolean useFullScreen() {
         return useFullScreen;
+    }
+
+    @VisibleForTesting
+    CustomTabsOptions customTabsOptions() {
+        return ctOptions;
     }
 
     @VisibleForTesting

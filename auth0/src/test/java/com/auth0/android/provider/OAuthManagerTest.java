@@ -18,9 +18,11 @@ import java.util.Date;
 import java.util.HashMap;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 
 @RunWith(RobolectricTestRunner.class)
@@ -64,6 +66,20 @@ public class OAuthManagerTest {
         OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>());
         manager.useFullScreen(true);
         assertTrue(manager.useFullScreen());
+    }
+
+    @Test
+    public void shouldNotHaveCustomTabsOptionsByDefault() throws Exception {
+        OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>());
+        assertThat(manager.customTabsOptions(), is(nullValue()));
+    }
+
+    @Test
+    public void shouldSetCustomTabsOptions() throws Exception {
+        CustomTabsOptions options = mock(CustomTabsOptions.class);
+        OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>());
+        manager.setCustomTabsOptions(options);
+        assertThat(manager.customTabsOptions(), is(options));
     }
 
     @Test
