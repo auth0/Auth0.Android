@@ -224,6 +224,22 @@ WebAuthProvider.init(account)
 ```
 
 
+#### Customize the Custom Tabs UI
+
+If the device where the app is running has a Custom Tabs compatible Browser, a Custom Tab will be preferred for the authentication flow. You can customize the Page Title visibility and the Toolbar color by using the `CustomTabsOptions` class.
+ 
+```java
+ CustomTabsOptions options = CustomTabsOptions.newBuilder()
+    .withToolbarColor(R.color.ct_toolbar_color)
+    .showTitle(true)
+    .build();
+ 
+  WebAuthProvider.init(account)
+                  .withCustomTabsOptions(options)
+                  .start(MainActivity.this, authCallback);
+```
+
+
 ## Next steps
 
 ### Learning resources

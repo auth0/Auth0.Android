@@ -15,20 +15,22 @@ public class AuthenticationActivity extends Activity {
     static final String EXTRA_USE_FULL_SCREEN = "com.auth0.android.EXTRA_USE_FULL_SCREEN";
     static final String EXTRA_CONNECTION_NAME = "com.auth0.android.EXTRA_CONNECTION_NAME";
     static final String EXTRA_AUTHORIZE_URI = "com.auth0.android.EXTRA_AUTHORIZE_URI";
-    private static final String EXTRA_INTENT_LAUNCHED = "com.auth0.android.EXTRA_INTENT_LAUNCHED";
+    static final String EXTRA_INTENT_LAUNCHED = "com.auth0.android.EXTRA_INTENT_LAUNCHED";
+    static final String EXTRA_CT_OPTIONS = "com.auth0.android.EXTRA_CT_OPTIONS";
 
     private boolean intentLaunched;
     private CustomTabsController customTabsController;
 
-    static void authenticateUsingBrowser(Context context, Uri authorizeUri) {
+    static void authenticateUsingBrowser(@NonNull Context context, @NonNull Uri authorizeUri, @Nullable CustomTabsOptions options) {
         Intent intent = new Intent(context, AuthenticationActivity.class);
         intent.putExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI, authorizeUri);
         intent.putExtra(AuthenticationActivity.EXTRA_USE_BROWSER, true);
+        intent.putExtra(AuthenticationActivity.EXTRA_CT_OPTIONS, options);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         context.startActivity(intent);
     }
 
-    static void authenticateUsingWebView(Activity activity, Uri authorizeUri, int requestCode, String connection, boolean useFullScreen) {
+    static void authenticateUsingWebView(@NonNull Activity activity, @NonNull Uri authorizeUri, int requestCode, String connection, boolean useFullScreen) {
         Intent intent = new Intent(activity, AuthenticationActivity.class);
         intent.putExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI, authorizeUri);
         intent.putExtra(AuthenticationActivity.EXTRA_USE_BROWSER, false);
@@ -105,6 +107,7 @@ public class AuthenticationActivity extends Activity {
         }
 
         customTabsController = createCustomTabsController(this);
+        customTabsController.setCustomizationOptions((CustomTabsOptions) extras.getParcelable(EXTRA_CT_OPTIONS));
         customTabsController.bindService();
         customTabsController.launchUri(authorizeUri);
     }

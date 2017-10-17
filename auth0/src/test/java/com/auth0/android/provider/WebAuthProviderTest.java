@@ -59,6 +59,7 @@ import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -949,6 +950,33 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
+    public void shouldStartWithBrowserCustomTabsOptions() throws Exception {
+        CustomTabsOptions options = mock(CustomTabsOptions.class);
+        WebAuthProvider.init(account)
+                .withCustomTabsOptions(options)
+                .useCodeGrant(false)
+                .start(activity, callback);
+
+        verify(activity).startActivity(intentCaptor.capture());
+
+        Intent intent = intentCaptor.getValue();
+        assertThat(intent, is(notNullValue()));
+        assertThat(intent, hasComponent(AuthenticationActivity.class.getName()));
+        assertThat(intent, hasFlag(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+        assertThat(intent.getData(), is(nullValue()));
+
+        Bundle extras = intentCaptor.getValue().getExtras();
+        assertThat(extras.getParcelable(AuthenticationActivity.EXTRA_AUTHORIZE_URI), is(notNullValue()));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(false));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(false));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CT_OPTIONS), is(true));
+        assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
+        assertThat((CustomTabsOptions) extras.getParcelable(AuthenticationActivity.EXTRA_CT_OPTIONS), is(options));
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
     public void shouldStartWithBrowser() throws Exception {
         WebAuthProvider.init(account)
                 .useBrowser(true)
@@ -968,7 +996,9 @@ public class WebAuthProviderTest {
         assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(false));
         assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(false));
         assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CT_OPTIONS), is(true));
         assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
+        assertThat(extras.getParcelable(AuthenticationActivity.EXTRA_CT_OPTIONS), is(nullValue()));
     }
 
     @SuppressWarnings("deprecation")
@@ -996,6 +1026,7 @@ public class WebAuthProviderTest {
         assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(false));
         assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
         assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(false));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CT_OPTIONS), is(false));
     }
 
     @SuppressWarnings("deprecation")
@@ -1024,6 +1055,7 @@ public class WebAuthProviderTest {
         assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(true));
         assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
         assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(false));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CT_OPTIONS), is(false));
     }
 
     @SuppressWarnings({"deprecation", "ThrowableResultOfMethodCallIgnored"})

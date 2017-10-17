@@ -72,6 +72,7 @@ public class WebAuthProvider {
         private boolean useFullscreen;
         private PKCE pkce;
         private String scheme;
+        private CustomTabsOptions ctOptions;
 
         Builder(Auth0 account) {
             this.account = account;
@@ -249,6 +250,17 @@ public class WebAuthProvider {
             return this;
         }
 
+        /**
+         * When using a Custom Tabs compatible Browser, apply this customization options.
+         *
+         * @param options the Custom Tabs customization options
+         * @return the current builder instance
+         */
+        public Builder withCustomTabsOptions(@NonNull CustomTabsOptions options) {
+            this.ctOptions = options;
+            return this;
+        }
+
         @VisibleForTesting
         Builder withPKCE(PKCE pkce) {
             this.pkce = pkce;
@@ -275,6 +287,7 @@ public class WebAuthProvider {
             OAuthManager manager = new OAuthManager(account, callback, values);
             manager.useFullScreen(useFullscreen);
             manager.useBrowser(useBrowser);
+            manager.setCustomTabsOptions(ctOptions);
             manager.setPKCE(pkce);
 
             managerInstance = manager;
