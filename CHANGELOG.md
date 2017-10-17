@@ -1,5 +1,15 @@
 # Change Log
 
+## [1.11.0](https://github.com/auth0/Auth0.Android/tree/1.11.0) (2017-10-17)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.10.1...1.11.0)
+
+**Added**
+- Add an encrypted version of the CredentialsManager [\#115](https://github.com/auth0/Auth0.Android/pull/115) ([lbalmaceda](https://github.com/lbalmaceda))
+- Allow Custom Tabs UI to be customizable [\#111](https://github.com/auth0/Auth0.Android/pull/111) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Changed**
+- Make Credential Managers save the refreshed value [\#118](https://github.com/auth0/Auth0.Android/pull/118) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.10.1](https://github.com/auth0/Auth0.Android/tree/1.10.1) (2017-10-05)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.10.0...1.10.1)
 
