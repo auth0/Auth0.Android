@@ -37,6 +37,7 @@ import com.auth0.android.result.Delegation;
 import com.auth0.android.result.UserProfile;
 import com.auth0.android.util.AuthenticationAPI;
 import com.auth0.android.util.MockAuthenticationCallback;
+import com.auth0.android.util.OkHttpTls12Compat;
 import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -49,10 +50,15 @@ import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.rule.PowerMockRule;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
@@ -87,6 +93,8 @@ import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 21, manifest = Config.NONE)
+@PowerMockIgnore({ "org.mockito.*", "org.robolectric.*", "android.*" })
+@PrepareForTest({OkHttpTls12Compat.class})
 public class AuthenticationAPIClientTest {
 
     private static final String CLIENT_ID = "CLIENTID";
@@ -105,6 +113,9 @@ public class AuthenticationAPIClientTest {
     private Gson gson;
 
     private AuthenticationAPI mockAPI;
+
+    @Rule
+    public PowerMockRule rule = new PowerMockRule();
 
     @Before
     public void setUp() throws Exception {
@@ -1774,6 +1785,12 @@ public class AuthenticationAPIClientTest {
         assertThat(callback.getError().getDescription(), is(equalTo("Unauthorized")));
     }
 
+    @Test
+    public void shouldExtendTls12Support() {
+        PowerMockito.mockStatic(OkHttpTls12Compat.class);
+        client.enableTls12OnPreLollipop();
+        PowerMockito.verifyStatic();
+    }
 
     private Map<String, String> bodyFromRequest(RecordedRequest request) throws java.io.IOException {
         final Type mapType = new TypeToken<Map<String, String>>() {

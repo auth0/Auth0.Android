@@ -37,6 +37,7 @@ import com.auth0.android.request.internal.ManagementErrorBuilder;
 import com.auth0.android.request.internal.RequestFactory;
 import com.auth0.android.result.UserIdentity;
 import com.auth0.android.result.UserProfile;
+import com.auth0.android.util.OkHttpTls12Compat;
 import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -131,6 +132,12 @@ public class UsersAPIClient {
     public void setUserAgent(String userAgent) {
         factory.setUserAgent(userAgent);
     }
+
+    @SuppressWarnings("unused")
+    public void enableTls12OnPreLollipop() {
+        OkHttpTls12Compat.enableSupportOnPreLollipop(client);
+    }
+
 
 
     /**

@@ -45,6 +45,7 @@ import com.auth0.android.result.Credentials;
 import com.auth0.android.result.DatabaseUser;
 import com.auth0.android.result.Delegation;
 import com.auth0.android.result.UserProfile;
+import com.auth0.android.util.OkHttpTls12Compat;
 import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
 import com.squareup.okhttp.HttpUrl;
@@ -158,6 +159,11 @@ public class AuthenticationAPIClient {
     @SuppressWarnings("unused")
     public void setUserAgent(String userAgent) {
         factory.setUserAgent(userAgent);
+    }
+
+    @SuppressWarnings("unused")
+    public void enableTls12OnPreLollipop() {
+        OkHttpTls12Compat.enableSupportOnPreLollipop(client);
     }
 
     /**

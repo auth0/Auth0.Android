@@ -33,6 +33,7 @@ import com.auth0.android.request.internal.RequestFactory;
 import com.auth0.android.result.UserIdentity;
 import com.auth0.android.result.UserProfile;
 import com.auth0.android.util.MockManagementCallback;
+import com.auth0.android.util.OkHttpTls12Compat;
 import com.auth0.android.util.Telemetry;
 import com.auth0.android.util.TypeTokenMatcher;
 import com.auth0.android.util.UsersAPI;
@@ -46,8 +47,16 @@ import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.rule.PowerMockRule;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 import java.lang.reflect.Type;
 import java.util.Arrays;
@@ -73,6 +82,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@RunWith(RobolectricTestRunner.class)
+@Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 21, manifest = Config.NONE)
+@PowerMockIgnore({ "org.mockito.*", "org.robolectric.*", "android.*" })
+@PrepareForTest({OkHttpTls12Compat.class})
 public class UsersAPIClientTest {
 
     private static final String CLIENT_ID = "CLIENTID";
@@ -95,6 +108,9 @@ public class UsersAPIClientTest {
     private Gson gson;
 
     private UsersAPI mockAPI;
+
+    @Rule
+    public PowerMockRule rule = new PowerMockRule();
 
     @Before
     public void setUp() throws Exception {
@@ -393,6 +409,13 @@ public class UsersAPIClientTest {
         assertThat(request.getMethod(), equalTo(METHOD_GET));
 
         assertThat(result, isA(UserProfile.class));
+    }
+
+    @Test
+    public void shouldExtendTls12Support() {
+        PowerMockito.mockStatic(OkHttpTls12Compat.class);
+        client.enableTls12OnPreLollipop();
+        PowerMockito.verifyStatic();
     }
 
     private <T> Map<String, T> bodyFromRequest(RecordedRequest request) throws java.io.IOException {
