@@ -84,7 +84,8 @@ import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 21, manifest = Config.NONE)
-@PowerMockIgnore({ "org.mockito.*", "org.robolectric.*", "android.*" })
+@PowerMockIgnore({ "org.mockito.*", "org.robolectric.*", "android.*", "org.powermock.*",
+        "com.squareup.okhttp", "okio.*", "javax.net.ssl.*" })
 @PrepareForTest({OkHttpTls12Compat.class})
 public class UsersAPIClientTest {
 
