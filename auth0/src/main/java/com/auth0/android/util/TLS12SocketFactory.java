@@ -17,13 +17,13 @@ import javax.net.ssl.SSLSocketFactory;
  * @link https://developer.android.com/reference/javax/net/ssl/SSLSocket.html
  * @see SSLSocketFactory
  */
-public class Tls12SocketFactory extends SSLSocketFactory {
+class TLS12SocketFactory extends SSLSocketFactory {
     private static final String[] TLS_V12_ONLY = { "TLSv1.2" };
 
     @VisibleForTesting
     private final SSLSocketFactory delegate;
 
-    Tls12SocketFactory(SSLSocketFactory base) {
+    TLS12SocketFactory(SSLSocketFactory base) {
         this.delegate = base;
     }
 

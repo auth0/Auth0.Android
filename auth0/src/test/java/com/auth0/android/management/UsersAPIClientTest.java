@@ -33,7 +33,7 @@ import com.auth0.android.request.internal.RequestFactory;
 import com.auth0.android.result.UserIdentity;
 import com.auth0.android.result.UserProfile;
 import com.auth0.android.util.MockManagementCallback;
-import com.auth0.android.util.OkHttpTls12Compat;
+import com.auth0.android.util.OkHttpTLS12Compat;
 import com.auth0.android.util.Telemetry;
 import com.auth0.android.util.TypeTokenMatcher;
 import com.auth0.android.util.UsersAPI;
@@ -86,7 +86,7 @@ import static org.mockito.Mockito.when;
 @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 21, manifest = Config.NONE)
 @PowerMockIgnore({ "org.mockito.*", "org.robolectric.*", "android.*", "org.powermock.*",
         "com.squareup.okhttp", "okio.*", "javax.net.ssl.*" })
-@PrepareForTest({OkHttpTls12Compat.class})
+@PrepareForTest({OkHttpTLS12Compat.class})
 public class UsersAPIClientTest {
 
     private static final String CLIENT_ID = "CLIENTID";
@@ -414,8 +414,8 @@ public class UsersAPIClientTest {
 
     @Test
     public void shouldExtendTls12Support() {
-        PowerMockito.mockStatic(OkHttpTls12Compat.class);
-        client.enableTls12OnPreLollipop();
+        PowerMockito.mockStatic(OkHttpTLS12Compat.class);
+        client.enableTLS12OnPreLollipop();
         PowerMockito.verifyStatic();
     }
 

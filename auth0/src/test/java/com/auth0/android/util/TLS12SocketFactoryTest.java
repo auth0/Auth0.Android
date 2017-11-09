@@ -27,7 +27,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class Tls12SocketFactoryTest {
+public class TLS12SocketFactoryTest {
 
     private static final String TLS_1_2 = "TLSv1.2";
     private static final String MOCK_HOST = "www.example.com";
@@ -37,7 +37,7 @@ public class Tls12SocketFactoryTest {
 
     @Mock SSLSocket socket;
     @Mock SSLSocketFactory delegate;
-    Tls12SocketFactory factory;
+    TLS12SocketFactory factory;
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -45,7 +45,7 @@ public class Tls12SocketFactoryTest {
     @Before
     public void setUp(){
         MockitoAnnotations.initMocks(this);
-        factory = new Tls12SocketFactory(delegate);
+        factory = new TLS12SocketFactory(delegate);
     }
 
     @Test
