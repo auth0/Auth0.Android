@@ -47,16 +47,9 @@ import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.rule.PowerMockRule;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
 import java.lang.reflect.Type;
 import java.util.Arrays;
@@ -75,6 +68,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -82,11 +76,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(RobolectricTestRunner.class)
-@Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 21, manifest = Config.NONE)
-@PowerMockIgnore({ "org.mockito.*", "org.robolectric.*", "android.*", "org.powermock.*",
-        "com.squareup.okhttp", "okio.*", "javax.net.ssl.*" })
-@PrepareForTest({OkHttpTLS12Compat.class})
 public class UsersAPIClientTest {
 
     private static final String CLIENT_ID = "CLIENTID";
@@ -110,9 +99,6 @@ public class UsersAPIClientTest {
 
     private UsersAPI mockAPI;
 
-    @Rule
-    public PowerMockRule rule = new PowerMockRule();
-
     @Before
     public void setUp() throws Exception {
         mockAPI = new UsersAPI();
@@ -132,7 +118,8 @@ public class UsersAPIClientTest {
         Auth0 account = mock(Auth0.class);
         RequestFactory factory = mock(RequestFactory.class);
         OkHttpClient okClient = mock(OkHttpClient.class);
-        final UsersAPIClient client = new UsersAPIClient(account, factory, okClient);
+        OkHttpTLS12Compat tlsCompat = mock(OkHttpTLS12Compat.class);
+        final UsersAPIClient client = new UsersAPIClient(account, factory, okClient, tlsCompat);
         client.setUserAgent("android-user-agent");
         verify(factory).setUserAgent("android-user-agent");
     }
@@ -143,9 +130,10 @@ public class UsersAPIClientTest {
         when(telemetry.getValue()).thenReturn("the-telemetry-data");
         RequestFactory factory = mock(RequestFactory.class);
         OkHttpClient okClient = mock(OkHttpClient.class);
+        OkHttpTLS12Compat tlsCompat = mock(OkHttpTLS12Compat.class);
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         auth0.setTelemetry(telemetry);
-        new UsersAPIClient(auth0, factory, okClient);
+        new UsersAPIClient(auth0, factory, okClient, tlsCompat);
         verify(factory).setClientInfo("the-telemetry-data");
     }
 
@@ -153,9 +141,10 @@ public class UsersAPIClientTest {
     public void shouldNotSetTelemetryIfMissing() throws Exception {
         RequestFactory factory = mock(RequestFactory.class);
         OkHttpClient okClient = mock(OkHttpClient.class);
+        OkHttpTLS12Compat tlsCompat = mock(OkHttpTLS12Compat.class);
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         auth0.doNotSendTelemetry();
-        new UsersAPIClient(auth0, factory, okClient);
+        new UsersAPIClient(auth0, factory, okClient, tlsCompat);
         verify(factory, never()).setClientInfo(any(String.class));
     }
 
@@ -166,11 +155,12 @@ public class UsersAPIClientTest {
         when(account.isLoggingEnabled()).thenReturn(true);
         RequestFactory factory = mock(RequestFactory.class);
         OkHttpClient okClient = mock(OkHttpClient.class);
+        OkHttpTLS12Compat tlsCompat = mock(OkHttpTLS12Compat.class);
         List list = mock(List.class);
         when(okClient.interceptors()).thenReturn(list);
 
         ArgumentCaptor<Interceptor> interceptorCaptor = ArgumentCaptor.forClass(Interceptor.class);
-        new UsersAPIClient(account, factory, okClient);
+        new UsersAPIClient(account, factory, okClient, tlsCompat);
 
         verify(okClient).interceptors();
         verify(list).add(interceptorCaptor.capture());
@@ -187,10 +177,11 @@ public class UsersAPIClientTest {
         when(account.isLoggingEnabled()).thenReturn(false);
         RequestFactory factory = mock(RequestFactory.class);
         OkHttpClient okClient = mock(OkHttpClient.class);
+        OkHttpTLS12Compat tlsCompat = mock(OkHttpTLS12Compat.class);
         List list = mock(List.class);
         when(okClient.interceptors()).thenReturn(list);
 
-        new UsersAPIClient(account, factory, okClient);
+        new UsersAPIClient(account, factory, okClient, tlsCompat);
 
         verify(okClient, never()).interceptors();
         verify(list, never()).add(any(Interceptor.class));
@@ -202,10 +193,11 @@ public class UsersAPIClientTest {
         Auth0 account = mock(Auth0.class);
         RequestFactory factory = mock(RequestFactory.class);
         OkHttpClient okClient = mock(OkHttpClient.class);
+        OkHttpTLS12Compat tlsCompat = mock(OkHttpTLS12Compat.class);
         List list = mock(List.class);
         when(okClient.interceptors()).thenReturn(list);
 
-        new UsersAPIClient(account, factory, okClient);
+        new UsersAPIClient(account, factory, okClient, tlsCompat);
 
         verify(okClient, never()).interceptors();
         verify(list, never()).add(any(Interceptor.class));
@@ -414,9 +406,17 @@ public class UsersAPIClientTest {
 
     @Test
     public void shouldExtendTls12Support() {
-        PowerMockito.mockStatic(OkHttpTLS12Compat.class);
+        Auth0 account = mock(Auth0.class);
+        RequestFactory factory = mock(RequestFactory.class);
+        OkHttpClient okClient = mock(OkHttpClient.class);
+        OkHttpTLS12Compat tlsCompat = mock(OkHttpTLS12Compat.class);
+        when(tlsCompat.setClient((OkHttpClient) anyObject())).thenReturn(tlsCompat);
+        UsersAPIClient client = new UsersAPIClient(account, factory, okClient, tlsCompat);
+
         client.enableTLS12OnPreLollipop();
-        PowerMockito.verifyStatic();
+
+        verify(tlsCompat).setClient(eq(client.client));
+        verify(tlsCompat).enableForClient();
     }
 
     private <T> Map<String, T> bodyFromRequest(RecordedRequest request) throws java.io.IOException {

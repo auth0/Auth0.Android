@@ -14,23 +14,32 @@ import java.util.List;
 
 import javax.net.ssl.SSLContext;
 
-public final class OkHttpTLS12Compat {
+public class OkHttpTLS12Compat {
 
     private static final String TAG = OkHttpTLS12Compat.class.getSimpleName();
 
-    private OkHttpTLS12Compat() {}
+    private OkHttpClient client = null;
+
+    /**
+     * Sets the OkHttp client instance
+     * @param client OkHttpClient instance to be modified
+     */
+    public OkHttpTLS12Compat setClient(OkHttpClient client) {
+        this.client = client;
+        return this;
+    }
 
     /**
      * Enable TLS 1.2 on the OkHttpClient on API 16-21, which is supported but not enabled by default.
      * @link https://github.com/square/okhttp/issues/2372
      * @see TLS12SocketFactory
-     * @param client OkHttpClient instance to be modified
      */
-    public static void enableForClient(OkHttpClient client) {
+    public OkHttpTLS12Compat enableForClient() {
         // No need to modify client as TLS 1.2 is enabled by default on API21+
         // Lollipop is included because some Samsung devices face the same problem on API 21.
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN || Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
-            return;
+        if (client == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN
+                || Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
+            return this;
         }
         try {
             SSLContext sc = SSLContext.getInstance("TLSv1.2");
@@ -50,5 +59,6 @@ public final class OkHttpTLS12Compat {
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
             Log.e(TAG, "Error while setting TLS 1.2", e);
         }
+        return this;
     }
 }

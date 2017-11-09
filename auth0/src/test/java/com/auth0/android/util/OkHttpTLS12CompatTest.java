@@ -29,26 +29,28 @@ import static org.mockito.Mockito.verify;
 @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 21, manifest = Config.NONE)
 public class OkHttpTLS12CompatTest {
 
-    Activity activity;
-    @Mock OkHttpClient client;
+    private Activity activity;
+    private OkHttpTLS12Compat tlsCompat;
+    @Mock private OkHttpClient client;
 
     @Before
     public void setUp(){
         MockitoAnnotations.initMocks(this);
+        tlsCompat = new OkHttpTLS12Compat().setClient(client);
         activity = Robolectric.setupActivity(Activity.class);
     }
 
     @Test
     @Config(sdk=22)
     public void shouldNotConfigTlsPostApi21() {
-        OkHttpTLS12Compat.enableForClient(client);
+        tlsCompat.enableForClient();
         verify(client, never()).setSslSocketFactory((SSLSocketFactory) any());
     }
 
     @Test
     @Config(sdk=21)
     public void shouldConfigTlsOnOrPreApi21() {
-        OkHttpTLS12Compat.enableForClient(client);
+        tlsCompat.enableForClient();
 
         ArgumentCaptor<SSLSocketFactory> factoryCaptor = ArgumentCaptor.forClass(SSLSocketFactory.class);
         verify(client).setSslSocketFactory(factoryCaptor.capture());

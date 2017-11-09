@@ -69,7 +69,8 @@ public class UsersAPIClient {
     private static final String USER_METADATA_KEY = "user_metadata";
 
     private final Auth0 auth0;
-    private final OkHttpClient client;
+    private final OkHttpTLS12Compat tlsCompat;
+    @VisibleForTesting final OkHttpClient client;
     private final Gson gson;
     private final RequestFactory factory;
     private final ErrorBuilder<ManagementException> mgmtErrorBuilder;
@@ -81,7 +82,7 @@ public class UsersAPIClient {
      * @param token of the primary identity
      */
     public UsersAPIClient(Auth0 auth0, String token) {
-        this(auth0, new RequestFactory(token), new OkHttpClient(), GsonProvider.buildGson());
+        this(auth0, new RequestFactory(token), new OkHttpClient(), new OkHttpTLS12Compat(), GsonProvider.buildGson());
     }
 
     /**
@@ -96,13 +97,14 @@ public class UsersAPIClient {
     }
 
     @VisibleForTesting
-    UsersAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClient client) {
-        this(auth0, factory, client, GsonProvider.buildGson());
+    UsersAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClient client, OkHttpTLS12Compat tlsCompat) {
+        this(auth0, factory, client, tlsCompat, GsonProvider.buildGson());
     }
 
-    private UsersAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClient client, Gson gson) {
+    private UsersAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClient client, OkHttpTLS12Compat tlsCompat, Gson gson) {
         this.auth0 = auth0;
         this.client = client;
+        this.tlsCompat = tlsCompat;
         if (auth0.isLoggingEnabled()) {
             this.client.interceptors().add(new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY));
         }
@@ -135,10 +137,8 @@ public class UsersAPIClient {
 
     @SuppressWarnings("Unused")
     public void enableTLS12OnPreLollipop() {
-        OkHttpTLS12Compat.enableForClient(client);
+        tlsCompat.setClient(client).enableForClient();
     }
-
-
 
     /**
      * Link a user identity calling <a href="https://auth0.com/docs/link-accounts#the-management-api">'/api/v2/users/:primaryUserId/identities'</a> endpoint
