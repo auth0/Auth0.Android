@@ -1,4 +1,4 @@
-package com.auth0.android.util;
+package com.auth0.android.request.internal;
 
 import org.junit.Before;
 import org.junit.Rule;

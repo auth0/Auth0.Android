@@ -61,6 +61,7 @@ public class Auth0 {
     private Telemetry telemetry;
     private boolean oidcConformant;
     private boolean loggingEnabled;
+    private boolean tls12Enforced;
 
     /**
      * Creates a new Auth0 instance with the 'com_auth0_client_id' and 'com_auth0_domain' values
@@ -202,6 +203,23 @@ public class Auth0 {
      */
     public void setLoggingEnabled(boolean enabled) {
         loggingEnabled = enabled;
+    }
+
+    /**
+     * Getter for whether TLS 1.2 is enforced on devices with API 16-21.
+     *
+     * @return whether TLS 1.2 is enforced on devices with API 16-21.
+     */
+    public boolean isTLS12Enforced() {
+        return tls12Enforced;
+    }
+
+    /**
+     * Set whether to enforce TLS 1.2 on devices with API 16-21.
+     * @param enforced whether TLS 1.2 is enforced on devices with API 16-21.
+     */
+    public void setTLS12Enforced(boolean enforced) {
+        tls12Enforced = enforced;
     }
 
     private HttpUrl resolveConfiguration(@Nullable String configurationDomain, @NonNull HttpUrl domainUrl) {
