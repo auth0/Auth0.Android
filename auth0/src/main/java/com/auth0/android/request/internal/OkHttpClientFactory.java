@@ -17,6 +17,11 @@ import java.util.List;
 
 import javax.net.ssl.SSLContext;
 
+/**
+ * Factory class used to configure and obtain a new OkHttpClient instance.
+ * This class is meant for internal use only,
+ * breaking changes may appear at any time without backwards compatibility guarantee.
+ */
 public class OkHttpClientFactory {
 
     private static final String TAG = OkHttpClientFactory.class.getSimpleName();
@@ -57,7 +62,7 @@ public class OkHttpClientFactory {
     private void enforceTls12(OkHttpClient client) {
         // No need to modify client as TLS 1.2 is enabled by default on API21+
         // Lollipop is included because some Samsung devices face the same problem on API 21.
-        if (client == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN
                 || Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
             return;
         }
