@@ -1725,6 +1725,6 @@ public class AuthenticationAPIClientTest {
 
     private String getDefaultLocale() {
         String language = Locale.getDefault().toString();
-        return !language.isEmpty() ? language : "en";
+        return !language.isEmpty() ? language : RequestFactory.DEFAULT_LOCALE_IF_MISSING;
     }
 }

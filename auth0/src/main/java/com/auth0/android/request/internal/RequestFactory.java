@@ -43,6 +43,8 @@ import java.util.Map;
 
 public class RequestFactory {
 
+    public static final String DEFAULT_LOCALE_IF_MISSING = "en_US";
+
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String USER_AGENT_HEADER = "User-Agent";
     private static final String ACCEPT_LANGUAGE_HEADER = "Accept-Language";
@@ -149,6 +151,6 @@ public class RequestFactory {
 
     static String getDefaultLocale() {
         String language = Locale.getDefault().toString();
-        return !language.isEmpty() ? language : "en_US";
+        return !language.isEmpty() ? language : DEFAULT_LOCALE_IF_MISSING;
     }
 }
