@@ -29,6 +29,7 @@ import android.content.Context;
 import android.content.res.Resources;
 
 import com.auth0.android.Auth0;
+import com.auth0.android.request.internal.OkHttpClientFactory;
 import com.auth0.android.request.internal.RequestFactory;
 import com.auth0.android.result.UserIdentity;
 import com.auth0.android.result.UserProfile;
@@ -39,15 +40,11 @@ import com.auth0.android.util.UsersAPI;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import com.squareup.okhttp.Interceptor;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.logging.HttpLoggingInterceptor;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 
 import java.lang.reflect.Type;
 import java.util.Arrays;
@@ -59,7 +56,6 @@ import static com.auth0.android.util.ManagementCallbackMatcher.hasPayloadOfType;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.notNullValue;
@@ -114,8 +110,8 @@ public class UsersAPIClientTest {
     public void shouldSetUserAgent() throws Exception {
         Auth0 account = mock(Auth0.class);
         RequestFactory factory = mock(RequestFactory.class);
-        OkHttpClient okClient = mock(OkHttpClient.class);
-        final UsersAPIClient client = new UsersAPIClient(account, factory, okClient);
+        OkHttpClientFactory clientFactory = mock(OkHttpClientFactory.class);
+        final UsersAPIClient client = new UsersAPIClient(account, factory, clientFactory);
         client.setUserAgent("android-user-agent");
         verify(factory).setUserAgent("android-user-agent");
     }
@@ -125,73 +121,21 @@ public class UsersAPIClientTest {
         final Telemetry telemetry = mock(Telemetry.class);
         when(telemetry.getValue()).thenReturn("the-telemetry-data");
         RequestFactory factory = mock(RequestFactory.class);
-        OkHttpClient okClient = mock(OkHttpClient.class);
+        OkHttpClientFactory clientFactory = mock(OkHttpClientFactory.class);
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         auth0.setTelemetry(telemetry);
-        new UsersAPIClient(auth0, factory, okClient);
+        new UsersAPIClient(auth0, factory, clientFactory);
         verify(factory).setClientInfo("the-telemetry-data");
     }
 
     @Test
     public void shouldNotSetTelemetryIfMissing() throws Exception {
         RequestFactory factory = mock(RequestFactory.class);
-        OkHttpClient okClient = mock(OkHttpClient.class);
+        OkHttpClientFactory clientFactory = mock(OkHttpClientFactory.class);
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         auth0.doNotSendTelemetry();
-        new UsersAPIClient(auth0, factory, okClient);
+        new UsersAPIClient(auth0, factory, clientFactory);
         verify(factory, never()).setClientInfo(any(String.class));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void shouldEnableHttpLogging() throws Exception {
-        Auth0 account = mock(Auth0.class);
-        when(account.isLoggingEnabled()).thenReturn(true);
-        RequestFactory factory = mock(RequestFactory.class);
-        OkHttpClient okClient = mock(OkHttpClient.class);
-        List list = mock(List.class);
-        when(okClient.interceptors()).thenReturn(list);
-
-        ArgumentCaptor<Interceptor> interceptorCaptor = ArgumentCaptor.forClass(Interceptor.class);
-        new UsersAPIClient(account, factory, okClient);
-
-        verify(okClient).interceptors();
-        verify(list).add(interceptorCaptor.capture());
-
-        assertThat(interceptorCaptor.getValue(), is(notNullValue()));
-        assertThat(interceptorCaptor.getValue(), is(instanceOf(HttpLoggingInterceptor.class)));
-        assertThat(((HttpLoggingInterceptor) interceptorCaptor.getValue()).getLevel(), is(HttpLoggingInterceptor.Level.BODY));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void shouldDisableHttpLogging() throws Exception {
-        Auth0 account = mock(Auth0.class);
-        when(account.isLoggingEnabled()).thenReturn(false);
-        RequestFactory factory = mock(RequestFactory.class);
-        OkHttpClient okClient = mock(OkHttpClient.class);
-        List list = mock(List.class);
-        when(okClient.interceptors()).thenReturn(list);
-
-        new UsersAPIClient(account, factory, okClient);
-
-        verify(okClient, never()).interceptors();
-        verify(list, never()).add(any(Interceptor.class));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void shouldHaveHttpLoggingDisabledByDefault() throws Exception {
-        Auth0 account = mock(Auth0.class);
-        RequestFactory factory = mock(RequestFactory.class);
-        OkHttpClient okClient = mock(OkHttpClient.class);
-        List list = mock(List.class);
-        when(okClient.interceptors()).thenReturn(list);
-
-        new UsersAPIClient(account, factory, okClient);
-
-        verify(okClient, never()).interceptors();
-        verify(list, never()).add(any(Interceptor.class));
     }
 
     @Test

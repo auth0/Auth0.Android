@@ -37,6 +37,7 @@ import com.auth0.android.request.internal.ManagementErrorBuilder;
 import com.auth0.android.request.internal.RequestFactory;
 import com.auth0.android.result.UserIdentity;
 import com.auth0.android.result.UserProfile;
+import com.auth0.android.request.internal.OkHttpClientFactory;
 import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -68,7 +69,7 @@ public class UsersAPIClient {
     private static final String USER_METADATA_KEY = "user_metadata";
 
     private final Auth0 auth0;
-    private final OkHttpClient client;
+    @VisibleForTesting final OkHttpClient client;
     private final Gson gson;
     private final RequestFactory factory;
     private final ErrorBuilder<ManagementException> mgmtErrorBuilder;
@@ -80,7 +81,7 @@ public class UsersAPIClient {
      * @param token of the primary identity
      */
     public UsersAPIClient(Auth0 auth0, String token) {
-        this(auth0, new RequestFactory(token), new OkHttpClient(), GsonProvider.buildGson());
+        this(auth0, new RequestFactory(token), new OkHttpClientFactory(), GsonProvider.buildGson());
     }
 
     /**
@@ -95,16 +96,13 @@ public class UsersAPIClient {
     }
 
     @VisibleForTesting
-    UsersAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClient client) {
-        this(auth0, factory, client, GsonProvider.buildGson());
+    UsersAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClientFactory clientFactory) {
+        this(auth0, factory, clientFactory, GsonProvider.buildGson());
     }
 
-    private UsersAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClient client, Gson gson) {
+    private UsersAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClientFactory clientFactory, Gson gson) {
         this.auth0 = auth0;
-        this.client = client;
-        if (auth0.isLoggingEnabled()) {
-            this.client.interceptors().add(new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY));
-        }
+        client = clientFactory.createClient(auth0.isLoggingEnabled(), auth0.isTLS12Enforced());
         this.gson = gson;
         this.factory = factory;
         this.mgmtErrorBuilder = new ManagementErrorBuilder();
@@ -131,7 +129,6 @@ public class UsersAPIClient {
     public void setUserAgent(String userAgent) {
         factory.setUserAgent(userAgent);
     }
-
 
     /**
      * Link a user identity calling <a href="https://auth0.com/docs/link-accounts#the-management-api">'/api/v2/users/:primaryUserId/identities'</a> endpoint

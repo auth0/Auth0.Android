@@ -108,6 +108,28 @@ public class Auth0Test {
     }
 
     @Test
+    public void shouldNotEnforceTLS12ByDefault() throws Exception {
+        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
+        assertThat(auth0.isTLS12Enforced(), is(false));
+    }
+
+    @Test
+    public void shouldHaveTLS12Enforced() throws Exception {
+        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
+        auth0.setTLS12Enforced(true);
+
+        assertThat(auth0.isTLS12Enforced(), is(true));
+    }
+
+    @Test
+    public void shouldNotHaveTLS12Enforced() throws Exception {
+        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
+        auth0.setTLS12Enforced(false);
+
+        assertThat(auth0.isTLS12Enforced(), is(false));
+    }
+
+    @Test
     public void shouldNotHaveLoggingEnabledByDefault() throws Exception {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         assertThat(auth0.isLoggingEnabled(), is(false));

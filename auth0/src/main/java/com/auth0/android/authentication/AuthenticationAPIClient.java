@@ -45,11 +45,11 @@ import com.auth0.android.result.Credentials;
 import com.auth0.android.result.DatabaseUser;
 import com.auth0.android.result.Delegation;
 import com.auth0.android.result.UserProfile;
+import com.auth0.android.request.internal.OkHttpClientFactory;
 import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
 import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.logging.HttpLoggingInterceptor;
 
 import java.util.Map;
 
@@ -97,7 +97,7 @@ public class AuthenticationAPIClient {
     private static final String HEADER_AUTHORIZATION = "Authorization";
 
     private final Auth0 auth0;
-    private final OkHttpClient client;
+    @VisibleForTesting final OkHttpClient client;
     private final Gson gson;
     private final RequestFactory factory;
     private final ErrorBuilder<AuthenticationException> authErrorBuilder;
@@ -109,7 +109,7 @@ public class AuthenticationAPIClient {
      * @param auth0 account information
      */
     public AuthenticationAPIClient(@NonNull Auth0 auth0) {
-        this(auth0, new RequestFactory(), new OkHttpClient(), GsonProvider.buildGson());
+        this(auth0, new RequestFactory(), new OkHttpClientFactory(), GsonProvider.buildGson());
     }
 
     /**
@@ -123,16 +123,13 @@ public class AuthenticationAPIClient {
     }
 
     @VisibleForTesting
-    AuthenticationAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClient client) {
-        this(auth0, factory, client, GsonProvider.buildGson());
+    AuthenticationAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClientFactory clientFactory) {
+        this(auth0, factory, clientFactory, GsonProvider.buildGson());
     }
 
-    private AuthenticationAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClient client, Gson gson) {
+    private AuthenticationAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClientFactory clientFactory, Gson gson) {
         this.auth0 = auth0;
-        this.client = client;
-        if (auth0.isLoggingEnabled()) {
-            this.client.interceptors().add(new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY));
-        }
+        this.client = clientFactory.createClient(auth0.isLoggingEnabled(), auth0.isTLS12Enforced());
         this.gson = gson;
         this.factory = factory;
         this.authErrorBuilder = new AuthenticationErrorBuilder();
