@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.12.0](https://github.com/auth0/Auth0.Android/tree/1.12.0) (2017-11-17)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.11.0...1.12.0)
+
+**Added**
+- Add support for TLS1.2 on pre-lollipop devices. [\#128](https://github.com/auth0/Auth0.Android/pull/128) ([dj-mal](https://github.com/dj-mal))
+
 ## [1.11.0](https://github.com/auth0/Auth0.Android/tree/1.11.0) (2017-10-17)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.10.1...1.11.0)
 
