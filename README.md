@@ -95,14 +95,14 @@ android {
         //...
 
         //---> Add the next line
-        manifestPlaceholders = [auth0Domain: "@string/auth0_domain", auth0Scheme: "https"]
+        manifestPlaceholders = [auth0Domain: "@string/com_auth0_domain", auth0Scheme: "https"]
         //<---
     }
     //...
 }
 ```
 
-It's a good practice to define reusable resources like `@string/auth0_domain` but you can also hard code the value in the file. The scheme value can be either `https` or a [custom scheme](#a-note-about-app-deep-linking).  
+It's a good practice to define reusable resources like `@string/com_auth0_domain` but you can also hard code the value in the file. The scheme value can be either `https` or a custom one. Read [this section](#a-note-about-app-deep-linking) to learn more.
 
 Alternatively, you can declare the `RedirectActivity` in the `AndroidManifest.xml` file with your own **intent-filter** so it overrides the library's default. If you do this then the `manifestPlaceholders` don't need to be set as long as the activity contains the `tools:node="replace"` like in the snippet below.
 
@@ -126,7 +126,7 @@ In your manifest inside your application's tag add the `RedirectActivity` declar
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:host="@string/auth0_domain"
+                    android:host="@string/com_auth0_domain"
                     android:pathPrefix="/android/${applicationId}/callback"
                     android:scheme="https" />
             </intent-filter>
@@ -138,7 +138,9 @@ In your manifest inside your application's tag add the `RedirectActivity` declar
 </manifest>
 ```
 
-If you request a different scheme you must replace the `android:scheme` property value. Finally, don't forget to add the internet permission.
+If you request a different scheme you must replace the above `android:scheme` property value and initialize the provider with the new scheme. Read [this section](#a-note-about-app-deep-linking) to learn more. 
+
+Finally, don't forget to add the internet permission.
 
 ```xml
 <uses-permission android:name="android.permission.INTERNET" />
