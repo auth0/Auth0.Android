@@ -70,7 +70,7 @@ account.setOIDCConformant(true);
 Passwordless authentication *cannot be used* with this flag set to `true`. For more information, please see the [OIDC adoption guide](https://auth0.com/docs/api-auth/tutorials/adoption).
 
 
-### Authentication with Hosted Login Page
+### Authentication with Universal Login
 
 First go to [Auth0 Dashboard](https://manage.auth0.com/#/applications) and go to your application's settings. Make sure you have in *Allowed Callback URLs* a URL with the following format:
 
@@ -150,7 +150,7 @@ Finally, don't forget to add the internet permission.
 > In versions 1.8.0 and before you had to define the **intent-filter** inside your activity to capture the result in the `onNewIntent` method and call `WebAuthProvider.resume()` with the received intent. This call is no longer required for versions greater than 1.8.0 as it's now done for you by the library.
 
 
-Finally, authenticate by showing the **Auth0 Hosted Login Page**:
+Finally, authenticate by showing the **Auth0 Universal Login**:
 
 ```java
 WebAuthProvider.init(account)
