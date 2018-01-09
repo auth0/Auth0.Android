@@ -240,7 +240,7 @@ public class WebAuthProvider {
         }
 
         /**
-         * Use the given connection. By default no connection is specified, so the Universal Login will be displayed.
+         * Use the given connection. By default no connection is specified, so the login page will be displayed.
          *
          * @param connectionName to use
          * @return the current builder instance
