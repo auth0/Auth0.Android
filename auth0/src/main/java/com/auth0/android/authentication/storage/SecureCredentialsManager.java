@@ -5,6 +5,7 @@ import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
@@ -82,12 +83,12 @@ public class SecureCredentialsManager {
      * call {@link SecureCredentialsManager#checkAuthenticationResult(int, int)} with the received parameters.
      *
      * @param activity    a valid activity context. Will be used in the authentication request to launch a LockScreen intent.
-     * @param requestCode the request code to use in the authentication request. Must be a value between 1 and 200.
-     * @param title       the text to use as title in the authentication screen.
-     * @param description the text to use as description in the authentication screen. On some Android versions it might not be shown.
-     * @return whether this device supports requiring authentication or not.
+     * @param requestCode the request code to use in the authentication request. Must be a value between 1 and 255.
+     * @param title       the text to use as title in the authentication screen. Passing null will result in using the OS's default value.
+     * @param description the text to use as description in the authentication screen. On some Android versions it might not be shown. Passing null will result in using the OS's default value.
+     * @return whether this device supports requiring authentication or not. This result can be ignored safely.
      */
-    public boolean requireAuthentication(@NonNull Activity activity, int requestCode, @Nullable String title, @Nullable String description) {
+    public boolean requireAuthentication(@NonNull Activity activity, @IntRange(from = 1, to = 255) int requestCode, @Nullable String title, @Nullable String description) {
         if (requestCode < 1 || requestCode > 255) {
             throw new IllegalArgumentException("Request code must a value between 1 and 255.");
         }
@@ -106,6 +107,7 @@ public class SecureCredentialsManager {
     /**
      * Checks the result after showing the LockScreen to the user.
      * Must be called from the {@link Activity#onActivityResult(int, int, Intent)} method with the received parameters.
+     * It's safe to call this method even if {@link SecureCredentialsManager#requireAuthentication(Activity, int, String, String)} was unsuccessful.
      *
      * @param requestCode the request code received in the onActivityResult call.
      * @param resultCode  the result code received in the onActivityResult call.
