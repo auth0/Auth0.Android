@@ -144,7 +144,6 @@ class CustomTabsController extends CustomTabsServiceConnection {
                     context.startActivity(intent);
                 } catch (ActivityNotFoundException ignored) {
                     Intent fallbackIntent = new Intent(Intent.ACTION_VIEW, uri);
-                    fallbackIntent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
                     context.startActivity(fallbackIntent);
                 }
             }

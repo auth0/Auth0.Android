@@ -256,7 +256,7 @@ public class CustomTabsControllerTest {
         Intent fallbackIntent = intents.get(1);
         assertThat(fallbackIntent.getAction(), is(Intent.ACTION_VIEW));
         assertThat(fallbackIntent.getData(), is(uri));
-        assertThat(fallbackIntent, hasFlag(Intent.FLAG_ACTIVITY_NO_HISTORY));
+        assertThat(fallbackIntent, not(hasFlag(Intent.FLAG_ACTIVITY_NO_HISTORY)));
         assertThat(fallbackIntent.hasExtra(CustomTabsIntent.EXTRA_SESSION), is(false));
         assertThat(fallbackIntent.hasExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE), is(false));
     }
