@@ -72,6 +72,22 @@ public class AuthenticationActivityTest {
 
     @SuppressWarnings("deprecation")
     @Test
+    public void shouldFinishGracefullyWhenCalledByError() throws Exception {
+        Intent intent = new Intent(callerActivity, AuthenticationActivity.class);
+        //An invalid call will not pass any expected extras
+        createActivity(intent);
+
+        activityController.create().newIntent(intent).start().resume();
+
+        verifyNoMoreInteractions(customTabsController);
+        assertThat(activity.getDeliveredIntent(), is(nullValue()));
+        assertThat(activity.isFinishing(), is(true));
+
+        activityController.destroy();
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
     public void shouldAuthenticateUsingBrowser() throws Exception {
         AuthenticationActivity.authenticateUsingBrowser(callerActivity, uri, customTabsOptions);
         verify(callerActivity).startActivity(intentCaptor.capture());
