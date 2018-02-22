@@ -140,15 +140,23 @@ public class AuthenticationExceptionTest {
 
     @Test
     public void shouldHaveExpiredMultifactorTokenOnOIDCMode() throws Exception {
-        values.put(CODE_KEY, "expired_token");
-        values.put(DESCRIPTION_KEY, "mfa_token is expired");
+        values.put(ERROR_KEY, "expired_token");
+        values.put(ERROR_DESCRIPTION_KEY, "mfa_token is expired");
         AuthenticationException ex = new AuthenticationException(values);
-        assertThat(ex.isMultifactorTokenExpired(), is(true));
+        assertThat(ex.isMultifactorTokenInvalid(), is(true));
+    }
+
+    @Test
+    public void shouldHaveMalformedMultifactorTokenOnOIDCMode() throws Exception {
+        values.put(ERROR_KEY, "invalid_grant");
+        values.put(ERROR_DESCRIPTION_KEY, "Malformed mfa_token");
+        AuthenticationException ex = new AuthenticationException(values);
+        assertThat(ex.isMultifactorTokenInvalid(), is(true));
     }
 
     @Test
     public void shouldRequireMultifactorOnOIDCMode() throws Exception {
-        values.put(CODE_KEY, "mfa_required");
+        values.put(ERROR_KEY, "mfa_required");
         values.put("mfa_token", "some-random-token");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.isMultifactorRequired(), is(true));
@@ -164,8 +172,8 @@ public class AuthenticationExceptionTest {
 
     @Test
     public void shouldRequireMultifactorEnrollOnOIDCMode() throws Exception {
-        values.put(CODE_KEY, "unsupported_challenge_type");
-        values.put(DESCRIPTION_KEY, "User is not enrolled with guardian");
+        values.put(ERROR_KEY, "unsupported_challenge_type");
+        values.put(ERROR_DESCRIPTION_KEY, "User is not enrolled with guardian");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.isMultifactorEnrollRequired(), is(true));
     }
@@ -179,8 +187,8 @@ public class AuthenticationExceptionTest {
 
     @Test
     public void shouldHaveInvalidMultifactorCodeOnOIDCMode() throws Exception {
-        values.put(CODE_KEY, "invalid_grant");
-        values.put(DESCRIPTION_KEY, "Invalid otp_code.");
+        values.put(ERROR_KEY, "invalid_grant");
+        values.put(ERROR_DESCRIPTION_KEY, "Invalid otp_code.");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.isMultifactorCodeInvalid(), is(true));
     }
