@@ -47,9 +47,7 @@ import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.robolectric.RobolectricTestRunner;
@@ -59,7 +57,6 @@ import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import static com.auth0.android.util.AuthenticationAPI.GENERIC_TOKEN;
 import static com.auth0.android.util.AuthenticationAPI.ID_TOKEN;
@@ -103,7 +100,6 @@ public class AuthenticationAPIClientTest {
     private Gson gson;
 
     private AuthenticationAPI mockAPI;
-    private ExpectedException expectedException = ExpectedException.none();
 
     @Before
     public void setUp() throws Exception {
@@ -179,17 +175,6 @@ public class AuthenticationAPIClientTest {
         assertThat(client, is(notNullValue()));
         assertThat(client.getClientId(), is(CLIENT_ID));
         assertThat(client.getBaseURL(), equalTo("https://" + DOMAIN + "/"));
-    }
-
-    @Test
-    public void shouldThrowOnLoginWithMFAOTPCodeWithNonOIDCClient() throws Exception {
-        expectedException.expect(IllegalStateException.class);
-        expectedException.expectMessage("Clients that are non OIDC conformant can not call this endpoint.");
-
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
-        auth0.setOIDCConformant(false);
-        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-        client.login(SUPPORT_AUTH0_COM, "some-password", MY_CONNECTION);
     }
 
     @Test

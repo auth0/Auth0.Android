@@ -263,10 +263,6 @@ public class AuthenticationAPIClient {
      */
     @SuppressWarnings("WeakerAccess")
     public AuthenticationRequest loginWithOTP(@NonNull String mfaToken, @NonNull String otp) {
-        if (!auth0.isOIDCConformant()) {
-            throw new IllegalStateException("Clients that are non OIDC conformant can not call this endpoint.");
-        }
-
         Map<String, Object> parameters = ParameterBuilder.newBuilder()
                 .setGrantType(GRANT_TYPE_MFA_OTP)
                 .set(MFA_TOKEN_KEY, mfaToken)
