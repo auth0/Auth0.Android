@@ -242,7 +242,7 @@ public class AuthenticationAPIClient {
     /**
      * Log in a user using the One Time Password code after they have received the 'mfa_required' error.
      * The MFA token tells the server the username or email, password and realm values sent on the first request.
-     * Example usage:
+     * Requires your client to have the <b>MFA</b> Grant Type enabled. See <a href="https://auth0.com/docs/clients/client-grant-types">Client Grant Types</a> to learn how to enable it.* Example usage:
      * <pre>
      * {@code
      * client.loginWithOTP("{mfa token}", "{one time password}")
