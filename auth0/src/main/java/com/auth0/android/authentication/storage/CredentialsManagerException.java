@@ -8,11 +8,21 @@ import com.auth0.android.Auth0Exception;
  */
 @SuppressWarnings("WeakerAccess")
 public class CredentialsManagerException extends Auth0Exception {
-    CredentialsManagerException(String message, Throwable cause) {
+
+    private CredentialsManagerException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    CredentialsManagerException(String message) {
+    private CredentialsManagerException(String message) {
         super(message);
+
+    }
+
+    public static CredentialsManagerException create(CredentialsManagerError credentialsManagerError) {
+        return new CredentialsManagerException(credentialsManagerError.getMessage());
+    }
+
+    public static CredentialsManagerException create(CredentialsManagerError credentialsManagerError, Throwable cause) {
+        return new CredentialsManagerException(credentialsManagerError.getMessage(), cause);
     }
 }

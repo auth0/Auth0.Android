@@ -24,6 +24,10 @@ import org.robolectric.annotation.Config;
 
 import java.util.Date;
 
+import static com.auth0.android.authentication.storage.CredentialsManagerError.INVALID_CREDENTIALS;
+import static com.auth0.android.authentication.storage.CredentialsManagerError.NO_AVAILABLE_REFRESH_TOKEN;
+import static com.auth0.android.authentication.storage.CredentialsManagerError.NO_CREDENTIALS_SET;
+import static com.auth0.android.authentication.storage.CredentialsManagerError.RENEW_CREDENTIALS_ERROR;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
@@ -105,7 +109,7 @@ public class CredentialsManagerTest {
     @Test
     public void shouldThrowOnSetIfCredentialsDoesNotHaveIdTokenOrAccessToken() throws Exception {
         exception.expect(CredentialsManagerException.class);
-        exception.expectMessage("Credentials must have a valid date of expiration and a valid access_token or id_token value.");
+        exception.expectMessage(INVALID_CREDENTIALS.getMessage());
 
         Credentials credentials = new CredentialsMock(null, null, "type", "refreshToken", 123456L);
         manager.saveCredentials(credentials);
@@ -115,7 +119,7 @@ public class CredentialsManagerTest {
     @Test
     public void shouldThrowOnSetIfCredentialsDoesNotHaveExpiresAt() throws Exception {
         exception.expect(CredentialsManagerException.class);
-        exception.expectMessage("Credentials must have a valid date of expiration and a valid access_token or id_token value.");
+        exception.expectMessage(INVALID_CREDENTIALS.getMessage());
 
         Date date = null;
         Credentials credentials = new CredentialsMock("idToken", "accessToken", "type", "refreshToken", date, "scope");
@@ -151,7 +155,7 @@ public class CredentialsManagerTest {
         verify(callback).onFailure(exceptionCaptor.capture());
         CredentialsManagerException exception = exceptionCaptor.getValue();
         assertThat(exception, is(notNullValue()));
-        assertThat(exception.getMessage(), is("No Credentials were previously set."));
+        assertThat(exception.getMessage(), is(NO_CREDENTIALS_SET.getMessage()));
     }
 
     @Test
@@ -170,7 +174,7 @@ public class CredentialsManagerTest {
         verify(callback).onFailure(exceptionCaptor.capture());
         CredentialsManagerException exception = exceptionCaptor.getValue();
         assertThat(exception, is(notNullValue()));
-        assertThat(exception.getMessage(), is("No Credentials were previously set."));
+        assertThat(exception.getMessage(), is(NO_CREDENTIALS_SET.getMessage()));
     }
 
     @SuppressWarnings("UnnecessaryLocalVariable")
@@ -191,7 +195,7 @@ public class CredentialsManagerTest {
         verify(callback).onFailure(exceptionCaptor.capture());
         CredentialsManagerException exception = exceptionCaptor.getValue();
         assertThat(exception, is(notNullValue()));
-        assertThat(exception.getMessage(), is("Credentials have expired and no Refresh Token was available to renew them."));
+        assertThat(exception.getMessage(), is(NO_AVAILABLE_REFRESH_TOKEN.getMessage()));
     }
 
     @Test
@@ -347,7 +351,7 @@ public class CredentialsManagerTest {
         CredentialsManagerException exception = exceptionCaptor.getValue();
         assertThat(exception, is(notNullValue()));
         assertThat(exception.getCause(), Is.<Throwable>is(authenticationException));
-        assertThat(exception.getMessage(), is("An error occurred while trying to use the Refresh Token to renew the Credentials."));
+        assertThat(exception.getMessage(), is(RENEW_CREDENTIALS_ERROR.getMessage()));
     }
 
     @Test

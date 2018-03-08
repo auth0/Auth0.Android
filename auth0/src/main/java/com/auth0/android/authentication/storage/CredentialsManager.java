@@ -12,6 +12,8 @@ import com.auth0.android.result.Credentials;
 import java.util.Date;
 
 import static android.text.TextUtils.isEmpty;
+import static com.auth0.android.authentication.storage.CredentialsManagerError.INVALID_CREDENTIALS;
+import static com.auth0.android.authentication.storage.CredentialsManagerError.RENEW_CREDENTIALS_ERROR;
 
 /**
  * Class that handles credentials and allows to save and retrieve them.
@@ -46,7 +48,7 @@ public class CredentialsManager {
      */
     public void saveCredentials(@NonNull Credentials credentials) {
         if ((isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken())) || credentials.getExpiresAt() == null) {
-            throw new CredentialsManagerException("Credentials must have a valid date of expiration and a valid access_token or id_token value.");
+            throw CredentialsManagerException.create(INVALID_CREDENTIALS);
         }
         storage.store(KEY_ACCESS_TOKEN, credentials.getAccessToken());
         storage.store(KEY_REFRESH_TOKEN, credentials.getRefreshToken());
@@ -72,7 +74,8 @@ public class CredentialsManager {
         String scope = storage.retrieveString(KEY_SCOPE);
 
         if (isEmpty(accessToken) && isEmpty(idToken) || expiresAt == null) {
-            callback.onFailure(new CredentialsManagerException("No Credentials were previously set."));
+
+            callback.onFailure(CredentialsManagerException.create(CredentialsManagerError.NO_CREDENTIALS_SET));
             return;
         }
         if (expiresAt > getCurrentTimeInMillis()) {
@@ -80,7 +83,7 @@ public class CredentialsManager {
             return;
         }
         if (refreshToken == null) {
-            callback.onFailure(new CredentialsManagerException("Credentials have expired and no Refresh Token was available to renew them."));
+            callback.onFailure(CredentialsManagerException.create(CredentialsManagerError.NO_AVAILABLE_REFRESH_TOKEN));
             return;
         }
 
@@ -95,13 +98,14 @@ public class CredentialsManager {
 
             @Override
             public void onFailure(AuthenticationException error) {
-                callback.onFailure(new CredentialsManagerException("An error occurred while trying to use the Refresh Token to renew the Credentials.", error));
+                callback.onFailure(CredentialsManagerException.create(RENEW_CREDENTIALS_ERROR, error));
             }
         });
     }
 
     /**
      * Checks if a non-expired pair of credentials can be obtained from this manager.
+     * @return if the credentials are valid or not
      */
     public boolean hasValidCredentials() {
         String accessToken = storage.retrieveString(KEY_ACCESS_TOKEN);

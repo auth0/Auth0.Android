@@ -22,6 +22,12 @@ import com.auth0.android.result.Credentials;
 import com.google.gson.Gson;
 
 import static android.text.TextUtils.isEmpty;
+import static com.auth0.android.authentication.storage.CredentialsManagerError.AUTHENTICATION_CHALLENGE_FAILED;
+import static com.auth0.android.authentication.storage.CredentialsManagerError.DECRYPTION_ERROR;
+import static com.auth0.android.authentication.storage.CredentialsManagerError.ENCRYPTION_ERROR;
+import static com.auth0.android.authentication.storage.CredentialsManagerError.INVALID_CREDENTIALS;
+import static com.auth0.android.authentication.storage.CredentialsManagerError.NO_CREDENTIALS_SET;
+import static com.auth0.android.authentication.storage.CredentialsManagerError.RENEW_CREDENTIALS_ERROR;
 
 /**
  * A safer alternative to the {@link CredentialsManager} class. A combination of RSA and AES keys is used to keep the values secure.
@@ -120,7 +126,7 @@ public class SecureCredentialsManager {
         if (resultCode == Activity.RESULT_OK) {
             continueGetCredentials(decryptCallback);
         } else {
-            decryptCallback.onFailure(new CredentialsManagerException("The user didn't pass the authentication challenge."));
+            decryptCallback.onFailure(CredentialsManagerException.create(AUTHENTICATION_CHALLENGE_FAILED));
             decryptCallback = null;
         }
         return true;
@@ -134,7 +140,7 @@ public class SecureCredentialsManager {
      */
     public void saveCredentials(@NonNull Credentials credentials) throws CredentialsManagerException {
         if ((isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken())) || credentials.getExpiresAt() == null) {
-            throw new CredentialsManagerException("Credentials must have a valid date of expiration and a valid access_token or id_token value.");
+            throw CredentialsManagerException.create(INVALID_CREDENTIALS);
         }
 
         String json = gson.toJson(credentials);
@@ -149,7 +155,7 @@ public class SecureCredentialsManager {
             storage.store(KEY_EXPIRES_AT, expiresAt);
             storage.store(KEY_CAN_REFRESH, canRefresh);
         } catch (CryptoException e) {
-            throw new CredentialsManagerException("An error occurred while encrypting the credentials.", e);
+            throw CredentialsManagerException.create(ENCRYPTION_ERROR, e);
         }
     }
 
@@ -162,7 +168,7 @@ public class SecureCredentialsManager {
      */
     public void getCredentials(@NonNull BaseCallback<Credentials, CredentialsManagerException> callback) {
         if (!hasValidCredentials()) {
-            callback.onFailure(new CredentialsManagerException("No Credentials were previously set."));
+            callback.onFailure(CredentialsManagerException.create(NO_CREDENTIALS_SET));
             return;
         }
 
@@ -207,12 +213,12 @@ public class SecureCredentialsManager {
         try {
             json = new String(crypto.decrypt(encrypted));
         } catch (CryptoException e) {
-            callback.onFailure(new CredentialsManagerException("An error occurred while decrypting the existing credentials.", e));
+            callback.onFailure(CredentialsManagerException.create(DECRYPTION_ERROR, e));
             return;
         }
         final Credentials credentials = gson.fromJson(json, Credentials.class);
         if (isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken()) || credentials.getExpiresAt() == null) {
-            callback.onFailure(new CredentialsManagerException("No Credentials were previously set."));
+            callback.onFailure(CredentialsManagerException.create(NO_CREDENTIALS_SET));
             decryptCallback = null;
             return;
         }
@@ -222,7 +228,7 @@ public class SecureCredentialsManager {
             return;
         }
         if (credentials.getRefreshToken() == null) {
-            callback.onFailure(new CredentialsManagerException("No Credentials were previously set."));
+            callback.onFailure(CredentialsManagerException.create(NO_CREDENTIALS_SET));
             decryptCallback = null;
             return;
         }
@@ -240,7 +246,7 @@ public class SecureCredentialsManager {
 
             @Override
             public void onFailure(AuthenticationException error) {
-                callback.onFailure(new CredentialsManagerException("An error occurred while trying to use the Refresh Token to renew the Credentials.", error));
+                callback.onFailure(CredentialsManagerException.create(RENEW_CREDENTIALS_ERROR, error));
                 decryptCallback = null;
             }
         });
