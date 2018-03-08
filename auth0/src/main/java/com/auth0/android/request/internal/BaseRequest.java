@@ -37,18 +37,20 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.TypeAdapter;
 import com.google.gson.reflect.TypeToken;
-import com.squareup.okhttp.Callback;
-import com.squareup.okhttp.HttpUrl;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.RequestBody;
-import com.squareup.okhttp.Response;
-import com.squareup.okhttp.ResponseBody;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 import static com.auth0.android.request.internal.ResponseUtils.closeStream;
 
@@ -146,7 +148,7 @@ abstract class BaseRequest<T, U extends Auth0Exception> implements Parameterizab
     }
 
     @Override
-    public void onFailure(Request request, IOException e) {
+    public void onFailure(Call call, IOException e) {
         Auth0Exception exception = new Auth0Exception("Failed to execute request to " + url.toString(), e);
         postOnFailure(errorBuilder.from("Request failed", exception));
     }

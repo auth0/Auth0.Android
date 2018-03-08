@@ -4,18 +4,18 @@ import android.os.Build;
 import android.support.annotation.VisibleForTesting;
 import android.util.Log;
 
-import com.squareup.okhttp.ConnectionSpec;
-import com.squareup.okhttp.Interceptor;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.TlsVersion;
-import com.squareup.okhttp.logging.HttpLoggingInterceptor;
-
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.net.ssl.SSLContext;
+
+import okhttp3.ConnectionSpec;
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
+import okhttp3.TlsVersion;
+import okhttp3.logging.HttpLoggingInterceptor;
 
 /**
  * Factory class used to configure and obtain a new OkHttpClient instance.
@@ -34,24 +34,24 @@ public class OkHttpClientFactory {
      * @return new OkHttpClient instance created according to the parameters.
      */
     public OkHttpClient createClient(boolean loggingEnabled, boolean tls12Enforced) {
-        return modifyClient(new OkHttpClient(), loggingEnabled, tls12Enforced);
+        return modifyClient(new OkHttpClient.Builder(), loggingEnabled, tls12Enforced);
     }
 
     @VisibleForTesting
-    OkHttpClient modifyClient(OkHttpClient client, boolean loggingEnabled, boolean tls12Enforced) {
+    OkHttpClient modifyClient(OkHttpClient.Builder clientBuilder, boolean loggingEnabled, boolean tls12Enforced) {
         if (loggingEnabled) {
-            enableLogging(client);
+            enableLogging(clientBuilder);
         }
         if (tls12Enforced) {
-            enforceTls12(client);
+            enforceTls12(clientBuilder);
         }
-        return client;
+        return clientBuilder.build();
     }
 
-    private void enableLogging(OkHttpClient client) {
+    private void enableLogging(OkHttpClient.Builder clientBuilder) {
         Interceptor interceptor = new HttpLoggingInterceptor()
                 .setLevel(HttpLoggingInterceptor.Level.BODY);
-        client.interceptors().add(interceptor);
+        clientBuilder.addInterceptor(interceptor);
     }
 
     /**
@@ -59,7 +59,7 @@ public class OkHttpClientFactory {
      * @link https://github.com/square/okhttp/issues/2372
      * @see TLS12SocketFactory
      */
-    private void enforceTls12(OkHttpClient client) {
+    private void enforceTls12(OkHttpClient.Builder clientBuilder) {
         // No need to modify client as TLS 1.2 is enabled by default on API21+
         // Lollipop is included because some Samsung devices face the same problem on API 21.
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN
@@ -69,7 +69,8 @@ public class OkHttpClientFactory {
         try {
             SSLContext sc = SSLContext.getInstance("TLSv1.2");
             sc.init(null, null, null);
-            client.setSslSocketFactory(new TLS12SocketFactory(sc.getSocketFactory()));
+
+            clientBuilder.sslSocketFactory(new TLS12SocketFactory(sc.getSocketFactory()));
 
             ConnectionSpec cs = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
                     .tlsVersions(TlsVersion.TLS_1_2)
@@ -80,7 +81,8 @@ public class OkHttpClientFactory {
             specs.add(ConnectionSpec.COMPATIBLE_TLS);
             specs.add(ConnectionSpec.CLEARTEXT);
 
-            client.setConnectionSpecs(specs);
+            clientBuilder.connectionSpecs(specs);
+
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
             Log.e(TAG, "Error while setting TLS 1.2", e);
         }

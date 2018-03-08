@@ -2,16 +2,15 @@ package com.auth0.android.request.internal;
 
 import android.app.Activity;
 
-import com.squareup.okhttp.ConnectionSpec;
-import com.squareup.okhttp.Interceptor;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.TlsVersion;
-import com.squareup.okhttp.logging.HttpLoggingInterceptor;
+import okhttp3.ConnectionSpec;
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
+import okhttp3.TlsVersion;
+import okhttp3.logging.HttpLoggingInterceptor;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
@@ -20,18 +19,8 @@ import org.robolectric.annotation.Config;
 
 import java.util.List;
 
-import javax.net.ssl.SSLSocketFactory;
-
 import static junit.framework.Assert.assertTrue;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 21, manifest = Config.NONE)
@@ -39,7 +28,6 @@ public class OkHttpClientFactoryTest {
 
     private Activity activity;
     private OkHttpClientFactory factory;
-    @Mock private OkHttpClient mockClient;
 
     @Before
     public void setUp(){
@@ -57,117 +45,106 @@ public class OkHttpClientFactoryTest {
     @Test
     @Config(sdk=21)
     public void shouldEnableLoggingTLS12Enforced() {
-        List list = generateInterceptorsMockList(mockClient);
-        OkHttpClient client = factory.modifyClient(mockClient, true, true);
-        verifyLoggingEnabled(client, list);
-        verifyTLS12Enforced(client);
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        OkHttpClient okHttpClient = factory.modifyClient(builder, true, true);
+        verifyLoggingEnabled(okHttpClient);
+        verifyTLS12Enforced(okHttpClient);
     }
 
     @Test
     @Config(sdk=21)
     public void shouldEnableLoggingTLS12NotEnforced(){
-        List list = generateInterceptorsMockList(mockClient);
-        OkHttpClient client = factory.modifyClient(mockClient, true, false);
-        verifyLoggingEnabled(client, list);
-        verifyTLS12NotEnforced(client);
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        OkHttpClient okHttpClient = factory.modifyClient(builder, true, false);
+        verifyLoggingEnabled(okHttpClient);
+        verifyTLS12NotEnforced(builder.build());
     }
 
     @Test
     @Config(sdk=21)
     public void shouldDisableLoggingTLS12Enforced(){
-        List list = generateInterceptorsMockList(mockClient);
-        OkHttpClient client = factory.modifyClient(mockClient, false, true);
-        verifyLoggingDisabled(client, list);
-        verifyTLS12Enforced(client);
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        OkHttpClient okHttpClient = factory.modifyClient(builder, false, true);
+        verifyLoggingDisabled(okHttpClient);
+        verifyTLS12Enforced(builder.build());
     }
-
+//
     @Test
     @Config(sdk=21)
     public void shouldDisableLoggingTLS12NotEnforced(){
-        List list = generateInterceptorsMockList(mockClient);
-        OkHttpClient client = factory.modifyClient(mockClient, false, false);
-        verifyLoggingDisabled(client, list);
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        OkHttpClient client = factory.modifyClient(builder, false, false);
+        verifyLoggingDisabled(client);
         verifyTLS12NotEnforced(client);
     }
 
     @Test
     @Config(sdk=22)
     public void shouldEnableLoggingTLS12Enforced_postLollipopTLS12NoEffect() {
-        List list = generateInterceptorsMockList(mockClient);
-        OkHttpClient client = factory.modifyClient(mockClient, true, true);
-        verifyLoggingEnabled(client, list);
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        OkHttpClient client = factory.modifyClient(builder, true, true);
+        verifyLoggingEnabled(client);
         verifyTLS12NotEnforced(client);
     }
 
     @Test
     @Config(sdk=22)
     public void shouldEnableLoggingTLS12NotEnforced_posLollipop(){
-        List list = generateInterceptorsMockList(mockClient);
-        OkHttpClient client = factory.modifyClient(mockClient, true, false);
-        verifyLoggingEnabled(client, list);
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        OkHttpClient client = factory.modifyClient(builder, true, false);
+        verifyLoggingEnabled(client);
         verifyTLS12NotEnforced(client);
     }
 
     @Test
     @Config(sdk=22)
     public void shouldDisableLoggingTLS12Enforced_postLollipopTLS12NoEffect(){
-        List list = generateInterceptorsMockList(mockClient);
-        OkHttpClient client = factory.modifyClient(mockClient, false, true);
-        verifyLoggingDisabled(client, list);
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        OkHttpClient client = factory.modifyClient(builder, false, true);
+        verifyLoggingDisabled(client);
         verifyTLS12NotEnforced(client);
     }
 
     @Test
     @Config(sdk=22)
     public void shouldDisableLoggingTLS12NotEnforced_postLollipop(){
-        List list = generateInterceptorsMockList(mockClient);
-        OkHttpClient client = factory.modifyClient(mockClient, false, false);
-        verifyLoggingDisabled(client, list);
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        OkHttpClient client = factory.modifyClient(builder, false, false);
+        verifyLoggingDisabled(client);
         verifyTLS12NotEnforced(client);
     }
 
-    private static List generateInterceptorsMockList(OkHttpClient client) {
-        List list = mock(List.class);
-        when(client.interceptors()).thenReturn(list);
-        return list;
+    private static boolean containsInterceptor(List<Interceptor> list) {
+        for (Interceptor interceptor : list) {
+            if (interceptor instanceof HttpLoggingInterceptor
+                    && ((HttpLoggingInterceptor) interceptor).getLevel() == HttpLoggingInterceptor.Level.BODY) {
+                return true;
+            }
+        }
+        return false;
     }
 
-    private static void verifyLoggingEnabled(OkHttpClient client, List list) {
-        verify(client).interceptors();
-
-        ArgumentCaptor<Interceptor> interceptorCaptor = ArgumentCaptor.forClass(Interceptor.class);
-        verify(list).add(interceptorCaptor.capture());
-
-        assertThat(interceptorCaptor.getValue(), is(notNullValue()));
-        assertThat(interceptorCaptor.getValue(), is(instanceOf(HttpLoggingInterceptor.class)));
-        assertThat(((HttpLoggingInterceptor) interceptorCaptor.getValue()).getLevel(), is(HttpLoggingInterceptor.Level.BODY));
+    private static void verifyLoggingEnabled(OkHttpClient client) {
+        assertTrue(containsInterceptor(client.interceptors()));
     }
 
-    private static void verifyLoggingDisabled(OkHttpClient client, List list) {
-        verify(client, never()).interceptors();
-        verify(list, never()).add(any(Interceptor.class));
+    private static void verifyLoggingDisabled(OkHttpClient client) {
+        assertFalse(containsInterceptor(client.interceptors()));
     }
 
     private static void verifyTLS12NotEnforced(OkHttpClient client) {
-        verify(client, never()).setSslSocketFactory((SSLSocketFactory) any());
+        assertFalse(client.sslSocketFactory() instanceof TLS12SocketFactory);
     }
 
     private static void verifyTLS12Enforced(OkHttpClient client) {
+        assertTrue(client.sslSocketFactory() instanceof TLS12SocketFactory);
 
-        ArgumentCaptor<SSLSocketFactory> factoryCaptor = ArgumentCaptor.forClass(SSLSocketFactory.class);
-        verify(client).setSslSocketFactory(factoryCaptor.capture());
-        assertTrue(factoryCaptor.getValue() instanceof TLS12SocketFactory);
-
-        ArgumentCaptor<List> specCaptor = ArgumentCaptor.forClass(List.class);
-        verify(client).setConnectionSpecs(specCaptor.capture());
         boolean hasTls12 = false;
-        for (Object item : specCaptor.getValue()) {
-            assertTrue(item instanceof ConnectionSpec);
-            ConnectionSpec spec = (ConnectionSpec) item;
-            if (!spec.isTls()) {
+        for (ConnectionSpec item : client.connectionSpecs()) {
+            if (!item.isTls()) {
                 continue;
             }
-            List<TlsVersion> versions = spec.tlsVersions();
+            List<TlsVersion> versions = item.tlsVersions();
             for (TlsVersion version : versions) {
                 if ("TLSv1.2".equals(version.javaName())) {
                     hasTls12 = true;

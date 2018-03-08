@@ -28,7 +28,7 @@ import android.content.Context;
 import android.content.res.Resources;
 
 import com.auth0.android.util.Telemetry;
-import com.squareup.okhttp.HttpUrl;
+import okhttp3.HttpUrl;
 
 import org.junit.Before;
 import org.junit.Rule;

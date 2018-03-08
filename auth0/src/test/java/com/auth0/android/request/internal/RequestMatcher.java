@@ -1,7 +1,7 @@
 package com.auth0.android.request.internal;
 
 import com.google.gson.reflect.TypeToken;
-import com.squareup.okhttp.HttpUrl;
+import okhttp3.HttpUrl;
 
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
