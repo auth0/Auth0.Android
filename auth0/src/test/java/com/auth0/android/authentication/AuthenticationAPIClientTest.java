@@ -849,6 +849,9 @@ public class AuthenticationAPIClientTest {
         assertThat(loginBody, not(hasKey("connection")));
     }
 
+    // Has to put that because of assertionError
+    // https://github.com/square/okhttp/issues/2591
+    @Config(sdk = 23)
     @Test
     public void shouldSignUpUserWithoutUsernameSync() throws Exception {
         mockAPI.willReturnSuccessfulSignUp()

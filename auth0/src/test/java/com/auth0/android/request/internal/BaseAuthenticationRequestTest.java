@@ -70,6 +70,9 @@ public class BaseAuthenticationRequestTest {
         return gson.fromJson(request.getBody().readUtf8(), mapType);
     }
 
+    // Has to put that because of assertionError
+    // https://github.com/square/okhttp/issues/2591
+    @Config(sdk = 23)
     @Test
     public void shouldSetGrantType() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
@@ -81,6 +84,9 @@ public class BaseAuthenticationRequestTest {
         assertThat(body, hasEntry("grant_type", "grantType"));
     }
 
+    // Has to put that because of assertionError
+    // https://github.com/square/okhttp/issues/2591
+    @Config(sdk = 23)
     @Test
     public void shouldSetConnection() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
@@ -92,6 +98,9 @@ public class BaseAuthenticationRequestTest {
         assertThat(body, hasEntry("connection", "my-connection"));
     }
 
+    // Has to put that because of assertionError
+    // https://github.com/square/okhttp/issues/2591
+    @Config(sdk = 23)
     @Test
     public void shouldNotSetConnectionOnNonLegacyEndpoints() throws Exception {
         exception.expect(IllegalArgumentException.class);
@@ -108,6 +117,9 @@ public class BaseAuthenticationRequestTest {
                 .execute();
     }
 
+    // Has to put that because of assertionError
+    // https://github.com/square/okhttp/issues/2591
+    @Config(sdk = 23)
     @Test
     public void shouldSetRealm() throws Exception {
         HttpUrl url = HttpUrl.parse(mockAPI.getDomain())
@@ -135,6 +147,9 @@ public class BaseAuthenticationRequestTest {
                 .execute();
     }
 
+    // Has to put that because of assertionError
+    // https://github.com/square/okhttp/issues/2591
+    @Config(sdk = 23)
     @Test
     public void shouldSetScope() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
@@ -146,6 +161,9 @@ public class BaseAuthenticationRequestTest {
         assertThat(body, hasEntry("scope", "profile photos"));
     }
 
+    // Has to put that because of assertionError
+    // https://github.com/square/okhttp/issues/2591
+    @Config(sdk = 23)
     @Test
     public void shouldSetDevice() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
@@ -157,6 +175,9 @@ public class BaseAuthenticationRequestTest {
         assertThat(body, hasEntry("device", "nexus-5x"));
     }
 
+    // Has to put that because of assertionError
+    // https://github.com/square/okhttp/issues/2591
+    @Config(sdk = 23)
     @Test
     public void shouldSetAudience() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
@@ -168,6 +189,9 @@ public class BaseAuthenticationRequestTest {
         assertThat(body, hasEntry("audience", "https://domain.auth0.com"));
     }
 
+    // Has to put that because of assertionError
+    // https://github.com/square/okhttp/issues/2591
+    @Config(sdk = 23)
     @Test
     public void shouldSetAccessToken() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
@@ -179,6 +203,9 @@ public class BaseAuthenticationRequestTest {
         assertThat(body, hasEntry("access_token", "accessToken"));
     }
 
+    // Has to put that because of assertionError
+    // https://github.com/square/okhttp/issues/2591
+    @Config(sdk = 23)
     @Test
     public void shouldAddAuthenticationParameters() throws Exception {
         HashMap<String, Object> parameters = new HashMap<>();
@@ -194,6 +221,9 @@ public class BaseAuthenticationRequestTest {
         assertThat(body, hasEntry("123", "890"));
     }
 
+    // Has to put that because of assertionError
+    // https://github.com/square/okhttp/issues/2591
+    @Config(sdk = 23)
     @Test
     public void shouldWhiteListOAuth2ParametersOnLegacyEndpoints() throws Exception {
         HashMap<String, Object> parameters = new HashMap<>();
@@ -215,6 +245,9 @@ public class BaseAuthenticationRequestTest {
         assertThat(body, not(hasKey("realm")));
     }
 
+    // Has to put that because of assertionError
+    // https://github.com/square/okhttp/issues/2591
+    @Config(sdk = 23)
     @Test
     public void shouldWhiteListLegacyParametersOnNonLegacyEndpoints() throws Exception {
         HashMap<String, Object> parameters = new HashMap<>();
