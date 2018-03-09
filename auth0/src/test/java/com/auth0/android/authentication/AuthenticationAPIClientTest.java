@@ -285,6 +285,9 @@ public class AuthenticationAPIClientTest {
         assertThat(body, not(hasKey("audience")));
     }
 
+    // Has to put that because of assertionError
+    // https://github.com/square/okhttp/issues/2591
+    @Config(sdk = 23)
     @Test
     public void shouldFetchTokenInfo() throws Exception {
         mockAPI.willReturnTokenInfo();
@@ -374,6 +377,9 @@ public class AuthenticationAPIClientTest {
         assertThat(callback, hasPayloadOfType(Credentials.class));
     }
 
+    // Has to put that because of assertionError
+    // https://github.com/square/okhttp/issues/2591
+    @Config(sdk = 23)
     @Test
     public void shouldLoginWithOAuthAccessTokenSync() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
@@ -628,6 +634,9 @@ public class AuthenticationAPIClientTest {
         assertThat(callback, hasPayloadOfType(DatabaseUser.class));
     }
 
+    // Has to put that because of assertionError
+    // https://github.com/square/okhttp/issues/2591
+    @Config(sdk = 23)
     @Test
     public void shouldNotSendNullUsernameOnSignUpSync() throws Exception {
         mockAPI.willReturnSuccessfulSignUp();
@@ -649,6 +658,9 @@ public class AuthenticationAPIClientTest {
         assertThat(user, is(notNullValue()));
     }
 
+    // Has to put that because of assertionError
+    // https://github.com/square/okhttp/issues/2591
+    @Config(sdk = 23)
     @Test
     public void shouldSignUpUser() throws Exception {
         mockAPI.willReturnSuccessfulSignUp()
@@ -681,6 +693,9 @@ public class AuthenticationAPIClientTest {
         assertThat(loginBody, not(hasKey("realm")));
     }
 
+    // Has to put that because of assertionError
+    // https://github.com/square/okhttp/issues/2591
+    @Config(sdk = 23)
     @Test
     public void shouldLoginWithUsernameSignedUpUserWithPasswordReamGrant() throws Exception {
         mockAPI.willReturnSuccessfulSignUp()
@@ -716,6 +731,9 @@ public class AuthenticationAPIClientTest {
         assertThat(loginBody, not(hasKey("connection")));
     }
 
+    // Has to put that because of assertionError
+    // https://github.com/square/okhttp/issues/2591
+    @Config(sdk = 23)
     @Test
     public void shouldSignUpUserWithCustomFields() throws Exception {
         mockAPI.willReturnSuccessfulSignUp()
@@ -748,6 +766,9 @@ public class AuthenticationAPIClientTest {
         assertThat(callback, hasPayloadOfType(Credentials.class));
     }
 
+    // Has to put that because of assertionError
+    // https://github.com/square/okhttp/issues/2591
+    @Config(sdk = 23)
     @Test
     public void shouldSignUpUserSync() throws Exception {
         mockAPI.willReturnSuccessfulSignUp()
@@ -780,6 +801,9 @@ public class AuthenticationAPIClientTest {
         assertThat(loginBody, hasEntry("scope", OPENID));
     }
 
+    // Has to put that because of assertionError
+    // https://github.com/square/okhttp/issues/2591
+    @Config(sdk = 23)
     @Test
     public void shouldSignUpUserWithoutUsername() throws Exception {
         mockAPI.willReturnSuccessfulSignUp()
@@ -984,6 +1008,10 @@ public class AuthenticationAPIClientTest {
         assertThat(callback, hasPayload(payload));
     }
 
+
+    // Has to put that because of assertionError
+    // https://github.com/square/okhttp/issues/2591
+    @Config(sdk = 23)
     @Test
     public void shouldCallDelegationSync() throws Exception {
         mockAPI.willReturnGenericDelegationToken();
@@ -1582,6 +1610,9 @@ public class AuthenticationAPIClientTest {
         assertThat(callback, hasPayloadOfType(Credentials.class));
     }
 
+    // Has to put that because of assertionError
+    // https://github.com/square/okhttp/issues/2591
+    @Config(sdk = 23)
     @Test
     public void shouldRenewAuthWithOAuthTokenIfOIDCConformantSync() throws Exception {
         Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
