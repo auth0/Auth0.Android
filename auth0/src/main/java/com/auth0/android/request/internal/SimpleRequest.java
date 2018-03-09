@@ -30,10 +30,6 @@ import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.ParameterizableRequest;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-
-import java.io.IOException;
-import java.io.Reader;
-
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.HttpUrl;
@@ -41,6 +37,9 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+
+import java.io.IOException;
+import java.io.Reader;
 
 import static com.auth0.android.request.internal.ResponseUtils.closeStream;
 

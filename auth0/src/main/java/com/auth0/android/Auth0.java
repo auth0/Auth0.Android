@@ -32,7 +32,6 @@ import android.support.annotation.Nullable;
 import com.auth0.android.auth0.BuildConfig;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.util.Telemetry;
-
 import okhttp3.HttpUrl;
 
 /**

@@ -24,11 +24,11 @@
 
 package com.auth0.android.util;
 
-import java.io.IOException;
-
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
+
+import java.io.IOException;
 
 public class AuthenticationAPI {
 

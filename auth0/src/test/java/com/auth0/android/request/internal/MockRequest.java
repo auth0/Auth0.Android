@@ -6,12 +6,12 @@ import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.ParameterizableRequest;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
 
 public class MockRequest<T, U extends Auth0Exception> implements ParameterizableRequest<T, U> {
 

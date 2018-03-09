@@ -32,7 +32,6 @@ import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.request.ErrorBuilder;
 import com.google.gson.Gson;
 import com.google.gson.TypeAdapter;
-
 import okhttp3.Call;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;

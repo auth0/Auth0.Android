@@ -26,7 +26,6 @@ package com.auth0.android.request.internal;
 
 import com.auth0.android.RequestBodyBuildException;
 import com.google.gson.Gson;
-
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
 

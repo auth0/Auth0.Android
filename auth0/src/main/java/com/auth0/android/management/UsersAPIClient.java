@@ -41,12 +41,12 @@ import com.auth0.android.request.internal.OkHttpClientFactory;
 import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+
 
 import java.util.List;
 import java.util.Map;
-
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
 
 /**
  * API client for Auth0 Management API.

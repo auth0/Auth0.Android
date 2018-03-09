@@ -5,7 +5,6 @@ import com.auth0.android.result.Credentials;
 import com.auth0.android.util.AuthenticationAPI;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.RecordedRequest;

@@ -42,7 +42,6 @@ import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-
 import okhttp3.HttpUrl;
 import okhttp3.mockwebserver.RecordedRequest;
 

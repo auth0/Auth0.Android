@@ -7,6 +7,8 @@ import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.ParameterizableRequest;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -15,9 +17,6 @@ import org.mockito.MockitoAnnotations;
 
 import java.util.Locale;
 import java.util.Map;
-
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
 
 import static com.auth0.android.request.internal.RequestMatcher.hasArguments;
 import static com.auth0.android.request.internal.RequestMatcher.hasHeaders;

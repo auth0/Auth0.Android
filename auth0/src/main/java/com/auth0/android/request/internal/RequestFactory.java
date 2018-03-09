@@ -34,13 +34,13 @@ import com.auth0.android.result.Credentials;
 import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
 
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
 
 public class RequestFactory {
 

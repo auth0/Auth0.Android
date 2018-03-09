@@ -6,12 +6,12 @@ import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.result.Credentials;
 import com.google.gson.Gson;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+
 
 import java.util.HashMap;
 import java.util.Map;
-
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
 
 import static com.auth0.android.authentication.ParameterBuilder.ACCESS_TOKEN_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.AUDIENCE_KEY;

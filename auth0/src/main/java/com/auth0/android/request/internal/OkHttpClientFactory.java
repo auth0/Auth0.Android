@@ -3,6 +3,11 @@ package com.auth0.android.request.internal;
 import android.os.Build;
 import android.support.annotation.VisibleForTesting;
 import android.util.Log;
+import okhttp3.ConnectionSpec;
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
+import okhttp3.TlsVersion;
+import okhttp3.logging.HttpLoggingInterceptor;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -10,12 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.net.ssl.SSLContext;
-
-import okhttp3.ConnectionSpec;
-import okhttp3.Interceptor;
-import okhttp3.OkHttpClient;
-import okhttp3.TlsVersion;
-import okhttp3.logging.HttpLoggingInterceptor;
 
 /**
  * Factory class used to configure and obtain a new OkHttpClient instance.

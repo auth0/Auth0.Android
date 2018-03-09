@@ -48,11 +48,10 @@ import com.auth0.android.result.UserProfile;
 import com.auth0.android.request.internal.OkHttpClientFactory;
 import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
-
-import java.util.Map;
-
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+
+import java.util.Map;
 
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_AUTHORIZATION_CODE;
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSWORD;
@@ -447,7 +446,6 @@ public class AuthenticationAPIClient {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(TOKEN_INFO_PATH)
                 .build();
-
 
         return factory.POST(url, client, gson, UserProfile.class, authErrorBuilder)
                 .addParameter(ID_TOKEN_KEY, idToken);
