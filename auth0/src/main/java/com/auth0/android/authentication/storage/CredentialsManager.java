@@ -12,8 +12,10 @@ import com.auth0.android.result.Credentials;
 import java.util.Date;
 
 import static android.text.TextUtils.isEmpty;
-import static com.auth0.android.authentication.storage.CredentialsManagerError.INVALID_CREDENTIALS;
-import static com.auth0.android.authentication.storage.CredentialsManagerError.RENEW_CREDENTIALS_ERROR;
+import static com.auth0.android.authentication.storage.CredentialsManagerException.INVALID_CREDENTIALS;
+import static com.auth0.android.authentication.storage.CredentialsManagerException.NO_AVAILABLE_REFRESH_TOKEN;
+import static com.auth0.android.authentication.storage.CredentialsManagerException.NO_CREDENTIALS_SET;
+import static com.auth0.android.authentication.storage.CredentialsManagerException.RENEW_CREDENTIALS_ERROR;
 
 /**
  * Class that handles credentials and allows to save and retrieve them.
@@ -48,7 +50,7 @@ public class CredentialsManager {
      */
     public void saveCredentials(@NonNull Credentials credentials) {
         if ((isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken())) || credentials.getExpiresAt() == null) {
-            throw CredentialsManagerException.create(INVALID_CREDENTIALS);
+            throw new CredentialsManagerException(INVALID_CREDENTIALS);
         }
         storage.store(KEY_ACCESS_TOKEN, credentials.getAccessToken());
         storage.store(KEY_REFRESH_TOKEN, credentials.getRefreshToken());
@@ -75,7 +77,7 @@ public class CredentialsManager {
 
         if (isEmpty(accessToken) && isEmpty(idToken) || expiresAt == null) {
 
-            callback.onFailure(CredentialsManagerException.create(CredentialsManagerError.NO_CREDENTIALS_SET));
+            callback.onFailure(new CredentialsManagerException(NO_CREDENTIALS_SET));
             return;
         }
         if (expiresAt > getCurrentTimeInMillis()) {
@@ -83,7 +85,7 @@ public class CredentialsManager {
             return;
         }
         if (refreshToken == null) {
-            callback.onFailure(CredentialsManagerException.create(CredentialsManagerError.NO_AVAILABLE_REFRESH_TOKEN));
+            callback.onFailure(new CredentialsManagerException(NO_AVAILABLE_REFRESH_TOKEN));
             return;
         }
 
@@ -98,7 +100,7 @@ public class CredentialsManager {
 
             @Override
             public void onFailure(AuthenticationException error) {
-                callback.onFailure(CredentialsManagerException.create(RENEW_CREDENTIALS_ERROR, error));
+                callback.onFailure(new CredentialsManagerException(RENEW_CREDENTIALS_ERROR, error));
             }
         });
     }
