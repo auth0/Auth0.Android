@@ -44,7 +44,6 @@ import com.google.gson.reflect.TypeToken;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 
-
 import java.util.List;
 import java.util.Map;
 

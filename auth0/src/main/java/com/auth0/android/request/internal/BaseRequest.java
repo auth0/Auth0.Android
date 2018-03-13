@@ -51,7 +51,6 @@ import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
-
 import static com.auth0.android.request.internal.ResponseUtils.closeStream;
 
 abstract class BaseRequest<T, U extends Auth0Exception> implements ParameterizableRequest<T, U>, AuthorizableRequest<T, U>, Callback {

@@ -41,7 +41,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-
 public class RequestFactory {
 
     public static final String DEFAULT_LOCALE_IF_MISSING = "en_US";

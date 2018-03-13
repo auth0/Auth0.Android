@@ -81,7 +81,6 @@ public class OkHttpClientFactory {
             specs.add(ConnectionSpec.CLEARTEXT);
 
             clientBuilder.connectionSpecs(specs);
-
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
             Log.e(TAG, "Error while setting TLS 1.2", e);
         }

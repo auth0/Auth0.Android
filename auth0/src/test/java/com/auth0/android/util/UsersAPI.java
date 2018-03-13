@@ -30,7 +30,6 @@ import okhttp3.mockwebserver.RecordedRequest;
 
 import java.io.IOException;
 
-
 public class UsersAPI {
 
     private MockWebServer server;
