@@ -24,6 +24,8 @@
 
 package com.auth0.android.util;
 
+import android.util.Log;
+
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.AuthenticationCallback;
 import com.jayway.awaitility.core.ConditionTimeoutException;

@@ -25,6 +25,7 @@
 package com.auth0.android.authentication;
 
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.Resources;
 
@@ -81,7 +82,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 21, manifest = Config.NONE)
+@Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 25, manifest = Config.NONE)
 public class AuthenticationAPIClientTest {
 
     private static final String CLIENT_ID = "CLIENTID";
@@ -177,6 +178,7 @@ public class AuthenticationAPIClientTest {
         assertThat(client.getBaseURL(), equalTo("https://" + DOMAIN + "/"));
     }
 
+    @Config(sdk = 23)
     @Test
     public void shouldLoginWithUserAndPassword() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
@@ -195,6 +197,7 @@ public class AuthenticationAPIClientTest {
         assertThat(body, not(hasKey("realm")));
     }
 
+    @Config(sdk = 23)
     @Test
     public void shouldLoginWithUserAndPasswordSync() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
@@ -212,6 +215,7 @@ public class AuthenticationAPIClientTest {
         assertThat(body, not(hasKey("realm")));
     }
 
+    @Config(sdk = 23)
     @Test
     public void shouldLoginWithPasswordReamGrant() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
@@ -239,6 +243,7 @@ public class AuthenticationAPIClientTest {
         assertThat(body, not(hasKey("audience")));
     }
 
+    @Config(sdk = 23)
     @Test
     public void shouldLoginWithUserAndPasswordUsingOAuthTokenEndpoint() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
@@ -262,6 +267,7 @@ public class AuthenticationAPIClientTest {
         assertThat(body, not(hasKey("audience")));
     }
 
+    @Config(sdk = 23)
     @Test
     public void shouldLoginWithUserAndPasswordSyncUsingOAuthTokenEndpoint() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
@@ -1163,6 +1169,7 @@ public class AuthenticationAPIClientTest {
         assertThat(delegation, is(notNullValue()));
     }
 
+    @Config(sdk = 23)
     @Test
     public void shouldSendEmailCodeWithCustomConnection() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
@@ -1403,6 +1410,7 @@ public class AuthenticationAPIClientTest {
         assertThat(body, hasEntry("connection", "sms"));
     }
 
+    @Config(sdk = 23)
     @Test
     public void shouldSendSMSLinkWithCustomConnection() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
@@ -1464,6 +1472,7 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
+    @Config(sdk = 23)
     public void shouldSendSMSLinkAndroidWithCustomConnection() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
 
@@ -1523,6 +1532,7 @@ public class AuthenticationAPIClientTest {
         assertThat(body, hasEntry("connection", "sms"));
     }
 
+    @Config(sdk = 23)
     @Test
     public void shouldFetchProfileAfterLoginRequest() throws Exception {
         mockAPI.willReturnSuccessfulLogin()
@@ -1704,6 +1714,7 @@ public class AuthenticationAPIClientTest {
         assertThat(authentication, is(notNullValue()));
     }
 
+    @Config(sdk = 23)
     @Test
     public void shouldGetOAuthTokensUsingCodeVerifier() throws Exception {
         mockAPI.willReturnTokens()
