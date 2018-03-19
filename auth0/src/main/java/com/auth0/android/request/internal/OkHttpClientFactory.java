@@ -7,12 +7,14 @@ import android.util.Log;
 import com.squareup.okhttp.ConnectionSpec;
 import com.squareup.okhttp.Interceptor;
 import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Protocol;
 import com.squareup.okhttp.TlsVersion;
 import com.squareup.okhttp.logging.HttpLoggingInterceptor;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.net.ssl.SSLContext;
@@ -29,8 +31,9 @@ public class OkHttpClientFactory {
     /**
      * This method creates an instance of OKHttpClient according to the provided parameters.
      * It is used internally and is not intended to be used directly.
+     *
      * @param loggingEnabled Enable logging in the created OkHttpClient.
-     * @param tls12Enforced Enforce TLS 1.2 in the created OkHttpClient on devices with API 16-21
+     * @param tls12Enforced  Enforce TLS 1.2 in the created OkHttpClient on devices with API 16-21
      * @return new OkHttpClient instance created according to the parameters.
      */
     public OkHttpClient createClient(boolean loggingEnabled, boolean tls12Enforced) {
@@ -45,6 +48,7 @@ public class OkHttpClientFactory {
         if (tls12Enforced) {
             enforceTls12(client);
         }
+        client.setProtocols(Arrays.asList(Protocol.HTTP_1_1, Protocol.SPDY_3));
         return client;
     }
 
@@ -56,6 +60,7 @@ public class OkHttpClientFactory {
 
     /**
      * Enable TLS 1.2 on the OkHttpClient on API 16-21, which is supported but not enabled by default.
+     *
      * @link https://github.com/square/okhttp/issues/2372
      * @see TLS12SocketFactory
      */
