@@ -34,13 +34,13 @@ Open your app's `AndroidManifest.xml` file and add the following permission.
 
 ## Usage
 
-First create an instance of `Auth0` with your client information
+First create an instance of `Auth0` with your Application information
 
 ```java
 Auth0 account = new Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}");
 ```
 
-Alternatively, you can save your client information in the `strings.xml` file using the following names:
+Alternatively, you can save your Application information in the `strings.xml` file using the following names:
 
 ```xml
 <resources>
@@ -165,7 +165,7 @@ If you've followed the configuration steps, the authentication result will be re
 If you've followed this document configuration steps you've noticed that the default scheme used in the Callback Uri is `https`. This works best for Android API 23 or newer if you're using [Android App Links](https://developer.android.com/training/app-links/index.html), but in previous Android versions this may show the intent chooser dialog prompting the user to chose either your application or the browser. You can change this behaviour by using a custom unique scheme so that the OS opens directly the link with your app.
 
 1. Update the `auth0Scheme` Manifest Placeholder on the `app/build.gradle` file or update the intent-filter declaration in the `AndroidManifest.xml` to use the new scheme.
-2. Update the allowed callback urls in your [Auth0 Dashboard](https://manage.auth0.com/#/applications) client's settings.
+2. Update the allowed callback urls in your [Auth0 Dashboard](https://manage.auth0.com/#/applications) application's settings.
 3. Call `withScheme()` passing the custom scheme you want to use.
 
 
@@ -186,7 +186,7 @@ WebAuthProvider.init(account)
 
 #### Use Code grant with PKCE
 
-> Before you can use `Code Grant` in Android, make sure to go to your [client's section](https://manage.auth0.com/#/applications) in dashboard and check in the Settings that `Client Type` is `Native`.
+> Before you can use `Code Grant` in Android, make sure to go to your [application's section](https://manage.auth0.com/#/applications) in dashboard and check in the Settings that `Client Type` is `Native`.
 
 
 ```java
@@ -197,7 +197,7 @@ WebAuthProvider.init(account)
 
 #### Specify audience
 
-The snippet below requests the "userinfo" audience in order to guarantee OIDC compliant responses from the server. This can also be achieved by flipping the "OIDC Conformant" switch on in the OAuth Advanced Settings of your client. For more information check [this documentation](https://auth0.com/docs/api-auth/intro#how-to-use-the-new-flows).
+The snippet below requests the "userinfo" audience in order to guarantee OIDC compliant responses from the server. This can also be achieved by flipping the "OIDC Conformant" switch on in the OAuth Advanced Settings of your application. For more information check [this documentation](https://auth0.com/docs/api-auth/intro#how-to-use-the-new-flows).
 
 ```java
 WebAuthProvider.init(account)
@@ -260,7 +260,7 @@ AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
 
 #### Login with database connection
 
-If the `Auth0` instance wasn't configured as "OIDC conformant", this call requires the client to have the *Resource Owner* Client Grant Type enabled. Check [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
+If the `Auth0` instance wasn't configured as "OIDC conformant", this call requires the Application to have the *Resource Owner* Client Grant Type enabled. Check [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
 
 ```java
 authentication
@@ -282,7 +282,7 @@ authentication
 
 #### Passwordless Login
 
-This feature requires your client to have the *Resource Owner* Legacy Grant Type enabled. Check [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it. Note that Passwordless authentication *cannot be used* with the [OIDC Conformant Mode](#oidc-conformant-mode) enabled.
+This feature requires your Application to have the *Resource Owner* Legacy Grant Type enabled. Check [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it. Note that Passwordless authentication *cannot be used* with the [OIDC Conformant Mode](#oidc-conformant-mode) enabled.
 
 Passwordless it's a 2 steps flow:
 
@@ -593,7 +593,7 @@ By default you should at least use the following files:
 
 Auth0 helps you to:
 
-* Add authentication with [multiple authentication sources](https://docs.auth0.com/identityproviders), either social like **Google, Facebook, Microsoft Account, LinkedIn, GitHub, Twitter, Box, Salesforce, amont others**, or enterprise identity systems like **Windows Azure AD, Google Apps, Active Directory, ADFS or any SAML Identity Provider**.
+* Add authentication with [multiple authentication sources](https://docs.auth0.com/identityproviders), either social like **Google, Facebook, Microsoft Account, LinkedIn, GitHub, Twitter, Box, Salesforce, among others**, or enterprise identity systems like **Windows Azure AD, Google Apps, Active Directory, ADFS or any SAML Identity Provider**.
 * Add authentication through more traditional **[username/password databases](https://docs.auth0.com/mysql-connection-tutorial)**.
 * Add support for **[linking different user accounts](https://docs.auth0.com/link-accounts)** with the same user.
 * Support for generating signed [Json Web Tokens](https://docs.auth0.com/jwt) to call your APIs and **flow the user identity** securely.

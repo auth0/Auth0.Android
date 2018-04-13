@@ -75,7 +75,7 @@ public class Auth0 {
     }
 
     /**
-     * Creates a new object using clientId {@literal &} domain
+     * Creates a new object using the Application's clientId {@literal &} domain
      *
      * @param clientId of your Auth0 application
      * @param domain   of your Auth0 account

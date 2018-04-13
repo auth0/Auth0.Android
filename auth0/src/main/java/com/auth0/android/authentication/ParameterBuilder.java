@@ -79,7 +79,7 @@ public class ParameterBuilder {
     /**
      * Sets the 'client_id' parameter
      *
-     * @param clientId clientID
+     * @param clientId the application's client id
      * @return itself
      */
     public ParameterBuilder setClientId(String clientId) {
