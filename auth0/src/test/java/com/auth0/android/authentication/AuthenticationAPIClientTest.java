@@ -178,6 +178,32 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
+    public void shouldLoginWithMFAOTPCode() throws Exception {
+        mockAPI.willReturnSuccessfulLogin();
+        final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
+
+        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        auth0.setOIDCConformant(true);
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
+        client.loginWithOTP("ey30.the-mfa-token.value", "123456")
+                .start(callback);
+        assertThat(callback, hasPayloadOfType(Credentials.class));
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+        Map<String, String> body = bodyFromRequest(request);
+
+        assertThat(request.getPath(), equalTo("/oauth/token"));
+        assertThat(body, hasEntry("client_id", CLIENT_ID));
+        assertThat(body, hasEntry("grant_type", "http://auth0.com/oauth/grant-type/mfa-otp"));
+        assertThat(body, hasEntry("mfa_token", "ey30.the-mfa-token.value"));
+        assertThat(body, hasEntry("otp", "123456"));
+        assertThat(body, not(hasKey("username")));
+        assertThat(body, not(hasKey("password")));
+        assertThat(body, not(hasKey("connection")));
+    }
+
+    @Test
     public void shouldLoginWithUserAndPassword() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
 

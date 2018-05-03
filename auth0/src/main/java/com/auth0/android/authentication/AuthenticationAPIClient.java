@@ -40,12 +40,12 @@ import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.request.Request;
 import com.auth0.android.request.internal.AuthenticationErrorBuilder;
 import com.auth0.android.request.internal.GsonProvider;
+import com.auth0.android.request.internal.OkHttpClientFactory;
 import com.auth0.android.request.internal.RequestFactory;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.DatabaseUser;
 import com.auth0.android.result.Delegation;
 import com.auth0.android.result.UserProfile;
-import com.auth0.android.request.internal.OkHttpClientFactory;
 import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
 import com.squareup.okhttp.HttpUrl;
@@ -54,6 +54,7 @@ import com.squareup.okhttp.OkHttpClient;
 import java.util.Map;
 
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_AUTHORIZATION_CODE;
+import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_MFA_OTP;
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSWORD;
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSWORD_REALM;
 import static com.auth0.android.authentication.ParameterBuilder.ID_TOKEN_KEY;
@@ -81,6 +82,8 @@ public class AuthenticationAPIClient {
     private static final String OAUTH_CODE_KEY = "code";
     private static final String REDIRECT_URI_KEY = "redirect_uri";
     private static final String TOKEN_KEY = "token";
+    private static final String MFA_TOKEN_KEY = "mfa_token";
+    private static final String ONE_TIME_PASSWORD_KEY = "otp";
     private static final String DELEGATION_PATH = "delegation";
     private static final String ACCESS_TOKEN_PATH = "access_token";
     private static final String SIGN_UP_PATH = "signup";
@@ -97,7 +100,8 @@ public class AuthenticationAPIClient {
     private static final String HEADER_AUTHORIZATION = "Authorization";
 
     private final Auth0 auth0;
-    @VisibleForTesting final OkHttpClient client;
+    @VisibleForTesting
+    final OkHttpClient client;
     private final Gson gson;
     private final RequestFactory factory;
     private final ErrorBuilder<AuthenticationException> authErrorBuilder;
@@ -233,6 +237,39 @@ public class AuthenticationAPIClient {
                 .asDictionary();
 
         return loginWithToken(requestParameters);
+    }
+
+    /**
+     * Log in a user using the One Time Password code after they have received the 'mfa_required' error.
+     * The MFA token tells the server the username or email, password and realm values sent on the first request.
+     * Requires your client to have the <b>MFA</b> Grant Type enabled. See <a href="https://auth0.com/docs/clients/client-grant-types">Client Grant Types</a> to learn how to enable it.* Example usage:
+     * <pre>
+     * {@code
+     * client.loginWithOTP("{mfa token}", "{one time password}")
+     *      .start(new BaseCallback<Credentials>() {
+     *          {@literal}Override
+     *          public void onSuccess(Credentials payload) { }
+     *
+     *          {@literal}Override
+     *          public void onFailure(AuthenticationException error) { }
+     *      });
+     * }
+     * </pre>
+     *
+     * @param mfaToken the token received in the previous {@link #login(String, String, String)} response.
+     * @param otp      the one time password code provided by the resource owner, typically obtained from an
+     *                 MFA application such as Google Authenticator or Guardian.
+     * @return a request to configure and start that will yield {@link Credentials}
+     */
+    @SuppressWarnings("WeakerAccess")
+    public AuthenticationRequest loginWithOTP(@NonNull String mfaToken, @NonNull String otp) {
+        Map<String, Object> parameters = ParameterBuilder.newBuilder()
+                .setGrantType(GRANT_TYPE_MFA_OTP)
+                .set(MFA_TOKEN_KEY, mfaToken)
+                .set(ONE_TIME_PASSWORD_KEY, otp)
+                .asDictionary();
+
+        return loginWithToken(parameters);
     }
 
     /**

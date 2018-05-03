@@ -280,6 +280,32 @@ authentication
 
 > The default scope used is `openid`
 
+
+#### Login using MFA with One Time Password code
+
+This call requires the client to have the *MFA* Client Grant Type enabled. Check [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
+
+When you sign in to a multifactor authentication enabled connection using the `login` method, you receive an error standing that MFA is required for that user along with an `mfa_token` value. Use this value to call `loginWithOTP` and complete the MFA flow passing the One Time Password from the enrolled MFA code generator app.
+
+
+```java
+authentication
+    .loginWithOTP("the mfa token", "123456")
+    .start(new BaseCallback<Credentials>() {
+        @Override
+        public void onSuccess(Credentials payload) {
+            //Logged in!
+        }
+
+        @Override
+        public void onFailure(AuthenticationException error) {
+            //Error!
+        }
+    });
+```
+
+
+
 #### Passwordless Login
 
 This feature requires your Application to have the *Resource Owner* Legacy Grant Type enabled. Check [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it. Note that Passwordless authentication *cannot be used* with the [OIDC Conformant Mode](#oidc-conformant-mode) enabled.

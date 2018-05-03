@@ -157,17 +157,23 @@ public class AuthenticationException extends Auth0Exception {
 
     /// When MFA code is required to authenticate
     public boolean isMultifactorRequired() {
-        return "a0.mfa_required".equals(code);
+        return "mfa_required".equals(code) || "a0.mfa_required".equals(code);
     }
 
     /// When MFA is required and the user is not enrolled
     public boolean isMultifactorEnrollRequired() {
-        return "a0.mfa_registration_required".equals(code);
+        return "a0.mfa_registration_required".equals(code) || "unsupported_challenge_type".equals(code);
+    }
+
+    /// When the MFA Token used on the login request is malformed or has expired
+    public boolean isMultifactorTokenInvalid() {
+        return "expired_token".equals(code) && "mfa_token is expired".equals(description) ||
+                "invalid_grant".equals(code) && "Malformed mfa_token".equals(description);
     }
 
     /// When MFA code sent is invalid or expired
     public boolean isMultifactorCodeInvalid() {
-        return "a0.mfa_invalid_code".equals(code);
+        return "a0.mfa_invalid_code".equals(code) || "invalid_grant".equals(code) && "Invalid otp_code.".equals(description);
     }
 
     /// When password used for SignUp does not match connection's strength requirements.
