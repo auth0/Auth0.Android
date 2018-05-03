@@ -139,6 +139,31 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
+    public void shouldHaveExpiredMultifactorTokenOnOIDCMode() throws Exception {
+        values.put(ERROR_KEY, "expired_token");
+        values.put(ERROR_DESCRIPTION_KEY, "mfa_token is expired");
+        AuthenticationException ex = new AuthenticationException(values);
+        assertThat(ex.isMultifactorTokenInvalid(), is(true));
+    }
+
+    @Test
+    public void shouldHaveMalformedMultifactorTokenOnOIDCMode() throws Exception {
+        values.put(ERROR_KEY, "invalid_grant");
+        values.put(ERROR_DESCRIPTION_KEY, "Malformed mfa_token");
+        AuthenticationException ex = new AuthenticationException(values);
+        assertThat(ex.isMultifactorTokenInvalid(), is(true));
+    }
+
+    @Test
+    public void shouldRequireMultifactorOnOIDCMode() throws Exception {
+        values.put(ERROR_KEY, "mfa_required");
+        values.put("mfa_token", "some-random-token");
+        AuthenticationException ex = new AuthenticationException(values);
+        assertThat(ex.isMultifactorRequired(), is(true));
+        assertThat((String) ex.getValue("mfa_token"), is("some-random-token"));
+    }
+
+    @Test
     public void shouldRequireMultifactor() throws Exception {
         values.put(CODE_KEY, "a0.mfa_required");
         AuthenticationException ex = new AuthenticationException(values);
@@ -146,10 +171,26 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
+    public void shouldRequireMultifactorEnrollOnOIDCMode() throws Exception {
+        values.put(ERROR_KEY, "unsupported_challenge_type");
+        values.put(ERROR_DESCRIPTION_KEY, "User is not enrolled with guardian");
+        AuthenticationException ex = new AuthenticationException(values);
+        assertThat(ex.isMultifactorEnrollRequired(), is(true));
+    }
+
+    @Test
     public void shouldRequireMultifactorEnroll() throws Exception {
         values.put(CODE_KEY, "a0.mfa_registration_required");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.isMultifactorEnrollRequired(), is(true));
+    }
+
+    @Test
+    public void shouldHaveInvalidMultifactorCodeOnOIDCMode() throws Exception {
+        values.put(ERROR_KEY, "invalid_grant");
+        values.put(ERROR_DESCRIPTION_KEY, "Invalid otp_code.");
+        AuthenticationException ex = new AuthenticationException(values);
+        assertThat(ex.isMultifactorCodeInvalid(), is(true));
     }
 
     @Test

@@ -102,6 +102,8 @@ public class CredentialsManager {
 
     /**
      * Checks if a non-expired pair of credentials can be obtained from this manager.
+     *
+     * @return whether there are valid credentials stored on this manager.
      */
     public boolean hasValidCredentials() {
         String accessToken = storage.retrieveString(KEY_ACCESS_TOKEN);

@@ -1,5 +1,17 @@
 # Change Log
 
+## [1.12.2](https://github.com/auth0/Auth0.Android/tree/1.12.2) (2018-03-19)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.12.1...1.12.2)
+
+**Fixed**
+- Disable HTTP 2 protocol on OkHttp client [\#152](https://github.com/auth0/Auth0.Android/pull/152) ([lbalmaceda](https://github.com/lbalmaceda))
+
+## [1.12.1](https://github.com/auth0/Auth0.Android/tree/1.12.1) (2018-02-01)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.12.0...1.12.1)
+
+**Fixed**
+- Fix NPE when browser re-attempts a finished authentication [\#143](https://github.com/auth0/Auth0.Android/pull/143) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.12.0](https://github.com/auth0/Auth0.Android/tree/1.12.0) (2017-11-17)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.11.0...1.12.0)
 

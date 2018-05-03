@@ -71,7 +71,11 @@ public class AuthenticationActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (!intentLaunched) {
+        if (!intentLaunched && getIntent().getExtras() == null) {
+            //Activity was launched in an unexpected way
+            finish();
+            return;
+        } else if (!intentLaunched) {
             intentLaunched = true;
             launchAuthenticationIntent();
             return;

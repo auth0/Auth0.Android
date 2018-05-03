@@ -75,7 +75,7 @@ public class Auth0 {
     }
 
     /**
-     * Creates a new object using clientId {@literal &} domain
+     * Creates a new object using the Application's clientId {@literal &} domain
      *
      * @param clientId of your Auth0 application
      * @param domain   of your Auth0 account
@@ -216,6 +216,7 @@ public class Auth0 {
 
     /**
      * Set whether to enforce TLS 1.2 on devices with API 16-21.
+     *
      * @param enforced whether TLS 1.2 is enforced on devices with API 16-21.
      */
     public void setTLS12Enforced(boolean enforced) {

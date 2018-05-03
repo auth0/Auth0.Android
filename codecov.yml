@@ -15,7 +15,7 @@ coverage:
       default:
         enabled: true
         target: 80%
-        threshold: 10%
+        threshold: 30%
         if_no_uploads: error
     changes:
       default:

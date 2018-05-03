@@ -38,8 +38,8 @@ import java.util.Map;
  * Represents a delegation request for Auth0 tokens that will yield a new delegation token.
  * The delegation response depends on the 'api_type' parameter.
  *
- * @param <T> type of object that will hold the delegation response. When requesting Auth0’s 'id_token' you can
- *            use {@link Delegation}, otherwise you’ll need to provide an object that can be created from the JSON
+ * @param <T> type of object that will hold the delegation response. When requesting Auth0's 'id_token' you can
+ *            use {@link Delegation}, otherwise you'll need to provide an object that can be created from the JSON
  *            payload or just use {@code Map<String, Object>}
  */
 public class DelegationRequest<T> implements Request<T, AuthenticationException> {
