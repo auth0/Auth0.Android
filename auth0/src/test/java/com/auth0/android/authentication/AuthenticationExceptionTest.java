@@ -280,4 +280,11 @@ public class AuthenticationExceptionTest {
         assertThat(ex.isPasswordLeaked(), is(true));
     }
 
+    @Test
+    public void shouldHaveLoginRequired() throws Exception {
+        values.put(CODE_KEY, "login_required");
+        AuthenticationException ex = new AuthenticationException(values);
+        assertThat(ex.isLoginRequired(), is(true));
+    }
+
 }
