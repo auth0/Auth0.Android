@@ -1448,6 +1448,40 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings({"deprecation", "ThrowableResultOfMethodCallIgnored"})
     @Test
+    public void shouldFailToResumeWithIntentWithLoginRequired() throws Exception {
+        WebAuthProvider.init(account)
+                .withState("1234567890")
+                .useCodeGrant(false)
+                .start(activity, callback);
+        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", null, "1234567890", "login_required", "Login Required"));
+        assertTrue(WebAuthProvider.resume(intent));
+
+        verify(callback).onFailure(authExceptionCaptor.capture());
+
+        assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
+        assertThat(authExceptionCaptor.getValue().getCode(), is("login_required"));
+        assertThat(authExceptionCaptor.getValue().getDescription(), is("Login Required"));
+    }
+
+    @SuppressWarnings({"deprecation", "ThrowableResultOfMethodCallIgnored"})
+    @Test
+    public void shouldFailToResumeWithRequestCodeWithLoginRequired() throws Exception {
+        WebAuthProvider.init(account)
+                .withState("1234567890")
+                .useCodeGrant(false)
+                .start(activity, callback, REQUEST_CODE);
+        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", null, "1234567890", "login_required", "Login Required"));
+        assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
+
+        verify(callback).onFailure(authExceptionCaptor.capture());
+
+        assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
+        assertThat(authExceptionCaptor.getValue().getCode(), is("login_required"));
+        assertThat(authExceptionCaptor.getValue().getDescription(), is("Login Required"));
+    }
+
+    @SuppressWarnings({"deprecation", "ThrowableResultOfMethodCallIgnored"})
+    @Test
     public void shouldFailToResumeWithIntentWithInvalidState() throws Exception {
         WebAuthProvider.init(account)
                 .withState("abcdefghijk")

@@ -37,6 +37,7 @@ class OAuthManager {
 
     private static final String ERROR_VALUE_ACCESS_DENIED = "access_denied";
     private static final String ERROR_VALUE_UNAUTHORIZED = "unauthorized";
+    private static final String ERROR_VALUE_LOGIN_REQUIRED = "login_required";
     private static final String METHOD_SHA_256 = "S256";
     private static final String KEY_CODE_CHALLENGE = "code_challenge";
     private static final String KEY_CODE_CHALLENGE_METHOD = "code_challenge_method";
@@ -171,6 +172,9 @@ class OAuthManager {
             throw new AuthenticationException(ERROR_VALUE_ACCESS_DENIED, "Permissions were not granted. Try again.");
         } else if (ERROR_VALUE_UNAUTHORIZED.equalsIgnoreCase(errorValue)) {
             throw new AuthenticationException(ERROR_VALUE_UNAUTHORIZED, errorDescription);
+        } else if (ERROR_VALUE_LOGIN_REQUIRED.equals(errorValue)) {
+            //Whitelist to allow SSO errors go through
+            throw new AuthenticationException(errorValue, errorDescription);
         } else {
             throw new AuthenticationException("a0.invalid_configuration", "The application isn't configured properly for the social connection. Please check your Auth0's application configuration");
         }

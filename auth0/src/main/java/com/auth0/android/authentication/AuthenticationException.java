@@ -206,4 +206,9 @@ public class AuthenticationException extends Auth0Exception {
         return "access_denied".equals(code);
     }
 
+    /// When authenticating with web-based authentication using prompt=none and the auth0 session had expired
+    public boolean isLoginRequired() {
+        return "login_required".equals(code);
+    }
+
 }
