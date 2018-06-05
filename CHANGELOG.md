@@ -1,5 +1,12 @@
 # Change Log
 
+## [1.13.0](https://github.com/auth0/Auth0.Android/tree/1.13.0) (2018-06-05)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.12.2...1.13.0)
+
+**Added**
+- Allow SSO error to go through [\#161](https://github.com/auth0/Auth0.Android/pull/161) ([lbalmaceda](https://github.com/lbalmaceda))
+- Add support for MFA using OIDC conformant endpoints [\#146](https://github.com/auth0/Auth0.Android/pull/146) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.12.2](https://github.com/auth0/Auth0.Android/tree/1.12.2) (2018-03-19)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.12.1...1.12.2)
 
