@@ -29,7 +29,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
     private static final String TAG = CustomTabsController.class.getSimpleName();
     private static final long MAX_WAIT_TIME_SECONDS = 1;
     private static final String ACTION_CUSTOM_TABS_CONNECTION = "android.support.customtabs.action.CustomTabsService";
-    //Known Browsers
+    //Known Browsers with Custom Tabs support
     private static final String CHROME_STABLE = "com.android.chrome";
     private static final String CHROME_SYSTEM = "com.google.android.apps.chrome";
     private static final String CHROME_BETA = "com.android.chrome.beta";
@@ -44,7 +44,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
     private CustomTabsOptions customTabsOptions;
 
     @VisibleForTesting
-    CustomTabsController(@NonNull Context context, @NonNull String browserPackage) {
+    CustomTabsController(@NonNull Context context, @Nullable String browserPackage) {
         this.context = new WeakReference<>(context);
         this.session = new AtomicReference<>();
         this.sessionLatch = new CountDownLatch(1);
@@ -93,7 +93,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
         Log.v(TAG, "Trying to bind the service");
         Context context = this.context.get();
         boolean success = false;
-        if (context != null) {
+        if (context != null && preferredPackage != null) {
             success = CustomTabsClient.bindCustomTabsService(context, preferredPackage, this);
         }
         Log.v(TAG, "Bind request result: " + success);
@@ -133,7 +133,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
             public void run() {
                 boolean available = false;
                 try {
-                    available = sessionLatch.await(MAX_WAIT_TIME_SECONDS, TimeUnit.SECONDS);
+                    available = sessionLatch.await(preferredPackage == null ? 0 : MAX_WAIT_TIME_SECONDS, TimeUnit.SECONDS);
                 } catch (InterruptedException ignored) {
                 }
                 Log.d(TAG, "Launching URI. Custom Tabs available: " + available);
@@ -142,9 +142,9 @@ class CustomTabsController extends CustomTabsServiceConnection {
                 intent.setData(uri);
                 try {
                     context.startActivity(intent);
-                } catch (ActivityNotFoundException ignored) {
-                    Intent fallbackIntent = new Intent(Intent.ACTION_VIEW, uri);
-                    context.startActivity(fallbackIntent);
+                } catch (ActivityNotFoundException ex) {
+                    Log.e(TAG, "No Browser available to open the URI");
+                    throw new IllegalStateException("Could not find any Browser application installed in this device to handle the intent.", ex);
                 }
             }
         }).start();
@@ -155,9 +155,9 @@ class CustomTabsController extends CustomTabsServiceConnection {
      * It will pick the default browser first if is Custom Tab compatible, then any Chrome browser or the first Custom Tab compatible browser.
      *
      * @param context a valid Context
-     * @return the recommended Browser application package name, compatible with Custom Tabs if possible.
+     * @return the recommended Browser application package name, compatible with Custom Tabs. Null if no compatible browser is found.
      */
-    @VisibleForTesting
+    @Nullable
     static String getBestBrowserPackage(@NonNull Context context) {
         PackageManager pm = context.getPackageManager();
         Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.example.com"));
@@ -191,7 +191,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
         } else if (!customTabsBrowsers.isEmpty()) {
             return customTabsBrowsers.get(0);
         } else {
-            return defaultBrowser;
+            return null;
         }
     }
 }
