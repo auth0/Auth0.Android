@@ -27,6 +27,8 @@ package com.auth0.android.provider;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
@@ -267,6 +269,11 @@ public class WebAuthProvider {
             return this;
         }
 
+        static boolean hasBrowserAppInstalled(@NonNull PackageManager packageManager) {
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://auth0.com"));
+            return intent.resolveActivity(packageManager) != null;
+        }
+
         /**
          * Request user Authentication. The result will be received in the callback.
          *
@@ -280,6 +287,12 @@ public class WebAuthProvider {
             managerInstance = null;
             if (account.getAuthorizeUrl() == null) {
                 final AuthenticationException ex = new AuthenticationException("a0.invalid_authorize_url", "Auth0 authorize URL not properly set. This can be related to an invalid domain.");
+                callback.onFailure(ex);
+                return;
+            }
+
+            if (useBrowser && !hasBrowserAppInstalled(activity.getPackageManager())) {
+                AuthenticationException ex = new AuthenticationException("a0.browser_not_available", "No Browser application installed to perform web authentication.");
                 callback.onFailure(ex);
                 return;
             }
