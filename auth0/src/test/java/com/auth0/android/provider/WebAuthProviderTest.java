@@ -68,6 +68,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -1681,11 +1682,9 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldFailToStartWithBrowserWhenNoBrowserAppIsInstalled() throws Exception {
-        PackageManager pm = mock(PackageManager.class);
-        when(activity.getPackageManager()).thenReturn(pm);
-        when(pm.resolveActivity(intentCaptor.capture(), eq(PackageManager.MATCH_DEFAULT_ONLY))).thenReturn(null);
-
+        prepareBrowserApp(false, null);
         WebAuthProvider.init(account)
+                .useBrowser(true)
                 .start(activity, callback);
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -1694,6 +1693,25 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getCode(), is("a0.browser_not_available"));
         assertThat(authExceptionCaptor.getValue().getDescription(), is("No Browser application installed to perform web authentication."));
         assertThat(WebAuthProvider.getInstance(), is(nullValue()));
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void shouldNotFailToStartWithWebviewWhenNoBrowserAppIsInstalled() throws Exception {
+        prepareBrowserApp(false, null);
+        WebAuthProvider.init(account)
+                .useBrowser(false)
+                .start(activity, callback, REQUEST_CODE);
+
+        verify(activity).startActivityForResult(intentCaptor.capture(), any(Integer.class));
+
+        Intent intent = intentCaptor.getValue();
+        assertThat(intent, is(notNullValue()));
+        assertThat(intent, hasComponent(AuthenticationActivity.class.getName()));
+        assertThat(intent, hasFlag(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+        assertThat(intent.getData(), is(nullValue()));
+
+        verify(callback, never()).onFailure(any(AuthenticationException.class));
     }
 
     @Test
