@@ -159,6 +159,23 @@ WebAuthProvider.init(account)
 
 If you've followed the configuration steps, the authentication result will be redirected from the browser to your application and you'll receive it in the Callback.
 
+#### Those who don't need Web Authentication in their app
+
+If you don't plan to use the _Web Authentication_ feature you will still be prompted to provide the `manifestPlaceholders` values since the `AuthenticationActivity` included in this library will require them and the Gradle tasks won't be able to run. Declare the activity manually with `tools:node="remove"` in your app's Android Manifest in order to make the manifest merger remove it from the final manifest file. Additionally, 2 more unused activities can be removed from the final APK by using the same process. A complete snippet to achieve this is:
+
+```xml
+<activity
+    android:name="com.auth0.android.provider.AuthenticationActivity"
+    tools:node="remove"/>
+<!--Optional: Remove RedirectActivity and WebAuthActivity -->
+<activity
+    android:name="com.auth0.android.provider.RedirectActivity"
+    tools:node="remove"/>
+<activity
+    android:name="com.auth0.android.provider.WebAuthActivity"
+    tools:node="remove"/>
+```
+
 
 ##### A note about App Deep Linking:
 
