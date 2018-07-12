@@ -269,6 +269,7 @@ public class WebAuthProvider {
             return this;
         }
 
+        @VisibleForTesting
         static boolean hasBrowserAppInstalled(@NonNull PackageManager packageManager) {
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://auth0.com"));
             return intent.resolveActivity(packageManager) != null;
