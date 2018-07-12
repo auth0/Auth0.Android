@@ -114,6 +114,9 @@ class CustomTabsController extends CustomTabsServiceConnection {
      * Opens a Uri in a Custom Tab or Browser.
      * The Custom Tab service will be given up to {@link CustomTabsController#MAX_WAIT_TIME_SECONDS} to be connected.
      * If it fails to connect the Uri will be opened on a Browser.
+     * <p>
+     * In the exceptional case that no Browser app is installed on the device, this method will fail silently and do nothing.
+     * Please, ensure the {@link Intent#ACTION_VIEW} action can be handled before calling this method.
      *
      * @param uri the uri to open in a Custom Tab or Browser.
      */
@@ -143,8 +146,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
                 try {
                     context.startActivity(intent);
                 } catch (ActivityNotFoundException ex) {
-                    Log.e(TAG, "No Browser available to open the URI");
-                    throw new IllegalStateException("Could not find any Browser application installed in this device to handle the intent.", ex);
+                    Log.e(TAG, "Could not find any Browser application installed in this device to handle the intent.");
                 }
             }
         }).start();
