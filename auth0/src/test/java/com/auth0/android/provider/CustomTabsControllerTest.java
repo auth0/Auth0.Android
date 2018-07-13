@@ -14,6 +14,7 @@ import android.support.customtabs.CustomTabsCallback;
 import android.support.customtabs.CustomTabsClient;
 import android.support.customtabs.CustomTabsIntent;
 import android.support.customtabs.CustomTabsServiceConnection;
+import android.support.customtabs.CustomTabsSession;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -26,8 +27,7 @@ import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.mockito.internal.verification.VerificationModeFactory;
-import org.mockito.verification.Timeout;
+import org.powermock.api.mockito.PowerMockito;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
@@ -44,6 +44,7 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -87,19 +88,20 @@ public class CustomTabsControllerTest {
         MockitoAnnotations.initMocks(this);
         Activity activity = Robolectric.setupActivity(Activity.class);
         context = spy(activity);
+        //By using this constructor, the "default browser" is Custom Tabs compatible
         controller = new CustomTabsController(context, DEFAULT_BROWSER_PACKAGE);
     }
 
     @Test
     public void shouldNotHaveCustomizationOptionsSetByDefault() throws Exception {
-        controller = new CustomTabsController(context, DEFAULT_BROWSER_PACKAGE);
+        CustomTabsController controller = new CustomTabsController(context, DEFAULT_BROWSER_PACKAGE);
         assertThat(controller.getCustomizationOptions(), is(nullValue()));
     }
 
     @Test
     public void shouldChangeCustomizationOptions() throws Exception {
         CustomTabsOptions options = mock(CustomTabsOptions.class);
-        controller = new CustomTabsController(context, DEFAULT_BROWSER_PACKAGE);
+        CustomTabsController controller = new CustomTabsController(context, DEFAULT_BROWSER_PACKAGE);
         controller.setCustomizationOptions(options);
         assertThat(controller.getCustomizationOptions(), is(options));
     }
@@ -119,10 +121,10 @@ public class CustomTabsControllerTest {
     }
 
     @Test
-    public void shouldChooseDefaultBrowserIfNoOtherBrowserIsCustomTabsCapable() throws Exception {
+    public void shouldReturnNullIfNoBrowserIsCustomTabsCapable() throws Exception {
         preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE);
         String bestPackage = CustomTabsController.getBestBrowserPackage(context);
-        assertThat(bestPackage, is(DEFAULT_BROWSER_PACKAGE));
+        assertThat(bestPackage, is(nullValue()));
     }
 
     @Test
@@ -181,10 +183,25 @@ public class CustomTabsControllerTest {
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
         Intent intent = launchIntentCaptor.getValue();
         assertThat(intent.getAction(), is(Intent.ACTION_VIEW));
+        assertThat(intent.getPackage(), is(DEFAULT_BROWSER_PACKAGE));
         assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_SESSION), is(true));
         assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR), is(false));
         assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE), is(true));
         assertThat(intent.getIntExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE, CustomTabsIntent.NO_TITLE), is(CustomTabsIntent.NO_TITLE));
+        assertThat(intent.getData(), is(uri));
+        assertThat(intent, not(hasFlag(Intent.FLAG_ACTIVITY_NO_HISTORY)));
+    }
+
+    @Test
+    public void shouldLaunchUriUsingFallbackWhenNoCustomTabsCompatibleBrowserIsAvailable() throws Exception {
+        CustomTabsController controller = new CustomTabsController(context, null);
+        controller.launchUri(uri);
+
+        verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
+        Intent intent = launchIntentCaptor.getValue();
+        assertThat(intent.getAction(), is(Intent.ACTION_VIEW));
+        //A null package name would make the OS decide the best app to resolve the intent
+        assertThat(intent.getPackage(), is(nullValue()));
         assertThat(intent.getData(), is(uri));
         assertThat(intent, not(hasFlag(Intent.FLAG_ACTIVITY_NO_HISTORY)));
     }
@@ -204,6 +221,7 @@ public class CustomTabsControllerTest {
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
         Intent intent = launchIntentCaptor.getValue();
         assertThat(intent.getAction(), is(Intent.ACTION_VIEW));
+        assertThat(intent.getPackage(), is(DEFAULT_BROWSER_PACKAGE));
         assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_SESSION), is(true));
         assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE), is(true));
         assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR), is(true));
@@ -241,31 +259,26 @@ public class CustomTabsControllerTest {
                 .when(context).startActivity(any(Intent.class));
         controller.launchUri(uri);
 
-        verify(context, new Timeout(MAX_TEST_WAIT_TIME_MS, VerificationModeFactory.times(2))).startActivity(launchIntentCaptor.capture());
+        verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
         List<Intent> intents = launchIntentCaptor.getAllValues();
 
         Intent customTabIntent = intents.get(0);
         assertThat(customTabIntent.getAction(), is(Intent.ACTION_VIEW));
+        //A null package name would make the OS decide the best app to resolve the intent
+        assertThat(customTabIntent.getPackage(), is(nullValue()));
         assertThat(customTabIntent.getData(), is(uri));
         assertThat(customTabIntent, not(hasFlag(Intent.FLAG_ACTIVITY_NO_HISTORY)));
         assertThat(customTabIntent.hasExtra(CustomTabsIntent.EXTRA_SESSION), is(true));
         assertThat(customTabIntent.hasExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE), is(true));
         assertThat(customTabIntent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR), is(false));
         assertThat(customTabIntent.getIntExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE, CustomTabsIntent.NO_TITLE), is(CustomTabsIntent.NO_TITLE));
-
-        Intent fallbackIntent = intents.get(1);
-        assertThat(fallbackIntent.getAction(), is(Intent.ACTION_VIEW));
-        assertThat(fallbackIntent.getData(), is(uri));
-        assertThat(fallbackIntent, not(hasFlag(Intent.FLAG_ACTIVITY_NO_HISTORY)));
-        assertThat(fallbackIntent.hasExtra(CustomTabsIntent.EXTRA_SESSION), is(false));
-        assertThat(fallbackIntent.hasExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE), is(false));
     }
 
     //Helper Methods
 
     @SuppressWarnings("WrongConstant")
     private void bindService(boolean willSucceed) {
-        Mockito.doReturn(willSucceed).when(context).bindService(
+        doReturn(willSucceed).when(context).bindService(
                 serviceIntentCaptor.capture(),
                 serviceConnectionCaptor.capture(),
                 Mockito.anyInt());
@@ -274,9 +287,15 @@ public class CustomTabsControllerTest {
         assertThat(intent.getPackage(), is(DEFAULT_BROWSER_PACKAGE));
     }
 
-    private void connectBoundService() {
+    private void connectBoundService() throws Exception {
+        CustomTabsSession session = mock(CustomTabsSession.class);
+        ComponentName componentName = new ComponentName(DEFAULT_BROWSER_PACKAGE, DEFAULT_BROWSER_PACKAGE + ".CustomTabsService");
+        //This depends on an implementation detail but is the only way to test it because of methods visibility
+        PowerMockito.when(session, "getComponentName").thenReturn(componentName);
+
+        when(customTabsClient.newSession(Matchers.<CustomTabsCallback>eq(null))).thenReturn(session);
         CustomTabsServiceConnection conn = serviceConnectionCaptor.getValue();
-        conn.onCustomTabsServiceConnected(new ComponentName(DEFAULT_BROWSER_PACKAGE, DEFAULT_BROWSER_PACKAGE + ".CustomTabsService"), customTabsClient);
+        conn.onCustomTabsServiceConnected(componentName, customTabsClient);
         verify(customTabsClient).newSession(Matchers.<CustomTabsCallback>eq(null));
         verify(customTabsClient).warmup(eq(0L));
     }
@@ -287,11 +306,12 @@ public class CustomTabsControllerTest {
         when(context.getPackageManager()).thenReturn(pm);
         ResolveInfo defaultPackage = resolveInfoForPackageName(defaultBrowserPackage);
         when(pm.resolveActivity(any(Intent.class), anyInt())).thenReturn(defaultPackage);
-        when(pm.resolveService(any(Intent.class), eq(0))).thenReturn(defaultPackage);
 
         List<ResolveInfo> customTabsCapable = new ArrayList<>();
         for (String customTabEnabledPackage : customTabEnabledPackages) {
-            customTabsCapable.add(resolveInfoForPackageName(customTabEnabledPackage));
+            ResolveInfo info = resolveInfoForPackageName(customTabEnabledPackage);
+            when(pm.resolveService(any(Intent.class), eq(0))).thenReturn(info);
+            customTabsCapable.add(info);
         }
         when(pm.queryIntentActivities(any(Intent.class), eq(0))).thenReturn(customTabsCapable);
     }

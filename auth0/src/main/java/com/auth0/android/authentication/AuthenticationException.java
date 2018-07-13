@@ -145,6 +145,11 @@ public class AuthenticationException extends Auth0Exception {
         return values.get(key);
     }
 
+    // When there is no Browser app installed to handle the web authentication
+    public boolean isBrowserAppNotAvailable() {
+        return "a0.browser_not_available".equals(code);
+    }
+
     // When the Authorize URL is invalid
     public boolean isInvalidAuthorizeURL() {
         return "a0.invalid_authorize_url".equals(code);

@@ -287,4 +287,11 @@ public class AuthenticationExceptionTest {
         assertThat(ex.isLoginRequired(), is(true));
     }
 
+    @Test
+    public void shouldHaveMissingBrowserApp() throws Exception {
+        values.put(CODE_KEY, "a0.browser_not_available");
+        AuthenticationException ex = new AuthenticationException(values);
+        assertThat(ex.isBrowserAppNotAvailable(), is(true));
+    }
+
 }
