@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.13.1](https://github.com/auth0/Auth0.Android/tree/1.13.1) (2018-07-13)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.13.0...1.13.1)
+
+**Fixed**
+- Fix Web Authentication issues [\#169](https://github.com/auth0/Auth0.Android/pull/169) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.13.0](https://github.com/auth0/Auth0.Android/tree/1.13.0) (2018-06-05)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.12.2...1.13.0)
 
