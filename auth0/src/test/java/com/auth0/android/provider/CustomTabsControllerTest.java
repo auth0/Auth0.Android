@@ -5,6 +5,7 @@ import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -172,6 +173,15 @@ public class CustomTabsControllerTest {
         final CustomTabsServiceConnection connection = serviceConnectionCaptor.getValue();
         CustomTabsServiceConnection controllerConnection = controller;
         assertThat(connection, is(equalTo(controllerConnection)));
+    }
+
+    @Test
+    public void shouldNotUnbindIfNotBound() throws Exception {
+        bindService(false);
+        connectBoundService();
+
+        controller.unbindService();
+        verify(context, never()).unbindService(any(ServiceConnection.class));
     }
 
     @Test
