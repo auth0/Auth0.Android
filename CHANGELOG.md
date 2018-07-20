@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.13.2](https://github.com/auth0/Auth0.Android/tree/1.13.2) (2018-07-20)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.13.1...1.13.2)
+
+**Fixed**
+- Fix service handling when custom tabs are not available [\#173](https://github.com/auth0/Auth0.Android/pull/173) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.13.1](https://github.com/auth0/Auth0.Android/tree/1.13.1) (2018-07-13)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.13.0...1.13.1)
 
