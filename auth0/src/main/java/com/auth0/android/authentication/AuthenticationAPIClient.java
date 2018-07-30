@@ -47,6 +47,8 @@ import com.auth0.android.result.DatabaseUser;
 import com.auth0.android.result.Delegation;
 import com.auth0.android.result.UserProfile;
 import com.auth0.android.util.Telemetry;
+import com.auth0.android.verification.JwkProvider;
+import com.auth0.android.verification.JwtVerifier;
 import com.google.gson.Gson;
 import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.OkHttpClient;
@@ -105,6 +107,7 @@ public class AuthenticationAPIClient {
     private final Gson gson;
     private final RequestFactory factory;
     private final ErrorBuilder<AuthenticationException> authErrorBuilder;
+    private final JwtVerifier verifier;
 
 
     /**
@@ -137,10 +140,17 @@ public class AuthenticationAPIClient {
         this.gson = gson;
         this.factory = factory;
         this.authErrorBuilder = new AuthenticationErrorBuilder();
+        this.verifier = new JwtVerifier(new JwkProvider(auth0.getDomainUrl()));
         final Telemetry telemetry = auth0.getTelemetry();
         if (telemetry != null) {
             factory.setClientInfo(telemetry.getValue());
         }
+    }
+
+    @NonNull
+    @VisibleForTesting
+    public JwtVerifier getTokenVerifier() {
+        return verifier;
     }
 
     public String getClientId() {

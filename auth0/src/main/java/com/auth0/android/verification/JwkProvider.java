@@ -1,12 +1,15 @@
 package com.auth0.android.verification;
 
 import android.net.Uri;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
 import android.util.Log;
 import android.webkit.URLUtil;
 
+import com.auth0.android.callback.BaseCallback;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
 import java.io.IOException;
@@ -19,8 +22,6 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
 import java.security.PublicKey;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 public class JwkProvider implements KeyProvider {
@@ -29,37 +30,11 @@ public class JwkProvider implements KeyProvider {
     private final URL url;
     private List<Jwk> jwks;
 
-    public JwkProvider(String domain) {
+    public JwkProvider(@NonNull String domain) {
         url = createUrl(domain);
-        fetchJwks(url);
-    }
-
-    @SuppressWarnings("unchecked")
-    private List<Jwk> fetchJwks(URL url) {
-        Log.d(TAG, String.format("Trying to fetch JWKS from %s", url.toString()));
-        HttpURLConnection urlConnection = null;
-        List<Jwk> jwks = Collections.emptyList();
-        try {
-            urlConnection = (HttpURLConnection) url.openConnection();
-            InputStream is = urlConnection.getInputStream();
-
-            Type listType = new TypeToken<List<Jwk>>() {
-            }.getType();
-            InputStreamReader reader = new InputStreamReader(is, Charset.defaultCharset());
-            jwks.addAll((Collection<? extends Jwk>) new Gson().fromJson(reader, listType));
-        } catch (IOException e) {
-            //TODO: handle
-            e.printStackTrace();
-        } finally {
-            if (urlConnection != null) {
-                urlConnection.disconnect();
-            }
-        }
-        return jwks;
     }
 
     private URL createUrl(String domain) {
-        //TODO: Extract to constructor parameter
         final Uri.Builder builder = Uri.parse(domain)
                 .buildUpon()
                 .appendPath(".well-known")
@@ -75,26 +50,52 @@ public class JwkProvider implements KeyProvider {
     }
 
     @Override
-    @WorkerThread
-    public PublicKey getPublicKey(@Nullable String keyId) throws KeyProviderException {
-        if (jwks == null) {
-            jwks = fetchJwks(url);
-        }
-        Throwable creationException = null;
-        try {
-            if (keyId == null && jwks.size() == 1) {
-                return jwks.get(0).getPublicKey();
-            }
-            if (keyId != null) {
-                for (Jwk jwk : jwks) {
-                    if (keyId.equals(jwk.getKeyId())) {
-                        return jwk.getPublicKey();
+    public void getPublicKey(@Nullable final String keyId, @NonNull final BaseCallback<PublicKey, KeyProviderException> callback) {
+        Runnable task = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    if (jwks == null) {
+                        jwks = fetchJwks();
                     }
+                    if (keyId == null && jwks.size() == 1) {
+                        callback.onSuccess(jwks.get(0).getPublicKey());
+                        return;
+                    }
+                    if (keyId != null) {
+                        for (Jwk jwk : jwks) {
+                            if (keyId.equals(jwk.getKeyId())) {
+                                callback.onSuccess(jwk.getPublicKey());
+                            }
+                        }
+                    }
+                } catch (IOException | InvalidKeyException e) {
+                    callback.onFailure(new KeyProviderException(String.format("Could not obtain a JWK with key id %s", keyId), e));
                 }
             }
-        } catch (InvalidKeyException e) {
-            creationException = e;
+        };
+        new Thread(task).start();
+    }
+
+    @WorkerThread
+    private List<Jwk> fetchJwks() throws IOException {
+        Log.d(TAG, String.format("Trying to fetch JWKS from %s", url.toString()));
+        HttpURLConnection urlConnection = null;
+        try {
+            urlConnection = (HttpURLConnection) url.openConnection();
+            InputStream is = urlConnection.getInputStream();
+
+            Type listType = new TypeToken<List<Jwk>>() {
+            }.getType();
+            InputStreamReader reader = new InputStreamReader(is, Charset.defaultCharset());
+            Gson gson = new GsonBuilder()
+                    .registerTypeAdapter(listType, new JwksDeserializer())
+                    .create();
+            return gson.fromJson(reader, listType);
+        } finally {
+            if (urlConnection != null) {
+                urlConnection.disconnect();
+            }
         }
-        throw new KeyProviderException(String.format("Could not obtain a Json Web Key with key id %s", keyId), creationException);
     }
 }
