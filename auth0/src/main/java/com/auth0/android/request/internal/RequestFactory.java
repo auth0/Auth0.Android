@@ -32,6 +32,7 @@ import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.util.Telemetry;
+import com.auth0.android.authentication.JwtVerifier;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.HttpUrl;
@@ -51,6 +52,7 @@ public class RequestFactory {
     private static final String CLIENT_INFO_HEADER = Telemetry.HEADER_NAME;
 
     private final HashMap<String, String> headers;
+    private JwtVerifier verifier;
 
     public RequestFactory() {
         headers = new HashMap<>();
@@ -70,6 +72,9 @@ public class RequestFactory {
         headers.put(USER_AGENT_HEADER, userAgent);
     }
 
+    public void setJwtVerifier(JwtVerifier verifier) {
+        this.verifier = verifier;
+    }
 
     public AuthenticationRequest authenticationPOST(HttpUrl url, OkHttpClient client, Gson gson) {
         final AuthenticationRequest request = createAuthenticationRequest(url, client, gson, "POST");
@@ -126,7 +131,11 @@ public class RequestFactory {
     }
 
     <T, U extends Auth0Exception> ParameterizableRequest<T, U> createSimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, String method, Class<T> clazz, ErrorBuilder<U> errorBuilder) {
-        return new SimpleRequest<>(url, client, gson, method, clazz, errorBuilder);
+        SimpleRequest<T, U> request = new SimpleRequest<>(url, client, gson, method, clazz, errorBuilder);
+        if ("POST".equals(method) && Credentials.class.equals(clazz)) {
+            request.setJwtVerifier(verifier);
+        }
+        return request;
     }
 
     <T, U extends Auth0Exception> ParameterizableRequest<T, U> createSimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, String method, TypeToken<T> typeToken, ErrorBuilder<U> errorBuilder) {
@@ -138,7 +147,9 @@ public class RequestFactory {
     }
 
     AuthenticationRequest createAuthenticationRequest(HttpUrl url, OkHttpClient client, Gson gson, String method) {
-        return new BaseAuthenticationRequest(url, client, gson, method, Credentials.class);
+        BaseAuthenticationRequest request = new BaseAuthenticationRequest(url, client, gson, method, Credentials.class);
+        request.setJwtVerifier(verifier);
+        return request;
     }
 
     <U extends Auth0Exception> ParameterizableRequest<Void, U> createVoidRequest(HttpUrl url, OkHttpClient client, Gson gson, String method, ErrorBuilder<U> errorBuilder) {

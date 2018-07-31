@@ -24,10 +24,15 @@
 
 package com.auth0.android.request.internal;
 
+import android.text.TextUtils;
+
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.RequestBodyBuildException;
+import com.auth0.android.authentication.JwtVerifier;
+import com.auth0.android.authentication.TokenVerificationException;
 import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.ParameterizableRequest;
+import com.auth0.android.result.Credentials;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.Callback;
@@ -45,6 +50,7 @@ import static com.auth0.android.request.internal.ResponseUtils.closeStream;
 class SimpleRequest<T, U extends Auth0Exception> extends BaseRequest<T, U> implements ParameterizableRequest<T, U>, Callback {
 
     private final String method;
+    private JwtVerifier verifier;
 
     public SimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, String httpMethod, TypeToken<T> typeToken, ErrorBuilder<U> errorBuilder) {
         super(url, client, gson, gson.getAdapter(typeToken), errorBuilder);
@@ -72,8 +78,14 @@ class SimpleRequest<T, U extends Auth0Exception> extends BaseRequest<T, U> imple
         ResponseBody body = response.body();
         try {
             Reader charStream = body.charStream();
-            T payload = getAdapter().fromJson(charStream);
-            postOnSuccess(payload);
+            T result = getAdapter().fromJson(charStream);
+            if (result instanceof Credentials) {
+                Credentials credentials = (Credentials) result;
+                assertValidIdToken(credentials);
+            }
+            postOnSuccess(result);
+        } catch (TokenVerificationException e) {
+            postOnFailure(getErrorBuilder().from("The received Id Token is not valid", e));
         } catch (IOException e) {
             final Auth0Exception auth0Exception = new Auth0Exception("Failed to parse response to request to " + url, e);
             postOnFailure(getErrorBuilder().from("Failed to parse a successful response", auth0Exception));
@@ -108,11 +120,28 @@ class SimpleRequest<T, U extends Auth0Exception> extends BaseRequest<T, U> imple
         ResponseBody body = response.body();
         try {
             Reader charStream = body.charStream();
-            return getAdapter().fromJson(charStream);
+            T result = getAdapter().fromJson(charStream);
+            if (result instanceof Credentials) {
+                Credentials credentials = (Credentials) result;
+                assertValidIdToken(credentials);
+            }
+            return result;
         } catch (IOException e) {
             throw new Auth0Exception("Failed to parse response to request to " + url, e);
         } finally {
             closeStream(body);
         }
+    }
+
+    void setJwtVerifier(JwtVerifier verifier) {
+        this.verifier = verifier;
+    }
+
+    private void assertValidIdToken(Credentials credentials) throws TokenVerificationException {
+        String idToken = credentials.getIdToken();
+        if (verifier == null || TextUtils.isEmpty(idToken)) {
+            return;
+        }
+        verifier.verify(idToken);
     }
 }
