@@ -75,6 +75,7 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -95,19 +96,13 @@ public class AuthenticationAPIClientTest {
     private static final String COMPANY = "Auth0";
     private static final String OPENID = "openid";
 
-    private AuthenticationAPIClient client;
-    private Auth0 auth0;
-    private Gson gson;
-
     private AuthenticationAPI mockAPI;
+    private AuthenticationAPIClient client; //Legacy Behavior enabled Client
 
     @Before
     public void setUp() throws Exception {
         mockAPI = new AuthenticationAPI();
-        final String domain = mockAPI.getDomain();
-        auth0 = new Auth0(CLIENT_ID, domain, domain);
-        client = new AuthenticationAPIClient(auth0);
-        gson = new GsonBuilder().serializeNulls().create();
+        client = createClient(false);
     }
 
     @After
@@ -117,12 +112,21 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldSetUserAgent() throws Exception {
-        Auth0 account = mock(Auth0.class);
+        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         RequestFactory factory = mock(RequestFactory.class);
         OkHttpClientFactory clientFactory = mock(OkHttpClientFactory.class);
-        AuthenticationAPIClient client = new AuthenticationAPIClient(account, factory, clientFactory);
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0, factory, clientFactory);
         client.setUserAgent("nexus-5x");
         verify(factory).setUserAgent("nexus-5x");
+    }
+
+    @Test
+    public void shouldUseJwtVerifier() throws Exception {
+        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
+        RequestFactory factory = mock(RequestFactory.class);
+        OkHttpClientFactory clientFactory = mock(OkHttpClientFactory.class);
+        new AuthenticationAPIClient(auth0, factory, clientFactory);
+        verify(factory).setJwtVerifier(any(JwtVerifier.class));
     }
 
     @Test
@@ -133,7 +137,7 @@ public class AuthenticationAPIClientTest {
         OkHttpClientFactory clientFactory = mock(OkHttpClientFactory.class);
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         auth0.setTelemetry(telemetry);
-        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0, factory, clientFactory);
+        new AuthenticationAPIClient(auth0, factory, clientFactory);
         verify(factory).setClientInfo("the-telemetry-data");
     }
 
@@ -143,7 +147,7 @@ public class AuthenticationAPIClientTest {
         OkHttpClientFactory clientFactory = mock(OkHttpClientFactory.class);
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         auth0.doNotSendTelemetry();
-        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0, factory, clientFactory);
+        new AuthenticationAPIClient(auth0, factory, clientFactory);
         verify(factory, never()).setClientInfo(any(String.class));
     }
 
@@ -182,9 +186,7 @@ public class AuthenticationAPIClientTest {
         mockAPI.willReturnSuccessfulLogin();
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
 
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
-        auth0.setOIDCConformant(true);
-        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
+        AuthenticationAPIClient client = createClient(true);
         client.loginWithOTP("ey30.the-mfa-token.value", "123456")
                 .start(callback);
         assertThat(callback, hasPayloadOfType(Credentials.class));
@@ -239,13 +241,11 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldLoginWithPasswordReamGrant() throws Exception {
+    public void shouldLoginWithPasswordRealmGrant() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
 
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
-        auth0.setOIDCConformant(true);
-        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
+        AuthenticationAPIClient client = createClient(true);
         client.login(SUPPORT_AUTH0_COM, "some-password", MY_CONNECTION)
                 .start(callback);
         assertThat(callback, hasPayloadOfType(Credentials.class));
@@ -715,7 +715,9 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         auth0.setOIDCConformant(true);
-        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
+        RequestFactory requestFactory = Mockito.spy(new RequestFactory());
+        doNothing().when(requestFactory).setJwtVerifier(any(JwtVerifier.class));
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0, requestFactory, new OkHttpClientFactory());
         client.signUp(SUPPORT_AUTH0_COM, PASSWORD, SUPPORT, MY_CONNECTION)
                 .start(callback);
 
@@ -847,7 +849,9 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         auth0.setOIDCConformant(true);
-        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
+        RequestFactory requestFactory = Mockito.spy(new RequestFactory());
+        doNothing().when(requestFactory).setJwtVerifier(any(JwtVerifier.class));
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0, requestFactory, new OkHttpClientFactory());
         client.signUp(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
                 .start(callback);
 
@@ -882,7 +886,9 @@ public class AuthenticationAPIClientTest {
 
         Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         auth0.setOIDCConformant(false);
-        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
+        RequestFactory requestFactory = Mockito.spy(new RequestFactory());
+        doNothing().when(requestFactory).setJwtVerifier(any(JwtVerifier.class));
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0, requestFactory, new OkHttpClientFactory());
         final Credentials credentials = client
                 .signUp(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
                 .execute();
@@ -1545,9 +1551,6 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldRevokeToken() throws Exception {
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
-        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-
         mockAPI.willReturnSuccessfulEmptyBody();
         final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
         client.revokeToken("refreshToken")
@@ -1566,9 +1569,6 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldRevokeTokenSync() throws Exception {
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
-        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-
         mockAPI.willReturnSuccessfulEmptyBody();
         client.revokeToken("refreshToken")
                 .execute();
@@ -1584,9 +1584,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldRenewAuthWithOAuthTokenIfOIDCConformant() throws Exception {
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
-        auth0.setOIDCConformant(true);
-        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
+        AuthenticationAPIClient client = createClient(true);
 
         mockAPI.willReturnSuccessfulLogin();
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
@@ -1607,9 +1605,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldRenewAuthWithOAuthTokenIfOIDCConformantSync() throws Exception {
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
-        auth0.setOIDCConformant(true);
-        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
+        AuthenticationAPIClient client = createClient(true);
 
         mockAPI.willReturnSuccessfulLogin();
         Credentials credentials = client.renewAuth("refreshToken")
@@ -1629,10 +1625,6 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldRenewAuthWithDelegationIfNotOIDCConformant() throws Exception {
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
-        auth0.setOIDCConformant(false);
-        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-
         mockAPI.willReturnSuccessfulLogin();
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         client.renewAuth("refreshToken")
@@ -1652,10 +1644,6 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldRenewAuthWithDelegationIfNotOIDCConformantSync() throws Exception {
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
-        auth0.setOIDCConformant(false);
-        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-
         mockAPI.willReturnSuccessfulLogin();
         Credentials credentials = client.renewAuth("refreshToken")
                 .execute();
@@ -1743,7 +1731,16 @@ public class AuthenticationAPIClientTest {
         assertThat(callback.getError().getDescription(), is(equalTo("Unauthorized")));
     }
 
+    private AuthenticationAPIClient createClient(boolean oidcConformant) {
+        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        auth0.setOIDCConformant(oidcConformant);
+        RequestFactory requestFactory = Mockito.spy(new RequestFactory());
+        doNothing().when(requestFactory).setJwtVerifier(any(JwtVerifier.class));
+        return new AuthenticationAPIClient(auth0, requestFactory, new OkHttpClientFactory());
+    }
+
     private Map<String, String> bodyFromRequest(RecordedRequest request) throws java.io.IOException {
+        Gson gson = new GsonBuilder().serializeNulls().create();
         final Type mapType = new TypeToken<Map<String, String>>() {
         }.getType();
         return gson.fromJson(request.getBody().readUtf8(), mapType);
