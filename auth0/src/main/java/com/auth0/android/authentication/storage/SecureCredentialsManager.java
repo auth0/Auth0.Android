@@ -141,7 +141,7 @@ public class SecureCredentialsManager {
         long expiresAt = credentials.getExpiresAt().getTime();
         boolean canRefresh = !isEmpty(credentials.getRefreshToken());
 
-        Log.e(TAG, "Trying to encrypt the given data using the private key.");
+        Log.d(TAG, "Trying to encrypt the given data using the private key.");
         try {
             byte[] encrypted = crypto.encrypt(json.getBytes());
             String encryptedEncoded = Base64.encodeToString(encrypted, Base64.DEFAULT);
