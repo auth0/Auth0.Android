@@ -182,8 +182,7 @@ abstract class BaseRequest<T, U extends Auth0Exception> implements Parameterizab
             Request request = doBuildRequest();
             client.newCall(request).enqueue(this);
         } catch (RequestBodyBuildException e) {
-            final U exception = errorBuilder.from("Error parsing the request body", e);
-            callback.onFailure(exception);
+            callback.onFailure(errorBuilder.from("Error parsing the request body", e));
         }
     }
 

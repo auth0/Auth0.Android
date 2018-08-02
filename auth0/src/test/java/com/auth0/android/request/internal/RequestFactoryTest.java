@@ -48,7 +48,7 @@ public class RequestFactoryTest {
         MockitoAnnotations.initMocks(this);
         gson = new Gson();
         url = HttpUrl.parse("http://domain.auth0.com");
-        factory = createBaseFactory();
+        factory = createMockFactory();
     }
 
     @Test
@@ -180,7 +180,7 @@ public class RequestFactoryTest {
         };
     }
 
-    private RequestFactory createBaseFactory() {
+    private RequestFactory createMockFactory() {
         final MockRequestFactory factory = new MockRequestFactory();
         factory.setClientInfo(CLIENT_INFO);
         factory.setUserAgent(USER_AGENT);

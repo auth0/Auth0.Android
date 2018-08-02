@@ -1735,6 +1735,7 @@ public class AuthenticationAPIClientTest {
         Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         auth0.setOIDCConformant(oidcConformant);
         RequestFactory requestFactory = Mockito.spy(new RequestFactory());
+        //Disable Id Token Verification for this class
         doNothing().when(requestFactory).setJwtVerifier(any(JwtVerifier.class));
         return new AuthenticationAPIClient(auth0, requestFactory, new OkHttpClientFactory());
     }

@@ -122,6 +122,15 @@ public class AuthenticationAPI {
         return this;
     }
 
+    public AuthenticationAPI willReturnSuccessfulLoginWithoutIdToken() {
+        String json = "{\n" +
+                "  \"access_token\": \"" + ACCESS_TOKEN + "\",\n" +
+                "  \"token_type\": \"" + BEARER + "\"\n" +
+                "}";
+        server.enqueue(responseWithJSON(json, 200));
+        return this;
+    }
+
     public AuthenticationAPI willReturnFailedLogin() {
         String json = "{\n" +
                 "  \"error\": \"invalid_request\",\n" +
