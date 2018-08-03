@@ -14,6 +14,7 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.util.Date;
+import java.util.List;
 
 public class JwtVerifier {
 
@@ -65,10 +66,11 @@ public class JwtVerifier {
             throw new TokenVerificationException(String.format("The token has expired at %s", exp));
         }
         String issuer = jwt.getIssuer();
-        if (issuer != null && !issuer.equals(expectedIssuer)) {
+        if (issuer != null && expectedIssuer != null && !issuer.equals(expectedIssuer)) {
             throw new TokenVerificationException("The token has an invalid issuer");
         }
-        if (!jwt.getAudience().contains(expectedAudience)) {
+        List<String> audience = jwt.getAudience();
+        if (!audience.isEmpty() && expectedAudience != null && !audience.contains(expectedAudience)) {
             throw new TokenVerificationException("The token has an invalid audience");
         }
     }
