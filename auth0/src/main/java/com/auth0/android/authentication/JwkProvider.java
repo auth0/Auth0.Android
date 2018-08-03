@@ -3,11 +3,11 @@ package com.auth0.android.authentication;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import android.support.annotation.WorkerThread;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
-import android.webkit.URLUtil;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -17,6 +17,7 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
 
@@ -46,17 +47,26 @@ class JwkProvider implements KeyProvider {
     private List<Jwk> jwks;
 
     JwkProvider(@NonNull String domain) {
-        url = createUrl(domain);
+        this(createUrl(domain));
     }
 
-    private URL createUrl(String domain) {
-        final Uri.Builder builder = Uri.parse(domain)
+    @SuppressWarnings("WeakerAccess")
+    @VisibleForTesting
+    JwkProvider(@NonNull URL url) {
+        this.url = url;
+    }
+
+    @VisibleForTesting
+    URL getURL() {
+        return this.url;
+    }
+
+    private static URL createUrl(String domain) {
+        String safeUrl = domain.startsWith("http") ? domain : "https://" + domain;
+        final Uri.Builder builder = Uri.parse(safeUrl)
                 .buildUpon()
                 .appendPath(".well-known")
                 .appendPath("jwks.json");
-        if (!URLUtil.isHttpUrl(domain)) {
-            builder.scheme("https");
-        }
         try {
             return new URL(builder.build().toString());
         } catch (MalformedURLException e) {
@@ -81,7 +91,7 @@ class JwkProvider implements KeyProvider {
                     }
                 }
             }
-        } catch (IOException | InvalidKeyException e) {
+        } catch (IOException | InvalidKeyException | JsonSyntaxException e) {
             exception = e;
         }
         throw new KeyProviderException(String.format("Could not obtain a JWK with key id %s", keyId), exception);
@@ -180,6 +190,5 @@ class JwkProvider implements KeyProvider {
             }
             return jwks;
         }
-
     }
 }
