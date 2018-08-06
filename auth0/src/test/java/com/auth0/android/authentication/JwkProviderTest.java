@@ -4,7 +4,6 @@ import com.google.gson.JsonParseException;
 
 import org.apache.tools.ant.filters.StringInputStream;
 import org.hamcrest.core.IsInstanceOf;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -14,9 +13,11 @@ import org.robolectric.annotation.Config;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
+import java.security.InvalidKeyException;
 import java.security.PublicKey;
 import java.security.interfaces.RSAPublicKey;
 
@@ -37,9 +38,8 @@ public class JwkProviderTest {
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
-    private static final String SAMPLE_JWKS = "{\n" +
-            "\"keys\": [\n" +
-            "{\n" +
+    private static final String SAMPLE_JWKS_RS = "{" +
+            "\"keys\": [{\n" +
             "\"alg\": \"RS256\",\n" +
             "\"kty\": \"RSA\",\n" +
             "\"use\": \"sig\",\n" +
@@ -50,14 +50,32 @@ public class JwkProviderTest {
             "\"e\": \"AQAB\",\n" +
             "\"kid\": \"NTIwOEI1RTBEQzlERDMwRDY0OTFCNjVDOEMxRDAxNkE1MDBFNzk5NA\",\n" +
             "\"x5t\": \"NTIwOEI1RTBEQzlERDMwRDY0OTFCNjVDOEMxRDAxNkE1MDBFNzk5NA\"\n" +
-            "}\n" +
-            "]\n" +
-            "}";
+            "}]}";
+    private static final String SAMPLE_JWKS_EC = "{" +
+            "\"keys\":[{\n" +
+            "\"kty\" : \"EC\",\n" +
+            "\"crv\" : \"P-256\",\n" +
+            "\"kid\" : \"NTIwOEI1RTBEQzlERDMwRDY0OTFCNjVDOEMxRDAxNkE1MDBFNzk5NA\",\n" +
+            "\"x\"   : \"SVqB4JcUD6lsfvqMr-OKUNUphdNn64Eay60978ZlL74\",\n" +
+            "\"y\"   : \"lf0u0pMj4lGAzZix5u4Cm5CMQIgMNpkwy163wtKYVKI\",\n" +
+            "\"d\"   : \"0g5vAEKzugrXaRbgKG0Tj2qJ5lMP4Bezds1_sTybkfk\"\n" +
+            "}]}";
     private static final String INVALID_JSON = "{[}";
+    private static final String INVALID_JWKS = "{\"keys\":[{" +
+            "\"kid\" : \"cc34c0a0-bd5a-4a3c-a50d-a2a7db7643df\",\n" +
+            "\"n\"   : \"pjdss8ZaDfEH6K6U7GeW2nxDqR4IP049fk1fK0lndimbMMVBdPv_hSpm8T8EtBDxrUdi1OHZfMhUixGaut-3nQ4GG9nM249oxhCtxqqNvEXrmQRGqczyLxuh-fKn9Fg--hS9UpazHpfVAFnB5aCfXoNhPuI8oByyFKMKaOVgHNqP5NBEqabiLftZD3W_lsFCPGuzr4Vp0YS7zS2hDYScC2oOMu4rGU1LcMZf39p3153Cq7bS2Xh6Y-vw5pwzFYZdjQxDn8x8BG3fJ6j8TGLXQsbKH1218_HcUJRvMwdpbUQG5nvA2GXVqLqdwp054Lzk9_B_f1lVrmOKuHjTNHq48w\",\n" +
+            "\"e\"   : \"AQAB\"" +
+            "}]}";
+
     private static final String EMPTY_JWKS = "{\"keys\":[]}";
 
-    @Before
-    public void setUp() throws Exception {
+    @Test
+    public void shouldFailToCreateWithInvalidDomain() {
+        exception.expect(TokenVerificationException.class);
+        exception.expectCause(IsInstanceOf.<Throwable>instanceOf(MalformedURLException.class));
+        JwkProvider jwkProvider = new JwkProvider("https/:/invalid");
+        URL url = jwkProvider.getURL();
+        assertThat(url, is(notNullValue()));
     }
 
     @Test
@@ -112,9 +130,74 @@ public class JwkProviderTest {
     }
 
     @Test
+    public void shouldFailWhenJwkDoesNotContainKeyType() throws Exception {
+        exception.expect(KeyProviderException.class);
+        exception.expectCause(IsInstanceOf.<Throwable>instanceOf(JsonParseException.class));
+        exception.expectMessage("Could not obtain a JWK with key id null");
+
+        final HttpURLConnection connection = mock(HttpURLConnection.class);
+        when(connection.getInputStream()).thenReturn(new StringInputStream(INVALID_JWKS));
+        URLStreamHandler urlStreamHandler = new URLStreamHandler() {
+            @Override
+            protected URLConnection openConnection(URL u) throws IOException {
+                return connection;
+            }
+        };
+
+        URL url = new URL("https", "samples.auth0.com", 80, "/.well-known/jwks.json", urlStreamHandler);
+        JwkProvider jwkProvider = new JwkProvider(url);
+        assertThat(jwkProvider.getURL().toString(), is("https://samples.auth0.com:80/.well-known/jwks.json"));
+
+        jwkProvider.getPublicKey(null);
+    }
+
+    @Test
+    public void shouldFailWhenJwkIsNotRS256() throws Exception {
+        exception.expect(KeyProviderException.class);
+        exception.expectCause(IsInstanceOf.<Throwable>instanceOf(InvalidKeyException.class));
+        exception.expectMessage("Could not obtain a JWK with key id NTIwOEI1RTBEQzlERDMwRDY0OTFCNjVDOEMxRDAxNkE1MDBFNzk5NA");
+
+        final HttpURLConnection connection = mock(HttpURLConnection.class);
+        when(connection.getInputStream()).thenReturn(new StringInputStream(SAMPLE_JWKS_EC));
+        URLStreamHandler urlStreamHandler = new URLStreamHandler() {
+            @Override
+            protected URLConnection openConnection(URL u) throws IOException {
+                return connection;
+            }
+        };
+
+        URL url = new URL("https", "samples.auth0.com", 80, "/.well-known/jwks.json", urlStreamHandler);
+        JwkProvider jwkProvider = new JwkProvider(url);
+        assertThat(jwkProvider.getURL().toString(), is("https://samples.auth0.com:80/.well-known/jwks.json"));
+
+        jwkProvider.getPublicKey("NTIwOEI1RTBEQzlERDMwRDY0OTFCNjVDOEMxRDAxNkE1MDBFNzk5NA");
+    }
+
+    @Test
+    public void shouldFailWhenJwksIsEmpty() throws Exception {
+        exception.expect(KeyProviderException.class);
+        exception.expectMessage("Could not obtain a JWK with key id NTIwOEI1RTBEQzlERDMwRDY0OTFCNjVDOEMxRDAxNkE1MDBFNzk5NA");
+
+        final HttpURLConnection connection = mock(HttpURLConnection.class);
+        when(connection.getInputStream()).thenReturn(new StringInputStream(EMPTY_JWKS));
+        URLStreamHandler urlStreamHandler = new URLStreamHandler() {
+            @Override
+            protected URLConnection openConnection(URL u) throws IOException {
+                return connection;
+            }
+        };
+
+        URL url = new URL("https", "samples.auth0.com", 80, "/.well-known/jwks.json", urlStreamHandler);
+        JwkProvider jwkProvider = new JwkProvider(url);
+        assertThat(jwkProvider.getURL().toString(), is("https://samples.auth0.com:80/.well-known/jwks.json"));
+
+        jwkProvider.getPublicKey("NTIwOEI1RTBEQzlERDMwRDY0OTFCNjVDOEMxRDAxNkE1MDBFNzk5NA");
+    }
+
+    @Test
     public void shouldFetchJwks() throws Exception {
         final HttpURLConnection connection = mock(HttpURLConnection.class);
-        when(connection.getInputStream()).thenReturn(new StringInputStream(SAMPLE_JWKS));
+        when(connection.getInputStream()).thenReturn(new StringInputStream(SAMPLE_JWKS_RS));
         URLStreamHandler urlStreamHandler = new URLStreamHandler() {
             @Override
             protected URLConnection openConnection(URL u) throws IOException {
@@ -140,30 +223,9 @@ public class JwkProviderTest {
     }
 
     @Test
-    public void shouldFetchEmptyJwks() throws Exception {
-        exception.expect(KeyProviderException.class);
-        exception.expectMessage("Could not obtain a JWK with key id NTIwOEI1RTBEQzlERDMwRDY0OTFCNjVDOEMxRDAxNkE1MDBFNzk5NA");
-
-        final HttpURLConnection connection = mock(HttpURLConnection.class);
-        when(connection.getInputStream()).thenReturn(new StringInputStream(EMPTY_JWKS));
-        URLStreamHandler urlStreamHandler = new URLStreamHandler() {
-            @Override
-            protected URLConnection openConnection(URL u) throws IOException {
-                return connection;
-            }
-        };
-
-        URL url = new URL("https", "samples.auth0.com", 80, "/.well-known/jwks.json", urlStreamHandler);
-        JwkProvider jwkProvider = new JwkProvider(url);
-        assertThat(jwkProvider.getURL().toString(), is("https://samples.auth0.com:80/.well-known/jwks.json"));
-
-        PublicKey key = jwkProvider.getPublicKey("NTIwOEI1RTBEQzlERDMwRDY0OTFCNjVDOEMxRDAxNkE1MDBFNzk5NA");
-    }
-
-    @Test
     public void shouldFetchJwksWhenKeyIdIsNotGivenAndSetContainsOneElement() throws Exception {
         final HttpURLConnection connection = mock(HttpURLConnection.class);
-        when(connection.getInputStream()).thenReturn(new StringInputStream(SAMPLE_JWKS));
+        when(connection.getInputStream()).thenReturn(new StringInputStream(SAMPLE_JWKS_RS));
         URLStreamHandler urlStreamHandler = new URLStreamHandler() {
             @Override
             protected URLConnection openConnection(URL u) throws IOException {
@@ -211,6 +273,5 @@ public class JwkProviderTest {
         assertThat(expectedException.getCause(), IsInstanceOf.<Throwable>instanceOf(IOException.class));
         verify(connection).getInputStream();
         verify(connection).disconnect();
-
     }
 }

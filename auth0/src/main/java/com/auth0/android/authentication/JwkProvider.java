@@ -5,7 +5,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.support.annotation.WorkerThread;
-import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 
@@ -38,7 +37,6 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 class JwkProvider implements KeyProvider {
 
@@ -63,11 +61,11 @@ class JwkProvider implements KeyProvider {
 
     private static URL createUrl(String domain) {
         String safeUrl = domain.startsWith("http") ? domain : "https://" + domain;
-        final Uri.Builder builder = Uri.parse(safeUrl)
-                .buildUpon()
-                .appendPath(".well-known")
-                .appendPath("jwks.json");
         try {
+            final Uri.Builder builder = Uri.parse(safeUrl)
+                    .buildUpon()
+                    .appendPath(".well-known")
+                    .appendPath("jwks.json");
             return new URL(builder.build().toString());
         } catch (MalformedURLException e) {
             throw new TokenVerificationException("The domain provided is not a valid URL", e);
@@ -91,7 +89,7 @@ class JwkProvider implements KeyProvider {
                     }
                 }
             }
-        } catch (IOException | InvalidKeyException | JsonSyntaxException e) {
+        } catch (IOException | InvalidKeyException | JsonParseException e) {
             exception = e;
         }
         throw new KeyProviderException(String.format("Could not obtain a JWK with key id %s", keyId), exception);
@@ -120,33 +118,22 @@ class JwkProvider implements KeyProvider {
     }
 
 
+    @SuppressWarnings("unused")
     static class Jwk {
 
         private static final String RSA_ALGORITHM = "RSA";
         @SerializedName("kty")
-        private final String keyType;
+        private String keyType;
         @SerializedName("kid")
-        private final String keyId;
+        private String keyId;
         @SerializedName("n")
-        private final String n;
+        private String n;
         @SerializedName("e")
-        private final String e;
-
-        @SuppressWarnings("unchecked")
-        Jwk(Map<String, Object> values) {
-            this.keyType = (String) values.remove("kty");
-            if (TextUtils.isEmpty(keyType)) {
-                //TODO: Assert this constructor gets called when deserializing
-                throw new TokenVerificationException(String.format("The Jwk does not contain the required Key Type attribute. Values are: %s", values));
-            }
-            this.keyId = (String) values.remove("kid");
-            this.n = (String) values.remove("n");
-            this.e = (String) values.remove("e");
-        }
+        private String e;
 
         PublicKey getPublicKey() throws InvalidKeyException {
             if (!RSA_ALGORITHM.equalsIgnoreCase(keyType)) {
-                return null;
+                throw new InvalidKeyException("The algorithm of this Json Web Key is not supported");
             }
             try {
                 KeyFactory kf = KeyFactory.getInstance(RSA_ALGORITHM);
@@ -164,11 +151,11 @@ class JwkProvider implements KeyProvider {
             return keyId;
         }
 
-        private byte[] base64Decode(String input) {
+        private byte[] base64Decode(String input) throws InvalidKeySpecException {
             try {
                 return Base64.decode(input, Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
             } catch (IllegalArgumentException e) {
-                throw new TokenVerificationException("Could not base64 decode the given string.", e);
+                throw new InvalidKeySpecException("Could not base64 decode the given string.", e);
             }
         }
     }
@@ -185,6 +172,9 @@ class JwkProvider implements KeyProvider {
             JsonObject object = json.getAsJsonObject();
             JsonArray keys = object.getAsJsonArray("keys");
             for (JsonElement e : keys) {
+                if (!e.getAsJsonObject().has("kty")) {
+                    throw new JsonParseException(String.format("The Jwk does not contain the required Key Type attribute. Values are: %s", e));
+                }
                 Jwk jwk = context.deserialize(e, Jwk.class);
                 jwks.add(jwk);
             }
