@@ -53,7 +53,7 @@ public class JwtVerifier {
             String kid = jwt.getHeader().get("kid");
             PublicKey publicKey = keyProvider.getPublicKey(kid);
             if (!verifySignature(publicKey, content, signature)) {
-                throw new SignatureException("The signature does not match");
+                throw new SignatureException("The signature is invalid");
             }
         } catch (Exception e) {
             throw new TokenVerificationException("Could not verify the token's signature", e);
