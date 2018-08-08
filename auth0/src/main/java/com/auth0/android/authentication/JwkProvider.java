@@ -60,7 +60,7 @@ class JwkProvider implements KeyProvider {
     }
 
     private static URL createUrl(String domain) {
-        String safeUrl = domain.startsWith("http") ? domain : "https://" + domain;
+        String safeUrl = domain.startsWith("http://") || domain.startsWith("https://") ? domain : "https://" + domain;
         try {
             final Uri.Builder builder = Uri.parse(safeUrl)
                     .buildUpon()

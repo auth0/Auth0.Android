@@ -13,7 +13,6 @@ import org.robolectric.annotation.Config;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
@@ -70,12 +69,11 @@ public class JwkProviderTest {
     private static final String EMPTY_JWKS = "{\"keys\":[]}";
 
     @Test
-    public void shouldFailToCreateWithInvalidDomain() {
-        exception.expect(TokenVerificationException.class);
-        exception.expectCause(IsInstanceOf.<Throwable>instanceOf(MalformedURLException.class));
-        JwkProvider jwkProvider = new JwkProvider("https/:/invalid");
+    public void shouldCreateFromDomainThatStartsLikeAScheme() {
+        JwkProvider jwkProvider = new JwkProvider("http2.auth0.com");
         URL url = jwkProvider.getURL();
         assertThat(url, is(notNullValue()));
+        assertThat(url.toString(), is("https://http2.auth0.com/.well-known/jwks.json"));
     }
 
     @Test
