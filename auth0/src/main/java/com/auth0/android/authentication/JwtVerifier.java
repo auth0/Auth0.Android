@@ -65,6 +65,10 @@ public class JwtVerifier {
         if (exp != null && exp.before(today)) {
             throw new TokenVerificationException(String.format("The token has expired at %s", exp));
         }
+        Date nbf = jwt.getNotBefore();
+        if (nbf != null && today.before(nbf)) {
+            throw new TokenVerificationException(String.format("The token cannot be used before %s", nbf));
+        }
         String issuer = jwt.getIssuer();
         if (issuer != null && expectedIssuer != null && !issuer.equals(expectedIssuer)) {
             throw new TokenVerificationException("The token has an invalid issuer");
