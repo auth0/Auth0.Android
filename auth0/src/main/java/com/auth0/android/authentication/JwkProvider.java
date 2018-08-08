@@ -133,7 +133,7 @@ class JwkProvider implements KeyProvider {
 
         PublicKey getPublicKey() throws InvalidKeyException {
             if (!RSA_ALGORITHM.equalsIgnoreCase(keyType)) {
-                throw new InvalidKeyException("The algorithm of this Json Web Key is not supported");
+                throw new InvalidKeyException("The algorithm of this JWK is not supported");
             }
             try {
                 KeyFactory kf = KeyFactory.getInstance(RSA_ALGORITHM);
@@ -143,7 +143,7 @@ class JwkProvider implements KeyProvider {
             } catch (InvalidKeySpecException e) {
                 throw new InvalidKeyException("Invalid public key", e);
             } catch (NoSuchAlgorithmException e) {
-                throw new InvalidKeyException("Invalid algorithm to generate key", e);
+                throw new InvalidKeyException("Invalid algorithm used to generate key", e);
             }
         }
 
@@ -165,7 +165,7 @@ class JwkProvider implements KeyProvider {
         @Override
         public List<Jwk> deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
             if (!json.isJsonObject() || json.isJsonNull()) {
-                throw new JsonParseException("jwks json is not a valid json object");
+                throw new JsonParseException("JWKs JSON is not a valid json object");
             }
 
             List<Jwk> jwks = new ArrayList<>();
@@ -173,7 +173,7 @@ class JwkProvider implements KeyProvider {
             JsonArray keys = object.getAsJsonArray("keys");
             for (JsonElement e : keys) {
                 if (!e.getAsJsonObject().has("kty")) {
-                    throw new JsonParseException(String.format("The Jwk does not contain the required Key Type attribute. Values are: %s", e));
+                    throw new JsonParseException(String.format("The JWK does not contain the required Key Type attribute. Values are: %s", e));
                 }
                 Jwk jwk = context.deserialize(e, Jwk.class);
                 jwks.add(jwk);

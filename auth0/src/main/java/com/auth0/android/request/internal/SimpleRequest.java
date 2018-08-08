@@ -85,9 +85,9 @@ class SimpleRequest<T, U extends Auth0Exception> extends BaseRequest<T, U> imple
             }
             postOnSuccess(result);
         } catch (TokenVerificationException e) {
-            postOnFailure(getErrorBuilder().from("The received Id Token is not valid", e));
+            postOnFailure(getErrorBuilder().from("The received ID Token is not valid", e));
         } catch (IOException e) {
-            Auth0Exception auth0Exception = new Auth0Exception("Failed to parse response to request to " + url, e);
+            Auth0Exception auth0Exception = new Auth0Exception("Failed to parse response from " + url, e);
             postOnFailure(getErrorBuilder().from("Failed to parse a successful response", auth0Exception));
         } finally {
             closeStream(body);
@@ -127,9 +127,9 @@ class SimpleRequest<T, U extends Auth0Exception> extends BaseRequest<T, U> imple
             }
             return result;
         } catch (TokenVerificationException e) {
-            throw getErrorBuilder().from("The received Id Token is not valid", e);
+            throw getErrorBuilder().from("The received ID Token is not valid", e);
         } catch (IOException e) {
-            Auth0Exception auth0Exception = new Auth0Exception("Failed to parse response to request to " + url, e);
+            Auth0Exception auth0Exception = new Auth0Exception("Failed to parse response from " + url, e);
             throw getErrorBuilder().from("Failed to parse a successful response", auth0Exception);
         } finally {
             closeStream(body);

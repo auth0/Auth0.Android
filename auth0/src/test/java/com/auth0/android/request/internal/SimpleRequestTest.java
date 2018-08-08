@@ -163,7 +163,7 @@ public class SimpleRequestTest {
     public void shouldThrowWhenIdTokenVerificationFails() throws Exception {
         exception.expect(AuthenticationException.class);
         exception.expectCause(IsInstanceOf.<Throwable>instanceOf(TokenVerificationException.class));
-        exception.expectMessage("The received Id Token is not valid");
+        exception.expectMessage("The received ID Token is not valid");
 
         SimpleRequest<Credentials, AuthenticationException> requestSync = createRequest(Credentials.class);
         JwtVerifier verifierSync = mock(JwtVerifier.class);
@@ -191,7 +191,7 @@ public class SimpleRequestTest {
         AuthenticationException error = callback.getError();
         assertThat(error, instanceOf(AuthenticationException.class));
         assertThat(error.getCause(), instanceOf(TokenVerificationException.class));
-        assertThat(error.getMessage(), is("The received Id Token is not valid"));
+        assertThat(error.getMessage(), is("The received ID Token is not valid"));
         mockAPI.takeRequest();
     }
 
