@@ -1,5 +1,7 @@
 package com.auth0.android.authentication;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Base64;
 
 import org.bouncycastle.util.io.pem.PemObject;
@@ -121,7 +123,7 @@ public class JwtVerifierTest {
     @Test
     public void shouldFailVerificationWhenTokenIsExpired() throws Exception {
         exception.expect(TokenVerificationException.class);
-        exception.expectMessage(startsWith("The token has expired at"));
+        exception.expectMessage("The token is either missing the 'exp' (expires in) claim or has already expired");
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.MINUTE, -1);
         Date momentsAgo = calendar.getTime();
@@ -133,7 +135,7 @@ public class JwtVerifierTest {
     @Test
     public void shouldFailVerificationWhenIssuerDoesNotMatch() throws Exception {
         exception.expect(TokenVerificationException.class);
-        exception.expectMessage("The token has an invalid issuer");
+        exception.expectMessage("The token is either missing the 'iss' (issuer) claim or has an invalid value");
         when(keyProvider.getPublicKey("my-key-id")).thenReturn(readPublicKeyFromString(RS256_PUBLIC_KEY));
         verifier.setExpectedValues("https://company.auth10.com/", EXPECTED_AUDIENCE);
         String validJwt = createRSToken(true, true, futureDate, pastDate);
@@ -143,7 +145,7 @@ public class JwtVerifierTest {
     @Test
     public void shouldFailVerificationWhenAudienceDoesNotMatch() throws Exception {
         exception.expect(TokenVerificationException.class);
-        exception.expectMessage("The token has an invalid audience");
+        exception.expectMessage("The token is either missing the 'aud' (audience) claim or has an invalid value");
         when(keyProvider.getPublicKey("my-key-id")).thenReturn(readPublicKeyFromString(RS256_PUBLIC_KEY));
         verifier.setExpectedValues(EXPECTED_ISSUER, "COMPANYID");
         String validJwt = createRSToken(true, true, futureDate, pastDate);
@@ -151,21 +153,35 @@ public class JwtVerifierTest {
     }
 
     @Test
-    public void shouldNotFailVerificationWhenSpecificValuesAreNotExpected() throws Exception {
+    public void shouldFailVerificationWhenExpectedAudienceAndIssuerValuesAreNotGiven() throws Exception {
+        exception.expect(TokenVerificationException.class);
         when(keyProvider.getPublicKey("my-key-id")).thenReturn(readPublicKeyFromString(RS256_PUBLIC_KEY));
         String validJwt = createRSToken(true, true, futureDate, pastDate);
         verifier.verify(validJwt);
     }
 
     @Test
-    public void shouldNotFailVerificationWhenIssuerIsNotPresent() throws Exception {
+    public void shouldFailVerificationWhenExpiresInIsNotPresent() throws Exception {
+        exception.expect(TokenVerificationException.class);
+        exception.expectMessage("The token is either missing the 'exp' (expires in) claim or has already expired");
+        when(keyProvider.getPublicKey("my-key-id")).thenReturn(readPublicKeyFromString(RS256_PUBLIC_KEY));
+        String validJwt = createRSToken(false, true, null, pastDate);
+        verifier.verify(validJwt);
+    }
+
+    @Test
+    public void shouldFailVerificationWhenIssuerIsNotPresent() throws Exception {
+        exception.expect(TokenVerificationException.class);
+        exception.expectMessage("The token is either missing the 'iss' (issuer) claim or has an invalid value");
         when(keyProvider.getPublicKey("my-key-id")).thenReturn(readPublicKeyFromString(RS256_PUBLIC_KEY));
         String validJwt = createRSToken(false, true, futureDate, pastDate);
         verifier.verify(validJwt);
     }
 
     @Test
-    public void shouldNotFailVerificationWhenAudienceIsNotPresent() throws Exception {
+    public void shouldFailVerificationWhenAudienceIsNotPresent() throws Exception {
+        exception.expect(TokenVerificationException.class);
+        exception.expectMessage("The token is either missing the 'iss' (issuer) claim or has an invalid value");
         when(keyProvider.getPublicKey("my-key-id")).thenReturn(readPublicKeyFromString(RS256_PUBLIC_KEY));
         String validJwt = createRSToken(true, false, futureDate, pastDate);
         verifier.verify(validJwt);
@@ -222,7 +238,7 @@ public class JwtVerifierTest {
             "rK0/Ikt5ybqUzKCMJZg2VKGTxg==\n" +
             "-----END PRIVATE KEY-----`";
 
-    private String createRSToken(boolean hasIssuer, boolean hasAudience, Date expiresAt, Date notBefore) throws Exception {
+    private String createRSToken(boolean hasIssuer, boolean hasAudience, @Nullable Date expiresAt, @NonNull Date notBefore) throws Exception {
         String header = "{\"alg\": \"RS256\", \"kid\": \"my-key-id\"}";
         StringBuilder payloadBuilder = new StringBuilder("{");
         if (hasIssuer) {
@@ -231,8 +247,10 @@ public class JwtVerifierTest {
         if (hasAudience) {
             payloadBuilder.append("\"aud\": \"").append(EXPECTED_AUDIENCE).append("\",");
         }
-        long expSeconds = expiresAt.getTime() / 1000;
-        payloadBuilder.append("\"exp\": ").append(expSeconds).append(",");
+        if (expiresAt!=null){
+            long expSeconds = expiresAt.getTime() / 1000;
+            payloadBuilder.append("\"exp\": ").append(expSeconds).append(",");
+        }
         long nbfSeconds = notBefore.getTime() / 1000;
         payloadBuilder.append("\"nbf\": ").append(nbfSeconds).append("}");
         String payload = payloadBuilder.toString();

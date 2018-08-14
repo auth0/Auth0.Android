@@ -62,20 +62,20 @@ public class JwtVerifier {
         //Step 3: Verify the claims - Following https://auth0.com/docs/tokens/id-token#validate-the-claims
         Date today = new Date();
         Date exp = jwt.getExpiresAt();
-        if (exp != null && exp.before(today)) {
-            throw new TokenVerificationException(String.format("The token has expired at %s", exp));
+        if (exp == null || exp.before(today)) {
+            throw new TokenVerificationException("The token is either missing the 'exp' (expires in) claim or has already expired");
         }
         Date nbf = jwt.getNotBefore();
         if (nbf != null && today.before(nbf)) {
             throw new TokenVerificationException(String.format("The token cannot be used before %s", nbf));
         }
         String issuer = jwt.getIssuer();
-        if (issuer != null && expectedIssuer != null && !issuer.equals(expectedIssuer)) {
-            throw new TokenVerificationException("The token has an invalid issuer");
+        if (issuer == null || !issuer.equals(expectedIssuer)) {
+            throw new TokenVerificationException("The token is either missing the 'iss' (issuer) claim or has an invalid value");
         }
         List<String> audience = jwt.getAudience();
-        if (!audience.isEmpty() && expectedAudience != null && !audience.contains(expectedAudience)) {
-            throw new TokenVerificationException("The token has an invalid audience");
+        if (audience.isEmpty() || !audience.contains(expectedAudience)) {
+            throw new TokenVerificationException("The token is either missing the 'aud' (audience) claim or has an invalid value");
         }
     }
 
