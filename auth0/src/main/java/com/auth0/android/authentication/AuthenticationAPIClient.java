@@ -136,9 +136,11 @@ public class AuthenticationAPIClient {
         this.client = clientFactory.createClient(auth0.isLoggingEnabled(), auth0.isTLS12Enforced());
         this.gson = gson;
         this.factory = factory;
-        JwtVerifier verifier = new JwtVerifier(new JwkProvider(auth0.getDomainUrl()));
-        verifier.setExpectedValues(auth0.getDomainUrl(), auth0.getClientId());
-        this.factory.setJwtVerifier(verifier);
+        if (auth0.isOIDCConformant()) {
+            JwtVerifier verifier = new JwtVerifier(new JwkProvider(auth0.getDomainUrl()));
+            verifier.setExpectedValues(auth0.getDomainUrl(), auth0.getClientId());
+            this.factory.setJwtVerifier(verifier);
+        }
         this.authErrorBuilder = new AuthenticationErrorBuilder();
         final Telemetry telemetry = auth0.getTelemetry();
         if (telemetry != null) {

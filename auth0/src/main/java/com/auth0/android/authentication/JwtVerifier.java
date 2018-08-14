@@ -39,10 +39,7 @@ public class JwtVerifier {
         }
         JWT jwt = new JWT(token);
         if (!ALGORITHM_NAME.equalsIgnoreCase(jwt.getHeader().get("alg"))) {
-            //Only tokens with RS256 are allowed. But let the remaining be "valid" for retro compatibility
-            Log.w(TAG, "Skipping Token verification as it was not signed using the RS256 algorithm");
-            //FIXME: This case should not be allowed in the new major
-            return;
+            throw new TokenVerificationException("The token must be signed using the RS256 algorithm");
         }
 
         byte[] content = String.format("%s.%s", parts[0], parts[1]).getBytes(Charset.defaultCharset());

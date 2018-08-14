@@ -121,12 +121,23 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldUseJwtVerifier() throws Exception {
+    public void shouldUseJwtVerifierWhenOIDCConformant() throws Exception {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
+        auth0.setOIDCConformant(true);
         RequestFactory factory = mock(RequestFactory.class);
         OkHttpClientFactory clientFactory = mock(OkHttpClientFactory.class);
         new AuthenticationAPIClient(auth0, factory, clientFactory);
         verify(factory).setJwtVerifier(any(JwtVerifier.class));
+    }
+
+    @Test
+    public void shouldNotUseJwtVerifierWhenNonOIDCConformant() throws Exception {
+        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
+        auth0.setOIDCConformant(false);
+        RequestFactory factory = mock(RequestFactory.class);
+        OkHttpClientFactory clientFactory = mock(OkHttpClientFactory.class);
+        new AuthenticationAPIClient(auth0, factory, clientFactory);
+        verify(factory, never()).setJwtVerifier(any(JwtVerifier.class));
     }
 
     @Test
@@ -708,7 +719,7 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldLoginWithUsernameSignedUpUserWithPasswordReamGrant() throws Exception {
+    public void shouldLoginWithUsernameSignedUpUserWithPasswordRealmGrant() throws Exception {
         mockAPI.willReturnSuccessfulSignUp()
                 .willReturnSuccessfulLogin();
 
@@ -886,9 +897,7 @@ public class AuthenticationAPIClientTest {
 
         Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         auth0.setOIDCConformant(false);
-        RequestFactory requestFactory = Mockito.spy(new RequestFactory());
-        doNothing().when(requestFactory).setJwtVerifier(any(JwtVerifier.class));
-        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0, requestFactory, new OkHttpClientFactory());
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0, new RequestFactory(), new OkHttpClientFactory());
         final Credentials credentials = client
                 .signUp(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
                 .execute();

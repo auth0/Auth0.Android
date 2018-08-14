@@ -73,21 +73,23 @@ public class JwtVerifierTest {
     }
 
     @Test
-    public void shouldSkipVerificationIfTokenIsNotSigned() {
+    public void shouldFailVerificationIfTokenIsNotSigned() {
         exception.expect(TokenVerificationException.class);
         exception.expectMessage("The token is not signed");
         verifier.verify("header.payload.");
     }
 
     @Test
-    public void shouldSkipVerificationIfTokenDoesNotHaveThreeParts() {
+    public void shouldFailVerificationIfTokenDoesNotHaveThreeParts() {
         exception.expect(TokenVerificationException.class);
         exception.expectMessage("The token is not signed");
         verifier.verify("header.payload");
     }
 
     @Test
-    public void shouldSkipVerificationIfTokenIsSignedWithHS256() {
+    public void shouldNotSkipVerificationIfTokenIsSignedWithHS256() {
+        exception.expect(TokenVerificationException.class);
+        exception.expectMessage("The token must be signed using the RS256 algorithm");
         verifier.verify("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImFiYzEyMyJ9.eyJpc3MiOiJodHRwczovL3NhbXBsZXMuYXV0aDAuY29tLyIsImF1ZCI6IkNMSUVOVElEIn0.x-xM2TdAFzrdQ-n-Rc_lLyP0AIrY0VWuWQoD8bQF1LE");
     }
 
