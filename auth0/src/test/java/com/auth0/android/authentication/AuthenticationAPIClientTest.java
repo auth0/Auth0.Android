@@ -84,6 +84,7 @@ import static org.mockito.Mockito.when;
 @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 21, manifest = Config.NONE)
 public class AuthenticationAPIClientTest {
 
+    private static final String CERTIFICATE_HASH_EXAMPLE = "sha1/Ym9ndXM=";
     private static final String CLIENT_ID = "CLIENTID";
     private static final String DOMAIN = "samples.auth0.com";
     private static final String PASSWORD = "123123123";
@@ -113,6 +114,13 @@ public class AuthenticationAPIClientTest {
     @After
     public void tearDown() throws Exception {
         mockAPI.shutdown();
+    }
+
+    @Test
+    public void shouldSetCertificate() {
+        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0, CERTIFICATE_HASH_EXAMPLE);
+        assertThat(client.client.getCertificatePinner(), is(notNullValue()));
     }
 
     @Test

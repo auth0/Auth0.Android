@@ -4,6 +4,7 @@ import android.os.Build;
 import android.support.annotation.VisibleForTesting;
 import android.util.Log;
 
+import com.squareup.okhttp.CertificatePinner;
 import com.squareup.okhttp.ConnectionSpec;
 import com.squareup.okhttp.Interceptor;
 import com.squareup.okhttp.OkHttpClient;
@@ -16,6 +17,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.net.ssl.SSLContext;
 
@@ -40,13 +43,53 @@ public class OkHttpClientFactory {
         return modifyClient(new OkHttpClient(), loggingEnabled, tls12Enforced);
     }
 
+    /**
+     * This method creates an instance of OKHttpClient according to the provided parameters.
+     * Extra optional parameter for ssl pinning
+     *
+     * @param loggingEnabled Enable logging in the created OkHttpClient.
+     * @param tls12Enforced  Enforce TLS 1.2 in the created OkHttpClient on devices with API 16-21
+     * @param url  Auth0 baseDomainUrl for certificate pinning
+     * @param certificateHash  Add certificate pinning
+     * @return new OkHttpClient instance created according to the parameters.
+     */
+    public OkHttpClient createClient(
+            boolean loggingEnabled, boolean tls12Enforced, String url, String certificateHash) {
+        return modifyClient(new OkHttpClient(), loggingEnabled, tls12Enforced, url, certificateHash);
+    }
+
     @VisibleForTesting
     OkHttpClient modifyClient(OkHttpClient client, boolean loggingEnabled, boolean tls12Enforced) {
+        return modifyClient(client, loggingEnabled, tls12Enforced, null, null);
+    }
+
+    @VisibleForTesting
+    OkHttpClient modifyClient(
+            OkHttpClient client,
+            boolean loggingEnabled,
+            boolean tls12Enforced,
+            String url,
+            String certificateHash) {
         if (loggingEnabled) {
             enableLogging(client);
         }
         if (tls12Enforced) {
             enforceTls12(client);
+        }
+        if (url != null && certificateHash != null) {
+            // Split URL into protocol, host, port and URI
+            Pattern pattern = Pattern.compile("(https?://)([^:^/]*)(:\\d*)?(.*)?");
+            Matcher matcher = pattern.matcher(url);
+            matcher.find();
+
+            if (matcher.group(2) != null) {
+                String hostname = matcher.group(2);
+                CertificatePinner certificatePinner = new CertificatePinner.Builder()
+                        .add(hostname, certificateHash)
+                        .build();
+
+                client.setCertificatePinner(certificatePinner);
+            }
         }
         client.setProtocols(Arrays.asList(Protocol.HTTP_1_1, Protocol.SPDY_3));
         return client;

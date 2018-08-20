@@ -20,6 +20,7 @@ import java.util.List;
 
 import javax.net.ssl.SSLSocketFactory;
 
+import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -35,6 +36,8 @@ import static org.mockito.Mockito.when;
 @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 21, manifest = Config.NONE)
 public class OkHttpClientFactoryTest {
 
+    private static final String CERTIFICATE_HASH_EXAMPLE = "sha1/Ym9ndXM=";
+
     private OkHttpClientFactory factory;
     @Mock
     private OkHttpClient mockClient;
@@ -49,6 +52,24 @@ public class OkHttpClientFactoryTest {
     // Verify that there's no error when creating a new OkHttpClient instance
     public void shouldCreateNewClient() {
         factory.createClient(false, false);
+    }
+
+    @Test
+    // Verify that there's no error when creating a new OkHttpClient instance with ssl pinning
+    public void shouldCreateNewClientWithCertificate() {
+        factory.createClient(false, false, "https://www.google.com", CERTIFICATE_HASH_EXAMPLE);
+    }
+
+    @Test
+    public void shouldNotContainCertificate() {
+        OkHttpClient client = factory.createClient(false, false);
+        assertNull(client.getCertificatePinner());
+    }
+
+    @Test
+    public void shouldContainCertificate() {
+        OkHttpClient client = factory.createClient(false, false, "https://www.google.com", CERTIFICATE_HASH_EXAMPLE);
+        assertThat(client.getCertificatePinner(), is(notNullValue()));
     }
 
     @Test

@@ -117,6 +117,16 @@ public class AuthenticationAPIClient {
     }
 
     /**
+     * Creates a new API client instance providing Auth0 account info and allow optional ssl pinning
+     *
+     * @param auth0 account information
+     * @param certificateHash certificate hash string for ssl pinning
+     */
+    public AuthenticationAPIClient(@NonNull Auth0 auth0, String certificateHash) {
+        this(auth0, new RequestFactory(), new OkHttpClientFactory(), GsonProvider.buildGson(), certificateHash);
+    }
+
+    /**
      * Creates a new API client instance using the 'com_auth0_client_id' and 'com_auth0_domain' values
      * defined in the project String resources file.
      *
@@ -132,14 +142,31 @@ public class AuthenticationAPIClient {
     }
 
     private AuthenticationAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClientFactory clientFactory, Gson gson) {
+        this(auth0, factory, clientFactory, gson, null);
+    }
+
+    private AuthenticationAPIClient(
+            Auth0 auth0,
+            RequestFactory factory,
+            OkHttpClientFactory clientFactory,
+            Gson gson,
+            String certificateHash) {
         this.auth0 = auth0;
-        this.client = clientFactory.createClient(auth0.isLoggingEnabled(), auth0.isTLS12Enforced());
         this.gson = gson;
         this.factory = factory;
         this.authErrorBuilder = new AuthenticationErrorBuilder();
         final Telemetry telemetry = auth0.getTelemetry();
         if (telemetry != null) {
             factory.setClientInfo(telemetry.getValue());
+        }
+        if (certificateHash != null) {
+            this.client = clientFactory.createClient(
+                    auth0.isLoggingEnabled(),
+                    auth0.isTLS12Enforced(),
+                    auth0.getDomainUrl(),
+                    certificateHash);
+        } else {
+            this.client = clientFactory.createClient(auth0.isLoggingEnabled(), auth0.isTLS12Enforced());
         }
     }
 
