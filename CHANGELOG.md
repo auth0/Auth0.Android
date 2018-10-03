@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.14.0](https://github.com/auth0/Auth0.Android/tree/1.14.0) (2018-10-03)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.13.2...1.14.0)
+
+**Fixed**
+- Change target sdk to 28 and use latest Gradle plugin [\#186](https://github.com/auth0/Auth0.Android/pull/186) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.13.2](https://github.com/auth0/Auth0.Android/tree/1.13.2) (2018-07-20)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.13.1...1.13.2)
 
