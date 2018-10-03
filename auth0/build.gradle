@@ -22,7 +22,9 @@
  * THE SOFTWARE.
  */
 
-apply plugin: 'com.auth0.gradle.oss-library.android'
+plugins {
+    id "com.auth0.gradle.oss-library.android" version "0.7.1"
+}
 
 logger.lifecycle("Using version ${version} for ${name}")
 
@@ -45,12 +47,11 @@ oss {
 }
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion '25.0.2'
+    compileSdkVersion 28
 
     defaultConfig {
         minSdkVersion 15
-        targetSdkVersion 25
+        targetSdkVersion 28
         versionCode 1
         versionName project.version
         buildConfigField "String", "LIBRARY_NAME", "\"$project.rootProject.name\""
@@ -65,25 +66,29 @@ android {
             manifestPlaceholders = [auth0Domain: "auth0.test.domain", auth0Scheme: "https"]
         }
     }
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:25.3.1'
-    compile 'com.android.support:customtabs:25.3.1'
-    compile 'com.squareup.okhttp:okhttp:2.7.5'
-    compile 'com.squareup.okhttp:logging-interceptor:2.7.5'
-    compile 'com.google.code.gson:gson:2.8.5'
-    compile 'com.auth0.android:jwtdecode:1.1.1'
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'com.android.support:customtabs:28.0.0'
+    implementation 'com.squareup.okhttp:okhttp:2.7.5'
+    implementation 'com.squareup.okhttp:logging-interceptor:2.7.5'
+    implementation 'com.google.code.gson:gson:2.8.5'
+    implementation 'com.auth0.android:jwtdecode:1.1.1'
 
-    testCompile 'junit:junit:4.12'
-    testCompile 'org.hamcrest:java-hamcrest:2.0.0.0'
-    testCompile 'org.powermock:powermock-module-junit4:1.6.5'
-    testCompile 'org.powermock:powermock-module-junit4-rule:1.6.5'
-    testCompile 'org.powermock:powermock-api-mockito:1.6.5'
-    testCompile 'org.mockito:mockito-core:1.10.19'
-    testCompile 'com.squareup.okhttp:mockwebserver:2.7.5'
-    testCompile 'com.jayway.awaitility:awaitility:1.7.0'
-    testCompile 'org.robolectric:robolectric:3.4.2'
-    testCompile 'com.android.support.test.espresso:espresso-intents:2.2.2'
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'org.hamcrest:java-hamcrest:2.0.0.0'
+    testImplementation 'org.powermock:powermock-module-junit4:1.6.5'
+    testImplementation 'org.powermock:powermock-module-junit4-rule:1.6.5'
+    testImplementation 'org.powermock:powermock-api-mockito:1.6.5'
+    testImplementation 'org.mockito:mockito-core:1.10.19'
+    testImplementation 'com.squareup.okhttp:mockwebserver:2.7.5'
+    testImplementation 'com.jayway.awaitility:awaitility:1.7.0'
+    testImplementation 'org.robolectric:robolectric:3.4.2'
+    testImplementation 'com.android.support.test.espresso:espresso-intents:3.0.2'
 }
