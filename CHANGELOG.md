@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.14.1](https://github.com/auth0/Auth0.Android/tree/1.14.1) (2018-10-04)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.14.0...1.14.1)
+
+**Fixed**
+- Use latest patch of the OSS plugin [\#190](https://github.com/auth0/Auth0.Android/pull/190) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.14.0](https://github.com/auth0/Auth0.Android/tree/1.14.0) (2018-10-03)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.13.2...1.14.0)
 
