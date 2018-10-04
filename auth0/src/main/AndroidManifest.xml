@@ -23,6 +23,7 @@
   -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.auth0.android.auth0">
 
     <uses-permission android:name="android.permission.INTERNET" />
@@ -37,7 +38,8 @@
         <activity
             android:name="com.auth0.android.provider.RedirectActivity"
             android:exported="true">
-            <intent-filter android:autoVerify="true">
+            <intent-filter android:autoVerify="true"
+                tools:targetApi="m">
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
