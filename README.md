@@ -72,7 +72,7 @@ Passwordless authentication *cannot be used* with this flag set to `true`. For m
 
 ### Authentication with Universal Login
 
-First go to [Auth0 Dashboard](https://manage.auth0.com/#/applications) and go to your application's settings. Make sure you have in *Allowed Callback URLs* a URL with the following format:
+First go to the [Auth0 Dashboard](https://manage.auth0.com/#/applications) and go to your application's settings. Make sure you have in *Allowed Callback URLs* a URL with the following format:
 
 ```
 https://{YOUR_AUTH0_DOMAIN}/android/{YOUR_APP_PACKAGE_NAME}/callback
@@ -179,7 +179,7 @@ If you don't plan to use the _Web Authentication_ feature you will still be prom
 
 ##### A note about App Deep Linking:
 
-If you've followed this document configuration steps you've noticed that the default scheme used in the Callback Uri is `https`. This works best for Android API 23 or newer if you're using [Android App Links](https://auth0.com/docs/applications/enable-android-app-links), but in previous Android versions this may show the intent chooser dialog prompting the user to chose either your application or the browser. You can change this behaviour by using a custom unique scheme so that the OS opens directly the link with your app.
+If you've followed this documents' configuration steps you've noticed that the default scheme used in the Callback Uri is `https`. This works best for Android API 23 or newer if you're using [Android App Links](https://auth0.com/docs/applications/enable-android-app-links), but in previous Android versions this may show the intent chooser dialog prompting the user to choose either your application or the browser. You can change this behaviour by using a custom unique scheme so that the OS opens directly the link with your app.
 
 1. Update the `auth0Scheme` Manifest Placeholder on the `app/build.gradle` file or update the intent-filter declaration in the `AndroidManifest.xml` to use the new scheme.
 2. Update the allowed callback urls in your [Auth0 Dashboard](https://manage.auth0.com/#/applications) application's settings.
@@ -498,7 +498,7 @@ users
 
 ## Credentials Manager
 
-This library ships with two additional classes that help you manage the Credentials received during authentication. Depending on the minimum API level that your application is targeting you'd like to use a different implementation.
+This library ships with two additional classes that help you manage the Credentials received during authentication. Depending on the minimum API level that your application is targeting you may like to use a different implementation.
 
 ### Basic (Min API 15)
 
@@ -536,7 +536,7 @@ authentication
 ```
 
 3. **Check credentials existence:**
-There are cases were you just want to check if a user session is still valid (i.e. to know if you should present the login screen or the main screen). For convenience we include a `hasValidCredentials` method that can let you know in advance if a non-expired token is available without making an additional network call. The same rules of the `getCredentials` method apply:
+There are cases were you just want to check if a user session is still valid (i.e. to know if you should present the login screen or the main screen). For convenience, we include a `hasValidCredentials` method that can let you know in advance if a non-expired token is available without making an additional network call. The same rules of the `getCredentials` method apply:
 
 ```java
 boolean authenticated = manager.hasValidCredentials();
@@ -593,7 +593,7 @@ private static final int AUTH_REQ_CODE = 11;
 manager.requireAuthentication(this, AUTH_REQ_CODE, null, null);
 ```
 
-When the above conditions are met and the manager requires the user authentication, it will use the activity context to launch a new activity for result. The outcome of getting approved or rejected by the LockScreen is given back to the activity in the `onActivityResult` method, which your activity must override to redirect the data to the manager using the `checkAuthenticationResult` method.
+When the above conditions are met and the manager requires the user authentication, it will use the activity context to launch a new activity for the result. The outcome of getting approved or rejected by the LockScreen is given back to the activity in the `onActivityResult` method, which your activity must override to redirect the data to the manager using the `checkAuthenticationResult` method.
 
 ```java
 @Override
