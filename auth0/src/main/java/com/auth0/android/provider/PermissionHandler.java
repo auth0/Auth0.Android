@@ -130,7 +130,7 @@ class PermissionHandler {
     }
 
     @VisibleForTesting
-    int getLastRequestCode(){
+    int getLastRequestCode() {
         return lastRequestCode;
     }
 }

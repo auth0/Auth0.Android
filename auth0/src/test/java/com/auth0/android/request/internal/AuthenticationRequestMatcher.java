@@ -132,9 +132,7 @@ public class AuthenticationRequestMatcher<T> extends BaseMatcher<MockAuthenticat
             return true;
         } else if (a == null ^ b == null) {
             return false;
-        } else if (a.equals(b)) {
-            return true;
         }
-        return false;
+        return a.equals(b);
     }
 }
