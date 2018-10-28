@@ -85,7 +85,7 @@ class CryptoUtil {
             keyStore.load(null);
             if (keyStore.containsAlias(KEY_ALIAS)) {
                 //Return existing key
-                return (KeyStore.PrivateKeyEntry) keyStore.getEntry(KEY_ALIAS, null);
+                return getKeyEntryCompat(keyStore);
             }
 
             Calendar start = Calendar.getInstance();
@@ -133,7 +133,8 @@ class CryptoUtil {
             KeyPairGenerator generator = KeyPairGenerator.getInstance(ALGORITHM_RSA, ANDROID_KEY_STORE);
             generator.initialize(spec);
             generator.generateKeyPair();
-            return (KeyStore.PrivateKeyEntry) keyStore.getEntry(KEY_ALIAS, null);
+
+            return getKeyEntryCompat(keyStore);
         } catch (KeyStoreException | IOException | NoSuchProviderException | InvalidAlgorithmParameterException | NoSuchAlgorithmException | CertificateException e) {
             Log.e(TAG, "An error occurred while trying to obtain the RSA KeyPair Entry from the Android KeyStore.", e);
             throw new KeyException("An error occurred while trying to obtain the RSA KeyPair Entry from the Android KeyStore.", e);
@@ -145,6 +146,21 @@ class CryptoUtil {
         }
     }
 
+    private KeyStore.PrivateKeyEntry getKeyEntryCompat(KeyStore keyStore) throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableEntryException {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+            return (KeyStore.PrivateKeyEntry) keyStore.getEntry(KEY_ALIAS, null);
+        }
+
+        //Following code is for API 28+
+        PrivateKey privateKey = (PrivateKey) keyStore.getKey(KEY_ALIAS, null);
+
+        if (privateKey == null) {
+            return (KeyStore.PrivateKeyEntry) keyStore.getEntry(KEY_ALIAS, null);
+        }
+
+        Certificate certificate = keyStore.getCertificate(KEY_ALIAS);
+        return new KeyStore.PrivateKeyEntry(privateKey, new Certificate[]{certificate});
+    }
 
     //Used to delete recreate the key pair in case of error
     private void deleteKeys() {
