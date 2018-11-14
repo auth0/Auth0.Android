@@ -133,7 +133,7 @@ public class AuthenticationAPIClient {
 
     private AuthenticationAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClientFactory clientFactory, Gson gson) {
         this.auth0 = auth0;
-        this.client = clientFactory.createClient(auth0.isLoggingEnabled(), auth0.isTLS12Enforced());
+        this.client = clientFactory.createClient(auth0.isLoggingEnabled(), auth0.isTLS12Enforced(), auth0.getTimeout());
         this.gson = gson;
         this.factory = factory;
         this.authErrorBuilder = new AuthenticationErrorBuilder();

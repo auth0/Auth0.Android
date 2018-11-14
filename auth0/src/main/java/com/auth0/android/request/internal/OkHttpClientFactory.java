@@ -16,6 +16,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLContext;
 
@@ -34,19 +35,23 @@ public class OkHttpClientFactory {
      *
      * @param loggingEnabled Enable logging in the created OkHttpClient.
      * @param tls12Enforced  Enforce TLS 1.2 in the created OkHttpClient on devices with API 16-21
+     * @param timeoutInSeconds        Override default timeout for OkHttpClient
      * @return new OkHttpClient instance created according to the parameters.
      */
-    public OkHttpClient createClient(boolean loggingEnabled, boolean tls12Enforced) {
-        return modifyClient(new OkHttpClient(), loggingEnabled, tls12Enforced);
+    public OkHttpClient createClient(boolean loggingEnabled, boolean tls12Enforced, int timeoutInSeconds) {
+        return modifyClient(new OkHttpClient(), loggingEnabled, tls12Enforced, timeoutInSeconds);
     }
 
     @VisibleForTesting
-    OkHttpClient modifyClient(OkHttpClient client, boolean loggingEnabled, boolean tls12Enforced) {
+    OkHttpClient modifyClient(OkHttpClient client, boolean loggingEnabled, boolean tls12Enforced, int timeoutInSeconds) {
         if (loggingEnabled) {
             enableLogging(client);
         }
         if (tls12Enforced) {
             enforceTls12(client);
+        }
+        if(timeoutInSeconds > 0){
+            setTimeout(client, timeoutInSeconds);
         }
         client.setProtocols(Arrays.asList(Protocol.HTTP_1_1, Protocol.SPDY_3));
         return client;
@@ -56,6 +61,12 @@ public class OkHttpClientFactory {
         Interceptor interceptor = new HttpLoggingInterceptor()
                 .setLevel(HttpLoggingInterceptor.Level.BODY);
         client.interceptors().add(interceptor);
+    }
+
+    private void setTimeout(OkHttpClient client, int timeout){
+        client.setConnectTimeout(timeout, TimeUnit.SECONDS);
+        client.setReadTimeout(timeout, TimeUnit.SECONDS);
+        client.setWriteTimeout(timeout, TimeUnit.SECONDS);
     }
 
     /**

@@ -102,7 +102,7 @@ public class UsersAPIClient {
 
     private UsersAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClientFactory clientFactory, Gson gson) {
         this.auth0 = auth0;
-        client = clientFactory.createClient(auth0.isLoggingEnabled(), auth0.isTLS12Enforced());
+        client = clientFactory.createClient(auth0.isLoggingEnabled(), auth0.isTLS12Enforced(), auth0.getTimeout());
         this.gson = gson;
         this.factory = factory;
         this.mgmtErrorBuilder = new ManagementErrorBuilder();

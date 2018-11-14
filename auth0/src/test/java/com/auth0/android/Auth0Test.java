@@ -130,6 +130,14 @@ public class Auth0Test {
     }
 
     @Test
+    public void shouldHaveTimeout() throws Exception {
+        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
+        auth0.setTimeout(15);
+
+        assertThat(auth0.getTimeout(), is(15));
+    }
+
+    @Test
     public void shouldNotHaveLoggingEnabledByDefault() throws Exception {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         assertThat(auth0.isLoggingEnabled(), is(false));
