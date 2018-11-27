@@ -2,11 +2,11 @@
 
 [![CircleCI](https://img.shields.io/circleci/project/github/auth0/Auth0.Android.svg?style=flat-square)](https://circleci.com/gh/auth0/Auth0.Android/tree/master)
 [![Coverage Status](https://img.shields.io/codecov/c/github/auth0/Auth0.Android/master.svg?style=flat-square)](https://codecov.io/github/auth0/Auth0.Android)
-[![License](http://img.shields.io/:license-mit-blue.svg?style=flat)](http://doge.mit-license.org)
-[![Maven Central](https://img.shields.io/maven-central/v/com.auth0.android/auth0.svg)](http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22com.auth0.android%22%20AND%20a%3A%22auth0%22)
-[![Bintray](https://api.bintray.com/packages/auth0/android/auth0/images/download.svg)](https://bintray.com/auth0/android/auth0/_latestVersion)
+[![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](http://doge.mit-license.org)
+[![Maven Central](https://img.shields.io/maven-central/v/com.auth0.android/auth0.svg?style=flat-square)](http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22com.auth0.android%22%20AND%20a%3A%22auth0%22)
+[![Bintray](https://img.shields.io/bintray/v/auth0/android/auth0.svg?style=flat-square)](https://bintray.com/auth0/android/auth0/_latestVersion)
 
-Android java toolkit for Auth0 API
+Android Java toolkit for Auth0 API
 
 ## Requirements
 
@@ -675,8 +675,8 @@ If you have found a bug or if you have a feature request, please report them at 
 
 ## Author
 
-[Auth0](auth0.com)
+[Auth0](https://auth0.com)
 
 ## License
 
-This project is licensed under the MIT license. See the [LICENSE](LICENSE.txt) file for more info.
+This project is licensed under the MIT license. See the [LICENSE](LICENSE) file for more info.
