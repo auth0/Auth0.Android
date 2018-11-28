@@ -63,7 +63,7 @@ class SimpleRequest<T, U extends Auth0Exception> extends BaseRequest<T, U> imple
     }
 
     @Override
-    public void onResponse(Response response) throws IOException {
+    public void onResponse(Response response) {
         if (!response.isSuccessful()) {
             postOnFailure(parseUnsuccessfulResponse(response));
             return;
