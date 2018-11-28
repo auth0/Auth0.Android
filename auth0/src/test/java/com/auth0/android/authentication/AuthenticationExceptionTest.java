@@ -28,7 +28,7 @@ import static org.junit.Assert.assertThat;
 
 @SuppressWarnings("ThrowableInstanceNeverThrown")
 @RunWith(RobolectricTestRunner.class)
-@Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 21, manifest = Config.NONE)
+@Config(sdk = 21, manifest = Config.NONE)
 public class AuthenticationExceptionTest {
 
     @Rule
