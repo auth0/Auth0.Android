@@ -29,7 +29,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 21, manifest = Config.NONE)
+@Config(sdk = 21, manifest = Config.NONE)
 @SuppressLint("CommitPrefEdits")
 public class SharedPreferencesStorageTest {
 
