@@ -28,7 +28,7 @@ import static org.hamcrest.Matchers.hasKey;
 import static org.junit.Assert.assertThat;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 21, manifest = Config.NONE)
+@Config(sdk = 21, manifest = Config.NONE)
 public class BaseAuthenticationRequestTest {
 
     public static final String OAUTH_PATH = "oauth";
