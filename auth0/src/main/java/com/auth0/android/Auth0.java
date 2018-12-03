@@ -62,7 +62,9 @@ public class Auth0 {
     private boolean oidcConformant;
     private boolean loggingEnabled;
     private boolean tls12Enforced;
-
+    private int connectTimeoutInSeconds;
+    private int readTimeoutInSeconds;
+    private int writeTimeoutInSeconds;
     /**
      * Creates a new Auth0 instance with the 'com_auth0_client_id' and 'com_auth0_domain' values
      * defined in the project String resources file.
@@ -140,6 +142,21 @@ public class Auth0 {
     public Telemetry getTelemetry() {
         return telemetry;
     }
+
+    /**
+     * @return Auth0 request connectTimeoutInSeconds
+     */
+    public int getConnectTimeoutInSeconds(){ return connectTimeoutInSeconds; }
+
+    /**
+     * @return Auth0 request readTimeoutInSeconds
+     */
+    public int getReadTimeoutInSeconds(){ return readTimeoutInSeconds; }
+
+    /**
+     * @return Auth0 request writeTimeoutInSeconds
+     */
+    public int getWriteTimeoutInSeconds(){ return writeTimeoutInSeconds; }
 
     /**
      * Setter for the Telemetry to send in every request to Auth0.
@@ -221,6 +238,30 @@ public class Auth0 {
      */
     public void setTLS12Enforced(boolean enforced) {
         tls12Enforced = enforced;
+    }
+
+    /**
+     * Override default connection timeout for requests
+     * @param timeout
+     */
+    public void setConnectTimeoutInSeconds(int timeout){
+        this.connectTimeoutInSeconds = timeout;
+    }
+
+    /**
+     * Override default read timeout for requests
+     * @param timeout
+     */
+    public void setReadTimeoutInSeconds(int timeout){
+        this.readTimeoutInSeconds = timeout;
+    }
+
+    /**
+     * Override default write timeout for requests
+     * @param timeout
+     */
+    public void setWriteTimeoutInSeconds(int timeout){
+        this.writeTimeoutInSeconds = timeout;
     }
 
     private HttpUrl resolveConfiguration(@Nullable String configurationDomain, @NonNull HttpUrl domainUrl) {

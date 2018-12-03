@@ -16,6 +16,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLContext;
 
@@ -34,19 +35,31 @@ public class OkHttpClientFactory {
      *
      * @param loggingEnabled Enable logging in the created OkHttpClient.
      * @param tls12Enforced  Enforce TLS 1.2 in the created OkHttpClient on devices with API 16-21
+     * @param connectTimeout        Override default connect timeout for OkHttpClient
+     * @param readTimeout        Override default read timeout for OkHttpClient
+     * @param writeTimeout        Override default write timeout for OkHttpClient
      * @return new OkHttpClient instance created according to the parameters.
      */
-    public OkHttpClient createClient(boolean loggingEnabled, boolean tls12Enforced) {
-        return modifyClient(new OkHttpClient(), loggingEnabled, tls12Enforced);
+    public OkHttpClient createClient(boolean loggingEnabled, boolean tls12Enforced, int connectTimeout, int readTimeout, int writeTimeout) {
+        return modifyClient(new OkHttpClient(), loggingEnabled, tls12Enforced, connectTimeout, readTimeout, writeTimeout);
     }
 
     @VisibleForTesting
-    OkHttpClient modifyClient(OkHttpClient client, boolean loggingEnabled, boolean tls12Enforced) {
+    OkHttpClient modifyClient(OkHttpClient client, boolean loggingEnabled, boolean tls12Enforced, int connectTimeout, int readTimeout, int writeTimeout) {
         if (loggingEnabled) {
             enableLogging(client);
         }
         if (tls12Enforced) {
             enforceTls12(client);
+        }
+        if(connectTimeout > 0){
+            client.setConnectTimeout(connectTimeout, TimeUnit.SECONDS);
+        }
+        if(readTimeout > 0){
+            client.setReadTimeout(readTimeout, TimeUnit.SECONDS);
+        }
+        if(writeTimeout > 0){
+            client.setWriteTimeout(writeTimeout, TimeUnit.SECONDS);
         }
         client.setProtocols(Arrays.asList(Protocol.HTTP_1_1, Protocol.SPDY_3));
         return client;
