@@ -46,7 +46,7 @@ class VoidRequest<U extends Auth0Exception> extends BaseRequest<Void, U> impleme
     }
 
     @Override
-    public void onResponse(Response response) throws IOException {
+    public void onResponse(Response response) {
         if (!response.isSuccessful()) {
             postOnFailure(parseUnsuccessfulResponse(response));
             return;

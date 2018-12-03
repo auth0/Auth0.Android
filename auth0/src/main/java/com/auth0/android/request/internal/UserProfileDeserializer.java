@@ -33,7 +33,7 @@ class UserProfileDeserializer implements JsonDeserializer<UserProfile> {
         final Boolean emailVerified = object.has("email_verified") ? context.<Boolean>deserialize(object.remove("email_verified"), Boolean.class) : false;
         final Date createdAt = context.deserialize(object.remove("created_at"), Date.class);
 
-        final Type identitiesType = new TypeToken<List<UserIdentity>>(){}.getType();
+        final Type identitiesType = new TypeToken<List<UserIdentity>>() {}.getType();
         final List<UserIdentity> identities = context.deserialize(object.remove("identities"), identitiesType);
 
         final Type metadataType = new TypeToken<Map<String, Object>>() {}.getType();
