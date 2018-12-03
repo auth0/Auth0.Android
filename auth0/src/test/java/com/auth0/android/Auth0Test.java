@@ -130,11 +130,27 @@ public class Auth0Test {
     }
 
     @Test
-    public void shouldHaveTimeout() throws Exception {
+    public void shouldHaveConnectTimeout() throws Exception {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
-        auth0.setTimeout(15);
+        auth0.setConnectTimeoutInSeconds(5);
 
-        assertThat(auth0.getTimeout(), is(15));
+        assertThat(auth0.getConnectTimeoutInSeconds(), is(5));
+    }
+
+    @Test
+    public void shouldReadHaveTimeout() throws Exception {
+        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
+        auth0.setReadTimeoutInSeconds(15);
+
+        assertThat(auth0.getReadTimeoutInSeconds(), is(15));
+    }
+
+    @Test
+    public void shouldHaveWriteTimeout() throws Exception {
+        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
+        auth0.setWriteTimeoutInSeconds(20);
+
+        assertThat(auth0.getWriteTimeoutInSeconds(), is(20));
     }
 
     @Test
