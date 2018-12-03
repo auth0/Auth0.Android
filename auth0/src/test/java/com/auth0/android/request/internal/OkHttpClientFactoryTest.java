@@ -63,7 +63,7 @@ public class OkHttpClientFactoryTest {
 
     @Test
     public void shouldUseDefaultTimeoutWhenTimeoutZero() {
-        OkHttpClient client = factory.createClient(false, false, 0, 0 , 0);
+        OkHttpClient client = factory.createClient(false, false, 0, 0, 0);
         assertThat(client.getConnectTimeout(), is(10000));
         assertThat(client.getReadTimeout(), is(10000));
         assertThat(client.getWriteTimeout(), is(10000));
@@ -71,7 +71,7 @@ public class OkHttpClientFactoryTest {
 
     @Test
     public void shouldUsePassedInTimeout() {
-        OkHttpClient client = factory.createClient(false, false, 5, 15 , 20);
+        OkHttpClient client = factory.createClient(false, false, 5, 15, 20);
         assertThat(client.getConnectTimeout(), is(5000));
         assertThat(client.getReadTimeout(), is(15000));
         assertThat(client.getWriteTimeout(), is(20000));
@@ -81,7 +81,7 @@ public class OkHttpClientFactoryTest {
     @Config(sdk = 21)
     public void shouldEnableLoggingTLS12Enforced() {
         List list = generateInterceptorsMockList(mockClient);
-        OkHttpClient client = factory.modifyClient(mockClient, true, true, 0, 0 , 0);
+        OkHttpClient client = factory.modifyClient(mockClient, true, true, 0, 0, 0);
         verifyLoggingEnabled(client, list);
         verifyTLS12Enforced(client);
     }
@@ -90,7 +90,7 @@ public class OkHttpClientFactoryTest {
     @Config(sdk = 21)
     public void shouldEnableLoggingTLS12NotEnforced() {
         List list = generateInterceptorsMockList(mockClient);
-        OkHttpClient client = factory.modifyClient(mockClient, true, false, 0, 0 , 0);
+        OkHttpClient client = factory.modifyClient(mockClient, true, false, 0, 0, 0);
         verifyLoggingEnabled(client, list);
         verifyTLS12NotEnforced(client);
     }
@@ -99,7 +99,7 @@ public class OkHttpClientFactoryTest {
     @Config(sdk = 21)
     public void shouldDisableLoggingTLS12Enforced() {
         List list = generateInterceptorsMockList(mockClient);
-        OkHttpClient client = factory.modifyClient(mockClient, false, true,0, 0 , 0);
+        OkHttpClient client = factory.modifyClient(mockClient, false, true, 0, 0, 0);
         verifyLoggingDisabled(client, list);
         verifyTLS12Enforced(client);
     }
@@ -108,7 +108,7 @@ public class OkHttpClientFactoryTest {
     @Config(sdk = 21)
     public void shouldDisableLoggingTLS12NotEnforced() {
         List list = generateInterceptorsMockList(mockClient);
-        OkHttpClient client = factory.modifyClient(mockClient, false, false,0, 0 , 0);
+        OkHttpClient client = factory.modifyClient(mockClient, false, false, 0, 0, 0);
         verifyLoggingDisabled(client, list);
         verifyTLS12NotEnforced(client);
     }
@@ -117,7 +117,7 @@ public class OkHttpClientFactoryTest {
     @Config(sdk = 22)
     public void shouldEnableLoggingTLS12Enforced_postLollipopTLS12NoEffect() {
         List list = generateInterceptorsMockList(mockClient);
-        OkHttpClient client = factory.modifyClient(mockClient, true, true,0, 0 , 0);
+        OkHttpClient client = factory.modifyClient(mockClient, true, true, 0, 0, 0);
         verifyLoggingEnabled(client, list);
         verifyTLS12NotEnforced(client);
     }
@@ -126,7 +126,7 @@ public class OkHttpClientFactoryTest {
     @Config(sdk = 22)
     public void shouldEnableLoggingTLS12NotEnforced_posLollipop() {
         List list = generateInterceptorsMockList(mockClient);
-        OkHttpClient client = factory.modifyClient(mockClient, true, false,0, 0 , 0);
+        OkHttpClient client = factory.modifyClient(mockClient, true, false, 0, 0, 0);
         verifyLoggingEnabled(client, list);
         verifyTLS12NotEnforced(client);
     }
@@ -135,7 +135,7 @@ public class OkHttpClientFactoryTest {
     @Config(sdk = 22)
     public void shouldDisableLoggingTLS12Enforced_postLollipopTLS12NoEffect() {
         List list = generateInterceptorsMockList(mockClient);
-        OkHttpClient client = factory.modifyClient(mockClient, false, true,0, 0 , 0);
+        OkHttpClient client = factory.modifyClient(mockClient, false, true, 0, 0, 0);
         verifyLoggingDisabled(client, list);
         verifyTLS12NotEnforced(client);
     }
@@ -144,7 +144,7 @@ public class OkHttpClientFactoryTest {
     @Config(sdk = 22)
     public void shouldDisableLoggingTLS12NotEnforced_postLollipop() {
         List list = generateInterceptorsMockList(mockClient);
-        OkHttpClient client = factory.modifyClient(mockClient, false, false,0, 0 , 0);
+        OkHttpClient client = factory.modifyClient(mockClient, false, false, 0, 0, 0);
         verifyLoggingDisabled(client, list);
         verifyTLS12NotEnforced(client);
     }
