@@ -45,5 +45,3 @@ class CredentialsDeserializer implements JsonDeserializer<Credentials> {
         return new Credentials(idToken, accessToken, type, refreshToken, expiresAt, scope);
     }
 }
-
-
