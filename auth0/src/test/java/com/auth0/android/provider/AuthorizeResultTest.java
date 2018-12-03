@@ -41,7 +41,7 @@ import org.robolectric.annotation.Config;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 21, manifest = Config.NONE)
+@Config(sdk = 21)
 public class AuthorizeResultTest {
 
     private static final int REQUEST_CODE = 11;

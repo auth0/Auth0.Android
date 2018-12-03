@@ -56,7 +56,7 @@ import static org.mockito.Mockito.when;
 
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 21, manifest = Config.NONE)
+@Config(sdk = 21)
 public class SecureCredentialsManagerTest {
 
     @Mock
@@ -493,7 +493,7 @@ public class SecureCredentialsManagerTest {
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Test
-    @Config(sdk = 21, manifest = Config.NONE)
+    @Config(sdk = 21)
     public void shouldNotRequireAuthenticationIfAPI21AndLockScreenDisabled() throws Exception {
         ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 21);
         Activity activity = spy(Robolectric.buildActivity(Activity.class).create().start().resume().get());
@@ -511,7 +511,7 @@ public class SecureCredentialsManagerTest {
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Test
-    @Config(sdk = 23, manifest = Config.NONE)
+    @Config(sdk = 23)
     public void shouldNotRequireAuthenticationIfAPI23AndLockScreenDisabled() throws Exception {
         ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 23);
         Activity activity = spy(Robolectric.buildActivity(Activity.class).create().start().resume().get());
@@ -529,7 +529,7 @@ public class SecureCredentialsManagerTest {
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Test
-    @Config(sdk = 21, manifest = Config.NONE)
+    @Config(sdk = 21)
     public void shouldRequireAuthenticationIfAPI21AndLockScreenEnabled() throws Exception {
         ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 21);
         Activity activity = spy(Robolectric.buildActivity(Activity.class).create().start().resume().get());
@@ -547,7 +547,7 @@ public class SecureCredentialsManagerTest {
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Test
-    @Config(sdk = 23, manifest = Config.NONE)
+    @Config(sdk = 23)
     public void shouldRequireAuthenticationIfAPI23AndLockScreenEnabled() throws Exception {
         ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 23);
         Activity activity = spy(Robolectric.buildActivity(Activity.class).create().start().resume().get());

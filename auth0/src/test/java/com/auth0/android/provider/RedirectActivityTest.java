@@ -24,7 +24,7 @@ import static org.hamcrest.core.Is.is;
 import static org.robolectric.Shadows.shadowOf;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 18, manifest = Config.NONE)
+@Config(sdk = 18)
 public class RedirectActivityTest {
 
 
@@ -32,7 +32,6 @@ public class RedirectActivityTest {
     private Uri uri;
 
     private RedirectActivity activity;
-    private ShadowActivity activityShadow;
     private ActivityController<RedirectActivity> activityController;
 
     @Before
@@ -43,7 +42,6 @@ public class RedirectActivityTest {
     private void createActivity(Intent launchIntent) {
         activityController = Robolectric.buildActivity(RedirectActivity.class, launchIntent);
         activity = activityController.get();
-        activityShadow = shadowOf(activity);
     }
 
     @SuppressWarnings("deprecation")
@@ -55,7 +53,7 @@ public class RedirectActivityTest {
         createActivity(resultIntent);
         activityController.create().start().resume();
 
-        Intent authenticationIntent = activityShadow.getNextStartedActivity();
+        Intent authenticationIntent = shadowOf(activity).getNextStartedActivity();
         assertThat(authenticationIntent, is(notNullValue()));
         assertThat(authenticationIntent, hasComponent(AuthenticationActivity.class.getName()));
         assertThat(authenticationIntent, hasData(uri));
@@ -74,7 +72,7 @@ public class RedirectActivityTest {
         createActivity(resultIntent);
         activityController.create().start().resume();
 
-        Intent authenticationIntent = activityShadow.getNextStartedActivity();
+        Intent authenticationIntent = shadowOf(activity).getNextStartedActivity();
         assertThat(authenticationIntent, is(notNullValue()));
         assertThat(authenticationIntent, hasComponent(AuthenticationActivity.class.getName()));
         assertThat(authenticationIntent.getData(), is(nullValue()));
