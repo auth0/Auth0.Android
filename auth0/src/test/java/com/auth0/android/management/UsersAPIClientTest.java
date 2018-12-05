@@ -45,6 +45,8 @@ import com.squareup.okhttp.mockwebserver.RecordedRequest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
 
 import java.lang.reflect.Type;
 import java.util.Arrays;
@@ -69,6 +71,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@RunWith(RobolectricTestRunner.class)
 public class UsersAPIClientTest {
 
     private static final String CLIENT_ID = "CLIENTID";

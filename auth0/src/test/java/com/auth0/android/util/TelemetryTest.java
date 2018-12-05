@@ -5,7 +5,6 @@ import android.util.Base64;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -22,24 +21,12 @@ import static org.junit.Assert.assertThat;
 @RunWith(RobolectricTestRunner.class)
 public class TelemetryTest {
 
-    private Telemetry telemetry;
-
-    @Before
-    public void setUp() throws Exception {
-        telemetry = new Telemetry("auth0-java", "1.0.0", "1.2.3");
-    }
-
-    @Test
-    public void shouldReturnBase64() throws Exception {
-        assertThat(telemetry.getValue(), is(notNullValue()));
-    }
-
     //Testing Android version only for a few SDKs
 
     @Test
     @Config(sdk = 21)
     public void shouldAlwaysIncludeAndroidVersionAPI21() throws Exception {
-        telemetry = new Telemetry(null, null);
+        Telemetry telemetry = new Telemetry(null, null);
         assertThat(telemetry.getEnvironment(), is(notNullValue()));
         assertThat(telemetry.getEnvironment().get("android"), is("21"));
     }
@@ -47,37 +34,40 @@ public class TelemetryTest {
     @Test
     @Config(sdk = 23)
     public void shouldAlwaysIncludeAndroidVersionAPI23() throws Exception {
-        telemetry = new Telemetry(null, null);
+        Telemetry telemetry = new Telemetry(null, null);
         assertThat(telemetry.getEnvironment(), is(notNullValue()));
         assertThat(telemetry.getEnvironment().get("android"), is("23"));
     }
 
     @Test
     public void shouldNotIncludeCoreIfNotProvided() throws Exception {
-        telemetry = new Telemetry(null, null);
+        Telemetry telemetry = new Telemetry(null, null);
         assertThat(telemetry.getEnvironment(), is(notNullValue()));
         assertThat(telemetry.getEnvironment().containsKey("core"), is(false));
     }
 
     @Test
     public void shouldGetName() throws Exception {
+        Telemetry telemetry = new Telemetry("auth0-java", "1.0.0", "1.2.3");
         assertThat(telemetry.getName(), is("auth0-java"));
     }
 
     @Test
     public void shouldGetVersion() throws Exception {
+        Telemetry telemetry = new Telemetry("auth0-java", "1.0.0", "1.2.3");
         assertThat(telemetry.getVersion(), is("1.0.0"));
     }
 
     @Test
     public void shouldGetLibraryVersion() throws Exception {
+        Telemetry telemetry = new Telemetry("auth0-java", "1.0.0", "1.2.3");
         assertThat(telemetry.getLibraryVersion(), is("1.2.3"));
         assertThat(telemetry.getEnvironment().get("core"), is("1.2.3"));
     }
 
     @Test
     @Config(sdk = 23)
-    public void shouldGenerateValidCompleteTelemetryValue() throws Exception {
+    public void shouldGenerateCompleteTelemetryBase64Value() throws Exception {
         Gson gson = new Gson();
         Type mapType = new TypeToken<Map<String, Object>>() {
         }.getType();
@@ -96,7 +86,7 @@ public class TelemetryTest {
 
     @Test
     @Config(sdk = 23)
-    public void shouldGenerateValidBasicTelemetryValue() throws Exception {
+    public void shouldGenerateBasicTelemetryBase64Value() throws Exception {
         Gson gson = new Gson();
         Type mapType = new TypeToken<Map<String, Object>>() {
         }.getType();
@@ -115,7 +105,7 @@ public class TelemetryTest {
 
     @Test
     @Config(sdk = 21)
-    public void shouldGenerateValidRegularTelemetryValue() throws Exception {
+    public void shouldGenerateRegularTelemetryBase64Value() throws Exception {
         Gson gson = new Gson();
         Type mapType = new TypeToken<Map<String, Object>>() {
         }.getType();
