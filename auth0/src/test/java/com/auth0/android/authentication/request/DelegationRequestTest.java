@@ -18,7 +18,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 21, manifest = Config.NONE)
+@Config(sdk = 21)
 public class DelegationRequestTest {
 
     private ParameterizableRequest mockRequest;

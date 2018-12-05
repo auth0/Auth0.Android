@@ -46,7 +46,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 21, manifest = Config.NONE)
+@Config(sdk = 21)
 public class CallbackHelperTest {
 
     private static final String PACKAGE_NAME = "com.auth0.lock.android.app";

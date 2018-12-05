@@ -26,7 +26,7 @@ import static org.mockito.Mockito.mock;
 
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 18, manifest = Config.NONE)
+@Config(sdk = 18)
 public class OAuthManagerTest {
 
     @Rule
