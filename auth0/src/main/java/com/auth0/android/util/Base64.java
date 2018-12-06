@@ -3,9 +3,15 @@ package com.auth0.android.util;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 
+/**
+ * Helper class originally used to generate URL safe Base64 encoded strings with padding.
+ *
+ * @deprecated this class is no longer used and will be removed soon. See {@link android.util.Base64} as an alternative.
+ */
+@Deprecated
 public class Base64 {
 
-    private static final byte[] ENCODE_MAP = new byte[] {
+    private static final byte[] ENCODE_MAP = new byte[]{
             'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
             'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
             'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4',
