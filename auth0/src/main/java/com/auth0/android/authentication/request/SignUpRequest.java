@@ -50,9 +50,10 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
 
     /**
      * Add additional parameters sent when creating a user.
-     * 
+     *
+     * <p>A common use case for this is storing extra information in the user metadata.
      * To set user metadata you have to wrap your custom properties in a map containing
-     * a field <code>user_metadadata</code>:
+     * a field <code>user_metadadata</code>:</p>
      * 
      * <pre>
      * // Define your custom fields
@@ -62,10 +63,14 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
      * // Define the sign up parameters, adding the user_metadata
      * Map<String, Object> params = new HashMap<>();
      * params.put("user_metadata", metadata);
+     *
+     * // Set the parameters in your request
+     * signUpRequest.addSignUpParameters(params);
      * </pre>
      *
      * @param parameters sent with the request and must be non-null
      * @see ParameterBuilder
+     * @see <a href="https://auth0.com/docs/users/concepts/overview-user-metadata">User Metadata documentation</a>
      * @return itself
      */
     public SignUpRequest addSignUpParameters(Map<String, Object> parameters) {
