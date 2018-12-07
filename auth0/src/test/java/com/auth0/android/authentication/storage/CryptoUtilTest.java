@@ -73,7 +73,7 @@ import static org.powermock.api.mockito.PowerMockito.mock;
 @RequiresApi(api = Build.VERSION_CODES.KITKAT)
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({CryptoUtil.class, KeyGenerator.class, TextUtils.class, Build.VERSION.class, Base64.class, Cipher.class, Log.class})
-@Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 22, manifest = Config.NONE)
+@Config(sdk = 22)
 public class CryptoUtilTest {
 
     private static final String RSA_TRANSFORMATION = "RSA/ECB/PKCS1Padding";
@@ -128,7 +128,7 @@ public class CryptoUtilTest {
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Test
-    @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 19, manifest = Config.NONE)
+    @Config(sdk = 19)
     public void shouldNotCreateProtectedRSAKeyPairIfMissingAndLockScreenEnabledOnAPI19() throws Exception {
         ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 19);
 
@@ -179,7 +179,7 @@ public class CryptoUtilTest {
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Test
-    @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 21, manifest = Config.NONE)
+    @Config(sdk = 21)
     public void shouldCreateUnprotectedRSAKeyPairIfMissingAndLockScreenDisabledOnAPI21() throws Exception {
         ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 21);
 
@@ -231,7 +231,7 @@ public class CryptoUtilTest {
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Test
-    @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 21, manifest = Config.NONE)
+    @Config(sdk = 21)
     public void shouldCreateProtectedRSAKeyPairIfMissingAndLockScreenEnabledOnAPI21() throws Exception {
         ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 21);
 
@@ -283,7 +283,7 @@ public class CryptoUtilTest {
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Test
-    @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 23, manifest = Config.NONE)
+    @Config(sdk = 23)
     public void shouldCreateRSAKeyPairIfMissingOnAPI23AndUp() throws Exception {
         ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 23);
 

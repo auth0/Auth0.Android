@@ -43,7 +43,6 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.logging.HttpLoggingInterceptor;
 
 import java.util.List;
 import java.util.Map;
@@ -102,7 +101,11 @@ public class UsersAPIClient {
 
     private UsersAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClientFactory clientFactory, Gson gson) {
         this.auth0 = auth0;
-        client = clientFactory.createClient(auth0.isLoggingEnabled(), auth0.isTLS12Enforced());
+        client = clientFactory.createClient(auth0.isLoggingEnabled(),
+                auth0.isTLS12Enforced(),
+                auth0.getConnectTimeoutInSeconds(),
+                auth0.getReadTimeoutInSeconds(),
+                auth0.getWriteTimeoutInSeconds());
         this.gson = gson;
         this.factory = factory;
         this.mgmtErrorBuilder = new ManagementErrorBuilder();

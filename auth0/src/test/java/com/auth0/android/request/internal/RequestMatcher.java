@@ -167,10 +167,8 @@ public class RequestMatcher<T> extends BaseMatcher<MockRequest> {
             return true;
         } else if (a == null ^ b == null) {
             return false;
-        } else if (a.equals(b)) {
-            return true;
         }
-        return false;
+        return a.equals(b);
     }
 
     private boolean sameClass(Class<?> a, Class<?> b) {
@@ -178,10 +176,8 @@ public class RequestMatcher<T> extends BaseMatcher<MockRequest> {
             return true;
         } else if (a == null ^ b == null) {
             return false;
-        } else if (a.isAssignableFrom(b)) {
-            return true;
         }
-        return false;
+        return a.isAssignableFrom(b);
     }
 
     private boolean sameTypeToken(TypeToken a, TypeToken b) {
@@ -189,9 +185,7 @@ public class RequestMatcher<T> extends BaseMatcher<MockRequest> {
             return true;
         } else if (a == null ^ b == null) {
             return false;
-        } else if (sameClass(b.getRawType(), a.getRawType())) {
-            return true;
         }
-        return false;
+        return sameClass(b.getRawType(), a.getRawType());
     }
 }

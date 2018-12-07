@@ -58,6 +58,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
@@ -75,7 +76,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 18, manifest = Config.NONE)
+@Config(sdk = 18)
 public class WebAuthProviderTest {
 
     private static final int REQUEST_CODE = 11;
@@ -749,7 +750,7 @@ public class WebAuthProviderTest {
         Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
-        assertThat(uri, hasParamWithValue("redirect_uri", "https://domain/android/com.auth0.android.auth0/callback"));
+        assertThat(uri.getQueryParameter("redirect_uri"), is("https://domain/android/com.auth0.android.auth0.test/callback"));
     }
 
     //response type

@@ -43,7 +43,7 @@ public class TLS12SocketFactoryTest {
     public ExpectedException expectedException = ExpectedException.none();
 
     @Before
-    public void setUp(){
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
         factory = new TLS12SocketFactory(delegate);
     }

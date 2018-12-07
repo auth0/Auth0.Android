@@ -36,7 +36,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.robolectric.Shadows.shadowOf;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 18, manifest = Config.NONE)
+@Config(sdk = 18)
 public class AuthenticationActivityTest {
 
     @Mock
@@ -54,7 +54,6 @@ public class AuthenticationActivityTest {
 
     private Activity callerActivity;
     private AuthenticationActivityMock activity;
-    private ShadowActivity activityShadow;
     private ActivityController<AuthenticationActivityMock> activityController;
 
     @Before
@@ -67,7 +66,6 @@ public class AuthenticationActivityTest {
         activityController = Robolectric.buildActivity(AuthenticationActivityMock.class, configurationIntent);
         activity = activityController.get();
         activity.setCustomTabsController(customTabsController);
-        activityShadow = shadowOf(activity);
     }
 
     @SuppressWarnings("deprecation")
@@ -182,7 +180,7 @@ public class AuthenticationActivityTest {
 
         createActivity(intentCaptor.getValue());
         activityController.create().start().resume();
-        final ShadowActivity.IntentForResult webViewIntent = activityShadow.getNextStartedActivityForResult();
+        final ShadowActivity.IntentForResult webViewIntent = shadowOf(activity).getNextStartedActivityForResult();
 
         Bundle extras = webViewIntent.intent.getExtras();
         assertThat(extras.containsKey(WebAuthActivity.CONNECTION_NAME_EXTRA), is(true));
@@ -199,7 +197,7 @@ public class AuthenticationActivityTest {
 
         Intent authenticationResultIntent = new Intent();
         authenticationResultIntent.setData(resultUri);
-        activityShadow.receiveResult(webViewIntent.intent, Activity.RESULT_OK, authenticationResultIntent);
+        shadowOf(activity).receiveResult(webViewIntent.intent, Activity.RESULT_OK, authenticationResultIntent);
 
         assertThat(activity.getDeliveredIntent(), is(notNullValue()));
         assertThat(activity.getDeliveredIntent().getData(), is(resultUri));
@@ -219,7 +217,7 @@ public class AuthenticationActivityTest {
 
         createActivity(intentCaptor.getValue());
         activityController.create().start().resume();
-        final ShadowActivity.IntentForResult webViewIntent = activityShadow.getNextStartedActivityForResult();
+        final ShadowActivity.IntentForResult webViewIntent = shadowOf(activity).getNextStartedActivityForResult();
 
         Bundle extras = webViewIntent.intent.getExtras();
         assertThat(extras.containsKey(WebAuthActivity.CONNECTION_NAME_EXTRA), is(true));
@@ -255,7 +253,7 @@ public class AuthenticationActivityTest {
 
         createActivity(intentCaptor.getValue());
         activityController.create().start().resume();
-        final ShadowActivity.IntentForResult webViewIntent = activityShadow.getNextStartedActivityForResult();
+        final ShadowActivity.IntentForResult webViewIntent = shadowOf(activity).getNextStartedActivityForResult();
 
         Bundle extras = webViewIntent.intent.getExtras();
         assertThat(extras.containsKey(WebAuthActivity.CONNECTION_NAME_EXTRA), is(true));
@@ -270,7 +268,7 @@ public class AuthenticationActivityTest {
         activityController.pause().stop();
         //WebViewActivity is shown
 
-        activityShadow.receiveResult(webViewIntent.intent, Activity.RESULT_CANCELED, null);
+        shadowOf(activity).receiveResult(webViewIntent.intent, Activity.RESULT_CANCELED, null);
 
         assertThat(activity.getDeliveredIntent(), is(nullValue()));
         assertThat(activity.isFinishing(), is(true));

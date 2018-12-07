@@ -34,9 +34,11 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.robolectric.RobolectricTestRunner;
 
 import static com.auth0.android.util.HttpUrlMatcher.hasHost;
 import static com.auth0.android.util.HttpUrlMatcher.hasPath;
@@ -50,6 +52,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
+@RunWith(RobolectricTestRunner.class)
 public class Auth0Test {
 
     @Rule
@@ -127,6 +130,30 @@ public class Auth0Test {
         auth0.setTLS12Enforced(false);
 
         assertThat(auth0.isTLS12Enforced(), is(false));
+    }
+
+    @Test
+    public void shouldHaveConnectTimeout() throws Exception {
+        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
+        auth0.setConnectTimeoutInSeconds(5);
+
+        assertThat(auth0.getConnectTimeoutInSeconds(), is(5));
+    }
+
+    @Test
+    public void shouldReadHaveTimeout() throws Exception {
+        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
+        auth0.setReadTimeoutInSeconds(15);
+
+        assertThat(auth0.getReadTimeoutInSeconds(), is(15));
+    }
+
+    @Test
+    public void shouldHaveWriteTimeout() throws Exception {
+        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
+        auth0.setWriteTimeoutInSeconds(20);
+
+        assertThat(auth0.getWriteTimeoutInSeconds(), is(20));
     }
 
     @Test
