@@ -302,6 +302,54 @@ public class CryptoUtilTest {
 
         final KeyStore.PrivateKeyEntry entry = cryptoUtil.getRSAKeyEntry();
 
+
+        Mockito.verify(builder).setKeySize(2048);
+        Mockito.verify(builder).setCertificateSubject(principalCaptor.capture());
+        Mockito.verify(builder).setCertificateSerialNumber(BigInteger.ONE);
+        Mockito.verify(builder).setCertificateNotBefore(startDateCaptor.capture());
+        Mockito.verify(builder).setCertificateNotAfter(endDateCaptor.capture());
+        Mockito.verify(builder).setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_RSA_PKCS1);
+        Mockito.verify(builder).setBlockModes(KeyProperties.BLOCK_MODE_ECB);
+        Mockito.verify(keyPairGenerator).initialize(spec);
+        Mockito.verify(keyPairGenerator).generateKeyPair();
+
+        assertThat(principalCaptor.getValue(), is(notNullValue()));
+        assertThat(principalCaptor.getValue().getName(), is(CERTIFICATE_PRINCIPAL));
+
+        assertThat(startDateCaptor.getValue(), is(notNullValue()));
+        long diffMillis = startDateCaptor.getValue().getTime() - new Date().getTime();
+        long days = TimeUnit.MILLISECONDS.toDays(diffMillis);
+        assertThat(days, is(0L)); //Date is Today
+
+        assertThat(endDateCaptor.getValue(), is(notNullValue()));
+        diffMillis = endDateCaptor.getValue().getTime() - new Date().getTime();
+        days = TimeUnit.MILLISECONDS.toDays(diffMillis);
+        assertThat(days, is(greaterThan(25 * 365L))); //Date more than 25 Years in days
+
+        assertThat(entry, is(expectedEntry));
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.P)
+    @Test
+    @Config(sdk = 28)
+    public void shouldCreateRSAKeyPairIfMissingOnAPI28AndUp() throws Exception {
+        ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 28);
+
+        PowerMockito.when(keyStore.containsAlias(KEY_ALIAS)).thenReturn(false);
+        KeyStore.PrivateKeyEntry expectedEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
+        PowerMockito.when(keyStore.getEntry(KEY_ALIAS, null)).thenReturn(expectedEntry);
+
+        KeyGenParameterSpec spec = PowerMockito.mock(KeyGenParameterSpec.class);
+        KeyGenParameterSpec.Builder builder = newKeyGenParameterSpecBuilder(spec);
+        PowerMockito.whenNew(KeyGenParameterSpec.Builder.class).withArguments(KEY_ALIAS, KeyProperties.PURPOSE_DECRYPT | KeyProperties.PURPOSE_ENCRYPT).thenReturn(builder);
+
+        ArgumentCaptor<X500Principal> principalCaptor = ArgumentCaptor.forClass(X500Principal.class);
+        ArgumentCaptor<Date> startDateCaptor = ArgumentCaptor.forClass(Date.class);
+        ArgumentCaptor<Date> endDateCaptor = ArgumentCaptor.forClass(Date.class);
+
+
+        final KeyStore.PrivateKeyEntry entry = cryptoUtil.getRSAKeyEntry();
+
         Mockito.verify(builder).setKeySize(2048);
         Mockito.verify(builder).setCertificateSubject(principalCaptor.capture());
         Mockito.verify(builder).setCertificateSerialNumber(BigInteger.ONE);
