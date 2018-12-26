@@ -331,7 +331,7 @@ public class CryptoUtilTest {
 
     @RequiresApi(api = Build.VERSION_CODES.P)
     @Test
-    @Config(constants = com.auth0.android.auth0.BuildConfig.class, sdk = 28)
+    @Config(sdk = 28)
     public void shouldCreateRSAKeyPairIfMissingOnAPI28AndUp() throws Exception {
         ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 28);
 
