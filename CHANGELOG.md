@@ -1,5 +1,17 @@
 # Change Log
 
+## [1.15.0](https://github.com/auth0/Auth0.Android/tree/1.15.0) (2019-01-10)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.14.1...1.15.0)
+
+**Added**
+- Allow to override default timeouts for Http Client [\#206](https://github.com/auth0/Auth0.Android/pull/206) ([nolivermke](https://github.com/nolivermke))
+
+**Changed**
+- Update Telemetry format [\#209](https://github.com/auth0/Auth0.Android/pull/209) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Fixed**
+- Add Android P support for SecureCredentialsManager [\#203](https://github.com/auth0/Auth0.Android/pull/203) ([TheGamer007](https://github.com/TheGamer007))
+
 ## [1.14.1](https://github.com/auth0/Auth0.Android/tree/1.14.1) (2018-10-04)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.14.0...1.14.1)
 
