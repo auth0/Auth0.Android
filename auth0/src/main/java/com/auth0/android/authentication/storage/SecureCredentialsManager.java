@@ -148,6 +148,9 @@ public class SecureCredentialsManager {
             storage.store(KEY_CREDENTIALS, encryptedEncoded);
             storage.store(KEY_EXPIRES_AT, expiresAt);
             storage.store(KEY_CAN_REFRESH, canRefresh);
+        } catch (UnrecoverableContentException e) {
+            //If keys were invalidated, a retry will work fine for the "save credentials" use case.
+            saveCredentials(credentials);
         } catch (CryptoException e) {
             throw new CredentialsManagerException("An error occurred while encrypting the credentials.", e);
         }
@@ -207,6 +210,10 @@ public class SecureCredentialsManager {
         try {
             json = new String(crypto.decrypt(encrypted));
         } catch (CryptoException e) {
+            if (e instanceof UnrecoverableContentException) {
+                //If keys were invalidated, existing credentials will not be recoverable.
+                clearCredentials();
+            }
             callback.onFailure(new CredentialsManagerException("An error occurred while decrypting the existing credentials.", e));
             return;
         }
