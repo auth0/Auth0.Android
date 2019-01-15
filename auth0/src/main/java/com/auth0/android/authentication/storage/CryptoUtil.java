@@ -79,7 +79,7 @@ class CryptoUtil {
     }
 
     @VisibleForTesting
-    KeyStore.PrivateKeyEntry getRSAKeyEntry() throws KeyException {
+    KeyStore.PrivateKeyEntry getRSAKeyEntry() throws KeyException, UnrecoverableEntryException {
         try {
             KeyStore keyStore = KeyStore.getInstance(ANDROID_KEY_STORE);
             keyStore.load(null);
@@ -138,11 +138,6 @@ class CryptoUtil {
         } catch (KeyStoreException | IOException | NoSuchProviderException | InvalidAlgorithmParameterException | NoSuchAlgorithmException | CertificateException e) {
             Log.e(TAG, "An error occurred while trying to obtain the RSA KeyPair Entry from the Android KeyStore.", e);
             throw new KeyException("An error occurred while trying to obtain the RSA KeyPair Entry from the Android KeyStore.", e);
-        } catch (UnrecoverableEntryException e) {
-            //Remove keys and Retry
-            Log.w(TAG, "RSA KeyPair was deemed unrecoverable. Deleting the existing entry and trying again.");
-            deleteKeys();
-            return getRSAKeyEntry();
         }
     }
 
@@ -185,11 +180,11 @@ class CryptoUtil {
             return cipher.doFinal(encryptedInput);
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | KeyException e) {
             throw new CryptoException("Couldn't decrypt the input using the RSA Key.", e);
-        } catch (BadPaddingException | IllegalBlockSizeException e) {
+        } catch (BadPaddingException | IllegalBlockSizeException | UnrecoverableEntryException e) {
             deleteKeys();
             Log.e(TAG, "The input contained unexpected content, probably because it was encrypted using a different key. " +
                     "The existing keys have been deleted and a new pair will be created next time. Please try to encrypt the content again.", e);
-            return new byte[]{};
+            throw new CryptoException("Couldn't decrypt the input using the RSA Key.", new UnrecoverableContentException(e));
         }
     }
 
@@ -203,11 +198,11 @@ class CryptoUtil {
             return cipher.doFinal(decryptedInput);
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | KeyException e) {
             throw new CryptoException("Couldn't encrypt the input using the RSA Key.", e);
-        } catch (BadPaddingException | IllegalBlockSizeException e) {
+        } catch (BadPaddingException | IllegalBlockSizeException | UnrecoverableEntryException e) {
             deleteKeys();
             Log.e(TAG, "The input contained unexpected content and it was deemed unrecoverable." +
                     " The existing keys have been deleted and a new pair will be created next time.", e);
-            return new byte[]{};
+            throw new CryptoException("Couldn't encrypt the input using the RSA Key.", new UnrecoverableContentException(e));
         }
     }
 
