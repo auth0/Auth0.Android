@@ -19,6 +19,7 @@ import com.auth0.android.result.CredentialsMock;
 import com.google.gson.Gson;
 
 import org.hamcrest.core.Is;
+import org.hamcrest.core.IsInstanceOf;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -50,6 +51,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -159,7 +161,34 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public void shouldThrowOnSetIfCryptoError() throws Exception {
+    public void shouldRetryOnceOnSaveIfUnrecoverableContentException() throws Exception {
+        long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456 * 1000;
+        Credentials credentials = new CredentialsMock("idToken", "accessToken", "type", null, new Date(expirationTime), "scope");
+        String json = gson.toJson(credentials);
+        when(crypto.encrypt(json.getBytes())).thenThrow(new UnrecoverableContentException(null)).thenReturn(json.getBytes());
+
+        manager.saveCredentials(credentials);
+
+        verify(crypto, times(2)).encrypt(any(byte[].class));
+        verify(storage).store(eq("com.auth0.credentials"), stringCaptor.capture());
+        verify(storage).store("com.auth0.credentials_expires_at", expirationTime);
+        verify(storage).store("com.auth0.credentials_can_refresh", false);
+        verifyNoMoreInteractions(storage);
+        final String encodedJson = stringCaptor.getValue();
+        assertThat(encodedJson, is(notNullValue()));
+        final byte[] decoded = Base64.decode(encodedJson, Base64.DEFAULT);
+        Credentials storedCredentials = gson.fromJson(new String(decoded), Credentials.class);
+        assertThat(storedCredentials.getAccessToken(), is("accessToken"));
+        assertThat(storedCredentials.getIdToken(), is("idToken"));
+        assertThat(storedCredentials.getRefreshToken(), is(nullValue()));
+        assertThat(storedCredentials.getType(), is("type"));
+        assertThat(storedCredentials.getExpiresAt(), is(notNullValue()));
+        assertThat(storedCredentials.getExpiresAt().getTime(), is(expirationTime));
+        assertThat(storedCredentials.getScope(), is("scope"));
+    }
+
+    @Test
+    public void shouldThrowOnSaveIfCryptoError() throws Exception {
         exception.expect(CredentialsManagerException.class);
         exception.expectMessage("An error occurred while encrypting the credentials.");
 
@@ -170,7 +199,7 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public void shouldThrowOnSetIfCredentialsDoesNotHaveIdTokenOrAccessToken() throws Exception {
+    public void shouldThrowOnSaveIfCredentialsDoesNotHaveIdTokenOrAccessToken() throws Exception {
         exception.expect(CredentialsManagerException.class);
         exception.expectMessage("Credentials must have a valid date of expiration and a valid access_token or id_token value.");
 
@@ -180,7 +209,7 @@ public class SecureCredentialsManagerTest {
 
     @SuppressWarnings("ConstantConditions")
     @Test
-    public void shouldThrowOnSetIfCredentialsDoesNotHaveExpiresAt() throws Exception {
+    public void shouldThrowOnSaveIfCredentialsDoesNotHaveExpiresAt() throws Exception {
         exception.expect(CredentialsManagerException.class);
         exception.expectMessage("Credentials must have a valid date of expiration and a valid access_token or id_token value.");
 
@@ -190,30 +219,65 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public void shouldNotThrowOnSetIfCredentialsHaveAccessTokenAndExpiresIn() throws Exception {
+    public void shouldNotThrowOnSaveIfCredentialsHaveAccessTokenAndExpiresIn() throws Exception {
         Credentials credentials = new CredentialsMock(null, "accessToken", "type", "refreshToken", 123456L);
         when(crypto.encrypt(any(byte[].class))).thenReturn(new byte[]{12, 34, 56, 78});
         manager.saveCredentials(credentials);
     }
 
     @Test
-    public void shouldNotThrowOnSetIfCredentialsHaveIdTokenAndExpiresIn() throws Exception {
+    public void shouldNotThrowOnSaveIfCredentialsHaveIdTokenAndExpiresIn() throws Exception {
         Credentials credentials = new CredentialsMock("idToken", null, "type", "refreshToken", 123456L);
         when(crypto.encrypt(any(byte[].class))).thenReturn(new byte[]{12, 34, 56, 78});
         manager.saveCredentials(credentials);
     }
 
     @Test
+    public void shouldFailOnGetCredentialsWhenCryptoExceptionIsThrown() throws Exception {
+        verifyNoMoreInteractions(client);
+
+        Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456L * 1000);
+        String storedJson = insertTestCredentials(true, true, true, expiresAt);
+        when(crypto.decrypt(storedJson.getBytes())).thenThrow(new CryptoException("This just happened", null));
+        manager.getCredentials(callback);
+
+        verify(callback).onFailure(exceptionCaptor.capture());
+        CredentialsManagerException exception = exceptionCaptor.getValue();
+        assertThat(exception, is(notNullValue()));
+        assertThat(exception.getCause(), IsInstanceOf.<Throwable>instanceOf(CryptoException.class));
+        assertThat(exception.getMessage(), is("An error occurred while decrypting the existing credentials."));
+
+        verify(storage, never()).remove("com.auth0.credentials");
+        verify(storage, never()).remove("com.auth0.credentials_expires_at");
+        verify(storage, never()).remove("com.auth0.credentials_can_refresh");
+    }
+
+    @Test
+    public void shouldFailOnGetCredentialsAndClearStoredCredentialsWhenUnrecoverableContentExceptionIsThrown() throws Exception {
+        verifyNoMoreInteractions(client);
+
+        Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456L * 1000);
+        String storedJson = insertTestCredentials(true, true, true, expiresAt);
+        when(crypto.decrypt(storedJson.getBytes())).thenThrow(new UnrecoverableContentException(null));
+        manager.getCredentials(callback);
+
+        verify(callback).onFailure(exceptionCaptor.capture());
+        CredentialsManagerException exception = exceptionCaptor.getValue();
+        assertThat(exception, is(notNullValue()));
+        assertThat(exception.getCause(), IsInstanceOf.<Throwable>instanceOf(UnrecoverableContentException.class));
+        assertThat(exception.getMessage(), is("An error occurred while decrypting the existing credentials."));
+
+        verify(storage).remove("com.auth0.credentials");
+        verify(storage).remove("com.auth0.credentials_expires_at");
+        verify(storage).remove("com.auth0.credentials_can_refresh");
+    }
+
+    @Test
     public void shouldFailOnGetCredentialsWhenNoAccessTokenOrIdTokenWasSaved() throws Exception {
         verifyNoMoreInteractions(client);
 
-        long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456L * 1000;
-        Credentials storedCredentials = new Credentials(null, null, "type", "refreshToken", new Date(expirationTime), "scope");
-        String storedJson = gson.toJson(storedCredentials);
-        String encoded = new String(Base64.encode(storedJson.getBytes(), Base64.DEFAULT));
-        when(crypto.decrypt(storedJson.getBytes())).thenReturn(storedJson.getBytes());
-        when(storage.retrieveString("com.auth0.credentials")).thenReturn(encoded);
-
+        Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456L * 1000);
+        insertTestCredentials(false, false, true, expiresAt);
         manager.getCredentials(callback);
 
         verify(callback).onFailure(exceptionCaptor.capture());
@@ -226,13 +290,7 @@ public class SecureCredentialsManagerTest {
     public void shouldFailOnGetCredentialsWhenNoExpirationTimeWasSaved() throws Exception {
         verifyNoMoreInteractions(client);
 
-        Date expiresAt = null;
-        Credentials storedCredentials = new Credentials("idToken", "accessToken", "type", "refreshToken", expiresAt, "scope");
-        String storedJson = gson.toJson(storedCredentials);
-        String encoded = new String(Base64.encode(storedJson.getBytes(), Base64.DEFAULT));
-        when(crypto.decrypt(storedJson.getBytes())).thenReturn(storedJson.getBytes());
-        when(storage.retrieveString("com.auth0.credentials")).thenReturn(encoded);
-
+        insertTestCredentials(false, false, true, null);
         manager.getCredentials(callback);
 
         verify(callback).onFailure(exceptionCaptor.capture());
@@ -247,14 +305,7 @@ public class SecureCredentialsManagerTest {
         verifyNoMoreInteractions(client);
 
         Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS); //Same as current time --> expired
-        Credentials storedCredentials = new Credentials("idToken", "accessToken", "type", null, expiresAt, "scope");
-        when(storage.retrieveLong("com.auth0.credentials_expires_at")).thenReturn(expiresAt.getTime());
-        when(storage.retrieveBoolean("com.auth0.credentials_can_refresh")).thenReturn(false);
-        String storedJson = gson.toJson(storedCredentials);
-        String encoded = new String(Base64.encode(storedJson.getBytes(), Base64.DEFAULT));
-        when(crypto.decrypt(storedJson.getBytes())).thenReturn(storedJson.getBytes());
-        when(storage.retrieveString("com.auth0.credentials")).thenReturn(encoded);
-
+        insertTestCredentials(true, true, false, expiresAt);
         manager.getCredentials(callback);
 
         verify(callback).onFailure(exceptionCaptor.capture());
@@ -268,13 +319,7 @@ public class SecureCredentialsManagerTest {
         verifyNoMoreInteractions(client);
 
         Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456L * 1000);
-        Credentials storedCredentials = new Credentials("idToken", "accessToken", "type", "refreshToken", expiresAt, "scope");
-        String storedJson = gson.toJson(storedCredentials);
-        String encoded = new String(Base64.encode(storedJson.getBytes(), Base64.DEFAULT));
-        when(crypto.decrypt(storedJson.getBytes())).thenReturn(storedJson.getBytes());
-        when(storage.retrieveString("com.auth0.credentials")).thenReturn(encoded);
-        when(storage.retrieveLong("com.auth0.credentials_expires_at")).thenReturn(expiresAt.getTime());
-        when(storage.retrieveBoolean("com.auth0.credentials_can_refresh")).thenReturn(false);
+        insertTestCredentials(true, true, true, expiresAt);
 
         manager.getCredentials(callback);
         verify(callback).onSuccess(credentialsCaptor.capture());
@@ -295,13 +340,8 @@ public class SecureCredentialsManagerTest {
         verifyNoMoreInteractions(client);
 
         Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456L * 1000);
-        Credentials storedCredentials = new Credentials("idToken", null, "type", "refreshToken", expiresAt, "scope");
-        String storedJson = gson.toJson(storedCredentials);
-        String encoded = new String(Base64.encode(storedJson.getBytes(), Base64.DEFAULT));
-        when(crypto.decrypt(storedJson.getBytes())).thenReturn(storedJson.getBytes());
-        when(storage.retrieveString("com.auth0.credentials")).thenReturn(encoded);
-        when(storage.retrieveLong("com.auth0.credentials_expires_at")).thenReturn(expiresAt.getTime());
-        when(storage.retrieveBoolean("com.auth0.credentials_can_refresh")).thenReturn(false);
+        insertTestCredentials(true, false, true, expiresAt);
+
 
         manager.getCredentials(callback);
         verify(callback).onSuccess(credentialsCaptor.capture());
@@ -322,13 +362,7 @@ public class SecureCredentialsManagerTest {
         verifyNoMoreInteractions(client);
 
         Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456L * 1000);
-        Credentials storedCredentials = new Credentials(null, "accessToken", "type", "refreshToken", expiresAt, "scope");
-        String storedJson = gson.toJson(storedCredentials);
-        String encoded = new String(Base64.encode(storedJson.getBytes(), Base64.DEFAULT));
-        when(crypto.decrypt(storedJson.getBytes())).thenReturn(storedJson.getBytes());
-        when(storage.retrieveString("com.auth0.credentials")).thenReturn(encoded);
-        when(storage.retrieveLong("com.auth0.credentials_expires_at")).thenReturn(expiresAt.getTime());
-        when(storage.retrieveBoolean("com.auth0.credentials_can_refresh")).thenReturn(false);
+        insertTestCredentials(false, true, true, expiresAt);
 
         manager.getCredentials(callback);
         verify(callback).onSuccess(credentialsCaptor.capture());
@@ -348,13 +382,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public void shouldGetAndSuccessfullyRenewExpiredCredentials() throws Exception {
         Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS);
-        Credentials storedCredentials = new Credentials(null, "accessToken", "type", "refreshToken", expiresAt, "scope");
-        String storedJson = gson.toJson(storedCredentials);
-        String encoded = new String(Base64.encode(storedJson.getBytes(), Base64.DEFAULT));
-        when(crypto.decrypt(storedJson.getBytes())).thenReturn(storedJson.getBytes());
-        when(storage.retrieveString("com.auth0.credentials")).thenReturn(encoded);
-        when(storage.retrieveLong("com.auth0.credentials_expires_at")).thenReturn(expiresAt.getTime());
-        when(storage.retrieveBoolean("com.auth0.credentials_can_refresh")).thenReturn(true);
+        insertTestCredentials(false, true, true, expiresAt);
         when(client.renewAuth("refreshToken")).thenReturn(request);
 
         manager.getCredentials(callback);
@@ -401,13 +429,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public void shouldGetAndFailToRenewExpiredCredentials() throws Exception {
         Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS);
-        Credentials storedCredentials = new Credentials(null, "accessToken", "type", "refreshToken", expiresAt, "scope");
-        String storedJson = gson.toJson(storedCredentials);
-        String encoded = new String(Base64.encode(storedJson.getBytes(), Base64.DEFAULT));
-        when(crypto.decrypt(storedJson.getBytes())).thenReturn(storedJson.getBytes());
-        when(storage.retrieveString("com.auth0.credentials")).thenReturn(encoded);
-        when(storage.retrieveLong("com.auth0.credentials_expires_at")).thenReturn(expiresAt.getTime());
-        when(storage.retrieveBoolean("com.auth0.credentials_can_refresh")).thenReturn(true);
+        insertTestCredentials(false, true, true, expiresAt);
         when(client.renewAuth("refreshToken")).thenReturn(request);
 
         manager.getCredentials(callback);
@@ -566,13 +588,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public void shouldGetCredentialsAfterAuthentication() throws Exception {
         Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456L * 1000);
-        Credentials storedCredentials = new Credentials("idToken", "accessToken", "type", "refreshToken", expiresAt, "scope");
-        String storedJson = gson.toJson(storedCredentials);
-        String encoded = new String(Base64.encode(storedJson.getBytes(), Base64.DEFAULT));
-        when(crypto.decrypt(storedJson.getBytes())).thenReturn(storedJson.getBytes());
-        when(storage.retrieveString("com.auth0.credentials")).thenReturn(encoded);
-        when(storage.retrieveLong("com.auth0.credentials_expires_at")).thenReturn(expiresAt.getTime());
-        when(storage.retrieveBoolean("com.auth0.credentials_can_refresh")).thenReturn(false);
+        insertTestCredentials(true, true, false, expiresAt);
 
         //Require authentication
         Activity activity = spy(Robolectric.buildActivity(Activity.class).create().start().resume().get());
@@ -600,23 +616,21 @@ public class SecureCredentialsManagerTest {
         assertThat(retrievedCredentials, is(notNullValue()));
         assertThat(retrievedCredentials.getAccessToken(), is("accessToken"));
         assertThat(retrievedCredentials.getIdToken(), is("idToken"));
-        assertThat(retrievedCredentials.getRefreshToken(), is("refreshToken"));
+        assertThat(retrievedCredentials.getRefreshToken(), is(nullValue()));
         assertThat(retrievedCredentials.getType(), is("type"));
         assertThat(retrievedCredentials.getExpiresAt(), is(notNullValue()));
         assertThat(retrievedCredentials.getExpiresAt().getTime(), is(expiresAt.getTime()));
         assertThat(retrievedCredentials.getScope(), is("scope"));
+
+        //A second call to checkAuthenticationResult should fail as callback is set to null
+        final boolean retryCheck = manager.checkAuthenticationResult(123, Activity.RESULT_OK);
+        assertThat(retryCheck, is(false));
     }
 
     @Test
     public void shouldNotGetCredentialsAfterCanceledAuthentication() throws Exception {
         Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456L * 1000);
-        Credentials storedCredentials = new Credentials("idToken", "accessToken", "type", "refreshToken", expiresAt, "scope");
-        String storedJson = gson.toJson(storedCredentials);
-        String encoded = new String(Base64.encode(storedJson.getBytes(), Base64.DEFAULT));
-        when(crypto.decrypt(storedJson.getBytes())).thenReturn(storedJson.getBytes());
-        when(storage.retrieveString("com.auth0.credentials")).thenReturn(encoded);
-        when(storage.retrieveLong("com.auth0.credentials_expires_at")).thenReturn(expiresAt.getTime());
-        when(storage.retrieveBoolean("com.auth0.credentials_can_refresh")).thenReturn(false);
+        insertTestCredentials(true, true, false, expiresAt);
 
         //Require authentication
         Activity activity = spy(Robolectric.buildActivity(Activity.class).create().start().resume().get());
@@ -644,5 +658,50 @@ public class SecureCredentialsManagerTest {
 
         assertThat(exceptionCaptor.getValue(), is(notNullValue()));
         assertThat(exceptionCaptor.getValue().getMessage(), is("The user didn't pass the authentication challenge."));
+    }
+
+    @Test
+    public void shouldNotGetCredentialsOnDifferentAuthenticationRequestCode() throws Exception {
+        Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456L * 1000);
+        insertTestCredentials(true, true, false, expiresAt);
+
+        //Require authentication
+        Activity activity = spy(Robolectric.buildActivity(Activity.class).create().start().resume().get());
+        KeyguardManager kService = mock(KeyguardManager.class);
+        when(activity.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService);
+        when(kService.isKeyguardSecure()).thenReturn(true);
+        Intent confirmCredentialsIntent = mock(Intent.class);
+        when(kService.createConfirmDeviceCredentialIntent("theTitle", "theDescription")).thenReturn(confirmCredentialsIntent);
+        boolean willRequireAuthentication = manager.requireAuthentication(activity, 100, "theTitle", "theDescription");
+        assertThat(willRequireAuthentication, is(true));
+
+        manager.getCredentials(callback);
+
+        ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        verify(activity).startActivityForResult(intentCaptor.capture(), eq(100));
+        assertThat(intentCaptor.getValue(), is(confirmCredentialsIntent));
+
+
+        //Continue after successful authentication
+        verifyNoMoreInteractions(callback);
+        final boolean processed = manager.checkAuthenticationResult(123, Activity.RESULT_OK);
+        assertThat(processed, is(false));
+
+    }
+
+
+    /**
+     * Used to simplify the tests length
+     */
+    private String insertTestCredentials(boolean hasIdToken, boolean hasAccessToken, boolean hasRefreshToken, Date willExpireAt) {
+        Credentials storedCredentials = new Credentials(hasIdToken ? "idToken" : null, hasAccessToken ? "accessToken" : null, "type",
+                hasRefreshToken ? "refreshToken" : null, willExpireAt, "scope");
+        String storedJson = gson.toJson(storedCredentials);
+        String encoded = new String(Base64.encode(storedJson.getBytes(), Base64.DEFAULT));
+        when(crypto.decrypt(storedJson.getBytes())).thenReturn(storedJson.getBytes());
+        when(storage.retrieveString("com.auth0.credentials")).thenReturn(encoded);
+        when(storage.retrieveLong("com.auth0.credentials_expires_at")).thenReturn(willExpireAt != null ? willExpireAt.getTime() : null);
+        when(storage.retrieveBoolean("com.auth0.credentials_can_refresh")).thenReturn(hasRefreshToken);
+        return storedJson;
     }
 }

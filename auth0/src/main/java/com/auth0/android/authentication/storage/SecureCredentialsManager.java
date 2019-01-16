@@ -215,6 +215,7 @@ public class SecureCredentialsManager {
                 clearCredentials();
             }
             callback.onFailure(new CredentialsManagerException("An error occurred while decrypting the existing credentials.", e));
+            decryptCallback = null;
             return;
         }
         final Credentials credentials = gson.fromJson(json, Credentials.class);
