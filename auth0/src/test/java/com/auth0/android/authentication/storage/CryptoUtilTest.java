@@ -12,6 +12,7 @@ import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 
+import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -376,8 +377,54 @@ public class CryptoUtilTest {
         assertThat(entry, is(expectedEntry));
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.P)
     @Test
-    public void shouldUseExistingRSAKeyPair() throws Exception {
+    @Config(sdk = 28)
+    public void shouldUseExistingRSAKeyPairRebuildingTheEntryOnAPI28AndUp() throws Exception {
+        ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 28);
+        KeyStore.PrivateKeyEntry entry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
+        PrivateKey privateKey = PowerMockito.mock(PrivateKey.class);
+        Certificate certificate = PowerMockito.mock(Certificate.class);
+
+        ArgumentCaptor<Object> varargsCaptor = ArgumentCaptor.forClass(Object.class);
+        PowerMockito.when(keyStore.containsAlias(KEY_ALIAS)).thenReturn(true);
+        PowerMockito.when(keyStore.getKey(KEY_ALIAS, null)).thenReturn(privateKey);
+        PowerMockito.when(keyStore.getCertificate(KEY_ALIAS)).thenReturn(certificate);
+        PowerMockito.whenNew(KeyStore.PrivateKeyEntry.class).withAnyArguments().thenReturn(entry);
+
+        KeyStore.PrivateKeyEntry rsaEntry = cryptoUtil.getRSAKeyEntry();
+        PowerMockito.verifyNew(KeyStore.PrivateKeyEntry.class).withArguments(varargsCaptor.capture());
+        assertThat(rsaEntry, is(notNullValue()));
+        assertThat(rsaEntry, is(entry));
+        assertThat(varargsCaptor.getAllValues(), is(notNullValue()));
+        PrivateKey capturedPrivateKey = (PrivateKey) varargsCaptor.getAllValues().get(0);
+        Certificate[] capturedCertificatesArray = (Certificate[]) varargsCaptor.getAllValues().get(1);
+        assertThat(capturedPrivateKey, is(privateKey));
+        assertThat(capturedCertificatesArray[0], is(certificate));
+        assertThat(capturedCertificatesArray.length, is(1));
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.P)
+    @Test
+    @Config(sdk = 28)
+    public void shouldUseExistingRSAKeyPairOnAPI28AndUp() throws Exception {
+        ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 28);
+        KeyStore.PrivateKeyEntry entry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
+        PowerMockito.when(keyStore.getEntry(KEY_ALIAS, null)).thenReturn(entry);
+        PrivateKey privateKey = null;
+        PowerMockito.when(keyStore.containsAlias(KEY_ALIAS)).thenReturn(true);
+        PowerMockito.when(keyStore.getKey(KEY_ALIAS, null)).thenReturn(privateKey);
+
+        KeyStore.PrivateKeyEntry rsaEntry = cryptoUtil.getRSAKeyEntry();
+        assertThat(rsaEntry, is(notNullValue()));
+        assertThat(rsaEntry, is(entry));
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O_MR1)
+    @Test
+    @Config(sdk = 27)
+    public void shouldUseExistingRSAKeyPairOnAPI27AndDown() throws Exception {
+        ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 27);
         KeyStore.PrivateKeyEntry entry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
         PowerMockito.when(keyStore.containsAlias(KEY_ALIAS)).thenReturn(true);
         PowerMockito.when(keyStore.getEntry(KEY_ALIAS, null)).thenReturn(entry);
@@ -388,7 +435,9 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldDeleteKeysOnUnrecoverableErrorWhenTryingToObtainRSAKeys() throws Exception {
+    public void shouldThrowUnrecoverableEntryExceptionOnUnrecoverableErrorWhenTryingToObtainRSAKeys() throws Exception {
+        exception.expect(UnrecoverableEntryException.class);
+
         KeyStore.PrivateKeyEntry entry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
         PowerMockito.when(keyStore.containsAlias(KEY_ALIAS)).thenReturn(true);
         PowerMockito.when(keyStore.getEntry(KEY_ALIAS, null))
@@ -396,10 +445,6 @@ public class CryptoUtilTest {
                 .thenReturn(entry);
 
         cryptoUtil.getRSAKeyEntry();
-
-        Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
-        Mockito.verify(storage).remove(KEY_ALIAS);
-        Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
     }
 
     @Test
@@ -651,7 +696,11 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldDeleteKeysOnErrorWhenTryingToRSADecrypt() throws Exception {
+    public void shouldDeleteKeysOnBadPaddingExceptionWhenTryingToRSADecrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("Couldn't decrypt the input using the RSA Key.");
+        exception.expectCause(CoreMatchers.<Throwable>instanceOf(UnrecoverableContentException.class));
+
         PrivateKey privateKey = PowerMockito.mock(PrivateKey.class);
         KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
         doReturn(privateKey).when(privateKeyEntry).getPrivateKey();
@@ -659,16 +708,54 @@ public class CryptoUtilTest {
 
         doThrow(new BadPaddingException()).when(rsaCipher).doFinal(any(byte[].class));
         cryptoUtil.RSADecrypt(new byte[0]);
-        doThrow(new IllegalBlockSizeException()).when(rsaCipher).doFinal(any(byte[].class));
-        cryptoUtil.RSADecrypt(new byte[0]);
 
-        Mockito.verify(keyStore, Mockito.times(2)).deleteEntry(KEY_ALIAS);
-        Mockito.verify(storage, Mockito.times(2)).remove(KEY_ALIAS);
-        Mockito.verify(storage, Mockito.times(2)).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
     }
 
     @Test
-    public void shouldDeleteKeysOnErrorWhenTryingToRSAEncrypt() throws Exception {
+    public void shouldDeleteKeysOnIllegalBlockSizeExceptionWhenTryingToRSADecrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("Couldn't decrypt the input using the RSA Key.");
+        exception.expectCause(CoreMatchers.<Throwable>instanceOf(UnrecoverableContentException.class));
+
+        PrivateKey privateKey = PowerMockito.mock(PrivateKey.class);
+        KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
+        doReturn(privateKey).when(privateKeyEntry).getPrivateKey();
+        doReturn(privateKeyEntry).when(cryptoUtil).getRSAKeyEntry();
+
+        doThrow(new IllegalBlockSizeException()).when(rsaCipher).doFinal(any(byte[].class));
+        cryptoUtil.RSADecrypt(new byte[0]);
+
+        Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
+    }
+
+    @Test
+    public void shouldDeleteKeysOnUnrecoverableEntryExceptionWhenTryingToRSADecrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("Couldn't decrypt the input using the RSA Key.");
+        exception.expectCause(CoreMatchers.<Throwable>instanceOf(UnrecoverableContentException.class));
+
+        PrivateKey privateKey = PowerMockito.mock(PrivateKey.class);
+        KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
+        doReturn(privateKey).when(privateKeyEntry).getPrivateKey();
+        doThrow(new UnrecoverableEntryException()).when(cryptoUtil).getRSAKeyEntry();
+        cryptoUtil.RSADecrypt(new byte[0]);
+
+        Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
+    }
+
+    @Test
+    public void shouldDeleteKeysOnBadPaddingExceptionWhenTryingToRSAEncrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("Couldn't encrypt the input using the RSA Key.");
+        exception.expectCause(CoreMatchers.<Throwable>instanceOf(UnrecoverableContentException.class));
+
         Certificate certificate = PowerMockito.mock(Certificate.class);
         KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
         doReturn(certificate).when(privateKeyEntry).getCertificate();
@@ -676,12 +763,48 @@ public class CryptoUtilTest {
 
         doThrow(new BadPaddingException()).when(rsaCipher).doFinal(any(byte[].class));
         cryptoUtil.RSAEncrypt(new byte[0]);
+
+        Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
+    }
+
+    @Test
+    public void shouldDeleteKeysOnIllegalBlockSizeExceptionWhenTryingToRSAEncrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("Couldn't encrypt the input using the RSA Key.");
+        exception.expectCause(CoreMatchers.<Throwable>instanceOf(UnrecoverableContentException.class));
+
+        Certificate certificate = PowerMockito.mock(Certificate.class);
+        KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
+        doReturn(certificate).when(privateKeyEntry).getCertificate();
+        doReturn(privateKeyEntry).when(cryptoUtil).getRSAKeyEntry();
+
         doThrow(new IllegalBlockSizeException()).when(rsaCipher).doFinal(any(byte[].class));
         cryptoUtil.RSAEncrypt(new byte[0]);
 
-        Mockito.verify(keyStore, Mockito.times(2)).deleteEntry(KEY_ALIAS);
-        Mockito.verify(storage, Mockito.times(2)).remove(KEY_ALIAS);
-        Mockito.verify(storage, Mockito.times(2)).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
+    }
+
+    @Test
+    public void shouldDeleteKeysOnUnrecoverableEntryExceptionWhenTryingToRSAEncrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("Couldn't encrypt the input using the RSA Key.");
+        exception.expectCause(CoreMatchers.<Throwable>instanceOf(UnrecoverableContentException.class));
+
+        Certificate certificate = PowerMockito.mock(Certificate.class);
+        KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
+        doReturn(certificate).when(privateKeyEntry).getCertificate();
+        doReturn(privateKeyEntry).when(cryptoUtil).getRSAKeyEntry();
+
+        doThrow(new UnrecoverableEntryException()).when(cryptoUtil).getRSAKeyEntry();
+        cryptoUtil.RSAEncrypt(new byte[0]);
+
+        Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
     }
 
     @Test
