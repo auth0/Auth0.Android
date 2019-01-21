@@ -90,7 +90,7 @@ public class SecureCredentialsManager {
      */
     public boolean requireAuthentication(@NonNull Activity activity, @IntRange(from = 1, to = 255) int requestCode, @Nullable String title, @Nullable String description) {
         if (requestCode < 1 || requestCode > 255) {
-            throw new IllegalArgumentException("Request code must a value between 1 and 255.");
+            throw new IllegalArgumentException("Request code must be a value between 1 and 255.");
         }
         KeyguardManager kManager = (KeyguardManager) activity.getSystemService(Context.KEYGUARD_SERVICE);
         this.authIntent = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ? kManager.createConfirmDeviceCredentialIntent(title, description) : null;
@@ -130,7 +130,7 @@ public class SecureCredentialsManager {
      * Saves the given credentials in the Storage.
      *
      * @param credentials the credentials to save.
-     * @throws CredentialsManagerException if the credentials couldn't be encrypted.
+     * @throws CredentialsManagerException if the credentials couldn't be encrypted. If the class is not supported by this device the cause will be a {@link IncompatibleDeviceException}.
      */
     public void saveCredentials(@NonNull Credentials credentials) throws CredentialsManagerException {
         if ((isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken())) || credentials.getExpiresAt() == null) {
@@ -148,18 +148,22 @@ public class SecureCredentialsManager {
             storage.store(KEY_CREDENTIALS, encryptedEncoded);
             storage.store(KEY_EXPIRES_AT, expiresAt);
             storage.store(KEY_CAN_REFRESH, canRefresh);
-        } catch (UnrecoverableContentException e) {
-            //If keys were invalidated, a retry will work fine for the "save credentials" use case.
-            saveCredentials(credentials);
         } catch (CryptoException e) {
-            throw new CredentialsManagerException("An error occurred while encrypting the credentials.", e);
+            /*
+             * If the keys were invalidated in the call above a good new pair is going to be available
+             * to use on the next call. Retrying this operation will succeed.
+             */
+            throw new CredentialsManagerException("A change on the Lock Screen security settings have deemed the encryption keys invalid and have been recreated. Please, try saving the credentials again.", e);
+        } catch (IncompatibleDeviceException e) {
+            throw new CredentialsManagerException(String.format("This device is not compatible with the %s class.", SecureCredentialsManager.class.getSimpleName()), e);
         }
     }
 
     /**
      * Tries to obtain the credentials from the Storage.
-     * If a LockScreen is setup the user will be asked to authenticate before accessing the credentials. Your activity must override the
-     * {@link Activity#onActivityResult(int, int, Intent)} method and call {@link #checkAuthenticationResult(int, int)} with the received values.
+     * If a LockScreen is setup and {@link #requireAuthentication(Activity, int, String, String)} was called, the user will be asked to authenticate before accessing
+     * the credentials. Your activity must override the {@link Activity#onActivityResult(int, int, Intent)} method and call
+     * {@link #checkAuthenticationResult(int, int)} with the received values.
      *
      * @param callback the callback to receive the result in.
      */
@@ -210,11 +214,14 @@ public class SecureCredentialsManager {
         try {
             json = new String(crypto.decrypt(encrypted));
         } catch (CryptoException e) {
-            if (e instanceof UnrecoverableContentException) {
-                //If keys were invalidated, existing credentials will not be recoverable.
-                clearCredentials();
-            }
-            callback.onFailure(new CredentialsManagerException("An error occurred while decrypting the existing credentials.", e));
+            //If keys were invalidated, existing credentials will not be recoverable.
+            clearCredentials();
+            callback.onFailure(new CredentialsManagerException("A change on the Lock Screen security settings have deemed the encryption keys invalid and have been recreated. " +
+                    "Any previously stored content is now lost. Please, try saving the credentials again.", e));
+            decryptCallback = null;
+            return;
+        } catch (IncompatibleDeviceException e) {
+            callback.onFailure(new CredentialsManagerException(String.format("This device is not compatible with the %s class.", SecureCredentialsManager.class.getSimpleName()), e));
             decryptCallback = null;
             return;
         }
