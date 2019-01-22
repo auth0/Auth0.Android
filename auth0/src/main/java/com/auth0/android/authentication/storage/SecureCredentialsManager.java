@@ -13,6 +13,7 @@ import android.support.annotation.VisibleForTesting;
 import android.util.Base64;
 import android.util.Log;
 
+import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.AuthenticationCallback;
@@ -130,7 +131,8 @@ public class SecureCredentialsManager {
      * Saves the given credentials in the Storage.
      *
      * @param credentials the credentials to save.
-     * @throws CredentialsManagerException if the credentials couldn't be encrypted. If the class is not supported by this device the cause will be a {@link IncompatibleDeviceException}.
+     * @throws CredentialsManagerException if the credentials couldn't be encrypted. Some devices are not compatible at all with the cryptographic
+     *                                     implementation and will have {@link CredentialsManagerException#isDeviceIncompatible()} return true.
      */
     public void saveCredentials(@NonNull Credentials credentials) throws CredentialsManagerException {
         if ((isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken())) || credentials.getExpiresAt() == null) {
@@ -162,7 +164,10 @@ public class SecureCredentialsManager {
     }
 
     /**
-     * Tries to obtain the credentials from the Storage.
+     * Tries to obtain the credentials from the Storage. The callback's {@link BaseCallback#onSuccess(Object)} method will be called with the result.
+     * If something unexpected happens, the {@link BaseCallback#onFailure(Auth0Exception)} method will be called with the error. Some devices are not compatible
+     * at all with the cryptographic implementation and will have {@link CredentialsManagerException#isDeviceIncompatible()} return true.
+     * <p>
      * If a LockScreen is setup and {@link #requireAuthentication(Activity, int, String, String)} was called, the user will be asked to authenticate before accessing
      * the credentials. Your activity must override the {@link Activity#onActivityResult(int, int, Intent)} method and call
      * {@link #checkAuthenticationResult(int, int)} with the received values.

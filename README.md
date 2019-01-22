@@ -589,11 +589,11 @@ manager.clearCredentials();
 
 ### Encryption enforced (Min API 21)
 
-This version expands the minimum version and adds encryption to the data storage. In those devices where a Secure LockScreen has been configured it can require the user authentication before letting them obtain the stored credentials. The class is called `SecureCredentialsManager` and requires at minimum Android API 21.
+This version expands the minimum version and adds encryption to the data storage. Additionally, in those devices where a Secure Lock Screen has been configured it can require the user authentication before letting them obtain the stored credentials. The class is called `SecureCredentialsManager` and requires at minimum Android API 21.
 
 
 #### Usage
-The usage is similar to the previous version, with the slight difference that the manager now requires a valid `Context` as shown below:
+The usage is similar to the previous version, with the slight difference that the manager now requires a valid android `Context` as shown below:
 
 ```java
 AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
@@ -603,7 +603,7 @@ SecureCredentialsManager manager = new SecureCredentialsManager(this, authentica
 
 #### Requiring Authentication
 
-You can require the user authentication to obtain credentials. This will make the manager prompt the user with the device's configured LockScreen, which they must pass correctly in order to obtain the credentials. **This feature is only available on devices where the user has setup a secured LockScreen** (PIN, Pattern, Password or Fingerprint).
+You can require the user authentication to obtain credentials. This will make the manager prompt the user with the device's configured Lock Screen, which they must pass correctly in order to obtain the credentials. **This feature is only available on devices where the user has setup a secured Lock Screen** (PIN, Pattern, Password or Fingerprint).
 
 To enable authentication you must call the `requireAuthentication` method passing a valid _Activity_ context, a Request Code that represents the authentication call, and the title and description to display in the LockScreen. As seen in the snippet below, you can leave these last two parameters with `null` to use the system default resources.
 
@@ -614,7 +614,7 @@ private static final int AUTH_REQ_CODE = 11;
 manager.requireAuthentication(this, AUTH_REQ_CODE, null, null);
 ```
 
-When the above conditions are met and the manager requires the user authentication, it will use the activity context to launch a new activity for the result. The outcome of getting approved or rejected by the LockScreen is given back to the activity in the `onActivityResult` method, which your activity must override to redirect the data to the manager using the `checkAuthenticationResult` method.
+When the above conditions are met and the manager requires the user authentication, it will use the activity context to launch a new activity for the result. The outcome of getting approved or rejected by the Lock Screen is given back to the activity in the `onActivityResult` method, which your activity must override to redirect the data to the manager using the `checkAuthenticationResult` method.
 
 ```java
 @Override
@@ -628,6 +628,15 @@ protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
 The `checkAuthenticationResult` method will continue the retrieval of credentials on a successful authentication, and the decrypted credentials will be delivered to the callback passed on the `getCredentials` call.
 
+
+#### Handling exceptions
+
+In the event that something happened while trying to save or retrieve the credentials, a `CredentialsManagerException` will be thrown. These are some of the expected failure scenarios:
+
+- Invalid Credentials format or values. e.g. when it's missing the `access_token`, the `id_token` or the `expires_at` values.
+- Tokens have expired but no `refresh_token` is available to perform a refresh credentials request.
+- Device's Lock Screen security settings have changed (e.g. the PIN code was changed). Even when `hasCredentials` returns true, the encryption keys will be deemed invalid and until `saveCredentials` is called again it won't be possible to decrypt any previously existing content, since they keys used back then are not the same as the new ones.
+- Device is not compatible with some of the algorithms required by the `SecureCredentialsManager` class. This is considered a catastrophic event and might happen when the OEM has modified the Android ROM removing some of the officially included algorithms. Nevertheless, it can be checked in the exception instance itself by calling `isDeviceIncompatible`. By doing so you can decide the fallback for storing the credentials, such as using the regular `CredentialsManager`.
 
 ## FAQ
 
