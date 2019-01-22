@@ -148,14 +148,16 @@ public class SecureCredentialsManager {
             storage.store(KEY_CREDENTIALS, encryptedEncoded);
             storage.store(KEY_EXPIRES_AT, expiresAt);
             storage.store(KEY_CAN_REFRESH, canRefresh);
+        } catch (IncompatibleDeviceException e) {
+            throw new CredentialsManagerException(String.format("This device is not compatible with the %s class.", SecureCredentialsManager.class.getSimpleName()), e);
         } catch (CryptoException e) {
             /*
              * If the keys were invalidated in the call above a good new pair is going to be available
-             * to use on the next call. Retrying this operation will succeed.
+             * to use on the next call. We clear any existing credentials so #hasValidCredentials returns
+             * a true value. Retrying this operation will succeed.
              */
+            clearCredentials();
             throw new CredentialsManagerException("A change on the Lock Screen security settings have deemed the encryption keys invalid and have been recreated. Please, try saving the credentials again.", e);
-        } catch (IncompatibleDeviceException e) {
-            throw new CredentialsManagerException(String.format("This device is not compatible with the %s class.", SecureCredentialsManager.class.getSimpleName()), e);
         }
     }
 
@@ -213,15 +215,15 @@ public class SecureCredentialsManager {
         String json;
         try {
             json = new String(crypto.decrypt(encrypted));
+        } catch (IncompatibleDeviceException e) {
+            callback.onFailure(new CredentialsManagerException(String.format("This device is not compatible with the %s class.", SecureCredentialsManager.class.getSimpleName()), e));
+            decryptCallback = null;
+            return;
         } catch (CryptoException e) {
             //If keys were invalidated, existing credentials will not be recoverable.
             clearCredentials();
             callback.onFailure(new CredentialsManagerException("A change on the Lock Screen security settings have deemed the encryption keys invalid and have been recreated. " +
                     "Any previously stored content is now lost. Please, try saving the credentials again.", e));
-            decryptCallback = null;
-            return;
-        } catch (IncompatibleDeviceException e) {
-            callback.onFailure(new CredentialsManagerException(String.format("This device is not compatible with the %s class.", SecureCredentialsManager.class.getSimpleName()), e));
             decryptCallback = null;
             return;
         }
