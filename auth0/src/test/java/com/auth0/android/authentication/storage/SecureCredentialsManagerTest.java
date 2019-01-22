@@ -51,7 +51,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -108,6 +107,10 @@ public class SecureCredentialsManagerTest {
         assertThat(manager, is(notNullValue()));
     }
 
+    /*
+     * SAVE Credentials tests
+     */
+
     @Test
     public void shouldSaveRefreshableCredentialsInStorage() throws Exception {
         long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456 * 1000;
@@ -161,41 +164,41 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public void shouldRetryOnceOnSaveIfUnrecoverableContentException() throws Exception {
+    public void shouldClearStoredCredentialsAndThrowOnSaveOnCryptoException() throws Exception {
         long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456 * 1000;
-        Credentials credentials = new CredentialsMock("idToken", "accessToken", "type", null, new Date(expirationTime), "scope");
-        String json = gson.toJson(credentials);
-        when(crypto.encrypt(json.getBytes())).thenThrow(new UnrecoverableContentException(null)).thenReturn(json.getBytes());
+        Credentials credentials = new CredentialsMock("idToken", "accessToken", "type", "refreshToken", new Date(expirationTime), "scope");
+        when(crypto.encrypt(any(byte[].class))).thenThrow(new CryptoException(null, null));
 
-        manager.saveCredentials(credentials);
+        CredentialsManagerException exception = null;
+        try {
+            manager.saveCredentials(credentials);
+        } catch (CredentialsManagerException e) {
+            exception = e;
+        }
+        assertThat(exception, is(notNullValue()));
+        assertThat(exception.isDeviceIncompatible(), is(false));
+        assertThat(exception.getMessage(), is("A change on the Lock Screen security settings have deemed the encryption keys invalid and have been recreated. Please, try saving the credentials again."));
 
-        verify(crypto, times(2)).encrypt(any(byte[].class));
-        verify(storage).store(eq("com.auth0.credentials"), stringCaptor.capture());
-        verify(storage).store("com.auth0.credentials_expires_at", expirationTime);
-        verify(storage).store("com.auth0.credentials_can_refresh", false);
-        verifyNoMoreInteractions(storage);
-        final String encodedJson = stringCaptor.getValue();
-        assertThat(encodedJson, is(notNullValue()));
-        final byte[] decoded = Base64.decode(encodedJson, Base64.DEFAULT);
-        Credentials storedCredentials = gson.fromJson(new String(decoded), Credentials.class);
-        assertThat(storedCredentials.getAccessToken(), is("accessToken"));
-        assertThat(storedCredentials.getIdToken(), is("idToken"));
-        assertThat(storedCredentials.getRefreshToken(), is(nullValue()));
-        assertThat(storedCredentials.getType(), is("type"));
-        assertThat(storedCredentials.getExpiresAt(), is(notNullValue()));
-        assertThat(storedCredentials.getExpiresAt().getTime(), is(expirationTime));
-        assertThat(storedCredentials.getScope(), is("scope"));
+        verify(storage).remove("com.auth0.credentials");
+        verify(storage).remove("com.auth0.credentials_expires_at");
+        verify(storage).remove("com.auth0.credentials_can_refresh");
     }
 
     @Test
-    public void shouldThrowOnSaveIfCryptoError() throws Exception {
-        exception.expect(CredentialsManagerException.class);
-        exception.expectMessage("An error occurred while encrypting the credentials.");
-
+    public void shouldThrowOnSaveOnIncompatibleDeviceException() throws Exception {
         long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456 * 1000;
         Credentials credentials = new CredentialsMock("idToken", "accessToken", "type", "refreshToken", new Date(expirationTime), "scope");
-        when(crypto.encrypt(any(byte[].class))).thenThrow(new CryptoException("something", new Throwable("happened")));
-        manager.saveCredentials(credentials);
+        when(crypto.encrypt(any(byte[].class))).thenThrow(new IncompatibleDeviceException(null));
+
+        CredentialsManagerException exception = null;
+        try {
+            manager.saveCredentials(credentials);
+        } catch (CredentialsManagerException e) {
+            exception = e;
+        }
+        assertThat(exception, is(notNullValue()));
+        assertThat(exception.isDeviceIncompatible(), is(true));
+        assertThat(exception.getMessage(), is("This device is not compatible with the SecureCredentialsManager class."));
     }
 
     @Test
@@ -232,44 +235,50 @@ public class SecureCredentialsManagerTest {
         manager.saveCredentials(credentials);
     }
 
+    /*
+     * GET Credentials tests
+     */
+
     @Test
-    public void shouldFailOnGetCredentialsWhenCryptoExceptionIsThrown() throws Exception {
+    public void shouldClearStoredCredentialsAndFailOnGetCredentialsWhenCryptoExceptionIsThrown() throws Exception {
         verifyNoMoreInteractions(client);
 
         Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456L * 1000);
         String storedJson = insertTestCredentials(true, true, true, expiresAt);
-        when(crypto.decrypt(storedJson.getBytes())).thenThrow(new CryptoException("This just happened", null));
+        when(crypto.decrypt(storedJson.getBytes())).thenThrow(new CryptoException(null, null));
         manager.getCredentials(callback);
 
         verify(callback).onFailure(exceptionCaptor.capture());
         CredentialsManagerException exception = exceptionCaptor.getValue();
         assertThat(exception, is(notNullValue()));
         assertThat(exception.getCause(), IsInstanceOf.<Throwable>instanceOf(CryptoException.class));
-        assertThat(exception.getMessage(), is("An error occurred while decrypting the existing credentials."));
+        assertThat(exception.getMessage(), is("A change on the Lock Screen security settings have deemed the encryption keys invalid and have been recreated. " +
+                "Any previously stored content is now lost. Please, try saving the credentials again."));
 
-        verify(storage, never()).remove("com.auth0.credentials");
-        verify(storage, never()).remove("com.auth0.credentials_expires_at");
-        verify(storage, never()).remove("com.auth0.credentials_can_refresh");
+
+        verify(storage).remove("com.auth0.credentials");
+        verify(storage).remove("com.auth0.credentials_expires_at");
+        verify(storage).remove("com.auth0.credentials_can_refresh");
     }
 
     @Test
-    public void shouldFailOnGetCredentialsAndClearStoredCredentialsWhenUnrecoverableContentExceptionIsThrown() throws Exception {
+    public void shouldFailOnGetCredentialsWhenIncompatibleDeviceExceptionIsThrown() throws Exception {
         verifyNoMoreInteractions(client);
 
         Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456L * 1000);
         String storedJson = insertTestCredentials(true, true, true, expiresAt);
-        when(crypto.decrypt(storedJson.getBytes())).thenThrow(new UnrecoverableContentException(null));
+        when(crypto.decrypt(storedJson.getBytes())).thenThrow(new IncompatibleDeviceException(null));
         manager.getCredentials(callback);
 
         verify(callback).onFailure(exceptionCaptor.capture());
         CredentialsManagerException exception = exceptionCaptor.getValue();
         assertThat(exception, is(notNullValue()));
-        assertThat(exception.getCause(), IsInstanceOf.<Throwable>instanceOf(UnrecoverableContentException.class));
-        assertThat(exception.getMessage(), is("An error occurred while decrypting the existing credentials."));
+        assertThat(exception.getCause(), IsInstanceOf.<Throwable>instanceOf(IncompatibleDeviceException.class));
+        assertThat(exception.getMessage(), is("This device is not compatible with the SecureCredentialsManager class."));
 
-        verify(storage).remove("com.auth0.credentials");
-        verify(storage).remove("com.auth0.credentials_expires_at");
-        verify(storage).remove("com.auth0.credentials_can_refresh");
+        verify(storage, never()).remove("com.auth0.credentials");
+        verify(storage, never()).remove("com.auth0.credentials_expires_at");
+        verify(storage, never()).remove("com.auth0.credentials_can_refresh");
     }
 
     @Test
@@ -451,6 +460,10 @@ public class SecureCredentialsManagerTest {
         assertThat(exception.getMessage(), is("An error occurred while trying to use the Refresh Token to renew the Credentials."));
     }
 
+    /*
+     * CLEAR Credentials tests
+     */
+
     @Test
     public void shouldClearCredentials() throws Exception {
         manager.clearCredentials();
@@ -460,6 +473,10 @@ public class SecureCredentialsManagerTest {
         verify(storage).remove("com.auth0.credentials_can_refresh");
         verifyNoMoreInteractions(storage);
     }
+
+    /*
+     * HAS Credentials tests
+     */
 
     @Test
     public void shouldHaveCredentialsWhenTokenHasNotExpired() throws Exception {
@@ -504,10 +521,14 @@ public class SecureCredentialsManagerTest {
         assertFalse(manager.hasValidCredentials());
     }
 
+    /*
+     * Authentication tests
+     */
+
     @Test
     public void shouldThrowOnInvalidAuthenticationRequestCode() throws Exception {
         exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Request code must a value between 1 and 255.");
+        exception.expectMessage("Request code must be a value between 1 and 255.");
         Activity activity = Robolectric.buildActivity(Activity.class).create().start().resume().get();
 
         manager.requireAuthentication(activity, 256, null, null);
@@ -689,6 +710,10 @@ public class SecureCredentialsManagerTest {
 
     }
 
+
+    /*
+     * Helper methods
+     */
 
     /**
      * Used to simplify the tests length

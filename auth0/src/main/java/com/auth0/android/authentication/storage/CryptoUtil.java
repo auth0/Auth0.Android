@@ -232,9 +232,10 @@ class CryptoUtil {
      * @param encryptedInput the input bytes to decrypt
      * @return the decrypted bytes output
      * @throws IncompatibleDeviceException in the event the device can't understand the cryptographic settings required
+     * @throws CryptoException             if the stored RSA keys can't be recovered and should be deemed invalid
      */
     @VisibleForTesting
-    byte[] RSADecrypt(byte[] encryptedInput) throws IncompatibleDeviceException {
+    byte[] RSADecrypt(byte[] encryptedInput) throws IncompatibleDeviceException, CryptoException {
         try {
             PrivateKey privateKey = getRSAKeyEntry().getPrivateKey();
             Cipher cipher = Cipher.getInstance(RSA_TRANSFORMATION);
@@ -270,9 +271,10 @@ class CryptoUtil {
      * @param decryptedInput the input bytes to encrypt
      * @return the encrypted bytes output
      * @throws IncompatibleDeviceException in the event the device can't understand the cryptographic settings required
+     * @throws CryptoException             if the stored RSA keys can't be recovered and should be deemed invalid
      */
     @VisibleForTesting
-    byte[] RSAEncrypt(byte[] decryptedInput) throws IncompatibleDeviceException {
+    byte[] RSAEncrypt(byte[] decryptedInput) throws IncompatibleDeviceException, CryptoException {
         try {
             Certificate certificate = getRSAKeyEntry().getCertificate();
             Cipher cipher = Cipher.getInstance(RSA_TRANSFORMATION);
@@ -306,9 +308,10 @@ class CryptoUtil {
      *
      * @return a valid  AES Key bytes
      * @throws IncompatibleDeviceException in the event the device can't understand the cryptographic settings required
+     * @throws CryptoException             if the stored RSA keys can't be recovered and should be deemed invalid
      */
     @VisibleForTesting
-    byte[] getAESKey() throws IncompatibleDeviceException {
+    byte[] getAESKey() throws IncompatibleDeviceException, CryptoException {
         final String encodedEncryptedAES = storage.retrieveString(KEY_ALIAS);
         if (encodedEncryptedAES != null) {
             //Return existing key
