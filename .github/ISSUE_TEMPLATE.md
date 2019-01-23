@@ -27,7 +27,7 @@ Please provide the following:
 
 - Version of Auth0.Android used:
 - Version of Android being used:
-- Additional pacckages that might be affecting your instance:
+- Additional packages that might be affecting your instance:
 
 ### Reproduction
 
@@ -36,6 +36,6 @@ Detail the steps taken to reproduce this error and note if this issue can be rep
 Please include:
 
 - Specific devices affected
-- Log files (redact/remove sensitive information)
-- Application settings (redact/remove sensitive information)
+- Log files or stacktraces (redact/remove sensitive information)
+- Snippet of the code you're running (redact/remove sensitive information)
 - Screenshots, if helpful
