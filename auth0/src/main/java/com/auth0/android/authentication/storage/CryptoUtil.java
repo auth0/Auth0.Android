@@ -168,14 +168,15 @@ class CryptoUtil {
         } catch (IOException | UnrecoverableEntryException e) {
             /*
              * Any of this exceptions mean the old key pair is somehow corrupted.
-             * We can delete it and let the user retry the operation.
+             * We can delete both the RSA and the AES keys and let the user retry the operation.
              *
              * - IOException:
              *      Thrown when there is an I/O or format problem with the keystore data.
              * - UnrecoverableEntryException:
              *      Thrown when the key cannot be recovered. Probably because it was invalidated by a Lock Screen change.
              */
-            deleteKeys();
+            deleteRSAKeys();
+            deleteAESKeys();
             throw new CryptoException("The existing RSA key pair could not be recovered and has been deleted. " +
                     "This occasionally happens when the Lock Screen settings are changed. You can safely retry this operation.", e);
         }
@@ -208,13 +209,11 @@ class CryptoUtil {
     }
 
     /**
-     * Removes the AES and RSA keys generated in a previous execution.
+     * Removes the RSA keys generated in a previous execution.
      * Used when we want the next call to {@link #encrypt(byte[])} or {@link #decrypt(byte[])}
      * to recreate the keys.
      */
-    private void deleteKeys() {
-        storage.remove(KEY_ALIAS);
-        storage.remove(KEY_IV_ALIAS);
+    private void deleteRSAKeys() {
         try {
             KeyStore keyStore = KeyStore.getInstance(ANDROID_KEY_STORE);
             keyStore.load(null);
@@ -223,6 +222,16 @@ class CryptoUtil {
         } catch (KeyStoreException | CertificateException | IOException | NoSuchAlgorithmException e) {
             Log.e(TAG, "Failed to remove the RSA KeyEntry from the Android KeyStore.", e);
         }
+    }
+
+    /**
+     * Removes the AES keys generated in a previous execution.
+     * Used when we want the next call to {@link #encrypt(byte[])} or {@link #decrypt(byte[])}
+     * to recreate the keys.
+     */
+    private void deleteAESKeys() {
+        storage.remove(KEY_ALIAS);
+        storage.remove(KEY_IV_ALIAS);
     }
 
     /**
@@ -241,7 +250,7 @@ class CryptoUtil {
             Cipher cipher = Cipher.getInstance(RSA_TRANSFORMATION);
             cipher.init(Cipher.DECRYPT_MODE, privateKey);
             return cipher.doFinal(encryptedInput);
-        } catch (NoSuchAlgorithmException | IllegalBlockSizeException | BadPaddingException | NoSuchPaddingException | InvalidKeyException e) {
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException e) {
             /*
              * This exceptions are safe to be ignored:
              *
@@ -252,15 +261,24 @@ class CryptoUtil {
              *      implements it. Was introduced in API 1.
              * - InvalidKeyException:
              *      Thrown if the given key is inappropriate for initializing this cipher.
-             * - IllegalBlockSizeException:
-             *      Thrown only on encrypt mode.
-             * - BadPaddingException:
-             *      Thrown if the input doesn't contain the proper padding bytes.
              *
              * Read more in https://developer.android.com/reference/javax/crypto/Cipher
              */
             Log.e(TAG, "The device can't decrypt input using a RSA Key.", e);
             throw new IncompatibleDeviceException(e);
+        } catch (IllegalBlockSizeException | BadPaddingException e) {
+            /*
+             * Any of this exceptions mean the encrypted input is somehow corrupted and cannot be recovered.
+             * Delete the AES keys since those originated the input.
+             *
+             * - IllegalBlockSizeException:
+             *      Thrown only on encrypt mode.
+             * - BadPaddingException:
+             *      Thrown if the input doesn't contain the proper padding bytes.
+             *
+             */
+            deleteAESKeys();
+            throw new CryptoException("The RSA encrypted input is corrupted and cannot be recovered. Please discard it.", e);
         }
     }
 
@@ -280,7 +298,7 @@ class CryptoUtil {
             Cipher cipher = Cipher.getInstance(RSA_TRANSFORMATION);
             cipher.init(Cipher.ENCRYPT_MODE, certificate);
             return cipher.doFinal(decryptedInput);
-        } catch (NoSuchAlgorithmException | IllegalBlockSizeException | BadPaddingException | NoSuchPaddingException | InvalidKeyException e) {
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException e) {
             /*
              * This exceptions are safe to be ignored:
              *
@@ -291,15 +309,23 @@ class CryptoUtil {
              *      implements it. Was introduced in API 1.
              * - InvalidKeyException:
              *      Thrown if the given key is inappropriate for initializing this cipher.
-             * - IllegalBlockSizeException:
-             *      Thrown if no padding has been requested and the length is not multiple of block size.
-             * - BadPaddingException:
-             *      Thrown only on decrypt mode.
              *
              * Read more in https://developer.android.com/reference/javax/crypto/Cipher
              */
             Log.e(TAG, "The device can't encrypt input using a RSA Key.", e);
             throw new IncompatibleDeviceException(e);
+        } catch (IllegalBlockSizeException | BadPaddingException e) {
+            /*
+             * They really should not be thrown at all since padding is requested in the transformation.
+             * Delete the AES keys since those originated the input.
+             *
+             * - IllegalBlockSizeException:
+             *      Thrown if no padding has been requested and the length is not multiple of block size.
+             * - BadPaddingException:
+             *      Thrown only on decrypt mode.
+             */
+            deleteAESKeys();
+            throw new CryptoException("The RSA decrypted input is invalid.", e);
         }
     }
 
@@ -335,9 +361,6 @@ class CryptoUtil {
              * - NoSuchAlgorithmException:
              *      Thrown if the Algorithm implementation is not available. AES was introduced in API 1
              *
-             * However if any of this exceptions happens to be thrown (OEMs often change their Android distribution source code),
-             * all the checks performed in this class wouldn't matter and the device would not be compatible at all with it.
-             *
              * Read more in https://developer.android.com/reference/javax/crypto/KeyGenerator
              */
             Log.e(TAG, "Error while creating the AES key.", e);
@@ -367,7 +390,7 @@ class CryptoUtil {
             byte[] iv = Base64.decode(encodedIV, Base64.DEFAULT);
             cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(iv));
             return cipher.doFinal(encryptedInput);
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | InvalidAlgorithmParameterException | BadPaddingException | IllegalBlockSizeException e) {
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | InvalidAlgorithmParameterException e) {
             /*
              * This exceptions are safe to be ignored:
              *
@@ -380,15 +403,20 @@ class CryptoUtil {
              *      Thrown if the given key is inappropriate for initializing this cipher.
              * - InvalidAlgorithmParameterException:
              *      If the IV parameter is null.
-             * - BadPaddingException:
-             *      Thrown if the input doesn't contain the proper padding bytes. In this case, if the input contains padding.
-             * - IllegalBlockSizeException:
-             *      Thrown only on encrypt mode.
              *
              * Read more in https://developer.android.com/reference/javax/crypto/Cipher
              */
             Log.e(TAG, "Error while decrypting the input.", e);
             throw new IncompatibleDeviceException(e);
+        } catch (BadPaddingException | IllegalBlockSizeException e) {
+            /*
+             * Any of this exceptions mean the encrypted input is somehow corrupted and cannot be recovered.
+             * - BadPaddingException:
+             *      Thrown if the input doesn't contain the proper padding bytes. In this case, if the input contains padding.
+             * - IllegalBlockSizeException:
+             *      Thrown only on encrypt mode.
+             */
+            throw new CryptoException("The AES encrypted input is corrupted and cannot be recovered. Please discard it.", e);
         }
     }
 
@@ -411,7 +439,7 @@ class CryptoUtil {
             //Save IV for Decrypt stage
             storage.store(KEY_IV_ALIAS, new String(encodedIV));
             return encrypted;
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException e) {
             /*
              * This exceptions are safe to be ignored:
              *
@@ -426,13 +454,19 @@ class CryptoUtil {
              *      If the IV parameter is null.
              * - BadPaddingException:
              *      Thrown only on decrypt mode.
-             * - IllegalBlockSizeException:
-             *      Thrown if no padding has been requested and the length is not multiple of block size.
              *
              * Read more in https://developer.android.com/reference/javax/crypto/Cipher
              */
             Log.e(TAG, "Error while encrypting the input.", e);
             throw new IncompatibleDeviceException(e);
+        } catch (IllegalBlockSizeException | BadPaddingException e) {
+            /*
+             * - IllegalBlockSizeException:
+             *      Thrown if no padding has been requested and the length is not multiple of block size.
+             * - BadPaddingException:
+             *      Thrown only on decrypt mode.
+             */
+            throw new CryptoException("The AES decrypted input is invalid.", e);
         }
     }
 

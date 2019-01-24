@@ -63,6 +63,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.never;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
 import static org.powermock.api.mockito.PowerMockito.doThrow;
 import static org.powermock.api.mockito.PowerMockito.mock;
@@ -161,7 +162,7 @@ public class CryptoUtilTest {
         Mockito.verify(builder).setSerialNumber(BigInteger.ONE);
         Mockito.verify(builder).setStartDate(startDateCaptor.capture());
         Mockito.verify(builder).setEndDate(endDateCaptor.capture());
-        Mockito.verify(builder, Mockito.never()).setEncryptionRequired();
+        Mockito.verify(builder, never()).setEncryptionRequired();
         Mockito.verify(keyPairGenerator).initialize(spec);
         Mockito.verify(keyPairGenerator).generateKeyPair();
 
@@ -213,7 +214,7 @@ public class CryptoUtilTest {
         Mockito.verify(builder).setSerialNumber(BigInteger.ONE);
         Mockito.verify(builder).setStartDate(startDateCaptor.capture());
         Mockito.verify(builder).setEndDate(endDateCaptor.capture());
-        Mockito.verify(builder, Mockito.never()).setEncryptionRequired();
+        Mockito.verify(builder, never()).setEncryptionRequired();
         Mockito.verify(keyPairGenerator).initialize(spec);
         Mockito.verify(keyPairGenerator).generateKeyPair();
 
@@ -453,7 +454,7 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldDeleteKeysAndThrowOnIOExceptionWhenTryingToObtainRSAKeys() throws Exception {
+    public void shouldDeleteRSAAndAESKeysAndThrowOnIOExceptionWhenTryingToObtainRSAKeys() throws Exception {
         exception.expect(CryptoException.class);
         exception.expectMessage("The existing RSA key pair could not be recovered and has been deleted. " +
                 "This occasionally happens when the Lock Screen settings are changed. You can safely retry this operation.");
@@ -633,9 +634,9 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldThrowOnBadPaddingExceptionWhenTryingToRSAEncrypt() throws Exception {
-        exception.expect(IncompatibleDeviceException.class);
-        exception.expectMessage("The device is not compatible with the CryptoUtil class");
+    public void shouldDeleteAESKeysAndThrowOnBadPaddingExceptionWhenTryingToRSAEncrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("The RSA decrypted input is invalid.");
 
         byte[] sampleBytes = new byte[0];
         Certificate certificate = PowerMockito.mock(Certificate.class);
@@ -647,12 +648,16 @@ public class CryptoUtilTest {
         PowerMockito.when(rsaCipher.doFinal(sampleBytes)).thenThrow(new BadPaddingException());
 
         cryptoUtil.RSAEncrypt(sampleBytes);
+
+        Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
     }
 
     @Test
-    public void shouldThrowOnIllegalBlockSizeExceptionWhenTryingToRSAEncrypt() throws Exception {
-        exception.expect(IncompatibleDeviceException.class);
-        exception.expectMessage("The device is not compatible with the CryptoUtil class");
+    public void shouldDeleteAESKeysAndThrowOnIllegalBlockSizeExceptionWhenTryingToRSAEncrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("The RSA decrypted input is invalid.");
 
         Certificate certificate = PowerMockito.mock(Certificate.class);
         KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
@@ -663,6 +668,10 @@ public class CryptoUtilTest {
         PowerMockito.when(rsaCipher.doFinal(any(byte[].class))).thenThrow(new IllegalBlockSizeException());
 
         cryptoUtil.RSAEncrypt(new byte[0]);
+
+        Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
     }
 
     @Test
@@ -764,9 +773,9 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldThrowOnBadPaddingExceptionWhenTryingToRSADecrypt() throws Exception {
-        exception.expect(IncompatibleDeviceException.class);
-        exception.expectMessage("The device is not compatible with the CryptoUtil class");
+    public void shouldDeleteAESKeysAndThrowOnBadPaddingExceptionWhenTryingToRSADecrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("The RSA encrypted input is corrupted and cannot be recovered. Please discard it.");
 
         PrivateKey privateKey = PowerMockito.mock(PrivateKey.class);
         KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
@@ -775,12 +784,16 @@ public class CryptoUtilTest {
 
         doThrow(new BadPaddingException()).when(rsaCipher).doFinal(any(byte[].class));
         cryptoUtil.RSADecrypt(new byte[0]);
+
+        Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
     }
 
     @Test
-    public void shouldThrowOnIllegalBlockSizeExceptionWhenTryingToRSADecrypt() throws Exception {
-        exception.expect(IncompatibleDeviceException.class);
-        exception.expectMessage("The device is not compatible with the CryptoUtil class");
+    public void shouldDeleteAESKeysAndThrowOnIllegalBlockSizeExceptionWhenTryingToRSADecrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("The RSA encrypted input is corrupted and cannot be recovered. Please discard it.");
 
         PrivateKey privateKey = PowerMockito.mock(PrivateKey.class);
         KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
@@ -789,6 +802,10 @@ public class CryptoUtilTest {
 
         doThrow(new IllegalBlockSizeException()).when(rsaCipher).doFinal(any(byte[].class));
         cryptoUtil.RSADecrypt(new byte[0]);
+
+        Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
     }
 
     /*
@@ -911,23 +928,35 @@ public class CryptoUtilTest {
 
 
     @Test
-    public void shouldThrowOnBadPaddingExceptionWhenTryingToAESEncrypt() throws Exception {
-        exception.expect(IncompatibleDeviceException.class);
+    public void shouldDeleteAESKeysAndThrowOnBadPaddingExceptionWhenTryingToAESEncrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("The AES decrypted input is invalid.");
+
         doReturn(new byte[]{11, 22, 33}).when(cryptoUtil).getAESKey();
         doThrow(new BadPaddingException()).when(aesCipher)
                 .doFinal(any(byte[].class));
 
         cryptoUtil.encrypt(new byte[0]);
+
+        Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
+        Mockito.verify(storage, never()).remove(KEY_ALIAS);
+        Mockito.verify(storage, never()).remove(KEY_ALIAS + "_iv");
     }
 
     @Test
-    public void shouldThrowOnIllegalBlockSizeExceptionWhenTryingToAESEncrypt() throws Exception {
-        exception.expect(IncompatibleDeviceException.class);
+    public void shouldDeleteAESKeysAndThrowOnIllegalBlockSizeExceptionWhenTryingToAESEncrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("The AES decrypted input is invalid.");
+
         doReturn(new byte[]{11, 22, 33}).when(cryptoUtil).getAESKey();
         doThrow(new IllegalBlockSizeException()).when(aesCipher)
                 .doFinal(any(byte[].class));
 
         cryptoUtil.encrypt(new byte[0]);
+
+        Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
+        Mockito.verify(storage, never()).remove(KEY_ALIAS);
+        Mockito.verify(storage, never()).remove(KEY_ALIAS + "_iv");
     }
 
 
@@ -1102,8 +1131,9 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldThrowOnBadPaddingExceptionWhenTryingToAESDecrypt() throws Exception {
-        exception.expect(IncompatibleDeviceException.class);
+    public void shouldDeleteAESKeysAndThrowOnBadPaddingExceptionWhenTryingToAESDecrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("The AES encrypted input is corrupted and cannot be recovered. Please discard it.");
 
         byte[] aesKeyBytes = new byte[]{11, 22, 33};
         byte[] ivBytes = new byte[]{99, 22};
@@ -1119,11 +1149,16 @@ public class CryptoUtilTest {
         doThrow(new BadPaddingException()).when(aesCipher).doFinal(any(byte[].class));
 
         cryptoUtil.decrypt(new byte[0]);
+
+        Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
+        Mockito.verify(storage, never()).remove(KEY_ALIAS);
+        Mockito.verify(storage, never()).remove(KEY_ALIAS + "_iv");
     }
 
     @Test
-    public void shouldThrowOnIllegalBlockSizeExceptionWhenTryingToAESDecrypt() throws Exception {
-        exception.expect(IncompatibleDeviceException.class);
+    public void shouldDeleteAESKeysAndThrowOnIllegalBlockSizeExceptionWhenTryingToAESDecrypt() throws Exception {
+        exception.expect(CryptoException.class);
+        exception.expectMessage("The AES encrypted input is corrupted and cannot be recovered. Please discard it.");
 
         byte[] aesKeyBytes = new byte[]{11, 22, 33};
         doReturn(aesKeyBytes).when(cryptoUtil).getAESKey();
@@ -1138,6 +1173,10 @@ public class CryptoUtilTest {
         doThrow(new IllegalBlockSizeException()).when(aesCipher).doFinal(any(byte[].class));
 
         cryptoUtil.decrypt(new byte[0]);
+
+        Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
+        Mockito.verify(storage, never()).remove(KEY_ALIAS);
+        Mockito.verify(storage, never()).remove(KEY_ALIAS + "_iv");
     }
 
 
