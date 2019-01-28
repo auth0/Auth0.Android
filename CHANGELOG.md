@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.15.1](https://github.com/auth0/Auth0.Android/tree/1.15.1) (2019-01-28)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.15.0...1.15.1)
+
+**Fixed**
+- Delete keys and stored Credentials on unrecoverable use cases [\#218](https://github.com/auth0/Auth0.Android/pull/218) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.15.0](https://github.com/auth0/Auth0.Android/tree/1.15.0) (2019-01-10)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.14.1...1.15.0)
 
