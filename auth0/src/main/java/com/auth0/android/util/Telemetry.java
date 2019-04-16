@@ -1,6 +1,7 @@
 package com.auth0.android.util;
 
 import android.support.annotation.VisibleForTesting;
+import android.text.TextUtils;
 import android.util.Base64;
 
 import com.google.gson.Gson;
@@ -17,7 +18,7 @@ public class Telemetry {
     private static final String NAME_KEY = "name";
     private static final String VERSION_KEY = "version";
     private static final String ENV_KEY = "env";
-    private static final String CORE_KEY = "core";
+    private static final String LIBRARY_VERSION_KEY = "auth0.android";
     private static final String ANDROID_KEY = "android";
 
     private final String name;
@@ -29,21 +30,24 @@ public class Telemetry {
         this(name, version, null);
     }
 
-    public Telemetry(String name, String version, String core) {
+    public Telemetry(String name, String version, String libraryVersion) {
         this.name = name;
         this.version = version;
+        if (TextUtils.isEmpty(name)) {
+            env = Collections.emptyMap();
+            value = null;
+            return;
+        }
         Map<String, String> tmpEnv = new HashMap<>();
         tmpEnv.put(ANDROID_KEY, String.valueOf(android.os.Build.VERSION.SDK_INT));
-        if (core != null) {
-            tmpEnv.put(CORE_KEY, core);
+        if (!TextUtils.isEmpty(libraryVersion)) {
+            tmpEnv.put(LIBRARY_VERSION_KEY, libraryVersion);
         }
         this.env = Collections.unmodifiableMap(tmpEnv);
 
         Map<String, Object> values = new HashMap<>();
-        if (name != null) {
-            values.put(NAME_KEY, name);
-        }
-        if (version != null) {
+        values.put(NAME_KEY, name);
+        if (!TextUtils.isEmpty(version)) {
             values.put(VERSION_KEY, version);
         }
         values.put(ENV_KEY, env);
@@ -62,7 +66,7 @@ public class Telemetry {
     }
 
     public String getLibraryVersion() {
-        return env.get(CORE_KEY);
+        return env.get(LIBRARY_VERSION_KEY);
     }
 
     @VisibleForTesting
