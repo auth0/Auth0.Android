@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.15.2](https://github.com/auth0/Auth0.Android/tree/1.15.2) (2019-04-17)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.15.1...1.15.2)
+
+**Fixed**
+- Update telemetry format [\#228](https://github.com/auth0/Auth0.Android/pull/228) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.15.1](https://github.com/auth0/Auth0.Android/tree/1.15.1) (2019-01-28)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.15.0...1.15.1)
 
