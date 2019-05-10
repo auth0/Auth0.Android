@@ -1,17 +1,17 @@
 package com.auth0.android.authentication.storage;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.VisibleForTesting;
+import static android.text.TextUtils.isEmpty;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.AuthenticationCallback;
 import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.result.Credentials;
-
 import java.util.Date;
-
-import static android.text.TextUtils.isEmpty;
 
 /**
  * Class that handles credentials and allows to save and retrieve them.
@@ -64,19 +64,31 @@ public class CredentialsManager {
      * @param callback the callback that will receive a valid {@link Credentials} or the {@link CredentialsManagerException}.
      */
     public void getCredentials(@NonNull final BaseCallback<Credentials, CredentialsManagerException> callback) {
+        getCredentials(null, callback);
+    }
+
+    /**
+     * Retrieves the credentials from the storage and refresh them if they have already expired.
+     * It will fail with {@link CredentialsManagerException} if the saved access_token or id_token is null,
+     * or if the tokens have already expired and the refresh_token is null.
+     *
+     * @param callback the callback that will receive a valid {@link Credentials} or the {@link CredentialsManagerException}.
+     */
+    public void getCredentials(@Nullable final String scope,
+                               @NonNull final BaseCallback<Credentials, CredentialsManagerException> callback) {
         String accessToken = storage.retrieveString(KEY_ACCESS_TOKEN);
         final String refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN);
         String idToken = storage.retrieveString(KEY_ID_TOKEN);
         String tokenType = storage.retrieveString(KEY_TOKEN_TYPE);
         Long expiresAt = storage.retrieveLong(KEY_EXPIRES_AT);
-        String scope = storage.retrieveString(KEY_SCOPE);
+        String storedScope = storage.retrieveString(KEY_SCOPE);
 
         if (isEmpty(accessToken) && isEmpty(idToken) || expiresAt == null) {
             callback.onFailure(new CredentialsManagerException("No Credentials were previously set."));
             return;
         }
         if (expiresAt > getCurrentTimeInMillis()) {
-            callback.onSuccess(recreateCredentials(idToken, accessToken, tokenType, refreshToken, new Date(expiresAt), scope));
+            callback.onSuccess(recreateCredentials(idToken, accessToken, tokenType, refreshToken, new Date(expiresAt), storedScope));
             return;
         }
         if (refreshToken == null) {
@@ -84,7 +96,11 @@ public class CredentialsManager {
             return;
         }
 
-        authClient.renewAuth(refreshToken).start(new AuthenticationCallback<Credentials>() {
+        ParameterizableRequest<Credentials, AuthenticationException> renewRequest = authClient.renewAuth(refreshToken);
+        if (scope != null) {
+            renewRequest = renewRequest.addParameter("scope", scope);
+        }
+        renewRequest.start(new AuthenticationCallback<Credentials>() {
             @Override
             public void onSuccess(Credentials fresh) {
                 //RefreshTokens don't expire. It should remain the same
@@ -112,8 +128,8 @@ public class CredentialsManager {
         Long expiresAt = storage.retrieveLong(KEY_EXPIRES_AT);
 
         return !(isEmpty(accessToken) && isEmpty(idToken) ||
-                expiresAt == null ||
-                expiresAt <= getCurrentTimeInMillis() && refreshToken == null);
+            expiresAt == null ||
+            expiresAt <= getCurrentTimeInMillis() && refreshToken == null);
     }
 
     /**
