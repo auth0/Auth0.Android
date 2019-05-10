@@ -319,6 +319,33 @@ public class CredentialsManagerTest {
         assertThat(retrievedCredentials.getScope(), is("newScope"));
     }
 
+    @Test
+    public void shouldGetAndSuccessfullyRenewExpiredCredentialsWithScopeWhenGiven() throws Exception {
+        String givenScope = "given scope";
+        when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
+        when(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken");
+        when(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken");
+        when(storage.retrieveString("com.auth0.token_type")).thenReturn("type");
+        long expirationTime = CredentialsMock.CURRENT_TIME_MS; //Same as current time --> expired
+        when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveString("com.auth0.scope")).thenReturn("scope");
+        when(request.addParameter("scope", givenScope)).thenReturn(request);
+        when(client.renewAuth("refreshToken")).thenReturn(request);
+
+        manager.getCredentials(givenScope, callback);
+        verify(request).start(requestCallbackCaptor.capture());
+
+        //Trigger success
+        Date newDate = new Date();
+        String newRefresh = null;
+        Credentials renewedCredentials = new Credentials("newId", "newAccess", "newType", newRefresh, newDate, "newScope");
+        requestCallbackCaptor.getValue().onSuccess(renewedCredentials);
+        verify(callback).onSuccess(credentialsCaptor.capture());
+
+        // Verify scope was added to the request
+        verify(request).addParameter("scope", givenScope);
+    }
+
     @SuppressWarnings("UnnecessaryLocalVariable")
     @Test
     public void shouldGetAndFailToRenewExpiredCredentials() throws Exception {
