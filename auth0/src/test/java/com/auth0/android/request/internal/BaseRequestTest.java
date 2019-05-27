@@ -26,6 +26,7 @@ package com.auth0.android.request.internal;
 
 
 import com.auth0.android.Auth0Exception;
+import com.auth0.android.NetworkErrorException;
 import com.auth0.android.RequestBodyBuildException;
 import com.auth0.android.authentication.ParameterBuilder;
 import com.auth0.android.callback.BaseCallback;
@@ -178,9 +179,9 @@ public class BaseRequestTest {
     }
 
     @Test
-    public void shouldBuildException() throws Exception {
+    public void shouldBuildNetworkErrorException() throws Exception {
         baseRequest.onFailure(null, mock(IOException.class));
-        verify(errorBuilder).from(eq("Request failed"), any(Auth0Exception.class));
+        verify(errorBuilder).from(eq("Request failed"), any(NetworkErrorException.class));
     }
 
     @Test

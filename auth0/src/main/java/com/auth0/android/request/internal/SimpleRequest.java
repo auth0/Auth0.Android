@@ -25,6 +25,7 @@
 package com.auth0.android.request.internal;
 
 import com.auth0.android.Auth0Exception;
+import com.auth0.android.NetworkErrorException;
 import com.auth0.android.RequestBodyBuildException;
 import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.ParameterizableRequest;
@@ -98,7 +99,7 @@ class SimpleRequest<T, U extends Auth0Exception> extends BaseRequest<T, U> imple
         try {
             response = client.newCall(request).execute();
         } catch (IOException e) {
-            throw new Auth0Exception("Failed to execute request to " + url, e);
+            throw getErrorBuilder().from("Request failed", new NetworkErrorException(e));
         }
 
         if (!response.isSuccessful()) {
