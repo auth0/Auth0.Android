@@ -661,7 +661,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Request the revoke of a given refresh_token. Once revoked, the refresh_token cannot be used to obtain new tokens.
-     * The client must be of type 'Native' or have the 'Token Endpoint Authentication Method' set to 'none' for this endpoint to work.
+     * The application must be of type 'Native' and have the 'Token Endpoint Authentication Method' set to 'None' for this endpoint to work.
      * Example usage:
      * <pre>
      * {@code

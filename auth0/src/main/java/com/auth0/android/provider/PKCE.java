@@ -93,7 +93,7 @@ class PKCE {
                     @Override
                     public void onFailure(AuthenticationException error) {
                         if ("Unauthorized".equals(error.getDescription())) {
-                            Log.e(TAG, "Please go to 'https://manage.auth0.com/#/applications/" + apiClient.getClientId() + "/settings' and set 'Client Type' to 'Native' to enable PKCE.");
+                            Log.e(TAG, "Please go to 'https://manage.auth0.com/#/applications/" + apiClient.getClientId() + "/settings' and set 'Token Endpoint Authentication Method' to 'None' and 'Application Type' to 'Native' to enable PKCE.");
                         }
                         callback.onFailure(error);
                     }
