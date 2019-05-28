@@ -407,9 +407,9 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldSetConnectionScopeFromParameters() throws Exception {
-        Map<String, Object> parameters = Collections.singletonMap("connection_scope", (Object) "openid email contacts");
+        Map<String, Object> parameters = Collections.singletonMap("connection_scope", (Object) "openid,email,contacts");
         WebAuthProvider.init(account)
-                .withConnectionScope("profile super_scope")
+                .withConnectionScope("profile", "super_scope")
                 .withParameters(parameters)
                 .start(activity, callback);
 
@@ -417,27 +417,27 @@ public class WebAuthProviderTest {
         Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
-        assertThat(uri, hasParamWithValue("connection_scope", "openid email contacts"));
+        assertThat(uri, hasParamWithValue("connection_scope", "openid,email,contacts"));
     }
 
     @Test
     public void shouldSetConnectionScopeFromSetter() throws Exception {
-        Map<String, Object> parameters = Collections.singletonMap("connection_scope", (Object) "openid email contacts");
+        Map<String, Object> parameters = Collections.singletonMap("connection_scope", (Object) "openid,email,contacts");
         WebAuthProvider.init(account)
                 .withParameters(parameters)
-                .withConnectionScope("profile super_scope")
+                .withConnectionScope("profile", "super_scope")
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
         Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
-        assertThat(uri, hasParamWithValue("connection_scope", "profile super_scope"));
+        assertThat(uri, hasParamWithValue("connection_scope", "profile,super_scope"));
     }
 
     @Test
     public void shouldNotOverrideConnectionScopeValueWithDefaultConnectionScope() throws Exception {
-        Map<String, Object> parameters = Collections.singletonMap("connection_scope", (Object) "openid email contacts");
+        Map<String, Object> parameters = Collections.singletonMap("connection_scope", (Object) "openid,email,contacts");
         WebAuthProvider.init(account)
                 .withParameters(parameters)
                 .start(activity, callback);
@@ -446,7 +446,7 @@ public class WebAuthProviderTest {
         Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
-        assertThat(uri, hasParamWithValue("connection_scope", "openid email contacts"));
+        assertThat(uri, hasParamWithValue("connection_scope", "openid,email,contacts"));
     }
 
     @Test
@@ -459,7 +459,7 @@ public class WebAuthProviderTest {
         Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
         assertThat(uri, is(notNullValue()));
 
-        assertThat(uri, hasParamWithValue("connection_scope", "the scope of my connection"));
+        assertThat(uri, hasParamWithValue("connection_scope", "the,scope,of,my,connection"));
     }
 
 
