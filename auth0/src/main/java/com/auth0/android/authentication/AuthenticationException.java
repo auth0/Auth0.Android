@@ -28,6 +28,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.auth0.android.Auth0Exception;
+import com.auth0.android.NetworkErrorException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -143,6 +144,11 @@ public class AuthenticationException extends Auth0Exception {
             return null;
         }
         return values.get(key);
+    }
+
+    // When the request failed due to network issues
+    public boolean isNetworkError() {
+        return getCause() instanceof NetworkErrorException;
     }
 
     // When there is no Browser app installed to handle the web authentication
