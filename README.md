@@ -303,7 +303,7 @@ If the `Auth0` instance wasn't configured as "OIDC conformant", this call requir
 ```java
 authentication
     .login("info@auth0.com", "a secret password", "my-database-connection")
-    .start(new BaseCallback<Credentials>() {
+    .start(new BaseCallback<Credentials, AuthenticationException>() {
         @Override
         public void onSuccess(Credentials payload) {
             //Logged in!
@@ -329,7 +329,7 @@ When you sign in to a multifactor authentication enabled connection using the `l
 ```java
 authentication
     .loginWithOTP("the mfa token", "123456")
-    .start(new BaseCallback<Credentials>() {
+    .start(new BaseCallback<Credentials, AuthenticationException>() {
         @Override
         public void onSuccess(Credentials payload) {
             //Logged in!
@@ -355,7 +355,7 @@ Step 1: Request the code
 ```java
 authentication
     .passwordlessWithEmail("info@auth0.com", PasswordlessType.CODE, "my-passwordless-connection")
-    .start(new BaseCallback<Credentials>() {
+    .start(new BaseCallback<Void, AuthenticationException>() {
         @Override
         public void onSuccess(Void payload) {
             //Code sent!
@@ -375,6 +375,7 @@ Step 2: Input the code
 ```java
 authentication
     .loginWithEmail("info@auth0.com", "123456", "my-passwordless-connection")
+    .start(new BaseCallback<Credentials, AuthenticationException>() {
         @Override
         public void onSuccess(Credentials payload) {
             //Logged in!
@@ -393,7 +394,7 @@ authentication
 ```java
 authentication
     .signUp("info@auth0.com", "a secret password", "my-database-connection")
-    .start(new BaseCallback<Credentials>() {
+    .start(new BaseCallback<Credentials, AuthenticationException>() {
         @Override
         public void onSuccess(Credentials payload) {
             //Signed Up & Logged in!
@@ -412,7 +413,7 @@ authentication
 ```java
 authentication
    .userInfo("user access_token")
-   .start(new BaseCallback<Credentials>() {
+   .start(new BaseCallback<UserProfile, AuthenticationException>() {
        @Override
        public void onSuccess(UserProfile payload) {
            //Got the profile!
@@ -442,14 +443,14 @@ UsersAPIClient users = new UsersAPIClient(account, "api token");
 ```java
 users
     .link("primary user id", "secondary user token")
-    .start(new BaseCallback<List<UserIdentity>>() {
+    .start(new BaseCallback<List<UserIdentity>, ManagementException>() {
         @Override
         public void onSuccess(List<UserIdentity> payload) {
             //Got the updated identities! Accounts linked.
         }
 
         @Override
-        public void onFailure(Auth0Exception error) {
+        public void onFailure(ManagementException error) {
             //Error!
         }
     });
@@ -460,14 +461,14 @@ users
 ```java
 users
     .unlink("primary user id", "secondary user id", "secondary provider")
-    .start(new BaseCallback<List<UserIdentity>>() {
+    .start(new BaseCallback<List<UserIdentity>, ManagementException>() {
         @Override
         public void onSuccess(List<UserIdentity> payload) {
             //Got the updated identities! Accounts linked.
         }
 
         @Override
-        public void onFailure(Auth0Exception error) {
+        public void onFailure(ManagementException error) {
             //Error!
         }
     });
@@ -481,7 +482,7 @@ users
     .start(new BaseCallback<UserProfile, ManagementException>() {
         @Override
         public void onSuccess(UserProfile payload) {
-            //Profile
+            //Profile received
         }
 
         @Override
@@ -503,7 +504,7 @@ users
     .start(new BaseCallback<UserProfile, ManagementException>() {
         @Override
         public void onSuccess(UserProfile payload) {
-            //Metadata updated
+            //User Metadata updated
         }
 
         @Override
@@ -542,9 +543,9 @@ The credentials to save **must have** `expires_in` and at least an `access_token
 authentication
     .login("info@auth0.com", "a secret password", "my-database-connection")
     .setScope("openid offline_access")
-    .start(new BaseCallback<Credentials>() {
+    .start(new BaseCallback<Credentials, AuthenticationException>() {
         @Override
-        public void onSuccess(Credentials credentials) {
+        public void onSuccess(Credentials payload) {
             //Save the credentials
             manager.saveCredentials(credentials);
         }
@@ -567,14 +568,16 @@ boolean authenticated = manager.hasValidCredentials();
 Existing credentials will be returned if they are still valid, otherwise the `refresh_token` will be used to attempt to renew them. If the `expires_in` or both the `access_token` and `id_token` values are missing, the method will throw a `CredentialsManagerException`. The same will happen if the credentials have expired and there's no `refresh_token` available.
 
 ```java
-manager.getCredentials(new BaseCallback<Credentials, CredentialsManagerException>(){
-   public void onSuccess(Credentials credentials){
-      //Use the Credentials
-   }
+manager.getCredentials(new BaseCallback<Credentials, CredentialsManagerException>() {
+    @Override
+    public void onSuccess(Credentials credentials){
+        //Use the Credentials
+    }
 
+    @Override
     public void onFailure(CredentialsManagerException error){
-      //Error!
-   }
+        //Error!
+    }
 });
 ```
 

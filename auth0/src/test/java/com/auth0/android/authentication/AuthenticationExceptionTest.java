@@ -1,6 +1,7 @@
 package com.auth0.android.authentication;
 
 import com.auth0.android.Auth0Exception;
+import com.auth0.android.NetworkErrorException;
 import com.auth0.android.request.internal.GsonProvider;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -14,6 +15,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import java.io.FileReader;
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
@@ -139,6 +141,18 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
+    public void shouldNotHaveNetworkError() {
+        AuthenticationException ex = new AuthenticationException("Something else happened");
+        assertThat(ex.isNetworkError(), is(false));
+    }
+
+    @Test
+    public void shouldHaveNetworkError() {
+        AuthenticationException ex = new AuthenticationException("Request has definitely failed", new NetworkErrorException(new IOException()));
+        assertThat(ex.isNetworkError(), is(true));
+    }
+
+    @Test
     public void shouldHaveExpiredMultifactorTokenOnOIDCMode() throws Exception {
         values.put(ERROR_KEY, "expired_token");
         values.put(ERROR_DESCRIPTION_KEY, "mfa_token is expired");
@@ -212,7 +226,8 @@ public class AuthenticationExceptionTest {
     public void shouldHaveNotStrongPasswordWithDetailedDescription() throws Exception {
         Gson gson = GsonProvider.buildGson();
         FileReader fr = new FileReader(PASSWORD_STRENGTH_ERROR_RESPONSE);
-        Type mapType = new TypeToken<Map<String, Object>>() {}.getType();
+        Type mapType = new TypeToken<Map<String, Object>>() {
+        }.getType();
         Map<String, Object> mapPayload = gson.fromJson(fr, mapType);
 
         AuthenticationException ex = new AuthenticationException(mapPayload);

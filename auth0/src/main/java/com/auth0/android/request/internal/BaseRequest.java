@@ -27,6 +27,7 @@ package com.auth0.android.request.internal;
 import android.support.annotation.VisibleForTesting;
 
 import com.auth0.android.Auth0Exception;
+import com.auth0.android.NetworkErrorException;
 import com.auth0.android.RequestBodyBuildException;
 import com.auth0.android.authentication.ParameterBuilder;
 import com.auth0.android.callback.BaseCallback;
@@ -147,8 +148,7 @@ abstract class BaseRequest<T, U extends Auth0Exception> implements Parameterizab
 
     @Override
     public void onFailure(Request request, IOException e) {
-        Auth0Exception exception = new Auth0Exception("Failed to execute request to " + url.toString(), e);
-        postOnFailure(errorBuilder.from("Request failed", exception));
+        postOnFailure(errorBuilder.from("Request failed", new NetworkErrorException(e)));
     }
 
     @Override
