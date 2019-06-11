@@ -307,7 +307,7 @@ public class WebAuthProvider {
             managerInstance = manager;
 
             String redirectUri = CallbackHelper.getCallbackUri(scheme, activity.getApplicationContext().getPackageName(), account.getDomainUrl());
-            manager.startAuthorization(activity, redirectUri, requestCode);
+            manager.startAuthentication(activity, redirectUri, requestCode);
         }
 
         /**
@@ -364,7 +364,7 @@ public class WebAuthProvider {
             return false;
         }
         final AuthorizeResult result = new AuthorizeResult(requestCode, resultCode, intent);
-        boolean success = managerInstance.resumeAuthorization(result);
+        boolean success = managerInstance.resumeAuthentication(result);
         if (success) {
             managerInstance = null;
         }
@@ -386,7 +386,7 @@ public class WebAuthProvider {
             return false;
         }
         final AuthorizeResult result = new AuthorizeResult(intent);
-        boolean success = managerInstance.resumeAuthorization(result);
+        boolean success = managerInstance.resumeAuthentication(result);
         if (success) {
             managerInstance = null;
         }

@@ -90,8 +90,7 @@ class OAuthManager {
         this.pkce = pkce;
     }
 
-    //TODO: Internal class. Rename to "authentication"
-    void startAuthorization(Activity activity, String redirectUri, int requestCode) {
+    void startAuthentication(Activity activity, String redirectUri, int requestCode) {
         addPKCEParameters(parameters, redirectUri);
         addClientParameters(parameters, redirectUri);
         addValidationParameters(parameters);
@@ -105,8 +104,7 @@ class OAuthManager {
         }
     }
 
-    //TODO: Internal class. Rename to "authentication"
-    boolean resumeAuthorization(AuthorizeResult result) {
+    boolean resumeAuthentication(AuthorizeResult result) {
         if (!result.isValid(requestCode)) {
             Log.w(TAG, "The Authorize Result is invalid.");
             return false;
