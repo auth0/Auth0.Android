@@ -163,7 +163,8 @@ public class AuthenticationActivityTest {
 
         activityController.start().resume();
 
-        assertThat(activity.getDeliveredIntent(), is(nullValue()));
+        assertThat(activity.getDeliveredIntent(), is(notNullValue()));
+        assertThat(activity.getDeliveredIntent().getData(), is(nullValue())); //null data == canceled
         assertThat(activity.isFinishing(), is(true));
 
         activityController.destroy();
@@ -230,6 +231,7 @@ public class AuthenticationActivityTest {
         assertThat(webViewIntent.requestCode, is(greaterThan(0)));
         assertThat(activity.getDeliveredIntent(), is(nullValue()));
         //WebViewActivity is shown
+
         //Memory needed. Let's kill the activity
         Intent authenticationResultIntent = new Intent();
         authenticationResultIntent.setData(resultUri);
@@ -269,8 +271,10 @@ public class AuthenticationActivityTest {
         //WebViewActivity is shown
 
         shadowOf(activity).receiveResult(webViewIntent.intent, Activity.RESULT_CANCELED, null);
+        activityController.resume();
 
-        assertThat(activity.getDeliveredIntent(), is(nullValue()));
+        assertThat(activity.getDeliveredIntent(), is(notNullValue()));
+        assertThat(activity.getDeliveredIntent().getData(), is(nullValue()));
         assertThat(activity.isFinishing(), is(true));
 
         activityController.destroy();
@@ -345,6 +349,8 @@ public class AuthenticationActivityTest {
         createActivity(null);
         activityController.create(outState).start().restoreInstanceState(outState);
         activity.onActivityResult(reqCode, Activity.RESULT_OK, data);
-        activityController.resume();
+        if (!activity.isFinishing()) {
+            activityController.resume();
+        }
     }
 }

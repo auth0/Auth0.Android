@@ -28,17 +28,18 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 
-import com.auth0.android.provider.AuthorizeResult;
-
 import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 21)
@@ -50,71 +51,60 @@ public class AuthorizeResultTest {
     private static final String SAMPLE_HASH = "#access_token=aToken&id_token=iToken&token_type=Bearer&state=randomState";
 
     private Intent intent;
-    private Uri validUri;
 
     @Before
     public void setUp() throws Exception {
-        intent = new Intent();
-        validUri = Uri.parse(CALLBACK_URL + SAMPLE_HASH);
-    }
-
-    @Test
-    public void shouldNotBeValidForNullUri() throws Exception {
-        intent.setData(null);
-        AuthorizeResult authorizeResult = new AuthorizeResult(intent);
-
-        boolean isValid = authorizeResult.isValid(REQUEST_CODE);
-
-        MatcherAssert.assertThat(isValid, Matchers.is(false));
+        intent = Mockito.mock(Intent.class);
+        Uri data = Uri.parse(CALLBACK_URL + SAMPLE_HASH);
+        when(intent.getData()).thenReturn(data);
     }
 
     @Test
     public void shouldNotBeValidForOtherResult() throws Exception {
-        intent.setData(validUri);
         AuthorizeResult authorizeResult = new AuthorizeResult(REQUEST_CODE, Activity.RESULT_OK, intent);
 
         boolean isValid = authorizeResult.isValid(OTHER_REQUEST_CODE);
 
-        MatcherAssert.assertThat(isValid, Matchers.is(false));
+        MatcherAssert.assertThat(isValid, is(false));
     }
 
     @Test
-    public void shouldNotBeValidForCanceledResult() throws Exception {
-        intent.setData(validUri);
+    public void shouldBeValidAndCanceledForNullUri() throws Exception {
+        when(intent.getData()).thenReturn(null);
+        AuthorizeResult authorizeResult = new AuthorizeResult(intent);
+
+        assertThat(authorizeResult.isValid(REQUEST_CODE), is(true));
+        assertThat(authorizeResult.isCanceled(), is(true));
+    }
+
+    @Test
+    public void shouldBeValidForCanceledResult() throws Exception {
+        when(intent.getData()).thenReturn(null);
         AuthorizeResult authorizeResult = new AuthorizeResult(REQUEST_CODE, Activity.RESULT_CANCELED, intent);
 
-        boolean isValid = authorizeResult.isValid(REQUEST_CODE);
-
-        MatcherAssert.assertThat(isValid, Matchers.is(false));
+        assertThat(authorizeResult.isValid(REQUEST_CODE), is(true));
     }
 
     @Test
     public void shouldBeValidForExpectedActivityResult() throws Exception {
-        intent.setData(validUri);
         AuthorizeResult authorizeResult = new AuthorizeResult(REQUEST_CODE, Activity.RESULT_OK, intent);
 
-        boolean isValid = authorizeResult.isValid(REQUEST_CODE);
-
-        MatcherAssert.assertThat(isValid, Matchers.is(true));
+        assertThat(authorizeResult.isValid(REQUEST_CODE), is(true));
     }
 
     @Test
     public void shouldBeValid() throws Exception {
-        intent.setData(validUri);
         AuthorizeResult authorizeResult = new AuthorizeResult(intent);
 
-        boolean isValid = authorizeResult.isValid(0);
-
-        MatcherAssert.assertThat(isValid, Matchers.is(true));
+        assertThat(authorizeResult.isValid(0), is(true));
     }
 
     @Test
     public void shouldCreateAValidResultWithOnlyTheIntent() throws Exception {
-        intent.setData(validUri);
         AuthorizeResult authorizeResult = new AuthorizeResult(intent);
 
-        assertThat(authorizeResult.getRequestCode(), Matchers.is(Matchers.equalTo(-100)));
-        assertThat(authorizeResult.getResultCode(), Matchers.is(Matchers.equalTo(Activity.RESULT_OK)));
-        assertThat(authorizeResult.getIntent(), Matchers.is(Matchers.equalTo(intent)));
+        assertThat(authorizeResult.getIntentData(), is(notNullValue()));
+        assertThat(authorizeResult.getIntentData(), is(intent.getData()));
+        assertThat(authorizeResult.isCanceled(), is(false));
     }
 }

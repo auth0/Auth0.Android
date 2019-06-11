@@ -191,4 +191,12 @@ public class CallbackHelperTest {
         assertThat(values, notNullValue());
         assertThat(values, IsMapWithSize.<String, String>anEmptyMap());
     }
+
+    @Test
+    public void shouldGetEmptyValuesWhenUriIsNull() throws Exception {
+        Uri uri = null;
+        final Map<String, String> values = CallbackHelper.getValuesFromUri(uri);
+        assertThat(values, notNullValue());
+        assertThat(values, IsMapWithSize.<String, String>anEmptyMap());
+    }
 }
