@@ -166,6 +166,11 @@ public class AuthenticationException extends Auth0Exception {
         return "a0.invalid_configuration".equals(code);
     }
 
+    // When a user closes the browser app and in turn, cancels the authentication
+    public boolean isAuthenticationCanceled() {
+        return "a0.authentication_canceled".equals(code);
+    }
+
     /// When MFA code is required to authenticate
     public boolean isMultifactorRequired() {
         return "mfa_required".equals(code) || "a0.mfa_required".equals(code);

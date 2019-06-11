@@ -30,6 +30,7 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 import android.webkit.URLUtil;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -60,7 +61,11 @@ abstract class CallbackHelper {
         return uri.toString();
     }
 
-    public static Map<String, String> getValuesFromUri(@NonNull Uri uri) {
+    @NonNull
+    public static Map<String, String> getValuesFromUri(@Nullable Uri uri) {
+        if (uri == null) {
+            return Collections.emptyMap();
+        }
         return asMap(uri.getQuery() != null ? uri.getQuery() : uri.getFragment());
     }
 

@@ -48,9 +48,10 @@ public class AuthenticationActivity extends Activity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (resultCode == RESULT_OK) {
-            deliverSuccessfulAuthenticationResult(data);
+        if (resultCode == RESULT_CANCELED) {
+            data = new Intent();
         }
+        deliverAuthenticationResult(data);
         finish();
     }
 
@@ -71,7 +72,8 @@ public class AuthenticationActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (!intentLaunched && getIntent().getExtras() == null) {
+        final Intent authenticationIntent = getIntent();
+        if (!intentLaunched && authenticationIntent.getExtras() == null) {
             //Activity was launched in an unexpected way
             finish();
             return;
@@ -81,10 +83,11 @@ public class AuthenticationActivity extends Activity {
             return;
         }
 
-        if (getIntent().getData() != null) {
-            deliverSuccessfulAuthenticationResult(getIntent());
+        boolean resultMissing = authenticationIntent.getData() == null;
+        if (resultMissing) {
+            setResult(RESULT_CANCELED);
         }
-        setResult(RESULT_CANCELED);
+        deliverAuthenticationResult(authenticationIntent);
         finish();
     }
 
@@ -122,7 +125,7 @@ public class AuthenticationActivity extends Activity {
     }
 
     @VisibleForTesting
-    void deliverSuccessfulAuthenticationResult(Intent result) {
+    void deliverAuthenticationResult(Intent result) {
         WebAuthProvider.resume(result);
     }
 

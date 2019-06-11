@@ -19,9 +19,9 @@ public class AuthenticationActivityMock extends AuthenticationActivity {
     }
 
     @Override
-    protected void deliverSuccessfulAuthenticationResult(Intent result) {
+    protected void deliverAuthenticationResult(Intent result) {
         this.deliveredIntent = result;
-        super.deliverSuccessfulAuthenticationResult(result);
+        super.deliverAuthenticationResult(result);
     }
 
     public void setCustomTabsController(CustomTabsController customTabsController) {

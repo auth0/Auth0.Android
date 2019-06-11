@@ -46,9 +46,9 @@ class AuthorizeResult {
      * @param intent      the response intent.
      */
     public AuthorizeResult(int requestCode, int resultCode, @Nullable Intent intent) {
+        this.intent = intent;
         this.requestCode = requestCode;
         this.resultCode = resultCode;
-        this.intent = intent;
     }
 
     /**
@@ -57,9 +57,9 @@ class AuthorizeResult {
      * @param intent the response intent.
      */
     public AuthorizeResult(@Nullable Intent intent) {
-        this.requestCode = MISSING_REQUEST_CODE;
-        this.resultCode = Activity.RESULT_OK;
         this.intent = intent;
+        this.requestCode = MISSING_REQUEST_CODE;
+        this.resultCode = getIntentData() != null ? Activity.RESULT_OK : Activity.RESULT_CANCELED;
     }
 
     /**
@@ -69,32 +69,28 @@ class AuthorizeResult {
      * @return whether if the received uri data can be parsed or not.
      */
     public boolean isValid(int expectedRequestCode) {
-        Uri uri = intent != null ? intent.getData() : null;
-        if (uri == null) {
-            Log.d(TAG, "Result is invalid: Received Intent's Uri is null.");
-            return false;
-        }
-
-        if (requestCode == MISSING_REQUEST_CODE) {
+        boolean validRequestCode = requestCode == MISSING_REQUEST_CODE || requestCode == expectedRequestCode;
+        boolean validResultCode = isCanceled() || resultCode == Activity.RESULT_OK;
+        if (validRequestCode && validResultCode) {
+            //A 'user canceled' state is also a valid scenario
             return true;
         }
-
-        boolean fromRequest = getRequestCode() == expectedRequestCode;
-        if (!fromRequest) {
-            Log.d(TAG, String.format("Result is invalid: Received Request Code doesn't match the expected one. Was %d but expected %d", getRequestCode(), expectedRequestCode));
-        }
-        return fromRequest && resultCode == Activity.RESULT_OK;
+        Log.d(TAG, "Result is invalid: Either the received Intent is null or the Request Code doesn't match the expected one.");
+        return false;
     }
 
-    public Intent getIntent() {
-        return intent;
+    /**
+     * Checks whether the result belongs to a canceled authentication
+     *
+     * @return true if the result is from a canceled authentication. False otherwise.
+     */
+    public boolean isCanceled() {
+        return resultCode == Activity.RESULT_CANCELED && intent != null && getIntentData() == null;
     }
 
-    public int getRequestCode() {
-        return requestCode;
+    @Nullable
+    public Uri getIntentData() {
+        return intent == null ? null : intent.getData();
     }
 
-    public int getResultCode() {
-        return resultCode;
-    }
 }

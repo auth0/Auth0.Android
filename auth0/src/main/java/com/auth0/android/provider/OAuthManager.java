@@ -35,6 +35,8 @@ class OAuthManager {
     static final String RESPONSE_TYPE_ID_TOKEN = "id_token";
     static final String RESPONSE_TYPE_CODE = "code";
 
+    private static final String ERROR_VALUE_INVALID_CONFIGURATION = "a0.invalid_configuration";
+    private static final String ERROR_VALUE_AUTHENTICATION_CANCELED = "a0.authentication_canceled";
     private static final String ERROR_VALUE_ACCESS_DENIED = "access_denied";
     private static final String ERROR_VALUE_UNAUTHORIZED = "unauthorized";
     private static final String ERROR_VALUE_LOGIN_REQUIRED = "login_required";
@@ -88,6 +90,7 @@ class OAuthManager {
         this.pkce = pkce;
     }
 
+    //TODO: Internal class. Rename to "authentication"
     void startAuthorization(Activity activity, String redirectUri, int requestCode) {
         addPKCEParameters(parameters, redirectUri);
         addClientParameters(parameters, redirectUri);
@@ -102,13 +105,21 @@ class OAuthManager {
         }
     }
 
-    boolean resumeAuthorization(AuthorizeResult data) {
-        if (!data.isValid(requestCode)) {
+    //TODO: Internal class. Rename to "authentication"
+    boolean resumeAuthorization(AuthorizeResult result) {
+        if (!result.isValid(requestCode)) {
             Log.w(TAG, "The Authorize Result is invalid.");
             return false;
         }
 
-        final Map<String, String> values = CallbackHelper.getValuesFromUri(data.getIntent().getData());
+        if (result.isCanceled()) {
+            //User cancelled the authentication
+            AuthenticationException exception = new AuthenticationException(ERROR_VALUE_AUTHENTICATION_CANCELED, "The user closed the browser app and the authentication was canceled.");
+            callback.onFailure(exception);
+            return true;
+        }
+
+        final Map<String, String> values = CallbackHelper.getValuesFromUri(result.getIntentData());
         if (values.isEmpty()) {
             Log.w(TAG, "The response didn't contain any of these values: code, state, id_token, access_token, token_type, refresh_token");
             return false;
@@ -176,7 +187,7 @@ class OAuthManager {
             //Whitelist to allow SSO errors go through
             throw new AuthenticationException(errorValue, errorDescription);
         } else {
-            throw new AuthenticationException("a0.invalid_configuration", "The application isn't configured properly for the social connection. Please check your Auth0's application configuration");
+            throw new AuthenticationException(ERROR_VALUE_INVALID_CONFIGURATION, "The application isn't configured properly for the social connection. Please check your Auth0's application configuration");
         }
     }
 
