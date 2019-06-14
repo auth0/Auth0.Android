@@ -58,7 +58,6 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
-import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
@@ -1286,6 +1285,40 @@ public class WebAuthProviderTest {
         assertThat(credentialsCaptor.getValue().getExpiresIn(), is(1111L));
     }
 
+    @SuppressWarnings("deprecation")
+    @Test
+    public void shouldResumeWithRequestCodeWhenResultCancelled() throws Exception {
+        WebAuthProvider.init(account)
+                .useCodeGrant(false)
+                .start(activity, callback, REQUEST_CODE);
+
+        Intent intent = createAuthIntent(null);
+        assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_CANCELED, intent));
+
+        verify(callback).onFailure(authExceptionCaptor.capture());
+
+        assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
+        assertThat(authExceptionCaptor.getValue().getCode(), is("a0.authentication_canceled"));
+        assertThat(authExceptionCaptor.getValue().getDescription(), is("The user closed the browser app and the authentication was canceled."));
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void shouldResumeWithIntentWhenResultCancelled() throws Exception {
+        WebAuthProvider.init(account)
+                .useCodeGrant(false)
+                .start(activity, callback);
+
+        Intent intent = createAuthIntent(null);
+        assertTrue(WebAuthProvider.resume(intent));
+
+        verify(callback).onFailure(authExceptionCaptor.capture());
+
+        assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
+        assertThat(authExceptionCaptor.getValue().getCode(), is("a0.authentication_canceled"));
+        assertThat(authExceptionCaptor.getValue().getDescription(), is("The user closed the browser app and the authentication was canceled."));
+    }
+
     @Test
     public void shouldCalculateExpiresAtDateOnResumeAuthentication() throws Exception {
         WebAuthProvider.init(account)
@@ -1577,18 +1610,6 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldFailToResumeWithResultCancelled() throws Exception {
-        verifyNoMoreInteractions(callback);
-        WebAuthProvider.init(account)
-                .useCodeGrant(false)
-                .start(activity, callback, REQUEST_CODE);
-
-        Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", null, "1234567890", null, null));
-        assertFalse(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_CANCELED, intent));
-    }
-
-    @SuppressWarnings("deprecation")
-    @Test
     public void shouldFailToResumeWithResultNotOK() throws Exception {
         verifyNoMoreInteractions(callback);
         WebAuthProvider.init(account)
@@ -1640,7 +1661,7 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldFailToResumeWithIntentWithNullIntent() throws Exception {
+    public void shouldResumeWithIntentWithNullIntent() throws Exception {
         WebAuthProvider.init(account)
                 .withState("abcdefghijk")
                 .useCodeGrant(false)
@@ -1739,9 +1760,12 @@ public class WebAuthProviderTest {
 
 
     //Test Helper Functions
-    private Intent createAuthIntent(String hash) {
-        Uri validUri = Uri.parse("https://domain.auth0.com/android/package/callback" + hash);
+    private Intent createAuthIntent(@Nullable String hash) {
         Intent intent = new Intent();
+        if (hash == null) {
+            return intent;
+        }
+        Uri validUri = Uri.parse("https://domain.auth0.com/android/package/callback" + hash);
         intent.setData(validUri);
         return intent;
     }

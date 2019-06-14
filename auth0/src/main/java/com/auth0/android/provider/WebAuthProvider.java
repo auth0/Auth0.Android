@@ -307,7 +307,7 @@ public class WebAuthProvider {
             managerInstance = manager;
 
             String redirectUri = CallbackHelper.getCallbackUri(scheme, activity.getApplicationContext().getPackageName(), account.getDomainUrl());
-            manager.startAuthorization(activity, redirectUri, requestCode);
+            manager.startAuthentication(activity, redirectUri, requestCode);
         }
 
         /**
@@ -354,7 +354,7 @@ public class WebAuthProvider {
      * @param requestCode the request code received on the onActivityResult() call
      * @param resultCode  the result code received on the onActivityResult() call
      * @param intent      the data received on the onActivityResult() call
-     * @return true if a result was expected and has a valid format, or false if not.
+     * @return true if a result was expected and has a valid format, or false if not. When true is returned a call on the callback is expected.
      * @deprecated This method has been deprecated since it only applied to WebView authentication and Google is no longer supporting it. Please use {@link WebAuthProvider#resume(Intent)}
      */
     @Deprecated
@@ -363,8 +363,8 @@ public class WebAuthProvider {
             Log.w(TAG, "There is no previous instance of this provider.");
             return false;
         }
-        final AuthorizeResult data = new AuthorizeResult(requestCode, resultCode, intent);
-        boolean success = managerInstance.resumeAuthorization(data);
+        final AuthorizeResult result = new AuthorizeResult(requestCode, resultCode, intent);
+        boolean success = managerInstance.resumeAuthentication(result);
         if (success) {
             managerInstance = null;
         }
@@ -377,16 +377,16 @@ public class WebAuthProvider {
      * <p>
      * This is no longer required to be called, the authentication is handled internally as long as you've correctly setup the intent-filter.
      *
-     * @param intent the data received on the onNewIntent() call
-     * @return true if a result was expected and has a valid format, or false if not.
+     * @param intent the data received on the onNewIntent() call. When null is passed, the authentication will be considered canceled.
+     * @return true if a result was expected and has a valid format, or false if not. When true is returned a call on the callback is expected.
      */
     public static boolean resume(@Nullable Intent intent) {
         if (managerInstance == null) {
             Log.w(TAG, "There is no previous instance of this provider.");
             return false;
         }
-        final AuthorizeResult data = new AuthorizeResult(intent);
-        boolean success = managerInstance.resumeAuthorization(data);
+        final AuthorizeResult result = new AuthorizeResult(intent);
+        boolean success = managerInstance.resumeAuthentication(result);
         if (success) {
             managerInstance = null;
         }

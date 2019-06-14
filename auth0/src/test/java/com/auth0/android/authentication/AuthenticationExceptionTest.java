@@ -289,6 +289,13 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
+    public void shouldHaveAuthenticationCanceled() throws Exception {
+        values.put(CODE_KEY, "a0.authentication_canceled");
+        AuthenticationException ex = new AuthenticationException(values);
+        assertThat(ex.isAuthenticationCanceled(), is(true));
+    }
+
+    @Test
     public void shouldHavePasswordLeaked() throws Exception {
         values.put(CODE_KEY, "password_leaked");
         AuthenticationException ex = new AuthenticationException(values);
