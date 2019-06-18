@@ -1,5 +1,16 @@
 # Change Log
 
+## [1.16.0](https://github.com/auth0/Auth0.Android/tree/1.16.0) (2019-06-18)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.15.2...1.16.0)
+
+**Added**
+- Support Web authentication cancel scenario [\#240](https://github.com/auth0/Auth0.Android/pull/240) ([lbalmaceda](https://github.com/lbalmaceda))
+- Expose NetworkErrorException when request fails due to networking [\#235](https://github.com/auth0/Auth0.Android/pull/235) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Fixed**
+- Update PKCE usage requirements and errors [\#239](https://github.com/auth0/Auth0.Android/pull/239) ([lbalmaceda](https://github.com/lbalmaceda))
+- Make connection_scope separate values with comma [\#236](https://github.com/auth0/Auth0.Android/pull/236) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.15.2](https://github.com/auth0/Auth0.Android/tree/1.15.2) (2019-04-17)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.15.1...1.15.2)
 
