@@ -35,7 +35,9 @@ import android.support.annotation.VisibleForTesting;
 import android.util.Log;
 
 import com.auth0.android.Auth0;
+import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
+import com.auth0.android.callback.BaseCallback;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -57,16 +59,104 @@ public class WebAuthProvider {
 
     private static final String TAG = WebAuthProvider.class.getName();
 
-    private static final String KEY_AUDIENCE = "audience";
-    private static final String KEY_SCOPE = "scope";
-    private static final String KEY_CONNECTION_SCOPE = "connection_scope";
-    private static final String SCOPE_TYPE_OPENID = "openid";
-    private static final String RESPONSE_TYPE_TOKEN = "token";
-
     private static OAuthManager managerInstance;
+    private static LogoutManager logoutManagerInstance;
 
+    public static class LogoutBuilder {
+
+        private static final String KEY_FEDERATED = "federated";
+        private static final String KEY_RETURN_TO_URL = "returnTo";
+
+        private final Auth0 account;
+        private final Map<String, String> values;
+        private String scheme;
+        private CustomTabsOptions ctOptions;
+
+        LogoutBuilder(Auth0 account) {
+            this.account = account;
+
+            //Default values
+            this.scheme = "https";
+            this.values = new HashMap<>();
+        }
+
+        /**
+         * When using a Custom Tabs compatible Browser, apply this customization options.
+         *
+         * @param options the Custom Tabs customization options
+         * @return the current builder instance
+         */
+        public LogoutBuilder withCustomTabsOptions(@NonNull CustomTabsOptions options) {
+            this.ctOptions = options;
+            return this;
+        }
+
+        /**
+         * Specify a custom Scheme to use on the Return To Uri. Default scheme is 'https'.
+         *
+         * @param scheme to use in the Callback Uri.
+         * @return the current builder instance
+         */
+        public LogoutBuilder withScheme(@NonNull String scheme) {
+            String lowerCase = scheme.toLowerCase();
+            if (!scheme.equals(lowerCase)) {
+                Log.w(TAG, "Please provide the scheme in lowercase and make sure it's the same configured in the intent filter. Android expects the scheme in lowercase");
+            }
+            this.scheme = scheme;
+            return this;
+        }
+
+        /**
+         * Whether to also clear the session from the identity provider when possible or not.
+         *
+         * @param federatedLogout true to clear the session on the identity provider's site.
+         * @return the current builder instance
+         */
+        public LogoutBuilder useFederatedLogout(@NonNull boolean federatedLogout) {
+            if (federatedLogout) {
+                this.values.put(KEY_FEDERATED, "1");
+            } else {
+                this.values.remove(KEY_FEDERATED);
+            }
+            return this;
+        }
+
+        @VisibleForTesting
+        static boolean hasBrowserAppInstalled(@NonNull PackageManager packageManager) {
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://auth0.com"));
+            return intent.resolveActivity(packageManager) != null;
+        }
+
+        /**
+         * Request the user session to be cleared. When successful, the callback will get invoked
+         *
+         * @param context  to run the log out
+         * @param callback to invoke when log out is successful
+         */
+        public void start(Context context, BaseCallback<Void, Auth0Exception> callback) {
+            logoutManagerInstance = null;
+            if (!hasBrowserAppInstalled(context.getPackageManager())) {
+                AuthenticationException ex = new AuthenticationException("a0.browser_not_available", "No Browser application installed to perform web log out.");
+                callback.onFailure(ex);
+                return;
+            }
+
+            String returnToUrl = CallbackHelper.getCallbackUri(scheme, context.getApplicationContext().getPackageName(), account.getDomainUrl());
+            this.values.put(KEY_RETURN_TO_URL, returnToUrl);
+            logoutManagerInstance = new LogoutManager(this.account, callback, this.values);
+            logoutManagerInstance.setCustomTabsOptions(ctOptions);
+
+            logoutManagerInstance.launchLogout(context);
+        }
+    }
 
     public static class Builder {
+
+        private static final String KEY_AUDIENCE = "audience";
+        private static final String KEY_SCOPE = "scope";
+        private static final String KEY_CONNECTION_SCOPE = "connection_scope";
+        private static final String SCOPE_TYPE_OPENID = "openid";
+        private static final String RESPONSE_TYPE_TOKEN = "token";
 
         private final Auth0 account;
         private final Map<String, String> values;
@@ -324,7 +414,22 @@ public class WebAuthProvider {
     // Public methods
 
     /**
-     * Initialize the WebAuthProvider instance with an account. Additional settings can be configured
+     * Initialize the WebAuthProvider instance for logging out the user using an account. Additional settings can be configured
+     * in the LogoutBuilder, like setting the federated parameter.
+     *
+     * @param account to use for authentication
+     * @return a new Builder instance to customize.
+     */
+    public static LogoutBuilder clearSession(@NonNull Auth0 account) {
+        //TODO: Should this method be named "logOut" or similar?
+        // given that the "authentication" method is called "init" it might be
+        // confusing whether init should be called always before a log out.
+        return new LogoutBuilder(account);
+    }
+
+
+    /**
+     * Initialize the WebAuthProvider instance for authenticating the user using an account. Additional settings can be configured
      * in the Builder, like setting the connection name or authentication parameters.
      *
      * @param account to use for authentication
@@ -335,7 +440,7 @@ public class WebAuthProvider {
     }
 
     /**
-     * Initialize the WebAuthProvider instance with an Android Context. Additional settings can be configured
+     * Initialize the WebAuthProvider instance for authenticating the user with an Android Context. Additional settings can be configured
      * in the Builder, like setting the connection name or authentication parameters.
      *
      * @param context a valid context.
@@ -346,10 +451,10 @@ public class WebAuthProvider {
     }
 
     /**
-     * Finishes the authentication flow by passing the data received in the activity's onActivityResult() callback.
-     * The final authentication result will be delivered to the callback specified when calling start().
+     * Finishes the authentication or log out flow by passing the data received in the activity's onActivityResult() callback.
+     * The final result will be delivered to the callback specified when calling start().
      * <p>
-     * This is no longer required to be called, the authentication is handled internally as long as you've correctly setup the intent-filter.
+     * This is no longer required to be called, the redirect is handled internally as long as you've correctly setup the intent-filter.
      *
      * @param requestCode the request code received on the onActivityResult() call
      * @param resultCode  the result code received on the onActivityResult() call
@@ -372,8 +477,8 @@ public class WebAuthProvider {
     }
 
     /**
-     * Finishes the authentication flow by passing the data received in the activity's onNewIntent() callback.
-     * The final authentication result will be delivered to the callback specified when calling start().
+     * Finishes the authentication or log out flow by passing the data received in the activity's onNewIntent() callback.
+     * The final result will be delivered to the callback specified when calling start().
      * <p>
      * This is no longer required to be called, the authentication is handled internally as long as you've correctly setup the intent-filter.
      *
@@ -381,11 +486,18 @@ public class WebAuthProvider {
      * @return true if a result was expected and has a valid format, or false if not. When true is returned a call on the callback is expected.
      */
     public static boolean resume(@Nullable Intent intent) {
-        if (managerInstance == null) {
+        if (managerInstance == null && logoutManagerInstance == null) {
             Log.w(TAG, "There is no previous instance of this provider.");
             return false;
         }
+
         final AuthorizeResult result = new AuthorizeResult(intent);
+        if (logoutManagerInstance != null) {
+            logoutManagerInstance.resume(result);
+            logoutManagerInstance = null;
+            return true;
+        }
+
         boolean success = managerInstance.resumeAuthentication(result);
         if (success) {
             managerInstance = null;

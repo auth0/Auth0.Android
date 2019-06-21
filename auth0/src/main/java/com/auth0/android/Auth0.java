@@ -138,6 +138,17 @@ public class Auth0 {
     }
 
     /**
+     * @return Url to perform the web logout
+     */
+    public String getLogoutUrl() {
+        return domainUrl.newBuilder()
+                .addEncodedPathSegment("v2")
+                .addEncodedPathSegment("logout")
+                .build()
+                .toString();
+    }
+
+    /**
      * @return Auth0 telemetry info sent in every request
      */
     public Telemetry getTelemetry() {
