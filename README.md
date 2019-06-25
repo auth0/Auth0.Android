@@ -174,8 +174,27 @@ Finally, don't forget to add the internet permission.
 Finally, authenticate by showing the **Auth0 Universal Login**:
 
 ```java
+//Configure and launch the authentication
 WebAuthProvider.init(account)
                 .start(MainActivity.this, authCallback);
+
+// Define somewhere in the code the callback
+AuthCallback authCallback = new AuthCallback() {
+    @Override
+    public void onFailure(@NonNull Dialog dialog) {
+        //failed with a dialog
+    }
+
+    @Override
+    public void onFailure(AuthenticationException exception) {
+        //failed with an exception
+    }
+
+    @Override
+    public void onSuccess(@NonNull Credentials credentials) {
+        //succeeded!
+    }
+};
 ```
 
 If you've followed the configuration steps, the authentication result will be redirected from the browser to your application and you'll receive it in the Callback.
