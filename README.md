@@ -299,6 +299,71 @@ If the device where the app is running has a Custom Tabs compatible Browser, a C
 ```
 
 
+### Clearing the session
+
+To log the user out and clear the SSO cookies that the Auth0 Server keeps attached to your browser app, you need to call the [logout endpoint](https://auth0.com/docs/api/authentication?#logout). This can be done is a similar fashion to how you authenticated before: using the `WebAuthProvider` class.
+
+Note that the Manifest Placeholders must be set in order for the redirection to work, just like you were required to do so for the authentication flow. Make sure to [revisit that section](#authentication-with-universal-login) first if you still cannot authenticate successfully.
+
+In addition, you need to whitelist in the [Auth0 Dashboard](https://manage.auth0.com/#/applications) the "return to" URL for your application settings, right into the *Allowed Logout URLs* The value of this URL is the very same of the Allowed Callback URL you've whitelisted when setting up the authentication. Remember, you must **save** the settings in the dashboard for them to apply.
+
+
+
+Initialize the provider, this time calling the static method `clearSession`.
+
+```java
+//Configure and launch the log out
+WebAuthProvider.clearSession(account)
+                .start(MainActivity.this, logoutCallback);
+
+// Define somewhere in the code the callback
+BaseCallback logoutCallback = new BaseCallback<Void, Auth0Exception>() {
+    @Override
+    public void onFailure(Auth0Exception exception) {
+        //failed with an exception
+    }
+
+    @Override
+    public void onSuccess(@NonNull Void payload) {
+        //succeeded!
+    }
+};
+```
+
+
+The callback will get invoked when the user returns to your application. If this is the result of being redirected back by the server, that would be considered a success. There are some scenarios in which this can fail:
+* When the domain is not [correctly set up](#usage) in the Auth0 instance. The cause of the exception will be an instance of `IllegalArgumentException`.
+* When there is no browser application that can open a URL. The cause of the exception will be an instance of `ActivityNotFoundException`.
+* When the user closes the browser manually.
+* When the `returnTo` URL is not whitelisted in your application settings.
+
+
+#### Customize the Custom Tabs UI
+
+Similarly to when you authenticated your users, for log out you can also customize the styling of the Custom Tabs browser. However, do note the browser is briefly shown to the user.
+
+```java
+ CustomTabsOptions options = CustomTabsOptions.newBuilder()
+    .withToolbarColor(R.color.ct_toolbar_color)
+    .showTitle(true)
+    .build();
+
+  WebAuthProvider.clearSession(account)
+                  .withCustomTabsOptions(options)
+                  .start(MainActivity.this, logoutCallback);
+```
+
+
+#### Changing the scheme
+The scheme used can be changed as well. This configuration will probably match what you've done for the [authentication setup](#a-note-about-app-deep-linking).
+
+```java
+WebAuthProvider.clearSession(account)
+                .withScheme("myapp")
+                .start(MainActivity.this, logoutCallback);
+```
+
+
 ## Next steps
 
 ### Learning resources
