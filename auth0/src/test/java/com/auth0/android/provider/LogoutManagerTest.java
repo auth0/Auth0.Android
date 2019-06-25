@@ -15,8 +15,6 @@ import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
-import java.util.HashMap;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -46,21 +44,21 @@ public class LogoutManagerTest {
 
     @Test
     public void shouldNotHaveCustomTabsOptionsByDefault() throws Exception {
-        LogoutManager manager = new LogoutManager(account, callback, new HashMap<String, String>());
+        LogoutManager manager = new LogoutManager(account, callback, "https://auth0.com/callback");
         assertThat(manager.customTabsOptions(), is(nullValue()));
     }
 
     @Test
     public void shouldSetCustomTabsOptions() throws Exception {
         CustomTabsOptions options = mock(CustomTabsOptions.class);
-        LogoutManager manager = new LogoutManager(account, callback, new HashMap<String, String>());
+        LogoutManager manager = new LogoutManager(account, callback, "https://auth0.com/callback");
         manager.setCustomTabsOptions(options);
         assertThat(manager.customTabsOptions(), is(options));
     }
 
     @Test
     public void shouldCallOnFailureWhenResumedWithCanceledResult() throws Exception {
-        LogoutManager manager = new LogoutManager(account, callback, new HashMap<String, String>());
+        LogoutManager manager = new LogoutManager(account, callback, "https://auth0.com/callback");
         AuthorizeResult result = mock(AuthorizeResult.class);
         when(result.isCanceled()).thenReturn(true);
         manager.resume(result);
@@ -72,7 +70,7 @@ public class LogoutManagerTest {
 
     @Test
     public void shouldCallOnSuccessWhenResumedWithValidResult() throws Exception {
-        LogoutManager manager = new LogoutManager(account, callback, new HashMap<String, String>());
+        LogoutManager manager = new LogoutManager(account, callback, "https://auth0.com/callback");
         AuthorizeResult result = mock(AuthorizeResult.class);
         when(result.isCanceled()).thenReturn(false);
         manager.resume(result);

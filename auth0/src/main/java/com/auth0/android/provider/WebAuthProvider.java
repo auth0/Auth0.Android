@@ -64,11 +64,7 @@ public class WebAuthProvider {
 
     public static class LogoutBuilder {
 
-        private static final String KEY_FEDERATED = "federated";
-        private static final String KEY_RETURN_TO_URL = "returnTo";
-
         private final Auth0 account;
-        private final Map<String, String> values;
         private String scheme;
         private CustomTabsOptions ctOptions;
 
@@ -77,7 +73,6 @@ public class WebAuthProvider {
 
             //Default values
             this.scheme = "https";
-            this.values = new HashMap<>();
         }
 
         /**
@@ -107,21 +102,6 @@ public class WebAuthProvider {
         }
 
         /**
-         * Whether to also clear the session from the identity provider when possible or not.
-         *
-         * @param federatedLogout true to clear the session on the identity provider's site.
-         * @return the current builder instance
-         */
-        public LogoutBuilder useFederatedLogout(@NonNull boolean federatedLogout) {
-            if (federatedLogout) {
-                this.values.put(KEY_FEDERATED, "1");
-            } else {
-                this.values.remove(KEY_FEDERATED);
-            }
-            return this;
-        }
-
-        /**
          * Request the user session to be cleared. When successful, the callback will get invoked
          *
          * @param context  to run the log out
@@ -144,8 +124,7 @@ public class WebAuthProvider {
             }
 
             String returnToUrl = CallbackHelper.getCallbackUri(scheme, context.getApplicationContext().getPackageName(), account.getDomainUrl());
-            this.values.put(KEY_RETURN_TO_URL, returnToUrl);
-            LogoutManager logoutManager = new LogoutManager(this.account, callback, this.values);
+            LogoutManager logoutManager = new LogoutManager(this.account, callback, returnToUrl);
             logoutManager.setCustomTabsOptions(ctOptions);
 
             managerInstance = logoutManager;
@@ -412,7 +391,7 @@ public class WebAuthProvider {
 
     /**
      * Initialize the WebAuthProvider instance for logging out the user using an account. Additional settings can be configured
-     * in the LogoutBuilder, like setting the federated parameter.
+     * in the LogoutBuilder, like changing the scheme of the return to URL.
      *
      * @param account to use for authentication
      * @return a new Builder instance to customize.

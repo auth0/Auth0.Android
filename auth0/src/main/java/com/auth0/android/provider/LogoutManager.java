@@ -21,6 +21,7 @@ class LogoutManager extends ResumableManager {
 
     private static final String KEY_CLIENT_ID = "client_id";
     private static final String KEY_TELEMETRY = "auth0Client";
+    private static final String KEY_RETURN_TO_URL = "returnTo";
 
     private final Auth0 account;
     private final BaseCallback<Void, Auth0Exception> callback;
@@ -28,10 +29,11 @@ class LogoutManager extends ResumableManager {
 
     private CustomTabsOptions ctOptions;
 
-    LogoutManager(@NonNull Auth0 account, @NonNull BaseCallback<Void, Auth0Exception> callback, @NonNull Map<String, String> parameters) {
+    LogoutManager(@NonNull Auth0 account, @NonNull BaseCallback<Void, Auth0Exception> callback, @NonNull String returnToUrl) {
         this.account = account;
         this.callback = callback;
-        this.parameters = new HashMap<>(parameters);
+        this.parameters = new HashMap<>();
+        this.parameters.put(KEY_RETURN_TO_URL, returnToUrl);
     }
 
     void setCustomTabsOptions(@Nullable CustomTabsOptions options) {

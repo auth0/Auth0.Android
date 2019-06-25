@@ -1790,7 +1790,6 @@ public class WebAuthProviderTest {
     @Captor
     private ArgumentCaptor<BaseCallback> baseCallbackCaptor;
 
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldInitLogoutWithAccount() throws Exception {
         WebAuthProvider.clearSession(account)
@@ -1842,47 +1841,6 @@ public class WebAuthProviderTest {
 
         assertThat(uri, hasParamWithValue("client_id", "clientId"));
     }
-
-    // federated
-
-    @Test
-    public void shouldNotSendFederatedByDefaultOnLogout() throws Exception {
-        WebAuthProvider.clearSession(account)
-                .start(activity, baseCallback);
-
-        verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
-        assertThat(uri, is(notNullValue()));
-
-        assertThat(uri, not(hasParamWithName("federated")));
-    }
-
-    @Test
-    public void shouldNotSendFederatedWhenRequestedOnLogout() throws Exception {
-        WebAuthProvider.clearSession(account)
-                .useFederatedLogout(false)
-                .start(activity, baseCallback);
-
-        verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
-        assertThat(uri, is(notNullValue()));
-
-        assertThat(uri, not(hasParamWithName("federated")));
-    }
-
-    @Test
-    public void shouldSetFederatedWhenRequestedOnLogout() throws Exception {
-        WebAuthProvider.clearSession(account)
-                .useFederatedLogout(true)
-                .start(activity, baseCallback);
-
-        verify(activity).startActivity(intentCaptor.capture());
-        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
-        assertThat(uri, is(notNullValue()));
-
-        assertThat(uri, hasParamWithValue("federated", "1"));
-    }
-
 
     // auth0 related
 
@@ -2032,7 +1990,6 @@ public class WebAuthProviderTest {
         assertThat(WebAuthProvider.getManagerInstance(), is(nullValue()));
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldClearLogoutManagerInstanceAfterSuccessfulLogout() throws Exception {
         WebAuthProvider.clearSession(account)
