@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @SuppressWarnings("WeakerAccess")
-class OAuthManager {
+class OAuthManager extends ResumableManager {
 
     private static final String TAG = OAuthManager.class.getSimpleName();
 
@@ -104,7 +104,8 @@ class OAuthManager {
         }
     }
 
-    boolean resumeAuthentication(AuthorizeResult result) {
+    @Override
+    boolean resume(AuthorizeResult result) {
         if (!result.isValid(requestCode)) {
             Log.w(TAG, "The Authorize Result is invalid.");
             return false;

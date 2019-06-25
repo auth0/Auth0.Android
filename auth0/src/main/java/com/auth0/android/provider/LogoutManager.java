@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @SuppressWarnings("WeakerAccess")
-class LogoutManager {
+class LogoutManager extends ResumableManager {
 
     private static final String TAG = LogoutManager.class.getSimpleName();
 
@@ -38,20 +38,22 @@ class LogoutManager {
         this.ctOptions = options;
     }
 
-    void launchLogout(Context context) {
+    void startLogout(Context context) {
         addClientParameters(parameters);
         Uri uri = buildLogoutUri();
 
         AuthenticationActivity.authenticateUsingBrowser(context, uri, ctOptions);
     }
 
-    void resume(AuthorizeResult result) {
+    @Override
+    boolean resume(AuthorizeResult result) {
         if (result.isCanceled()) {
             Auth0Exception exception = new Auth0Exception("The user closed the browser app and the log out was cancelled.");
             callback.onFailure(exception);
-            return;
+        } else {
+            callback.onSuccess(null);
         }
-        callback.onSuccess(null);
+        return true;
     }
 
     private Uri buildLogoutUri() {

@@ -271,6 +271,16 @@ public class Auth0Test {
     }
 
     @Test
+    public void shouldReturnLogoutUrl() throws Exception {
+        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
+
+        final HttpUrl url = HttpUrl.parse(auth0.getLogoutUrl());
+        assertThat(url, hasScheme("https"));
+        assertThat(url, hasHost(DOMAIN));
+        assertThat(url, hasPath("v2", "logout"));
+    }
+
+    @Test
     public void shouldNotReturnTelemetryWhenExplicitlyDisabledThem() throws Exception {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         auth0.doNotSendTelemetry();

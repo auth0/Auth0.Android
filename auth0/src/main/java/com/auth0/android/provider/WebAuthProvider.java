@@ -25,6 +25,7 @@
 package com.auth0.android.provider;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -59,8 +60,7 @@ public class WebAuthProvider {
 
     private static final String TAG = WebAuthProvider.class.getName();
 
-    private static OAuthManager managerInstance;
-    private static LogoutManager logoutManagerInstance;
+    private static ResumableManager managerInstance;
 
     public static class LogoutBuilder {
 
@@ -121,12 +121,6 @@ public class WebAuthProvider {
             return this;
         }
 
-        @VisibleForTesting
-        static boolean hasBrowserAppInstalled(@NonNull PackageManager packageManager) {
-            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://auth0.com"));
-            return intent.resolveActivity(packageManager) != null;
-        }
-
         /**
          * Request the user session to be cleared. When successful, the callback will get invoked
          *
@@ -134,19 +128,28 @@ public class WebAuthProvider {
          * @param callback to invoke when log out is successful
          */
         public void start(Context context, BaseCallback<Void, Auth0Exception> callback) {
-            logoutManagerInstance = null;
+            managerInstance = null;
+            if (account.getLogoutUrl() == null) {
+                Throwable cause = new IllegalArgumentException("Auth0 logout URL not properly set. This can be related to an invalid domain.");
+                final Auth0Exception ex = new Auth0Exception("Cannot perform web log out", cause);
+                callback.onFailure(ex);
+                return;
+            }
+
             if (!hasBrowserAppInstalled(context.getPackageManager())) {
-                AuthenticationException ex = new AuthenticationException("a0.browser_not_available", "No Browser application installed to perform web log out.");
+                Throwable cause = new ActivityNotFoundException("No Browser application installed.");
+                final Auth0Exception ex = new Auth0Exception("Cannot perform web log out", cause);
                 callback.onFailure(ex);
                 return;
             }
 
             String returnToUrl = CallbackHelper.getCallbackUri(scheme, context.getApplicationContext().getPackageName(), account.getDomainUrl());
             this.values.put(KEY_RETURN_TO_URL, returnToUrl);
-            logoutManagerInstance = new LogoutManager(this.account, callback, this.values);
-            logoutManagerInstance.setCustomTabsOptions(ctOptions);
+            LogoutManager logoutManager = new LogoutManager(this.account, callback, this.values);
+            logoutManager.setCustomTabsOptions(ctOptions);
 
-            logoutManagerInstance.launchLogout(context);
+            managerInstance = logoutManager;
+            logoutManager.startLogout(context);
         }
     }
 
@@ -359,12 +362,6 @@ public class WebAuthProvider {
             return this;
         }
 
-        @VisibleForTesting
-        static boolean hasBrowserAppInstalled(@NonNull PackageManager packageManager) {
-            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://auth0.com"));
-            return intent.resolveActivity(packageManager) != null;
-        }
-
         /**
          * Request user Authentication. The result will be received in the callback.
          *
@@ -469,7 +466,7 @@ public class WebAuthProvider {
             return false;
         }
         final AuthorizeResult result = new AuthorizeResult(requestCode, resultCode, intent);
-        boolean success = managerInstance.resumeAuthentication(result);
+        boolean success = managerInstance.resume(result);
         if (success) {
             managerInstance = null;
         }
@@ -486,29 +483,30 @@ public class WebAuthProvider {
      * @return true if a result was expected and has a valid format, or false if not. When true is returned a call on the callback is expected.
      */
     public static boolean resume(@Nullable Intent intent) {
-        if (managerInstance == null && logoutManagerInstance == null) {
+        if (managerInstance == null) {
             Log.w(TAG, "There is no previous instance of this provider.");
             return false;
         }
 
         final AuthorizeResult result = new AuthorizeResult(intent);
-        if (logoutManagerInstance != null) {
-            logoutManagerInstance.resume(result);
-            logoutManagerInstance = null;
-            return true;
-        }
-
-        boolean success = managerInstance.resumeAuthentication(result);
+        boolean success = managerInstance.resume(result);
         if (success) {
             managerInstance = null;
         }
         return success;
+
     }
 
     // End Public methods
 
     @VisibleForTesting
-    static OAuthManager getInstance() {
+    static ResumableManager getManagerInstance() {
         return managerInstance;
+    }
+
+    @VisibleForTesting
+    static boolean hasBrowserAppInstalled(@NonNull PackageManager packageManager) {
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://auth0.com"));
+        return intent.resolveActivity(packageManager) != null;
     }
 }
