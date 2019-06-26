@@ -2,7 +2,6 @@ package com.auth0.android.provider;
 
 import com.auth0.android.Auth0;
 import com.auth0.android.Auth0Exception;
-import com.auth0.android.callback.BaseCallback;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -35,7 +34,7 @@ public class LogoutManagerTest {
     @Mock
     Auth0 account;
     @Mock
-    BaseCallback<Void, Auth0Exception> callback;
+    VoidCallback callback;
 
     @Before
     public void setUp() throws Exception {
@@ -65,7 +64,7 @@ public class LogoutManagerTest {
         ArgumentCaptor<Auth0Exception> exceptionCaptor = ArgumentCaptor.forClass(Auth0Exception.class);
         verify(callback).onFailure(exceptionCaptor.capture());
         assertThat(exceptionCaptor.getValue(), is(notNullValue()));
-        assertThat(exceptionCaptor.getValue().getMessage(), is("The user closed the browser app and the log out was cancelled."));
+        assertThat(exceptionCaptor.getValue().getMessage(), is("The user closed the browser app and the logout was cancelled."));
     }
 
     @Test

@@ -107,7 +107,7 @@ public class WebAuthProvider {
          * @param context  to run the log out
          * @param callback to invoke when log out is successful
          */
-        public void start(Context context, BaseCallback<Void, Auth0Exception> callback) {
+        public void start(Context context, VoidCallback callback) {
 
             managerInstance = null;
 

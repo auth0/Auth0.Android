@@ -9,7 +9,6 @@ import android.util.Log;
 
 import com.auth0.android.Auth0;
 import com.auth0.android.Auth0Exception;
-import com.auth0.android.callback.BaseCallback;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,12 +23,12 @@ class LogoutManager extends ResumableManager {
     private static final String KEY_RETURN_TO_URL = "returnTo";
 
     private final Auth0 account;
-    private final BaseCallback<Void, Auth0Exception> callback;
+    private final VoidCallback callback;
     private final Map<String, String> parameters;
 
     private CustomTabsOptions ctOptions;
 
-    LogoutManager(@NonNull Auth0 account, @NonNull BaseCallback<Void, Auth0Exception> callback, @NonNull String returnToUrl) {
+    LogoutManager(@NonNull Auth0 account, @NonNull VoidCallback callback, @NonNull String returnToUrl) {
         this.account = account;
         this.callback = callback;
         this.parameters = new HashMap<>();
