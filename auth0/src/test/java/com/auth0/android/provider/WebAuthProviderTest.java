@@ -1088,25 +1088,6 @@ public class WebAuthProviderTest {
         assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CT_OPTIONS), is(false));
     }
 
-    @SuppressWarnings({"deprecation", "ThrowableResultOfMethodCallIgnored"})
-    @Test
-    public void shouldFailToStartWithInvalidAuthorizeURI() throws Exception {
-        Auth0 account = Mockito.mock(Auth0.class);
-        when(account.getAuthorizeUrl()).thenReturn(null);
-
-        WebAuthProvider.init(account)
-                .withState("abcdefghijk")
-                .useCodeGrant(false)
-                .start(activity, callback);
-
-        verify(callback).onFailure(authExceptionCaptor.capture());
-
-        assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
-        assertThat(authExceptionCaptor.getValue().getCode(), is("a0.invalid_authorize_url"));
-        assertThat(authExceptionCaptor.getValue().getDescription(), is("Auth0 authorize URL not properly set. This can be related to an invalid domain."));
-        assertThat(WebAuthProvider.getManagerInstance(), is(nullValue()));
-    }
-
     @SuppressWarnings("deprecation")
     @Test
     public void shouldResumeWithRequestCodeWithResponseTypeIdToken() throws Exception {
@@ -1919,24 +1900,6 @@ public class WebAuthProviderTest {
         assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CT_OPTIONS), is(true));
         assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
         assertThat((CustomTabsOptions) extras.getParcelable(AuthenticationActivity.EXTRA_CT_OPTIONS), is(options));
-    }
-
-    @Test
-    public void shouldFailToStartLogoutWithInvalidLogoutURI() throws Exception {
-        Auth0 account = Mockito.mock(Auth0.class);
-        when(account.getLogoutUrl()).thenReturn(null);
-
-        WebAuthProvider.clearSession(account)
-                .start(activity, baseCallback);
-
-        verify(baseCallback).onFailure(auth0ExceptionCaptor.capture());
-
-        assertThat(auth0ExceptionCaptor.getValue(), is(notNullValue()));
-        assertThat(auth0ExceptionCaptor.getValue().getMessage(), is("Cannot perform web log out"));
-        Throwable cause = auth0ExceptionCaptor.getValue().getCause();
-        assertThat(cause, is(CoreMatchers.<Throwable>instanceOf(IllegalArgumentException.class)));
-        assertThat(cause.getMessage(), is("Auth0 logout URL not properly set. This can be related to an invalid domain."));
-        assertThat(WebAuthProvider.getManagerInstance(), is(nullValue()));
     }
 
     @Test

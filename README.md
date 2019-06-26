@@ -339,7 +339,6 @@ BaseCallback logoutCallback = new BaseCallback<Void, Auth0Exception>() {
 
 
 The callback will get invoked when the user returns to your application. If this is the result of being redirected back by the server, that would be considered a success. There are some scenarios in which this can fail:
-* When the domain is not [correctly set up](#usage) in the Auth0 instance. The cause of the exception will be an instance of `IllegalArgumentException`.
 * When there is no browser application that can open a URL. The cause of the exception will be an instance of `ActivityNotFoundException`.
 * When the user closes the browser manually, e.g. by pressing the back key on their device.
 * When the `returnTo` URL is not whitelisted in your application settings.

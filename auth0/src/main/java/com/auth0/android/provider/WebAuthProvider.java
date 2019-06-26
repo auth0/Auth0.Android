@@ -110,12 +110,6 @@ public class WebAuthProvider {
         public void start(Context context, BaseCallback<Void, Auth0Exception> callback) {
 
             managerInstance = null;
-            if (account.getLogoutUrl() == null) {
-                Throwable cause = new IllegalArgumentException("Auth0 logout URL not properly set. This can be related to an invalid domain.");
-                final Auth0Exception ex = new Auth0Exception("Cannot perform web log out", cause);
-                callback.onFailure(ex);
-                return;
-            }
 
             if (!hasBrowserAppInstalled(context.getPackageManager())) {
                 Throwable cause = new ActivityNotFoundException("No Browser application installed.");
@@ -353,11 +347,6 @@ public class WebAuthProvider {
         @Deprecated
         public void start(@NonNull Activity activity, @NonNull AuthCallback callback, int requestCode) {
             managerInstance = null;
-            if (account.getAuthorizeUrl() == null) {
-                final AuthenticationException ex = new AuthenticationException("a0.invalid_authorize_url", "Auth0 authorize URL not properly set. This can be related to an invalid domain.");
-                callback.onFailure(ex);
-                return;
-            }
 
             if (useBrowser && !hasBrowserAppInstalled(activity.getPackageManager())) {
                 AuthenticationException ex = new AuthenticationException("a0.browser_not_available", "No Browser application installed to perform web authentication.");
