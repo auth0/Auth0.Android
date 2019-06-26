@@ -303,9 +303,16 @@ If the device where the app is running has a Custom Tabs compatible Browser, a C
 
 To log the user out and clear the SSO cookies that the Auth0 Server keeps attached to your browser app, you need to call the [logout endpoint](https://auth0.com/docs/api/authentication?#logout). This can be done is a similar fashion to how you authenticated before: using the `WebAuthProvider` class.
 
-Note that the Manifest Placeholders must be set in order for the redirection to work, just like you were required to do so for the authentication flow. Make sure to [revisit that section](#authentication-with-universal-login) first if you still cannot authenticate successfully.
+Make sure to [revisit that section](#authentication-with-universal-login) to configure the Manifest Placeholders if you still cannot authenticate successfully. The values set there are used to generate the URL that the server will redirect the user back to after a successful log out.
 
-In addition, you need to whitelist in the [Auth0 Dashboard](https://manage.auth0.com/#/applications) the "return to" URL for your application settings, right into the *Allowed Logout URLs* The value of this URL is the very same of the Allowed Callback URL you've whitelisted when setting up the authentication. Remember, you must **save** the settings in the dashboard for them to apply.
+In order for this redirection to happen, you must copy the *Allowed Callback URLs* value you added for authentication into the *Allowed Logout URLs* field in your [application settings](https://manage.auth0.com/#/applications). Both fields should have an URL with the following format:
+
+
+```
+https://{YOUR_AUTH0_DOMAIN}/android/{YOUR_APP_PACKAGE_NAME}/callback
+```
+
+Remember to replace `{YOUR_APP_PACKAGE_NAME}` with your actual application's package name, available in your `app/build.gradle` file as the `applicationId` value.
 
 
 
@@ -316,7 +323,7 @@ Initialize the provider, this time calling the static method `clearSession`.
 WebAuthProvider.clearSession(account)
                 .start(MainActivity.this, logoutCallback);
 
-// Define somewhere in the code the callback
+//Declare the callback that will receive the result
 BaseCallback logoutCallback = new BaseCallback<Void, Auth0Exception>() {
     @Override
     public void onFailure(Auth0Exception exception) {
@@ -334,7 +341,7 @@ BaseCallback logoutCallback = new BaseCallback<Void, Auth0Exception>() {
 The callback will get invoked when the user returns to your application. If this is the result of being redirected back by the server, that would be considered a success. There are some scenarios in which this can fail:
 * When the domain is not [correctly set up](#usage) in the Auth0 instance. The cause of the exception will be an instance of `IllegalArgumentException`.
 * When there is no browser application that can open a URL. The cause of the exception will be an instance of `ActivityNotFoundException`.
-* When the user closes the browser manually.
+* When the user closes the browser manually, e.g. by pressing the back key on their device.
 * When the `returnTo` URL is not whitelisted in your application settings.
 
 

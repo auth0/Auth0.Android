@@ -50,7 +50,7 @@ class LogoutManager extends ResumableManager {
     @Override
     boolean resume(AuthorizeResult result) {
         if (result.isCanceled()) {
-            Auth0Exception exception = new Auth0Exception("The user closed the browser app and the log out was cancelled.");
+            Auth0Exception exception = new Auth0Exception("The user closed the browser app and the logout was cancelled.");
             callback.onFailure(exception);
         } else {
             callback.onSuccess(null);

@@ -1986,7 +1986,7 @@ public class WebAuthProviderTest {
         verify(baseCallback).onFailure(auth0ExceptionCaptor.capture());
 
         assertThat(auth0ExceptionCaptor.getValue(), is(notNullValue()));
-        assertThat(auth0ExceptionCaptor.getValue().getMessage(), is("The user closed the browser app and the log out was cancelled."));
+        assertThat(auth0ExceptionCaptor.getValue().getMessage(), is("The user closed the browser app and the logout was cancelled."));
         assertThat(WebAuthProvider.getManagerInstance(), is(nullValue()));
     }
 

@@ -108,6 +108,7 @@ public class WebAuthProvider {
          * @param callback to invoke when log out is successful
          */
         public void start(Context context, BaseCallback<Void, Auth0Exception> callback) {
+
             managerInstance = null;
             if (account.getLogoutUrl() == null) {
                 Throwable cause = new IllegalArgumentException("Auth0 logout URL not properly set. This can be related to an invalid domain.");
