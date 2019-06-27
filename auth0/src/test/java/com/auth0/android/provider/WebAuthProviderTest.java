@@ -127,6 +127,15 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
+    public void shouldLoginWithAccount() throws Exception {
+        WebAuthProvider.login(account)
+                .start(activity, callback, REQUEST_CODE);
+
+        assertNotNull(WebAuthProvider.getManagerInstance());
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
     public void shouldInitWithAccount() throws Exception {
         WebAuthProvider.init(account)
                 .start(activity, callback, REQUEST_CODE);

@@ -175,10 +175,10 @@ Finally, authenticate by showing the **Auth0 Universal Login**:
 
 ```java
 //Configure and launch the authentication
-WebAuthProvider.init(account)
+WebAuthProvider.login(account)
     .start(MainActivity.this, authCallback);
 
-// Define somewhere in the code the callback
+//Declare the callback that will receive the result
 AuthCallback authCallback = new AuthCallback() {
     @Override
     public void onFailure(@NonNull Dialog dialog) {
@@ -227,7 +227,7 @@ If you've followed this documents' configuration steps you've noticed that the d
 
 
 ```java
-WebAuthProvider.init(account)
+WebAuthProvider.login(account)
     .withScheme("myapp")
     .start(MainActivity.this, authCallback);
 ```
@@ -236,7 +236,7 @@ WebAuthProvider.init(account)
 #### Authenticate with any Auth0 connection
 
 ```java
-WebAuthProvider.init(account)
+WebAuthProvider.login(account)
     .withConnection("twitter")
     .start(MainActivity.this, authCallback);
 ```
@@ -247,7 +247,7 @@ WebAuthProvider.init(account)
 
 
 ```java
-WebAuthProvider.init(account)
+WebAuthProvider.login(account)
     .useCodeGrant(true)
     .start(MainActivity.this, authCallback);
 ```
@@ -257,7 +257,7 @@ WebAuthProvider.init(account)
 The snippet below requests the "userinfo" audience in order to guarantee OIDC compliant responses from the server. This can also be achieved by flipping the "OIDC Conformant" switch on in the OAuth Advanced Settings of your application. For more information check [this documentation](https://auth0.com/docs/api-auth/intro#how-to-use-the-new-flows).
 
 ```java
-WebAuthProvider.init(account)
+WebAuthProvider.login(account)
     .withAudience("https://{YOUR_AUTH0_DOMAIN}/userinfo")
     .start(MainActivity.this, authCallback);
 ```
@@ -267,7 +267,7 @@ WebAuthProvider.init(account)
 #### Specify scope
 
 ```java
-WebAuthProvider.init(account)
+WebAuthProvider.login(account)
     .withScope("openid profile email")
     .start(MainActivity.this, authCallback);
 ```
@@ -277,7 +277,7 @@ WebAuthProvider.init(account)
 #### Specify Connection scope
 
 ```java
-WebAuthProvider.init(account)
+WebAuthProvider.login(account)
     .withConnectionScope("email", "profile", "calendar:read")
     .start(MainActivity.this, authCallback);
 ```
@@ -293,7 +293,7 @@ CustomTabsOptions options = CustomTabsOptions.newBuilder()
     .showTitle(true)
     .build();
  
-WebAuthProvider.init(account)
+WebAuthProvider.login(account)
     .withCustomTabsOptions(options)
     .start(MainActivity.this, authCallback);
 ```

@@ -38,7 +38,6 @@ import android.util.Log;
 import com.auth0.android.Auth0;
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.callback.BaseCallback;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -390,7 +389,6 @@ public class WebAuthProvider {
         return new LogoutBuilder(account);
     }
 
-
     /**
      * Initialize the WebAuthProvider instance for authenticating the user using an account. Additional settings can be configured
      * in the Builder, like setting the connection name or authentication parameters.
@@ -398,19 +396,34 @@ public class WebAuthProvider {
      * @param account to use for authentication
      * @return a new Builder instance to customize.
      */
-    public static Builder init(@NonNull Auth0 account) {
+    public static Builder login(@NonNull Auth0 account) {
         return new Builder(account);
     }
 
     /**
-     * Initialize the WebAuthProvider instance for authenticating the user with an Android Context. Additional settings can be configured
+     * Initialize the WebAuthProvider instance for authenticating the user using an account. Additional settings can be configured
+     * in the Builder, like setting the connection name or authentication parameters.
+     *
+     * @param account to use for authentication
+     * @return a new Builder instance to customize.
+     * @deprecated This method was renamed to reflect an authentication flow. Please use {@link #login(Auth0)}.
+     */
+    @Deprecated
+    public static Builder init(@NonNull Auth0 account) {
+        return login(account);
+    }
+
+    /**
+     * Initialize the WebAuthProvider instance with an Android Context. Additional settings can be configured
      * in the Builder, like setting the connection name or authentication parameters.
      *
      * @param context a valid context.
      * @return a new Builder instance to customize.
+     * @deprecated This method was renamed to reflect an authentication flow. Please use {@link #login(Auth0)}. You can create an Auth0 instance from a Context using {@link Auth0#Auth0(Context)}.
      */
+    @Deprecated
     public static Builder init(@NonNull Context context) {
-        return init(new Auth0(context));
+        return login(new Auth0(context));
     }
 
     /**
