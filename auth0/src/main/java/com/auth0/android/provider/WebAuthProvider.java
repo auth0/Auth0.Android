@@ -25,6 +25,7 @@
 package com.auth0.android.provider;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -35,7 +36,9 @@ import android.support.annotation.VisibleForTesting;
 import android.util.Log;
 
 import com.auth0.android.Auth0;
+import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
+import com.auth0.android.callback.BaseCallback;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -57,16 +60,80 @@ public class WebAuthProvider {
 
     private static final String TAG = WebAuthProvider.class.getName();
 
-    private static final String KEY_AUDIENCE = "audience";
-    private static final String KEY_SCOPE = "scope";
-    private static final String KEY_CONNECTION_SCOPE = "connection_scope";
-    private static final String SCOPE_TYPE_OPENID = "openid";
-    private static final String RESPONSE_TYPE_TOKEN = "token";
+    private static ResumableManager managerInstance;
 
-    private static OAuthManager managerInstance;
+    public static class LogoutBuilder {
 
+        private final Auth0 account;
+        private String scheme;
+        private CustomTabsOptions ctOptions;
+
+        LogoutBuilder(Auth0 account) {
+            this.account = account;
+
+            //Default values
+            this.scheme = "https";
+        }
+
+        /**
+         * When using a Custom Tabs compatible Browser, apply these customization options.
+         *
+         * @param options the Custom Tabs customization options
+         * @return the current builder instance
+         */
+        public LogoutBuilder withCustomTabsOptions(@NonNull CustomTabsOptions options) {
+            this.ctOptions = options;
+            return this;
+        }
+
+        /**
+         * Specify a custom Scheme to use on the Return To Uri. Default scheme is 'https'.
+         *
+         * @param scheme to use in the Callback Uri.
+         * @return the current builder instance
+         */
+        public LogoutBuilder withScheme(@NonNull String scheme) {
+            String lowerCase = scheme.toLowerCase();
+            if (!scheme.equals(lowerCase)) {
+                Log.w(TAG, "Please provide the scheme in lowercase and make sure it's the same configured in the intent filter. Android expects the scheme to be lowercase.");
+            }
+            this.scheme = scheme;
+            return this;
+        }
+
+        /**
+         * Request the user session to be cleared. When successful, the callback will get invoked
+         *
+         * @param context  to run the log out
+         * @param callback to invoke when log out is successful
+         */
+        public void start(Context context, VoidCallback callback) {
+
+            managerInstance = null;
+
+            if (!hasBrowserAppInstalled(context.getPackageManager())) {
+                Throwable cause = new ActivityNotFoundException("No Browser application installed.");
+                final Auth0Exception ex = new Auth0Exception("Cannot perform web log out", cause);
+                callback.onFailure(ex);
+                return;
+            }
+
+            String returnToUrl = CallbackHelper.getCallbackUri(scheme, context.getApplicationContext().getPackageName(), account.getDomainUrl());
+            LogoutManager logoutManager = new LogoutManager(this.account, callback, returnToUrl);
+            logoutManager.setCustomTabsOptions(ctOptions);
+
+            managerInstance = logoutManager;
+            logoutManager.startLogout(context);
+        }
+    }
 
     public static class Builder {
+
+        private static final String KEY_AUDIENCE = "audience";
+        private static final String KEY_SCOPE = "scope";
+        private static final String KEY_CONNECTION_SCOPE = "connection_scope";
+        private static final String SCOPE_TYPE_OPENID = "openid";
+        private static final String RESPONSE_TYPE_TOKEN = "token";
 
         private final Auth0 account;
         private final Map<String, String> values;
@@ -157,7 +224,7 @@ public class WebAuthProvider {
         public Builder withScheme(@NonNull String scheme) {
             String lowerCase = scheme.toLowerCase();
             if (!scheme.equals(lowerCase)) {
-                Log.w(TAG, "Please provide the scheme in lowercase and make sure it's the same configured in the intent filter. Android expects the scheme in lowercase");
+                Log.w(TAG, "Please provide the scheme in lowercase and make sure it's the same configured in the intent filter. Android expects the scheme to be lowercase.");
             }
             this.scheme = scheme;
             return this;
@@ -253,7 +320,7 @@ public class WebAuthProvider {
         }
 
         /**
-         * When using a Custom Tabs compatible Browser, apply this customization options.
+         * When using a Custom Tabs compatible Browser, apply these customization options.
          *
          * @param options the Custom Tabs customization options
          * @return the current builder instance
@@ -269,12 +336,6 @@ public class WebAuthProvider {
             return this;
         }
 
-        @VisibleForTesting
-        static boolean hasBrowserAppInstalled(@NonNull PackageManager packageManager) {
-            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://auth0.com"));
-            return intent.resolveActivity(packageManager) != null;
-        }
-
         /**
          * Request user Authentication. The result will be received in the callback.
          *
@@ -286,11 +347,6 @@ public class WebAuthProvider {
         @Deprecated
         public void start(@NonNull Activity activity, @NonNull AuthCallback callback, int requestCode) {
             managerInstance = null;
-            if (account.getAuthorizeUrl() == null) {
-                final AuthenticationException ex = new AuthenticationException("a0.invalid_authorize_url", "Auth0 authorize URL not properly set. This can be related to an invalid domain.");
-                callback.onFailure(ex);
-                return;
-            }
 
             if (useBrowser && !hasBrowserAppInstalled(activity.getPackageManager())) {
                 AuthenticationException ex = new AuthenticationException("a0.browser_not_available", "No Browser application installed to perform web authentication.");
@@ -324,7 +380,19 @@ public class WebAuthProvider {
     // Public methods
 
     /**
-     * Initialize the WebAuthProvider instance with an account. Additional settings can be configured
+     * Initialize the WebAuthProvider instance for logging out the user using an account. Additional settings can be configured
+     * in the LogoutBuilder, like changing the scheme of the return to URL.
+     *
+     * @param account to use for authentication
+     * @return a new Builder instance to customize.
+     */
+    public static LogoutBuilder logout(@NonNull Auth0 account) {
+        return new LogoutBuilder(account);
+    }
+
+
+    /**
+     * Initialize the WebAuthProvider instance for authenticating the user using an account. Additional settings can be configured
      * in the Builder, like setting the connection name or authentication parameters.
      *
      * @param account to use for authentication
@@ -335,7 +403,7 @@ public class WebAuthProvider {
     }
 
     /**
-     * Initialize the WebAuthProvider instance with an Android Context. Additional settings can be configured
+     * Initialize the WebAuthProvider instance for authenticating the user with an Android Context. Additional settings can be configured
      * in the Builder, like setting the connection name or authentication parameters.
      *
      * @param context a valid context.
@@ -346,10 +414,10 @@ public class WebAuthProvider {
     }
 
     /**
-     * Finishes the authentication flow by passing the data received in the activity's onActivityResult() callback.
-     * The final authentication result will be delivered to the callback specified when calling start().
+     * Finishes the authentication or log out flow by passing the data received in the activity's onActivityResult() callback.
+     * The final result will be delivered to the callback specified when calling start().
      * <p>
-     * This is no longer required to be called, the authentication is handled internally as long as you've correctly setup the intent-filter.
+     * This is no longer required to be called, the redirect is handled internally as long as you've correctly setup the intent-filter.
      *
      * @param requestCode the request code received on the onActivityResult() call
      * @param resultCode  the result code received on the onActivityResult() call
@@ -364,7 +432,7 @@ public class WebAuthProvider {
             return false;
         }
         final AuthorizeResult result = new AuthorizeResult(requestCode, resultCode, intent);
-        boolean success = managerInstance.resumeAuthentication(result);
+        boolean success = managerInstance.resume(result);
         if (success) {
             managerInstance = null;
         }
@@ -372,8 +440,8 @@ public class WebAuthProvider {
     }
 
     /**
-     * Finishes the authentication flow by passing the data received in the activity's onNewIntent() callback.
-     * The final authentication result will be delivered to the callback specified when calling start().
+     * Finishes the authentication or log out flow by passing the data received in the activity's onNewIntent() callback.
+     * The final result will be delivered to the callback specified when calling start().
      * <p>
      * This is no longer required to be called, the authentication is handled internally as long as you've correctly setup the intent-filter.
      *
@@ -385,18 +453,26 @@ public class WebAuthProvider {
             Log.w(TAG, "There is no previous instance of this provider.");
             return false;
         }
+
         final AuthorizeResult result = new AuthorizeResult(intent);
-        boolean success = managerInstance.resumeAuthentication(result);
+        boolean success = managerInstance.resume(result);
         if (success) {
             managerInstance = null;
         }
         return success;
+
     }
 
     // End Public methods
 
     @VisibleForTesting
-    static OAuthManager getInstance() {
+    static ResumableManager getManagerInstance() {
         return managerInstance;
+    }
+
+    @VisibleForTesting
+    static boolean hasBrowserAppInstalled(@NonNull PackageManager packageManager) {
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://auth0.com"));
+        return intent.resolveActivity(packageManager) != null;
     }
 }

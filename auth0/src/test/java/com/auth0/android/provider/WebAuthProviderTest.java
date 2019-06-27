@@ -2,6 +2,7 @@ package com.auth0.android.provider;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -19,9 +20,11 @@ import android.util.Base64;
 import android.webkit.URLUtil;
 
 import com.auth0.android.Auth0;
+import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.result.Credentials;
 
+import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.Is;
 import org.junit.Before;
@@ -85,15 +88,21 @@ public class WebAuthProviderTest {
 
     @Mock
     private AuthCallback callback;
+    @Mock
+    private VoidCallback voidCallback;
     private Activity activity;
     private Auth0 account;
 
+    @Captor
+    private ArgumentCaptor<Auth0Exception> auth0ExceptionCaptor;
     @Captor
     private ArgumentCaptor<AuthenticationException> authExceptionCaptor;
     @Captor
     private ArgumentCaptor<Intent> intentCaptor;
     @Captor
     private ArgumentCaptor<AuthCallback> callbackCaptor;
+    @Captor
+    private ArgumentCaptor<VoidCallback> voidCallbackCaptor;
 
 
     @Before
@@ -110,13 +119,19 @@ public class WebAuthProviderTest {
         prepareBrowserApp(true, null);
     }
 
+    //** ** ** ** ** **  **//
+    //** ** ** ** ** **  **//
+    //** LOG IN  FEATURE **//
+    //** ** ** ** ** **  **//
+    //** ** ** ** ** **  **//
+
     @SuppressWarnings("deprecation")
     @Test
     public void shouldInitWithAccount() throws Exception {
         WebAuthProvider.init(account)
                 .start(activity, callback, REQUEST_CODE);
 
-        assertNotNull(WebAuthProvider.getInstance());
+        assertNotNull(WebAuthProvider.getManagerInstance());
     }
 
     @Test
@@ -133,16 +148,22 @@ public class WebAuthProviderTest {
         WebAuthProvider.init(context)
                 .start(activity, callback);
 
-        assertNotNull(WebAuthProvider.getInstance());
+        assertNotNull(WebAuthProvider.getManagerInstance());
     }
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldNotResumeWhenNotInit() throws Exception {
+    public void shouldNotResumeWithRequestCodeWhenNotInit() throws Exception {
+        Intent intentMock = Mockito.mock(Intent.class);
+
+        assertFalse(WebAuthProvider.resume(0, 0, intentMock));
+    }
+
+    @Test
+    public void shouldNotResumeWithIntentWhenNotInit() throws Exception {
         Intent intentMock = Mockito.mock(Intent.class);
 
         assertFalse(WebAuthProvider.resume(intentMock));
-        assertFalse(WebAuthProvider.resume(0, 0, intentMock));
     }
 
     //scheme
@@ -1070,25 +1091,6 @@ public class WebAuthProviderTest {
         assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CT_OPTIONS), is(false));
     }
 
-    @SuppressWarnings({"deprecation", "ThrowableResultOfMethodCallIgnored"})
-    @Test
-    public void shouldFailToStartWithInvalidAuthorizeURI() throws Exception {
-        Auth0 account = Mockito.mock(Auth0.class);
-        when(account.getAuthorizeUrl()).thenReturn(null);
-
-        WebAuthProvider.init(account)
-                .withState("abcdefghijk")
-                .useCodeGrant(false)
-                .start(activity, callback);
-
-        verify(callback).onFailure(authExceptionCaptor.capture());
-
-        assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
-        assertThat(authExceptionCaptor.getValue().getCode(), is("a0.invalid_authorize_url"));
-        assertThat(authExceptionCaptor.getValue().getDescription(), is("Auth0 authorize URL not properly set. This can be related to an invalid domain."));
-        assertThat(WebAuthProvider.getInstance(), is(nullValue()));
-    }
-
     @SuppressWarnings("deprecation")
     @Test
     public void shouldResumeWithRequestCodeWithResponseTypeIdToken() throws Exception {
@@ -1324,7 +1326,8 @@ public class WebAuthProviderTest {
         WebAuthProvider.init(account)
                 .useCodeGrant(false)
                 .start(activity, callback, REQUEST_CODE);
-        WebAuthProvider.getInstance().setCurrentTimeInMillis(CURRENT_TIME_MS);
+        OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
+        managerInstance.setCurrentTimeInMillis(CURRENT_TIME_MS);
 
         verify(activity).startActivity(intentCaptor.capture());
         Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
@@ -1684,10 +1687,10 @@ public class WebAuthProviderTest {
         WebAuthProvider.init(account)
                 .start(activity, callback);
 
-        assertThat(WebAuthProvider.getInstance(), is(notNullValue()));
+        assertThat(WebAuthProvider.getManagerInstance(), is(notNullValue()));
         Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", null, "1234567890", null, null));
         assertTrue(WebAuthProvider.resume(intent));
-        assertThat(WebAuthProvider.getInstance(), is(nullValue()));
+        assertThat(WebAuthProvider.getManagerInstance(), is(nullValue()));
     }
 
     @SuppressWarnings("deprecation")
@@ -1696,10 +1699,10 @@ public class WebAuthProviderTest {
         WebAuthProvider.init(account)
                 .start(activity, callback, REQUEST_CODE);
 
-        assertThat(WebAuthProvider.getInstance(), is(notNullValue()));
+        assertThat(WebAuthProvider.getManagerInstance(), is(notNullValue()));
         Intent intent = createAuthIntent(createHash("iToken", "aToken", null, "refresh_token", null, "1234567890", null, null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
-        assertThat(WebAuthProvider.getInstance(), is(nullValue()));
+        assertThat(WebAuthProvider.getManagerInstance(), is(nullValue()));
     }
 
     @Test
@@ -1714,7 +1717,7 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
         assertThat(authExceptionCaptor.getValue().getCode(), is("a0.browser_not_available"));
         assertThat(authExceptionCaptor.getValue().getDescription(), is("No Browser application installed to perform web authentication."));
-        assertThat(WebAuthProvider.getInstance(), is(nullValue()));
+        assertThat(WebAuthProvider.getManagerInstance(), is(nullValue()));
     }
 
     @SuppressWarnings("deprecation")
@@ -1741,7 +1744,7 @@ public class WebAuthProviderTest {
         ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
         prepareBrowserApp(true, intentCaptor);
 
-        boolean hasBrowserApp = WebAuthProvider.Builder.hasBrowserAppInstalled(activity.getPackageManager());
+        boolean hasBrowserApp = WebAuthProvider.hasBrowserAppInstalled(activity.getPackageManager());
         MatcherAssert.assertThat(hasBrowserApp, Is.is(true));
         MatcherAssert.assertThat(intentCaptor.getValue(), Is.is(IntentMatchers.hasAction(Intent.ACTION_VIEW)));
         MatcherAssert.assertThat(URLUtil.isValidUrl(intentCaptor.getValue().getDataString()), Is.is(true));
@@ -1752,12 +1755,211 @@ public class WebAuthProviderTest {
         ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
         prepareBrowserApp(false, intentCaptor);
 
-        boolean hasBrowserApp = WebAuthProvider.Builder.hasBrowserAppInstalled(activity.getPackageManager());
+        boolean hasBrowserApp = WebAuthProvider.hasBrowserAppInstalled(activity.getPackageManager());
         MatcherAssert.assertThat(hasBrowserApp, Is.is(false));
         MatcherAssert.assertThat(intentCaptor.getValue(), Is.is(IntentMatchers.hasAction(Intent.ACTION_VIEW)));
         MatcherAssert.assertThat(URLUtil.isValidUrl(intentCaptor.getValue().getDataString()), Is.is(true));
     }
 
+
+    //** ** ** ** ** **  **//
+    //** ** ** ** ** **  **//
+    //** LOG OUT FEATURE **//
+    //** ** ** ** ** **  **//
+    //** ** ** ** ** **  **//
+
+    @Test
+    public void shouldInitLogoutWithAccount() throws Exception {
+        WebAuthProvider.logout(account)
+                .start(activity, voidCallback);
+
+        assertNotNull(WebAuthProvider.getManagerInstance());
+    }
+
+    //scheme
+
+    @Test
+    public void shouldHaveDefaultSchemeOnLogout() throws Exception {
+        WebAuthProvider.logout(account)
+                .start(activity, voidCallback);
+        verify(activity).startActivity(intentCaptor.capture());
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
+        assertThat(uri, is(notNullValue()));
+
+        assertThat(uri, hasParamWithName("returnTo"));
+        Uri returnToUri = Uri.parse(uri.getQueryParameter("returnTo"));
+        assertThat(returnToUri, hasScheme("https"));
+    }
+
+    @Test
+    public void shouldSetSchemeOnLogout() throws Exception {
+        WebAuthProvider.logout(account)
+                .withScheme("myapp")
+                .start(activity, voidCallback);
+
+        verify(activity).startActivity(intentCaptor.capture());
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
+        assertThat(uri, is(notNullValue()));
+
+        assertThat(uri, hasParamWithName("returnTo"));
+        Uri returnToUri = Uri.parse(uri.getQueryParameter("returnTo"));
+        assertThat(returnToUri, hasScheme("myapp"));
+    }
+
+    // client id
+
+    @Test
+    public void shouldAlwaysSetClientIdOnLogout() throws Exception {
+        WebAuthProvider.logout(account)
+                .start(activity, voidCallback);
+
+        verify(activity).startActivity(intentCaptor.capture());
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
+        assertThat(uri, is(notNullValue()));
+
+        assertThat(uri, hasParamWithValue("client_id", "clientId"));
+    }
+
+    // auth0 related
+
+    @Test
+    public void shouldHaveTelemetryInfoOnLogout() throws Exception {
+        WebAuthProvider.logout(account)
+                .start(activity, voidCallback);
+
+        verify(activity).startActivity(intentCaptor.capture());
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
+        assertThat(uri, is(notNullValue()));
+
+        assertThat(uri, hasParamWithValue(is("auth0Client"), not(isEmptyOrNullString())));
+    }
+
+    @Test
+    public void shouldHaveReturnToUriOnLogout() throws Exception {
+        WebAuthProvider.logout(account)
+                .start(activity, voidCallback);
+
+        verify(activity).startActivity(intentCaptor.capture());
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
+        assertThat(uri, is(notNullValue()));
+
+        assertThat(uri.getQueryParameter("returnTo"), is("https://domain/android/com.auth0.android.auth0.test/callback"));
+    }
+
+
+    // Launch log out
+
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void shouldStartLogout() throws Exception {
+        WebAuthProvider.logout(account)
+                .start(activity, voidCallback);
+
+        verify(activity).startActivity(intentCaptor.capture());
+
+        Intent intent = intentCaptor.getValue();
+        assertThat(intent, is(notNullValue()));
+        assertThat(intent, hasComponent(AuthenticationActivity.class.getName()));
+        assertThat(intent, hasFlag(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+        assertThat(intent.getData(), is(nullValue()));
+
+        Bundle extras = intentCaptor.getValue().getExtras();
+        assertThat(extras.getParcelable(AuthenticationActivity.EXTRA_AUTHORIZE_URI), is(notNullValue()));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(false));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(false));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CT_OPTIONS), is(true));
+        assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
+        assertThat(extras.getParcelable(AuthenticationActivity.EXTRA_CT_OPTIONS), is(nullValue()));
+    }
+
+    @Test
+    public void shouldStartLogoutWithCustomTabsOptions() throws Exception {
+        CustomTabsOptions options = mock(CustomTabsOptions.class);
+        WebAuthProvider.logout(account)
+                .withCustomTabsOptions(options)
+                .start(activity, voidCallback);
+
+        verify(activity).startActivity(intentCaptor.capture());
+
+        Intent intent = intentCaptor.getValue();
+        assertThat(intent, is(notNullValue()));
+        assertThat(intent, hasComponent(AuthenticationActivity.class.getName()));
+        assertThat(intent, hasFlag(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+        assertThat(intent.getData(), is(nullValue()));
+
+        Bundle extras = intentCaptor.getValue().getExtras();
+        assertThat(extras.getParcelable(AuthenticationActivity.EXTRA_AUTHORIZE_URI), is(notNullValue()));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(false));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(false));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CT_OPTIONS), is(true));
+        assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
+        assertThat((CustomTabsOptions) extras.getParcelable(AuthenticationActivity.EXTRA_CT_OPTIONS), is(options));
+    }
+
+    @Test
+    public void shouldFailToStartLogoutWhenNoBrowserAppIsInstalled() throws Exception {
+        prepareBrowserApp(false, null);
+        WebAuthProvider.logout(account)
+                .start(activity, voidCallback);
+
+        verify(voidCallback).onFailure(auth0ExceptionCaptor.capture());
+
+        assertThat(auth0ExceptionCaptor.getValue(), is(notNullValue()));
+        assertThat(auth0ExceptionCaptor.getValue().getMessage(), is("Cannot perform web log out"));
+        Throwable cause = auth0ExceptionCaptor.getValue().getCause();
+        assertThat(cause, is(CoreMatchers.<Throwable>instanceOf(ActivityNotFoundException.class)));
+        assertThat(cause.getMessage(), is("No Browser application installed."));
+        assertThat(WebAuthProvider.getManagerInstance(), is(nullValue()));
+    }
+
+    @Test
+    public void shouldResumeLogoutSuccessfullyWithIntent() throws Exception {
+        WebAuthProvider.logout(account)
+                .start(activity, voidCallback);
+
+        verify(activity).startActivity(intentCaptor.capture());
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
+        assertThat(uri, is(notNullValue()));
+
+        Intent intent = createAuthIntent("");
+        assertTrue(WebAuthProvider.resume(intent));
+
+        verify(voidCallback).onSuccess(any(Void.class));
+    }
+
+    @Test
+    public void shouldResumeLogoutFailingWithIntent() throws Exception {
+        WebAuthProvider.logout(account)
+                .start(activity, voidCallback);
+
+        verify(activity).startActivity(intentCaptor.capture());
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
+        assertThat(uri, is(notNullValue()));
+
+        //null data translates to result canceled
+        Intent intent = createAuthIntent(null);
+        assertTrue(WebAuthProvider.resume(intent));
+
+        verify(voidCallback).onFailure(auth0ExceptionCaptor.capture());
+
+        assertThat(auth0ExceptionCaptor.getValue(), is(notNullValue()));
+        assertThat(auth0ExceptionCaptor.getValue().getMessage(), is("The user closed the browser app so the logout was cancelled."));
+        assertThat(WebAuthProvider.getManagerInstance(), is(nullValue()));
+    }
+
+    @Test
+    public void shouldClearLogoutManagerInstanceAfterSuccessfulLogout() throws Exception {
+        WebAuthProvider.logout(account)
+                .start(activity, voidCallback);
+
+        assertThat(WebAuthProvider.getManagerInstance(), is(notNullValue()));
+        Intent intent = createAuthIntent("");
+        assertTrue(WebAuthProvider.resume(intent));
+        assertThat(WebAuthProvider.getManagerInstance(), is(nullValue()));
+    }
 
     //Test Helper Functions
     private Intent createAuthIntent(@Nullable String hash) {
