@@ -56,6 +56,7 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
      * a field <code>user_metadadata</code>:</p>
      * 
      * <pre>
+     * {@code
      * // Define your custom fields
      * Map<String, Object> metadata = new HashMap<>();
      * metadata.put("key", value);
@@ -66,6 +67,7 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
      *
      * // Set the parameters in your request
      * signUpRequest.addSignUpParameters(params);
+     * }
      * </pre>
      *
      * @param parameters sent with the request and must be non-null

@@ -172,13 +172,6 @@ public class WebAuthProviderTest {
     public void shouldNotResumeLoginWithIntentWhenNotInit() throws Exception {
         Intent intentMock = Mockito.mock(Intent.class);
 
-        assertFalse(WebAuthProvider.resume(0, 0, intentMock));
-    }
-
-    @Test
-    public void shouldNotResumeWithIntentWhenNotInit() throws Exception {
-        Intent intentMock = Mockito.mock(Intent.class);
-
         assertFalse(WebAuthProvider.resume(intentMock));
     }
 
