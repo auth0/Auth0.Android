@@ -43,33 +43,33 @@ public class LogoutManagerTest {
 
     @Test
     public void shouldNotHaveCustomTabsOptionsByDefault() throws Exception {
-        LogoutManager manager = new LogoutManager(account, callback, "https://auth0.com/callback");
+        LogoutManager manager = new LogoutManager(account, callback, "https://auth0.com/android/my.app.name/callback");
         assertThat(manager.customTabsOptions(), is(nullValue()));
     }
 
     @Test
     public void shouldSetCustomTabsOptions() throws Exception {
         CustomTabsOptions options = mock(CustomTabsOptions.class);
-        LogoutManager manager = new LogoutManager(account, callback, "https://auth0.com/callback");
+        LogoutManager manager = new LogoutManager(account, callback, "https://auth0.com/android/my.app.name/callback");
         manager.setCustomTabsOptions(options);
         assertThat(manager.customTabsOptions(), is(options));
     }
 
     @Test
     public void shouldCallOnFailureWhenResumedWithCanceledResult() throws Exception {
-        LogoutManager manager = new LogoutManager(account, callback, "https://auth0.com/callback");
+        LogoutManager manager = new LogoutManager(account, callback, "https://auth0.com/android/my.app.name/callback");
         AuthorizeResult result = mock(AuthorizeResult.class);
         when(result.isCanceled()).thenReturn(true);
         manager.resume(result);
         ArgumentCaptor<Auth0Exception> exceptionCaptor = ArgumentCaptor.forClass(Auth0Exception.class);
         verify(callback).onFailure(exceptionCaptor.capture());
         assertThat(exceptionCaptor.getValue(), is(notNullValue()));
-        assertThat(exceptionCaptor.getValue().getMessage(), is("The user closed the browser app and the logout was cancelled."));
+        assertThat(exceptionCaptor.getValue().getMessage(), is("The user closed the browser app so the logout was cancelled."));
     }
 
     @Test
     public void shouldCallOnSuccessWhenResumedWithValidResult() throws Exception {
-        LogoutManager manager = new LogoutManager(account, callback, "https://auth0.com/callback");
+        LogoutManager manager = new LogoutManager(account, callback, "https://auth0.com/android/my.app.name/callback");
         AuthorizeResult result = mock(AuthorizeResult.class);
         when(result.isCanceled()).thenReturn(false);
         manager.resume(result);

@@ -221,7 +221,7 @@ class OAuthManager extends ResumableManager {
             builder.appendQueryParameter(entry.getKey(), entry.getValue());
         }
         Uri uri = builder.build();
-        logDebug("Using the following AuthorizeURI: " + uri.toString());
+        logDebug("Using the following Authorize URI: " + uri.toString());
         return uri;
     }
 

@@ -76,7 +76,7 @@ public class WebAuthProvider {
         }
 
         /**
-         * When using a Custom Tabs compatible Browser, apply this customization options.
+         * When using a Custom Tabs compatible Browser, apply these customization options.
          *
          * @param options the Custom Tabs customization options
          * @return the current builder instance
@@ -95,7 +95,7 @@ public class WebAuthProvider {
         public LogoutBuilder withScheme(@NonNull String scheme) {
             String lowerCase = scheme.toLowerCase();
             if (!scheme.equals(lowerCase)) {
-                Log.w(TAG, "Please provide the scheme in lowercase and make sure it's the same configured in the intent filter. Android expects the scheme in lowercase");
+                Log.w(TAG, "Please provide the scheme in lowercase and make sure it's the same configured in the intent filter. Android expects the scheme to be lowercase.");
             }
             this.scheme = scheme;
             return this;
@@ -224,7 +224,7 @@ public class WebAuthProvider {
         public Builder withScheme(@NonNull String scheme) {
             String lowerCase = scheme.toLowerCase();
             if (!scheme.equals(lowerCase)) {
-                Log.w(TAG, "Please provide the scheme in lowercase and make sure it's the same configured in the intent filter. Android expects the scheme in lowercase");
+                Log.w(TAG, "Please provide the scheme in lowercase and make sure it's the same configured in the intent filter. Android expects the scheme to be lowercase.");
             }
             this.scheme = scheme;
             return this;
@@ -320,7 +320,7 @@ public class WebAuthProvider {
         }
 
         /**
-         * When using a Custom Tabs compatible Browser, apply this customization options.
+         * When using a Custom Tabs compatible Browser, apply these customization options.
          *
          * @param options the Custom Tabs customization options
          * @return the current builder instance
@@ -386,10 +386,7 @@ public class WebAuthProvider {
      * @param account to use for authentication
      * @return a new Builder instance to customize.
      */
-    public static LogoutBuilder clearSession(@NonNull Auth0 account) {
-        //TODO: Should this method be named "logOut" or similar?
-        // given that the "authentication" method is called "init" it might be
-        // confusing whether init should be called always before a log out.
+    public static LogoutBuilder logout(@NonNull Auth0 account) {
         return new LogoutBuilder(account);
     }
 

@@ -22,7 +22,6 @@ import android.webkit.URLUtil;
 import com.auth0.android.Auth0;
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.result.Credentials;
 
 import org.hamcrest.CoreMatchers;
@@ -1771,7 +1770,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldInitLogoutWithAccount() throws Exception {
-        WebAuthProvider.clearSession(account)
+        WebAuthProvider.logout(account)
                 .start(activity, voidCallback);
 
         assertNotNull(WebAuthProvider.getManagerInstance());
@@ -1781,7 +1780,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldHaveDefaultSchemeOnLogout() throws Exception {
-        WebAuthProvider.clearSession(account)
+        WebAuthProvider.logout(account)
                 .start(activity, voidCallback);
         verify(activity).startActivity(intentCaptor.capture());
         Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
@@ -1794,7 +1793,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldSetSchemeOnLogout() throws Exception {
-        WebAuthProvider.clearSession(account)
+        WebAuthProvider.logout(account)
                 .withScheme("myapp")
                 .start(activity, voidCallback);
 
@@ -1811,7 +1810,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldAlwaysSetClientIdOnLogout() throws Exception {
-        WebAuthProvider.clearSession(account)
+        WebAuthProvider.logout(account)
                 .start(activity, voidCallback);
 
         verify(activity).startActivity(intentCaptor.capture());
@@ -1825,7 +1824,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldHaveTelemetryInfoOnLogout() throws Exception {
-        WebAuthProvider.clearSession(account)
+        WebAuthProvider.logout(account)
                 .start(activity, voidCallback);
 
         verify(activity).startActivity(intentCaptor.capture());
@@ -1837,7 +1836,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldHaveReturnToUriOnLogout() throws Exception {
-        WebAuthProvider.clearSession(account)
+        WebAuthProvider.logout(account)
                 .start(activity, voidCallback);
 
         verify(activity).startActivity(intentCaptor.capture());
@@ -1854,7 +1853,7 @@ public class WebAuthProviderTest {
     @SuppressWarnings("deprecation")
     @Test
     public void shouldStartLogout() throws Exception {
-        WebAuthProvider.clearSession(account)
+        WebAuthProvider.logout(account)
                 .start(activity, voidCallback);
 
         verify(activity).startActivity(intentCaptor.capture());
@@ -1878,7 +1877,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldStartLogoutWithCustomTabsOptions() throws Exception {
         CustomTabsOptions options = mock(CustomTabsOptions.class);
-        WebAuthProvider.clearSession(account)
+        WebAuthProvider.logout(account)
                 .withCustomTabsOptions(options)
                 .start(activity, voidCallback);
 
@@ -1903,7 +1902,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldFailToStartLogoutWhenNoBrowserAppIsInstalled() throws Exception {
         prepareBrowserApp(false, null);
-        WebAuthProvider.clearSession(account)
+        WebAuthProvider.logout(account)
                 .start(activity, voidCallback);
 
         verify(voidCallback).onFailure(auth0ExceptionCaptor.capture());
@@ -1918,7 +1917,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldResumeLogoutSuccessfullyWithIntent() throws Exception {
-        WebAuthProvider.clearSession(account)
+        WebAuthProvider.logout(account)
                 .start(activity, voidCallback);
 
         verify(activity).startActivity(intentCaptor.capture());
@@ -1933,7 +1932,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldResumeLogoutFailingWithIntent() throws Exception {
-        WebAuthProvider.clearSession(account)
+        WebAuthProvider.logout(account)
                 .start(activity, voidCallback);
 
         verify(activity).startActivity(intentCaptor.capture());
@@ -1947,13 +1946,13 @@ public class WebAuthProviderTest {
         verify(voidCallback).onFailure(auth0ExceptionCaptor.capture());
 
         assertThat(auth0ExceptionCaptor.getValue(), is(notNullValue()));
-        assertThat(auth0ExceptionCaptor.getValue().getMessage(), is("The user closed the browser app and the logout was cancelled."));
+        assertThat(auth0ExceptionCaptor.getValue().getMessage(), is("The user closed the browser app so the logout was cancelled."));
         assertThat(WebAuthProvider.getManagerInstance(), is(nullValue()));
     }
 
     @Test
     public void shouldClearLogoutManagerInstanceAfterSuccessfulLogout() throws Exception {
-        WebAuthProvider.clearSession(account)
+        WebAuthProvider.logout(account)
                 .start(activity, voidCallback);
 
         assertThat(WebAuthProvider.getManagerInstance(), is(notNullValue()));

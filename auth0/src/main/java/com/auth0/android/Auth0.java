@@ -128,7 +128,9 @@ public class Auth0 {
     }
 
     /**
-     * @return Url to perform the web flow of OAuth
+     * Obtain the authorize URL for the current domain
+     *
+     * @return Url to call to perform the web flow of OAuth
      */
     public String getAuthorizeUrl() {
         return domainUrl.newBuilder()
@@ -138,7 +140,9 @@ public class Auth0 {
     }
 
     /**
-     * @return Url to perform the web logout
+     * Obtain the logout URL for the current domain
+     *
+     * @return Url to call to perform the web logout
      */
     public String getLogoutUrl() {
         return domainUrl.newBuilder()

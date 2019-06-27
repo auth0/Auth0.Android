@@ -31,10 +31,10 @@ Those using this library from version `1.14.0` and up should start targeting lat
 
 ```groovy
 apply plugin: 'com.android.application'
- android {
+android {
     //...
 }
- dependencies {
+dependencies {
     implementation ('com.auth0.android:lock:1.14.1'){
         exclude group: 'com.android.support', module: 'appcompat-v7'
         exclude group: 'com.android.support', module: 'customtabs'
@@ -93,7 +93,7 @@ Passwordless authentication *cannot be used* with this flag set to `true`. For m
 
 ### Authentication with Universal Login
 
-First go to the [Auth0 Dashboard](https://manage.auth0.com/#/applications) and go to your application's settings. Make sure you have in *Allowed Callback URLs* a URL with the following format:
+First go to the [Auth0 Dashboard](https://manage.auth0.com/#/applications) and go to your application's settings. Make sure you have in **Allowed Callback URLs** a URL with the following format:
 
 ```
 https://{YOUR_AUTH0_DOMAIN}/android/{YOUR_APP_PACKAGE_NAME}/callback
@@ -176,7 +176,7 @@ Finally, authenticate by showing the **Auth0 Universal Login**:
 ```java
 //Configure and launch the authentication
 WebAuthProvider.init(account)
-                .start(MainActivity.this, authCallback);
+    .start(MainActivity.this, authCallback);
 
 // Define somewhere in the code the callback
 AuthCallback authCallback = new AuthCallback() {
@@ -222,14 +222,14 @@ If you don't plan to use the _Web Authentication_ feature you will still be prom
 If you've followed this documents' configuration steps you've noticed that the default scheme used in the Callback URI is `https`. This works best for Android API 23 or newer if you're using [Android App Links](https://auth0.com/docs/applications/enable-android-app-links), but in previous Android versions this may show the intent chooser dialog prompting the user to choose either your application or the browser. You can change this behaviour by using a custom unique scheme so that the OS opens directly the link with your app.
 
 1. Update the `auth0Scheme` Manifest Placeholder on the `app/build.gradle` file or update the intent-filter declaration in the `AndroidManifest.xml` to use the new scheme.
-2. Update the allowed callback urls in your [Auth0 Dashboard](https://manage.auth0.com/#/applications) application's settings.
+2. Update the **Allowed Callback URLs** in your [Auth0 Dashboard](https://manage.auth0.com/#/applications) application's settings.
 3. Call `withScheme()` passing the custom scheme you want to use.
 
 
 ```java
 WebAuthProvider.init(account)
-                .withScheme("myapp")
-                .start(MainActivity.this, authCallback);
+    .withScheme("myapp")
+    .start(MainActivity.this, authCallback);
 ```
 
 
@@ -237,8 +237,8 @@ WebAuthProvider.init(account)
 
 ```java
 WebAuthProvider.init(account)
-                .withConnection("twitter")
-                .start(MainActivity.this, authCallback);
+    .withConnection("twitter")
+    .start(MainActivity.this, authCallback);
 ```
 
 #### Use Code grant with PKCE
@@ -248,8 +248,8 @@ WebAuthProvider.init(account)
 
 ```java
 WebAuthProvider.init(account)
-                .useCodeGrant(true)
-                .start(MainActivity.this, authCallback);
+    .useCodeGrant(true)
+    .start(MainActivity.this, authCallback);
 ```
 
 #### Specify audience
@@ -258,8 +258,8 @@ The snippet below requests the "userinfo" audience in order to guarantee OIDC co
 
 ```java
 WebAuthProvider.init(account)
-                .withAudience("https://{YOUR_AUTH0_DOMAIN}/userinfo")
-                .start(MainActivity.this, authCallback);
+    .withAudience("https://{YOUR_AUTH0_DOMAIN}/userinfo")
+    .start(MainActivity.this, authCallback);
 ```
 
 > Replace `{YOUR_AUTH0_DOMAIN}` with your actual Auth0 domain (i.e. `mytenant.auth0.com`).
@@ -268,8 +268,8 @@ WebAuthProvider.init(account)
 
 ```java
 WebAuthProvider.init(account)
-                .withScope("openid profile email")
-                .start(MainActivity.this, authCallback);
+    .withScope("openid profile email")
+    .start(MainActivity.this, authCallback);
 ```
 
 > The default scope used is `openid`
@@ -278,8 +278,8 @@ WebAuthProvider.init(account)
 
 ```java
 WebAuthProvider.init(account)
-                .withConnectionScope("email", "profile", "calendar:read")
-                .start(MainActivity.this, authCallback);
+    .withConnectionScope("email", "profile", "calendar:read")
+    .start(MainActivity.this, authCallback);
 ```
 
 
@@ -288,14 +288,14 @@ WebAuthProvider.init(account)
 If the device where the app is running has a Custom Tabs compatible Browser, a Custom Tab will be preferred for the authentication flow. You can customize the Page Title visibility and the Toolbar color by using the `CustomTabsOptions` class.
  
 ```java
- CustomTabsOptions options = CustomTabsOptions.newBuilder()
+CustomTabsOptions options = CustomTabsOptions.newBuilder()
     .withToolbarColor(R.color.ct_toolbar_color)
     .showTitle(true)
     .build();
  
-  WebAuthProvider.init(account)
-                  .withCustomTabsOptions(options)
-                  .start(MainActivity.this, authCallback);
+WebAuthProvider.init(account)
+    .withCustomTabsOptions(options)
+    .start(MainActivity.this, authCallback);
 ```
 
 
@@ -305,7 +305,7 @@ To log the user out and clear the SSO cookies that the Auth0 Server keeps attac
 
 Make sure to [revisit that section](#authentication-with-universal-login) to configure the Manifest Placeholders if you still cannot authenticate successfully. The values set there are used to generate the URL that the server will redirect the user back to after a successful log out.
 
-In order for this redirection to happen, you must copy the *Allowed Callback URLs* value you added for authentication into the *Allowed Logout URLs* field in your [application settings](https://manage.auth0.com/#/applications). Both fields should have an URL with the following format:
+In order for this redirection to happen, you must copy the **Allowed Callback URLs** value you added for authentication into the **Allowed Logout URLs** field in your [application settings](https://manage.auth0.com/#/applications). Both fields should have an URL with the following format:
 
 
 ```
@@ -316,12 +316,12 @@ Remember to replace `{YOUR_APP_PACKAGE_NAME}` with your actual application's pac
 
 
 
-Initialize the provider, this time calling the static method `clearSession`.
+Initialize the provider, this time calling the static method `logout`.
 
 ```java
 //Configure and launch the log out
-WebAuthProvider.clearSession(account)
-                .start(MainActivity.this, logoutCallback);
+WebAuthProvider.logout(account)
+    .start(MainActivity.this, logoutCallback);
 
 //Declare the callback that will receive the result
 BaseCallback logoutCallback = new BaseCallback<Void, Auth0Exception>() {
@@ -341,32 +341,32 @@ BaseCallback logoutCallback = new BaseCallback<Void, Auth0Exception>() {
 The callback will get invoked when the user returns to your application. If this is the result of being redirected back by the server, that would be considered a success. There are some scenarios in which this can fail:
 * When there is no browser application that can open a URL. The cause of the exception will be an instance of `ActivityNotFoundException`.
 * When the user closes the browser manually, e.g. by pressing the back key on their device.
-* When the `returnTo` URL is not whitelisted in your application settings.
+* When the `returnTo` URL is not found in the **Allowed Logout URLs** in your Auth0 application settings.
 
 
 #### Customize the Custom Tabs UI
 
-Similarly to when you authenticated your users, for log out you can also customize the styling of the Custom Tabs browser. However, do note the browser is briefly shown to the user.
+If the device where the app is running has a Custom Tabs compatible Browser, a Custom Tab will be preferred for the logout flow. You can customize the Page Title visibility and the Toolbar color by using the `CustomTabsOptions` class.
 
 ```java
- CustomTabsOptions options = CustomTabsOptions.newBuilder()
+CustomTabsOptions options = CustomTabsOptions.newBuilder()
     .withToolbarColor(R.color.ct_toolbar_color)
     .showTitle(true)
     .build();
 
-  WebAuthProvider.clearSession(account)
-                  .withCustomTabsOptions(options)
-                  .start(MainActivity.this, logoutCallback);
+WebAuthProvider.logout(account)
+    .withCustomTabsOptions(options)
+    .start(MainActivity.this, logoutCallback);
 ```
 
 
-#### Changing the scheme
-The scheme used can be changed as well. This configuration will probably match what you've done for the [authentication setup](#a-note-about-app-deep-linking).
+#### Changing the Return To URL scheme
+This configuration will probably match what you've done for the [authentication setup](#a-note-about-app-deep-linking).
 
 ```java
-WebAuthProvider.clearSession(account)
-                .withScheme("myapp")
-                .start(MainActivity.this, logoutCallback);
+WebAuthProvider.logout(account)
+    .withScheme("myapp")
+    .start(MainActivity.this, logoutCallback);
 ```
 
 

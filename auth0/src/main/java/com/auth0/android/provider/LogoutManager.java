@@ -49,7 +49,7 @@ class LogoutManager extends ResumableManager {
     @Override
     boolean resume(AuthorizeResult result) {
         if (result.isCanceled()) {
-            Auth0Exception exception = new Auth0Exception("The user closed the browser app and the logout was cancelled.");
+            Auth0Exception exception = new Auth0Exception("The user closed the browser app so the logout was cancelled.");
             callback.onFailure(exception);
         } else {
             callback.onSuccess(null);
@@ -64,7 +64,7 @@ class LogoutManager extends ResumableManager {
             builder.appendQueryParameter(entry.getKey(), entry.getValue());
         }
         Uri uri = builder.build();
-        logDebug("Using the following LogoutURI: " + uri.toString());
+        logDebug("Using the following Logout URI: " + uri.toString());
         return uri;
     }
 
