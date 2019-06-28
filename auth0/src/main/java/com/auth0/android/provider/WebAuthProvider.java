@@ -107,8 +107,7 @@ public class WebAuthProvider {
          * @param callback to invoke when log out is successful
          */
         public void start(Context context, VoidCallback callback) {
-
-            managerInstance = null;
+            resetManagerInstance();
 
             if (!hasBrowserAppInstalled(context.getPackageManager())) {
                 Throwable cause = new ActivityNotFoundException("No Browser application installed.");
@@ -345,7 +344,7 @@ public class WebAuthProvider {
          */
         @Deprecated
         public void start(@NonNull Activity activity, @NonNull AuthCallback callback, int requestCode) {
-            managerInstance = null;
+            resetManagerInstance();
 
             if (useBrowser && !hasBrowserAppInstalled(activity.getPackageManager())) {
                 AuthenticationException ex = new AuthenticationException("a0.browser_not_available", "No Browser application installed to perform web authentication.");
@@ -447,7 +446,7 @@ public class WebAuthProvider {
         final AuthorizeResult result = new AuthorizeResult(requestCode, resultCode, intent);
         boolean success = managerInstance.resume(result);
         if (success) {
-            managerInstance = null;
+            resetManagerInstance();
         }
         return success;
     }
@@ -470,7 +469,7 @@ public class WebAuthProvider {
         final AuthorizeResult result = new AuthorizeResult(intent);
         boolean success = managerInstance.resume(result);
         if (success) {
-            managerInstance = null;
+            resetManagerInstance();
         }
         return success;
 
@@ -481,6 +480,11 @@ public class WebAuthProvider {
     @VisibleForTesting
     static ResumableManager getManagerInstance() {
         return managerInstance;
+    }
+
+    @VisibleForTesting
+    static void resetManagerInstance() {
+        managerInstance = null;
     }
 
     @VisibleForTesting

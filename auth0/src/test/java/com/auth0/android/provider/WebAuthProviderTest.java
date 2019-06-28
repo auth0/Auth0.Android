@@ -1660,6 +1660,8 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldFailToResumeLoginWithIntentWithoutFirstInitProvider() throws Exception {
+        WebAuthProvider.resetManagerInstance();
+
         Intent intent = createAuthIntent("");
         assertFalse(WebAuthProvider.resume(intent));
     }
@@ -1667,6 +1669,8 @@ public class WebAuthProviderTest {
     @SuppressWarnings("deprecation")
     @Test
     public void shouldFailToResumeLoginWithRequestCodeWithoutFirstInitProvider() throws Exception {
+        WebAuthProvider.resetManagerInstance();
+
         Intent intent = createAuthIntent("");
         assertFalse(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
     }
