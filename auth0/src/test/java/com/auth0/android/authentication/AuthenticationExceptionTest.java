@@ -28,7 +28,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
-@SuppressWarnings("ThrowableInstanceNeverThrown")
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 21)
 public class AuthenticationExceptionTest {
@@ -46,18 +45,18 @@ public class AuthenticationExceptionTest {
     private Map<String, Object> values;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         values = new HashMap<>();
     }
 
     @Test
-    public void shouldGetUnknownCode() throws Exception {
+    public void shouldGetUnknownCode() {
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.getCode(), is(equalTo(UNKNOWN_ERROR)));
     }
 
     @Test
-    public void shouldGetPreferErrorOverCode() throws Exception {
+    public void shouldGetPreferErrorOverCode() {
         values.put(ERROR_KEY, "a_valid_error");
         values.put(CODE_KEY, "a_valid_code");
         AuthenticationException ex = new AuthenticationException(values);
@@ -65,21 +64,21 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
-    public void shouldGetValidCode() throws Exception {
+    public void shouldGetValidCode() {
         values.put(CODE_KEY, "a_valid_code");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.getCode(), is(equalTo("a_valid_code")));
     }
 
     @Test
-    public void shouldGetValidError() throws Exception {
+    public void shouldGetValidError() {
         values.put(ERROR_KEY, "a_valid_error");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.getCode(), is(equalTo("a_valid_error")));
     }
 
     @Test
-    public void shouldGetPreferDescriptionOverErrorDescription() throws Exception {
+    public void shouldGetPreferDescriptionOverErrorDescription() {
         values.put(ERROR_DESCRIPTION_KEY, "a_valid_error_description");
         values.put(DESCRIPTION_KEY, "a_valid_description");
         AuthenticationException ex = new AuthenticationException(values);
@@ -87,40 +86,40 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
-    public void shouldGetValidDescription() throws Exception {
+    public void shouldGetValidDescription() {
         values.put(DESCRIPTION_KEY, "a_valid_error_description");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.getDescription(), is(equalTo("a_valid_error_description")));
     }
 
     @Test
-    public void shouldGetValidErrorDescription() throws Exception {
+    public void shouldGetValidErrorDescription() {
         values.put(ERROR_DESCRIPTION_KEY, "a_valid_error_description");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.getDescription(), is(equalTo("a_valid_error_description")));
     }
 
     @Test
-    public void shouldGetPlainTextAsDescription() throws Exception {
+    public void shouldGetPlainTextAsDescription() {
         AuthenticationException ex = new AuthenticationException("Payload", 404);
         assertThat(ex.getDescription(), is(equalTo("Payload")));
     }
 
     @Test
-    public void shouldGetMessageWithUnknownCodeIfNullDescription() throws Exception {
+    public void shouldGetMessageWithUnknownCodeIfNullDescription() {
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.getDescription(), is(equalTo(String.format("Received error with code %s", UNKNOWN_ERROR))));
     }
 
     @Test
-    public void shouldNotGetEmptyDescription() throws Exception {
+    public void shouldNotGetEmptyDescription() {
         values.put(CODE_KEY, "a_valid_code");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.getDescription(), is(equalTo("Failed with unknown error")));
     }
 
     @Test
-    public void shouldGetValuesFromTheMap() throws Exception {
+    public void shouldGetValuesFromTheMap() {
         values.put("key", "value");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.getValue("key"), is(notNullValue()));
@@ -129,7 +128,7 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
-    public void shouldReturnNullIfMapDoesNotExist() throws Exception {
+    public void shouldReturnNullIfMapDoesNotExist() {
         AuthenticationException ex1 = new AuthenticationException("code", "description");
         AuthenticationException ex2 = new AuthenticationException("message");
         AuthenticationException ex3 = new AuthenticationException("code", new Auth0Exception("message"));
@@ -153,7 +152,7 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
-    public void shouldHaveExpiredMultifactorTokenOnOIDCMode() throws Exception {
+    public void shouldHaveExpiredMultifactorTokenOnOIDCMode() {
         values.put(ERROR_KEY, "expired_token");
         values.put(ERROR_DESCRIPTION_KEY, "mfa_token is expired");
         AuthenticationException ex = new AuthenticationException(values);
@@ -161,7 +160,7 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
-    public void shouldHaveMalformedMultifactorTokenOnOIDCMode() throws Exception {
+    public void shouldHaveMalformedMultifactorTokenOnOIDCMode() {
         values.put(ERROR_KEY, "invalid_grant");
         values.put(ERROR_DESCRIPTION_KEY, "Malformed mfa_token");
         AuthenticationException ex = new AuthenticationException(values);
@@ -169,7 +168,7 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
-    public void shouldRequireMultifactorOnOIDCMode() throws Exception {
+    public void shouldRequireMultifactorOnOIDCMode() {
         values.put(ERROR_KEY, "mfa_required");
         values.put("mfa_token", "some-random-token");
         AuthenticationException ex = new AuthenticationException(values);
@@ -178,14 +177,14 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
-    public void shouldRequireMultifactor() throws Exception {
+    public void shouldRequireMultifactor() {
         values.put(CODE_KEY, "a0.mfa_required");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.isMultifactorRequired(), is(true));
     }
 
     @Test
-    public void shouldRequireMultifactorEnrollOnOIDCMode() throws Exception {
+    public void shouldRequireMultifactorEnrollOnOIDCMode() {
         values.put(ERROR_KEY, "unsupported_challenge_type");
         values.put(ERROR_DESCRIPTION_KEY, "User is not enrolled with guardian");
         AuthenticationException ex = new AuthenticationException(values);
@@ -193,14 +192,14 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
-    public void shouldRequireMultifactorEnroll() throws Exception {
+    public void shouldRequireMultifactorEnroll() {
         values.put(CODE_KEY, "a0.mfa_registration_required");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.isMultifactorEnrollRequired(), is(true));
     }
 
     @Test
-    public void shouldHaveInvalidMultifactorCodeOnOIDCMode() throws Exception {
+    public void shouldHaveInvalidMultifactorCodeOnOIDCMode() {
         values.put(ERROR_KEY, "invalid_grant");
         values.put(ERROR_DESCRIPTION_KEY, "Invalid otp_code.");
         AuthenticationException ex = new AuthenticationException(values);
@@ -208,14 +207,14 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
-    public void shouldHaveInvalidMultifactorCode() throws Exception {
+    public void shouldHaveInvalidMultifactorCode() {
         values.put(CODE_KEY, "a0.mfa_invalid_code");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.isMultifactorCodeInvalid(), is(true));
     }
 
     @Test
-    public void shouldHaveNotStrongPassword() throws Exception {
+    public void shouldHaveNotStrongPassword() {
         values.put(CODE_KEY, "invalid_password");
         values.put(NAME_KEY, "PasswordStrengthError");
         AuthenticationException ex = new AuthenticationException(values);
@@ -238,7 +237,7 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
-    public void shouldHaveAlreadyUsedPassword() throws Exception {
+    public void shouldHaveAlreadyUsedPassword() {
         values.put(CODE_KEY, "invalid_password");
         values.put(NAME_KEY, "PasswordHistoryError");
         AuthenticationException ex = new AuthenticationException(values);
@@ -246,21 +245,21 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
-    public void shouldHaveRuleError() throws Exception {
+    public void shouldHaveRuleError() {
         values.put(CODE_KEY, "unauthorized");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.isRuleError(), is(true));
     }
 
     @Test
-    public void shouldHaveInvalidCredentials() throws Exception {
+    public void shouldHaveInvalidCredentials() {
         values.put(CODE_KEY, "invalid_user_password");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.isInvalidCredentials(), is(true));
     }
 
     @Test
-    public void shouldHaveOIDCInvalidCredentials() throws Exception {
+    public void shouldHaveOIDCInvalidCredentials() {
         values.put(CODE_KEY, "invalid_grant");
         values.put(ERROR_DESCRIPTION_KEY, "Wrong email or password.");
         AuthenticationException ex = new AuthenticationException(values);
@@ -268,49 +267,49 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
-    public void shouldHaveAccessDenied() throws Exception {
+    public void shouldHaveAccessDenied() {
         values.put(CODE_KEY, "access_denied");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.isAccessDenied(), is(true));
     }
 
     @Test
-    public void shouldHaveInvalidAuthorizeUrl() throws Exception {
+    public void shouldHaveInvalidAuthorizeUrl() {
         values.put(CODE_KEY, "a0.invalid_authorize_url");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.isInvalidAuthorizeURL(), is(true));
     }
 
     @Test
-    public void shouldHaveInvalidConfiguration() throws Exception {
+    public void shouldHaveInvalidConfiguration() {
         values.put(CODE_KEY, "a0.invalid_configuration");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.isInvalidConfiguration(), is(true));
     }
 
     @Test
-    public void shouldHaveAuthenticationCanceled() throws Exception {
+    public void shouldHaveAuthenticationCanceled() {
         values.put(CODE_KEY, "a0.authentication_canceled");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.isAuthenticationCanceled(), is(true));
     }
 
     @Test
-    public void shouldHavePasswordLeaked() throws Exception {
+    public void shouldHavePasswordLeaked() {
         values.put(CODE_KEY, "password_leaked");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.isPasswordLeaked(), is(true));
     }
 
     @Test
-    public void shouldHaveLoginRequired() throws Exception {
+    public void shouldHaveLoginRequired() {
         values.put(CODE_KEY, "login_required");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.isLoginRequired(), is(true));
     }
 
     @Test
-    public void shouldHaveMissingBrowserApp() throws Exception {
+    public void shouldHaveMissingBrowserApp() {
         values.put(CODE_KEY, "a0.browser_not_available");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.isBrowserAppNotAvailable(), is(true));

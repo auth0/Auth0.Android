@@ -57,7 +57,7 @@ public class AuthenticationActivityTest {
     private ActivityController<AuthenticationActivityMock> activityController;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
         callerActivity = spy(Robolectric.buildActivity(Activity.class).get());
     }
@@ -68,9 +68,8 @@ public class AuthenticationActivityTest {
         activity.setCustomTabsController(customTabsController);
     }
 
-    @SuppressWarnings("deprecation")
     @Test
-    public void shouldFinishGracefullyWhenCalledByError() throws Exception {
+    public void shouldFinishGracefullyWhenCalledByError() {
         Intent intent = new Intent(callerActivity, AuthenticationActivity.class);
         //An invalid call will not pass any expected extras
         createActivity(intent);
@@ -84,9 +83,8 @@ public class AuthenticationActivityTest {
         activityController.destroy();
     }
 
-    @SuppressWarnings("deprecation")
     @Test
-    public void shouldAuthenticateUsingBrowser() throws Exception {
+    public void shouldAuthenticateUsingBrowser() {
         AuthenticationActivity.authenticateUsingBrowser(callerActivity, uri, customTabsOptions);
         verify(callerActivity).startActivity(intentCaptor.capture());
 
@@ -115,9 +113,8 @@ public class AuthenticationActivityTest {
         verify(customTabsController).unbindService();
     }
 
-    @SuppressWarnings("deprecation")
     @Test
-    public void shouldAuthenticateAfterRecreatedUsingBrowser() throws Exception {
+    public void shouldAuthenticateAfterRecreatedUsingBrowser() {
         AuthenticationActivity.authenticateUsingBrowser(callerActivity, uri, customTabsOptions);
         verify(callerActivity).startActivity(intentCaptor.capture());
 
@@ -144,9 +141,8 @@ public class AuthenticationActivityTest {
         verify(customTabsController).unbindService();
     }
 
-    @SuppressWarnings("deprecation")
     @Test
-    public void shouldCancelAuthenticationUsingBrowser() throws Exception {
+    public void shouldCancelAuthenticationUsingBrowser() {
         AuthenticationActivity.authenticateUsingBrowser(callerActivity, uri, customTabsOptions);
         verify(callerActivity).startActivity(intentCaptor.capture());
 
@@ -171,9 +167,8 @@ public class AuthenticationActivityTest {
         verify(customTabsController).unbindService();
     }
 
-    @SuppressWarnings("deprecation")
     @Test
-    public void shouldAuthenticateUsingWebView() throws Exception {
+    public void shouldAuthenticateUsingWebView() {
         verifyNoMoreInteractions(customTabsController);
 
         AuthenticationActivity.authenticateUsingWebView(callerActivity, uri, 123, "facebook", true);
@@ -208,9 +203,8 @@ public class AuthenticationActivityTest {
         activityController.destroy();
     }
 
-    @SuppressWarnings("deprecation")
     @Test
-    public void shouldAuthenticateAfterRecreatedUsingWebView() throws Exception {
+    public void shouldAuthenticateAfterRecreatedUsingWebView() {
         verifyNoMoreInteractions(customTabsController);
 
         AuthenticationActivity.authenticateUsingWebView(callerActivity, uri, 123, "facebook", true);
@@ -245,9 +239,8 @@ public class AuthenticationActivityTest {
         activityController.destroy();
     }
 
-    @SuppressWarnings("deprecation")
     @Test
-    public void shouldCancelAuthenticationUsingWebView() throws Exception {
+    public void shouldCancelAuthenticationUsingWebView() {
         verifyNoMoreInteractions(customTabsController);
 
         AuthenticationActivity.authenticateUsingWebView(callerActivity, uri, 123, "facebook", true);
@@ -280,9 +273,8 @@ public class AuthenticationActivityTest {
         activityController.destroy();
     }
 
-    @SuppressWarnings("deprecation")
     @Test
-    public void shouldLaunchForBrowserAuthentication() throws Exception {
+    public void shouldLaunchForBrowserAuthentication() {
         AuthenticationActivity.authenticateUsingBrowser(callerActivity, uri, customTabsOptions);
         verify(callerActivity).startActivity(intentCaptor.capture());
 
@@ -301,9 +293,8 @@ public class AuthenticationActivityTest {
         Assert.assertThat((CustomTabsOptions) extras.getParcelable(AuthenticationActivity.EXTRA_CT_OPTIONS), is(customTabsOptions));
     }
 
-    @SuppressWarnings("deprecation")
     @Test
-    public void shouldLaunchForWebViewAuthentication() throws Exception {
+    public void shouldLaunchForWebViewAuthentication() {
         AuthenticationActivity.authenticateUsingWebView(callerActivity, uri, 123, "facebook", true);
         verify(callerActivity).startActivityForResult(intentCaptor.capture(), eq(123));
 
@@ -325,7 +316,7 @@ public class AuthenticationActivityTest {
     }
 
     @Test
-    public void shouldCreateCustomTabsController() throws Exception {
+    public void shouldCreateCustomTabsController() {
         final AuthenticationActivity authenticationActivity = new AuthenticationActivity();
         final CustomTabsController controller = authenticationActivity.createCustomTabsController(RuntimeEnvironment.application);
 

@@ -21,7 +21,6 @@ import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyFloat;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anySet;
 import static org.mockito.Matchers.anySetOf;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -43,7 +42,7 @@ public class SharedPreferencesStorageTest {
     public ExpectedException exception = ExpectedException.none();
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
         when(context.getSharedPreferences(anyString(), eq(Context.MODE_PRIVATE))).thenReturn(sharedPreferences);
         when(sharedPreferences.edit()).thenReturn(sharedPreferencesEditor);
@@ -57,20 +56,20 @@ public class SharedPreferencesStorageTest {
     }
 
     @Test
-    public void shouldCreateWithDefaultPreferencesFileName() throws Exception {
+    public void shouldCreateWithDefaultPreferencesFileName() {
         new SharedPreferencesStorage(context);
         verify(context).getSharedPreferences("com.auth0.authentication.storage", Context.MODE_PRIVATE);
     }
 
     @Test
-    public void shouldCreateWithCustomPreferencesFileName() throws Exception {
+    public void shouldCreateWithCustomPreferencesFileName() {
         new SharedPreferencesStorage(context, "my-preferences-file");
         verify(context).getSharedPreferences("my-preferences-file", Context.MODE_PRIVATE);
     }
 
     @SuppressWarnings("ConstantConditions")
     @Test
-    public void shouldThrowOnCreateIfCustomPreferencesFileNameIsNull() throws Exception {
+    public void shouldThrowOnCreateIfCustomPreferencesFileNameIsNull() {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("The SharedPreferences name is invalid");
         new SharedPreferencesStorage(context, null);
@@ -80,7 +79,7 @@ public class SharedPreferencesStorageTest {
     //Store
 
     @Test
-    public void shouldStoreStringValueOnPreferences() throws Exception {
+    public void shouldStoreStringValueOnPreferences() {
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
         storage.store("name", "value");
         verify(sharedPreferencesEditor).putString("name", "value");
@@ -88,7 +87,7 @@ public class SharedPreferencesStorageTest {
     }
 
     @Test
-    public void shouldStoreLongValueOnPreferences() throws Exception {
+    public void shouldStoreLongValueOnPreferences() {
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
         storage.store("name", 123L);
         verify(sharedPreferencesEditor).putLong("name", 123L);
@@ -96,7 +95,7 @@ public class SharedPreferencesStorageTest {
     }
 
     @Test
-    public void shouldStoreIntegerValueOnPreferences() throws Exception {
+    public void shouldStoreIntegerValueOnPreferences() {
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
         storage.store("name", 123);
         verify(sharedPreferencesEditor).putInt("name", 123);
@@ -104,7 +103,7 @@ public class SharedPreferencesStorageTest {
     }
 
     @Test
-    public void shouldStoreBooleanValueOnPreferences() throws Exception {
+    public void shouldStoreBooleanValueOnPreferences() {
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
         storage.store("name", true);
         verify(sharedPreferencesEditor).putBoolean("name", true);
@@ -115,7 +114,7 @@ public class SharedPreferencesStorageTest {
     //Retrieve
 
     @Test
-    public void shouldRetrieveNullStringValueIfMissingKeyFromPreferences() throws Exception {
+    public void shouldRetrieveNullStringValueIfMissingKeyFromPreferences() {
         when(sharedPreferences.contains("name")).thenReturn(false);
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
         String value = storage.retrieveString("name");
@@ -123,7 +122,7 @@ public class SharedPreferencesStorageTest {
     }
 
     @Test
-    public void shouldRetrieveNullLongValueIfMissingKeyFromPreferences() throws Exception {
+    public void shouldRetrieveNullLongValueIfMissingKeyFromPreferences() {
         when(sharedPreferences.contains("name")).thenReturn(false);
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
         Long value = storage.retrieveLong("name");
@@ -131,7 +130,7 @@ public class SharedPreferencesStorageTest {
     }
 
     @Test
-    public void shouldRetrieveNullIntegerValueIfMissingKeyFromPreferences() throws Exception {
+    public void shouldRetrieveNullIntegerValueIfMissingKeyFromPreferences() {
         when(sharedPreferences.contains("name")).thenReturn(false);
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
         Integer value = storage.retrieveInteger("name");
@@ -139,7 +138,7 @@ public class SharedPreferencesStorageTest {
     }
 
     @Test
-    public void shouldRetrieveNullBooleanValueIfMissingKeyFromPreferences() throws Exception {
+    public void shouldRetrieveNullBooleanValueIfMissingKeyFromPreferences() {
         when(sharedPreferences.contains("name")).thenReturn(false);
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
         Boolean value = storage.retrieveBoolean("name");
@@ -147,7 +146,7 @@ public class SharedPreferencesStorageTest {
     }
 
     @Test
-    public void shouldRetrieveStringValueFromPreferences() throws Exception {
+    public void shouldRetrieveStringValueFromPreferences() {
         when(sharedPreferences.contains("name")).thenReturn(true);
         when(sharedPreferences.getString("name", null)).thenReturn("value");
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
@@ -156,7 +155,7 @@ public class SharedPreferencesStorageTest {
     }
 
     @Test
-    public void shouldRetrieveLongValueFromPreferences() throws Exception {
+    public void shouldRetrieveLongValueFromPreferences() {
         when(sharedPreferences.contains("name")).thenReturn(true);
         when(sharedPreferences.getLong("name", 0)).thenReturn(1234567890L);
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
@@ -165,7 +164,7 @@ public class SharedPreferencesStorageTest {
     }
 
     @Test
-    public void shouldRetrieveIntegerValueFromPreferences() throws Exception {
+    public void shouldRetrieveIntegerValueFromPreferences() {
         when(sharedPreferences.contains("name")).thenReturn(true);
         when(sharedPreferences.getInt("name", 0)).thenReturn(123);
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
@@ -174,7 +173,7 @@ public class SharedPreferencesStorageTest {
     }
 
     @Test
-    public void shouldRetrieveBooleanValueFromPreferences() throws Exception {
+    public void shouldRetrieveBooleanValueFromPreferences() {
         when(sharedPreferences.contains("name")).thenReturn(true);
         when(sharedPreferences.getBoolean("name", false)).thenReturn(true);
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
@@ -187,7 +186,7 @@ public class SharedPreferencesStorageTest {
 
     @SuppressWarnings("ConstantConditions")
     @Test
-    public void shouldRemovePreferencesKeyOnNullStringValue() throws Exception {
+    public void shouldRemovePreferencesKeyOnNullStringValue() {
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
         String value = null;
         storage.store("name", value);
@@ -197,7 +196,7 @@ public class SharedPreferencesStorageTest {
 
     @SuppressWarnings("ConstantConditions")
     @Test
-    public void shouldRemovePreferencesKeyOnNullLongValue() throws Exception {
+    public void shouldRemovePreferencesKeyOnNullLongValue() {
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
         Long value = null;
         storage.store("name", value);
@@ -207,7 +206,7 @@ public class SharedPreferencesStorageTest {
 
     @SuppressWarnings("ConstantConditions")
     @Test
-    public void shouldRemovePreferencesKeyOnNullIntegerValue() throws Exception {
+    public void shouldRemovePreferencesKeyOnNullIntegerValue() {
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
         Integer value = null;
         storage.store("name", value);
@@ -217,7 +216,7 @@ public class SharedPreferencesStorageTest {
 
     @SuppressWarnings("ConstantConditions")
     @Test
-    public void shouldRemovePreferencesKeyOnNullBooleanValue() throws Exception {
+    public void shouldRemovePreferencesKeyOnNullBooleanValue() {
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
         Boolean value = null;
         storage.store("name", value);
@@ -225,9 +224,8 @@ public class SharedPreferencesStorageTest {
         verify(sharedPreferencesEditor).apply();
     }
 
-    @SuppressWarnings("ConstantConditions")
     @Test
-    public void shouldRemovePreferencesKey() throws Exception {
+    public void shouldRemovePreferencesKey() {
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
         storage.remove("name");
         verify(sharedPreferencesEditor).remove("name");

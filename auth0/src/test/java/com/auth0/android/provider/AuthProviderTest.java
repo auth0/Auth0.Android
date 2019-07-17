@@ -31,8 +31,6 @@ import android.support.annotation.Nullable;
 import android.support.v4.content.PermissionChecker;
 import android.widget.TextView;
 
-import org.hamcrest.Matcher;
-import org.hamcrest.collection.IsMapContaining;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -79,7 +77,7 @@ public class AuthProviderTest {
     private static final int[] PERMISSIONS_GRANTED = new int[]{PermissionChecker.PERMISSION_GRANTED, PermissionChecker.PERMISSION_GRANTED};
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
         processAuthenticationCalled = false;
         provider = new AuthProvider(handler) {
@@ -102,7 +100,7 @@ public class AuthProviderTest {
     }
 
     @Test
-    public void shouldHavePermissionHandler() throws Exception {
+    public void shouldHavePermissionHandler() {
         AuthProvider provider = new AuthProvider() {
             @Override
             protected void requestAuth(Activity activity, int requestCode) {
@@ -124,12 +122,12 @@ public class AuthProviderTest {
     }
 
     @Test
-    public void shouldStop() throws Exception {
+    public void shouldStop() {
         provider.stop();
     }
 
     @Test
-    public void shouldClearSession() throws Exception {
+    public void shouldClearSession() {
         assertThat(provider.getCallback(), is(nullValue()));
         provider.start(activity, callback, PERMISSION_REQUEST_CODE, AUTHENTICATION_REQUEST_CODE);
         assertThat(provider.getCallback(), is(notNullValue()));
@@ -138,7 +136,7 @@ public class AuthProviderTest {
     }
 
     @Test
-    public void shouldCallProcessAuthenticationIfPermissionsWereAlreadyGranted() throws Exception {
+    public void shouldCallProcessAuthenticationIfPermissionsWereAlreadyGranted() {
         when(handler.areAllPermissionsGranted(activity, PROVIDER_PERMISSIONS)).thenReturn(true);
         provider.start(activity, callback, PERMISSION_REQUEST_CODE, AUTHENTICATION_REQUEST_CODE);
 
@@ -146,7 +144,7 @@ public class AuthProviderTest {
     }
 
     @Test
-    public void shouldCallProcessAuthenticationIfPermissionsAreGranted() throws Exception {
+    public void shouldCallProcessAuthenticationIfPermissionsAreGranted() {
         when(handler.areAllPermissionsGranted(activity, PROVIDER_PERMISSIONS)).thenReturn(false);
         when(handler.parseRequestResult(PERMISSION_REQUEST_CODE, PROVIDER_PERMISSIONS, PERMISSIONS_GRANTED)).thenReturn(Collections.<String>emptyList());
         provider.start(activity, callback, PERMISSION_REQUEST_CODE, AUTHENTICATION_REQUEST_CODE);
@@ -156,14 +154,14 @@ public class AuthProviderTest {
     }
 
     @Test
-    public void shouldCallCheckPermissionsOnHandler() throws Exception {
+    public void shouldCallCheckPermissionsOnHandler() {
         provider.start(activity, callback, PERMISSION_REQUEST_CODE, AUTHENTICATION_REQUEST_CODE);
 
         verify(handler).areAllPermissionsGranted(activity, PROVIDER_PERMISSIONS);
     }
 
     @Test
-    public void shouldCallRequestPermissionsOnHandlerIfPermissionsAreNotAlreadyGranted() throws Exception {
+    public void shouldCallRequestPermissionsOnHandlerIfPermissionsAreNotAlreadyGranted() {
         when(handler.areAllPermissionsGranted(activity, PROVIDER_PERMISSIONS)).thenReturn(false);
         provider.start(activity, callback, PERMISSION_REQUEST_CODE, AUTHENTICATION_REQUEST_CODE);
 
@@ -171,14 +169,14 @@ public class AuthProviderTest {
     }
 
     @Test
-    public void shouldDeliverOnRequestPermissionsResultToHandler() throws Exception {
+    public void shouldDeliverOnRequestPermissionsResultToHandler() {
         provider.onRequestPermissionsResult(activity, PERMISSION_REQUEST_CODE, PROVIDER_PERMISSIONS, PERMISSIONS_GRANTED);
 
         verify(handler).parseRequestResult(PERMISSION_REQUEST_CODE, PROVIDER_PERMISSIONS, PERMISSIONS_GRANTED);
     }
 
     @Test
-    public void shouldFailWithDialogWhenPermissionsAreNotGranted() throws Exception {
+    public void shouldFailWithDialogWhenPermissionsAreNotGranted() {
         when(handler.parseRequestResult(PERMISSION_REQUEST_CODE, PROVIDER_PERMISSIONS, PERMISSIONS_GRANTED)).thenReturn(Arrays.asList("some", "values"));
         Activity activity = Robolectric.buildActivity(Activity.class).create().resume().get();
         provider.start(activity, callback, PERMISSION_REQUEST_CODE, AUTHENTICATION_REQUEST_CODE);
@@ -190,13 +188,13 @@ public class AuthProviderTest {
         assertThat(dialog, is(instanceOf(Dialog.class)));
         assertThat(dialog, is(notNullValue()));
         dialog.show(); //Load the layout
-        TextView messageTV = (TextView) dialog.findViewById(android.R.id.message);
+        TextView messageTV = dialog.findViewById(android.R.id.message);
         assertThat(messageTV.getText().toString(), containsString("Some permissions required by this provider were not granted. You can try to authenticate again or go to " +
                 "the application's permission screen in the phone settings and grant them. The missing permissions are:\n" + "[some, values]"));
     }
 
     @Test
-    public void shouldSetParameters() throws Exception {
+    public void shouldSetParameters() {
         Map<String, Object> params = new HashMap<>();
         params.put("key", "value");
         provider.setParameters(params);
@@ -207,13 +205,13 @@ public class AuthProviderTest {
     }
 
     @Test
-    public void shouldReturnFalseWhenCalledWithIntentByDefault() throws Exception {
+    public void shouldReturnFalseWhenCalledWithIntentByDefault() {
         boolean authorizeResult = provider.authorize(new Intent());
         assertFalse(authorizeResult);
     }
 
     @Test
-    public void shouldReturnCallback() throws Exception {
+    public void shouldReturnCallback() {
         Mockito.when(handler.areAllPermissionsGranted(activity, PROVIDER_PERMISSIONS)).thenReturn(true);
         provider.start(activity, callback, PERMISSION_REQUEST_CODE, AUTHENTICATION_REQUEST_CODE);
 
@@ -221,14 +219,14 @@ public class AuthProviderTest {
     }
 
     @Test
-    public void shouldReturnNullCallbackIfNotStarted() throws Exception {
+    public void shouldReturnNullCallbackIfNotStarted() {
         Mockito.when(handler.areAllPermissionsGranted(activity, PROVIDER_PERMISSIONS)).thenReturn(true);
 
         assertThat(provider.getCallback(), is(nullValue()));
     }
 
     @Test
-    public void shouldReturnNullCallbackIfSessionCleared() throws Exception {
+    public void shouldReturnNullCallbackIfSessionCleared() {
         Mockito.when(handler.areAllPermissionsGranted(activity, PROVIDER_PERMISSIONS)).thenReturn(true);
         provider.start(activity, callback, PERMISSION_REQUEST_CODE, AUTHENTICATION_REQUEST_CODE);
         provider.clearSession();

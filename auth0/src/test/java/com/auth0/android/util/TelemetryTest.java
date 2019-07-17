@@ -25,7 +25,7 @@ public class TelemetryTest {
 
     @Test
     @Config(sdk = 21)
-    public void shouldAlwaysIncludeAndroidVersionAPI21() throws Exception {
+    public void shouldAlwaysIncludeAndroidVersionAPI21() {
         Telemetry telemetry = new Telemetry("auth0-java", null);
         assertThat(telemetry.getEnvironment(), is(notNullValue()));
         assertThat(telemetry.getEnvironment().get("android"), is("21"));
@@ -33,40 +33,40 @@ public class TelemetryTest {
 
     @Test
     @Config(sdk = 23)
-    public void shouldAlwaysIncludeAndroidVersionAPI23() throws Exception {
+    public void shouldAlwaysIncludeAndroidVersionAPI23() {
         Telemetry telemetry = new Telemetry("auth0-java", null);
         assertThat(telemetry.getEnvironment(), is(notNullValue()));
         assertThat(telemetry.getEnvironment().get("android"), is("23"));
     }
 
     @Test
-    public void shouldNotAcceptNullName() throws Exception {
+    public void shouldNotAcceptNullName() {
         Telemetry telemetry = new Telemetry(null, null);
         assertThat(telemetry.getValue(), is(nullValue()));
         assertThat(telemetry.getEnvironment(), is(notNullValue()));
     }
 
     @Test
-    public void shouldNotIncludeLibraryVersionIfNotProvided() throws Exception {
+    public void shouldNotIncludeLibraryVersionIfNotProvided() {
         Telemetry telemetry = new Telemetry(null, null);
         assertThat(telemetry.getEnvironment(), is(notNullValue()));
         assertThat(telemetry.getEnvironment().containsKey("auth0.android"), is(false));
     }
 
     @Test
-    public void shouldGetName() throws Exception {
+    public void shouldGetName() {
         Telemetry telemetry = new Telemetry("auth0-java", "1.0.0", "1.2.3");
         assertThat(telemetry.getName(), is("auth0-java"));
     }
 
     @Test
-    public void shouldGetVersion() throws Exception {
+    public void shouldGetVersion() {
         Telemetry telemetry = new Telemetry("auth0-java", "1.0.0", "1.2.3");
         assertThat(telemetry.getVersion(), is("1.0.0"));
     }
 
     @Test
-    public void shouldGetLibraryVersion() throws Exception {
+    public void shouldGetLibraryVersion() {
         Telemetry telemetry = new Telemetry("auth0-java", "1.0.0", "1.2.3");
         assertThat(telemetry.getLibraryVersion(), is("1.2.3"));
         assertThat(telemetry.getEnvironment().get("auth0.android"), is("1.2.3"));

@@ -26,7 +26,7 @@ public class CredentialsDeserializerTest {
     private Gson gson;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         final CredentialsDeserializerMock deserializer = new CredentialsDeserializerMock();
         gson = new GsonBuilder()
                 .setDateFormat(GsonProvider.DATE_FORMAT)

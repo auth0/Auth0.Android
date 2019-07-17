@@ -56,7 +56,7 @@ public class CallbackHelperTest {
     private static final String DEFAULT_SCHEME = "https";
 
     @Test
-    public void shouldGetCallbackURI() throws Exception {
+    public void shouldGetCallbackURI() {
         final Uri expected = Uri.parse(DOMAIN + "/android/" + PACKAGE_NAME + "/callback");
         final Uri result = Uri.parse(CallbackHelper.getCallbackUri(DEFAULT_SCHEME, PACKAGE_NAME, DOMAIN));
 
@@ -70,7 +70,7 @@ public class CallbackHelperTest {
     }
 
     @Test
-    public void shouldGetCallbackURIWithCustomScheme() throws Exception {
+    public void shouldGetCallbackURIWithCustomScheme() {
         final Uri expected = Uri.parse("myapp://" + "my-domain.auth0.com" + "/android/" + PACKAGE_NAME + "/callback");
         final Uri result = Uri.parse(CallbackHelper.getCallbackUri("myapp", PACKAGE_NAME, DOMAIN));
 
@@ -84,7 +84,7 @@ public class CallbackHelperTest {
     }
 
     @Test
-    public void shouldGetCallbackURIIfDomainEndsWithSlash() throws Exception {
+    public void shouldGetCallbackURIIfDomainEndsWithSlash() {
         final Uri expected = Uri.parse(DOMAIN + "/android/" + PACKAGE_NAME + "/callback");
         final Uri result = Uri.parse(CallbackHelper.getCallbackUri(DEFAULT_SCHEME, PACKAGE_NAME, DOMAIN_WITH_TRAILING_SLASH));
 
@@ -98,13 +98,13 @@ public class CallbackHelperTest {
     }
 
     @Test
-    public void shouldGetNullCallbackURIIfInvalidDomain() throws Exception {
+    public void shouldGetNullCallbackURIIfInvalidDomain() {
         String uri = CallbackHelper.getCallbackUri(DEFAULT_SCHEME, PACKAGE_NAME, INVALID_DOMAIN);
         assertThat(uri, nullValue());
     }
 
     @Test
-    public void shouldParseQueryValues() throws Exception {
+    public void shouldParseQueryValues() {
         String uriString = "https://lbalmaceda.auth0.com/android/com.auth0.android.lock.app/callback?code=soMec0d3ML8B&state=810132b-486aa-4aa8-1768-a1dcd3368fae";
         Uri uri = Uri.parse(uriString);
         final Map<String, String> values = CallbackHelper.getValuesFromUri(uri);
@@ -116,7 +116,7 @@ public class CallbackHelperTest {
     }
 
     @Test
-    public void shouldParseFragmentValues() throws Exception {
+    public void shouldParseFragmentValues() {
         String uriString = "https://lbalmaceda.auth0.com/android/com.auth0.android.lock.app/callback#code=soMec0d3ML8B&state=810132b-486aa-4aa8-1768-a1dcd3368fae";
         Uri uri = Uri.parse(uriString);
         final Map<String, String> values = CallbackHelper.getValuesFromUri(uri);
@@ -128,7 +128,7 @@ public class CallbackHelperTest {
     }
 
     @Test
-    public void shouldReturnEmptyQueryValues() throws Exception {
+    public void shouldReturnEmptyQueryValues() {
         String uriString = "https://lbalmaceda.auth0.com/android/com.auth0.android.lock.app/callback?";
         Uri uri = Uri.parse(uriString);
         final Map<String, String> values = CallbackHelper.getValuesFromUri(uri);
@@ -138,7 +138,7 @@ public class CallbackHelperTest {
     }
 
     @Test
-    public void shouldReturnEmptyFragmentValues() throws Exception {
+    public void shouldReturnEmptyFragmentValues() {
         String uriString = "https://lbalmaceda.auth0.com/android/com.auth0.android.lock.app/callback#";
         Uri uri = Uri.parse(uriString);
         final Map<String, String> values = CallbackHelper.getValuesFromUri(uri);
@@ -148,7 +148,7 @@ public class CallbackHelperTest {
     }
 
     @Test
-    public void shouldGetEmptyValuesWhenQueryOrFragmentIsMissing() throws Exception {
+    public void shouldGetEmptyValuesWhenQueryOrFragmentIsMissing() {
         String uriString = "https://my.website.com/some/page";
         Uri uri = Uri.parse(uriString);
         final Map<String, String> values = CallbackHelper.getValuesFromUri(uri);
@@ -157,7 +157,7 @@ public class CallbackHelperTest {
     }
 
     @Test
-    public void shouldGetEmptyValuesWhenQueryIsEmpty() throws Exception {
+    public void shouldGetEmptyValuesWhenQueryIsEmpty() {
         String uriString = "https://my.website.com/some/page?";
         Uri uri = Uri.parse(uriString);
         final Map<String, String> values = CallbackHelper.getValuesFromUri(uri);
@@ -166,7 +166,7 @@ public class CallbackHelperTest {
     }
 
     @Test
-    public void shouldGetEmptyValuesWhenQueryBeginsWithAmpersand() throws Exception {
+    public void shouldGetEmptyValuesWhenQueryBeginsWithAmpersand() {
         String uriString = "https://my.website.com/some/page?&key_without_value";
         Uri uri = Uri.parse(uriString);
         final Map<String, String> values = CallbackHelper.getValuesFromUri(uri);
@@ -175,7 +175,7 @@ public class CallbackHelperTest {
     }
 
     @Test
-    public void shouldGetEmptyValuesWhenFragmentIsEmpty() throws Exception {
+    public void shouldGetEmptyValuesWhenFragmentIsEmpty() {
         String uriString = "https://my.website.com/some/page#";
         Uri uri = Uri.parse(uriString);
         final Map<String, String> values = CallbackHelper.getValuesFromUri(uri);
@@ -184,7 +184,7 @@ public class CallbackHelperTest {
     }
 
     @Test
-    public void shouldGetEmptyValuesWhenFragmentBeginsWithAmpersand() throws Exception {
+    public void shouldGetEmptyValuesWhenFragmentBeginsWithAmpersand() {
         String uriString = "https://my.website.com/some/page#&key_without_value";
         Uri uri = Uri.parse(uriString);
         final Map<String, String> values = CallbackHelper.getValuesFromUri(uri);
@@ -193,7 +193,7 @@ public class CallbackHelperTest {
     }
 
     @Test
-    public void shouldGetEmptyValuesWhenUriIsNull() throws Exception {
+    public void shouldGetEmptyValuesWhenUriIsNull() {
         Uri uri = null;
         final Map<String, String> values = CallbackHelper.getValuesFromUri(uri);
         assertThat(values, notNullValue());

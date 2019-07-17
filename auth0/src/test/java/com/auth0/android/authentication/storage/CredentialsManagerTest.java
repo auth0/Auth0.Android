@@ -67,7 +67,7 @@ public class CredentialsManagerTest {
     private ArgumentCaptor<BaseCallback<Credentials, AuthenticationException>> requestCallbackCaptor;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
         CredentialsManager credentialsManager = new CredentialsManager(client, storage);
         manager = spy(credentialsManager);
@@ -75,7 +75,7 @@ public class CredentialsManagerTest {
         doReturn(CredentialsMock.CURRENT_TIME_MS).when(manager).getCurrentTimeInMillis();
         doAnswer(new Answer() {
             @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
+            public Object answer(InvocationOnMock invocation) {
                 String idToken = invocation.getArgumentAt(0, String.class);
                 String accessToken = invocation.getArgumentAt(1, String.class);
                 String type = invocation.getArgumentAt(2, String.class);
@@ -88,7 +88,7 @@ public class CredentialsManagerTest {
     }
 
     @Test
-    public void shouldSaveCredentialsInStorage() throws Exception {
+    public void shouldSaveCredentialsInStorage() {
         long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456 * 1000;
         Credentials credentials = new CredentialsMock("idToken", "accessToken", "type", "refreshToken", new Date(expirationTime), "scope");
         manager.saveCredentials(credentials);
@@ -103,7 +103,7 @@ public class CredentialsManagerTest {
     }
 
     @Test
-    public void shouldThrowOnSetIfCredentialsDoesNotHaveIdTokenOrAccessToken() throws Exception {
+    public void shouldThrowOnSetIfCredentialsDoesNotHaveIdTokenOrAccessToken() {
         exception.expect(CredentialsManagerException.class);
         exception.expectMessage("Credentials must have a valid date of expiration and a valid access_token or id_token value.");
 
@@ -113,7 +113,7 @@ public class CredentialsManagerTest {
 
     @SuppressWarnings("ConstantConditions")
     @Test
-    public void shouldThrowOnSetIfCredentialsDoesNotHaveExpiresAt() throws Exception {
+    public void shouldThrowOnSetIfCredentialsDoesNotHaveExpiresAt() {
         exception.expect(CredentialsManagerException.class);
         exception.expectMessage("Credentials must have a valid date of expiration and a valid access_token or id_token value.");
 
@@ -123,19 +123,19 @@ public class CredentialsManagerTest {
     }
 
     @Test
-    public void shouldNotThrowOnSetIfCredentialsHaveAccessTokenAndExpiresIn() throws Exception {
+    public void shouldNotThrowOnSetIfCredentialsHaveAccessTokenAndExpiresIn() {
         Credentials credentials = new CredentialsMock(null, "accessToken", "type", "refreshToken", 123456L);
         manager.saveCredentials(credentials);
     }
 
     @Test
-    public void shouldNotThrowOnSetIfCredentialsHaveIdTokenAndExpiresIn() throws Exception {
+    public void shouldNotThrowOnSetIfCredentialsHaveIdTokenAndExpiresIn() {
         Credentials credentials = new CredentialsMock("idToken", null, "type", "refreshToken", 123456L);
         manager.saveCredentials(credentials);
     }
 
     @Test
-    public void shouldFailOnGetCredentialsWhenNoAccessTokenOrIdTokenWasSaved() throws Exception {
+    public void shouldFailOnGetCredentialsWhenNoAccessTokenOrIdTokenWasSaved() {
         verifyNoMoreInteractions(client);
 
         when(storage.retrieveString("com.auth0.id_token")).thenReturn(null);
@@ -155,7 +155,7 @@ public class CredentialsManagerTest {
     }
 
     @Test
-    public void shouldFailOnGetCredentialsWhenNoExpirationTimeWasSaved() throws Exception {
+    public void shouldFailOnGetCredentialsWhenNoExpirationTimeWasSaved() {
         verifyNoMoreInteractions(client);
 
         when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
@@ -173,9 +173,8 @@ public class CredentialsManagerTest {
         assertThat(exception.getMessage(), is("No Credentials were previously set."));
     }
 
-    @SuppressWarnings("UnnecessaryLocalVariable")
     @Test
-    public void shouldFailOnGetCredentialsWhenExpiredAndNoRefreshTokenWasSaved() throws Exception {
+    public void shouldFailOnGetCredentialsWhenExpiredAndNoRefreshTokenWasSaved() {
         verifyNoMoreInteractions(client);
 
         when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
@@ -195,7 +194,7 @@ public class CredentialsManagerTest {
     }
 
     @Test
-    public void shouldGetNonExpiredCredentialsFromStorage() throws Exception {
+    public void shouldGetNonExpiredCredentialsFromStorage() {
         verifyNoMoreInteractions(client);
 
         when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
@@ -222,7 +221,7 @@ public class CredentialsManagerTest {
     }
 
     @Test
-    public void shouldGetNonExpiredCredentialsFromStorageWhenOnlyIdTokenIsAvailable() throws Exception {
+    public void shouldGetNonExpiredCredentialsFromStorageWhenOnlyIdTokenIsAvailable() {
         verifyNoMoreInteractions(client);
 
         when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
@@ -249,7 +248,7 @@ public class CredentialsManagerTest {
     }
 
     @Test
-    public void shouldGetNonExpiredCredentialsFromStorageWhenOnlyAccessTokenIsAvailable() throws Exception {
+    public void shouldGetNonExpiredCredentialsFromStorageWhenOnlyAccessTokenIsAvailable() {
         verifyNoMoreInteractions(client);
 
         when(storage.retrieveString("com.auth0.id_token")).thenReturn(null);
@@ -275,9 +274,8 @@ public class CredentialsManagerTest {
         assertThat(retrievedCredentials.getScope(), is("scope"));
     }
 
-    @SuppressWarnings("UnnecessaryLocalVariable")
     @Test
-    public void shouldGetAndSuccessfullyRenewExpiredCredentials() throws Exception {
+    public void shouldGetAndSuccessfullyRenewExpiredCredentials() {
         when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
         when(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken");
         when(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken");
@@ -319,9 +317,8 @@ public class CredentialsManagerTest {
         assertThat(retrievedCredentials.getScope(), is("newScope"));
     }
 
-    @SuppressWarnings("UnnecessaryLocalVariable")
     @Test
-    public void shouldGetAndFailToRenewExpiredCredentials() throws Exception {
+    public void shouldGetAndFailToRenewExpiredCredentials() {
         when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
         when(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken");
         when(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken");
@@ -351,7 +348,7 @@ public class CredentialsManagerTest {
     }
 
     @Test
-    public void shouldClearCredentials() throws Exception {
+    public void shouldClearCredentials() {
         manager.clearCredentials();
 
         verify(storage).remove("com.auth0.id_token");
@@ -364,7 +361,7 @@ public class CredentialsManagerTest {
     }
 
     @Test
-    public void shouldHaveCredentialsWhenTokenHasNotExpired() throws Exception {
+    public void shouldHaveCredentialsWhenTokenHasNotExpired() {
         long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456L * 1000;
         when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
 
@@ -378,7 +375,7 @@ public class CredentialsManagerTest {
     }
 
     @Test
-    public void shouldNotHaveCredentialsWhenTokenHasExpiredAndNoRefreshTokenIsAvailable() throws Exception {
+    public void shouldNotHaveCredentialsWhenTokenHasExpiredAndNoRefreshTokenIsAvailable() {
         long expirationTime = CredentialsMock.CURRENT_TIME_MS; //Same as current time --> expired
         when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
         when(storage.retrieveString("com.auth0.refresh_token")).thenReturn(null);
@@ -393,7 +390,7 @@ public class CredentialsManagerTest {
     }
 
     @Test
-    public void shouldHaveCredentialsWhenTokenHasExpiredButRefreshTokenIsAvailable() throws Exception {
+    public void shouldHaveCredentialsWhenTokenHasExpiredButRefreshTokenIsAvailable() {
         long expirationTime = CredentialsMock.CURRENT_TIME_MS; //Same as current time --> expired
         when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
         when(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken");
@@ -408,7 +405,7 @@ public class CredentialsManagerTest {
     }
 
     @Test
-    public void shouldNotHaveCredentialsWhenAccessTokenAndIdTokenAreMissing() throws Exception {
+    public void shouldNotHaveCredentialsWhenAccessTokenAndIdTokenAreMissing() {
         when(storage.retrieveString("com.auth0.id_token")).thenReturn(null);
         when(storage.retrieveString("com.auth0.access_token")).thenReturn(null);
 
@@ -416,7 +413,7 @@ public class CredentialsManagerTest {
     }
 
     @Test
-    public void shouldRecreateTheCredentials() throws Exception {
+    public void shouldRecreateTheCredentials() {
         CredentialsManager credentialsManager = new CredentialsManager(client, storage);
         Date now = new Date();
         final Credentials credentials = credentialsManager.recreateCredentials("idTOKEN", "accessTOKEN", "tokenTYPE", "refreshTOKEN", now, "openid profile");

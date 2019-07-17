@@ -36,40 +36,40 @@ public class PermissionHandlerTest {
     private PermissionHandler handler;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         handler = new PermissionHandler();
     }
 
     @Test
-    public void shouldHavePermissionGranted() throws Exception {
+    public void shouldHavePermissionGranted() {
         final Activity activity = mock(Activity.class);
         when(activity.checkPermission(eq("permission"), anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
         assertTrue(handler.isPermissionGranted(activity, "permission"));
     }
 
     @Test
-    public void shouldHavePermissionDeclined() throws Exception {
+    public void shouldHavePermissionDeclined() {
         final Activity activity = mock(Activity.class);
         when(activity.checkPermission(eq("permission"), anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_DENIED);
         assertFalse(handler.isPermissionGranted(activity, "permission"));
     }
 
     @Test
-    public void shouldHaveAllPermissionsGranted() throws Exception {
+    public void shouldHaveAllPermissionsGranted() {
         final Activity activity = mock(Activity.class);
         when(activity.checkPermission(anyString(), anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
         assertTrue(handler.areAllPermissionsGranted(activity, new String[]{"permission1", "permission2"}));
     }
 
     @Test
-    public void shouldHaveAllPermissionsDeclined() throws Exception {
+    public void shouldHaveAllPermissionsDeclined() {
         final Activity activity = mock(Activity.class);
         when(activity.checkPermission(anyString(), anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_DENIED);
         assertFalse(handler.areAllPermissionsGranted(activity, new String[]{"permission1", "permission2"}));
     }
 
     @Test
-    public void shouldHaveAllPermissionsDeclinedIfOneIsDenied() throws Exception {
+    public void shouldHaveAllPermissionsDeclinedIfOneIsDenied() {
         final Activity activity = mock(Activity.class);
         when(activity.checkPermission(eq("permission1"), anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
         when(activity.checkPermission(eq("permission2"), anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_DENIED);
@@ -78,7 +78,7 @@ public class PermissionHandlerTest {
 
     @TargetApi(Build.VERSION_CODES.M)
     @Test
-    public void requestPermissions() throws Exception {
+    public void requestPermissions() {
         final Activity activity = mock(Activity.class);
         when(activity.checkPermission(eq("permission1"), anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
         when(activity.checkPermission(eq("permission2"), anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_DENIED);
@@ -91,7 +91,7 @@ public class PermissionHandlerTest {
 
     @TargetApi(Build.VERSION_CODES.M)
     @Test
-    public void shouldExplainPermissions() throws Exception {
+    public void shouldExplainPermissions() {
         final Activity activity = mock(Activity.class);
         when(activity.shouldShowRequestPermissionRationale("permission1")).thenReturn(true);
         when(activity.shouldShowRequestPermissionRationale("permission2")).thenReturn(false);
@@ -105,7 +105,7 @@ public class PermissionHandlerTest {
     }
 
     @Test
-    public void shouldSetLastRequestCode() throws Exception {
+    public void shouldSetLastRequestCode() {
         final Activity activity = mock(Activity.class);
         String[] permissions = new String[]{"permission1", "permission2"};
         handler.requestPermissions(activity, permissions, 100);
@@ -114,7 +114,7 @@ public class PermissionHandlerTest {
     }
 
     @Test
-    public void shouldReturnAllPermissionDeclinedWhenInvalidRequestCode() throws Exception {
+    public void shouldReturnAllPermissionDeclinedWhenInvalidRequestCode() {
         final Activity activity = mock(Activity.class);
         String[] permissions = new String[]{"permission1", "permission2"};
         int[] grantResults = new int[]{PackageManager.PERMISSION_GRANTED, PackageManager.PERMISSION_GRANTED};
@@ -126,7 +126,7 @@ public class PermissionHandlerTest {
     }
 
     @Test
-    public void shouldHaveAllPermissionDeclinedByUser() throws Exception {
+    public void shouldHaveAllPermissionDeclinedByUser() {
         final Activity activity = mock(Activity.class);
         handler.requestPermissions(activity, new String[]{}, 100);
         final List<String> result = handler.parseRequestResult(100, new String[]{}, new int[]{});
@@ -136,7 +136,7 @@ public class PermissionHandlerTest {
     }
 
     @Test
-    public void shouldHaveSomePermissionsDeclinedByUser() throws Exception {
+    public void shouldHaveSomePermissionsDeclinedByUser() {
         final Activity activity = mock(Activity.class);
         String[] permissions = new String[]{"permission1", "permission2"};
         int[] grantResults = new int[]{PackageManager.PERMISSION_GRANTED, PackageManager.PERMISSION_DENIED};
@@ -148,7 +148,7 @@ public class PermissionHandlerTest {
     }
 
     @Test
-    public void shouldHaveAllPermissionsGrantedByUser() throws Exception {
+    public void shouldHaveAllPermissionsGrantedByUser() {
         final Activity activity = mock(Activity.class);
         String[] permissions = new String[]{"permission1", "permission2"};
         int[] grantResults = new int[]{PackageManager.PERMISSION_GRANTED, PackageManager.PERMISSION_GRANTED};

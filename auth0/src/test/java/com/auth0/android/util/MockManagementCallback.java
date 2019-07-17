@@ -47,7 +47,7 @@ public class MockManagementCallback<T> implements ManagementCallback<T> {
     public Callable<ManagementException> error() {
         return new Callable<ManagementException>() {
             @Override
-            public ManagementException call() throws Exception {
+            public ManagementException call() {
                 return error;
             }
         };
@@ -56,7 +56,7 @@ public class MockManagementCallback<T> implements ManagementCallback<T> {
     public Callable<T> payload() {
         return new Callable<T>() {
             @Override
-            public T call() throws Exception {
+            public T call() {
                 return payload;
             }
         };

@@ -24,18 +24,18 @@ public class CustomTabsOptionsTest {
     private Activity context;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         context = Robolectric.setupActivity(Activity.class);
     }
 
     @Test
-    public void shouldCreateNewBuilder() throws Exception {
+    public void shouldCreateNewBuilder() {
         CustomTabsOptions.Builder builder = CustomTabsOptions.newBuilder();
         assertThat(builder, is(notNullValue()));
     }
 
     @Test
-    public void shouldHaveDefaultValues() throws Exception {
+    public void shouldHaveDefaultValues() {
         CustomTabsOptions options = CustomTabsOptions.newBuilder().build();
         assertThat(options, is(notNullValue()));
 
@@ -63,7 +63,7 @@ public class CustomTabsOptionsTest {
     }
 
     @Test
-    public void shouldSetShowTitle() throws Exception {
+    public void shouldSetShowTitle() {
         CustomTabsOptions options = CustomTabsOptions.newBuilder()
                 .showTitle(true)
                 .build();
@@ -89,7 +89,7 @@ public class CustomTabsOptionsTest {
     }
 
     @Test
-    public void shouldSetToolbarColor() throws Exception {
+    public void shouldSetToolbarColor() {
         CustomTabsOptions options = CustomTabsOptions.newBuilder()
                 .withToolbarColor(android.R.color.black)
                 .build();

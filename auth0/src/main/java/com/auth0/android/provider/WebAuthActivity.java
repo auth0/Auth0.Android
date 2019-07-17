@@ -24,6 +24,7 @@
 
 package com.auth0.android.provider;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
@@ -83,15 +84,15 @@ public class WebAuthActivity extends AppCompatActivity {
             bar.setDisplayShowCustomEnabled(true);
             bar.setTitle(serviceName);
         }
-        webView = (WebView) findViewById(R.id.com_auth0_lock_webview);
+        webView = findViewById(R.id.com_auth0_lock_webview);
         webView.setVisibility(View.INVISIBLE);
-        progressBar = (ProgressBar) findViewById(R.id.com_auth0_lock_progressbar);
+        progressBar = findViewById(R.id.com_auth0_lock_progressbar);
         progressBar.setIndeterminate(true);
         progressBar.setMax(100);
         errorView = findViewById(R.id.com_auth0_lock_error_view);
         errorView.setVisibility(View.GONE);
-        errorMessage = (TextView) findViewById(R.id.com_auth0_lock_text);
-        Button retryButton = (Button) findViewById(R.id.com_auth0_lock_retry);
+        errorMessage = findViewById(R.id.com_auth0_lock_text);
+        Button retryButton = findViewById(R.id.com_auth0_lock_retry);
         retryButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -112,6 +113,7 @@ public class WebAuthActivity extends AppCompatActivity {
         }
     }
 
+    @SuppressLint("SetJavaScriptEnabled")
     private void startUrlLoading() {
         if (!isNetworkAvailable()) {
             renderLoadError(getString(R.string.com_auth0_webauth_network_error));
@@ -162,7 +164,6 @@ public class WebAuthActivity extends AppCompatActivity {
                 progressBar.setVisibility(View.VISIBLE);
             }
 
-            @SuppressWarnings("deprecation")
             @Override
             public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
                 Log.w(TAG, String.format("Load error (%d) %s", errorCode, description));
@@ -196,6 +197,7 @@ public class WebAuthActivity extends AppCompatActivity {
         boolean available = true;
         ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         try {
+            @SuppressLint("MissingPermission")
             NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
             available = activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting();
             Log.v(TAG, "Is network available? " + available);

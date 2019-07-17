@@ -3,12 +3,10 @@ package com.auth0.android.authentication.request;
 import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.request.ParameterizableRequest;
 
-import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
@@ -27,13 +25,13 @@ public class DatabaseConnectionRequestTest {
     private DatabaseConnectionRequest dbRequest;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         mockRequest = mock(ParameterizableRequest.class);
         dbRequest = new DatabaseConnectionRequest<>(mockRequest);
     }
 
     @Test
-    public void shouldAddAllTheParameters() throws Exception {
+    public void shouldAddAllTheParameters() {
         final Map params = mock(Map.class);
         final DatabaseConnectionRequest req = dbRequest.addParameters(params);
         verify(mockRequest).addParameters(params);
@@ -42,7 +40,7 @@ public class DatabaseConnectionRequestTest {
     }
 
     @Test
-    public void shouldAddParameter() throws Exception {
+    public void shouldAddParameter() {
         final DatabaseConnectionRequest req = dbRequest.addParameter("key", "value");
         verify(mockRequest).addParameter("key", "value");
         Assert.assertThat(req, is(notNullValue()));
@@ -50,7 +48,7 @@ public class DatabaseConnectionRequestTest {
     }
 
     @Test
-    public void shouldAddHeader() throws Exception {
+    public void shouldAddHeader() {
         final DatabaseConnectionRequest req = dbRequest.addHeader("header", "value");
         verify(mockRequest).addHeader("header", "value");
         Assert.assertThat(req, is(notNullValue()));
@@ -58,7 +56,7 @@ public class DatabaseConnectionRequestTest {
     }
 
     @Test
-    public void shouldSetConnection() throws Exception {
+    public void shouldSetConnection() {
         final DatabaseConnectionRequest req = dbRequest.setConnection("my-connection");
         verify(mockRequest).addParameter("connection", "my-connection");
         Assert.assertThat(req, is(notNullValue()));
@@ -66,14 +64,14 @@ public class DatabaseConnectionRequestTest {
     }
 
     @Test
-    public void shouldStartTheRequest() throws Exception {
+    public void shouldStartTheRequest() {
         final BaseCallback callback = mock(BaseCallback.class);
         dbRequest.start(callback);
         verify(mockRequest).start(callback);
     }
 
     @Test
-    public void shouldExecuteTheRequest() throws Exception {
+    public void shouldExecuteTheRequest() {
         dbRequest.execute();
         verify(mockRequest).execute();
     }

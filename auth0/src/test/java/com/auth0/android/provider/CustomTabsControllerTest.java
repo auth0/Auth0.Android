@@ -85,7 +85,7 @@ public class CustomTabsControllerTest {
 
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
         Activity activity = Robolectric.setupActivity(Activity.class);
         context = spy(activity);
@@ -94,13 +94,13 @@ public class CustomTabsControllerTest {
     }
 
     @Test
-    public void shouldNotHaveCustomizationOptionsSetByDefault() throws Exception {
+    public void shouldNotHaveCustomizationOptionsSetByDefault() {
         CustomTabsController controller = new CustomTabsController(context, DEFAULT_BROWSER_PACKAGE);
         assertThat(controller.getCustomizationOptions(), is(nullValue()));
     }
 
     @Test
-    public void shouldChangeCustomizationOptions() throws Exception {
+    public void shouldChangeCustomizationOptions() {
         CustomTabsOptions options = mock(CustomTabsOptions.class);
         CustomTabsController controller = new CustomTabsController(context, DEFAULT_BROWSER_PACKAGE);
         controller.setCustomizationOptions(options);
@@ -108,56 +108,56 @@ public class CustomTabsControllerTest {
     }
 
     @Test
-    public void shouldChooseNullBrowserIfNoBrowserAvailable() throws Exception {
+    public void shouldChooseNullBrowserIfNoBrowserAvailable() {
         preparePackageManagerForCustomTabs(null);
         String bestPackage = CustomTabsController.getBestBrowserPackage(context);
         assertThat(bestPackage, is(nullValue()));
     }
 
     @Test
-    public void shouldChooseDefaultBrowserIfIsCustomTabsCapable() throws Exception {
+    public void shouldChooseDefaultBrowserIfIsCustomTabsCapable() {
         preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE, DEFAULT_BROWSER_PACKAGE);
         String bestPackage = CustomTabsController.getBestBrowserPackage(context);
         assertThat(bestPackage, is(DEFAULT_BROWSER_PACKAGE));
     }
 
     @Test
-    public void shouldReturnNullIfNoBrowserIsCustomTabsCapable() throws Exception {
+    public void shouldReturnNullIfNoBrowserIsCustomTabsCapable() {
         preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE);
         String bestPackage = CustomTabsController.getBestBrowserPackage(context);
         assertThat(bestPackage, is(nullValue()));
     }
 
     @Test
-    public void shouldChooseChromeStableOverOtherCustomTabsCapableBrowsers() throws Exception {
+    public void shouldChooseChromeStableOverOtherCustomTabsCapableBrowsers() {
         preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE, CHROME_STABLE_PACKAGE, CHROME_SYSTEM_PACKAGE, CHROME_BETA_PACKAGE, CHROME_DEV_PACKAGE, CUSTOM_TABS_BROWSER_1, CUSTOM_TABS_BROWSER_2);
         String bestPackage = CustomTabsController.getBestBrowserPackage(context);
         assertThat(bestPackage, is(CHROME_STABLE_PACKAGE));
     }
 
     @Test
-    public void shouldChooseChromeSystemOverOtherCustomTabsCapableBrowsers() throws Exception {
+    public void shouldChooseChromeSystemOverOtherCustomTabsCapableBrowsers() {
         preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE, CHROME_SYSTEM_PACKAGE, CHROME_BETA_PACKAGE, CHROME_DEV_PACKAGE, CUSTOM_TABS_BROWSER_1, CUSTOM_TABS_BROWSER_2);
         String bestPackage = CustomTabsController.getBestBrowserPackage(context);
         assertThat(bestPackage, is(CHROME_SYSTEM_PACKAGE));
     }
 
     @Test
-    public void shouldChooseChromeBetaOverOtherCustomTabsCapableBrowsers() throws Exception {
+    public void shouldChooseChromeBetaOverOtherCustomTabsCapableBrowsers() {
         preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE, CHROME_BETA_PACKAGE, CHROME_DEV_PACKAGE, CUSTOM_TABS_BROWSER_1, CUSTOM_TABS_BROWSER_2);
         String bestPackage = CustomTabsController.getBestBrowserPackage(context);
         assertThat(bestPackage, is(CHROME_BETA_PACKAGE));
     }
 
     @Test
-    public void shouldChooseChromeDevOverOtherCustomTabsCapableBrowsers() throws Exception {
+    public void shouldChooseChromeDevOverOtherCustomTabsCapableBrowsers() {
         preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE, CHROME_DEV_PACKAGE, CUSTOM_TABS_BROWSER_1, CUSTOM_TABS_BROWSER_2);
         String bestPackage = CustomTabsController.getBestBrowserPackage(context);
         assertThat(bestPackage, is(CHROME_DEV_PACKAGE));
     }
 
     @Test
-    public void shouldChooseCustomTabsCapableBrowserIfAvailable() throws Exception {
+    public void shouldChooseCustomTabsCapableBrowserIfAvailable() {
         preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE, CUSTOM_TABS_BROWSER_1, CUSTOM_TABS_BROWSER_2);
         String bestPackage = CustomTabsController.getBestBrowserPackage(context);
         assertThat(bestPackage, is(CUSTOM_TABS_BROWSER_1));
@@ -203,7 +203,7 @@ public class CustomTabsControllerTest {
     }
 
     @Test
-    public void shouldLaunchUriUsingFallbackWhenNoCustomTabsCompatibleBrowserIsAvailable() throws Exception {
+    public void shouldLaunchUriUsingFallbackWhenNoCustomTabsCompatibleBrowserIsAvailable() {
         CustomTabsController controller = new CustomTabsController(context, null);
         controller.launchUri(uri);
 
@@ -242,7 +242,7 @@ public class CustomTabsControllerTest {
     }
 
     @Test
-    public void shouldFailToBindButLaunchUri() throws Exception {
+    public void shouldFailToBindButLaunchUri() {
         bindService(false);
         controller.launchUri(uri);
 
@@ -255,7 +255,7 @@ public class CustomTabsControllerTest {
     }
 
     @Test
-    public void shouldNotLaunchUriIfContextNoLongerValid() throws Exception {
+    public void shouldNotLaunchUriIfContextNoLongerValid() {
         bindService(true);
         controller.clearContext();
         controller.launchUri(uri);
@@ -263,7 +263,7 @@ public class CustomTabsControllerTest {
     }
 
     @Test
-    public void shouldLaunchUriWithFallbackIfCustomTabIntentFails() throws Exception {
+    public void shouldLaunchUriWithFallbackIfCustomTabIntentFails() {
         doThrow(ActivityNotFoundException.class)
                 .doNothing()
                 .when(context).startActivity(any(Intent.class));

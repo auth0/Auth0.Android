@@ -24,7 +24,7 @@ public class UserProfileTest {
     private UserProfile userProfile;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         createdAt = Mockito.mock(Date.class);
         identities = Mockito.mock(List.class);
         extraInfo = Mockito.mock(Map.class);
@@ -34,82 +34,81 @@ public class UserProfileTest {
     }
 
     @Test
-    public void getId() throws Exception {
+    public void getId() {
         assertThat(userProfile.getId(), is("id"));
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void shouldReturnSubIfMissingId() throws Exception {
+    public void shouldReturnSubIfMissingId() {
         Map<String, Object> extraInfo = Collections.singletonMap("sub", "fromSub");
         userProfile = new UserProfile(null, null, null, null, null, false, null, null, null, extraInfo, null, null, null);
         assertThat(userProfile.getId(), is("fromSub"));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
-    public void shouldGetNullIdIfMissing() throws Exception {
+    public void shouldGetNullIdIfMissing() {
         userProfile = new UserProfile(null, null, null, null, null, false, null, null, null, null, null, null, null);
         assertThat(userProfile.getId(), is(nullValue()));
     }
 
     @Test
-    public void getName() throws Exception {
+    public void getName() {
         assertThat(userProfile.getName(), is("name"));
     }
 
     @Test
-    public void getNickname() throws Exception {
+    public void getNickname() {
         assertThat(userProfile.getNickname(), is("nickname"));
     }
 
     @Test
-    public void getEmail() throws Exception {
+    public void getEmail() {
         assertThat(userProfile.getEmail(), is("email"));
     }
 
     @Test
-    public void isEmailVerified() throws Exception {
+    public void isEmailVerified() {
         assertThat(userProfile.isEmailVerified(), is(true));
     }
 
     @Test
-    public void getPictureURL() throws Exception {
+    public void getPictureURL() {
         assertThat(userProfile.getPictureURL(), is("pictureUrl"));
     }
 
     @Test
-    public void getCreatedAt() throws Exception {
+    public void getCreatedAt() {
         assertThat(userProfile.getCreatedAt(), is(createdAt));
     }
 
     @Test
-    public void getGivenName() throws Exception {
+    public void getGivenName() {
         assertThat(userProfile.getGivenName(), is("givenName"));
     }
 
     @Test
-    public void getFamilyName() throws Exception {
+    public void getFamilyName() {
         assertThat(userProfile.getFamilyName(), is("familyName"));
     }
 
     @Test
-    public void getUserMetadata() throws Exception {
+    public void getUserMetadata() {
         assertThat(userProfile.getUserMetadata(), is(userMetadata));
     }
 
     @Test
-    public void getAppMetadata() throws Exception {
+    public void getAppMetadata() {
         assertThat(userProfile.getAppMetadata(), is(appMetadata));
     }
 
     @Test
-    public void getExtraInfo() throws Exception {
+    public void getExtraInfo() {
         assertThat(userProfile.getExtraInfo(), is(extraInfo));
     }
 
     @Test
-    public void getIdentities() throws Exception {
+    public void getIdentities() {
         assertThat(userProfile.getIdentities(), is(identities));
     }
 

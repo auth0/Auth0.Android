@@ -110,7 +110,7 @@ public class UsersAPIClientTest {
     }
 
     @Test
-    public void shouldSetUserAgent() throws Exception {
+    public void shouldSetUserAgent() {
         Auth0 account = mock(Auth0.class);
         RequestFactory factory = mock(RequestFactory.class);
         OkHttpClientFactory clientFactory = mock(OkHttpClientFactory.class);
@@ -120,7 +120,7 @@ public class UsersAPIClientTest {
     }
 
     @Test
-    public void shouldSetTelemetryIfPresent() throws Exception {
+    public void shouldSetTelemetryIfPresent() {
         final Telemetry telemetry = mock(Telemetry.class);
         when(telemetry.getValue()).thenReturn("the-telemetry-data");
         RequestFactory factory = mock(RequestFactory.class);
@@ -132,7 +132,7 @@ public class UsersAPIClientTest {
     }
 
     @Test
-    public void shouldNotSetTelemetryIfMissing() throws Exception {
+    public void shouldNotSetTelemetryIfMissing() {
         RequestFactory factory = mock(RequestFactory.class);
         OkHttpClientFactory clientFactory = mock(OkHttpClientFactory.class);
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
@@ -142,7 +142,7 @@ public class UsersAPIClientTest {
     }
 
     @Test
-    public void shouldCreateClientWithAccountInfo() throws Exception {
+    public void shouldCreateClientWithAccountInfo() {
         UsersAPIClient client = new UsersAPIClient(new Auth0(CLIENT_ID, DOMAIN), TOKEN_PRIMARY);
         assertThat(client, is(notNullValue()));
         assertThat(client.getClientId(), equalTo(CLIENT_ID));
@@ -150,7 +150,7 @@ public class UsersAPIClientTest {
     }
 
     @Test
-    public void shouldCreateClientWithContextInfo() throws Exception {
+    public void shouldCreateClientWithContextInfo() {
         Context context = mock(Context.class);
         Resources resources = mock(Resources.class);
         when(context.getResources()).thenReturn(resources);
@@ -342,7 +342,7 @@ public class UsersAPIClientTest {
         assertThat(result, isA(UserProfile.class));
     }
 
-    private <T> Map<String, T> bodyFromRequest(RecordedRequest request) throws java.io.IOException {
+    private <T> Map<String, T> bodyFromRequest(RecordedRequest request) {
         final Type mapType = new TypeToken<Map<String, T>>() {
         }.getType();
         return gson.fromJson(request.getBody().readUtf8(), mapType);

@@ -34,7 +34,7 @@ public class CredentialsGsonTest extends GsonBaseTest {
     public ExpectedException expectedException = ExpectedException.none();
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         gson = GsonProvider.buildGson();
     }
 
@@ -115,7 +115,7 @@ public class CredentialsGsonTest extends GsonBaseTest {
     }
 
     @Test
-    public void shouldSerializeCredentials() throws Exception {
+    public void shouldSerializeCredentials() {
         Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456 * 1000);
         final String expectedExpiresAt = GsonProvider.formatDate(expiresAt);
 

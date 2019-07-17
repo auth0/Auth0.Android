@@ -21,14 +21,14 @@ public class JsonRequiredTypeAdapterFactoryTest {
     Gson gson;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         gson = new GsonBuilder()
                 .registerTypeAdapterFactory(new JsonRequiredTypeAdapterFactory())
                 .create();
     }
 
     @Test
-    public void shouldThrowExceptionIfMissingFieldIsRequired() throws Exception {
+    public void shouldThrowExceptionIfMissingFieldIsRequired() {
         Exception error = null;
         try {
             gson.fromJson(missingValue, RequiredClass.class);
@@ -41,7 +41,7 @@ public class JsonRequiredTypeAdapterFactoryTest {
     }
 
     @Test
-    public void shouldNotThrowExceptionIfMissingFieldIsNotRequired() throws Exception {
+    public void shouldNotThrowExceptionIfMissingFieldIsNotRequired() {
         NotRequiredClass bean = null;
         Exception error = null;
         try {

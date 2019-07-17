@@ -10,7 +10,7 @@ import static org.junit.Assert.assertThat;
 public class CredentialsTest {
 
     @Test
-    public void shouldCreateWithExpiresAtDateAndSetExpiresIn() throws Exception {
+    public void shouldCreateWithExpiresAtDateAndSetExpiresIn() {
         Date date = new Date();
         long expiresIn = (date.getTime() - CredentialsMock.CURRENT_TIME_MS) / 1000;
         Credentials credentials = new CredentialsMock("idToken", "accessToken", "type", "refreshToken", date, "scope");
@@ -24,7 +24,7 @@ public class CredentialsTest {
     }
 
     @Test
-    public void shouldCreateWithExpiresInAndSetExpiresAt() throws Exception {
+    public void shouldCreateWithExpiresInAndSetExpiresAt() {
         Credentials credentials = new CredentialsMock("idToken", "accessToken", "type", "refreshToken", 86400L);
         assertThat(credentials.getIdToken(), is("idToken"));
         assertThat(credentials.getAccessToken(), is("accessToken"));
@@ -36,7 +36,7 @@ public class CredentialsTest {
     }
 
     @Test
-    public void getScope() throws Exception {
+    public void getScope() {
         Credentials credentials = new Credentials("idToken", "accessToken", "type", "refreshToken", new Date(), "openid profile");
         assertThat(credentials.getScope(), is("openid profile"));
     }

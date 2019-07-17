@@ -47,7 +47,7 @@ public class MockAuthenticationCallback<T> implements AuthenticationCallback<T> 
     public Callable<AuthenticationException> error() {
         return new Callable<AuthenticationException>() {
             @Override
-            public AuthenticationException call() throws Exception {
+            public AuthenticationException call() {
                 return error;
             }
         };
@@ -56,7 +56,7 @@ public class MockAuthenticationCallback<T> implements AuthenticationCallback<T> 
     public Callable<T> payload() {
         return new Callable<T>() {
             @Override
-            public T call() throws Exception {
+            public T call() {
                 return payload;
             }
         };

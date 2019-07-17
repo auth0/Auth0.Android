@@ -11,22 +11,22 @@ public class DatabaseUserTest {
     private DatabaseUser databaseUser;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         databaseUser = new DatabaseUser("email", "username", true);
     }
 
     @Test
-    public void getEmail() throws Exception {
+    public void getEmail() {
         assertThat(databaseUser.getEmail(), is("email"));
     }
 
     @Test
-    public void getUsername() throws Exception {
+    public void getUsername() {
         assertThat(databaseUser.getUsername(), is("username"));
     }
 
     @Test
-    public void isEmailVerified() throws Exception {
+    public void isEmailVerified() {
         assertThat(databaseUser.isEmailVerified(), is(true));
     }
 
