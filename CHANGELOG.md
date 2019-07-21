@@ -1,14 +1,5 @@
 # Change Log
 
-## [1.17.0](https://github.com/auth0/Auth0.Android/tree/1.17.0) (2019-06-28)
-[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.16.0...1.17.0)
-
-**Added**
-- Add WebAuth Logout feature [\#245](https://github.com/auth0/Auth0.Android/pull/245) ([lbalmaceda](https://github.com/lbalmaceda))
-
-**Deprecated**
-- Deprecate WebAuthProvider.init() [\#247](https://github.com/auth0/Auth0.Android/pull/247) ([lbalmaceda](https://github.com/lbalmaceda))
-
 ## [1.16.0](https://github.com/auth0/Auth0.Android/tree/1.16.0) (2019-06-18)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.15.2...1.16.0)
 
