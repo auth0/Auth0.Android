@@ -75,19 +75,19 @@ public class PKCETest {
     private AuthCallback callback;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
         pkce = new PKCE(apiClient, new AlgorithmHelperMock(CODE_VERIFIER), REDIRECT_URI);
     }
 
     @Test
-    public void shouldGenerateChallengeFromRandomVerifier() throws Exception {
+    public void shouldGenerateChallengeFromRandomVerifier() {
         PKCE pkce = new PKCE(apiClient, REDIRECT_URI);
         assertThat(pkce.getCodeChallenge(), is(notNullValue()));
     }
 
     @Test
-    public void shouldGenerateValidRandomCodeChallenge() throws Exception {
+    public void shouldGenerateValidRandomCodeChallenge() {
         PKCE randomPKCE = new PKCE(apiClient, REDIRECT_URI);
         String challenge = randomPKCE.getCodeChallenge();
         assertThat(challenge, is(notNullValue()));
@@ -98,13 +98,13 @@ public class PKCETest {
     }
 
     @Test
-    public void shouldGenerateExpectedCodeChallenge() throws Exception {
+    public void shouldGenerateExpectedCodeChallenge() {
         String challenge = pkce.getCodeChallenge();
         assertThat(challenge, is(equalTo(CODE_CHALLENGE)));
     }
 
     @Test
-    public void shouldGetToken() throws Exception {
+    public void shouldGetToken() {
         TokenRequest tokenRequest = mock(TokenRequest.class);
         when(apiClient.token(AUTHORIZATION_CODE, REDIRECT_URI)).thenReturn(tokenRequest);
         when(tokenRequest.setCodeVerifier(CODE_VERIFIER)).thenReturn(tokenRequest);
@@ -119,7 +119,7 @@ public class PKCETest {
     }
 
     @Test
-    public void shouldFailToGetToken() throws Exception {
+    public void shouldFailToGetToken() {
         TokenRequest tokenRequest = mock(TokenRequest.class);
         when(apiClient.token(AUTHORIZATION_CODE, REDIRECT_URI)).thenReturn(tokenRequest);
         when(tokenRequest.setCodeVerifier(CODE_VERIFIER)).thenReturn(tokenRequest);
@@ -133,21 +133,21 @@ public class PKCETest {
     }
 
     @Test
-    public void shouldNotHavePKCEAvailableIfSHA256IsNotAvailable() throws Exception {
+    public void shouldNotHavePKCEAvailableIfSHA256IsNotAvailable() {
         AlgorithmHelper algorithmHelper = Mockito.mock(AlgorithmHelper.class);
         when(algorithmHelper.getSHA256(any(byte[].class))).thenThrow(NoSuchAlgorithmException.class);
         assertFalse(PKCE.isAvailable(algorithmHelper));
     }
 
     @Test
-    public void shouldNotHavePKCEAvailableIfASCIIIsNotAvailable() throws Exception {
+    public void shouldNotHavePKCEAvailableIfASCIIIsNotAvailable() {
         AlgorithmHelper algorithmHelper = Mockito.mock(AlgorithmHelper.class);
         when(algorithmHelper.getASCIIBytes(anyString())).thenThrow(UnsupportedEncodingException.class);
         assertFalse(PKCE.isAvailable(algorithmHelper));
     }
 
     @Test
-    public void shouldHavePKCEAvailable() throws Exception {
+    public void shouldHavePKCEAvailable() {
         AlgorithmHelper algorithmHelper = Mockito.mock(AlgorithmHelper.class);
         when(algorithmHelper.getSHA256(any(byte[].class))).thenReturn(new byte[]{1, 2, 1, 2, 1, 2, 1, 2, 1});
         when(algorithmHelper.getASCIIBytes(anyString())).thenReturn(new byte[]{1, 2, 1, 2, 1, 2, 1, 2, 1});

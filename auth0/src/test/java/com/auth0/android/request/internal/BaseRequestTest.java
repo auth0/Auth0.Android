@@ -85,7 +85,7 @@ public class BaseRequestTest {
     private ArgumentCaptor<Map<String, Object>> mapCaptor;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
         HttpUrl url = HttpUrl.parse("https://auth0.com");
         parameterBuilder = ParameterBuilder.newBuilder();
@@ -97,7 +97,7 @@ public class BaseRequestTest {
             }
 
             @Override
-            public void onResponse(Response response) throws IOException {
+            public void onResponse(Response response) {
 
             }
 
@@ -109,35 +109,35 @@ public class BaseRequestTest {
     }
 
     @Test
-    public void shouldUpdateTheCallback() throws Exception {
+    public void shouldUpdateTheCallback() {
         BaseCallback<String, Auth0Exception> diffCallback = mock(BaseCallback.class);
         baseRequest.setCallback(diffCallback);
         assertThat(baseRequest.getCallback(), CoreMatchers.equalTo(diffCallback));
     }
 
     @Test
-    public void shouldGetTheCallback() throws Exception {
+    public void shouldGetTheCallback() {
         assertThat(baseRequest.getCallback(), CoreMatchers.equalTo(callback));
     }
 
     @Test
-    public void shouldGetTheErrorBuilder() throws Exception {
+    public void shouldGetTheErrorBuilder() {
         assertThat(baseRequest.getErrorBuilder(), CoreMatchers.equalTo(errorBuilder));
     }
 
     @Test
-    public void shouldGetTheAdapter() throws Exception {
+    public void shouldGetTheAdapter() {
         assertThat(baseRequest.getAdapter(), CoreMatchers.equalTo(adapter));
     }
 
     @Test
-    public void shouldAddHeaders() throws Exception {
+    public void shouldAddHeaders() {
         baseRequest.addHeader("name", "value");
         verify(headers).put("name", "value");
     }
 
     @Test
-    public void shouldAddASingleParameter() throws Exception {
+    public void shouldAddASingleParameter() {
         baseRequest.addParameter("name", "value");
 
         final Map<String, Object> result = parameterBuilder.asDictionary();
@@ -146,7 +146,7 @@ public class BaseRequestTest {
     }
 
     @Test
-    public void shouldAddParameters() throws Exception {
+    public void shouldAddParameters() {
         Map<String, Object> params = new HashMap<>();
         params.put("name", "value");
         params.put("asd", "123");
@@ -159,33 +159,33 @@ public class BaseRequestTest {
     }
 
     @Test
-    public void shouldSetBearer() throws Exception {
+    public void shouldSetBearer() {
         baseRequest.setBearer("my-jwt-token");
         verify(headers).put("Authorization", "Bearer my-jwt-token");
     }
 
     @Test
-    public void shouldPostOnSuccess() throws Exception {
+    public void shouldPostOnSuccess() {
         baseRequest.postOnSuccess("OK");
         verify(callback).onSuccess(eq("OK"));
         verifyNoMoreInteractions(callback);
     }
 
     @Test
-    public void shouldPostOnFailure() throws Exception {
+    public void shouldPostOnFailure() {
         baseRequest.postOnFailure(throwable);
         verify(callback).onFailure(eq(throwable));
         verifyNoMoreInteractions(callback);
     }
 
     @Test
-    public void shouldBuildNetworkErrorException() throws Exception {
+    public void shouldBuildNetworkErrorException() {
         baseRequest.onFailure(null, mock(IOException.class));
         verify(errorBuilder).from(eq("Request failed"), any(NetworkErrorException.class));
     }
 
     @Test
-    public void shouldParseUnsuccessfulJsonResponse() throws Exception {
+    public void shouldParseUnsuccessfulJsonResponse() {
         String payload = "{key: \"value\", asd: \"123\"}";
         final Response response = createJsonResponse(payload, 401);
         baseRequest.parseUnsuccessfulResponse(response);
@@ -196,7 +196,7 @@ public class BaseRequestTest {
     }
 
     @Test
-    public void shouldParseUnsuccessfulNotJsonResponse() throws Exception {
+    public void shouldParseUnsuccessfulNotJsonResponse() {
         String payload = "n=ot_a valid json {{]";
         final Response response = createJsonResponse(payload, 401);
         baseRequest.parseUnsuccessfulResponse(response);

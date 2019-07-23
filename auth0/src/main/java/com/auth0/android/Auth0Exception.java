@@ -30,8 +30,11 @@ package com.auth0.android;
 public class Auth0Exception extends RuntimeException {
 
     public static final String UNKNOWN_ERROR = "a0.sdk.internal_error.unknown";
+    @SuppressWarnings("WeakerAccess")
     public static final String NON_JSON_ERROR = "a0.sdk.internal_error.plain";
+    @SuppressWarnings("WeakerAccess")
     public static final String EMPTY_BODY_ERROR = "a0.sdk.internal_error.empty";
+    @SuppressWarnings("WeakerAccess")
     public static final String EMPTY_RESPONSE_BODY_DESCRIPTION = "Empty response body";
 
     public Auth0Exception(String message, Throwable cause) {

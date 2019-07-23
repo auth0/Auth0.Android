@@ -38,44 +38,44 @@ public class OAuthManagerTest {
     AuthCallback callback;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
     }
 
     @Test
-    public void shouldUseBrowserByDefault() throws Exception {
+    public void shouldUseBrowserByDefault() {
         OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>());
         assertTrue(manager.useBrowser());
     }
 
     @Test
-    public void shouldNotUseBrowser() throws Exception {
+    public void shouldNotUseBrowser() {
         OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>());
         manager.useBrowser(false);
         assertFalse(manager.useBrowser());
     }
 
     @Test
-    public void shouldNotUseFullScreenByDefault() throws Exception {
+    public void shouldNotUseFullScreenByDefault() {
         OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>());
         assertFalse(manager.useFullScreen());
     }
 
     @Test
-    public void shouldUseFullScreen() throws Exception {
+    public void shouldUseFullScreen() {
         OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>());
         manager.useFullScreen(true);
         assertTrue(manager.useFullScreen());
     }
 
     @Test
-    public void shouldNotHaveCustomTabsOptionsByDefault() throws Exception {
+    public void shouldNotHaveCustomTabsOptionsByDefault() {
         OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>());
         assertThat(manager.customTabsOptions(), is(nullValue()));
     }
 
     @Test
-    public void shouldSetCustomTabsOptions() throws Exception {
+    public void shouldSetCustomTabsOptions() {
         CustomTabsOptions options = mock(CustomTabsOptions.class);
         OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>());
         manager.setCustomTabsOptions(options);
@@ -83,7 +83,7 @@ public class OAuthManagerTest {
     }
 
     @Test
-    public void shouldMergeCredentials() throws Exception {
+    public void shouldMergeCredentials() {
         Date expiresAt = new Date();
         Credentials urlCredentials = new Credentials("urlId", "urlAccess", "urlType", "urlRefresh", expiresAt, "urlScope");
         Credentials codeCredentials = new Credentials("codeId", "codeAccess", "codeType", "codeRefresh", expiresAt, "codeScope");
@@ -100,8 +100,7 @@ public class OAuthManagerTest {
     }
 
     @Test
-    @SuppressWarnings("ConstantConditions")
-    public void shouldPreferNonNullValuesWhenMergingCredentials() throws Exception {
+    public void shouldPreferNonNullValuesWhenMergingCredentials() {
         Credentials urlCredentials = new Credentials("urlId", "urlAccess", "urlType", "urlRefresh", new Date(), "urlScope");
         Credentials codeCredentials = new Credentials(null, null, null, null, null, null);
         Credentials merged = OAuthManager.mergeCredentials(urlCredentials, codeCredentials);
@@ -116,35 +115,35 @@ public class OAuthManagerTest {
     }
 
     @Test
-    public void shouldHaveValidState() throws Exception {
+    public void shouldHaveValidState() {
         OAuthManager.assertValidState("1234567890", "1234567890");
     }
 
     @Test
-    public void shouldHaveInvalidState() throws Exception {
+    public void shouldHaveInvalidState() {
         exception.expect(AuthenticationException.class);
         OAuthManager.assertValidState("0987654321", "1234567890");
     }
 
     @Test
-    public void shouldHaveInvalidStateWhenOneIsNull() throws Exception {
+    public void shouldHaveInvalidStateWhenOneIsNull() {
         exception.expect(AuthenticationException.class);
         OAuthManager.assertValidState("0987654321", null);
     }
 
     @Test
-    public void shouldHaveValidNonce() throws Exception {
+    public void shouldHaveValidNonce() {
         OAuthManager.assertValidNonce("1234567890", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk");
     }
 
     @Test
-    public void shouldHaveInvalidNonce() throws Exception {
+    public void shouldHaveInvalidNonce() {
         exception.expect(AuthenticationException.class);
         OAuthManager.assertValidNonce("0987654321", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk");
     }
 
     @Test
-    public void shouldHaveInvalidNonceOnDecodeException() throws Exception {
+    public void shouldHaveInvalidNonceOnDecodeException() {
         exception.expect(AuthenticationException.class);
         OAuthManager.assertValidNonce("0987654321", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVC.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk");
     }

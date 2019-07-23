@@ -53,14 +53,14 @@ public class AuthorizeResultTest {
     private Intent intent;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         intent = Mockito.mock(Intent.class);
         Uri data = Uri.parse(CALLBACK_URL + SAMPLE_HASH);
         when(intent.getData()).thenReturn(data);
     }
 
     @Test
-    public void shouldNotBeValidForOtherResult() throws Exception {
+    public void shouldNotBeValidForOtherResult() {
         AuthorizeResult authorizeResult = new AuthorizeResult(REQUEST_CODE, Activity.RESULT_OK, intent);
 
         boolean isValid = authorizeResult.isValid(OTHER_REQUEST_CODE);
@@ -69,7 +69,7 @@ public class AuthorizeResultTest {
     }
 
     @Test
-    public void shouldBeValidAndCanceledForNullUri() throws Exception {
+    public void shouldBeValidAndCanceledForNullUri() {
         when(intent.getData()).thenReturn(null);
         AuthorizeResult authorizeResult = new AuthorizeResult(intent);
 
@@ -78,7 +78,7 @@ public class AuthorizeResultTest {
     }
 
     @Test
-    public void shouldBeValidForCanceledResult() throws Exception {
+    public void shouldBeValidForCanceledResult() {
         when(intent.getData()).thenReturn(null);
         AuthorizeResult authorizeResult = new AuthorizeResult(REQUEST_CODE, Activity.RESULT_CANCELED, intent);
 
@@ -86,21 +86,21 @@ public class AuthorizeResultTest {
     }
 
     @Test
-    public void shouldBeValidForExpectedActivityResult() throws Exception {
+    public void shouldBeValidForExpectedActivityResult() {
         AuthorizeResult authorizeResult = new AuthorizeResult(REQUEST_CODE, Activity.RESULT_OK, intent);
 
         assertThat(authorizeResult.isValid(REQUEST_CODE), is(true));
     }
 
     @Test
-    public void shouldBeValid() throws Exception {
+    public void shouldBeValid() {
         AuthorizeResult authorizeResult = new AuthorizeResult(intent);
 
         assertThat(authorizeResult.isValid(0), is(true));
     }
 
     @Test
-    public void shouldCreateAValidResultWithOnlyTheIntent() throws Exception {
+    public void shouldCreateAValidResultWithOnlyTheIntent() {
         AuthorizeResult authorizeResult = new AuthorizeResult(intent);
 
         assertThat(authorizeResult.getIntentData(), is(notNullValue()));

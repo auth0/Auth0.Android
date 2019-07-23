@@ -43,7 +43,7 @@ public class UserProfileGsonTest extends GsonBaseTest {
     public ExpectedException expectedException = ExpectedException.none();
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         gson = GsonProvider.buildGson();
     }
 

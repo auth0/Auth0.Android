@@ -15,19 +15,19 @@ public class AuthenticationTest {
     private Authentication authentication;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         credentials = Mockito.mock(Credentials.class);
         profile = Mockito.mock(UserProfile.class);
         authentication = new Authentication(profile, credentials);
     }
 
     @Test
-    public void getProfile() throws Exception {
+    public void getProfile() {
         assertThat(authentication.getProfile(), is(profile));
     }
 
     @Test
-    public void getCredentials() throws Exception {
+    public void getCredentials() {
         assertThat(authentication.getCredentials(), is(credentials));
     }
 

@@ -35,14 +35,14 @@ public class SignUpRequestTest {
     private SignUpRequest signUpRequest;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         dbMockRequest = mock(DatabaseConnectionRequest.class);
         authenticationMockRequest = mock(AuthenticationRequest.class);
         signUpRequest = new SignUpRequest(dbMockRequest, authenticationMockRequest);
     }
 
     @Test
-    public void shouldAddSignUpParameters() throws Exception {
+    public void shouldAddSignUpParameters() {
         final Map params = mock(Map.class);
         final SignUpRequest req = signUpRequest.addSignUpParameters(params);
         verify(dbMockRequest).addParameters(params);
@@ -51,7 +51,7 @@ public class SignUpRequestTest {
     }
 
     @Test
-    public void shouldAddAuthenticationParameters() throws Exception {
+    public void shouldAddAuthenticationParameters() {
         final Map params = mock(Map.class);
         final SignUpRequest req = signUpRequest.addAuthenticationParameters(params);
         verify(authenticationMockRequest).addAuthenticationParameters(params);
@@ -60,7 +60,7 @@ public class SignUpRequestTest {
     }
 
     @Test
-    public void shouldSetScope() throws Exception {
+    public void shouldSetScope() {
         final SignUpRequest req = signUpRequest.setScope("oauth2 offline_access profile");
         verify(authenticationMockRequest).setScope("oauth2 offline_access profile");
         Assert.assertThat(req, is(notNullValue()));
@@ -68,7 +68,7 @@ public class SignUpRequestTest {
     }
 
     @Test
-    public void shouldSetAudience() throws Exception {
+    public void shouldSetAudience() {
         final AuthenticationRequest req = signUpRequest.setAudience("https://domain.auth0.com/api");
         verify(authenticationMockRequest).setAudience("https://domain.auth0.com/api");
         Assert.assertThat(req, is(notNullValue()));
@@ -76,7 +76,7 @@ public class SignUpRequestTest {
     }
 
     @Test
-    public void shouldSetDevice() throws Exception {
+    public void shouldSetDevice() {
         final AuthenticationRequest req = signUpRequest.setDevice("nexus-5x");
         verify(authenticationMockRequest).setDevice("nexus-5x");
         Assert.assertThat(req, is(notNullValue()));
@@ -84,7 +84,7 @@ public class SignUpRequestTest {
     }
 
     @Test
-    public void shouldSetGrantType() throws Exception {
+    public void shouldSetGrantType() {
         final AuthenticationRequest req = signUpRequest.setGrantType("token");
         verify(authenticationMockRequest).setGrantType("token");
         Assert.assertThat(req, is(notNullValue()));
@@ -92,7 +92,7 @@ public class SignUpRequestTest {
     }
 
     @Test
-    public void shouldSetAccessToken() throws Exception {
+    public void shouldSetAccessToken() {
         final AuthenticationRequest req = signUpRequest.setAccessToken("super-access-token");
         verify(authenticationMockRequest).setAccessToken("super-access-token");
         Assert.assertThat(req, is(notNullValue()));
@@ -100,7 +100,7 @@ public class SignUpRequestTest {
     }
 
     @Test
-    public void shouldSetConnection() throws Exception {
+    public void shouldSetConnection() {
         final SignUpRequest req = signUpRequest.setConnection("my-connection");
         verify(dbMockRequest).setConnection("my-connection");
         verify(authenticationMockRequest).setConnection("my-connection");
@@ -109,7 +109,7 @@ public class SignUpRequestTest {
     }
 
     @Test
-    public void shouldSetRealm() throws Exception {
+    public void shouldSetRealm() {
         final SignUpRequest req = signUpRequest.setRealm("users");
         verify(dbMockRequest).setConnection("users");
         verify(authenticationMockRequest).setRealm("users");
@@ -118,7 +118,7 @@ public class SignUpRequestTest {
     }
 
     @Test
-    public void shouldReturnCredentialsAfterStartingTheRequest() throws Exception {
+    public void shouldReturnCredentialsAfterStartingTheRequest() {
         final DatabaseUser user = mock(DatabaseUser.class);
         final Credentials credentials = mock(Credentials.class);
         final DatabaseConnectionRequestMock dbRequestMock = new DatabaseConnectionRequestMock(user, null);
@@ -134,7 +134,7 @@ public class SignUpRequestTest {
     }
 
     @Test
-    public void shouldReturnErrorAfterStartingTheRequestIfDatabaseRequestFails() throws Exception {
+    public void shouldReturnErrorAfterStartingTheRequestIfDatabaseRequestFails() {
         final AuthenticationException error = mock(AuthenticationException.class);
         final Credentials credentials = mock(Credentials.class);
         final DatabaseConnectionRequestMock dbRequestMock = new DatabaseConnectionRequestMock(null, error);
@@ -150,7 +150,7 @@ public class SignUpRequestTest {
     }
 
     @Test
-    public void shouldReturnErrorAfterStartingTheRequestIfAuthenticationRequestFails() throws Exception {
+    public void shouldReturnErrorAfterStartingTheRequestIfAuthenticationRequestFails() {
         final DatabaseUser user = mock(DatabaseUser.class);
         final AuthenticationException error = mock(AuthenticationException.class);
         final DatabaseConnectionRequestMock dbRequestMock = new DatabaseConnectionRequestMock(user, null);
@@ -166,17 +166,17 @@ public class SignUpRequestTest {
     }
 
     @Test
-    public void shouldExecuteTheRequest() throws Exception {
+    public void shouldExecuteTheRequest() {
         when(dbMockRequest.execute()).thenAnswer(new Answer<Object>() {
             @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
+            public Object answer(InvocationOnMock invocation) {
                 return null;
             }
         });
         final Credentials credentials = mock(Credentials.class);
         when(authenticationMockRequest.execute()).thenAnswer(new Answer<Object>() {
             @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
+            public Object answer(InvocationOnMock invocation) {
                 return credentials;
             }
         });

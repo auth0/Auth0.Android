@@ -1,5 +1,6 @@
 package com.auth0.android.provider;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Parcel;
@@ -33,6 +34,7 @@ public class CustomTabsOptions implements Parcelable {
     }
 
 
+    @SuppressLint("ResourceType")
     Intent toIntent(Context context, CustomTabsSession session) {
         final CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder(session)
                 .setShowTitle(showTitle);

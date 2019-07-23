@@ -47,7 +47,7 @@ public class MockBaseCallback<T, U extends Auth0Exception> implements BaseCallba
     public Callable<T> payload() {
         return new Callable<T>() {
             @Override
-            public T call() throws Exception {
+            public T call() {
                 return payload;
             }
         };
@@ -56,7 +56,7 @@ public class MockBaseCallback<T, U extends Auth0Exception> implements BaseCallba
     public Callable<U> error() {
         return new Callable<U>() {
             @Override
-            public U call() throws Exception {
+            public U call() {
                 return error;
             }
         };

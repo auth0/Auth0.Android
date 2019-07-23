@@ -63,7 +63,7 @@ public class BaseAuthenticationRequestTest {
         return new BaseAuthenticationRequest(url, new OkHttpClient(), gson, "POST", Credentials.class);
     }
 
-    private Map<String, String> bodyFromRequest(RecordedRequest request) throws java.io.IOException {
+    private Map<String, String> bodyFromRequest(RecordedRequest request) {
         final Type mapType = new TypeToken<Map<String, String>>() {
         }.getType();
         return gson.fromJson(request.getBody().readUtf8(), mapType);
@@ -92,7 +92,7 @@ public class BaseAuthenticationRequestTest {
     }
 
     @Test
-    public void shouldNotSetConnectionOnNonLegacyEndpoints() throws Exception {
+    public void shouldNotSetConnectionOnNonLegacyEndpoints() {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("method POST must have a request body.");
         //no body was sent
@@ -125,7 +125,7 @@ public class BaseAuthenticationRequestTest {
     }
 
     @Test
-    public void shouldNotSetRealmOnLegacyEndpoints() throws Exception {
+    public void shouldNotSetRealmOnLegacyEndpoints() {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("method POST must have a request body.");
         //no body was sent

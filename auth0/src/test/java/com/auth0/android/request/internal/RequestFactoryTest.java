@@ -44,7 +44,7 @@ public class RequestFactoryTest {
     private HttpUrl url;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
         gson = new Gson();
         url = HttpUrl.parse("http://domain.auth0.com");
@@ -52,14 +52,14 @@ public class RequestFactoryTest {
     }
 
     @Test
-    public void shouldHaveNonNullHeaders() throws Exception {
+    public void shouldHaveNonNullHeaders() {
         final RequestFactory factory = new RequestFactory();
 
         assertThat(factory.getHeaders(), is(notNullValue()));
     }
 
     @Test
-    public void shouldHaveAcceptLanguageHeader() throws Exception {
+    public void shouldHaveAcceptLanguageHeader() {
         final RequestFactory factory = new RequestFactory();
 
         assertThat(factory.getHeaders().size(), is(1));
@@ -67,7 +67,7 @@ public class RequestFactoryTest {
     }
 
     @Test
-    public void shouldHaveClientInfoHeader() throws Exception {
+    public void shouldHaveClientInfoHeader() {
         final RequestFactory factory = new RequestFactory();
 
         factory.setClientInfo(CLIENT_INFO);
@@ -76,7 +76,7 @@ public class RequestFactoryTest {
     }
 
     @Test
-    public void shouldHaveUserAgentHeader() throws Exception {
+    public void shouldHaveUserAgentHeader() {
         final RequestFactory factory = new RequestFactory();
 
         factory.setUserAgent(USER_AGENT);
@@ -85,7 +85,7 @@ public class RequestFactoryTest {
     }
 
     @Test
-    public void shouldHaveAuthorizationHeader() throws Exception {
+    public void shouldHaveAuthorizationHeader() {
         final RequestFactory factory = new RequestFactory(TOKEN);
 
         assertThat(factory.getHeaders().size(), is(2));
@@ -93,7 +93,7 @@ public class RequestFactoryTest {
     }
 
     @Test
-    public void shouldCreateAuthenticationPOSTRequest() throws Exception {
+    public void shouldCreateAuthenticationPOSTRequest() {
         final MockAuthenticationRequest request = (MockAuthenticationRequest) factory.authenticationPOST(url, client, gson);
 
         assertThat(request, is(notNullValue()));
@@ -102,7 +102,7 @@ public class RequestFactoryTest {
     }
 
     @Test
-    public void shouldCreatePOSTRequestOfTClass() throws Exception {
+    public void shouldCreatePOSTRequestOfTClass() {
         ParameterizableRequest<Auth0, Auth0Exception> request = factory.POST(url, client, gson, Auth0.class, builder);
 
         assertThat(request, is(notNullValue()));
@@ -111,7 +111,7 @@ public class RequestFactoryTest {
     }
 
     @Test
-    public void shouldCreatePOSTRequestOfTToken() throws Exception {
+    public void shouldCreatePOSTRequestOfTToken() {
         TypeToken<Auth0> typeToken = createTypeToken();
         final ParameterizableRequest<Auth0, Auth0Exception> request = factory.POST(url, client, gson, typeToken, builder);
 
@@ -121,7 +121,7 @@ public class RequestFactoryTest {
     }
 
     @Test
-    public void shouldCreateVoidPOSTRequest() throws Exception {
+    public void shouldCreateVoidPOSTRequest() {
         final ParameterizableRequest<Void, Auth0Exception> request = factory.POST(url, client, gson, builder);
 
         assertThat(request, is(notNullValue()));
@@ -130,7 +130,7 @@ public class RequestFactoryTest {
     }
 
     @Test
-    public void shouldCreateRawPOSTRequest() throws Exception {
+    public void shouldCreateRawPOSTRequest() {
         final ParameterizableRequest<Map<String, Object>, Auth0Exception> request = factory.rawPOST(url, client, gson, builder);
 
         assertThat(request, is(notNullValue()));
@@ -139,7 +139,7 @@ public class RequestFactoryTest {
     }
 
     @Test
-    public void shouldCreatePATCHRequestOfTClass() throws Exception {
+    public void shouldCreatePATCHRequestOfTClass() {
         final ParameterizableRequest<Auth0, Auth0Exception> request = factory.PATCH(url, client, gson, Auth0.class, builder);
 
         assertThat(request, is(notNullValue()));
@@ -148,7 +148,7 @@ public class RequestFactoryTest {
     }
 
     @Test
-    public void shouldCreateDELETERequestOfTToken() throws Exception {
+    public void shouldCreateDELETERequestOfTToken() {
         TypeToken<Auth0> typeToken = createTypeToken();
         final ParameterizableRequest<Auth0, Auth0Exception> request = factory.DELETE(url, client, gson, typeToken, builder);
 
@@ -158,7 +158,7 @@ public class RequestFactoryTest {
     }
 
     @Test
-    public void shouldGetDefaultLocale() throws Exception {
+    public void shouldGetDefaultLocale() {
         final Locale localeJP = new Locale("ja", "JP");
         Locale.setDefault(localeJP);
         assertThat(RequestFactory.getDefaultLocale(), is("ja_JP"));
@@ -169,7 +169,7 @@ public class RequestFactoryTest {
     }
 
     @Test
-    public void shouldAlwaysReturnValidLocale() throws Exception {
+    public void shouldAlwaysReturnValidLocale() {
         final Locale locale = new Locale("");
         Locale.setDefault(locale);
         assertThat(RequestFactory.getDefaultLocale(), is("en_US"));

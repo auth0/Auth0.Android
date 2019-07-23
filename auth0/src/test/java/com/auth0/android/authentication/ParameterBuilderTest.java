@@ -56,101 +56,101 @@ public class ParameterBuilderTest {
     private ParameterBuilder builder;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         this.builder = ParameterBuilder.newAuthenticationBuilder();
     }
 
     @Test
-    public void shouldInstantiateWithNoArguments() throws Exception {
+    public void shouldInstantiateWithNoArguments() {
         assertThat(ParameterBuilder.newAuthenticationBuilder(), is(notNullValue()));
     }
 
     @Test
-    public void shouldInstantiateWithDefaultScope() throws Exception {
+    public void shouldInstantiateWithDefaultScope() {
         assertThat(ParameterBuilder.newAuthenticationBuilder().asDictionary(), hasEntry("scope", ParameterBuilder.SCOPE_OPENID));
     }
 
     @Test
-    public void shouldInstantiateWithArguments() throws Exception {
+    public void shouldInstantiateWithArguments() {
         assertThat(ParameterBuilder.newBuilder(new HashMap<String, Object>()), is(notNullValue()));
     }
 
     @Test
-    public void shouldFailToInstantiateWithNullParametersInFactoryMethod() throws Exception {
+    public void shouldFailToInstantiateWithNullParametersInFactoryMethod() {
         expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage(equalToIgnoringCase("Must provide non-null parameters"));
         ParameterBuilder.newBuilder(null);
     }
 
     @Test
-    public void shouldSetClientID() throws Exception {
+    public void shouldSetClientID() {
         assertThat(builder.setClientId(CLIENT_ID).asDictionary(), hasEntry("client_id", CLIENT_ID));
     }
 
     @Test
-    public void shouldSetScope() throws Exception {
+    public void shouldSetScope() {
         Map<String, Object> parameters = builder.setScope(ParameterBuilder.SCOPE_OFFLINE_ACCESS).asDictionary();
         assertThat(parameters, hasEntry("scope", ParameterBuilder.SCOPE_OFFLINE_ACCESS));
     }
 
     @Test
-    public void shouldSetAudience() throws Exception {
+    public void shouldSetAudience() {
         Map<String, Object> parameters = builder.setAudience("https://domain.auth0.com/api").asDictionary();
         assertThat(parameters, hasEntry("audience", "https://domain.auth0.com/api"));
     }
 
     @Test
-    public void shouldSetDevice() throws Exception {
+    public void shouldSetDevice() {
         Map<String, Object> parameters = builder.setDevice(DEVICE).asDictionary();
         assertThat(parameters, hasEntry("device", DEVICE));
     }
 
     @Test
-    public void shouldSetRefreshToken() throws Exception {
+    public void shouldSetRefreshToken() {
         Map<String, Object> parameters = builder.setRefreshToken(DEVICE).asDictionary();
         assertThat(parameters, hasEntry("refresh_token", DEVICE));
     }
 
     @Test
-    public void shouldSetScopeWithOfflineAccess() throws Exception {
+    public void shouldSetScopeWithOfflineAccess() {
         Map<String, Object> parameters = builder.setScope(ParameterBuilder.SCOPE_OFFLINE_ACCESS).asDictionary();
         assertThat(parameters, hasEntry("scope", ParameterBuilder.SCOPE_OFFLINE_ACCESS));
     }
 
     @Test
-    public void shouldSetGrantType() throws Exception {
+    public void shouldSetGrantType() {
         assertThat(builder.setGrantType(GRANT_TYPE).asDictionary(), hasEntry("grant_type", GRANT_TYPE));
     }
 
     @Test
-    public void shouldSetConnection() throws Exception {
+    public void shouldSetConnection() {
         assertThat(builder.setConnection(CONNECTION).asDictionary(), hasEntry("connection", CONNECTION));
     }
 
     @Test
-    public void shouldSetRealm() throws Exception {
+    public void shouldSetRealm() {
         assertThat(builder.setRealm(REALM).asDictionary(), hasEntry("realm", REALM));
     }
 
     @Test
-    public void shouldAddArbitraryEntry() throws Exception {
+    public void shouldAddArbitraryEntry() {
         assertThat(builder.set("key", "value").asDictionary(), hasEntry("key", "value"));
     }
 
     @Test
-    public void shouldNotAddNullEntry() throws Exception {
+    public void shouldNotAddNullEntry() {
         assertThat(builder.set("key", null).asDictionary(), not(hasEntry("key", null)));
     }
 
     @Test
-    public void shouldAddAllFromDictionary() throws Exception {
+    public void shouldAddAllFromDictionary() {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("key", "value");
         assertThat(builder.addAll(parameters).asDictionary(), hasEntry("key", "value"));
     }
 
     @Test
-    public void shouldSkipNullValuesOnAddAllFromDictionary() throws Exception {
+    public void shouldSkipNullValuesOnAddAllFromDictionary() {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("key", "value");
         parameters.put("null", null);
@@ -159,7 +159,7 @@ public class ParameterBuilderTest {
     }
 
     @Test
-    public void shouldClearAllValues() throws Exception {
+    public void shouldClearAllValues() {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("key", "value");
         builder.addAll(parameters);
@@ -169,19 +169,19 @@ public class ParameterBuilderTest {
     }
 
     @Test
-    public void shouldDoNothingWhenAddingNullParameters() throws Exception {
+    public void shouldDoNothingWhenAddingNullParameters() {
         assertThat(builder.addAll(null).asDictionary(), hasEntry("scope", ParameterBuilder.SCOPE_OPENID));
     }
 
     @Test
-    public void shouldProvideADictionaryCopy() throws Exception {
+    public void shouldProvideADictionaryCopy() {
         Map<String, Object> parameters = builder.setClientId(CLIENT_ID).asDictionary();
         builder.set("key", "value");
         assertThat(parameters, not(hasEntry("key", "value")));
     }
 
     @Test
-    public void shouldProvideAnImmutableDictionary() throws Exception {
+    public void shouldProvideAnImmutableDictionary() {
         Map<String, Object> parameters = builder.setClientId(CLIENT_ID).asDictionary();
         try {
             parameters.put("key", "value");

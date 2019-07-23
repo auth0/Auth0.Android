@@ -106,7 +106,7 @@ public class WebAuthProviderTest {
 
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
         activity = spy(Robolectric.buildActivity(Activity.class).get());
         account = new Auth0("clientId", "domain");
@@ -127,7 +127,7 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldLoginWithAccount() throws Exception {
+    public void shouldLoginWithAccount() {
         WebAuthProvider.login(account)
                 .start(activity, callback, REQUEST_CODE);
 
@@ -136,7 +136,7 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldInitWithAccount() throws Exception {
+    public void shouldInitWithAccount() {
         WebAuthProvider.init(account)
                 .start(activity, callback, REQUEST_CODE);
 
@@ -144,7 +144,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldInitWithContext() throws Exception {
+    public void shouldInitWithContext() {
         Context context = Mockito.mock(Context.class);
         Resources resources = Mockito.mock(Resources.class);
         when(context.getResources()).thenReturn(resources);
@@ -162,14 +162,14 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldNotResumeLoginWithRequestCodeWhenNotInit() throws Exception {
+    public void shouldNotResumeLoginWithRequestCodeWhenNotInit() {
         Intent intentMock = Mockito.mock(Intent.class);
 
         assertFalse(WebAuthProvider.resume(0, 0, intentMock));
     }
 
     @Test
-    public void shouldNotResumeLoginWithIntentWhenNotInit() throws Exception {
+    public void shouldNotResumeLoginWithIntentWhenNotInit() {
         Intent intentMock = Mockito.mock(Intent.class);
 
         assertFalse(WebAuthProvider.resume(intentMock));
@@ -178,7 +178,7 @@ public class WebAuthProviderTest {
     //scheme
 
     @Test
-    public void shouldHaveDefaultSchemeOnLogin() throws Exception {
+    public void shouldHaveDefaultSchemeOnLogin() {
         WebAuthProvider.init(account)
                 .start(activity, callback);
         verify(activity).startActivity(intentCaptor.capture());
@@ -191,7 +191,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetSchemeOnLogin() throws Exception {
+    public void shouldSetSchemeOnLogin() {
         WebAuthProvider.init(account)
                 .withScheme("myapp")
                 .start(activity, callback);
@@ -208,7 +208,7 @@ public class WebAuthProviderTest {
     //connection
 
     @Test
-    public void shouldNotHaveDefaultConnectionOnLogin() throws Exception {
+    public void shouldNotHaveDefaultConnectionOnLogin() {
         WebAuthProvider.init(account)
                 .start(activity, callback);
 
@@ -220,7 +220,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetConnectionFromParametersOnLogin() throws Exception {
+    public void shouldSetConnectionFromParametersOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("connection", (Object) "my-connection");
         WebAuthProvider.init(account)
                 .withConnection("some-connection")
@@ -235,7 +235,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetConnectionFromSetterOnLogin() throws Exception {
+    public void shouldSetConnectionFromSetterOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("connection", (Object) "my-connection");
         WebAuthProvider.init(account)
                 .withParameters(parameters)
@@ -250,7 +250,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldNotOverrideConnectionValueWithDefaultConnectionOnLogin() throws Exception {
+    public void shouldNotOverrideConnectionValueWithDefaultConnectionOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("connection", (Object) "my-connection");
         WebAuthProvider.init(account)
                 .withParameters(parameters)
@@ -264,7 +264,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetConnectionOnLogin() throws Exception {
+    public void shouldSetConnectionOnLogin() {
         WebAuthProvider.init(account)
                 .withConnection("some-connection")
                 .start(activity, callback);
@@ -279,7 +279,7 @@ public class WebAuthProviderTest {
     //audience
 
     @Test
-    public void shouldNotHaveDefaultAudienceOnLogin() throws Exception {
+    public void shouldNotHaveDefaultAudienceOnLogin() {
         WebAuthProvider.init(account)
                 .start(activity, callback);
 
@@ -291,7 +291,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetAudienceFromParametersOnLogin() throws Exception {
+    public void shouldSetAudienceFromParametersOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("audience", (Object) "https://mydomain.auth0.com/myapi");
         WebAuthProvider.init(account)
                 .withAudience("https://google.com/apis")
@@ -306,7 +306,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetAudienceFromSetterOnLogin() throws Exception {
+    public void shouldSetAudienceFromSetterOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("audience", (Object) "https://mydomain.auth0.com/myapi");
         WebAuthProvider.init(account)
                 .withParameters(parameters)
@@ -321,7 +321,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldNotOverrideAudienceValueWithDefaultAudienceOnLogin() throws Exception {
+    public void shouldNotOverrideAudienceValueWithDefaultAudienceOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("audience", (Object) "https://mydomain.auth0.com/myapi");
         WebAuthProvider.init(account)
                 .withParameters(parameters)
@@ -335,7 +335,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetAudienceOnLogin() throws Exception {
+    public void shouldSetAudienceOnLogin() {
         WebAuthProvider.init(account)
                 .withAudience("https://google.com/apis")
                 .start(activity, callback);
@@ -351,7 +351,7 @@ public class WebAuthProviderTest {
     //scope
 
     @Test
-    public void shouldHaveDefaultScopeOnLogin() throws Exception {
+    public void shouldHaveDefaultScopeOnLogin() {
         WebAuthProvider.init(account)
                 .start(activity, callback);
 
@@ -363,7 +363,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetScopeFromParametersOnLogin() throws Exception {
+    public void shouldSetScopeFromParametersOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("scope", (Object) "openid email contacts");
         WebAuthProvider.init(account)
                 .withScope("profile super_scope")
@@ -378,7 +378,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetScopeFromSetterOnLogin() throws Exception {
+    public void shouldSetScopeFromSetterOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("scope", (Object) "openid email contacts");
         WebAuthProvider.init(account)
                 .withParameters(parameters)
@@ -393,7 +393,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldNotOverrideScopeValueWithDefaultScopeOnLogin() throws Exception {
+    public void shouldNotOverrideScopeValueWithDefaultScopeOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("scope", (Object) "openid email contacts");
         WebAuthProvider.init(account)
                 .withParameters(parameters)
@@ -407,7 +407,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetScopeOnLogin() throws Exception {
+    public void shouldSetScopeOnLogin() {
         WebAuthProvider.init(account)
                 .withScope("profile super_scope")
                 .start(activity, callback);
@@ -423,7 +423,7 @@ public class WebAuthProviderTest {
     //connection scope
 
     @Test
-    public void shouldNotHaveDefaultConnectionScopeOnLogin() throws Exception {
+    public void shouldNotHaveDefaultConnectionScopeOnLogin() {
         WebAuthProvider.init(account)
                 .start(activity, callback);
 
@@ -435,7 +435,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetConnectionScopeFromParametersOnLogin() throws Exception {
+    public void shouldSetConnectionScopeFromParametersOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("connection_scope", (Object) "openid,email,contacts");
         WebAuthProvider.init(account)
                 .withConnectionScope("profile", "super_scope")
@@ -450,7 +450,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetConnectionScopeFromSetterOnLogin() throws Exception {
+    public void shouldSetConnectionScopeFromSetterOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("connection_scope", (Object) "openid,email,contacts");
         WebAuthProvider.init(account)
                 .withParameters(parameters)
@@ -465,7 +465,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldNotOverrideConnectionScopeValueWithDefaultConnectionScopeOnLogin() throws Exception {
+    public void shouldNotOverrideConnectionScopeValueWithDefaultConnectionScopeOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("connection_scope", (Object) "openid,email,contacts");
         WebAuthProvider.init(account)
                 .withParameters(parameters)
@@ -479,7 +479,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetConnectionScopeOnLogin() throws Exception {
+    public void shouldSetConnectionScopeOnLogin() {
         WebAuthProvider.init(account)
                 .withConnectionScope("the", "scope", "of", "my", "connection")
                 .start(activity, callback);
@@ -495,7 +495,7 @@ public class WebAuthProviderTest {
     //state
 
     @Test
-    public void shouldHaveDefaultStateOnLogin() throws Exception {
+    public void shouldHaveDefaultStateOnLogin() {
         WebAuthProvider.init(account)
                 .start(activity, callback);
 
@@ -507,7 +507,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetNonNullStateOnLogin() throws Exception {
+    public void shouldSetNonNullStateOnLogin() {
         WebAuthProvider.init(account)
                 .withState(null)
                 .start(activity, callback);
@@ -520,7 +520,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetStateFromParametersOnLogin() throws Exception {
+    public void shouldSetStateFromParametersOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("state", (Object) "1234567890");
         WebAuthProvider.init(account)
                 .withState("abcdefg")
@@ -535,7 +535,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetStateFromSetterOnLogin() throws Exception {
+    public void shouldSetStateFromSetterOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("state", (Object) "1234567890");
         WebAuthProvider.init(account)
                 .withParameters(parameters)
@@ -550,7 +550,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldNotOverrideStateValueWithDefaultStateOnLogin() throws Exception {
+    public void shouldNotOverrideStateValueWithDefaultStateOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("state", (Object) "1234567890");
         WebAuthProvider.init(account)
                 .withParameters(parameters)
@@ -564,7 +564,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetStateOnLogin() throws Exception {
+    public void shouldSetStateOnLogin() {
         WebAuthProvider.init(account)
                 .withState("abcdefg")
                 .start(activity, callback);
@@ -579,7 +579,7 @@ public class WebAuthProviderTest {
     //nonce
 
     @Test
-    public void shouldNotSetNonceByDefaultIfResponseTypeIsCodeOnLogin() throws Exception {
+    public void shouldNotSetNonceByDefaultIfResponseTypeIsCodeOnLogin() {
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.CODE)
                 .start(activity, callback);
@@ -592,7 +592,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldNotSetNonceByDefaultIfResponseTypeIsTokenOnLogin() throws Exception {
+    public void shouldNotSetNonceByDefaultIfResponseTypeIsTokenOnLogin() {
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.TOKEN)
                 .start(activity, callback);
@@ -605,7 +605,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldHaveDefaultNonceOnLogin() throws Exception {
+    public void shouldHaveDefaultNonceOnLogin() {
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.ID_TOKEN)
                 .start(activity, callback);
@@ -618,7 +618,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetNonNullNonceOnLogin() throws Exception {
+    public void shouldSetNonNullNonceOnLogin() {
         WebAuthProvider.init(account)
                 .withNonce(null)
                 .withResponseType(ResponseType.ID_TOKEN)
@@ -632,7 +632,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetUserNonceIfResponseTypeIsTokenOnLogin() throws Exception {
+    public void shouldSetUserNonceIfResponseTypeIsTokenOnLogin() {
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.TOKEN)
                 .withNonce("1234567890")
@@ -646,7 +646,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetUserNonceIfResponseTypeIsCodeOnLogin() throws Exception {
+    public void shouldSetUserNonceIfResponseTypeIsCodeOnLogin() {
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.CODE)
                 .withNonce("1234567890")
@@ -660,7 +660,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetNonceFromParametersOnLogin() throws Exception {
+    public void shouldSetNonceFromParametersOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("nonce", (Object) "1234567890");
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.ID_TOKEN)
@@ -676,7 +676,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetNonceFromSetterOnLogin() throws Exception {
+    public void shouldSetNonceFromSetterOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("nonce", (Object) "1234567890");
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.ID_TOKEN)
@@ -692,7 +692,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldNotOverrideNonceValueWithDefaultNonceOnLogin() throws Exception {
+    public void shouldNotOverrideNonceValueWithDefaultNonceOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("nonce", (Object) "1234567890");
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.ID_TOKEN)
@@ -707,7 +707,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetNonceOnLogin() throws Exception {
+    public void shouldSetNonceOnLogin() {
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.ID_TOKEN)
                 .withNonce("abcdefg")
@@ -721,7 +721,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldGenerateRandomStringIfDefaultValueMissingOnLogin() throws Exception {
+    public void shouldGenerateRandomStringIfDefaultValueMissingOnLogin() {
         WebAuthProvider.init(account)
                 .start(activity, callback);
         String random1 = OAuthManager.getRandomString(null);
@@ -733,7 +733,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldNotGenerateRandomStringIfDefaultValuePresentOnLogin() throws Exception {
+    public void shouldNotGenerateRandomStringIfDefaultValuePresentOnLogin() {
         WebAuthProvider.init(account)
                 .start(activity, callback);
         String random1 = OAuthManager.getRandomString("some");
@@ -747,7 +747,7 @@ public class WebAuthProviderTest {
     // auth0 related
 
     @Test
-    public void shouldHaveClientIdOnLogin() throws Exception {
+    public void shouldHaveClientIdOnLogin() {
         WebAuthProvider.init(account)
                 .start(activity, callback);
 
@@ -759,7 +759,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldHaveTelemetryInfoOnLogin() throws Exception {
+    public void shouldHaveTelemetryInfoOnLogin() {
         WebAuthProvider.init(account)
                 .start(activity, callback);
 
@@ -771,7 +771,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldHaveRedirectUriOnLogin() throws Exception {
+    public void shouldHaveRedirectUriOnLogin() {
         WebAuthProvider.init(account)
                 .start(activity, callback);
 
@@ -785,7 +785,7 @@ public class WebAuthProviderTest {
     //response type
 
     @Test
-    public void shouldHaveDefaultResponseTypeOnLogin() throws Exception {
+    public void shouldHaveDefaultResponseTypeOnLogin() {
         WebAuthProvider.init(account)
                 .start(activity, callback);
 
@@ -797,7 +797,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetResponseTypeTokenOnLogin() throws Exception {
+    public void shouldSetResponseTypeTokenOnLogin() {
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.TOKEN)
                 .start(activity, callback);
@@ -810,7 +810,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetResponseTypeIdTokenOnLogin() throws Exception {
+    public void shouldSetResponseTypeIdTokenOnLogin() {
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.ID_TOKEN)
                 .start(activity, callback);
@@ -823,7 +823,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetResponseTypeCodeOnLogin() throws Exception {
+    public void shouldSetResponseTypeCodeOnLogin() {
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.CODE)
                 .start(activity, callback);
@@ -836,7 +836,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetResponseTypeCodeTokenOnLogin() throws Exception {
+    public void shouldSetResponseTypeCodeTokenOnLogin() {
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.CODE | ResponseType.TOKEN)
                 .start(activity, callback);
@@ -849,7 +849,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetResponseTypeCodeIdTokenOnLogin() throws Exception {
+    public void shouldSetResponseTypeCodeIdTokenOnLogin() {
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.CODE | ResponseType.ID_TOKEN)
                 .start(activity, callback);
@@ -862,7 +862,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetResponseTypeIdTokenTokenOnLogin() throws Exception {
+    public void shouldSetResponseTypeIdTokenTokenOnLogin() {
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.ID_TOKEN | ResponseType.TOKEN)
                 .start(activity, callback);
@@ -875,7 +875,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetResponseTypeCodeIdTokenTokenOnLogin() throws Exception {
+    public void shouldSetResponseTypeCodeIdTokenTokenOnLogin() {
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.CODE | ResponseType.ID_TOKEN | ResponseType.TOKEN)
                 .start(activity, callback);
@@ -888,7 +888,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetNonNullAuthenticationParametersOnLogin() throws Exception {
+    public void shouldSetNonNullAuthenticationParametersOnLogin() {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("a", "valid");
         parameters.put("b", null);
@@ -905,7 +905,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldBuildAuthorizeURIWithoutNullsOnLogin() throws Exception {
+    public void shouldBuildAuthorizeURIWithoutNullsOnLogin() {
         WebAuthProvider.init(account)
                 .start(activity, callback);
 
@@ -921,7 +921,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldBuildAuthorizeURIWithCorrectSchemeHostAndPathOnLogin() throws Exception {
+    public void shouldBuildAuthorizeURIWithCorrectSchemeHostAndPathOnLogin() {
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.ID_TOKEN)
                 .withState("a-state")
@@ -939,7 +939,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldBuildAuthorizeURIWithResponseTypeIdTokenOnLogin() throws Exception {
+    public void shouldBuildAuthorizeURIWithResponseTypeIdTokenOnLogin() {
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.ID_TOKEN)
                 .withState("a-state")
@@ -957,7 +957,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldBuildAuthorizeURIWithResponseTypeTokenOnLogin() throws Exception {
+    public void shouldBuildAuthorizeURIWithResponseTypeTokenOnLogin() {
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.TOKEN)
                 .withState("a-state")
@@ -974,7 +974,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldBuildAuthorizeURIWithResponseTypeCodeOnLogin() throws Exception {
+    public void shouldBuildAuthorizeURIWithResponseTypeCodeOnLogin() {
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.CODE)
                 .withState("a-state")
@@ -992,7 +992,7 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldStartLoginWithBrowserCustomTabsOptions() throws Exception {
+    public void shouldStartLoginWithBrowserCustomTabsOptions() {
         CustomTabsOptions options = mock(CustomTabsOptions.class);
         WebAuthProvider.init(account)
                 .withCustomTabsOptions(options)
@@ -1019,7 +1019,7 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldStartLoginWithBrowser() throws Exception {
+    public void shouldStartLoginWithBrowser() {
         WebAuthProvider.init(account)
                 .useBrowser(true)
                 .useCodeGrant(false)
@@ -1045,7 +1045,7 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldStartLoginWithWebViewAndDefaultConnection() throws Exception {
+    public void shouldStartLoginWithWebViewAndDefaultConnection() {
         WebAuthProvider.init(account)
                 .useBrowser(false)
                 .useCodeGrant(false)
@@ -1073,7 +1073,7 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldStartLoginWithWebViewAndCustomConnection() throws Exception {
+    public void shouldStartLoginWithWebViewAndCustomConnection() {
         WebAuthProvider.init(account)
                 .useBrowser(false)
                 .withConnection("my-connection")
@@ -1102,7 +1102,7 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldResumeLoginWithRequestCodeWithResponseTypeIdToken() throws Exception {
+    public void shouldResumeLoginWithRequestCodeWithResponseTypeIdToken() {
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.ID_TOKEN)
                 .start(activity, callback, REQUEST_CODE);
@@ -1122,7 +1122,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldResumeLoginWithIntentWithResponseTypeIdToken() throws Exception {
+    public void shouldResumeLoginWithIntentWithResponseTypeIdToken() {
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.ID_TOKEN)
                 .start(activity, callback);
@@ -1144,12 +1144,12 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldStartLoginWithValidRequestCode() throws Exception {
+    public void shouldStartLoginWithValidRequestCode() {
         final Credentials credentials = Mockito.mock(Credentials.class);
         PKCE pkce = Mockito.mock(PKCE.class);
         Mockito.doAnswer(new Answer() {
             @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
+            public Object answer(InvocationOnMock invocation) {
                 callback.onSuccess(credentials);
                 return null;
             }
@@ -1166,13 +1166,13 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldResumeLoginWithIntentWithCodeGrant() throws Exception {
+    public void shouldResumeLoginWithIntentWithCodeGrant() {
         Date expiresAt = new Date();
         final Credentials codeCredentials = new Credentials("codeId", "codeAccess", "codeType", "codeRefresh", expiresAt, "codeScope");
         PKCE pkce = Mockito.mock(PKCE.class);
         Mockito.doAnswer(new Answer() {
             @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
+            public Object answer(InvocationOnMock invocation) {
                 callbackCaptor.getValue().onSuccess(codeCredentials);
                 return null;
             }
@@ -1205,13 +1205,13 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldResumeLoginWithRequestCodeWithCodeGrant() throws Exception {
+    public void shouldResumeLoginWithRequestCodeWithCodeGrant() {
         Date expiresAt = new Date();
         final Credentials codeCredentials = new Credentials("codeId", "codeAccess", "codeType", "codeRefresh", expiresAt, "codeScope");
         PKCE pkce = Mockito.mock(PKCE.class);
         Mockito.doAnswer(new Answer() {
             @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
+            public Object answer(InvocationOnMock invocation) {
                 callbackCaptor.getValue().onSuccess(codeCredentials);
                 return null;
             }
@@ -1244,7 +1244,7 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldResumeLoginWithIntentWithImplicitGrant() throws Exception {
+    public void shouldResumeLoginWithIntentWithImplicitGrant() {
         WebAuthProvider.init(account)
                 .useCodeGrant(false)
                 .start(activity, callback);
@@ -1271,7 +1271,7 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldResumeLoginWithRequestCodeWithImplicitGrant() throws Exception {
+    public void shouldResumeLoginWithRequestCodeWithImplicitGrant() {
         WebAuthProvider.init(account)
                 .useCodeGrant(false)
                 .start(activity, callback, REQUEST_CODE);
@@ -1298,7 +1298,7 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldResumeLoginWithRequestCodeWhenResultCancelled() throws Exception {
+    public void shouldResumeLoginWithRequestCodeWhenResultCancelled() {
         WebAuthProvider.init(account)
                 .useCodeGrant(false)
                 .start(activity, callback, REQUEST_CODE);
@@ -1315,7 +1315,7 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldResumeLoginWithIntentWhenResultCancelled() throws Exception {
+    public void shouldResumeLoginWithIntentWhenResultCancelled() {
         WebAuthProvider.init(account)
                 .useCodeGrant(false)
                 .start(activity, callback);
@@ -1331,7 +1331,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldCalculateExpiresAtDateOnResumeLogin() throws Exception {
+    public void shouldCalculateExpiresAtDateOnResumeLogin() {
         WebAuthProvider.init(account)
                 .useCodeGrant(false)
                 .start(activity, callback, REQUEST_CODE);
@@ -1358,12 +1358,12 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldReThrowAnyFailedCodeExchangeDialogOnLogin() throws Exception {
+    public void shouldReThrowAnyFailedCodeExchangeDialogOnLogin() {
         final Dialog dialog = Mockito.mock(Dialog.class);
         PKCE pkce = Mockito.mock(PKCE.class);
         Mockito.doAnswer(new Answer() {
             @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
+            public Object answer(InvocationOnMock invocation) {
                 callbackCaptor.getValue().onFailure(dialog);
                 return null;
             }
@@ -1381,12 +1381,12 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldReThrowAnyFailedCodeExchangeExceptionOnLogin() throws Exception {
+    public void shouldReThrowAnyFailedCodeExchangeExceptionOnLogin() {
         final AuthenticationException exception = Mockito.mock(AuthenticationException.class);
         PKCE pkce = Mockito.mock(PKCE.class);
         Mockito.doAnswer(new Answer() {
             @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
+            public Object answer(InvocationOnMock invocation) {
                 callbackCaptor.getValue().onFailure(exception);
                 return null;
             }
@@ -1402,9 +1402,9 @@ public class WebAuthProviderTest {
         verify(callback).onFailure(exception);
     }
 
-    @SuppressWarnings({"deprecation", "ThrowableResultOfMethodCallIgnored"})
+    @SuppressWarnings({"deprecation"})
     @Test
-    public void shouldFailToResumeLoginWithIntentWithAccessDenied() throws Exception {
+    public void shouldFailToResumeLoginWithIntentWithAccessDenied() {
         WebAuthProvider.init(account)
                 .withState("1234567890")
                 .useCodeGrant(false)
@@ -1419,9 +1419,9 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getDescription(), is("Permissions were not granted. Try again."));
     }
 
-    @SuppressWarnings({"deprecation", "ThrowableResultOfMethodCallIgnored"})
+    @SuppressWarnings({"deprecation"})
     @Test
-    public void shouldFailToResumeLoginWithRequestCodeWithAccessDenied() throws Exception {
+    public void shouldFailToResumeLoginWithRequestCodeWithAccessDenied() {
         WebAuthProvider.init(account)
                 .withState("1234567890")
                 .useCodeGrant(false)
@@ -1436,9 +1436,9 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getDescription(), is("Permissions were not granted. Try again."));
     }
 
-    @SuppressWarnings({"deprecation", "ThrowableResultOfMethodCallIgnored"})
+    @SuppressWarnings({"deprecation"})
     @Test
-    public void shouldFailToResumeLoginWithIntentWithRuleError() throws Exception {
+    public void shouldFailToResumeLoginWithIntentWithRuleError() {
         WebAuthProvider.init(account)
                 .withState("1234567890")
                 .useCodeGrant(false)
@@ -1453,9 +1453,9 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getDescription(), is("Custom Rule Error"));
     }
 
-    @SuppressWarnings({"deprecation", "ThrowableResultOfMethodCallIgnored"})
+    @SuppressWarnings({"deprecation"})
     @Test
-    public void shouldFailToResumeLoginWithRequestCodeWithRuleError() throws Exception {
+    public void shouldFailToResumeLoginWithRequestCodeWithRuleError() {
         WebAuthProvider.init(account)
                 .withState("1234567890")
                 .useCodeGrant(false)
@@ -1470,9 +1470,9 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getDescription(), is("Custom Rule Error"));
     }
 
-    @SuppressWarnings({"deprecation", "ThrowableResultOfMethodCallIgnored"})
+    @SuppressWarnings({"deprecation"})
     @Test
-    public void shouldFailToResumeLoginWithIntentWithConfigurationInvalid() throws Exception {
+    public void shouldFailToResumeLoginWithIntentWithConfigurationInvalid() {
         WebAuthProvider.init(account)
                 .withState("1234567890")
                 .useCodeGrant(false)
@@ -1487,9 +1487,9 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getDescription(), is("The application isn't configured properly for the social connection. Please check your Auth0's application configuration"));
     }
 
-    @SuppressWarnings({"deprecation", "ThrowableResultOfMethodCallIgnored"})
+    @SuppressWarnings({"deprecation"})
     @Test
-    public void shouldFailToResumeLoginWithRequestCodeWithConfigurationInvalid() throws Exception {
+    public void shouldFailToResumeLoginWithRequestCodeWithConfigurationInvalid() {
         WebAuthProvider.init(account)
                 .withState("1234567890")
                 .useCodeGrant(false)
@@ -1504,9 +1504,9 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getDescription(), is("The application isn't configured properly for the social connection. Please check your Auth0's application configuration"));
     }
 
-    @SuppressWarnings({"deprecation", "ThrowableResultOfMethodCallIgnored"})
+    @SuppressWarnings({"deprecation"})
     @Test
-    public void shouldFailToResumeLoginWithIntentWithLoginRequired() throws Exception {
+    public void shouldFailToResumeLoginWithIntentWithLoginRequired() {
         WebAuthProvider.init(account)
                 .withState("1234567890")
                 .useCodeGrant(false)
@@ -1521,9 +1521,9 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getDescription(), is("Login Required"));
     }
 
-    @SuppressWarnings({"deprecation", "ThrowableResultOfMethodCallIgnored"})
+    @SuppressWarnings({"deprecation"})
     @Test
-    public void shouldFailToResumeLoginWithRequestCodeWithLoginRequired() throws Exception {
+    public void shouldFailToResumeLoginWithRequestCodeWithLoginRequired() {
         WebAuthProvider.init(account)
                 .withState("1234567890")
                 .useCodeGrant(false)
@@ -1538,9 +1538,9 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getDescription(), is("Login Required"));
     }
 
-    @SuppressWarnings({"deprecation", "ThrowableResultOfMethodCallIgnored"})
+    @SuppressWarnings({"deprecation"})
     @Test
-    public void shouldFailToResumeLoginWithIntentWithInvalidState() throws Exception {
+    public void shouldFailToResumeLoginWithIntentWithInvalidState() {
         WebAuthProvider.init(account)
                 .withState("abcdefghijk")
                 .useCodeGrant(false)
@@ -1555,9 +1555,9 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getDescription(), is("The received state is invalid. Try again."));
     }
 
-    @SuppressWarnings({"deprecation", "ThrowableResultOfMethodCallIgnored"})
+    @SuppressWarnings({"deprecation"})
     @Test
-    public void shouldFailToResumeLoginWithRequestCodeWithInvalidState() throws Exception {
+    public void shouldFailToResumeLoginWithRequestCodeWithInvalidState() {
         WebAuthProvider.init(account)
                 .withState("abcdefghijk")
                 .useCodeGrant(false)
@@ -1572,9 +1572,9 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getDescription(), is("The received state is invalid. Try again."));
     }
 
-    @SuppressWarnings({"deprecation", "ThrowableResultOfMethodCallIgnored"})
+    @SuppressWarnings({"deprecation"})
     @Test
-    public void shouldFailToResumeLoginWithIntentWithInvalidNonce() throws Exception {
+    public void shouldFailToResumeLoginWithIntentWithInvalidNonce() {
         WebAuthProvider.init(account)
                 .withState("state")
                 .withNonce("0987654321")
@@ -1590,9 +1590,9 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getDescription(), is("The received nonce is invalid. Try again."));
     }
 
-    @SuppressWarnings({"deprecation", "ThrowableResultOfMethodCallIgnored"})
+    @SuppressWarnings({"deprecation"})
     @Test
-    public void shouldFailToResumeLoginWithRequestCodeWithInvalidNonce() throws Exception {
+    public void shouldFailToResumeLoginWithRequestCodeWithInvalidNonce() {
         WebAuthProvider.init(account)
                 .withState("state")
                 .withNonce("0987654321")
@@ -1610,7 +1610,7 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldFailToResumeLoginWithUnexpectedRequestCode() throws Exception {
+    public void shouldFailToResumeLoginWithUnexpectedRequestCode() {
         verifyNoMoreInteractions(callback);
         WebAuthProvider.init(account)
                 .useCodeGrant(false)
@@ -1622,7 +1622,7 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldFailToResumeLoginWithResultNotOK() throws Exception {
+    public void shouldFailToResumeLoginWithResultNotOK() {
         verifyNoMoreInteractions(callback);
         WebAuthProvider.init(account)
                 .useCodeGrant(false)
@@ -1634,7 +1634,7 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldFailToResumeLoginWithIntentWithEmptyUriValues() throws Exception {
+    public void shouldFailToResumeLoginWithIntentWithEmptyUriValues() {
         verifyNoMoreInteractions(callback);
         WebAuthProvider.init(account)
                 .withState("abcdefghijk")
@@ -1647,7 +1647,7 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldFailToResumeLoginWithRequestCodeWithEmptyUriValues() throws Exception {
+    public void shouldFailToResumeLoginWithRequestCodeWithEmptyUriValues() {
         verifyNoMoreInteractions(callback);
         WebAuthProvider.init(account)
                 .withState("abcdefghijk")
@@ -1659,7 +1659,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldFailToResumeLoginWithIntentWithoutFirstInitProvider() throws Exception {
+    public void shouldFailToResumeLoginWithIntentWithoutFirstInitProvider() {
         WebAuthProvider.resetManagerInstance();
 
         Intent intent = createAuthIntent("");
@@ -1668,7 +1668,7 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldFailToResumeLoginWithRequestCodeWithoutFirstInitProvider() throws Exception {
+    public void shouldFailToResumeLoginWithRequestCodeWithoutFirstInitProvider() {
         WebAuthProvider.resetManagerInstance();
 
         Intent intent = createAuthIntent("");
@@ -1677,7 +1677,7 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldResumeLoginWithIntentWithNullIntent() throws Exception {
+    public void shouldResumeLoginWithIntentWithNullIntent() {
         WebAuthProvider.init(account)
                 .withState("abcdefghijk")
                 .useCodeGrant(false)
@@ -1687,7 +1687,7 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldFailToResumeLoginWithRequestCodeWithNullIntent() throws Exception {
+    public void shouldFailToResumeLoginWithRequestCodeWithNullIntent() {
         WebAuthProvider.init(account)
                 .withState("abcdefghijk")
                 .useCodeGrant(false)
@@ -1696,7 +1696,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldClearInstanceAfterSuccessLoginWithIntent() throws Exception {
+    public void shouldClearInstanceAfterSuccessLoginWithIntent() {
         WebAuthProvider.init(account)
                 .start(activity, callback);
 
@@ -1708,7 +1708,7 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldClearInstanceAfterSuccessLoginWithRequestCode() throws Exception {
+    public void shouldClearInstanceAfterSuccessLoginWithRequestCode() {
         WebAuthProvider.init(account)
                 .start(activity, callback, REQUEST_CODE);
 
@@ -1719,7 +1719,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldFailToStartLoginWithBrowserWhenNoBrowserAppIsInstalled() throws Exception {
+    public void shouldFailToStartLoginWithBrowserWhenNoBrowserAppIsInstalled() {
         prepareBrowserApp(false, null);
         WebAuthProvider.init(account)
                 .useBrowser(true)
@@ -1735,7 +1735,7 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldNotFailToStartLoginWithWebviewWhenNoBrowserAppIsInstalled() throws Exception {
+    public void shouldNotFailToStartLoginWithWebviewWhenNoBrowserAppIsInstalled() {
         prepareBrowserApp(false, null);
         WebAuthProvider.init(account)
                 .useBrowser(false)
@@ -1759,7 +1759,7 @@ public class WebAuthProviderTest {
     //** ** ** ** ** **  **//
 
     @Test
-    public void shouldInitLogoutWithAccount() throws Exception {
+    public void shouldInitLogoutWithAccount() {
         WebAuthProvider.logout(account)
                 .start(activity, voidCallback);
 
@@ -1769,7 +1769,7 @@ public class WebAuthProviderTest {
     //scheme
 
     @Test
-    public void shouldHaveDefaultSchemeOnLogout() throws Exception {
+    public void shouldHaveDefaultSchemeOnLogout() {
         WebAuthProvider.logout(account)
                 .start(activity, voidCallback);
         verify(activity).startActivity(intentCaptor.capture());
@@ -1782,7 +1782,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetSchemeOnLogout() throws Exception {
+    public void shouldSetSchemeOnLogout() {
         WebAuthProvider.logout(account)
                 .withScheme("myapp")
                 .start(activity, voidCallback);
@@ -1799,7 +1799,7 @@ public class WebAuthProviderTest {
     // client id
 
     @Test
-    public void shouldAlwaysSetClientIdOnLogout() throws Exception {
+    public void shouldAlwaysSetClientIdOnLogout() {
         WebAuthProvider.logout(account)
                 .start(activity, voidCallback);
 
@@ -1813,7 +1813,7 @@ public class WebAuthProviderTest {
     // auth0 related
 
     @Test
-    public void shouldHaveTelemetryInfoOnLogout() throws Exception {
+    public void shouldHaveTelemetryInfoOnLogout() {
         WebAuthProvider.logout(account)
                 .start(activity, voidCallback);
 
@@ -1825,7 +1825,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldHaveReturnToUriOnLogout() throws Exception {
+    public void shouldHaveReturnToUriOnLogout() {
         WebAuthProvider.logout(account)
                 .start(activity, voidCallback);
 
@@ -1840,9 +1840,8 @@ public class WebAuthProviderTest {
     // Launch log out
 
 
-    @SuppressWarnings("deprecation")
     @Test
-    public void shouldStartLogout() throws Exception {
+    public void shouldStartLogout() {
         WebAuthProvider.logout(account)
                 .start(activity, voidCallback);
 
@@ -1865,7 +1864,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldStartLogoutWithCustomTabsOptions() throws Exception {
+    public void shouldStartLogoutWithCustomTabsOptions() {
         CustomTabsOptions options = mock(CustomTabsOptions.class);
         WebAuthProvider.logout(account)
                 .withCustomTabsOptions(options)
@@ -1890,7 +1889,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldFailToStartLogoutWhenNoBrowserAppIsInstalled() throws Exception {
+    public void shouldFailToStartLogoutWhenNoBrowserAppIsInstalled() {
         prepareBrowserApp(false, null);
         WebAuthProvider.logout(account)
                 .start(activity, voidCallback);
@@ -1906,7 +1905,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldResumeLogoutSuccessfullyWithIntent() throws Exception {
+    public void shouldResumeLogoutSuccessfullyWithIntent() {
         WebAuthProvider.logout(account)
                 .start(activity, voidCallback);
 
@@ -1921,7 +1920,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldResumeLogoutFailingWithIntent() throws Exception {
+    public void shouldResumeLogoutFailingWithIntent() {
         WebAuthProvider.logout(account)
                 .start(activity, voidCallback);
 
@@ -1941,7 +1940,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldClearLogoutManagerInstanceAfterSuccessfulLogout() throws Exception {
+    public void shouldClearLogoutManagerInstanceAfterSuccessfulLogout() {
         WebAuthProvider.logout(account)
                 .start(activity, voidCallback);
 

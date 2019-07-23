@@ -25,13 +25,13 @@ public class DelegationRequestTest {
     private DelegationRequest delegationRequest;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         mockRequest = mock(ParameterizableRequest.class);
         delegationRequest = new DelegationRequest(mockRequest);
     }
 
     @Test
-    public void shouldAddAllTheParameters() throws Exception {
+    public void shouldAddAllTheParameters() {
         final Map params = mock(Map.class);
         final DelegationRequest req = delegationRequest.addParameters(params);
         verify(mockRequest).addParameters(params);
@@ -40,7 +40,7 @@ public class DelegationRequestTest {
     }
 
     @Test
-    public void shouldSetApiType() throws Exception {
+    public void shouldSetApiType() {
         final DelegationRequest req = delegationRequest.setApiType("type-auth0");
         verify(mockRequest).addParameter("api_type", "type-auth0");
         Assert.assertThat(req, is(notNullValue()));
@@ -48,7 +48,7 @@ public class DelegationRequestTest {
     }
 
     @Test
-    public void shouldSetScope() throws Exception {
+    public void shouldSetScope() {
         final DelegationRequest req = delegationRequest.setScope("oauth2 offline_access profile");
         verify(mockRequest).addParameter("scope", "oauth2 offline_access profile");
         Assert.assertThat(req, is(notNullValue()));
@@ -56,7 +56,7 @@ public class DelegationRequestTest {
     }
 
     @Test
-    public void shouldSetTarget() throws Exception {
+    public void shouldSetTarget() {
         final DelegationRequest req = delegationRequest.setTarget("target-is");
         verify(mockRequest).addParameter("target", "target-is");
         Assert.assertThat(req, is(notNullValue()));
@@ -64,14 +64,14 @@ public class DelegationRequestTest {
     }
 
     @Test
-    public void shouldStartTheRequest() throws Exception {
+    public void shouldStartTheRequest() {
         final BaseCallback callback = mock(BaseCallback.class);
         delegationRequest.start(callback);
         verify(mockRequest).start(callback);
     }
 
     @Test
-    public void shouldExecuteTheRequest() throws Exception {
+    public void shouldExecuteTheRequest() {
         delegationRequest.execute();
         verify(mockRequest).execute();
     }

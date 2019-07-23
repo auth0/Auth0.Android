@@ -24,6 +24,7 @@
 
 package com.auth0.android.provider;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
@@ -160,6 +161,7 @@ public class WebAuthProvider {
          * @return the current builder instance
          * @deprecated This method has been deprecated since it only applied to WebView authentication and Google is no longer supporting it. You should use the default value (use browser).
          */
+        @SuppressWarnings("DeprecatedIsStillUsed")
         @Deprecated
         public Builder useBrowser(boolean useBrowser) {
             this.useBrowser = useBrowser;
@@ -342,6 +344,7 @@ public class WebAuthProvider {
          * @param requestCode to use in the authentication request
          * @deprecated This method has been deprecated since it only applied to WebView authentication and Google is no longer supporting it. Please use {@link WebAuthProvider.Builder#start(Activity, AuthCallback)}
          */
+        @SuppressLint("VisibleForTests")
         @Deprecated
         public void start(@NonNull Activity activity, @NonNull AuthCallback callback, int requestCode) {
             resetManagerInstance();

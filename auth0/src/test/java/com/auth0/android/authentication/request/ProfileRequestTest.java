@@ -42,14 +42,14 @@ public class ProfileRequestTest {
     private ProfileRequest profileRequest;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         credentialsMockRequest = mock(AuthenticationRequest.class);
         userInfoMockRequest = mock(ParameterizableRequest.class);
         profileRequest = new ProfileRequest(credentialsMockRequest, userInfoMockRequest);
     }
 
     @Test
-    public void shouldAddParameters() throws Exception {
+    public void shouldAddParameters() {
         final Map params = mock(Map.class);
         final ProfileRequest req = profileRequest.addParameters(params);
         verify(credentialsMockRequest).addAuthenticationParameters(params);
@@ -58,7 +58,7 @@ public class ProfileRequestTest {
     }
 
     @Test
-    public void shouldSetScope() throws Exception {
+    public void shouldSetScope() {
         final ProfileRequest req = profileRequest.setScope("oauth2 offline_access profile");
         verify(credentialsMockRequest).setScope("oauth2 offline_access profile");
         Assert.assertThat(req, is(CoreMatchers.notNullValue()));
@@ -66,7 +66,7 @@ public class ProfileRequestTest {
     }
 
     @Test
-    public void shouldSetConnection() throws Exception {
+    public void shouldSetConnection() {
         final ProfileRequest req = profileRequest.setConnection("my-connection");
         verify(credentialsMockRequest).setConnection("my-connection");
         Assert.assertThat(req, is(CoreMatchers.notNullValue()));
@@ -74,7 +74,7 @@ public class ProfileRequestTest {
     }
 
     @Test
-    public void shouldReturnAuthenticationAfterStartingTheRequest() throws Exception {
+    public void shouldReturnAuthenticationAfterStartingTheRequest() {
         final UserProfile userProfile = mock(UserProfile.class);
         final Credentials credentials = mock(Credentials.class);
 
@@ -100,7 +100,7 @@ public class ProfileRequestTest {
     }
 
     @Test
-    public void shouldReturnErrorAfterStartingTheRequestIfAuthenticationRequestFails() throws Exception {
+    public void shouldReturnErrorAfterStartingTheRequestIfAuthenticationRequestFails() {
         final UserProfile userProfile = mock(UserProfile.class);
         final AuthenticationException error = mock(AuthenticationException.class);
 
@@ -118,7 +118,7 @@ public class ProfileRequestTest {
     }
 
     @Test
-    public void shouldReturnErrorAfterStartingTheRequestIfTokenInfoRequestFails() throws Exception {
+    public void shouldReturnErrorAfterStartingTheRequestIfTokenInfoRequestFails() {
         final Credentials credentials = mock(Credentials.class);
         final AuthenticationException error = mock(AuthenticationException.class);
 
@@ -136,11 +136,11 @@ public class ProfileRequestTest {
     }
 
     @Test
-    public void shouldExecuteTheRequest() throws Exception {
+    public void shouldExecuteTheRequest() {
         final Credentials credentials = mock(Credentials.class);
         when(credentialsMockRequest.execute()).thenAnswer(new Answer<Object>() {
             @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
+            public Object answer(InvocationOnMock invocation) {
                 return credentials;
             }
         });
@@ -149,7 +149,7 @@ public class ProfileRequestTest {
         when(userInfoMockRequest.addHeader(anyString(), anyString())).thenReturn(userInfoMockRequest);
         when(userInfoMockRequest.execute()).thenAnswer(new Answer<Object>() {
             @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
+            public Object answer(InvocationOnMock invocation) {
                 return userProfile;
             }
         });

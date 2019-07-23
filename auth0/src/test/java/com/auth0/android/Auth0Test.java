@@ -68,12 +68,12 @@ public class Auth0Test {
     private static final String OTHER_DOMAIN = "samples-test.other-subdomain.other.auth0.com";
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
     }
 
     @Test
-    public void shouldBeOIDCConformant() throws Exception {
+    public void shouldBeOIDCConformant() {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         auth0.setOIDCConformant(true);
 
@@ -81,7 +81,7 @@ public class Auth0Test {
     }
 
     @Test
-    public void shouldNotBeOIDCConformant() throws Exception {
+    public void shouldNotBeOIDCConformant() {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         auth0.setOIDCConformant(false);
 
@@ -89,13 +89,13 @@ public class Auth0Test {
     }
 
     @Test
-    public void shouldNotBeOIDCConformantByDefault() throws Exception {
+    public void shouldNotBeOIDCConformantByDefault() {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         assertThat(auth0.isOIDCConformant(), is(false));
     }
 
     @Test
-    public void shouldHaveLoggingEnabled() throws Exception {
+    public void shouldHaveLoggingEnabled() {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         auth0.setLoggingEnabled(true);
 
@@ -103,7 +103,7 @@ public class Auth0Test {
     }
 
     @Test
-    public void shouldNotHaveLoggingEnabled() throws Exception {
+    public void shouldNotHaveLoggingEnabled() {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         auth0.setLoggingEnabled(false);
 
@@ -111,13 +111,13 @@ public class Auth0Test {
     }
 
     @Test
-    public void shouldNotEnforceTLS12ByDefault() throws Exception {
+    public void shouldNotEnforceTLS12ByDefault() {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         assertThat(auth0.isTLS12Enforced(), is(false));
     }
 
     @Test
-    public void shouldHaveTLS12Enforced() throws Exception {
+    public void shouldHaveTLS12Enforced() {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         auth0.setTLS12Enforced(true);
 
@@ -125,7 +125,7 @@ public class Auth0Test {
     }
 
     @Test
-    public void shouldNotHaveTLS12Enforced() throws Exception {
+    public void shouldNotHaveTLS12Enforced() {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         auth0.setTLS12Enforced(false);
 
@@ -133,7 +133,7 @@ public class Auth0Test {
     }
 
     @Test
-    public void shouldHaveConnectTimeout() throws Exception {
+    public void shouldHaveConnectTimeout() {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         auth0.setConnectTimeoutInSeconds(5);
 
@@ -141,7 +141,7 @@ public class Auth0Test {
     }
 
     @Test
-    public void shouldReadHaveTimeout() throws Exception {
+    public void shouldReadHaveTimeout() {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         auth0.setReadTimeoutInSeconds(15);
 
@@ -149,7 +149,7 @@ public class Auth0Test {
     }
 
     @Test
-    public void shouldHaveWriteTimeout() throws Exception {
+    public void shouldHaveWriteTimeout() {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         auth0.setWriteTimeoutInSeconds(20);
 
@@ -157,13 +157,13 @@ public class Auth0Test {
     }
 
     @Test
-    public void shouldNotHaveLoggingEnabledByDefault() throws Exception {
+    public void shouldNotHaveLoggingEnabledByDefault() {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         assertThat(auth0.isLoggingEnabled(), is(false));
     }
 
     @Test
-    public void shouldBuildFromResources() throws Exception {
+    public void shouldBuildFromResources() {
         Resources resources = Mockito.mock(Resources.class);
         when(context.getResources()).thenReturn(resources);
         when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), anyString())).thenReturn(222);
@@ -181,7 +181,7 @@ public class Auth0Test {
     }
 
     @Test
-    public void shouldFailToBuildFromResourcesWithoutClientID() throws Exception {
+    public void shouldFailToBuildFromResourcesWithoutClientID() {
         Resources resources = Mockito.mock(Resources.class);
         when(context.getResources()).thenReturn(resources);
         when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), anyString())).thenReturn(0);
@@ -194,7 +194,7 @@ public class Auth0Test {
     }
 
     @Test
-    public void shouldFailToBuildFromResourcesWithoutDomain() throws Exception {
+    public void shouldFailToBuildFromResourcesWithoutDomain() {
         Resources resources = Mockito.mock(Resources.class);
         when(context.getResources()).thenReturn(resources);
         when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), anyString())).thenReturn(222);
@@ -207,7 +207,7 @@ public class Auth0Test {
     }
 
     @Test
-    public void shouldBuildWithClientIdAndDomain() throws Exception {
+    public void shouldBuildWithClientIdAndDomain() {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         assertThat(auth0.getClientId(), equalTo(CLIENT_ID));
         assertThat(HttpUrl.parse(auth0.getDomainUrl()), equalTo(HttpUrl.parse("https://samples.auth0.com")));
@@ -215,7 +215,7 @@ public class Auth0Test {
     }
 
     @Test
-    public void shouldBuildWithConfigurationDomainToo() throws Exception {
+    public void shouldBuildWithConfigurationDomainToo() {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN, CONFIG_DOMAIN_CUSTOM);
         assertThat(auth0.getClientId(), equalTo(CLIENT_ID));
         assertThat(HttpUrl.parse(auth0.getDomainUrl()), equalTo(HttpUrl.parse("https://samples.auth0.com")));
@@ -223,7 +223,7 @@ public class Auth0Test {
     }
 
     @Test
-    public void shouldHandleEUInstance() throws Exception {
+    public void shouldHandleEUInstance() {
         Auth0 auth0 = new Auth0(CLIENT_ID, EU_DOMAIN);
         assertThat(auth0.getClientId(), equalTo(CLIENT_ID));
         assertThat(HttpUrl.parse(auth0.getDomainUrl()), equalTo(HttpUrl.parse("https://samples.eu.auth0.com")));
@@ -231,7 +231,7 @@ public class Auth0Test {
     }
 
     @Test
-    public void shouldHandleAUInstance() throws Exception {
+    public void shouldHandleAUInstance() {
         Auth0 auth0 = new Auth0(CLIENT_ID, AU_DOMAIN);
         assertThat(auth0.getClientId(), equalTo(CLIENT_ID));
         assertThat(HttpUrl.parse(auth0.getDomainUrl()), equalTo(HttpUrl.parse("https://samples.au.auth0.com")));
@@ -239,7 +239,7 @@ public class Auth0Test {
     }
 
     @Test
-    public void shouldHandleOtherInstance() throws Exception {
+    public void shouldHandleOtherInstance() {
         Auth0 auth0 = new Auth0(CLIENT_ID, OTHER_DOMAIN);
         assertThat(auth0.getClientId(), equalTo(CLIENT_ID));
         assertThat(HttpUrl.parse(auth0.getDomainUrl()), equalTo(HttpUrl.parse("https://samples-test.other-subdomain.other.auth0.com")));
@@ -247,7 +247,7 @@ public class Auth0Test {
     }
 
     @Test
-    public void shouldHandleNonAuth0Domain() throws Exception {
+    public void shouldHandleNonAuth0Domain() {
         Auth0 auth0 = new Auth0(CLIENT_ID, "mydomain.com");
         assertThat(auth0.getClientId(), equalTo(CLIENT_ID));
         assertThat(HttpUrl.parse(auth0.getDomainUrl()), equalTo(HttpUrl.parse("https://mydomain.com")));
@@ -255,13 +255,13 @@ public class Auth0Test {
     }
 
     @Test
-    public void shouldThrowWhenInvalidDomain() throws Exception {
+    public void shouldThrowWhenInvalidDomain() {
         expectedException.expect(IllegalArgumentException.class);
         new Auth0(CLIENT_ID, "some invalid domain.com");
     }
 
     @Test
-    public void shouldReturnAuthorizeUrl() throws Exception {
+    public void shouldReturnAuthorizeUrl() {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
 
         final HttpUrl url = HttpUrl.parse(auth0.getAuthorizeUrl());
@@ -271,7 +271,7 @@ public class Auth0Test {
     }
 
     @Test
-    public void shouldReturnLogoutUrl() throws Exception {
+    public void shouldReturnLogoutUrl() {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
 
         final HttpUrl url = HttpUrl.parse(auth0.getLogoutUrl());
@@ -281,14 +281,14 @@ public class Auth0Test {
     }
 
     @Test
-    public void shouldNotReturnTelemetryWhenExplicitlyDisabledThem() throws Exception {
+    public void shouldNotReturnTelemetryWhenExplicitlyDisabledThem() {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         auth0.doNotSendTelemetry();
         assertThat(auth0.getTelemetry(), is(nullValue()));
     }
 
     @Test
-    public void shouldSetCustomTelemetry() throws Exception {
+    public void shouldSetCustomTelemetry() {
         Telemetry customTelemetry = new Telemetry("custom", "9.9.9", "1.1.1");
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         auth0.setTelemetry(customTelemetry);

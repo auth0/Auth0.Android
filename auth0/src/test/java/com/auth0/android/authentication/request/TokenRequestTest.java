@@ -23,13 +23,13 @@ public class TokenRequestTest {
     private TokenRequest tokenRequest;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         mockRequest = mock(ParameterizableRequest.class);
         tokenRequest = new TokenRequest(mockRequest);
     }
 
     @Test
-    public void shouldSetCodeVerifier() throws Exception {
+    public void shouldSetCodeVerifier() {
         final TokenRequest req = tokenRequest.setCodeVerifier("1234567890");
         verify(mockRequest).addParameter("code_verifier", "1234567890");
         Assert.assertThat(req, is(notNullValue()));
@@ -37,14 +37,14 @@ public class TokenRequestTest {
     }
 
     @Test
-    public void shouldStartTheRequest() throws Exception {
+    public void shouldStartTheRequest() {
         final BaseCallback callback = mock(BaseCallback.class);
         tokenRequest.start(callback);
         verify(mockRequest).start(callback);
     }
 
     @Test
-    public void shouldExecuteTheRequest() throws Exception {
+    public void shouldExecuteTheRequest() {
         tokenRequest.execute();
         verify(mockRequest).execute();
     }

@@ -96,7 +96,6 @@ public class AuthenticationAPIClientTest {
     private static final String OPENID = "openid";
 
     private AuthenticationAPIClient client;
-    private Auth0 auth0;
     private Gson gson;
 
     private AuthenticationAPI mockAPI;
@@ -105,7 +104,7 @@ public class AuthenticationAPIClientTest {
     public void setUp() throws Exception {
         mockAPI = new AuthenticationAPI();
         final String domain = mockAPI.getDomain();
-        auth0 = new Auth0(CLIENT_ID, domain, domain);
+        Auth0 auth0 = new Auth0(CLIENT_ID, domain, domain);
         client = new AuthenticationAPIClient(auth0);
         gson = new GsonBuilder().serializeNulls().create();
     }
@@ -116,7 +115,7 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldSetUserAgent() throws Exception {
+    public void shouldSetUserAgent() {
         Auth0 account = mock(Auth0.class);
         RequestFactory factory = mock(RequestFactory.class);
         OkHttpClientFactory clientFactory = mock(OkHttpClientFactory.class);
@@ -126,7 +125,7 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldSetTelemetryIfPresent() throws Exception {
+    public void shouldSetTelemetryIfPresent() {
         final Telemetry telemetry = mock(Telemetry.class);
         when(telemetry.getValue()).thenReturn("the-telemetry-data");
         RequestFactory factory = mock(RequestFactory.class);
@@ -138,7 +137,7 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldNotSetTelemetryIfMissing() throws Exception {
+    public void shouldNotSetTelemetryIfMissing() {
         RequestFactory factory = mock(RequestFactory.class);
         OkHttpClientFactory clientFactory = mock(OkHttpClientFactory.class);
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
@@ -148,7 +147,7 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldCreateClientWithAccountInfo() throws Exception {
+    public void shouldCreateClientWithAccountInfo() {
         AuthenticationAPIClient client = new AuthenticationAPIClient(new Auth0(CLIENT_ID, DOMAIN));
         assertThat(client, is(notNullValue()));
         assertThat(client.getClientId(), equalTo(CLIENT_ID));
@@ -160,7 +159,7 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldCreateClientWithContextInfo() throws Exception {
+    public void shouldCreateClientWithContextInfo() {
         Context context = Mockito.mock(Context.class);
         Resources resources = Mockito.mock(Resources.class);
         when(context.getResources()).thenReturn(resources);
@@ -1743,7 +1742,7 @@ public class AuthenticationAPIClientTest {
         assertThat(callback.getError().getDescription(), is(equalTo("Unauthorized")));
     }
 
-    private Map<String, String> bodyFromRequest(RecordedRequest request) throws java.io.IOException {
+    private Map<String, String> bodyFromRequest(RecordedRequest request) {
         final Type mapType = new TypeToken<Map<String, String>>() {
         }.getType();
         return gson.fromJson(request.getBody().readUtf8(), mapType);

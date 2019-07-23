@@ -85,7 +85,7 @@ public class SecureCredentialsManagerTest {
     private Gson gson;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
         Activity activity = Robolectric.buildActivity(Activity.class).create().start().resume().get();
         Activity activityContext = spy(activity);
@@ -99,7 +99,7 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public void shouldCreateAManagerInstance() throws Exception {
+    public void shouldCreateAManagerInstance() {
         Context context = Robolectric.buildActivity(Activity.class).create().start().resume().get();
         AuthenticationAPIClient apiClient = new AuthenticationAPIClient(new Auth0("clientId", "domain"));
         Storage storage = new SharedPreferencesStorage(context);
@@ -112,7 +112,7 @@ public class SecureCredentialsManagerTest {
      */
 
     @Test
-    public void shouldSaveRefreshableCredentialsInStorage() throws Exception {
+    public void shouldSaveRefreshableCredentialsInStorage() {
         long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456 * 1000;
         Credentials credentials = new CredentialsMock("idToken", "accessToken", "type", "refreshToken", new Date(expirationTime), "scope");
         String json = gson.toJson(credentials);
@@ -138,7 +138,7 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public void shouldSaveNonRefreshableCredentialsInStorage() throws Exception {
+    public void shouldSaveNonRefreshableCredentialsInStorage() {
         long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456 * 1000;
         Credentials credentials = new CredentialsMock("idToken", "accessToken", "type", null, new Date(expirationTime), "scope");
         String json = gson.toJson(credentials);
@@ -164,7 +164,7 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public void shouldClearStoredCredentialsAndThrowOnSaveOnCryptoException() throws Exception {
+    public void shouldClearStoredCredentialsAndThrowOnSaveOnCryptoException() {
         long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456 * 1000;
         Credentials credentials = new CredentialsMock("idToken", "accessToken", "type", "refreshToken", new Date(expirationTime), "scope");
         when(crypto.encrypt(any(byte[].class))).thenThrow(new CryptoException(null, null));
@@ -185,7 +185,7 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public void shouldThrowOnSaveOnIncompatibleDeviceException() throws Exception {
+    public void shouldThrowOnSaveOnIncompatibleDeviceException() {
         long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456 * 1000;
         Credentials credentials = new CredentialsMock("idToken", "accessToken", "type", "refreshToken", new Date(expirationTime), "scope");
         when(crypto.encrypt(any(byte[].class))).thenThrow(new IncompatibleDeviceException(null));
@@ -202,7 +202,7 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public void shouldThrowOnSaveIfCredentialsDoesNotHaveIdTokenOrAccessToken() throws Exception {
+    public void shouldThrowOnSaveIfCredentialsDoesNotHaveIdTokenOrAccessToken() {
         exception.expect(CredentialsManagerException.class);
         exception.expectMessage("Credentials must have a valid date of expiration and a valid access_token or id_token value.");
 
@@ -212,7 +212,7 @@ public class SecureCredentialsManagerTest {
 
     @SuppressWarnings("ConstantConditions")
     @Test
-    public void shouldThrowOnSaveIfCredentialsDoesNotHaveExpiresAt() throws Exception {
+    public void shouldThrowOnSaveIfCredentialsDoesNotHaveExpiresAt() {
         exception.expect(CredentialsManagerException.class);
         exception.expectMessage("Credentials must have a valid date of expiration and a valid access_token or id_token value.");
 
@@ -222,14 +222,14 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public void shouldNotThrowOnSaveIfCredentialsHaveAccessTokenAndExpiresIn() throws Exception {
+    public void shouldNotThrowOnSaveIfCredentialsHaveAccessTokenAndExpiresIn() {
         Credentials credentials = new CredentialsMock(null, "accessToken", "type", "refreshToken", 123456L);
         when(crypto.encrypt(any(byte[].class))).thenReturn(new byte[]{12, 34, 56, 78});
         manager.saveCredentials(credentials);
     }
 
     @Test
-    public void shouldNotThrowOnSaveIfCredentialsHaveIdTokenAndExpiresIn() throws Exception {
+    public void shouldNotThrowOnSaveIfCredentialsHaveIdTokenAndExpiresIn() {
         Credentials credentials = new CredentialsMock("idToken", null, "type", "refreshToken", 123456L);
         when(crypto.encrypt(any(byte[].class))).thenReturn(new byte[]{12, 34, 56, 78});
         manager.saveCredentials(credentials);
@@ -240,7 +240,7 @@ public class SecureCredentialsManagerTest {
      */
 
     @Test
-    public void shouldClearStoredCredentialsAndFailOnGetCredentialsWhenCryptoExceptionIsThrown() throws Exception {
+    public void shouldClearStoredCredentialsAndFailOnGetCredentialsWhenCryptoExceptionIsThrown() {
         verifyNoMoreInteractions(client);
 
         Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456L * 1000);
@@ -262,7 +262,7 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public void shouldFailOnGetCredentialsWhenIncompatibleDeviceExceptionIsThrown() throws Exception {
+    public void shouldFailOnGetCredentialsWhenIncompatibleDeviceExceptionIsThrown() {
         verifyNoMoreInteractions(client);
 
         Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456L * 1000);
@@ -282,7 +282,7 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public void shouldFailOnGetCredentialsWhenNoAccessTokenOrIdTokenWasSaved() throws Exception {
+    public void shouldFailOnGetCredentialsWhenNoAccessTokenOrIdTokenWasSaved() {
         verifyNoMoreInteractions(client);
 
         Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456L * 1000);
@@ -296,7 +296,7 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public void shouldFailOnGetCredentialsWhenNoExpirationTimeWasSaved() throws Exception {
+    public void shouldFailOnGetCredentialsWhenNoExpirationTimeWasSaved() {
         verifyNoMoreInteractions(client);
 
         insertTestCredentials(false, false, true, null);
@@ -308,9 +308,8 @@ public class SecureCredentialsManagerTest {
         assertThat(exception.getMessage(), is("No Credentials were previously set."));
     }
 
-    @SuppressWarnings("UnnecessaryLocalVariable")
     @Test
-    public void shouldFailOnGetCredentialsWhenExpiredAndNoRefreshTokenWasSaved() throws Exception {
+    public void shouldFailOnGetCredentialsWhenExpiredAndNoRefreshTokenWasSaved() {
         verifyNoMoreInteractions(client);
 
         Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS); //Same as current time --> expired
@@ -324,7 +323,7 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public void shouldGetNonExpiredCredentialsFromStorage() throws Exception {
+    public void shouldGetNonExpiredCredentialsFromStorage() {
         verifyNoMoreInteractions(client);
 
         Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456L * 1000);
@@ -345,7 +344,7 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public void shouldGetNonExpiredCredentialsFromStorageWhenOnlyIdTokenIsAvailable() throws Exception {
+    public void shouldGetNonExpiredCredentialsFromStorageWhenOnlyIdTokenIsAvailable() {
         verifyNoMoreInteractions(client);
 
         Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456L * 1000);
@@ -367,7 +366,7 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public void shouldGetNonExpiredCredentialsFromStorageWhenOnlyAccessTokenIsAvailable() throws Exception {
+    public void shouldGetNonExpiredCredentialsFromStorageWhenOnlyAccessTokenIsAvailable() {
         verifyNoMoreInteractions(client);
 
         Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456L * 1000);
@@ -387,9 +386,8 @@ public class SecureCredentialsManagerTest {
         assertThat(retrievedCredentials.getScope(), is("scope"));
     }
 
-    @SuppressWarnings("UnnecessaryLocalVariable")
     @Test
-    public void shouldGetAndSuccessfullyRenewExpiredCredentials() throws Exception {
+    public void shouldGetAndSuccessfullyRenewExpiredCredentials() {
         Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS);
         insertTestCredentials(false, true, true, expiresAt);
         when(client.renewAuth("refreshToken")).thenReturn(request);
@@ -434,9 +432,8 @@ public class SecureCredentialsManagerTest {
         assertThat(renewedStoredCredentials.getScope(), is("newScope"));
     }
 
-    @SuppressWarnings("UnnecessaryLocalVariable")
     @Test
-    public void shouldGetAndFailToRenewExpiredCredentials() throws Exception {
+    public void shouldGetAndFailToRenewExpiredCredentials() {
         Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS);
         insertTestCredentials(false, true, true, expiresAt);
         when(client.renewAuth("refreshToken")).thenReturn(request);
@@ -465,7 +462,7 @@ public class SecureCredentialsManagerTest {
      */
 
     @Test
-    public void shouldClearCredentials() throws Exception {
+    public void shouldClearCredentials() {
         manager.clearCredentials();
 
         verify(storage).remove("com.auth0.credentials");
@@ -479,7 +476,7 @@ public class SecureCredentialsManagerTest {
      */
 
     @Test
-    public void shouldHaveCredentialsWhenTokenHasNotExpired() throws Exception {
+    public void shouldHaveCredentialsWhenTokenHasNotExpired() {
         long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456L * 1000;
         when(storage.retrieveLong("com.auth0.credentials_expires_at")).thenReturn(expirationTime);
         when(storage.retrieveBoolean("com.auth0.credentials_can_refresh")).thenReturn(false);
@@ -491,7 +488,7 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public void shouldNotHaveCredentialsWhenTokenHasExpiredAndNoRefreshTokenIsAvailable() throws Exception {
+    public void shouldNotHaveCredentialsWhenTokenHasExpiredAndNoRefreshTokenIsAvailable() {
         long expirationTime = CredentialsMock.CURRENT_TIME_MS; //Same as current time --> expired
         when(storage.retrieveLong("com.auth0.credentials_expires_at")).thenReturn(expirationTime);
         when(storage.retrieveBoolean("com.auth0.credentials_can_refresh")).thenReturn(false);
@@ -503,7 +500,7 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public void shouldHaveCredentialsWhenTokenHasExpiredButRefreshTokenIsAvailable() throws Exception {
+    public void shouldHaveCredentialsWhenTokenHasExpiredButRefreshTokenIsAvailable() {
         long expirationTime = CredentialsMock.CURRENT_TIME_MS; //Same as current time --> expired
         when(storage.retrieveLong("com.auth0.credentials_expires_at")).thenReturn(expirationTime);
         when(storage.retrieveBoolean("com.auth0.credentials_can_refresh")).thenReturn(true);
@@ -515,7 +512,7 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public void shouldNotHaveCredentialsWhenAccessTokenAndIdTokenAreMissing() throws Exception {
+    public void shouldNotHaveCredentialsWhenAccessTokenAndIdTokenAreMissing() {
         when(storage.retrieveString("com.auth0.credentials")).thenReturn("{\"token_type\":\"type\", \"refresh_token\":\"refreshToken\"}");
 
         assertFalse(manager.hasValidCredentials());
@@ -526,7 +523,7 @@ public class SecureCredentialsManagerTest {
      */
 
     @Test
-    public void shouldThrowOnInvalidAuthenticationRequestCode() throws Exception {
+    public void shouldThrowOnInvalidAuthenticationRequestCode() {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Request code must be a value between 1 and 255.");
         Activity activity = Robolectric.buildActivity(Activity.class).create().start().resume().get();
@@ -537,7 +534,7 @@ public class SecureCredentialsManagerTest {
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Test
     @Config(sdk = 21)
-    public void shouldNotRequireAuthenticationIfAPI21AndLockScreenDisabled() throws Exception {
+    public void shouldNotRequireAuthenticationIfAPI21AndLockScreenDisabled() {
         ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 21);
         Activity activity = spy(Robolectric.buildActivity(Activity.class).create().start().resume().get());
 
@@ -555,7 +552,7 @@ public class SecureCredentialsManagerTest {
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Test
     @Config(sdk = 23)
-    public void shouldNotRequireAuthenticationIfAPI23AndLockScreenDisabled() throws Exception {
+    public void shouldNotRequireAuthenticationIfAPI23AndLockScreenDisabled() {
         ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 23);
         Activity activity = spy(Robolectric.buildActivity(Activity.class).create().start().resume().get());
 
@@ -573,7 +570,7 @@ public class SecureCredentialsManagerTest {
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Test
     @Config(sdk = 21)
-    public void shouldRequireAuthenticationIfAPI21AndLockScreenEnabled() throws Exception {
+    public void shouldRequireAuthenticationIfAPI21AndLockScreenEnabled() {
         ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 21);
         Activity activity = spy(Robolectric.buildActivity(Activity.class).create().start().resume().get());
 
@@ -591,7 +588,7 @@ public class SecureCredentialsManagerTest {
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Test
     @Config(sdk = 23)
-    public void shouldRequireAuthenticationIfAPI23AndLockScreenEnabled() throws Exception {
+    public void shouldRequireAuthenticationIfAPI23AndLockScreenEnabled() {
         ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 23);
         Activity activity = spy(Robolectric.buildActivity(Activity.class).create().start().resume().get());
 
@@ -607,7 +604,7 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public void shouldGetCredentialsAfterAuthentication() throws Exception {
+    public void shouldGetCredentialsAfterAuthentication() {
         Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456L * 1000);
         insertTestCredentials(true, true, false, expiresAt);
 
@@ -649,7 +646,7 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public void shouldNotGetCredentialsAfterCanceledAuthentication() throws Exception {
+    public void shouldNotGetCredentialsAfterCanceledAuthentication() {
         Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456L * 1000);
         insertTestCredentials(true, true, false, expiresAt);
 
@@ -682,7 +679,7 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public void shouldNotGetCredentialsOnDifferentAuthenticationRequestCode() throws Exception {
+    public void shouldNotGetCredentialsOnDifferentAuthenticationRequestCode() {
         Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456L * 1000);
         insertTestCredentials(true, true, false, expiresAt);
 

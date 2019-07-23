@@ -21,12 +21,12 @@ public class ManagementErrorBuilderTest {
     private ManagementErrorBuilder builder;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         builder = new ManagementErrorBuilder();
     }
 
     @Test
-    public void shouldCreateFromMessage() throws Exception {
+    public void shouldCreateFromMessage() {
         final ManagementException ex = builder.from("message");
 
         assertThat(ex.getCause(), is(nullValue()));
@@ -36,7 +36,7 @@ public class ManagementErrorBuilderTest {
     }
 
     @Test
-    public void shouldCreateFromMessageAndException() throws Exception {
+    public void shouldCreateFromMessageAndException() {
         final Auth0Exception auth0Ex = Mockito.mock(Auth0Exception.class);
         final ManagementException ex = builder.from("message", auth0Ex);
 
@@ -47,7 +47,7 @@ public class ManagementErrorBuilderTest {
     }
 
     @Test
-    public void shouldCreateFromStringPayloadAndIntCode() throws Exception {
+    public void shouldCreateFromStringPayloadAndIntCode() {
         final ManagementException ex = builder.from("message", 999);
 
         assertThat(ex.getCause(), is(nullValue()));
@@ -57,7 +57,7 @@ public class ManagementErrorBuilderTest {
     }
 
     @Test
-    public void shouldCreateFromMap() throws Exception {
+    public void shouldCreateFromMap() {
         Map<String, Object> map = new HashMap<>();
         map.put("key", "value");
         map.put("asd", "123");

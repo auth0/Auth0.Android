@@ -12,7 +12,6 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
-import org.robolectric.shadows.ShadowActivity;
 
 import static android.support.test.espresso.intent.matcher.IntentMatchers.hasComponent;
 import static android.support.test.espresso.intent.matcher.IntentMatchers.hasData;
@@ -35,7 +34,7 @@ public class RedirectActivityTest {
     private ActivityController<RedirectActivity> activityController;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
     }
 
@@ -44,9 +43,8 @@ public class RedirectActivityTest {
         activity = activityController.get();
     }
 
-    @SuppressWarnings("deprecation")
     @Test
-    public void shouldLaunchAuthenticationActivityWithDataOnSuccess() throws Exception {
+    public void shouldLaunchAuthenticationActivityWithDataOnSuccess() {
         Intent resultIntent = new Intent();
         resultIntent.setData(uri);
 
@@ -63,9 +61,8 @@ public class RedirectActivityTest {
         activityController.destroy();
     }
 
-    @SuppressWarnings("deprecation")
     @Test
-    public void shouldLaunchAuthenticationActivityWithoutDataOnCancel() throws Exception {
+    public void shouldLaunchAuthenticationActivityWithoutDataOnCancel() {
         Intent resultIntent = new Intent();
         resultIntent.setData(null);
 

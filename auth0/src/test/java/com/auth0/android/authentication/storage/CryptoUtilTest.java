@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.security.Key;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -110,7 +109,7 @@ public class CryptoUtilTest {
         PowerMockito.mockStatic(TextUtils.class);
         PowerMockito.when(TextUtils.isEmpty(anyString())).then(new Answer<Boolean>() {
             @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
+            public Boolean answer(InvocationOnMock invocation) {
                 String input = invocation.getArgumentAt(0, String.class);
                 return input == null || input.isEmpty();
             }
@@ -125,7 +124,7 @@ public class CryptoUtilTest {
      */
 
     @Test
-    public void shouldThrowWhenRSAKeyAliasIsInvalid() throws Exception {
+    public void shouldThrowWhenRSAKeyAliasIsInvalid() {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("RSA and AES Key alias must be valid.");
         new CryptoUtil(RuntimeEnvironment.application, storage, " ");
@@ -547,16 +546,16 @@ public class CryptoUtilTest {
      */
 
     @Test
-    public void shouldCreateAESKeyIfMissing() throws Exception {
+    public void shouldCreateAESKeyIfMissing() {
         byte[] sampleBytes = new byte[]{0, 1, 2, 3, 4, 5};
         PowerMockito.mockStatic(Base64.class);
         PowerMockito.when(Base64.encode(sampleBytes, Base64.DEFAULT)).thenReturn("data".getBytes());
         PowerMockito.when(storage.retrieveString(KEY_ALIAS)).thenReturn(null);
         doReturn(sampleBytes).when(cryptoUtil).RSAEncrypt(sampleBytes);
 
-        Key secretKey = PowerMockito.mock(SecretKey.class);
+        SecretKey secretKey = PowerMockito.mock(SecretKey.class);
         PowerMockito.when(secretKey.getEncoded()).thenReturn(sampleBytes);
-        PowerMockito.when(keyGenerator.generateKey()).thenReturn((SecretKey) secretKey);
+        PowerMockito.when(keyGenerator.generateKey()).thenReturn(secretKey);
 
 
         final byte[] aesKey = cryptoUtil.getAESKey();
@@ -570,7 +569,7 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldUseExistingAESKey() throws Exception {
+    public void shouldUseExistingAESKey() {
         byte[] sampleBytes = new byte[]{0, 1, 2, 3, 4, 5};
         PowerMockito.mockStatic(Base64.class);
         PowerMockito.when(Base64.decode("data", Base64.DEFAULT)).thenReturn(sampleBytes);
@@ -841,7 +840,7 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldThrowOnCryptoExceptionOnRSAKeyReadingWhenTryingToAESEncrypt() throws Exception {
+    public void shouldThrowOnCryptoExceptionOnRSAKeyReadingWhenTryingToAESEncrypt() {
         exception.expect(CryptoException.class);
 
         PowerMockito.mockStatic(Base64.class);
@@ -853,7 +852,7 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldThrowOnCryptoExceptionOnAESKeyReadingWhenTryingToAESEncrypt() throws Exception {
+    public void shouldThrowOnCryptoExceptionOnAESKeyReadingWhenTryingToAESEncrypt() {
         exception.expect(CryptoException.class);
 
         doThrow(new CryptoException(null, null)).when(cryptoUtil).getAESKey();
@@ -861,7 +860,7 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldThrowOnIncompatibleDeviceExceptionOnRSAKeyReadingWhenTryingToAESEncrypt() throws Exception {
+    public void shouldThrowOnIncompatibleDeviceExceptionOnRSAKeyReadingWhenTryingToAESEncrypt() {
         exception.expect(IncompatibleDeviceException.class);
         exception.expectMessage("The device is not compatible with the CryptoUtil class");
 
@@ -874,7 +873,7 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldThrowOnIncompatibleDeviceExceptionOnAESKeyReadingWhenTryingToAESEncrypt() throws Exception {
+    public void shouldThrowOnIncompatibleDeviceExceptionOnAESKeyReadingWhenTryingToAESEncrypt() {
         exception.expect(IncompatibleDeviceException.class);
         exception.expectMessage("The device is not compatible with the CryptoUtil class");
 
@@ -994,7 +993,7 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldThrowOnCryptoExceptionOnRSAKeyReadingWhenTryingToAESDecrypt() throws Exception {
+    public void shouldThrowOnCryptoExceptionOnRSAKeyReadingWhenTryingToAESDecrypt() {
         exception.expect(CryptoException.class);
 
         PowerMockito.mockStatic(Base64.class);
@@ -1006,7 +1005,7 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldThrowOnCryptoExceptionOnAESKeyReadingWhenTryingToAESDecrypt() throws Exception {
+    public void shouldThrowOnCryptoExceptionOnAESKeyReadingWhenTryingToAESDecrypt() {
         exception.expect(CryptoException.class);
 
         doThrow(new CryptoException(null, null)).when(cryptoUtil).getAESKey();
@@ -1014,7 +1013,7 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldThrowOnIncompatibleDeviceExceptionOnRSAKeyReadingWhenTryingToAESDecrypt() throws Exception {
+    public void shouldThrowOnIncompatibleDeviceExceptionOnRSAKeyReadingWhenTryingToAESDecrypt() {
         exception.expect(IncompatibleDeviceException.class);
         exception.expectMessage("The device is not compatible with the CryptoUtil class");
 
@@ -1027,7 +1026,7 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldThrowOnIncompatibleDeviceExceptionOnAESKeyReadingWhenTryingToAESDecrypt() throws Exception {
+    public void shouldThrowOnIncompatibleDeviceExceptionOnAESKeyReadingWhenTryingToAESDecrypt() {
         exception.expect(IncompatibleDeviceException.class);
         exception.expectMessage("The device is not compatible with the CryptoUtil class");
 
@@ -1223,7 +1222,7 @@ public class CryptoUtilTest {
         PowerMockito.mockStatic(Cipher.class);
         PowerMockito.when(Cipher.getInstance(anyString())).then(new Answer<Cipher>() {
             @Override
-            public Cipher answer(InvocationOnMock invocation) throws Throwable {
+            public Cipher answer(InvocationOnMock invocation) {
                 String transformation = invocation.getArgumentAt(0, String.class);
                 if (RSA_TRANSFORMATION.equals(transformation)) {
                     return rsaCipher;
