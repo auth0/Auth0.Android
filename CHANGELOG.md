@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.18.0](https://github.com/auth0/Auth0.Android/tree/1.18.0) (2019-07-26)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.17.0...1.18.0)
+
+**Changed**
+- Update gradle android plugin and wrapper version [\#250](https://github.com/auth0/Auth0.Android/pull/250) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.17.0](https://github.com/auth0/Auth0.Android/tree/1.17.0) (2019-06-28)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.16.0...1.17.0)
 
