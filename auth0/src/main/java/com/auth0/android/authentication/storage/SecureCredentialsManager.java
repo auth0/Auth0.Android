@@ -144,12 +144,12 @@ public class SecureCredentialsManager {
 
         long expiresAt = credentials.getExpiresAt().getTime();
 
-        if(credentials.getIdToken() != null) {
+        if (credentials.getIdToken() != null) {
             JWT idToken = new JWT(credentials.getIdToken());
             Date idTokenExpiresAtDate = idToken.getExpiresAt();
 
             if (idTokenExpiresAtDate != null) {
-                expiresAt = Math.min(idTokenExpiresAtDate.getTime(), credentials.getExpiresAt().getTime());
+                expiresAt = Math.min(idTokenExpiresAtDate.getTime(), expiresAt);
             }
         }
 
