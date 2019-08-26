@@ -1,8 +1,11 @@
 package com.auth0.android.authentication.storage;
 
+import android.support.annotation.Nullable;
+
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.jwt.JWT;
 import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.CredentialsMock;
@@ -55,6 +58,8 @@ public class CredentialsManagerTest {
     private BaseCallback<Credentials, CredentialsManagerException> callback;
     @Mock
     private ParameterizableRequest<Credentials, AuthenticationException> request;
+    @Mock
+    private JWTDecoder jwtDecoder;
     @Captor
     private ArgumentCaptor<Credentials> credentialsCaptor;
     @Captor
@@ -69,7 +74,7 @@ public class CredentialsManagerTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        CredentialsManager credentialsManager = new CredentialsManager(client, storage);
+        CredentialsManager credentialsManager = new CredentialsManager(client, storage, jwtDecoder);
         manager = spy(credentialsManager);
         //Needed to test expiration verification
         doReturn(CredentialsMock.CURRENT_TIME_MS).when(manager).getCurrentTimeInMillis();
@@ -88,9 +93,10 @@ public class CredentialsManagerTest {
     }
 
     @Test
-    public void shouldSaveCredentialsInStorage() {
+    public void shouldSaveRefreshableCredentialsInStorage() {
         long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456 * 1000;
         Credentials credentials = new CredentialsMock("idToken", "accessToken", "type", "refreshToken", new Date(expirationTime), "scope");
+        prepareJwtDecoderMock(new Date(expirationTime));
         manager.saveCredentials(credentials);
 
         verify(storage).store("com.auth0.id_token", "idToken");
@@ -99,6 +105,59 @@ public class CredentialsManagerTest {
         verify(storage).store("com.auth0.token_type", "type");
         verify(storage).store("com.auth0.expires_at", expirationTime);
         verify(storage).store("com.auth0.scope", "scope");
+        verify(storage).store("com.auth0.cache_expires_at", expirationTime);
+        verifyNoMoreInteractions(storage);
+    }
+
+    @Test
+    public void shouldSaveRefreshableCredentialsUsingAccessTokenExpForCacheExpirationInStorage() {
+        long accessTokenExpirationTime = CredentialsMock.CURRENT_TIME_MS + 123456 * 1000;
+        Credentials credentials = new CredentialsMock(null, "accessToken", "type", "refreshToken", new Date(accessTokenExpirationTime), "scope");
+        prepareJwtDecoderMock(new Date(accessTokenExpirationTime));
+        manager.saveCredentials(credentials);
+
+        verify(storage).store("com.auth0.id_token", (String)null);
+        verify(storage).store("com.auth0.access_token", "accessToken");
+        verify(storage).store("com.auth0.refresh_token", "refreshToken");
+        verify(storage).store("com.auth0.token_type", "type");
+        verify(storage).store("com.auth0.expires_at", accessTokenExpirationTime);
+        verify(storage).store("com.auth0.scope", "scope");
+        verify(storage).store("com.auth0.cache_expires_at", accessTokenExpirationTime);
+        verifyNoMoreInteractions(storage);
+    }
+
+    @Test
+    public void shouldSaveRefreshableCredentialsUsingIdTokenExpForCacheExpirationInStorage() {
+        long accessTokenExpirationTime = CredentialsMock.CURRENT_TIME_MS + 123456 * 1000;
+        long idTokenExpirationTime = CredentialsMock.CURRENT_TIME_MS + 2000 * 1000;
+        Credentials credentials = new CredentialsMock("idToken", "accessToken", "type", "refreshToken", new Date(accessTokenExpirationTime), "scope");
+        prepareJwtDecoderMock(new Date(idTokenExpirationTime));
+        manager.saveCredentials(credentials);
+
+        verify(storage).store("com.auth0.id_token", "idToken");
+        verify(storage).store("com.auth0.access_token", "accessToken");
+        verify(storage).store("com.auth0.refresh_token", "refreshToken");
+        verify(storage).store("com.auth0.token_type", "type");
+        verify(storage).store("com.auth0.expires_at", accessTokenExpirationTime);
+        verify(storage).store("com.auth0.scope", "scope");
+        verify(storage).store("com.auth0.cache_expires_at", idTokenExpirationTime);
+        verifyNoMoreInteractions(storage);
+    }
+
+    @Test
+    public void shouldSaveNonRefreshableCredentialsInStorage() {
+        long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456 * 1000;
+        Credentials credentials = new CredentialsMock("idToken", "accessToken", "type", null, new Date(expirationTime), "scope");
+        prepareJwtDecoderMock(new Date(expirationTime));
+        manager.saveCredentials(credentials);
+
+        verify(storage).store("com.auth0.id_token", "idToken");
+        verify(storage).store("com.auth0.access_token", "accessToken");
+        verify(storage).store("com.auth0.refresh_token", (String) null);
+        verify(storage).store("com.auth0.token_type", "type");
+        verify(storage).store("com.auth0.expires_at", expirationTime);
+        verify(storage).store("com.auth0.scope", "scope");
+        verify(storage).store("com.auth0.cache_expires_at", expirationTime);
         verifyNoMoreInteractions(storage);
     }
 
@@ -131,6 +190,7 @@ public class CredentialsManagerTest {
     @Test
     public void shouldNotThrowOnSetIfCredentialsHaveIdTokenAndExpiresIn() {
         Credentials credentials = new CredentialsMock("idToken", null, "type", "refreshToken", 123456L);
+        prepareJwtDecoderMock(new Date());
         manager.saveCredentials(credentials);
     }
 
@@ -144,25 +204,7 @@ public class CredentialsManagerTest {
         when(storage.retrieveString("com.auth0.token_type")).thenReturn("type");
         long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456L * 1000;
         when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
-        when(storage.retrieveString("com.auth0.scope")).thenReturn("scope");
-
-        manager.getCredentials(callback);
-
-        verify(callback).onFailure(exceptionCaptor.capture());
-        CredentialsManagerException exception = exceptionCaptor.getValue();
-        assertThat(exception, is(notNullValue()));
-        assertThat(exception.getMessage(), is("No Credentials were previously set."));
-    }
-
-    @Test
-    public void shouldFailOnGetCredentialsWhenNoExpirationTimeWasSaved() {
-        verifyNoMoreInteractions(client);
-
-        when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
-        when(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken");
-        when(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken");
-        when(storage.retrieveString("com.auth0.token_type")).thenReturn("type");
-        when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(null);
+        when(storage.retrieveLong("com.auth0.cache_expires_at")).thenReturn(expirationTime);
         when(storage.retrieveString("com.auth0.scope")).thenReturn("scope");
 
         manager.getCredentials(callback);
@@ -203,6 +245,7 @@ public class CredentialsManagerTest {
         when(storage.retrieveString("com.auth0.token_type")).thenReturn("type");
         long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456L * 1000;
         when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveLong("com.auth0.cache_expires_at")).thenReturn(expirationTime);
         when(storage.retrieveString("com.auth0.scope")).thenReturn("scope");
 
         manager.getCredentials(callback);
@@ -230,6 +273,7 @@ public class CredentialsManagerTest {
         when(storage.retrieveString("com.auth0.token_type")).thenReturn("type");
         long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456L * 1000;
         when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveLong("com.auth0.cache_expires_at")).thenReturn(expirationTime);
         when(storage.retrieveString("com.auth0.scope")).thenReturn("scope");
 
         manager.getCredentials(callback);
@@ -257,6 +301,7 @@ public class CredentialsManagerTest {
         when(storage.retrieveString("com.auth0.token_type")).thenReturn("type");
         Long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456L * 1000;
         when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveLong("com.auth0.cache_expires_at")).thenReturn(expirationTime);
         when(storage.retrieveString("com.auth0.scope")).thenReturn("scope");
 
         manager.getCredentials(callback);
@@ -282,14 +327,19 @@ public class CredentialsManagerTest {
         when(storage.retrieveString("com.auth0.token_type")).thenReturn("type");
         long expirationTime = CredentialsMock.CURRENT_TIME_MS; //Same as current time --> expired
         when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveLong("com.auth0.cache_expires_at")).thenReturn(expirationTime);
         when(storage.retrieveString("com.auth0.scope")).thenReturn("scope");
         when(client.renewAuth("refreshToken")).thenReturn(request);
+
+        Date newDate = new Date(123412341234L);
+        JWT jwtMock = mock(JWT.class);
+        when(jwtMock.getExpiresAt()).thenReturn(newDate);
+        when(jwtDecoder.decode("newId")).thenReturn(jwtMock);
 
         manager.getCredentials(callback);
         verify(request).start(requestCallbackCaptor.capture());
 
         //Trigger success
-        Date newDate = new Date();
         String newRefresh = null;
         Credentials renewedCredentials = new Credentials("newId", "newAccess", "newType", newRefresh, newDate, "newScope");
         requestCallbackCaptor.getValue().onSuccess(renewedCredentials);
@@ -304,6 +354,7 @@ public class CredentialsManagerTest {
         verify(storage).store("com.auth0.token_type", renewedCredentials.getType());
         verify(storage).store("com.auth0.expires_at", renewedCredentials.getExpiresAt().getTime());
         verify(storage).store("com.auth0.scope", renewedCredentials.getScope());
+        verify(storage).store("com.auth0.cache_expires_at", renewedCredentials.getExpiresAt().getTime());
         verify(storage, never()).remove(anyString());
 
         //// Verify the returned credentials are the latest
@@ -325,6 +376,7 @@ public class CredentialsManagerTest {
         when(storage.retrieveString("com.auth0.token_type")).thenReturn("type");
         long expirationTime = CredentialsMock.CURRENT_TIME_MS; //Same as current time --> expired
         when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveLong("com.auth0.cache_expires_at")).thenReturn(expirationTime);
         when(storage.retrieveString("com.auth0.scope")).thenReturn("scope");
         when(client.renewAuth("refreshToken")).thenReturn(request);
 
@@ -357,6 +409,7 @@ public class CredentialsManagerTest {
         verify(storage).remove("com.auth0.token_type");
         verify(storage).remove("com.auth0.expires_at");
         verify(storage).remove("com.auth0.scope");
+        verify(storage).remove("com.auth0.cache_expires_at");
         verifyNoMoreInteractions(storage);
     }
 
@@ -364,6 +417,7 @@ public class CredentialsManagerTest {
     public void shouldHaveCredentialsWhenTokenHasNotExpired() {
         long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456L * 1000;
         when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveLong("com.auth0.cache_expires_at")).thenReturn(expirationTime);
 
         when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
         when(storage.retrieveString("com.auth0.access_token")).thenReturn(null);
@@ -378,6 +432,7 @@ public class CredentialsManagerTest {
     public void shouldNotHaveCredentialsWhenTokenHasExpiredAndNoRefreshTokenIsAvailable() {
         long expirationTime = CredentialsMock.CURRENT_TIME_MS; //Same as current time --> expired
         when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveLong("com.auth0.cache_expires_at")).thenReturn(expirationTime);
         when(storage.retrieveString("com.auth0.refresh_token")).thenReturn(null);
 
         when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
@@ -393,6 +448,7 @@ public class CredentialsManagerTest {
     public void shouldHaveCredentialsWhenTokenHasExpiredButRefreshTokenIsAvailable() {
         long expirationTime = CredentialsMock.CURRENT_TIME_MS; //Same as current time --> expired
         when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveLong("com.auth0.cache_expires_at")).thenReturn(expirationTime);
         when(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken");
 
         when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
@@ -424,5 +480,11 @@ public class CredentialsManagerTest {
         assertThat(credentials.getRefreshToken(), is("refreshTOKEN"));
         assertThat(credentials.getExpiresAt(), is(now));
         assertThat(credentials.getScope(), is("openid profile"));
+    }
+
+    private void prepareJwtDecoderMock(@Nullable Date expiresAt) {
+        JWT jwtMock = mock(JWT.class);
+        when(jwtMock.getExpiresAt()).thenReturn(expiresAt);
+        when(jwtDecoder.decode("idToken")).thenReturn(jwtMock);
     }
 }

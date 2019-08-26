@@ -25,9 +25,18 @@ public class CredentialsManager {
     private static final String KEY_TOKEN_TYPE = "com.auth0.token_type";
     private static final String KEY_EXPIRES_AT = "com.auth0.expires_at";
     private static final String KEY_SCOPE = "com.auth0.scope";
+    private static final String KEY_CACHE_EXPIRES_AT = "com.auth0.cache_expires_at";
 
     private final AuthenticationAPIClient authClient;
     private final Storage storage;
+    private final JWTDecoder jwtDecoder;
+
+    @VisibleForTesting
+    CredentialsManager(@NonNull AuthenticationAPIClient authenticationClient, @NonNull Storage storage, @NonNull JWTDecoder jwtDecoder) {
+        this.authClient = authenticationClient;
+        this.storage = storage;
+        this.jwtDecoder = jwtDecoder;
+    }
 
     /**
      * Creates a new instance of the manager that will store the credentials in the given Storage.
@@ -36,8 +45,7 @@ public class CredentialsManager {
      * @param storage              the storage to use for the credentials.
      */
     public CredentialsManager(@NonNull AuthenticationAPIClient authenticationClient, @NonNull Storage storage) {
-        this.authClient = authenticationClient;
-        this.storage = storage;
+        this(authenticationClient, storage, new JWTDecoder());
     }
 
     /**
@@ -53,7 +61,7 @@ public class CredentialsManager {
         long expiresAt = credentials.getExpiresAt().getTime();
 
         if (credentials.getIdToken() != null) {
-            JWT idToken = new JWT(credentials.getIdToken());
+            JWT idToken = jwtDecoder.decode(credentials.getIdToken());
             Date idTokenExpiresAtDate = idToken.getExpiresAt();
 
             if (idTokenExpiresAtDate != null) {
@@ -65,8 +73,9 @@ public class CredentialsManager {
         storage.store(KEY_REFRESH_TOKEN, credentials.getRefreshToken());
         storage.store(KEY_ID_TOKEN, credentials.getIdToken());
         storage.store(KEY_TOKEN_TYPE, credentials.getType());
-        storage.store(KEY_EXPIRES_AT, expiresAt);
+        storage.store(KEY_EXPIRES_AT, credentials.getExpiresAt().getTime());
         storage.store(KEY_SCOPE, credentials.getScope());
+        storage.store(KEY_CACHE_EXPIRES_AT, expiresAt);
     }
 
     /**
@@ -83,12 +92,13 @@ public class CredentialsManager {
         String tokenType = storage.retrieveString(KEY_TOKEN_TYPE);
         Long expiresAt = storage.retrieveLong(KEY_EXPIRES_AT);
         String scope = storage.retrieveString(KEY_SCOPE);
+        Long cacheExpiresAt = storage.retrieveLong(KEY_CACHE_EXPIRES_AT);
 
         if (isEmpty(accessToken) && isEmpty(idToken) || expiresAt == null) {
             callback.onFailure(new CredentialsManagerException("No Credentials were previously set."));
             return;
         }
-        if (expiresAt > getCurrentTimeInMillis()) {
+        if (cacheExpiresAt > getCurrentTimeInMillis()) {
             callback.onSuccess(recreateCredentials(idToken, accessToken, tokenType, refreshToken, new Date(expiresAt), scope));
             return;
         }
@@ -139,6 +149,7 @@ public class CredentialsManager {
         storage.remove(KEY_TOKEN_TYPE);
         storage.remove(KEY_EXPIRES_AT);
         storage.remove(KEY_SCOPE);
+        storage.remove(KEY_CACHE_EXPIRES_AT);
     }
 
     @VisibleForTesting
