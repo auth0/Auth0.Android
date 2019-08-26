@@ -7,6 +7,7 @@ import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.AuthenticationCallback;
 import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.jwt.JWT;
 import com.auth0.android.result.Credentials;
 
 import java.util.Date;
@@ -48,11 +49,24 @@ public class CredentialsManager {
         if ((isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken())) || credentials.getExpiresAt() == null) {
             throw new CredentialsManagerException("Credentials must have a valid date of expiration and a valid access_token or id_token value.");
         }
+
+        long expiresAt = credentials.getExpiresAt().getTime();
+
+        if(credentials.getIdToken() != null) {
+
+            JWT idToken = new JWT(credentials.getIdToken());
+            Date idTokenExpiresAtDate = idToken.getExpiresAt();
+
+            if (idTokenExpiresAtDate != null) {
+                expiresAt = Math.min(idTokenExpiresAtDate.getTime(), credentials.getExpiresAt().getTime());
+            }
+        }
+
         storage.store(KEY_ACCESS_TOKEN, credentials.getAccessToken());
         storage.store(KEY_REFRESH_TOKEN, credentials.getRefreshToken());
         storage.store(KEY_ID_TOKEN, credentials.getIdToken());
         storage.store(KEY_TOKEN_TYPE, credentials.getType());
-        storage.store(KEY_EXPIRES_AT, credentials.getExpiresAt().getTime());
+        storage.store(KEY_EXPIRES_AT, expiresAt);
         storage.store(KEY_SCOPE, credentials.getScope());
     }
 
