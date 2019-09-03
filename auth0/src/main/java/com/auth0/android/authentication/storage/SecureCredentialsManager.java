@@ -18,9 +18,12 @@ import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.AuthenticationCallback;
 import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.jwt.JWT;
 import com.auth0.android.request.internal.GsonProvider;
 import com.auth0.android.result.Credentials;
 import com.google.gson.Gson;
+
+import java.util.Date;
 
 import static android.text.TextUtils.isEmpty;
 
@@ -44,6 +47,7 @@ public class SecureCredentialsManager {
     private final Storage storage;
     private final CryptoUtil crypto;
     private final Gson gson;
+    private final JWTDecoder jwtDecoder;
 
     //Changeable by the user
     private boolean authenticateBeforeDecrypt;
@@ -56,12 +60,13 @@ public class SecureCredentialsManager {
 
 
     @VisibleForTesting
-    SecureCredentialsManager(@NonNull AuthenticationAPIClient apiClient, @NonNull Storage storage, @NonNull CryptoUtil crypto) {
+    SecureCredentialsManager(@NonNull AuthenticationAPIClient apiClient, @NonNull Storage storage, @NonNull CryptoUtil crypto, @NonNull JWTDecoder jwtDecoder) {
         this.apiClient = apiClient;
         this.storage = storage;
         this.crypto = crypto;
         this.gson = GsonProvider.buildGson();
         this.authenticateBeforeDecrypt = false;
+        this.jwtDecoder = jwtDecoder;
     }
 
     /**
@@ -72,7 +77,7 @@ public class SecureCredentialsManager {
      * @param storage   the storage implementation to use
      */
     public SecureCredentialsManager(@NonNull Context context, @NonNull AuthenticationAPIClient apiClient, @NonNull Storage storage) {
-        this(apiClient, storage, new CryptoUtil(context, storage, KEY_ALIAS));
+        this(apiClient, storage, new CryptoUtil(context, storage, KEY_ALIAS), new JWTDecoder());
     }
 
     /**
@@ -139,8 +144,18 @@ public class SecureCredentialsManager {
             throw new CredentialsManagerException("Credentials must have a valid date of expiration and a valid access_token or id_token value.");
         }
 
-        String json = gson.toJson(credentials);
         long expiresAt = credentials.getExpiresAt().getTime();
+
+        if (credentials.getIdToken() != null) {
+            JWT idToken = jwtDecoder.decode(credentials.getIdToken());
+            Date idTokenExpiresAtDate = idToken.getExpiresAt();
+
+            if (idTokenExpiresAtDate != null) {
+                expiresAt = Math.min(idTokenExpiresAtDate.getTime(), expiresAt);
+            }
+        }
+
+        String json = gson.toJson(credentials);
         boolean canRefresh = !isEmpty(credentials.getRefreshToken());
 
         Log.d(TAG, "Trying to encrypt the given data using the private key.");
