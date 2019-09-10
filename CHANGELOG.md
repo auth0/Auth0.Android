@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.19.0](https://github.com/auth0/Auth0.Android/tree/1.19.0) (2019-09-10)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.18.0...1.19.0)
+
+**Changed**
+- Update CredentialManager classes to include IDToken expiration [\#254](https://github.com/auth0/Auth0.Android/pull/254) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.18.0](https://github.com/auth0/Auth0.Android/tree/1.18.0) (2019-07-26)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.17.0...1.18.0)
 
