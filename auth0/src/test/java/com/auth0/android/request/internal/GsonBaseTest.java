@@ -1,6 +1,7 @@
 package com.auth0.android.request.internal;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -14,6 +15,10 @@ abstract class GsonBaseTest {
 
 
     Gson gson;
+
+    <T> T pojoFrom(Reader json, TypeToken<T> typeToken) throws IOException {
+        return gson.getAdapter(typeToken).fromJson(json);
+    }
 
     <T> T pojoFrom(Reader json, Class<T> clazz) throws IOException {
         return gson.getAdapter(clazz).fromJson(json);

@@ -48,9 +48,11 @@ import com.auth0.android.result.Delegation;
 import com.auth0.android.result.UserProfile;
 import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.OkHttpClient;
 
+import java.security.PublicKey;
 import java.util.Map;
 
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_AUTHORIZATION_CODE;
@@ -98,10 +100,11 @@ public class AuthenticationAPIClient {
     private static final String USER_INFO_PATH = "userinfo";
     private static final String REVOKE_PATH = "revoke";
     private static final String HEADER_AUTHORIZATION = "Authorization";
+    private static final String WELL_KNOWN_PATH = ".well-known";
+    private static final String JWKS_FILE_PATH = "jwks.json";
 
     private final Auth0 auth0;
-    @VisibleForTesting
-    final OkHttpClient client;
+    private final OkHttpClient client;
     private final Gson gson;
     private final RequestFactory factory;
     private final ErrorBuilder<AuthenticationException> authErrorBuilder;
@@ -1073,6 +1076,22 @@ public class AuthenticationAPIClient {
         ParameterizableRequest<Credentials, AuthenticationException> request = factory.POST(url, client, gson, Credentials.class, authErrorBuilder);
         request.addParameters(parameters);
         return new TokenRequest(request);
+    }
+
+    /**
+     * Creates a new Request to obtain the JSON Web Keys associated with the Auth0 account under the given domain.
+     * Only supports RSA keys used for signatures (Public Keys).
+     *
+     * @return a request to obtain the JSON Web Keys associated with this Auth0 account.
+     */
+    public Request<Map<String, PublicKey>, AuthenticationException> fetchJsonWebKeys() {
+        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+                .addPathSegment(WELL_KNOWN_PATH)
+                .addPathSegment(JWKS_FILE_PATH)
+                .build();
+        TypeToken<Map<String, PublicKey>> jwksType = new TypeToken<Map<String, PublicKey>>() {
+        };
+        return factory.GET(url, client, gson, jwksType, authErrorBuilder);
     }
 
     private AuthenticationRequest loginWithToken(Map<String, Object> parameters) {
