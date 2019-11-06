@@ -29,7 +29,7 @@ class JwksDeserializer implements JsonDeserializer<Map<String, PublicKey>> {
     @Override
     public Map<String, PublicKey> deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
         if (!json.isJsonObject() || json.isJsonNull() || json.getAsJsonObject().entrySet().isEmpty()) {
-            throw new JsonParseException("jwks json is not a valid json object");
+            throw new JsonParseException("jwks json must be a valid and non-empty json object");
         }
 
         HashMap<String, PublicKey> jwks = new HashMap<>();
