@@ -92,6 +92,13 @@ public class JwksGsonTest extends GsonBaseTest {
         assertTrue(jwks.isEmpty());
     }
 
+    @Test
+    public void shouldReturnEmptyWhenKeysCannotBeCreatedBecauseOfNotSupportedKeyType() throws Exception {
+        Map<String, PublicKey> jwks = buildJwksFrom(new StringReader("{\"keys\": [{\"alg\": \"RS256\", \"use\": \"sig\", \"kty\": \"INVALID_VALUE\"}]}"));
+        assertThat(jwks, is(notNullValue()));
+        assertTrue(jwks.isEmpty());
+    }
+
     private Map<String, PublicKey> buildJwksFrom(Reader json) throws IOException {
         TypeToken<Map<String, PublicKey>> jwksType = new TypeToken<Map<String, PublicKey>>() {
         };

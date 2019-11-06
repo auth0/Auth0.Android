@@ -38,16 +38,16 @@ class JwksDeserializer implements JsonDeserializer<Map<String, PublicKey>> {
         JsonArray keys = object.getAsJsonArray("keys");
         for (JsonElement k : keys) {
             JsonObject currentKey = k.getAsJsonObject();
-            String keyAlg = context.deserialize(currentKey.remove("alg"), String.class);
-            String keyUse = context.deserialize(currentKey.remove("use"), String.class);
+            String keyAlg = context.deserialize(currentKey.get("alg"), String.class);
+            String keyUse = context.deserialize(currentKey.get("use"), String.class);
             if (!RSA_ALGORITHM.equals(keyAlg) || !USE_SIGNING.equals(keyUse)) {
                 //Key not supported at this time
                 continue;
             }
-            String keyType = context.deserialize(currentKey.remove("kty"), String.class);
-            String keyId = context.deserialize(currentKey.remove("kid"), String.class);
-            String keyModulus = context.deserialize(currentKey.remove("n"), String.class);
-            String keyPublicExponent = context.deserialize(currentKey.remove("e"), String.class);
+            String keyType = context.deserialize(currentKey.get("kty"), String.class);
+            String keyId = context.deserialize(currentKey.get("kid"), String.class);
+            String keyModulus = context.deserialize(currentKey.get("n"), String.class);
+            String keyPublicExponent = context.deserialize(currentKey.get("e"), String.class);
 
             try {
                 KeyFactory kf = KeyFactory.getInstance(keyType);
