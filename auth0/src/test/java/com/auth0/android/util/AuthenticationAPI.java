@@ -131,6 +131,14 @@ public class AuthenticationAPI {
         return this;
     }
 
+    public AuthenticationAPI willReturnSuccessfulJsonWebKeys() {
+        String json = "{" +
+                "\"keys\": []" +
+                "}";
+        server.enqueue(responseWithJSON(json, 200));
+        return this;
+    }
+
     public AuthenticationAPI willReturnTokenInfo() {
         String json = "{\n" +
                 "  \"email\": \"p@p.xom\",\n" +

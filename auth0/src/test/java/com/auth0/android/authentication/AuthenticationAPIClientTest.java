@@ -54,6 +54,8 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import java.lang.reflect.Type;
+import java.security.PublicKey;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -1515,6 +1517,36 @@ public class AuthenticationAPIClientTest {
         assertThat(body, hasEntry("phone_number", "+1123123123"));
         assertThat(body, hasEntry("send", "link_android"));
         assertThat(body, hasEntry("connection", "sms"));
+    }
+
+    @Test
+    public void shouldFetchJsonWebKeys() throws Exception {
+        mockAPI.willReturnSuccessfulJsonWebKeys();
+
+        MockAuthenticationCallback<Map<String, PublicKey>> callback = new MockAuthenticationCallback<>();
+        client.fetchJsonWebKeys()
+                .start(callback);
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getPath(), equalTo("/.well-known/jwks.json"));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+
+        assertThat(callback, hasPayload(Collections.<String, PublicKey>emptyMap()));
+    }
+
+    @Test
+    public void shouldFetchJsonWebKeysSync() throws Exception {
+        mockAPI.willReturnSuccessfulJsonWebKeys();
+
+        Map<String, PublicKey> result = client.fetchJsonWebKeys()
+                .execute();
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getPath(), equalTo("/.well-known/jwks.json"));
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+
+        assertThat(result, is(notNullValue()));
+        assertThat(result, is(Collections.<String, PublicKey>emptyMap()));
     }
 
     @Test

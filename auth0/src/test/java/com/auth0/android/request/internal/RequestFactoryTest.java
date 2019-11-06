@@ -30,6 +30,7 @@ public class RequestFactoryTest {
     private static final String METHOD_POST = "POST";
     private static final String METHOD_PATCH = "PATCH";
     private static final String METHOD_DELETE = "DELETE";
+    private static final String METHOD_GET = "GET";
     private static final String CLIENT_INFO = "client_info";
     private static final String USER_AGENT = "user_agent";
     private static final String TOKEN = "token";
@@ -155,6 +156,25 @@ public class RequestFactoryTest {
         assertThat(request, is(notNullValue()));
         assertThat(request, hasHeaders(RequestFactory.getDefaultLocale(), CLIENT_INFO, USER_AGENT));
         assertThat(request, RequestMatcher.hasArguments(url, METHOD_DELETE, typeToken));
+    }
+
+    @Test
+    public void shouldCreateGETRequest() {
+        final ParameterizableRequest<Auth0, Auth0Exception> request = factory.GET(url, client, gson, Auth0.class, builder);
+
+        assertThat(request, is(notNullValue()));
+        assertThat(request, hasHeaders(RequestFactory.getDefaultLocale(), CLIENT_INFO, USER_AGENT));
+        assertThat(request, RequestMatcher.hasArguments(url, METHOD_GET, Auth0.class));
+    }
+
+    @Test
+    public void shouldCreateGETRequestOfTToken() {
+        TypeToken<Auth0> typeToken = createTypeToken();
+        final ParameterizableRequest<Auth0, Auth0Exception> request = factory.GET(url, client, gson, typeToken, builder);
+
+        assertThat(request, is(notNullValue()));
+        assertThat(request, hasHeaders(RequestFactory.getDefaultLocale(), CLIENT_INFO, USER_AGENT));
+        assertThat(request, RequestMatcher.hasArguments(url, METHOD_GET, typeToken));
     }
 
     @Test
