@@ -130,22 +130,4 @@ public class OAuthManagerTest {
         exception.expect(AuthenticationException.class);
         OAuthManager.assertValidState("0987654321", null);
     }
-
-    @Test
-    public void shouldHaveValidNonce() {
-        OAuthManager.assertValidNonce("1234567890", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk");
-    }
-
-    @Test
-    public void shouldHaveInvalidNonce() {
-        exception.expect(AuthenticationException.class);
-        OAuthManager.assertValidNonce("0987654321", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk");
-    }
-
-    @Test
-    public void shouldHaveInvalidNonceOnDecodeException() {
-        exception.expect(AuthenticationException.class);
-        OAuthManager.assertValidNonce("0987654321", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVC.eyJub25jZSI6IjEyMzQ1Njc4OTAifQ.oUb6xFIEPJQrFbel_Js4SaOwpFfM_kxHxI7xDOHgghk");
-    }
-
 }
