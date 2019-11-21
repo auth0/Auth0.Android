@@ -229,7 +229,6 @@ class OAuthManager extends ResumableManager {
             @Override
             public void onSuccess(SignatureVerifier signatureVerifier) {
                 IdTokenVerifier.Options options = new IdTokenVerifier.Options(apiClient.getBaseURL(), apiClient.getClientId(), signatureVerifier);
-                //FIXME: Check for null max-age
                 String maxAge = parameters.get("max_age");
                 if (!TextUtils.isEmpty(maxAge)) {
                     options.setMaxAge(Integer.valueOf(maxAge));
@@ -238,6 +237,7 @@ class OAuthManager extends ResumableManager {
                 if (!TextUtils.isEmpty(nonce)) {
                     options.setNonce(nonce);
                 }
+                options.setClock(new Date(getCurrentTimeInMillis()));
                 try {
                     new IdTokenVerifier().verify(decodedIdToken, options);
                     logDebug("Authenticated using web flow");
@@ -339,8 +339,7 @@ class OAuthManager extends ResumableManager {
         String state = getRandomString(parameters.get(KEY_STATE));
         parameters.put(KEY_STATE, state);
 
-        if (parameters.containsKey(KEY_RESPONSE_TYPE) && parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_ID_TOKEN)) {
-            //FIXME: Nonce must be sent for id_token and code response_types
+        if (parameters.containsKey(KEY_RESPONSE_TYPE) && (parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_ID_TOKEN) || parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_CODE))) {
             String nonce = getRandomString(parameters.get(KEY_NONCE));
             parameters.put(KEY_NONCE, nonce);
         }
