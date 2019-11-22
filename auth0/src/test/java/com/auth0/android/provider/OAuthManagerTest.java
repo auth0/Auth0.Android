@@ -85,30 +85,30 @@ public class OAuthManagerTest {
     @Test
     public void shouldMergeCredentials() {
         Date expiresAt = new Date();
-        Credentials urlCredentials = new Credentials("urlId", "urlAccess", "urlType", "urlRefresh", expiresAt, "urlScope");
-        Credentials codeCredentials = new Credentials("codeId", "codeAccess", "codeType", "codeRefresh", expiresAt, "codeScope");
-        Credentials merged = OAuthManager.mergeCredentials(urlCredentials, codeCredentials);
+        Credentials frontChannelCredentials = new Credentials("urlId", "urlAccess", "urlType", null, expiresAt, "urlScope");
+        Credentials codeExchangeCredentials = new Credentials("codeId", "codeAccess", "codeType", "codeRefresh", expiresAt, "codeScope");
+        Credentials merged = OAuthManager.mergeCredentials(frontChannelCredentials, codeExchangeCredentials);
 
-        assertThat(merged.getIdToken(), is(codeCredentials.getIdToken()));
-        assertThat(merged.getAccessToken(), is(codeCredentials.getAccessToken()));
-        assertThat(merged.getType(), is(codeCredentials.getType()));
-        assertThat(merged.getRefreshToken(), is(codeCredentials.getRefreshToken()));
-        assertThat(merged.getExpiresIn(), is(codeCredentials.getExpiresIn()));
+        assertThat(merged.getIdToken(), is(frontChannelCredentials.getIdToken()));
+        assertThat(merged.getAccessToken(), is(codeExchangeCredentials.getAccessToken()));
+        assertThat(merged.getType(), is(codeExchangeCredentials.getType()));
+        assertThat(merged.getRefreshToken(), is(codeExchangeCredentials.getRefreshToken()));
+        assertThat(merged.getExpiresIn(), is(codeExchangeCredentials.getExpiresIn()));
         assertThat(merged.getExpiresAt(), is(expiresAt));
-        assertThat(merged.getExpiresAt(), is(codeCredentials.getExpiresAt()));
-        assertThat(merged.getScope(), is(codeCredentials.getScope()));
+        assertThat(merged.getExpiresAt(), is(codeExchangeCredentials.getExpiresAt()));
+        assertThat(merged.getScope(), is(codeExchangeCredentials.getScope()));
     }
 
     @Test
     public void shouldPreferNonNullValuesWhenMergingCredentials() {
-        Credentials urlCredentials = new Credentials("urlId", "urlAccess", "urlType", "urlRefresh", new Date(), "urlScope");
-        Credentials codeCredentials = new Credentials(null, null, null, null, null, null);
+        Credentials urlCredentials = new Credentials("urlId", "urlAccess", "urlType", null, new Date(), "urlScope");
+        Credentials codeCredentials = new Credentials(null, null, null, "codeRefresh", null, null);
         Credentials merged = OAuthManager.mergeCredentials(urlCredentials, codeCredentials);
 
         assertThat(merged.getIdToken(), is(urlCredentials.getIdToken()));
         assertThat(merged.getAccessToken(), is(urlCredentials.getAccessToken()));
         assertThat(merged.getType(), is(urlCredentials.getType()));
-        assertThat(merged.getRefreshToken(), is(urlCredentials.getRefreshToken()));
+        assertThat(merged.getRefreshToken(), is(codeCredentials.getRefreshToken()));
         assertThat(merged.getExpiresIn(), is(urlCredentials.getExpiresIn()));
         assertThat(merged.getScope(), is(urlCredentials.getScope()));
         assertThat(merged.getExpiresAt(), is(urlCredentials.getExpiresAt()));

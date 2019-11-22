@@ -380,11 +380,10 @@ class OAuthManager extends ResumableManager {
 
     @VisibleForTesting
     static Credentials mergeCredentials(Credentials urlCredentials, Credentials codeCredentials) {
-        //FIXME: Prefer front-channel ID token. Also, only accept refresh_token from back-channel
-        final String idToken = TextUtils.isEmpty(codeCredentials.getIdToken()) ? urlCredentials.getIdToken() : codeCredentials.getIdToken();
+        final String idToken = TextUtils.isEmpty(urlCredentials.getIdToken()) ? codeCredentials.getIdToken() : urlCredentials.getIdToken();
         final String accessToken = TextUtils.isEmpty(codeCredentials.getAccessToken()) ? urlCredentials.getAccessToken() : codeCredentials.getAccessToken();
         final String type = TextUtils.isEmpty(codeCredentials.getType()) ? urlCredentials.getType() : codeCredentials.getType();
-        final String refreshToken = TextUtils.isEmpty(codeCredentials.getRefreshToken()) ? urlCredentials.getRefreshToken() : codeCredentials.getRefreshToken();
+        final String refreshToken = codeCredentials.getRefreshToken();
         final Date expiresAt = codeCredentials.getExpiresAt() != null ? codeCredentials.getExpiresAt() : urlCredentials.getExpiresAt();
         final String scope = TextUtils.isEmpty(codeCredentials.getScope()) ? urlCredentials.getScope() : codeCredentials.getScope();
 
