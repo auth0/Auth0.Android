@@ -66,6 +66,7 @@ class OAuthManager extends ResumableManager {
     private final Auth0 account;
     private final AuthCallback callback;
     private final Map<String, String> parameters;
+    private final AuthenticationAPIClient apiClient;
 
     private boolean useFullScreen;
     private boolean useBrowser = true;
@@ -73,7 +74,6 @@ class OAuthManager extends ResumableManager {
     private PKCE pkce;
     private Long currentTimeInMillis;
     private CustomTabsOptions ctOptions;
-    private AuthenticationAPIClient apiClient;
 
     OAuthManager(@NonNull Auth0 account, @NonNull AuthCallback callback, @NonNull Map<String, String> parameters) {
         this.account = account;
@@ -223,6 +223,7 @@ class OAuthManager extends ResumableManager {
 
             @Override
             public void onFailure(TokenValidationException error) {
+                //TODO Test that the exception cause message is readable by the end user
                 validationCallback.onFailure(error);
             }
 
@@ -262,13 +263,13 @@ class OAuthManager extends ResumableManager {
                 try {
                     verifierCallback.onSuccess(new AsymmetricVerifier(publicKey));
                 } catch (InvalidKeyException e) {
-                    verifierCallback.onFailure(new TokenValidationException(String.format("Could not find a public key for kid %s.", keyId)));
+                    verifierCallback.onFailure(new TokenValidationException(String.format("Could not find a public key for kid \"%s\"", keyId)));
                 }
             }
 
             @Override
             public void onFailure(AuthenticationException error) {
-                verifierCallback.onFailure(new TokenValidationException(String.format("Could not find a public key for kid %s", keyId)));
+                verifierCallback.onFailure(new TokenValidationException(String.format("Could not find a public key for kid \"%s\"", keyId)));
             }
         });
     }

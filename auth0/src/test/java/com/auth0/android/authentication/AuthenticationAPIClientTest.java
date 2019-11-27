@@ -240,7 +240,7 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldLoginWithPasswordReamGrant() throws Exception {
+    public void shouldLoginWithPasswordRealmGrant() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
 
@@ -709,7 +709,7 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldLoginWithUsernameSignedUpUserWithPasswordReamGrant() throws Exception {
+    public void shouldLoginWithUsernameSignedUpUserWithPasswordRealmGrant() throws Exception {
         mockAPI.willReturnSuccessfulSignUp()
                 .willReturnSuccessfulLogin();
 
@@ -1521,7 +1521,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldFetchJsonWebKeys() throws Exception {
-        mockAPI.willReturnSuccessfulJsonWebKeys();
+        mockAPI.willReturnEmptyJsonWebKeys();
 
         MockAuthenticationCallback<Map<String, PublicKey>> callback = new MockAuthenticationCallback<>();
         client.fetchJsonWebKeys()
@@ -1536,7 +1536,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldFetchJsonWebKeysSync() throws Exception {
-        mockAPI.willReturnSuccessfulJsonWebKeys();
+        mockAPI.willReturnEmptyJsonWebKeys();
 
         Map<String, PublicKey> result = client.fetchJsonWebKeys()
                 .execute();

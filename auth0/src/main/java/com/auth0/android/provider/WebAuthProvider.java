@@ -38,6 +38,7 @@ import android.util.Log;
 
 import com.auth0.android.Auth0;
 import com.auth0.android.Auth0Exception;
+import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 
 import java.util.HashMap;
@@ -141,6 +142,7 @@ public class WebAuthProvider {
         private PKCE pkce;
         private String scheme;
         private CustomTabsOptions ctOptions;
+        private AuthenticationAPIClient apiClient;
 
         Builder(Auth0 account) {
             this.account = account;

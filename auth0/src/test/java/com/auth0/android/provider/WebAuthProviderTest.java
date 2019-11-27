@@ -23,6 +23,9 @@ import com.auth0.android.Auth0;
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.result.Credentials;
+import com.auth0.android.util.AuthCallbackMatcher;
+import com.auth0.android.util.AuthenticationAPI;
+import com.auth0.android.util.MockAuthCallback;
 
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
@@ -41,7 +44,14 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
-import java.io.UnsupportedEncodingException;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.Signature;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -85,6 +95,7 @@ public class WebAuthProviderTest {
     private static final String KEY_STATE = "state";
     private static final String KEY_NONCE = "nonce";
     private static final long FIXED_CLOCK_CURRENT_TIME_MS = 1567314000000L;
+    private static final String RSA_PRIVATE_KEY = "src/test/resources/rsa_private.pem";
 
     @Mock
     private AuthCallback callback;
@@ -1102,7 +1113,7 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldSetExpectedNonceWithResponseTypeIdToken() {
+    public void shouldSetExpectedNonceWithResponseTypeIdToken() throws Exception {
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.ID_TOKEN)
                 .start(activity, callback, REQUEST_CODE);
@@ -1118,7 +1129,7 @@ public class WebAuthProviderTest {
         assertThat(sentState, is(not(isEmptyOrNullString())));
         assertThat(sentNonce, is(not(isEmptyOrNullString())));
 
-        String expectedIdToken = customNonceJWT(sentNonce);
+        String expectedIdToken = createTestJWT("HS256", sentNonce, account.getDomainUrl());
         Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, sentState, null, null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
@@ -1126,7 +1137,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldResumeLoginWithIntentWithResponseTypeIdToken() {
+    public void shouldResumeLoginWithIntentWithResponseTypeIdToken() throws Exception {
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.ID_TOKEN)
                 .start(activity, callback);
@@ -1142,7 +1153,7 @@ public class WebAuthProviderTest {
         assertThat(sentState, is(not(isEmptyOrNullString())));
         assertThat(sentNonce, is(not(isEmptyOrNullString())));
 
-        String expectedIdToken = customNonceJWT(sentNonce);
+        String expectedIdToken = createTestJWT("HS256", sentNonce, account.getDomainUrl());
         Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, sentState, null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
@@ -1174,7 +1185,7 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldResumeLoginWithIntentWithCodeGrant() {
+    public void shouldResumeLoginWithIntentWithCodeGrant() throws Exception {
         Date expiresAt = new Date();
         PKCE pkce = Mockito.mock(PKCE.class);
         WebAuthProvider.init(account)
@@ -1195,7 +1206,7 @@ public class WebAuthProviderTest {
         assertThat(sentNonce, is(not(isEmptyOrNullString())));
         Intent intent = createAuthIntent(createHash(null, null, null, null, null, sentState, null, null));
 
-        String expectedIdToken = customNonceJWT(sentNonce);
+        String expectedIdToken = createTestJWT("HS256", sentNonce, account.getDomainUrl());
         final Credentials codeCredentials = new Credentials(expectedIdToken, "codeAccess", "codeType", "codeRefresh", expiresAt, "codeScope");
         Mockito.doAnswer(new Answer() {
             @Override
@@ -1221,7 +1232,55 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldResumeLoginWithRequestCodeWithCodeGrant() {
+    public void shouldResumeLoginWithIntentWithHybridGrant() throws Exception {
+        Date expiresAt = new Date();
+        PKCE pkce = Mockito.mock(PKCE.class);
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.ID_TOKEN | ResponseType.CODE)
+                .withPKCE(pkce)
+                .start(activity, callback);
+        OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
+        managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
+
+        verify(activity).startActivity(intentCaptor.capture());
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
+        assertThat(uri, is(notNullValue()));
+
+        String sentState = uri.getQueryParameter(KEY_STATE);
+        String sentNonce = uri.getQueryParameter(KEY_NONCE);
+
+        assertThat(sentState, is(not(isEmptyOrNullString())));
+        assertThat(sentNonce, is(not(isEmptyOrNullString())));
+        String expectedIdToken = createTestJWT("HS256", sentNonce, account.getDomainUrl());
+
+        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, sentState, null, null));
+        final Credentials codeCredentials = new Credentials("codeIdtoken", "codeAccess", "codeType", "codeRefresh", expiresAt, "codeScope");
+        Mockito.doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) {
+                callbackCaptor.getValue().onSuccess(codeCredentials);
+                return null;
+            }
+        }).when(pkce).getToken(any(String.class), callbackCaptor.capture());
+
+        assertTrue(WebAuthProvider.resume(intent));
+
+        ArgumentCaptor<Credentials> credentialsCaptor = ArgumentCaptor.forClass(Credentials.class);
+        verify(callback).onSuccess(credentialsCaptor.capture());
+
+        assertThat(credentialsCaptor.getValue(), is(notNullValue()));
+        assertThat(credentialsCaptor.getValue().getIdToken(), is(expectedIdToken));
+        assertThat(credentialsCaptor.getValue().getAccessToken(), is("codeAccess"));
+        assertThat(credentialsCaptor.getValue().getRefreshToken(), is("codeRefresh"));
+        assertThat(credentialsCaptor.getValue().getType(), is("codeType"));
+        assertThat(credentialsCaptor.getValue().getExpiresAt(), is(expiresAt));
+        assertThat(credentialsCaptor.getValue().getScope(), is("codeScope"));
+    }
+
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void shouldResumeLoginWithRequestCodeWithCodeGrant() throws Exception {
         Date expiresAt = new Date();
         PKCE pkce = Mockito.mock(PKCE.class);
 
@@ -1242,7 +1301,7 @@ public class WebAuthProviderTest {
         assertThat(sentNonce, is(not(isEmptyOrNullString())));
         Intent intent = createAuthIntent(createHash(null, null, null, null, null, sentState, null, null));
 
-        String expectedIdToken = customNonceJWT(sentNonce);
+        String expectedIdToken = createTestJWT("HS256", sentNonce, account.getDomainUrl());
         final Credentials codeCredentials = new Credentials(expectedIdToken, "codeAccess", "codeType", "codeRefresh", expiresAt, "codeScope");
         Mockito.doAnswer(new Answer() {
             @Override
@@ -1406,7 +1465,7 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldReThrowAnyFailedCodeExchangeExceptionOnLogin() {
+    public void shouldReThrowAnyFailedCodeExchangeExceptionOnLoginWithCodeGrant() throws Exception {
         final AuthenticationException exception = Mockito.mock(AuthenticationException.class);
         PKCE pkce = Mockito.mock(PKCE.class);
         Mockito.doAnswer(new Answer() {
@@ -1418,10 +1477,45 @@ public class WebAuthProviderTest {
         }).when(pkce).getToken(any(String.class), callbackCaptor.capture());
         WebAuthProvider.init(account)
                 .withState("1234567890")
-                .useCodeGrant(true)
+                .withNonce("abcdefg")
+                .withResponseType(ResponseType.CODE)
                 .withPKCE(pkce)
                 .start(activity, callback);
-        Intent intent = createAuthIntent(createHash(null, null, null, null, 1111L, "1234567890", null, null));
+
+        OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
+        managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
+
+        String expectedIdToken = createTestJWT("HS256", "abcdefg", account.getDomainUrl());
+        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, "1234567890", null, null));
+        assertTrue(WebAuthProvider.resume(intent));
+
+        verify(callback).onFailure(exception);
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void shouldReThrowAnyFailedCodeExchangeExceptionOnLoginWithHybridGrant() throws Exception {
+        final AuthenticationException exception = Mockito.mock(AuthenticationException.class);
+        PKCE pkce = Mockito.mock(PKCE.class);
+        Mockito.doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) {
+                callbackCaptor.getValue().onFailure(exception);
+                return null;
+            }
+        }).when(pkce).getToken(any(String.class), callbackCaptor.capture());
+        WebAuthProvider.init(account)
+                .withState("1234567890")
+                .withNonce("abcdefg")
+                .withResponseType(ResponseType.ID_TOKEN | ResponseType.CODE)
+                .withPKCE(pkce)
+                .start(activity, callback);
+
+        OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
+        managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
+
+        String expectedIdToken = createTestJWT("HS256", "abcdefg", account.getDomainUrl());
+        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, "1234567890", null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(exception);
@@ -1531,6 +1625,110 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings({"deprecation"})
     @Test
+    public void shouldFailToResumeLoginWithImplicitGrantMissingIdToken() {
+        WebAuthProvider.init(account)
+                .withState("1234567890")
+                .withResponseType(ResponseType.ID_TOKEN | ResponseType.TOKEN)
+                .start(activity, callback);
+        Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", null, null));
+        assertTrue(WebAuthProvider.resume(intent));
+
+        verify(callback).onFailure(authExceptionCaptor.capture());
+
+        assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
+        assertThat(authExceptionCaptor.getValue().getCode(), is("a0.sdk.internal_error.id_token_validation"));
+        assertThat(authExceptionCaptor.getValue().getDescription(), is("ID token is required but missing"));
+    }
+
+    @SuppressWarnings({"deprecation"})
+    @Test
+    public void shouldFailToResumeLoginWhenRSAKeyIsMissingFromJWKSet() throws Exception {
+        AuthenticationAPI mockAPI = new AuthenticationAPI();
+        mockAPI.willReturnEmptyJsonWebKeys();
+
+        MockAuthCallback callback = new MockAuthCallback();
+
+        Auth0 proxyAccount = new Auth0("my-client-id", mockAPI.getDomain(), mockAPI.getDomain());
+        WebAuthProvider.init(proxyAccount)
+                .withState("1234567890")
+                .withNonce("abcdefghijk")
+                .withResponseType(ResponseType.ID_TOKEN | ResponseType.TOKEN)
+                .start(activity, callback);
+
+        String expectedIdToken = createTestJWT("RS256", "abcdefghijk", proxyAccount.getDomainUrl());
+        Intent intent = createAuthIntent(createHash(expectedIdToken, "aToken", null, "urlType", 1111L, "1234567890", null, null));
+        assertTrue(WebAuthProvider.resume(intent));
+        mockAPI.takeRequest();
+
+        assertThat(callback, AuthCallbackMatcher.hasError());
+
+        AuthenticationException error = callback.getError();
+        assertThat(error.getCode(), is("a0.sdk.internal_error.id_token_validation"));
+        assertThat(error.getDescription(), is("Could not find a public key for kid \"key123\""));
+
+        mockAPI.shutdown();
+    }
+
+    @SuppressWarnings({"deprecation"})
+    @Test
+    public void shouldFailToResumeLoginWhenJWKSRequestFails() throws Exception {
+        AuthenticationAPI mockAPI = new AuthenticationAPI();
+        mockAPI.willReturnInvalidRequest();
+
+        MockAuthCallback callback = new MockAuthCallback();
+
+        Auth0 proxyAccount = new Auth0("my-client-id", mockAPI.getDomain(), mockAPI.getDomain());
+        WebAuthProvider.init(proxyAccount)
+                .withState("1234567890")
+                .withNonce("abcdefghijk")
+                .withResponseType(ResponseType.ID_TOKEN | ResponseType.TOKEN)
+                .start(activity, callback);
+
+        String expectedIdToken = createTestJWT("RS256", "abcdefghijk", proxyAccount.getDomainUrl());
+        Intent intent = createAuthIntent(createHash(expectedIdToken, "aToken", null, "urlType", 1111L, "1234567890", null, null));
+        assertTrue(WebAuthProvider.resume(intent));
+        mockAPI.takeRequest();
+
+        assertThat(callback, AuthCallbackMatcher.hasError());
+
+        AuthenticationException error = callback.getError();
+        assertThat(error.getCode(), is("a0.sdk.internal_error.id_token_validation"));
+        assertThat(error.getDescription(), is("Could not find a public key for kid \"key123\""));
+
+        mockAPI.shutdown();
+    }
+
+    @SuppressWarnings({"deprecation"})
+    @Test
+    public void shouldResumeLoginWhenJWKSRequestSuceeds() throws Exception {
+        AuthenticationAPI mockAPI = new AuthenticationAPI();
+        mockAPI.willReturnValidJsonWebKeys();
+
+        MockAuthCallback callback = new MockAuthCallback();
+
+        Auth0 proxyAccount = new Auth0("my-client-id", mockAPI.getDomain(), mockAPI.getDomain());
+        WebAuthProvider.init(proxyAccount)
+                .withState("1234567890")
+                .withNonce("abcdefghijk")
+                .withResponseType(ResponseType.ID_TOKEN | ResponseType.TOKEN)
+                .start(activity, callback);
+
+        String expectedIdToken = createTestJWT("RS256", "abcdefghijk", proxyAccount.getDomainUrl());
+        Intent intent = createAuthIntent(createHash(expectedIdToken, "aToken", null, "urlType", 1111L, "1234567890", null, null));
+        assertTrue(WebAuthProvider.resume(intent));
+        mockAPI.takeRequest();
+
+        assertThat(callback, AuthCallbackMatcher.hasCredentials());
+
+        Credentials credentials = callback.getCredentials();
+        assertThat(credentials.getAccessToken(), is("aToken"));
+        assertThat(credentials.getIdToken(), is(expectedIdToken));
+
+        mockAPI.shutdown();
+    }
+
+    @SuppressWarnings({"deprecation"})
+    @Test
     public void shouldFailToResumeLoginWithIntentWithLoginRequired() {
         WebAuthProvider.init(account)
                 .withState("1234567890")
@@ -1599,7 +1797,61 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings({"deprecation"})
     @Test
-    public void shouldFailToResumeLoginWithIntentWithInvalidNonce() {
+    public void shouldFailToResumeLoginWithIntentWithInvalidIdTokenWithImplicitGrant() {
+        WebAuthProvider.init(account)
+                .withState("state")
+                .withResponseType(ResponseType.ID_TOKEN)
+                .start(activity, callback);
+        OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
+        managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
+
+        Intent intent = createAuthIntent(createHash("not.valid", null, null, null, null, "state", null, null));
+        assertTrue(WebAuthProvider.resume(intent));
+
+        verify(callback).onFailure(authExceptionCaptor.capture());
+
+        assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
+        assertThat(authExceptionCaptor.getValue().getCode(), is("a0.sdk.internal_error.id_token_validation"));
+        assertThat(authExceptionCaptor.getValue().getDescription(), is("ID token could not be decoded"));
+    }
+
+    @SuppressWarnings({"deprecation"})
+    @Test
+    public void shouldFailToResumeLoginWithIntentWithInvalidIdTokenWithHybridGrant() {
+        Date expiresAt = new Date();
+        PKCE pkce = Mockito.mock(PKCE.class);
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.TOKEN | ResponseType.CODE)
+                .withState("state")
+                .withPKCE(pkce)
+                .start(activity, callback);
+        OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
+        managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
+
+        verify(activity).startActivity(intentCaptor.capture());
+
+        Intent intent = createAuthIntent(createHash(null, "urlAccess", null, null, null, "state", null, null));
+        final Credentials codeCredentials = new Credentials("not.valid", "codeAccess", "codeType", "codeRefresh", expiresAt, "codeScope");
+        Mockito.doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) {
+                callbackCaptor.getValue().onSuccess(codeCredentials);
+                return null;
+            }
+        }).when(pkce).getToken(any(String.class), callbackCaptor.capture());
+
+        assertTrue(WebAuthProvider.resume(intent));
+
+        verify(callback).onFailure(authExceptionCaptor.capture());
+
+        assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
+        assertThat(authExceptionCaptor.getValue().getCode(), is("a0.sdk.internal_error.id_token_validation"));
+        assertThat(authExceptionCaptor.getValue().getDescription(), is("ID token could not be decoded"));
+    }
+
+    @SuppressWarnings({"deprecation"})
+    @Test
+    public void shouldFailToResumeLoginWithIntentWithInvalidNonce() throws Exception {
         WebAuthProvider.init(account)
                 .withState("state")
                 .withNonce("0987654321")
@@ -1608,7 +1860,7 @@ public class WebAuthProviderTest {
         OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
         managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
 
-        String expectedIdToken = customNonceJWT("abcdefg");
+        String expectedIdToken = createTestJWT("HS256", "abcdefg", account.getDomainUrl());
         Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, "state", null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
@@ -1621,7 +1873,7 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings({"deprecation"})
     @Test
-    public void shouldFailToResumeLoginWithRequestCodeWithInvalidNonce() {
+    public void shouldFailToResumeLoginWithRequestCodeWithInvalidNonce() throws Exception {
         WebAuthProvider.init(account)
                 .withState("state")
                 .withNonce("0987654321")
@@ -1630,7 +1882,7 @@ public class WebAuthProviderTest {
         OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
         managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
 
-        String expectedIdToken = customNonceJWT("abcdefg");
+        String expectedIdToken = createTestJWT("HS256", "abcdefg", account.getDomainUrl());
         Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, "state", null, null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
@@ -2092,15 +2344,19 @@ public class WebAuthProviderTest {
         return hash.length() == 1 ? "" : hash;
     }
 
-    private String customNonceJWT(@NonNull String nonce) {
+    private String createTestJWT(@NonNull String algorithm, @NonNull String nonce, @NonNull String issuer) throws Exception {
+        if (!Arrays.asList("HS256", "RS256").contains(algorithm)) {
+            throw new IllegalArgumentException("ID token algorithm not supported");
+        }
         long iat = FIXED_CLOCK_CURRENT_TIME_MS / 1000;
         long exp = iat + 3600;
         String header = "{" +
-                "\"alg\":\"HS256\"," +
-                "\"typ\":\"JWT\"" +
+                "\"alg\":\"" + algorithm + "\"," +
+                "\"typ\":\"JWT\"," +
+                "\"kid\":\"key123\"" +
                 "}";
         String body = "{" +
-                "\"iss\":\"https://my-domain.com/\"," +
+                "\"iss\":\"" + issuer + "\"," +
                 "\"sub\":\"auth0|123456789\"," +
                 "\"aud\": [" +
                 "\"my-client-id\"," +
@@ -2112,20 +2368,45 @@ public class WebAuthProviderTest {
                 "\"azp\":\"my-client-id\"," +
                 "\"nonce\":\"" + nonce + "\"" +
                 "}";
-        String signature = "sign";
+        String signature = "signature";
 
-        String encodedHeader = encodeString(header);
-        String encodedBody = encodeString(body);
+        byte[] encodedHeaderBytes = Base64.encode(header.getBytes(), Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
+        byte[] encodedBodyBytes = Base64.encode(body.getBytes(), Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
+
+        if (algorithm.equals("RS256")) {
+            PrivateKey pk = getPemPrivateKey(RSA_PRIVATE_KEY);
+            Signature s = Signature.getInstance("SHA256withRSA");
+            s.initSign(pk);
+            s.update(encodedHeaderBytes);
+            s.update((byte) '.');
+            s.update(encodedBodyBytes);
+            byte[] signatureBytes = s.sign();
+            signature = Base64.encodeToString(signatureBytes, Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
+        }
+        String encodedHeader = new String(encodedHeaderBytes, "UTF-8");
+        String encodedBody = new String(encodedBodyBytes, "UTF-8");
+
         return String.format("%s.%s.%s", encodedHeader, encodedBody, signature);
     }
 
-    private String encodeString(String source) {
-        byte[] bytes = Base64.encode(source.getBytes(), Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
-        String res = "";
-        try {
-            res = new String(bytes, "UTF-8");
-        } catch (UnsupportedEncodingException ignored) {
-        }
-        return res;
+    public PrivateKey getPemPrivateKey(String filename) throws Exception {
+        File f = new File(filename);
+        FileInputStream fis = new FileInputStream(f);
+        DataInputStream dis = new DataInputStream(fis);
+        byte[] keyBytes = new byte[(int) f.length()];
+        dis.readFully(keyBytes);
+        dis.close();
+
+        String temp = new String(keyBytes);
+        String privKeyPEM = temp.replace("-----BEGIN PRIVATE KEY-----\n", "");
+
+        privKeyPEM = privKeyPEM.replace("-----END PRIVATE KEY-----", "");
+        //System.out.println("Private key\n"+privKeyPEM);
+
+        byte[] decoded = Base64.decode(privKeyPEM, Base64.DEFAULT);
+
+        PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(decoded);
+        KeyFactory kf = KeyFactory.getInstance("RSA");
+        return kf.generatePrivate(spec);
     }
 }

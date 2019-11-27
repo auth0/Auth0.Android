@@ -132,7 +132,7 @@ public class AuthenticationExceptionTest {
         AuthenticationException ex1 = new AuthenticationException("code", "description");
         AuthenticationException ex2 = new AuthenticationException("message");
         AuthenticationException ex3 = new AuthenticationException("code", new Auth0Exception("message"));
-        AuthenticationException ex4 = new AuthenticationException("payload", 1);
+        AuthenticationException ex4 = new AuthenticationException("credentials", 1);
         assertThat(ex1.getValue("key"), is(nullValue()));
         assertThat(ex2.getValue("key"), is(nullValue()));
         assertThat(ex3.getValue("key"), is(nullValue()));
