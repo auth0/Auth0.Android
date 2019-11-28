@@ -116,7 +116,7 @@ public class CredentialsManagerTest {
         prepareJwtDecoderMock(new Date(accessTokenExpirationTime));
         manager.saveCredentials(credentials);
 
-        verify(storage).store("com.auth0.id_token", (String)null);
+        verify(storage).store("com.auth0.id_token", (String) null);
         verify(storage).store("com.auth0.access_token", "accessToken");
         verify(storage).store("com.auth0.refresh_token", "refreshToken");
         verify(storage).store("com.auth0.token_type", "type");
@@ -233,6 +233,25 @@ public class CredentialsManagerTest {
         CredentialsManagerException exception = exceptionCaptor.getValue();
         assertThat(exception, is(notNullValue()));
         assertThat(exception.getMessage(), is("Credentials have expired and no Refresh Token was available to renew them."));
+    }
+
+    @Test
+    public void shouldNotFailOnGetCredentialsWhenCacheExpiresAtNotSetButExpiresAtIsPresent() {
+        verifyNoMoreInteractions(client);
+
+        when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
+        when(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken");
+        when(storage.retrieveString("com.auth0.token_type")).thenReturn("type");
+        long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456L * 1000;
+        when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveLong("com.auth0.cache_expires_at")).thenReturn(null);
+        when(storage.retrieveString("com.auth0.scope")).thenReturn("scope");
+
+        manager.getCredentials(callback);
+
+        verify(callback).onSuccess(credentialsCaptor.capture());
+        Credentials retrievedCredentials = credentialsCaptor.getValue();
+        assertThat(retrievedCredentials, is(notNullValue()));
     }
 
     @Test
