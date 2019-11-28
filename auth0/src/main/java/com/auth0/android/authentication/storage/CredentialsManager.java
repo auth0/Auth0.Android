@@ -93,6 +93,9 @@ public class CredentialsManager {
         Long expiresAt = storage.retrieveLong(KEY_EXPIRES_AT);
         String scope = storage.retrieveString(KEY_SCOPE);
         Long cacheExpiresAt = storage.retrieveLong(KEY_CACHE_EXPIRES_AT);
+        if (cacheExpiresAt == null) {
+            cacheExpiresAt = expiresAt;
+        }
 
         if (isEmpty(accessToken) && isEmpty(idToken) || expiresAt == null) {
             callback.onFailure(new CredentialsManagerException("No Credentials were previously set."));
