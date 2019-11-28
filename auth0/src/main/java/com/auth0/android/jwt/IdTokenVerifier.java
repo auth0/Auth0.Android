@@ -1,6 +1,7 @@
 package com.auth0.android.jwt;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -128,19 +129,19 @@ public class IdTokenVerifier {
             this.verifier = verifier;
         }
 
-        public void setNonce(String nonce) {
+        public void setNonce(@Nullable String nonce) {
             this.nonce = nonce;
         }
 
-        public void setMaxAge(Integer maxAge) {
+        public void setMaxAge(@Nullable Integer maxAge) {
             this.maxAge = maxAge;
         }
 
-        public void setClockSkew(Integer clockSkew) {
+        public void setClockSkew(@Nullable Integer clockSkew) {
             this.clockSkew = clockSkew;
         }
 
-        public void setClock(Date now) {
+        public void setClock(@Nullable Date now) {
             this.clock = now;
         }
 

@@ -38,6 +38,7 @@ class OAuthManager extends ResumableManager {
     static final String KEY_RESPONSE_TYPE = "response_type";
     static final String KEY_STATE = "state";
     static final String KEY_NONCE = "nonce";
+    static final String KEY_MAX_AGE = "max_age";
     static final String KEY_CONNECTION = "connection";
     static final String RESPONSE_TYPE_ID_TOKEN = "id_token";
     static final String RESPONSE_TYPE_CODE = "code";
@@ -74,6 +75,7 @@ class OAuthManager extends ResumableManager {
     private PKCE pkce;
     private Long currentTimeInMillis;
     private CustomTabsOptions ctOptions;
+    private Integer idTokenVerificationLeeway;
 
     OAuthManager(@NonNull Auth0 account, @NonNull AuthCallback callback, @NonNull Map<String, String> parameters) {
         this.account = account;
@@ -97,6 +99,10 @@ class OAuthManager extends ResumableManager {
     @VisibleForTesting
     void setPKCE(PKCE pkce) {
         this.pkce = pkce;
+    }
+
+    void setIdTokenVerificationLeeway(Integer leeway) {
+        this.idTokenVerificationLeeway = leeway;
     }
 
     void startAuthentication(Activity activity, String redirectUri, int requestCode) {
@@ -230,14 +236,13 @@ class OAuthManager extends ResumableManager {
             @Override
             public void onSuccess(SignatureVerifier signatureVerifier) {
                 IdTokenVerifier.Options options = new IdTokenVerifier.Options(apiClient.getBaseURL(), apiClient.getClientId(), signatureVerifier);
-                String maxAge = parameters.get("max_age");
+                String maxAge = parameters.get(KEY_MAX_AGE);
                 if (!TextUtils.isEmpty(maxAge)) {
+                    //noinspection ConstantConditions
                     options.setMaxAge(Integer.valueOf(maxAge));
                 }
-                String nonce = parameters.get("nonce");
-                if (!TextUtils.isEmpty(nonce)) {
-                    options.setNonce(nonce);
-                }
+                options.setClockSkew(idTokenVerificationLeeway);
+                options.setNonce(parameters.get(KEY_NONCE));
                 options.setClock(new Date(getCurrentTimeInMillis()));
                 try {
                     new IdTokenVerifier().verify(decodedIdToken, options);

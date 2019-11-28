@@ -754,6 +754,49 @@ public class WebAuthProviderTest {
         assertThat(random2, is("some"));
     }
 
+    // max_age
+    @Test
+    public void shouldNotSetMaxAgeByDefaultOnLogin() {
+        WebAuthProvider.init(account)
+                .start(activity, callback);
+
+        verify(activity).startActivity(intentCaptor.capture());
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
+        assertThat(uri, is(notNullValue()));
+
+        assertThat(uri, not(hasParamWithName("max_age")));
+    }
+
+    @Test
+    public void shouldSetMaxAgeFromParametersOnLogin() {
+        Map<String, Object> parameters = Collections.singletonMap("max_age", (Object) "09876");
+        WebAuthProvider.init(account)
+                .withMaxAge(12345)
+                .withParameters(parameters)
+                .start(activity, callback);
+
+        verify(activity).startActivity(intentCaptor.capture());
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
+        assertThat(uri, is(notNullValue()));
+
+        assertThat(uri, hasParamWithValue("max_age", "09876"));
+    }
+
+    @Test
+    public void shouldSetMaxAgeFromSetterOnLogin() {
+        Map<String, Object> parameters = Collections.singletonMap("max_age", (Object) "09876");
+        WebAuthProvider.init(account)
+                .withParameters(parameters)
+                .withMaxAge(12345)
+                .start(activity, callback);
+
+        verify(activity).startActivity(intentCaptor.capture());
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
+        assertThat(uri, is(notNullValue()));
+
+        assertThat(uri, hasParamWithValue("max_age", "12345"));
+    }
+
 
     // auth0 related
 
@@ -1117,6 +1160,7 @@ public class WebAuthProviderTest {
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.ID_TOKEN)
                 .start(activity, callback, REQUEST_CODE);
+
         OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
         managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
 
@@ -1192,6 +1236,7 @@ public class WebAuthProviderTest {
                 .useCodeGrant(true)
                 .withPKCE(pkce)
                 .start(activity, callback);
+
         OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
         managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
 
@@ -1239,6 +1284,7 @@ public class WebAuthProviderTest {
                 .withResponseType(ResponseType.ID_TOKEN | ResponseType.CODE)
                 .withPKCE(pkce)
                 .start(activity, callback);
+
         OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
         managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
 
@@ -1288,6 +1334,7 @@ public class WebAuthProviderTest {
                 .useCodeGrant(true)
                 .withPKCE(pkce)
                 .start(activity, callback, REQUEST_CODE);
+
         OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
         managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
 
@@ -1475,6 +1522,7 @@ public class WebAuthProviderTest {
                 return null;
             }
         }).when(pkce).getToken(any(String.class), callbackCaptor.capture());
+
         WebAuthProvider.init(account)
                 .withState("1234567890")
                 .withNonce("abcdefg")
@@ -1504,6 +1552,7 @@ public class WebAuthProviderTest {
                 return null;
             }
         }).when(pkce).getToken(any(String.class), callbackCaptor.capture());
+
         WebAuthProvider.init(account)
                 .withState("1234567890")
                 .withNonce("abcdefg")
@@ -1651,11 +1700,14 @@ public class WebAuthProviderTest {
         Auth0 proxyAccount = new Auth0("my-client-id", mockAPI.getDomain(), mockAPI.getDomain());
         WebAuthProvider.init(proxyAccount)
                 .withState("1234567890")
-                .withNonce("abcdefghijk")
+                .withNonce("abcdefg")
                 .withResponseType(ResponseType.ID_TOKEN | ResponseType.TOKEN)
                 .start(activity, callback);
 
-        String expectedIdToken = createTestJWT("RS256", "abcdefghijk", proxyAccount.getDomainUrl());
+        OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
+        managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
+
+        String expectedIdToken = createTestJWT("RS256", "abcdefg", proxyAccount.getDomainUrl());
         Intent intent = createAuthIntent(createHash(expectedIdToken, "aToken", null, "urlType", 1111L, "1234567890", null, null));
         assertTrue(WebAuthProvider.resume(intent));
         mockAPI.takeRequest();
@@ -1680,11 +1732,14 @@ public class WebAuthProviderTest {
         Auth0 proxyAccount = new Auth0("my-client-id", mockAPI.getDomain(), mockAPI.getDomain());
         WebAuthProvider.init(proxyAccount)
                 .withState("1234567890")
-                .withNonce("abcdefghijk")
+                .withNonce("abcdefg")
                 .withResponseType(ResponseType.ID_TOKEN | ResponseType.TOKEN)
                 .start(activity, callback);
 
-        String expectedIdToken = createTestJWT("RS256", "abcdefghijk", proxyAccount.getDomainUrl());
+        OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
+        managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
+
+        String expectedIdToken = createTestJWT("RS256", "abcdefg", proxyAccount.getDomainUrl());
         Intent intent = createAuthIntent(createHash(expectedIdToken, "aToken", null, "urlType", 1111L, "1234567890", null, null));
         assertTrue(WebAuthProvider.resume(intent));
         mockAPI.takeRequest();
@@ -1709,11 +1764,14 @@ public class WebAuthProviderTest {
         Auth0 proxyAccount = new Auth0("my-client-id", mockAPI.getDomain(), mockAPI.getDomain());
         WebAuthProvider.init(proxyAccount)
                 .withState("1234567890")
-                .withNonce("abcdefghijk")
+                .withNonce("abcdefg")
                 .withResponseType(ResponseType.ID_TOKEN | ResponseType.TOKEN)
                 .start(activity, callback);
 
-        String expectedIdToken = createTestJWT("RS256", "abcdefghijk", proxyAccount.getDomainUrl());
+        OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
+        managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
+
+        String expectedIdToken = createTestJWT("RS256", "abcdefg", proxyAccount.getDomainUrl());
         Intent intent = createAuthIntent(createHash(expectedIdToken, "aToken", null, "urlType", 1111L, "1234567890", null, null));
         assertTrue(WebAuthProvider.resume(intent));
         mockAPI.takeRequest();
@@ -1849,6 +1907,30 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getDescription(), is("ID token could not be decoded"));
     }
 
+    @Test
+    public void shouldFailToResumeLoginWithIntentWithInvalidMaxAge() throws Exception {
+        WebAuthProvider.init(account)
+                .withState("state")
+                .withNonce("abcdefg")
+                .withIdTokenVerificationLeeway(0)
+                .withMaxAge(5) //5 secs
+                .withResponseType(ResponseType.ID_TOKEN)
+                .start(activity, callback);
+
+        OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
+        managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS + 10 * 1000);
+
+        String expectedIdToken = createTestJWT("HS256", "abcdefg", account.getDomainUrl());
+        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, "state", null, null));
+        assertTrue(WebAuthProvider.resume(intent));
+
+        verify(callback).onFailure(authExceptionCaptor.capture());
+
+        assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
+        assertThat(authExceptionCaptor.getValue().getCode(), is("a0.sdk.internal_error.id_token_validation"));
+        assertThat(authExceptionCaptor.getValue().getDescription(), is("Authentication Time (auth_time) claim in the ID token indicates that too much time has passed since the last end-user authentication. Current time (1567314010) is after last auth at (1567314004)"));
+    }
+
     @SuppressWarnings({"deprecation"})
     @Test
     public void shouldFailToResumeLoginWithIntentWithInvalidNonce() throws Exception {
@@ -1857,6 +1939,7 @@ public class WebAuthProviderTest {
                 .withNonce("0987654321")
                 .withResponseType(ResponseType.ID_TOKEN)
                 .start(activity, callback);
+
         OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
         managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
 
@@ -1879,6 +1962,7 @@ public class WebAuthProviderTest {
                 .withNonce("0987654321")
                 .withResponseType(ResponseType.ID_TOKEN)
                 .start(activity, callback, REQUEST_CODE);
+
         OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
         managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
 
@@ -2364,7 +2448,7 @@ public class WebAuthProviderTest {
                 "]," +
                 "\"exp\":" + exp + "," +
                 "\"iat\":" + iat + "," +
-                "\"auth_time\":" + iat + "," +
+                "\"auth_time\":" + (iat - 1) + "," +
                 "\"azp\":\"my-client-id\"," +
                 "\"nonce\":\"" + nonce + "\"" +
                 "}";
