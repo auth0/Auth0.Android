@@ -19,6 +19,7 @@ import java.util.Date;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -68,7 +69,8 @@ public class CredentialsGsonTest extends GsonBaseTest {
         assertThat(credentials.getIdToken(), is(nullValue()));
         assertThat(credentials.getType(), equalTo("bearer"));
         assertThat(credentials.getRefreshToken(), is(nullValue()));
-        assertThat(credentials.getExpiresIn(), is(86000L));
+        assertThat(credentials.getExpiresIn(), is(notNullValue()));
+        assertThat(credentials.getExpiresIn().doubleValue(), is(closeTo(86000, 1)));
         assertThat(credentials.getExpiresAt(), is(notNullValue()));
         assertThat(credentials.getScope(), is(nullValue()));
     }
@@ -76,16 +78,20 @@ public class CredentialsGsonTest extends GsonBaseTest {
     @Test
     public void shouldReturnWithExpiresAt() throws Exception {
         Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.DAY_OF_YEAR, 7);
-        Date expiresAt = cal.getTime();
-        final Credentials credentials = buildCredentialsFrom(new StringReader(generateExpiresAtCredentialsJSON(expiresAt)));
+        cal.add(Calendar.DAY_OF_YEAR, 1);
+        Date exp = cal.getTime();
+        String credentialsJSON = generateJSONWithExpiresAt(exp);
+        final Credentials credentials = buildCredentialsFrom(new StringReader(credentialsJSON));
         assertThat(credentials, is(notNullValue()));
         assertThat(credentials.getAccessToken(), is(notNullValue()));
         assertThat(credentials.getType(), equalTo("bearer"));
-        assertThat(credentials.getExpiresIn(), is(not(86000L)));
-        assertThat(credentials.getExpiresAt(), is(notNullValue()));
         //The hardcoded value comes from the JSON file
-        assertThat(credentials.getExpiresAt().getTime(), is(expiresAt.getTime()));
+        assertThat(credentials.getExpiresIn(), is(notNullValue()));
+        double expectedCalculatedExpiresIn = (exp.getTime() - System.currentTimeMillis()) / 1000;
+        assertThat(credentials.getExpiresIn().doubleValue(), is(closeTo(expectedCalculatedExpiresIn, 1)));
+        assertThat(credentials.getExpiresAt(), is(notNullValue()));
+        double expiresAt = credentials.getExpiresAt().getTime();
+        assertThat(expiresAt, is(closeTo(exp.getTime(), 1)));
     }
 
     @Test
@@ -96,7 +102,8 @@ public class CredentialsGsonTest extends GsonBaseTest {
         assertThat(credentials.getIdToken(), is(notNullValue()));
         assertThat(credentials.getType(), equalTo("bearer"));
         assertThat(credentials.getRefreshToken(), is(nullValue()));
-        assertThat(credentials.getExpiresIn(), is(86000L));
+        assertThat(credentials.getExpiresIn(), is(notNullValue()));
+        assertThat(credentials.getExpiresIn().doubleValue(), is(closeTo(86000, 1)));
         assertThat(credentials.getExpiresAt(), is(notNullValue()));
         assertThat(credentials.getScope(), is("openid profile"));
     }
@@ -109,7 +116,8 @@ public class CredentialsGsonTest extends GsonBaseTest {
         assertThat(credentials.getIdToken(), is(notNullValue()));
         assertThat(credentials.getType(), equalTo("bearer"));
         assertThat(credentials.getRefreshToken(), is(notNullValue()));
-        assertThat(credentials.getExpiresIn(), is(86000L));
+        assertThat(credentials.getExpiresIn(), is(notNullValue()));
+        assertThat(credentials.getExpiresIn().doubleValue(), is(closeTo(86000, 1)));
         assertThat(credentials.getExpiresAt(), is(notNullValue()));
         assertThat(credentials.getScope(), is("openid profile"));
     }
@@ -145,7 +153,7 @@ public class CredentialsGsonTest extends GsonBaseTest {
         return pojoFrom(json, Credentials.class);
     }
 
-    private String generateExpiresAtCredentialsJSON(@NonNull Date expiresAt) {
+    private String generateJSONWithExpiresAt(@NonNull Date expiresAt) {
         return "{\n" +
                 "\"access_token\": \"s6GS5FGJN2jfd4l6\",\n" +
                 "\"token_type\": \"bearer\",\n" +

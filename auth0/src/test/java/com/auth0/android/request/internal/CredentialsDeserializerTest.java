@@ -7,7 +7,6 @@ import com.auth0.android.result.CredentialsMock;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -16,6 +15,7 @@ import java.util.Calendar;
 import java.util.Date;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
@@ -37,22 +37,27 @@ public class CredentialsDeserializerTest {
     @Test
     public void shouldSetExpiresAtFromExpiresIn() throws Exception {
         final Credentials credentials = gson.getAdapter(Credentials.class).fromJson(new FileReader(BASIC_CREDENTIALS));
-        assertThat(credentials.getExpiresIn(), is(86000L));
+        assertThat(credentials.getExpiresIn().doubleValue(), is(closeTo(86000, 1)));
         assertThat(credentials.getExpiresAt(), is(notNullValue()));
-        assertThat(credentials.getExpiresAt().getTime(), is(CredentialsMock.CURRENT_TIME_MS + 86000 * 1000));
+        double expiresAt = credentials.getExpiresAt().getTime();
+        double expectedExpiresAt = CredentialsMock.CURRENT_TIME_MS + 86000 * 1000;
+        assertThat(expiresAt, is(closeTo(expectedExpiresAt, 1)));
     }
 
     @Test
     public void shouldSetExpiresInFromExpiresAt() throws Exception {
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.DAY_OF_YEAR, 7);
-        Date expiresAt = cal.getTime();
-        final Credentials credentials = gson.getAdapter(Credentials.class).fromJson(generateExpiresAtCredentialsJSON(expiresAt));
-        assertThat(credentials.getExpiresAt(), is(notNullValue()));
+        Date exp = cal.getTime();
+        final Credentials credentials = gson.getAdapter(Credentials.class).fromJson(generateExpiresAtCredentialsJSON(exp));
         //The hardcoded value comes from the JSON file
-        assertThat(credentials.getExpiresAt().getTime(), is(expiresAt.getTime()));
+        assertThat(credentials.getExpiresAt(), is(notNullValue()));
+        double expiresAt = credentials.getExpiresAt().getTime();
+        double expectedExpiresAt = exp.getTime();
+        assertThat(expiresAt, is(closeTo(expectedExpiresAt, 1)));
         assertThat(credentials.getExpiresIn(), is(notNullValue()));
-        assertThat(credentials.getExpiresIn(), Matchers.is((expiresAt.getTime() - CredentialsMock.CURRENT_TIME_MS) / 1000));
+        double expectedExpiresIn = (exp.getTime() - CredentialsMock.CURRENT_TIME_MS) / 1000;
+        assertThat(credentials.getExpiresIn().doubleValue(), is(closeTo(expectedExpiresIn, 1)));
     }
 
 
