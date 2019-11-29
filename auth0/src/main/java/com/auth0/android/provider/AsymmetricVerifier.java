@@ -1,6 +1,8 @@
-package com.auth0.android.jwt;
+package com.auth0.android.provider;
 
 import android.util.Base64;
+
+import com.auth0.android.jwt.JWT;
 
 import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
@@ -9,13 +11,12 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 
-//TODO: Make pkg private
-public class AsymmetricVerifier extends SignatureVerifier {
+class AsymmetricVerifier extends SignatureVerifier {
 
     private static final String EXPECTED_ALGORITHM = "RS256";
     private Signature publicSignature;
 
-    public AsymmetricVerifier(PublicKey publicKey) throws InvalidKeyException {
+    AsymmetricVerifier(PublicKey publicKey) throws InvalidKeyException {
         super(EXPECTED_ALGORITHM);
         try {
             publicSignature = Signature.getInstance("SHA256withRSA");
@@ -28,7 +29,7 @@ public class AsymmetricVerifier extends SignatureVerifier {
 
 
     @Override
-    public void verifySignature(JWT token) throws TokenValidationException {
+    void verifySignature(JWT token) throws TokenValidationException {
         super.verifySignature(token);
         String[] parts = token.toString().split("\\.");
         String content = parts[0] + "." + parts[1];

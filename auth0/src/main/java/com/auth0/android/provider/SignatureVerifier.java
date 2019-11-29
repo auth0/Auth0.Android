@@ -1,13 +1,15 @@
-package com.auth0.android.jwt;
+package com.auth0.android.provider;
 
 import android.support.annotation.CallSuper;
 
+import com.auth0.android.jwt.JWT;
+
 //TODO: Make pkg private
-public abstract class SignatureVerifier {
+abstract class SignatureVerifier {
 
     private final String expectedAlgorithm;
 
-    public SignatureVerifier(String expectedAlgorithm) {
+    SignatureVerifier(String expectedAlgorithm) {
         this.expectedAlgorithm = expectedAlgorithm;
     }
 
@@ -19,7 +21,7 @@ public abstract class SignatureVerifier {
     }
 
     @CallSuper
-    public void verifySignature(JWT token) throws TokenValidationException {
+    void verifySignature(JWT token) throws TokenValidationException {
         checkAlgorithm(token);
     }
 

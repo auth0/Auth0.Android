@@ -14,13 +14,8 @@ import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.AuthenticationCallback;
 import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.jwt.AsymmetricVerifier;
 import com.auth0.android.jwt.DecodeException;
-import com.auth0.android.jwt.IdTokenVerifier;
 import com.auth0.android.jwt.JWT;
-import com.auth0.android.jwt.NoSignatureVerifier;
-import com.auth0.android.jwt.SignatureVerifier;
-import com.auth0.android.jwt.TokenValidationException;
 import com.auth0.android.result.Credentials;
 
 import java.security.InvalidKeyException;

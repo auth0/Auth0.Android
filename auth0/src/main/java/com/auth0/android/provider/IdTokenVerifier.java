@@ -1,7 +1,9 @@
-package com.auth0.android.jwt;
+package com.auth0.android.provider;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+
+import com.auth0.android.jwt.JWT;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -9,8 +11,7 @@ import java.util.List;
 
 import static android.text.TextUtils.isEmpty;
 
-//TODO: Make pkg private
-public class IdTokenVerifier {
+class IdTokenVerifier {
     private static final Integer DEFAULT_CLOCK_SKEW = 60; //1 min = 60 sec
 
     private static final String NONCE_CLAIM = "nonce";
@@ -25,7 +26,7 @@ public class IdTokenVerifier {
      * @param verifyOptions the verification options, like audience, issuer, algorithm.
      * @throws TokenValidationException If the ID Token is null, its signing algorithm not supported, its signature invalid or one of its claim invalid.
      */
-    public void verify(@NonNull JWT token, @NonNull Options verifyOptions) throws TokenValidationException {
+    void verify(@NonNull JWT token, @NonNull Options verifyOptions) throws TokenValidationException {
         verifyOptions.verifier.verifySignature(token);
 
         if (isEmpty(token.getIssuer())) {
@@ -114,7 +115,7 @@ public class IdTokenVerifier {
         }
     }
 
-    public static class Options {
+    static class Options {
         final String issuer;
         final String audience;
         final SignatureVerifier verifier;
@@ -123,30 +124,26 @@ public class IdTokenVerifier {
         Integer clockSkew;
         Date clock;
 
-        public Options(@NonNull String issuer, @NonNull String audience, @NonNull SignatureVerifier verifier) {
+        Options(@NonNull String issuer, @NonNull String audience, @NonNull SignatureVerifier verifier) {
             this.issuer = issuer;
             this.audience = audience;
             this.verifier = verifier;
         }
 
-        public void setNonce(@Nullable String nonce) {
+        void setNonce(@Nullable String nonce) {
             this.nonce = nonce;
         }
 
-        public void setMaxAge(@Nullable Integer maxAge) {
+        void setMaxAge(@Nullable Integer maxAge) {
             this.maxAge = maxAge;
         }
 
-        public void setClockSkew(@Nullable Integer clockSkew) {
+        void setClockSkew(@Nullable Integer clockSkew) {
             this.clockSkew = clockSkew;
         }
 
-        public void setClock(@Nullable Date now) {
+        void setClock(@Nullable Date now) {
             this.clock = now;
-        }
-
-        Integer getMaxAge() {
-            return maxAge;
         }
     }
 }
