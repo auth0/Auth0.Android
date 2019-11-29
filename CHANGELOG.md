@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.19.1](https://github.com/auth0/Auth0.Android/tree/1.19.1) (2019-11-29)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.19.0...1.19.1)
+
+**Fixed**
+- Fix CredentialsManager migration scenario [\#266](https://github.com/auth0/Auth0.Android/pull/266) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.19.0](https://github.com/auth0/Auth0.Android/tree/1.19.0) (2019-09-10)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.18.0...1.19.0)
 
