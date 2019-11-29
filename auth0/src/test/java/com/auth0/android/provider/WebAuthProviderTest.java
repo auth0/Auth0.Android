@@ -1979,6 +1979,29 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
+    public void shouldFailToResumeLoginWithNotSupportedSigningAlgorithm() throws Exception {
+        WebAuthProvider.init(account)
+                .withState("state")
+                .withNonce("abcdefg")
+                .withResponseType(ResponseType.ID_TOKEN)
+                .start(activity, callback);
+
+        OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
+        managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
+
+        String expectedIdToken = createTestJWT("none", "abcdefg", account.getDomainUrl());
+        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, "state", null, null));
+        assertTrue(WebAuthProvider.resume(intent));
+
+        verify(callback).onFailure(authExceptionCaptor.capture());
+
+        assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
+        assertThat(authExceptionCaptor.getValue().getCode(), is("a0.sdk.internal_error.id_token_validation"));
+        assertThat(authExceptionCaptor.getValue().getDescription(), is("The algorithm received is not supported"));
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
     public void shouldFailToResumeLoginWithUnexpectedRequestCode() {
         verifyNoMoreInteractions(callback);
         WebAuthProvider.init(account)
@@ -2429,8 +2452,8 @@ public class WebAuthProviderTest {
     }
 
     private String createTestJWT(@NonNull String algorithm, @NonNull String nonce, @NonNull String issuer) throws Exception {
-        if (!Arrays.asList("HS256", "RS256").contains(algorithm)) {
-            throw new IllegalArgumentException("ID token algorithm not supported");
+        if (!Arrays.asList("HS256", "RS256", "none").contains(algorithm)) {
+            throw new IllegalArgumentException("[Unit Tests] ID token algorithm not supported");
         }
         long iat = FIXED_CLOCK_CURRENT_TIME_MS / 1000;
         long exp = iat + 3600;

@@ -26,6 +26,7 @@ import com.auth0.android.result.Credentials;
 import java.security.InvalidKeyException;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -224,6 +225,12 @@ class OAuthManager extends ResumableManager {
 
         String algorithmName = decodedIdToken.getHeader().get("alg");
         String keyId = decodedIdToken.getHeader().get("kid");
+
+        if (!Arrays.asList("HS256", "RS256").contains(algorithmName)){
+            //TODO: Update the error message
+            validationCallback.onFailure(new TokenValidationException("The algorithm received is not supported"));
+            return;
+        }
 
         createSignatureVerifier(algorithmName, keyId, new BaseCallback<SignatureVerifier, TokenValidationException>() {
 
