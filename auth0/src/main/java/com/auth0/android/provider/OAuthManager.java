@@ -18,10 +18,7 @@ import com.auth0.android.jwt.DecodeException;
 import com.auth0.android.jwt.JWT;
 import com.auth0.android.result.Credentials;
 
-import java.security.InvalidKeyException;
-import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -218,16 +215,7 @@ class OAuthManager extends ResumableManager {
             return;
         }
 
-        String algorithmName = decodedIdToken.getHeader().get("alg");
-        String keyId = decodedIdToken.getHeader().get("kid");
-
-        if (!Arrays.asList("HS256", "RS256").contains(algorithmName)){
-            //TODO: Update the error message
-            validationCallback.onFailure(new TokenValidationException("The algorithm received is not supported"));
-            return;
-        }
-
-        createSignatureVerifier(algorithmName, keyId, new BaseCallback<SignatureVerifier, TokenValidationException>() {
+        SignatureVerifier.forToken(decodedIdToken, apiClient, new BaseCallback<SignatureVerifier, TokenValidationException>() {
 
             @Override
             public void onFailure(TokenValidationException error) {
@@ -253,30 +241,6 @@ class OAuthManager extends ResumableManager {
                 } catch (TokenValidationException exc) {
                     validationCallback.onFailure(exc);
                 }
-            }
-        });
-    }
-
-    private void createSignatureVerifier(String algorithmName, final String keyId, final BaseCallback<SignatureVerifier, TokenValidationException> verifierCallback) {
-        if ("HS256".equals(algorithmName)) {
-            verifierCallback.onSuccess(new NoSignatureVerifier());
-            return;
-        }
-        //TODO: Check that 'none' is not accepted
-        apiClient.fetchJsonWebKeys().start(new AuthenticationCallback<Map<String, PublicKey>>() {
-            @Override
-            public void onSuccess(Map<String, PublicKey> jwks) {
-                PublicKey publicKey = jwks.get(keyId);
-                try {
-                    verifierCallback.onSuccess(new AsymmetricVerifier(publicKey));
-                } catch (InvalidKeyException e) {
-                    verifierCallback.onFailure(new TokenValidationException(String.format("Could not find a public key for kid \"%s\"", keyId)));
-                }
-            }
-
-            @Override
-            public void onFailure(AuthenticationException error) {
-                verifierCallback.onFailure(new TokenValidationException(String.format("Could not find a public key for kid \"%s\"", keyId)));
             }
         });
     }

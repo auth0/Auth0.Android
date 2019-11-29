@@ -1997,7 +1997,7 @@ public class WebAuthProviderTest {
 
         assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
         assertThat(authExceptionCaptor.getValue().getCode(), is("a0.sdk.internal_error.id_token_validation"));
-        assertThat(authExceptionCaptor.getValue().getDescription(), is("The algorithm received is not supported"));
+        assertThat(authExceptionCaptor.getValue().getDescription(), is("Signature algorithm of \"none\" is not supported. Expected either \"RS256\" or \"HS256\"."));
     }
 
     @SuppressWarnings("deprecation")
