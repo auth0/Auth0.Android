@@ -990,6 +990,19 @@ public class WebAuthProviderTest {
         assertThat(uri, hasParamWithValue("response_type", "code"));
     }
 
+    @Test
+    public void shouldBuildAuthorizeURIWithCustomRedirectUri() {
+        WebAuthProvider.login(account)
+                .withCustomRedirectUri("a-custom-redirect-uri")
+                .start(activity, callback);
+
+        verify(activity).startActivity(intentCaptor.capture());
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
+        assertThat(uri, is(notNullValue()));
+
+        assertThat(uri, hasParamWithValue("redirect_uri", "a-custom-redirect-uri"));
+    }
+
     @SuppressWarnings("deprecation")
     @Test
     public void shouldStartLoginWithBrowserCustomTabsOptions() {

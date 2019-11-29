@@ -141,6 +141,7 @@ public class WebAuthProvider {
         private PKCE pkce;
         private String scheme;
         private CustomTabsOptions ctOptions;
+        private String customRedirectUri;
 
         Builder(Auth0 account) {
             this.account = account;
@@ -337,6 +338,17 @@ public class WebAuthProvider {
         }
 
         /**
+         * Give a custom redirect uri for this request.
+         *
+         * @param customRedirectUri the custom redirect uri
+         * @return the current builder instance
+         */
+        public Builder withCustomRedirectUri(@NonNull String customRedirectUri) {
+            this.customRedirectUri = customRedirectUri;
+            return this;
+        }
+
+        /**
          * Request user Authentication. The result will be received in the callback.
          *
          * @param activity    context to run the authentication
@@ -363,7 +375,12 @@ public class WebAuthProvider {
 
             managerInstance = manager;
 
-            String redirectUri = CallbackHelper.getCallbackUri(scheme, activity.getApplicationContext().getPackageName(), account.getDomainUrl());
+            final String redirectUri;
+            if (customRedirectUri == null) {
+                redirectUri = CallbackHelper.getCallbackUri(scheme, activity.getApplicationContext().getPackageName(), account.getDomainUrl());
+            } else {
+                redirectUri = customRedirectUri;
+            }
             manager.startAuthentication(activity, redirectUri, requestCode);
         }
 
