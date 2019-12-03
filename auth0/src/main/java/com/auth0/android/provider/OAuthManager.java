@@ -142,12 +142,12 @@ class OAuthManager extends ResumableManager {
         }
 
         final Date expiresAt = !values.containsKey(KEY_EXPIRES_IN) ? null : new Date(getCurrentTimeInMillis() + Long.valueOf(values.get(KEY_EXPIRES_IN)) * 1000);
-        final Credentials frontChannelCredentials = new Credentials(values.get(KEY_ID_TOKEN), values.get(KEY_ACCESS_TOKEN), values.get(KEY_TOKEN_TYPE), values.get(KEY_REFRESH_TOKEN), expiresAt, values.get(KEY_SCOPE));
         boolean frontChannelIdTokenExpected = parameters.containsKey(KEY_RESPONSE_TYPE) && parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_ID_TOKEN);
+        final Credentials frontChannelCredentials = new Credentials(frontChannelIdTokenExpected?values.get(KEY_ID_TOKEN) : null, values.get(KEY_ACCESS_TOKEN), values.get(KEY_TOKEN_TYPE), null, expiresAt, values.get(KEY_SCOPE));
 
         if (frontChannelIdTokenExpected) {
             //Must be response_type=id_token (or additional values)
-            assertValidIdToken(values.get(KEY_ID_TOKEN), new AuthenticationCallback<Void>() {
+            assertValidIdToken(frontChannelCredentials.getIdToken(), new AuthenticationCallback<Void>() {
                 @Override
                 public void onSuccess(Void ignored) {
                     if (!shouldUsePKCE()) {

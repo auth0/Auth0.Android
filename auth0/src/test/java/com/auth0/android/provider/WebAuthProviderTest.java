@@ -1375,6 +1375,34 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
+    public void shouldNotReturnUnverifiedIdTokenWhenResponseTypeIsToken() {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.TOKEN)
+                .start(activity, callback);
+
+        verify(activity).startActivity(intentCaptor.capture());
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
+        assertThat(uri, is(notNullValue()));
+
+        String sentState = uri.getQueryParameter(KEY_STATE);
+        assertThat(sentState, is(not(isEmptyOrNullString())));
+        Intent intent = createAuthIntent(createHash("maliciuouslyPutIdToken", "urlAccess", null, "urlType", 1111L, sentState, null, null));
+        assertTrue(WebAuthProvider.resume(intent));
+
+        ArgumentCaptor<Credentials> credentialsCaptor = ArgumentCaptor.forClass(Credentials.class);
+        verify(callback).onSuccess(credentialsCaptor.capture());
+
+        assertThat(credentialsCaptor.getValue(), is(notNullValue()));
+        assertThat(credentialsCaptor.getValue().getIdToken(), is(nullValue()));
+        assertThat(credentialsCaptor.getValue().getAccessToken(), is("urlAccess"));
+        assertThat(credentialsCaptor.getValue().getRefreshToken(), is(nullValue()));
+        assertThat(credentialsCaptor.getValue().getType(), is("urlType"));
+        assertThat(credentialsCaptor.getValue().getExpiresIn(), is(1111L));
+    }
+
+
+    @SuppressWarnings("deprecation")
+    @Test
     public void shouldResumeLoginWithIntentWithImplicitGrant() {
         WebAuthProvider.init(account)
                 .useCodeGrant(false)
@@ -1749,6 +1777,38 @@ public class WebAuthProviderTest {
         AuthenticationException error = callback.getError();
         assertThat(error.getCode(), is("a0.sdk.internal_error.id_token_validation"));
         assertThat(error.getDescription(), is("Could not find a public key for kid \"key123\""));
+
+        mockAPI.shutdown();
+    }
+
+    @SuppressWarnings({"deprecation"})
+    @Test
+    public void shouldFailToResumeLoginWhenKeyIdIsMissingFromIdTokenHeader() throws Exception {
+        AuthenticationAPI mockAPI = new AuthenticationAPI();
+        mockAPI.willReturnValidJsonWebKeys();
+
+        MockAuthCallback callback = new MockAuthCallback();
+
+        Auth0 proxyAccount = new Auth0("my-client-id", mockAPI.getDomain(), mockAPI.getDomain());
+        WebAuthProvider.init(proxyAccount)
+                .withState("1234567890")
+                .withNonce("abcdefg")
+                .withResponseType(ResponseType.ID_TOKEN | ResponseType.TOKEN)
+                .start(activity, callback);
+
+        OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
+        managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
+
+        String expectedIdToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhdXRoMHwxMjM0NTY3ODkifQ.PZivSuGSAWpSU62-iHwI16Po9DgO9lN7SLB3168P03wXBkue6nxbL3beq6jjW9uuhqRKfOiDtsvtr3paGXHONarPqQ1LEm4TDg8CM6AugaphH36EjEjL0zEYo0nxz9Fv1Xu9_bWSzfmLLgRefjZ5R0muV7JlyfBgtkfG0avD3PtjlNtToXX1sN9DyhgCT-STX9kSQAlk23V1XA3c8st09QgmQRgtZC3ZmTEHqq_FTmFUkVUNM6E0LbgLR7bLcOx4Xqayp1mqZxUgTg7ynHI6Ey4No-R5_twAki_BR8uG0TxqHlPxuU9QTzEvCQxrqzZZufRv_kIn2-fqrF3yr3z4Og";
+        Intent intent = createAuthIntent(createHash(expectedIdToken, "aToken", null, "urlType", 1111L, "1234567890", null, null));
+        assertTrue(WebAuthProvider.resume(intent));
+        mockAPI.takeRequest();
+
+        assertThat(callback, AuthCallbackMatcher.hasError());
+
+        AuthenticationException error = callback.getError();
+        assertThat(error.getCode(), is("a0.sdk.internal_error.id_token_validation"));
+        assertThat(error.getDescription(), is("Could not find a public key for kid \"null\""));
 
         mockAPI.shutdown();
     }
