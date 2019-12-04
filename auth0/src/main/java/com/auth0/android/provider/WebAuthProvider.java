@@ -213,7 +213,6 @@ public class WebAuthProvider {
          * @return the current builder instance
          */
         public Builder withMaxAge(@NonNull Integer maxAge) {
-            //TODO: This is set by the user. Should that be directly a string?
             this.values.put(KEY_MAX_AGE, String.valueOf(maxAge));
             return this;
         }

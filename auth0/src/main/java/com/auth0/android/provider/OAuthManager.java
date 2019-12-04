@@ -143,7 +143,7 @@ class OAuthManager extends ResumableManager {
 
         final Date expiresAt = !values.containsKey(KEY_EXPIRES_IN) ? null : new Date(getCurrentTimeInMillis() + Long.valueOf(values.get(KEY_EXPIRES_IN)) * 1000);
         boolean frontChannelIdTokenExpected = parameters.containsKey(KEY_RESPONSE_TYPE) && parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_ID_TOKEN);
-        final Credentials frontChannelCredentials = new Credentials(frontChannelIdTokenExpected?values.get(KEY_ID_TOKEN) : null, values.get(KEY_ACCESS_TOKEN), values.get(KEY_TOKEN_TYPE), null, expiresAt, values.get(KEY_SCOPE));
+        final Credentials frontChannelCredentials = new Credentials(frontChannelIdTokenExpected ? values.get(KEY_ID_TOKEN) : null, values.get(KEY_ACCESS_TOKEN), values.get(KEY_TOKEN_TYPE), null, expiresAt, values.get(KEY_SCOPE));
 
         if (frontChannelIdTokenExpected) {
             //Must be response_type=id_token (or additional values)
@@ -225,7 +225,7 @@ class OAuthManager extends ResumableManager {
 
             @Override
             public void onSuccess(SignatureVerifier signatureVerifier) {
-                IdTokenVerifier.Options options = new IdTokenVerifier.Options(apiClient.getBaseURL(), apiClient.getClientId(), signatureVerifier);
+                IdTokenVerificationOptions options = new IdTokenVerificationOptions(apiClient.getBaseURL(), apiClient.getClientId(), signatureVerifier);
                 String maxAge = parameters.get(KEY_MAX_AGE);
                 if (!TextUtils.isEmpty(maxAge)) {
                     //noinspection ConstantConditions
