@@ -34,12 +34,11 @@ public class IdTokenVerifierTest {
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
-    private SignatureVerifier noSignatureVerifier;
 
     @Before
     public void setUp() {
         idTokenVerifier = new IdTokenVerifier();
-        noSignatureVerifier = mock(SignatureVerifier.class);
+        SignatureVerifier noSignatureVerifier = mock(SignatureVerifier.class);
         options = new IdTokenVerificationOptions(EXPECTED_ISSUER, EXPECTED_AUDIENCE, noSignatureVerifier);
         options.setClock(new Date(FIXED_CLOCK_CURRENT_TIME_MS));
     }

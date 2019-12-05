@@ -6,7 +6,6 @@ import android.util.Base64;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.lang.reflect.Array;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -21,7 +20,8 @@ import java.util.Map;
 class JwtTestUtils {
 
     static final long FIXED_CLOCK_CURRENT_TIME_MS = 1567314000000L;
-    static final String EXPECTED_ISSUER = "https://test.domain.com/";
+    static final String EXPECTED_BASE_DOMAIN = "test.domain.com";
+    static final String EXPECTED_ISSUER = "https://" + EXPECTED_BASE_DOMAIN + "/";
     static final String[] EXPECTED_AUDIENCE_ARRAY = new String[]{"__test_client_id__", "__test_other_client_id__"};
     static final String EXPECTED_AUDIENCE = "__test_client_id__";
     static final String EXPECTED_NONCE = "__test_nonce__";
@@ -70,31 +70,6 @@ class JwtTestUtils {
         return signJWT(algorithm, header, body);
     }
 
-    static String createTestJWT(@NonNull String algorithm, @NonNull String nonce, @NonNull String issuer) throws Exception {
-        long iat = FIXED_CLOCK_CURRENT_TIME_MS / 1000;
-        long exp = iat + 3600;
-        String header = "{" +
-                "\"alg\":\"" + algorithm + "\"," +
-                "\"typ\":\"JWT\"," +
-                "\"kid\":\"key123\"" +
-                "}";
-        String body = "{" +
-                "\"iss\":\"" + issuer + "\"," +
-                "\"sub\":\"auth0|123456789\"," +
-                "\"aud\": [" +
-                "\"my-client-id\"," +
-                "\"other-client-id\"" +
-                "]," +
-                "\"exp\":" + exp + "," +
-                "\"iat\":" + iat + "," +
-                "\"auth_time\":" + (iat - 1) + "," +
-                "\"azp\":\"my-client-id\"," +
-                "\"nonce\":\"" + nonce + "\"" +
-                "}";
-        //TODO: Refactor so it uses the generic map-claim method
-        return signJWT(algorithm, header, body);
-    }
-
     static Map<String, Object> createJWTBody(String... claimToRemove) {
         Map<String, Object> bodyClaims = new HashMap<>();
         long iat = FIXED_CLOCK_CURRENT_TIME_MS / 1000;
@@ -102,6 +77,7 @@ class JwtTestUtils {
         bodyClaims.put("iss", EXPECTED_ISSUER);
         bodyClaims.put("sub", EXPECTED_SUBJECT);
         bodyClaims.put("aud", EXPECTED_AUDIENCE);
+        bodyClaims.put("nonce", EXPECTED_NONCE);
         bodyClaims.put("exp", exp);
         bodyClaims.put("iat", iat);
         if (claimToRemove != null) {
