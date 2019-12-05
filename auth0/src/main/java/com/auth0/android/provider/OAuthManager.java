@@ -1,7 +1,6 @@
 package com.auth0.android.provider;
 
 import android.app.Activity;
-import android.app.Dialog;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -13,7 +12,8 @@ import android.util.Log;
 import com.auth0.android.Auth0;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.jwt.Claim;
+import com.auth0.android.callback.AuthenticationCallback;
+import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.jwt.DecodeException;
 import com.auth0.android.jwt.JWT;
 import com.auth0.android.result.Credentials;
@@ -31,6 +31,7 @@ class OAuthManager extends ResumableManager {
     static final String KEY_RESPONSE_TYPE = "response_type";
     static final String KEY_STATE = "state";
     static final String KEY_NONCE = "nonce";
+    static final String KEY_MAX_AGE = "max_age";
     static final String KEY_CONNECTION = "connection";
     static final String RESPONSE_TYPE_ID_TOKEN = "id_token";
     static final String RESPONSE_TYPE_CODE = "code";
@@ -59,6 +60,7 @@ class OAuthManager extends ResumableManager {
     private final Auth0 account;
     private final AuthCallback callback;
     private final Map<String, String> parameters;
+    private final AuthenticationAPIClient apiClient;
 
     private boolean useFullScreen;
     private boolean useBrowser = true;
@@ -66,11 +68,13 @@ class OAuthManager extends ResumableManager {
     private PKCE pkce;
     private Long currentTimeInMillis;
     private CustomTabsOptions ctOptions;
+    private Integer idTokenVerificationLeeway;
 
     OAuthManager(@NonNull Auth0 account, @NonNull AuthCallback callback, @NonNull Map<String, String> parameters) {
         this.account = account;
         this.callback = callback;
         this.parameters = new HashMap<>(parameters);
+        this.apiClient = new AuthenticationAPIClient(account);
     }
 
     void useFullScreen(boolean useFullScreen) {
@@ -88,6 +92,10 @@ class OAuthManager extends ResumableManager {
     @VisibleForTesting
     void setPKCE(PKCE pkce) {
         this.pkce = pkce;
+    }
+
+    void setIdTokenVerificationLeeway(Integer leeway) {
+        this.idTokenVerificationLeeway = leeway;
     }
 
     void startAuthentication(Activity activity, String redirectUri, int requestCode) {
@@ -128,38 +136,113 @@ class OAuthManager extends ResumableManager {
         try {
             assertNoError(values.get(KEY_ERROR), values.get(KEY_ERROR_DESCRIPTION));
             assertValidState(parameters.get(KEY_STATE), values.get(KEY_STATE));
-            if (parameters.containsKey(KEY_RESPONSE_TYPE) && parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_ID_TOKEN)) {
-                assertValidNonce(parameters.get(KEY_NONCE), values.get(KEY_ID_TOKEN));
-            }
+        } catch (AuthenticationException e) {
+            callback.onFailure(e);
+            return true;
+        }
 
-            Log.d(TAG, "Authenticated using web flow");
-            final Date expiresAt = !values.containsKey(KEY_EXPIRES_IN) ? null : new Date(getCurrentTimeInMillis() + Long.valueOf(values.get(KEY_EXPIRES_IN)) * 1000);
-            final Credentials urlCredentials = new Credentials(values.get(KEY_ID_TOKEN), values.get(KEY_ACCESS_TOKEN), values.get(KEY_TOKEN_TYPE), values.get(KEY_REFRESH_TOKEN), expiresAt, values.get(KEY_SCOPE));
-            if (!shouldUsePKCE()) {
-                callback.onSuccess(urlCredentials);
-            } else {
-                //Finish Code Exchange
-                pkce.getToken(values.get(KEY_CODE), new AuthCallback() {
+        final Date expiresAt = !values.containsKey(KEY_EXPIRES_IN) ? null : new Date(getCurrentTimeInMillis() + Long.valueOf(values.get(KEY_EXPIRES_IN)) * 1000);
+        boolean frontChannelIdTokenExpected = parameters.containsKey(KEY_RESPONSE_TYPE) && parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_ID_TOKEN);
+        final Credentials frontChannelCredentials = new Credentials(frontChannelIdTokenExpected ? values.get(KEY_ID_TOKEN) : null, values.get(KEY_ACCESS_TOKEN), values.get(KEY_TOKEN_TYPE), null, expiresAt, values.get(KEY_SCOPE));
+
+        if (frontChannelIdTokenExpected) {
+            //Must be response_type=id_token (or additional values)
+            assertValidIdToken(frontChannelCredentials.getIdToken(), new AuthenticationCallback<Void>() {
+                @Override
+                public void onSuccess(Void ignored) {
+                    if (!shouldUsePKCE()) {
+                        //response_type=id_token or response_type=id_token token
+                        callback.onSuccess(frontChannelCredentials);
+                        return;
+                    }
+                    //response_type=id_token code
+                    pkce.getToken(values.get(KEY_CODE), new SimpleAuthCallback(callback) {
+
+                        @Override
+                        public void onSuccess(@NonNull Credentials credentials) {
+                            Credentials finalCredentials = mergeCredentials(frontChannelCredentials, credentials);
+                            callback.onSuccess(finalCredentials);
+                        }
+                    });
+                }
+
+                @Override
+                public void onFailure(AuthenticationException error) {
+                    callback.onFailure(error);
+                }
+            });
+            return true;
+        }
+
+        if (!shouldUsePKCE()) {
+            //Must be response_type=token
+            callback.onSuccess(frontChannelCredentials);
+            return true;
+        }
+
+        //Either response_type=code or response_type=token code
+        pkce.getToken(values.get(KEY_CODE), new SimpleAuthCallback(callback) {
+
+            @Override
+            public void onSuccess(@NonNull final Credentials credentials) {
+                assertValidIdToken(credentials.getIdToken(), new AuthenticationCallback<Void>() {
                     @Override
-                    public void onFailure(@NonNull Dialog dialog) {
-                        callback.onFailure(dialog);
+                    public void onSuccess(Void ignored) {
+                        Credentials finalCredentials = mergeCredentials(frontChannelCredentials, credentials);
+                        callback.onSuccess(finalCredentials);
                     }
 
                     @Override
-                    public void onFailure(AuthenticationException exception) {
-                        callback.onFailure(exception);
-                    }
-
-                    @Override
-                    public void onSuccess(@NonNull Credentials codeCredentials) {
-                        callback.onSuccess(mergeCredentials(urlCredentials, codeCredentials));
+                    public void onFailure(AuthenticationException error) {
+                        callback.onFailure(error);
                     }
                 });
             }
-        } catch (AuthenticationException e) {
-            callback.onFailure(e);
-        }
+        });
         return true;
+    }
+
+    private void assertValidIdToken(String idToken, final AuthenticationCallback<Void> validationCallback) {
+        if (TextUtils.isEmpty(idToken)) {
+            validationCallback.onFailure(new TokenValidationException("ID token is required but missing"));
+            return;
+        }
+        final JWT decodedIdToken;
+        try {
+            decodedIdToken = new JWT(idToken);
+        } catch (DecodeException ignored) {
+            validationCallback.onFailure(new TokenValidationException("ID token could not be decoded"));
+            return;
+        }
+
+        SignatureVerifier.forToken(decodedIdToken, apiClient, new BaseCallback<SignatureVerifier, TokenValidationException>() {
+
+            @Override
+            public void onFailure(TokenValidationException error) {
+                //TODO Test that the exception cause message is readable by the end user
+                validationCallback.onFailure(error);
+            }
+
+            @Override
+            public void onSuccess(SignatureVerifier signatureVerifier) {
+                IdTokenVerificationOptions options = new IdTokenVerificationOptions(apiClient.getBaseURL(), apiClient.getClientId(), signatureVerifier);
+                String maxAge = parameters.get(KEY_MAX_AGE);
+                if (!TextUtils.isEmpty(maxAge)) {
+                    //noinspection ConstantConditions
+                    options.setMaxAge(Integer.valueOf(maxAge));
+                }
+                options.setClockSkew(idTokenVerificationLeeway);
+                options.setNonce(parameters.get(KEY_NONCE));
+                options.setClock(new Date(getCurrentTimeInMillis()));
+                try {
+                    new IdTokenVerifier().verify(decodedIdToken, options);
+                    logDebug("Authenticated using web flow");
+                    validationCallback.onSuccess(null);
+                } catch (TokenValidationException exc) {
+                    validationCallback.onFailure(exc);
+                }
+            }
+        });
     }
 
     private long getCurrentTimeInMillis() {
@@ -198,22 +281,6 @@ class OAuthManager extends ResumableManager {
         }
     }
 
-    @VisibleForTesting
-    static void assertValidNonce(@NonNull String requestNonce, @NonNull String idToken) throws AuthenticationException {
-        boolean valid = false;
-        try {
-            final JWT token = new JWT(idToken);
-            final Claim nonceClaim = token.getClaim(KEY_NONCE);
-            valid = requestNonce.equals(nonceClaim.asString());
-        } catch (DecodeException e) {
-            Log.e(TAG, "An exception occurred when trying to validate the token's 'nonce' claim. " + e.getMessage(), e);
-        }
-        if (!valid) {
-            Log.e(TAG, "Received nonce doesn't match.");
-            throw new AuthenticationException(ERROR_VALUE_ACCESS_DENIED, "The received nonce is invalid. Try again.");
-        }
-    }
-
     private Uri buildAuthorizeUri() {
         Uri authorizeUri = Uri.parse(account.getAuthorizeUrl());
         Uri.Builder builder = authorizeUri.buildUpon();
@@ -244,7 +311,8 @@ class OAuthManager extends ResumableManager {
         String state = getRandomString(parameters.get(KEY_STATE));
         parameters.put(KEY_STATE, state);
 
-        if (parameters.containsKey(KEY_RESPONSE_TYPE) && parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_ID_TOKEN)) {
+        boolean idTokenExpected = parameters.containsKey(KEY_RESPONSE_TYPE) && (parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_ID_TOKEN) || parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_CODE));
+        if (idTokenExpected) {
             String nonce = getRandomString(parameters.get(KEY_NONCE));
             parameters.put(KEY_NONCE, nonce);
         }
@@ -260,7 +328,7 @@ class OAuthManager extends ResumableManager {
 
     private void createPKCE(String redirectUri) {
         if (pkce == null) {
-            pkce = new PKCE(new AuthenticationAPIClient(account), redirectUri);
+            pkce = new PKCE(apiClient, redirectUri);
         }
     }
 
@@ -285,10 +353,10 @@ class OAuthManager extends ResumableManager {
 
     @VisibleForTesting
     static Credentials mergeCredentials(Credentials urlCredentials, Credentials codeCredentials) {
-        final String idToken = TextUtils.isEmpty(codeCredentials.getIdToken()) ? urlCredentials.getIdToken() : codeCredentials.getIdToken();
+        final String idToken = TextUtils.isEmpty(urlCredentials.getIdToken()) ? codeCredentials.getIdToken() : urlCredentials.getIdToken();
         final String accessToken = TextUtils.isEmpty(codeCredentials.getAccessToken()) ? urlCredentials.getAccessToken() : codeCredentials.getAccessToken();
         final String type = TextUtils.isEmpty(codeCredentials.getType()) ? urlCredentials.getType() : codeCredentials.getType();
-        final String refreshToken = TextUtils.isEmpty(codeCredentials.getRefreshToken()) ? urlCredentials.getRefreshToken() : codeCredentials.getRefreshToken();
+        final String refreshToken = codeCredentials.getRefreshToken();
         final Date expiresAt = codeCredentials.getExpiresAt() != null ? codeCredentials.getExpiresAt() : urlCredentials.getExpiresAt();
         final String scope = TextUtils.isEmpty(codeCredentials.getScope()) ? urlCredentials.getScope() : codeCredentials.getScope();
 

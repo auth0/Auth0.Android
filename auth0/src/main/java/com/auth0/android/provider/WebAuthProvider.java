@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.auth0.android.provider.OAuthManager.KEY_CONNECTION;
+import static com.auth0.android.provider.OAuthManager.KEY_MAX_AGE;
 import static com.auth0.android.provider.OAuthManager.KEY_NONCE;
 import static com.auth0.android.provider.OAuthManager.KEY_RESPONSE_TYPE;
 import static com.auth0.android.provider.OAuthManager.KEY_STATE;
@@ -141,6 +142,7 @@ public class WebAuthProvider {
         private PKCE pkce;
         private String scheme;
         private CustomTabsOptions ctOptions;
+        private Integer leeway;
 
         Builder(Auth0 account) {
             this.account = account;
@@ -201,6 +203,29 @@ public class WebAuthProvider {
          */
         public Builder withNonce(@NonNull String nonce) {
             this.values.put(KEY_NONCE, nonce);
+            return this;
+        }
+
+        /**
+         * Set the max age value for the authentication.
+         *
+         * @param maxAge to use in the requests
+         * @return the current builder instance
+         */
+        public Builder withMaxAge(@NonNull Integer maxAge) {
+            this.values.put(KEY_MAX_AGE, String.valueOf(maxAge));
+            return this;
+        }
+
+        /**
+         * Set the leeway or clock skew to be used for ID Token verification.
+         * Defaults to 60 seconds.
+         *
+         * @param leeway to use for ID token verification, in seconds.
+         * @return the current builder instance
+         */
+        public Builder withIdTokenVerificationLeeway(@NonNull Integer leeway) {
+            this.leeway = leeway;
             return this;
         }
 
@@ -360,6 +385,7 @@ public class WebAuthProvider {
             manager.useBrowser(useBrowser);
             manager.setCustomTabsOptions(ctOptions);
             manager.setPKCE(pkce);
+            manager.setIdTokenVerificationLeeway(leeway);
 
             managerInstance = manager;
 
