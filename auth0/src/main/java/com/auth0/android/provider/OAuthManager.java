@@ -52,7 +52,6 @@ class OAuthManager extends ResumableManager {
     private static final String KEY_ID_TOKEN = "id_token";
     private static final String KEY_ACCESS_TOKEN = "access_token";
     private static final String KEY_TOKEN_TYPE = "token_type";
-    private static final String KEY_REFRESH_TOKEN = "refresh_token";
     private static final String KEY_EXPIRES_IN = "expires_in";
     private static final String KEY_CODE = "code";
     private static final String KEY_SCOPE = "scope";
@@ -217,11 +216,10 @@ class OAuthManager extends ResumableManager {
             return;
         }
 
-        SignatureVerifier.forToken(decodedIdToken, apiClient, new BaseCallback<SignatureVerifier, TokenValidationException>() {
+        BaseCallback<SignatureVerifier, TokenValidationException> signatureVerifierCallback = new BaseCallback<SignatureVerifier, TokenValidationException>() {
 
             @Override
             public void onFailure(TokenValidationException error) {
-                //TODO Test that the exception cause message is readable by the end user
                 validationCallback.onFailure(error);
             }
 
@@ -244,7 +242,15 @@ class OAuthManager extends ResumableManager {
                     validationCallback.onFailure(exc);
                 }
             }
-        });
+        };
+
+        String tokenAlg = decodedIdToken.getHeader().get("alg");
+        if (account.isOIDCConformant() || "RS256".equals(tokenAlg)) {
+            String tokenKeyId = decodedIdToken.getHeader().get("kid");
+            SignatureVerifier.forAsymmetricAlgorithm(tokenKeyId, apiClient, signatureVerifierCallback);
+        } else {
+            SignatureVerifier.forUnknownAlgorithm(signatureVerifierCallback);
+        }
     }
 
     private long getCurrentTimeInMillis() {

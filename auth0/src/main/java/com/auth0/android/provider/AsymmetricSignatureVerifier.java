@@ -4,13 +4,12 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Base64;
 
-import com.auth0.android.jwt.JWT;
-
 import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.Signature;
+import java.util.Collections;
 
 /**
  * Token signature verifier for HS256 algorithms.
@@ -26,6 +25,7 @@ class AsymmetricSignatureVerifier extends SignatureVerifier {
      * @throws InvalidKeyException if the public key provided is null or not of type RSA
      */
     AsymmetricSignatureVerifier(@Nullable PublicKey publicKey) throws InvalidKeyException {
+        super(Collections.singletonList("RS256"));
         try {
             publicSignature = Signature.getInstance("SHA256withRSA");
             publicSignature.initVerify(publicKey);
@@ -36,13 +36,12 @@ class AsymmetricSignatureVerifier extends SignatureVerifier {
     }
 
     @Override
-    void verifySignature(@NonNull JWT token) throws TokenValidationException {
-        String[] parts = token.toString().split("\\.");
-        String content = parts[0] + "." + parts[1];
+    protected void checkSignature(@NonNull String[] tokenParts) throws TokenValidationException {
+        String content = tokenParts[0] + "." + tokenParts[1];
         byte[] contentBytes = content.getBytes(Charset.defaultCharset());
         boolean valid = false;
         try {
-            byte[] signatureBytes = Base64.decode(parts[2], Base64.URL_SAFE | Base64.NO_WRAP);
+            byte[] signatureBytes = Base64.decode(tokenParts[2], Base64.URL_SAFE | Base64.NO_WRAP);
             publicSignature.update(contentBytes);
             valid = publicSignature.verify(signatureBytes);
         } catch (Exception ignored) {

@@ -30,7 +30,7 @@ public class IdTokenVerifierTest {
 
 
     private IdTokenVerifier idTokenVerifier;
-    private IdTokenVerifier.Options options;
+    private IdTokenVerificationOptions options;
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -40,7 +40,7 @@ public class IdTokenVerifierTest {
     public void setUp() {
         idTokenVerifier = new IdTokenVerifier();
         noSignatureVerifier = mock(SignatureVerifier.class);
-        options = new IdTokenVerifier.Options(EXPECTED_ISSUER, EXPECTED_AUDIENCE, noSignatureVerifier);
+        options = new IdTokenVerificationOptions(EXPECTED_ISSUER, EXPECTED_AUDIENCE, noSignatureVerifier);
         options.setClock(new Date(FIXED_CLOCK_CURRENT_TIME_MS));
     }
 
@@ -67,7 +67,7 @@ public class IdTokenVerifierTest {
     public void shouldFailWhenSignatureIsInvalid() throws Exception {
         PublicKey pk = getPublicKey();
         SignatureVerifier signatureVerifier = new AsymmetricSignatureVerifier(pk);
-        IdTokenVerifier.Options options = new IdTokenVerifier.Options(EXPECTED_ISSUER, EXPECTED_AUDIENCE, signatureVerifier);
+        IdTokenVerificationOptions options = new IdTokenVerificationOptions(EXPECTED_ISSUER, EXPECTED_AUDIENCE, signatureVerifier);
 
         expectedException.expect(TokenValidationException.class);
         expectedException.expectMessage("Invalid ID token signature.");

@@ -26,7 +26,7 @@ class IdTokenVerifier {
      * @throws TokenValidationException If the ID Token is null, its signing algorithm not supported, its signature invalid or one of its claim invalid.
      */
     void verify(@NonNull JWT token, @NonNull IdTokenVerificationOptions verifyOptions) throws TokenValidationException {
-        verifyOptions.getSignatureVerifier().verifySignature(token);
+        verifyOptions.getSignatureVerifier().verify(token);
 
         if (isEmpty(token.getIssuer())) {
             throw new TokenValidationException("Issuer (iss) claim must be a string present in the ID token");
