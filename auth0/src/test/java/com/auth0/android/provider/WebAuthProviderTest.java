@@ -1878,6 +1878,108 @@ public class WebAuthProviderTest {
         mockAPI.shutdown();
     }
 
+    @Test
+    public void shouldResumeLoginWithHS256WithoutCheckingSignatureWhenNonOIDCConformant() throws Exception {
+        Auth0 account = new Auth0(EXPECTED_AUDIENCE, EXPECTED_BASE_DOMAIN);
+        account.setOIDCConformant(false);
+
+        WebAuthProvider.init(account)
+                .withState("1234567890")
+                .withNonce(EXPECTED_NONCE)
+                .withResponseType(ResponseType.ID_TOKEN | ResponseType.TOKEN)
+                .start(activity, callback);
+
+        OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
+        managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
+
+        Map<String, Object> jwtBody = createJWTBody();
+        String expectedIdToken = createTestJWT("HS256", jwtBody);
+        String[] parts = expectedIdToken.split("\\.");
+        expectedIdToken = parts[0] + "." + parts[1] + ".invalid-signature";
+
+        Intent intent = createAuthIntent(createHash(expectedIdToken, "aToken", null, "urlType", 1111L, "1234567890", null, null));
+        assertTrue(WebAuthProvider.resume(intent));
+
+        ArgumentCaptor<Credentials> credentialsCaptor = ArgumentCaptor.forClass(Credentials.class);
+        verify(callback).onSuccess(credentialsCaptor.capture());
+
+        assertThat(credentialsCaptor.getValue(), is(notNullValue()));
+        assertThat(credentialsCaptor.getValue().getAccessToken(), is("aToken"));
+        assertThat(credentialsCaptor.getValue().getIdToken(), is(expectedIdToken));
+    }
+
+    @Test
+    public void shouldResumeLoginWithRS256CheckingSignatureWhenNonOIDCConformant() throws Exception {
+        AuthenticationAPI mockAPI = new AuthenticationAPI();
+        mockAPI.willReturnValidJsonWebKeys();
+
+        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain(), mockAPI.getDomain());
+        proxyAccount.setOIDCConformant(false);
+
+        MockAuthCallback callback = new MockAuthCallback();
+
+        WebAuthProvider.init(proxyAccount)
+                .withState("1234567890")
+                .withNonce(EXPECTED_NONCE)
+                .withResponseType(ResponseType.ID_TOKEN | ResponseType.TOKEN)
+                .start(activity, callback);
+
+        OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
+        managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
+
+        Map<String, Object> jwtBody = createJWTBody();
+        jwtBody.put("iss", proxyAccount.getDomainUrl());
+        String expectedIdToken = createTestJWT("RS256", jwtBody);
+
+        Intent intent = createAuthIntent(createHash(expectedIdToken, "aToken", null, "urlType", 1111L, "1234567890", null, null));
+        assertTrue(WebAuthProvider.resume(intent));
+        mockAPI.takeRequest();
+
+        assertThat(callback, AuthCallbackMatcher.hasCredentials());
+
+        Credentials credentials = callback.getCredentials();
+        assertThat(credentials, is(notNullValue()));
+        assertThat(credentials.getAccessToken(), is("aToken"));
+        assertThat(credentials.getIdToken(), is(expectedIdToken));
+    }
+
+    @Test
+    public void shouldFailToResumeLoginWithHS256IdTokenAndOIDCConformantConfiguration() throws Exception {
+        AuthenticationAPI mockAPI = new AuthenticationAPI();
+        mockAPI.willReturnValidJsonWebKeys();
+
+        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain(), mockAPI.getDomain());
+        proxyAccount.setOIDCConformant(true);
+
+        MockAuthCallback callback = new MockAuthCallback();
+
+        WebAuthProvider.init(proxyAccount)
+                .withState("1234567890")
+                .withNonce(EXPECTED_NONCE)
+                .withResponseType(ResponseType.ID_TOKEN | ResponseType.TOKEN)
+                .start(activity, callback);
+
+        OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
+        managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
+
+        Map<String, Object> jwtBody = createJWTBody();
+        jwtBody.put("iss", proxyAccount.getDomainUrl());
+        String expectedIdToken = createTestJWT("HS256", jwtBody);
+
+        Intent intent = createAuthIntent(createHash(expectedIdToken, "aToken", null, "urlType", 1111L, "1234567890", null, null));
+        assertTrue(WebAuthProvider.resume(intent));
+        mockAPI.takeRequest();
+
+        assertThat(callback, AuthCallbackMatcher.hasError());
+
+        AuthenticationException error = callback.getError();
+        assertThat(error, is(notNullValue()));
+        assertThat(error.getCause(), is(Matchers.<Throwable>instanceOf(TokenValidationException.class)));
+        assertThat(error.getCause().getMessage(), is("Signature algorithm of \"HS256\" is not supported. Expected the ID token to be signed with any of [RS256]."));
+
+        mockAPI.shutdown();
+    }
+
     @SuppressWarnings({"deprecation"})
     @Test
     public void shouldFailToResumeLoginWithIntentWithLoginRequired() {
