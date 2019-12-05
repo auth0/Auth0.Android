@@ -27,6 +27,7 @@ import com.auth0.android.util.MockAuthCallback;
 
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.hamcrest.core.Is;
 import org.junit.Before;
 import org.junit.Test;
@@ -1703,8 +1704,8 @@ public class WebAuthProviderTest {
         verify(callback).onFailure(authExceptionCaptor.capture());
 
         assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
-        assertThat(authExceptionCaptor.getValue().getCode(), is("a0.sdk.internal_error.id_token_validation"));
-        assertThat(authExceptionCaptor.getValue().getDescription(), is("ID token is required but missing"));
+        assertThat(authExceptionCaptor.getValue().getCause(), is(Matchers.<Throwable>instanceOf(TokenValidationException.class)));
+        assertThat(authExceptionCaptor.getValue().getCause().getMessage(), is("ID token is required but missing"));
     }
 
     @SuppressWarnings({"deprecation"})
@@ -1733,8 +1734,9 @@ public class WebAuthProviderTest {
         assertThat(callback, AuthCallbackMatcher.hasError());
 
         AuthenticationException error = callback.getError();
-        assertThat(error.getCode(), is("a0.sdk.internal_error.id_token_validation"));
-        assertThat(error.getDescription(), is("Could not find a public key for kid \"key123\""));
+        assertThat(error, is(notNullValue()));
+        assertThat(error.getCause(), is(Matchers.<Throwable>instanceOf(TokenValidationException.class)));
+        assertThat(error.getCause().getMessage(), is("Could not find a public key for kid \"key123\""));
 
         mockAPI.shutdown();
     }
@@ -1765,8 +1767,9 @@ public class WebAuthProviderTest {
         assertThat(callback, AuthCallbackMatcher.hasError());
 
         AuthenticationException error = callback.getError();
-        assertThat(error.getCode(), is("a0.sdk.internal_error.id_token_validation"));
-        assertThat(error.getDescription(), is("Could not find a public key for kid \"key123\""));
+        assertThat(error, is(notNullValue()));
+        assertThat(error.getCause(), is(Matchers.<Throwable>instanceOf(TokenValidationException.class)));
+        assertThat(error.getCause().getMessage(), is("Could not find a public key for kid \"key123\""));
 
         mockAPI.shutdown();
     }
@@ -1797,8 +1800,9 @@ public class WebAuthProviderTest {
         assertThat(callback, AuthCallbackMatcher.hasError());
 
         AuthenticationException error = callback.getError();
-        assertThat(error.getCode(), is("a0.sdk.internal_error.id_token_validation"));
-        assertThat(error.getDescription(), is("Could not find a public key for kid \"null\""));
+        assertThat(error, is(notNullValue()));
+        assertThat(error.getCause(), is(Matchers.<Throwable>instanceOf(TokenValidationException.class)));
+        assertThat(error.getCause().getMessage(), is("Could not find a public key for kid \"null\""));
 
         mockAPI.shutdown();
     }
@@ -1919,8 +1923,8 @@ public class WebAuthProviderTest {
         verify(callback).onFailure(authExceptionCaptor.capture());
 
         assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
-        assertThat(authExceptionCaptor.getValue().getCode(), is("a0.sdk.internal_error.id_token_validation"));
-        assertThat(authExceptionCaptor.getValue().getDescription(), is("ID token could not be decoded"));
+        assertThat(authExceptionCaptor.getValue().getCause(), is(Matchers.<Throwable>instanceOf(TokenValidationException.class)));
+        assertThat(authExceptionCaptor.getValue().getCause().getMessage(), is("ID token could not be decoded"));
     }
 
     @SuppressWarnings({"deprecation"})
@@ -1953,8 +1957,8 @@ public class WebAuthProviderTest {
         verify(callback).onFailure(authExceptionCaptor.capture());
 
         assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
-        assertThat(authExceptionCaptor.getValue().getCode(), is("a0.sdk.internal_error.id_token_validation"));
-        assertThat(authExceptionCaptor.getValue().getDescription(), is("ID token could not be decoded"));
+        assertThat(authExceptionCaptor.getValue().getCause(), is(Matchers.<Throwable>instanceOf(TokenValidationException.class)));
+        assertThat(authExceptionCaptor.getValue().getCause().getMessage(), is("ID token could not be decoded"));
     }
 
     @Test
@@ -1977,8 +1981,8 @@ public class WebAuthProviderTest {
         verify(callback).onFailure(authExceptionCaptor.capture());
 
         assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
-        assertThat(authExceptionCaptor.getValue().getCode(), is("a0.sdk.internal_error.id_token_validation"));
-        assertThat(authExceptionCaptor.getValue().getDescription(), is("Authentication Time (auth_time) claim in the ID token indicates that too much time has passed since the last end-user authentication. Current time (1567314010) is after last auth at (1567314004)"));
+        assertThat(authExceptionCaptor.getValue().getCause(), is(Matchers.<Throwable>instanceOf(TokenValidationException.class)));
+        assertThat(authExceptionCaptor.getValue().getCause().getMessage(), is("Authentication Time (auth_time) claim in the ID token indicates that too much time has passed since the last end-user authentication. Current time (1567314010) is after last auth at (1567314004)"));
     }
 
     @SuppressWarnings({"deprecation"})
@@ -2000,8 +2004,8 @@ public class WebAuthProviderTest {
         verify(callback).onFailure(authExceptionCaptor.capture());
 
         assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
-        assertThat(authExceptionCaptor.getValue().getCode(), is("a0.sdk.internal_error.id_token_validation"));
-        assertThat(authExceptionCaptor.getValue().getDescription(), is("Nonce (nonce) claim mismatch in the ID token; expected \"0987654321\", found \"abcdefg\""));
+        assertThat(authExceptionCaptor.getValue().getCause(), is(Matchers.<Throwable>instanceOf(TokenValidationException.class)));
+        assertThat(authExceptionCaptor.getValue().getCause().getMessage(), is("Nonce (nonce) claim mismatch in the ID token; expected \"0987654321\", found \"abcdefg\""));
     }
 
     @SuppressWarnings({"deprecation"})
@@ -2023,8 +2027,8 @@ public class WebAuthProviderTest {
         verify(callback).onFailure(authExceptionCaptor.capture());
 
         assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
-        assertThat(authExceptionCaptor.getValue().getCode(), is("a0.sdk.internal_error.id_token_validation"));
-        assertThat(authExceptionCaptor.getValue().getDescription(), is("Nonce (nonce) claim mismatch in the ID token; expected \"0987654321\", found \"abcdefg\""));
+        assertThat(authExceptionCaptor.getValue().getCause(), is(Matchers.<Throwable>instanceOf(TokenValidationException.class)));
+        assertThat(authExceptionCaptor.getValue().getCause().getMessage(), is("Nonce (nonce) claim mismatch in the ID token; expected \"0987654321\", found \"abcdefg\""));
     }
 
     @SuppressWarnings("deprecation")
@@ -2046,8 +2050,8 @@ public class WebAuthProviderTest {
         verify(callback).onFailure(authExceptionCaptor.capture());
 
         assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
-        assertThat(authExceptionCaptor.getValue().getCode(), is("a0.sdk.internal_error.id_token_validation"));
-        assertThat(authExceptionCaptor.getValue().getDescription(), is("Signature algorithm of \"none\" is not supported. Expected either \"RS256\" or \"HS256\"."));
+        assertThat(authExceptionCaptor.getValue().getCause(), is(Matchers.<Throwable>instanceOf(TokenValidationException.class)));
+        assertThat(authExceptionCaptor.getValue().getCause().getMessage(), is("Signature algorithm of \"none\" is not supported. Expected the ID token to be signed with any of [HS256, RS256]."));
     }
 
     @SuppressWarnings("deprecation")
