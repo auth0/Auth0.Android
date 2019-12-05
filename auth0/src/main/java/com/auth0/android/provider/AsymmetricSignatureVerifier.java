@@ -40,9 +40,9 @@ class AsymmetricSignatureVerifier extends SignatureVerifier {
         String[] parts = token.toString().split("\\.");
         String content = parts[0] + "." + parts[1];
         byte[] contentBytes = content.getBytes(Charset.defaultCharset());
-        byte[] signatureBytes = Base64.decode(parts[2], Base64.URL_SAFE | Base64.NO_WRAP);
         boolean valid = false;
         try {
+            byte[] signatureBytes = Base64.decode(parts[2], Base64.URL_SAFE | Base64.NO_WRAP);
             publicSignature.update(contentBytes);
             valid = publicSignature.verify(signatureBytes);
         } catch (Exception ignored) {
