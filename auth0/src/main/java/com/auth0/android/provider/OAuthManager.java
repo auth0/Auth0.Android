@@ -12,7 +12,6 @@ import android.util.Log;
 import com.auth0.android.Auth0;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.callback.AuthenticationCallback;
 import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.jwt.DecodeException;
 import com.auth0.android.jwt.JWT;
@@ -41,6 +40,7 @@ class OAuthManager extends ResumableManager {
     private static final String ERROR_VALUE_ACCESS_DENIED = "access_denied";
     private static final String ERROR_VALUE_UNAUTHORIZED = "unauthorized";
     private static final String ERROR_VALUE_LOGIN_REQUIRED = "login_required";
+    private static final String ERROR_VALUE_ID_TOKEN_VALIDATION_FAILED = "Could not verify the ID token";
     private static final String METHOD_SHA_256 = "S256";
     private static final String KEY_CODE_CHALLENGE = "code_challenge";
     private static final String KEY_CODE_CHALLENGE_METHOD = "code_challenge_method";
@@ -147,7 +147,7 @@ class OAuthManager extends ResumableManager {
 
         if (frontChannelIdTokenExpected) {
             //Must be response_type=id_token (or additional values)
-            assertValidIdToken(frontChannelCredentials.getIdToken(), new AuthenticationCallback<Void>() {
+            assertValidIdToken(frontChannelCredentials.getIdToken(), new BaseCallback<Void, TokenValidationException>() {
                 @Override
                 public void onSuccess(Void ignored) {
                     if (!shouldUsePKCE()) {
@@ -167,8 +167,9 @@ class OAuthManager extends ResumableManager {
                 }
 
                 @Override
-                public void onFailure(AuthenticationException error) {
-                    callback.onFailure(error);
+                public void onFailure(TokenValidationException error) {
+                    AuthenticationException wrappedError = new AuthenticationException(ERROR_VALUE_ID_TOKEN_VALIDATION_FAILED, error);
+                    callback.onFailure(wrappedError);
                 }
             });
             return true;
@@ -185,7 +186,7 @@ class OAuthManager extends ResumableManager {
 
             @Override
             public void onSuccess(@NonNull final Credentials credentials) {
-                assertValidIdToken(credentials.getIdToken(), new AuthenticationCallback<Void>() {
+                assertValidIdToken(credentials.getIdToken(), new BaseCallback<Void, TokenValidationException>() {
                     @Override
                     public void onSuccess(Void ignored) {
                         Credentials finalCredentials = mergeCredentials(frontChannelCredentials, credentials);
@@ -193,8 +194,9 @@ class OAuthManager extends ResumableManager {
                     }
 
                     @Override
-                    public void onFailure(AuthenticationException error) {
-                        callback.onFailure(error);
+                    public void onFailure(TokenValidationException error) {
+                        AuthenticationException wrappedError = new AuthenticationException(ERROR_VALUE_ID_TOKEN_VALIDATION_FAILED, error);
+                        callback.onFailure(wrappedError);
                     }
                 });
             }
@@ -202,7 +204,7 @@ class OAuthManager extends ResumableManager {
         return true;
     }
 
-    private void assertValidIdToken(String idToken, final AuthenticationCallback<Void> validationCallback) {
+    private void assertValidIdToken(String idToken, final BaseCallback<Void, TokenValidationException> validationCallback) {
         if (TextUtils.isEmpty(idToken)) {
             validationCallback.onFailure(new TokenValidationException("ID token is required but missing"));
             return;

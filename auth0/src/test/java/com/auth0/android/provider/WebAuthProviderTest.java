@@ -13,10 +13,8 @@ import android.content.pm.ResolveInfo;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.test.espresso.intent.matcher.IntentMatchers;
-import android.util.Base64;
 import android.webkit.URLUtil;
 
 import com.auth0.android.Auth0;
@@ -44,14 +42,6 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.security.KeyFactory;
-import java.security.PrivateKey;
-import java.security.Signature;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -65,6 +55,8 @@ import static android.support.test.espresso.intent.matcher.UriMatchers.hasParamW
 import static android.support.test.espresso.intent.matcher.UriMatchers.hasParamWithValue;
 import static android.support.test.espresso.intent.matcher.UriMatchers.hasPath;
 import static android.support.test.espresso.intent.matcher.UriMatchers.hasScheme;
+import static com.auth0.android.provider.JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS;
+import static com.auth0.android.provider.JwtTestUtils.createTestJWT;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -94,8 +86,6 @@ public class WebAuthProviderTest {
     private static final int REQUEST_CODE = 11;
     private static final String KEY_STATE = "state";
     private static final String KEY_NONCE = "nonce";
-    private static final long FIXED_CLOCK_CURRENT_TIME_MS = 1567314000000L;
-    private static final String RSA_PRIVATE_KEY = "src/test/resources/rsa_private.pem";
 
     @Mock
     private AuthCallback callback;
@@ -2511,69 +2501,4 @@ public class WebAuthProviderTest {
         return hash.length() == 1 ? "" : hash;
     }
 
-    private String createTestJWT(@NonNull String algorithm, @NonNull String nonce, @NonNull String issuer) throws Exception {
-        if (!Arrays.asList("HS256", "RS256", "none").contains(algorithm)) {
-            throw new IllegalArgumentException("[Unit Tests] ID token algorithm not supported");
-        }
-        long iat = FIXED_CLOCK_CURRENT_TIME_MS / 1000;
-        long exp = iat + 3600;
-        String header = "{" +
-                "\"alg\":\"" + algorithm + "\"," +
-                "\"typ\":\"JWT\"," +
-                "\"kid\":\"key123\"" +
-                "}";
-        String body = "{" +
-                "\"iss\":\"" + issuer + "\"," +
-                "\"sub\":\"auth0|123456789\"," +
-                "\"aud\": [" +
-                "\"my-client-id\"," +
-                "\"other-client-id\"" +
-                "]," +
-                "\"exp\":" + exp + "," +
-                "\"iat\":" + iat + "," +
-                "\"auth_time\":" + (iat - 1) + "," +
-                "\"azp\":\"my-client-id\"," +
-                "\"nonce\":\"" + nonce + "\"" +
-                "}";
-        String signature = "signature";
-
-        byte[] encodedHeaderBytes = Base64.encode(header.getBytes(), Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
-        byte[] encodedBodyBytes = Base64.encode(body.getBytes(), Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
-
-        if (algorithm.equals("RS256")) {
-            PrivateKey pk = getPemPrivateKey(RSA_PRIVATE_KEY);
-            Signature s = Signature.getInstance("SHA256withRSA");
-            s.initSign(pk);
-            s.update(encodedHeaderBytes);
-            s.update((byte) '.');
-            s.update(encodedBodyBytes);
-            byte[] signatureBytes = s.sign();
-            signature = Base64.encodeToString(signatureBytes, Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
-        }
-        String encodedHeader = new String(encodedHeaderBytes, "UTF-8");
-        String encodedBody = new String(encodedBodyBytes, "UTF-8");
-
-        return String.format("%s.%s.%s", encodedHeader, encodedBody, signature);
-    }
-
-    public PrivateKey getPemPrivateKey(String filename) throws Exception {
-        File f = new File(filename);
-        FileInputStream fis = new FileInputStream(f);
-        DataInputStream dis = new DataInputStream(fis);
-        byte[] keyBytes = new byte[(int) f.length()];
-        dis.readFully(keyBytes);
-        dis.close();
-
-        String temp = new String(keyBytes);
-        String privKeyPEM = temp.replace("-----BEGIN PRIVATE KEY-----\n", "");
-
-        privKeyPEM = privKeyPEM.replace("-----END PRIVATE KEY-----", "");
-        //System.out.println("Private key\n"+privKeyPEM);
-
-        byte[] decoded = Base64.decode(privKeyPEM, Base64.DEFAULT);
-
-        PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(decoded);
-        KeyFactory kf = KeyFactory.getInstance("RSA");
-        return kf.generatePrivate(spec);
-    }
 }

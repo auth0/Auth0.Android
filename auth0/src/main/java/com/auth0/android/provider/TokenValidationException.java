@@ -1,11 +1,10 @@
 package com.auth0.android.provider;
 
-import com.auth0.android.authentication.AuthenticationException;
+import com.auth0.android.Auth0Exception;
 
-class TokenValidationException extends AuthenticationException {
-    private static final String ERROR_CODE = "a0.sdk.internal_error.id_token_validation";
+class TokenValidationException extends Auth0Exception {
 
     TokenValidationException(String message) {
-        super(ERROR_CODE, message);
+        super(message);
     }
 }
