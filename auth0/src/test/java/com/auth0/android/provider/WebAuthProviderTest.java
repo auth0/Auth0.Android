@@ -70,6 +70,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -1397,7 +1398,7 @@ public class WebAuthProviderTest {
         assertThat(credentialsCaptor.getValue().getAccessToken(), is("urlAccess"));
         assertThat(credentialsCaptor.getValue().getRefreshToken(), is(nullValue()));
         assertThat(credentialsCaptor.getValue().getType(), is("urlType"));
-        assertThat(credentialsCaptor.getValue().getExpiresIn(), is(1111L));
+        assertThat(credentialsCaptor.getValue().getExpiresIn().doubleValue(), is(closeTo(1111L, 1)));
     }
 
 
@@ -1425,7 +1426,7 @@ public class WebAuthProviderTest {
         assertThat(credentialsCaptor.getValue().getAccessToken(), is("urlAccess"));
         assertThat(credentialsCaptor.getValue().getRefreshToken(), is(nullValue()));
         assertThat(credentialsCaptor.getValue().getType(), is("urlType"));
-        assertThat(credentialsCaptor.getValue().getExpiresIn(), is(1111L));
+        assertThat(credentialsCaptor.getValue().getExpiresIn().doubleValue(), is(closeTo(1111L, 1)));
     }
 
     @SuppressWarnings("deprecation")
@@ -1452,7 +1453,7 @@ public class WebAuthProviderTest {
         assertThat(credentialsCaptor.getValue().getAccessToken(), is("urlAccess"));
         assertThat(credentialsCaptor.getValue().getRefreshToken(), is(nullValue()));
         assertThat(credentialsCaptor.getValue().getType(), is("urlType"));
-        assertThat(credentialsCaptor.getValue().getExpiresIn(), is(1111L));
+        assertThat(credentialsCaptor.getValue().getExpiresIn().doubleValue(), is(closeTo(1111L, 1)));
     }
 
     @SuppressWarnings("deprecation")

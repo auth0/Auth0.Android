@@ -10,6 +10,7 @@ import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.CredentialsMock;
 
+import org.hamcrest.CoreMatchers;
 import org.hamcrest.core.Is;
 import org.junit.Before;
 import org.junit.Rule;
@@ -27,6 +28,7 @@ import org.robolectric.annotation.Config;
 
 import java.util.Date;
 
+import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
@@ -276,7 +278,8 @@ public class CredentialsManagerTest {
         assertThat(retrievedCredentials.getIdToken(), is("idToken"));
         assertThat(retrievedCredentials.getRefreshToken(), is("refreshToken"));
         assertThat(retrievedCredentials.getType(), is("type"));
-        assertThat(retrievedCredentials.getExpiresIn(), is(123456L));
+        assertThat(retrievedCredentials.getExpiresIn(), is(notNullValue()));
+        assertThat(retrievedCredentials.getExpiresIn().doubleValue(), CoreMatchers.is(closeTo(123456L, 1)));
         assertThat(retrievedCredentials.getExpiresAt(), is(notNullValue()));
         assertThat(retrievedCredentials.getExpiresAt().getTime(), is(expirationTime));
         assertThat(retrievedCredentials.getScope(), is("scope"));
@@ -304,7 +307,8 @@ public class CredentialsManagerTest {
         assertThat(retrievedCredentials.getIdToken(), is("idToken"));
         assertThat(retrievedCredentials.getRefreshToken(), is("refreshToken"));
         assertThat(retrievedCredentials.getType(), is("type"));
-        assertThat(retrievedCredentials.getExpiresIn(), is(123456L));
+        assertThat(retrievedCredentials.getExpiresIn(), is(notNullValue()));
+        assertThat(retrievedCredentials.getExpiresIn().doubleValue(), CoreMatchers.is(closeTo(123456L, 1)));
         assertThat(retrievedCredentials.getExpiresAt(), is(notNullValue()));
         assertThat(retrievedCredentials.getExpiresAt().getTime(), is(expirationTime));
         assertThat(retrievedCredentials.getScope(), is("scope"));
@@ -332,7 +336,8 @@ public class CredentialsManagerTest {
         assertThat(retrievedCredentials.getIdToken(), is(nullValue()));
         assertThat(retrievedCredentials.getRefreshToken(), is("refreshToken"));
         assertThat(retrievedCredentials.getType(), is("type"));
-        assertThat(retrievedCredentials.getExpiresIn(), is(123456L));
+        assertThat(retrievedCredentials.getExpiresIn(), is(notNullValue()));
+        assertThat(retrievedCredentials.getExpiresIn().doubleValue(), CoreMatchers.is(closeTo(123456L, 1)));
         assertThat(retrievedCredentials.getExpiresAt(), is(notNullValue()));
         assertThat(retrievedCredentials.getExpiresAt().getTime(), is(expirationTime));
         assertThat(retrievedCredentials.getScope(), is("scope"));
