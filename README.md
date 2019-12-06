@@ -88,7 +88,7 @@ account.setOIDCConformant(true);
 //Use the account in the API clients
 ```
 
-Passwordless authentication *cannot be used* with this flag set to `true`. For more information, please see the [OIDC adoption guide](https://auth0.com/docs/api-auth/tutorials/adoption).
+For more information, please see the [OIDC adoption guide](https://auth0.com/docs/api-auth/tutorials/adoption).
 
 
 ### Authentication with Universal Login
@@ -436,7 +436,7 @@ authentication
 
 #### Passwordless Login
 
-This feature requires your Application to have the *Resource Owner* Legacy Grant Type enabled. Check [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it. Note that Passwordless authentication *cannot be used* with the [OIDC Conformant Mode](#oidc-conformant-mode) enabled.
+This feature requires your Application to have a specific Grant Type enabled. If the [OIDC Conformant flag](#OIDC-Conformant-Mode) is enabled, the required Grant Type is *Passwordless OTP*. If instead the flag is disabled, the required Grant Type is *Resource Owner*. Check [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
 
 Passwordless it's a 2 steps flow:
 

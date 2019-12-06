@@ -31,6 +31,7 @@ import android.support.annotation.Nullable;
 
 import com.auth0.android.auth0.BuildConfig;
 import com.auth0.android.authentication.AuthenticationAPIClient;
+import com.auth0.android.authentication.PasswordlessType;
 import com.auth0.android.util.Telemetry;
 import com.squareup.okhttp.HttpUrl;
 
@@ -208,6 +209,14 @@ public class Auth0 {
      * <li>{@link AuthenticationAPIClient#signUp(String, String, String)}</li>
      * <li>{@link AuthenticationAPIClient#signUp(String, String, String, String)}</li>
      * <li>{@link AuthenticationAPIClient#renewAuth(String)}</li>
+     * <li>{@link AuthenticationAPIClient#passwordlessWithSMS(String, PasswordlessType, String)}</li>
+     * <li>{@link AuthenticationAPIClient#passwordlessWithSMS(String, PasswordlessType)}</li>
+     * <li>{@link AuthenticationAPIClient#passwordlessWithEmail(String, PasswordlessType)}</li>
+     * <li>{@link AuthenticationAPIClient#passwordlessWithEmail(String, PasswordlessType, String)}</li>
+     * <li>{@link AuthenticationAPIClient#loginWithPhoneNumber(String, String)}</li>
+     * <li>{@link AuthenticationAPIClient#loginWithPhoneNumber(String, String, String)}</li>
+     * <li>{@link AuthenticationAPIClient#loginWithEmail(String, String)}</li>
+     * <li>{@link AuthenticationAPIClient#loginWithEmail(String, String, String)}</li>
      * </ul>
      *
      * @param enabled if Lock will use the Legacy Authentication API or the new OIDC Conformant Authentication API.
