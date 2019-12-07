@@ -1,9 +1,12 @@
 package com.auth0.android.result;
 
+import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 
 import java.util.Date;
 
+import static org.hamcrest.Matchers.closeTo;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
@@ -18,7 +21,8 @@ public class CredentialsTest {
         assertThat(credentials.getAccessToken(), is("accessToken"));
         assertThat(credentials.getType(), is("type"));
         assertThat(credentials.getRefreshToken(), is("refreshToken"));
-        assertThat(credentials.getExpiresIn(), is(expiresIn));
+        assertThat(credentials.getExpiresIn(), is(notNullValue()));
+        assertThat(credentials.getExpiresIn().doubleValue(), CoreMatchers.is(closeTo(expiresIn, 1)));
         assertThat(credentials.getExpiresAt(), is(date));
         assertThat(credentials.getScope(), is("scope"));
     }
@@ -30,7 +34,8 @@ public class CredentialsTest {
         assertThat(credentials.getAccessToken(), is("accessToken"));
         assertThat(credentials.getType(), is("type"));
         assertThat(credentials.getRefreshToken(), is("refreshToken"));
-        assertThat(credentials.getExpiresIn(), is(86400L));
+        assertThat(credentials.getExpiresIn(), is(notNullValue()));
+        assertThat(credentials.getExpiresIn().doubleValue(), CoreMatchers.is(closeTo(86400, 1)));
         Date expirationDate = new Date(CredentialsMock.CURRENT_TIME_MS + 86400L * 1000);
         assertThat(credentials.getExpiresAt(), is(expirationDate));
     }
