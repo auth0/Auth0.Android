@@ -26,7 +26,7 @@ class IdTokenVerifier {
      * @throws TokenValidationException If the ID Token is null, its signing algorithm not supported, its signature invalid or one of its claim invalid.
      */
     void verify(@NonNull JWT token, @NonNull IdTokenVerificationOptions verifyOptions) throws TokenValidationException {
-        verifyOptions.getSignatureVerifier().verifySignature(token);
+        verifyOptions.getSignatureVerifier().verify(token);
 
         if (isEmpty(token.getIssuer())) {
             throw new TokenValidationException("Issuer (iss) claim must be a string present in the ID token");
@@ -41,11 +41,11 @@ class IdTokenVerifier {
         }
 
         final List<String> audience = token.getAudience();
-        if (audience == null) {
+        if (audience == null || audience.isEmpty()) {
             throw new TokenValidationException("Audience (aud) claim must be a string or array of strings present in the ID token");
         }
         if (!audience.contains(verifyOptions.getAudience())) {
-            throw new TokenValidationException(String.format("Audience (aud) claim mismatch in the ID token; expected \"%s\" but found \"%s\"", verifyOptions.getAudience(), token.getAudience()));
+            throw new TokenValidationException(String.format("Audience (aud) claim mismatch in the ID token; expected \"%s\" but was not one of \"%s\"", verifyOptions.getAudience(), token.getAudience()));
         }
 
         final Calendar cal = Calendar.getInstance();
@@ -75,7 +75,6 @@ class IdTokenVerifier {
         if (now.before(iatDate)) {
             throw new TokenValidationException(String.format("Issued At (iat) claim error in the ID token; current time (%d) is before issued at time (%d)", now.getTime() / 1000, iatDate.getTime() / 1000));
         }
-
 
         if (verifyOptions.getNonce() != null) {
             String nonceClaim = token.getClaim(NONCE_CLAIM).asString();
