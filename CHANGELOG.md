@@ -1,5 +1,18 @@
 # Change Log
 
+## [1.20.0](https://github.com/auth0/Auth0.Android/tree/1.20.0) (2019-12-23)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.19.1...1.20.0)
+
+**Added**
+- Add OIDC passwordless  [\#271](https://github.com/auth0/Auth0.Android/pull/271) ([lbalmaceda](https://github.com/lbalmaceda))
+- Support fetching the JWKS [\#260](https://github.com/auth0/Auth0.Android/pull/260) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Fixed**
+- Use closeTo to still match with small differences [part 2] [\#272](https://github.com/auth0/Auth0.Android/pull/272) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Security**
+- Improve OIDC compliance [\#265](https://github.com/auth0/Auth0.Android/pull/265) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.19.1](https://github.com/auth0/Auth0.Android/tree/1.19.1) (2019-11-29)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.19.0...1.19.1)
 
