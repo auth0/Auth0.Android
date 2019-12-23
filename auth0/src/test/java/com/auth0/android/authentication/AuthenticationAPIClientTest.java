@@ -422,6 +422,164 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
+    public void shouldLoginWithPhoneNumberWithCustomConnectionWithOTPGrantIfOIDCConformant() throws Exception {
+        mockAPI.willReturnSuccessfulLogin();
+
+        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        auth0.setOIDCConformant(true);
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
+
+        final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
+        client.loginWithPhoneNumber("+10101010101", "1234", MY_CONNECTION)
+                .start(callback);
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+        assertThat(request.getPath(), equalTo("/oauth/token"));
+
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP));
+        assertThat(body, hasEntry("realm", MY_CONNECTION));
+        assertThat(body, hasEntry("username", "+10101010101"));
+        assertThat(body, hasEntry("otp", "1234"));
+        assertThat(body, hasEntry("scope", OPENID));
+
+        assertThat(callback, hasPayloadOfType(Credentials.class));
+    }
+
+    @Test
+    public void shouldLoginWithPhoneNumberWithOTPGrantIfOIDCConformant() throws Exception {
+        mockAPI.willReturnSuccessfulLogin();
+
+        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        auth0.setOIDCConformant(true);
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
+
+        final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
+        client.loginWithPhoneNumber("+10101010101", "1234")
+                .start(callback);
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+        assertThat(request.getPath(), equalTo("/oauth/token"));
+
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP));
+        assertThat(body, hasEntry("realm", "sms"));
+        assertThat(body, hasEntry("username", "+10101010101"));
+        assertThat(body, hasEntry("otp", "1234"));
+        assertThat(body, hasEntry("scope", OPENID));
+
+        assertThat(callback, hasPayloadOfType(Credentials.class));
+    }
+
+    @Test
+    public void shouldLoginWithPhoneNumberSyncWithOTPGrantIfOIDCConformant() throws Exception {
+        mockAPI.willReturnSuccessfulLogin();
+
+        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        auth0.setOIDCConformant(true);
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
+
+        final Credentials credentials = client
+                .loginWithPhoneNumber("+10101010101", "1234")
+                .execute();
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+        assertThat(request.getPath(), equalTo("/oauth/token"));
+
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP));
+        assertThat(body, hasEntry("realm", "sms"));
+        assertThat(body, hasEntry("username", "+10101010101"));
+        assertThat(body, hasEntry("otp", "1234"));
+        assertThat(body, hasEntry("scope", OPENID));
+
+        assertThat(credentials, is(notNullValue()));
+    }
+
+    @Test
+    public void shouldLoginWithEmailOnlyWithCustomConnectionWithOTPGrantIfOIDCConformant() throws Exception {
+        mockAPI.willReturnSuccessfulLogin();
+
+        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        auth0.setOIDCConformant(true);
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
+
+        final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
+        client.loginWithEmail(SUPPORT_AUTH0_COM, "1234", MY_CONNECTION)
+                .start(callback);
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+        assertThat(request.getPath(), equalTo("/oauth/token"));
+
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP));
+        assertThat(body, hasEntry("realm", MY_CONNECTION));
+        assertThat(body, hasEntry("username", SUPPORT_AUTH0_COM));
+        assertThat(body, hasEntry("otp", "1234"));
+        assertThat(body, hasEntry("scope", OPENID));
+
+        assertThat(callback, hasPayloadOfType(Credentials.class));
+    }
+
+    @Test
+    public void shouldLoginWithEmailOnlyWithOTPGrantIfOIDCConformant() throws Exception {
+        mockAPI.willReturnSuccessfulLogin();
+
+        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        auth0.setOIDCConformant(true);
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
+
+        final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
+        client.loginWithEmail(SUPPORT_AUTH0_COM, "1234")
+                .start(callback);
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+        assertThat(request.getPath(), equalTo("/oauth/token"));
+
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP));
+        assertThat(body, hasEntry("realm", "email"));
+        assertThat(body, hasEntry("username", SUPPORT_AUTH0_COM));
+        assertThat(body, hasEntry("otp", "1234"));
+        assertThat(body, hasEntry("scope", OPENID));
+
+        assertThat(callback, hasPayloadOfType(Credentials.class));
+    }
+
+    @Test
+    public void shouldLoginWithEmailOnlySyncWithOTPGrantIfOIDCConformant() throws Exception {
+        mockAPI
+                .willReturnSuccessfulLogin()
+                .willReturnTokenInfo();
+
+        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        auth0.setOIDCConformant(true);
+        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
+
+        final Credentials credentials = client
+                .loginWithEmail(SUPPORT_AUTH0_COM, "1234")
+                .execute();
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+        assertThat(request.getPath(), equalTo("/oauth/token"));
+
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP));
+        assertThat(body, hasEntry("realm", "email"));
+        assertThat(body, hasEntry("username", SUPPORT_AUTH0_COM));
+        assertThat(body, hasEntry("otp", "1234"));
+        assertThat(body, hasEntry("scope", OPENID));
+
+        assertThat(credentials, is(notNullValue()));
+    }
+
+    @Test
     public void shouldLoginWithPhoneNumberWithCustomConnection() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
 
@@ -434,6 +592,7 @@ public class AuthenticationAPIClientTest {
         assertThat(request.getPath(), equalTo("/oauth/ro"));
 
         Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_PASSWORD));
         assertThat(body, hasEntry("connection", MY_CONNECTION));
         assertThat(body, hasEntry("username", "+10101010101"));
         assertThat(body, hasEntry("password", "1234"));
@@ -455,6 +614,7 @@ public class AuthenticationAPIClientTest {
         assertThat(request.getPath(), equalTo("/oauth/ro"));
 
         Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_PASSWORD));
         assertThat(body, hasEntry("connection", "sms"));
         assertThat(body, hasEntry("username", "+10101010101"));
         assertThat(body, hasEntry("password", "1234"));
@@ -476,6 +636,7 @@ public class AuthenticationAPIClientTest {
         assertThat(request.getPath(), equalTo("/oauth/ro"));
 
         Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_PASSWORD));
         assertThat(body, hasEntry("connection", "sms"));
         assertThat(body, hasEntry("username", "+10101010101"));
         assertThat(body, hasEntry("password", "1234"));
@@ -497,6 +658,7 @@ public class AuthenticationAPIClientTest {
         assertThat(request.getPath(), equalTo("/oauth/ro"));
 
         Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_PASSWORD));
         assertThat(body, hasEntry("connection", MY_CONNECTION));
         assertThat(body, hasEntry("username", SUPPORT_AUTH0_COM));
         assertThat(body, hasEntry("password", "1234"));
@@ -518,6 +680,7 @@ public class AuthenticationAPIClientTest {
         assertThat(request.getPath(), equalTo("/oauth/ro"));
 
         Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_PASSWORD));
         assertThat(body, hasEntry("connection", "email"));
         assertThat(body, hasEntry("username", SUPPORT_AUTH0_COM));
         assertThat(body, hasEntry("password", "1234"));
@@ -541,6 +704,7 @@ public class AuthenticationAPIClientTest {
         assertThat(request.getPath(), equalTo("/oauth/ro"));
 
         Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_PASSWORD));
         assertThat(body, hasEntry("connection", "email"));
         assertThat(body, hasEntry("username", SUPPORT_AUTH0_COM));
         assertThat(body, hasEntry("password", "1234"));
