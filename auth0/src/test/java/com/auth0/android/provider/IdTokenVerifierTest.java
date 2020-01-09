@@ -241,20 +241,6 @@ public class IdTokenVerifierTest {
     }
 
     @Test
-    public void shouldFailWhenIssuedAtClaimHasUnexpectedValue() throws Exception {
-        expectedException.expect(TokenValidationException.class);
-        expectedException.expectMessage("Issued At (iat) claim error in the ID token; current time (1567314000) is before issued at time (1567314060)");
-
-        Map<String, Object> jwtBody = createJWTBody();
-        long clock = FIXED_CLOCK_CURRENT_TIME_MS / 1000;
-        long futureIat = clock + 2 * 60; // 2 min
-        jwtBody.put("iat", futureIat);
-        String token = createTestJWT("none", jwtBody);
-        JWT jwt = new JWT(token);
-        idTokenVerifier.verify(jwt, options);
-    }
-
-    @Test
     public void shouldFailWhenMaxAgeIsSetButAuthTimeClaimIsMissing() throws Exception {
         expectedException.expect(TokenValidationException.class);
         expectedException.expectMessage("Authentication Time (auth_time) claim must be a number present in the ID token when Max Age (max_age) is specified");
