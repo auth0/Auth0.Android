@@ -68,14 +68,6 @@ class IdTokenVerifier {
             throw new TokenValidationException("Issued At (iat) claim must be a number present in the ID token");
         }
 
-        cal.setTime(token.getIssuedAt());
-        cal.add(Calendar.SECOND, -1 * clockSkew);
-        Date iatDate = cal.getTime();
-
-        if (now.before(iatDate)) {
-            throw new TokenValidationException(String.format("Issued At (iat) claim error in the ID token; current time (%d) is before issued at time (%d)", now.getTime() / 1000, iatDate.getTime() / 1000));
-        }
-
         if (verifyOptions.getNonce() != null) {
             String nonceClaim = token.getClaim(NONCE_CLAIM).asString();
             if (isEmpty(nonceClaim)) {
