@@ -1,5 +1,14 @@
 # Change Log
 
+## [1.20.1](https://github.com/auth0/Auth0.Android/tree/1.20.1) (2020-01-10)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.20.0...1.20.1)
+
+**Changed**
+- Update OSS Gradle plugin version [\#275](https://github.com/auth0/Auth0.Android/pull/275) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Removed**
+- Remove issued_at value check [\#274](https://github.com/auth0/Auth0.Android/pull/274) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.20.0](https://github.com/auth0/Auth0.Android/tree/1.20.0) (2019-12-23)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.19.1...1.20.0)
 
