@@ -85,7 +85,7 @@ public class CredentialsManager {
      *
      * @param callback the callback that will receive a valid {@link Credentials} or the {@link CredentialsManagerException}.
      */
-    public void getCredentials(@NonNull final BaseCallback<Credentials, CredentialsManagerException> callback) {
+    public void getCredentials(Map<String, Object> additionalParameters, @NonNull final BaseCallback<Credentials, CredentialsManagerException> callback) {
         String accessToken = storage.retrieveString(KEY_ACCESS_TOKEN);
         final String refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN);
         String idToken = storage.retrieveString(KEY_ID_TOKEN);
@@ -110,7 +110,12 @@ public class CredentialsManager {
             return;
         }
 
-        authClient.renewAuth(refreshToken).start(new AuthenticationCallback<Credentials>() {
+        ParameterizableRequest<Credentials, AuthenticationException> request = authClient.renewAuth(refreshToken);
+        if (additionalParameters != null) {
+            request = request.addParameters(additionalParameters);
+        }
+
+        request.start(new AuthenticationCallback<Credentials>() {
             @Override
             public void onSuccess(Credentials fresh) {
                 //RefreshTokens don't expire. It should remain the same

@@ -209,7 +209,7 @@ public class CredentialsManagerTest {
         when(storage.retrieveLong("com.auth0.cache_expires_at")).thenReturn(expirationTime);
         when(storage.retrieveString("com.auth0.scope")).thenReturn("scope");
 
-        manager.getCredentials(callback);
+        manager.getCredentials(null, callback);
 
         verify(callback).onFailure(exceptionCaptor.capture());
         CredentialsManagerException exception = exceptionCaptor.getValue();
@@ -229,7 +229,7 @@ public class CredentialsManagerTest {
         when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
         when(storage.retrieveString("com.auth0.scope")).thenReturn("scope");
 
-        manager.getCredentials(callback);
+        manager.getCredentials(null, callback);
 
         verify(callback).onFailure(exceptionCaptor.capture());
         CredentialsManagerException exception = exceptionCaptor.getValue();
@@ -249,7 +249,7 @@ public class CredentialsManagerTest {
         when(storage.retrieveLong("com.auth0.cache_expires_at")).thenReturn(null);
         when(storage.retrieveString("com.auth0.scope")).thenReturn("scope");
 
-        manager.getCredentials(callback);
+        manager.getCredentials(null, callback);
 
         verify(callback).onSuccess(credentialsCaptor.capture());
         Credentials retrievedCredentials = credentialsCaptor.getValue();
@@ -269,7 +269,7 @@ public class CredentialsManagerTest {
         when(storage.retrieveLong("com.auth0.cache_expires_at")).thenReturn(expirationTime);
         when(storage.retrieveString("com.auth0.scope")).thenReturn("scope");
 
-        manager.getCredentials(callback);
+        manager.getCredentials(null, callback);
         verify(callback).onSuccess(credentialsCaptor.capture());
         Credentials retrievedCredentials = credentialsCaptor.getValue();
 
@@ -298,7 +298,7 @@ public class CredentialsManagerTest {
         when(storage.retrieveLong("com.auth0.cache_expires_at")).thenReturn(expirationTime);
         when(storage.retrieveString("com.auth0.scope")).thenReturn("scope");
 
-        manager.getCredentials(callback);
+        manager.getCredentials(null, callback);
         verify(callback).onSuccess(credentialsCaptor.capture());
         Credentials retrievedCredentials = credentialsCaptor.getValue();
 
@@ -327,7 +327,7 @@ public class CredentialsManagerTest {
         when(storage.retrieveLong("com.auth0.cache_expires_at")).thenReturn(expirationTime);
         when(storage.retrieveString("com.auth0.scope")).thenReturn("scope");
 
-        manager.getCredentials(callback);
+        manager.getCredentials(null, callback);
         verify(callback).onSuccess(credentialsCaptor.capture());
         Credentials retrievedCredentials = credentialsCaptor.getValue();
 
@@ -360,7 +360,7 @@ public class CredentialsManagerTest {
         when(jwtMock.getExpiresAt()).thenReturn(newDate);
         when(jwtDecoder.decode("newId")).thenReturn(jwtMock);
 
-        manager.getCredentials(callback);
+        manager.getCredentials(null, callback);
         verify(request).start(requestCallbackCaptor.capture());
 
         //Trigger success
@@ -404,7 +404,7 @@ public class CredentialsManagerTest {
         when(storage.retrieveString("com.auth0.scope")).thenReturn("scope");
         when(client.renewAuth("refreshToken")).thenReturn(request);
 
-        manager.getCredentials(callback);
+        manager.getCredentials(null, callback);
         verify(storage, never()).store(anyString(), anyInt());
         verify(storage, never()).store(anyString(), anyLong());
         verify(storage, never()).store(anyString(), anyString());

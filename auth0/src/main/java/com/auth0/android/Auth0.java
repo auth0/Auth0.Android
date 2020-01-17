@@ -208,7 +208,7 @@ public class Auth0 {
      * <li>{@link AuthenticationAPIClient#login(String, String, String)}</li>
      * <li>{@link AuthenticationAPIClient#signUp(String, String, String)}</li>
      * <li>{@link AuthenticationAPIClient#signUp(String, String, String, String)}</li>
-     * <li>{@link AuthenticationAPIClient#renewAuth(String)}</li>
+     * <li>{@link AuthenticationAPIClient#renewAuth(String, Map<String, Object>)}</li>
      * <li>{@link AuthenticationAPIClient#passwordlessWithSMS(String, PasswordlessType, String)}</li>
      * <li>{@link AuthenticationAPIClient#passwordlessWithSMS(String, PasswordlessType)}</li>
      * <li>{@link AuthenticationAPIClient#passwordlessWithEmail(String, PasswordlessType)}</li>
