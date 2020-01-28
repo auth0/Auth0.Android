@@ -832,6 +832,20 @@ public class WebAuthProviderTest {
         assertThat(uri.getQueryParameter("redirect_uri"), is("https://test.domain.com/android/com.auth0.android.auth0.test/callback"));
     }
 
+    @Test
+    public void shouldSetRedirectUriIgnoringSchemeOnLogin() {
+        WebAuthProvider.init(account)
+                .withScheme("https")
+                .withRedirectUri("myapp://app.company.com/mobile/callback")
+                .start(activity, callback);
+
+        verify(activity).startActivity(intentCaptor.capture());
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
+        assertThat(uri, is(notNullValue()));
+
+        assertThat(uri.getQueryParameter("redirect_uri"), is("myapp://app.company.com/mobile/callback"));
+    }
+
     //response type
 
     @Test
@@ -2435,6 +2449,20 @@ public class WebAuthProviderTest {
         assertThat(uri, is(notNullValue()));
 
         assertThat(uri.getQueryParameter("returnTo"), is("https://test.domain.com/android/com.auth0.android.auth0.test/callback"));
+    }
+
+    @Test
+    public void shouldSetRedirectToUrlIgnoringSchemeOnLogout() {
+        WebAuthProvider.logout(account)
+                .withScheme("https")
+                .withReturnToUrl("myapp://app.company.com/mobile/callback")
+                .start(activity, voidCallback);
+
+        verify(activity).startActivity(intentCaptor.capture());
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
+        assertThat(uri, is(notNullValue()));
+
+        assertThat(uri.getQueryParameter("returnTo"), is("myapp://app.company.com/mobile/callback"));
     }
 
 
