@@ -43,7 +43,7 @@ abstract class CallbackHelper {
      *
      * @return the callback Uri.
      */
-    public static String getCallbackUri(@NonNull String scheme, @NonNull String packageName, @NonNull String domain) {
+    static String getCallbackUri(@NonNull String scheme, @NonNull String packageName, @NonNull String domain) {
         if (!URLUtil.isValidUrl(domain)) {
             Log.e(TAG, "The Domain is invalid and the Callback URI will not be set. You used: " + domain);
             return null;
@@ -62,7 +62,7 @@ abstract class CallbackHelper {
     }
 
     @NonNull
-    public static Map<String, String> getValuesFromUri(@Nullable Uri uri) {
+    static Map<String, String> getValuesFromUri(@Nullable Uri uri) {
         if (uri == null) {
             return Collections.emptyMap();
         }
