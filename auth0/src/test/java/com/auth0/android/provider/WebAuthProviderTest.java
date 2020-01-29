@@ -2452,7 +2452,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldSetRedirectToUrlIgnoringSchemeOnLogout() {
+    public void shouldSetReturnToUrlIgnoringSchemeOnLogout() {
         WebAuthProvider.logout(account)
                 .withScheme("https")
                 .withReturnToUrl("myapp://app.company.com/mobile/callback")
