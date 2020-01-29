@@ -89,7 +89,7 @@ public class WebAuthProvider {
         }
 
         /**
-         * Specify a custom Scheme to use on the Return To Uri. Default scheme is 'https'.
+         * Specify a custom Scheme to use on the Return To URL. Default scheme is 'https'.
          *
          * @param scheme to use in the Return To URL.
          * @return the current builder instance
