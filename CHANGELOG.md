@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.21.0](https://github.com/auth0/Auth0.Android/tree/1.21.0) (2020-01-29)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.20.1...1.21.0)
+
+**Added**
+- Allow to customize the redirect URI / return to URL [\#279](https://github.com/auth0/Auth0.Android/pull/279) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.20.1](https://github.com/auth0/Auth0.Android/tree/1.20.1) (2020-01-10)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.20.0...1.20.1)
 
