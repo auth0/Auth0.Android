@@ -422,6 +422,51 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
+    public void shouldLoginWithNativeSocialToken() throws Exception {
+        mockAPI
+                .willReturnSuccessfulLogin();
+
+        final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
+        client.loginWithNativeSocialToken("test-token-value", "test-token-type")
+                .start(callback);
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+        assertThat(request.getPath(), equalTo("/oauth/token"));
+
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("client_id", CLIENT_ID));
+        assertThat(body, hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE));
+        assertThat(body, hasEntry("subject_token", "test-token-value"));
+        assertThat(body, hasEntry("subject_token_type", "test-token-type"));
+        assertThat(body, hasEntry("scope", OPENID));
+
+        assertThat(callback, hasPayloadOfType(Credentials.class));
+    }
+
+    @Test
+    public void shouldLoginWithNativeSocialTokenSync() throws Exception {
+        mockAPI.willReturnSuccessfulLogin();
+
+        final Credentials credentials = client
+                .loginWithNativeSocialToken("test-token-value", "test-token-type")
+                .execute();
+
+        final RecordedRequest request = mockAPI.takeRequest();
+        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
+        assertThat(request.getPath(), equalTo("/oauth/token"));
+
+        Map<String, String> body = bodyFromRequest(request);
+        assertThat(body, hasEntry("client_id", CLIENT_ID));
+        assertThat(body, hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE));
+        assertThat(body, hasEntry("subject_token", "test-token-value"));
+        assertThat(body, hasEntry("subject_token_type", "test-token-type"));
+        assertThat(body, hasEntry("scope", OPENID));
+
+        assertThat(credentials, is(notNullValue()));
+    }
+
+    @Test
     public void shouldLoginWithPhoneNumberWithCustomConnectionWithOTPGrantIfOIDCConformant() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
 
