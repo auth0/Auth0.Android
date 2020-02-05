@@ -382,8 +382,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldLoginWithOAuthAccessToken() throws Exception {
-        mockAPI
-                .willReturnSuccessfulLogin();
+        mockAPI.willReturnSuccessfulLogin();
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         client.loginWithOAuthAccessToken("fbtoken", "facebook")
@@ -423,8 +422,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldLoginWithNativeSocialToken() throws Exception {
-        mockAPI
-                .willReturnSuccessfulLogin();
+        mockAPI.willReturnSuccessfulLogin();
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         client.loginWithNativeSocialToken("test-token-value", "test-token-type")
@@ -598,8 +596,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldLoginWithEmailOnlySyncWithOTPGrantIfOIDCConformant() throws Exception {
-        mockAPI
-                .willReturnSuccessfulLogin()
+        mockAPI.willReturnSuccessfulLogin()
                 .willReturnTokenInfo();
 
         Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
@@ -736,8 +733,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldLoginWithEmailOnlySync() throws Exception {
-        mockAPI
-                .willReturnSuccessfulLogin()
+        mockAPI.willReturnSuccessfulLogin()
                 .willReturnTokenInfo();
 
         final Credentials credentials = client
@@ -1307,8 +1303,7 @@ public class AuthenticationAPIClientTest {
     public void shouldGetCustomizedDelegationRequestWithIdTokenSync() throws Exception {
         mockAPI.willReturnNewIdToken();
 
-        client
-                .delegationWithIdToken(ID_TOKEN, "custom_api_type")
+        client.delegationWithIdToken(ID_TOKEN, "custom_api_type")
                 .setScope("custom_scope")
                 .setTarget("custom_target")
                 .execute();
@@ -1961,8 +1956,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldParseUnauthorizedPKCEError() throws Exception {
-        mockAPI
-                .willReturnPlainTextUnauthorized();
+        mockAPI.willReturnPlainTextUnauthorized();
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         client.token("code", "http://redirect.uri")
