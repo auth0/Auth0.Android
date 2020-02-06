@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.22.0](https://github.com/auth0/Auth0.Android/tree/1.22.0) (2020-02-06)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.21.0...1.22.0)
+
+**Added**
+- Add support for Social Native Token Exchange endpoint [\#281](https://github.com/auth0/Auth0.Android/pull/281) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.21.0](https://github.com/auth0/Auth0.Android/tree/1.21.0) (2020-01-29)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.20.1...1.21.0)
 
