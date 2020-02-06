@@ -60,6 +60,7 @@ import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_MFA_O
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSWORD;
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP;
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSWORD_REALM;
+import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE;
 import static com.auth0.android.authentication.ParameterBuilder.ID_TOKEN_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.SCOPE_OPENID;
 
@@ -87,6 +88,8 @@ public class AuthenticationAPIClient {
     private static final String TOKEN_KEY = "token";
     private static final String MFA_TOKEN_KEY = "mfa_token";
     private static final String ONE_TIME_PASSWORD_KEY = "otp";
+    private static final String SUBJECT_TOKEN_KEY = "subject_token";
+    private static final String SUBJECT_TOKEN_TYPE_KEY = "subject_token_type";
     private static final String DELEGATION_PATH = "delegation";
     private static final String ACCESS_TOKEN_PATH = "access_token";
     private static final String SIGN_UP_PATH = "signup";
@@ -312,6 +315,45 @@ public class AuthenticationAPIClient {
                 .setClientId(getClientId())
                 .setConnection(connection)
                 .setAccessToken(token)
+                .asDictionary();
+
+        return factory.authenticationPOST(url, client, gson)
+                .addAuthenticationParameters(parameters);
+    }
+
+    /**
+     * Log in a user using a token obtained from a Native Social Identity Provider, such as Facebook, using <a href="https://auth0.com/docs/api/authentication#token-exchange-for-native-social">'\oauth\token' endpoint</a>
+     * The default scope used is 'openid'.
+     * Example usage:
+     * <pre>
+     * {@code
+     * client.loginWithNativeSocialToken("{subject token}", "{subject token type}")
+     *      .start(new BaseCallback<Credentials>() {
+     *          {@literal}Override
+     *          public void onSuccess(Credentials payload) { }
+     *
+     *          {@literal}Override
+     *          public void onFailure(AuthenticationException error) { }
+     *      });
+     * }
+     * </pre>
+     *
+     * @param token     the subject token, typically obtained through the Identity Provider's SDK
+     * @param tokenType the subject token type that is associated with this Identity Provider. e.g. 'http://auth0.com/oauth/token-type/facebook-session-access-token'
+     * @return a request to configure and start that will yield {@link Credentials}
+     */
+    @SuppressWarnings("WeakerAccess")
+    public AuthenticationRequest loginWithNativeSocialToken(@NonNull String token, @NonNull String tokenType) {
+        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+                .addPathSegment(OAUTH_PATH)
+                .addPathSegment(TOKEN_PATH)
+                .build();
+
+        Map<String, Object> parameters = ParameterBuilder.newAuthenticationBuilder()
+                .setGrantType(GRANT_TYPE_TOKEN_EXCHANGE)
+                .setClientId(getClientId())
+                .set(SUBJECT_TOKEN_KEY, token)
+                .set(SUBJECT_TOKEN_TYPE_KEY, tokenType)
                 .asDictionary();
 
         return factory.authenticationPOST(url, client, gson)
