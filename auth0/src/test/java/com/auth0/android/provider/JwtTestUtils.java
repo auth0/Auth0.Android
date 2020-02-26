@@ -5,7 +5,6 @@ import androidx.annotation.NonNull;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -107,11 +106,10 @@ class JwtTestUtils {
             s.update((byte) '.');
             s.update(encodedBodyBytes);
             byte[] signatureBytes = s.sign();
-            signature = Base64.encodeToString(signatureBytes,
-                Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
+            signature = Base64.encodeToString(signatureBytes, Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
         }
-        String encodedHeader = new String(encodedHeaderBytes, StandardCharsets.UTF_8);
-        String encodedBody = new String(encodedBodyBytes, StandardCharsets.UTF_8);
+        String encodedHeader = new String(encodedHeaderBytes, "UTF-8");
+        String encodedBody = new String(encodedBodyBytes, "UTF-8");
 
         return String.format("%s.%s.%s", encodedHeader, encodedBody, signature);
     }

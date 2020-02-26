@@ -5,7 +5,6 @@ import android.util.Base64;
 import androidx.annotation.VisibleForTesting;
 import com.google.gson.Gson;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -50,7 +49,7 @@ public class Telemetry {
         }
         values.put(ENV_KEY, env);
         String json = new Gson().toJson(values);
-        Charset utf8 = StandardCharsets.UTF_8;
+        Charset utf8 = Charset.forName("UTF-8");
         byte[] bytes = json.getBytes(utf8);
         value = new String(Base64.encode(bytes, Base64.URL_SAFE | Base64.NO_WRAP), utf8);
     }

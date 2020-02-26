@@ -44,22 +44,22 @@ import java.util.Date;
 public class Credentials {
 
     @SerializedName("access_token")
-    private final String accessToken;
+    private String accessToken;
 
     @SerializedName("token_type")
-    private final String type;
+    private String type;
 
     @SerializedName("id_token")
-    private final String idToken;
+    private String idToken;
 
     @SerializedName("refresh_token")
-    private final String refreshToken;
+    private String refreshToken;
 
     @SerializedName("expires_in")
     private Long expiresIn;
 
     @SerializedName("scope")
-    private final String scope;
+    private String scope;
 
     @SerializedName("expires_at")
     private Date expiresAt;

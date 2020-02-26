@@ -3,7 +3,7 @@ package com.auth0.android.provider;
 import android.util.Base64;
 import android.util.Log;
 import androidx.annotation.NonNull;
-import java.nio.charset.StandardCharsets;
+import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -21,7 +21,12 @@ class AlgorithmHelper {
 
     byte[] getASCIIBytes(String value) {
         byte[] input;
-        input = value.getBytes(StandardCharsets.US_ASCII);
+        try {
+            input = value.getBytes(US_ASCII);
+        } catch (UnsupportedEncodingException e) {
+            Log.e(TAG, "Could not convert string to an ASCII byte array", e);
+            throw new IllegalStateException("Could not convert string to an ASCII byte array", e);
+        }
         return input;
     }
 
