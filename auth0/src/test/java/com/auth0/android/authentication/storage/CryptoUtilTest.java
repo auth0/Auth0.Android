@@ -1,5 +1,18 @@
 package com.auth0.android.authentication.storage;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.never;
+import static org.powermock.api.mockito.PowerMockito.doReturn;
+import static org.powermock.api.mockito.PowerMockito.doThrow;
+import static org.powermock.api.mockito.PowerMockito.mock;
+
 import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.Intent;
@@ -7,27 +20,10 @@ import android.os.Build;
 import android.security.KeyPairGeneratorSpec;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
-import android.support.annotation.RequiresApi;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.robolectric.RuntimeEnvironment;
-import org.robolectric.annotation.Config;
-import org.robolectric.util.ReflectionHelpers;
-
+import androidx.annotation.RequiresApi;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
@@ -44,7 +40,6 @@ import java.security.cert.CertificateException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
-
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -53,19 +48,21 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.security.auth.x500.X500Principal;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.never;
-import static org.powermock.api.mockito.PowerMockito.doReturn;
-import static org.powermock.api.mockito.PowerMockito.doThrow;
-import static org.powermock.api.mockito.PowerMockito.mock;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.robolectric.RuntimeEnvironment;
+import org.robolectric.annotation.Config;
+import org.robolectric.util.ReflectionHelpers;
 
 /**
  * Created by lbalmaceda on 8/24/17.
@@ -87,12 +84,12 @@ public class CryptoUtilTest {
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
-    private Storage storage = PowerMockito.mock(Storage.class);
-    private Cipher rsaCipher = PowerMockito.mock(Cipher.class);
-    private Cipher aesCipher = PowerMockito.mock(Cipher.class);
-    private KeyStore keyStore = PowerMockito.mock(KeyStore.class);
-    private KeyPairGenerator keyPairGenerator = PowerMockito.mock(KeyPairGenerator.class);
-    private KeyGenerator keyGenerator = PowerMockito.mock(KeyGenerator.class);
+    private final Storage storage = PowerMockito.mock(Storage.class);
+    private final Cipher rsaCipher = PowerMockito.mock(Cipher.class);
+    private final Cipher aesCipher = PowerMockito.mock(Cipher.class);
+    private final KeyStore keyStore = PowerMockito.mock(KeyStore.class);
+    private final KeyPairGenerator keyPairGenerator = PowerMockito.mock(KeyPairGenerator.class);
+    private final KeyGenerator keyGenerator = PowerMockito.mock(KeyGenerator.class);
 
     private CryptoUtil cryptoUtil;
 

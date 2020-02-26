@@ -24,10 +24,18 @@
 
 package com.auth0.android.authentication;
 
-import android.content.Context;
-import android.support.annotation.NonNull;
-import android.support.annotation.VisibleForTesting;
+import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_AUTHORIZATION_CODE;
+import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_MFA_OTP;
+import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSWORD;
+import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP;
+import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSWORD_REALM;
+import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE;
+import static com.auth0.android.authentication.ParameterBuilder.ID_TOKEN_KEY;
+import static com.auth0.android.authentication.ParameterBuilder.SCOPE_OPENID;
 
+import android.content.Context;
+import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import com.auth0.android.Auth0;
 import com.auth0.android.authentication.request.DatabaseConnectionRequest;
 import com.auth0.android.authentication.request.DelegationRequest;
@@ -51,18 +59,8 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.OkHttpClient;
-
 import java.security.PublicKey;
 import java.util.Map;
-
-import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_AUTHORIZATION_CODE;
-import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_MFA_OTP;
-import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSWORD;
-import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP;
-import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSWORD_REALM;
-import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE;
-import static com.auth0.android.authentication.ParameterBuilder.ID_TOKEN_KEY;
-import static com.auth0.android.authentication.ParameterBuilder.SCOPE_OPENID;
 
 /**
  * API client for Auth0 Authentication API.

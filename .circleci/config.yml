@@ -5,24 +5,24 @@ jobs:
       GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx2048m -XX:+HeapDumpOnOutOfMemoryError"
       _JAVA_OPTIONS: -Xms512m -Xmx1024m
     docker:
-      - image: circleci/android:api-28-alpha
+      - image: circleci/android:api-28
 
     steps:
     - checkout
-    
+
     - restore_cache:
         keys:
-        - v1-dep-{{ .Branch }}-
-    
+          - v1-dep-{{ .Branch }}-
+
     - save_cache:
         key: v1-dep-{{ .Branch }}-{{ epoch }}
         paths:
-        - ~/.gradle
-        - ~/.android
-        - /usr/local/android-sdk-linux/extras
-    
-    - run: ./gradlew clean test jacocoTestReport --continue --console=plain
+          - ~/.gradle
+          - ~/.android
+          - /usr/local/android-sdk-linux/extras
+
+    - run: ./gradlew clean test jacocoTestReport --console=plain
     - run:
-          name: Upload Coverage
-          when: on_success
-          command: bash <(curl -s https://codecov.io/bash) -Z -C $CIRCLE_SHA1
+        name: Upload Coverage
+        when: on_success
+        command: bash <(curl -s https://codecov.io/bash) -Z -C $CIRCLE_SHA1

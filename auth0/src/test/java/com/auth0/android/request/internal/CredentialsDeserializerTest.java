@@ -1,23 +1,20 @@
 package com.auth0.android.request.internal;
 
-import android.support.annotation.NonNull;
-
-import com.auth0.android.result.Credentials;
-import com.auth0.android.result.CredentialsMock;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import org.junit.Before;
-import org.junit.Test;
-
-import java.io.FileReader;
-import java.util.Calendar;
-import java.util.Date;
-
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+
+import androidx.annotation.NonNull;
+import com.auth0.android.result.Credentials;
+import com.auth0.android.result.CredentialsMock;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import java.io.FileReader;
+import java.util.Calendar;
+import java.util.Date;
+import org.junit.Before;
+import org.junit.Test;
 
 public class CredentialsDeserializerTest {
 

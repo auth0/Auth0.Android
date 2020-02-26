@@ -24,8 +24,7 @@
 
 package com.auth0.android.request.internal;
 
-import android.support.annotation.NonNull;
-
+import androidx.annotation.NonNull;
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.request.ErrorBuilder;
@@ -36,7 +35,6 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.OkHttpClient;
-
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;

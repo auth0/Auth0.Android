@@ -27,8 +27,8 @@ package com.auth0.android.provider;
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
-import android.support.annotation.Nullable;
 import android.util.Log;
+import androidx.annotation.Nullable;
 
 class AuthorizeResult {
 

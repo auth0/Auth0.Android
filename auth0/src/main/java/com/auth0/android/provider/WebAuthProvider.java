@@ -24,25 +24,6 @@
 
 package com.auth0.android.provider;
 
-import android.annotation.SuppressLint;
-import android.app.Activity;
-import android.content.ActivityNotFoundException;
-import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.net.Uri;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
-import android.util.Log;
-
-import com.auth0.android.Auth0;
-import com.auth0.android.Auth0Exception;
-import com.auth0.android.authentication.AuthenticationException;
-
-import java.util.HashMap;
-import java.util.Map;
-
 import static com.auth0.android.provider.OAuthManager.KEY_CONNECTION;
 import static com.auth0.android.provider.OAuthManager.KEY_MAX_AGE;
 import static com.auth0.android.provider.OAuthManager.KEY_NONCE;
@@ -50,6 +31,23 @@ import static com.auth0.android.provider.OAuthManager.KEY_RESPONSE_TYPE;
 import static com.auth0.android.provider.OAuthManager.KEY_STATE;
 import static com.auth0.android.provider.OAuthManager.RESPONSE_TYPE_CODE;
 import static com.auth0.android.provider.OAuthManager.RESPONSE_TYPE_ID_TOKEN;
+
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.content.ActivityNotFoundException;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.util.Log;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+import com.auth0.android.Auth0;
+import com.auth0.android.Auth0Exception;
+import com.auth0.android.authentication.AuthenticationException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * OAuth2 Web Authentication Provider.

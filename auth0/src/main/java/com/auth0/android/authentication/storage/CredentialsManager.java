@@ -1,18 +1,16 @@
 package com.auth0.android.authentication.storage;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.VisibleForTesting;
+import static android.text.TextUtils.isEmpty;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.AuthenticationCallback;
 import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.jwt.JWT;
 import com.auth0.android.result.Credentials;
-
 import java.util.Date;
-
-import static android.text.TextUtils.isEmpty;
 
 /**
  * Class that handles credentials and allows to save and retrieve them.

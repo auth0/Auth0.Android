@@ -1,11 +1,9 @@
 package com.auth0.android.request.internal;
 
-import android.support.annotation.VisibleForTesting;
-
+import androidx.annotation.VisibleForTesting;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
-
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 

@@ -24,8 +24,9 @@
 
 package com.auth0.android.request.internal;
 
-import android.support.annotation.VisibleForTesting;
+import static com.auth0.android.request.internal.ResponseUtils.closeStream;
 
+import androidx.annotation.VisibleForTesting;
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.NetworkErrorException;
 import com.auth0.android.RequestBodyBuildException;
@@ -45,13 +46,10 @@ import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
 import com.squareup.okhttp.ResponseBody;
-
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
-
-import static com.auth0.android.request.internal.ResponseUtils.closeStream;
 
 abstract class BaseRequest<T, U extends Auth0Exception> implements ParameterizableRequest<T, U>, AuthorizableRequest<T, U>, Callback {
 

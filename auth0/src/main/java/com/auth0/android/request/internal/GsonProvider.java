@@ -1,14 +1,12 @@
 package com.auth0.android.request.internal;
 
-import android.support.annotation.VisibleForTesting;
-
+import androidx.annotation.VisibleForTesting;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.UserProfile;
 import com.auth0.android.util.JsonRequiredTypeAdapterFactory;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-
 import java.lang.reflect.Type;
 import java.security.PublicKey;
 import java.text.SimpleDateFormat;

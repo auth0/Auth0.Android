@@ -24,10 +24,9 @@
 
 package com.auth0.android.provider;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.VisibleForTesting;
 import android.util.Log;
-
+import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.BaseCallback;

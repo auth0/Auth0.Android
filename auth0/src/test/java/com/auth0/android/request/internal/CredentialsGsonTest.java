@@ -1,22 +1,5 @@
 package com.auth0.android.request.internal;
 
-import android.support.annotation.NonNull;
-
-import com.auth0.android.result.Credentials;
-import com.auth0.android.result.CredentialsMock;
-import com.google.gson.JsonParseException;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-
-import java.io.IOException;
-import java.io.Reader;
-import java.io.StringReader;
-import java.util.Calendar;
-import java.util.Date;
-
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.closeTo;
@@ -26,7 +9,22 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 
+import androidx.annotation.NonNull;
+import com.auth0.android.result.Credentials;
+import com.auth0.android.result.CredentialsMock;
+import com.google.gson.JsonParseException;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.Calendar;
+import java.util.Date;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
 public class CredentialsGsonTest extends GsonBaseTest {
+
     private static final String OPEN_ID_OFFLINE_ACCESS_CREDENTIALS = "src/test/resources/credentials_openid_refresh_token.json";
     private static final String OPEN_ID_CREDENTIALS = "src/test/resources/credentials_openid.json";
     private static final String BASIC_CREDENTIALS = "src/test/resources/credentials.json";

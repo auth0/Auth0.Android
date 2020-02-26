@@ -26,8 +26,7 @@ package com.auth0.android.management;
 
 
 import android.content.Context;
-import android.support.annotation.VisibleForTesting;
-
+import androidx.annotation.VisibleForTesting;
 import com.auth0.android.Auth0;
 import com.auth0.android.authentication.ParameterBuilder;
 import com.auth0.android.request.ErrorBuilder;
@@ -43,7 +42,6 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.OkHttpClient;
-
 import java.util.List;
 import java.util.Map;
 
@@ -68,7 +66,8 @@ public class UsersAPIClient {
     private static final String USER_METADATA_KEY = "user_metadata";
 
     private final Auth0 auth0;
-    @VisibleForTesting final OkHttpClient client;
+    @VisibleForTesting
+    final OkHttpClient client;
     private final Gson gson;
     private final RequestFactory factory;
     private final ErrorBuilder<ManagementException> mgmtErrorBuilder;

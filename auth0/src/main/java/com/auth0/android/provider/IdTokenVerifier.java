@@ -1,14 +1,12 @@
 package com.auth0.android.provider;
 
-import android.support.annotation.NonNull;
+import static android.text.TextUtils.isEmpty;
 
+import androidx.annotation.NonNull;
 import com.auth0.android.jwt.JWT;
-
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-
-import static android.text.TextUtils.isEmpty;
 
 class IdTokenVerifier {
     private static final Integer DEFAULT_CLOCK_SKEW = 60; //1 min = 60 sec

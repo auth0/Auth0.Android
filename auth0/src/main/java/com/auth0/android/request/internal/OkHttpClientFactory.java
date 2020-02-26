@@ -1,23 +1,20 @@
 package com.auth0.android.request.internal;
 
 import android.os.Build;
-import android.support.annotation.VisibleForTesting;
 import android.util.Log;
-
+import androidx.annotation.VisibleForTesting;
 import com.squareup.okhttp.ConnectionSpec;
 import com.squareup.okhttp.Interceptor;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Protocol;
 import com.squareup.okhttp.TlsVersion;
 import com.squareup.okhttp.logging.HttpLoggingInterceptor;
-
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
 import javax.net.ssl.SSLContext;
 
 /**

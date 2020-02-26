@@ -25,8 +25,7 @@
 package com.auth0.android.provider;
 
 import android.app.Dialog;
-import android.support.annotation.NonNull;
-
+import androidx.annotation.NonNull;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.result.Credentials;
 

@@ -3,9 +3,9 @@ package com.auth0.android.authentication.storage;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.text.TextUtils;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 /**
  * An implementation of {@link Storage} that uses {@link android.content.SharedPreferences} in Context.MODE_PRIVATE to store the values.
