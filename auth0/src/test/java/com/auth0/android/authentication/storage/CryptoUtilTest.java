@@ -30,6 +30,7 @@ import org.robolectric.util.ReflectionHelpers;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPairGenerator;
@@ -42,6 +43,7 @@ import java.security.UnrecoverableEntryException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -551,7 +553,40 @@ public class CryptoUtilTest {
         PowerMockito.mockStatic(Base64.class);
         PowerMockito.when(Base64.encode(sampleBytes, Base64.DEFAULT)).thenReturn("data".getBytes());
         PowerMockito.when(storage.retrieveString(KEY_ALIAS)).thenReturn(null);
+
+        SecretKey secretKey = PowerMockito.mock(SecretKey.class);
+        PowerMockito.when(keyGenerator.generateKey()).thenReturn(secretKey);
+        PowerMockito.when(secretKey.getEncoded()).thenReturn(sampleBytes);
         doReturn(sampleBytes).when(cryptoUtil).RSAEncrypt(sampleBytes);
+
+
+        final byte[] aesKey = cryptoUtil.getAESKey();
+
+        Mockito.verify(keyGenerator).init(256);
+        Mockito.verify(keyGenerator).generateKey();
+        Mockito.verify(storage).store(KEY_ALIAS, "data");
+
+        assertThat(aesKey, is(notNullValue()));
+        assertThat(aesKey, is(sampleBytes));
+    }
+
+    @Test
+    public void shouldCreateAESKeyIfStoredOneIsEmpty() throws BadPaddingException, IllegalBlockSizeException {
+        String emptyString = "";
+        byte[] sampleBytes = emptyString.getBytes();
+        byte[] sampleOutput = new byte[]{99, 33, 11};
+        PowerMockito.mockStatic(Base64.class);
+        PowerMockito.when(Base64.decode(emptyString, Base64.DEFAULT)).thenReturn(sampleBytes);
+        PowerMockito.when(Base64.encode(sampleBytes, Base64.DEFAULT)).thenReturn("data".getBytes());
+        PowerMockito.when(storage.retrieveString(KEY_ALIAS)).thenReturn(emptyString);
+        doReturn(sampleBytes).when(cryptoUtil).RSAEncrypt(sampleBytes);
+
+        //Assume RSAKeyEntry exists
+        PrivateKey privateKey = PowerMockito.mock(PrivateKey.class);
+        KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
+        doReturn(privateKey).when(privateKeyEntry).getPrivateKey();
+        doReturn(privateKeyEntry).when(cryptoUtil).getRSAKeyEntry();
+        doReturn(sampleOutput).when(rsaCipher).doFinal(sampleBytes);
 
         SecretKey secretKey = PowerMockito.mock(SecretKey.class);
         PowerMockito.when(secretKey.getEncoded()).thenReturn(sampleBytes);
@@ -570,10 +605,14 @@ public class CryptoUtilTest {
 
     @Test
     public void shouldUseExistingAESKey() {
-        byte[] sampleBytes = new byte[]{0, 1, 2, 3, 4, 5};
+        final int AES_KEY_SIZE = 256;
+        byte[] sampleBytes = new byte[AES_KEY_SIZE / 8];
+        Arrays.fill(sampleBytes, (byte) 1);
+        String aesString = "non null string";
+
         PowerMockito.mockStatic(Base64.class);
-        PowerMockito.when(Base64.decode("data", Base64.DEFAULT)).thenReturn(sampleBytes);
-        PowerMockito.when(storage.retrieveString(KEY_ALIAS)).thenReturn("data");
+        PowerMockito.when(Base64.decode(aesString, Base64.DEFAULT)).thenReturn(sampleBytes);
+        PowerMockito.when(storage.retrieveString(KEY_ALIAS)).thenReturn(aesString);
         doReturn(sampleBytes).when(cryptoUtil).RSADecrypt(sampleBytes);
 
         final byte[] aesKey = cryptoUtil.getAESKey();

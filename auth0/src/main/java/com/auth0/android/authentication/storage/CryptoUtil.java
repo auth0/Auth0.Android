@@ -266,7 +266,7 @@ class CryptoUtil {
              */
             Log.e(TAG, "The device can't decrypt input using a RSA Key.", e);
             throw new IncompatibleDeviceException(e);
-        } catch (IllegalBlockSizeException | BadPaddingException e) {
+        } catch (IllegalArgumentException | IllegalBlockSizeException | BadPaddingException e) {
             /*
              * Any of this exceptions mean the encrypted input is somehow corrupted and cannot be recovered.
              * Delete the AES keys since those originated the input.
@@ -275,7 +275,8 @@ class CryptoUtil {
              *      Thrown only on encrypt mode.
              * - BadPaddingException:
              *      Thrown if the input doesn't contain the proper padding bytes.
-             *
+             * - IllegalArgumentException
+             *      Thrown when doFinal is called with a null input.
              */
             deleteAESKeys();
             throw new CryptoException("The RSA encrypted input is corrupted and cannot be recovered. Please discard it.", e);
@@ -342,7 +343,13 @@ class CryptoUtil {
         if (encodedEncryptedAES != null) {
             //Return existing key
             byte[] encryptedAES = Base64.decode(encodedEncryptedAES, Base64.DEFAULT);
-            return RSADecrypt(encryptedAES);
+            byte[] existingAES = RSADecrypt(encryptedAES);
+            final int aesExpectedLengthInBytes = AES_KEY_SIZE / 8;
+            //Prevent returning an 'Empty key' (invalid/corrupted) that was mistakenly saved
+            if (existingAES != null && existingAES.length == aesExpectedLengthInBytes) {
+                //Key exists and has the right size
+                return existingAES;
+            }
         }
         //Key doesn't exist. Generate new AES
         try {
