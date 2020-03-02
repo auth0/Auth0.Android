@@ -24,6 +24,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
+import java.security.ProviderException;
 import java.security.UnrecoverableEntryException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -142,7 +143,7 @@ class CryptoUtil {
             generator.generateKeyPair();
 
             return getKeyEntryCompat(keyStore);
-        } catch (CertificateException | InvalidAlgorithmParameterException | NoSuchProviderException | NoSuchAlgorithmException | KeyStoreException e) {
+        } catch (CertificateException | InvalidAlgorithmParameterException | NoSuchProviderException | NoSuchAlgorithmException | KeyStoreException | ProviderException e) {
             /*
              * This exceptions are safe to be ignored:
              *
@@ -157,6 +158,9 @@ class CryptoUtil {
              *      Thrown if Key Size is other than 512, 768, 1024, 2048, 3072, 4096
              *      or if Padding is other than RSA/ECB/PKCS1Padding, introduced on API 18
              *      or if Block Mode is other than ECB
+             * - ProviderException:
+             *      Thrown on some modified devices when KeyPairGenerator#generateKeyPair is called.
+             *      See: https://www.bountysource.com/issues/45527093-keystore-issues
              *
              * However if any of this exceptions happens to be thrown (OEMs often change their Android distribution source code),
              * all the checks performed in this class wouldn't matter and the device would not be compatible at all with it.

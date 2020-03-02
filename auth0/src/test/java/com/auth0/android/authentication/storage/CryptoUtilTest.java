@@ -39,6 +39,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
+import java.security.ProviderException;
 import java.security.UnrecoverableEntryException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -487,6 +488,16 @@ public class CryptoUtilTest {
         exception.expectMessage("The device is not compatible with the CryptoUtil class");
 
         doThrow(new CertificateException()).when(keyStore).load(any(KeyStore.LoadStoreParameter.class));
+
+        cryptoUtil.getRSAKeyEntry();
+    }
+
+    @Test
+    public void shouldThrowOnProviderExceptionWhenTryingToObtainRSAKeys() throws Exception {
+        exception.expect(IncompatibleDeviceException.class);
+        exception.expectMessage("The device is not compatible with the CryptoUtil class");
+
+        doThrow(new ProviderException()).when(keyStore).load(any(KeyStore.LoadStoreParameter.class));
 
         cryptoUtil.getRSAKeyEntry();
     }
