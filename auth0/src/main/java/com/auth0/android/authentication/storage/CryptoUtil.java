@@ -94,8 +94,11 @@ class CryptoUtil {
             KeyStore keyStore = KeyStore.getInstance(ANDROID_KEY_STORE);
             keyStore.load(null);
             if (keyStore.containsAlias(KEY_ALIAS)) {
-                //Return existing key
-                return getKeyEntryCompat(keyStore);
+                //Return existing key. On weird cases, the alias would be present but the key not
+                KeyStore.PrivateKeyEntry existingKey = getKeyEntryCompat(keyStore);
+                if (existingKey != null) {
+                    return existingKey;
+                }
             }
 
             Calendar start = Calendar.getInstance();
@@ -191,7 +194,7 @@ class CryptoUtil {
      * the KeyStore using the {@link #KEY_ALIAS}.
      *
      * @param keyStore the KeyStore instance. Must be initialized (loaded).
-     * @return the key entry stored in the KeyStore.
+     * @return the key entry stored in the KeyStore or null if not present.
      * @throws KeyStoreException           if the keystore was not initialized.
      * @throws NoSuchAlgorithmException    if device is not compatible with RSA algorithm. RSA is available since API 18.
      * @throws UnrecoverableEntryException if key cannot be recovered. Probably because it was invalidated by a Lock Screen change.
@@ -209,6 +212,9 @@ class CryptoUtil {
         }
 
         Certificate certificate = keyStore.getCertificate(KEY_ALIAS);
+        if (certificate == null) {
+            return null;
+        }
         return new KeyStore.PrivateKeyEntry(privateKey, new Certificate[]{certificate});
     }
 
