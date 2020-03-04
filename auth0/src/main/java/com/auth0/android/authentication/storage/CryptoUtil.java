@@ -24,6 +24,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
+import java.security.ProviderException;
 import java.security.UnrecoverableEntryException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -93,8 +94,11 @@ class CryptoUtil {
             KeyStore keyStore = KeyStore.getInstance(ANDROID_KEY_STORE);
             keyStore.load(null);
             if (keyStore.containsAlias(KEY_ALIAS)) {
-                //Return existing key
-                return getKeyEntryCompat(keyStore);
+                //Return existing key. On weird cases, the alias would be present but the key not
+                KeyStore.PrivateKeyEntry existingKey = getKeyEntryCompat(keyStore);
+                if (existingKey != null) {
+                    return existingKey;
+                }
             }
 
             Calendar start = Calendar.getInstance();
@@ -142,7 +146,7 @@ class CryptoUtil {
             generator.generateKeyPair();
 
             return getKeyEntryCompat(keyStore);
-        } catch (CertificateException | InvalidAlgorithmParameterException | NoSuchProviderException | NoSuchAlgorithmException | KeyStoreException e) {
+        } catch (CertificateException | InvalidAlgorithmParameterException | NoSuchProviderException | NoSuchAlgorithmException | KeyStoreException | ProviderException e) {
             /*
              * This exceptions are safe to be ignored:
              *
@@ -157,6 +161,9 @@ class CryptoUtil {
              *      Thrown if Key Size is other than 512, 768, 1024, 2048, 3072, 4096
              *      or if Padding is other than RSA/ECB/PKCS1Padding, introduced on API 18
              *      or if Block Mode is other than ECB
+             * - ProviderException:
+             *      Thrown on some modified devices when KeyPairGenerator#generateKeyPair is called.
+             *      See: https://www.bountysource.com/issues/45527093-keystore-issues
              *
              * However if any of this exceptions happens to be thrown (OEMs often change their Android distribution source code),
              * all the checks performed in this class wouldn't matter and the device would not be compatible at all with it.
@@ -187,7 +194,7 @@ class CryptoUtil {
      * the KeyStore using the {@link #KEY_ALIAS}.
      *
      * @param keyStore the KeyStore instance. Must be initialized (loaded).
-     * @return the key entry stored in the KeyStore.
+     * @return the key entry stored in the KeyStore or null if not present.
      * @throws KeyStoreException           if the keystore was not initialized.
      * @throws NoSuchAlgorithmException    if device is not compatible with RSA algorithm. RSA is available since API 18.
      * @throws UnrecoverableEntryException if key cannot be recovered. Probably because it was invalidated by a Lock Screen change.
@@ -205,6 +212,9 @@ class CryptoUtil {
         }
 
         Certificate certificate = keyStore.getCertificate(KEY_ALIAS);
+        if (certificate == null) {
+            return null;
+        }
         return new KeyStore.PrivateKeyEntry(privateKey, new Certificate[]{certificate});
     }
 
@@ -266,7 +276,7 @@ class CryptoUtil {
              */
             Log.e(TAG, "The device can't decrypt input using a RSA Key.", e);
             throw new IncompatibleDeviceException(e);
-        } catch (IllegalBlockSizeException | BadPaddingException e) {
+        } catch (IllegalArgumentException | IllegalBlockSizeException | BadPaddingException e) {
             /*
              * Any of this exceptions mean the encrypted input is somehow corrupted and cannot be recovered.
              * Delete the AES keys since those originated the input.
@@ -275,7 +285,8 @@ class CryptoUtil {
              *      Thrown only on encrypt mode.
              * - BadPaddingException:
              *      Thrown if the input doesn't contain the proper padding bytes.
-             *
+             * - IllegalArgumentException
+             *      Thrown when doFinal is called with a null input.
              */
             deleteAESKeys();
             throw new CryptoException("The RSA encrypted input is corrupted and cannot be recovered. Please discard it.", e);
@@ -342,7 +353,13 @@ class CryptoUtil {
         if (encodedEncryptedAES != null) {
             //Return existing key
             byte[] encryptedAES = Base64.decode(encodedEncryptedAES, Base64.DEFAULT);
-            return RSADecrypt(encryptedAES);
+            byte[] existingAES = RSADecrypt(encryptedAES);
+            final int aesExpectedLengthInBytes = AES_KEY_SIZE / 8;
+            //Prevent returning an 'Empty key' (invalid/corrupted) that was mistakenly saved
+            if (existingAES != null && existingAES.length == aesExpectedLengthInBytes) {
+                //Key exists and has the right size
+                return existingAES;
+            }
         }
         //Key doesn't exist. Generate new AES
         try {

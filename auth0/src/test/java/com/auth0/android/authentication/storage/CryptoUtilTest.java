@@ -38,10 +38,12 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
+import java.security.ProviderException;
 import java.security.UnrecoverableEntryException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -383,6 +385,62 @@ public class CryptoUtilTest {
     @RequiresApi(api = Build.VERSION_CODES.P)
     @Test
     @Config(sdk = 28)
+    public void shouldCreateNewRSAKeyPairWhenExistingRSAKeyPairCannotBeRebuiltOnAPI28AndUp() throws Exception {
+        ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 28);
+        PrivateKey privateKey = PowerMockito.mock(PrivateKey.class);
+
+        //This is required to trigger the fallback when alias is present but key is not
+        PowerMockito.when(keyStore.containsAlias(KEY_ALIAS)).thenReturn(true);
+        PowerMockito.when(keyStore.getKey(KEY_ALIAS, null)).thenReturn(privateKey).thenReturn(null);
+        PowerMockito.when(keyStore.getCertificate(KEY_ALIAS)).thenReturn(null);
+        //This is required to trigger finding the key after generating it
+        KeyStore.PrivateKeyEntry expectedEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
+        PowerMockito.when(keyStore.getEntry(KEY_ALIAS, null)).thenReturn(expectedEntry);
+
+        //Tests no instantiation of PrivateKeyEntry
+        PowerMockito.verifyZeroInteractions(KeyStore.PrivateKeyEntry.class);
+
+        //Creation assertion
+        KeyGenParameterSpec spec = PowerMockito.mock(KeyGenParameterSpec.class);
+        KeyGenParameterSpec.Builder builder = newKeyGenParameterSpecBuilder(spec);
+        PowerMockito.whenNew(KeyGenParameterSpec.Builder.class).withArguments(KEY_ALIAS, KeyProperties.PURPOSE_DECRYPT | KeyProperties.PURPOSE_ENCRYPT).thenReturn(builder);
+
+        ArgumentCaptor<X500Principal> principalCaptor = ArgumentCaptor.forClass(X500Principal.class);
+        ArgumentCaptor<Date> startDateCaptor = ArgumentCaptor.forClass(Date.class);
+        ArgumentCaptor<Date> endDateCaptor = ArgumentCaptor.forClass(Date.class);
+
+
+        final KeyStore.PrivateKeyEntry entry = cryptoUtil.getRSAKeyEntry();
+
+        Mockito.verify(builder).setKeySize(2048);
+        Mockito.verify(builder).setCertificateSubject(principalCaptor.capture());
+        Mockito.verify(builder).setCertificateSerialNumber(BigInteger.ONE);
+        Mockito.verify(builder).setCertificateNotBefore(startDateCaptor.capture());
+        Mockito.verify(builder).setCertificateNotAfter(endDateCaptor.capture());
+        Mockito.verify(builder).setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_RSA_PKCS1);
+        Mockito.verify(builder).setBlockModes(KeyProperties.BLOCK_MODE_ECB);
+        Mockito.verify(keyPairGenerator).initialize(spec);
+        Mockito.verify(keyPairGenerator).generateKeyPair();
+
+        assertThat(principalCaptor.getValue(), is(notNullValue()));
+        assertThat(principalCaptor.getValue().getName(), is(CERTIFICATE_PRINCIPAL));
+
+        assertThat(startDateCaptor.getValue(), is(notNullValue()));
+        long diffMillis = startDateCaptor.getValue().getTime() - new Date().getTime();
+        long days = TimeUnit.MILLISECONDS.toDays(diffMillis);
+        assertThat(days, is(0L)); //Date is Today
+
+        assertThat(endDateCaptor.getValue(), is(notNullValue()));
+        diffMillis = endDateCaptor.getValue().getTime() - new Date().getTime();
+        days = TimeUnit.MILLISECONDS.toDays(diffMillis);
+        assertThat(days, is(greaterThan(25 * 365L))); //Date more than 25 Years in days
+
+        assertThat(entry, is(expectedEntry));
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.P)
+    @Test
+    @Config(sdk = 28)
     public void shouldUseExistingRSAKeyPairRebuildingTheEntryOnAPI28AndUp() throws Exception {
         ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 28);
         KeyStore.PrivateKeyEntry entry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
@@ -490,6 +548,16 @@ public class CryptoUtilTest {
     }
 
     @Test
+    public void shouldThrowOnProviderExceptionWhenTryingToObtainRSAKeys() throws Exception {
+        exception.expect(IncompatibleDeviceException.class);
+        exception.expectMessage("The device is not compatible with the CryptoUtil class");
+
+        doThrow(new ProviderException()).when(keyStore).load(any(KeyStore.LoadStoreParameter.class));
+
+        cryptoUtil.getRSAKeyEntry();
+    }
+
+    @Test
     public void shouldThrowOnNoSuchProviderExceptionWhenTryingToObtainRSAKeys() throws Exception {
         ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 19);
         exception.expect(IncompatibleDeviceException.class);
@@ -551,7 +619,40 @@ public class CryptoUtilTest {
         PowerMockito.mockStatic(Base64.class);
         PowerMockito.when(Base64.encode(sampleBytes, Base64.DEFAULT)).thenReturn("data".getBytes());
         PowerMockito.when(storage.retrieveString(KEY_ALIAS)).thenReturn(null);
+
+        SecretKey secretKey = PowerMockito.mock(SecretKey.class);
+        PowerMockito.when(keyGenerator.generateKey()).thenReturn(secretKey);
+        PowerMockito.when(secretKey.getEncoded()).thenReturn(sampleBytes);
         doReturn(sampleBytes).when(cryptoUtil).RSAEncrypt(sampleBytes);
+
+
+        final byte[] aesKey = cryptoUtil.getAESKey();
+
+        Mockito.verify(keyGenerator).init(256);
+        Mockito.verify(keyGenerator).generateKey();
+        Mockito.verify(storage).store(KEY_ALIAS, "data");
+
+        assertThat(aesKey, is(notNullValue()));
+        assertThat(aesKey, is(sampleBytes));
+    }
+
+    @Test
+    public void shouldCreateAESKeyIfStoredOneIsEmpty() throws BadPaddingException, IllegalBlockSizeException {
+        String emptyString = "";
+        byte[] sampleBytes = emptyString.getBytes();
+        byte[] sampleOutput = new byte[]{99, 33, 11};
+        PowerMockito.mockStatic(Base64.class);
+        PowerMockito.when(Base64.decode(emptyString, Base64.DEFAULT)).thenReturn(sampleBytes);
+        PowerMockito.when(Base64.encode(sampleBytes, Base64.DEFAULT)).thenReturn("data".getBytes());
+        PowerMockito.when(storage.retrieveString(KEY_ALIAS)).thenReturn(emptyString);
+        doReturn(sampleBytes).when(cryptoUtil).RSAEncrypt(sampleBytes);
+
+        //Assume RSAKeyEntry exists
+        PrivateKey privateKey = PowerMockito.mock(PrivateKey.class);
+        KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
+        doReturn(privateKey).when(privateKeyEntry).getPrivateKey();
+        doReturn(privateKeyEntry).when(cryptoUtil).getRSAKeyEntry();
+        doReturn(sampleOutput).when(rsaCipher).doFinal(sampleBytes);
 
         SecretKey secretKey = PowerMockito.mock(SecretKey.class);
         PowerMockito.when(secretKey.getEncoded()).thenReturn(sampleBytes);
@@ -570,10 +671,14 @@ public class CryptoUtilTest {
 
     @Test
     public void shouldUseExistingAESKey() {
-        byte[] sampleBytes = new byte[]{0, 1, 2, 3, 4, 5};
+        final int AES_KEY_SIZE = 256;
+        byte[] sampleBytes = new byte[AES_KEY_SIZE / 8];
+        Arrays.fill(sampleBytes, (byte) 1);
+        String aesString = "non null string";
+
         PowerMockito.mockStatic(Base64.class);
-        PowerMockito.when(Base64.decode("data", Base64.DEFAULT)).thenReturn(sampleBytes);
-        PowerMockito.when(storage.retrieveString(KEY_ALIAS)).thenReturn("data");
+        PowerMockito.when(Base64.decode(aesString, Base64.DEFAULT)).thenReturn(sampleBytes);
+        PowerMockito.when(storage.retrieveString(KEY_ALIAS)).thenReturn(aesString);
         doReturn(sampleBytes).when(cryptoUtil).RSADecrypt(sampleBytes);
 
         final byte[] aesKey = cryptoUtil.getAESKey();
