@@ -76,7 +76,7 @@ dependencies {
     implementation 'com.squareup.okhttp:okhttp:2.7.5'
     implementation 'com.squareup.okhttp:logging-interceptor:2.7.5'
     implementation 'com.google.code.gson:gson:2.8.6'
-    implementation 'com.auth0.android:jwtdecode:1.4.0'
+    implementation 'com.auth0.android:jwtdecode:2.0.0'
 
     testImplementation 'junit:junit:4.13'
     testImplementation 'org.hamcrest:java-hamcrest:2.0.0.0'

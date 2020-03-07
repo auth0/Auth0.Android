@@ -58,6 +58,7 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.robolectric.RuntimeEnvironment;
@@ -69,6 +70,7 @@ import org.robolectric.util.ReflectionHelpers;
  */
 @RequiresApi(api = Build.VERSION_CODES.KITKAT)
 @RunWith(PowerMockRunner.class)
+@PowerMockIgnore("jdk.internal.reflect.*")
 @PrepareForTest({CryptoUtil.class, KeyGenerator.class, TextUtils.class, Build.VERSION.class, Base64.class, Cipher.class, Log.class})
 @Config(sdk = 22)
 public class CryptoUtilTest {
