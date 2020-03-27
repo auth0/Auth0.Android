@@ -113,8 +113,9 @@ public class CredentialsManager {
         authClient.renewAuth(refreshToken).start(new AuthenticationCallback<Credentials>() {
             @Override
             public void onSuccess(Credentials fresh) {
-                //RefreshTokens don't expire. It should remain the same
-                Credentials credentials = new Credentials(fresh.getIdToken(), fresh.getAccessToken(), fresh.getType(), refreshToken, fresh.getExpiresAt(), fresh.getScope());
+                //non-empty refresh token for refresh token rotation scenarios
+                String updatedRefreshToken = isEmpty(fresh.getRefreshToken()) ? refreshToken : fresh.getRefreshToken();
+                Credentials credentials = new Credentials(fresh.getIdToken(), fresh.getAccessToken(), fresh.getType(), updatedRefreshToken, fresh.getExpiresAt(), fresh.getScope());
                 saveCredentials(credentials);
                 callback.onSuccess(credentials);
             }

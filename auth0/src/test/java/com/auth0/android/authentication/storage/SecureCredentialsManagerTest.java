@@ -489,6 +489,55 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
+    public void shouldGetAndSuccessfullyRenewExpiredCredentialsWithRefreshTokenRotation() {
+        Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS);
+        insertTestCredentials(false, true, true, expiresAt);
+
+        Date newDate = new Date(123412341234L);
+        JWT jwtMock = mock(JWT.class);
+        when(jwtMock.getExpiresAt()).thenReturn(expiresAt);
+        when(jwtDecoder.decode("newId")).thenReturn(jwtMock);
+        when(client.renewAuth("refreshToken")).thenReturn(request);
+
+        manager.getCredentials(callback);
+        verify(request).start(requestCallbackCaptor.capture());
+
+        //Trigger success
+        Credentials renewedCredentials = new Credentials("newId", "newAccess", "newType", "rotatedRefreshToken", newDate, "newScope");
+        String expectedJson = gson.toJson(renewedCredentials);
+        when(crypto.encrypt(expectedJson.getBytes())).thenReturn(expectedJson.getBytes());
+        requestCallbackCaptor.getValue().onSuccess(renewedCredentials);
+        verify(callback).onSuccess(credentialsCaptor.capture());
+        verify(storage).store(eq("com.auth0.credentials"), stringCaptor.capture());
+        verify(storage).store("com.auth0.credentials_expires_at", newDate.getTime());
+        verify(storage).store("com.auth0.credentials_can_refresh", true);
+        verify(storage, never()).remove(anyString());
+
+        // Verify the returned credentials are the latest
+        Credentials retrievedCredentials = credentialsCaptor.getValue();
+        assertThat(retrievedCredentials, is(notNullValue()));
+        assertThat(retrievedCredentials.getIdToken(), is("newId"));
+        assertThat(retrievedCredentials.getAccessToken(), is("newAccess"));
+        assertThat(retrievedCredentials.getType(), is("newType"));
+        assertThat(retrievedCredentials.getRefreshToken(), is("rotatedRefreshToken"));
+        assertThat(retrievedCredentials.getExpiresAt(), is(newDate));
+        assertThat(retrievedCredentials.getScope(), is("newScope"));
+
+        // Verify the credentials are property stored
+        String encodedJson = stringCaptor.getValue();
+        assertThat(encodedJson, is(notNullValue()));
+        final byte[] decoded = Base64.decode(encodedJson, Base64.DEFAULT);
+        Credentials renewedStoredCredentials = gson.fromJson(new String(decoded), Credentials.class);
+        assertThat(renewedStoredCredentials.getIdToken(), is("newId"));
+        assertThat(renewedStoredCredentials.getAccessToken(), is("newAccess"));
+        assertThat(renewedStoredCredentials.getRefreshToken(), is("rotatedRefreshToken"));
+        assertThat(renewedStoredCredentials.getType(), is("newType"));
+        assertThat(renewedStoredCredentials.getExpiresAt(), is(notNullValue()));
+        assertThat(renewedStoredCredentials.getExpiresAt().getTime(), is(newDate.getTime()));
+        assertThat(renewedStoredCredentials.getScope(), is("newScope"));
+    }
+
+    @Test
     public void shouldGetAndFailToRenewExpiredCredentials() {
         Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS);
         insertTestCredentials(false, true, true, expiresAt);
