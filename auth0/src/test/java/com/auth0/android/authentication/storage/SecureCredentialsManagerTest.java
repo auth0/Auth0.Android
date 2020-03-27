@@ -195,7 +195,6 @@ public class SecureCredentialsManagerTest {
         assertThat(storedCredentials.getExpiresAt(), is(notNullValue()));
         assertThat(storedCredentials.getExpiresAt().getTime(), is(accessTokenExpirationTime));
         assertThat(storedCredentials.getScope(), is("scope"));
-
     }
 
     @Test
