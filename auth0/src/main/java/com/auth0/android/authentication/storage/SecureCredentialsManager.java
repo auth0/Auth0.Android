@@ -248,12 +248,13 @@ public class SecureCredentialsManager {
             return;
         }
         final Credentials credentials = gson.fromJson(json, Credentials.class);
-        if (isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken()) || credentials.getExpiresAt() == null) {
+        Long expiresAt = storage.retrieveLong(KEY_EXPIRES_AT);
+        if (isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken()) || expiresAt == null) {
             callback.onFailure(new CredentialsManagerException("No Credentials were previously set."));
             decryptCallback = null;
             return;
         }
-        if (credentials.getExpiresAt().getTime() > getCurrentTimeInMillis()) {
+        if (expiresAt > getCurrentTimeInMillis()) {
             callback.onSuccess(credentials);
             decryptCallback = null;
             return;

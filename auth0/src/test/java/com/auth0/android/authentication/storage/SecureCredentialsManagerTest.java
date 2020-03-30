@@ -712,6 +712,7 @@ public class SecureCredentialsManagerTest {
     public void shouldGetCredentialsAfterAuthentication() {
         Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456L * 1000);
         insertTestCredentials(true, true, false, expiresAt);
+        when(storage.retrieveLong("com.auth0.credentials_expires_at")).thenReturn(expiresAt.getTime());
 
         //Require authentication
         Activity activity = spy(Robolectric.buildActivity(Activity.class).create().start().resume().get());
@@ -744,6 +745,36 @@ public class SecureCredentialsManagerTest {
         assertThat(retrievedCredentials.getExpiresAt(), is(notNullValue()));
         assertThat(retrievedCredentials.getExpiresAt().getTime(), is(expiresAt.getTime()));
         assertThat(retrievedCredentials.getScope(), is("scope"));
+
+        //A second call to checkAuthenticationResult should fail as callback is set to null
+        final boolean retryCheck = manager.checkAuthenticationResult(123, Activity.RESULT_OK);
+        assertThat(retryCheck, is(false));
+    }
+
+    @Test
+    public void shouldNotGetCredentialsWhenCredentialsHaveExpired() {
+        Date credentialsExpiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456L * 1000);
+        Date storedExpiresAt = new Date(CredentialsMock.CURRENT_TIME_MS - 60L * 1000);
+        insertTestCredentials(true, true, false, credentialsExpiresAt);
+        when(storage.retrieveLong("com.auth0.credentials_expires_at")).thenReturn(storedExpiresAt.getTime());
+
+        //Require authentication
+        Activity activity = spy(Robolectric.buildActivity(Activity.class).create().start().resume().get());
+        KeyguardManager kService = mock(KeyguardManager.class);
+        when(activity.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService);
+        when(kService.isKeyguardSecure()).thenReturn(true);
+        Intent confirmCredentialsIntent = mock(Intent.class);
+        when(kService.createConfirmDeviceCredentialIntent("theTitle", "theDescription")).thenReturn(confirmCredentialsIntent);
+        boolean willRequireAuthentication = manager.requireAuthentication(activity, 123, "theTitle", "theDescription");
+        assertThat(willRequireAuthentication, is(true));
+
+        manager.getCredentials(callback);
+
+        //Should fail because of expired credentials
+        verify(callback).onFailure(exceptionCaptor.capture());
+        CredentialsManagerException exception = exceptionCaptor.getValue();
+        assertThat(exception, is(notNullValue()));
+        assertThat(exception.getMessage(), is("No Credentials were previously set."));
 
         //A second call to checkAuthenticationResult should fail as callback is set to null
         final boolean retryCheck = manager.checkAuthenticationResult(123, Activity.RESULT_OK);
