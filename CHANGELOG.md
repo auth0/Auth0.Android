@@ -1,5 +1,14 @@
 # Change Log
 
+## [1.23.0](https://github.com/auth0/Auth0.Android/tree/1.23.0) (2020-03-30)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.22.1...1.23.0)
+
+**Added**
+- Support Refresh Token Rotation [\#294](https://github.com/auth0/Auth0.Android/pull/294) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Fixed**
+- Improve consistency around Expires At in CredentialsManager [\#295](https://github.com/auth0/Auth0.Android/pull/295) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.22.1](https://github.com/auth0/Auth0.Android/tree/1.22.1) (2020-03-04)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.22.0...1.22.1)
 
