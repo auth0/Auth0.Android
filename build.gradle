@@ -10,10 +10,6 @@ buildscript {
     }
 }
 
-plugins {
-    id 'lifecycle-base'
-}
-
 allprojects {
     group = 'com.auth0.android'
 
@@ -21,8 +17,4 @@ allprojects {
         google()
         jcenter()
     }
-}
-
-tasks.named("clean").configure {
-    delete 'CHANGELOG.md.release'
 }

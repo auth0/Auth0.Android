@@ -23,7 +23,7 @@
  */
 
 plugins {
-    id "com.auth0.gradle.oss-library.android" version "0.11.0"
+    id "com.auth0.gradle.oss-library.android" version "0.12.1"
 }
 
 logger.lifecycle("Using version ${version} for ${name}")
@@ -88,17 +88,4 @@ dependencies {
     testImplementation 'com.jayway.awaitility:awaitility:1.7.0'
     testImplementation 'org.robolectric:robolectric:4.3.1'
     testImplementation 'androidx.test.espresso:espresso-intents:3.2.0'
-}
-
-tasks.withType(Test) {
-    jacoco.includeNoLocationClasses = true
-    jacoco.excludes = ['jdk.internal.*']
-
-    maxParallelForks = Runtime.getRuntime().availableProcessors()
-
-    testLogging {
-        events 'passed', 'failed', 'skipped'
-        showStandardStreams = true
-        exceptionFormat 'full'
-    }
 }
