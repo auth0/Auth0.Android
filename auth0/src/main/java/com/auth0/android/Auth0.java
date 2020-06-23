@@ -272,7 +272,8 @@ public class Auth0 {
     }
 
     /**
-     * Override default connection timeout for requests
+     * Set the connection timeout for network requests.
+     * By default, this value is 10 seconds.
      *
      * @param timeout the new timeout value in seconds
      */
@@ -281,7 +282,8 @@ public class Auth0 {
     }
 
     /**
-     * Override default read timeout for requests
+     * Set the read timeout for network requests.
+     * By default, this value is 10 seconds.
      *
      * @param timeout the new timeout value in seconds
      */
@@ -290,7 +292,8 @@ public class Auth0 {
     }
 
     /**
-     * Override default write timeout for requests
+     * Set the write timeout for network requests.
+     * By default, this value is 10 seconds.
      *
      * @param timeout the new timeout value in seconds
      */
