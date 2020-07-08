@@ -65,6 +65,7 @@ import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
 import static org.powermock.api.mockito.PowerMockito.doThrow;
 import static org.powermock.api.mockito.PowerMockito.mock;
@@ -98,7 +99,9 @@ public class CryptoUtilTest {
 
     private CryptoUtil cryptoUtil;
 
-    private static final String KEY_ALIAS = "keyName";
+    private static final String APP_PACKAGE_NAME = "com.mycompany.myapp";
+    private static final String BASE_ALIAS = "keyName";
+    private static final String KEY_ALIAS = APP_PACKAGE_NAME + "." + BASE_ALIAS;
     private Context context;
 
     //Android KeyStore not accessible using Robolectric
@@ -118,6 +121,7 @@ public class CryptoUtilTest {
         });
 
         context = mock(Context.class);
+        when(context.getPackageName()).thenReturn(APP_PACKAGE_NAME);
         cryptoUtil = newCryptoUtilSpy();
     }
 
@@ -1317,7 +1321,7 @@ public class CryptoUtilTest {
     }
 
     private CryptoUtil newCryptoUtilSpy() throws Exception {
-        CryptoUtil cryptoUtil = PowerMockito.spy(new CryptoUtil(context, storage, KEY_ALIAS));
+        CryptoUtil cryptoUtil = PowerMockito.spy(new CryptoUtil(context, storage, BASE_ALIAS));
         PowerMockito.mockStatic(KeyStore.class);
         PowerMockito.when(KeyStore.getInstance(ANDROID_KEY_STORE)).thenReturn(keyStore);
         PowerMockito.mockStatic(KeyPairGenerator.class);

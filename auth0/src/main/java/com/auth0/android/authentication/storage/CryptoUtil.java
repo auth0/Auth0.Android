@@ -74,8 +74,8 @@ class CryptoUtil {
         if (TextUtils.isEmpty(keyAlias)) {
             throw new IllegalArgumentException("RSA and AES Key alias must be valid.");
         }
-        this.KEY_ALIAS = keyAlias;
-        this.KEY_IV_ALIAS = keyAlias + "_iv";
+        this.KEY_ALIAS = context.getPackageName() + "." + keyAlias;
+        this.KEY_IV_ALIAS = context.getPackageName() + "." + keyAlias + "_iv";
         this.context = context;
         this.storage = storage;
     }
