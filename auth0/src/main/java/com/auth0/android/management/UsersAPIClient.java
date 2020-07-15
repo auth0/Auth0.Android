@@ -31,7 +31,7 @@ import android.support.annotation.VisibleForTesting;
 import com.auth0.android.Auth0;
 import com.auth0.android.authentication.ParameterBuilder;
 import com.auth0.android.request.ErrorBuilder;
-import com.auth0.android.request.Request;
+import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.request.internal.GsonProvider;
 import com.auth0.android.request.internal.ManagementErrorBuilder;
 import com.auth0.android.request.internal.OkHttpClientFactory;
@@ -68,7 +68,8 @@ public class UsersAPIClient {
     private static final String USER_METADATA_KEY = "user_metadata";
 
     private final Auth0 auth0;
-    @VisibleForTesting final OkHttpClient client;
+    @VisibleForTesting
+    final OkHttpClient client;
     private final Gson gson;
     private final RequestFactory factory;
     private final ErrorBuilder<ManagementException> mgmtErrorBuilder;
@@ -154,7 +155,7 @@ public class UsersAPIClient {
      * @return a request to start
      */
     @SuppressWarnings("WeakerAccess")
-    public Request<List<UserIdentity>, ManagementException> link(String primaryUserId, String secondaryToken) {
+    public ParameterizableRequest<List<UserIdentity>, ManagementException> link(String primaryUserId, String secondaryToken) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(API_PATH)
                 .addPathSegment(V2_PATH)
@@ -195,7 +196,7 @@ public class UsersAPIClient {
      * @return a request to start
      */
     @SuppressWarnings("WeakerAccess")
-    public Request<List<UserIdentity>, ManagementException> unlink(String primaryUserId, String secondaryUserId, String secondaryProvider) {
+    public ParameterizableRequest<List<UserIdentity>, ManagementException> unlink(String primaryUserId, String secondaryUserId, String secondaryProvider) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(API_PATH)
                 .addPathSegment(V2_PATH)
@@ -232,7 +233,7 @@ public class UsersAPIClient {
      * @return a request to start
      */
     @SuppressWarnings("WeakerAccess")
-    public Request<UserProfile, ManagementException> updateMetadata(String userId, Map<String, Object> userMetadata) {
+    public ParameterizableRequest<UserProfile, ManagementException> updateMetadata(String userId, Map<String, Object> userMetadata) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(API_PATH)
                 .addPathSegment(V2_PATH)
@@ -264,7 +265,7 @@ public class UsersAPIClient {
      * @return a request to start
      */
     @SuppressWarnings("WeakerAccess")
-    public Request<UserProfile, ManagementException> getProfile(String userId) {
+    public ParameterizableRequest<UserProfile, ManagementException> getProfile(String userId) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(API_PATH)
                 .addPathSegment(V2_PATH)
