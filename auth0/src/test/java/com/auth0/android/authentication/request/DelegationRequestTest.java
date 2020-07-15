@@ -3,6 +3,7 @@ package com.auth0.android.authentication.request;
 import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.request.ParameterizableRequest;
 
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,6 +15,7 @@ import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -36,6 +38,14 @@ public class DelegationRequestTest {
         final DelegationRequest req = delegationRequest.addParameters(params);
         verify(mockRequest).addParameters(params);
         Assert.assertThat(req, is(notNullValue()));
+        Assert.assertThat(req, is(delegationRequest));
+    }
+
+    @Test
+    public void shouldAddHeader() {
+        final DelegationRequest req = delegationRequest.addHeader("auth", "val123");
+        verify(mockRequest).addHeader(eq("auth"), eq("val123"));
+        Assert.assertThat(req, is(Matchers.notNullValue()));
         Assert.assertThat(req, is(delegationRequest));
     }
 

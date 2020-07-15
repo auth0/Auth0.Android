@@ -2,7 +2,7 @@ package com.auth0.android.request.internal;
 
 import com.auth0.android.Auth0;
 import com.auth0.android.Auth0Exception;
-import com.auth0.android.request.AuthenticationRequest;
+import com.auth0.android.request.AuthRequest;
 import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.ParameterizableRequest;
 import com.google.gson.Gson;
@@ -231,7 +231,7 @@ public class RequestFactoryTest {
         }
 
         @Override
-        AuthenticationRequest createAuthenticationRequest(HttpUrl url, OkHttpClient client, Gson gson, String method) {
+        AuthRequest createAuthenticationRequest(HttpUrl url, OkHttpClient client, Gson gson, String method) {
             authenticationRequest = new MockAuthenticationRequest(url, client, gson, method);
             return authenticationRequest;
         }

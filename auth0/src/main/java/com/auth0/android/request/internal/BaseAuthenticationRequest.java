@@ -3,7 +3,7 @@ package com.auth0.android.request.internal;
 import android.util.Log;
 
 import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.request.AuthenticationRequest;
+import com.auth0.android.request.AuthRequest;
 import com.auth0.android.result.Credentials;
 import com.google.gson.Gson;
 import com.squareup.okhttp.HttpUrl;
@@ -20,7 +20,7 @@ import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.REALM_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.SCOPE_KEY;
 
-class BaseAuthenticationRequest extends SimpleRequest<Credentials, AuthenticationException> implements AuthenticationRequest {
+class BaseAuthenticationRequest extends SimpleRequest<Credentials, AuthenticationException> implements AuthRequest {
 
     private static final String TAG = BaseAuthenticationRequest.class.getSimpleName();
 
@@ -39,7 +39,7 @@ class BaseAuthenticationRequest extends SimpleRequest<Credentials, Authenticatio
      * @return itself
      */
     @Override
-    public AuthenticationRequest setGrantType(String grantType) {
+    public AuthRequest setGrantType(String grantType) {
         addParameter(GRANT_TYPE_KEY, grantType);
         return this;
     }
@@ -51,7 +51,7 @@ class BaseAuthenticationRequest extends SimpleRequest<Credentials, Authenticatio
      * @return itself
      */
     @Override
-    public AuthenticationRequest setConnection(String connection) {
+    public AuthRequest setConnection(String connection) {
         if (!hasLegacyPath()) {
             Log.w(TAG, "Not setting the 'connection' parameter as the request is using a OAuth 2.0 API Authorization endpoint that doesn't support it.");
             return this;
@@ -67,7 +67,7 @@ class BaseAuthenticationRequest extends SimpleRequest<Credentials, Authenticatio
      * @return itself
      */
     @Override
-    public AuthenticationRequest setRealm(String realm) {
+    public AuthRequest setRealm(String realm) {
         if (hasLegacyPath()) {
             Log.w(TAG, "Not setting the 'realm' parameter as the request is using a Legacy Authorization API endpoint that doesn't support it.");
             return this;
@@ -82,7 +82,7 @@ class BaseAuthenticationRequest extends SimpleRequest<Credentials, Authenticatio
      * @param scope a scope value
      * @return itself
      */
-    public AuthenticationRequest setScope(String scope) {
+    public AuthRequest setScope(String scope) {
         addParameter(SCOPE_KEY, scope);
         return this;
     }
@@ -93,7 +93,7 @@ class BaseAuthenticationRequest extends SimpleRequest<Credentials, Authenticatio
      * @param device a device name
      * @return itself
      */
-    public AuthenticationRequest setDevice(String device) {
+    public AuthRequest setDevice(String device) {
         addParameter(DEVICE_KEY, device);
         return this;
     }
@@ -105,7 +105,7 @@ class BaseAuthenticationRequest extends SimpleRequest<Credentials, Authenticatio
      * @return itself
      */
     @Override
-    public AuthenticationRequest setAudience(String audience) {
+    public AuthRequest setAudience(String audience) {
         addParameter(AUDIENCE_KEY, audience);
         return this;
     }
@@ -116,13 +116,13 @@ class BaseAuthenticationRequest extends SimpleRequest<Credentials, Authenticatio
      * @param accessToken a access token
      * @return itself
      */
-    public AuthenticationRequest setAccessToken(String accessToken) {
+    public AuthRequest setAccessToken(String accessToken) {
         addParameter(ACCESS_TOKEN_KEY, accessToken);
         return this;
     }
 
     @Override
-    public AuthenticationRequest addAuthenticationParameters(Map<String, Object> parameters) {
+    public AuthRequest addAuthenticationParameters(Map<String, Object> parameters) {
         final HashMap<String, Object> params = new HashMap<>(parameters);
         if (parameters.containsKey(CONNECTION_KEY)) {
             setConnection((String) params.remove(CONNECTION_KEY));
@@ -131,6 +131,12 @@ class BaseAuthenticationRequest extends SimpleRequest<Credentials, Authenticatio
             setRealm((String) params.remove(REALM_KEY));
         }
         addParameters(params);
+        return this;
+    }
+
+    @Override
+    public BaseAuthenticationRequest addHeader(String name, String value) {
+        super.addHeader(name, value);
         return this;
     }
 }
