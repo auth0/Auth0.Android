@@ -2,6 +2,7 @@ package com.auth0.android.authentication.request;
 
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.request.AuthRequest;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.DatabaseUser;
@@ -22,8 +23,10 @@ import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
@@ -31,13 +34,13 @@ import static org.mockito.Mockito.when;
 public class SignUpRequestTest {
 
     private DatabaseConnectionRequest dbMockRequest;
-    private AuthenticationRequest authenticationMockRequest;
+    private AuthRequest authenticationMockRequest;
     private SignUpRequest signUpRequest;
 
     @Before
     public void setUp() {
         dbMockRequest = mock(DatabaseConnectionRequest.class);
-        authenticationMockRequest = mock(AuthenticationRequest.class);
+        authenticationMockRequest = mock(AuthRequest.class);
         signUpRequest = new SignUpRequest(dbMockRequest, authenticationMockRequest);
     }
 
@@ -63,6 +66,24 @@ public class SignUpRequestTest {
     public void shouldSetScope() {
         final SignUpRequest req = signUpRequest.setScope("oauth2 offline_access profile");
         verify(authenticationMockRequest).setScope("oauth2 offline_access profile");
+        Assert.assertThat(req, is(notNullValue()));
+        Assert.assertThat(req, is(signUpRequest));
+    }
+
+    @Test
+    public void shouldAddHeader() {
+        final SignUpRequest req = signUpRequest.addHeader("auth", "val123");
+        verify(authenticationMockRequest).addHeader(eq("auth"), eq("val123"));
+        Assert.assertThat(req, is(notNullValue()));
+        Assert.assertThat(req, is(signUpRequest));
+    }
+
+    @Test
+    public void shouldNotAddHeaderWithAuthenticationRequest() {
+        AuthenticationRequest authenticationMockRequest = mock(AuthenticationRequest.class);
+        SignUpRequest signUpRequest = new SignUpRequest(dbMockRequest, authenticationMockRequest);
+        final SignUpRequest req = signUpRequest.addHeader("auth", "val123");
+        verifyZeroInteractions(authenticationMockRequest);
         Assert.assertThat(req, is(notNullValue()));
         Assert.assertThat(req, is(signUpRequest));
     }

@@ -10,8 +10,11 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
+import java.util.Map;
+
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -47,6 +50,19 @@ public class TokenRequestTest {
     public void shouldExecuteTheRequest() {
         tokenRequest.execute();
         verify(mockRequest).execute();
+    }
+
+    @Test
+    public void shouldAddHeaders() {
+        tokenRequest.addHeader("auth", "val123");
+        verify(mockRequest).addHeader(eq("auth"), eq("val123"));
+    }
+
+    @Test
+    public void shouldAddParameters() {
+        Map params = mock(Map.class);
+        tokenRequest.addParameters(params);
+        verify(mockRequest).addParameters(eq(params));
     }
 
 }

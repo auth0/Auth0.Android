@@ -21,6 +21,7 @@ public class DatabaseConnectionRequest<T, U extends Auth0Exception> {
 
     /**
      * Add the given parameters to the request
+     *
      * @param parameters to be sent with the request
      * @return itself
      */
@@ -31,7 +32,8 @@ public class DatabaseConnectionRequest<T, U extends Auth0Exception> {
 
     /**
      * Add a parameter by name to the request
-     * @param name of the parameter
+     *
+     * @param name  of the parameter
      * @param value of the parameter
      * @return itself
      */
@@ -41,8 +43,9 @@ public class DatabaseConnectionRequest<T, U extends Auth0Exception> {
     }
 
     /**
-     * Add a header for the request, e.g. "Authorization"
-     * @param name of the header
+     * Add a header to the request, e.g. "Authorization"
+     *
+     * @param name  of the header
      * @param value of the header
      * @return itself
      */
@@ -53,6 +56,7 @@ public class DatabaseConnectionRequest<T, U extends Auth0Exception> {
 
     /**
      * Set the Auth0 Database Connection used for this request using its name.
+     *
      * @param connection name
      * @return itself
      */
@@ -63,6 +67,7 @@ public class DatabaseConnectionRequest<T, U extends Auth0Exception> {
 
     /**
      * Executes the request async and returns its results via callback
+     *
      * @param callback called on success or failure of the request
      */
     public void start(BaseCallback<T, U> callback) {
@@ -71,6 +76,7 @@ public class DatabaseConnectionRequest<T, U extends Auth0Exception> {
 
     /**
      * Executes the request synchronously
+     *
      * @return the request result
      * @throws Auth0Exception if the request failed
      */

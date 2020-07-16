@@ -24,11 +24,15 @@
 
 package com.auth0.android.authentication.request;
 
+import android.support.annotation.NonNull;
+
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.authentication.ParameterBuilder;
 import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.request.AuthRequest;
 import com.auth0.android.request.AuthenticationRequest;
+import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.request.Request;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.DatabaseUser;
@@ -38,23 +42,43 @@ import java.util.Map;
 /**
  * Represent a request that creates a user in a Auth0 Database connection and then logs in.
  */
-public class SignUpRequest implements Request<Credentials, AuthenticationException>, AuthenticationRequest {
+public class SignUpRequest implements Request<Credentials, AuthenticationException>, AuthRequest {
 
     private final DatabaseConnectionRequest<DatabaseUser, AuthenticationException> signUpRequest;
     private final AuthenticationRequest authenticationRequest;
+    private final AuthRequest authRequest;
 
-    public SignUpRequest(DatabaseConnectionRequest<DatabaseUser, AuthenticationException> signUpRequest, AuthenticationRequest authenticationRequest) {
+    /**
+     * @param signUpRequest         the request that creates the user
+     * @param authenticationRequest the request that will output a pair of credentials
+     * @deprecated using this constructor prevents from updating the request headers. See {@link #SignUpRequest(DatabaseConnectionRequest, AuthRequest)}
+     */
+    @Deprecated
+    public SignUpRequest(@NonNull DatabaseConnectionRequest<DatabaseUser, AuthenticationException> signUpRequest, @NonNull AuthenticationRequest authenticationRequest) {
         this.signUpRequest = signUpRequest;
         this.authenticationRequest = authenticationRequest;
+        this.authRequest = null;
+    }
+
+    public SignUpRequest(@NonNull DatabaseConnectionRequest<DatabaseUser, AuthenticationException> signUpRequest, @NonNull AuthRequest authRequest) {
+        this.signUpRequest = signUpRequest;
+        this.authRequest = authRequest;
+        this.authenticationRequest = null;
+    }
+
+    @NonNull
+    private AuthenticationRequest getAuthRequest() {
+        //noinspection ConstantConditions
+        return authenticationRequest == null ? authRequest : authenticationRequest;
     }
 
     /**
-     * Add additional parameters sent when creating a user.
+     * Add additional parameters to be sent when creating a user.
      *
      * <p>A common use case for this is storing extra information in the user metadata.
      * To set user metadata you have to wrap your custom properties in a map containing
      * a field <code>user_metadadata</code>:</p>
-     * 
+     *
      * <pre>
      * {@code
      * // Define your custom fields
@@ -71,9 +95,9 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
      * </pre>
      *
      * @param parameters sent with the request and must be non-null
+     * @return itself
      * @see ParameterBuilder
      * @see <a href="https://auth0.com/docs/users/concepts/overview-user-metadata">User Metadata documentation</a>
-     * @return itself
      */
     public SignUpRequest addSignUpParameters(Map<String, Object> parameters) {
         signUpRequest.addParameters(parameters);
@@ -81,7 +105,7 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
     }
 
     /**
-     * Add additional parameters sent when logging the user in
+     * Add additional parameters to be sent when logging the user in.
      *
      * @param parameters sent with the request and must be non-null
      * @return itself
@@ -89,51 +113,68 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
      */
     @Override
     public SignUpRequest addAuthenticationParameters(Map<String, Object> parameters) {
-        authenticationRequest.addAuthenticationParameters(parameters);
+        getAuthRequest().addAuthenticationParameters(parameters);
+        return this;
+    }
+
+    /**
+     * Add a header to the sign up request and to the authentication request, provided
+     * it's of type {@link AuthRequest}.
+     *
+     * @param name  of the header
+     * @param value of the header
+     * @return itself
+     */
+    @Override
+    public SignUpRequest addHeader(String name, String value) {
+        signUpRequest.addHeader(name, value);
+        if (authRequest != null) {
+            authRequest.addHeader(name, value);
+        }
         return this;
     }
 
     @Override
     public SignUpRequest setScope(String scope) {
-        authenticationRequest.setScope(scope);
+        getAuthRequest().setScope(scope);
         return this;
     }
 
     @Override
     public SignUpRequest setDevice(String device) {
-        authenticationRequest.setDevice(device);
+        getAuthRequest().setDevice(device);
         return this;
     }
 
     @Override
     public SignUpRequest setAudience(String audience) {
-        authenticationRequest.setAudience(audience);
+        getAuthRequest().setAudience(audience);
         return this;
     }
 
     @Override
     public SignUpRequest setAccessToken(String accessToken) {
-        authenticationRequest.setAccessToken(accessToken);
+        getAuthRequest().setAccessToken(accessToken);
         return this;
     }
 
     @Override
     public SignUpRequest setGrantType(String grantType) {
-        authenticationRequest.setGrantType(grantType);
+        getAuthRequest().setGrantType(grantType);
         return this;
     }
 
     @Override
     public SignUpRequest setConnection(String connection) {
         signUpRequest.setConnection(connection);
-        authenticationRequest.setConnection(connection);
+        getAuthRequest().setConnection(connection);
         return this;
     }
 
     @Override
     public SignUpRequest setRealm(String realm) {
         signUpRequest.setConnection(realm);
-        authenticationRequest.setRealm(realm);
+        getAuthRequest().setRealm(realm);
         return this;
     }
 
@@ -147,7 +188,7 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
         signUpRequest.start(new BaseCallback<DatabaseUser, AuthenticationException>() {
             @Override
             public void onSuccess(final DatabaseUser user) {
-                authenticationRequest.start(callback);
+                getAuthRequest().start(callback);
             }
 
             @Override
@@ -166,6 +207,6 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
     @Override
     public Credentials execute() throws Auth0Exception {
         signUpRequest.execute();
-        return authenticationRequest.execute();
+        return getAuthRequest().execute();
     }
 }

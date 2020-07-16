@@ -3,6 +3,7 @@ package com.auth0.android.request.internal;
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.request.AuthRequest;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.result.Credentials;
@@ -13,7 +14,7 @@ import com.squareup.okhttp.OkHttpClient;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MockAuthenticationRequest implements ParameterizableRequest<Credentials, AuthenticationException>, AuthenticationRequest {
+public class MockAuthenticationRequest implements ParameterizableRequest<Credentials, AuthenticationException>, AuthRequest {
 
     HashMap<String, String> headers;
     HttpUrl url;
@@ -80,7 +81,7 @@ public class MockAuthenticationRequest implements ParameterizableRequest<Credent
     }
 
     @Override
-    public ParameterizableRequest<Credentials, AuthenticationException> addHeader(String name, String value) {
+    public MockAuthenticationRequest addHeader(String name, String value) {
         headers.put(name, value);
         return this;
     }

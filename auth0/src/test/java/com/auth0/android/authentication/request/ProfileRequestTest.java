@@ -2,6 +2,7 @@ package com.auth0.android.authentication.request;
 
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.request.AuthRequest;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.result.Authentication;
@@ -29,47 +30,68 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 21)
 public class ProfileRequestTest {
 
-    private AuthenticationRequest credentialsMockRequest;
+    private AuthRequest authenticationMockRequest;
     private ParameterizableRequest userInfoMockRequest;
     private ProfileRequest profileRequest;
 
     @Before
     public void setUp() {
-        credentialsMockRequest = mock(AuthenticationRequest.class);
         userInfoMockRequest = mock(ParameterizableRequest.class);
-        profileRequest = new ProfileRequest(credentialsMockRequest, userInfoMockRequest);
+        authenticationMockRequest = mock(AuthRequest.class);
+        profileRequest = new ProfileRequest(authenticationMockRequest, userInfoMockRequest);
     }
 
     @Test
     public void shouldAddParameters() {
         final Map params = mock(Map.class);
         final ProfileRequest req = profileRequest.addParameters(params);
-        verify(credentialsMockRequest).addAuthenticationParameters(params);
-        Assert.assertThat(req, is(CoreMatchers.notNullValue()));
+        verify(authenticationMockRequest).addAuthenticationParameters(params);
+        Assert.assertThat(req, is(notNullValue()));
+        Assert.assertThat(req, is(profileRequest));
+    }
+
+    @Test
+    public void shouldAddHeader() {
+        final ProfileRequest req = profileRequest.addHeader("auth", "val123");
+        verify(authenticationMockRequest).addHeader(eq("auth"), eq("val123"));
+        Assert.assertThat(req, is(notNullValue()));
+        Assert.assertThat(req, is(profileRequest));
+    }
+
+    @Test
+    public void shouldNotAddHeaderWithAuthenticationRequest() {
+        AuthenticationRequest authenticationMockRequest = mock(AuthenticationRequest.class);
+        ProfileRequest profileRequest = new ProfileRequest(authenticationMockRequest, userInfoMockRequest);
+        final ProfileRequest req = profileRequest.addHeader("auth", "val123");
+        verifyZeroInteractions(authenticationMockRequest);
+        Assert.assertThat(req, is(notNullValue()));
         Assert.assertThat(req, is(profileRequest));
     }
 
     @Test
     public void shouldSetScope() {
         final ProfileRequest req = profileRequest.setScope("oauth2 offline_access profile");
-        verify(credentialsMockRequest).setScope("oauth2 offline_access profile");
-        Assert.assertThat(req, is(CoreMatchers.notNullValue()));
+        verify(authenticationMockRequest).setScope("oauth2 offline_access profile");
+        Assert.assertThat(req, is(notNullValue()));
         Assert.assertThat(req, is(profileRequest));
     }
 
     @Test
     public void shouldSetConnection() {
         final ProfileRequest req = profileRequest.setConnection("my-connection");
-        verify(credentialsMockRequest).setConnection("my-connection");
-        Assert.assertThat(req, is(CoreMatchers.notNullValue()));
+        verify(authenticationMockRequest).setConnection("my-connection");
+        Assert.assertThat(req, is(notNullValue()));
         Assert.assertThat(req, is(profileRequest));
     }
 
@@ -138,7 +160,7 @@ public class ProfileRequestTest {
     @Test
     public void shouldExecuteTheRequest() {
         final Credentials credentials = mock(Credentials.class);
-        when(credentialsMockRequest.execute()).thenAnswer(new Answer<Object>() {
+        when(authenticationMockRequest.execute()).thenAnswer(new Answer<Object>() {
             @Override
             public Object answer(InvocationOnMock invocation) {
                 return credentials;
@@ -155,7 +177,7 @@ public class ProfileRequestTest {
         });
         final Authentication executeResult = profileRequest.execute();
 
-        verify(credentialsMockRequest).execute();
+        verify(authenticationMockRequest).execute();
         verify(userInfoMockRequest).execute();
         assertThat(executeResult, is(notNullValue()));
         assertThat(executeResult, is(instanceOf(Authentication.class)));

@@ -67,6 +67,18 @@ public class DelegationRequest<T> implements Request<T, AuthenticationException>
     }
 
     /**
+     * Add a header to the request, e.g. "Authorization"
+     *
+     * @param name  of the header
+     * @param value of the header
+     * @return itself
+     */
+    public DelegationRequest<T> addHeader(String name, String value) {
+        request.addHeader(name, value);
+        return this;
+    }
+
+    /**
      * Set the 'api_type' parameter to be sent in the request
      *
      * @param apiType the delegation api type

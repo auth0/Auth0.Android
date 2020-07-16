@@ -7,6 +7,8 @@ import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.request.Request;
 import com.auth0.android.result.Credentials;
 
+import java.util.Map;
+
 /**
  * Auth Request to obtain tokens using OAuth2 {@literal /oauth/token} method
  */
@@ -19,6 +21,29 @@ public class TokenRequest implements Request<Credentials, AuthenticationExceptio
 
     public TokenRequest(ParameterizableRequest<Credentials, AuthenticationException> request) {
         this.request = request;
+    }
+
+    /**
+     * Adds additional parameters to the request.
+     *
+     * @param parameters as a non-null dictionary
+     * @return itself
+     */
+    public TokenRequest addParameters(Map<String, Object> parameters) {
+        request.addParameters(parameters);
+        return this;
+    }
+
+    /**
+     * Add a header to the request, e.g. "Authorization"
+     *
+     * @param name  of the header
+     * @param value of the header
+     * @return itself
+     */
+    public TokenRequest addHeader(String name, String value) {
+        request.addHeader(name, value);
+        return this;
     }
 
     /**
