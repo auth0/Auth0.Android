@@ -1,5 +1,14 @@
 # Change Log
 
+## [1.24.0](https://github.com/auth0/Auth0.Android/tree/1.24.0) (2020-07-16)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.23.0...1.24.0)
+
+**Changed**
+- Allow to set headers and parameters in all requests [\#318](https://github.com/auth0/Auth0.Android/pull/318) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Fixed**
+- Use of a unique keystore key alias across apps [\#315](https://github.com/auth0/Auth0.Android/pull/315) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.23.0](https://github.com/auth0/Auth0.Android/tree/1.23.0) (2020-03-30)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.22.1...1.23.0)
 
