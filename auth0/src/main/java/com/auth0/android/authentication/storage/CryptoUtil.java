@@ -66,6 +66,8 @@ class CryptoUtil {
 
     private final String KEY_ALIAS;
     private final String KEY_IV_ALIAS;
+    private final String DEPRECATED_KEY_ALIAS;
+    private final String DEPRECATED_KEY_IV_ALIAS;
     private final Storage storage;
     private final Context context;
 
@@ -74,6 +76,8 @@ class CryptoUtil {
         if (TextUtils.isEmpty(keyAlias)) {
             throw new IllegalArgumentException("RSA and AES Key alias must be valid.");
         }
+        this.DEPRECATED_KEY_ALIAS = keyAlias;
+        this.DEPRECATED_KEY_IV_ALIAS = keyAlias + "_iv";
         this.KEY_ALIAS = context.getPackageName() + "." + keyAlias;
         this.KEY_IV_ALIAS = context.getPackageName() + "." + keyAlias + "_iv";
         this.context = context;
@@ -93,9 +97,18 @@ class CryptoUtil {
         try {
             KeyStore keyStore = KeyStore.getInstance(ANDROID_KEY_STORE);
             keyStore.load(null);
+
+            // assign alias
+            String alias = null;
             if (keyStore.containsAlias(KEY_ALIAS)) {
+                alias = KEY_ALIAS;
+            } else if (keyStore.containsAlias(DEPRECATED_KEY_ALIAS)) {
+                alias = DEPRECATED_KEY_ALIAS;
+            }
+
+            if (alias != null) {
                 //Return existing key. On weird cases, the alias would be present but the key not
-                KeyStore.PrivateKeyEntry existingKey = getKeyEntryCompat(keyStore);
+                KeyStore.PrivateKeyEntry existingKey = getKeyEntryCompat(keyStore, alias);
                 if (existingKey != null) {
                     return existingKey;
                 }
@@ -145,7 +158,7 @@ class CryptoUtil {
             generator.initialize(spec);
             generator.generateKeyPair();
 
-            return getKeyEntryCompat(keyStore);
+            return getKeyEntryCompat(keyStore, KEY_ALIAS);
         } catch (CertificateException | InvalidAlgorithmParameterException | NoSuchProviderException | NoSuchAlgorithmException | KeyStoreException | ProviderException e) {
             /*
              * This exceptions are safe to be ignored:
@@ -199,19 +212,19 @@ class CryptoUtil {
      * @throws NoSuchAlgorithmException    if device is not compatible with RSA algorithm. RSA is available since API 18.
      * @throws UnrecoverableEntryException if key cannot be recovered. Probably because it was invalidated by a Lock Screen change.
      */
-    private KeyStore.PrivateKeyEntry getKeyEntryCompat(KeyStore keyStore) throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableEntryException {
+    private KeyStore.PrivateKeyEntry getKeyEntryCompat(KeyStore keyStore, String alias) throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableEntryException {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
-            return (KeyStore.PrivateKeyEntry) keyStore.getEntry(KEY_ALIAS, null);
+            return (KeyStore.PrivateKeyEntry) keyStore.getEntry(alias, null);
         }
 
         //Following code is for API 28+
-        PrivateKey privateKey = (PrivateKey) keyStore.getKey(KEY_ALIAS, null);
+        PrivateKey privateKey = (PrivateKey) keyStore.getKey(alias, null);
 
         if (privateKey == null) {
-            return (KeyStore.PrivateKeyEntry) keyStore.getEntry(KEY_ALIAS, null);
+            return (KeyStore.PrivateKeyEntry) keyStore.getEntry(alias, null);
         }
 
-        Certificate certificate = keyStore.getCertificate(KEY_ALIAS);
+        Certificate certificate = keyStore.getCertificate(alias);
         if (certificate == null) {
             return null;
         }
@@ -228,6 +241,7 @@ class CryptoUtil {
             KeyStore keyStore = KeyStore.getInstance(ANDROID_KEY_STORE);
             keyStore.load(null);
             keyStore.deleteEntry(KEY_ALIAS);
+            keyStore.deleteEntry(DEPRECATED_KEY_ALIAS);
             Log.d(TAG, "Deleting the existing RSA key pair from the KeyStore.");
         } catch (KeyStoreException | CertificateException | IOException | NoSuchAlgorithmException e) {
             Log.e(TAG, "Failed to remove the RSA KeyEntry from the Android KeyStore.", e);
@@ -242,6 +256,8 @@ class CryptoUtil {
     private void deleteAESKeys() {
         storage.remove(KEY_ALIAS);
         storage.remove(KEY_IV_ALIAS);
+        storage.remove(DEPRECATED_KEY_ALIAS);
+        storage.remove(DEPRECATED_KEY_IV_ALIAS);
     }
 
     /**
@@ -349,7 +365,10 @@ class CryptoUtil {
      */
     @VisibleForTesting
     byte[] getAESKey() throws IncompatibleDeviceException, CryptoException {
-        final String encodedEncryptedAES = storage.retrieveString(KEY_ALIAS);
+        String encodedEncryptedAES = storage.retrieveString(KEY_ALIAS);
+        if (encodedEncryptedAES == null) {
+            encodedEncryptedAES = storage.retrieveString(DEPRECATED_KEY_ALIAS);
+        }
         if (encodedEncryptedAES != null) {
             //Return existing key
             byte[] encryptedAES = Base64.decode(encodedEncryptedAES, Base64.DEFAULT);
@@ -387,7 +406,7 @@ class CryptoUtil {
 
 
     /**
-     * Encrypts the given input bytes using a symmetric key (AES).
+     * Decrypts the given input bytes using a symmetric key (AES).
      * The AES key is stored protected by an asymmetric key pair (RSA).
      *
      * @param encryptedInput the input bytes to decrypt. There's no limit in size.
@@ -400,6 +419,9 @@ class CryptoUtil {
             SecretKey key = new SecretKeySpec(getAESKey(), ALGORITHM_AES);
             Cipher cipher = Cipher.getInstance(AES_TRANSFORMATION);
             String encodedIV = storage.retrieveString(KEY_IV_ALIAS);
+            if (TextUtils.isEmpty(encodedIV)) {
+                encodedIV = storage.retrieveString(DEPRECATED_KEY_IV_ALIAS);
+            }
             if (TextUtils.isEmpty(encodedIV)) {
                 //AES key was JUST generated. If anything existed before, should be encrypted again first.
                 throw new CryptoException("The encryption keys changed recently. You need to re-encrypt something first.", null);

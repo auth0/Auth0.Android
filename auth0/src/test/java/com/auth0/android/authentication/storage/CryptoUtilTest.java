@@ -18,6 +18,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -102,6 +103,7 @@ public class CryptoUtilTest {
     private static final String APP_PACKAGE_NAME = "com.mycompany.myapp";
     private static final String BASE_ALIAS = "keyName";
     private static final String KEY_ALIAS = APP_PACKAGE_NAME + "." + BASE_ALIAS;
+    private static final String DEPRECATED_KEY_ALIAS = "keyName";
     private Context context;
 
     //Android KeyStore not accessible using Robolectric
@@ -525,8 +527,11 @@ public class CryptoUtilTest {
         cryptoUtil.getRSAKeyEntry();
 
         Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
+        Mockito.verify(keyStore).deleteEntry(DEPRECATED_KEY_ALIAS);
         Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(DEPRECATED_KEY_ALIAS);
         Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(storage).remove(DEPRECATED_KEY_ALIAS + "_iv");
     }
 
     @Test
@@ -691,6 +696,24 @@ public class CryptoUtilTest {
     }
 
     @Test
+    public void shouldUseDeprecatedAESKeyIfPresent() {
+        final int AES_KEY_SIZE = 256;
+        byte[] sampleBytes = new byte[AES_KEY_SIZE / 8];
+        Arrays.fill(sampleBytes, (byte) 1);
+        String aesString = "non null string";
+
+        PowerMockito.mockStatic(Base64.class);
+        PowerMockito.when(Base64.decode(aesString, Base64.DEFAULT)).thenReturn(sampleBytes);
+        PowerMockito.when(storage.retrieveString(KEY_ALIAS)).thenReturn(null);
+        PowerMockito.when(storage.retrieveString(DEPRECATED_KEY_ALIAS)).thenReturn(aesString);
+        doReturn(sampleBytes).when(cryptoUtil).RSADecrypt(sampleBytes);
+
+        final byte[] aesKey = cryptoUtil.getAESKey();
+        assertThat(aesKey, is(notNullValue()));
+        assertThat(aesKey, is(sampleBytes));
+    }
+
+    @Test
     public void shouldThrowOnNoSuchAlgorithmExceptionWhenCreatingAESKey() throws Exception {
         exception.expect(IncompatibleDeviceException.class);
         exception.expectMessage("The device is not compatible with the CryptoUtil class");
@@ -758,8 +781,11 @@ public class CryptoUtilTest {
         cryptoUtil.RSAEncrypt(sampleBytes);
 
         Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
+        Mockito.verify(keyStore, never()).deleteEntry(DEPRECATED_KEY_ALIAS);
         Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(DEPRECATED_KEY_ALIAS);
         Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(storage).remove(DEPRECATED_KEY_ALIAS + "_iv");
     }
 
     @Test
@@ -778,8 +804,11 @@ public class CryptoUtilTest {
         cryptoUtil.RSAEncrypt(new byte[0]);
 
         Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
+        Mockito.verify(keyStore, never()).deleteEntry(DEPRECATED_KEY_ALIAS);
         Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(DEPRECATED_KEY_ALIAS);
         Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(storage).remove(DEPRECATED_KEY_ALIAS + "_iv");
     }
 
     @Test
@@ -894,8 +923,11 @@ public class CryptoUtilTest {
         cryptoUtil.RSADecrypt(new byte[0]);
 
         Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
+        Mockito.verify(keyStore, never()).deleteEntry(DEPRECATED_KEY_ALIAS);
         Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(DEPRECATED_KEY_ALIAS);
         Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(storage).remove(DEPRECATED_KEY_ALIAS + "_iv");
     }
 
     @Test
@@ -912,8 +944,11 @@ public class CryptoUtilTest {
         cryptoUtil.RSADecrypt(new byte[0]);
 
         Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
+        Mockito.verify(keyStore, never()).deleteEntry(DEPRECATED_KEY_ALIAS);
         Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(DEPRECATED_KEY_ALIAS);
         Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(storage).remove(DEPRECATED_KEY_ALIAS + "_iv");
     }
 
     /*
@@ -1047,8 +1082,11 @@ public class CryptoUtilTest {
         cryptoUtil.encrypt(new byte[0]);
 
         Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
+        Mockito.verify(keyStore, never()).deleteEntry(DEPRECATED_KEY_ALIAS);
         Mockito.verify(storage, never()).remove(KEY_ALIAS);
+        Mockito.verify(storage, never()).remove(DEPRECATED_KEY_ALIAS);
         Mockito.verify(storage, never()).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(storage, never()).remove(DEPRECATED_KEY_ALIAS + "_iv");
     }
 
     @Test
@@ -1063,8 +1101,11 @@ public class CryptoUtilTest {
         cryptoUtil.encrypt(new byte[0]);
 
         Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
+        Mockito.verify(keyStore, never()).deleteEntry(DEPRECATED_KEY_ALIAS);
         Mockito.verify(storage, never()).remove(KEY_ALIAS);
+        Mockito.verify(storage, never()).remove(DEPRECATED_KEY_ALIAS);
         Mockito.verify(storage, never()).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(storage, never()).remove(DEPRECATED_KEY_ALIAS + "_iv");
     }
 
 
@@ -1085,6 +1126,36 @@ public class CryptoUtilTest {
         doReturn(decryptedData).when(aesCipher).doFinal(data);
         PowerMockito.when(aesCipher.doFinal(data)).thenReturn(decryptedData);
         PowerMockito.when(storage.retrieveString(KEY_ALIAS + "_iv")).thenReturn(encodedIv);
+        PowerMockito.mockStatic(Base64.class);
+        PowerMockito.when(Base64.decode(encodedIv, Base64.DEFAULT)).thenReturn(encodedIv.getBytes());
+
+        final byte[] decrypted = cryptoUtil.decrypt(data);
+
+
+        Mockito.verify(aesCipher).init(eq(Cipher.DECRYPT_MODE), secretKeyCaptor.capture(), ivParameterSpecCaptor.capture());
+        assertThat(secretKeyCaptor.getValue(), is(notNullValue()));
+        assertThat(secretKeyCaptor.getValue().getAlgorithm(), is(ALGORITHM_AES));
+        assertThat(secretKeyCaptor.getValue().getEncoded(), is(aesKey));
+        assertThat(ivParameterSpecCaptor.getValue(), is(notNullValue()));
+        assertThat(ivParameterSpecCaptor.getValue().getIV(), is(encodedIv.getBytes()));
+
+        assertThat(decrypted, is(decryptedData));
+    }
+
+    @Test
+    public void shouldAESDecryptDeprecatedKeyAliasData() throws Exception {
+        ArgumentCaptor<SecretKey> secretKeyCaptor = ArgumentCaptor.forClass(SecretKey.class);
+        ArgumentCaptor<IvParameterSpec> ivParameterSpecCaptor = ArgumentCaptor.forClass(IvParameterSpec.class);
+        byte[] aesKey = "aes-decrypted-key".getBytes();
+        byte[] data = "data".getBytes();
+        byte[] decryptedData = new byte[]{0, 1, 2, 3, 4, 5};
+        String encodedIv = "iv-data";
+
+        doReturn(aesKey).when(cryptoUtil).getAESKey();
+        doReturn(decryptedData).when(aesCipher).doFinal(data);
+        PowerMockito.when(aesCipher.doFinal(data)).thenReturn(decryptedData);
+        PowerMockito.when(storage.retrieveString(KEY_ALIAS + "_iv")).thenReturn(null);
+        PowerMockito.when(storage.retrieveString(DEPRECATED_KEY_ALIAS + "_iv")).thenReturn(encodedIv);
         PowerMockito.mockStatic(Base64.class);
         PowerMockito.when(Base64.decode(encodedIv, Base64.DEFAULT)).thenReturn(encodedIv.getBytes());
 
@@ -1259,8 +1330,11 @@ public class CryptoUtilTest {
         cryptoUtil.decrypt(new byte[0]);
 
         Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
+        Mockito.verify(keyStore, never()).deleteEntry(DEPRECATED_KEY_ALIAS);
         Mockito.verify(storage, never()).remove(KEY_ALIAS);
+        Mockito.verify(storage, never()).remove(DEPRECATED_KEY_ALIAS);
         Mockito.verify(storage, never()).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(storage, never()).remove(DEPRECATED_KEY_ALIAS + "_iv");
     }
 
     @Test
@@ -1283,10 +1357,29 @@ public class CryptoUtilTest {
         cryptoUtil.decrypt(new byte[0]);
 
         Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
+        Mockito.verify(keyStore, never()).deleteEntry(DEPRECATED_KEY_ALIAS);
         Mockito.verify(storage, never()).remove(KEY_ALIAS);
+        Mockito.verify(storage, never()).remove(DEPRECATED_KEY_ALIAS);
         Mockito.verify(storage, never()).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(storage, never()).remove(DEPRECATED_KEY_ALIAS + "_iv");
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.P)
+    @Test
+    @Config(sdk = 28)
+    public void shouldUseExistingDeprecatedEntryWhenPresent() throws Exception {
+        ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 28);
+        KeyStore.PrivateKeyEntry entry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
+        PowerMockito.when(keyStore.getEntry(DEPRECATED_KEY_ALIAS, null)).thenReturn(entry);
+        PrivateKey privateKey = null;
+        PowerMockito.when(keyStore.containsAlias(KEY_ALIAS)).thenReturn(false);
+        PowerMockito.when(keyStore.containsAlias(DEPRECATED_KEY_ALIAS)).thenReturn(true);
+        PowerMockito.when(keyStore.getKey(DEPRECATED_KEY_ALIAS, null)).thenReturn(privateKey);
+
+        KeyStore.PrivateKeyEntry rsaEntry = cryptoUtil.getRSAKeyEntry();
+        assertThat(rsaEntry, is(notNullValue()));
+        assertThat(rsaEntry, is(entry));
+    }
 
     /*
      * Helper methods
