@@ -183,27 +183,22 @@ AuthCallback authCallback = new AuthCallback() {
     @Override
     public void onFailure(@NonNull Dialog dialog) {
         //failed with a dialog
-        // Update UI on main thread
-        activity.runOnUiThread { dialog.show(); };
     }
 
     @Override
     public void onFailure(AuthenticationException exception) {
         //failed with an exception
-        // Update UI on main thread
-        activity.runOnUiThread { // Update UI };
     }
 
     @Override
     public void onSuccess(@NonNull Credentials credentials) {
         //succeeded!
-        // Update UI on main thread
-        activity.runOnUiThread { // Update UI };
     }
 };
 ```
 
-It is important to note that the callback might not occur on the main thread. If you need to update any UI ensure that it is run on the main thread.
+
+**Note:** The callback could be invoked from a background thread. If you need to update your UI, make sure to change to the UI thread using [Activity#runOnUiThread(Runnable)](https://developer.android.com/reference/android/app/Activity#runOnUiThread(java.lang.Runnable)).
 
 If you've followed the configuration steps, the authentication result will be redirected from the browser to your application and you'll receive it in the Callback.
 
@@ -336,24 +331,21 @@ BaseCallback logoutCallback = new BaseCallback<Void, Auth0Exception>() {
     @Override
     public void onFailure(Auth0Exception exception) {
         //failed with an exception
-        activity.runOnUiThread { // Update UI };
     }
 
     @Override
     public void onSuccess(@NonNull Void payload) {
         //succeeded!
-        activity.runOnUiThread { // Update UI };
     }
 };
 ```
-
-As with login, this callback might not be called on the main thread. Ensure that any UI updates are ran on the main thread.
 
 The callback will get invoked when the user returns to your application. If this is the result of being redirected back by the server, that would be considered a success. There are some scenarios in which this can fail:
 * When there is no browser application that can open a URL. The cause of the exception will be an instance of `ActivityNotFoundException`.
 * When the user closes the browser manually, e.g. by pressing the back key on their device.
 * When the `returnTo` URL is not found in the **Allowed Logout URLs** in your Auth0 application settings.
 
+**Note:** The callback could be invoked from a background thread. If you need to update your UI, make sure to change to the UI thread using [Activity#runOnUiThread(Runnable)](https://developer.android.com/reference/android/app/Activity#runOnUiThread(java.lang.Runnable)).
 
 #### Customize the Custom Tabs UI
 
