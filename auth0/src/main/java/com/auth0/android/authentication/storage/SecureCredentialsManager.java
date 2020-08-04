@@ -41,7 +41,9 @@ public class SecureCredentialsManager {
     private static final String KEY_CREDENTIALS = "com.auth0.credentials";
     private static final String KEY_EXPIRES_AT = "com.auth0.credentials_expires_at";
     private static final String KEY_CAN_REFRESH = "com.auth0.credentials_can_refresh";
-    private static final String KEY_ALIAS = "com.auth0.key";
+    private static final String KEY_CRYPTO_ALIAS = "com.auth0.manager_key_alias";
+    @VisibleForTesting
+    static final String KEY_ALIAS = "com.auth0.key";
 
     private final AuthenticationAPIClient apiClient;
     private final Storage storage;
@@ -165,6 +167,7 @@ public class SecureCredentialsManager {
             storage.store(KEY_CREDENTIALS, encryptedEncoded);
             storage.store(KEY_EXPIRES_AT, expiresAt);
             storage.store(KEY_CAN_REFRESH, canRefresh);
+            storage.store(KEY_CRYPTO_ALIAS, KEY_ALIAS);
         } catch (IncompatibleDeviceException e) {
             throw new CredentialsManagerException(String.format("This device is not compatible with the %s class.", SecureCredentialsManager.class.getSimpleName()), e);
         } catch (CryptoException e) {
@@ -211,6 +214,7 @@ public class SecureCredentialsManager {
         storage.remove(KEY_CREDENTIALS);
         storage.remove(KEY_EXPIRES_AT);
         storage.remove(KEY_CAN_REFRESH);
+        storage.remove(KEY_CRYPTO_ALIAS);
         Log.d(TAG, "Credentials were just removed from the storage");
     }
 
@@ -223,9 +227,10 @@ public class SecureCredentialsManager {
         String encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS);
         Long expiresAt = storage.retrieveLong(KEY_EXPIRES_AT);
         Boolean canRefresh = storage.retrieveBoolean(KEY_CAN_REFRESH);
-        return !(isEmpty(encryptedEncoded) ||
-                expiresAt == null ||
-                expiresAt <= getCurrentTimeInMillis() && (canRefresh == null || !canRefresh));
+        String keyAliasUsed = storage.retrieveString(KEY_CRYPTO_ALIAS);
+        return KEY_ALIAS.equals(keyAliasUsed) &&
+                !(isEmpty(encryptedEncoded) || expiresAt == null ||
+                        expiresAt <= getCurrentTimeInMillis() && (canRefresh == null || !canRefresh));
     }
 
     private void continueGetCredentials(final BaseCallback<Credentials, CredentialsManagerException> callback) {

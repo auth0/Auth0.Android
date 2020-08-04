@@ -128,6 +128,7 @@ public class SecureCredentialsManagerTest {
         verify(storage).store(eq("com.auth0.credentials"), stringCaptor.capture());
         verify(storage).store("com.auth0.credentials_expires_at", sharedExpirationTime);
         verify(storage).store("com.auth0.credentials_can_refresh", true);
+        verify(storage).store("com.auth0.manager_key_alias", SecureCredentialsManager.KEY_ALIAS);
         verifyNoMoreInteractions(storage);
         final String encodedJson = stringCaptor.getValue();
         assertThat(encodedJson, is(notNullValue()));
@@ -155,6 +156,7 @@ public class SecureCredentialsManagerTest {
         verify(storage).store(eq("com.auth0.credentials"), stringCaptor.capture());
         verify(storage).store("com.auth0.credentials_expires_at", accessTokenExpirationTime);
         verify(storage).store("com.auth0.credentials_can_refresh", true);
+        verify(storage).store("com.auth0.manager_key_alias", SecureCredentialsManager.KEY_ALIAS);
         verifyNoMoreInteractions(storage);
         final String encodedJson = stringCaptor.getValue();
         assertThat(encodedJson, is(notNullValue()));
@@ -183,6 +185,7 @@ public class SecureCredentialsManagerTest {
         verify(storage).store(eq("com.auth0.credentials"), stringCaptor.capture());
         verify(storage).store("com.auth0.credentials_expires_at", idTokenExpirationTime);
         verify(storage).store("com.auth0.credentials_can_refresh", true);
+        verify(storage).store("com.auth0.manager_key_alias", SecureCredentialsManager.KEY_ALIAS);
         verifyNoMoreInteractions(storage);
         final String encodedJson = stringCaptor.getValue();
         assertThat(encodedJson, is(notNullValue()));
@@ -210,6 +213,7 @@ public class SecureCredentialsManagerTest {
         verify(storage).store(eq("com.auth0.credentials"), stringCaptor.capture());
         verify(storage).store("com.auth0.credentials_expires_at", expirationTime);
         verify(storage).store("com.auth0.credentials_can_refresh", false);
+        verify(storage).store("com.auth0.manager_key_alias", SecureCredentialsManager.KEY_ALIAS);
         verifyNoMoreInteractions(storage);
         final String encodedJson = stringCaptor.getValue();
         assertThat(encodedJson, is(notNullValue()));
@@ -573,6 +577,7 @@ public class SecureCredentialsManagerTest {
         verify(storage).remove("com.auth0.credentials");
         verify(storage).remove("com.auth0.credentials_expires_at");
         verify(storage).remove("com.auth0.credentials_can_refresh");
+        verify(storage).remove("com.auth0.manager_key_alias");
         verifyNoMoreInteractions(storage);
     }
 
@@ -586,6 +591,7 @@ public class SecureCredentialsManagerTest {
         when(storage.retrieveLong("com.auth0.credentials_expires_at")).thenReturn(expirationTime);
         when(storage.retrieveBoolean("com.auth0.credentials_can_refresh")).thenReturn(false);
         when(storage.retrieveString("com.auth0.credentials")).thenReturn("{\"id_token\":\"idToken\"}");
+        when(storage.retrieveString("com.auth0.manager_key_alias")).thenReturn(SecureCredentialsManager.KEY_ALIAS);
         assertThat(manager.hasValidCredentials(), is(true));
 
         when(storage.retrieveString("com.auth0.credentials")).thenReturn("{\"access_token\":\"accessToken\"}");
@@ -598,6 +604,7 @@ public class SecureCredentialsManagerTest {
         when(storage.retrieveLong("com.auth0.credentials_expires_at")).thenReturn(expirationTime);
         when(storage.retrieveBoolean("com.auth0.credentials_can_refresh")).thenReturn(false);
         when(storage.retrieveString("com.auth0.credentials")).thenReturn("{\"id_token\":\"idToken\"}");
+        when(storage.retrieveString("com.auth0.manager_key_alias")).thenReturn(SecureCredentialsManager.KEY_ALIAS);
         assertThat(manager.hasValidCredentials(), is(false));
 
         when(storage.retrieveString("com.auth0.credentials")).thenReturn("{\"access_token\":\"accessToken\"}");
@@ -610,6 +617,7 @@ public class SecureCredentialsManagerTest {
         when(storage.retrieveLong("com.auth0.credentials_expires_at")).thenReturn(expirationTime);
         when(storage.retrieveBoolean("com.auth0.credentials_can_refresh")).thenReturn(true);
         when(storage.retrieveString("com.auth0.credentials")).thenReturn("{\"id_token\":\"idToken\", \"refresh_token\":\"refreshToken\"}");
+        when(storage.retrieveString("com.auth0.manager_key_alias")).thenReturn(SecureCredentialsManager.KEY_ALIAS);
         assertThat(manager.hasValidCredentials(), is(true));
 
         when(storage.retrieveString("com.auth0.credentials")).thenReturn("{\"access_token\":\"accessToken\", \"refresh_token\":\"refreshToken\"}");
@@ -619,8 +627,35 @@ public class SecureCredentialsManagerTest {
     @Test
     public void shouldNotHaveCredentialsWhenAccessTokenAndIdTokenAreMissing() {
         when(storage.retrieveString("com.auth0.credentials")).thenReturn("{\"token_type\":\"type\", \"refresh_token\":\"refreshToken\"}");
+        when(storage.retrieveString("com.auth0.manager_key_alias")).thenReturn(SecureCredentialsManager.KEY_ALIAS);
 
         assertFalse(manager.hasValidCredentials());
+    }
+
+    @Test
+    public void shouldNotHaveCredentialsWhenTheAliasUsedHasNotBeenMigratedYet() {
+        long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456L * 1000;
+        when(storage.retrieveLong("com.auth0.credentials_expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveBoolean("com.auth0.credentials_can_refresh")).thenReturn(false);
+        when(storage.retrieveString("com.auth0.credentials")).thenReturn("{\"id_token\":\"idToken\"}");
+        when(storage.retrieveString("com.auth0.manager_key_alias")).thenReturn("old_alias");
+        assertThat(manager.hasValidCredentials(), is(false));
+
+        when(storage.retrieveString("com.auth0.credentials")).thenReturn("{\"access_token\":\"accessToken\"}");
+        assertThat(manager.hasValidCredentials(), is(false));
+    }
+
+    @Test
+    public void shouldNotHaveCredentialsWhenTheAliasUsedHasNotBeenSetYet() {
+        long expirationTime = CredentialsMock.CURRENT_TIME_MS + 123456L * 1000;
+        when(storage.retrieveLong("com.auth0.credentials_expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveBoolean("com.auth0.credentials_can_refresh")).thenReturn(false);
+        when(storage.retrieveString("com.auth0.credentials")).thenReturn("{\"id_token\":\"idToken\"}");
+        when(storage.retrieveString("com.auth0.manager_key_alias")).thenReturn(null);
+        assertThat(manager.hasValidCredentials(), is(false));
+
+        when(storage.retrieveString("com.auth0.credentials")).thenReturn("{\"access_token\":\"accessToken\"}");
+        assertThat(manager.hasValidCredentials(), is(false));
     }
 
     /*
@@ -860,6 +895,7 @@ public class SecureCredentialsManagerTest {
         when(storage.retrieveString("com.auth0.credentials")).thenReturn(encoded);
         when(storage.retrieveLong("com.auth0.credentials_expires_at")).thenReturn(willExpireAt != null ? willExpireAt.getTime() : null);
         when(storage.retrieveBoolean("com.auth0.credentials_can_refresh")).thenReturn(hasRefreshToken);
+        when(storage.retrieveString("com.auth0.manager_key_alias")).thenReturn(SecureCredentialsManager.KEY_ALIAS);
         return storedJson;
     }
 
