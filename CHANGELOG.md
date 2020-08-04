@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.24.1](https://github.com/auth0/Auth0.Android/tree/1.24.1) (2020-08-04)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.24.0...1.24.1)
+
+**Fixed**
+- Patch Key alias migration for Secure Credentials Manager [\#325](https://github.com/auth0/Auth0.Android/pull/325) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.24.0](https://github.com/auth0/Auth0.Android/tree/1.24.0) (2020-07-16)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.23.0...1.24.0)
 
