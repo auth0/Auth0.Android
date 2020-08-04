@@ -197,6 +197,9 @@ AuthCallback authCallback = new AuthCallback() {
 };
 ```
 
+
+**Note:** The callback could be invoked from a background thread. If you need to update your UI, make sure to change to the UI thread using [Activity#runOnUiThread(Runnable)](https://developer.android.com/reference/android/app/Activity#runOnUiThread(java.lang.Runnable)).
+
 If you've followed the configuration steps, the authentication result will be redirected from the browser to your application and you'll receive it in the Callback.
 
 #### Those who don't need Web Authentication in their app
@@ -337,12 +340,12 @@ BaseCallback logoutCallback = new BaseCallback<Void, Auth0Exception>() {
 };
 ```
 
-
 The callback will get invoked when the user returns to your application. If this is the result of being redirected back by the server, that would be considered a success. There are some scenarios in which this can fail:
 * When there is no browser application that can open a URL. The cause of the exception will be an instance of `ActivityNotFoundException`.
 * When the user closes the browser manually, e.g. by pressing the back key on their device.
 * When the `returnTo` URL is not found in the **Allowed Logout URLs** in your Auth0 application settings.
 
+**Note:** The callback could be invoked from a background thread. If you need to update your UI, make sure to change to the UI thread using [Activity#runOnUiThread(Runnable)](https://developer.android.com/reference/android/app/Activity#runOnUiThread(java.lang.Runnable)).
 
 #### Customize the Custom Tabs UI
 
