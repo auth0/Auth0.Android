@@ -9,7 +9,7 @@
 ## [1.24.0](https://github.com/auth0/Auth0.Android/tree/1.24.0) (2020-07-16)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.23.0...1.24.0)
 
-### Note
+### Read if using the SecureCredentialsManager
 Starting from this version, the alias used to store the key pair in the Android Keystore is prefixed to avoid collisions between other Auth0 enabled apps. Your users will be facing a "credentials not found" scenario, requiring them to log in again **once**. Double check that you are not ignoring the errors being returned in the callback and documented [here](https://github.com/auth0/Auth0.Android#handling-exceptions).
 
 **Changed**
