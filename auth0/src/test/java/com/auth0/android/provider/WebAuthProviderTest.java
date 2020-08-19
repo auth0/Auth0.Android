@@ -1902,6 +1902,7 @@ public class WebAuthProviderTest {
 
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.ID_TOKEN)
+                .withIdTokenVerificationIssuer("https://some.different.issuer/")
                 .start(activity, callback, REQUEST_CODE);
 
         OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();

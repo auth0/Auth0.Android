@@ -68,6 +68,7 @@ class OAuthManager extends ResumableManager {
     private Long currentTimeInMillis;
     private CustomTabsOptions ctOptions;
     private Integer idTokenVerificationLeeway;
+    private String idTokenVerificationIssuer;
 
     OAuthManager(@NonNull Auth0 account, @NonNull AuthCallback callback, @NonNull Map<String, String> parameters) {
         this.account = account;
@@ -95,6 +96,10 @@ class OAuthManager extends ResumableManager {
 
     void setIdTokenVerificationLeeway(Integer leeway) {
         this.idTokenVerificationLeeway = leeway;
+    }
+
+    void setIdTokenVerificationIssuer(String issuer) {
+        this.idTokenVerificationIssuer = TextUtils.isEmpty(issuer) ? apiClient.getBaseURL() : issuer;
     }
 
     void startAuthentication(Activity activity, String redirectUri, int requestCode) {
@@ -225,7 +230,7 @@ class OAuthManager extends ResumableManager {
 
             @Override
             public void onSuccess(SignatureVerifier signatureVerifier) {
-                IdTokenVerificationOptions options = new IdTokenVerificationOptions(apiClient.getBaseURL(), apiClient.getClientId(), signatureVerifier);
+                IdTokenVerificationOptions options = new IdTokenVerificationOptions(idTokenVerificationIssuer, apiClient.getClientId(), signatureVerifier);
                 String maxAge = parameters.get(KEY_MAX_AGE);
                 if (!TextUtils.isEmpty(maxAge)) {
                     //noinspection ConstantConditions
