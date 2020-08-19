@@ -1895,11 +1895,38 @@ public class WebAuthProviderTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    public void shouldResumeLoginUsingCustomIDTokenVerificationIssuer() throws Exception {
-        AuthenticationAPI mockAPI = new AuthenticationAPI();
-        mockAPI.willReturnValidJsonWebKeys();
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+    public void shouldResumeLoginIgnoringEmptyCustomIDTokenVerificationIssuer() throws Exception {
+        WebAuthProvider.init(account)
+                .withResponseType(ResponseType.ID_TOKEN)
+                .withIdTokenVerificationIssuer(null)
+                .start(activity, callback, REQUEST_CODE);
 
+        OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
+        managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
+
+        verify(activity).startActivity(intentCaptor.capture());
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
+        assertThat(uri, is(notNullValue()));
+
+        String sentState = uri.getQueryParameter(KEY_STATE);
+        String sentNonce = uri.getQueryParameter(KEY_NONCE);
+        assertThat(sentState, is(not(isEmptyOrNullString())));
+        assertThat(sentNonce, is(not(isEmptyOrNullString())));
+
+        Map<String, Object> jwtBody = createJWTBody();
+        jwtBody.put("nonce", sentNonce);
+        jwtBody.put("iss", account.getDomainUrl());
+        String expectedIdToken = createTestJWT("HS256", jwtBody);
+
+        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, sentState, null, null));
+        assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
+
+        verify(callback).onSuccess(any(Credentials.class));
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void shouldResumeLoginUsingCustomIDTokenVerificationIssuer() throws Exception {
         WebAuthProvider.init(account)
                 .withResponseType(ResponseType.ID_TOKEN)
                 .withIdTokenVerificationIssuer("https://some.different.issuer/")
