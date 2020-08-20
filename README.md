@@ -208,7 +208,7 @@ The ID token received as part of this authentication flow is automatically verif
 If you are a user of Auth0 Private Cloud with ["Custom Domains"](https://auth0.com/docs/custom-domains) still on the [legacy behavior](https://auth0.com/docs/private-cloud/private-cloud-migrations/migrate-private-cloud-custom-domains#background), you need to override the expected issuer to match your Auth0 domain before starting the authentication.
 
 ```java
-Auth0 account = new Auth0("{YOUR_AUTH0_CLIENT_ID}", ""{YOUR_CUSTOM_DOMAIN}");
+Auth0 account = new Auth0("{YOUR_AUTH0_CLIENT_ID}", "{YOUR_CUSTOM_DOMAIN}");
 
 WebAuthProvider.login(account)
     .withIdTokenVerificationIssuer("https://{YOUR_AUTH0_DOMAIN}/")
