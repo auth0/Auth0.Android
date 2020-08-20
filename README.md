@@ -540,6 +540,7 @@ authentication.login(email, password, realm)
                     Map<String, Object> params = new HashMap<>();
                     params.put("login_hint", email); // So the user doesn't have to type it again
                     WebAuthProvider.login(account)
+                            .withConnection(realm)
                             .withParameters(params)
                             .start(LoginActivity.this, new AuthCallback() {
                                 // You might already have an AuthCallback instance defined
