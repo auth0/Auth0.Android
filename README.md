@@ -205,7 +205,7 @@ If you've followed the configuration steps, the authentication result will be re
 #### Token Validation
 The ID token received as part of this authentication flow is automatically verified following the [OpenID Connect specification](https://openid.net/specs/openid-connect-core-1_0.html).
 
-If your Auth0 account is set up to use Custom Domain but has not yet migrated from the [legacy behavior](https://auth0.com/docs/private-cloud/private-cloud-migrations/migrate-private-cloud-custom-domains#background), you need to override the expected issuer to match your Auth0 domain before starting the authentication.
+If you are a user of Auth0 Private Cloud with ["Custom Domains"](https://auth0.com/docs/custom-domains) still on the [legacy behavior](https://auth0.com/docs/private-cloud/private-cloud-migrations/migrate-private-cloud-custom-domains#background), you need to override the expected issuer to match your Auth0 domain before starting the authentication.
 
 ```java
 Auth0 account = new Auth0("{YOUR_AUTH0_CLIENT_ID}", ""{YOUR_CUSTOM_DOMAIN}");
@@ -278,7 +278,7 @@ WebAuthProvider.login(account)
     .start(MainActivity.this, authCallback);
 ```
 
-> Replace `{YOUR_AUTH0_DOMAIN}` with your actual Auth0 domain (i.e. `mytenant.auth0.com`). If you've set up the tenant to use Custom Domain, use that value here.
+> Replace `{YOUR_AUTH0_DOMAIN}` with your actual Auth0 domain (i.e. `mytenant.auth0.com`). If you've set up the tenant to use "Custom Domains", use that value here.
 
 #### Specify scope
 
