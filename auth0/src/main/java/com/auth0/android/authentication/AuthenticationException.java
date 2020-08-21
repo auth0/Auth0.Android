@@ -181,6 +181,11 @@ public class AuthenticationException extends Auth0Exception {
         return "a0.mfa_registration_required".equals(code) || "unsupported_challenge_type".equals(code);
     }
 
+    /// When Bot Protection flags the request as suspicious
+    public boolean isVerificationRequired() {
+        return "requires_verification".equals(code);
+    }
+
     /// When the MFA Token used on the login request is malformed or has expired
     public boolean isMultifactorTokenInvalid() {
         return "expired_token".equals(code) && "mfa_token is expired".equals(description) ||

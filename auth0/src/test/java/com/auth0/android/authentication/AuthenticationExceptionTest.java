@@ -152,6 +152,14 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
+    public void shouldHaveRequestVerificationError() {
+        values.put(CODE_KEY, "requires_verification");
+        values.put(ERROR_DESCRIPTION_KEY, "Suspicious request requires verification");
+        AuthenticationException ex = new AuthenticationException(values);
+        assertThat(ex.isVerificationRequired(), is(true));
+    }
+
+    @Test
     public void shouldHaveExpiredMultifactorTokenOnOIDCMode() {
         values.put(ERROR_KEY, "expired_token");
         values.put(ERROR_DESCRIPTION_KEY, "mfa_token is expired");

@@ -402,6 +402,8 @@ Create a new instance by passing the account:
 AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
 ```
 
+**Note:** If your Auth0 account has the ["Bot Protection"](https://auth0.com/docs/anomaly-detection/bot-protection) feature enabled, your requests might be flagged for verification. Read how to handle this scenario on the [Bot Protection](#bot-protection) section.
+
 #### Login with database connection
 
 If the `Auth0` instance wasn't configured as "OIDC conformant", this call requires the Application to have the *Resource Owner* Client Grant Type enabled. Check [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
@@ -532,6 +534,62 @@ authentication
    });
 ```
 
+
+#### Bot Protection
+If you are using the [Bot Protection](https://auth0.com/docs/anomaly-detection/bot-protection) feature and performing database login/signup via the Authentication API, you need to handle the `AuthenticationException#isVerificationRequired()` error. It indicates that the request was flagged as suspicious and an additional verification step is necessary to log the user in. That verification step is web-based, so you need to use Universal Login to complete it.
+
+```java
+final String email = "info@auth0.com";
+final String password = "a secret password";
+final String realm = "my-database-connection";
+
+AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
+authentication.login(email, password, realm)
+        .start(new BaseCallback<Credentials, AuthenticationException>() {
+
+            @Override
+            public void onFailure(AuthenticationException error) {
+                if (error.isVerificationRequired()){
+                    Map<String, Object> params = new HashMap<>();
+                    params.put("login_hint", email); // So the user doesn't have to type it again
+                    WebAuthProvider.login(account)
+                            .withConnection(realm)
+                            .withParameters(params)
+                            .start(LoginActivity.this, new AuthCallback() {
+                                // You might already have an AuthCallback instance defined
+
+                                @Override
+                                public void onFailure(@NonNull Dialog dialog) {
+                                    // Error dialog available
+                                }
+
+                                @Override
+                                public void onFailure(AuthenticationException exception) {
+                                    // Error
+                                }
+
+                                @Override
+                                public void onSuccess(@NonNull Credentials credentials) {
+                                    // Handle WebAuth success
+                                }
+                            });
+                }
+            }
+
+            @Override
+            public void onSuccess(Credentials payload) {
+                // Handle API success
+            }
+        });
+```
+
+In the case of signup, you can add [an additional parameter](https://auth0.com/docs/universal-login/new-experience#signup) to make the user land directly on the signup page:
+
+```java
+params.put("screen_hint", "signup");
+```
+
+Check out how to set up Universal Login in the [Authentication with Universal Login](#authentication-with-universal-login) section.
 
 ### Management API (Users)
 
