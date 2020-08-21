@@ -578,12 +578,12 @@ authentication.login(email, password, realm)
 
             @Override
             public void onSuccess(Credentials payload) {
-                //Handle API success
+                // Handle API success
             }
         });
 ```
 
-In the case of signup, you can add [an additional parameter](https://auth0.com/docs/universal-login/new-experience#signup) to make the user land directly on the signup tab:
+In the case of signup, you can add [an additional parameter](https://auth0.com/docs/universal-login/new-experience#signup) to make the user land directly on the signup page:
 
 ```java
 params.put("screen_hint", "signup");
