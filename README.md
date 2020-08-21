@@ -570,6 +570,12 @@ authentication.login(email, password, realm)
         });
 ```
 
+In the case of signup, you can add [an additional parameter](https://auth0.com/docs/universal-login/new-experience#signup) to make the user land directly on the signup tab:
+
+```java
+params.put("screen_hint", "signup");
+```
+
 Check out how to set up Universal Login in the [Authentication with Universal Login](#authentication-with-universal-login) section.
 
 ### Management API (Users)
