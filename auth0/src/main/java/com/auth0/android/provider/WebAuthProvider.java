@@ -156,6 +156,7 @@ public class WebAuthProvider {
         private boolean useBrowser;
         private boolean useFullscreen;
         private PKCE pkce;
+        private String issuer;
         private String scheme;
         private String redirectUri;
         private CustomTabsOptions ctOptions;
@@ -243,6 +244,18 @@ public class WebAuthProvider {
          */
         public Builder withIdTokenVerificationLeeway(@NonNull Integer leeway) {
             this.leeway = leeway;
+            return this;
+        }
+
+        /**
+         * Set the expected issuer to be used for ID Token verification.
+         * Defaults to the value returned by {@link Auth0#getDomainUrl()}.
+         *
+         * @param issuer to use for ID token verification.
+         * @return the current builder instance
+         */
+        public Builder withIdTokenVerificationIssuer(@NonNull String issuer) {
+            this.issuer = issuer;
             return this;
         }
 
@@ -416,6 +429,7 @@ public class WebAuthProvider {
             manager.setCustomTabsOptions(ctOptions);
             manager.setPKCE(pkce);
             manager.setIdTokenVerificationLeeway(leeway);
+            manager.setIdTokenVerificationIssuer(issuer);
 
             managerInstance = manager;
 
