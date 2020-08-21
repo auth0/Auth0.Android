@@ -202,6 +202,19 @@ AuthCallback authCallback = new AuthCallback() {
 
 If you've followed the configuration steps, the authentication result will be redirected from the browser to your application and you'll receive it in the Callback.
 
+#### Token Validation
+The ID token received as part of this authentication flow is automatically verified following the [OpenID Connect specification](https://openid.net/specs/openid-connect-core-1_0.html).
+
+If you are a user of Auth0 Private Cloud with ["Custom Domains"](https://auth0.com/docs/custom-domains) still on the [legacy behavior](https://auth0.com/docs/private-cloud/private-cloud-migrations/migrate-private-cloud-custom-domains#background), you need to override the expected issuer to match your Auth0 domain before starting the authentication.
+
+```java
+Auth0 account = new Auth0("{YOUR_AUTH0_CLIENT_ID}", "{YOUR_CUSTOM_DOMAIN}");
+
+WebAuthProvider.login(account)
+    .withIdTokenVerificationIssuer("https://{YOUR_AUTH0_DOMAIN}/")
+    .start(MainActivity.this, authCallback);
+```
+
 #### Those who don't need Web Authentication in their app
 
 If you don't plan to use the _Web Authentication_ feature you will still be prompted to provide the `manifestPlaceholders` values since the `AuthenticationActivity` included in this library will require them and the Gradle tasks won't be able to run. Declare the activity manually with `tools:node="remove"` in your app's Android Manifest in order to make the manifest merger remove it from the final manifest file. Additionally, 2 more unused activities can be removed from the final APK by using the same process. A complete snippet to achieve this is:
@@ -265,7 +278,7 @@ WebAuthProvider.login(account)
     .start(MainActivity.this, authCallback);
 ```
 
-> Replace `{YOUR_AUTH0_DOMAIN}` with your actual Auth0 domain (i.e. `mytenant.auth0.com`).
+> Replace `{YOUR_AUTH0_DOMAIN}` with your actual Auth0 domain (i.e. `mytenant.auth0.com`). If you've set up the tenant to use "Custom Domains", use that value here.
 
 #### Specify scope
 
