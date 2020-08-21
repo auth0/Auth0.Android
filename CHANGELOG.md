@@ -1,5 +1,12 @@
 # Change Log
 
+## [1.25.0](https://github.com/auth0/Auth0.Android/tree/1.25.0) (2020-08-21)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.24.1...1.25.0)
+
+**Added**
+- Add Bot Protection support [\#329](https://github.com/auth0/Auth0.Android/pull/329) ([lbalmaceda](https://github.com/lbalmaceda))
+- Support use of Custom Issuer for ID Token verification [SDK-1910] [\#328](https://github.com/auth0/Auth0.Android/pull/328) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.24.1](https://github.com/auth0/Auth0.Android/tree/1.24.1) (2020-08-04)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.24.0...1.24.1)
 
