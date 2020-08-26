@@ -153,6 +153,7 @@ public class WebAuthProvider {
 
         private final Auth0 account;
         private final Map<String, String> values;
+        private final Map<String, String> headers;
         private PKCE pkce;
         private NetworkingClient networkingClient;
         private String issuer;
@@ -166,6 +167,7 @@ public class WebAuthProvider {
             this.values = new HashMap<>();
 
             //Default values
+            this.headers = new HashMap<>();
             this.scheme = "https";
             this.ctOptions = CustomTabsOptions.newBuilder().build();
             withScope(SCOPE_TYPE_OPENID);
@@ -300,6 +302,18 @@ public class WebAuthProvider {
         }
 
         /**
+         * Add custom headers for PKCE token request.
+         *
+         * @param headers for token request.
+         * @return the current builder instance
+         */
+        @NonNull
+        public Builder withHeaders(@NonNull Map<String, String> headers) {
+            this.headers.putAll(headers);
+            return this;
+        }
+
+        /**
          * Give a connection scope for this request.
          *
          * @param connectionScope to request.
@@ -384,14 +398,8 @@ public class WebAuthProvider {
                 return;
             }
 
-            if (!PKCE.isAvailable()) {
-                AuthenticationException ex = new AuthenticationException("a0.pkce_not_available",
-                        "The SHA-256 algorithm, required to generate the Proof of Key Exchange (PKCE) signature, is not available on this device. See https://developer.android.com/reference/java/security/MessageDigest for additional information on the support for the SHA-256 algorithm.");
-                callback.onFailure(ex);
-                return;
-            }
-
             OAuthManager manager = new OAuthManager(account, callback, values, ctOptions, networkingClient);
+            manager.setHeaders(headers);
             manager.setPKCE(pkce);
             manager.setIdTokenVerificationLeeway(leeway);
             manager.setIdTokenVerificationIssuer(issuer);

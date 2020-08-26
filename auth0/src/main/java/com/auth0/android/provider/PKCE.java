@@ -33,7 +33,11 @@ import androidx.annotation.VisibleForTesting;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.request.Request;
 import com.auth0.android.result.Credentials;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Performs code exchange according to Proof Key for Code Exchange (PKCE) spec.
@@ -45,6 +49,7 @@ class PKCE {
     private final String codeVerifier;
     private final String redirectUri;
     private final String codeChallenge;
+    private final Map<String, String> headers = new HashMap<>();
 
     /**
      * Creates a new instance of this class with the given AuthenticationAPIClient.
@@ -76,6 +81,10 @@ class PKCE {
         return codeChallenge;
     }
 
+    public void setHeaders(@NonNull Map<String, String> headers) {
+        this.headers.putAll(headers);
+    }
+
     /**
      * Performs a request to the Auth0 API to get the OAuth Token and end the PKCE flow.
      * The instance of this class must be disposed after this method is called.
@@ -84,21 +93,24 @@ class PKCE {
      * @param callback          to notify the result of this call to.
      */
     public void getToken(String authorizationCode, @NonNull final AuthCallback callback) {
-        apiClient.token(authorizationCode, codeVerifier, redirectUri)
-                .start(new BaseCallback<Credentials, AuthenticationException>() {
-                    @Override
-                    public void onSuccess(@Nullable Credentials payload) {
-                        callback.onSuccess(payload);
-                    }
+        Request<Credentials, AuthenticationException> tokenRequest = apiClient.token(authorizationCode, codeVerifier, redirectUri);
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            tokenRequest.addHeader(entry.getKey(), entry.getValue());
+        }
+        tokenRequest.start(new BaseCallback<Credentials, AuthenticationException>() {
+            @Override
+            public void onSuccess(@Nullable Credentials payload) {
+                callback.onSuccess(payload);
+            }
 
-                    @Override
-                    public void onFailure(@NonNull AuthenticationException error) {
-                        if ("Unauthorized".equals(error.getDescription())) {
-                            Log.e(TAG, "Unable to complete authentication with PKCE. PKCE support can be enabled by setting Application Type to 'Native' and Token Endpoint Authentication Method to 'None' for this app at 'https://manage.auth0.com/#/applications/" + apiClient.getClientId() + "/settings'.");
-                        }
-                        callback.onFailure(error);
-                    }
-                });
+            @Override
+            public void onFailure(@NonNull AuthenticationException error) {
+                if ("Unauthorized".equals(error.getDescription())) {
+                    Log.e(TAG, "Unable to complete authentication with PKCE. PKCE support can be enabled by setting Application Type to 'Native' and Token Endpoint Authentication Method to 'None' for this app at 'https://manage.auth0.com/#/applications/" + apiClient.getClientId() + "/settings'.");
+                }
+                callback.onFailure(error);
+            }
+        });
     }
 
     /**

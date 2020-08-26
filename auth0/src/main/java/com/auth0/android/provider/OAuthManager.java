@@ -61,13 +61,15 @@ class OAuthManager extends ResumableManager {
     private int requestCode;
     private PKCE pkce;
     private Long currentTimeInMillis;
-    private final CustomTabsOptions ctOptions;
+    private CustomTabsOptions ctOptions;
     private Integer idTokenVerificationLeeway;
     private String idTokenVerificationIssuer;
+    private Map<String, String> headers;
 
     OAuthManager(@NonNull Auth0 account, @NonNull AuthCallback callback, @NonNull Map<String, String> parameters, @NonNull CustomTabsOptions ctOptions, @Nullable NetworkingClient networkingClient) {
         this.account = account;
         this.callback = callback;
+        this.headers = new HashMap<>();
         this.parameters = new HashMap<>(parameters);
         this.parameters.put(KEY_RESPONSE_TYPE, RESPONSE_TYPE_CODE);
         if (networkingClient == null) {
@@ -94,6 +96,7 @@ class OAuthManager extends ResumableManager {
 
     void startAuthentication(Activity activity, String redirectUri, int requestCode) {
         addPKCEParameters(parameters, redirectUri);
+        addPKCEHeaders(headers);
         addClientParameters(parameters, redirectUri);
         addValidationParameters(parameters);
         Uri uri = buildAuthorizeUri();
@@ -102,7 +105,10 @@ class OAuthManager extends ResumableManager {
         AuthenticationActivity.authenticateUsingBrowser(activity, uri, ctOptions);
     }
 
-    @SuppressWarnings("ConstantConditions")
+    void setHeaders(@NonNull Map<String, String> headers) {
+        this.headers.putAll(headers);
+    }
+
     @Override
     boolean resume(AuthorizeResult result) {
         if (!result.isValid(requestCode)) {
@@ -254,6 +260,10 @@ class OAuthManager extends ResumableManager {
         parameters.put(KEY_CODE_CHALLENGE, codeChallenge);
         parameters.put(KEY_CODE_CHALLENGE_METHOD, METHOD_SHA_256);
         Log.v(TAG, "Using PKCE authentication flow");
+    }
+
+    private void addPKCEHeaders(@NonNull Map<String, String> httpHeaders) {
+        pkce.setHeaders(httpHeaders);
     }
 
     private void addValidationParameters(Map<String, String> parameters) {
