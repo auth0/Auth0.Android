@@ -70,12 +70,14 @@ class OAuthManager extends ResumableManager {
     private CustomTabsOptions ctOptions;
     private Integer idTokenVerificationLeeway;
     private String idTokenVerificationIssuer;
+    private Map<String, String> headers;
 
     OAuthManager(@NonNull Auth0 account, @NonNull AuthCallback callback, @NonNull Map<String, String> parameters) {
         this.account = account;
         this.callback = callback;
         this.parameters = new HashMap<>(parameters);
         this.apiClient = new AuthenticationAPIClient(account);
+        this.headers = new HashMap<>();
     }
 
     void useFullScreen(boolean useFullScreen) {
@@ -105,6 +107,7 @@ class OAuthManager extends ResumableManager {
 
     void startAuthentication(Activity activity, String redirectUri, int requestCode) {
         addPKCEParameters(parameters, redirectUri);
+        addPKCEHeaders(headers);
         addClientParameters(parameters, redirectUri);
         addValidationParameters(parameters);
         Uri uri = buildAuthorizeUri();
@@ -115,6 +118,10 @@ class OAuthManager extends ResumableManager {
         } else {
             AuthenticationActivity.authenticateUsingWebView(activity, uri, requestCode, parameters.get(KEY_CONNECTION), useFullScreen);
         }
+    }
+
+    void setHeaders(@NonNull Map<String, String> headers) {
+        this.headers.putAll(headers);
     }
 
     @Override
@@ -320,6 +327,14 @@ class OAuthManager extends ResumableManager {
         } catch (IllegalStateException e) {
             Log.e(TAG, "Some algorithms aren't available on this device and PKCE can't be used. Defaulting to token response_type.", e);
         }
+    }
+
+    private void addPKCEHeaders(@NonNull Map<String, String> httpHeaders) {
+        if (!shouldUsePKCE()) {
+            return;
+        }
+
+        pkce.setHeaders(httpHeaders);
     }
 
     private void addValidationParameters(Map<String, String> parameters) {
