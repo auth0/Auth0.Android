@@ -41,6 +41,7 @@ import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.auth0.android.provider.OAuthManager.KEY_CONNECTION;
@@ -69,6 +70,7 @@ public class WebAuthProvider {
         private String scheme;
         private String returnToUrl;
         private CustomTabsOptions ctOptions;
+        private String[] browserPackages;
 
         LogoutBuilder(Auth0 account) {
             this.account = account;
@@ -85,6 +87,16 @@ public class WebAuthProvider {
          */
         public LogoutBuilder withCustomTabsOptions(@NonNull CustomTabsOptions options) {
             this.ctOptions = options;
+            return this;
+        }
+
+        /**
+         * When using override custom tabs browser packages
+         * @param browserPackages the List of browsers to be used
+         * @return the current builder instance
+         */
+        public LogoutBuilder withBrowserPackage(@NonNull String[] browserPackages){
+            this.browserPackages = browserPackages;
             return this;
         }
 
@@ -137,6 +149,7 @@ public class WebAuthProvider {
             }
             LogoutManager logoutManager = new LogoutManager(this.account, callback, returnToUrl);
             logoutManager.setCustomTabsOptions(ctOptions);
+            logoutManager.setBrowserPackages(browserPackages);
 
             managerInstance = logoutManager;
             logoutManager.startLogout(context);
@@ -151,6 +164,7 @@ public class WebAuthProvider {
         private static final String SCOPE_TYPE_OPENID = "openid";
         private static final String RESPONSE_TYPE_TOKEN = "token";
 
+
         private final Auth0 account;
         private final Map<String, String> values;
         private boolean useBrowser;
@@ -161,6 +175,8 @@ public class WebAuthProvider {
         private String redirectUri;
         private CustomTabsOptions ctOptions;
         private Integer leeway;
+
+        private String[] browserPackages;
 
         Builder(Auth0 account) {
             this.account = account;
@@ -398,6 +414,11 @@ public class WebAuthProvider {
             return this;
         }
 
+        public Builder withBrowserPackage(@NonNull String[] browserPackages){
+            this.browserPackages = browserPackages;
+            return this;
+        }
+
         @VisibleForTesting
         Builder withPKCE(PKCE pkce) {
             this.pkce = pkce;
@@ -430,6 +451,7 @@ public class WebAuthProvider {
             manager.setPKCE(pkce);
             manager.setIdTokenVerificationLeeway(leeway);
             manager.setIdTokenVerificationIssuer(issuer);
+            manager.setBrowserPackages(browserPackages);
 
             managerInstance = manager;
 
