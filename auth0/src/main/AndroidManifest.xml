@@ -22,6 +22,8 @@
   ~ THE SOFTWARE.
   -->
 
+<!--Ignore rule required due to the 'queries' tag, fix only available for targetSdk=30 -->
+<!--suppress AndroidElementNotAllowed -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="com.auth0.android.auth0">
@@ -54,5 +56,12 @@
 
         <activity android:name="com.auth0.android.provider.WebAuthActivity" />
     </application>
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
+    </queries>
 
 </manifest>
