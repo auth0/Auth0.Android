@@ -85,7 +85,7 @@ public class AuthenticationActivityTest {
 
     @Test
     public void shouldAuthenticateUsingBrowser() {
-        AuthenticationActivity.authenticateUsingBrowser(callerActivity, uri, customTabsOptions);
+        AuthenticationActivity.authenticateUsingBrowser(callerActivity, uri, customTabsOptions, null);
         verify(callerActivity).startActivity(intentCaptor.capture());
 
         createActivity(intentCaptor.getValue());
@@ -115,7 +115,7 @@ public class AuthenticationActivityTest {
 
     @Test
     public void shouldAuthenticateAfterRecreatedUsingBrowser() {
-        AuthenticationActivity.authenticateUsingBrowser(callerActivity, uri, customTabsOptions);
+        AuthenticationActivity.authenticateUsingBrowser(callerActivity, uri, customTabsOptions, null);
         verify(callerActivity).startActivity(intentCaptor.capture());
 
         createActivity(intentCaptor.getValue());
@@ -143,7 +143,7 @@ public class AuthenticationActivityTest {
 
     @Test
     public void shouldCancelAuthenticationUsingBrowser() {
-        AuthenticationActivity.authenticateUsingBrowser(callerActivity, uri, customTabsOptions);
+        AuthenticationActivity.authenticateUsingBrowser(callerActivity, uri, customTabsOptions, null);
         verify(callerActivity).startActivity(intentCaptor.capture());
 
         createActivity(intentCaptor.getValue());
@@ -275,7 +275,7 @@ public class AuthenticationActivityTest {
 
     @Test
     public void shouldLaunchForBrowserAuthentication() {
-        AuthenticationActivity.authenticateUsingBrowser(callerActivity, uri, customTabsOptions);
+        AuthenticationActivity.authenticateUsingBrowser(callerActivity, uri, customTabsOptions, null);
         verify(callerActivity).startActivity(intentCaptor.capture());
 
         Intent intent = intentCaptor.getValue();
@@ -318,7 +318,7 @@ public class AuthenticationActivityTest {
     @Test
     public void shouldCreateCustomTabsController() {
         final AuthenticationActivity authenticationActivity = new AuthenticationActivity();
-        final CustomTabsController controller = authenticationActivity.createCustomTabsController(RuntimeEnvironment.application);
+        final CustomTabsController controller = authenticationActivity.createCustomTabsController(RuntimeEnvironment.application, null);
 
         assertThat(controller, is(notNullValue()));
     }

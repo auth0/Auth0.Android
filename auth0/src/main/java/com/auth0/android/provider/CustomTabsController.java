@@ -52,8 +52,13 @@ class CustomTabsController extends CustomTabsServiceConnection {
         this.preferredPackage = browserPackage;
     }
 
-    public CustomTabsController(@NonNull Context context) {
-        this(context, getBestBrowserPackage(context));
+    /**
+     *
+     * @param context - Android Context
+     * @param overrideBrowserPackages - List of browser to override to default browser packages
+     */
+    public CustomTabsController(@NonNull Context context, String[] overrideBrowserPackages) {
+        this(context, getBestSupportedBrowserPackage(context, overrideBrowserPackages));
     }
 
     @VisibleForTesting
@@ -154,23 +159,20 @@ class CustomTabsController extends CustomTabsServiceConnection {
         }).start();
     }
 
+
     /**
      * Query the OS for a Custom Tab compatible Browser application.
-     * It will pick the default browser first if is Custom Tab compatible, then any Chrome browser or the first Custom Tab compatible browser.
+     * It will pick the any browser supported if is Custom Tab compatible, then any Chrome browser or the first Custom Tab compatible browser.
      *
      * @param context a valid Context
      * @return the recommended Browser application package name, compatible with Custom Tabs. Null if no compatible browser is found.
      */
     @Nullable
-    static String getBestBrowserPackage(@NonNull Context context) {
+    static String getBestSupportedBrowserPackage(@NonNull Context context, @Nullable String[] overrideBrowserPackages) {
         PackageManager pm = context.getPackageManager();
         Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.example.com"));
-        ResolveInfo webHandler = pm.resolveActivity(browserIntent,
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PackageManager.MATCH_ALL : PackageManager.MATCH_DEFAULT_ONLY);
-        String defaultBrowser = null;
-        if (webHandler != null) {
-            defaultBrowser = webHandler.activityInfo.packageName;
-        }
+
+        String[] browserPackages = overrideBrowserPackages == null ? getBrowserPackages(pm) : overrideBrowserPackages;
 
         List<ResolveInfo> resolvedActivityList = pm.queryIntentActivities(browserIntent, 0);
         List<String> customTabsBrowsers = new ArrayList<>();
@@ -182,20 +184,42 @@ class CustomTabsController extends CustomTabsServiceConnection {
                 customTabsBrowsers.add(info.activityInfo.packageName);
             }
         }
-        if (customTabsBrowsers.contains(defaultBrowser)) {
-            return defaultBrowser;
-        } else if (customTabsBrowsers.contains(CHROME_STABLE)) {
-            return CHROME_STABLE;
-        } else if (customTabsBrowsers.contains(CHROME_SYSTEM)) {
-            return CHROME_SYSTEM;
-        } else if (customTabsBrowsers.contains(CHROME_BETA)) {
-            return CHROME_BETA;
-        } else if (customTabsBrowsers.contains(CHROME_DEV)) {
-            return CHROME_DEV;
-        } else if (!customTabsBrowsers.isEmpty()) {
-            return customTabsBrowsers.get(0);
-        } else {
-            return null;
+
+        for (String browserPackage : browserPackages) {
+            if (customTabsBrowsers.contains(browserPackage)) {
+                return browserPackage;
+            }
         }
+
+        if (!customTabsBrowsers.isEmpty()) {
+            return customTabsBrowsers.get(0);
+        }
+
+        return null;
+    }
+
+    /**
+     * Get a default list of browsers that try with custom tabs
+     *
+     * @param pm package manager to retrieve the default system browser
+     * @return the list of browser packages to try in order of priority
+     */
+    private static String[] getBrowserPackages(@NonNull PackageManager pm) {
+
+        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.example.com"));
+        ResolveInfo webHandler = pm.resolveActivity(browserIntent,
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PackageManager.MATCH_ALL : PackageManager.MATCH_DEFAULT_ONLY);
+        List<String> result = new ArrayList<>();
+
+        if (webHandler != null) {
+            result.add(webHandler.activityInfo.packageName);
+        }
+
+        result.add(CHROME_STABLE);
+        result.add(CHROME_SYSTEM);
+        result.add(CHROME_BETA);
+        result.add(CHROME_DEV);
+
+        return result.toArray(new String[0]);
     }
 }

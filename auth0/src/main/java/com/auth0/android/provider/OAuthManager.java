@@ -21,6 +21,7 @@ import com.auth0.android.result.Credentials;
 import java.security.SecureRandom;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings("WeakerAccess")
@@ -68,6 +69,7 @@ class OAuthManager extends ResumableManager {
     private PKCE pkce;
     private Long currentTimeInMillis;
     private CustomTabsOptions ctOptions;
+    private String[] browserPackages;
     private Integer idTokenVerificationLeeway;
     private String idTokenVerificationIssuer;
 
@@ -88,6 +90,10 @@ class OAuthManager extends ResumableManager {
 
     public void setCustomTabsOptions(@Nullable CustomTabsOptions options) {
         this.ctOptions = options;
+    }
+
+    public void setBrowserPackages(@Nullable String[] browserPackages){
+        this.browserPackages = browserPackages;
     }
 
     @VisibleForTesting
@@ -111,7 +117,7 @@ class OAuthManager extends ResumableManager {
         this.requestCode = requestCode;
 
         if (useBrowser) {
-            AuthenticationActivity.authenticateUsingBrowser(activity, uri, ctOptions);
+            AuthenticationActivity.authenticateUsingBrowser(activity, uri, ctOptions, browserPackages);
         } else {
             AuthenticationActivity.authenticateUsingWebView(activity, uri, requestCode, parameters.get(KEY_CONNECTION), useFullScreen);
         }

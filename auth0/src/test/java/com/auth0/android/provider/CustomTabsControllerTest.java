@@ -110,56 +110,56 @@ public class CustomTabsControllerTest {
     @Test
     public void shouldChooseNullBrowserIfNoBrowserAvailable() {
         preparePackageManagerForCustomTabs(null);
-        String bestPackage = CustomTabsController.getBestBrowserPackage(context);
+        String bestPackage = CustomTabsController.getBestSupportedBrowserPackage(context,  null);
         assertThat(bestPackage, is(nullValue()));
     }
 
     @Test
     public void shouldChooseDefaultBrowserIfIsCustomTabsCapable() {
         preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE, DEFAULT_BROWSER_PACKAGE);
-        String bestPackage = CustomTabsController.getBestBrowserPackage(context);
+        String bestPackage = CustomTabsController.getBestSupportedBrowserPackage(context,  null);
         assertThat(bestPackage, is(DEFAULT_BROWSER_PACKAGE));
     }
 
     @Test
     public void shouldReturnNullIfNoBrowserIsCustomTabsCapable() {
         preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE);
-        String bestPackage = CustomTabsController.getBestBrowserPackage(context);
+        String bestPackage = CustomTabsController.getBestSupportedBrowserPackage(context,  null);
         assertThat(bestPackage, is(nullValue()));
     }
 
     @Test
     public void shouldChooseChromeStableOverOtherCustomTabsCapableBrowsers() {
         preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE, CHROME_STABLE_PACKAGE, CHROME_SYSTEM_PACKAGE, CHROME_BETA_PACKAGE, CHROME_DEV_PACKAGE, CUSTOM_TABS_BROWSER_1, CUSTOM_TABS_BROWSER_2);
-        String bestPackage = CustomTabsController.getBestBrowserPackage(context);
+        String bestPackage = CustomTabsController.getBestSupportedBrowserPackage(context,  null);
         assertThat(bestPackage, is(CHROME_STABLE_PACKAGE));
     }
 
     @Test
     public void shouldChooseChromeSystemOverOtherCustomTabsCapableBrowsers() {
         preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE, CHROME_SYSTEM_PACKAGE, CHROME_BETA_PACKAGE, CHROME_DEV_PACKAGE, CUSTOM_TABS_BROWSER_1, CUSTOM_TABS_BROWSER_2);
-        String bestPackage = CustomTabsController.getBestBrowserPackage(context);
+        String bestPackage = CustomTabsController.getBestSupportedBrowserPackage(context,  null);
         assertThat(bestPackage, is(CHROME_SYSTEM_PACKAGE));
     }
 
     @Test
     public void shouldChooseChromeBetaOverOtherCustomTabsCapableBrowsers() {
         preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE, CHROME_BETA_PACKAGE, CHROME_DEV_PACKAGE, CUSTOM_TABS_BROWSER_1, CUSTOM_TABS_BROWSER_2);
-        String bestPackage = CustomTabsController.getBestBrowserPackage(context);
+        String bestPackage = CustomTabsController.getBestSupportedBrowserPackage(context,  null);
         assertThat(bestPackage, is(CHROME_BETA_PACKAGE));
     }
 
     @Test
     public void shouldChooseChromeDevOverOtherCustomTabsCapableBrowsers() {
         preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE, CHROME_DEV_PACKAGE, CUSTOM_TABS_BROWSER_1, CUSTOM_TABS_BROWSER_2);
-        String bestPackage = CustomTabsController.getBestBrowserPackage(context);
+        String bestPackage = CustomTabsController.getBestSupportedBrowserPackage(context,  null);
         assertThat(bestPackage, is(CHROME_DEV_PACKAGE));
     }
 
     @Test
     public void shouldChooseCustomTabsCapableBrowserIfAvailable() {
         preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE, CUSTOM_TABS_BROWSER_1, CUSTOM_TABS_BROWSER_2);
-        String bestPackage = CustomTabsController.getBestBrowserPackage(context);
+        String bestPackage = CustomTabsController.getBestSupportedBrowserPackage(context,  null);
         assertThat(bestPackage, is(CUSTOM_TABS_BROWSER_1));
     }
 
@@ -204,7 +204,7 @@ public class CustomTabsControllerTest {
 
     @Test
     public void shouldLaunchUriUsingFallbackWhenNoCustomTabsCompatibleBrowserIsAvailable() {
-        CustomTabsController controller = new CustomTabsController(context, null);
+        CustomTabsController controller = new CustomTabsController(context, (String[]) null);
         controller.launchUri(uri);
 
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
