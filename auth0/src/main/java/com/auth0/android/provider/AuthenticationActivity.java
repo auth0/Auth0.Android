@@ -9,6 +9,8 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
+import java.util.List;
+
 public class AuthenticationActivity extends Activity {
 
     static final String EXTRA_USE_BROWSER = "com.auth0.android.EXTRA_USE_BROWSER";
@@ -16,16 +18,18 @@ public class AuthenticationActivity extends Activity {
     static final String EXTRA_CONNECTION_NAME = "com.auth0.android.EXTRA_CONNECTION_NAME";
     static final String EXTRA_AUTHORIZE_URI = "com.auth0.android.EXTRA_AUTHORIZE_URI";
     static final String EXTRA_CT_OPTIONS = "com.auth0.android.EXTRA_CT_OPTIONS";
+    static final String EXTRA_BROWSER_PACKAGES = "com.auth0.android.EXTRA_BROWSER_PACKAGES";
     private static final String EXTRA_INTENT_LAUNCHED = "com.auth0.android.EXTRA_INTENT_LAUNCHED";
 
     private boolean intentLaunched;
     private CustomTabsController customTabsController;
 
-    static void authenticateUsingBrowser(@NonNull Context context, @NonNull Uri authorizeUri, @Nullable CustomTabsOptions options) {
+    static void authenticateUsingBrowser(@NonNull Context context, @NonNull Uri authorizeUri, @Nullable CustomTabsOptions options, @Nullable String[] browserPackages) {
         Intent intent = new Intent(context, AuthenticationActivity.class);
         intent.putExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI, authorizeUri);
         intent.putExtra(AuthenticationActivity.EXTRA_USE_BROWSER, true);
         intent.putExtra(AuthenticationActivity.EXTRA_CT_OPTIONS, options);
+        intent.putExtra(AuthenticationActivity.EXTRA_BROWSER_PACKAGES, browserPackages);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         context.startActivity(intent);
     }
@@ -113,15 +117,16 @@ public class AuthenticationActivity extends Activity {
             return;
         }
 
-        customTabsController = createCustomTabsController(this);
+        String[] browserPackages = extras.getStringArray(EXTRA_BROWSER_PACKAGES);
+        customTabsController = createCustomTabsController(this, browserPackages);
         customTabsController.setCustomizationOptions((CustomTabsOptions) extras.getParcelable(EXTRA_CT_OPTIONS));
         customTabsController.bindService();
         customTabsController.launchUri(authorizeUri);
     }
 
     @VisibleForTesting
-    CustomTabsController createCustomTabsController(@NonNull Context context) {
-        return new CustomTabsController(context);
+    CustomTabsController createCustomTabsController(@NonNull Context context, @Nullable String[] browserPackages) {
+        return new CustomTabsController(context, browserPackages);
     }
 
     @VisibleForTesting

@@ -27,6 +27,7 @@ class LogoutManager extends ResumableManager {
     private final Map<String, String> parameters;
 
     private CustomTabsOptions ctOptions;
+    private String[] browserPackages;
 
     LogoutManager(@NonNull Auth0 account, @NonNull VoidCallback callback, @NonNull String returnToUrl) {
         this.account = account;
@@ -39,11 +40,15 @@ class LogoutManager extends ResumableManager {
         this.ctOptions = options;
     }
 
+    void setBrowserPackages(@Nullable String[] browserPackages){
+        this.browserPackages = browserPackages;
+    }
+
     void startLogout(Context context) {
         addClientParameters(parameters);
         Uri uri = buildLogoutUri();
 
-        AuthenticationActivity.authenticateUsingBrowser(context, uri, ctOptions);
+        AuthenticationActivity.authenticateUsingBrowser(context, uri, ctOptions, browserPackages);
     }
 
     @Override
