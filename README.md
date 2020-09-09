@@ -5,6 +5,7 @@
 [![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](http://doge.mit-license.org)
 [![Maven Central](https://img.shields.io/maven-central/v/com.auth0.android/auth0.svg?style=flat-square)](http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22com.auth0.android%22%20AND%20a%3A%22auth0%22)
 [![Bintray](https://img.shields.io/bintray/v/auth0/android/auth0.svg?style=flat-square)](https://bintray.com/auth0/android/auth0/_latestVersion)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fauth0%2FAuth0.Android.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fauth0%2FAuth0.Android?ref=badge_shield)
 
 Android Java toolkit for Auth0 API
 
@@ -856,3 +857,6 @@ If you have found a bug or if you have a feature request, please report them at 
 ## License
 
 This project is licensed under the MIT license. See the [LICENSE](LICENSE) file for more info.
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fauth0%2FAuth0.Android.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fauth0%2FAuth0.Android?ref=badge_large)
