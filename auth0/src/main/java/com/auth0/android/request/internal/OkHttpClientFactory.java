@@ -1,6 +1,7 @@
 package com.auth0.android.request.internal;
 
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
 import android.util.Log;
 
@@ -40,6 +41,7 @@ public class OkHttpClientFactory {
      * @param writeTimeout        Override default write timeout for OkHttpClient
      * @return new OkHttpClient instance created according to the parameters.
      */
+    @NonNull
     public OkHttpClient createClient(boolean loggingEnabled, boolean tls12Enforced, int connectTimeout, int readTimeout, int writeTimeout) {
         return modifyClient(new OkHttpClient(), loggingEnabled, tls12Enforced, connectTimeout, readTimeout, writeTimeout);
     }

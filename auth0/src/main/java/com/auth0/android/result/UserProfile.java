@@ -24,6 +24,9 @@
 
 package com.auth0.android.result;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Date;
@@ -36,23 +39,23 @@ import java.util.Map;
  * Used both in {@link com.auth0.android.management.UsersAPIClient} and {@link com.auth0.android.authentication.AuthenticationAPIClient}.
  */
 public class UserProfile implements Serializable {
-    private String id;
-    private String name;
-    private String nickname;
-    private String pictureURL;
+    private final String id;
+    private final String name;
+    private final String nickname;
+    private final String pictureURL;
 
-    private String email;
-    private boolean emailVerified;
-    private String givenName;
-    private String familyName;
-    private Map<String, Object> userMetadata;
-    private Map<String, Object> appMetadata;
-    private Date createdAt;
-    private List<UserIdentity> identities;
+    private final String email;
+    private final boolean emailVerified;
+    private final String givenName;
+    private final String familyName;
+    private final Map<String, Object> userMetadata;
+    private final Map<String, Object> appMetadata;
+    private final Date createdAt;
+    private final List<UserIdentity> identities;
 
-    private Map<String, Object> extraInfo;
+    private final Map<String, Object> extraInfo;
 
-    public UserProfile(String id, String name, String nickname, String pictureURL, String email, boolean emailVerified, String familyName, Date createdAt, List<UserIdentity> identities, Map<String, Object> extraInfo, Map<String, Object> userMetadata, Map<String, Object> appMetadata, String givenName) {
+    public UserProfile(@Nullable String id, @Nullable String name, @Nullable String nickname, @Nullable String pictureURL, @Nullable String email, boolean emailVerified, @Nullable String familyName, @Nullable Date createdAt, @Nullable List<UserIdentity> identities, @Nullable Map<String, Object> extraInfo, @Nullable Map<String, Object> userMetadata, @Nullable Map<String, Object> appMetadata, @Nullable String givenName) {
         this.id = id;
         this.name = name;
         this.nickname = nickname;
@@ -74,6 +77,7 @@ public class UserProfile implements Serializable {
      *
      * @return the unique identifier of the user.
      */
+    @Nullable
     public String getId() {
         if (id != null) {
             return id;
@@ -81,14 +85,17 @@ public class UserProfile implements Serializable {
         return getExtraInfo().containsKey("sub") ? (String) getExtraInfo().get("sub") : null;
     }
 
+    @Nullable
     public String getName() {
         return name;
     }
 
+    @Nullable
     public String getNickname() {
         return nickname;
     }
 
+    @Nullable
     public String getEmail() {
         return email;
     }
@@ -97,26 +104,32 @@ public class UserProfile implements Serializable {
         return emailVerified;
     }
 
+    @Nullable
     public String getPictureURL() {
         return pictureURL;
     }
 
+    @Nullable
     public Date getCreatedAt() {
         return createdAt;
     }
 
+    @Nullable
     public String getGivenName() {
         return givenName;
     }
 
+    @Nullable
     public String getFamilyName() {
         return familyName;
     }
 
+    @NonNull
     public Map<String, Object> getUserMetadata() {
         return userMetadata != null ? userMetadata : Collections.<String, Object>emptyMap();
     }
 
+    @NonNull
     public Map<String, Object> getAppMetadata() {
         return appMetadata != null ? appMetadata : Collections.<String, Object>emptyMap();
     }
@@ -126,6 +139,7 @@ public class UserProfile implements Serializable {
      *
      * @return a map with user's extra information found in the profile
      */
+    @NonNull
     public Map<String, Object> getExtraInfo() {
         return extraInfo != null ? new HashMap<>(extraInfo) : Collections.<String, Object>emptyMap();
     }
@@ -135,6 +149,7 @@ public class UserProfile implements Serializable {
      *
      * @return a list of identity provider information.
      */
+    @Nullable
     public List<UserIdentity> getIdentities() {
         return identities;
     }

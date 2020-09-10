@@ -43,6 +43,7 @@ abstract class CallbackHelper {
      *
      * @return the callback Uri.
      */
+    @Nullable
     static String getCallbackUri(@NonNull String scheme, @NonNull String packageName, @NonNull String domain) {
         if (!URLUtil.isValidUrl(domain)) {
             Log.e(TAG, "The Domain is invalid and the Callback URI will not be set. You used: " + domain);

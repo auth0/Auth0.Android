@@ -1,10 +1,10 @@
 package com.auth0.android.request.internal;
 
+import android.support.annotation.NonNull;
+
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.request.AuthRequest;
-import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.result.Credentials;
 import com.google.gson.Gson;
@@ -14,7 +14,7 @@ import com.squareup.okhttp.OkHttpClient;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MockAuthenticationRequest implements ParameterizableRequest<Credentials, AuthenticationException>, AuthRequest {
+public class MockAuthenticationRequest extends BaseAuthenticationRequest {
 
     HashMap<String, String> headers;
     HttpUrl url;
@@ -23,6 +23,7 @@ public class MockAuthenticationRequest implements ParameterizableRequest<Credent
     String method;
 
     public MockAuthenticationRequest(HttpUrl url, OkHttpClient client, Gson gson, String method) {
+        super(url, client, gson, method);
         this.headers = new HashMap<>();
         this.url = url;
         this.client = client;
@@ -30,67 +31,31 @@ public class MockAuthenticationRequest implements ParameterizableRequest<Credent
         this.method = method;
     }
 
+    @NonNull
     @Override
-    public AuthenticationRequest setGrantType(String grantType) {
+    public ParameterizableRequest<Credentials, AuthenticationException> addParameters(@NonNull Map<String, Object> parameters) {
         return null;
     }
 
+    @NonNull
     @Override
-    public AuthenticationRequest setConnection(String connection) {
+    public ParameterizableRequest<Credentials, AuthenticationException> addParameter(@NonNull String name, @NonNull Object value) {
         return null;
     }
 
+    @NonNull
     @Override
-    public AuthenticationRequest setRealm(String realm) {
-        return null;
-    }
-
-    @Override
-    public AuthenticationRequest setScope(String scope) {
-        return null;
-    }
-
-    @Override
-    public AuthenticationRequest setDevice(String device) {
-        return null;
-    }
-
-    @Override
-    public AuthenticationRequest setAudience(String audience) {
-        return null;
-    }
-
-    @Override
-    public AuthenticationRequest setAccessToken(String accessToken) {
-        return null;
-    }
-
-    @Override
-    public AuthenticationRequest addAuthenticationParameters(Map<String, Object> parameters) {
-        return null;
-    }
-
-    @Override
-    public ParameterizableRequest<Credentials, AuthenticationException> addParameters(Map<String, Object> parameters) {
-        return null;
-    }
-
-    @Override
-    public ParameterizableRequest<Credentials, AuthenticationException> addParameter(String name, Object value) {
-        return null;
-    }
-
-    @Override
-    public MockAuthenticationRequest addHeader(String name, String value) {
+    public MockAuthenticationRequest addHeader(@NonNull String name, @NonNull String value) {
         headers.put(name, value);
         return this;
     }
 
     @Override
-    public void start(BaseCallback<Credentials, AuthenticationException> callback) {
+    public void start(@NonNull BaseCallback<Credentials, AuthenticationException> callback) {
 
     }
 
+    @NonNull
     @Override
     public Credentials execute() throws Auth0Exception {
         return null;

@@ -25,6 +25,9 @@
 package com.auth0.android.result;
 
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.util.JsonRequired;
 import com.google.gson.annotations.SerializedName;
@@ -44,16 +47,18 @@ public class DatabaseUser {
     @SerializedName("email_verified")
     private final boolean emailVerified;
 
-    public DatabaseUser(String email, String username, boolean emailVerified) {
+    public DatabaseUser(@NonNull String email, @Nullable String username, boolean emailVerified) {
         this.email = email;
         this.username = username;
         this.emailVerified = emailVerified;
     }
 
+    @NonNull
     public String getEmail() {
         return email;
     }
 
+    @Nullable
     public String getUsername() {
         return username;
     }

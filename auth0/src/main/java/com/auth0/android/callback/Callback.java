@@ -24,6 +24,8 @@
 
 package com.auth0.android.callback;
 
+import android.support.annotation.NonNull;
+
 import com.auth0.android.Auth0Exception;
 
 /**
@@ -36,6 +38,6 @@ public interface Callback<U extends Auth0Exception> {
      *
      * @param error The reason of the failure
      */
-    void onFailure(U error);
+    void onFailure(@NonNull U error);
 
 }

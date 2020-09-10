@@ -24,6 +24,9 @@
 
 package com.auth0.android.authentication;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import com.auth0.android.util.CheckHelper;
 
 import java.util.Collections;
@@ -72,7 +75,7 @@ public class ParameterBuilder {
     public static final String DEVICE_KEY = "device";
     public static final String AUDIENCE_KEY = "audience";
 
-    private Map<String, Object> parameters;
+    private final Map<String, Object> parameters;
 
     private ParameterBuilder(Map<String, Object> parameters) {
         CheckHelper.checkArgument(parameters != null, "Must provide non-null parameters");
@@ -85,7 +88,8 @@ public class ParameterBuilder {
      * @param clientId the application's client id
      * @return itself
      */
-    public ParameterBuilder setClientId(String clientId) {
+    @NonNull
+    public ParameterBuilder setClientId(@NonNull String clientId) {
         return set(CLIENT_ID_KEY, clientId);
     }
 
@@ -95,7 +99,8 @@ public class ParameterBuilder {
      * @param grantType grant type
      * @return itself
      */
-    public ParameterBuilder setGrantType(String grantType) {
+    @NonNull
+    public ParameterBuilder setGrantType(@NonNull String grantType) {
         return set(GRANT_TYPE_KEY, grantType);
     }
 
@@ -105,7 +110,8 @@ public class ParameterBuilder {
      * @param connection name of the connection
      * @return itself
      */
-    public ParameterBuilder setConnection(String connection) {
+    @NonNull
+    public ParameterBuilder setConnection(@NonNull String connection) {
         return set(CONNECTION_KEY, connection);
     }
 
@@ -115,7 +121,8 @@ public class ParameterBuilder {
      * @param realm name of the realm
      * @return itself
      */
-    public ParameterBuilder setRealm(String realm) {
+    @NonNull
+    public ParameterBuilder setRealm(@NonNull String realm) {
         return set(REALM_KEY, realm);
     }
 
@@ -125,7 +132,8 @@ public class ParameterBuilder {
      * @param scope a scope value
      * @return itself
      */
-    public ParameterBuilder setScope(String scope) {
+    @NonNull
+    public ParameterBuilder setScope(@NonNull String scope) {
         return set(SCOPE_KEY, scope);
     }
 
@@ -135,7 +143,8 @@ public class ParameterBuilder {
      * @param audience an audience value
      * @return itself
      */
-    public ParameterBuilder setAudience(String audience) {
+    @NonNull
+    public ParameterBuilder setAudience(@NonNull String audience) {
         return set(AUDIENCE_KEY, audience);
     }
 
@@ -145,7 +154,8 @@ public class ParameterBuilder {
      * @param device a device name
      * @return itself
      */
-    public ParameterBuilder setDevice(String device) {
+    @NonNull
+    public ParameterBuilder setDevice(@NonNull String device) {
         return set(DEVICE_KEY, device);
     }
 
@@ -155,7 +165,8 @@ public class ParameterBuilder {
      * @param accessToken a access token
      * @return itself
      */
-    public ParameterBuilder setAccessToken(String accessToken) {
+    @NonNull
+    public ParameterBuilder setAccessToken(@NonNull String accessToken) {
         return set(ACCESS_TOKEN_KEY, accessToken);
     }
 
@@ -165,7 +176,8 @@ public class ParameterBuilder {
      * @param refreshToken a access token
      * @return itself
      */
-    public ParameterBuilder setRefreshToken(String refreshToken) {
+    @NonNull
+    public ParameterBuilder setRefreshToken(@NonNull String refreshToken) {
         return set(REFRESH_TOKEN_KEY, refreshToken);
     }
 
@@ -175,7 +187,8 @@ public class ParameterBuilder {
      * @param passwordlessType the type of passwordless login
      * @return itself
      */
-    public ParameterBuilder setSend(PasswordlessType passwordlessType) {
+    @NonNull
+    public ParameterBuilder setSend(@NonNull PasswordlessType passwordlessType) {
         return set(SEND_KEY, passwordlessType.getValue());
     }
 
@@ -186,7 +199,8 @@ public class ParameterBuilder {
      * @param value parameter value. A null value will remove the key if present.
      * @return itself
      */
-    public ParameterBuilder set(String key, Object value) {
+    @NonNull
+    public ParameterBuilder set(@NonNull String key, @Nullable Object value) {
         if (value == null) {
             this.parameters.remove(key);
         } else {
@@ -201,7 +215,8 @@ public class ParameterBuilder {
      * @param parameters map with parameters to add. Null values will be skipped.
      * @return itself
      */
-    public ParameterBuilder addAll(Map<String, Object> parameters) {
+    @NonNull
+    public ParameterBuilder addAll(@Nullable Map<String, Object> parameters) {
         if (parameters != null) {
             for (String k : parameters.keySet()) {
                 if (parameters.get(k) != null) {
@@ -217,6 +232,8 @@ public class ParameterBuilder {
      *
      * @return itself
      */
+    @SuppressWarnings("UnusedReturnValue")
+    @NonNull
     public ParameterBuilder clearAll() {
         parameters.clear();
         return this;
@@ -227,6 +244,7 @@ public class ParameterBuilder {
      *
      * @return all parameters added previously as a {@link Map}
      */
+    @NonNull
     public Map<String, Object> asDictionary() {
         return Collections.unmodifiableMap(new HashMap<>(this.parameters));
     }
@@ -236,6 +254,7 @@ public class ParameterBuilder {
      *
      * @return a new builder
      */
+    @NonNull
     public static ParameterBuilder newAuthenticationBuilder() {
         return newBuilder()
                 .setScope(SCOPE_OPENID);
@@ -247,6 +266,7 @@ public class ParameterBuilder {
      *
      * @return a new builder
      */
+    @NonNull
     public static ParameterBuilder newBuilder() {
         return newBuilder(new HashMap<String, Object>());
     }
@@ -257,7 +277,8 @@ public class ParameterBuilder {
      * @param parameters initial parameters
      * @return a new builder
      */
-    public static ParameterBuilder newBuilder(Map<String, Object> parameters) {
+    @NonNull
+    public static ParameterBuilder newBuilder(@NonNull Map<String, Object> parameters) {
         return new ParameterBuilder(parameters);
     }
 

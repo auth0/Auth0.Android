@@ -24,6 +24,9 @@
 
 package com.auth0.android.util;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.AuthenticationCallback;
 
@@ -35,12 +38,12 @@ public class MockAuthenticationCallback<T> implements AuthenticationCallback<T> 
     private T payload;
 
     @Override
-    public void onFailure(AuthenticationException error) {
+    public void onFailure(@NonNull AuthenticationException error) {
         this.error = error;
     }
 
     @Override
-    public void onSuccess(T payload) {
+    public void onSuccess(@Nullable T payload) {
         this.payload = payload;
     }
 

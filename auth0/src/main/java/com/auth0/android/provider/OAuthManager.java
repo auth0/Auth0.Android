@@ -10,6 +10,7 @@ import android.util.Base64;
 import android.util.Log;
 
 import com.auth0.android.Auth0;
+import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.BaseCallback;
@@ -145,15 +146,15 @@ class OAuthManager extends ResumableManager {
             return true;
         }
 
-        final Date expiresAt = !values.containsKey(KEY_EXPIRES_IN) ? null : new Date(getCurrentTimeInMillis() + Long.valueOf(values.get(KEY_EXPIRES_IN)) * 1000);
+        final Date expiresAt = !values.containsKey(KEY_EXPIRES_IN) ? null : new Date(getCurrentTimeInMillis() + Long.parseLong(values.get(KEY_EXPIRES_IN)) * 1000);
         boolean frontChannelIdTokenExpected = parameters.containsKey(KEY_RESPONSE_TYPE) && parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_ID_TOKEN);
         final Credentials frontChannelCredentials = new Credentials(frontChannelIdTokenExpected ? values.get(KEY_ID_TOKEN) : null, values.get(KEY_ACCESS_TOKEN), values.get(KEY_TOKEN_TYPE), null, expiresAt, values.get(KEY_SCOPE));
 
         if (frontChannelIdTokenExpected) {
             //Must be response_type=id_token (or additional values)
-            assertValidIdToken(frontChannelCredentials.getIdToken(), new BaseCallback<Void, TokenValidationException>() {
+            assertValidIdToken(frontChannelCredentials.getIdToken(), new VoidCallback() {
                 @Override
-                public void onSuccess(Void ignored) {
+                public void onSuccess(@Nullable Void ignored) {
                     if (!shouldUsePKCE()) {
                         //response_type=id_token or response_type=id_token token
                         callback.onSuccess(frontChannelCredentials);
@@ -171,7 +172,7 @@ class OAuthManager extends ResumableManager {
                 }
 
                 @Override
-                public void onFailure(TokenValidationException error) {
+                public void onFailure(@NonNull Auth0Exception error) {
                     AuthenticationException wrappedError = new AuthenticationException(ERROR_VALUE_ID_TOKEN_VALIDATION_FAILED, error);
                     callback.onFailure(wrappedError);
                 }
@@ -190,15 +191,15 @@ class OAuthManager extends ResumableManager {
 
             @Override
             public void onSuccess(@NonNull final Credentials credentials) {
-                assertValidIdToken(credentials.getIdToken(), new BaseCallback<Void, TokenValidationException>() {
+                assertValidIdToken(credentials.getIdToken(), new VoidCallback() {
                     @Override
-                    public void onSuccess(Void ignored) {
+                    public void onSuccess(@Nullable Void ignored) {
                         Credentials finalCredentials = mergeCredentials(frontChannelCredentials, credentials);
                         callback.onSuccess(finalCredentials);
                     }
 
                     @Override
-                    public void onFailure(TokenValidationException error) {
+                    public void onFailure(@Nullable Auth0Exception error) {
                         AuthenticationException wrappedError = new AuthenticationException(ERROR_VALUE_ID_TOKEN_VALIDATION_FAILED, error);
                         callback.onFailure(wrappedError);
                     }
@@ -208,7 +209,7 @@ class OAuthManager extends ResumableManager {
         return true;
     }
 
-    private void assertValidIdToken(String idToken, final BaseCallback<Void, TokenValidationException> validationCallback) {
+    private void assertValidIdToken(String idToken, final VoidCallback validationCallback) {
         if (TextUtils.isEmpty(idToken)) {
             validationCallback.onFailure(new TokenValidationException("ID token is required but missing"));
             return;
@@ -224,12 +225,12 @@ class OAuthManager extends ResumableManager {
         BaseCallback<SignatureVerifier, TokenValidationException> signatureVerifierCallback = new BaseCallback<SignatureVerifier, TokenValidationException>() {
 
             @Override
-            public void onFailure(TokenValidationException error) {
+            public void onFailure(@NonNull TokenValidationException error) {
                 validationCallback.onFailure(error);
             }
 
             @Override
-            public void onSuccess(SignatureVerifier signatureVerifier) {
+            public void onSuccess(@Nullable SignatureVerifier signatureVerifier) {
                 IdTokenVerificationOptions options = new IdTokenVerificationOptions(idTokenVerificationIssuer, apiClient.getClientId(), signatureVerifier);
                 String maxAge = parameters.get(KEY_MAX_AGE);
                 if (!TextUtils.isEmpty(maxAge)) {

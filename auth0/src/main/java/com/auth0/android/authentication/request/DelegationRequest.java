@@ -24,6 +24,9 @@
 
 package com.auth0.android.authentication.request;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.authentication.ParameterBuilder;
@@ -51,7 +54,7 @@ public class DelegationRequest<T> implements Request<T, AuthenticationException>
 
     private final ParameterizableRequest<T, AuthenticationException> request;
 
-    public DelegationRequest(ParameterizableRequest<T, AuthenticationException> request) {
+    public DelegationRequest(@NonNull ParameterizableRequest<T, AuthenticationException> request) {
         this.request = request;
     }
 
@@ -61,7 +64,8 @@ public class DelegationRequest<T> implements Request<T, AuthenticationException>
      * @param parameters as a non-null dictionary
      * @return itself
      */
-    public DelegationRequest<T> addParameters(Map<String, Object> parameters) {
+    @NonNull
+    public DelegationRequest<T> addParameters(@NonNull Map<String, Object> parameters) {
         request.addParameters(parameters);
         return this;
     }
@@ -73,7 +77,8 @@ public class DelegationRequest<T> implements Request<T, AuthenticationException>
      * @param value of the header
      * @return itself
      */
-    public DelegationRequest<T> addHeader(String name, String value) {
+    @NonNull
+    public DelegationRequest<T> addHeader(@NonNull String name, @NonNull String value) {
         request.addHeader(name, value);
         return this;
     }
@@ -84,7 +89,8 @@ public class DelegationRequest<T> implements Request<T, AuthenticationException>
      * @param apiType the delegation api type
      * @return itself
      */
-    public DelegationRequest<T> setApiType(String apiType) {
+    @NonNull
+    public DelegationRequest<T> setApiType(@NonNull String apiType) {
         request.addParameter(API_TYPE_KEY, apiType);
         return this;
     }
@@ -95,7 +101,8 @@ public class DelegationRequest<T> implements Request<T, AuthenticationException>
      * @param scope value
      * @return itself
      */
-    public DelegationRequest<T> setScope(String scope) {
+    @NonNull
+    public DelegationRequest<T> setScope(@NonNull String scope) {
         request.addParameter(ParameterBuilder.SCOPE_KEY, scope);
         return this;
     }
@@ -106,7 +113,8 @@ public class DelegationRequest<T> implements Request<T, AuthenticationException>
      * @param target the delegation target
      * @return itself
      */
-    public DelegationRequest<T> setTarget(String target) {
+    @NonNull
+    public DelegationRequest<T> setTarget(@NonNull String target) {
         request.addParameter(TARGET_KEY, target);
         return this;
     }
@@ -117,7 +125,7 @@ public class DelegationRequest<T> implements Request<T, AuthenticationException>
      * @param callback called either on success or failure
      */
     @Override
-    public void start(final BaseCallback<T, AuthenticationException> callback) {
+    public void start(@NonNull final BaseCallback<T, AuthenticationException> callback) {
         request.start(callback);
     }
 
@@ -127,6 +135,7 @@ public class DelegationRequest<T> implements Request<T, AuthenticationException>
      * @return the delegation response on success
      * @throws Auth0Exception when the delegation request fails
      */
+    @NonNull
     @Override
     public T execute() throws Auth0Exception {
         return request.execute();

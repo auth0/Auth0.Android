@@ -25,6 +25,7 @@
 package com.auth0.android.provider;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.util.Log;
 
@@ -37,9 +38,9 @@ import com.auth0.android.result.Credentials;
  * Performs code exchange according to Proof Key for Code Exchange (PKCE) spec.
  */
 class PKCE {
-    private static final String TAG = PKCE.class.getSimpleName();
+    static final String TAG = PKCE.class.getSimpleName();
 
-    private final AuthenticationAPIClient apiClient;
+    final AuthenticationAPIClient apiClient;
     private final String codeVerifier;
     private final String redirectUri;
     private final String codeChallenge;
@@ -86,12 +87,12 @@ class PKCE {
                 .setCodeVerifier(codeVerifier)
                 .start(new BaseCallback<Credentials, AuthenticationException>() {
                     @Override
-                    public void onSuccess(Credentials payload) {
+                    public void onSuccess(@Nullable Credentials payload) {
                         callback.onSuccess(payload);
                     }
 
                     @Override
-                    public void onFailure(AuthenticationException error) {
+                    public void onFailure(@NonNull AuthenticationException error) {
                         if ("Unauthorized".equals(error.getDescription())) {
                             Log.e(TAG, "Unable to complete authentication with PKCE. PKCE support can be enabled by setting Application Type to 'Native' and Token Endpoint Authentication Method to 'None' for this app at 'https://manage.auth0.com/#/applications/" + apiClient.getClientId() + "/settings'.");
                         }

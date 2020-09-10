@@ -60,7 +60,7 @@ public class BaseAuthenticationRequestTest {
     }
 
     private BaseAuthenticationRequest createRequest(HttpUrl url) {
-        return new BaseAuthenticationRequest(url, new OkHttpClient(), gson, "POST", Credentials.class);
+        return new BaseAuthenticationRequest(url, new OkHttpClient(), gson, "POST");
     }
 
     private Map<String, String> bodyFromRequest(RecordedRequest request) {

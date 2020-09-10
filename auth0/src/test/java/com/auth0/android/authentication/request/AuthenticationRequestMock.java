@@ -1,5 +1,7 @@
 package com.auth0.android.authentication.request;
 
+import android.support.annotation.NonNull;
+
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.BaseCallback;
@@ -19,7 +21,7 @@ public class AuthenticationRequestMock implements AuthenticationRequest {
     }
 
     @Override
-    public void start(BaseCallback<Credentials, AuthenticationException> callback) {
+    public void start(@NonNull BaseCallback<Credentials, AuthenticationException> callback) {
         started = true;
         if (credentials != null) {
             callback.onSuccess(credentials);
@@ -28,48 +30,57 @@ public class AuthenticationRequestMock implements AuthenticationRequest {
         }
     }
 
+    @NonNull
     @Override
     public Credentials execute() throws Auth0Exception {
         return credentials;
     }
 
+    @NonNull
     @Override
-    public AuthenticationRequest setGrantType(String grantType) {
+    public AuthenticationRequest setGrantType(@NonNull String grantType) {
         return this;
     }
 
+    @NonNull
     @Override
-    public AuthenticationRequest setConnection(String connection) {
+    public AuthenticationRequest setConnection(@NonNull String connection) {
         return this;
     }
 
+    @NonNull
     @Override
-    public AuthenticationRequest setRealm(String realm) {
+    public AuthenticationRequest setRealm(@NonNull String realm) {
         return this;
     }
 
+    @NonNull
     @Override
-    public AuthenticationRequest setScope(String scope) {
+    public AuthenticationRequest setScope(@NonNull String scope) {
         return this;
     }
 
+    @NonNull
     @Override
-    public AuthenticationRequest setDevice(String device) {
+    public AuthenticationRequest setDevice(@NonNull String device) {
         return this;
     }
 
+    @NonNull
     @Override
-    public AuthenticationRequest setAudience(String audience) {
+    public AuthenticationRequest setAudience(@NonNull String audience) {
         return this;
     }
 
+    @NonNull
     @Override
-    public AuthenticationRequest setAccessToken(String accessToken) {
+    public AuthenticationRequest setAccessToken(@NonNull String accessToken) {
         return this;
     }
 
+    @NonNull
     @Override
-    public AuthenticationRequest addAuthenticationParameters(Map<String, Object> parameters) {
+    public AuthenticationRequest addAuthenticationParameters(@NonNull Map<String, Object> parameters) {
         return this;
     }
 

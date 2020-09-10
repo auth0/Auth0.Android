@@ -207,7 +207,7 @@ public class RequestFactoryTest {
         return factory;
     }
 
-    class MockRequestFactory extends RequestFactory {
+    static class MockRequestFactory extends RequestFactory {
 
         MockRequest request;
         MockAuthenticationRequest authenticationRequest;
@@ -225,20 +225,20 @@ public class RequestFactoryTest {
         }
 
         @Override
-        <T, U extends Auth0Exception> ParameterizableRequest<T, U> createSimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, String method, ErrorBuilder<U> errorBuilder) {
-            request = new MockRequest<>(url, client, gson, method, errorBuilder);
+        <T, U extends Auth0Exception> ParameterizableRequest<T, U> createSimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, ErrorBuilder<U> errorBuilder) {
+            request = new MockRequest<>(url, client, gson, "POST", errorBuilder);
             return request;
         }
 
         @Override
-        AuthRequest createAuthenticationRequest(HttpUrl url, OkHttpClient client, Gson gson, String method) {
-            authenticationRequest = new MockAuthenticationRequest(url, client, gson, method);
+        BaseAuthenticationRequest createAuthenticationRequest(HttpUrl url, OkHttpClient client, Gson gson) {
+            authenticationRequest = new MockAuthenticationRequest(url, client, gson, "POST");
             return authenticationRequest;
         }
 
         @Override
-        <U extends Auth0Exception> ParameterizableRequest<Void, U> createVoidRequest(HttpUrl url, OkHttpClient client, Gson gson, String method, ErrorBuilder<U> errorBuilder) {
-            request = new MockRequest<>(url, client, gson, method, errorBuilder);
+        <U extends Auth0Exception> ParameterizableRequest<Void, U> createVoidRequest(HttpUrl url, OkHttpClient client, Gson gson, ErrorBuilder<U> errorBuilder) {
+            request = new MockRequest<>(url, client, gson, "POST", errorBuilder);
             return request;
         }
     }

@@ -24,6 +24,9 @@
 
 package com.auth0.android.result;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import com.auth0.android.util.JsonRequired;
 import com.google.gson.annotations.SerializedName;
 
@@ -39,27 +42,27 @@ public class UserIdentity implements Serializable {
 
     @JsonRequired
     @SerializedName("user_id")
-    private String id;
+    private final String id;
     @JsonRequired
     @SerializedName("connection")
-    private String connection;
+    private final String connection;
     @JsonRequired
     @SerializedName("provider")
-    private String provider;
+    private final String provider;
 
     @SerializedName("isSocial")
-    private boolean social;
+    private final boolean social;
 
     @SerializedName("access_token")
-    private String accessToken;
+    private final String accessToken;
     @SerializedName("access_token_secret")
-    private String accessTokenSecret;
+    private final String accessTokenSecret;
 
     @SerializedName("profileData")
-    private Map<String, Object> profileInfo;
+    private final Map<String, Object> profileInfo;
 
-    public UserIdentity(String id, String connection, String provider, boolean social,
-                        String accessToken, String accessTokenSecret, Map<String, Object> profileInfo) {
+    public UserIdentity(@NonNull String id, @NonNull String connection, @NonNull String provider, boolean social,
+                        @Nullable String accessToken, @Nullable String accessTokenSecret, @NonNull Map<String, Object> profileInfo) {
         this.id = id;
         this.connection = connection;
         this.provider = provider;
@@ -69,14 +72,17 @@ public class UserIdentity implements Serializable {
         this.profileInfo = profileInfo;
     }
 
+    @NonNull
     public String getId() {
         return id;
     }
 
+    @NonNull
     public String getConnection() {
         return connection;
     }
 
+    @NonNull
     public String getProvider() {
         return provider;
     }
@@ -85,14 +91,17 @@ public class UserIdentity implements Serializable {
         return social;
     }
 
+    @Nullable
     public String getAccessToken() {
         return accessToken;
     }
 
+    @Nullable
     public String getAccessTokenSecret() {
         return accessTokenSecret;
     }
 
+    @NonNull
     public Map<String, Object> getProfileInfo() {
         return profileInfo != null ? new HashMap<>(profileInfo) : Collections.<String, Object>emptyMap();
     }

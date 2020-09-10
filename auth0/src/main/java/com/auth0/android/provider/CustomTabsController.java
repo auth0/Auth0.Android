@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @SuppressWarnings("WeakerAccess")
 class CustomTabsController extends CustomTabsServiceConnection {
 
-    private static final String TAG = CustomTabsController.class.getSimpleName();
+    static final String TAG = CustomTabsController.class.getSimpleName();
     private static final long MAX_WAIT_TIME_SECONDS = 1;
     private static final String ACTION_CUSTOM_TABS_CONNECTION = "android.support.customtabs.action.CustomTabsService";
     //Known Browsers with Custom Tabs support

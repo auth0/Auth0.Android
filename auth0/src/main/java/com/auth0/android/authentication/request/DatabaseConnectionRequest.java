@@ -1,5 +1,7 @@
 package com.auth0.android.authentication.request;
 
+import android.support.annotation.NonNull;
+
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.ParameterBuilder;
 import com.auth0.android.callback.BaseCallback;
@@ -15,7 +17,7 @@ public class DatabaseConnectionRequest<T, U extends Auth0Exception> {
 
     private final ParameterizableRequest<T, U> request;
 
-    public DatabaseConnectionRequest(ParameterizableRequest<T, U> request) {
+    public DatabaseConnectionRequest(@NonNull ParameterizableRequest<T, U> request) {
         this.request = request;
     }
 
@@ -25,7 +27,8 @@ public class DatabaseConnectionRequest<T, U extends Auth0Exception> {
      * @param parameters to be sent with the request
      * @return itself
      */
-    public DatabaseConnectionRequest<T, U> addParameters(Map<String, Object> parameters) {
+    @NonNull
+    public DatabaseConnectionRequest<T, U> addParameters(@NonNull Map<String, Object> parameters) {
         request.addParameters(parameters);
         return this;
     }
@@ -37,7 +40,8 @@ public class DatabaseConnectionRequest<T, U extends Auth0Exception> {
      * @param value of the parameter
      * @return itself
      */
-    public DatabaseConnectionRequest<T, U> addParameter(String name, Object value) {
+    @NonNull
+    public DatabaseConnectionRequest<T, U> addParameter(@NonNull String name, @NonNull Object value) {
         request.addParameter(name, value);
         return this;
     }
@@ -49,7 +53,8 @@ public class DatabaseConnectionRequest<T, U extends Auth0Exception> {
      * @param value of the header
      * @return itself
      */
-    public DatabaseConnectionRequest<T, U> addHeader(String name, String value) {
+    @NonNull
+    public DatabaseConnectionRequest<T, U> addHeader(@NonNull String name, @NonNull String value) {
         request.addHeader(name, value);
         return this;
     }
@@ -60,7 +65,8 @@ public class DatabaseConnectionRequest<T, U extends Auth0Exception> {
      * @param connection name
      * @return itself
      */
-    public DatabaseConnectionRequest<T, U> setConnection(String connection) {
+    @NonNull
+    public DatabaseConnectionRequest<T, U> setConnection(@NonNull String connection) {
         request.addParameter(ParameterBuilder.CONNECTION_KEY, connection);
         return this;
     }
@@ -70,7 +76,7 @@ public class DatabaseConnectionRequest<T, U extends Auth0Exception> {
      *
      * @param callback called on success or failure of the request
      */
-    public void start(BaseCallback<T, U> callback) {
+    public void start(@NonNull BaseCallback<T, U> callback) {
         request.start(callback);
     }
 
@@ -80,6 +86,7 @@ public class DatabaseConnectionRequest<T, U extends Auth0Exception> {
      * @return the request result
      * @throws Auth0Exception if the request failed
      */
+    @NonNull
     public T execute() throws Auth0Exception {
         return request.execute();
     }

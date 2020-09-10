@@ -24,6 +24,8 @@
 
 package com.auth0.android.request.internal;
 
+import android.support.annotation.NonNull;
+
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.NetworkErrorException;
 import com.auth0.android.RequestBodyBuildException;
@@ -91,6 +93,7 @@ class SimpleRequest<T, U extends Auth0Exception> extends BaseRequest<T, U> imple
                 .build();
     }
 
+    @NonNull
     @Override
     public T execute() throws Auth0Exception {
         Request request = doBuildRequest();

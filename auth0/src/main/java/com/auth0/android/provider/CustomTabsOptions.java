@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.ColorRes;
+import android.support.annotation.NonNull;
 import android.support.customtabs.CustomTabsIntent;
 import android.support.customtabs.CustomTabsSession;
 import android.support.v4.content.ContextCompat;
@@ -29,6 +30,7 @@ public class CustomTabsOptions implements Parcelable {
      *
      * @return a new CustomTabsOptions.Builder ready to customize.
      */
+    @NonNull
     public static Builder newBuilder() {
         return new Builder();
     }
@@ -46,7 +48,7 @@ public class CustomTabsOptions implements Parcelable {
     }
 
 
-    protected CustomTabsOptions(Parcel in) {
+    protected CustomTabsOptions(@NonNull Parcel in) {
         showTitle = in.readByte() != 0x00;
         toolbarColor = in.readInt();
     }
@@ -57,7 +59,7 @@ public class CustomTabsOptions implements Parcelable {
     }
 
     @Override
-    public void writeToParcel(Parcel dest, int flags) {
+    public void writeToParcel(@NonNull Parcel dest, int flags) {
         dest.writeByte((byte) (showTitle ? 0x01 : 0x00));
         dest.writeInt(toolbarColor);
     }
@@ -82,7 +84,7 @@ public class CustomTabsOptions implements Parcelable {
         private int toolbarColor;
         private boolean showTitle;
 
-        private Builder() {
+        Builder() {
             this.showTitle = false;
             this.toolbarColor = 0;
         }
@@ -93,6 +95,7 @@ public class CustomTabsOptions implements Parcelable {
          * @param toolbarColor the new toolbar color to set
          * @return this same builder instance.
          */
+        @NonNull
         public Builder withToolbarColor(@ColorRes int toolbarColor) {
             this.toolbarColor = toolbarColor;
             return this;
@@ -105,6 +108,7 @@ public class CustomTabsOptions implements Parcelable {
          * @param showTitle whether to show the Page Title in the toolbar or not.
          * @return this same builder instance.
          */
+        @NonNull
         public Builder showTitle(boolean showTitle) {
             this.showTitle = showTitle;
             return this;
@@ -115,6 +119,7 @@ public class CustomTabsOptions implements Parcelable {
          *
          * @return an instance of CustomTabsOptions with the customization settings.
          */
+        @NonNull
         public CustomTabsOptions build() {
             return new CustomTabsOptions(showTitle, toolbarColor);
         }

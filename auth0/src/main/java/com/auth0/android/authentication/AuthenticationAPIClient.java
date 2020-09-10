@@ -129,7 +129,7 @@ public class AuthenticationAPIClient {
      *
      * @param context a valid Context
      */
-    public AuthenticationAPIClient(Context context) {
+    public AuthenticationAPIClient(@NonNull Context context) {
         this(new Auth0(context));
     }
 
@@ -154,10 +154,12 @@ public class AuthenticationAPIClient {
         }
     }
 
+    @NonNull
     public String getClientId() {
         return auth0.getClientId();
     }
 
+    @NonNull
     public String getBaseURL() {
         return auth0.getDomainUrl();
     }
@@ -168,7 +170,7 @@ public class AuthenticationAPIClient {
      * @param userAgent value to send in every request to Auth0
      */
     @SuppressWarnings("unused")
-    public void setUserAgent(String userAgent) {
+    public void setUserAgent(@NonNull String userAgent) {
         factory.setUserAgent(userAgent);
     }
 
@@ -196,7 +198,7 @@ public class AuthenticationAPIClient {
      * @param realmOrConnection realm to use in the authorize flow or the name of the database to authenticate with.
      * @return a request to configure and start that will yield {@link Credentials}
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public AuthRequest login(@NonNull String usernameOrEmail, @NonNull String password, @NonNull String realmOrConnection) {
 
         ParameterBuilder builder = ParameterBuilder.newBuilder()
@@ -239,7 +241,7 @@ public class AuthenticationAPIClient {
      * @param password        of the user
      * @return a request to configure and start that will yield {@link Credentials}
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public AuthRequest login(@NonNull String usernameOrEmail, @NonNull String password) {
         Map<String, Object> requestParameters = ParameterBuilder.newBuilder()
                 .set(USERNAME_KEY, usernameOrEmail)
@@ -272,7 +274,7 @@ public class AuthenticationAPIClient {
      *                 MFA application such as Google Authenticator or Guardian.
      * @return a request to configure and start that will yield {@link Credentials}
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public AuthRequest loginWithOTP(@NonNull String mfaToken, @NonNull String otp) {
         Map<String, Object> parameters = ParameterBuilder.newBuilder()
                 .setGrantType(GRANT_TYPE_MFA_OTP)
@@ -304,7 +306,7 @@ public class AuthenticationAPIClient {
      * @param connection that will be used to authenticate the user, e.g. 'facebook'
      * @return a request to configure and start that will yield {@link Credentials}
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public AuthRequest loginWithOAuthAccessToken(@NonNull String token, @NonNull String connection) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(OAUTH_PATH)
@@ -343,7 +345,7 @@ public class AuthenticationAPIClient {
      * @param tokenType the subject token type that is associated with this Identity Provider. e.g. 'http://auth0.com/oauth/token-type/facebook-session-access-token'
      * @return a request to configure and start that will yield {@link Credentials}
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public AuthRequest loginWithNativeSocialToken(@NonNull String token, @NonNull String tokenType) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(OAUTH_PATH)
@@ -386,7 +388,7 @@ public class AuthenticationAPIClient {
      * @param realmOrConnection to end the passwordless authentication on
      * @return a request to configure and start that will yield {@link Credentials}
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public AuthRequest loginWithPhoneNumber(@NonNull String phoneNumber, @NonNull String verificationCode, @NonNull String realmOrConnection) {
         ParameterBuilder builder = ParameterBuilder.newAuthenticationBuilder()
                 .setClientId(getClientId())
@@ -432,7 +434,7 @@ public class AuthenticationAPIClient {
      * @param verificationCode sent by Auth0 via SMS
      * @return a request to configure and start that will yield {@link Credentials}
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public AuthRequest loginWithPhoneNumber(@NonNull String phoneNumber, @NonNull String verificationCode) {
         return loginWithPhoneNumber(phoneNumber, verificationCode, SMS_CONNECTION);
     }
@@ -461,7 +463,7 @@ public class AuthenticationAPIClient {
      * @param realmOrConnection to end the passwordless authentication on
      * @return a request to configure and start that will yield {@link Credentials}
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public AuthRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode, @NonNull String realmOrConnection) {
         ParameterBuilder builder = ParameterBuilder.newAuthenticationBuilder()
                 .setClientId(getClientId())
@@ -507,7 +509,7 @@ public class AuthenticationAPIClient {
      * @param verificationCode sent by Auth0 via Email
      * @return a request to configure and start that will yield {@link Credentials}
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public AuthRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode) {
         return loginWithEmail(email, verificationCode, EMAIL_CONNECTION);
     }
@@ -531,7 +533,7 @@ public class AuthenticationAPIClient {
      * @param accessToken used to fetch it's information
      * @return a request to start
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public ParameterizableRequest<UserProfile, AuthenticationException> userInfo(@NonNull String accessToken) {
         return profileRequest()
                 .addHeader(HEADER_AUTHORIZATION, "Bearer " + accessToken);
@@ -557,7 +559,7 @@ public class AuthenticationAPIClient {
      * @return a request to start
      * @deprecated Please use {@link AuthenticationAPIClient#userInfo(String)} instead.
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     @Deprecated
     public ParameterizableRequest<UserProfile, AuthenticationException> tokenInfo(@NonNull String idToken) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
@@ -590,7 +592,7 @@ public class AuthenticationAPIClient {
      * @param connection of the database to create the user on
      * @return a request to start
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUser(@NonNull String email, @NonNull String password, @NonNull String username, @NonNull String connection) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(DB_CONNECTIONS_PATH)
@@ -631,7 +633,7 @@ public class AuthenticationAPIClient {
      * @param connection of the database to create the user on
      * @return a request to start
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUser(@NonNull String email, @NonNull String password, @NonNull String connection) {
         //noinspection ConstantConditions
         return createUser(email, password, null, connection);
@@ -660,7 +662,7 @@ public class AuthenticationAPIClient {
      * @param connection of the database to sign up with
      * @return a request to configure and start that will yield {@link Credentials}
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public SignUpRequest signUp(@NonNull String email, @NonNull String password, @NonNull String username, @NonNull String connection) {
         final DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUserRequest = createUser(email, password, username, connection);
         final AuthRequest authenticationRequest = login(email, password, connection);
@@ -690,7 +692,7 @@ public class AuthenticationAPIClient {
      * @param connection of the database to sign up with
      * @return a request to configure and start that will yield {@link Credentials}
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public SignUpRequest signUp(@NonNull String email, @NonNull String password, @NonNull String connection) {
         final DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUserRequest = createUser(email, password, connection);
         final AuthRequest authenticationRequest = login(email, password, connection);
@@ -717,7 +719,7 @@ public class AuthenticationAPIClient {
      * @param connection of the database to request the reset password on
      * @return a request to configure and start
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public DatabaseConnectionRequest<Void, AuthenticationException> resetPassword(@NonNull String email, @NonNull String connection) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(DB_CONNECTIONS_PATH)
@@ -754,8 +756,9 @@ public class AuthenticationAPIClient {
      *
      * @param refreshToken the token to revoke
      * @return a request to start
+     *
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public ParameterizableRequest<Void, AuthenticationException> revokeToken(@NonNull String refreshToken) {
         final Map<String, Object> parameters = ParameterBuilder.newBuilder()
                 .setClientId(getClientId())
@@ -794,7 +797,7 @@ public class AuthenticationAPIClient {
      * @param refreshToken used to fetch the new Credentials.
      * @return a request to start
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public ParameterizableRequest<Credentials, AuthenticationException> renewAuth(@NonNull String refreshToken) {
         final Map<String, Object> parameters = ParameterBuilder.newBuilder()
                 .setClientId(getClientId())
@@ -837,7 +840,7 @@ public class AuthenticationAPIClient {
      * @param idToken issued by Auth0 for the user. The token must not be expired.
      * @return a request to configure and start
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public DelegationRequest<Delegation> delegationWithIdToken(@NonNull String idToken) {
         ParameterizableRequest<Delegation, AuthenticationException> request = delegation(Delegation.class)
                 .addParameter(ParameterBuilder.ID_TOKEN_KEY, idToken);
@@ -866,7 +869,7 @@ public class AuthenticationAPIClient {
      * @param refreshToken issued by Auth0 for the user when using the 'offline_access' scope when logging in.
      * @return a request to configure and start
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public DelegationRequest<Delegation> delegationWithRefreshToken(@NonNull String refreshToken) {
         ParameterizableRequest<Delegation, AuthenticationException> request = delegation(Delegation.class)
                 .addParameter(ParameterBuilder.REFRESH_TOKEN_KEY, refreshToken);
@@ -895,7 +898,7 @@ public class AuthenticationAPIClient {
      * @param apiType the delegation 'api_type' parameter
      * @return a request to configure and start
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public DelegationRequest<Map<String, Object>> delegationWithIdToken(@NonNull String idToken, @NonNull String apiType) {
         ParameterizableRequest<Map<String, Object>, AuthenticationException> request = delegation()
                 .addParameter(ParameterBuilder.ID_TOKEN_KEY, idToken);
@@ -927,7 +930,7 @@ public class AuthenticationAPIClient {
      * @param connection       the passwordless connection to start the flow with.
      * @return a request to configure and start
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public ParameterizableRequest<Void, AuthenticationException> passwordlessWithEmail(@NonNull String email, @NonNull PasswordlessType passwordlessType, @NonNull String connection) {
         final Map<String, Object> parameters = ParameterBuilder.newBuilder()
                 .set(EMAIL_KEY, email)
@@ -962,7 +965,7 @@ public class AuthenticationAPIClient {
      * @param passwordlessType indicate whether the email should contain a code, link or magic link (android {@literal &} iOS)
      * @return a request to configure and start
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public ParameterizableRequest<Void, AuthenticationException> passwordlessWithEmail(@NonNull String email, @NonNull PasswordlessType passwordlessType) {
         return passwordlessWithEmail(email, passwordlessType, EMAIL_CONNECTION);
     }
@@ -990,7 +993,7 @@ public class AuthenticationAPIClient {
      * @param connection       the passwordless connection to start the flow with.
      * @return a request to configure and start
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public ParameterizableRequest<Void, AuthenticationException> passwordlessWithSMS(@NonNull String phoneNumber, @NonNull PasswordlessType passwordlessType, @NonNull String connection) {
         final Map<String, Object> parameters = ParameterBuilder.newBuilder()
                 .set(PHONE_NUMBER_KEY, phoneNumber)
@@ -1025,7 +1028,7 @@ public class AuthenticationAPIClient {
      * @param passwordlessType indicate whether the SMS should contain a code, link or magic link (android {@literal &} iOS)
      * @return a request to configure and start
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public ParameterizableRequest<Void, AuthenticationException> passwordlessWithSMS(@NonNull String phoneNumber, @NonNull PasswordlessType passwordlessType) {
         return passwordlessWithSMS(phoneNumber, passwordlessType, SMS_CONNECTION);
     }
@@ -1050,7 +1053,7 @@ public class AuthenticationAPIClient {
      *
      * @return a request to configure and start
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public ParameterizableRequest<Map<String, Object>, AuthenticationException> delegation() {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(DELEGATION_PATH)
@@ -1065,6 +1068,7 @@ public class AuthenticationAPIClient {
                 .addParameters(parameters);
     }
 
+    @SuppressWarnings("SameParameterValue")
     private <T> ParameterizableRequest<T, AuthenticationException> delegation(Class<T> clazz) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(DELEGATION_PATH)
@@ -1084,7 +1088,6 @@ public class AuthenticationAPIClient {
      *
      * @return a request to configure and start
      */
-    @SuppressWarnings("WeakerAccess")
     private ParameterizableRequest<Void, AuthenticationException> passwordless() {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(PASSWORDLESS_PATH)
@@ -1106,8 +1109,10 @@ public class AuthenticationAPIClient {
      * @param authenticationRequest that will authenticate a user with Auth0 and return a {@link Credentials}
      * @return a {@link ProfileRequest} that first logins and the fetches the profile
      */
+    @NonNull
     public ProfileRequest getProfileAfter(@NonNull AuthenticationRequest authenticationRequest) {
         final ParameterizableRequest<UserProfile, AuthenticationException> profileRequest = profileRequest();
+        //noinspection deprecation
         return new ProfileRequest(authenticationRequest, profileRequest);
     }
 
@@ -1138,7 +1143,7 @@ public class AuthenticationAPIClient {
      * @param redirectUri       the uri sent to /authorize as the 'redirect_uri'.
      * @return a request to obtain access_token by exchanging a authorization code.
      */
-    @SuppressWarnings("WeakerAccess")
+    @NonNull
     public TokenRequest token(@NonNull String authorizationCode, @NonNull String redirectUri) {
         Map<String, Object> parameters = ParameterBuilder.newBuilder()
                 .setClientId(getClientId())
@@ -1163,6 +1168,7 @@ public class AuthenticationAPIClient {
      *
      * @return a request to obtain the JSON Web Keys associated with this Auth0 account.
      */
+    @NonNull
     public ParameterizableRequest<Map<String, PublicKey>, AuthenticationException> fetchJsonWebKeys() {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(WELL_KNOWN_PATH)

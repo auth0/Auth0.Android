@@ -1,5 +1,7 @@
 package com.auth0.android.request;
 
+import android.support.annotation.NonNull;
+
 public interface AuthRequest extends AuthenticationRequest {
 
     /**
@@ -9,6 +11,7 @@ public interface AuthRequest extends AuthenticationRequest {
      * @param value of the header
      * @return itself
      */
-    AuthRequest addHeader(String name, String value);
+    @NonNull
+    AuthRequest addHeader(@NonNull String name, @NonNull String value);
 
 }

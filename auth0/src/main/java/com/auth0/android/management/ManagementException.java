@@ -24,6 +24,9 @@
 
 package com.auth0.android.management;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.NetworkErrorException;
 
@@ -45,22 +48,22 @@ public class ManagementException extends Auth0Exception {
     private Map<String, Object> values;
 
 
-    public ManagementException(String message) {
+    public ManagementException(@NonNull String message) {
         this(message, null);
     }
 
-    public ManagementException(String message, Auth0Exception exception) {
+    public ManagementException(@NonNull String message, @Nullable Auth0Exception exception) {
         super(message, exception);
     }
 
-    public ManagementException(String payload, int statusCode) {
+    public ManagementException(@Nullable String payload, int statusCode) {
         this(DEFAULT_MESSAGE);
         this.code = payload != null ? NON_JSON_ERROR : EMPTY_BODY_ERROR;
         this.description = payload != null ? payload : EMPTY_RESPONSE_BODY_DESCRIPTION;
         this.statusCode = statusCode;
     }
 
-    public ManagementException(Map<String, Object> values) {
+    public ManagementException(@NonNull Map<String, Object> values) {
         this(DEFAULT_MESSAGE);
         this.values = new HashMap<>(values);
 
@@ -74,6 +77,7 @@ public class ManagementException extends Auth0Exception {
      *
      * @return the error code.
      */
+    @NonNull
     public String getCode() {
         return code != null ? code : UNKNOWN_ERROR;
     }
@@ -93,6 +97,7 @@ public class ManagementException extends Auth0Exception {
      *
      * @return the error description.
      */
+    @NonNull
     public String getDescription() {
         if (description != null) {
             return description;
@@ -109,7 +114,8 @@ public class ManagementException extends Auth0Exception {
      * @param key key of the value to return
      * @return the value if found or null
      */
-    public Object getValue(String key) {
+    @Nullable
+    public Object getValue(@NonNull String key) {
         if (values == null) {
             return null;
         }

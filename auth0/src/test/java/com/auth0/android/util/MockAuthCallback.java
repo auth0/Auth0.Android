@@ -86,7 +86,7 @@ public class MockAuthCallback implements AuthCallback {
     }
 
     @Override
-    public void onFailure(AuthenticationException exception) {
+    public void onFailure(@NonNull AuthenticationException exception) {
         this.error = exception;
     }
 

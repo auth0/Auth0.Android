@@ -1,6 +1,7 @@
 package com.auth0.android.authentication.storage;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import com.auth0.android.authentication.AuthenticationAPIClient;
@@ -112,7 +113,7 @@ public class CredentialsManager {
 
         authClient.renewAuth(refreshToken).start(new AuthenticationCallback<Credentials>() {
             @Override
-            public void onSuccess(Credentials fresh) {
+            public void onSuccess(@Nullable Credentials fresh) {
                 //non-empty refresh token for refresh token rotation scenarios
                 String updatedRefreshToken = isEmpty(fresh.getRefreshToken()) ? refreshToken : fresh.getRefreshToken();
                 Credentials credentials = new Credentials(fresh.getIdToken(), fresh.getAccessToken(), fresh.getType(), updatedRefreshToken, fresh.getExpiresAt(), fresh.getScope());
@@ -121,7 +122,7 @@ public class CredentialsManager {
             }
 
             @Override
-            public void onFailure(AuthenticationException error) {
+            public void onFailure(@NonNull AuthenticationException error) {
                 callback.onFailure(new CredentialsManagerException("An error occurred while trying to use the Refresh Token to renew the Credentials.", error));
             }
         });

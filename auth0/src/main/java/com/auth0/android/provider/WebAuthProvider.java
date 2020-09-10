@@ -41,6 +41,7 @@ import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import static com.auth0.android.provider.OAuthManager.KEY_CONNECTION;
@@ -59,9 +60,9 @@ import static com.auth0.android.provider.OAuthManager.RESPONSE_TYPE_ID_TOKEN;
 @SuppressWarnings("WeakerAccess")
 public class WebAuthProvider {
 
-    private static final String TAG = WebAuthProvider.class.getName();
+    static final String TAG = WebAuthProvider.class.getName();
 
-    private static ResumableManager managerInstance;
+    static ResumableManager managerInstance;
 
     public static class LogoutBuilder {
 
@@ -83,6 +84,7 @@ public class WebAuthProvider {
          * @param options the Custom Tabs customization options
          * @return the current builder instance
          */
+        @NonNull
         public LogoutBuilder withCustomTabsOptions(@NonNull CustomTabsOptions options) {
             this.ctOptions = options;
             return this;
@@ -94,8 +96,9 @@ public class WebAuthProvider {
          * @param scheme to use in the Return To URL.
          * @return the current builder instance
          */
+        @NonNull
         public LogoutBuilder withScheme(@NonNull String scheme) {
-            String lowerCase = scheme.toLowerCase();
+            String lowerCase = scheme.toLowerCase(Locale.ROOT);
             if (!scheme.equals(lowerCase)) {
                 Log.w(TAG, "Please provide the scheme in lowercase and make sure it's the same configured in the intent filter. Android expects the scheme to be lowercase.");
             }
@@ -111,6 +114,7 @@ public class WebAuthProvider {
          * @param returnToUrl to use to invoke the app on redirection.
          * @return the current builder instance
          */
+        @NonNull
         public LogoutBuilder withReturnToUrl(@NonNull String returnToUrl) {
             this.returnToUrl = returnToUrl;
             return this;
@@ -122,7 +126,7 @@ public class WebAuthProvider {
          * @param context  to run the log out
          * @param callback to invoke when log out is successful
          */
-        public void start(Context context, VoidCallback callback) {
+        public void start(@NonNull Context context, @NonNull VoidCallback callback) {
             resetManagerInstance();
 
             if (!hasBrowserAppInstalled(context.getPackageManager())) {
@@ -181,8 +185,8 @@ public class WebAuthProvider {
          * @return the current builder instance
          * @deprecated This method has been deprecated since it only applied to WebView authentication and Google is no longer supporting it. You should use the default value (use browser).
          */
-        @SuppressWarnings("DeprecatedIsStillUsed")
         @Deprecated
+        @NonNull
         public Builder useBrowser(boolean useBrowser) {
             this.useBrowser = useBrowser;
             return this;
@@ -197,6 +201,7 @@ public class WebAuthProvider {
          * @deprecated This method has been deprecated since it only applied to WebView authentication and Google is no longer supporting it.
          */
         @Deprecated
+        @NonNull
         public Builder useFullscreen(boolean useFullscreen) {
             this.useFullscreen = useFullscreen;
             return this;
@@ -208,6 +213,7 @@ public class WebAuthProvider {
          * @param state to use in the requests
          * @return the current builder instance
          */
+        @NonNull
         public Builder withState(@NonNull String state) {
             this.values.put(KEY_STATE, state);
             return this;
@@ -219,6 +225,7 @@ public class WebAuthProvider {
          * @param nonce to use in the requests
          * @return the current builder instance
          */
+        @NonNull
         public Builder withNonce(@NonNull String nonce) {
             this.values.put(KEY_NONCE, nonce);
             return this;
@@ -230,6 +237,7 @@ public class WebAuthProvider {
          * @param maxAge to use in the requests
          * @return the current builder instance
          */
+        @NonNull
         public Builder withMaxAge(@NonNull Integer maxAge) {
             this.values.put(KEY_MAX_AGE, String.valueOf(maxAge));
             return this;
@@ -242,6 +250,7 @@ public class WebAuthProvider {
          * @param leeway to use for ID token verification, in seconds.
          * @return the current builder instance
          */
+        @NonNull
         public Builder withIdTokenVerificationLeeway(@NonNull Integer leeway) {
             this.leeway = leeway;
             return this;
@@ -254,6 +263,7 @@ public class WebAuthProvider {
          * @param issuer to use for ID token verification.
          * @return the current builder instance
          */
+        @NonNull
         public Builder withIdTokenVerificationIssuer(@NonNull String issuer) {
             this.issuer = issuer;
             return this;
@@ -265,6 +275,7 @@ public class WebAuthProvider {
          * @param audience to use in the requests
          * @return the current builder instance
          */
+        @NonNull
         public Builder withAudience(@NonNull String audience) {
             this.values.put(KEY_AUDIENCE, audience);
             return this;
@@ -276,8 +287,9 @@ public class WebAuthProvider {
          * @param scheme to use in the Redirect URI.
          * @return the current builder instance
          */
+        @NonNull
         public Builder withScheme(@NonNull String scheme) {
-            String lowerCase = scheme.toLowerCase();
+            String lowerCase = scheme.toLowerCase(Locale.ROOT);
             if (!scheme.equals(lowerCase)) {
                 Log.w(TAG, "Please provide the scheme in lowercase and make sure it's the same configured in the intent filter. Android expects the scheme to be lowercase.");
             }
@@ -293,6 +305,7 @@ public class WebAuthProvider {
          * @param redirectUri to use to invoke the app on redirection.
          * @return the current builder instance
          */
+        @NonNull
         public Builder withRedirectUri(@NonNull String redirectUri) {
             this.redirectUri = redirectUri;
             return this;
@@ -304,6 +317,7 @@ public class WebAuthProvider {
          * @param scope to request.
          * @return the current builder instance
          */
+        @NonNull
         public Builder withScope(@NonNull String scope) {
             this.values.put(KEY_SCOPE, scope);
             return this;
@@ -315,6 +329,7 @@ public class WebAuthProvider {
          * @param connectionScope to request.
          * @return the current builder instance
          */
+        @NonNull
         public Builder withConnectionScope(@NonNull String... connectionScope) {
             StringBuilder sb = new StringBuilder();
             for (String s : connectionScope) {
@@ -335,6 +350,7 @@ public class WebAuthProvider {
          * @deprecated Please use {@link WebAuthProvider.Builder#withResponseType(int)} to specify a custom Response Type
          */
         @Deprecated
+        @NonNull
         public Builder useCodeGrant(boolean useCodeGrant) {
             withResponseType(useCodeGrant ? ResponseType.CODE : ResponseType.TOKEN);
             return this;
@@ -346,6 +362,7 @@ public class WebAuthProvider {
          * @param type the ResponseType to request to the Authentication API. Multiple ResponseType's can be defined using a pipe. "CODE | TOKEN"
          * @return the current builder instance
          */
+        @NonNull
         public Builder withResponseType(@ResponseType int type) {
             StringBuilder sb = new StringBuilder();
             if (FlagChecker.hasFlag(type, ResponseType.CODE)) {
@@ -367,6 +384,7 @@ public class WebAuthProvider {
          * @param parameters to add
          * @return the current builder instance
          */
+        @NonNull
         public Builder withParameters(@NonNull Map<String, Object> parameters) {
             for (Map.Entry<String, Object> entry : parameters.entrySet()) {
                 if (entry.getValue() != null) {
@@ -382,6 +400,7 @@ public class WebAuthProvider {
          * @param connectionName to use
          * @return the current builder instance
          */
+        @NonNull
         public Builder withConnection(@NonNull String connectionName) {
             this.values.put(KEY_CONNECTION, connectionName);
             return this;
@@ -393,6 +412,7 @@ public class WebAuthProvider {
          * @param options the Custom Tabs customization options
          * @return the current builder instance
          */
+        @NonNull
         public Builder withCustomTabsOptions(@NonNull CustomTabsOptions options) {
             this.ctOptions = options;
             return this;
@@ -446,6 +466,7 @@ public class WebAuthProvider {
          * @param callback to receive the parsed results
          */
         public void start(@NonNull Activity activity, @NonNull AuthCallback callback) {
+            //noinspection deprecation
             this.start(activity, callback, 110);
         }
     }
@@ -459,6 +480,7 @@ public class WebAuthProvider {
      * @param account to use for authentication
      * @return a new Builder instance to customize.
      */
+    @NonNull
     public static LogoutBuilder logout(@NonNull Auth0 account) {
         return new LogoutBuilder(account);
     }
@@ -470,6 +492,7 @@ public class WebAuthProvider {
      * @param account to use for authentication
      * @return a new Builder instance to customize.
      */
+    @NonNull
     public static Builder login(@NonNull Auth0 account) {
         return new Builder(account);
     }
@@ -482,6 +505,7 @@ public class WebAuthProvider {
      * @return a new Builder instance to customize.
      * @deprecated This method was renamed to reflect an authentication flow. Please use {@link #login(Auth0)}.
      */
+    @NonNull
     @Deprecated
     public static Builder init(@NonNull Auth0 account) {
         return login(account);
@@ -495,6 +519,7 @@ public class WebAuthProvider {
      * @return a new Builder instance to customize.
      * @deprecated This method was renamed to reflect an authentication flow. Please use {@link #login(Auth0)}. You can create an Auth0 instance from a Context using {@link Auth0#Auth0(Context)}.
      */
+    @NonNull
     @Deprecated
     public static Builder init(@NonNull Context context) {
         return login(new Auth0(context));
