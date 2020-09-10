@@ -12,16 +12,26 @@ jobs:
     
     - restore_cache:
         keys:
-        - v1-dep-{{ .Branch }}-
+        - v1-dep-{{ checksum "build.gradle" }}-{{ checksum  "auth0/build.gradle" }}
     
+    - run:
+        name: Run checks
+        command: ./gradlew clean test jacocoTestReport lint --continue --console=plain
+
     - save_cache:
-        key: v1-dep-{{ .Branch }}-{{ epoch }}
+        key: v1-dep-{{ checksum "build.gradle" }}-{{ checksum  "auth0/build.gradle" }}
         paths:
-        - ~/.gradle
-        - ~/.android
-        - /usr/local/android-sdk-linux/extras
-    
-    - run: ./gradlew clean test jacocoTestReport --continue --console=plain
+          - ~/.gradle
+          - ~/.android
+          - /usr/local/android-sdk-linux/extras
+
+    - store_artifacts:
+        path: auth0/build/reports
+        destination: reports
+
+    - store_test_results:
+        path: auth0/build/test-results
+
     - run:
           name: Upload Coverage
           when: on_success

@@ -58,8 +58,8 @@ android {
         consumerProguardFiles '../proguard/proguard-gson.pro', '../proguard/proguard-okio.pro'
     }
     lintOptions {
-        warningsAsErrors true
-        warning 'InvalidPackage'
+        htmlReport true
+        abortOnError true
     }
     testOptions {
         unitTests {
