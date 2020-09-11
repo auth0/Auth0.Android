@@ -172,9 +172,19 @@ class CustomTabsController extends CustomTabsServiceConnection {
         PackageManager pm = context.getPackageManager();
         Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.example.com"));
 
-        String[] browserPackages = overrideBrowserPackages == null ? getBrowserPackages(pm) : overrideBrowserPackages;
+        String[] browserPackages;
+        int packageManagerFlags;
 
-        List<ResolveInfo> resolvedActivityList = pm.queryIntentActivities(browserIntent, 0);
+        // if the overrideBrowserPackages is null, preserve old behaviour of the library
+        if(overrideBrowserPackages != null){
+            browserPackages = overrideBrowserPackages;
+            packageManagerFlags = PackageManager.MATCH_ALL;
+        }else{
+            browserPackages = getBrowserPackages(pm);
+            packageManagerFlags = 0;
+        }
+
+        List<ResolveInfo> resolvedActivityList = pm.queryIntentActivities(browserIntent, packageManagerFlags);
         List<String> customTabsBrowsers = new ArrayList<>();
         for (ResolveInfo info : resolvedActivityList) {
             Intent serviceIntent = new Intent();
