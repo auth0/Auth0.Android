@@ -25,6 +25,7 @@
 package com.auth0.android.authentication.request;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
@@ -32,7 +33,6 @@ import com.auth0.android.authentication.ParameterBuilder;
 import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.request.AuthRequest;
 import com.auth0.android.request.AuthenticationRequest;
-import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.request.Request;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.DatabaseUser;
@@ -99,7 +99,8 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
      * @see ParameterBuilder
      * @see <a href="https://auth0.com/docs/users/concepts/overview-user-metadata">User Metadata documentation</a>
      */
-    public SignUpRequest addSignUpParameters(Map<String, Object> parameters) {
+    @NonNull
+    public SignUpRequest addSignUpParameters(@NonNull Map<String, Object> parameters) {
         signUpRequest.addParameters(parameters);
         return this;
     }
@@ -111,8 +112,9 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
      * @return itself
      * @see ParameterBuilder
      */
+    @NonNull
     @Override
-    public SignUpRequest addAuthenticationParameters(Map<String, Object> parameters) {
+    public SignUpRequest addAuthenticationParameters(@NonNull Map<String, Object> parameters) {
         getAuthRequest().addAuthenticationParameters(parameters);
         return this;
     }
@@ -125,8 +127,9 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
      * @param value of the header
      * @return itself
      */
+    @NonNull
     @Override
-    public SignUpRequest addHeader(String name, String value) {
+    public SignUpRequest addHeader(@NonNull String name, @NonNull String value) {
         signUpRequest.addHeader(name, value);
         if (authRequest != null) {
             authRequest.addHeader(name, value);
@@ -134,45 +137,52 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
         return this;
     }
 
+    @NonNull
     @Override
-    public SignUpRequest setScope(String scope) {
+    public SignUpRequest setScope(@NonNull String scope) {
         getAuthRequest().setScope(scope);
         return this;
     }
 
+    @NonNull
     @Override
-    public SignUpRequest setDevice(String device) {
+    public SignUpRequest setDevice(@NonNull String device) {
         getAuthRequest().setDevice(device);
         return this;
     }
 
+    @NonNull
     @Override
-    public SignUpRequest setAudience(String audience) {
+    public SignUpRequest setAudience(@NonNull String audience) {
         getAuthRequest().setAudience(audience);
         return this;
     }
 
+    @NonNull
     @Override
-    public SignUpRequest setAccessToken(String accessToken) {
+    public SignUpRequest setAccessToken(@NonNull String accessToken) {
         getAuthRequest().setAccessToken(accessToken);
         return this;
     }
 
+    @NonNull
     @Override
-    public SignUpRequest setGrantType(String grantType) {
+    public SignUpRequest setGrantType(@NonNull String grantType) {
         getAuthRequest().setGrantType(grantType);
         return this;
     }
 
+    @NonNull
     @Override
-    public SignUpRequest setConnection(String connection) {
+    public SignUpRequest setConnection(@NonNull String connection) {
         signUpRequest.setConnection(connection);
         getAuthRequest().setConnection(connection);
         return this;
     }
 
+    @NonNull
     @Override
-    public SignUpRequest setRealm(String realm) {
+    public SignUpRequest setRealm(@NonNull String realm) {
         signUpRequest.setConnection(realm);
         getAuthRequest().setRealm(realm);
         return this;
@@ -184,15 +194,15 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
      * @param callback called on either success or failure.
      */
     @Override
-    public void start(final BaseCallback<Credentials, AuthenticationException> callback) {
+    public void start(@NonNull final BaseCallback<Credentials, AuthenticationException> callback) {
         signUpRequest.start(new BaseCallback<DatabaseUser, AuthenticationException>() {
             @Override
-            public void onSuccess(final DatabaseUser user) {
+            public void onSuccess(@Nullable final DatabaseUser user) {
                 getAuthRequest().start(callback);
             }
 
             @Override
-            public void onFailure(AuthenticationException error) {
+            public void onFailure(@NonNull AuthenticationException error) {
                 callback.onFailure(error);
             }
         });
@@ -204,6 +214,7 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
      * @return authentication object on success
      * @throws Auth0Exception on failure
      */
+    @NonNull
     @Override
     public Credentials execute() throws Auth0Exception {
         signUpRequest.execute();

@@ -26,6 +26,7 @@ package com.auth0.android.management;
 
 
 import android.content.Context;
+import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
 
 import com.auth0.android.Auth0;
@@ -80,7 +81,7 @@ public class UsersAPIClient {
      * @param auth0 account information
      * @param token of the primary identity
      */
-    public UsersAPIClient(Auth0 auth0, String token) {
+    public UsersAPIClient(@NonNull Auth0 auth0, @NonNull String token) {
         this(auth0, new RequestFactory(token), new OkHttpClientFactory(), GsonProvider.buildGson());
     }
 
@@ -91,7 +92,7 @@ public class UsersAPIClient {
      * @param context a valid Context
      * @param token   of the primary identity
      */
-    public UsersAPIClient(Context context, String token) {
+    public UsersAPIClient(@NonNull Context context, @NonNull String token) {
         this(new Auth0(context), token);
     }
 
@@ -116,10 +117,12 @@ public class UsersAPIClient {
         }
     }
 
+    @NonNull
     public String getClientId() {
         return auth0.getClientId();
     }
 
+    @NonNull
     public String getBaseURL() {
         return auth0.getDomainUrl();
     }
@@ -130,7 +133,7 @@ public class UsersAPIClient {
      * @param userAgent value to send in every request to Auth0
      */
     @SuppressWarnings("unused")
-    public void setUserAgent(String userAgent) {
+    public void setUserAgent(@NonNull String userAgent) {
         factory.setUserAgent(userAgent);
     }
 
@@ -154,8 +157,9 @@ public class UsersAPIClient {
      * @param secondaryToken of the secondary identity obtained after login
      * @return a request to start
      */
+    @NonNull
     @SuppressWarnings("WeakerAccess")
-    public ParameterizableRequest<List<UserIdentity>, ManagementException> link(String primaryUserId, String secondaryToken) {
+    public ParameterizableRequest<List<UserIdentity>, ManagementException> link(@NonNull String primaryUserId, @NonNull String secondaryToken) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(API_PATH)
                 .addPathSegment(V2_PATH)
@@ -195,8 +199,9 @@ public class UsersAPIClient {
      * @param secondaryProvider of the secondary identity you wish to unlink from the main one.
      * @return a request to start
      */
+    @NonNull
     @SuppressWarnings("WeakerAccess")
-    public ParameterizableRequest<List<UserIdentity>, ManagementException> unlink(String primaryUserId, String secondaryUserId, String secondaryProvider) {
+    public ParameterizableRequest<List<UserIdentity>, ManagementException> unlink(@NonNull String primaryUserId, @NonNull String secondaryUserId, @NonNull String secondaryProvider) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(API_PATH)
                 .addPathSegment(V2_PATH)
@@ -232,8 +237,9 @@ public class UsersAPIClient {
      * @param userMetadata to merge with the existing one
      * @return a request to start
      */
+    @NonNull
     @SuppressWarnings("WeakerAccess")
-    public ParameterizableRequest<UserProfile, ManagementException> updateMetadata(String userId, Map<String, Object> userMetadata) {
+    public ParameterizableRequest<UserProfile, ManagementException> updateMetadata(@NonNull String userId, @NonNull Map<String, Object> userMetadata) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(API_PATH)
                 .addPathSegment(V2_PATH)
@@ -264,8 +270,9 @@ public class UsersAPIClient {
      * @param userId identity of the user
      * @return a request to start
      */
+    @NonNull
     @SuppressWarnings("WeakerAccess")
-    public ParameterizableRequest<UserProfile, ManagementException> getProfile(String userId) {
+    public ParameterizableRequest<UserProfile, ManagementException> getProfile(@NonNull String userId) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(API_PATH)
                 .addPathSegment(V2_PATH)

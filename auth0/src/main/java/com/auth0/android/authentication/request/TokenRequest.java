@@ -1,5 +1,7 @@
 package com.auth0.android.authentication.request;
 
+import android.support.annotation.NonNull;
+
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.BaseCallback;
@@ -19,7 +21,7 @@ public class TokenRequest implements Request<Credentials, AuthenticationExceptio
 
     private final ParameterizableRequest<Credentials, AuthenticationException> request;
 
-    public TokenRequest(ParameterizableRequest<Credentials, AuthenticationException> request) {
+    public TokenRequest(@NonNull ParameterizableRequest<Credentials, AuthenticationException> request) {
         this.request = request;
     }
 
@@ -29,7 +31,8 @@ public class TokenRequest implements Request<Credentials, AuthenticationExceptio
      * @param parameters as a non-null dictionary
      * @return itself
      */
-    public TokenRequest addParameters(Map<String, Object> parameters) {
+    @NonNull
+    public TokenRequest addParameters(@NonNull Map<String, Object> parameters) {
         request.addParameters(parameters);
         return this;
     }
@@ -41,7 +44,8 @@ public class TokenRequest implements Request<Credentials, AuthenticationExceptio
      * @param value of the header
      * @return itself
      */
-    public TokenRequest addHeader(String name, String value) {
+    @NonNull
+    public TokenRequest addHeader(@NonNull String name, @NonNull String value) {
         request.addHeader(name, value);
         return this;
     }
@@ -52,17 +56,19 @@ public class TokenRequest implements Request<Credentials, AuthenticationExceptio
      * @param codeVerifier the code verifier used to generate the challenge sent to /authorize.
      * @return itself
      */
+    @NonNull
     @SuppressWarnings("WeakerAccess")
-    public TokenRequest setCodeVerifier(String codeVerifier) {
+    public TokenRequest setCodeVerifier(@NonNull String codeVerifier) {
         this.request.addParameter(OAUTH_CODE_VERIFIER_KEY, codeVerifier);
         return this;
     }
 
     @Override
-    public void start(BaseCallback<Credentials, AuthenticationException> callback) {
+    public void start(@NonNull BaseCallback<Credentials, AuthenticationException> callback) {
         request.start(callback);
     }
 
+    @NonNull
     @Override
     public Credentials execute() throws Auth0Exception {
         return request.execute();

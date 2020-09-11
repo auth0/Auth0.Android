@@ -24,6 +24,9 @@
 
 package com.auth0.android;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 /**
  * Base Exception for any error found during a request to Auth0's API
  */
@@ -37,11 +40,11 @@ public class Auth0Exception extends RuntimeException {
     @SuppressWarnings("WeakerAccess")
     public static final String EMPTY_RESPONSE_BODY_DESCRIPTION = "Empty response body";
 
-    public Auth0Exception(String message, Throwable cause) {
+    public Auth0Exception(@NonNull String message, @Nullable Throwable cause) {
         super(message, cause);
     }
 
-    public Auth0Exception(String message) {
+    public Auth0Exception(@NonNull String message) {
         super(message);
     }
 }

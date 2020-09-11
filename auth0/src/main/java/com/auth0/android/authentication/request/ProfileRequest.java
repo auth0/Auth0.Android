@@ -24,7 +24,9 @@
 
 package com.auth0.android.authentication.request;
 
+import android.annotation.SuppressLint;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
@@ -48,13 +50,14 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
 
     private final AuthenticationRequest authenticationRequest;
     private final AuthRequest authRequest;
-    private final ParameterizableRequest<UserProfile, AuthenticationException> userInfoRequest;
+    final ParameterizableRequest<UserProfile, AuthenticationException> userInfoRequest;
 
     /**
      * @param authenticationRequest the request that will output a pair of credentials
      * @param userInfoRequest       the /userinfo request that will be wrapped
      * @deprecated using this constructor prevents from updating the request headers. See {@link #ProfileRequest(AuthRequest, ParameterizableRequest)}
      */
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     public ProfileRequest(@NonNull AuthenticationRequest authenticationRequest, @NonNull ParameterizableRequest<UserProfile, AuthenticationException> userInfoRequest) {
         this.userInfoRequest = userInfoRequest;
@@ -62,6 +65,7 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
         this.authRequest = null;
     }
 
+    @SuppressLint("LambdaLast")
     public ProfileRequest(@NonNull AuthRequest authRequest, @NonNull ParameterizableRequest<UserProfile, AuthenticationException> userInfoRequest) {
         this.userInfoRequest = userInfoRequest;
         this.authRequest = authRequest;
@@ -80,7 +84,8 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
      * @param parameters as a non-null dictionary
      * @return itself
      */
-    public ProfileRequest addParameters(Map<String, Object> parameters) {
+    @NonNull
+    public ProfileRequest addParameters(@NonNull Map<String, Object> parameters) {
         getAuthRequest().addAuthenticationParameters(parameters);
         return this;
     }
@@ -92,9 +97,10 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
      * @param name  of the header
      * @param value of the header
      * @return itself
-     * @see ProfileRequest(AuthRequest, ParameterizableRequest<UserProfile, AuthenticationException>)
+     * @see ProfileRequest#ProfileRequest(AuthRequest, ParameterizableRequest)
      */
-    public ProfileRequest addHeader(String name, String value) {
+    @NonNull
+    public ProfileRequest addHeader(@NonNull String name, @NonNull String value) {
         if (authRequest != null) {
             authRequest.addHeader(name, value);
         }
@@ -107,7 +113,8 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
      * @param scope value
      * @return itself
      */
-    public ProfileRequest setScope(String scope) {
+    @NonNull
+    public ProfileRequest setScope(@NonNull String scope) {
         getAuthRequest().setScope(scope);
         return this;
     }
@@ -118,7 +125,8 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
      * @param connection name
      * @return itself
      */
-    public ProfileRequest setConnection(String connection) {
+    @NonNull
+    public ProfileRequest setConnection(@NonNull String connection) {
         getAuthRequest().setConnection(connection);
         return this;
     }
@@ -129,27 +137,27 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
      * @param callback called on either success or failure
      */
     @Override
-    public void start(final BaseCallback<Authentication, AuthenticationException> callback) {
+    public void start(@NonNull final BaseCallback<Authentication, AuthenticationException> callback) {
         getAuthRequest().start(new BaseCallback<Credentials, AuthenticationException>() {
             @Override
-            public void onSuccess(final Credentials credentials) {
+            public void onSuccess(@Nullable final Credentials credentials) {
                 userInfoRequest
                         .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.getAccessToken())
                         .start(new BaseCallback<UserProfile, AuthenticationException>() {
                             @Override
-                            public void onSuccess(UserProfile profile) {
+                            public void onSuccess(@Nullable UserProfile profile) {
                                 callback.onSuccess(new Authentication(profile, credentials));
                             }
 
                             @Override
-                            public void onFailure(AuthenticationException error) {
+                            public void onFailure(@NonNull AuthenticationException error) {
                                 callback.onFailure(error);
                             }
                         });
             }
 
             @Override
-            public void onFailure(AuthenticationException error) {
+            public void onFailure(@NonNull AuthenticationException error) {
                 callback.onFailure(error);
             }
         });
@@ -161,6 +169,7 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
      * @return authentication object containing the user's tokens and profile
      * @throws Auth0Exception when either authentication or profile fetch fails
      */
+    @NonNull
     @Override
     public Authentication execute() throws Auth0Exception {
         Credentials credentials = getAuthRequest().execute();

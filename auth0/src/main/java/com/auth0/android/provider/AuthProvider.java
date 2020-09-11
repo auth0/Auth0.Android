@@ -109,11 +109,12 @@ public abstract class AuthProvider {
      * @param activity    a valid activity context.
      * @param requestCode to use in the Authentication request
      */
-    protected abstract void requestAuth(Activity activity, int requestCode);
+    protected abstract void requestAuth(@NonNull Activity activity, int requestCode);
 
     /**
      * Stops the authentication process (even if it's in progress).
      */
+    @SuppressWarnings("EmptyMethod")
     public void stop() {
     }
 
@@ -134,6 +135,7 @@ public abstract class AuthProvider {
      * @param intent      the data received on the onActivityResult() call
      * @return true if a result was expected and has a valid format, or false if not.
      */
+    @SuppressWarnings("unused")
     public abstract boolean authorize(int requestCode, int resultCode, @Nullable Intent intent);
 
     /**
@@ -144,6 +146,7 @@ public abstract class AuthProvider {
      * @param intent the data received on the onNewIntent() call
      * @return true if a result was expected and has a valid format, or false if not.
      */
+    @SuppressWarnings({"unused", "SameReturnValue"})
     public boolean authorize(@Nullable Intent intent) {
         return false;
     }
@@ -154,6 +157,7 @@ public abstract class AuthProvider {
      *
      * @return the required Android Manifest.permissions
      */
+    @NonNull
     public abstract String[] getRequiredAndroidPermissions();
 
     /**
@@ -172,7 +176,7 @@ public abstract class AuthProvider {
      * @return the parameters to use.
      */
     @NonNull
-    protected Map<String, Object> getParameters() {
+    public Map<String, Object> getParameters() {
         return parameters;
     }
 

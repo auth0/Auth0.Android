@@ -273,7 +273,7 @@ public class SecureCredentialsManager {
         Log.d(TAG, "Credentials have expired. Renewing them now...");
         apiClient.renewAuth(credentials.getRefreshToken()).start(new AuthenticationCallback<Credentials>() {
             @Override
-            public void onSuccess(Credentials fresh) {
+            public void onSuccess(@Nullable Credentials fresh) {
                 //non-empty refresh token for refresh token rotation scenarios
                 String updatedRefreshToken = isEmpty(fresh.getRefreshToken()) ? credentials.getRefreshToken() : fresh.getRefreshToken();
                 Credentials refreshed = new Credentials(fresh.getIdToken(), fresh.getAccessToken(), fresh.getType(), updatedRefreshToken, fresh.getExpiresAt(), fresh.getScope());
@@ -283,7 +283,7 @@ public class SecureCredentialsManager {
             }
 
             @Override
-            public void onFailure(AuthenticationException error) {
+            public void onFailure(@NonNull AuthenticationException error) {
                 callback.onFailure(new CredentialsManagerException("An error occurred while trying to use the Refresh Token to renew the Credentials.", error));
                 decryptCallback = null;
             }

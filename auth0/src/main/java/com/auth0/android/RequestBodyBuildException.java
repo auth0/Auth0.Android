@@ -24,12 +24,15 @@
 
 package com.auth0.android;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 /**
  * Exception that wraps errors when creating a body for a request
  */
 public class RequestBodyBuildException extends Auth0Exception {
 
-    public RequestBodyBuildException(String message, Throwable cause) {
+    public RequestBodyBuildException(@NonNull String message, @Nullable Throwable cause) {
         super(message, cause);
     }
 

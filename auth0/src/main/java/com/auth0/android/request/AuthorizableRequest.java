@@ -24,6 +24,8 @@
 
 package com.auth0.android.request;
 
+import android.support.annotation.NonNull;
+
 import com.auth0.android.Auth0Exception;
 
 /**
@@ -40,6 +42,7 @@ public interface AuthorizableRequest<T, U extends Auth0Exception> extends Parame
      * @param jwt token to send to the API
      * @return itself
      */
-    AuthorizableRequest<T, U> setBearer(String jwt);
+    @NonNull
+    AuthorizableRequest<T, U> setBearer(@NonNull String jwt);
 
 }

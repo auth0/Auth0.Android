@@ -34,6 +34,7 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -66,7 +67,7 @@ public class WebAuthActivity extends AppCompatActivity {
     private TextView errorMessage;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         Log.v(TAG, "Creating a WebAuthActivity for navigating to " + getIntent().getData().toString());
         super.onCreate(savedInstanceState);
         if (getIntent().getBooleanExtra(FULLSCREEN_EXTRA, false)) {

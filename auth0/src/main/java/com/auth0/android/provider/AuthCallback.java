@@ -48,7 +48,7 @@ public interface AuthCallback {
      *
      * @param exception cause of the error
      */
-    void onFailure(AuthenticationException exception);
+    void onFailure(@NonNull AuthenticationException exception);
 
     /**
      * Called when the authentication is successful using web authentication against Auth0

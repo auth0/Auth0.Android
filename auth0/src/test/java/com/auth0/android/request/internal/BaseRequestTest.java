@@ -25,6 +25,8 @@
 package com.auth0.android.request.internal;
 
 
+import android.support.annotation.NonNull;
+
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.NetworkErrorException;
 import com.auth0.android.RequestBodyBuildException;
@@ -91,6 +93,7 @@ public class BaseRequestTest {
         parameterBuilder = ParameterBuilder.newBuilder();
 
         baseRequest = new BaseRequest<String, Auth0Exception>(url, client, new Gson(), adapter, errorBuilder, callback, headers, parameterBuilder) {
+            @NonNull
             @Override
             public String execute() throws Auth0Exception {
                 return null;

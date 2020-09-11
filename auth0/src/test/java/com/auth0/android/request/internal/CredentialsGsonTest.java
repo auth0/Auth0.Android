@@ -87,7 +87,7 @@ public class CredentialsGsonTest extends GsonBaseTest {
         assertThat(credentials.getType(), equalTo("bearer"));
         //The hardcoded value comes from the JSON file
         assertThat(credentials.getExpiresIn(), is(notNullValue()));
-        double expectedCalculatedExpiresIn = (exp.getTime() - System.currentTimeMillis()) / 1000;
+        double expectedCalculatedExpiresIn = (exp.getTime() - System.currentTimeMillis()) / 1000f;
         assertThat(credentials.getExpiresIn().doubleValue(), is(closeTo(expectedCalculatedExpiresIn, 1)));
         assertThat(credentials.getExpiresAt(), is(notNullValue()));
         double expiresAt = credentials.getExpiresAt().getTime();

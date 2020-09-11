@@ -1,5 +1,7 @@
 package com.auth0.android.request.internal;
 
+import android.support.annotation.NonNull;
+
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.request.ErrorBuilder;
@@ -52,26 +54,30 @@ public class MockRequest<T, U extends Auth0Exception> implements Parameterizable
         this.builder = builder;
     }
 
+    @NonNull
     @Override
-    public ParameterizableRequest<T, U> addParameters(Map<String, Object> parameters) {
+    public ParameterizableRequest<T, U> addParameters(@NonNull Map<String, Object> parameters) {
         return this;
     }
 
+    @NonNull
     @Override
-    public ParameterizableRequest<T, U> addParameter(String name, Object value) {
+    public ParameterizableRequest<T, U> addParameter(@NonNull String name, @NonNull Object value) {
         return this;
     }
 
+    @NonNull
     @Override
-    public ParameterizableRequest<T, U> addHeader(String name, String value) {
+    public ParameterizableRequest<T, U> addHeader(@NonNull String name, @NonNull String value) {
         headers.put(name, value);
         return this;
     }
 
     @Override
-    public void start(BaseCallback<T, U> callback) {
+    public void start(@NonNull BaseCallback<T, U> callback) {
     }
 
+    @NonNull
     @Override
     public T execute() throws Auth0Exception {
         return null;

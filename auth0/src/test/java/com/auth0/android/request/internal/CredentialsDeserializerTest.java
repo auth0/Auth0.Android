@@ -56,7 +56,7 @@ public class CredentialsDeserializerTest {
         double expectedExpiresAt = exp.getTime();
         assertThat(expiresAt, is(closeTo(expectedExpiresAt, 1)));
         assertThat(credentials.getExpiresIn(), is(notNullValue()));
-        double expectedExpiresIn = (exp.getTime() - CredentialsMock.CURRENT_TIME_MS) / 1000;
+        double expectedExpiresIn = (exp.getTime() - CredentialsMock.CURRENT_TIME_MS) / 1000f;
         assertThat(credentials.getExpiresIn().doubleValue(), is(closeTo(expectedExpiresIn, 1)));
     }
 

@@ -1,5 +1,7 @@
 package com.auth0.android.util;
 
+import android.support.annotation.NonNull;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import com.google.gson.TypeAdapter;
@@ -14,7 +16,8 @@ import java.lang.reflect.Field;
 
 public class JsonRequiredTypeAdapterFactory implements TypeAdapterFactory {
 
-    public <T> TypeAdapter<T> create(Gson gson, final TypeToken<T> type) {
+    @NonNull
+    public <T> TypeAdapter<T> create(@NonNull Gson gson, @NonNull final TypeToken<T> type) {
 
         final TypeAdapter<T> delegate = gson.getDelegateAdapter(this, type);
 

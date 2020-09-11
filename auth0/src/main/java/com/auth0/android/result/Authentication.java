@@ -25,10 +25,10 @@
 package com.auth0.android.result;
 
 
+import android.support.annotation.NonNull;
+
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.request.AuthenticationRequest;
-
-import static com.auth0.android.util.CheckHelper.checkArgument;
 
 /**
  * The result of a successful authentication against Auth0
@@ -41,17 +41,17 @@ public class Authentication {
     private final UserProfile profile;
     private final Credentials credentials;
 
-    public Authentication(UserProfile profile, Credentials credentials) {
-        checkArgument(profile != null, "profile must be non-null");
-        checkArgument(credentials != null, "credentials must be non-null");
+    public Authentication(@NonNull UserProfile profile, @NonNull Credentials credentials) {
         this.profile = profile;
         this.credentials = credentials;
     }
 
+    @NonNull
     public UserProfile getProfile() {
         return profile;
     }
 
+    @NonNull
     public Credentials getCredentials() {
         return credentials;
     }

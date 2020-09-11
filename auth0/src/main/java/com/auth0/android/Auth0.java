@@ -110,6 +110,7 @@ public class Auth0 {
     /**
      * @return your Auth0 application client identifier
      */
+    @NonNull
     public String getClientId() {
         return clientId;
     }
@@ -117,6 +118,7 @@ public class Auth0 {
     /**
      * @return your Auth0 account domain url
      */
+    @NonNull
     public String getDomainUrl() {
         return domainUrl.toString();
     }
@@ -124,6 +126,7 @@ public class Auth0 {
     /**
      * @return your account configuration url
      */
+    @NonNull
     public String getConfigurationUrl() {
         return configurationUrl.toString();
     }
@@ -133,6 +136,7 @@ public class Auth0 {
      *
      * @return Url to call to perform the web flow of OAuth
      */
+    @NonNull
     public String getAuthorizeUrl() {
         return domainUrl.newBuilder()
                 .addEncodedPathSegment("authorize")
@@ -145,6 +149,7 @@ public class Auth0 {
      *
      * @return Url to call to perform the web logout
      */
+    @NonNull
     public String getLogoutUrl() {
         return domainUrl.newBuilder()
                 .addEncodedPathSegment("v2")
@@ -156,6 +161,7 @@ public class Auth0 {
     /**
      * @return Auth0 telemetry info sent in every request
      */
+    @Nullable
     public Telemetry getTelemetry() {
         return telemetry;
     }
@@ -184,9 +190,10 @@ public class Auth0 {
     /**
      * Setter for the Telemetry to send in every request to Auth0.
      *
-     * @param telemetry to send in every request to Auth0
+     * @param telemetry to send in every request to Auth0.
+     * @see #doNotSendTelemetry()
      */
-    public void setTelemetry(Telemetry telemetry) {
+    public void setTelemetry(@Nullable Telemetry telemetry) {
         this.telemetry = telemetry;
     }
 

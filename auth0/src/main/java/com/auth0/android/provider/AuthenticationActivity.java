@@ -41,13 +41,13 @@ public class AuthenticationActivity extends Activity {
     }
 
     @Override
-    protected void onNewIntent(Intent intent) {
+    protected void onNewIntent(@Nullable Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         if (resultCode == RESULT_CANCELED) {
             data = new Intent();
         }
@@ -56,7 +56,7 @@ public class AuthenticationActivity extends Activity {
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putBoolean(EXTRA_INTENT_LAUNCHED, intentLaunched);
     }
@@ -125,7 +125,7 @@ public class AuthenticationActivity extends Activity {
     }
 
     @VisibleForTesting
-    void deliverAuthenticationResult(Intent result) {
+    void deliverAuthenticationResult(@Nullable Intent result) {
         WebAuthProvider.resume(result);
     }
 

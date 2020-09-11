@@ -1,5 +1,6 @@
 package com.auth0.android.request.internal;
 
+import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
 
 import com.auth0.android.result.Credentials;
@@ -20,6 +21,7 @@ public abstract class GsonProvider {
 
     static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
 
+    @NonNull
     public static Gson buildGson() {
         Type jwksType = new TypeToken<Map<String, PublicKey>>() {
         }.getType();

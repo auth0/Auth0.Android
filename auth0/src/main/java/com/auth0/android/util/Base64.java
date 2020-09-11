@@ -1,5 +1,8 @@
 package com.auth0.android.util;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 
@@ -18,7 +21,9 @@ public class Base64 {
             '5', '6', '7', '8', '9', '-', '_'
     };
 
-    public static String encodeUrlSafe(String string) {
+    @Nullable
+    @Deprecated
+    public static String encodeUrlSafe(@NonNull String string) {
         byte[] in = string.getBytes(Charset.defaultCharset());
         int length = (in.length + 2) * 4 / 3;
         byte[] out = new byte[length];

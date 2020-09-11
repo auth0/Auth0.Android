@@ -24,6 +24,7 @@
 
 package com.auth0.android.request.internal;
 
+import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
 
 import com.auth0.android.Auth0Exception;
@@ -151,32 +152,36 @@ abstract class BaseRequest<T, U extends Auth0Exception> implements Parameterizab
         postOnFailure(errorBuilder.from("Request failed", new NetworkErrorException(e)));
     }
 
+    @NonNull
     @Override
-    public ParameterizableRequest<T, U> addHeader(String name, String value) {
+    public ParameterizableRequest<T, U> addHeader(@NonNull String name, @NonNull String value) {
         headers.put(name, value);
         return this;
     }
 
+    @NonNull
     @Override
-    public AuthorizableRequest<T, U> setBearer(String jwt) {
+    public AuthorizableRequest<T, U> setBearer(@NonNull String jwt) {
         addHeader("Authorization", "Bearer " + jwt);
         return this;
     }
 
+    @NonNull
     @Override
-    public ParameterizableRequest<T, U> addParameters(Map<String, Object> parameters) {
+    public ParameterizableRequest<T, U> addParameters(@NonNull Map<String, Object> parameters) {
         builder.addAll(parameters);
         return this;
     }
 
+    @NonNull
     @Override
-    public ParameterizableRequest<T, U> addParameter(String name, Object value) {
+    public ParameterizableRequest<T, U> addParameter(@NonNull String name, @NonNull Object value) {
         builder.set(name, value);
         return this;
     }
 
     @Override
-    public void start(BaseCallback<T, U> callback) {
+    public void start(@NonNull BaseCallback<T, U> callback) {
         setCallback(callback);
         try {
             Request request = doBuildRequest();

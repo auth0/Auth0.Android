@@ -24,6 +24,8 @@
 
 package com.auth0.android.authentication;
 
+import android.support.annotation.NonNull;
+
 /**
  * Valid types of passwordless flows in Auth0
  */
@@ -35,6 +37,7 @@ public enum PasswordlessType {
     ANDROID_LINK,
     CODE;
 
+    @NonNull
     public String getValue() {
         switch (this) {
             default:

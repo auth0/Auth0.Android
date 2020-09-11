@@ -24,6 +24,8 @@
 
 package com.auth0.android.request;
 
+import android.support.annotation.NonNull;
+
 import com.auth0.android.Auth0Exception;
 
 import java.util.Map;
@@ -42,7 +44,8 @@ public interface ParameterizableRequest<T, U extends Auth0Exception> extends Req
      * @param parameters to send with the request
      * @return itself
      */
-    ParameterizableRequest<T, U> addParameters(Map<String, Object> parameters);
+    @NonNull
+    ParameterizableRequest<T, U> addParameters(@NonNull Map<String, Object> parameters);
 
     /**
      * Add parameter to the request with a given name
@@ -51,7 +54,8 @@ public interface ParameterizableRequest<T, U extends Auth0Exception> extends Req
      * @param value of the parameter
      * @return itself
      */
-    ParameterizableRequest<T, U> addParameter(String name, Object value);
+    @NonNull
+    ParameterizableRequest<T, U> addParameter(@NonNull String name, @NonNull Object value);
 
     /**
      * Adds an additional header for the request
@@ -60,6 +64,7 @@ public interface ParameterizableRequest<T, U extends Auth0Exception> extends Req
      * @param value of the header
      * @return itself
      */
-    ParameterizableRequest<T, U> addHeader(String name, String value);
+    @NonNull
+    ParameterizableRequest<T, U> addHeader(@NonNull String name, @NonNull String value);
 
 }

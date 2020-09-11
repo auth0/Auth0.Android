@@ -24,6 +24,8 @@
 
 package com.auth0.android.request;
 
+import android.support.annotation.NonNull;
+
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.callback.BaseCallback;
 
@@ -40,7 +42,7 @@ public interface Request<T, U extends Auth0Exception> {
      *
      * @param callback called either on success or failure
      */
-    void start(BaseCallback<T, U> callback);
+    void start(@NonNull BaseCallback<T, U> callback);
 
     /**
      * Executes the HTTP request against Auth0 API (blocking the current thread)
@@ -48,5 +50,6 @@ public interface Request<T, U extends Auth0Exception> {
      * @return the response on success
      * @throws Auth0Exception on failure
      */
+    @NonNull
     T execute() throws Auth0Exception;
 }

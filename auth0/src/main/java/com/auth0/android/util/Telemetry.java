@@ -1,5 +1,7 @@
 package com.auth0.android.util;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.text.TextUtils;
 import android.util.Base64;
@@ -26,11 +28,11 @@ public class Telemetry {
     private final Map<String, String> env;
     private final String value;
 
-    public Telemetry(String name, String version) {
+    public Telemetry(@NonNull String name, @NonNull String version) {
         this(name, version, null);
     }
 
-    public Telemetry(String name, String version, String libraryVersion) {
+    public Telemetry(@NonNull String name, @NonNull String version, @Nullable String libraryVersion) {
         this.name = name;
         this.version = version;
         if (TextUtils.isEmpty(name)) {
@@ -41,6 +43,7 @@ public class Telemetry {
         Map<String, String> tmpEnv = new HashMap<>();
         tmpEnv.put(ANDROID_KEY, String.valueOf(android.os.Build.VERSION.SDK_INT));
         if (!TextUtils.isEmpty(libraryVersion)) {
+            //noinspection ConstantConditions
             tmpEnv.put(LIBRARY_VERSION_KEY, libraryVersion);
         }
         this.env = Collections.unmodifiableMap(tmpEnv);
@@ -57,14 +60,17 @@ public class Telemetry {
         value = new String(Base64.encode(bytes, Base64.URL_SAFE | Base64.NO_WRAP), utf8);
     }
 
+    @NonNull
     public String getName() {
         return name;
     }
 
+    @NonNull
     public String getVersion() {
         return version;
     }
 
+    @Nullable
     public String getLibraryVersion() {
         return env.get(LIBRARY_VERSION_KEY);
     }
@@ -74,6 +80,7 @@ public class Telemetry {
         return env;
     }
 
+    @NonNull
     public String getValue() {
         return value;
     }

@@ -47,7 +47,7 @@ abstract class SimpleAuthCallback implements AuthCallback {
     }
 
     @Override
-    public void onFailure(AuthenticationException exception) {
+    public void onFailure(@NonNull AuthenticationException exception) {
         baseCallback.onFailure(exception);
     }
 

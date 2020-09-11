@@ -27,6 +27,7 @@ package com.auth0.android.provider;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Intent;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.PermissionChecker;
 import android.widget.TextView;
@@ -83,7 +84,7 @@ public class AuthProviderTest {
         provider = new AuthProvider(handler) {
 
             @Override
-            protected void requestAuth(Activity activity, int requestCode) {
+            protected void requestAuth(@NonNull Activity activity, int requestCode) {
                 processAuthenticationCalled = true;
             }
 
@@ -92,6 +93,7 @@ public class AuthProviderTest {
                 return false;
             }
 
+            @NonNull
             @Override
             public String[] getRequiredAndroidPermissions() {
                 return PROVIDER_PERMISSIONS;
@@ -103,7 +105,7 @@ public class AuthProviderTest {
     public void shouldHavePermissionHandler() {
         AuthProvider provider = new AuthProvider() {
             @Override
-            protected void requestAuth(Activity activity, int requestCode) {
+            protected void requestAuth(@NonNull Activity activity, int requestCode) {
             }
 
             @Override
@@ -111,6 +113,7 @@ public class AuthProviderTest {
                 return false;
             }
 
+            @NonNull
             @Override
             public String[] getRequiredAndroidPermissions() {
                 return new String[0];

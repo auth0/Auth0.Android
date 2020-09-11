@@ -58,7 +58,7 @@ abstract class SignatureVerifier {
     static void forAsymmetricAlgorithm(@Nullable final String keyId, @NonNull AuthenticationAPIClient apiClient, @NonNull final BaseCallback<SignatureVerifier, TokenValidationException> callback) {
         apiClient.fetchJsonWebKeys().start(new AuthenticationCallback<Map<String, PublicKey>>() {
             @Override
-            public void onSuccess(Map<String, PublicKey> jwks) {
+            public void onSuccess(@Nullable Map<String, PublicKey> jwks) {
                 PublicKey publicKey = jwks.get(keyId);
                 try {
                     callback.onSuccess(new AsymmetricSignatureVerifier(publicKey));
@@ -68,7 +68,7 @@ abstract class SignatureVerifier {
             }
 
             @Override
-            public void onFailure(AuthenticationException error) {
+            public void onFailure(@NonNull AuthenticationException error) {
                 callback.onFailure(new TokenValidationException(String.format("Could not find a public key for kid \"%s\"", keyId)));
             }
         });

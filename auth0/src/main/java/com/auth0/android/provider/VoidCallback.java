@@ -24,6 +24,8 @@
 
 package com.auth0.android.provider;
 
+import android.support.annotation.Nullable;
+
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.callback.BaseCallback;
 
@@ -32,4 +34,6 @@ import com.auth0.android.callback.BaseCallback;
  */
 @SuppressWarnings("WeakerAccess")
 public interface VoidCallback extends BaseCallback<Void, Auth0Exception> {
+    @Override
+    void onSuccess(@Nullable Void payload);
 }

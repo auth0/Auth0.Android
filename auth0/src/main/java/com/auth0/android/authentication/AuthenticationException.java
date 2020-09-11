@@ -24,6 +24,8 @@
 
 package com.auth0.android.authentication;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -51,28 +53,28 @@ public class AuthenticationException extends Auth0Exception {
     private int statusCode;
     private Map<String, Object> values;
 
-    public AuthenticationException(String code, String description) {
+    public AuthenticationException(@NonNull String code, @NonNull String description) {
         this(DEFAULT_MESSAGE);
         this.code = code;
         this.description = description;
     }
 
-    public AuthenticationException(String message) {
+    public AuthenticationException(@NonNull String message) {
         super(message);
     }
 
-    public AuthenticationException(String message, Auth0Exception exception) {
+    public AuthenticationException(@NonNull String message, @Nullable Auth0Exception exception) {
         super(message, exception);
     }
 
-    public AuthenticationException(String payload, int statusCode) {
+    public AuthenticationException(@Nullable String payload, int statusCode) {
         this(DEFAULT_MESSAGE);
         this.code = payload != null ? NON_JSON_ERROR : EMPTY_BODY_ERROR;
         this.description = payload != null ? payload : EMPTY_RESPONSE_BODY_DESCRIPTION;
         this.statusCode = statusCode;
     }
 
-    public AuthenticationException(Map<String, Object> values) {
+    public AuthenticationException(@NonNull Map<String, Object> values) {
         this(DEFAULT_MESSAGE);
         this.values = new HashMap<>(values);
 
@@ -87,7 +89,8 @@ public class AuthenticationException extends Auth0Exception {
         Object description = this.values.get(DESCRIPTION_KEY);
         if (description instanceof String) {
             this.description = (String) description;
-        } else if (isPasswordNotStrongEnough()) {
+        } else if (description instanceof Map && isPasswordNotStrongEnough()) {
+            @SuppressWarnings("unchecked")
             PasswordStrengthErrorParser pwStrengthParser = new PasswordStrengthErrorParser((Map<String, Object>) description);
             this.description = pwStrengthParser.getDescription();
         }
@@ -104,6 +107,7 @@ public class AuthenticationException extends Auth0Exception {
      *
      * @return the error code.
      */
+    @NonNull
     public String getCode() {
         return code != null ? code : UNKNOWN_ERROR;
     }
@@ -123,6 +127,7 @@ public class AuthenticationException extends Auth0Exception {
      *
      * @return the error description.
      */
+    @NonNull
     public String getDescription() {
         if (!TextUtils.isEmpty(description)) {
             return description;
@@ -139,7 +144,8 @@ public class AuthenticationException extends Auth0Exception {
      * @param key key of the value to return
      * @return the value if found or null
      */
-    public Object getValue(String key) {
+    @Nullable
+    public Object getValue(@NonNull String key) {
         if (values == null) {
             return null;
         }

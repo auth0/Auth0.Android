@@ -194,7 +194,6 @@ public class SharedPreferencesStorageTest {
         verify(sharedPreferencesEditor).apply();
     }
 
-    @SuppressWarnings("ConstantConditions")
     @Test
     public void shouldRemovePreferencesKeyOnNullLongValue() {
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
@@ -204,7 +203,6 @@ public class SharedPreferencesStorageTest {
         verify(sharedPreferencesEditor).apply();
     }
 
-    @SuppressWarnings("ConstantConditions")
     @Test
     public void shouldRemovePreferencesKeyOnNullIntegerValue() {
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
@@ -214,7 +212,6 @@ public class SharedPreferencesStorageTest {
         verify(sharedPreferencesEditor).apply();
     }
 
-    @SuppressWarnings("ConstantConditions")
     @Test
     public void shouldRemovePreferencesKeyOnNullBooleanValue() {
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);

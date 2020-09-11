@@ -25,9 +25,9 @@
 package com.auth0.android.result;
 
 
-import com.google.gson.annotations.SerializedName;
+import android.support.annotation.NonNull;
 
-import static com.auth0.android.util.CheckHelper.checkArgument;
+import com.google.gson.annotations.SerializedName;
 
 /**
  * The result of a successful delegation to an Auth0 application that contains a new Auth0 'id_token'
@@ -41,10 +41,7 @@ public class Delegation {
     @SerializedName("expires_in")
     private final Long expiresIn;
 
-    public Delegation(String idToken, String type, Long expiresIn) {
-        checkArgument(idToken != null, "id_token must be non-null");
-        checkArgument(type != null, "token_type must be non-null");
-        checkArgument(expiresIn != null, "expires_in must be non-null");
+    public Delegation(@NonNull String idToken, @NonNull String type, @NonNull Long expiresIn) {
         this.idToken = idToken;
         this.type = type;
         this.expiresIn = expiresIn;
@@ -55,6 +52,7 @@ public class Delegation {
      *
      * @return the 'id_token' value
      */
+    @NonNull
     public String getIdToken() {
         return idToken;
     }
@@ -64,6 +62,7 @@ public class Delegation {
      *
      * @return the 'token_type' value
      */
+    @NonNull
     public String getType() {
         return type;
     }
@@ -73,6 +72,7 @@ public class Delegation {
      *
      * @return the 'expires_in' value
      */
+    @NonNull
     public Long getExpiresIn() {
         return expiresIn;
     }
