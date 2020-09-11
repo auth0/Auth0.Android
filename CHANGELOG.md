@@ -1,5 +1,14 @@
 # Change Log
 
+## [1.26.0](https://github.com/auth0/Auth0.Android/tree/1.26.0) (2020-09-11)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.25.0...1.26.0)
+
+**Changed**
+- Improve compatibility with Kotlin and run Lint on CI [\#337](https://github.com/auth0/Auth0.Android/pull/337) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Fixed**
+- Add support for Android 11 new privacy settings [\#335](https://github.com/auth0/Auth0.Android/pull/335) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.25.0](https://github.com/auth0/Auth0.Android/tree/1.25.0) (2020-08-21)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.24.1...1.25.0)
 
