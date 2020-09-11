@@ -3,6 +3,11 @@
 ## [1.26.0](https://github.com/auth0/Auth0.Android/tree/1.26.0) (2020-09-11)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.25.0...1.26.0)
 
+**Having project sync issues after upgrading?**
+This release defines a "queries" element in the Android Manifest file to make the SDK compatible with Android 11 new privacy changes. If you run into a build compile issue when importing this version, make sure that you are using the latest patch version of the Android Gradle Plugin. Check the table in the [announcement blogpost](https://android-developers.googleblog.com/2020/07/preparing-your-build-for-package-visibility-in-android-11.html) to learn to what version you should update.
+
+
+
 **Changed**
 - Improve compatibility with Kotlin and run Lint on CI [\#337](https://github.com/auth0/Auth0.Android/pull/337) ([lbalmaceda](https://github.com/lbalmaceda))
 
