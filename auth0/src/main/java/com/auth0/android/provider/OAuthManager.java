@@ -231,6 +231,7 @@ class OAuthManager extends ResumableManager {
 
             @Override
             public void onSuccess(@Nullable SignatureVerifier signatureVerifier) {
+                //noinspection ConstantConditions
                 IdTokenVerificationOptions options = new IdTokenVerificationOptions(idTokenVerificationIssuer, apiClient.getClientId(), signatureVerifier);
                 String maxAge = parameters.get(KEY_MAX_AGE);
                 if (!TextUtils.isEmpty(maxAge)) {

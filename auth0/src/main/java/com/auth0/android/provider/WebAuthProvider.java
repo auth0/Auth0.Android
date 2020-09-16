@@ -139,6 +139,7 @@ public class WebAuthProvider {
             if (returnToUrl == null) {
                 returnToUrl = CallbackHelper.getCallbackUri(scheme, context.getApplicationContext().getPackageName(), account.getDomainUrl());
             }
+            //noinspection ConstantConditions
             LogoutManager logoutManager = new LogoutManager(this.account, callback, returnToUrl);
             logoutManager.setCustomTabsOptions(ctOptions);
 

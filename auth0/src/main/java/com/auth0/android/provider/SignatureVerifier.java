@@ -59,6 +59,7 @@ abstract class SignatureVerifier {
         apiClient.fetchJsonWebKeys().start(new AuthenticationCallback<Map<String, PublicKey>>() {
             @Override
             public void onSuccess(@Nullable Map<String, PublicKey> jwks) {
+                //noinspection ConstantConditions
                 PublicKey publicKey = jwks.get(keyId);
                 try {
                     callback.onSuccess(new AsymmetricSignatureVerifier(publicKey));

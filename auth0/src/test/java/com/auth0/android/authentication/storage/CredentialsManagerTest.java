@@ -172,13 +172,13 @@ public class CredentialsManagerTest {
         manager.saveCredentials(credentials);
     }
 
-    @SuppressWarnings("ConstantConditions")
     @Test
     public void shouldThrowOnSetIfCredentialsDoesNotHaveExpiresAt() {
         exception.expect(CredentialsManagerException.class);
         exception.expectMessage("Credentials must have a valid date of expiration and a valid access_token or id_token value.");
 
         Date date = null;
+        //noinspection ConstantConditions
         Credentials credentials = new CredentialsMock("idToken", "accessToken", "type", "refreshToken", date, "scope");
         manager.saveCredentials(credentials);
     }

@@ -88,6 +88,7 @@ class PKCE {
                 .start(new BaseCallback<Credentials, AuthenticationException>() {
                     @Override
                     public void onSuccess(@Nullable Credentials payload) {
+                        //noinspection ConstantConditions
                         callback.onSuccess(payload);
                     }
 
