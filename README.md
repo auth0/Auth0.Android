@@ -21,7 +21,7 @@ Auth0.android is available through [Gradle](https://gradle.org/). To install it,
 
 ```gradle
 dependencies {
-    implementation 'com.auth0.android:auth0:1.26.0'
+    implementation 'com.auth0.android:auth0:1.26.1'
 }
 ```
 
