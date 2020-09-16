@@ -141,11 +141,13 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
         getAuthRequest().start(new BaseCallback<Credentials, AuthenticationException>() {
             @Override
             public void onSuccess(@Nullable final Credentials credentials) {
+                //noinspection ConstantConditions
                 userInfoRequest
                         .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.getAccessToken())
                         .start(new BaseCallback<UserProfile, AuthenticationException>() {
                             @Override
                             public void onSuccess(@Nullable UserProfile profile) {
+                                //noinspection ConstantConditions
                                 callback.onSuccess(new Authentication(profile, credentials));
                             }
 

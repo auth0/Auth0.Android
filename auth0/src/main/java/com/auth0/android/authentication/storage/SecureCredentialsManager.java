@@ -275,6 +275,7 @@ public class SecureCredentialsManager {
             @Override
             public void onSuccess(@Nullable Credentials fresh) {
                 //non-empty refresh token for refresh token rotation scenarios
+                //noinspection ConstantConditions
                 String updatedRefreshToken = isEmpty(fresh.getRefreshToken()) ? credentials.getRefreshToken() : fresh.getRefreshToken();
                 Credentials refreshed = new Credentials(fresh.getIdToken(), fresh.getAccessToken(), fresh.getType(), updatedRefreshToken, fresh.getExpiresAt(), fresh.getScope());
                 saveCredentials(refreshed);

@@ -24,7 +24,7 @@
 
 package com.auth0.android.callback;
 
-import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.auth0.android.Auth0Exception;
 
@@ -38,6 +38,6 @@ public interface BaseCallback<T, U extends Auth0Exception> extends Callback<U> {
      *
      * @param payload Request payload or null
      */
-    void onSuccess(@NonNull T payload);
+    void onSuccess(@Nullable T payload);
 
 }
