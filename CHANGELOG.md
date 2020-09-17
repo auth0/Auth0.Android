@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.26.1](https://github.com/auth0/Auth0.Android/tree/1.26.1) (2020-09-16)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.26.0...1.26.1)
+
+**Fixed**
+- Fix NPE on Kotlin when callbacks returned a nullable value [\#344](https://github.com/auth0/Auth0.Android/pull/344) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.26.0](https://github.com/auth0/Auth0.Android/tree/1.26.0) (2020-09-11)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.25.0...1.26.0)
 

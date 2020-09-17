@@ -843,7 +843,6 @@ public class AuthenticationAPIClientTest {
         mockAPI.willReturnSuccessfulSignUp();
 
         final MockAuthenticationCallback<DatabaseUser> callback = new MockAuthenticationCallback<>();
-        //noinspection ConstantConditions
         client.createUser(SUPPORT_AUTH0_COM, PASSWORD, null, MY_CONNECTION)
                 .start(callback);
 
@@ -864,7 +863,6 @@ public class AuthenticationAPIClientTest {
     public void shouldNotSendNullUsernameOnSignUpSync() throws Exception {
         mockAPI.willReturnSuccessfulSignUp();
 
-        //noinspection ConstantConditions
         final DatabaseUser user = client.createUser(SUPPORT_AUTH0_COM, PASSWORD, null, MY_CONNECTION)
                 .execute();
 

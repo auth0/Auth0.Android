@@ -1,6 +1,7 @@
 package com.auth0.android.request.internal;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.management.ManagementException;
@@ -30,7 +31,7 @@ public class ManagementErrorBuilder implements ErrorBuilder<ManagementException>
 
     @NonNull
     @Override
-    public ManagementException from(@NonNull String payload, int statusCode) {
+    public ManagementException from(@Nullable String payload, int statusCode) {
         return new ManagementException(payload, statusCode);
     }
 }

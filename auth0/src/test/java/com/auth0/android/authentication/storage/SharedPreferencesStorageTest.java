@@ -67,11 +67,11 @@ public class SharedPreferencesStorageTest {
         verify(context).getSharedPreferences("my-preferences-file", Context.MODE_PRIVATE);
     }
 
-    @SuppressWarnings("ConstantConditions")
     @Test
     public void shouldThrowOnCreateIfCustomPreferencesFileNameIsNull() {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("The SharedPreferences name is invalid");
+        //noinspection ConstantConditions
         new SharedPreferencesStorage(context, null);
     }
 
@@ -184,11 +184,11 @@ public class SharedPreferencesStorageTest {
 
     //Remove
 
-    @SuppressWarnings("ConstantConditions")
     @Test
     public void shouldRemovePreferencesKeyOnNullStringValue() {
         SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
         String value = null;
+        //noinspection ConstantConditions
         storage.store("name", value);
         verify(sharedPreferencesEditor).remove("name");
         verify(sharedPreferencesEditor).apply();

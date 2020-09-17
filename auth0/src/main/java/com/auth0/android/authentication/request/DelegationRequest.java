@@ -25,7 +25,6 @@
 package com.auth0.android.authentication.request;
 
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;

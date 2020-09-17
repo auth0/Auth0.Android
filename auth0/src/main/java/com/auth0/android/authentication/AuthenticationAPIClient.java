@@ -26,6 +26,7 @@ package com.auth0.android.authentication;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import com.auth0.android.Auth0;
@@ -593,7 +594,7 @@ public class AuthenticationAPIClient {
      * @return a request to start
      */
     @NonNull
-    public DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUser(@NonNull String email, @NonNull String password, @NonNull String username, @NonNull String connection) {
+    public DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUser(@NonNull String email, @NonNull String password, @Nullable String username, @NonNull String connection) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(DB_CONNECTIONS_PATH)
                 .addPathSegment(SIGN_UP_PATH)
@@ -635,7 +636,6 @@ public class AuthenticationAPIClient {
      */
     @NonNull
     public DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUser(@NonNull String email, @NonNull String password, @NonNull String connection) {
-        //noinspection ConstantConditions
         return createUser(email, password, null, connection);
     }
 
