@@ -3,10 +3,12 @@ package com.auth0.android.provider;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.ColorRes;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.customtabs.CustomTabsIntent;
 import android.support.customtabs.CustomTabsSession;
 import android.support.v4.content.ContextCompat;
@@ -19,10 +21,21 @@ public class CustomTabsOptions implements Parcelable {
     private final boolean showTitle;
     @ColorRes
     private final int toolbarColor;
+    private final BrowserPicker browserPicker;
 
-    private CustomTabsOptions(boolean showTitle, @ColorRes int toolbarColor) {
+    private CustomTabsOptions(boolean showTitle, @ColorRes int toolbarColor, @NonNull BrowserPicker browserPicker) {
         this.showTitle = showTitle;
         this.toolbarColor = toolbarColor;
+        this.browserPicker = browserPicker;
+    }
+
+    @Nullable
+    String getPreferredPackage(@NonNull PackageManager pm) {
+        return browserPicker.getBestBrowserPackage(pm);
+    }
+
+    boolean canLaunchBrowser(@NonNull PackageManager pm) {
+        return getPreferredPackage(pm) != null;
     }
 
     /**
@@ -37,7 +50,7 @@ public class CustomTabsOptions implements Parcelable {
 
 
     @SuppressLint("ResourceType")
-    Intent toIntent(Context context, CustomTabsSession session) {
+    Intent toIntent(@NonNull Context context, @Nullable CustomTabsSession session) {
         final CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder(session)
                 .setShowTitle(showTitle);
         if (toolbarColor > 0) {
@@ -47,10 +60,17 @@ public class CustomTabsOptions implements Parcelable {
         return builder.build().intent;
     }
 
-
     protected CustomTabsOptions(@NonNull Parcel in) {
-        showTitle = in.readByte() != 0x00;
+        showTitle = in.readByte() != 0;
         toolbarColor = in.readInt();
+        browserPicker = in.readParcelable(BrowserPicker.class.getClassLoader());
+    }
+
+    @Override
+    public void writeToParcel(@NonNull Parcel dest, int flags) {
+        dest.writeByte((byte) (showTitle ? 1 : 0));
+        dest.writeInt(toolbarColor);
+        dest.writeParcelable(browserPicker, flags);
     }
 
     @Override
@@ -58,14 +78,7 @@ public class CustomTabsOptions implements Parcelable {
         return 0;
     }
 
-    @Override
-    public void writeToParcel(@NonNull Parcel dest, int flags) {
-        dest.writeByte((byte) (showTitle ? 0x01 : 0x00));
-        dest.writeInt(toolbarColor);
-    }
-
-    @SuppressWarnings("unused")
-    public static final Parcelable.Creator<CustomTabsOptions> CREATOR = new Parcelable.Creator<CustomTabsOptions>() {
+    public static final Creator<CustomTabsOptions> CREATOR = new Creator<CustomTabsOptions>() {
         @Override
         public CustomTabsOptions createFromParcel(Parcel in) {
             return new CustomTabsOptions(in);
@@ -83,10 +96,13 @@ public class CustomTabsOptions implements Parcelable {
         @ColorRes
         private int toolbarColor;
         private boolean showTitle;
+        @NonNull
+        private BrowserPicker browserPicker;
 
         Builder() {
             this.showTitle = false;
             this.toolbarColor = 0;
+            this.browserPicker = BrowserPicker.newBuilder().build();
         }
 
         /**
@@ -115,13 +131,32 @@ public class CustomTabsOptions implements Parcelable {
         }
 
         /**
+         * Filter the browser applications to launch the authentication on.
+         * <p>
+         * WARNING: The browser application in which the intent is resolved is chosen automatically
+         * for you considering the device's default browser app and the browsers that are Custom Tabs
+         * compatible. Overriding this preference is not only a bad practice, but can also result
+         * in an unexpected behavior that could prevent your users from authenticating successfully.
+         * That said, it might help resolve some browser UX or incompatibility issues when used
+         * in combination with "Android App Links". Use it at your own risk.
+         *
+         * @param browserPicker the browser picker to use.
+         * @return the current builder instance
+         */
+        @NonNull
+        public Builder withBrowserPicker(@NonNull BrowserPicker browserPicker) {
+            this.browserPicker = browserPicker;
+            return this;
+        }
+
+        /**
          * Create a new CustomTabsOptions instance with the customization settings.
          *
          * @return an instance of CustomTabsOptions with the customization settings.
          */
         @NonNull
         public CustomTabsOptions build() {
-            return new CustomTabsOptions(showTitle, toolbarColor);
+            return new CustomTabsOptions(showTitle, toolbarColor, browserPicker);
         }
     }
 
