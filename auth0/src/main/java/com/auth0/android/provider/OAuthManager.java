@@ -21,7 +21,6 @@ import com.auth0.android.result.Credentials;
 import java.security.SecureRandom;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings("WeakerAccess")
@@ -69,15 +68,15 @@ class OAuthManager extends ResumableManager {
     private PKCE pkce;
     private Long currentTimeInMillis;
     private CustomTabsOptions ctOptions;
-    private String[] browserPackages;
     private Integer idTokenVerificationLeeway;
     private String idTokenVerificationIssuer;
 
-    OAuthManager(@NonNull Auth0 account, @NonNull AuthCallback callback, @NonNull Map<String, String> parameters) {
+    OAuthManager(@NonNull Auth0 account, @NonNull AuthCallback callback, @NonNull Map<String, String> parameters, @NonNull CustomTabsOptions ctOptions) {
         this.account = account;
         this.callback = callback;
         this.parameters = new HashMap<>(parameters);
         this.apiClient = new AuthenticationAPIClient(account);
+        this.ctOptions = ctOptions;
     }
 
     void useFullScreen(boolean useFullScreen) {
@@ -88,16 +87,8 @@ class OAuthManager extends ResumableManager {
         this.useBrowser = useBrowser;
     }
 
-    public void setCustomTabsOptions(@Nullable CustomTabsOptions options) {
-        this.ctOptions = options;
-    }
-
-    public void setBrowserPackages(@Nullable String[] browserPackages){
-        this.browserPackages = browserPackages;
-    }
-
     @VisibleForTesting
-    void setPKCE(PKCE pkce) {
+    void setPKCE(@Nullable PKCE pkce) {
         this.pkce = pkce;
     }
 
@@ -117,7 +108,7 @@ class OAuthManager extends ResumableManager {
         this.requestCode = requestCode;
 
         if (useBrowser) {
-            AuthenticationActivity.authenticateUsingBrowser(activity, uri, ctOptions, browserPackages);
+            AuthenticationActivity.authenticateUsingBrowser(activity, uri, ctOptions);
         } else {
             AuthenticationActivity.authenticateUsingWebView(activity, uri, requestCode, parameters.get(KEY_CONNECTION), useFullScreen);
         }

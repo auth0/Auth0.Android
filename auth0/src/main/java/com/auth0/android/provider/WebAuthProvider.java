@@ -26,18 +26,14 @@ package com.auth0.android.provider;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.util.Log;
 
 import com.auth0.android.Auth0;
-import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
 
 import java.util.HashMap;
@@ -70,13 +66,13 @@ public class WebAuthProvider {
         private String scheme;
         private String returnToUrl;
         private CustomTabsOptions ctOptions;
-        private String[] browserPackages;
 
         LogoutBuilder(Auth0 account) {
             this.account = account;
 
             //Default values
             this.scheme = "https";
+            this.ctOptions = CustomTabsOptions.newBuilder().build();
         }
 
         /**
@@ -88,17 +84,6 @@ public class WebAuthProvider {
         @NonNull
         public LogoutBuilder withCustomTabsOptions(@NonNull CustomTabsOptions options) {
             this.ctOptions = options;
-            return this;
-        }
-
-        /**
-         * When using override custom tabs browser packages
-         *
-         * @param browserPackages the List of browsers to be used
-         * @return the current builder instance
-         */
-        public LogoutBuilder withBrowserPackage(@NonNull String[] browserPackages) {
-            this.browserPackages = browserPackages;
             return this;
         }
 
@@ -141,9 +126,8 @@ public class WebAuthProvider {
         public void start(@NonNull Context context, @NonNull VoidCallback callback) {
             resetManagerInstance();
 
-            if (!hasBrowserAppInstalled(context.getPackageManager())) {
-                Throwable cause = new ActivityNotFoundException("No Browser application installed.");
-                final Auth0Exception ex = new Auth0Exception("Cannot perform web log out", cause);
+            if (!ctOptions.canLaunchBrowser(context.getPackageManager())) {
+                AuthenticationException ex = new AuthenticationException("a0.browser_not_available", "No compatible Browser application is installed.");
                 callback.onFailure(ex);
                 return;
             }
@@ -152,9 +136,7 @@ public class WebAuthProvider {
                 returnToUrl = CallbackHelper.getCallbackUri(scheme, context.getApplicationContext().getPackageName(), account.getDomainUrl());
             }
             //noinspection ConstantConditions
-            LogoutManager logoutManager = new LogoutManager(this.account, callback, returnToUrl);
-            logoutManager.setCustomTabsOptions(ctOptions);
-            logoutManager.setBrowserPackages(browserPackages);
+            LogoutManager logoutManager = new LogoutManager(this.account, callback, returnToUrl, ctOptions);
 
             managerInstance = logoutManager;
             logoutManager.startLogout(context);
@@ -181,8 +163,6 @@ public class WebAuthProvider {
         private CustomTabsOptions ctOptions;
         private Integer leeway;
 
-        private String[] browserPackages;
-
         Builder(Auth0 account) {
             this.account = account;
             this.values = new HashMap<>();
@@ -191,6 +171,7 @@ public class WebAuthProvider {
             this.scheme = "https";
             this.useBrowser = true;
             this.useFullscreen = false;
+            this.ctOptions = CustomTabsOptions.newBuilder().build();
             withResponseType(ResponseType.CODE);
             withScope(SCOPE_TYPE_OPENID);
         }
@@ -435,13 +416,8 @@ public class WebAuthProvider {
             return this;
         }
 
-        public Builder withBrowserPackage(@NonNull String[] browserPackages) {
-            this.browserPackages = browserPackages;
-            return this;
-        }
-
         @VisibleForTesting
-        Builder withPKCE(PKCE pkce) {
+        Builder withPKCE(@Nullable PKCE pkce) {
             this.pkce = pkce;
             return this;
         }
@@ -459,20 +435,18 @@ public class WebAuthProvider {
         public void start(@NonNull Activity activity, @NonNull AuthCallback callback, int requestCode) {
             resetManagerInstance();
 
-            if (useBrowser && !hasBrowserAppInstalled(activity.getPackageManager())) {
-                AuthenticationException ex = new AuthenticationException("a0.browser_not_available", "No Browser application installed to perform web authentication.");
+            if (useBrowser && !ctOptions.canLaunchBrowser(activity.getPackageManager())) {
+                AuthenticationException ex = new AuthenticationException("a0.browser_not_available", "No compatible Browser application is installed.");
                 callback.onFailure(ex);
                 return;
             }
 
-            OAuthManager manager = new OAuthManager(account, callback, values);
+            OAuthManager manager = new OAuthManager(account, callback, values, ctOptions);
             manager.useFullScreen(useFullscreen);
             manager.useBrowser(useBrowser);
-            manager.setCustomTabsOptions(ctOptions);
             manager.setPKCE(pkce);
             manager.setIdTokenVerificationLeeway(leeway);
             manager.setIdTokenVerificationIssuer(issuer);
-            manager.setBrowserPackages(browserPackages);
 
             managerInstance = manager;
 
@@ -610,9 +584,4 @@ public class WebAuthProvider {
         managerInstance = null;
     }
 
-    @VisibleForTesting
-    static boolean hasBrowserAppInstalled(@NonNull PackageManager packageManager) {
-        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://auth0.com"));
-        return intent.resolveActivity(packageManager) != null;
-    }
 }

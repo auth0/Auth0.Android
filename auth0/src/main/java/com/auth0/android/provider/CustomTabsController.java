@@ -4,12 +4,8 @@ import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.net.Uri;
-import android.os.Build;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.support.customtabs.CustomTabsClient;
 import android.support.customtabs.CustomTabsServiceConnection;
@@ -17,8 +13,6 @@ import android.support.customtabs.CustomTabsSession;
 import android.util.Log;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -28,46 +22,28 @@ class CustomTabsController extends CustomTabsServiceConnection {
 
     static final String TAG = CustomTabsController.class.getSimpleName();
     private static final long MAX_WAIT_TIME_SECONDS = 1;
-    private static final String ACTION_CUSTOM_TABS_CONNECTION = "android.support.customtabs.action.CustomTabsService";
-    //Known Browsers with Custom Tabs support
-    private static final String CHROME_STABLE = "com.android.chrome";
-    private static final String CHROME_SYSTEM = "com.google.android.apps.chrome";
-    private static final String CHROME_BETA = "com.android.chrome.beta";
-    private static final String CHROME_DEV = "com.android.chrome.dev";
 
     private final WeakReference<Context> context;
     private final AtomicReference<CustomTabsSession> session;
     private final CountDownLatch sessionLatch;
     private final String preferredPackage;
 
-    @Nullable
+    @NonNull
     private CustomTabsOptions customTabsOptions;
     private boolean isBound;
 
     @VisibleForTesting
-    CustomTabsController(@NonNull Context context, @Nullable String browserPackage) {
+    CustomTabsController(@NonNull Context context, @NonNull CustomTabsOptions options) {
         this.context = new WeakReference<>(context);
         this.session = new AtomicReference<>();
         this.sessionLatch = new CountDownLatch(1);
-        this.preferredPackage = browserPackage;
-    }
-
-    /**
-     *
-     * @param context - Android Context
-     * @param overrideBrowserPackages - List of browser to override to default browser packages
-     */
-    public CustomTabsController(@NonNull Context context, String[] overrideBrowserPackages) {
-        this(context, getBestSupportedBrowserPackage(context, overrideBrowserPackages));
+        this.customTabsOptions = options;
+        this.preferredPackage = options.getPreferredPackage(context.getPackageManager());
     }
 
     @VisibleForTesting
     void clearContext() {
         this.context.clear();
-    }
-
-    void setCustomizationOptions(@Nullable CustomTabsOptions options) {
-        this.customTabsOptions = options;
     }
 
     @VisibleForTesting
@@ -134,10 +110,6 @@ class CustomTabsController extends CustomTabsServiceConnection {
             return;
         }
 
-        if (customTabsOptions == null) {
-            customTabsOptions = CustomTabsOptions.newBuilder().build();
-        }
-
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -159,77 +131,4 @@ class CustomTabsController extends CustomTabsServiceConnection {
         }).start();
     }
 
-
-    /**
-     * Query the OS for a Custom Tab compatible Browser application.
-     * It will pick the any browser supported if is Custom Tab compatible, then any Chrome browser or the first Custom Tab compatible browser.
-     *
-     * @param context a valid Context
-     * @return the recommended Browser application package name, compatible with Custom Tabs. Null if no compatible browser is found.
-     */
-    @Nullable
-    static String getBestSupportedBrowserPackage(@NonNull Context context, @Nullable String[] overrideBrowserPackages) {
-        PackageManager pm = context.getPackageManager();
-        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.example.com"));
-
-        String[] browserPackages;
-        int packageManagerFlags;
-
-        // if the overrideBrowserPackages is null, preserve old behaviour of the library
-        if(overrideBrowserPackages != null){
-            browserPackages = overrideBrowserPackages;
-            packageManagerFlags = PackageManager.MATCH_ALL;
-        }else{
-            browserPackages = getBrowserPackages(pm);
-            packageManagerFlags = 0;
-        }
-
-        List<ResolveInfo> resolvedActivityList = pm.queryIntentActivities(browserIntent, packageManagerFlags);
-        List<String> customTabsBrowsers = new ArrayList<>();
-        for (ResolveInfo info : resolvedActivityList) {
-            Intent serviceIntent = new Intent();
-            serviceIntent.setAction(ACTION_CUSTOM_TABS_CONNECTION);
-            serviceIntent.setPackage(info.activityInfo.packageName);
-            if (pm.resolveService(serviceIntent, 0) != null) {
-                customTabsBrowsers.add(info.activityInfo.packageName);
-            }
-        }
-
-        for (String browserPackage : browserPackages) {
-            if (customTabsBrowsers.contains(browserPackage)) {
-                return browserPackage;
-            }
-        }
-
-        if (!customTabsBrowsers.isEmpty()) {
-            return customTabsBrowsers.get(0);
-        }
-
-        return null;
-    }
-
-    /**
-     * Get a default list of browsers that try with custom tabs
-     *
-     * @param pm package manager to retrieve the default system browser
-     * @return the list of browser packages to try in order of priority
-     */
-    private static String[] getBrowserPackages(@NonNull PackageManager pm) {
-
-        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.example.com"));
-        ResolveInfo webHandler = pm.resolveActivity(browserIntent,
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PackageManager.MATCH_ALL : PackageManager.MATCH_DEFAULT_ONLY);
-        List<String> result = new ArrayList<>();
-
-        if (webHandler != null) {
-            result.add(webHandler.activityInfo.packageName);
-        }
-
-        result.add(CHROME_STABLE);
-        result.add(CHROME_SYSTEM);
-        result.add(CHROME_BETA);
-        result.add(CHROME_DEV);
-
-        return result.toArray(new String[0]);
-    }
 }

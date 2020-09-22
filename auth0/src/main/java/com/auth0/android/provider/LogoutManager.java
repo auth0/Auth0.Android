@@ -3,7 +3,6 @@ package com.auth0.android.provider;
 import android.content.Context;
 import android.net.Uri;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.util.Log;
 
@@ -27,28 +26,24 @@ class LogoutManager extends ResumableManager {
     private final Map<String, String> parameters;
 
     private CustomTabsOptions ctOptions;
-    private String[] browserPackages;
 
-    LogoutManager(@NonNull Auth0 account, @NonNull VoidCallback callback, @NonNull String returnToUrl) {
+    LogoutManager(@NonNull Auth0 account, @NonNull VoidCallback callback, @NonNull String returnToUrl, @NonNull CustomTabsOptions ctOptions) {
         this.account = account;
         this.callback = callback;
         this.parameters = new HashMap<>();
         this.parameters.put(KEY_RETURN_TO_URL, returnToUrl);
+        this.ctOptions = ctOptions;
     }
 
-    void setCustomTabsOptions(@Nullable CustomTabsOptions options) {
+    void setCustomTabsOptions(@NonNull CustomTabsOptions options) {
         this.ctOptions = options;
-    }
-
-    void setBrowserPackages(@Nullable String[] browserPackages){
-        this.browserPackages = browserPackages;
     }
 
     void startLogout(Context context) {
         addClientParameters(parameters);
         Uri uri = buildLogoutUri();
 
-        AuthenticationActivity.authenticateUsingBrowser(context, uri, ctOptions, browserPackages);
+        AuthenticationActivity.authenticateUsingBrowser(context, uri, ctOptions);
     }
 
     @Override
