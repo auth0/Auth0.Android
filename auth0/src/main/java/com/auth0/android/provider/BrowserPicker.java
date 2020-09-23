@@ -118,9 +118,16 @@ public class BrowserPicker implements Parcelable {
             }
         }
 
-        //If the browser packages were filtered, use the allowed packages list as preference.
+        //If the browser packages were filtered, use the allowed packages list as order preference.
         //A user-selected default browser will always be picked up first.
-        List<String> preferenceList = isFilterEnabled ? allowedPackages : CHROME_BROWSERS;
+        List<String> preferenceList = allowedPackages;
+        if (!isFilterEnabled) {
+            preferenceList = new ArrayList<>();
+            if (defaultBrowser != null) {
+                preferenceList.add(defaultBrowser);
+            }
+            preferenceList.addAll(CHROME_BROWSERS);
+        }
 
         //If the list was filtered, the customTabsBrowsers and regularBrowsers Lists will contain only allowed packages.
         final String customTabBrowser = getFirstMatch(customTabsBrowsers, preferenceList, defaultBrowser);

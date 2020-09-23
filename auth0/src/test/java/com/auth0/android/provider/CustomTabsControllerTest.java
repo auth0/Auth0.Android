@@ -6,9 +6,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.graphics.Color;
 import android.net.Uri;
 import android.support.customtabs.CustomTabsCallback;
@@ -30,7 +27,6 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static android.support.test.espresso.intent.matcher.IntentMatchers.hasFlag;
@@ -238,93 +234,5 @@ public class CustomTabsControllerTest {
         conn.onCustomTabsServiceConnected(componentName, customTabsClient);
         verify(customTabsClient).newSession(Matchers.<CustomTabsCallback>eq(null));
         verify(customTabsClient).warmup(eq(0L));
-    }
-
-    //    @Test
-//    public void shouldChooseNullBrowserIfNoBrowserAvailable() {
-//        ctOptions
-//        String bestPackage = CustomTabsController.getBestSupportedBrowserPackage(context,  null);
-//       MatcherAssert.assertThat(bestPackage, is(nullValue()));
-//    }
-//
-//    @Test
-//    public void shouldChooseDefaultBrowserIfIsCustomTabsCapable() {
-//        preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE, DEFAULT_BROWSER_PACKAGE);
-//        String bestPackage = CustomTabsController.getBestSupportedBrowserPackage(context,  null);
-//       MatcherAssert.assertThat(bestPackage, is(DEFAULT_BROWSER_PACKAGE));
-//    }
-//
-//    @Test
-//    public void shouldReturnNullIfNoBrowserIsCustomTabsCapable() {
-//        preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE);
-//        String bestPackage = CustomTabsController.getBestSupportedBrowserPackage(context,  null);
-//       MatcherAssert.assertThat(bestPackage, is(nullValue()));
-//    }
-//
-//    @Test
-//    public void shouldChooseChromeStableOverOtherCustomTabsCapableBrowsers() {
-//        preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE, CHROME_STABLE_PACKAGE, CHROME_SYSTEM_PACKAGE, CHROME_BETA_PACKAGE, CHROME_DEV_PACKAGE, CUSTOM_TABS_BROWSER_1, CUSTOM_TABS_BROWSER_2);
-//        String bestPackage = CustomTabsController.getBestSupportedBrowserPackage(context,  null);
-//       MatcherAssert.assertThat(bestPackage, is(CHROME_STABLE_PACKAGE));
-//    }
-//
-//    @Test
-//    public void shouldChooseChromeSystemOverOtherCustomTabsCapableBrowsers() {
-//        preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE, CHROME_SYSTEM_PACKAGE, CHROME_BETA_PACKAGE, CHROME_DEV_PACKAGE, CUSTOM_TABS_BROWSER_1, CUSTOM_TABS_BROWSER_2);
-//        String bestPackage = CustomTabsController.getBestSupportedBrowserPackage(context,  null);
-//       MatcherAssert.assertThat(bestPackage, is(CHROME_SYSTEM_PACKAGE));
-//    }
-//
-//    @Test
-//    public void shouldChooseChromeBetaOverOtherCustomTabsCapableBrowsers() {
-//        preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE, CHROME_BETA_PACKAGE, CHROME_DEV_PACKAGE, CUSTOM_TABS_BROWSER_1, CUSTOM_TABS_BROWSER_2);
-//        String bestPackage = CustomTabsController.getBestSupportedBrowserPackage(context,  null);
-//       MatcherAssert.assertThat(bestPackage, is(CHROME_BETA_PACKAGE));
-//    }
-//
-//    @Test
-//    public void shouldChooseChromeDevOverOtherCustomTabsCapableBrowsers() {
-//        preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE, CHROME_DEV_PACKAGE, CUSTOM_TABS_BROWSER_1, CUSTOM_TABS_BROWSER_2);
-//        String bestPackage = CustomTabsController.getBestSupportedBrowserPackage(context,  null);
-//       MatcherAssert.assertThat(bestPackage, is(CHROME_DEV_PACKAGE));
-//    }
-//
-//    @Test
-//    public void shouldChooseCustomTabsCapableBrowserIfAvailable() {
-//        preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE, CUSTOM_TABS_BROWSER_1, CUSTOM_TABS_BROWSER_2);
-//        String bestPackage = CustomTabsController.getBestSupportedBrowserPackage(context,  null);
-//       MatcherAssert.assertThat(bestPackage, is(CUSTOM_TABS_BROWSER_1));
-//    }
-//    private static final String CHROME_STABLE_PACKAGE = "com.android.chrome";
-//    private static final String CHROME_SYSTEM_PACKAGE = "com.google.android.apps.chrome";
-//    private static final String CHROME_BETA_PACKAGE = "com.android.chrome.beta";
-//    private static final String CHROME_DEV_PACKAGE = "com.android.chrome.dev";
-//    private static final String CUSTOM_TABS_BROWSER_1 = "com.browser.customtabs1";
-//    private static final String CUSTOM_TABS_BROWSER_2 = "com.browser.customtabs2";
-
-    @SuppressWarnings("WrongConstant")
-    private void preparePackageManagerForCustomTabs(String defaultBrowserPackage, String... customTabEnabledPackages) {
-        PackageManager pm = mock(PackageManager.class);
-        when(context.getPackageManager()).thenReturn(pm);
-        ResolveInfo defaultPackage = resolveInfoForPackageName(defaultBrowserPackage);
-        when(pm.resolveActivity(any(Intent.class), anyInt())).thenReturn(defaultPackage);
-
-        List<ResolveInfo> customTabsCapable = new ArrayList<>();
-        for (String customTabEnabledPackage : customTabEnabledPackages) {
-            ResolveInfo info = resolveInfoForPackageName(customTabEnabledPackage);
-            when(pm.resolveService(any(Intent.class), eq(0))).thenReturn(info);
-            customTabsCapable.add(info);
-        }
-        when(pm.queryIntentActivities(any(Intent.class), eq(0))).thenReturn(customTabsCapable);
-    }
-
-    private ResolveInfo resolveInfoForPackageName(String packageName) {
-        if (packageName == null) {
-            return null;
-        }
-        ResolveInfo resInfo = mock(ResolveInfo.class);
-        resInfo.activityInfo = new ActivityInfo();
-        resInfo.activityInfo.packageName = packageName;
-        return resInfo;
     }
 }
