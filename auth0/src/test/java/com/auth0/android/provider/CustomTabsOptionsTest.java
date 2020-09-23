@@ -2,6 +2,7 @@ package com.auth0.android.provider;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Parcel;
 import android.support.customtabs.CustomTabsIntent;
 import android.support.v4.content.ContextCompat;
@@ -18,7 +19,11 @@ import java.util.Arrays;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 21)
@@ -35,6 +40,34 @@ public class CustomTabsOptionsTest {
     public void shouldCreateNewBuilder() {
         CustomTabsOptions.Builder builder = CustomTabsOptions.newBuilder();
         assertThat(builder, is(notNullValue()));
+    }
+
+    @Test
+    public void shouldHaveCompatibleBrowser() {
+        PackageManager pm = mock(PackageManager.class);
+        BrowserPicker browserPicker = mock(BrowserPicker.class);
+        when(browserPicker.getBestBrowserPackage(any(PackageManager.class))).thenReturn("something");
+
+        CustomTabsOptions options = CustomTabsOptions.newBuilder()
+                .withBrowserPicker(browserPicker).build();
+
+
+        assertThat(options.getPreferredPackage(pm), is("something"));
+        assertThat(options.hasCompatibleBrowser(pm), is(true));
+    }
+
+    @Test
+    public void shouldNotHaveCompatibleBrowser() {
+        PackageManager pm = mock(PackageManager.class);
+        BrowserPicker browserPicker = mock(BrowserPicker.class);
+        when(browserPicker.getBestBrowserPackage(any(PackageManager.class))).thenReturn(null);
+
+        CustomTabsOptions options = CustomTabsOptions.newBuilder()
+                .withBrowserPicker(browserPicker).build();
+
+
+        assertThat(options.getPreferredPackage(pm), is(nullValue()));
+        assertThat(options.hasCompatibleBrowser(pm), is(false));
     }
 
     @Test
