@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.os.Parcel;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.test.espresso.intent.matcher.IntentMatchers;
@@ -23,8 +24,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
@@ -57,6 +60,46 @@ public class BrowserPickerTest {
         activity = spy(setupActivity(Activity.class));
         allBrowserPicker = BrowserPicker.newBuilder().build();
         filteredBrowserPicker = BrowserPicker.newBuilder().withAllowedPackages(PACKAGES_TO_FILTER_FROM).build();
+    }
+
+
+    // ********************************************************************************
+    // ************************* Parcelable implementation ****************************
+    // ********************************************************************************
+
+
+    @Test
+    public void shouldParcelizeAndHaveDefaultValues() {
+        BrowserPickerTest.setupBrowserContext(activity, ALL_BROWSERS, null, CHROME_STABLE);
+        assertThat(allBrowserPicker, is(notNullValue()));
+        String bestPackageBefore = allBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
+        assertThat(bestPackageBefore, is(CHROME_STABLE));
+
+        Parcel parcel = Parcel.obtain();
+        allBrowserPicker.writeToParcel(parcel, 0);
+        parcel.setDataPosition(0);
+        BrowserPicker parceledPicker = BrowserPicker.CREATOR.createFromParcel(parcel);
+        assertThat(parceledPicker, is(notNullValue()));
+
+        String bestPackageNow = parceledPicker.getBestBrowserPackage(activity.getPackageManager());
+        assertThat(bestPackageNow, is(CHROME_STABLE));
+    }
+
+    @Test
+    public void shouldParcelizeAndSetAllowedBrowsers() {
+        BrowserPickerTest.setupBrowserContext(activity, ALL_BROWSERS, null, CUSTOM_BROWSER_1);
+        assertThat(filteredBrowserPicker, is(notNullValue()));
+        String bestPackageBefore = filteredBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
+        assertThat(bestPackageBefore, is(CUSTOM_BROWSER_1));
+
+        Parcel parcel = Parcel.obtain();
+        filteredBrowserPicker.writeToParcel(parcel, 0);
+        parcel.setDataPosition(0);
+        BrowserPicker parceledPicker = BrowserPicker.CREATOR.createFromParcel(parcel);
+        assertThat(parceledPicker, is(notNullValue()));
+
+        String bestPackageNow = parceledPicker.getBestBrowserPackage(activity.getPackageManager());
+        assertThat(bestPackageNow, is(CUSTOM_BROWSER_1));
     }
 
     // ********************************************************************************
@@ -92,33 +135,35 @@ public class BrowserPickerTest {
     }
 
     @Test
-    public void shouldPreferChromeBrowsersIfDefaultBrowserIsNotSet() {
+    public void shouldMaintainLegacyBehaviorWithoutDefaultSet() {
+        //it will always prefer any browser that is custom tabs compatible.
+
+        //prefer chrome stable when default is not custom tabs compatible
         List<String> currentBrowsers = Arrays.asList(CHROME_BETA, CHROME_SYSTEM, CHROME_STABLE, CHROME_DEV, CUSTOM_BROWSER_1, CUSTOM_BROWSER_2);
         setupBrowserContext(activity, currentBrowsers, null, null);
         String bestPackage = allBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
         MatcherAssert.assertThat(bestPackage, is(CHROME_STABLE));
 
+        //prefer chrome system when default is not custom tabs compatible
         currentBrowsers = Arrays.asList(CHROME_BETA, CHROME_SYSTEM, CHROME_DEV, CUSTOM_BROWSER_1, CUSTOM_BROWSER_2);
         setupBrowserContext(activity, currentBrowsers, null, null);
         bestPackage = allBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
         MatcherAssert.assertThat(bestPackage, is(CHROME_SYSTEM));
 
+        //prefer chrome beta when default is not custom tabs compatible
         currentBrowsers = Arrays.asList(CHROME_BETA, CHROME_DEV, CUSTOM_BROWSER_1, CUSTOM_BROWSER_2);
         setupBrowserContext(activity, currentBrowsers, null, null);
         bestPackage = allBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
         MatcherAssert.assertThat(bestPackage, is(CHROME_BETA));
 
+        //prefer chrome dev when default is not custom tabs compatible
         currentBrowsers = Arrays.asList(CHROME_DEV, CUSTOM_BROWSER_1, CUSTOM_BROWSER_2);
         setupBrowserContext(activity, currentBrowsers, null, null);
         bestPackage = allBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
         MatcherAssert.assertThat(bestPackage, is(CHROME_DEV));
 
+        //prefer first custom tabs compatible browser when default is not custom tabs compatible
         currentBrowsers = Arrays.asList(CUSTOM_BROWSER_1, CUSTOM_BROWSER_2);
-        setupBrowserContext(activity, currentBrowsers, null, null);
-        bestPackage = allBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
-        MatcherAssert.assertThat(bestPackage, is(currentBrowsers.get(0)));
-
-        currentBrowsers = Collections.singletonList(CUSTOM_BROWSER_1);
         setupBrowserContext(activity, currentBrowsers, null, null);
         bestPackage = allBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
         MatcherAssert.assertThat(bestPackage, is(currentBrowsers.get(0)));
@@ -126,41 +171,49 @@ public class BrowserPickerTest {
 
     @Test
     public void shouldMaintainLegacyBehavior() {
+        //it will always prefer a default browser that is custom tabs compatible or any other browser that is custom tabs compatible.
+
+        //prefer default browser over chrome if custom tabs compatible
         List<String> currentBrowsers = Arrays.asList(CHROME_BETA, CHROME_SYSTEM, CHROME_STABLE, CHROME_DEV, CUSTOM_BROWSER_1, CUSTOM_BROWSER_2);
         List<String> currentCompatibleBrowsers = Arrays.asList(CHROME_BETA, CHROME_SYSTEM, CHROME_STABLE, CHROME_DEV, CUSTOM_BROWSER_1);
-        setupBrowserContext(activity, currentBrowsers, currentCompatibleBrowsers, CUSTOM_BROWSER_2);
+        setupBrowserContext(activity, currentBrowsers, currentCompatibleBrowsers, CUSTOM_BROWSER_1);
         String bestPackage = allBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
+        MatcherAssert.assertThat(bestPackage, is(CUSTOM_BROWSER_1));
+
+        //prefer chrome stable when default is not custom tabs compatible
+        currentBrowsers = Arrays.asList(CHROME_BETA, CHROME_SYSTEM, CHROME_STABLE, CHROME_DEV, CUSTOM_BROWSER_1, CUSTOM_BROWSER_2);
+        currentCompatibleBrowsers = Arrays.asList(CHROME_BETA, CHROME_SYSTEM, CHROME_STABLE, CHROME_DEV, CUSTOM_BROWSER_1);
+        setupBrowserContext(activity, currentBrowsers, currentCompatibleBrowsers, CUSTOM_BROWSER_2);
+        bestPackage = allBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
         MatcherAssert.assertThat(bestPackage, is(CHROME_STABLE));
 
+        //prefer chrome system when default is not custom tabs compatible
         currentBrowsers = Arrays.asList(CHROME_BETA, CHROME_SYSTEM, CHROME_DEV, CUSTOM_BROWSER_1, CUSTOM_BROWSER_2);
         currentCompatibleBrowsers = Arrays.asList(CHROME_BETA, CHROME_SYSTEM, CHROME_DEV, CUSTOM_BROWSER_1);
         setupBrowserContext(activity, currentBrowsers, currentCompatibleBrowsers, CUSTOM_BROWSER_2);
         bestPackage = allBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
         MatcherAssert.assertThat(bestPackage, is(CHROME_SYSTEM));
 
+        //prefer chrome beta when default is not custom tabs compatible
         currentBrowsers = Arrays.asList(CHROME_BETA, CHROME_DEV, CUSTOM_BROWSER_1, CUSTOM_BROWSER_2);
         currentCompatibleBrowsers = Arrays.asList(CHROME_BETA, CHROME_DEV, CUSTOM_BROWSER_1);
         setupBrowserContext(activity, currentBrowsers, currentCompatibleBrowsers, CUSTOM_BROWSER_2);
         bestPackage = allBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
         MatcherAssert.assertThat(bestPackage, is(CHROME_BETA));
 
+        //prefer chrome dev when default is not custom tabs compatible
         currentBrowsers = Arrays.asList(CHROME_DEV, CUSTOM_BROWSER_1, CUSTOM_BROWSER_2);
         currentCompatibleBrowsers = Arrays.asList(CHROME_DEV, CUSTOM_BROWSER_1);
         setupBrowserContext(activity, currentBrowsers, currentCompatibleBrowsers, CUSTOM_BROWSER_2);
         bestPackage = allBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
         MatcherAssert.assertThat(bestPackage, is(CHROME_DEV));
 
+        //prefer first custom tabs compatible browser when default is not custom tabs compatible
         currentBrowsers = Arrays.asList(CUSTOM_BROWSER_1, CUSTOM_BROWSER_2);
         currentCompatibleBrowsers = Arrays.asList(CUSTOM_BROWSER_1);
         setupBrowserContext(activity, currentBrowsers, currentCompatibleBrowsers, CUSTOM_BROWSER_2);
         bestPackage = allBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
         MatcherAssert.assertThat(bestPackage, is(currentCompatibleBrowsers.get(0)));
-
-        currentBrowsers = Collections.singletonList(CUSTOM_BROWSER_1);
-        currentCompatibleBrowsers = Arrays.asList();
-        setupBrowserContext(activity, currentBrowsers, currentCompatibleBrowsers, CUSTOM_BROWSER_2);
-        bestPackage = allBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
-        MatcherAssert.assertThat(bestPackage, is(CUSTOM_BROWSER_1));
     }
 
     // ********************************************************************************
@@ -183,19 +236,84 @@ public class BrowserPickerTest {
     }
 
     @Test
+    public void whenFilteringShouldNeverPickDefaultBrowserIfRestrictedEvenIfCustomTabsCapable() {
+        setupBrowserContext(activity, ALL_BROWSERS, Arrays.asList(CHROME_STABLE, CUSTOM_BROWSER_2), CHROME_STABLE);
+        String bestPackage = filteredBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
+        MatcherAssert.assertThat(bestPackage, is(CUSTOM_BROWSER_2));
+    }
+
+    @Test
+    public void whenFilteringShouldReturnNullIfNoBrowsersAreLeftAfterFiltering() {
+        ArrayList<String> installedBrowsers = new ArrayList<>(ALL_BROWSERS);
+        installedBrowsers.removeAll(PACKAGES_TO_FILTER_FROM);
+        //Next line says the installed browsers are all of those we don't accept
+        setupBrowserContext(activity, installedBrowsers, ALL_BROWSERS, null);
+        String bestPackage = filteredBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
+        MatcherAssert.assertThat(bestPackage, is(nullValue()));
+    }
+
+    @Test
     public void whenFilteringShouldNeverPickRestrictedBrowsers() {
+        //Every test here will pick from the allowed packages that are installed/available
+        //allowed packages = CUSTOM_BROWSER_1, CUSTOM_BROWSER_2, CHROME_DEV  (see PACKAGES_TO_FILTER_FROM)
+
+        //picks the first regular browser, ignores default because is restricted
         List<String> currentBrowsers = Arrays.asList(CHROME_BETA, CHROME_SYSTEM, CHROME_STABLE, CHROME_DEV, CUSTOM_BROWSER_1, CUSTOM_BROWSER_2);
         setupBrowserContext(activity, currentBrowsers, Collections.singletonList(CHROME_STABLE), CHROME_STABLE);
         String bestPackage = filteredBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
         MatcherAssert.assertThat(bestPackage, is(PACKAGES_TO_FILTER_FROM.get(0)));
 
+        //picks the first regular browser, respecting the order of the allowed packages list, and ignoring default because is restricted
         currentBrowsers = Arrays.asList(CHROME_BETA, CUSTOM_BROWSER_2);
         setupBrowserContext(activity, currentBrowsers, Collections.singletonList(CHROME_STABLE), CHROME_STABLE);
         bestPackage = filteredBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
         MatcherAssert.assertThat(bestPackage, is(CUSTOM_BROWSER_2));
 
+        //picks the first custom tab compatible browser, ignoring the default
+        currentBrowsers = Arrays.asList(CHROME_BETA, CUSTOM_BROWSER_2, CUSTOM_BROWSER_1);
+        setupBrowserContext(activity, currentBrowsers, Collections.singletonList(CUSTOM_BROWSER_1), CUSTOM_BROWSER_2);
+        bestPackage = filteredBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
+        MatcherAssert.assertThat(bestPackage, is(CUSTOM_BROWSER_1));
+
+        //picks the default browser, which is also custom tabs compatible
         currentBrowsers = Arrays.asList(CHROME_BETA, CUSTOM_BROWSER_2, CUSTOM_BROWSER_1);
         setupBrowserContext(activity, currentBrowsers, Collections.singletonList(CUSTOM_BROWSER_1), CUSTOM_BROWSER_1);
+        bestPackage = filteredBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
+        MatcherAssert.assertThat(bestPackage, is(CUSTOM_BROWSER_1));
+
+        //picks the default browser, which is not custom tabs compatible
+        currentBrowsers = Arrays.asList(CHROME_BETA, CUSTOM_BROWSER_2, CUSTOM_BROWSER_1);
+        setupBrowserContext(activity, currentBrowsers, null, CUSTOM_BROWSER_1);
+        bestPackage = filteredBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
+        MatcherAssert.assertThat(bestPackage, is(CUSTOM_BROWSER_1));
+    }
+
+    @Test
+    public void whenFilteringShouldNeverPickRestrictedBrowsersWithoutDefaultSet() {
+        //Every test here will pick from the allowed packages that are installed/available
+        //allowed packages = CUSTOM_BROWSER_1, CUSTOM_BROWSER_2, CHROME_DEV  (see PACKAGES_TO_FILTER_FROM)
+
+        //picks the first regular browser, ignores default because is not set
+        List<String> currentBrowsers = Arrays.asList(CHROME_BETA, CHROME_SYSTEM, CHROME_STABLE, CHROME_DEV, CUSTOM_BROWSER_1, CUSTOM_BROWSER_2);
+        setupBrowserContext(activity, currentBrowsers, Collections.singletonList(CHROME_STABLE), null);
+        String bestPackage = filteredBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
+        MatcherAssert.assertThat(bestPackage, is(PACKAGES_TO_FILTER_FROM.get(0)));
+
+        //picks the first regular browser, respecting the order of the allowed packages list, and ignoring default because is not set
+        currentBrowsers = Arrays.asList(CHROME_BETA, CUSTOM_BROWSER_2);
+        setupBrowserContext(activity, currentBrowsers, Collections.singletonList(CHROME_STABLE), null);
+        bestPackage = filteredBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
+        MatcherAssert.assertThat(bestPackage, is(CUSTOM_BROWSER_2));
+
+        //picks the first custom tab compatible browser, ignoring the default
+        currentBrowsers = Arrays.asList(CHROME_BETA, CUSTOM_BROWSER_2, CUSTOM_BROWSER_1);
+        setupBrowserContext(activity, currentBrowsers, Collections.singletonList(CUSTOM_BROWSER_1), null);
+        bestPackage = filteredBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
+        MatcherAssert.assertThat(bestPackage, is(CUSTOM_BROWSER_1));
+
+        //picks the first custom tabs compatible browser
+        currentBrowsers = Arrays.asList(CHROME_BETA, CUSTOM_BROWSER_2, CUSTOM_BROWSER_1);
+        setupBrowserContext(activity, currentBrowsers, Collections.singletonList(CUSTOM_BROWSER_1), null);
         bestPackage = filteredBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
         MatcherAssert.assertThat(bestPackage, is(CUSTOM_BROWSER_1));
     }

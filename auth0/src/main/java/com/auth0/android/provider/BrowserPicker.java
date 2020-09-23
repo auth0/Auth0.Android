@@ -16,6 +16,10 @@ import java.util.List;
 
 import static android.support.customtabs.CustomTabsService.ACTION_CUSTOM_TABS_CONNECTION;
 
+/**
+ * Class used to match any browser, preferring Custom Tabs compatible browsers
+ * and browsers that are selected as the default browser application in the device settings.
+ */
 public class BrowserPicker implements Parcelable {
 
     @NonNull
@@ -59,7 +63,8 @@ public class BrowserPicker implements Parcelable {
     };
 
     /**
-     * Create a new BrowserPicker.Builder instance.
+     * Starts building a new BrowserPicker that will match any browser, preferring Custom Tabs compatible browsers
+     * and browsers that are selected as the default browser application in the device settings.
      *
      * @return a new BrowserPicker.Builder ready to customize.
      */
@@ -74,13 +79,27 @@ public class BrowserPicker implements Parcelable {
         private Builder() {
         }
 
-        //TODO: JAVADOCS
+        /**
+         * Filters from the available browsers those whose package name is contained in the given list.
+         * The order of the list matters, as will be used as preference. Default browsers selected
+         * explicitly by the end-user in the device settings, will be always preferred when they are
+         * included in the allowed packages list.
+         *
+         * @param allowedPackages the list of browser package names to allow.
+         * @return this builder instance.
+         */
         @NonNull
         public Builder withAllowedPackages(@NonNull List<String> allowedPackages) {
             this.allowedPackages = allowedPackages;
             return this;
         }
 
+        /**
+         * Constructs a new BrowserPicker.
+         *
+         * @return a new BrowserPicker.
+         * @see CustomTabsOptions
+         */
         @NonNull
         public BrowserPicker build() {
             return new BrowserPicker(allowedPackages);
@@ -120,14 +139,7 @@ public class BrowserPicker implements Parcelable {
 
         //If the browser packages were filtered, use the allowed packages list as order preference.
         //A user-selected default browser will always be picked up first.
-        List<String> preferenceList = allowedPackages;
-        if (!isFilterEnabled) {
-            preferenceList = new ArrayList<>();
-            if (defaultBrowser != null) {
-                preferenceList.add(defaultBrowser);
-            }
-            preferenceList.addAll(CHROME_BROWSERS);
-        }
+        List<String> preferenceList = getPreferenceOrder(allowedPackages, defaultBrowser);
 
         //If the list was filtered, the customTabsBrowsers and regularBrowsers Lists will contain only allowed packages.
         final String customTabBrowser = getFirstMatch(customTabsBrowsers, preferenceList, defaultBrowser);
@@ -138,6 +150,18 @@ public class BrowserPicker implements Parcelable {
 
         //Will return any browser or null
         return getFirstMatch(regularBrowsers, preferenceList, defaultBrowser);
+    }
+
+    private List<String> getPreferenceOrder(@Nullable List<String> allowedPackages, @Nullable String defaultBrowser) {
+        if (allowedPackages != null) {
+            return allowedPackages;
+        }
+        List<String> preferenceList = new ArrayList<>();
+        if (defaultBrowser != null) {
+            preferenceList.add(defaultBrowser);
+        }
+        preferenceList.addAll(CHROME_BROWSERS);
+        return preferenceList;
     }
 
     @Nullable

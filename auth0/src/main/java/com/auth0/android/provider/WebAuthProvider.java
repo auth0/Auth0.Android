@@ -118,10 +118,12 @@ public class WebAuthProvider {
         }
 
         /**
-         * Request the user session to be cleared. When successful, the callback will get invoked
+         * Request the user session to be cleared. When successful, the callback will get invoked.
+         * An error is raised if there are no browser applications installed in the device.
          *
          * @param context  to run the log out
          * @param callback to invoke when log out is successful
+         * @see AuthenticationException#isBrowserAppNotAvailable()
          */
         public void start(@NonNull Context context, @NonNull VoidCallback callback) {
             resetManagerInstance();
@@ -424,10 +426,12 @@ public class WebAuthProvider {
 
         /**
          * Request user Authentication. The result will be received in the callback.
+         * An error is raised if there are no browser applications installed in the device.
          *
          * @param activity    context to run the authentication
          * @param callback    to receive the parsed results
          * @param requestCode to use in the authentication request
+         * @see AuthenticationException#isBrowserAppNotAvailable()
          * @deprecated This method has been deprecated since it only applied to WebView authentication and Google is no longer supporting it. Please use {@link WebAuthProvider.Builder#start(Activity, AuthCallback)}
          */
         @SuppressLint("VisibleForTests")
@@ -458,9 +462,11 @@ public class WebAuthProvider {
 
         /**
          * Request user Authentication. The result will be received in the callback.
+         * An error is raised if there are no browser applications installed in the device.
          *
          * @param activity context to run the authentication
          * @param callback to receive the parsed results
+         * @see AuthenticationException#isBrowserAppNotAvailable()
          */
         public void start(@NonNull Activity activity, @NonNull AuthCallback callback) {
             //noinspection deprecation

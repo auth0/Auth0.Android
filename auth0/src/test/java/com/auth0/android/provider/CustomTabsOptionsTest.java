@@ -13,9 +13,12 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
+import java.util.Arrays;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.mockito.Mockito.spy;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 21)
@@ -113,5 +116,29 @@ public class CustomTabsOptionsTest {
         assertThat(parceledIntent, is(notNullValue()));
         assertThat(parceledIntent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR), is(true));
         assertThat(parceledIntent.getIntExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR, 0), is(resolvedColor));
+    }
+
+    @Test
+    public void shouldSetBrowserPicker() {
+        Activity activity = spy(Robolectric.setupActivity(Activity.class));
+        BrowserPickerTest.setupBrowserContext(activity, Arrays.asList("com.auth0.browser"), null, null);
+
+        BrowserPicker browserPicker = BrowserPicker.newBuilder().build();
+        CustomTabsOptions options = CustomTabsOptions.newBuilder()
+                .withBrowserPicker(browserPicker)
+                .build();
+        assertThat(options, is(notNullValue()));
+
+        String preferredPackageBefore = options.getPreferredPackage(activity.getPackageManager());
+        assertThat(preferredPackageBefore, is("com.auth0.browser"));
+
+        Parcel parcel = Parcel.obtain();
+        options.writeToParcel(parcel, 0);
+        parcel.setDataPosition(0);
+        CustomTabsOptions parceledOptions = CustomTabsOptions.CREATOR.createFromParcel(parcel);
+        assertThat(parceledOptions, is(notNullValue()));
+
+        String preferredPackageNow = parceledOptions.getPreferredPackage(activity.getPackageManager());
+        assertThat(preferredPackageNow, is("com.auth0.browser"));
     }
 }
