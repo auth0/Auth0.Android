@@ -13,6 +13,8 @@ import android.support.customtabs.CustomTabsIntent;
 import android.support.customtabs.CustomTabsSession;
 import android.support.v4.content.ContextCompat;
 
+import com.auth0.android.authentication.AuthenticationException;
+
 /**
  * Holder for Custom Tabs customization options. Use {@link CustomTabsOptions#newBuilder()} to begin.
  */
@@ -142,6 +144,7 @@ public class CustomTabsOptions implements Parcelable {
          *
          * @param browserPicker the browser picker to use.
          * @return the current builder instance
+         * @see AuthenticationException#isBrowserAppNotAvailable()
          */
         @NonNull
         public Builder withBrowserPicker(@NonNull BrowserPicker browserPicker) {

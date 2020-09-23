@@ -115,7 +115,7 @@ public class AuthenticationActivity extends Activity {
         }
 
         CustomTabsOptions customTabsOptions = extras.getParcelable(EXTRA_CT_OPTIONS);
-        assert customTabsOptions != null;
+        //noinspection ConstantConditions
         customTabsController = createCustomTabsController(this, customTabsOptions);
         customTabsController.bindService();
         //noinspection ConstantConditions
