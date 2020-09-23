@@ -8,7 +8,6 @@ import com.auth0.android.result.Credentials;
 import com.auth0.android.result.DatabaseUser;
 
 import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -21,6 +20,7 @@ import java.util.Map;
 
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Matchers.eq;
@@ -49,8 +49,8 @@ public class SignUpRequestTest {
         final Map params = mock(Map.class);
         final SignUpRequest req = signUpRequest.addSignUpParameters(params);
         verify(dbMockRequest).addParameters(params);
-        Assert.assertThat(req, is(notNullValue()));
-        Assert.assertThat(req, is(signUpRequest));
+        assertThat(req, is(notNullValue()));
+        assertThat(req, is(signUpRequest));
     }
 
     @Test
@@ -58,24 +58,24 @@ public class SignUpRequestTest {
         final Map params = mock(Map.class);
         final SignUpRequest req = signUpRequest.addAuthenticationParameters(params);
         verify(authenticationMockRequest).addAuthenticationParameters(params);
-        Assert.assertThat(req, is(notNullValue()));
-        Assert.assertThat(req, is(signUpRequest));
+        assertThat(req, is(notNullValue()));
+        assertThat(req, is(signUpRequest));
     }
 
     @Test
     public void shouldSetScope() {
         final SignUpRequest req = signUpRequest.setScope("oauth2 offline_access profile");
         verify(authenticationMockRequest).setScope("oauth2 offline_access profile");
-        Assert.assertThat(req, is(notNullValue()));
-        Assert.assertThat(req, is(signUpRequest));
+        assertThat(req, is(notNullValue()));
+        assertThat(req, is(signUpRequest));
     }
 
     @Test
     public void shouldAddHeader() {
         final SignUpRequest req = signUpRequest.addHeader("auth", "val123");
         verify(authenticationMockRequest).addHeader(eq("auth"), eq("val123"));
-        Assert.assertThat(req, is(notNullValue()));
-        Assert.assertThat(req, is(signUpRequest));
+        assertThat(req, is(notNullValue()));
+        assertThat(req, is(signUpRequest));
     }
 
     @Test
@@ -84,40 +84,40 @@ public class SignUpRequestTest {
         SignUpRequest signUpRequest = new SignUpRequest(dbMockRequest, authenticationMockRequest);
         final SignUpRequest req = signUpRequest.addHeader("auth", "val123");
         verifyZeroInteractions(authenticationMockRequest);
-        Assert.assertThat(req, is(notNullValue()));
-        Assert.assertThat(req, is(signUpRequest));
+        assertThat(req, is(notNullValue()));
+        assertThat(req, is(signUpRequest));
     }
 
     @Test
     public void shouldSetAudience() {
         final AuthenticationRequest req = signUpRequest.setAudience("https://domain.auth0.com/api");
         verify(authenticationMockRequest).setAudience("https://domain.auth0.com/api");
-        Assert.assertThat(req, is(notNullValue()));
-        Assert.assertThat(req, Matchers.<AuthenticationRequest>is(signUpRequest));
+        assertThat(req, is(notNullValue()));
+        assertThat(req, Matchers.<AuthenticationRequest>is(signUpRequest));
     }
 
     @Test
     public void shouldSetDevice() {
         final AuthenticationRequest req = signUpRequest.setDevice("nexus-5x");
         verify(authenticationMockRequest).setDevice("nexus-5x");
-        Assert.assertThat(req, is(notNullValue()));
-        Assert.assertThat(req, Matchers.<AuthenticationRequest>is(signUpRequest));
+        assertThat(req, is(notNullValue()));
+        assertThat(req, Matchers.<AuthenticationRequest>is(signUpRequest));
     }
 
     @Test
     public void shouldSetGrantType() {
         final AuthenticationRequest req = signUpRequest.setGrantType("token");
         verify(authenticationMockRequest).setGrantType("token");
-        Assert.assertThat(req, is(notNullValue()));
-        Assert.assertThat(req, Matchers.<AuthenticationRequest>is(signUpRequest));
+        assertThat(req, is(notNullValue()));
+        assertThat(req, Matchers.<AuthenticationRequest>is(signUpRequest));
     }
 
     @Test
     public void shouldSetAccessToken() {
         final AuthenticationRequest req = signUpRequest.setAccessToken("super-access-token");
         verify(authenticationMockRequest).setAccessToken("super-access-token");
-        Assert.assertThat(req, is(notNullValue()));
-        Assert.assertThat(req, Matchers.<AuthenticationRequest>is(signUpRequest));
+        assertThat(req, is(notNullValue()));
+        assertThat(req, Matchers.<AuthenticationRequest>is(signUpRequest));
     }
 
     @Test
@@ -125,8 +125,8 @@ public class SignUpRequestTest {
         final SignUpRequest req = signUpRequest.setConnection("my-connection");
         verify(dbMockRequest).setConnection("my-connection");
         verify(authenticationMockRequest).setConnection("my-connection");
-        Assert.assertThat(req, is(notNullValue()));
-        Assert.assertThat(req, is(signUpRequest));
+        assertThat(req, is(notNullValue()));
+        assertThat(req, is(signUpRequest));
     }
 
     @Test
@@ -134,8 +134,8 @@ public class SignUpRequestTest {
         final SignUpRequest req = signUpRequest.setRealm("users");
         verify(dbMockRequest).setConnection("users");
         verify(authenticationMockRequest).setRealm("users");
-        Assert.assertThat(req, is(notNullValue()));
-        Assert.assertThat(req, is(signUpRequest));
+        assertThat(req, is(notNullValue()));
+        assertThat(req, is(signUpRequest));
     }
 
     @Test
@@ -205,8 +205,8 @@ public class SignUpRequestTest {
 
         verify(dbMockRequest).execute();
         verify(authenticationMockRequest).execute();
-        Assert.assertThat(executeResult, is(notNullValue()));
-        Assert.assertThat(executeResult, is(credentials));
+        assertThat(executeResult, is(notNullValue()));
+        assertThat(executeResult, is(credentials));
     }
 
 }

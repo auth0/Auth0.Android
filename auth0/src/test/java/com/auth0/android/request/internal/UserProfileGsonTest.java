@@ -16,6 +16,7 @@ import java.util.Locale;
 
 import static com.auth0.android.util.UserIdentityMatcher.isUserIdentity;
 import static com.auth0.android.util.UserProfileMatcher.isNormalizedProfile;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
@@ -28,7 +29,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsMapWithSize.aMapWithSize;
 import static org.hamcrest.collection.IsMapWithSize.anEmptyMap;
-import static org.junit.Assert.assertThat;
 
 public class UserProfileGsonTest extends GsonBaseTest {
     private static final String NICKNAME = "a0";
