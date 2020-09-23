@@ -4,10 +4,10 @@ import com.auth0.android.Auth0;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.result.Credentials;
 
+import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.function.ThrowingRunnable;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -18,24 +18,21 @@ import java.util.Date;
 import java.util.HashMap;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 18)
 public class OAuthManagerTest {
 
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
-
     @Mock
     Auth0 account;
     @Mock
     AuthCallback callback;
+    @Mock
+    CustomTabsOptions ctOptions;
 
     @Before
     public void setUp() {
@@ -44,42 +41,28 @@ public class OAuthManagerTest {
 
     @Test
     public void shouldUseBrowserByDefault() {
-        OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>());
+        OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>(), ctOptions);
         assertTrue(manager.useBrowser());
     }
 
     @Test
     public void shouldNotUseBrowser() {
-        OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>());
+        OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>(), ctOptions);
         manager.useBrowser(false);
         assertFalse(manager.useBrowser());
     }
 
     @Test
     public void shouldNotUseFullScreenByDefault() {
-        OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>());
+        OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>(), ctOptions);
         assertFalse(manager.useFullScreen());
     }
 
     @Test
     public void shouldUseFullScreen() {
-        OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>());
+        OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>(), ctOptions);
         manager.useFullScreen(true);
         assertTrue(manager.useFullScreen());
-    }
-
-    @Test
-    public void shouldNotHaveCustomTabsOptionsByDefault() {
-        OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>());
-        assertThat(manager.customTabsOptions(), is(nullValue()));
-    }
-
-    @Test
-    public void shouldSetCustomTabsOptions() {
-        CustomTabsOptions options = mock(CustomTabsOptions.class);
-        OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>());
-        manager.setCustomTabsOptions(options);
-        assertThat(manager.customTabsOptions(), is(options));
     }
 
     @Test
@@ -121,13 +104,23 @@ public class OAuthManagerTest {
 
     @Test
     public void shouldHaveInvalidState() {
-        exception.expect(AuthenticationException.class);
-        OAuthManager.assertValidState("0987654321", "1234567890");
+        Assert.assertThrows(AuthenticationException.class, new ThrowingRunnable() {
+
+            @Override
+            public void run() {
+                OAuthManager.assertValidState("0987654321", "1234567890");
+            }
+        });
     }
 
     @Test
     public void shouldHaveInvalidStateWhenOneIsNull() {
-        exception.expect(AuthenticationException.class);
-        OAuthManager.assertValidState("0987654321", null);
+        Assert.assertThrows(AuthenticationException.class, new ThrowingRunnable() {
+
+            @Override
+            public void run() {
+                OAuthManager.assertValidState("0987654321", null);
+            }
+        });
     }
 }

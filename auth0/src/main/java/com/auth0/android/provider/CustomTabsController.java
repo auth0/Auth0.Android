@@ -46,11 +46,6 @@ class CustomTabsController extends CustomTabsServiceConnection {
         this.context.clear();
     }
 
-    @VisibleForTesting
-    CustomTabsOptions getCustomizationOptions() {
-        return this.customTabsOptions;
-    }
-
     @Override
     public void onCustomTabsServiceConnected(ComponentName componentName, CustomTabsClient customTabsClient) {
         if (customTabsClient == null) {

@@ -34,7 +34,7 @@ public class CustomTabsOptions implements Parcelable {
         return browserPicker.getBestBrowserPackage(pm);
     }
 
-    boolean canLaunchBrowser(@NonNull PackageManager pm) {
+    boolean hasCompatibleBrowser(@NonNull PackageManager pm) {
         return getPreferredPackage(pm) != null;
     }
 

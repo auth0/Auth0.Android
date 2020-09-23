@@ -126,7 +126,7 @@ public class WebAuthProvider {
         public void start(@NonNull Context context, @NonNull VoidCallback callback) {
             resetManagerInstance();
 
-            if (!ctOptions.canLaunchBrowser(context.getPackageManager())) {
+            if (!ctOptions.hasCompatibleBrowser(context.getPackageManager())) {
                 AuthenticationException ex = new AuthenticationException("a0.browser_not_available", "No compatible Browser application is installed.");
                 callback.onFailure(ex);
                 return;
@@ -435,7 +435,7 @@ public class WebAuthProvider {
         public void start(@NonNull Activity activity, @NonNull AuthCallback callback, int requestCode) {
             resetManagerInstance();
 
-            if (useBrowser && !ctOptions.canLaunchBrowser(activity.getPackageManager())) {
+            if (useBrowser && !ctOptions.hasCompatibleBrowser(activity.getPackageManager())) {
                 AuthenticationException ex = new AuthenticationException("a0.browser_not_available", "No compatible Browser application is installed.");
                 callback.onFailure(ex);
                 return;

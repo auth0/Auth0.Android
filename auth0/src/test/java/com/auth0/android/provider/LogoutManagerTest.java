@@ -4,9 +4,7 @@ import com.auth0.android.Auth0;
 import com.auth0.android.Auth0Exception;
 
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
@@ -16,8 +14,7 @@ import org.robolectric.annotation.Config;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -28,13 +25,12 @@ import static org.mockito.Mockito.when;
 @Config(sdk = 18)
 public class LogoutManagerTest {
 
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
-
     @Mock
     Auth0 account;
     @Mock
     VoidCallback callback;
+    @Mock
+    CustomTabsOptions customTabsOptions;
 
     @Before
     public void setUp() {
@@ -42,22 +38,8 @@ public class LogoutManagerTest {
     }
 
     @Test
-    public void shouldNotHaveCustomTabsOptionsByDefault() {
-        LogoutManager manager = new LogoutManager(account, callback, "https://auth0.com/android/my.app.name/callback");
-        assertThat(manager.customTabsOptions(), is(nullValue()));
-    }
-
-    @Test
-    public void shouldSetCustomTabsOptions() {
-        CustomTabsOptions options = mock(CustomTabsOptions.class);
-        LogoutManager manager = new LogoutManager(account, callback, "https://auth0.com/android/my.app.name/callback");
-        manager.setCustomTabsOptions(options);
-        assertThat(manager.customTabsOptions(), is(options));
-    }
-
-    @Test
     public void shouldCallOnFailureWhenResumedWithCanceledResult() {
-        LogoutManager manager = new LogoutManager(account, callback, "https://auth0.com/android/my.app.name/callback");
+        LogoutManager manager = new LogoutManager(account, callback, "https://auth0.com/android/my.app.name/callback", customTabsOptions);
         AuthorizeResult result = mock(AuthorizeResult.class);
         when(result.isCanceled()).thenReturn(true);
         manager.resume(result);
@@ -69,7 +51,7 @@ public class LogoutManagerTest {
 
     @Test
     public void shouldCallOnSuccessWhenResumedWithValidResult() {
-        LogoutManager manager = new LogoutManager(account, callback, "https://auth0.com/android/my.app.name/callback");
+        LogoutManager manager = new LogoutManager(account, callback, "https://auth0.com/android/my.app.name/callback", customTabsOptions);
         AuthorizeResult result = mock(AuthorizeResult.class);
         when(result.isCanceled()).thenReturn(false);
         manager.resume(result);

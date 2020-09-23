@@ -114,6 +114,7 @@ class OAuthManager extends ResumableManager {
         }
     }
 
+    @SuppressWarnings("ConstantConditions")
     @Override
     boolean resume(AuthorizeResult result) {
         if (!result.isValid(requestCode)) {
@@ -323,6 +324,7 @@ class OAuthManager extends ResumableManager {
         String state = getRandomString(parameters.get(KEY_STATE));
         parameters.put(KEY_STATE, state);
 
+        //noinspection ConstantConditions
         boolean idTokenExpected = parameters.containsKey(KEY_RESPONSE_TYPE) && (parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_ID_TOKEN) || parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_CODE));
         if (idTokenExpected) {
             String nonce = getRandomString(parameters.get(KEY_NONCE));
@@ -344,7 +346,9 @@ class OAuthManager extends ResumableManager {
         }
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean shouldUsePKCE() {
+        //noinspection ConstantConditions
         return parameters.containsKey(KEY_RESPONSE_TYPE) && parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_CODE) && PKCE.isAvailable();
     }
 
@@ -356,11 +360,6 @@ class OAuthManager extends ResumableManager {
     @VisibleForTesting
     boolean useFullScreen() {
         return useFullScreen;
-    }
-
-    @VisibleForTesting
-    CustomTabsOptions customTabsOptions() {
-        return ctOptions;
     }
 
     @VisibleForTesting

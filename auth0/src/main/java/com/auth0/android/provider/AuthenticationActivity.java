@@ -102,6 +102,7 @@ public class AuthenticationActivity extends Activity {
 
     private void launchAuthenticationIntent() {
         Bundle extras = getIntent().getExtras();
+        //noinspection ConstantConditions
         Uri authorizeUri = extras.getParcelable(EXTRA_AUTHORIZE_URI);
         if (!extras.getBoolean(EXTRA_USE_BROWSER, true)) {
             Intent intent = new Intent(this, WebAuthActivity.class);
@@ -114,8 +115,10 @@ public class AuthenticationActivity extends Activity {
         }
 
         CustomTabsOptions customTabsOptions = extras.getParcelable(EXTRA_CT_OPTIONS);
+        assert customTabsOptions != null;
         customTabsController = createCustomTabsController(this, customTabsOptions);
         customTabsController.bindService();
+        //noinspection ConstantConditions
         customTabsController.launchUri(authorizeUri);
     }
 
