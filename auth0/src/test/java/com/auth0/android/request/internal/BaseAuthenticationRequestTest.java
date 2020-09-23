@@ -1,7 +1,6 @@
 package com.auth0.android.request.internal;
 
 import com.auth0.android.request.AuthenticationRequest;
-import com.auth0.android.result.Credentials;
 import com.auth0.android.util.AuthenticationAPI;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -23,9 +22,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
-import static org.junit.Assert.assertThat;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 21)

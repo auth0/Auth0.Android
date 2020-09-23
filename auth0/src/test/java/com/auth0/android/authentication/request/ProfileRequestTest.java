@@ -9,8 +9,6 @@ import com.auth0.android.result.Authentication;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.UserProfile;
 
-import org.hamcrest.CoreMatchers;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,15 +22,14 @@ import java.util.Map;
 
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
@@ -57,16 +54,16 @@ public class ProfileRequestTest {
         final Map params = mock(Map.class);
         final ProfileRequest req = profileRequest.addParameters(params);
         verify(authenticationMockRequest).addAuthenticationParameters(params);
-        Assert.assertThat(req, is(notNullValue()));
-        Assert.assertThat(req, is(profileRequest));
+        assertThat(req, is(notNullValue()));
+        assertThat(req, is(profileRequest));
     }
 
     @Test
     public void shouldAddHeader() {
         final ProfileRequest req = profileRequest.addHeader("auth", "val123");
         verify(authenticationMockRequest).addHeader(eq("auth"), eq("val123"));
-        Assert.assertThat(req, is(notNullValue()));
-        Assert.assertThat(req, is(profileRequest));
+        assertThat(req, is(notNullValue()));
+        assertThat(req, is(profileRequest));
     }
 
     @Test
@@ -75,24 +72,24 @@ public class ProfileRequestTest {
         ProfileRequest profileRequest = new ProfileRequest(authenticationMockRequest, userInfoMockRequest);
         final ProfileRequest req = profileRequest.addHeader("auth", "val123");
         verifyZeroInteractions(authenticationMockRequest);
-        Assert.assertThat(req, is(notNullValue()));
-        Assert.assertThat(req, is(profileRequest));
+        assertThat(req, is(notNullValue()));
+        assertThat(req, is(profileRequest));
     }
 
     @Test
     public void shouldSetScope() {
         final ProfileRequest req = profileRequest.setScope("oauth2 offline_access profile");
         verify(authenticationMockRequest).setScope("oauth2 offline_access profile");
-        Assert.assertThat(req, is(notNullValue()));
-        Assert.assertThat(req, is(profileRequest));
+        assertThat(req, is(notNullValue()));
+        assertThat(req, is(profileRequest));
     }
 
     @Test
     public void shouldSetConnection() {
         final ProfileRequest req = profileRequest.setConnection("my-connection");
         verify(authenticationMockRequest).setConnection("my-connection");
-        Assert.assertThat(req, is(notNullValue()));
-        Assert.assertThat(req, is(profileRequest));
+        assertThat(req, is(notNullValue()));
+        assertThat(req, is(profileRequest));
     }
 
     @Test

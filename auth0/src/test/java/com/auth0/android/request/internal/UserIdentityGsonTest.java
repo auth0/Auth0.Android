@@ -9,11 +9,11 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import static com.auth0.android.util.UserIdentityMatcher.isUserIdentity;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsMapWithSize.anEmptyMap;
-import static org.junit.Assert.assertThat;
 
 public class UserIdentityGsonTest extends GsonBaseTest {
 
