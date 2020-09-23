@@ -33,6 +33,7 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -110,7 +111,7 @@ public class WebAuthProviderTest {
         //Next line is needed to avoid CustomTabService from being bound to Test environment
         //noinspection WrongConstant
         doReturn(false).when(activity).bindService(any(Intent.class), any(ServiceConnection.class), anyInt());
-        BrowserPickerTest.setupBrowserContext(activity, new String[]{"com.auth0.browser"}, null);
+        BrowserPickerTest.setupBrowserContext(activity, Arrays.asList("com.auth0.browser"), null, null);
     }
 
     //** ** ** ** ** **  **//
