@@ -110,14 +110,13 @@ public class BrowserPicker implements Parcelable {
     @Nullable
     String getBestBrowserPackage(@NonNull PackageManager pm) {
         Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.example.com"));
-        ResolveInfo webHandler = pm.resolveActivity(browserIntent,
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PackageManager.MATCH_ALL : PackageManager.MATCH_DEFAULT_ONLY);
+        ResolveInfo webHandler = pm.resolveActivity(browserIntent, PackageManager.MATCH_DEFAULT_ONLY);
         String defaultBrowser = null;
         if (webHandler != null) {
             defaultBrowser = webHandler.activityInfo.packageName;
         }
 
-        final List<ResolveInfo> availableBrowsers = pm.queryIntentActivities(browserIntent, 0);
+        final List<ResolveInfo> availableBrowsers = pm.queryIntentActivities(browserIntent, Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PackageManager.MATCH_ALL : 0);
         final List<String> regularBrowsers = new ArrayList<>();
         final List<String> customTabsBrowsers = new ArrayList<>();
         final boolean isFilterEnabled = allowedPackages != null;
