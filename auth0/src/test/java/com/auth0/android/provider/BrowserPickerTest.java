@@ -26,11 +26,12 @@ import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isOneOf;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.intThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -327,7 +328,7 @@ public class BrowserPickerTest {
         PackageManager pm = mock(PackageManager.class);
         when(context.getPackageManager()).thenReturn(pm);
         ResolveInfo defaultPackage = resolveInfoForPackageName(defaultBrowserPackage);
-        when(pm.resolveActivity(any(Intent.class), anyInt())).thenReturn(defaultPackage);
+        when(pm.resolveActivity(any(Intent.class), eq(PackageManager.MATCH_DEFAULT_ONLY))).thenReturn(defaultPackage);
 
         List<ResolveInfo> allBrowsers = new ArrayList<>();
         for (String browser : browserPackages) {
@@ -337,7 +338,7 @@ public class BrowserPickerTest {
             }
             allBrowsers.add(info);
         }
-        when(pm.queryIntentActivities(any(Intent.class), eq(0))).thenReturn(allBrowsers);
+        when(pm.queryIntentActivities(any(Intent.class), intThat(isOneOf(0, PackageManager.MATCH_ALL)))).thenReturn(allBrowsers);
     }
 
     private static ResolveInfo resolveInfoForPackageName(@Nullable String packageName) {
