@@ -2,7 +2,6 @@ package com.auth0.android.request.internal;
 
 import com.auth0.android.Auth0;
 import com.auth0.android.Auth0Exception;
-import com.auth0.android.request.AuthRequest;
 import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.ParameterizableRequest;
 import com.google.gson.Gson;
@@ -22,8 +21,8 @@ import static com.auth0.android.request.internal.RequestMatcher.hasArguments;
 import static com.auth0.android.request.internal.RequestMatcher.hasHeaders;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
 
 public class RequestFactoryTest {
 

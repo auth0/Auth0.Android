@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -179,6 +178,7 @@ public class AuthenticationActivityTest {
         final ShadowActivity.IntentForResult webViewIntent = shadowOf(activity).getNextStartedActivityForResult();
 
         Bundle extras = webViewIntent.intent.getExtras();
+        assert extras != null;
         assertThat(extras.containsKey(WebAuthActivity.CONNECTION_NAME_EXTRA), is(true));
         assertThat(extras.getString(WebAuthActivity.CONNECTION_NAME_EXTRA), is("facebook"));
         assertThat(extras.containsKey(WebAuthActivity.FULLSCREEN_EXTRA), is(true));
@@ -215,6 +215,7 @@ public class AuthenticationActivityTest {
         final ShadowActivity.IntentForResult webViewIntent = shadowOf(activity).getNextStartedActivityForResult();
 
         Bundle extras = webViewIntent.intent.getExtras();
+        assert extras != null;
         assertThat(extras.containsKey(WebAuthActivity.CONNECTION_NAME_EXTRA), is(true));
         assertThat(extras.getString(WebAuthActivity.CONNECTION_NAME_EXTRA), is("facebook"));
         assertThat(extras.containsKey(WebAuthActivity.FULLSCREEN_EXTRA), is(true));
@@ -251,6 +252,7 @@ public class AuthenticationActivityTest {
         final ShadowActivity.IntentForResult webViewIntent = shadowOf(activity).getNextStartedActivityForResult();
 
         Bundle extras = webViewIntent.intent.getExtras();
+        assert extras != null;
         assertThat(extras.containsKey(WebAuthActivity.CONNECTION_NAME_EXTRA), is(true));
         assertThat(extras.getString(WebAuthActivity.CONNECTION_NAME_EXTRA), is("facebook"));
         assertThat(extras.containsKey(WebAuthActivity.FULLSCREEN_EXTRA), is(true));
@@ -279,18 +281,19 @@ public class AuthenticationActivityTest {
         verify(callerActivity).startActivity(intentCaptor.capture());
 
         Intent intent = intentCaptor.getValue();
-        Assert.assertThat(intent, is(notNullValue()));
-        Assert.assertThat(intent, hasComponent(AuthenticationActivity.class.getName()));
-        Assert.assertThat(intent, hasFlag(Intent.FLAG_ACTIVITY_CLEAR_TOP));
-        Assert.assertThat(intent, not(hasData(uri)));
+        assertThat(intent, is(notNullValue()));
+        assertThat(intent, hasComponent(AuthenticationActivity.class.getName()));
+        assertThat(intent, hasFlag(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+        assertThat(intent, not(hasData(uri)));
 
         Bundle extras = intent.getExtras();
-        Assert.assertThat((Uri) extras.getParcelable(AuthenticationActivity.EXTRA_AUTHORIZE_URI), is(uri));
-        Assert.assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(false));
-        Assert.assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(false));
-        Assert.assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
-        Assert.assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
-        Assert.assertThat((CustomTabsOptions) extras.getParcelable(AuthenticationActivity.EXTRA_CT_OPTIONS), is(customTabsOptions));
+        assert extras != null;
+        assertThat((Uri) extras.getParcelable(AuthenticationActivity.EXTRA_AUTHORIZE_URI), is(uri));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(false));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(false));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
+        assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
+        assertThat((CustomTabsOptions) extras.getParcelable(AuthenticationActivity.EXTRA_CT_OPTIONS), is(customTabsOptions));
     }
 
     @Test
@@ -299,26 +302,29 @@ public class AuthenticationActivityTest {
         verify(callerActivity).startActivityForResult(intentCaptor.capture(), eq(123));
 
         Intent intent = intentCaptor.getValue();
-        Assert.assertThat(intent, is(notNullValue()));
-        Assert.assertThat(intent, hasComponent(AuthenticationActivity.class.getName()));
-        Assert.assertThat(intent, hasFlag(Intent.FLAG_ACTIVITY_CLEAR_TOP));
-        Assert.assertThat(intent, not(hasData(uri)));
+        assertThat(intent, is(notNullValue()));
+        assertThat(intent, hasComponent(AuthenticationActivity.class.getName()));
+        assertThat(intent, hasFlag(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+        assertThat(intent, not(hasData(uri)));
 
         Bundle extras = intentCaptor.getValue().getExtras();
-        Assert.assertThat((Uri) extras.getParcelable(AuthenticationActivity.EXTRA_AUTHORIZE_URI), is(uri));
-        Assert.assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(true));
-        Assert.assertThat(extras.getString(AuthenticationActivity.EXTRA_CONNECTION_NAME), is("facebook"));
-        Assert.assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(true));
-        Assert.assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(true));
-        Assert.assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
-        Assert.assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(false));
-        Assert.assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_CT_OPTIONS), is(false));
+        assert extras != null;
+        assertThat((Uri) extras.getParcelable(AuthenticationActivity.EXTRA_AUTHORIZE_URI), is(uri));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(true));
+        assertThat(extras.getString(AuthenticationActivity.EXTRA_CONNECTION_NAME), is("facebook"));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(true));
+        assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(true));
+        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
+        assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(false));
+        assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_CT_OPTIONS), is(false));
     }
 
     @Test
     public void shouldCreateCustomTabsController() {
         final AuthenticationActivity authenticationActivity = new AuthenticationActivity();
-        final CustomTabsController controller = authenticationActivity.createCustomTabsController(RuntimeEnvironment.application);
+        CustomTabsOptions ctOptions = CustomTabsOptions.newBuilder().build();
+        //noinspection deprecation
+        final CustomTabsController controller = authenticationActivity.createCustomTabsController(RuntimeEnvironment.application, ctOptions);
 
         assertThat(controller, is(notNullValue()));
     }

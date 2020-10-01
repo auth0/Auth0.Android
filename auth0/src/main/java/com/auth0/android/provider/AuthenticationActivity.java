@@ -21,7 +21,7 @@ public class AuthenticationActivity extends Activity {
     private boolean intentLaunched;
     private CustomTabsController customTabsController;
 
-    static void authenticateUsingBrowser(@NonNull Context context, @NonNull Uri authorizeUri, @Nullable CustomTabsOptions options) {
+    static void authenticateUsingBrowser(@NonNull Context context, @NonNull Uri authorizeUri, @NonNull CustomTabsOptions options) {
         Intent intent = new Intent(context, AuthenticationActivity.class);
         intent.putExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI, authorizeUri);
         intent.putExtra(AuthenticationActivity.EXTRA_USE_BROWSER, true);
@@ -102,6 +102,7 @@ public class AuthenticationActivity extends Activity {
 
     private void launchAuthenticationIntent() {
         Bundle extras = getIntent().getExtras();
+        //noinspection ConstantConditions
         Uri authorizeUri = extras.getParcelable(EXTRA_AUTHORIZE_URI);
         if (!extras.getBoolean(EXTRA_USE_BROWSER, true)) {
             Intent intent = new Intent(this, WebAuthActivity.class);
@@ -113,15 +114,17 @@ public class AuthenticationActivity extends Activity {
             return;
         }
 
-        customTabsController = createCustomTabsController(this);
-        customTabsController.setCustomizationOptions((CustomTabsOptions) extras.getParcelable(EXTRA_CT_OPTIONS));
+        CustomTabsOptions customTabsOptions = extras.getParcelable(EXTRA_CT_OPTIONS);
+        //noinspection ConstantConditions
+        customTabsController = createCustomTabsController(this, customTabsOptions);
         customTabsController.bindService();
+        //noinspection ConstantConditions
         customTabsController.launchUri(authorizeUri);
     }
 
     @VisibleForTesting
-    CustomTabsController createCustomTabsController(@NonNull Context context) {
-        return new CustomTabsController(context);
+    CustomTabsController createCustomTabsController(@NonNull Context context, @NonNull CustomTabsOptions options) {
+        return new CustomTabsController(context, options);
     }
 
     @VisibleForTesting

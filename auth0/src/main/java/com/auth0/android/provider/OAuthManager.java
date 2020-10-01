@@ -72,11 +72,12 @@ class OAuthManager extends ResumableManager {
     private String idTokenVerificationIssuer;
     private Map<String, String> headers;
 
-    OAuthManager(@NonNull Auth0 account, @NonNull AuthCallback callback, @NonNull Map<String, String> parameters) {
+    OAuthManager(@NonNull Auth0 account, @NonNull AuthCallback callback, @NonNull Map<String, String> parameters, @NonNull CustomTabsOptions ctOptions) {
         this.account = account;
         this.callback = callback;
         this.parameters = new HashMap<>(parameters);
         this.apiClient = new AuthenticationAPIClient(account);
+        this.ctOptions = ctOptions;
         this.headers = new HashMap<>();
     }
 
@@ -88,12 +89,8 @@ class OAuthManager extends ResumableManager {
         this.useBrowser = useBrowser;
     }
 
-    public void setCustomTabsOptions(@Nullable CustomTabsOptions options) {
-        this.ctOptions = options;
-    }
-
     @VisibleForTesting
-    void setPKCE(PKCE pkce) {
+    void setPKCE(@Nullable PKCE pkce) {
         this.pkce = pkce;
     }
 
@@ -124,6 +121,7 @@ class OAuthManager extends ResumableManager {
         this.headers.putAll(headers);
     }
 
+    @SuppressWarnings("ConstantConditions")
     @Override
     boolean resume(AuthorizeResult result) {
         if (!result.isValid(requestCode)) {
@@ -341,6 +339,7 @@ class OAuthManager extends ResumableManager {
         String state = getRandomString(parameters.get(KEY_STATE));
         parameters.put(KEY_STATE, state);
 
+        //noinspection ConstantConditions
         boolean idTokenExpected = parameters.containsKey(KEY_RESPONSE_TYPE) && (parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_ID_TOKEN) || parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_CODE));
         if (idTokenExpected) {
             String nonce = getRandomString(parameters.get(KEY_NONCE));
@@ -362,7 +361,9 @@ class OAuthManager extends ResumableManager {
         }
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean shouldUsePKCE() {
+        //noinspection ConstantConditions
         return parameters.containsKey(KEY_RESPONSE_TYPE) && parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_CODE) && PKCE.isAvailable();
     }
 
@@ -374,11 +375,6 @@ class OAuthManager extends ResumableManager {
     @VisibleForTesting
     boolean useFullScreen() {
         return useFullScreen;
-    }
-
-    @VisibleForTesting
-    CustomTabsOptions customTabsOptions() {
-        return ctOptions;
     }
 
     @VisibleForTesting

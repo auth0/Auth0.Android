@@ -3,8 +3,6 @@ package com.auth0.android.provider;
 import android.content.Context;
 import android.net.Uri;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
 import android.util.Log;
 
 import com.auth0.android.Auth0;
@@ -28,15 +26,12 @@ class LogoutManager extends ResumableManager {
 
     private CustomTabsOptions ctOptions;
 
-    LogoutManager(@NonNull Auth0 account, @NonNull VoidCallback callback, @NonNull String returnToUrl) {
+    LogoutManager(@NonNull Auth0 account, @NonNull VoidCallback callback, @NonNull String returnToUrl, @NonNull CustomTabsOptions ctOptions) {
         this.account = account;
         this.callback = callback;
         this.parameters = new HashMap<>();
         this.parameters.put(KEY_RETURN_TO_URL, returnToUrl);
-    }
-
-    void setCustomTabsOptions(@Nullable CustomTabsOptions options) {
-        this.ctOptions = options;
+        this.ctOptions = ctOptions;
     }
 
     void startLogout(Context context) {
@@ -73,11 +68,6 @@ class LogoutManager extends ResumableManager {
             parameters.put(KEY_TELEMETRY, account.getTelemetry().getValue());
         }
         parameters.put(KEY_CLIENT_ID, account.getClientId());
-    }
-
-    @VisibleForTesting
-    CustomTabsOptions customTabsOptions() {
-        return ctOptions;
     }
 
     private void logDebug(String message) {

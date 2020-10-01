@@ -6,9 +6,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.graphics.Color;
 import android.net.Uri;
 import android.support.customtabs.CustomTabsCallback;
@@ -18,30 +15,26 @@ import android.support.customtabs.CustomTabsServiceConnection;
 import android.support.customtabs.CustomTabsSession;
 
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Matchers;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.powermock.api.mockito.PowerMockito;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static android.support.test.espresso.intent.matcher.IntentMatchers.hasFlag;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
@@ -59,12 +52,6 @@ import static org.mockito.Mockito.when;
 public class CustomTabsControllerTest {
 
     private static final String DEFAULT_BROWSER_PACKAGE = "com.auth0.browser";
-    private static final String CHROME_STABLE_PACKAGE = "com.android.chrome";
-    private static final String CHROME_SYSTEM_PACKAGE = "com.google.android.apps.chrome";
-    private static final String CHROME_BETA_PACKAGE = "com.android.chrome.beta";
-    private static final String CHROME_DEV_PACKAGE = "com.android.chrome.dev";
-    private static final String CUSTOM_TABS_BROWSER_1 = "com.browser.customtabs1";
-    private static final String CUSTOM_TABS_BROWSER_2 = "com.browser.customtabs2";
     private static final long MAX_TEST_WAIT_TIME_MS = 2000;
 
     private Context context;
@@ -78,8 +65,6 @@ public class CustomTabsControllerTest {
     private ArgumentCaptor<Intent> serviceIntentCaptor;
     @Captor
     private ArgumentCaptor<CustomTabsServiceConnection> serviceConnectionCaptor;
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     private CustomTabsController controller;
 
@@ -89,83 +74,18 @@ public class CustomTabsControllerTest {
         MockitoAnnotations.initMocks(this);
         Activity activity = Robolectric.setupActivity(Activity.class);
         context = spy(activity);
-        //By using this constructor, the "default browser" is Custom Tabs compatible
-        controller = new CustomTabsController(context, DEFAULT_BROWSER_PACKAGE);
-    }
 
-    @Test
-    public void shouldNotHaveCustomizationOptionsSetByDefault() {
-        CustomTabsController controller = new CustomTabsController(context, DEFAULT_BROWSER_PACKAGE);
-        assertThat(controller.getCustomizationOptions(), is(nullValue()));
-    }
+        //By default, a "compatible" browser is available
+        BrowserPicker browserPicker = mock(BrowserPicker.class);
+        when(browserPicker.getBestBrowserPackage(context.getPackageManager())).thenReturn(DEFAULT_BROWSER_PACKAGE);
+        CustomTabsOptions ctOptions = CustomTabsOptions.newBuilder().withBrowserPicker(browserPicker).build();
 
-    @Test
-    public void shouldChangeCustomizationOptions() {
-        CustomTabsOptions options = mock(CustomTabsOptions.class);
-        CustomTabsController controller = new CustomTabsController(context, DEFAULT_BROWSER_PACKAGE);
-        controller.setCustomizationOptions(options);
-        assertThat(controller.getCustomizationOptions(), is(options));
-    }
-
-    @Test
-    public void shouldChooseNullBrowserIfNoBrowserAvailable() {
-        preparePackageManagerForCustomTabs(null);
-        String bestPackage = CustomTabsController.getBestBrowserPackage(context);
-        assertThat(bestPackage, is(nullValue()));
-    }
-
-    @Test
-    public void shouldChooseDefaultBrowserIfIsCustomTabsCapable() {
-        preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE, DEFAULT_BROWSER_PACKAGE);
-        String bestPackage = CustomTabsController.getBestBrowserPackage(context);
-        assertThat(bestPackage, is(DEFAULT_BROWSER_PACKAGE));
-    }
-
-    @Test
-    public void shouldReturnNullIfNoBrowserIsCustomTabsCapable() {
-        preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE);
-        String bestPackage = CustomTabsController.getBestBrowserPackage(context);
-        assertThat(bestPackage, is(nullValue()));
-    }
-
-    @Test
-    public void shouldChooseChromeStableOverOtherCustomTabsCapableBrowsers() {
-        preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE, CHROME_STABLE_PACKAGE, CHROME_SYSTEM_PACKAGE, CHROME_BETA_PACKAGE, CHROME_DEV_PACKAGE, CUSTOM_TABS_BROWSER_1, CUSTOM_TABS_BROWSER_2);
-        String bestPackage = CustomTabsController.getBestBrowserPackage(context);
-        assertThat(bestPackage, is(CHROME_STABLE_PACKAGE));
-    }
-
-    @Test
-    public void shouldChooseChromeSystemOverOtherCustomTabsCapableBrowsers() {
-        preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE, CHROME_SYSTEM_PACKAGE, CHROME_BETA_PACKAGE, CHROME_DEV_PACKAGE, CUSTOM_TABS_BROWSER_1, CUSTOM_TABS_BROWSER_2);
-        String bestPackage = CustomTabsController.getBestBrowserPackage(context);
-        assertThat(bestPackage, is(CHROME_SYSTEM_PACKAGE));
-    }
-
-    @Test
-    public void shouldChooseChromeBetaOverOtherCustomTabsCapableBrowsers() {
-        preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE, CHROME_BETA_PACKAGE, CHROME_DEV_PACKAGE, CUSTOM_TABS_BROWSER_1, CUSTOM_TABS_BROWSER_2);
-        String bestPackage = CustomTabsController.getBestBrowserPackage(context);
-        assertThat(bestPackage, is(CHROME_BETA_PACKAGE));
-    }
-
-    @Test
-    public void shouldChooseChromeDevOverOtherCustomTabsCapableBrowsers() {
-        preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE, CHROME_DEV_PACKAGE, CUSTOM_TABS_BROWSER_1, CUSTOM_TABS_BROWSER_2);
-        String bestPackage = CustomTabsController.getBestBrowserPackage(context);
-        assertThat(bestPackage, is(CHROME_DEV_PACKAGE));
-    }
-
-    @Test
-    public void shouldChooseCustomTabsCapableBrowserIfAvailable() {
-        preparePackageManagerForCustomTabs(DEFAULT_BROWSER_PACKAGE, CUSTOM_TABS_BROWSER_1, CUSTOM_TABS_BROWSER_2);
-        String bestPackage = CustomTabsController.getBestBrowserPackage(context);
-        assertThat(bestPackage, is(CUSTOM_TABS_BROWSER_1));
+        controller = new CustomTabsController(context, ctOptions);
     }
 
     @Test
     public void shouldUnbind() throws Exception {
-        bindService(true);
+        bindService(controller, true);
         connectBoundService();
 
         controller.unbindService();
@@ -177,7 +97,7 @@ public class CustomTabsControllerTest {
 
     @Test
     public void shouldNotUnbindIfNotBound() throws Exception {
-        bindService(false);
+        bindService(controller, false);
         connectBoundService();
 
         controller.unbindService();
@@ -186,7 +106,7 @@ public class CustomTabsControllerTest {
 
     @Test
     public void shouldBindAndLaunchUri() throws Exception {
-        bindService(true);
+        bindService(controller, true);
         controller.launchUri(uri);
         connectBoundService();
 
@@ -203,8 +123,11 @@ public class CustomTabsControllerTest {
     }
 
     @Test
-    public void shouldLaunchUriUsingFallbackWhenNoCustomTabsCompatibleBrowserIsAvailable() {
-        CustomTabsController controller = new CustomTabsController(context, null);
+    public void shouldLaunchUriUsingFallbackWhenNoCompatibleBrowserIsAvailable() {
+        BrowserPicker browserPicker = mock(BrowserPicker.class);
+        when(browserPicker.getBestBrowserPackage(context.getPackageManager())).thenReturn(null);
+        CustomTabsOptions ctOptions = CustomTabsOptions.newBuilder().withBrowserPicker(browserPicker).build();
+        CustomTabsController controller = new CustomTabsController(context, ctOptions);
         controller.launchUri(uri);
 
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
@@ -218,13 +141,16 @@ public class CustomTabsControllerTest {
 
     @Test
     public void shouldBindAndLaunchUriWithCustomization() throws Exception {
-        CustomTabsOptions options = CustomTabsOptions.newBuilder()
+        BrowserPicker browserPicker = mock(BrowserPicker.class);
+        when(browserPicker.getBestBrowserPackage(context.getPackageManager())).thenReturn(DEFAULT_BROWSER_PACKAGE);
+        CustomTabsOptions ctOptions = CustomTabsOptions.newBuilder()
                 .showTitle(true)
                 .withToolbarColor(android.R.color.black)
+                .withBrowserPicker(browserPicker)
                 .build();
+        CustomTabsController controller = new CustomTabsController(context, ctOptions);
 
-        bindService(true);
-        controller.setCustomizationOptions(options);
+        bindService(controller, true);
         controller.launchUri(uri);
         connectBoundService();
 
@@ -243,7 +169,7 @@ public class CustomTabsControllerTest {
 
     @Test
     public void shouldFailToBindButLaunchUri() {
-        bindService(false);
+        bindService(controller, false);
         controller.launchUri(uri);
 
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
@@ -256,7 +182,7 @@ public class CustomTabsControllerTest {
 
     @Test
     public void shouldNotLaunchUriIfContextNoLongerValid() {
-        bindService(true);
+        bindService(controller, true);
         controller.clearContext();
         controller.launchUri(uri);
         verify(context, never()).startActivity(any(Intent.class));
@@ -287,11 +213,11 @@ public class CustomTabsControllerTest {
     //Helper Methods
 
     @SuppressWarnings("WrongConstant")
-    private void bindService(boolean willSucceed) {
+    private void bindService(CustomTabsController controller, boolean willSucceed) {
         doReturn(willSucceed).when(context).bindService(
                 serviceIntentCaptor.capture(),
                 serviceConnectionCaptor.capture(),
-                Mockito.anyInt());
+                anyInt());
         controller.bindService();
         Intent intent = serviceIntentCaptor.getValue();
         assertThat(intent.getPackage(), is(DEFAULT_BROWSER_PACKAGE));
@@ -308,31 +234,5 @@ public class CustomTabsControllerTest {
         conn.onCustomTabsServiceConnected(componentName, customTabsClient);
         verify(customTabsClient).newSession(Matchers.<CustomTabsCallback>eq(null));
         verify(customTabsClient).warmup(eq(0L));
-    }
-
-    @SuppressWarnings("WrongConstant")
-    private void preparePackageManagerForCustomTabs(String defaultBrowserPackage, String... customTabEnabledPackages) {
-        PackageManager pm = mock(PackageManager.class);
-        when(context.getPackageManager()).thenReturn(pm);
-        ResolveInfo defaultPackage = resolveInfoForPackageName(defaultBrowserPackage);
-        when(pm.resolveActivity(any(Intent.class), anyInt())).thenReturn(defaultPackage);
-
-        List<ResolveInfo> customTabsCapable = new ArrayList<>();
-        for (String customTabEnabledPackage : customTabEnabledPackages) {
-            ResolveInfo info = resolveInfoForPackageName(customTabEnabledPackage);
-            when(pm.resolveService(any(Intent.class), eq(0))).thenReturn(info);
-            customTabsCapable.add(info);
-        }
-        when(pm.queryIntentActivities(any(Intent.class), eq(0))).thenReturn(customTabsCapable);
-    }
-
-    private ResolveInfo resolveInfoForPackageName(String packageName) {
-        if (packageName == null) {
-            return null;
-        }
-        ResolveInfo resInfo = mock(ResolveInfo.class);
-        resInfo.activityInfo = new ActivityInfo();
-        resInfo.activityInfo.packageName = packageName;
-        return resInfo;
     }
 }

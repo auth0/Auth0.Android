@@ -2,20 +2,13 @@ package com.auth0.android.provider;
 
 import android.app.Activity;
 import android.app.Dialog;
-import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.pm.ActivityInfo;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.test.espresso.intent.matcher.IntentMatchers;
-import android.webkit.URLUtil;
 
 import com.auth0.android.Auth0;
 import com.auth0.android.Auth0Exception;
@@ -25,10 +18,7 @@ import com.auth0.android.util.AuthCallbackMatcher;
 import com.auth0.android.util.AuthenticationAPI;
 import com.auth0.android.util.MockAuthCallback;
 
-import org.hamcrest.CoreMatchers;
-import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.hamcrest.core.Is;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,6 +33,7 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -67,11 +58,11 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
@@ -121,9 +112,7 @@ public class WebAuthProviderTest {
         //Next line is needed to avoid CustomTabService from being bound to Test environment
         //noinspection WrongConstant
         doReturn(false).when(activity).bindService(any(Intent.class), any(ServiceConnection.class), anyInt());
-
-        //Next line is needed to tell a Browser app is installed
-        prepareBrowserApp(true, null);
+        BrowserPickerTest.setupBrowserContext(activity, Arrays.asList("com.auth0.browser"), null, null);
     }
 
     //** ** ** ** ** **  **//
@@ -165,21 +154,6 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         assertNotNull(WebAuthProvider.getManagerInstance());
-    }
-
-    @SuppressWarnings("deprecation")
-    @Test
-    public void shouldNotResumeLoginWithRequestCodeWhenNotInit() {
-        Intent intentMock = Mockito.mock(Intent.class);
-
-        assertFalse(WebAuthProvider.resume(0, 0, intentMock));
-    }
-
-    @Test
-    public void shouldNotResumeLoginWithIntentWhenNotInit() {
-        Intent intentMock = Mockito.mock(Intent.class);
-
-        assertFalse(WebAuthProvider.resume(intentMock));
     }
 
     //scheme
@@ -1057,7 +1031,7 @@ public class WebAuthProviderTest {
     @SuppressWarnings("deprecation")
     @Test
     public void shouldStartLoginWithBrowserCustomTabsOptions() {
-        CustomTabsOptions options = mock(CustomTabsOptions.class);
+        CustomTabsOptions options = CustomTabsOptions.newBuilder().build();
         WebAuthProvider.init(account)
                 .withCustomTabsOptions(options)
                 .useCodeGrant(false)
@@ -1104,7 +1078,7 @@ public class WebAuthProviderTest {
         assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
         assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CT_OPTIONS), is(true));
         assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
-        assertThat(extras.getParcelable(AuthenticationActivity.EXTRA_CT_OPTIONS), is(nullValue()));
+        assertThat(extras.getParcelable(AuthenticationActivity.EXTRA_CT_OPTIONS), is(notNullValue()));
     }
 
     @SuppressWarnings("deprecation")
@@ -2429,24 +2403,27 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldFailToStartLoginWithBrowserWhenNoBrowserAppIsInstalled() {
-        prepareBrowserApp(false, null);
+    public void shouldFailToStartLoginWithBrowserWhenNoCompatibleBrowserAppIsInstalled() {
+        CustomTabsOptions noBrowserOptions = mock(CustomTabsOptions.class);
+        when(noBrowserOptions.hasCompatibleBrowser(activity.getPackageManager())).thenReturn(false);
         WebAuthProvider.init(account)
                 .useBrowser(true)
+                .withCustomTabsOptions(noBrowserOptions)
                 .start(activity, callback);
 
         verify(callback).onFailure(authExceptionCaptor.capture());
 
         assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
         assertThat(authExceptionCaptor.getValue().getCode(), is("a0.browser_not_available"));
-        assertThat(authExceptionCaptor.getValue().getDescription(), is("No Browser application installed to perform web authentication."));
+        assertThat(authExceptionCaptor.getValue().getDescription(), is("No compatible Browser application is installed."));
         assertThat(WebAuthProvider.getManagerInstance(), is(nullValue()));
     }
 
     @SuppressWarnings("deprecation")
     @Test
     public void shouldNotFailToStartLoginWithWebviewWhenNoBrowserAppIsInstalled() {
-        prepareBrowserApp(false, null);
+        CustomTabsOptions noBrowserOptions = mock(CustomTabsOptions.class);
+        when(noBrowserOptions.hasCompatibleBrowser(activity.getPackageManager())).thenReturn(false);
         WebAuthProvider.init(account)
                 .useBrowser(false)
                 .start(activity, callback, REQUEST_CODE);
@@ -2584,12 +2561,12 @@ public class WebAuthProviderTest {
         assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
         assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CT_OPTIONS), is(true));
         assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
-        assertThat(extras.getParcelable(AuthenticationActivity.EXTRA_CT_OPTIONS), is(nullValue()));
+        assertThat(extras.getParcelable(AuthenticationActivity.EXTRA_CT_OPTIONS), is(notNullValue()));
     }
 
     @Test
     public void shouldStartLogoutWithCustomTabsOptions() {
-        CustomTabsOptions options = mock(CustomTabsOptions.class);
+        CustomTabsOptions options = CustomTabsOptions.newBuilder().build();
         WebAuthProvider.logout(account)
                 .withCustomTabsOptions(options)
                 .start(activity, voidCallback);
@@ -2613,18 +2590,18 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldFailToStartLogoutWhenNoBrowserAppIsInstalled() {
-        prepareBrowserApp(false, null);
+    public void shouldFailToStartLogoutWhenNoCompatibleBrowserAppIsInstalled() {
+        CustomTabsOptions noBrowserOptions = mock(CustomTabsOptions.class);
+        when(noBrowserOptions.hasCompatibleBrowser(activity.getPackageManager())).thenReturn(false);
         WebAuthProvider.logout(account)
+                .withCustomTabsOptions(noBrowserOptions)
                 .start(activity, voidCallback);
 
-        verify(voidCallback).onFailure(auth0ExceptionCaptor.capture());
+        verify(voidCallback).onFailure(authExceptionCaptor.capture());
 
-        assertThat(auth0ExceptionCaptor.getValue(), is(notNullValue()));
-        assertThat(auth0ExceptionCaptor.getValue().getMessage(), is("Cannot perform web log out"));
-        Throwable cause = auth0ExceptionCaptor.getValue().getCause();
-        assertThat(cause, is(CoreMatchers.<Throwable>instanceOf(ActivityNotFoundException.class)));
-        assertThat(cause.getMessage(), is("No Browser application installed."));
+        assertThat(authExceptionCaptor.getValue(), is(notNullValue()));
+        assertThat(authExceptionCaptor.getValue().getCode(), is("a0.browser_not_available"));
+        assertThat(authExceptionCaptor.getValue().getDescription(), is("No compatible Browser application is installed."));
         assertThat(WebAuthProvider.getManagerInstance(), is(nullValue()));
     }
 
@@ -2674,35 +2651,6 @@ public class WebAuthProviderTest {
         assertThat(WebAuthProvider.getManagerInstance(), is(nullValue()));
     }
 
-
-    //**  ** ** ** ** **  **//
-    //**  ** ** ** ** **  **//
-    //**Tests for Utilities**//
-    //**  ** ** ** ** **  **//
-    //**  ** ** ** ** **  **//
-
-    @Test
-    public void shouldHaveBrowserAppInstalled() {
-        ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
-        prepareBrowserApp(true, intentCaptor);
-
-        boolean hasBrowserApp = WebAuthProvider.hasBrowserAppInstalled(activity.getPackageManager());
-        MatcherAssert.assertThat(hasBrowserApp, Is.is(true));
-        MatcherAssert.assertThat(intentCaptor.getValue(), Is.is(IntentMatchers.hasAction(Intent.ACTION_VIEW)));
-        MatcherAssert.assertThat(URLUtil.isValidUrl(intentCaptor.getValue().getDataString()), Is.is(true));
-    }
-
-    @Test
-    public void shouldNotHaveBrowserAppInstalled() {
-        ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
-        prepareBrowserApp(false, intentCaptor);
-
-        boolean hasBrowserApp = WebAuthProvider.hasBrowserAppInstalled(activity.getPackageManager());
-        MatcherAssert.assertThat(hasBrowserApp, Is.is(false));
-        MatcherAssert.assertThat(intentCaptor.getValue(), Is.is(IntentMatchers.hasAction(Intent.ACTION_VIEW)));
-        MatcherAssert.assertThat(URLUtil.isValidUrl(intentCaptor.getValue().getDataString()), Is.is(true));
-    }
-
     //**  ** ** ** ** **  **//
     //**  ** ** ** ** **  **//
     //** Helpers Functions**//
@@ -2717,22 +2665,6 @@ public class WebAuthProviderTest {
         Uri validUri = Uri.parse("https://domain.auth0.com/android/package/callback" + hash);
         intent.setData(validUri);
         return intent;
-    }
-
-    private void prepareBrowserApp(boolean isAppInstalled, @Nullable ArgumentCaptor<Intent> intentCaptor) {
-        PackageManager pm = mock(PackageManager.class);
-        ResolveInfo info = null;
-        if (isAppInstalled) {
-            info = mock(ResolveInfo.class);
-            ApplicationInfo appInfo = mock(ApplicationInfo.class);
-            appInfo.packageName = "com.auth0.test";
-            ActivityInfo actInfo = mock(ActivityInfo.class);
-            actInfo.applicationInfo = appInfo;
-            actInfo.name = "Auth0 Browser";
-            info.activityInfo = actInfo;
-        }
-        when(pm.resolveActivity(intentCaptor != null ? intentCaptor.capture() : any(Intent.class), eq(PackageManager.MATCH_DEFAULT_ONLY))).thenReturn(info);
-        when(activity.getPackageManager()).thenReturn(pm);
     }
 
     private String createHash(@Nullable String idToken, @Nullable String accessToken, @Nullable String refreshToken, @Nullable String tokenType, @Nullable Long expiresIn, @Nullable String state, @Nullable String error, @Nullable String errorDescription) {

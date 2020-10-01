@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.27.0](https://github.com/auth0/Auth0.Android/tree/1.27.0) (2020-09-25)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.26.0...1.27.0)
+
+**Added**
+- Feat: Filter allowed CustomTabs browsers [\#353](https://github.com/auth0/Auth0.Android/pull/353) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.26.1](https://github.com/auth0/Auth0.Android/tree/1.26.1) (2020-09-16)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.26.0...1.26.1)
 

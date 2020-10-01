@@ -38,12 +38,12 @@ import java.util.Map;
 import static android.support.test.espresso.intent.matcher.UriMatchers.hasHost;
 import static android.support.test.espresso.intent.matcher.UriMatchers.hasScheme;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.collection.IsMapWithSize.aMapWithSize;
 import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.Assert.assertThat;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 21)

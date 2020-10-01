@@ -14,7 +14,7 @@ public class AuthenticationActivityMock extends AuthenticationActivity {
     private Intent deliveredIntent;
 
     @Override
-    protected CustomTabsController createCustomTabsController(@NonNull Context context) {
+    protected CustomTabsController createCustomTabsController(@NonNull Context context, @NonNull CustomTabsOptions options) {
         return customTabsController;
     }
 
