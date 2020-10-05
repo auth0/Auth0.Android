@@ -38,8 +38,8 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class SimpleRequestTest {
@@ -257,7 +257,7 @@ public class SimpleRequestTest {
             expectedException = e;
         }
         assertThat(result, Matchers.<Object>is(Collections.<String, Object>emptyMap()));
-        verify(errorBuilder, never());
+        verifyZeroInteractions(errorBuilder);
         assertThat(expectedException, is(nullValue()));
     }
 
@@ -365,6 +365,7 @@ public class SimpleRequestTest {
         } catch (Exception e) {
             expectedException = e;
         }
+        verifyZeroInteractions(errorBuilder);
         assertThat(result, is(nullValue()));
         assertThat(expectedException, is(notNullValue()));
         assertThat(expectedException.getCause(), is(Matchers.<Throwable>instanceOf(IOException.class)));
@@ -404,6 +405,7 @@ public class SimpleRequestTest {
         } catch (Exception e) {
             expectedException = e;
         }
+        verifyZeroInteractions(errorBuilder);
         assertThat(result, is(nullValue()));
         assertThat(expectedException, is(notNullValue()));
         assertThat(expectedException.getCause(), is(Matchers.<Throwable>instanceOf(IOException.class)));
