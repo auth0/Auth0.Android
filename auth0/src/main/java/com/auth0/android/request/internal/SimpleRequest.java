@@ -88,9 +88,9 @@ class SimpleRequest<T, U extends Auth0Exception> extends BaseRequest<T, U> imple
 
     @Override
     protected Request doBuildRequest() throws RequestBodyBuildException {
-        boolean sendBody = method.equals("HEAD") || method.equals("GET");
+        boolean skipBody = method.equals("HEAD") || method.equals("GET");
         return newBuilder()
-                .method(method, sendBody ? null : buildBody())
+                .method(method, skipBody ? null : buildBody())
                 .build();
     }
 
@@ -114,7 +114,7 @@ class SimpleRequest<T, U extends Auth0Exception> extends BaseRequest<T, U> imple
         try {
             Reader charStream = body.charStream();
             return getAdapter().fromJson(charStream);
-        } catch (IOException e) {
+        } catch (IOException | JsonParseException e) {
             throw new Auth0Exception("Failed to parse response to request to " + url, e);
         } finally {
             closeStream(body);
