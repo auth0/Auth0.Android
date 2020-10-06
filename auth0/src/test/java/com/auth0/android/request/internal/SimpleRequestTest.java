@@ -5,10 +5,10 @@ import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.request.ErrorBuilder;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 import com.squareup.okhttp.Call;
 import com.squareup.okhttp.Callback;
 import com.squareup.okhttp.HttpUrl;
@@ -28,7 +28,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.util.Collections;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -53,9 +52,9 @@ public class SimpleRequestTest {
     @Mock
     private ErrorBuilder<Auth0Exception> errorBuilder;
     @Mock
-    private BaseCallback<Object, Auth0Exception> callback;
+    private BaseCallback<TestPojo, Auth0Exception> callback;
     @Mock
-    private JsonDeserializer<Object> adapter;
+    private TypeAdapter<TestPojo> adapter;
     @Captor
     ArgumentCaptor<Auth0Exception> exceptionMatcher;
 
@@ -68,12 +67,12 @@ public class SimpleRequestTest {
 
     @Test
     public void shouldSkipSettingBodyWithGETorHEAD() {
-        SimpleRequest<Object, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", errorBuilder);
+        SimpleRequest<TestPojo, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", errorBuilder);
         get.addParameter("name", "john");
         Request getRequest = get.doBuildRequest();
         assertThat(getRequest.body(), is(nullValue()));
 
-        SimpleRequest<Object, Auth0Exception> head = new SimpleRequest<>(url, client, gson, "HEAD", errorBuilder);
+        SimpleRequest<TestPojo, Auth0Exception> head = new SimpleRequest<>(url, client, gson, "HEAD", errorBuilder);
         head.addParameter("name", "john");
         Request headRequest = head.doBuildRequest();
         assertThat(headRequest.body(), is(nullValue()));
@@ -96,7 +95,7 @@ public class SimpleRequestTest {
 
     @Test
     public void shouldSucceed() {
-        SimpleRequest<Object, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", errorBuilder);
+        SimpleRequest<TestPojo, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", errorBuilder);
         get.setCallback(callback);
         String validJson = "{}";
         ResponseBody resBody = ResponseBody.create(JSON_MEDIATYPE, validJson);
@@ -118,12 +117,12 @@ public class SimpleRequestTest {
         verify(call).enqueue(any(Callback.class));
 
         get.onResponse(response);
-        verify(callback).onSuccess(Collections.<String, Object>emptyMap());
+        verify(callback).onSuccess(any(TestPojo.class));
     }
 
     @Test
     public void shouldFailOnUnsuccessfulResponse() {
-        SimpleRequest<Object, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", errorBuilder);
+        SimpleRequest<TestPojo, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", errorBuilder);
         get.setCallback(callback);
         String validJson = "{}";
         ResponseBody resBody = ResponseBody.create(JSON_MEDIATYPE, validJson);
@@ -150,11 +149,20 @@ public class SimpleRequestTest {
     }
 
     @Test
-    public void shouldFailOnSuccessfulResponseWithIOException() {
-        when(adapter.deserialize(any(JsonElement.class), any(Type.class), any(JsonDeserializationContext.class)))
-                .thenThrow(IOException.class);
-        Gson gson = new GsonBuilder().registerTypeAdapter(Object.class, adapter).create();
-        SimpleRequest<Object, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", errorBuilder);
+    public void shouldFailOnSuccessfulResponseWithIOException() throws IOException {
+        TypeAdapter<TestPojo> brokenAdapter = new TypeAdapter<TestPojo>() {
+            @Override
+            public void write(JsonWriter out, TestPojo value) {
+            }
+
+            @Override
+            public TestPojo read(JsonReader in) throws IOException {
+                throw new IOException("err");
+            }
+        };
+        Gson gson = new GsonBuilder().registerTypeAdapter(TestPojo.class, brokenAdapter).create();
+
+        SimpleRequest<TestPojo, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", TestPojo.class, errorBuilder);
         get.setCallback(callback);
         String invalidJson = "{---}";
         ResponseBody resBody = ResponseBody.create(JSON_MEDIATYPE, invalidJson);
@@ -185,11 +193,19 @@ public class SimpleRequestTest {
     }
 
     @Test
-    public void shouldFailOnSuccessfulResponseWithJsonParseException() {
-        when(adapter.deserialize(any(JsonElement.class), any(Type.class), any(JsonDeserializationContext.class)))
-                .thenThrow(JsonParseException.class);
-        Gson gson = new GsonBuilder().registerTypeAdapter(Object.class, adapter).create();
-        SimpleRequest<Object, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", errorBuilder);
+    public void shouldFailOnSuccessfulResponseWithJsonParseException() throws IOException {
+        TypeAdapter<TestPojo> brokenAdapter = new TypeAdapter<TestPojo>() {
+            @Override
+            public void write(JsonWriter out, TestPojo value) {
+            }
+
+            @Override
+            public TestPojo read(JsonReader in) {
+                throw new JsonParseException("err");
+            }
+        };
+        Gson gson = new GsonBuilder().registerTypeAdapter(TestPojo.class, brokenAdapter).create();
+        SimpleRequest<TestPojo, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", TestPojo.class, errorBuilder);
         get.setCallback(callback);
         String invalidJson = "{---}";
         ResponseBody resBody = ResponseBody.create(JSON_MEDIATYPE, invalidJson);
@@ -216,14 +232,14 @@ public class SimpleRequestTest {
         verify(errorBuilder).from(eq("Failed to parse a successful response"), exceptionMatcher.capture());
         assertThat(exceptionMatcher.getValue(), is(notNullValue()));
         assertThat(exceptionMatcher.getValue().getMessage(), is("Failed to parse response to request to https://mycompany.com/"));
-        assertThat(exceptionMatcher.getValue().getCause(), is(Matchers.<Throwable>instanceOf(IOException.class)));
+        assertThat(exceptionMatcher.getValue().getCause(), is(Matchers.<Throwable>instanceOf(JsonParseException.class)));
     }
 
     @Test
     public void shouldStart() {
         Call call = mock(Call.class);
         when(client.newCall(any(Request.class))).thenReturn(call);
-        SimpleRequest<Object, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", errorBuilder);
+        SimpleRequest<TestPojo, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", errorBuilder);
         get.start(callback);
     }
 
@@ -246,7 +262,7 @@ public class SimpleRequestTest {
         Call call = mock(Call.class);
         when(client.newCall(any(Request.class))).thenReturn(call);
         when(call.execute()).thenReturn(response);
-        SimpleRequest<Object, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", errorBuilder);
+        SimpleRequest<TestPojo, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", errorBuilder);
 
 
         Exception expectedException = null;
@@ -280,7 +296,7 @@ public class SimpleRequestTest {
         Call call = mock(Call.class);
         when(client.newCall(any(Request.class))).thenReturn(call);
         when(call.execute()).thenReturn(response);
-        SimpleRequest<Object, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", errorBuilder);
+        SimpleRequest<TestPojo, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", errorBuilder);
 
 
         Exception expectedException = null;
@@ -314,7 +330,7 @@ public class SimpleRequestTest {
         Call call = mock(Call.class);
         when(client.newCall(any(Request.class))).thenReturn(call);
         when(call.execute()).thenThrow(IOException.class);
-        SimpleRequest<Object, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", errorBuilder);
+        SimpleRequest<TestPojo, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", errorBuilder);
 
 
         Exception expectedException = null;
@@ -334,10 +350,17 @@ public class SimpleRequestTest {
 
     @Test
     public void shouldFailToExecuteOnSuccessfulResponseWithIOException() throws IOException {
-        when(adapter.deserialize(any(JsonElement.class), any(Type.class), any(JsonDeserializationContext.class)))
-                .thenThrow(IOException.class);
-        Gson gson = new GsonBuilder().registerTypeAdapter(Object.class, adapter).create();
+        TypeAdapter<TestPojo> brokenAdapter = new TypeAdapter<TestPojo>() {
+            @Override
+            public void write(JsonWriter out, TestPojo value) {
+            }
 
+            @Override
+            public TestPojo read(JsonReader in) throws IOException {
+                throw new IOException("err");
+            }
+        };
+        Gson gson = new GsonBuilder().registerTypeAdapter(TestPojo.class, brokenAdapter).create();
         String invalidJson = "{---}";
         ResponseBody resBody = ResponseBody.create(JSON_MEDIATYPE, invalidJson);
 
@@ -355,7 +378,7 @@ public class SimpleRequestTest {
         Call call = mock(Call.class);
         when(client.newCall(any(Request.class))).thenReturn(call);
         when(call.execute()).thenReturn(response);
-        SimpleRequest<Object, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", errorBuilder);
+        SimpleRequest<TestPojo, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", TestPojo.class, errorBuilder);
 
 
         Exception expectedException = null;
@@ -374,11 +397,19 @@ public class SimpleRequestTest {
 
     @Test
     public void shouldFailToExecuteOnSuccessfulResponseWithJsonParseException() throws IOException {
-        when(adapter.deserialize(any(JsonElement.class), any(Type.class), any(JsonDeserializationContext.class)))
-                .thenThrow(JsonParseException.class);
-        Gson gson = new GsonBuilder().registerTypeAdapter(Object.class, adapter).create();
+        TypeAdapter<TestPojo> brokenAdapter = new TypeAdapter<TestPojo>() {
+            @Override
+            public void write(JsonWriter out, TestPojo value) {
+            }
 
-        String invalidJson = "{---}";
+            @Override
+            public TestPojo read(JsonReader in) {
+                throw new JsonParseException("err");
+            }
+        };
+        Gson gson = new GsonBuilder().registerTypeAdapter(TestPojo.class, brokenAdapter).create();
+
+        String invalidJson = "{}";
         ResponseBody resBody = ResponseBody.create(JSON_MEDIATYPE, invalidJson);
 
         Request request = new Request.Builder()
@@ -395,11 +426,10 @@ public class SimpleRequestTest {
         Call call = mock(Call.class);
         when(client.newCall(any(Request.class))).thenReturn(call);
         when(call.execute()).thenReturn(response);
-        SimpleRequest<Object, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", errorBuilder);
-
+        SimpleRequest<TestPojo, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", TestPojo.class, errorBuilder);
 
         Exception expectedException = null;
-        Object result = null;
+        TestPojo result = null;
         try {
             result = get.execute();
         } catch (Exception e) {
@@ -408,8 +438,15 @@ public class SimpleRequestTest {
         verifyZeroInteractions(errorBuilder);
         assertThat(result, is(nullValue()));
         assertThat(expectedException, is(notNullValue()));
-        assertThat(expectedException.getCause(), is(Matchers.<Throwable>instanceOf(IOException.class)));
+        assertThat(expectedException.getCause(), is(Matchers.<Throwable>instanceOf(JsonParseException.class)));
         assertThat(expectedException.getMessage(), is("Failed to parse response to request to https://mycompany.com/"));
+    }
+
+    /**
+     * Used for assigning an adapter to Gson.
+     * Most Gson classes are final and hard if not impossible to mock.
+     */
+    private static class TestPojo {
     }
 
 }
