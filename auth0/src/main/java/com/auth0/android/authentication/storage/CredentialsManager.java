@@ -10,6 +10,7 @@ import com.auth0.android.callback.AuthenticationCallback;
 import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.jwt.JWT;
 import com.auth0.android.result.Credentials;
+import com.auth0.android.util.Clock;
 
 import java.util.Date;
 
@@ -31,12 +32,14 @@ public class CredentialsManager {
     private final AuthenticationAPIClient authClient;
     private final Storage storage;
     private final JWTDecoder jwtDecoder;
+    private Clock clock;
 
     @VisibleForTesting
     CredentialsManager(@NonNull AuthenticationAPIClient authenticationClient, @NonNull Storage storage, @NonNull JWTDecoder jwtDecoder) {
         this.authClient = authenticationClient;
         this.storage = storage;
         this.jwtDecoder = jwtDecoder;
+        this.clock = new ClockImpl();
     }
 
     /**
@@ -47,6 +50,17 @@ public class CredentialsManager {
      */
     public CredentialsManager(@NonNull AuthenticationAPIClient authenticationClient, @NonNull Storage storage) {
         this(authenticationClient, storage, new JWTDecoder());
+    }
+
+    /**
+     * Updates the clock instance used for expiration verification purposes.
+     * The use of this method can help on situations where the clock comes from an external synced source.
+     * The default implementation uses the time returned by {@link System#currentTimeMillis()}.
+     *
+     * @param clock the new clock instance to use.
+     */
+    public void setClock(@NonNull Clock clock) {
+        this.clock = clock;
     }
 
     /**
@@ -164,7 +178,7 @@ public class CredentialsManager {
 
     @VisibleForTesting
     long getCurrentTimeInMillis() {
-        return System.currentTimeMillis();
+        return clock.getCurrentTimeMillis();
     }
 
 }

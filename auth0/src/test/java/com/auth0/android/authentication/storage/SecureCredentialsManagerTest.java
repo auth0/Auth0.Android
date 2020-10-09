@@ -18,6 +18,7 @@ import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.request.internal.GsonProvider;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.CredentialsMock;
+import com.auth0.android.util.Clock;
 import com.google.gson.Gson;
 
 import org.hamcrest.core.Is;
@@ -878,6 +879,30 @@ public class SecureCredentialsManagerTest {
 
     }
 
+    /*
+     * Custom Clock
+     */
+
+    @Test
+    public void shouldUseCustomClock() {
+        SecureCredentialsManager manager = new SecureCredentialsManager(client, storage, crypto, jwtDecoder);
+
+        long expirationTime = CredentialsMock.CURRENT_TIME_MS; //Same as current time --> expired
+        when(storage.retrieveLong("com.auth0.credentials_expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveBoolean("com.auth0.credentials_can_refresh")).thenReturn(false);
+        when(storage.retrieveString("com.auth0.credentials")).thenReturn("{\"access_token\":\"accessToken\"}");
+        when(storage.retrieveString("com.auth0.manager_key_alias")).thenReturn(SecureCredentialsManager.KEY_ALIAS);
+        assertThat(manager.hasValidCredentials(), is(false));
+
+        //now, update the clock and retry
+        manager.setClock(new Clock() {
+            @Override
+            public long getCurrentTimeMillis() {
+                return CredentialsMock.CURRENT_TIME_MS - 1000;
+            }
+        });
+        assertThat(manager.hasValidCredentials(), is(true));
+    }
 
     /*
      * Helper methods
