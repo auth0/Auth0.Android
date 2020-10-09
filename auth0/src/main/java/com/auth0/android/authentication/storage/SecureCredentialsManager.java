@@ -21,6 +21,7 @@ import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.jwt.JWT;
 import com.auth0.android.request.internal.GsonProvider;
 import com.auth0.android.result.Credentials;
+import com.auth0.android.util.Clock;
 import com.google.gson.Gson;
 
 import java.util.Date;
@@ -50,6 +51,7 @@ public class SecureCredentialsManager {
     private final CryptoUtil crypto;
     private final Gson gson;
     private final JWTDecoder jwtDecoder;
+    private Clock clock;
 
     //Changeable by the user
     private boolean authenticateBeforeDecrypt;
@@ -69,6 +71,7 @@ public class SecureCredentialsManager {
         this.gson = GsonProvider.buildGson();
         this.authenticateBeforeDecrypt = false;
         this.jwtDecoder = jwtDecoder;
+        this.clock = new ClockImpl();
     }
 
     /**
@@ -80,6 +83,17 @@ public class SecureCredentialsManager {
      */
     public SecureCredentialsManager(@NonNull Context context, @NonNull AuthenticationAPIClient apiClient, @NonNull Storage storage) {
         this(apiClient, storage, new CryptoUtil(context, storage, KEY_ALIAS), new JWTDecoder());
+    }
+
+    /**
+     * Updates the clock instance used for expiration verification purposes.
+     * The use of this method can help on situations where the clock comes from an external synced source.
+     * The default implementation uses the time returned by {@link System#currentTimeMillis()}.
+     *
+     * @param clock the new clock instance to use.
+     */
+    public void setClock(@NonNull Clock clock) {
+        this.clock = clock;
     }
 
     /**
@@ -293,7 +307,7 @@ public class SecureCredentialsManager {
 
     @VisibleForTesting
     long getCurrentTimeInMillis() {
-        return System.currentTimeMillis();
+        return clock.getCurrentTimeMillis();
     }
 
 }

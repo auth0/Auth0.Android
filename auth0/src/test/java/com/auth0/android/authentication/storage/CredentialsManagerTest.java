@@ -9,6 +9,7 @@ import com.auth0.android.jwt.JWT;
 import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.CredentialsMock;
+import com.auth0.android.util.Clock;
 
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.core.Is;
@@ -551,6 +552,27 @@ public class CredentialsManagerTest {
         assertThat(credentials.getRefreshToken(), is("refreshTOKEN"));
         assertThat(credentials.getExpiresAt(), is(now));
         assertThat(credentials.getScope(), is("openid profile"));
+    }
+
+    @Test
+    public void shouldUseCustomClock() {
+        CredentialsManager manager = new CredentialsManager(client, storage);
+
+        long expirationTime = CredentialsMock.CURRENT_TIME_MS; //Same as current time --> expired
+        when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveLong("com.auth0.cache_expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveString("com.auth0.refresh_token")).thenReturn(null);
+        when(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken");
+        assertThat(manager.hasValidCredentials(), is(false));
+
+        //now, update the clock and retry
+        manager.setClock(new Clock() {
+            @Override
+            public long getCurrentTimeMillis() {
+                return CredentialsMock.CURRENT_TIME_MS - 1000;
+            }
+        });
+        assertThat(manager.hasValidCredentials(), is(true));
     }
 
     private void prepareJwtDecoderMock(@Nullable Date expiresAt) {
