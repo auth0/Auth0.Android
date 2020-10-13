@@ -1,5 +1,14 @@
 # Change Log
 
+## [1.28.0](https://github.com/auth0/Auth0.Android/tree/1.28.0) (2020-10-13)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.27.0...1.28.0)
+
+**Added**
+- Accept a custom clock instance in both Credentials Managers [SDK-1973] [\#358](https://github.com/auth0/Auth0.Android/pull/358) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Fixed**
+- Catch a gson JsonIOException when parsing SimpleRequest response [SDK-1981] [\#355](https://github.com/auth0/Auth0.Android/pull/355) ([quibi-jlk](https://github.com/quibi-jlk))
+
 ## [1.27.0](https://github.com/auth0/Auth0.Android/tree/1.27.0) (2020-09-25)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.26.0...1.27.0)
 
