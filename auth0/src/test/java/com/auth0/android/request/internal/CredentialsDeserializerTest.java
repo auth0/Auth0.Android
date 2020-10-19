@@ -1,6 +1,6 @@
 package com.auth0.android.request.internal;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.CredentialsMock;

@@ -1,6 +1,6 @@
 package com.auth0.android.authentication.storage;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;

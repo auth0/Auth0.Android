@@ -26,8 +26,8 @@ package com.auth0.android.management;
 
 
 import android.content.Context;
-import android.support.annotation.NonNull;
-import android.support.annotation.VisibleForTesting;
+import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 
 import com.auth0.android.Auth0;
 import com.auth0.android.authentication.ParameterBuilder;

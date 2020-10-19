@@ -1,6 +1,6 @@
 package com.auth0.android.request.internal;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.util.Log;
 
 import com.auth0.android.authentication.AuthenticationException;

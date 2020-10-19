@@ -24,7 +24,7 @@
 
 package com.auth0.android.util;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 /**
  * A helper to check constructor arguments.

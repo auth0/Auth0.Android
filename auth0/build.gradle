@@ -69,8 +69,9 @@ android {
 }
 
 dependencies {
-    implementation 'com.android.support:appcompat-v7:28.0.0'
-    implementation 'com.android.support:customtabs:28.0.0'
+    implementation 'androidx.appcompat:appcompat:1.0.0'
+    implementation 'androidx.browser:browser:1.0.0'
+
     implementation 'com.squareup.okhttp:okhttp:2.7.5'
     implementation 'com.squareup.okhttp:logging-interceptor:2.7.5'
     implementation 'com.google.code.gson:gson:2.8.6'
@@ -85,5 +86,5 @@ dependencies {
     testImplementation 'com.squareup.okhttp:mockwebserver:2.7.5'
     testImplementation 'com.jayway.awaitility:awaitility:1.7.0'
     testImplementation 'org.robolectric:robolectric:4.0.2'
-    testImplementation 'com.android.support.test.espresso:espresso-intents:3.0.2'
+    testImplementation 'androidx.test.espresso:espresso-intents:3.1.0'
 }

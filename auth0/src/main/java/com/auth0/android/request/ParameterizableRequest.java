@@ -24,7 +24,7 @@
 
 package com.auth0.android.request;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import com.auth0.android.Auth0Exception;
 

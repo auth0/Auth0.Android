@@ -24,7 +24,7 @@
 
 package com.auth0.android.authentication;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 /**
  * Valid types of passwordless flows in Auth0

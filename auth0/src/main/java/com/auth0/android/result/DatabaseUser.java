@@ -25,8 +25,8 @@
 package com.auth0.android.result;
 
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.util.JsonRequired;
