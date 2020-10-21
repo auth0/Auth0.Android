@@ -10,6 +10,7 @@ import java.util.TimeZone;
 public class CredentialsMock extends Credentials {
 
     public static final long CURRENT_TIME_MS = calculateCurrentTime();
+    public static final long ONE_HOUR_AHEAD_MS = CURRENT_TIME_MS + 60 * 60 * 1000;
 
     public CredentialsMock(@Nullable String idToken, @Nullable String accessToken, @Nullable String type, @Nullable String refreshToken, @Nullable Long expiresIn) {
         super(idToken, accessToken, type, refreshToken, expiresIn);

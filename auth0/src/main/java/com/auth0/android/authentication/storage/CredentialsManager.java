@@ -132,7 +132,7 @@ public class CredentialsManager {
             return;
         }
         if (refreshToken == null) {
-            callback.onFailure(new CredentialsManagerException("Credentials have expired and no Refresh Token was available to renew them."));
+            callback.onFailure(new CredentialsManagerException("Credentials need to be renewed but no Refresh Token is available to renew them."));
             return;
         }
 
@@ -175,7 +175,7 @@ public class CredentialsManager {
         Arrays.sort(stored);
         String[] required = requiredScope.split(" ");
         Arrays.sort(required);
-        return stored != required;
+        return !Arrays.equals(stored, required);
     }
 
     private boolean willExpire(long expiresAt, long minTtl) {
