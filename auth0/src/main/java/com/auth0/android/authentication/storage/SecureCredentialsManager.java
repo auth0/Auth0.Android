@@ -164,7 +164,7 @@ public class SecureCredentialsManager {
             throw new CredentialsManagerException("Credentials must have a valid date of expiration and a valid access_token or id_token value.");
         }
 
-        long expiresAt = calculateExpiresAt(credentials);
+        long cacheExpiresAt = calculateCacheExpiresAt(credentials);
         String json = gson.toJson(credentials);
         boolean canRefresh = !isEmpty(credentials.getRefreshToken());
 
@@ -173,7 +173,7 @@ public class SecureCredentialsManager {
             byte[] encrypted = crypto.encrypt(json.getBytes());
             String encryptedEncoded = Base64.encodeToString(encrypted, Base64.DEFAULT);
             storage.store(KEY_CREDENTIALS, encryptedEncoded);
-            storage.store(KEY_EXPIRES_AT, expiresAt);
+            storage.store(KEY_EXPIRES_AT, cacheExpiresAt);
             storage.store(KEY_CAN_REFRESH, canRefresh);
             storage.store(KEY_CRYPTO_ALIAS, KEY_ALIAS);
         } catch (IncompatibleDeviceException e) {
@@ -214,7 +214,7 @@ public class SecureCredentialsManager {
      * {@link #checkAuthenticationResult(int, int)} with the received values.
      *
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
-     * @param minTtl   the minimum time in seconds that both the access token and ID token should last before expiration.
+     * @param minTtl   the minimum time in seconds that the access token should last before expiration.
      * @param callback the callback to receive the result in.
      */
     public void getCredentials(@Nullable String scope, int minTtl, @NonNull BaseCallback<Credentials, CredentialsManagerException> callback) {
@@ -280,18 +280,21 @@ public class SecureCredentialsManager {
             return;
         }
         final Credentials credentials = gson.fromJson(json, Credentials.class);
-        Long expiresAt = storage.retrieveLong(KEY_EXPIRES_AT);
-        boolean hasEmptyCredentials = isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken()) || expiresAt == null;
+        Long cacheExpiresAt = storage.retrieveLong(KEY_EXPIRES_AT);
+        boolean hasEmptyCredentials = isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken()) || cacheExpiresAt == null;
         if (hasEmptyCredentials) {
             callback.onFailure(new CredentialsManagerException("No Credentials were previously set."));
             decryptCallback = null;
             return;
         }
 
-        boolean willExpire = willExpire(expiresAt, minTtl);
+        //noinspection ConstantConditions
+        boolean hasEitherExpired = hasExpired(credentials.getExpiresAt().getTime());
+        boolean willAccessTokenExpire = willExpire(cacheExpiresAt, minTtl);
+        //noinspection ConstantConditions
         boolean scopeChanged = hasScopeChanged(credentials.getScope(), scope);
 
-        if (!willExpire && !scopeChanged) {
+        if (!hasEitherExpired && !willAccessTokenExpire && !scopeChanged) {
             callback.onSuccess(credentials);
             decryptCallback = null;
             return;
@@ -310,10 +313,10 @@ public class SecureCredentialsManager {
         request.start(new AuthenticationCallback<Credentials>() {
             @Override
             public void onSuccess(@Nullable Credentials fresh) {
-                long nextExpiresAt = calculateExpiresAt(fresh);
-                boolean willExpire = willExpire(nextExpiresAt, minTtl);
-                if (willExpire) {
-                    long tokenLifetime = (nextExpiresAt - getCurrentTimeInMillis() - minTtl * 1000) / -1000;
+                long expiresAt = fresh.getExpiresAt().getTime();
+                boolean willAccessTokenExpire = willExpire(expiresAt, minTtl);
+                if (willAccessTokenExpire) {
+                    long tokenLifetime = (expiresAt - getCurrentTimeInMillis() - minTtl * 1000) / -1000;
                     CredentialsManagerException wrongTtlException = new CredentialsManagerException(String.format("The lifetime of the renewed Access Token or Id Token (%d) is less than the minTTL requested (%d). Increase the 'Token Expiration' setting of your Auth0 API or the 'ID Token Expiration' of your Auth0 Application in the dashboard, or request a lower minTTL.", tokenLifetime, minTtl));
                     callback.onFailure(wrongTtlException);
                     decryptCallback = null;
@@ -357,7 +360,11 @@ public class SecureCredentialsManager {
         return expiresAt <= nextClock;
     }
 
-    private long calculateExpiresAt(Credentials credentials) {
+    private boolean hasExpired(long expiresAt) {
+        return expiresAt <= getCurrentTimeInMillis();
+    }
+
+    private long calculateCacheExpiresAt(Credentials credentials) {
         long expiresAt = credentials.getExpiresAt().getTime();
 
         if (credentials.getIdToken() != null) {
