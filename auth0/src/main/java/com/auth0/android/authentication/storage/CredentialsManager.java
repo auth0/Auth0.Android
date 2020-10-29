@@ -75,7 +75,7 @@ public class CredentialsManager {
             throw new CredentialsManagerException("Credentials must have a valid date of expiration and a valid access_token or id_token value.");
         }
 
-        long expiresAt = calculateExpiresAt(credentials);
+        long cacheExpiresAt = calculateCacheExpiresAt(credentials);
 
         storage.store(KEY_ACCESS_TOKEN, credentials.getAccessToken());
         storage.store(KEY_REFRESH_TOKEN, credentials.getRefreshToken());
@@ -83,7 +83,7 @@ public class CredentialsManager {
         storage.store(KEY_TOKEN_TYPE, credentials.getType());
         storage.store(KEY_EXPIRES_AT, credentials.getExpiresAt().getTime());
         storage.store(KEY_SCOPE, credentials.getScope());
-        storage.store(KEY_CACHE_EXPIRES_AT, expiresAt);
+        storage.store(KEY_CACHE_EXPIRES_AT, cacheExpiresAt);
     }
 
     /**
@@ -103,7 +103,7 @@ public class CredentialsManager {
      * or if the tokens have already expired and the refresh_token is null.
      *
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
-     * @param minTtl   the minimum time in seconds that both the access token and id token should last before expiration.
+     * @param minTtl   the minimum time in seconds that the access token should last before expiration.
      * @param callback the callback that will receive a valid {@link Credentials} or the {@link CredentialsManagerException}.
      */
     public void getCredentials(@Nullable String scope, final int minTtl, @NonNull final BaseCallback<Credentials, CredentialsManagerException> callback) {
@@ -124,10 +124,11 @@ public class CredentialsManager {
             return;
         }
 
-        boolean willExpire = willExpire(cacheExpiresAt, minTtl);
+        boolean hasEitherExpired = hasExpired(cacheExpiresAt);
+        boolean willAccessTokenExpire = willExpire(expiresAt, minTtl);
         boolean scopeChanged = hasScopeChanged(storedScope, scope);
 
-        if (!willExpire && !scopeChanged) {
+        if (!hasEitherExpired && !willAccessTokenExpire && !scopeChanged) {
             callback.onSuccess(recreateCredentials(idToken, accessToken, tokenType, refreshToken, new Date(expiresAt), storedScope));
             return;
         }
@@ -143,10 +144,11 @@ public class CredentialsManager {
         request.start(new AuthenticationCallback<Credentials>() {
             @Override
             public void onSuccess(@Nullable Credentials fresh) {
-                long nextCacheExpiresAt = calculateExpiresAt(fresh);
-                boolean willExpire = willExpire(nextCacheExpiresAt, minTtl);
-                if (willExpire) {
-                    long tokenLifetime = (nextCacheExpiresAt - getCurrentTimeInMillis() - minTtl * 1000) / -1000;
+                //noinspection ConstantConditions
+                long expiresAt = fresh.getExpiresAt().getTime();
+                boolean willAccessTokenExpire = willExpire(expiresAt, minTtl);
+                if (willAccessTokenExpire) {
+                    long tokenLifetime = (expiresAt - getCurrentTimeInMillis() - minTtl * 1000) / -1000;
                     CredentialsManagerException wrongTtlException = new CredentialsManagerException(String.format("The lifetime of the renewed Access Token or Id Token (%d) is less than the minTTL requested (%d). Increase the 'Token Expiration' setting of your Auth0 API or the 'ID Token Expiration' of your Auth0 Application in the dashboard, or request a lower minTTL.", tokenLifetime, minTtl));
                     callback.onFailure(wrongTtlException);
                     return;
@@ -183,7 +185,11 @@ public class CredentialsManager {
         return expiresAt <= nextClock;
     }
 
-    private long calculateExpiresAt(@NonNull Credentials credentials) {
+    private boolean hasExpired(long expiresAt) {
+        return expiresAt <= getCurrentTimeInMillis();
+    }
+
+    private long calculateCacheExpiresAt(@NonNull Credentials credentials) {
         long expiresAt = credentials.getExpiresAt().getTime();
 
         if (credentials.getIdToken() != null) {
