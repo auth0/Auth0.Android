@@ -213,10 +213,14 @@ public class CredentialsManager {
         String refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN);
         String idToken = storage.retrieveString(KEY_ID_TOKEN);
         Long expiresAt = storage.retrieveLong(KEY_EXPIRES_AT);
+        Long cacheExpiresAt = storage.retrieveLong(KEY_CACHE_EXPIRES_AT);
+        if (cacheExpiresAt == null) {
+            cacheExpiresAt = expiresAt;
+        }
 
         return !(isEmpty(accessToken) && isEmpty(idToken) ||
-                expiresAt == null ||
-                expiresAt <= getCurrentTimeInMillis() && refreshToken == null);
+                cacheExpiresAt == null ||
+                hasExpired(cacheExpiresAt) && refreshToken == null);
     }
 
     /**
