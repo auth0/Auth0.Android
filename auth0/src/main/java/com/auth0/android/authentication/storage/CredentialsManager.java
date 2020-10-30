@@ -144,12 +144,11 @@ public class CredentialsManager {
         request.start(new AuthenticationCallback<Credentials>() {
             @Override
             public void onSuccess(@Nullable Credentials fresh) {
-                //noinspection ConstantConditions
                 long expiresAt = fresh.getExpiresAt().getTime();
                 boolean willAccessTokenExpire = willExpire(expiresAt, minTtl);
                 if (willAccessTokenExpire) {
                     long tokenLifetime = (expiresAt - getCurrentTimeInMillis() - minTtl * 1000) / -1000;
-                    CredentialsManagerException wrongTtlException = new CredentialsManagerException(String.format("The lifetime of the renewed Access Token or Id Token (%d) is less than the minTTL requested (%d). Increase the 'Token Expiration' setting of your Auth0 API or the 'ID Token Expiration' of your Auth0 Application in the dashboard, or request a lower minTTL.", tokenLifetime, minTtl));
+                    CredentialsManagerException wrongTtlException = new CredentialsManagerException(String.format("The lifetime of the renewed Access Token (%d) is less than the minTTL requested (%d). Increase the 'Token Expiration' setting of your Auth0 API in the dashboard, or request a lower minTTL.", tokenLifetime, minTtl));
                     callback.onFailure(wrongTtlException);
                     return;
                 }
@@ -209,6 +208,16 @@ public class CredentialsManager {
      * @return whether there are valid credentials stored on this manager.
      */
     public boolean hasValidCredentials() {
+        return hasValidCredentials(0);
+    }
+
+    /**
+     * Checks if a non-expired pair of credentials can be obtained from this manager.
+     *
+     * @param minTtl the minimum time in seconds that the access token should last before expiration.
+     * @return whether there are valid credentials stored on this manager.
+     */
+    public boolean hasValidCredentials(long minTtl) {
         String accessToken = storage.retrieveString(KEY_ACCESS_TOKEN);
         String refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN);
         String idToken = storage.retrieveString(KEY_ID_TOKEN);
@@ -218,9 +227,8 @@ public class CredentialsManager {
             cacheExpiresAt = expiresAt;
         }
 
-        return !(isEmpty(accessToken) && isEmpty(idToken) ||
-                cacheExpiresAt == null ||
-                hasExpired(cacheExpiresAt) && refreshToken == null);
+        boolean emptyCredentials = isEmpty(accessToken) && isEmpty(idToken) || cacheExpiresAt == null || expiresAt == null;
+        return !(emptyCredentials || (hasExpired(cacheExpiresAt) || willExpire(expiresAt, minTtl)) && refreshToken == null);
     }
 
     /**
