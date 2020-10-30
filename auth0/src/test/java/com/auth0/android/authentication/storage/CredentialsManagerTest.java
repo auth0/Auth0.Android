@@ -35,6 +35,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
@@ -688,10 +689,12 @@ public class CredentialsManagerTest {
         when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
         when(storage.retrieveString("com.auth0.access_token")).thenReturn(null);
         assertThat(manager.hasValidCredentials(), is(true));
+        assertThat(manager.hasValidCredentials(ONE_HOUR_SECONDS - 1), is(true));
 
         when(storage.retrieveString("com.auth0.id_token")).thenReturn(null);
         when(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken");
         assertThat(manager.hasValidCredentials(), is(true));
+        assertThat(manager.hasValidCredentials(ONE_HOUR_SECONDS - 1), is(true));
     }
 
     @Test
@@ -708,6 +711,19 @@ public class CredentialsManagerTest {
         when(storage.retrieveString("com.auth0.id_token")).thenReturn(null);
         when(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken");
         assertFalse(manager.hasValidCredentials());
+    }
+
+    @Test
+    public void shouldNotHaveCredentialsWhenAccessTokenWillExpireAndNoRefreshTokenIsAvailable() {
+        long expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS;
+        when(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveLong("com.auth0.cache_expires_at")).thenReturn(expirationTime);
+        when(storage.retrieveString("com.auth0.refresh_token")).thenReturn(null);
+
+        when(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken");
+        when(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken");
+
+        assertFalse(manager.hasValidCredentials(ONE_HOUR_SECONDS));
     }
 
     @Test
