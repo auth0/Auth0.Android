@@ -584,7 +584,7 @@ public class CredentialsManagerTest {
         CredentialsManagerException exception = exceptionCaptor.getValue();
         assertThat(exception, is(notNullValue()));
         assertThat(exception.getCause(), is(nullValue()));
-        assertThat(exception.getMessage(), is("The lifetime of the renewed Access Token or Id Token (1) is less than the minTTL requested (60). Increase the 'Token Expiration' setting of your Auth0 API or the 'ID Token Expiration' of your Auth0 Application in the dashboard, or request a lower minTTL."));
+        assertThat(exception.getMessage(), is("The lifetime of the renewed Access Token (1) is less than the minTTL requested (60). Increase the 'Token Expiration' setting of your Auth0 API in the dashboard, or request a lower minTTL."));
     }
 
     @Test
