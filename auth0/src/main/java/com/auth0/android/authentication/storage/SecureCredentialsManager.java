@@ -42,7 +42,8 @@ public class SecureCredentialsManager {
     private static final String TAG = SecureCredentialsManager.class.getSimpleName();
 
     private static final String KEY_CREDENTIALS = "com.auth0.credentials";
-    private static final String KEY_EXPIRES_AT = "com.auth0.credentials_expires_at";
+    private static final String KEY_EXPIRES_AT = "com.auth0.credentials_access_token_expires_at";
+    private static final String KEY_CACHE_EXPIRES_AT = "com.auth0.credentials_expires_at";
     private static final String KEY_CAN_REFRESH = "com.auth0.credentials_can_refresh";
     private static final String KEY_CRYPTO_ALIAS = "com.auth0.manager_key_alias";
     @VisibleForTesting
@@ -173,7 +174,8 @@ public class SecureCredentialsManager {
             byte[] encrypted = crypto.encrypt(json.getBytes());
             String encryptedEncoded = Base64.encodeToString(encrypted, Base64.DEFAULT);
             storage.store(KEY_CREDENTIALS, encryptedEncoded);
-            storage.store(KEY_EXPIRES_AT, cacheExpiresAt);
+            storage.store(KEY_EXPIRES_AT, credentials.getExpiresAt().getTime());
+            storage.store(KEY_CACHE_EXPIRES_AT, cacheExpiresAt);
             storage.store(KEY_CAN_REFRESH, canRefresh);
             storage.store(KEY_CRYPTO_ALIAS, KEY_ALIAS);
         } catch (IncompatibleDeviceException e) {
@@ -240,6 +242,7 @@ public class SecureCredentialsManager {
     public void clearCredentials() {
         storage.remove(KEY_CREDENTIALS);
         storage.remove(KEY_EXPIRES_AT);
+        storage.remove(KEY_CACHE_EXPIRES_AT);
         storage.remove(KEY_CAN_REFRESH);
         storage.remove(KEY_CRYPTO_ALIAS);
         Log.d(TAG, "Credentials were just removed from the storage");
@@ -251,13 +254,26 @@ public class SecureCredentialsManager {
      * @return whether this manager contains a valid non-expired pair of credentials or not.
      */
     public boolean hasValidCredentials() {
+        return hasValidCredentials(0);
+    }
+
+    /**
+     * Returns whether this manager contains a valid non-expired pair of credentials.
+     *
+     * @param minTtl the minimum time in seconds that the access token should last before expiration.
+     * @return whether this manager contains a valid non-expired pair of credentials or not.
+     */
+    public boolean hasValidCredentials(long minTtl) {
         String encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS);
         Long expiresAt = storage.retrieveLong(KEY_EXPIRES_AT);
+        Long cacheExpiresAt = storage.retrieveLong(KEY_CACHE_EXPIRES_AT);
         Boolean canRefresh = storage.retrieveBoolean(KEY_CAN_REFRESH);
         String keyAliasUsed = storage.retrieveString(KEY_CRYPTO_ALIAS);
+        boolean emptyCredentials = isEmpty(encryptedEncoded) || cacheExpiresAt == null;
+
         return KEY_ALIAS.equals(keyAliasUsed) &&
-                !(isEmpty(encryptedEncoded) || expiresAt == null ||
-                        expiresAt <= getCurrentTimeInMillis() && (canRefresh == null || !canRefresh));
+                !(emptyCredentials || (hasExpired(cacheExpiresAt) || willExpire(expiresAt, minTtl)) &&
+                        (canRefresh == null || !canRefresh));
     }
 
     private void continueGetCredentials(@Nullable String scope, final int minTtl, final BaseCallback<Credentials, CredentialsManagerException> callback) {
@@ -280,7 +296,8 @@ public class SecureCredentialsManager {
             return;
         }
         final Credentials credentials = gson.fromJson(json, Credentials.class);
-        Long cacheExpiresAt = storage.retrieveLong(KEY_EXPIRES_AT);
+        Long cacheExpiresAt = storage.retrieveLong(KEY_CACHE_EXPIRES_AT);
+        Long expiresAt = credentials.getExpiresAt().getTime();
         boolean hasEmptyCredentials = isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken()) || cacheExpiresAt == null;
         if (hasEmptyCredentials) {
             callback.onFailure(new CredentialsManagerException("No Credentials were previously set."));
@@ -289,8 +306,8 @@ public class SecureCredentialsManager {
         }
 
         //noinspection ConstantConditions
-        boolean hasEitherExpired = hasExpired(credentials.getExpiresAt().getTime());
-        boolean willAccessTokenExpire = willExpire(cacheExpiresAt, minTtl);
+        boolean hasEitherExpired = hasExpired(cacheExpiresAt);
+        boolean willAccessTokenExpire = willExpire(expiresAt, minTtl);
         //noinspection ConstantConditions
         boolean scopeChanged = hasScopeChanged(credentials.getScope(), scope);
 
@@ -317,7 +334,7 @@ public class SecureCredentialsManager {
                 boolean willAccessTokenExpire = willExpire(expiresAt, minTtl);
                 if (willAccessTokenExpire) {
                     long tokenLifetime = (expiresAt - getCurrentTimeInMillis() - minTtl * 1000) / -1000;
-                    CredentialsManagerException wrongTtlException = new CredentialsManagerException(String.format("The lifetime of the renewed Access Token or Id Token (%d) is less than the minTTL requested (%d). Increase the 'Token Expiration' setting of your Auth0 API or the 'ID Token Expiration' of your Auth0 Application in the dashboard, or request a lower minTTL.", tokenLifetime, minTtl));
+                    CredentialsManagerException wrongTtlException = new CredentialsManagerException(String.format("The lifetime of the renewed Access Token (%d) is less than the minTTL requested (%d). Increase the 'Token Expiration' setting of your Auth0 API in the dashboard, or request a lower minTTL.", tokenLifetime, minTtl));
                     callback.onFailure(wrongTtlException);
                     decryptCallback = null;
                     return;
@@ -355,7 +372,11 @@ public class SecureCredentialsManager {
         return stored != required;
     }
 
-    private boolean willExpire(long expiresAt, long minTtl) {
+    private boolean willExpire(Long expiresAt, long minTtl) {
+        if (minTtl == 0 && (expiresAt == null || expiresAt == 0)) {
+            //expiresAt (access token) only considered if it has a positive value, to avoid logging out users
+            return false;
+        }
         long nextClock = getCurrentTimeInMillis() + minTtl * 1000;
         return expiresAt <= nextClock;
     }
