@@ -220,7 +220,7 @@ public class SecureCredentialsManager {
      * @param callback the callback to receive the result in.
      */
     public void getCredentials(@Nullable String scope, int minTtl, @NonNull BaseCallback<Credentials, CredentialsManagerException> callback) {
-        if (!hasValidCredentials()) {
+        if (!hasValidCredentials(minTtl)) {
             callback.onFailure(new CredentialsManagerException("No Credentials were previously set."));
             return;
         }
@@ -369,11 +369,11 @@ public class SecureCredentialsManager {
         Arrays.sort(stored);
         String[] required = requiredScope.split(" ");
         Arrays.sort(required);
-        return stored != required;
+        return !Arrays.equals(stored, required);
     }
 
-    private boolean willExpire(Long expiresAt, long minTtl) {
-        if (minTtl == 0 && (expiresAt == null || expiresAt == 0)) {
+    private boolean willExpire(@Nullable Long expiresAt, long minTtl) {
+        if (expiresAt == null || expiresAt <= 0) {
             //expiresAt (access token) only considered if it has a positive value, to avoid logging out users
             return false;
         }
@@ -385,7 +385,7 @@ public class SecureCredentialsManager {
         return expiresAt <= getCurrentTimeInMillis();
     }
 
-    private long calculateCacheExpiresAt(Credentials credentials) {
+    private long calculateCacheExpiresAt(@NonNull Credentials credentials) {
         long expiresAt = credentials.getExpiresAt().getTime();
 
         if (credentials.getIdToken() != null) {

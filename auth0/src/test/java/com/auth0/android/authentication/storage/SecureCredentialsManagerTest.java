@@ -459,7 +459,7 @@ public class SecureCredentialsManagerTest {
         when(jwtDecoder.decode("newId")).thenReturn(jwtMock);
         when(client.renewAuth("refreshToken")).thenReturn(request);
 
-        manager.getCredentials(null, 60, callback);
+        manager.getCredentials(null, 60, callback); // minTTL of 1 minute
         verify(request, never()).addParameter(eq("scope"), anyString());
         verify(request).start(requestCallbackCaptor.capture());
 
@@ -510,11 +510,11 @@ public class SecureCredentialsManagerTest {
         when(jwtDecoder.decode("newId")).thenReturn(jwtMock);
         when(client.renewAuth("refreshToken")).thenReturn(request);
 
-        manager.getCredentials(null, 60, callback);
+        manager.getCredentials(null, 60, callback); // minTTL of 1 minute
         verify(request, never()).addParameter(eq("scope"), anyString());
         verify(request).start(requestCallbackCaptor.capture());
 
-        // Trigger success
+        // Trigger failure
         Credentials expectedCredentials = new Credentials("newId", "newAccess", "newType", "refreshToken", newDate, "newScope");
         String expectedJson = gson.toJson(expectedCredentials);
         when(crypto.encrypt(expectedJson.getBytes())).thenReturn(expectedJson.getBytes());
@@ -542,7 +542,7 @@ public class SecureCredentialsManagerTest {
         when(jwtDecoder.decode("newId")).thenReturn(jwtMock);
         when(client.renewAuth("refreshToken")).thenReturn(request);
 
-        manager.getCredentials("different scope", 0, callback);
+        manager.getCredentials("different scope", 0, callback);  // minTTL of 0 seconds (default)
         verify(request).addParameter(eq("scope"), eq("different scope"));
         verify(request).start(requestCallbackCaptor.capture());
 
@@ -593,16 +593,15 @@ public class SecureCredentialsManagerTest {
         when(jwtDecoder.decode("newId")).thenReturn(jwtMock);
         when(client.renewAuth("refreshToken")).thenReturn(request);
 
-        manager.getCredentials(callback);
-        verify(request, never()).addParameter(eq("scope"), anyString());
+        manager.getCredentials("different scope", 0, callback);  // minTTL of 0 seconds (default)
+        verify(request).addParameter(eq("scope"), eq("different scope"));
         verify(request).start(requestCallbackCaptor.capture());
 
         // Trigger success
-        Credentials renewedCredentials = new Credentials("newId", "newAccess", "newType", null, newDate, "newScope");
-        Credentials expectedCredentials = new Credentials("newId", "newAccess", "newType", "refreshToken", newDate, "newScope");
+        Credentials expectedCredentials = new Credentials("newId", "newAccess", "newType", "refreshToken", newDate, "different scope");
         String expectedJson = gson.toJson(expectedCredentials);
         when(crypto.encrypt(expectedJson.getBytes())).thenReturn(expectedJson.getBytes());
-        requestCallbackCaptor.getValue().onSuccess(renewedCredentials);
+        requestCallbackCaptor.getValue().onSuccess(expectedCredentials);
         verify(callback).onSuccess(credentialsCaptor.capture());
         verify(storage).store(eq("com.auth0.credentials"), stringCaptor.capture());
         verify(storage).store("com.auth0.credentials_expires_at", newDate.getTime());
@@ -618,7 +617,7 @@ public class SecureCredentialsManagerTest {
         assertThat(retrievedCredentials.getType(), is("newType"));
         assertThat(retrievedCredentials.getRefreshToken(), is("refreshToken"));
         assertThat(retrievedCredentials.getExpiresAt(), is(newDate));
-        assertThat(retrievedCredentials.getScope(), is("newScope"));
+        assertThat(retrievedCredentials.getScope(), is("different scope"));
 
         // Verify the credentials are property stored
         String encodedJson = stringCaptor.getValue();
@@ -631,7 +630,7 @@ public class SecureCredentialsManagerTest {
         assertThat(renewedStoredCredentials.getType(), is("newType"));
         assertThat(renewedStoredCredentials.getExpiresAt(), is(notNullValue()));
         assertThat(renewedStoredCredentials.getExpiresAt().getTime(), is(newDate.getTime()));
-        assertThat(renewedStoredCredentials.getScope(), is("newScope"));
+        assertThat(renewedStoredCredentials.getScope(), is("different scope"));
     }
 
     @Test
@@ -792,7 +791,7 @@ public class SecureCredentialsManagerTest {
      */
 
     @Test
-    public void shouldHaveValidCredentialsDuringMigrationWhenAccessTokenExpiresAtValueWasNotSaved() {
+    public void shouldPreventLoggingOutUsersWhenAccessTokenExpiresAtWasNotSaved() {
         long cacheExpiresAt = CredentialsMock.ONE_HOUR_AHEAD_MS;
         when(storage.retrieveLong("com.auth0.credentials_expires_at")).thenReturn(cacheExpiresAt);
         when(storage.retrieveLong("com.auth0.credentials_access_token_expires_at")).thenReturn(null);
