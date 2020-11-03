@@ -18,15 +18,12 @@ import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.AuthenticationCallback;
 import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.jwt.JWT;
 import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.request.internal.GsonProvider;
 import com.auth0.android.result.Credentials;
-import com.auth0.android.util.Clock;
 import com.google.gson.Gson;
 
-import java.util.Arrays;
-import java.util.Date;
+import java.util.Locale;
 
 import static android.text.TextUtils.isEmpty;
 
@@ -37,7 +34,7 @@ import static android.text.TextUtils.isEmpty;
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-public class SecureCredentialsManager {
+public class SecureCredentialsManager extends BaseCredentialsManager {
 
     private static final String TAG = SecureCredentialsManager.class.getSimpleName();
 
@@ -49,12 +46,8 @@ public class SecureCredentialsManager {
     @VisibleForTesting
     static final String KEY_ALIAS = "com.auth0.key";
 
-    private final AuthenticationAPIClient apiClient;
-    private final Storage storage;
     private final CryptoUtil crypto;
     private final Gson gson;
-    private final JWTDecoder jwtDecoder;
-    private Clock clock;
 
     //Changeable by the user
     private boolean authenticateBeforeDecrypt;
@@ -70,13 +63,10 @@ public class SecureCredentialsManager {
 
     @VisibleForTesting
     SecureCredentialsManager(@NonNull AuthenticationAPIClient apiClient, @NonNull Storage storage, @NonNull CryptoUtil crypto, @NonNull JWTDecoder jwtDecoder) {
-        this.apiClient = apiClient;
-        this.storage = storage;
+        super(apiClient, storage, jwtDecoder);
         this.crypto = crypto;
         this.gson = GsonProvider.buildGson();
         this.authenticateBeforeDecrypt = false;
-        this.jwtDecoder = jwtDecoder;
-        this.clock = new ClockImpl();
     }
 
     /**
@@ -88,17 +78,6 @@ public class SecureCredentialsManager {
      */
     public SecureCredentialsManager(@NonNull Context context, @NonNull AuthenticationAPIClient apiClient, @NonNull Storage storage) {
         this(apiClient, storage, new CryptoUtil(context, storage, KEY_ALIAS), new JWTDecoder());
-    }
-
-    /**
-     * Updates the clock instance used for expiration verification purposes.
-     * The use of this method can help on situations where the clock comes from an external synced source.
-     * The default implementation uses the time returned by {@link System#currentTimeMillis()}.
-     *
-     * @param clock the new clock instance to use.
-     */
-    public void setClock(@NonNull Clock clock) {
-        this.clock = clock;
     }
 
     /**
@@ -160,6 +139,7 @@ public class SecureCredentialsManager {
      * @throws CredentialsManagerException if the credentials couldn't be encrypted. Some devices are not compatible at all with the cryptographic
      *                                     implementation and will have {@link CredentialsManagerException#isDeviceIncompatible()} return true.
      */
+    @Override
     public void saveCredentials(@NonNull Credentials credentials) throws CredentialsManagerException {
         if ((isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken())) || credentials.getExpiresAt() == null) {
             throw new CredentialsManagerException("Credentials must have a valid date of expiration and a valid access_token or id_token value.");
@@ -202,6 +182,7 @@ public class SecureCredentialsManager {
      *
      * @param callback the callback to receive the result in.
      */
+    @Override
     public void getCredentials(@NonNull BaseCallback<Credentials, CredentialsManagerException> callback) {
         getCredentials(null, 0, callback);
     }
@@ -219,6 +200,7 @@ public class SecureCredentialsManager {
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
      * @param callback the callback to receive the result in.
      */
+    @Override
     public void getCredentials(@Nullable String scope, int minTtl, @NonNull BaseCallback<Credentials, CredentialsManagerException> callback) {
         if (!hasValidCredentials(minTtl)) {
             callback.onFailure(new CredentialsManagerException("No Credentials were previously set."));
@@ -239,6 +221,7 @@ public class SecureCredentialsManager {
     /**
      * Delete the stored credentials
      */
+    @Override
     public void clearCredentials() {
         storage.remove(KEY_CREDENTIALS);
         storage.remove(KEY_EXPIRES_AT);
@@ -253,6 +236,7 @@ public class SecureCredentialsManager {
      *
      * @return whether this manager contains a valid non-expired pair of credentials or not.
      */
+    @Override
     public boolean hasValidCredentials() {
         return hasValidCredentials(0);
     }
@@ -263,9 +247,14 @@ public class SecureCredentialsManager {
      * @param minTtl the minimum time in seconds that the access token should last before expiration.
      * @return whether this manager contains a valid non-expired pair of credentials or not.
      */
+    @Override
     public boolean hasValidCredentials(long minTtl) {
         String encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS);
         Long expiresAt = storage.retrieveLong(KEY_EXPIRES_AT);
+        if (expiresAt == null) {
+            // Avoids logging out users when this value was not saved (migration scenario)
+            expiresAt = 0L;
+        }
         Long cacheExpiresAt = storage.retrieveLong(KEY_CACHE_EXPIRES_AT);
         Boolean canRefresh = storage.retrieveBoolean(KEY_CAN_REFRESH);
         String keyAliasUsed = storage.retrieveString(KEY_CRYPTO_ALIAS);
@@ -297,7 +286,7 @@ public class SecureCredentialsManager {
         }
         final Credentials credentials = gson.fromJson(json, Credentials.class);
         Long cacheExpiresAt = storage.retrieveLong(KEY_CACHE_EXPIRES_AT);
-        Long expiresAt = credentials.getExpiresAt().getTime();
+        long expiresAt = credentials.getExpiresAt().getTime();
         boolean hasEmptyCredentials = isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken()) || cacheExpiresAt == null;
         if (hasEmptyCredentials) {
             callback.onFailure(new CredentialsManagerException("No Credentials were previously set."));
@@ -305,10 +294,8 @@ public class SecureCredentialsManager {
             return;
         }
 
-        //noinspection ConstantConditions
         boolean hasEitherExpired = hasExpired(cacheExpiresAt);
         boolean willAccessTokenExpire = willExpire(expiresAt, minTtl);
-        //noinspection ConstantConditions
         boolean scopeChanged = hasScopeChanged(credentials.getScope(), scope);
 
         if (!hasEitherExpired && !willAccessTokenExpire && !scopeChanged) {
@@ -323,7 +310,7 @@ public class SecureCredentialsManager {
         }
 
         Log.d(TAG, "Credentials have expired. Renewing them now...");
-        ParameterizableRequest<Credentials, AuthenticationException> request = apiClient.renewAuth(credentials.getRefreshToken());
+        ParameterizableRequest<Credentials, AuthenticationException> request = authenticationClient.renewAuth(credentials.getRefreshToken());
         if (scope != null) {
             request.addParameter("scope", scope);
         }
@@ -334,7 +321,7 @@ public class SecureCredentialsManager {
                 boolean willAccessTokenExpire = willExpire(expiresAt, minTtl);
                 if (willAccessTokenExpire) {
                     long tokenLifetime = (expiresAt - getCurrentTimeInMillis() - minTtl * 1000) / -1000;
-                    CredentialsManagerException wrongTtlException = new CredentialsManagerException(String.format("The lifetime of the renewed Access Token (%d) is less than the minTTL requested (%d). Increase the 'Token Expiration' setting of your Auth0 API in the dashboard, or request a lower minTTL.", tokenLifetime, minTtl));
+                    CredentialsManagerException wrongTtlException = new CredentialsManagerException(String.format(Locale.getDefault(), "The lifetime of the renewed Access Token (%d) is less than the minTTL requested (%d). Increase the 'Token Expiration' setting of your Auth0 API in the dashboard, or request a lower minTTL.", tokenLifetime, minTtl));
                     callback.onFailure(wrongTtlException);
                     decryptCallback = null;
                     return;
@@ -354,49 +341,6 @@ public class SecureCredentialsManager {
                 decryptCallback = null;
             }
         });
-    }
-
-    @VisibleForTesting
-    long getCurrentTimeInMillis() {
-        return clock.getCurrentTimeMillis();
-    }
-
-    private boolean hasScopeChanged(@NonNull String storedScope, @Nullable String requiredScope) {
-        if (requiredScope == null) {
-            return false;
-        }
-        String[] stored = storedScope.split(" ");
-        Arrays.sort(stored);
-        String[] required = requiredScope.split(" ");
-        Arrays.sort(required);
-        return !Arrays.equals(stored, required);
-    }
-
-    private boolean willExpire(@Nullable Long expiresAt, long minTtl) {
-        if (expiresAt == null || expiresAt <= 0) {
-            //expiresAt (access token) only considered if it has a positive value, to avoid logging out users
-            return false;
-        }
-        long nextClock = getCurrentTimeInMillis() + minTtl * 1000;
-        return expiresAt <= nextClock;
-    }
-
-    private boolean hasExpired(long expiresAt) {
-        return expiresAt <= getCurrentTimeInMillis();
-    }
-
-    private long calculateCacheExpiresAt(@NonNull Credentials credentials) {
-        long expiresAt = credentials.getExpiresAt().getTime();
-
-        if (credentials.getIdToken() != null) {
-            JWT idToken = jwtDecoder.decode(credentials.getIdToken());
-            Date idTokenExpiresAtDate = idToken.getExpiresAt();
-
-            if (idTokenExpiresAtDate != null) {
-                expiresAt = Math.min(idTokenExpiresAtDate.getTime(), expiresAt);
-            }
-        }
-        return expiresAt;
     }
 
 }

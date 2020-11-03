@@ -8,13 +8,11 @@ import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.AuthenticationCallback;
 import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.jwt.JWT;
 import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.result.Credentials;
-import com.auth0.android.util.Clock;
 
-import java.util.Arrays;
 import java.util.Date;
+import java.util.Locale;
 
 import static android.text.TextUtils.isEmpty;
 
@@ -22,7 +20,7 @@ import static android.text.TextUtils.isEmpty;
  * Class that handles credentials and allows to save and retrieve them.
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
-public class CredentialsManager {
+public class CredentialsManager extends BaseCredentialsManager {
     private static final String KEY_ACCESS_TOKEN = "com.auth0.access_token";
     private static final String KEY_REFRESH_TOKEN = "com.auth0.refresh_token";
     private static final String KEY_ID_TOKEN = "com.auth0.id_token";
@@ -31,17 +29,9 @@ public class CredentialsManager {
     private static final String KEY_SCOPE = "com.auth0.scope";
     private static final String KEY_CACHE_EXPIRES_AT = "com.auth0.cache_expires_at";
 
-    private final AuthenticationAPIClient authClient;
-    private final Storage storage;
-    private final JWTDecoder jwtDecoder;
-    private Clock clock;
-
     @VisibleForTesting
     CredentialsManager(@NonNull AuthenticationAPIClient authenticationClient, @NonNull Storage storage, @NonNull JWTDecoder jwtDecoder) {
-        this.authClient = authenticationClient;
-        this.storage = storage;
-        this.jwtDecoder = jwtDecoder;
-        this.clock = new ClockImpl();
+        super(authenticationClient, storage, jwtDecoder);
     }
 
     /**
@@ -55,21 +45,11 @@ public class CredentialsManager {
     }
 
     /**
-     * Updates the clock instance used for expiration verification purposes.
-     * The use of this method can help on situations where the clock comes from an external synced source.
-     * The default implementation uses the time returned by {@link System#currentTimeMillis()}.
-     *
-     * @param clock the new clock instance to use.
-     */
-    public void setClock(@NonNull Clock clock) {
-        this.clock = clock;
-    }
-
-    /**
      * Stores the given credentials in the storage. Must have an access_token or id_token and a expires_in value.
      *
      * @param credentials the credentials to save in the storage.
      */
+    @Override
     public void saveCredentials(@NonNull Credentials credentials) {
         if ((isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken())) || credentials.getExpiresAt() == null) {
             throw new CredentialsManagerException("Credentials must have a valid date of expiration and a valid access_token or id_token value.");
@@ -93,6 +73,7 @@ public class CredentialsManager {
      *
      * @param callback the callback that will receive a valid {@link Credentials} or the {@link CredentialsManagerException}.
      */
+    @Override
     public void getCredentials(@NonNull BaseCallback<Credentials, CredentialsManagerException> callback) {
         getCredentials(null, 0, callback);
     }
@@ -106,6 +87,7 @@ public class CredentialsManager {
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
      * @param callback the callback that will receive a valid {@link Credentials} or the {@link CredentialsManagerException}.
      */
+    @Override
     public void getCredentials(@Nullable String scope, final int minTtl, @NonNull final BaseCallback<Credentials, CredentialsManagerException> callback) {
         String accessToken = storage.retrieveString(KEY_ACCESS_TOKEN);
         final String refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN);
@@ -137,7 +119,7 @@ public class CredentialsManager {
             return;
         }
 
-        final ParameterizableRequest<Credentials, AuthenticationException> request = authClient.renewAuth(refreshToken);
+        final ParameterizableRequest<Credentials, AuthenticationException> request = authenticationClient.renewAuth(refreshToken);
         if (scope != null) {
             request.addParameter("scope", scope);
         }
@@ -148,7 +130,7 @@ public class CredentialsManager {
                 boolean willAccessTokenExpire = willExpire(expiresAt, minTtl);
                 if (willAccessTokenExpire) {
                     long tokenLifetime = (expiresAt - getCurrentTimeInMillis() - minTtl * 1000) / -1000;
-                    CredentialsManagerException wrongTtlException = new CredentialsManagerException(String.format("The lifetime of the renewed Access Token (%d) is less than the minTTL requested (%d). Increase the 'Token Expiration' setting of your Auth0 API in the dashboard, or request a lower minTTL.", tokenLifetime, minTtl));
+                    CredentialsManagerException wrongTtlException = new CredentialsManagerException(String.format(Locale.getDefault(), "The lifetime of the renewed Access Token (%d) is less than the minTTL requested (%d). Increase the 'Token Expiration' setting of your Auth0 API in the dashboard, or request a lower minTTL.", tokenLifetime, minTtl));
                     callback.onFailure(wrongTtlException);
                     return;
                 }
@@ -168,45 +150,12 @@ public class CredentialsManager {
 
     }
 
-    private boolean hasScopeChanged(@NonNull String storedScope, @Nullable String requiredScope) {
-        if (requiredScope == null) {
-            return false;
-        }
-        String[] stored = storedScope.split(" ");
-        Arrays.sort(stored);
-        String[] required = requiredScope.split(" ");
-        Arrays.sort(required);
-        return !Arrays.equals(stored, required);
-    }
-
-    private boolean willExpire(long expiresAt, long minTtl) {
-        long nextClock = getCurrentTimeInMillis() + minTtl * 1000;
-        return expiresAt <= nextClock;
-    }
-
-    private boolean hasExpired(long expiresAt) {
-        return expiresAt <= getCurrentTimeInMillis();
-    }
-
-    private long calculateCacheExpiresAt(@NonNull Credentials credentials) {
-        long expiresAt = credentials.getExpiresAt().getTime();
-
-        if (credentials.getIdToken() != null) {
-            JWT idToken = jwtDecoder.decode(credentials.getIdToken());
-            Date idTokenExpiresAtDate = idToken.getExpiresAt();
-
-            if (idTokenExpiresAtDate != null) {
-                expiresAt = Math.min(idTokenExpiresAtDate.getTime(), expiresAt);
-            }
-        }
-        return expiresAt;
-    }
-
     /**
      * Checks if a non-expired pair of credentials can be obtained from this manager.
      *
      * @return whether there are valid credentials stored on this manager.
      */
+    @Override
     public boolean hasValidCredentials() {
         return hasValidCredentials(0);
     }
@@ -217,6 +166,7 @@ public class CredentialsManager {
      * @param minTtl the minimum time in seconds that the access token should last before expiration.
      * @return whether there are valid credentials stored on this manager.
      */
+    @Override
     public boolean hasValidCredentials(long minTtl) {
         String accessToken = storage.retrieveString(KEY_ACCESS_TOKEN);
         String refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN);
@@ -234,6 +184,7 @@ public class CredentialsManager {
     /**
      * Removes the credentials from the storage if present.
      */
+    @Override
     public void clearCredentials() {
         storage.remove(KEY_ACCESS_TOKEN);
         storage.remove(KEY_REFRESH_TOKEN);
@@ -247,11 +198,6 @@ public class CredentialsManager {
     @VisibleForTesting
     Credentials recreateCredentials(String idToken, String accessToken, String tokenType, String refreshToken, Date expiresAt, String scope) {
         return new Credentials(idToken, accessToken, tokenType, refreshToken, expiresAt, scope);
-    }
-
-    @VisibleForTesting
-    long getCurrentTimeInMillis() {
-        return clock.getCurrentTimeMillis();
     }
 
 }
