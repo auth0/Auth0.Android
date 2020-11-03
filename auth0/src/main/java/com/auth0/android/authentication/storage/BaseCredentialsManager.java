@@ -15,7 +15,7 @@ import java.util.Date;
 
 /**
  * Base class meant to abstract common logic across Credentials Manager implementations.
- * The scope of this class is package-private, as it's not meant to expose
+ * The scope of this class is package-private, as it's not meant to be exposed
  */
 abstract class BaseCredentialsManager {
 
