@@ -200,7 +200,9 @@ public class AuthenticationException extends Auth0Exception {
 
     /// When MFA code sent is invalid or expired
     public boolean isMultifactorCodeInvalid() {
-        return "a0.mfa_invalid_code".equals(code) || "invalid_grant".equals(code) && "Invalid otp_code.".equals(description);
+        return "a0.mfa_invalid_code".equals(code) 
+            || "invalid_grant".equals(code) && "Invalid otp_code.".equals(description)
+            || "invalid_grant".equals(code) && "Wrong phone number or verification code.".equals(description);
     }
 
     /// When password used for SignUp does not match connection's strength requirements.
