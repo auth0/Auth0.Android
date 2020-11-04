@@ -1,5 +1,12 @@
 # Change Log
 
+## [1.29.0](https://github.com/auth0/Auth0.Android/tree/1.29.0) (2020-11-04)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.28.0...1.29.0)
+
+**Added**
+- SecureCredentialsManager: Allow to pass scope and minTTL [\#369](https://github.com/auth0/Auth0.Android/pull/369) ([lbalmaceda](https://github.com/lbalmaceda))
+- CredentialsManager: Allow to pass scope and minTTL [\#363](https://github.com/auth0/Auth0.Android/pull/363) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.28.0](https://github.com/auth0/Auth0.Android/tree/1.28.0) (2020-10-13)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.27.0...1.28.0)
 
