@@ -202,7 +202,8 @@ public class AuthenticationException extends Auth0Exception {
     public boolean isMultifactorCodeInvalid() {
         return "a0.mfa_invalid_code".equals(code) 
             || "invalid_grant".equals(code) && "Invalid otp_code.".equals(description)
-            || "invalid_grant".equals(code) && "Wrong phone number or verification code.".equals(description);
+            || "invalid_grant".equals(code) && "Wrong phone number or verification code.".equals(description)
+            || "invalid_grant".equals(code) && "Wrong email or verification code.".equals(description);
     }
 
     /// When password used for SignUp does not match connection's strength requirements.
