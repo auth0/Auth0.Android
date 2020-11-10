@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.29.1](https://github.com/auth0/Auth0.Android/tree/1.29.1) (2020-11-10)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.29.0...1.29.1)
+
+**Fixed**
+- Handle API response for mobile OTP code incorrect. [\#371](https://github.com/auth0/Auth0.Android/pull/371) ([nicbell](https://github.com/nicbell))
+
 ## [1.29.0](https://github.com/auth0/Auth0.Android/tree/1.29.0) (2020-11-04)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.28.0...1.29.0)
 
