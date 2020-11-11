@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.29.2](https://github.com/auth0/Auth0.Android/tree/1.29.2) (2020-11-11)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.29.1...1.29.2)
+
+**Fixed**
+- Refactor: Move passwordless "invalid credentials" errors [\#373](https://github.com/auth0/Auth0.Android/pull/373) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.29.1](https://github.com/auth0/Auth0.Android/tree/1.29.1) (2020-11-10)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.29.0...1.29.1)
 
