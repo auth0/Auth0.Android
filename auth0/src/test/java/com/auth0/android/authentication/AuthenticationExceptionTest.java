@@ -215,22 +215,6 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
-    public void shouldHaveInvalidMultifactorCodePhoneOTP() {
-        values.put(ERROR_KEY, "invalid_grant");
-        values.put(ERROR_DESCRIPTION_KEY, "Wrong phone number or verification code.");
-        AuthenticationException ex = new AuthenticationException(values);
-        assertThat(ex.isMultifactorCodeInvalid(), is(true));
-    }
-
-    @Test
-    public void shouldHaveInvalidMultifactorCodeEmailOTP() {
-        values.put(ERROR_KEY, "invalid_grant");
-        values.put(ERROR_DESCRIPTION_KEY, "Wrong email or verification code.");
-        AuthenticationException ex = new AuthenticationException(values);
-        assertThat(ex.isMultifactorCodeInvalid(), is(true));
-    }
-
-    @Test
     public void shouldHaveInvalidMultifactorCode() {
         values.put(CODE_KEY, "a0.mfa_invalid_code");
         AuthenticationException ex = new AuthenticationException(values);
@@ -286,6 +270,22 @@ public class AuthenticationExceptionTest {
     public void shouldHaveOIDCInvalidCredentials() {
         values.put(CODE_KEY, "invalid_grant");
         values.put(ERROR_DESCRIPTION_KEY, "Wrong email or password.");
+        AuthenticationException ex = new AuthenticationException(values);
+        assertThat(ex.isInvalidCredentials(), is(true));
+    }
+
+    @Test
+    public void shouldHaveInvalidCredentialsOnPhonePasswordless() {
+        values.put(ERROR_KEY, "invalid_grant");
+        values.put(ERROR_DESCRIPTION_KEY, "Wrong phone number or verification code.");
+        AuthenticationException ex = new AuthenticationException(values);
+        assertThat(ex.isInvalidCredentials(), is(true));
+    }
+
+    @Test
+    public void shouldHaveInvalidCredentialsOnEmailPasswordless() {
+        values.put(ERROR_KEY, "invalid_grant");
+        values.put(ERROR_DESCRIPTION_KEY, "Wrong email or verification code.");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.isInvalidCredentials(), is(true));
     }
