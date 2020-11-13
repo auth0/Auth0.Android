@@ -1,6 +1,6 @@
 package com.auth0.android.request.internal;
 
-import android.support.annotation.VisibleForTesting;
+import androidx.annotation.VisibleForTesting;
 
 import com.auth0.android.result.Credentials;
 import com.google.gson.JsonDeserializationContext;

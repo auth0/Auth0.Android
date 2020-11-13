@@ -2,7 +2,7 @@ package com.auth0.android.provider;
 
 import android.content.Context;
 import android.net.Uri;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.util.Log;
 
 import com.auth0.android.Auth0;

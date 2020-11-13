@@ -4,11 +4,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
-import edu.emory.mathcs.backport.java.util.Collections;
 
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -41,7 +40,7 @@ public class UserProfileTest {
     @SuppressWarnings("unchecked")
     @Test
     public void shouldReturnSubIfMissingId() {
-        Map<String, Object> extraInfo = Collections.singletonMap("sub", "fromSub");
+        Map<String, Object> extraInfo = Collections.singletonMap("sub", (Object) "fromSub");
         userProfile = new UserProfile(null, null, null, null, null, false, null, null, null, extraInfo, null, null, null);
         assertThat(userProfile.getId(), is("fromSub"));
     }

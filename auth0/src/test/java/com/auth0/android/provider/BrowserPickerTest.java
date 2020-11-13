@@ -7,9 +7,9 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.os.Parcel;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.test.espresso.intent.matcher.IntentMatchers;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.test.espresso.intent.matcher.IntentMatchers;
 
 import org.hamcrest.MatcherAssert;
 import org.junit.Before;

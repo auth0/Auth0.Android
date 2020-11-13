@@ -1,6 +1,6 @@
 package com.auth0.android;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 /**
  * Exception that represents a failure caused when attempting to execute a network request

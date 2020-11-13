@@ -4,8 +4,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Parcel;
-import android.support.customtabs.CustomTabsIntent;
-import android.support.v4.content.ContextCompat;
+import androidx.browser.customtabs.CustomTabsIntent;
+import androidx.core.content.ContextCompat;
 
 import org.junit.Before;
 import org.junit.Test;

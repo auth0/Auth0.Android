@@ -24,8 +24,8 @@
 
 package com.auth0.android.request.internal;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.VisibleForTesting;
+import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.NetworkErrorException;
