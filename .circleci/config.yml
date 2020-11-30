@@ -2,24 +2,24 @@ version: 2
 jobs:
   build:
     environment:
-      GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx2048m -XX:+HeapDumpOnOutOfMemoryError"
+      GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx2048m -XX:+HeapDumpOnOutOfMemoryError" -Dkotlin.compiler.execution.strategy=in-process
       _JAVA_OPTIONS: -Xms512m -Xmx1024m
     docker:
-      - image: circleci/android:api-28-alpha
+      - image: circleci/android:api-29
 
     steps:
     - checkout
     
     - restore_cache:
         keys:
-        - v1-dep-{{ checksum "build.gradle" }}-{{ checksum  "auth0/build.gradle" }}
+        - v2-dep-{{ checksum "build.gradle" }}-{{ checksum  "auth0/build.gradle" }}
     
     - run:
         name: Run checks
-        command: ./gradlew clean test jacocoTestReport lint --continue --console=plain
+        command: ./gradlew clean test jacocoTestReport lint --continue --console=plain --no-daemon --max-workers=2
 
     - save_cache:
-        key: v1-dep-{{ checksum "build.gradle" }}-{{ checksum  "auth0/build.gradle" }}
+        key: v2-dep-{{ checksum "build.gradle" }}-{{ checksum  "auth0/build.gradle" }}
         paths:
           - ~/.gradle
           - ~/.android
