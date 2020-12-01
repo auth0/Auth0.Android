@@ -7,10 +7,11 @@ import android.os.Build;
 import android.security.KeyPairGeneratorSpec;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
-import androidx.annotation.RequiresApi;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
+
+import androidx.annotation.RequiresApi;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -22,6 +23,7 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.robolectric.RuntimeEnvironment;
@@ -76,6 +78,8 @@ import static org.powermock.api.mockito.PowerMockito.mock;
 @RequiresApi(api = Build.VERSION_CODES.KITKAT)
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({CryptoUtil.class, KeyGenerator.class, TextUtils.class, Build.VERSION.class, Base64.class, Cipher.class, Log.class})
+//@PowerMockIgnore({ "javax.management.*", "com.sun.org.apache.xerces.*", "javax.xml.*",
+//        "org.xml.*", "org.w3c.dom.*", "com.sun.org.apache.xalan.*", "javax.activation.*" })
 @Config(sdk = 22)
 public class CryptoUtilTest {
 
@@ -115,7 +119,7 @@ public class CryptoUtilTest {
         PowerMockito.when(TextUtils.isEmpty(anyString())).then(new Answer<Boolean>() {
             @Override
             public Boolean answer(InvocationOnMock invocation) {
-                String input = invocation.getArgumentAt(0, String.class);
+                String input = invocation.getArgument(0, String.class);
                 return input == null || input.isEmpty();
             }
         });
@@ -261,7 +265,7 @@ public class CryptoUtilTest {
         KeyguardManager kService = PowerMockito.mock(KeyguardManager.class);
         PowerMockito.when(context.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService);
         PowerMockito.when(kService.isKeyguardSecure()).thenReturn(true);
-        PowerMockito.when(kService.createConfirmDeviceCredentialIntent(any(CharSequence.class), any(CharSequence.class))).thenReturn(new Intent());
+        PowerMockito.when(kService.createConfirmDeviceCredentialIntent(any(), any())).thenReturn(new Intent());
 
         final KeyStore.PrivateKeyEntry entry = cryptoUtil.getRSAKeyEntry();
 
@@ -542,6 +546,7 @@ public class CryptoUtilTest {
     }
 
     @Test
+    @Config(sdk = 22)
     public void shouldThrowOnCertificateExceptionWhenTryingToObtainRSAKeys() throws Exception {
         exception.expect(IncompatibleDeviceException.class);
         exception.expectMessage("The device is not compatible with the CryptoUtil class");
@@ -1332,7 +1337,7 @@ public class CryptoUtilTest {
         PowerMockito.when(Cipher.getInstance(anyString())).then(new Answer<Cipher>() {
             @Override
             public Cipher answer(InvocationOnMock invocation) {
-                String transformation = invocation.getArgumentAt(0, String.class);
+                String transformation = invocation.getArgument(0, String.class);
                 if (RSA_TRANSFORMATION.equals(transformation)) {
                     return rsaCipher;
                 } else if (AES_TRANSFORMATION.equals(transformation)) {

@@ -27,6 +27,8 @@ package com.auth0.android;
 import android.content.Context;
 import android.content.res.Resources;
 
+import androidx.test.core.app.ApplicationProvider;
+
 import com.auth0.android.util.Telemetry;
 import com.squareup.okhttp.HttpUrl;
 
@@ -39,6 +41,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
+import org.robolectric.annotation.Config;
 
 import static com.auth0.android.util.HttpUrlMatcher.hasHost;
 import static com.auth0.android.util.HttpUrlMatcher.hasPath;
@@ -50,6 +54,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
@@ -61,6 +66,7 @@ public class Auth0Test {
     public Context context;
 
     private static final String CLIENT_ID = "CLIENT_ID";
+    private static final String PACKAGE_NAME = "com.sample.app";
     private static final String DOMAIN = "samples.auth0.com";
     private static final String CONFIG_DOMAIN_CUSTOM = "config.mydomain.com";
     private static final String EU_DOMAIN = "samples.eu.auth0.com";
@@ -70,6 +76,7 @@ public class Auth0Test {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
+        when(context.getPackageName()).thenReturn(PACKAGE_NAME);
     }
 
     @Test
@@ -166,8 +173,8 @@ public class Auth0Test {
     public void shouldBuildFromResources() {
         Resources resources = Mockito.mock(Resources.class);
         when(context.getResources()).thenReturn(resources);
-        when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), anyString())).thenReturn(222);
-        when(resources.getIdentifier(eq("com_auth0_domain"), eq("string"), anyString())).thenReturn(333);
+        when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), eq(PACKAGE_NAME))).thenReturn(222);
+        when(resources.getIdentifier(eq("com_auth0_domain"), eq("string"), eq(PACKAGE_NAME))).thenReturn(333);
 
         when(context.getString(eq(222))).thenReturn(CLIENT_ID);
         when(context.getString(eq(333))).thenReturn(DOMAIN);
@@ -184,8 +191,8 @@ public class Auth0Test {
     public void shouldFailToBuildFromResourcesWithoutClientID() {
         Resources resources = Mockito.mock(Resources.class);
         when(context.getResources()).thenReturn(resources);
-        when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), anyString())).thenReturn(0);
-        when(resources.getIdentifier(eq("com_auth0_domain"), eq("string"), anyString())).thenReturn(333);
+        when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), eq(PACKAGE_NAME))).thenReturn(0);
+        when(resources.getIdentifier(eq("com_auth0_domain"), eq("string"), eq(PACKAGE_NAME))).thenReturn(333);
 
         expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage("The 'R.string.com_auth0_client_id' value it's not defined in your project's resources file.");
@@ -197,8 +204,8 @@ public class Auth0Test {
     public void shouldFailToBuildFromResourcesWithoutDomain() {
         Resources resources = Mockito.mock(Resources.class);
         when(context.getResources()).thenReturn(resources);
-        when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), anyString())).thenReturn(222);
-        when(resources.getIdentifier(eq("com_auth0_domain"), eq("string"), anyString())).thenReturn(0);
+        when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), eq(PACKAGE_NAME))).thenReturn(222);
+        when(resources.getIdentifier(eq("com_auth0_domain"), eq("string"), eq(PACKAGE_NAME))).thenReturn(0);
 
         expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage("The 'R.string.com_auth0_domain' value it's not defined in your project's resources file.");

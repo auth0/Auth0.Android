@@ -56,7 +56,6 @@ public class LogoutManagerTest {
         when(result.isCanceled()).thenReturn(false);
         manager.resume(result);
         verify(callback).onSuccess(any(Void.class));
-
     }
 
 }
