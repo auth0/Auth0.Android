@@ -141,6 +141,7 @@ public class SimpleRequestTest {
         verify(call).enqueue(any(Callback.class));
 
         get.onResponse(response);
+        //FIXME: The line below doesn't check the type, but asserts the returned value is not null.
         verify(callback).onSuccess(MockitoHamcrest.argThat(notNullValue(TestPojo.class)));
     }
 

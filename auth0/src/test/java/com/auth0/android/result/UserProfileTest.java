@@ -37,10 +37,9 @@ public class UserProfileTest {
         assertThat(userProfile.getId(), is("id"));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void shouldReturnSubIfMissingId() {
-        Map<String, Object> extraInfo = Collections.singletonMap("sub", (Object) "fromSub");
+        Map<String, Object> extraInfo = Collections.singletonMap("sub", "fromSub");
         userProfile = new UserProfile(null, null, null, null, null, false, null, null, null, extraInfo, null, null, null);
         assertThat(userProfile.getId(), is("fromSub"));
     }
