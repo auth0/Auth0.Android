@@ -1,8 +1,9 @@
 package com.auth0.android.provider;
 
-import androidx.annotation.NonNull;
 import android.util.Base64;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;

@@ -24,8 +24,6 @@
 
 package com.auth0.android.provider;
 
-import android.util.Base64;
-
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.authentication.request.TokenRequest;
@@ -41,15 +39,12 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
-import java.security.MessageDigest;
+import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 
-import static org.hamcrest.CoreMatchers.anything;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -58,16 +53,13 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.anyIterable;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({MessageDigest.class, Base64.class})
+@RunWith(RobolectricTestRunner.class)
 @Config(sdk = 18)
 public class PKCETest {
 
@@ -81,13 +73,11 @@ public class PKCETest {
     private AuthenticationAPIClient apiClient;
     @Mock
     private AuthCallback callback;
-    private AlgorithmHelper algorithmHelper;
 
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        algorithmHelper = new AlgorithmHelperMock(CODE_VERIFIER);
-        pkce = new PKCE(apiClient, algorithmHelper, REDIRECT_URI);
+        pkce = new PKCE(apiClient, new AlgorithmHelperMock(CODE_VERIFIER), REDIRECT_URI);
     }
 
     @Test
@@ -143,11 +133,9 @@ public class PKCETest {
     }
 
     @Test
-    public void shouldNotHavePKCEAvailableIfSHA256IsNotAvailable() throws Exception {
-        PowerMockito.mockStatic(Base64.class);
-        PowerMockito.mockStatic(MessageDigest.class);
-        PowerMockito.when(Base64.encodeToString(eq(null), eq(Base64.DEFAULT))).thenReturn("data");
-        PowerMockito.when(MessageDigest.getInstance("SHA-256")).thenThrow(NoSuchAlgorithmException.class);
+    public void shouldNotHavePKCEAvailableIfSHA256IsNotAvailable() {
+        AlgorithmHelper algorithmHelper = Mockito.mock(AlgorithmHelper.class);
+        when(algorithmHelper.getSHA256(any())).thenThrow(IllegalStateException.class);
         assertFalse(PKCE.isAvailable(algorithmHelper));
     }
 

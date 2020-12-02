@@ -19,6 +19,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -62,6 +63,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
@@ -524,7 +526,7 @@ public class CryptoUtilTest {
         exception.expectMessage("The existing RSA key pair could not be recovered and has been deleted. " +
                 "This occasionally happens when the Lock Screen settings are changed. You can safely retry this operation.");
 
-        doThrow(new IOException()).when(keyStore).load(any(KeyStore.LoadStoreParameter.class));
+        doThrow(new IOException()).when(keyStore).load(nullable(KeyStore.LoadStoreParameter.class));
 
         cryptoUtil.getRSAKeyEntry();
 
@@ -551,7 +553,7 @@ public class CryptoUtilTest {
         exception.expect(IncompatibleDeviceException.class);
         exception.expectMessage("The device is not compatible with the CryptoUtil class");
 
-        doThrow(new CertificateException()).when(keyStore).load(any(KeyStore.LoadStoreParameter.class));
+        doThrow(new CertificateException()).when(keyStore).load(nullable(KeyStore.LoadStoreParameter.class));
 
         cryptoUtil.getRSAKeyEntry();
     }
@@ -561,7 +563,7 @@ public class CryptoUtilTest {
         exception.expect(IncompatibleDeviceException.class);
         exception.expectMessage("The device is not compatible with the CryptoUtil class");
 
-        doThrow(new ProviderException()).when(keyStore).load(any(KeyStore.LoadStoreParameter.class));
+        doThrow(new ProviderException()).when(keyStore).load(nullable(KeyStore.LoadStoreParameter.class));
 
         cryptoUtil.getRSAKeyEntry();
     }

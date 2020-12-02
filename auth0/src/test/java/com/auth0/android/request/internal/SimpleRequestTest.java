@@ -26,19 +26,23 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.hamcrest.MockitoHamcrest;
 
 import java.io.IOException;
 import java.util.Collections;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 public class SimpleRequestTest {
@@ -54,15 +58,35 @@ public class SimpleRequestTest {
     @Mock
     private BaseCallback<TestPojo, Auth0Exception> callback;
     @Mock
-    private TypeAdapter<TestPojo> adapter;
+    private TypeAdapter<TestPojo> brokenAdapter;
     @Captor
     ArgumentCaptor<Auth0Exception> exceptionMatcher;
 
     @Before
-    public void setUp() {
+    public void setUp() throws IOException {
         MockitoAnnotations.initMocks(this);
         url = HttpUrl.parse("https://mycompany.com/");
+        when(errorBuilder.from(anyString(), any(Auth0Exception.class))).thenReturn(mock(Auth0Exception.class));
+        when(errorBuilder.from(anyString(), MockitoHamcrest.intThat(greaterThanOrEqualTo(400)))).thenReturn(mock(Auth0Exception.class));
+        when(errorBuilder.from(anyMap())).thenReturn(mock(Auth0Exception.class));
+//        TypeAdapter<TestPojo> adapter = new TypeAdapter<TestPojo>() {
+//
+//            @Override
+//            public void write(JsonWriter out, TestPojo value) throws IOException {
+//                out.beginObject().endObject();
+//            }
+//
+//            @Override
+//            public TestPojo read(JsonReader in) throws IOException {
+//                return new TestPojo();
+//            }
+//        };
+//        when(adapter.fromJson(anyString())).thenReturn(new TestPojo());
+//        doReturn(new TestPojo()).when(adapter).fromJson(any(Reader.class));
+//        when(adapter.fromJson(ArgumentMatchers.any(Reader.class))).thenReturn(new TestPojo());
         gson = GsonProvider.buildGson();
+//        gson = new GsonBuilder().registerTypeAdapter(new TypeToken<TestPojo>() {
+//        }.getType(), adapter).create();
     }
 
     @Test
@@ -117,7 +141,7 @@ public class SimpleRequestTest {
         verify(call).enqueue(any(Callback.class));
 
         get.onResponse(response);
-        verify(callback).onSuccess(any(TestPojo.class));
+        verify(callback).onSuccess(MockitoHamcrest.argThat(notNullValue(TestPojo.class)));
     }
 
     @Test
@@ -194,16 +218,7 @@ public class SimpleRequestTest {
 
     @Test
     public void shouldFailOnSuccessfulResponseWithJsonParseException() throws IOException {
-        TypeAdapter<TestPojo> brokenAdapter = new TypeAdapter<TestPojo>() {
-            @Override
-            public void write(JsonWriter out, TestPojo value) {
-            }
-
-            @Override
-            public TestPojo read(JsonReader in) {
-                throw new JsonParseException("err");
-            }
-        };
+        when(brokenAdapter.read(any(JsonReader.class))).thenThrow(new JsonParseException("err"));
         Gson gson = new GsonBuilder().registerTypeAdapter(TestPojo.class, brokenAdapter).create();
         SimpleRequest<TestPojo, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", TestPojo.class, errorBuilder);
         get.setCallback(callback);
@@ -273,7 +288,7 @@ public class SimpleRequestTest {
             expectedException = e;
         }
         assertThat(result, Matchers.<Object>is(Collections.<String, Object>emptyMap()));
-        verifyZeroInteractions(errorBuilder);
+        verifyNoInteractions(errorBuilder);
         assertThat(expectedException, is(nullValue()));
     }
 
@@ -350,16 +365,7 @@ public class SimpleRequestTest {
 
     @Test
     public void shouldFailToExecuteOnSuccessfulResponseWithIOException() throws IOException {
-        TypeAdapter<TestPojo> brokenAdapter = new TypeAdapter<TestPojo>() {
-            @Override
-            public void write(JsonWriter out, TestPojo value) {
-            }
-
-            @Override
-            public TestPojo read(JsonReader in) throws IOException {
-                throw new IOException("err");
-            }
-        };
+        when(brokenAdapter.read(any(JsonReader.class))).thenThrow(new IOException("err"));
         Gson gson = new GsonBuilder().registerTypeAdapter(TestPojo.class, brokenAdapter).create();
         String invalidJson = "{---}";
         ResponseBody resBody = ResponseBody.create(JSON_MEDIATYPE, invalidJson);
@@ -388,7 +394,7 @@ public class SimpleRequestTest {
         } catch (Exception e) {
             expectedException = e;
         }
-        verifyZeroInteractions(errorBuilder);
+        verifyNoInteractions(errorBuilder);
         assertThat(result, is(nullValue()));
         assertThat(expectedException, is(notNullValue()));
         assertThat(expectedException.getCause(), is(Matchers.<Throwable>instanceOf(IOException.class)));
@@ -397,16 +403,7 @@ public class SimpleRequestTest {
 
     @Test
     public void shouldFailToExecuteOnSuccessfulResponseWithJsonParseException() throws IOException {
-        TypeAdapter<TestPojo> brokenAdapter = new TypeAdapter<TestPojo>() {
-            @Override
-            public void write(JsonWriter out, TestPojo value) {
-            }
-
-            @Override
-            public TestPojo read(JsonReader in) {
-                throw new JsonParseException("err");
-            }
-        };
+        when(brokenAdapter.read(any(JsonReader.class))).thenThrow(new JsonParseException("err"));
         Gson gson = new GsonBuilder().registerTypeAdapter(TestPojo.class, brokenAdapter).create();
 
         String invalidJson = "{}";
@@ -435,7 +432,7 @@ public class SimpleRequestTest {
         } catch (Exception e) {
             expectedException = e;
         }
-        verifyZeroInteractions(errorBuilder);
+        verifyNoInteractions(errorBuilder);
         assertThat(result, is(nullValue()));
         assertThat(expectedException, is(notNullValue()));
         assertThat(expectedException.getCause(), is(Matchers.<Throwable>instanceOf(JsonParseException.class)));
