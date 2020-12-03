@@ -282,7 +282,8 @@ public class CredentialsManagerTest {
         assertThat(retrievedCredentials.getRefreshToken(), is("refreshToken"));
         assertThat(retrievedCredentials.getType(), is("type"));
         assertThat(retrievedCredentials.getExpiresIn(), is(notNullValue()));
-        assertThat(retrievedCredentials.getExpiresIn().doubleValue(), CoreMatchers.is(closeTo(ONE_HOUR_SECONDS, 1)));
+        // TODO - fix clock mocking to avoid CredentialsManager expiresIn calculation
+        assertThat(retrievedCredentials.getExpiresIn().doubleValue(), CoreMatchers.is(closeTo(ONE_HOUR_SECONDS, 5)));
         assertThat(retrievedCredentials.getExpiresAt(), is(notNullValue()));
         assertThat(retrievedCredentials.getExpiresAt().getTime(), is(expirationTime));
         assertThat(retrievedCredentials.getScope(), is("scope"));
@@ -311,7 +312,8 @@ public class CredentialsManagerTest {
         assertThat(retrievedCredentials.getRefreshToken(), is("refreshToken"));
         assertThat(retrievedCredentials.getType(), is("type"));
         assertThat(retrievedCredentials.getExpiresIn(), is(notNullValue()));
-        assertThat(retrievedCredentials.getExpiresIn().doubleValue(), CoreMatchers.is(closeTo(ONE_HOUR_SECONDS, 1)));
+        // TODO - fix clock mocking to avoid CredentialsManager expiresIn calculation
+        assertThat(retrievedCredentials.getExpiresIn().doubleValue(), CoreMatchers.is(closeTo(ONE_HOUR_SECONDS, 5)));
         assertThat(retrievedCredentials.getExpiresAt(), is(notNullValue()));
         assertThat(retrievedCredentials.getExpiresAt().getTime(), is(expirationTime));
         assertThat(retrievedCredentials.getScope(), is("scope"));
@@ -340,7 +342,8 @@ public class CredentialsManagerTest {
         assertThat(retrievedCredentials.getRefreshToken(), is("refreshToken"));
         assertThat(retrievedCredentials.getType(), is("type"));
         assertThat(retrievedCredentials.getExpiresIn(), is(notNullValue()));
-        assertThat(retrievedCredentials.getExpiresIn().doubleValue(), CoreMatchers.is(closeTo(ONE_HOUR_SECONDS, 1)));
+        // TODO - fix clock mocking to avoid CredentialsManager expiresIn calculation
+        assertThat(retrievedCredentials.getExpiresIn().doubleValue(), CoreMatchers.is(closeTo(ONE_HOUR_SECONDS, 5)));
         assertThat(retrievedCredentials.getExpiresAt(), is(notNullValue()));
         assertThat(retrievedCredentials.getExpiresAt().getTime(), is(expirationTime));
         assertThat(retrievedCredentials.getScope(), is("scope"));
