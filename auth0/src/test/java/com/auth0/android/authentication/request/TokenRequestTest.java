@@ -7,7 +7,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
 import java.util.Map;
 
@@ -19,7 +18,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 21)
 public class TokenRequestTest {
 
     private ParameterizableRequest mockRequest;

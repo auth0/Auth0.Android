@@ -10,7 +10,7 @@ Android Java toolkit for Auth0 API
 
 ## Requirements
 
-Android API version 15 or newer
+Android API version 21 or newer
 
 ## Installation
 
@@ -87,11 +87,11 @@ Next, define the Manifest Placeholders for the Auth0 Domain and Scheme which are
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 25
+    compileSdkVersion 30
     defaultConfig {
         applicationId "com.auth0.samples"
-        minSdkVersion 15
-        targetSdkVersion 25
+        minSdkVersion 21
+        targetSdkVersion 30
         //...
 
         //---> Add the next line
@@ -665,9 +665,9 @@ users
 
 This library ships with two additional classes that help you manage the Credentials received during authentication. Depending on the minimum API level that your application is targeting you may like to use a different implementation.
 
-### Basic (Min API 15)
+### Basic
 
-The basic version supports asking for `Credentials` existence, storing them and getting them back. If the credentials have expired and a refresh_token was saved, they are automatically refreshed. The class is called `CredentialsManager` and requires at minimum Android API 15.
+The basic version supports asking for `Credentials` existence, storing them and getting them back. If the credentials have expired and a refresh_token was saved, they are automatically refreshed. The class is called `CredentialsManager`.
 
 #### Usage
 1. **Instantiate the manager:**
@@ -735,9 +735,9 @@ manager.clearCredentials();
 ```
 
 
-### Encryption enforced (Min API 21)
+### Encryption enforced
 
-This version expands the minimum version and adds encryption to the data storage. Additionally, in those devices where a Secure Lock Screen has been configured it can require the user authentication before letting them obtain the stored credentials. The class is called `SecureCredentialsManager` and requires at minimum Android API 21.
+This version expands the minimum version and adds encryption to the data storage. Additionally, in those devices where a Secure Lock Screen has been configured it can require the user authentication before letting them obtain the stored credentials. The class is called `SecureCredentialsManager`.
 
 
 #### Usage

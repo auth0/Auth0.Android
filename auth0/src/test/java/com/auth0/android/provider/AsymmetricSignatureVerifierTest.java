@@ -7,7 +7,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
 import java.security.PublicKey;
 
@@ -16,7 +15,6 @@ import static com.auth0.android.provider.JwtTestUtils.createTestJWT;
 import static com.auth0.android.provider.JwtTestUtils.getPublicKey;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 21)
 public class AsymmetricSignatureVerifierTest {
 
     @Rule

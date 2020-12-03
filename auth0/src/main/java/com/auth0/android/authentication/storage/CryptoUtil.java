@@ -7,12 +7,12 @@ import android.os.Build;
 import android.security.KeyPairGeneratorSpec;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
-import androidx.annotation.VisibleForTesting;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -46,7 +46,6 @@ import javax.security.auth.x500.X500Principal;
  * Class to handle encryption/decryption cryptographic operations using AES and RSA algorithms in devices with API 19 or higher.
  */
 @SuppressWarnings("WeakerAccess")
-@RequiresApi(api = Build.VERSION_CODES.KITKAT)
 class CryptoUtil {
 
     private static final String TAG = CryptoUtil.class.getSimpleName();

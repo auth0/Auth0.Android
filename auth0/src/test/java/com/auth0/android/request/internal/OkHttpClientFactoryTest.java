@@ -32,7 +32,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 21)
 public class OkHttpClientFactoryTest {
 
     private OkHttpClientFactory factory;
@@ -124,7 +123,7 @@ public class OkHttpClientFactoryTest {
 
     @Test
     @Config(sdk = 22)
-    public void shouldEnableLoggingTLS12NotEnforced_posLollipop() {
+    public void shouldEnableLoggingTLS12NotEnforced_postLollipop() {
         List list = generateInterceptorsMockList(mockClient);
         OkHttpClient client = factory.modifyClient(mockClient, true, false, 0, 0, 0);
         verifyLoggingEnabled(client, list);

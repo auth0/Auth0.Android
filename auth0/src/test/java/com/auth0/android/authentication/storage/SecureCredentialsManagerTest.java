@@ -5,9 +5,9 @@ import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import android.util.Base64;
+
+import androidx.annotation.Nullable;
 
 import com.auth0.android.Auth0;
 import com.auth0.android.authentication.AuthenticationAPIClient;
@@ -58,9 +58,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 21)
 public class SecureCredentialsManagerTest {
 
     private static final long ONE_HOUR_SECONDS = 60 * 60;
@@ -892,7 +890,6 @@ public class SecureCredentialsManagerTest {
         manager.requireAuthentication(activity, 256, null, null);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Test
     @Config(sdk = 21)
     public void shouldNotRequireAuthenticationIfAPI21AndLockScreenDisabled() {
@@ -910,7 +907,6 @@ public class SecureCredentialsManagerTest {
         assertThat(willAskAuthentication, is(false));
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
     @Test
     @Config(sdk = 23)
     public void shouldNotRequireAuthenticationIfAPI23AndLockScreenDisabled() {
@@ -928,7 +924,6 @@ public class SecureCredentialsManagerTest {
         assertThat(willAskAuthentication, is(false));
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Test
     @Config(sdk = 21)
     public void shouldRequireAuthenticationIfAPI21AndLockScreenEnabled() {
@@ -946,7 +941,6 @@ public class SecureCredentialsManagerTest {
         assertThat(willAskAuthentication, is(true));
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
     @Test
     @Config(sdk = 23)
     public void shouldRequireAuthenticationIfAPI23AndLockScreenEnabled() {

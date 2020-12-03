@@ -27,10 +27,11 @@ package com.auth0.android.provider;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Intent;
+import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.PermissionChecker;
-import android.widget.TextView;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -41,7 +42,6 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -60,7 +60,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 21)
 public class AuthProviderTest {
 
     @Mock
