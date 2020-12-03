@@ -8,6 +8,7 @@ import android.content.ServiceConnection;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
+
 import androidx.annotation.Nullable;
 
 import com.auth0.android.Auth0;
@@ -31,7 +32,6 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -76,7 +76,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 18)
 public class WebAuthProviderTest {
 
     private static final int REQUEST_CODE = 11;

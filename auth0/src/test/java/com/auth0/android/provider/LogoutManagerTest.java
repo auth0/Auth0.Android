@@ -10,7 +10,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -22,7 +21,6 @@ import static org.mockito.Mockito.when;
 
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 18)
 public class LogoutManagerTest {
 
     @Mock

@@ -8,7 +8,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
 import java.security.PublicKey;
 import java.util.Date;
@@ -25,7 +24,6 @@ import static com.auth0.android.provider.JwtTestUtils.getPublicKey;
 import static org.mockito.Mockito.mock;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 18)
 public class IdTokenVerifierTest {
 
 

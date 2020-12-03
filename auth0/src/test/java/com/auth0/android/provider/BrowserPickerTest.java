@@ -18,7 +18,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.hamcrest.MockitoHamcrest;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,7 +37,6 @@ import static org.mockito.Mockito.when;
 import static org.robolectric.Robolectric.setupActivity;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 18)
 public class BrowserPickerTest {
     private static final String CHROME_STABLE = "com.android.chrome";
     private static final String CHROME_SYSTEM = "com.google.android.apps.chrome";

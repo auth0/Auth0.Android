@@ -27,8 +27,6 @@ package com.auth0.android;
 import android.content.Context;
 import android.content.res.Resources;
 
-import androidx.test.core.app.ApplicationProvider;
-
 import com.auth0.android.util.Telemetry;
 import com.squareup.okhttp.HttpUrl;
 
@@ -41,8 +39,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
-import org.robolectric.annotation.Config;
 
 import static com.auth0.android.util.HttpUrlMatcher.hasHost;
 import static com.auth0.android.util.HttpUrlMatcher.hasPath;
@@ -52,9 +48,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
