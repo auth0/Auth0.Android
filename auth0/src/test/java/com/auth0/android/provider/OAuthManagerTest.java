@@ -12,7 +12,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -24,7 +23,6 @@ import static org.junit.Assert.assertTrue;
 
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 18)
 public class OAuthManagerTest {
 
     @Mock

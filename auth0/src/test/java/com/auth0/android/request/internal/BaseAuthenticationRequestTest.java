@@ -15,7 +15,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -27,7 +26,6 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 21)
 public class BaseAuthenticationRequestTest {
 
     public static final String OAUTH_PATH = "oauth";

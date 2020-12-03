@@ -30,7 +30,6 @@ import org.hamcrest.collection.IsMapWithSize;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
 import java.util.List;
 import java.util.Map;
@@ -46,7 +45,6 @@ import static org.hamcrest.collection.IsMapWithSize.aMapWithSize;
 import static org.hamcrest.core.IsNull.nullValue;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 21)
 public class CallbackHelperTest {
 
     private static final String PACKAGE_NAME = "com.auth0.lock.android.app";

@@ -9,7 +9,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -26,7 +25,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 21)
 public class JwksGsonTest extends GsonBaseTest {
     private static final String VALID_RSA_JWKS = "src/test/resources/rsa_jwks.json";
     private static final String EXPECTED_KEY_ID = "key123";

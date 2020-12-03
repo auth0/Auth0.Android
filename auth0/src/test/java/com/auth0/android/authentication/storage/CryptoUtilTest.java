@@ -11,20 +11,16 @@ import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 
-import androidx.annotation.RequiresApi;
-
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.robolectric.RuntimeEnvironment;
@@ -74,15 +70,8 @@ import static org.powermock.api.mockito.PowerMockito.doReturn;
 import static org.powermock.api.mockito.PowerMockito.doThrow;
 import static org.powermock.api.mockito.PowerMockito.mock;
 
-/**
- * Created by lbalmaceda on 8/24/17.
- */
-@RequiresApi(api = Build.VERSION_CODES.KITKAT)
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({CryptoUtil.class, KeyGenerator.class, TextUtils.class, Build.VERSION.class, Base64.class, Cipher.class, Log.class})
-//@PowerMockIgnore({ "javax.management.*", "com.sun.org.apache.xerces.*", "javax.xml.*",
-//        "org.xml.*", "org.w3c.dom.*", "com.sun.org.apache.xalan.*", "javax.activation.*" })
-@Config(sdk = 22)
 public class CryptoUtilTest {
 
     private static final String RSA_TRANSFORMATION = "RSA/ECB/PKCS1Padding";
@@ -142,7 +131,6 @@ public class CryptoUtilTest {
         new CryptoUtil(RuntimeEnvironment.application, storage, " ");
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Test
     @Config(sdk = 19)
     public void shouldNotCreateProtectedRSAKeyPairIfMissingAndLockScreenEnabledOnAPI19() throws Exception {
@@ -193,7 +181,6 @@ public class CryptoUtilTest {
         assertThat(entry, is(expectedEntry));
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Test
     @Config(sdk = 21)
     public void shouldCreateUnprotectedRSAKeyPairIfMissingAndLockScreenDisabledOnAPI21() throws Exception {
@@ -245,7 +232,6 @@ public class CryptoUtilTest {
         assertThat(entry, is(expectedEntry));
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Test
     @Config(sdk = 21)
     public void shouldCreateProtectedRSAKeyPairIfMissingAndLockScreenEnabledOnAPI21() throws Exception {
@@ -297,7 +283,6 @@ public class CryptoUtilTest {
         assertThat(entry, is(expectedEntry));
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
     @Test
     @Config(sdk = 23)
     public void shouldCreateRSAKeyPairIfMissingOnAPI23AndUp() throws Exception {
@@ -345,7 +330,6 @@ public class CryptoUtilTest {
         assertThat(entry, is(expectedEntry));
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.P)
     @Test
     @Config(sdk = 28)
     public void shouldCreateRSAKeyPairIfMissingOnAPI28AndUp() throws Exception {
@@ -392,7 +376,6 @@ public class CryptoUtilTest {
         assertThat(entry, is(expectedEntry));
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.P)
     @Test
     @Config(sdk = 28)
     public void shouldCreateNewRSAKeyPairWhenExistingRSAKeyPairCannotBeRebuiltOnAPI28AndUp() throws Exception {
@@ -448,7 +431,6 @@ public class CryptoUtilTest {
         assertThat(entry, is(expectedEntry));
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.P)
     @Test
     @Config(sdk = 28)
     public void shouldUseExistingRSAKeyPairRebuildingTheEntryOnAPI28AndUp() throws Exception {
@@ -475,7 +457,6 @@ public class CryptoUtilTest {
         assertThat(capturedCertificatesArray.length, is(1));
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.P)
     @Test
     @Config(sdk = 28)
     public void shouldUseExistingRSAKeyPairOnAPI28AndUp() throws Exception {
@@ -491,7 +472,6 @@ public class CryptoUtilTest {
         assertThat(rsaEntry, is(entry));
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O_MR1)
     @Test
     @Config(sdk = 27)
     public void shouldUseExistingRSAKeyPairOnAPI27AndDown() throws Exception {
@@ -548,7 +528,6 @@ public class CryptoUtilTest {
     }
 
     @Test
-    @Config(sdk = 22)
     public void shouldThrowOnCertificateExceptionWhenTryingToObtainRSAKeys() throws Exception {
         exception.expect(IncompatibleDeviceException.class);
         exception.expectMessage("The device is not compatible with the CryptoUtil class");
@@ -1311,7 +1290,6 @@ public class CryptoUtilTest {
         return builder;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
     private KeyGenParameterSpec.Builder newKeyGenParameterSpecBuilder(KeyGenParameterSpec expectedBuilderOutput) {
         KeyGenParameterSpec.Builder builder = PowerMockito.mock(KeyGenParameterSpec.Builder.class);
         PowerMockito.when(builder.setKeySize(anyInt())).thenReturn(builder);
