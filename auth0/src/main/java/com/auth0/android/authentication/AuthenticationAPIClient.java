@@ -541,37 +541,6 @@ public class AuthenticationAPIClient {
     }
 
     /**
-     * Fetch the token information from Auth0.
-     * Example usage:
-     * <pre>
-     * {@code
-     * client.tokenInfo("{id_token}")
-     *      .start(new BaseCallback<UserProfile>() {
-     *          {@literal}Override
-     *          public void onSuccess(UserProfile payload) { }
-     *
-     *          {@literal}@Override
-     *          public void onFailure(AuthenticationException error) { }
-     *      });
-     * }
-     * </pre>
-     *
-     * @param idToken used to fetch it's information
-     * @return a request to start
-     * @deprecated Please use {@link AuthenticationAPIClient#userInfo(String)} instead.
-     */
-    @NonNull
-    @Deprecated
-    public ParameterizableRequest<UserProfile, AuthenticationException> tokenInfo(@NonNull String idToken) {
-        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
-                .addPathSegment(TOKEN_INFO_PATH)
-                .build();
-
-        return factory.POST(url, client, gson, UserProfile.class, authErrorBuilder)
-                .addParameter(ID_TOKEN_KEY, idToken);
-    }
-
-    /**
      * Creates a user in a DB connection using <a href="https://auth0.com/docs/api/authentication#signup">'/dbconnections/signup' endpoint</a>
      * Example usage:
      * <pre>

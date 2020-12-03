@@ -179,35 +179,6 @@ public class WebAuthProvider {
         }
 
         /**
-         * If the class authenticates with an external browser or not.
-         *
-         * @param useBrowser if the authentication is handled in a Browser.
-         * @return the current builder instance
-         * @deprecated This method has been deprecated since it only applied to WebView authentication and Google is no longer supporting it. You should use the default value (use browser).
-         */
-        @Deprecated
-        @NonNull
-        public Builder useBrowser(boolean useBrowser) {
-            this.useBrowser = useBrowser;
-            return this;
-        }
-
-        /**
-         * If the activity should be fullscreen or not. Applies only to the WebView activity, not to the
-         * Browser authentication.
-         *
-         * @param useFullscreen if the activity should be fullscreen or not.
-         * @return the current builder instance
-         * @deprecated This method has been deprecated since it only applied to WebView authentication and Google is no longer supporting it.
-         */
-        @Deprecated
-        @NonNull
-        public Builder useFullscreen(boolean useFullscreen) {
-            this.useFullscreen = useFullscreen;
-            return this;
-        }
-
-        /**
          * Use a custom state in the requests
          *
          * @param state to use in the requests
@@ -345,20 +316,6 @@ public class WebAuthProvider {
         /**
          * Choose the grant type for this request.
          *
-         * @param useCodeGrant whether use code or implicit grant type
-         * @return the current builder instance
-         * @deprecated Please use {@link WebAuthProvider.Builder#withResponseType(int)} to specify a custom Response Type
-         */
-        @Deprecated
-        @NonNull
-        public Builder useCodeGrant(boolean useCodeGrant) {
-            withResponseType(useCodeGrant ? ResponseType.CODE : ResponseType.TOKEN);
-            return this;
-        }
-
-        /**
-         * Choose the grant type for this request.
-         *
          * @param type the ResponseType to request to the Authentication API. Multiple ResponseType's can be defined using a pipe. "CODE | TOKEN"
          * @return the current builder instance
          */
@@ -428,15 +385,11 @@ public class WebAuthProvider {
          * Request user Authentication. The result will be received in the callback.
          * An error is raised if there are no browser applications installed in the device.
          *
-         * @param activity    context to run the authentication
-         * @param callback    to receive the parsed results
-         * @param requestCode to use in the authentication request
+         * @param activity context to run the authentication
+         * @param callback to receive the parsed results
          * @see AuthenticationException#isBrowserAppNotAvailable()
-         * @deprecated This method has been deprecated since it only applied to WebView authentication and Google is no longer supporting it. Please use {@link WebAuthProvider.Builder#start(Activity, AuthCallback)}
          */
-        @SuppressLint("VisibleForTests")
-        @Deprecated
-        public void start(@NonNull Activity activity, @NonNull AuthCallback callback, int requestCode) {
+        public void start(@NonNull Activity activity, @NonNull AuthCallback callback) {
             resetManagerInstance();
 
             if (useBrowser && !ctOptions.hasCompatibleBrowser(activity.getPackageManager())) {
@@ -457,20 +410,7 @@ public class WebAuthProvider {
             if (redirectUri == null) {
                 redirectUri = CallbackHelper.getCallbackUri(scheme, activity.getApplicationContext().getPackageName(), account.getDomainUrl());
             }
-            manager.startAuthentication(activity, redirectUri, requestCode);
-        }
-
-        /**
-         * Request user Authentication. The result will be received in the callback.
-         * An error is raised if there are no browser applications installed in the device.
-         *
-         * @param activity context to run the authentication
-         * @param callback to receive the parsed results
-         * @see AuthenticationException#isBrowserAppNotAvailable()
-         */
-        public void start(@NonNull Activity activity, @NonNull AuthCallback callback) {
-            //noinspection deprecation
-            this.start(activity, callback, 110);
+            manager.startAuthentication(activity, redirectUri, 110);
         }
     }
 
@@ -498,60 +438,6 @@ public class WebAuthProvider {
     @NonNull
     public static Builder login(@NonNull Auth0 account) {
         return new Builder(account);
-    }
-
-    /**
-     * Initialize the WebAuthProvider instance for authenticating the user using an account. Additional settings can be configured
-     * in the Builder, like setting the connection name or authentication parameters.
-     *
-     * @param account to use for authentication
-     * @return a new Builder instance to customize.
-     * @deprecated This method was renamed to reflect an authentication flow. Please use {@link #login(Auth0)}.
-     */
-    @NonNull
-    @Deprecated
-    public static Builder init(@NonNull Auth0 account) {
-        return login(account);
-    }
-
-    /**
-     * Initialize the WebAuthProvider instance with an Android Context. Additional settings can be configured
-     * in the Builder, like setting the connection name or authentication parameters.
-     *
-     * @param context a valid context.
-     * @return a new Builder instance to customize.
-     * @deprecated This method was renamed to reflect an authentication flow. Please use {@link #login(Auth0)}. You can create an Auth0 instance from a Context using {@link Auth0#Auth0(Context)}.
-     */
-    @NonNull
-    @Deprecated
-    public static Builder init(@NonNull Context context) {
-        return login(new Auth0(context));
-    }
-
-    /**
-     * Finishes the authentication or log out flow by passing the data received in the activity's onActivityResult() callback.
-     * The final result will be delivered to the callback specified when calling start().
-     * <p>
-     * This is no longer required to be called, the redirect is handled internally as long as you've correctly setup the intent-filter.
-     *
-     * @param requestCode the request code received on the onActivityResult() call
-     * @param resultCode  the result code received on the onActivityResult() call
-     * @param intent      the data received on the onActivityResult() call
-     * @return true if a result was expected and has a valid format, or false if not. When true is returned a call on the callback is expected.
-     * @deprecated This method has been deprecated since it only applied to WebView authentication and Google is no longer supporting it. Please use {@link WebAuthProvider#resume(Intent)}
-     */
-    @Deprecated
-    public static boolean resume(int requestCode, int resultCode, @Nullable Intent intent) {
-        if (managerInstance == null) {
-            Log.w(TAG, "There is no previous instance of this provider.");
-            return false;
-        }
-        final AuthorizeResult result = new AuthorizeResult(requestCode, resultCode, intent);
-        boolean success = managerInstance.resume(result);
-        if (success) {
-            resetManagerInstance();
-        }
-        return success;
     }
 
     /**
