@@ -5,13 +5,13 @@ import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.util.Base64;
+import android.util.Log;
+
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
-import android.util.Base64;
-import android.util.Log;
 
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationAPIClient;
@@ -32,8 +32,6 @@ import static android.text.TextUtils.isEmpty;
  * On devices running Android API 21 or up with a Secure LockScreen configured (PIN, Pattern, Password or Fingerprint) an extra
  * authentication step can be required.
  */
-@SuppressWarnings({"WeakerAccess", "unused"})
-@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class SecureCredentialsManager extends BaseCredentialsManager {
 
     private static final String TAG = SecureCredentialsManager.class.getSimpleName();
@@ -94,6 +92,7 @@ public class SecureCredentialsManager extends BaseCredentialsManager {
      * @param description the text to use as description in the authentication screen. On some Android versions it might not be shown. Passing null will result in using the OS's default value.
      * @return whether this device supports requiring authentication or not. This result can be ignored safely.
      */
+    @SuppressWarnings("JavadocReference")
     public boolean requireAuthentication(@NonNull Activity activity, @IntRange(from = 1, to = 255) int requestCode, @Nullable String title, @Nullable String description) {
         if (requestCode < 1 || requestCode > 255) {
             throw new IllegalArgumentException("Request code must be a value between 1 and 255.");
@@ -119,6 +118,7 @@ public class SecureCredentialsManager extends BaseCredentialsManager {
      * @param resultCode  the result code received in the onActivityResult call.
      * @return true if the result was handled, false otherwise.
      */
+    @SuppressWarnings("JavadocReference")
     public boolean checkAuthenticationResult(int requestCode, int resultCode) {
         if (requestCode != authenticationRequestCode || decryptCallback == null) {
             return false;
@@ -182,6 +182,7 @@ public class SecureCredentialsManager extends BaseCredentialsManager {
      *
      * @param callback the callback to receive the result in.
      */
+    @SuppressWarnings("JavadocReference")
     @Override
     public void getCredentials(@NonNull BaseCallback<Credentials, CredentialsManagerException> callback) {
         getCredentials(null, 0, callback);
@@ -200,6 +201,7 @@ public class SecureCredentialsManager extends BaseCredentialsManager {
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
      * @param callback the callback to receive the result in.
      */
+    @SuppressWarnings("JavadocReference")
     @Override
     public void getCredentials(@Nullable String scope, int minTtl, @NonNull BaseCallback<Credentials, CredentialsManagerException> callback) {
         if (!hasValidCredentials(minTtl)) {

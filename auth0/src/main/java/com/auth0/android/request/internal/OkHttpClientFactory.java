@@ -1,9 +1,10 @@
 package com.auth0.android.request.internal;
 
 import android.os.Build;
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-import android.util.Log;
 
 import com.squareup.okhttp.ConnectionSpec;
 import com.squareup.okhttp.Interceptor;
@@ -82,8 +83,7 @@ public class OkHttpClientFactory {
     private void enforceTls12(OkHttpClient client) {
         // No need to modify client as TLS 1.2 is enabled by default on API21+
         // Lollipop is included because some Samsung devices face the same problem on API 21.
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN
-                || Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
             return;
         }
         try {
