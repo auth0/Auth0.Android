@@ -24,27 +24,6 @@ dependencies {
 }
 ```
 
-#### Android SDK Versions Troubleshooting
-Those using this library from version `1.14.0` and up should start targeting latest android SDK versions, as [recommended by Google](https://developer.android.com/distribute/best-practices/develop/target-sdk). Those running into conflicts because of different `com.android.support` libraries versions can choose to use the latest release `28.0.0` or exclude the ones required by this library and require a different version in their app's `build.gradle` file as shown below:
-
- e.g. if choosing an older version such as `25.4.0`
-
-```groovy
-apply plugin: 'com.android.application'
-android {
-    //...
-}
-dependencies {
-    implementation ('com.auth0.android:lock:1.14.1'){
-        exclude group: 'com.android.support', module: 'appcompat-v7'
-        exclude group: 'com.android.support', module: 'customtabs'
-    }
-    implementation 'com.android.support:appcompat-v7:25.4.0'
-    implementation 'com.android.support:customtabs:25.4.0'
-    //...
-}
-```
-
 ### Permissions
 
 Open your app's `AndroidManifest.xml` file and add the following permission.
@@ -692,7 +671,7 @@ The basic version supports asking for `Credentials` existence, storing them and 
 
 #### Usage
 1. **Instantiate the manager:**
-You'll need an `AuthenticationAPIClient` instance to renew the credentials when they expire and a `Storage` object. We provide a `SharedPreferencesStorage` class that makes use of `SharedPreferences` to create a file in the application's directory with **Context.MODE_PRIVATE** mode. This implementation is thread safe and can either be obtained through a shared method or on demand.
+You'll need an `AuthenticationAPIClient` instance to renew the credentials when they expire and a `Storage` object. We provide a `SharedPreferencesStorage` class that makes use of `SharedPreferences` to create a file in the application's directory with **Context.MODE_PRIVATE** mode.
 
 ```java
 AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
@@ -730,6 +709,8 @@ boolean authenticated = manager.hasValidCredentials();
 
 4. **Retrieve credentials:**
 Existing credentials will be returned if they are still valid, otherwise the `refresh_token` will be used to attempt to renew them. If the `expires_in` or both the `access_token` and `id_token` values are missing, the method will throw a `CredentialsManagerException`. The same will happen if the credentials have expired and there's no `refresh_token` available.
+
+> This method is not thread-safe, so if you're using _Refresh Token Rotation_ you should avoid calling this method concurrently (might result in more than one renew request being fired, and only the first one will succeed).
 
 ```java
 manager.getCredentials(new BaseCallback<Credentials, CredentialsManagerException>() {

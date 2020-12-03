@@ -135,14 +135,14 @@ public class PKCETest {
     @Test
     public void shouldNotHavePKCEAvailableIfSHA256IsNotAvailable() {
         AlgorithmHelper algorithmHelper = Mockito.mock(AlgorithmHelper.class);
-        when(algorithmHelper.getSHA256(any(byte[].class))).thenThrow(NoSuchAlgorithmException.class);
+        when(algorithmHelper.getSHA256(any())).thenThrow(IllegalStateException.class);
         assertFalse(PKCE.isAvailable(algorithmHelper));
     }
 
     @Test
     public void shouldNotHavePKCEAvailableIfASCIIIsNotAvailable() {
         AlgorithmHelper algorithmHelper = Mockito.mock(AlgorithmHelper.class);
-        when(algorithmHelper.getASCIIBytes(anyString())).thenThrow(UnsupportedEncodingException.class);
+        when(algorithmHelper.getASCIIBytes(anyString())).thenThrow(IllegalStateException.class);
         assertFalse(PKCE.isAvailable(algorithmHelper));
     }
 

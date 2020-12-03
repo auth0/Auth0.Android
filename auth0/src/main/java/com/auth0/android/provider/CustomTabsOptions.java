@@ -6,12 +6,12 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.support.annotation.ColorRes;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.customtabs.CustomTabsIntent;
-import android.support.customtabs.CustomTabsSession;
-import android.support.v4.content.ContextCompat;
+import androidx.annotation.ColorRes;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.browser.customtabs.CustomTabsIntent;
+import androidx.browser.customtabs.CustomTabsSession;
+import androidx.core.content.ContextCompat;
 
 import com.auth0.android.authentication.AuthenticationException;
 

@@ -1,7 +1,7 @@
 package com.auth0.android.provider;
 
 
-import android.support.annotation.IntDef;
+import androidx.annotation.IntDef;
 
 import java.lang.annotation.Retention;
 

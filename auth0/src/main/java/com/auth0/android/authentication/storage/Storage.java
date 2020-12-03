@@ -1,7 +1,7 @@
 package com.auth0.android.authentication.storage;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 /**
  * Represents a Storage of key-value data.

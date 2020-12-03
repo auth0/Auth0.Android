@@ -164,9 +164,10 @@ public class AuthenticationAPIClientTest {
     public void shouldCreateClientWithContextInfo() {
         Context context = Mockito.mock(Context.class);
         Resources resources = Mockito.mock(Resources.class);
+        when(context.getPackageName()).thenReturn("com.myapp");
         when(context.getResources()).thenReturn(resources);
-        when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), anyString())).thenReturn(222);
-        when(resources.getIdentifier(eq("com_auth0_domain"), eq("string"), anyString())).thenReturn(333);
+        when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), eq("com.myapp"))).thenReturn(222);
+        when(resources.getIdentifier(eq("com_auth0_domain"), eq("string"), eq("com.myapp"))).thenReturn(333);
 
         when(context.getString(eq(222))).thenReturn(CLIENT_ID);
         when(context.getString(eq(333))).thenReturn(DOMAIN);

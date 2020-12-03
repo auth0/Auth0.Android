@@ -1,6 +1,6 @@
 package com.auth0.android.provider;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 public class AlgorithmHelperMock extends AlgorithmHelper {
     private final String codeVerifier;

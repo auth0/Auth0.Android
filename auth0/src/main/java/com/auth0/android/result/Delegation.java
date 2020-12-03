@@ -25,7 +25,7 @@
 package com.auth0.android.result;
 
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import com.google.gson.annotations.SerializedName;
 

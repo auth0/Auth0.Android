@@ -35,8 +35,8 @@ import org.robolectric.annotation.Config;
 import java.util.List;
 import java.util.Map;
 
-import static android.support.test.espresso.intent.matcher.UriMatchers.hasHost;
-import static android.support.test.espresso.intent.matcher.UriMatchers.hasScheme;
+import static androidx.test.espresso.intent.matcher.UriMatchers.hasHost;
+import static androidx.test.espresso.intent.matcher.UriMatchers.hasScheme;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;

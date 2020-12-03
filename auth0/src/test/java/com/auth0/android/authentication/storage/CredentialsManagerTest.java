@@ -1,6 +1,6 @@
 package com.auth0.android.authentication.storage;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
@@ -35,7 +35,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
@@ -88,12 +87,12 @@ public class CredentialsManagerTest {
         doAnswer(new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) {
-                String idToken = invocation.getArgumentAt(0, String.class);
-                String accessToken = invocation.getArgumentAt(1, String.class);
-                String type = invocation.getArgumentAt(2, String.class);
-                String refreshToken = invocation.getArgumentAt(3, String.class);
-                Date expiresAt = invocation.getArgumentAt(4, Date.class);
-                String scope = invocation.getArgumentAt(5, String.class);
+                String idToken = invocation.getArgument(0, String.class);
+                String accessToken = invocation.getArgument(1, String.class);
+                String type = invocation.getArgument(2, String.class);
+                String refreshToken = invocation.getArgument(3, String.class);
+                Date expiresAt = invocation.getArgument(4, Date.class);
+                String scope = invocation.getArgument(5, String.class);
                 return new CredentialsMock(idToken, accessToken, type, refreshToken, expiresAt, scope);
             }
         }).when(manager).recreateCredentials(anyString(), anyString(), anyString(), anyString(), any(Date.class), anyString());

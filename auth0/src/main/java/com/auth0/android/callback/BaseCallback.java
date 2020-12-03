@@ -24,7 +24,7 @@
 
 package com.auth0.android.callback;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.auth0.android.Auth0Exception;
 

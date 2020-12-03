@@ -8,7 +8,7 @@ import android.content.ServiceConnection;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.auth0.android.Auth0;
 import com.auth0.android.Auth0Exception;
@@ -40,13 +40,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static android.support.test.espresso.intent.matcher.IntentMatchers.hasComponent;
-import static android.support.test.espresso.intent.matcher.IntentMatchers.hasFlag;
-import static android.support.test.espresso.intent.matcher.UriMatchers.hasHost;
-import static android.support.test.espresso.intent.matcher.UriMatchers.hasParamWithName;
-import static android.support.test.espresso.intent.matcher.UriMatchers.hasParamWithValue;
-import static android.support.test.espresso.intent.matcher.UriMatchers.hasPath;
-import static android.support.test.espresso.intent.matcher.UriMatchers.hasScheme;
+import static androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent;
+import static androidx.test.espresso.intent.matcher.IntentMatchers.hasFlag;
+import static androidx.test.espresso.intent.matcher.UriMatchers.hasHost;
+import static androidx.test.espresso.intent.matcher.UriMatchers.hasParamWithName;
+import static androidx.test.espresso.intent.matcher.UriMatchers.hasParamWithValue;
+import static androidx.test.espresso.intent.matcher.UriMatchers.hasPath;
+import static androidx.test.espresso.intent.matcher.UriMatchers.hasScheme;
 import static com.auth0.android.provider.JwtTestUtils.EXPECTED_AUDIENCE;
 import static com.auth0.android.provider.JwtTestUtils.EXPECTED_BASE_DOMAIN;
 import static com.auth0.android.provider.JwtTestUtils.EXPECTED_NONCE;
@@ -66,7 +66,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -143,9 +142,10 @@ public class WebAuthProviderTest {
     public void shouldInitWithContext() {
         Context context = Mockito.mock(Context.class);
         Resources resources = Mockito.mock(Resources.class);
+        when(context.getPackageName()).thenReturn("com.myapp");
         when(context.getResources()).thenReturn(resources);
-        when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), anyString())).thenReturn(222);
-        when(resources.getIdentifier(eq("com_auth0_domain"), eq("string"), anyString())).thenReturn(333);
+        when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), eq("com.myapp"))).thenReturn(222);
+        when(resources.getIdentifier(eq("com_auth0_domain"), eq("string"), eq("com.myapp"))).thenReturn(333);
 
         when(context.getString(eq(222))).thenReturn("clientId");
         when(context.getString(eq(333))).thenReturn("domain");
@@ -1162,7 +1162,7 @@ public class WebAuthProviderTest {
         jwtBody.put("iss", account.getDomainUrl());
         String expectedIdToken = createTestJWT("HS256", jwtBody);
 
-        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, sentState, null, null));
+        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, sentState, null, null, null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         verify(callback).onSuccess(any(Credentials.class));
@@ -1190,7 +1190,7 @@ public class WebAuthProviderTest {
         jwtBody.put("iss", account.getDomainUrl());
         String expectedIdToken = createTestJWT("HS256", jwtBody);
 
-        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, sentState, null, null));
+        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, sentState, null, null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
 
@@ -1214,7 +1214,7 @@ public class WebAuthProviderTest {
                 .useCodeGrant(true)
                 .withPKCE(pkce)
                 .start(activity, callback);
-        Intent intent = createAuthIntent(createHash(null, null, null, null, null, "1234567890", null, null));
+        Intent intent = createAuthIntent(createHash(null, null, null, null, null, "1234567890", null, null, "1234"));
         int DEFAULT_REQUEST_CODE = 110;
         assertTrue(WebAuthProvider.resume(DEFAULT_REQUEST_CODE, Activity.RESULT_OK, intent));
     }
@@ -1241,7 +1241,7 @@ public class WebAuthProviderTest {
 
         assertThat(sentState, is(not(isEmptyOrNullString())));
         assertThat(sentNonce, is(not(isEmptyOrNullString())));
-        Intent intent = createAuthIntent(createHash(null, null, null, null, null, sentState, null, null));
+        Intent intent = createAuthIntent(createHash(null, null, null, null, null, sentState, null, null, "1234"));
 
         Map<String, Object> jwtBody = createJWTBody();
         jwtBody.put("nonce", sentNonce);
@@ -1256,7 +1256,7 @@ public class WebAuthProviderTest {
                 callbackCaptor.getValue().onSuccess(codeCredentials);
                 return null;
             }
-        }).when(pkce).getToken(any(String.class), callbackCaptor.capture());
+        }).when(pkce).getToken(eq("1234"), callbackCaptor.capture());
 
         assertTrue(WebAuthProvider.resume(intent));
 
@@ -1301,7 +1301,7 @@ public class WebAuthProviderTest {
         jwtBody.put("iss", account.getDomainUrl());
         String expectedIdToken = createTestJWT("HS256", jwtBody);
 
-        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, sentState, null, null));
+        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, sentState, null, null, "1234"));
         final Credentials codeCredentials = new Credentials("codeIdtoken", "codeAccess", "codeType", "codeRefresh", expiresAt, "codeScope");
         Mockito.doAnswer(new Answer() {
             @Override
@@ -1309,7 +1309,7 @@ public class WebAuthProviderTest {
                 callbackCaptor.getValue().onSuccess(codeCredentials);
                 return null;
             }
-        }).when(pkce).getToken(any(String.class), callbackCaptor.capture());
+        }).when(pkce).getToken(eq("1234"), callbackCaptor.capture());
 
         assertTrue(WebAuthProvider.resume(intent));
 
@@ -1348,7 +1348,7 @@ public class WebAuthProviderTest {
         String sentNonce = uri.getQueryParameter(KEY_NONCE);
         assertThat(sentState, is(not(isEmptyOrNullString())));
         assertThat(sentNonce, is(not(isEmptyOrNullString())));
-        Intent intent = createAuthIntent(createHash(null, null, null, null, null, sentState, null, null));
+        Intent intent = createAuthIntent(createHash(null, null, null, null, null, sentState, null, null,"1234"));
 
         Map<String, Object> jwtBody = createJWTBody();
         jwtBody.put("nonce", sentNonce);
@@ -1362,7 +1362,7 @@ public class WebAuthProviderTest {
                 callbackCaptor.getValue().onSuccess(codeCredentials);
                 return null;
             }
-        }).when(pkce).getToken(any(String.class), callbackCaptor.capture());
+        }).when(pkce).getToken(eq("1234"), callbackCaptor.capture());
 
 
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
@@ -1392,7 +1392,7 @@ public class WebAuthProviderTest {
 
         String sentState = uri.getQueryParameter(KEY_STATE);
         assertThat(sentState, is(not(isEmptyOrNullString())));
-        Intent intent = createAuthIntent(createHash("maliciuouslyPutIdToken", "urlAccess", null, "urlType", 1111L, sentState, null, null));
+        Intent intent = createAuthIntent(createHash("maliciuouslyPutIdToken", "urlAccess", null, "urlType", 1111L, sentState, null, null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
         ArgumentCaptor<Credentials> credentialsCaptor = ArgumentCaptor.forClass(Credentials.class);
@@ -1420,7 +1420,7 @@ public class WebAuthProviderTest {
 
         String sentState = uri.getQueryParameter(KEY_STATE);
         assertThat(sentState, is(not(isEmptyOrNullString())));
-        Intent intent = createAuthIntent(createHash(null, "urlAccess", null, "urlType", 1111L, sentState, null, null));
+        Intent intent = createAuthIntent(createHash(null, "urlAccess", null, "urlType", 1111L, sentState, null, null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
         ArgumentCaptor<Credentials> credentialsCaptor = ArgumentCaptor.forClass(Credentials.class);
@@ -1447,7 +1447,7 @@ public class WebAuthProviderTest {
 
         String sentState = uri.getQueryParameter(KEY_STATE);
         assertThat(sentState, is(not(isEmptyOrNullString())));
-        Intent intent = createAuthIntent(createHash(null, "urlAccess", null, "urlType", 1111L, sentState, null, null));
+        Intent intent = createAuthIntent(createHash(null, "urlAccess", null, "urlType", 1111L, sentState, null, null, null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         ArgumentCaptor<Credentials> credentialsCaptor = ArgumentCaptor.forClass(Credentials.class);
@@ -1509,7 +1509,7 @@ public class WebAuthProviderTest {
 
         String sentState = uri.getQueryParameter(KEY_STATE);
         assertThat(sentState, is(not(isEmptyOrNullString())));
-        Intent intent = createAuthIntent(createHash(null, "urlAccess", null, "urlType", 1111L, sentState, null, null));
+        Intent intent = createAuthIntent(createHash(null, "urlAccess", null, "urlType", 1111L, sentState, null, null, null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         ArgumentCaptor<Credentials> credentialsCaptor = ArgumentCaptor.forClass(Credentials.class);
@@ -1532,13 +1532,13 @@ public class WebAuthProviderTest {
                 callbackCaptor.getValue().onFailure(dialog);
                 return null;
             }
-        }).when(pkce).getToken(any(String.class), callbackCaptor.capture());
+        }).when(pkce).getToken(eq("1234"), callbackCaptor.capture());
         WebAuthProvider.init(account)
                 .withState("1234567890")
                 .useCodeGrant(true)
                 .withPKCE(pkce)
                 .start(activity, callback);
-        Intent intent = createAuthIntent(createHash(null, null, null, null, 1111L, "1234567890", null, null));
+        Intent intent = createAuthIntent(createHash(null, null, null, null, 1111L, "1234567890", null, null, "1234"));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(dialog);
@@ -1555,7 +1555,7 @@ public class WebAuthProviderTest {
                 callbackCaptor.getValue().onFailure(exception);
                 return null;
             }
-        }).when(pkce).getToken(any(String.class), callbackCaptor.capture());
+        }).when(pkce).getToken(eq("1234"), callbackCaptor.capture());
 
         WebAuthProvider.init(account)
                 .withState("1234567890")
@@ -1570,7 +1570,7 @@ public class WebAuthProviderTest {
         Map<String, Object> jwtBody = createJWTBody();
         jwtBody.put("iss", account.getDomainUrl());
         String expectedIdToken = createTestJWT("HS256", jwtBody);
-        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, "1234567890", null, null));
+        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, "1234567890", null, null, "1234"));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(exception);
@@ -1587,7 +1587,7 @@ public class WebAuthProviderTest {
                 callbackCaptor.getValue().onFailure(exception);
                 return null;
             }
-        }).when(pkce).getToken(any(String.class), callbackCaptor.capture());
+        }).when(pkce).getToken(eq("1234"), callbackCaptor.capture());
 
         WebAuthProvider.init(account)
                 .withState("1234567890")
@@ -1602,7 +1602,7 @@ public class WebAuthProviderTest {
         Map<String, Object> jwtBody = createJWTBody();
         String expectedIdToken = createTestJWT("HS256", jwtBody);
 
-        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, "1234567890", null, null));
+        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, "1234567890", null, null, "1234"));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(exception);
@@ -1615,7 +1615,7 @@ public class WebAuthProviderTest {
                 .withState("1234567890")
                 .useCodeGrant(false)
                 .start(activity, callback);
-        Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", "access_denied", null));
+        Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", "access_denied", null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -1632,7 +1632,7 @@ public class WebAuthProviderTest {
                 .withState("1234567890")
                 .useCodeGrant(false)
                 .start(activity, callback, REQUEST_CODE);
-        Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", "access_denied", null));
+        Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", "access_denied", null, null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -1649,7 +1649,7 @@ public class WebAuthProviderTest {
                 .withState("1234567890")
                 .useCodeGrant(false)
                 .start(activity, callback);
-        Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", "unauthorized", "Custom Rule Error"));
+        Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", "unauthorized", "Custom Rule Error", null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -1666,7 +1666,7 @@ public class WebAuthProviderTest {
                 .withState("1234567890")
                 .useCodeGrant(false)
                 .start(activity, callback, REQUEST_CODE);
-        Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", "unauthorized", "Custom Rule Error"));
+        Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", "unauthorized", "Custom Rule Error", null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -1683,7 +1683,7 @@ public class WebAuthProviderTest {
                 .withState("1234567890")
                 .useCodeGrant(false)
                 .start(activity, callback);
-        Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", "some other error", null));
+        Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", "some other error", null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -1700,7 +1700,7 @@ public class WebAuthProviderTest {
                 .withState("1234567890")
                 .useCodeGrant(false)
                 .start(activity, callback, REQUEST_CODE);
-        Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", "some other error", null));
+        Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", "some other error", null, null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -1717,7 +1717,7 @@ public class WebAuthProviderTest {
                 .withState("1234567890")
                 .withResponseType(ResponseType.ID_TOKEN | ResponseType.TOKEN)
                 .start(activity, callback);
-        Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", null, null));
+        Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", null, null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -1749,7 +1749,7 @@ public class WebAuthProviderTest {
         jwtBody.put("iss", proxyAccount.getDomainUrl());
         String expectedIdToken = createTestJWT("RS256", jwtBody);
 
-        Intent intent = createAuthIntent(createHash(expectedIdToken, "aToken", null, "urlType", 1111L, "1234567890", null, null));
+        Intent intent = createAuthIntent(createHash(expectedIdToken, "aToken", null, "urlType", 1111L, "1234567890", null, null, null));
         assertTrue(WebAuthProvider.resume(intent));
         mockAPI.takeRequest();
 
@@ -1785,7 +1785,7 @@ public class WebAuthProviderTest {
         jwtBody.put("iss", proxyAccount.getDomainUrl());
         String expectedIdToken = createTestJWT("RS256", jwtBody);
 
-        Intent intent = createAuthIntent(createHash(expectedIdToken, "aToken", null, "urlType", 1111L, "1234567890", null, null));
+        Intent intent = createAuthIntent(createHash(expectedIdToken, "aToken", null, "urlType", 1111L, "1234567890", null, null, null));
         assertTrue(WebAuthProvider.resume(intent));
         mockAPI.takeRequest();
 
@@ -1818,7 +1818,7 @@ public class WebAuthProviderTest {
         managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
 
         String expectedIdToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhdXRoMHwxMjM0NTY3ODkifQ.PZivSuGSAWpSU62-iHwI16Po9DgO9lN7SLB3168P03wXBkue6nxbL3beq6jjW9uuhqRKfOiDtsvtr3paGXHONarPqQ1LEm4TDg8CM6AugaphH36EjEjL0zEYo0nxz9Fv1Xu9_bWSzfmLLgRefjZ5R0muV7JlyfBgtkfG0avD3PtjlNtToXX1sN9DyhgCT-STX9kSQAlk23V1XA3c8st09QgmQRgtZC3ZmTEHqq_FTmFUkVUNM6E0LbgLR7bLcOx4Xqayp1mqZxUgTg7ynHI6Ey4No-R5_twAki_BR8uG0TxqHlPxuU9QTzEvCQxrqzZZufRv_kIn2-fqrF3yr3z4Og";
-        Intent intent = createAuthIntent(createHash(expectedIdToken, "aToken", null, "urlType", 1111L, "1234567890", null, null));
+        Intent intent = createAuthIntent(createHash(expectedIdToken, "aToken", null, "urlType", 1111L, "1234567890", null, null, null));
         assertTrue(WebAuthProvider.resume(intent));
         mockAPI.takeRequest();
 
@@ -1854,7 +1854,7 @@ public class WebAuthProviderTest {
         jwtBody.put("iss", proxyAccount.getDomainUrl());
         String expectedIdToken = createTestJWT("RS256", jwtBody);
 
-        Intent intent = createAuthIntent(createHash(expectedIdToken, "aToken", null, "urlType", 1111L, "1234567890", null, null));
+        Intent intent = createAuthIntent(createHash(expectedIdToken, "aToken", null, "urlType", 1111L, "1234567890", null, null, null));
         assertTrue(WebAuthProvider.resume(intent));
         mockAPI.takeRequest();
 
@@ -1892,7 +1892,7 @@ public class WebAuthProviderTest {
         jwtBody.put("iss", account.getDomainUrl());
         String expectedIdToken = createTestJWT("HS256", jwtBody);
 
-        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, sentState, null, null));
+        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, sentState, null, null, null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         verify(callback).onSuccess(any(Credentials.class));
@@ -1923,7 +1923,7 @@ public class WebAuthProviderTest {
         jwtBody.put("iss", "https://some.different.issuer/");
         String expectedIdToken = createTestJWT("HS256", jwtBody);
 
-        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, sentState, null, null));
+        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, sentState, null, null, null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         verify(callback).onSuccess(any(Credentials.class));
@@ -1948,7 +1948,7 @@ public class WebAuthProviderTest {
         String[] parts = expectedIdToken.split("\\.");
         expectedIdToken = parts[0] + "." + parts[1] + ".invalid-signature";
 
-        Intent intent = createAuthIntent(createHash(expectedIdToken, "aToken", null, "urlType", 1111L, "1234567890", null, null));
+        Intent intent = createAuthIntent(createHash(expectedIdToken, "aToken", null, "urlType", 1111L, "1234567890", null, null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
         ArgumentCaptor<Credentials> credentialsCaptor = ArgumentCaptor.forClass(Credentials.class);
@@ -1982,7 +1982,7 @@ public class WebAuthProviderTest {
         jwtBody.put("iss", proxyAccount.getDomainUrl());
         String expectedIdToken = createTestJWT("RS256", jwtBody);
 
-        Intent intent = createAuthIntent(createHash(expectedIdToken, "aToken", null, "urlType", 1111L, "1234567890", null, null));
+        Intent intent = createAuthIntent(createHash(expectedIdToken, "aToken", null, "urlType", 1111L, "1234567890", null, null, null));
         assertTrue(WebAuthProvider.resume(intent));
         mockAPI.takeRequest();
 
@@ -2017,7 +2017,7 @@ public class WebAuthProviderTest {
         jwtBody.put("iss", proxyAccount.getDomainUrl());
         String expectedIdToken = createTestJWT("HS256", jwtBody);
 
-        Intent intent = createAuthIntent(createHash(expectedIdToken, "aToken", null, "urlType", 1111L, "1234567890", null, null));
+        Intent intent = createAuthIntent(createHash(expectedIdToken, "aToken", null, "urlType", 1111L, "1234567890", null, null, null));
         assertTrue(WebAuthProvider.resume(intent));
         mockAPI.takeRequest();
 
@@ -2038,7 +2038,7 @@ public class WebAuthProviderTest {
                 .withState("1234567890")
                 .useCodeGrant(false)
                 .start(activity, callback);
-        Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", "login_required", "Login Required"));
+        Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", "login_required", "Login Required", null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -2055,7 +2055,7 @@ public class WebAuthProviderTest {
                 .withState("1234567890")
                 .useCodeGrant(false)
                 .start(activity, callback, REQUEST_CODE);
-        Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", "login_required", "Login Required"));
+        Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", "login_required", "Login Required", null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -2072,7 +2072,7 @@ public class WebAuthProviderTest {
                 .withState("abcdefghijk")
                 .useCodeGrant(false)
                 .start(activity, callback);
-        Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", null, null));
+        Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", null, null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -2089,7 +2089,7 @@ public class WebAuthProviderTest {
                 .withState("abcdefghijk")
                 .useCodeGrant(false)
                 .start(activity, callback, REQUEST_CODE);
-        Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", null, null));
+        Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", null, null, null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -2109,7 +2109,7 @@ public class WebAuthProviderTest {
         OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
         managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
 
-        Intent intent = createAuthIntent(createHash("not.valid", null, null, null, null, "state", null, null));
+        Intent intent = createAuthIntent(createHash("not.valid", null, null, null, null, "state", null, null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -2134,7 +2134,7 @@ public class WebAuthProviderTest {
 
         verify(activity).startActivity(intentCaptor.capture());
 
-        Intent intent = createAuthIntent(createHash(null, "urlAccess", null, null, null, "state", null, null));
+        Intent intent = createAuthIntent(createHash(null, "urlAccess", null, null, null, "state", null, null, "1234"));
         final Credentials codeCredentials = new Credentials("not.valid", "codeAccess", "codeType", "codeRefresh", expiresAt, "codeScope");
         Mockito.doAnswer(new Answer() {
             @Override
@@ -2142,7 +2142,7 @@ public class WebAuthProviderTest {
                 callbackCaptor.getValue().onSuccess(codeCredentials);
                 return null;
             }
-        }).when(pkce).getToken(any(String.class), callbackCaptor.capture());
+        }).when(pkce).getToken(eq("1234"), callbackCaptor.capture());
 
         assertTrue(WebAuthProvider.resume(intent));
 
@@ -2173,7 +2173,7 @@ public class WebAuthProviderTest {
         jwtBody.put("auth_time", authTime);
         String expectedIdToken = createTestJWT("HS256", jwtBody);
 
-        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, "state", null, null));
+        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, "state", null, null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -2198,7 +2198,7 @@ public class WebAuthProviderTest {
         Map<String, Object> jwtBody = createJWTBody();
         String expectedIdToken = createTestJWT("HS256", jwtBody);
 
-        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, "state", null, null));
+        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, "state", null, null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -2223,7 +2223,7 @@ public class WebAuthProviderTest {
         Map<String, Object> jwtBody = createJWTBody();
         String expectedIdToken = createTestJWT("HS256", jwtBody);
 
-        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, "state", null, null));
+        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, "state", null, null, null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -2249,7 +2249,7 @@ public class WebAuthProviderTest {
         jwtBody.put("iss", account.getDomainUrl());
         String expectedIdToken = createTestJWT("none", jwtBody);
 
-        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, "state", null, null));
+        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, "state", null, null, null));
         assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
@@ -2267,7 +2267,7 @@ public class WebAuthProviderTest {
                 .useCodeGrant(false)
                 .start(activity, callback);
 
-        Intent intent = createAuthIntent(createHash(null, "aToken", null, null, null, "1234567890", null, null));
+        Intent intent = createAuthIntent(createHash(null, "aToken", null, null, null, "1234567890", null, null, null));
         assertFalse(WebAuthProvider.resume(999, Activity.RESULT_OK, intent));
     }
 
@@ -2279,7 +2279,7 @@ public class WebAuthProviderTest {
                 .useCodeGrant(false)
                 .start(activity, callback, REQUEST_CODE);
 
-        Intent intent = createAuthIntent(createHash(null, "aToken", null, null, null, "1234567890", null, null));
+        Intent intent = createAuthIntent(createHash(null, "aToken", null, null, null, "1234567890", null, null, null));
         assertFalse(WebAuthProvider.resume(REQUEST_CODE, 999, intent));
     }
 
@@ -2352,7 +2352,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback);
 
         assertThat(WebAuthProvider.getManagerInstance(), is(notNullValue()));
-        Intent intent = createAuthIntent(createHash(null, null, null, null, null, "1234567890", null, null));
+        Intent intent = createAuthIntent(createHash(null, null, null, null, null, "1234567890", null, null, null));
         assertTrue(WebAuthProvider.resume(intent));
         assertThat(WebAuthProvider.getManagerInstance(), is(nullValue()));
     }
@@ -2364,7 +2364,7 @@ public class WebAuthProviderTest {
                 .start(activity, callback, REQUEST_CODE);
 
         assertThat(WebAuthProvider.getManagerInstance(), is(notNullValue()));
-        Intent intent = createAuthIntent(createHash(null, null, null, null, null, "1234567890", null, null));
+        Intent intent = createAuthIntent(createHash(null, null, null, null, null, "1234567890", null, null, null));
         assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
         assertThat(WebAuthProvider.getManagerInstance(), is(nullValue()));
     }
@@ -2584,7 +2584,7 @@ public class WebAuthProviderTest {
         Intent intent = createAuthIntent("");
         assertTrue(WebAuthProvider.resume(intent));
 
-        verify(voidCallback).onSuccess(any(Void.class));
+        verify(voidCallback).onSuccess(eq(null));
     }
 
     @Test
@@ -2634,7 +2634,7 @@ public class WebAuthProviderTest {
         return intent;
     }
 
-    private String createHash(@Nullable String idToken, @Nullable String accessToken, @Nullable String refreshToken, @Nullable String tokenType, @Nullable Long expiresIn, @Nullable String state, @Nullable String error, @Nullable String errorDescription) {
+    private String createHash(@Nullable String idToken, @Nullable String accessToken, @Nullable String refreshToken, @Nullable String tokenType, @Nullable Long expiresIn, @Nullable String state, @Nullable String error, @Nullable String errorDescription, @Nullable String pkceCode) {
         String hash = "#";
         if (accessToken != null) {
             hash = hash.concat("access_token=")
@@ -2674,6 +2674,11 @@ public class WebAuthProviderTest {
         if (errorDescription != null) {
             hash = hash.concat("error_description=")
                     .concat(errorDescription)
+                    .concat("&");
+        }
+        if (pkceCode != null) {
+            hash = hash.concat("code=")
+                    .concat(pkceCode)
                     .concat("&");
         }
         if (hash.endsWith("&")) {

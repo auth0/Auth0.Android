@@ -9,8 +9,8 @@ buildscript {
         google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.4.3'
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4'
+        classpath 'com.android.tools.build:gradle:4.1.1'
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.5'
     }
 }
 
@@ -21,9 +21,4 @@ allprojects {
         jcenter()
         google()
     }
-}
-
-task clean(type: Delete) {
-    delete rootProject.buildDir
-    delete 'CHANGELOG.md.release'
 }

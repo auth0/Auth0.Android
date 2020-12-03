@@ -7,15 +7,16 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.os.Parcel;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.test.espresso.intent.matcher.IntentMatchers;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.test.espresso.intent.matcher.IntentMatchers;
 
 import org.hamcrest.MatcherAssert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
+import org.mockito.hamcrest.MockitoHamcrest;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
@@ -31,7 +32,6 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.intThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -334,11 +334,11 @@ public class BrowserPickerTest {
         for (String browser : browserPackages) {
             ResolveInfo info = resolveInfoForPackageName(browser);
             if (customTabPackages != null && customTabPackages.contains(browser)) {
-                when(pm.resolveService(Matchers.argThat(IntentMatchers.hasPackage(browser)), eq(0))).thenReturn(info);
+                when(pm.resolveService(MockitoHamcrest.argThat(IntentMatchers.hasPackage(browser)), eq(0))).thenReturn(info);
             }
             allBrowsers.add(info);
         }
-        when(pm.queryIntentActivities(any(Intent.class), intThat(isOneOf(0, PackageManager.MATCH_ALL)))).thenReturn(allBrowsers);
+        when(pm.queryIntentActivities(any(Intent.class), MockitoHamcrest.intThat(isOneOf(0, PackageManager.MATCH_ALL)))).thenReturn(allBrowsers);
     }
 
     private static ResolveInfo resolveInfoForPackageName(@Nullable String packageName) {
