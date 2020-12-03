@@ -1019,32 +1019,6 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    // TODO - is this test valuable after removing useBrowser and useCodeGrant?
-    public void shouldStartLoginWithBrowser() {
-        WebAuthProvider.login(account)
-//                .useBrowser(true)
-                .withResponseType(ResponseType.TOKEN)
-                .start(activity, callback);
-
-        verify(activity).startActivity(intentCaptor.capture());
-
-        Intent intent = intentCaptor.getValue();
-        assertThat(intent, is(notNullValue()));
-        assertThat(intent, hasComponent(AuthenticationActivity.class.getName()));
-        assertThat(intent, hasFlag(Intent.FLAG_ACTIVITY_CLEAR_TOP));
-        assertThat(intent.getData(), is(nullValue()));
-
-        Bundle extras = intentCaptor.getValue().getExtras();
-        assertThat(extras.getParcelable(AuthenticationActivity.EXTRA_AUTHORIZE_URI), is(notNullValue()));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(false));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(false));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CT_OPTIONS), is(true));
-        assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
-        assertThat(extras.getParcelable(AuthenticationActivity.EXTRA_CT_OPTIONS), is(notNullValue()));
-    }
-
-    @Test
     public void shouldSetExpectedNonceWithResponseTypeIdToken() throws Exception {
         WebAuthProvider.login(account)
                 .withResponseType(ResponseType.ID_TOKEN)
@@ -2123,32 +2097,6 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getCause(), is(Matchers.<Throwable>instanceOf(TokenValidationException.class)));
         assertThat(authExceptionCaptor.getValue().getCause().getMessage(), is("Signature algorithm of \"none\" is not supported. Expected the ID token to be signed with any of [HS256, RS256]."));
     }
-
-    // TODO is this test valid now?
-//    @SuppressWarnings("deprecation")
-//    @Test
-//    public void shouldFailToResumeLoginWithUnexpectedRequestCode() {
-//        verifyNoMoreInteractions(callback);
-//        WebAuthProvider.login(account)
-//                .useCodeGrant(false)
-//                .start(activity, callback);
-//
-//        Intent intent = createAuthIntent(createHash(null, "aToken", null, null, null, "1234567890", null, null, null));
-//        assertFalse(WebAuthProvider.resume(999, Activity.RESULT_OK, intent));
-//    }
-
-    // TODO is this test valid now?
-//    @SuppressWarnings("deprecation")
-//    @Test
-//    public void shouldFailToResumeLoginWithResultNotOK() {
-//        verifyNoMoreInteractions(callback);
-//        WebAuthProvider.login(account)
-//                .useCodeGrant(false)
-//                .start(activity, callback, REQUEST_CODE);
-//
-//        Intent intent = createAuthIntent(createHash(null, "aToken", null, null, null, "1234567890", null, null, null));
-//        assertFalse(WebAuthProvider.resume(REQUEST_CODE, 999, intent));
-//    }
 
     @Test
     public void shouldFailToResumeLoginWithIntentWithEmptyUriValues() {
