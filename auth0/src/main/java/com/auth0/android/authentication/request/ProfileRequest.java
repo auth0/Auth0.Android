@@ -25,6 +25,7 @@
 package com.auth0.android.authentication.request;
 
 import android.annotation.SuppressLint;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -33,12 +34,12 @@ import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.request.AuthRequest;
 import com.auth0.android.request.AuthenticationRequest;
-import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.request.Request;
 import com.auth0.android.result.Authentication;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.UserProfile;
 
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -50,16 +51,16 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
 
     private final AuthenticationRequest authenticationRequest;
     private final AuthRequest authRequest;
-    final ParameterizableRequest<UserProfile, AuthenticationException> userInfoRequest;
+    final Request<UserProfile, AuthenticationException> userInfoRequest;
 
     /**
      * @param authenticationRequest the request that will output a pair of credentials
      * @param userInfoRequest       the /userinfo request that will be wrapped
-     * @deprecated using this constructor prevents from updating the request headers. See {@link #ProfileRequest(AuthRequest, ParameterizableRequest)}
+     * @deprecated using this constructor prevents from updating the request headers. See {@link #ProfileRequest(AuthRequest, Request)}
      */
     @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
-    public ProfileRequest(@NonNull AuthenticationRequest authenticationRequest, @NonNull ParameterizableRequest<UserProfile, AuthenticationException> userInfoRequest) {
+    public ProfileRequest(@NonNull AuthenticationRequest authenticationRequest, @NonNull Request<UserProfile, AuthenticationException> userInfoRequest) {
         this.userInfoRequest = userInfoRequest;
         this.authenticationRequest = authenticationRequest;
         this.authRequest = null;
@@ -70,7 +71,7 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
      * @param userInfoRequest  the /userinfo request that will be wrapped
      */
     @SuppressLint("LambdaLast")
-    public ProfileRequest(@NonNull AuthRequest authRequest, @NonNull ParameterizableRequest<UserProfile, AuthenticationException> userInfoRequest) {
+    public ProfileRequest(@NonNull AuthRequest authRequest, @NonNull Request<UserProfile, AuthenticationException> userInfoRequest) {
         this.userInfoRequest = userInfoRequest;
         this.authRequest = authRequest;
         this.authenticationRequest = null;
@@ -94,6 +95,13 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
         return this;
     }
 
+    @NonNull
+    @Override
+    public ProfileRequest addParameter(@NonNull String name, @NonNull Object value) {
+        getAuthRequest().addAuthenticationParameters(Collections.singletonMap(name, value));
+        return this;
+    }
+
     /**
      * Adds a header to the request, e.g. "Authorization"
      * Only available when the underlying authentication request is of type {@link AuthRequest}.
@@ -101,7 +109,7 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
      * @param name  of the header
      * @param value of the header
      * @return itself
-     * @see ProfileRequest#ProfileRequest(AuthRequest, ParameterizableRequest)
+     * @see ProfileRequest#ProfileRequest(AuthRequest, Request)
      */
     @NonNull
     public ProfileRequest addHeader(@NonNull String name, @NonNull String value) {

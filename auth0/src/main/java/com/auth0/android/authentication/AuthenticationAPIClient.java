@@ -25,6 +25,7 @@
 package com.auth0.android.authentication;
 
 import android.content.Context;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -38,7 +39,7 @@ import com.auth0.android.authentication.request.TokenRequest;
 import com.auth0.android.request.AuthRequest;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.request.ErrorBuilder;
-import com.auth0.android.request.ParameterizableRequest;
+import com.auth0.android.request.Request;
 import com.auth0.android.request.internal.AuthenticationErrorBuilder;
 import com.auth0.android.request.internal.GsonProvider;
 import com.auth0.android.request.internal.OkHttpClientFactory;
@@ -62,7 +63,6 @@ import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSW
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP;
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSWORD_REALM;
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE;
-import static com.auth0.android.authentication.ParameterBuilder.ID_TOKEN_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.SCOPE_OPENID;
 
 /**
@@ -535,7 +535,7 @@ public class AuthenticationAPIClient {
      * @return a request to start
      */
     @NonNull
-    public ParameterizableRequest<UserProfile, AuthenticationException> userInfo(@NonNull String accessToken) {
+    public Request<UserProfile, AuthenticationException> userInfo(@NonNull String accessToken) {
         return profileRequest()
                 .addHeader(HEADER_AUTHORIZATION, "Bearer " + accessToken);
     }
@@ -577,7 +577,7 @@ public class AuthenticationAPIClient {
                 .setClientId(getClientId())
                 .asDictionary();
 
-        final ParameterizableRequest<DatabaseUser, AuthenticationException> request = factory.POST(url, client, gson, DatabaseUser.class, authErrorBuilder)
+        final Request<DatabaseUser, AuthenticationException> request = factory.POST(url, client, gson, DatabaseUser.class, authErrorBuilder)
                 .addParameters(parameters);
         return new DatabaseConnectionRequest<>(request);
     }
@@ -701,7 +701,7 @@ public class AuthenticationAPIClient {
                 .setConnection(connection)
                 .asDictionary();
 
-        final ParameterizableRequest<Void, AuthenticationException> request = factory.POST(url, client, gson, authErrorBuilder)
+        final Request<Void, AuthenticationException> request = factory.POST(url, client, gson, authErrorBuilder)
                 .addParameters(parameters);
         return new DatabaseConnectionRequest<>(request);
     }
@@ -728,7 +728,7 @@ public class AuthenticationAPIClient {
      *
      */
     @NonNull
-    public ParameterizableRequest<Void, AuthenticationException> revokeToken(@NonNull String refreshToken) {
+    public Request<Void, AuthenticationException> revokeToken(@NonNull String refreshToken) {
         final Map<String, Object> parameters = ParameterBuilder.newBuilder()
                 .setClientId(getClientId())
                 .set(TOKEN_KEY, refreshToken)
@@ -767,7 +767,7 @@ public class AuthenticationAPIClient {
      * @return a request to start
      */
     @NonNull
-    public ParameterizableRequest<Credentials, AuthenticationException> renewAuth(@NonNull String refreshToken) {
+    public Request<Credentials, AuthenticationException> renewAuth(@NonNull String refreshToken) {
         final Map<String, Object> parameters = ParameterBuilder.newBuilder()
                 .setClientId(getClientId())
                 .setRefreshToken(refreshToken)
@@ -811,7 +811,7 @@ public class AuthenticationAPIClient {
      */
     @NonNull
     public DelegationRequest<Delegation> delegationWithIdToken(@NonNull String idToken) {
-        ParameterizableRequest<Delegation, AuthenticationException> request = delegation(Delegation.class)
+        Request<Delegation, AuthenticationException> request = delegation(Delegation.class)
                 .addParameter(ParameterBuilder.ID_TOKEN_KEY, idToken);
 
         return new DelegationRequest<>(request)
@@ -840,7 +840,7 @@ public class AuthenticationAPIClient {
      */
     @NonNull
     public DelegationRequest<Delegation> delegationWithRefreshToken(@NonNull String refreshToken) {
-        ParameterizableRequest<Delegation, AuthenticationException> request = delegation(Delegation.class)
+        Request<Delegation, AuthenticationException> request = delegation(Delegation.class)
                 .addParameter(ParameterBuilder.REFRESH_TOKEN_KEY, refreshToken);
 
         return new DelegationRequest<>(request)
@@ -869,7 +869,7 @@ public class AuthenticationAPIClient {
      */
     @NonNull
     public DelegationRequest<Map<String, Object>> delegationWithIdToken(@NonNull String idToken, @NonNull String apiType) {
-        ParameterizableRequest<Map<String, Object>, AuthenticationException> request = delegation()
+        Request<Map<String, Object>, AuthenticationException> request = delegation()
                 .addParameter(ParameterBuilder.ID_TOKEN_KEY, idToken);
 
         return new DelegationRequest<>(request)
@@ -900,7 +900,7 @@ public class AuthenticationAPIClient {
      * @return a request to configure and start
      */
     @NonNull
-    public ParameterizableRequest<Void, AuthenticationException> passwordlessWithEmail(@NonNull String email, @NonNull PasswordlessType passwordlessType, @NonNull String connection) {
+    public Request<Void, AuthenticationException> passwordlessWithEmail(@NonNull String email, @NonNull PasswordlessType passwordlessType, @NonNull String connection) {
         final Map<String, Object> parameters = ParameterBuilder.newBuilder()
                 .set(EMAIL_KEY, email)
                 .setSend(passwordlessType)
@@ -935,7 +935,7 @@ public class AuthenticationAPIClient {
      * @return a request to configure and start
      */
     @NonNull
-    public ParameterizableRequest<Void, AuthenticationException> passwordlessWithEmail(@NonNull String email, @NonNull PasswordlessType passwordlessType) {
+    public Request<Void, AuthenticationException> passwordlessWithEmail(@NonNull String email, @NonNull PasswordlessType passwordlessType) {
         return passwordlessWithEmail(email, passwordlessType, EMAIL_CONNECTION);
     }
 
@@ -963,7 +963,7 @@ public class AuthenticationAPIClient {
      * @return a request to configure and start
      */
     @NonNull
-    public ParameterizableRequest<Void, AuthenticationException> passwordlessWithSMS(@NonNull String phoneNumber, @NonNull PasswordlessType passwordlessType, @NonNull String connection) {
+    public Request<Void, AuthenticationException> passwordlessWithSMS(@NonNull String phoneNumber, @NonNull PasswordlessType passwordlessType, @NonNull String connection) {
         final Map<String, Object> parameters = ParameterBuilder.newBuilder()
                 .set(PHONE_NUMBER_KEY, phoneNumber)
                 .setSend(passwordlessType)
@@ -998,7 +998,7 @@ public class AuthenticationAPIClient {
      * @return a request to configure and start
      */
     @NonNull
-    public ParameterizableRequest<Void, AuthenticationException> passwordlessWithSMS(@NonNull String phoneNumber, @NonNull PasswordlessType passwordlessType) {
+    public Request<Void, AuthenticationException> passwordlessWithSMS(@NonNull String phoneNumber, @NonNull PasswordlessType passwordlessType) {
         return passwordlessWithSMS(phoneNumber, passwordlessType, SMS_CONNECTION);
     }
 
@@ -1023,7 +1023,7 @@ public class AuthenticationAPIClient {
      * @return a request to configure and start
      */
     @NonNull
-    public ParameterizableRequest<Map<String, Object>, AuthenticationException> delegation() {
+    public Request<Map<String, Object>, AuthenticationException> delegation() {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(DELEGATION_PATH)
                 .build();
@@ -1038,7 +1038,7 @@ public class AuthenticationAPIClient {
     }
 
     @SuppressWarnings("SameParameterValue")
-    private <T> ParameterizableRequest<T, AuthenticationException> delegation(Class<T> clazz) {
+    private <T> Request<T, AuthenticationException> delegation(Class<T> clazz) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(DELEGATION_PATH)
                 .build();
@@ -1057,7 +1057,7 @@ public class AuthenticationAPIClient {
      *
      * @return a request to configure and start
      */
-    private ParameterizableRequest<Void, AuthenticationException> passwordless() {
+    private Request<Void, AuthenticationException> passwordless() {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(PASSWORDLESS_PATH)
                 .addPathSegment(START_PATH)
@@ -1080,7 +1080,7 @@ public class AuthenticationAPIClient {
      */
     @NonNull
     public ProfileRequest getProfileAfter(@NonNull AuthenticationRequest authenticationRequest) {
-        final ParameterizableRequest<UserProfile, AuthenticationException> profileRequest = profileRequest();
+        final Request<UserProfile, AuthenticationException> profileRequest = profileRequest();
         //noinspection deprecation
         return new ProfileRequest(authenticationRequest, profileRequest);
     }
@@ -1126,7 +1126,7 @@ public class AuthenticationAPIClient {
                 .addPathSegment(TOKEN_PATH)
                 .build();
 
-        ParameterizableRequest<Credentials, AuthenticationException> request = factory.POST(url, client, gson, Credentials.class, authErrorBuilder);
+        Request<Credentials, AuthenticationException> request = factory.POST(url, client, gson, Credentials.class, authErrorBuilder);
         request.addParameters(parameters);
         return new TokenRequest(request);
     }
@@ -1138,7 +1138,7 @@ public class AuthenticationAPIClient {
      * @return a request to obtain the JSON Web Keys associated with this Auth0 account.
      */
     @NonNull
-    public ParameterizableRequest<Map<String, PublicKey>, AuthenticationException> fetchJsonWebKeys() {
+    public Request<Map<String, PublicKey>, AuthenticationException> fetchJsonWebKeys() {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(WELL_KNOWN_PATH)
                 .addPathSegment(JWKS_FILE_PATH)
@@ -1178,7 +1178,7 @@ public class AuthenticationAPIClient {
         return authRequest;
     }
 
-    private ParameterizableRequest<UserProfile, AuthenticationException> profileRequest() {
+    private Request<UserProfile, AuthenticationException> profileRequest() {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(USER_INFO_PATH)
                 .build();

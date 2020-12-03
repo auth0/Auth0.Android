@@ -5,7 +5,7 @@ import androidx.annotation.NonNull;
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.request.ParameterizableRequest;
+import com.auth0.android.request.Request;
 import com.auth0.android.result.Credentials;
 import com.google.gson.Gson;
 import com.squareup.okhttp.HttpUrl;
@@ -33,13 +33,13 @@ public class MockAuthenticationRequest extends BaseAuthenticationRequest {
 
     @NonNull
     @Override
-    public ParameterizableRequest<Credentials, AuthenticationException> addParameters(@NonNull Map<String, Object> parameters) {
+    public Request<Credentials, AuthenticationException> addParameters(@NonNull Map<String, Object> parameters) {
         return null;
     }
 
     @NonNull
     @Override
-    public ParameterizableRequest<Credentials, AuthenticationException> addParameter(@NonNull String name, @NonNull Object value) {
+    public Request<Credentials, AuthenticationException> addParameter(@NonNull String name, @NonNull Object value) {
         return null;
     }
 

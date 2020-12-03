@@ -1,7 +1,7 @@
 package com.auth0.android.authentication.request;
 
 import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.request.ParameterizableRequest;
+import com.auth0.android.request.Request;
 
 import org.hamcrest.Matchers;
 import org.junit.Before;
@@ -21,12 +21,12 @@ import static org.mockito.Mockito.verify;
 @RunWith(RobolectricTestRunner.class)
 public class DelegationRequestTest {
 
-    private ParameterizableRequest mockRequest;
+    private Request mockRequest;
     private DelegationRequest delegationRequest;
 
     @Before
     public void setUp() {
-        mockRequest = mock(ParameterizableRequest.class);
+        mockRequest = mock(Request.class);
         delegationRequest = new DelegationRequest(mockRequest);
     }
 
@@ -35,6 +35,14 @@ public class DelegationRequestTest {
         final Map params = mock(Map.class);
         final DelegationRequest req = delegationRequest.addParameters(params);
         verify(mockRequest).addParameters(params);
+        assertThat(req, is(notNullValue()));
+        assertThat(req, is(delegationRequest));
+    }
+
+    @Test
+    public void shouldAddParameter() {
+        final DelegationRequest req = delegationRequest.addParameter("param", "val");
+        verify(mockRequest).addParameter("param", "val");
         assertThat(req, is(notNullValue()));
         assertThat(req, is(delegationRequest));
     }

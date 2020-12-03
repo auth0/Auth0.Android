@@ -34,7 +34,6 @@ import com.auth0.android.authentication.ParameterBuilder;
 import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.request.AuthorizableRequest;
 import com.auth0.android.request.ErrorBuilder;
-import com.auth0.android.request.ParameterizableRequest;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.TypeAdapter;
@@ -54,7 +53,7 @@ import java.util.Map;
 
 import static com.auth0.android.request.internal.ResponseUtils.closeStream;
 
-abstract class BaseRequest<T, U extends Auth0Exception> implements ParameterizableRequest<T, U>, AuthorizableRequest<T, U>, Callback {
+abstract class BaseRequest<T, U extends Auth0Exception> implements com.auth0.android.request.Request<T, U>, AuthorizableRequest<T, U>, Callback {
 
     private final Map<String, String> headers;
     protected final HttpUrl url;
@@ -154,7 +153,7 @@ abstract class BaseRequest<T, U extends Auth0Exception> implements Parameterizab
 
     @NonNull
     @Override
-    public ParameterizableRequest<T, U> addHeader(@NonNull String name, @NonNull String value) {
+    public com.auth0.android.request.Request<T, U> addHeader(@NonNull String name, @NonNull String value) {
         headers.put(name, value);
         return this;
     }
@@ -168,14 +167,14 @@ abstract class BaseRequest<T, U extends Auth0Exception> implements Parameterizab
 
     @NonNull
     @Override
-    public ParameterizableRequest<T, U> addParameters(@NonNull Map<String, Object> parameters) {
+    public com.auth0.android.request.Request<T, U> addParameters(@NonNull Map<String, Object> parameters) {
         builder.addAll(parameters);
         return this;
     }
 
     @NonNull
     @Override
-    public ParameterizableRequest<T, U> addParameter(@NonNull String name, @NonNull Object value) {
+    public com.auth0.android.request.Request<T, U> addParameter(@NonNull String name, @NonNull Object value) {
         builder.set(name, value);
         return this;
     }

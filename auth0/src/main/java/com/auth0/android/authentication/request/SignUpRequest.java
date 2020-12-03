@@ -131,6 +131,26 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
 
     @NonNull
     @Override
+    public SignUpRequest addParameters(@NonNull Map<String, Object> parameters) {
+        signUpRequest.addParameters(parameters);
+        if (authRequest != null) {
+            authRequest.addParameters(parameters);
+        }
+        return this;
+    }
+
+    @NonNull
+    @Override
+    public SignUpRequest addParameter(@NonNull String name, @NonNull Object value) {
+        signUpRequest.addParameter(name, value);
+        if (authRequest != null) {
+            authRequest.addParameter(name, value);
+        }
+        return this;
+    }
+
+    @NonNull
+    @Override
     public SignUpRequest setScope(@NonNull String scope) {
         getAuthRequest().setScope(scope);
         return this;

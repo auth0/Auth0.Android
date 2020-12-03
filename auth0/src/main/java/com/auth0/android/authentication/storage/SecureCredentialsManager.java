@@ -18,7 +18,7 @@ import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.AuthenticationCallback;
 import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.request.ParameterizableRequest;
+import com.auth0.android.request.Request;
 import com.auth0.android.request.internal.GsonProvider;
 import com.auth0.android.result.Credentials;
 import com.google.gson.Gson;
@@ -312,7 +312,7 @@ public class SecureCredentialsManager extends BaseCredentialsManager {
         }
 
         Log.d(TAG, "Credentials have expired. Renewing them now...");
-        ParameterizableRequest<Credentials, AuthenticationException> request = authenticationClient.renewAuth(credentials.getRefreshToken());
+        Request<Credentials, AuthenticationException> request = authenticationClient.renewAuth(credentials.getRefreshToken());
         if (scope != null) {
             request.addParameter("scope", scope);
         }

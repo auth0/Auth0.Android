@@ -30,7 +30,6 @@ import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.authentication.ParameterBuilder;
 import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.request.Request;
 import com.auth0.android.result.Delegation;
 
@@ -51,9 +50,9 @@ public class DelegationRequest<T> implements Request<T, AuthenticationException>
 
     private static final String TARGET_KEY = "target";
 
-    private final ParameterizableRequest<T, AuthenticationException> request;
+    private final Request<T, AuthenticationException> request;
 
-    public DelegationRequest(@NonNull ParameterizableRequest<T, AuthenticationException> request) {
+    public DelegationRequest(@NonNull Request<T, AuthenticationException> request) {
         this.request = request;
     }
 
@@ -66,6 +65,13 @@ public class DelegationRequest<T> implements Request<T, AuthenticationException>
     @NonNull
     public DelegationRequest<T> addParameters(@NonNull Map<String, Object> parameters) {
         request.addParameters(parameters);
+        return this;
+    }
+
+    @NonNull
+    @Override
+    public DelegationRequest<T> addParameter(@NonNull String name, @NonNull Object value) {
+        request.addParameter(name, value);
         return this;
     }
 

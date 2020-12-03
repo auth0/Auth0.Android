@@ -76,7 +76,7 @@ public interface AuthenticationRequest extends Request<Credentials, Authenticati
     AuthenticationRequest setAccessToken(@NonNull String accessToken);
 
     /**
-     * All all entries of the map as parameters of this request
+     * Add all entries of the map as parameters of this request
      *
      * @param parameters to be added to the request
      * @return itself

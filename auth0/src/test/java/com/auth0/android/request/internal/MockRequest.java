@@ -5,7 +5,7 @@ import androidx.annotation.NonNull;
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.request.ErrorBuilder;
-import com.auth0.android.request.ParameterizableRequest;
+import com.auth0.android.request.Request;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.HttpUrl;
@@ -14,7 +14,7 @@ import com.squareup.okhttp.OkHttpClient;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MockRequest<T, U extends Auth0Exception> implements ParameterizableRequest<T, U> {
+public class MockRequest<T, U extends Auth0Exception> implements Request<T, U> {
 
     HttpUrl url;
     OkHttpClient client;
@@ -56,19 +56,19 @@ public class MockRequest<T, U extends Auth0Exception> implements Parameterizable
 
     @NonNull
     @Override
-    public ParameterizableRequest<T, U> addParameters(@NonNull Map<String, Object> parameters) {
+    public Request<T, U> addParameters(@NonNull Map<String, Object> parameters) {
         return this;
     }
 
     @NonNull
     @Override
-    public ParameterizableRequest<T, U> addParameter(@NonNull String name, @NonNull Object value) {
+    public Request<T, U> addParameter(@NonNull String name, @NonNull Object value) {
         return this;
     }
 
     @NonNull
     @Override
-    public ParameterizableRequest<T, U> addHeader(@NonNull String name, @NonNull String value) {
+    public Request<T, U> addHeader(@NonNull String name, @NonNull String value) {
         headers.put(name, value);
         return this;
     }

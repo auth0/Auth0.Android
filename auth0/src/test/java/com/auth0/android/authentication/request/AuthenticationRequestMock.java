@@ -38,6 +38,24 @@ public class AuthenticationRequestMock implements AuthenticationRequest {
 
     @NonNull
     @Override
+    public AuthenticationRequest addParameters(@NonNull Map<String, Object> parameters) {
+        return this;
+    }
+
+    @NonNull
+    @Override
+    public AuthenticationRequest addParameter(@NonNull String name, @NonNull Object value) {
+        return this;
+    }
+
+    @NonNull
+    @Override
+    public AuthenticationRequest addHeader(@NonNull String name, @NonNull String value) {
+        return this;
+    }
+
+    @NonNull
+    @Override
     public AuthenticationRequest setGrantType(@NonNull String grantType) {
         return this;
     }
