@@ -17,15 +17,14 @@ import org.robolectric.RobolectricTestRunner;
 
 import java.util.Map;
 
-import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
@@ -72,16 +71,6 @@ public class SignUpRequestTest {
     public void shouldAddHeader() {
         final SignUpRequest req = signUpRequest.addHeader("auth", "val123");
         verify(authenticationMockRequest).addHeader(eq("auth"), eq("val123"));
-        assertThat(req, is(notNullValue()));
-        assertThat(req, is(signUpRequest));
-    }
-
-    @Test
-    public void shouldNotAddHeaderWithAuthenticationRequest() {
-        AuthenticationRequest authenticationMockRequest = mock(AuthenticationRequest.class);
-        SignUpRequest signUpRequest = new SignUpRequest(dbMockRequest, authenticationMockRequest);
-        final SignUpRequest req = signUpRequest.addHeader("auth", "val123");
-        verifyZeroInteractions(authenticationMockRequest);
         assertThat(req, is(notNullValue()));
         assertThat(req, is(signUpRequest));
     }
@@ -141,14 +130,19 @@ public class SignUpRequestTest {
         final DatabaseUser user = mock(DatabaseUser.class);
         final Credentials credentials = mock(Credentials.class);
         final DatabaseConnectionRequestMock dbRequestMock = new DatabaseConnectionRequestMock(user, null);
-        final AuthenticationRequestMock authenticationRequestMock = new AuthenticationRequestMock(credentials, null);
         final BaseCallback callback = mock(BaseCallback.class);
 
-        signUpRequest = new SignUpRequest(dbRequestMock, authenticationRequestMock);
+        doAnswer(invocation -> {
+            ((BaseCallback)invocation.getArguments()[0]).onSuccess(credentials);
+            return null;
+        }).when(authenticationMockRequest).start(callback);
+
+
+        signUpRequest = new SignUpRequest(dbRequestMock, authenticationMockRequest);
         signUpRequest.start(callback);
 
         assertTrue(dbRequestMock.isStarted());
-        assertTrue(authenticationRequestMock.isStarted());
+        verify(authenticationMockRequest).start(callback);
         verify(callback).onSuccess(credentials);
     }
 
@@ -157,14 +151,12 @@ public class SignUpRequestTest {
         final AuthenticationException error = mock(AuthenticationException.class);
         final Credentials credentials = mock(Credentials.class);
         final DatabaseConnectionRequestMock dbRequestMock = new DatabaseConnectionRequestMock(null, error);
-        final AuthenticationRequestMock authenticationRequestMock = new AuthenticationRequestMock(credentials, null);
         final BaseCallback callback = mock(BaseCallback.class);
 
-        signUpRequest = new SignUpRequest(dbRequestMock, authenticationRequestMock);
+        signUpRequest = new SignUpRequest(dbRequestMock, authenticationMockRequest);
         signUpRequest.start(callback);
 
         assertTrue(dbRequestMock.isStarted());
-        assertFalse(authenticationRequestMock.isStarted());
         verify(callback).onFailure(error);
     }
 
@@ -173,14 +165,19 @@ public class SignUpRequestTest {
         final DatabaseUser user = mock(DatabaseUser.class);
         final AuthenticationException error = mock(AuthenticationException.class);
         final DatabaseConnectionRequestMock dbRequestMock = new DatabaseConnectionRequestMock(user, null);
-        final AuthenticationRequestMock authenticationRequestMock = new AuthenticationRequestMock(null, error);
         final BaseCallback callback = mock(BaseCallback.class);
 
-        signUpRequest = new SignUpRequest(dbRequestMock, authenticationRequestMock);
+
+        doAnswer(invocation -> {
+            ((BaseCallback)invocation.getArguments()[0]).onFailure(error);
+            return null;
+        }).when(authenticationMockRequest).start(callback);
+
+        signUpRequest = new SignUpRequest(dbRequestMock, authenticationMockRequest);
         signUpRequest.start(callback);
 
         assertTrue(dbRequestMock.isStarted());
-        assertTrue(authenticationRequestMock.isStarted());
+        verify(authenticationMockRequest).start(callback);
         verify(callback).onFailure(error);
     }
 

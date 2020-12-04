@@ -311,42 +311,6 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldFetchTokenInfo() throws Exception {
-        mockAPI.willReturnTokenInfo();
-        final MockAuthenticationCallback<UserProfile> callback = new MockAuthenticationCallback<>();
-
-        client.tokenInfo("ID_TOKEN")
-                .start(callback);
-
-        assertThat(callback, hasPayloadOfType(UserProfile.class));
-
-        final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
-        assertThat(request.getPath(), equalTo("/tokeninfo"));
-
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("id_token", "ID_TOKEN"));
-    }
-
-    @Test
-    public void shouldFetchTokenInfoSync() throws Exception {
-        mockAPI.willReturnTokenInfo();
-
-        final UserProfile profile = client
-                .tokenInfo("ID_TOKEN")
-                .execute();
-
-        assertThat(profile, is(notNullValue()));
-
-        final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
-        assertThat(request.getPath(), equalTo("/tokeninfo"));
-
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("id_token", "ID_TOKEN"));
-    }
-
-    @Test
     public void shouldFetchUserInfo() throws Exception {
         mockAPI.willReturnTokenInfo();
         final MockAuthenticationCallback<UserProfile> callback = new MockAuthenticationCallback<>();

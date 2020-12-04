@@ -65,6 +65,10 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
         this.authRequest = null;
     }
 
+    /**
+     * @param authRequest      the request that will output a pair of credentials
+     * @param userInfoRequest  the /userinfo request that will be wrapped
+     */
     @SuppressLint("LambdaLast")
     public ProfileRequest(@NonNull AuthRequest authRequest, @NonNull ParameterizableRequest<UserProfile, AuthenticationException> userInfoRequest) {
         this.userInfoRequest = userInfoRequest;
