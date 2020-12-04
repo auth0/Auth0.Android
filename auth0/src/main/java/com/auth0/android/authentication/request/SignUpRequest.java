@@ -49,17 +49,9 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
     private final AuthRequest authRequest;
 
     /**
-     * @param signUpRequest         the request that creates the user
-     * @param authenticationRequest the request that will output a pair of credentials
-     * @deprecated using this constructor prevents from updating the request headers. See {@link #SignUpRequest(DatabaseConnectionRequest, AuthRequest)}
+     * @param signUpRequest the request that creates the user
+     * @param authRequest   the request that will output a pair of credentials
      */
-    @Deprecated
-    public SignUpRequest(@NonNull DatabaseConnectionRequest<DatabaseUser, AuthenticationException> signUpRequest, @NonNull AuthenticationRequest authenticationRequest) {
-        this.signUpRequest = signUpRequest;
-        this.authenticationRequest = authenticationRequest;
-        this.authRequest = null;
-    }
-
     public SignUpRequest(@NonNull DatabaseConnectionRequest<DatabaseUser, AuthenticationException> signUpRequest, @NonNull AuthRequest authRequest) {
         this.signUpRequest = signUpRequest;
         this.authRequest = authRequest;

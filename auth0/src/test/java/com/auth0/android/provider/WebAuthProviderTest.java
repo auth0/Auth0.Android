@@ -2,10 +2,8 @@ package com.auth0.android.provider;
 
 import android.app.Activity;
 import android.app.Dialog;
-import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
 
@@ -78,7 +76,6 @@ import static org.mockito.Mockito.when;
 @RunWith(RobolectricTestRunner.class)
 public class WebAuthProviderTest {
 
-    private static final int REQUEST_CODE = 11;
     private static final String KEY_STATE = "state";
     private static final String KEY_NONCE = "nonce";
 
@@ -97,9 +94,6 @@ public class WebAuthProviderTest {
     private ArgumentCaptor<Intent> intentCaptor;
     @Captor
     private ArgumentCaptor<AuthCallback> callbackCaptor;
-    @Captor
-    private ArgumentCaptor<VoidCallback> voidCallbackCaptor;
-
 
     @Before
     public void setUp() {
@@ -119,37 +113,9 @@ public class WebAuthProviderTest {
     //** ** ** ** ** **  **//
     //** ** ** ** ** **  **//
 
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldLoginWithAccount() {
         WebAuthProvider.login(account)
-                .start(activity, callback, REQUEST_CODE);
-
-        assertNotNull(WebAuthProvider.getManagerInstance());
-    }
-
-    @SuppressWarnings("deprecation")
-    @Test
-    public void shouldInitWithAccount() {
-        WebAuthProvider.init(account)
-                .start(activity, callback, REQUEST_CODE);
-
-        assertNotNull(WebAuthProvider.getManagerInstance());
-    }
-
-    @Test
-    public void shouldInitWithContext() {
-        Context context = Mockito.mock(Context.class);
-        Resources resources = Mockito.mock(Resources.class);
-        when(context.getPackageName()).thenReturn("com.myapp");
-        when(context.getResources()).thenReturn(resources);
-        when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), eq("com.myapp"))).thenReturn(222);
-        when(resources.getIdentifier(eq("com_auth0_domain"), eq("string"), eq("com.myapp"))).thenReturn(333);
-
-        when(context.getString(eq(222))).thenReturn("clientId");
-        when(context.getString(eq(333))).thenReturn("domain");
-
-        WebAuthProvider.init(context)
                 .start(activity, callback);
 
         assertNotNull(WebAuthProvider.getManagerInstance());
@@ -159,7 +125,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldHaveDefaultSchemeOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .start(activity, callback);
         verify(activity).startActivity(intentCaptor.capture());
         Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
@@ -172,7 +138,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldSetSchemeOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withScheme("myapp")
                 .start(activity, callback);
 
@@ -189,7 +155,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldNotHaveDefaultConnectionOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
@@ -202,7 +168,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldSetConnectionFromParametersOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("connection", (Object) "my-connection");
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withConnection("some-connection")
                 .withParameters(parameters)
                 .start(activity, callback);
@@ -217,7 +183,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldSetConnectionFromSetterOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("connection", (Object) "my-connection");
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withParameters(parameters)
                 .withConnection("some-connection")
                 .start(activity, callback);
@@ -232,7 +198,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldNotOverrideConnectionValueWithDefaultConnectionOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("connection", (Object) "my-connection");
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withParameters(parameters)
                 .start(activity, callback);
 
@@ -245,7 +211,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldSetConnectionOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withConnection("some-connection")
                 .start(activity, callback);
 
@@ -260,7 +226,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldNotHaveDefaultAudienceOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
@@ -273,7 +239,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldSetAudienceFromParametersOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("audience", (Object) "https://mydomain.auth0.com/myapi");
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withAudience("https://google.com/apis")
                 .withParameters(parameters)
                 .start(activity, callback);
@@ -288,7 +254,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldSetAudienceFromSetterOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("audience", (Object) "https://mydomain.auth0.com/myapi");
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withParameters(parameters)
                 .withAudience("https://google.com/apis")
                 .start(activity, callback);
@@ -303,7 +269,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldNotOverrideAudienceValueWithDefaultAudienceOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("audience", (Object) "https://mydomain.auth0.com/myapi");
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withParameters(parameters)
                 .start(activity, callback);
 
@@ -316,7 +282,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldSetAudienceOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withAudience("https://google.com/apis")
                 .start(activity, callback);
 
@@ -332,7 +298,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldHaveDefaultScopeOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
@@ -345,7 +311,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldSetScopeFromParametersOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("scope", (Object) "openid email contacts");
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withScope("profile super_scope")
                 .withParameters(parameters)
                 .start(activity, callback);
@@ -360,7 +326,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldSetScopeFromSetterOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("scope", (Object) "openid email contacts");
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withParameters(parameters)
                 .withScope("profile super_scope")
                 .start(activity, callback);
@@ -375,7 +341,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldNotOverrideScopeValueWithDefaultScopeOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("scope", (Object) "openid email contacts");
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withParameters(parameters)
                 .start(activity, callback);
 
@@ -388,7 +354,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldSetScopeOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withScope("profile super_scope")
                 .start(activity, callback);
 
@@ -404,7 +370,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldNotHaveDefaultConnectionScopeOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
@@ -417,7 +383,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldSetConnectionScopeFromParametersOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("connection_scope", (Object) "openid,email,contacts");
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withConnectionScope("profile", "super_scope")
                 .withParameters(parameters)
                 .start(activity, callback);
@@ -432,7 +398,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldSetConnectionScopeFromSetterOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("connection_scope", (Object) "openid,email,contacts");
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withParameters(parameters)
                 .withConnectionScope("profile", "super_scope")
                 .start(activity, callback);
@@ -447,7 +413,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldNotOverrideConnectionScopeValueWithDefaultConnectionScopeOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("connection_scope", (Object) "openid,email,contacts");
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withParameters(parameters)
                 .start(activity, callback);
 
@@ -460,7 +426,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldSetConnectionScopeOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withConnectionScope("the", "scope", "of", "my", "connection")
                 .start(activity, callback);
 
@@ -476,7 +442,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldHaveDefaultStateOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
@@ -488,7 +454,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldSetNonNullStateOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState(null)
                 .start(activity, callback);
 
@@ -502,7 +468,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldSetStateFromParametersOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("state", (Object) "1234567890");
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("abcdefg")
                 .withParameters(parameters)
                 .start(activity, callback);
@@ -517,7 +483,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldSetStateFromSetterOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("state", (Object) "1234567890");
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withParameters(parameters)
                 .withState("abcdefg")
                 .start(activity, callback);
@@ -532,7 +498,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldNotOverrideStateValueWithDefaultStateOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("state", (Object) "1234567890");
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withParameters(parameters)
                 .start(activity, callback);
 
@@ -545,7 +511,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldSetStateOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("abcdefg")
                 .start(activity, callback);
 
@@ -560,7 +526,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldSetNonceByDefaultIfResponseTypeIncludesCodeOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.CODE)
                 .start(activity, callback);
 
@@ -573,7 +539,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldSetNonceByDefaultIfResponseTypeIncludesIdTokenOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.ID_TOKEN)
                 .start(activity, callback);
 
@@ -586,7 +552,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldNotSetNonceByDefaultIfResponseTypeIsTokenOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.TOKEN)
                 .start(activity, callback);
 
@@ -599,7 +565,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldSetNonNullNonceOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withNonce(null)
                 .withResponseType(ResponseType.ID_TOKEN)
                 .start(activity, callback);
@@ -613,7 +579,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldSetUserNonceIfResponseTypeIsTokenOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.TOKEN)
                 .withNonce("1234567890")
                 .start(activity, callback);
@@ -627,7 +593,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldSetUserNonceIfResponseTypeIsCodeOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.CODE)
                 .withNonce("1234567890")
                 .start(activity, callback);
@@ -642,7 +608,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldSetNonceFromParametersOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("nonce", (Object) "1234567890");
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.ID_TOKEN)
                 .withNonce("abcdefg")
                 .withParameters(parameters)
@@ -658,7 +624,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldSetNonceFromSetterOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("nonce", (Object) "1234567890");
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.ID_TOKEN)
                 .withParameters(parameters)
                 .withNonce("abcdefg")
@@ -674,7 +640,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldNotOverrideNonceValueWithDefaultNonceOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("nonce", (Object) "1234567890");
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.ID_TOKEN)
                 .withParameters(parameters)
                 .start(activity, callback);
@@ -688,7 +654,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldSetNonceOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.ID_TOKEN)
                 .withNonce("abcdefg")
                 .start(activity, callback);
@@ -702,7 +668,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldGenerateRandomStringIfDefaultValueIsMissingOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .start(activity, callback);
         String random1 = OAuthManager.getRandomString(null);
         String random2 = OAuthManager.getRandomString(null);
@@ -714,7 +680,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldNotGenerateRandomStringIfDefaultValuePresentOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .start(activity, callback);
         String random1 = OAuthManager.getRandomString("some");
         String random2 = OAuthManager.getRandomString("some");
@@ -726,7 +692,7 @@ public class WebAuthProviderTest {
     // max_age
     @Test
     public void shouldNotSetMaxAgeByDefaultOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
@@ -739,7 +705,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldSetMaxAgeFromParametersOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("max_age", (Object) "09876");
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withMaxAge(12345)
                 .withParameters(parameters)
                 .start(activity, callback);
@@ -754,7 +720,7 @@ public class WebAuthProviderTest {
     @Test
     public void shouldSetMaxAgeFromSetterOnLogin() {
         Map<String, Object> parameters = Collections.singletonMap("max_age", (Object) "09876");
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withParameters(parameters)
                 .withMaxAge(12345)
                 .start(activity, callback);
@@ -771,7 +737,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldHaveClientIdOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
@@ -783,7 +749,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldHaveTelemetryInfoOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
@@ -795,7 +761,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldHaveRedirectUriOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
@@ -807,7 +773,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldSetRedirectUriIgnoringSchemeOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withScheme("https")
                 .withRedirectUri("myapp://app.company.com/mobile/callback")
                 .start(activity, callback);
@@ -823,7 +789,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldHaveDefaultResponseTypeOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
@@ -835,7 +801,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldSetResponseTypeTokenOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.TOKEN)
                 .start(activity, callback);
 
@@ -848,7 +814,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldSetResponseTypeIdTokenOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.ID_TOKEN)
                 .start(activity, callback);
 
@@ -861,7 +827,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldSetResponseTypeCodeOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.CODE)
                 .start(activity, callback);
 
@@ -874,7 +840,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldSetResponseTypeCodeTokenOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.CODE | ResponseType.TOKEN)
                 .start(activity, callback);
 
@@ -887,7 +853,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldSetResponseTypeCodeIdTokenOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.CODE | ResponseType.ID_TOKEN)
                 .start(activity, callback);
 
@@ -900,7 +866,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldSetResponseTypeIdTokenTokenOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.ID_TOKEN | ResponseType.TOKEN)
                 .start(activity, callback);
 
@@ -913,7 +879,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldSetResponseTypeCodeIdTokenTokenOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.CODE | ResponseType.ID_TOKEN | ResponseType.TOKEN)
                 .start(activity, callback);
 
@@ -929,7 +895,7 @@ public class WebAuthProviderTest {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("a", "valid");
         parameters.put("b", null);
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withParameters(parameters)
                 .start(activity, callback);
 
@@ -943,7 +909,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldBuildAuthorizeURIWithoutNullsOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
@@ -959,7 +925,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldBuildAuthorizeURIWithCorrectSchemeHostAndPathOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.ID_TOKEN)
                 .withState("a-state")
                 .withNonce("a-nonce")
@@ -977,7 +943,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldBuildAuthorizeURIWithResponseTypeIdTokenOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.ID_TOKEN)
                 .withState("a-state")
                 .withNonce("a-nonce")
@@ -995,7 +961,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldBuildAuthorizeURIWithResponseTypeTokenOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.TOKEN)
                 .withState("a-state")
                 .start(activity, callback);
@@ -1012,7 +978,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldBuildAuthorizeURIWithResponseTypeCodeOnLogin() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.CODE)
                 .withState("a-state")
                 .start(activity, callback);
@@ -1027,13 +993,11 @@ public class WebAuthProviderTest {
         assertThat(uri, hasParamWithValue("response_type", "code"));
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldStartLoginWithBrowserCustomTabsOptions() {
         CustomTabsOptions options = CustomTabsOptions.newBuilder().build();
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withCustomTabsOptions(options)
-                .useCodeGrant(false)
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
@@ -1051,98 +1015,14 @@ public class WebAuthProviderTest {
         assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
         assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CT_OPTIONS), is(true));
         assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
-        assertThat((CustomTabsOptions) extras.getParcelable(AuthenticationActivity.EXTRA_CT_OPTIONS), is(options));
+        assertThat(extras.getParcelable(AuthenticationActivity.EXTRA_CT_OPTIONS), is(options));
     }
 
-    @SuppressWarnings("deprecation")
-    @Test
-    public void shouldStartLoginWithBrowser() {
-        WebAuthProvider.init(account)
-                .useBrowser(true)
-                .useCodeGrant(false)
-                .start(activity, callback);
-
-        verify(activity).startActivity(intentCaptor.capture());
-
-        Intent intent = intentCaptor.getValue();
-        assertThat(intent, is(notNullValue()));
-        assertThat(intent, hasComponent(AuthenticationActivity.class.getName()));
-        assertThat(intent, hasFlag(Intent.FLAG_ACTIVITY_CLEAR_TOP));
-        assertThat(intent.getData(), is(nullValue()));
-
-        Bundle extras = intentCaptor.getValue().getExtras();
-        assertThat(extras.getParcelable(AuthenticationActivity.EXTRA_AUTHORIZE_URI), is(notNullValue()));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(false));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(false));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CT_OPTIONS), is(true));
-        assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
-        assertThat(extras.getParcelable(AuthenticationActivity.EXTRA_CT_OPTIONS), is(notNullValue()));
-    }
-
-    @SuppressWarnings("deprecation")
-    @Test
-    public void shouldStartLoginWithWebViewAndDefaultConnection() {
-        WebAuthProvider.init(account)
-                .useBrowser(false)
-                .useCodeGrant(false)
-                .useFullscreen(false)
-                .start(activity, callback, REQUEST_CODE);
-
-        verify(activity).startActivityForResult(intentCaptor.capture(), any(Integer.class));
-
-        Intent intent = intentCaptor.getValue();
-        assertThat(intent, is(notNullValue()));
-        assertThat(intent, hasComponent(AuthenticationActivity.class.getName()));
-        assertThat(intent, hasFlag(Intent.FLAG_ACTIVITY_CLEAR_TOP));
-        assertThat(intent.getData(), is(nullValue()));
-
-        Bundle extras = intentCaptor.getValue().getExtras();
-        assertThat(extras.getParcelable(AuthenticationActivity.EXTRA_AUTHORIZE_URI), is(notNullValue()));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(true));
-        assertThat(extras.getString(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(nullValue()));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(true));
-        assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(false));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
-        assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(false));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CT_OPTIONS), is(false));
-    }
-
-    @SuppressWarnings("deprecation")
-    @Test
-    public void shouldStartLoginWithWebViewAndCustomConnection() {
-        WebAuthProvider.init(account)
-                .useBrowser(false)
-                .withConnection("my-connection")
-                .useCodeGrant(false)
-                .useFullscreen(true)
-                .start(activity, callback);
-
-        verify(activity).startActivityForResult(intentCaptor.capture(), any(Integer.class));
-
-        Intent intent = intentCaptor.getValue();
-        assertThat(intent, is(notNullValue()));
-        assertThat(intent, hasComponent(AuthenticationActivity.class.getName()));
-        assertThat(intent, hasFlag(Intent.FLAG_ACTIVITY_CLEAR_TOP));
-        assertThat(intent.getData(), is(nullValue()));
-
-        Bundle extras = intent.getExtras();
-        assertThat(extras.getParcelable(AuthenticationActivity.EXTRA_AUTHORIZE_URI), is(notNullValue()));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(true));
-        assertThat(extras.getString(AuthenticationActivity.EXTRA_CONNECTION_NAME), is("my-connection"));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(true));
-        assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(true));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
-        assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(false));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CT_OPTIONS), is(false));
-    }
-
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldSetExpectedNonceWithResponseTypeIdToken() throws Exception {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.ID_TOKEN)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
 
         OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
         managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
@@ -1162,14 +1042,14 @@ public class WebAuthProviderTest {
         String expectedIdToken = createTestJWT("HS256", jwtBody);
 
         Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, sentState, null, null, null));
-        assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
+        assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onSuccess(any(Credentials.class));
     }
 
     @Test
     public void shouldResumeLoginWithIntentWithResponseTypeIdToken() throws Exception {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.ID_TOKEN)
                 .start(activity, callback);
         OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
@@ -1196,7 +1076,6 @@ public class WebAuthProviderTest {
         verify(callback).onSuccess(any(Credentials.class));
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldStartLoginWithValidRequestCode() {
         final Credentials credentials = Mockito.mock(Credentials.class);
@@ -1209,22 +1088,19 @@ public class WebAuthProviderTest {
             }
         }).when(pkce).getToken(any(String.class), eq(callback));
 
-        WebAuthProvider.init(account)
-                .useCodeGrant(true)
+        WebAuthProvider.login(account)
                 .withPKCE(pkce)
                 .start(activity, callback);
         Intent intent = createAuthIntent(createHash(null, null, null, null, null, "1234567890", null, null, "1234"));
         int DEFAULT_REQUEST_CODE = 110;
-        assertTrue(WebAuthProvider.resume(DEFAULT_REQUEST_CODE, Activity.RESULT_OK, intent));
+        assertTrue(WebAuthProvider.resume(intent));
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldResumeLoginWithIntentWithCodeGrant() throws Exception {
         Date expiresAt = new Date();
         PKCE pkce = Mockito.mock(PKCE.class);
-        WebAuthProvider.init(account)
-                .useCodeGrant(true)
+        WebAuthProvider.login(account)
                 .withPKCE(pkce)
                 .start(activity, callback);
 
@@ -1271,12 +1147,11 @@ public class WebAuthProviderTest {
         assertThat(credentialsCaptor.getValue().getScope(), is("codeScope"));
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldResumeLoginWithIntentWithHybridGrant() throws Exception {
         Date expiresAt = new Date();
         PKCE pkce = Mockito.mock(PKCE.class);
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.ID_TOKEN | ResponseType.CODE)
                 .withPKCE(pkce)
                 .start(activity, callback);
@@ -1324,17 +1199,14 @@ public class WebAuthProviderTest {
         assertThat(credentialsCaptor.getValue().getScope(), is("codeScope"));
     }
 
-
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldResumeLoginWithRequestCodeWithCodeGrant() throws Exception {
         Date expiresAt = new Date();
         PKCE pkce = Mockito.mock(PKCE.class);
 
-        WebAuthProvider.init(account)
-                .useCodeGrant(true)
+        WebAuthProvider.login(account)
                 .withPKCE(pkce)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
 
         OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
         managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
@@ -1364,7 +1236,7 @@ public class WebAuthProviderTest {
         }).when(pkce).getToken(eq("1234"), callbackCaptor.capture());
 
 
-        assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
+        assertTrue(WebAuthProvider.resume(intent));
 
         ArgumentCaptor<Credentials> credentialsCaptor = ArgumentCaptor.forClass(Credentials.class);
         verify(callback).onSuccess(credentialsCaptor.capture());
@@ -1378,10 +1250,9 @@ public class WebAuthProviderTest {
         assertThat(credentialsCaptor.getValue().getScope(), is("codeScope"));
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldNotReturnUnverifiedIdTokenWhenResponseTypeIsToken() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.TOKEN)
                 .start(activity, callback);
 
@@ -1405,12 +1276,10 @@ public class WebAuthProviderTest {
         assertThat(credentialsCaptor.getValue().getExpiresIn().doubleValue(), is(closeTo(1111L, 1)));
     }
 
-
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldResumeLoginWithIntentWithImplicitGrant() {
-        WebAuthProvider.init(account)
-                .useCodeGrant(false)
+        WebAuthProvider.login(account)
+                .withResponseType(ResponseType.TOKEN)
                 .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
@@ -1433,12 +1302,11 @@ public class WebAuthProviderTest {
         assertThat(credentialsCaptor.getValue().getExpiresIn().doubleValue(), is(closeTo(1111L, 1)));
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldResumeLoginWithRequestCodeWithImplicitGrant() {
-        WebAuthProvider.init(account)
-                .useCodeGrant(false)
-                .start(activity, callback, REQUEST_CODE);
+        WebAuthProvider.login(account)
+                .withResponseType(ResponseType.TOKEN)
+                .start(activity, callback);
 
         verify(activity).startActivity(intentCaptor.capture());
         Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
@@ -1447,7 +1315,7 @@ public class WebAuthProviderTest {
         String sentState = uri.getQueryParameter(KEY_STATE);
         assertThat(sentState, is(not(isEmptyOrNullString())));
         Intent intent = createAuthIntent(createHash(null, "urlAccess", null, "urlType", 1111L, sentState, null, null, null));
-        assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
+        assertTrue(WebAuthProvider.resume(intent));
 
         ArgumentCaptor<Credentials> credentialsCaptor = ArgumentCaptor.forClass(Credentials.class);
         verify(callback).onSuccess(credentialsCaptor.capture());
@@ -1460,15 +1328,14 @@ public class WebAuthProviderTest {
         assertThat(credentialsCaptor.getValue().getExpiresIn().doubleValue(), is(closeTo(1111L, 1)));
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldResumeLoginWithRequestCodeWhenResultCancelled() {
-        WebAuthProvider.init(account)
-                .useCodeGrant(false)
-                .start(activity, callback, REQUEST_CODE);
+        WebAuthProvider.login(account)
+                .withResponseType(ResponseType.TOKEN)
+                .start(activity, callback);
 
         Intent intent = createAuthIntent(null);
-        assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_CANCELED, intent));
+        assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
 
@@ -1477,11 +1344,10 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getDescription(), is("The user closed the browser app and the authentication was canceled."));
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldResumeLoginWithIntentWhenResultCancelled() {
-        WebAuthProvider.init(account)
-                .useCodeGrant(false)
+        WebAuthProvider.login(account)
+                .withResponseType(ResponseType.TOKEN)
                 .start(activity, callback);
 
         Intent intent = createAuthIntent(null);
@@ -1496,9 +1362,9 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldCalculateExpiresAtDateOnResumeLogin() {
-        WebAuthProvider.init(account)
-                .useCodeGrant(false)
-                .start(activity, callback, REQUEST_CODE);
+        WebAuthProvider.login(account)
+                .withResponseType(ResponseType.TOKEN)
+                .start(activity, callback);
         OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
         managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
 
@@ -1509,7 +1375,7 @@ public class WebAuthProviderTest {
         String sentState = uri.getQueryParameter(KEY_STATE);
         assertThat(sentState, is(not(isEmptyOrNullString())));
         Intent intent = createAuthIntent(createHash(null, "urlAccess", null, "urlType", 1111L, sentState, null, null, null));
-        assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
+        assertTrue(WebAuthProvider.resume(intent));
 
         ArgumentCaptor<Credentials> credentialsCaptor = ArgumentCaptor.forClass(Credentials.class);
         verify(callback).onSuccess(credentialsCaptor.capture());
@@ -1520,7 +1386,6 @@ public class WebAuthProviderTest {
         assertThat(credentialsCaptor.getValue().getExpiresAt().getTime(), is(expirationTime));
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldReThrowAnyFailedCodeExchangeDialogOnLogin() {
         final Dialog dialog = Mockito.mock(Dialog.class);
@@ -1532,9 +1397,8 @@ public class WebAuthProviderTest {
                 return null;
             }
         }).when(pkce).getToken(eq("1234"), callbackCaptor.capture());
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("1234567890")
-                .useCodeGrant(true)
                 .withPKCE(pkce)
                 .start(activity, callback);
         Intent intent = createAuthIntent(createHash(null, null, null, null, 1111L, "1234567890", null, null, "1234"));
@@ -1543,7 +1407,6 @@ public class WebAuthProviderTest {
         verify(callback).onFailure(dialog);
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldReThrowAnyFailedCodeExchangeExceptionOnLoginWithCodeGrant() throws Exception {
         final AuthenticationException exception = Mockito.mock(AuthenticationException.class);
@@ -1556,7 +1419,7 @@ public class WebAuthProviderTest {
             }
         }).when(pkce).getToken(eq("1234"), callbackCaptor.capture());
 
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("1234567890")
                 .withNonce(EXPECTED_NONCE)
                 .withResponseType(ResponseType.CODE)
@@ -1575,7 +1438,6 @@ public class WebAuthProviderTest {
         verify(callback).onFailure(exception);
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldReThrowAnyFailedCodeExchangeExceptionOnLoginWithHybridGrant() throws Exception {
         final AuthenticationException exception = Mockito.mock(AuthenticationException.class);
@@ -1588,7 +1450,7 @@ public class WebAuthProviderTest {
             }
         }).when(pkce).getToken(eq("1234"), callbackCaptor.capture());
 
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("1234567890")
                 .withNonce(EXPECTED_NONCE)
                 .withResponseType(ResponseType.ID_TOKEN | ResponseType.CODE)
@@ -1607,12 +1469,11 @@ public class WebAuthProviderTest {
         verify(callback).onFailure(exception);
     }
 
-    @SuppressWarnings({"deprecation"})
     @Test
     public void shouldFailToResumeLoginWithIntentWithAccessDenied() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("1234567890")
-                .useCodeGrant(false)
+                .withResponseType(ResponseType.TOKEN)
                 .start(activity, callback);
         Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", "access_denied", null, null));
         assertTrue(WebAuthProvider.resume(intent));
@@ -1624,15 +1485,14 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getDescription(), is("Permissions were not granted. Try again."));
     }
 
-    @SuppressWarnings({"deprecation"})
     @Test
     public void shouldFailToResumeLoginWithRequestCodeWithAccessDenied() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("1234567890")
-                .useCodeGrant(false)
-                .start(activity, callback, REQUEST_CODE);
+                .withResponseType(ResponseType.TOKEN)
+                .start(activity, callback);
         Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", "access_denied", null, null));
-        assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
+        assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
 
@@ -1641,12 +1501,11 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getDescription(), is("Permissions were not granted. Try again."));
     }
 
-    @SuppressWarnings({"deprecation"})
     @Test
     public void shouldFailToResumeLoginWithIntentWithRuleError() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("1234567890")
-                .useCodeGrant(false)
+                .withResponseType(ResponseType.TOKEN)
                 .start(activity, callback);
         Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", "unauthorized", "Custom Rule Error", null));
         assertTrue(WebAuthProvider.resume(intent));
@@ -1658,15 +1517,14 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getDescription(), is("Custom Rule Error"));
     }
 
-    @SuppressWarnings({"deprecation"})
     @Test
     public void shouldFailToResumeLoginWithRequestCodeWithRuleError() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("1234567890")
-                .useCodeGrant(false)
-                .start(activity, callback, REQUEST_CODE);
+                .withResponseType(ResponseType.TOKEN)
+                .start(activity, callback);
         Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", "unauthorized", "Custom Rule Error", null));
-        assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
+        assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
 
@@ -1675,12 +1533,11 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getDescription(), is("Custom Rule Error"));
     }
 
-    @SuppressWarnings({"deprecation"})
     @Test
     public void shouldFailToResumeLoginWithIntentWithConfigurationInvalid() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("1234567890")
-                .useCodeGrant(false)
+                .withResponseType(ResponseType.TOKEN)
                 .start(activity, callback);
         Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", "some other error", null, null));
         assertTrue(WebAuthProvider.resume(intent));
@@ -1692,15 +1549,14 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getDescription(), is("The application isn't configured properly for the social connection. Please check your Auth0's application configuration"));
     }
 
-    @SuppressWarnings({"deprecation"})
     @Test
     public void shouldFailToResumeLoginWithRequestCodeWithConfigurationInvalid() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("1234567890")
-                .useCodeGrant(false)
-                .start(activity, callback, REQUEST_CODE);
+                .withResponseType(ResponseType.TOKEN)
+                .start(activity, callback);
         Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", "some other error", null, null));
-        assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
+        assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
 
@@ -1709,10 +1565,9 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getDescription(), is("The application isn't configured properly for the social connection. Please check your Auth0's application configuration"));
     }
 
-    @SuppressWarnings({"deprecation"})
     @Test
     public void shouldFailToResumeLoginWithImplicitGrantMissingIdToken() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("1234567890")
                 .withResponseType(ResponseType.ID_TOKEN | ResponseType.TOKEN)
                 .start(activity, callback);
@@ -1726,7 +1581,6 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getCause().getMessage(), is("ID token is required but missing"));
     }
 
-    @SuppressWarnings({"deprecation"})
     @Test
     public void shouldFailToResumeLoginWhenRSAKeyIsMissingFromJWKSet() throws Exception {
         AuthenticationAPI mockAPI = new AuthenticationAPI();
@@ -1735,7 +1589,7 @@ public class WebAuthProviderTest {
         MockAuthCallback callback = new MockAuthCallback();
 
         Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
-        WebAuthProvider.init(proxyAccount)
+        WebAuthProvider.login(proxyAccount)
                 .withState("1234567890")
                 .withNonce(EXPECTED_NONCE)
                 .withResponseType(ResponseType.ID_TOKEN | ResponseType.TOKEN)
@@ -1762,7 +1616,6 @@ public class WebAuthProviderTest {
         mockAPI.shutdown();
     }
 
-    @SuppressWarnings({"deprecation"})
     @Test
     public void shouldFailToResumeLoginWhenJWKSRequestFails() throws Exception {
         AuthenticationAPI mockAPI = new AuthenticationAPI();
@@ -1771,7 +1624,7 @@ public class WebAuthProviderTest {
         MockAuthCallback callback = new MockAuthCallback();
 
         Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
-        WebAuthProvider.init(proxyAccount)
+        WebAuthProvider.login(proxyAccount)
                 .withState("1234567890")
                 .withNonce(EXPECTED_NONCE)
                 .withResponseType(ResponseType.ID_TOKEN | ResponseType.TOKEN)
@@ -1798,7 +1651,6 @@ public class WebAuthProviderTest {
         mockAPI.shutdown();
     }
 
-    @SuppressWarnings({"deprecation"})
     @Test
     public void shouldFailToResumeLoginWhenKeyIdIsMissingFromIdTokenHeader() throws Exception {
         AuthenticationAPI mockAPI = new AuthenticationAPI();
@@ -1807,7 +1659,7 @@ public class WebAuthProviderTest {
         MockAuthCallback callback = new MockAuthCallback();
 
         Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
-        WebAuthProvider.init(proxyAccount)
+        WebAuthProvider.login(proxyAccount)
                 .withState("1234567890")
                 .withNonce("abcdefg")
                 .withResponseType(ResponseType.ID_TOKEN | ResponseType.TOKEN)
@@ -1831,7 +1683,6 @@ public class WebAuthProviderTest {
         mockAPI.shutdown();
     }
 
-    @SuppressWarnings({"deprecation"})
     @Test
     public void shouldResumeLoginWhenJWKSRequestSuceeds() throws Exception {
         AuthenticationAPI mockAPI = new AuthenticationAPI();
@@ -1840,7 +1691,7 @@ public class WebAuthProviderTest {
         MockAuthCallback callback = new MockAuthCallback();
 
         Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
-        WebAuthProvider.init(proxyAccount)
+        WebAuthProvider.login(proxyAccount)
                 .withState("1234567890")
                 .withNonce(EXPECTED_NONCE)
                 .withResponseType(ResponseType.ID_TOKEN | ResponseType.TOKEN)
@@ -1866,13 +1717,12 @@ public class WebAuthProviderTest {
         mockAPI.shutdown();
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldResumeLoginIgnoringEmptyCustomIDTokenVerificationIssuer() throws Exception {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.ID_TOKEN)
                 .withIdTokenVerificationIssuer(null)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
 
         OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
         managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
@@ -1892,18 +1742,17 @@ public class WebAuthProviderTest {
         String expectedIdToken = createTestJWT("HS256", jwtBody);
 
         Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, sentState, null, null, null));
-        assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
+        assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onSuccess(any(Credentials.class));
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldResumeLoginUsingCustomIDTokenVerificationIssuer() throws Exception {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.ID_TOKEN)
                 .withIdTokenVerificationIssuer("https://some.different.issuer/")
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
 
         OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
         managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
@@ -1923,7 +1772,7 @@ public class WebAuthProviderTest {
         String expectedIdToken = createTestJWT("HS256", jwtBody);
 
         Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, sentState, null, null, null));
-        assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
+        assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onSuccess(any(Credentials.class));
     }
@@ -1933,7 +1782,7 @@ public class WebAuthProviderTest {
         Auth0 account = new Auth0(EXPECTED_AUDIENCE, EXPECTED_BASE_DOMAIN);
         account.setOIDCConformant(false);
 
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("1234567890")
                 .withNonce(EXPECTED_NONCE)
                 .withResponseType(ResponseType.ID_TOKEN | ResponseType.TOKEN)
@@ -1968,7 +1817,7 @@ public class WebAuthProviderTest {
 
         MockAuthCallback callback = new MockAuthCallback();
 
-        WebAuthProvider.init(proxyAccount)
+        WebAuthProvider.login(proxyAccount)
                 .withState("1234567890")
                 .withNonce(EXPECTED_NONCE)
                 .withResponseType(ResponseType.ID_TOKEN | ResponseType.TOKEN)
@@ -2003,7 +1852,7 @@ public class WebAuthProviderTest {
 
         MockAuthCallback callback = new MockAuthCallback();
 
-        WebAuthProvider.init(proxyAccount)
+        WebAuthProvider.login(proxyAccount)
                 .withState("1234567890")
                 .withNonce(EXPECTED_NONCE)
                 .withResponseType(ResponseType.ID_TOKEN | ResponseType.TOKEN)
@@ -2030,12 +1879,11 @@ public class WebAuthProviderTest {
         mockAPI.shutdown();
     }
 
-    @SuppressWarnings({"deprecation"})
     @Test
     public void shouldFailToResumeLoginWithIntentWithLoginRequired() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("1234567890")
-                .useCodeGrant(false)
+                .withResponseType(ResponseType.TOKEN)
                 .start(activity, callback);
         Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", "login_required", "Login Required", null));
         assertTrue(WebAuthProvider.resume(intent));
@@ -2047,15 +1895,14 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getDescription(), is("Login Required"));
     }
 
-    @SuppressWarnings({"deprecation"})
     @Test
     public void shouldFailToResumeLoginWithRequestCodeWithLoginRequired() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("1234567890")
-                .useCodeGrant(false)
-                .start(activity, callback, REQUEST_CODE);
+                .withResponseType(ResponseType.TOKEN)
+                .start(activity, callback);
         Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", "login_required", "Login Required", null));
-        assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
+        assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
 
@@ -2064,12 +1911,11 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getDescription(), is("Login Required"));
     }
 
-    @SuppressWarnings({"deprecation"})
     @Test
     public void shouldFailToResumeLoginWithIntentWithInvalidState() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("abcdefghijk")
-                .useCodeGrant(false)
+                .withResponseType(ResponseType.TOKEN)
                 .start(activity, callback);
         Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", null, null, null));
         assertTrue(WebAuthProvider.resume(intent));
@@ -2081,15 +1927,14 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getDescription(), is("The received state is invalid. Try again."));
     }
 
-    @SuppressWarnings({"deprecation"})
     @Test
     public void shouldFailToResumeLoginWithRequestCodeWithInvalidState() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("abcdefghijk")
-                .useCodeGrant(false)
-                .start(activity, callback, REQUEST_CODE);
+                .withResponseType(ResponseType.TOKEN)
+                .start(activity, callback);
         Intent intent = createAuthIntent(createHash(null, "aToken", null, "urlType", 1111L, "1234567890", null, null, null));
-        assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
+        assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
 
@@ -2098,10 +1943,9 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getDescription(), is("The received state is invalid. Try again."));
     }
 
-    @SuppressWarnings({"deprecation"})
     @Test
     public void shouldFailToResumeLoginWithIntentWithInvalidIdTokenWithImplicitGrant() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("state")
                 .withResponseType(ResponseType.ID_TOKEN)
                 .start(activity, callback);
@@ -2118,12 +1962,11 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getCause().getMessage(), is("ID token could not be decoded"));
     }
 
-    @SuppressWarnings({"deprecation"})
     @Test
     public void shouldFailToResumeLoginWithIntentWithInvalidIdTokenWithHybridGrant() {
         Date expiresAt = new Date();
         PKCE pkce = Mockito.mock(PKCE.class);
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withResponseType(ResponseType.TOKEN | ResponseType.CODE)
                 .withState("state")
                 .withPKCE(pkce)
@@ -2154,7 +1997,7 @@ public class WebAuthProviderTest {
 
     @Test
     public void shouldFailToResumeLoginWithIntentWithInvalidMaxAge() throws Exception {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("state")
                 .withNonce(EXPECTED_NONCE)
                 .withIdTokenVerificationLeeway(0)
@@ -2182,10 +2025,9 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getCause().getMessage(), is("Authentication Time (auth_time) claim in the ID token indicates that too much time has passed since the last end-user authentication. Current time (1567314010) is after last auth at (1567314006)"));
     }
 
-    @SuppressWarnings({"deprecation"})
     @Test
     public void shouldFailToResumeLoginWithIntentWithInvalidNonce() throws Exception {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("state")
                 .withNonce("0987654321")
                 .withResponseType(ResponseType.ID_TOKEN)
@@ -2207,14 +2049,13 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getCause().getMessage(), is("Nonce (nonce) claim mismatch in the ID token; expected \"0987654321\", found \"" + EXPECTED_NONCE + "\""));
     }
 
-    @SuppressWarnings({"deprecation"})
     @Test
     public void shouldFailToResumeLoginWithRequestCodeWithInvalidNonce() throws Exception {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("state")
                 .withNonce("0987654321")
                 .withResponseType(ResponseType.ID_TOKEN)
-                .start(activity, callback, REQUEST_CODE);
+                .start(activity, callback);
 
         OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
         managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
@@ -2223,7 +2064,7 @@ public class WebAuthProviderTest {
         String expectedIdToken = createTestJWT("HS256", jwtBody);
 
         Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, "state", null, null, null));
-        assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
+        assertTrue(WebAuthProvider.resume(intent));
 
         verify(callback).onFailure(authExceptionCaptor.capture());
 
@@ -2232,10 +2073,9 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getCause().getMessage(), is("Nonce (nonce) claim mismatch in the ID token; expected \"0987654321\", found \"" + EXPECTED_NONCE + "\""));
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldFailToResumeLoginWithNotSupportedSigningAlgorithm() throws Exception {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("state")
                 .withNonce(EXPECTED_NONCE)
                 .withResponseType(ResponseType.ID_TOKEN)
@@ -2258,54 +2098,28 @@ public class WebAuthProviderTest {
         assertThat(authExceptionCaptor.getValue().getCause().getMessage(), is("Signature algorithm of \"none\" is not supported. Expected the ID token to be signed with any of [HS256, RS256]."));
     }
 
-    @SuppressWarnings("deprecation")
-    @Test
-    public void shouldFailToResumeLoginWithUnexpectedRequestCode() {
-        verifyNoMoreInteractions(callback);
-        WebAuthProvider.init(account)
-                .useCodeGrant(false)
-                .start(activity, callback);
-
-        Intent intent = createAuthIntent(createHash(null, "aToken", null, null, null, "1234567890", null, null, null));
-        assertFalse(WebAuthProvider.resume(999, Activity.RESULT_OK, intent));
-    }
-
-    @SuppressWarnings("deprecation")
-    @Test
-    public void shouldFailToResumeLoginWithResultNotOK() {
-        verifyNoMoreInteractions(callback);
-        WebAuthProvider.init(account)
-                .useCodeGrant(false)
-                .start(activity, callback, REQUEST_CODE);
-
-        Intent intent = createAuthIntent(createHash(null, "aToken", null, null, null, "1234567890", null, null, null));
-        assertFalse(WebAuthProvider.resume(REQUEST_CODE, 999, intent));
-    }
-
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldFailToResumeLoginWithIntentWithEmptyUriValues() {
         verifyNoMoreInteractions(callback);
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("abcdefghijk")
-                .useCodeGrant(false)
+                .withResponseType(ResponseType.TOKEN)
                 .start(activity, callback);
 
         Intent intent = createAuthIntent("");
         assertFalse(WebAuthProvider.resume(intent));
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldFailToResumeLoginWithRequestCodeWithEmptyUriValues() {
         verifyNoMoreInteractions(callback);
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("abcdefghijk")
-                .useCodeGrant(false)
-                .start(activity, callback, REQUEST_CODE);
+                .withResponseType(ResponseType.TOKEN)
+                .start(activity, callback);
 
         Intent intent = createAuthIntent("");
-        assertFalse(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
+        assertFalse(WebAuthProvider.resume(intent));
     }
 
     @Test
@@ -2316,38 +2130,27 @@ public class WebAuthProviderTest {
         assertFalse(WebAuthProvider.resume(intent));
     }
 
-    @SuppressWarnings("deprecation")
-    @Test
-    public void shouldFailToResumeLoginWithRequestCodeWithoutFirstInitProvider() {
-        WebAuthProvider.resetManagerInstance();
-
-        Intent intent = createAuthIntent("");
-        assertFalse(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
-    }
-
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldResumeLoginWithIntentWithNullIntent() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("abcdefghijk")
-                .useCodeGrant(false)
+                .withResponseType(ResponseType.TOKEN)
                 .start(activity, callback);
         assertFalse(WebAuthProvider.resume(null));
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldFailToResumeLoginWithRequestCodeWithNullIntent() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .withState("abcdefghijk")
-                .useCodeGrant(false)
-                .start(activity, callback, REQUEST_CODE);
-        assertFalse(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, null));
+                .withResponseType(ResponseType.TOKEN)
+                .start(activity, callback);
+        assertFalse(WebAuthProvider.resume(null));
     }
 
     @Test
     public void shouldClearInstanceAfterSuccessLoginWithIntent() {
-        WebAuthProvider.init(account)
+        WebAuthProvider.login(account)
                 .start(activity, callback);
 
         assertThat(WebAuthProvider.getManagerInstance(), is(notNullValue()));
@@ -2356,15 +2159,14 @@ public class WebAuthProviderTest {
         assertThat(WebAuthProvider.getManagerInstance(), is(nullValue()));
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldClearInstanceAfterSuccessLoginWithRequestCode() {
-        WebAuthProvider.init(account)
-                .start(activity, callback, REQUEST_CODE);
+        WebAuthProvider.login(account)
+                .start(activity, callback);
 
         assertThat(WebAuthProvider.getManagerInstance(), is(notNullValue()));
         Intent intent = createAuthIntent(createHash(null, null, null, null, null, "1234567890", null, null, null));
-        assertTrue(WebAuthProvider.resume(REQUEST_CODE, Activity.RESULT_OK, intent));
+        assertTrue(WebAuthProvider.resume(intent));
         assertThat(WebAuthProvider.getManagerInstance(), is(nullValue()));
     }
 
@@ -2372,8 +2174,7 @@ public class WebAuthProviderTest {
     public void shouldFailToStartLoginWithBrowserWhenNoCompatibleBrowserAppIsInstalled() {
         CustomTabsOptions noBrowserOptions = mock(CustomTabsOptions.class);
         when(noBrowserOptions.hasCompatibleBrowser(activity.getPackageManager())).thenReturn(false);
-        WebAuthProvider.init(account)
-                .useBrowser(true)
+        WebAuthProvider.login(account)
                 .withCustomTabsOptions(noBrowserOptions)
                 .start(activity, callback);
 
@@ -2385,14 +2186,12 @@ public class WebAuthProviderTest {
         assertThat(WebAuthProvider.getManagerInstance(), is(nullValue()));
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldNotFailToStartLoginWithWebviewWhenNoBrowserAppIsInstalled() {
         CustomTabsOptions noBrowserOptions = mock(CustomTabsOptions.class);
         when(noBrowserOptions.hasCompatibleBrowser(activity.getPackageManager())).thenReturn(false);
-        WebAuthProvider.init(account)
-                .useBrowser(false)
-                .start(activity, callback, REQUEST_CODE);
+        WebAuthProvider.login(account)
+                .start(activity, callback);
 
         verify(activity).startActivityForResult(intentCaptor.capture(), any(Integer.class));
 
