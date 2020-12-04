@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Auth0 SDK Sample</string>
+    <string name="first_fragment_label">Database Login</string>
+
+</resources>
