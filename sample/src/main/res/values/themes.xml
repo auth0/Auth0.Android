@@ -1,0 +1,11 @@
+<resources>
+
+    <style name="Theme.Auth0Android.NoActionBar" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <style name="Theme.Auth0Android.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="Theme.Auth0Android.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+</resources>
