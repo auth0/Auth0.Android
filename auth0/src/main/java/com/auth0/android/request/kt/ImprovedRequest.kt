@@ -7,6 +7,10 @@ import java.io.IOException
 import java.io.InputStreamReader
 import java.nio.charset.Charset
 
+/**
+ * Implementation of Request (the merged version)
+ * Knows how to convert a raw streamed response into T or U.
+ */
 //FIXME: Make this internal once the API Client begins returning interfaces
 public class ImprovedRequest<T, U : Auth0Exception>(
     method: HttpMethod,
@@ -29,6 +33,9 @@ public class ImprovedRequest<T, U : Auth0Exception>(
         return this
     }
 
+    /**
+     * Runs in the background. Posts in the main thread.
+     */
     public fun start(callback: BaseCallback<T, U>) {
         ThreadUtils.executorService.execute {
             val response: ServerResponse
@@ -37,7 +44,7 @@ public class ImprovedRequest<T, U : Auth0Exception>(
             } catch (exception: IOException) {
                 //1. Network exceptions, timeouts, etc
                 ThreadUtils.mainThreadHandler.post {
-                    val error =
+                    val error: U =
                         errorBuilder.fromException("Network error!", exception)
                     callback.onFailure(error)
                 }
@@ -47,13 +54,13 @@ public class ImprovedRequest<T, U : Auth0Exception>(
             val reader = InputStreamReader(response.body, Charset.defaultCharset())
             if (response.isSuccess()) {
                 //2. Successful scenario. Response of type T
-                val result = jsonAdapter.fromJson(reader)
+                val result: T = jsonAdapter.fromJson(reader)
                 ThreadUtils.mainThreadHandler.post {
                     callback.onSuccess(result)
                 }
             } else {
                 //3. Error scenario. Response of type U
-                val error = errorBuilder.fromJson(reader)
+                val error: U = errorBuilder.fromJson(reader)
                 ThreadUtils.mainThreadHandler.post {
                     callback.onFailure(error)
                 }

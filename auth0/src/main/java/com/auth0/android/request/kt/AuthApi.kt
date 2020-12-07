@@ -1,11 +1,11 @@
 package com.auth0.android.request.kt
 
-import android.net.Credentials
 import android.net.Uri
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.authentication.ParameterBuilder
 import com.auth0.android.request.internal.GsonProvider
+import com.auth0.android.result.Credentials
 
 public class AuthApi(
     private val account: Auth0,
