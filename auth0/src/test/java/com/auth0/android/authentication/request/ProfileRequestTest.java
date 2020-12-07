@@ -2,7 +2,6 @@ package com.auth0.android.authentication.request;
 
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.request.AuthRequest;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.request.Request;
 import com.auth0.android.result.Authentication;
@@ -31,20 +30,19 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
 public class ProfileRequestTest {
 
-    private AuthRequest authenticationMockRequest;
+    private AuthenticationRequest authenticationMockRequest;
     private Request userInfoMockRequest;
     private ProfileRequest profileRequest;
 
     @Before
     public void setUp() {
         userInfoMockRequest = mock(Request.class);
-        authenticationMockRequest = mock(AuthRequest.class);
+        authenticationMockRequest = mock(AuthenticationRequest.class);
         profileRequest = new ProfileRequest(authenticationMockRequest, userInfoMockRequest);
     }
 
@@ -69,16 +67,6 @@ public class ProfileRequestTest {
     public void shouldAddHeader() {
         final ProfileRequest req = profileRequest.addHeader("auth", "val123");
         verify(authenticationMockRequest).addHeader(eq("auth"), eq("val123"));
-        assertThat(req, is(notNullValue()));
-        assertThat(req, is(profileRequest));
-    }
-
-    @Test
-    public void shouldNotAddHeaderWithAuthenticationRequest() {
-        AuthenticationRequest authenticationMockRequest = mock(AuthenticationRequest.class);
-        ProfileRequest profileRequest = new ProfileRequest(authenticationMockRequest, userInfoMockRequest);
-        final ProfileRequest req = profileRequest.addHeader("auth", "val123");
-        verifyNoInteractions(authenticationMockRequest);
         assertThat(req, is(notNullValue()));
         assertThat(req, is(profileRequest));
     }

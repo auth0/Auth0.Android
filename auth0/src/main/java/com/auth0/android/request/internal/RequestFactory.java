@@ -27,7 +27,7 @@ package com.auth0.android.request.internal;
 import androidx.annotation.NonNull;
 
 import com.auth0.android.Auth0Exception;
-import com.auth0.android.request.AuthRequest;
+import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.Request;
 import com.auth0.android.util.Telemetry;
@@ -71,7 +71,7 @@ public class RequestFactory {
 
 
     @NonNull
-    public AuthRequest authenticationPOST(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson) {
+    public AuthenticationRequest authenticationPOST(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson) {
         BaseAuthenticationRequest request = createAuthenticationRequest(url, client, gson);
         addMetrics(request);
         return request;

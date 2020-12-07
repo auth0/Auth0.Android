@@ -2,7 +2,6 @@ package com.auth0.android.authentication.request;
 
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.request.AuthRequest;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.DatabaseUser;
@@ -32,13 +31,13 @@ import static org.mockito.Mockito.when;
 public class SignUpRequestTest {
 
     private DatabaseConnectionRequest dbMockRequest;
-    private AuthRequest authenticationMockRequest;
+    private AuthenticationRequest authenticationMockRequest;
     private SignUpRequest signUpRequest;
 
     @Before
     public void setUp() {
         dbMockRequest = mock(DatabaseConnectionRequest.class);
-        authenticationMockRequest = mock(AuthRequest.class);
+        authenticationMockRequest = mock(AuthenticationRequest.class);
         signUpRequest = new SignUpRequest(dbMockRequest, authenticationMockRequest);
     }
 
