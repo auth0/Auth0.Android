@@ -7,7 +7,10 @@ import com.google.gson.TypeAdapter
 import com.google.gson.reflect.TypeToken
 import java.io.Reader
 
-internal class DefaultErrorBuilder<out U : Auth0Exception>(gson: Gson) : ErrorBuilder<U> {
+/**
+ * Temporary class that parses key/value responses into proper Errors
+ */
+internal class DefaultErrorBuilder(gson: Gson) : ErrorBuilder<AuthenticationException> {
 
     private var mapAdapter: TypeAdapter<Map<String, Any>>
 
@@ -16,15 +19,13 @@ internal class DefaultErrorBuilder<out U : Auth0Exception>(gson: Gson) : ErrorBu
         mapAdapter = gson.getAdapter(mapType)
     }
 
-    override fun fromJson(reader: Reader): U {
+    override fun fromJson(reader: Reader): AuthenticationException {
         val parsed = mapAdapter.fromJson(reader)
-        //FIXME: UNchecked cast below
-        return AuthenticationException(parsed) as U
+        return AuthenticationException(parsed)
     }
 
-    override fun fromException(message: String, exception: Exception): U {
-        //FIXME: UNchecked cast below
-        return AuthenticationException(message, Auth0Exception("Err", exception)) as U
+    override fun fromException(message: String, exception: Exception): AuthenticationException {
+        return AuthenticationException(message, Auth0Exception("Err", exception))
     }
 
 }

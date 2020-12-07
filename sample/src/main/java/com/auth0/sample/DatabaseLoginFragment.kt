@@ -9,6 +9,8 @@ import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.AuthenticationCallback
+import com.auth0.android.callback.BaseCallback
+import com.auth0.android.request.kt.AuthApi
 import com.auth0.android.result.Credentials
 import com.auth0.sample.databinding.FragmentDatabaseLoginBinding
 import com.google.android.material.snackbar.Snackbar
@@ -32,7 +34,7 @@ class DatabaseLoginFragment : Fragment() {
         binding.buttonLogin.setOnClickListener {
             val email = binding.textEmail.text.toString()
             val password = binding.textPassword.text.toString()
-            makeRequest(email, password)
+            requestAlternative(email, password)
         }
         return binding.root
     }
@@ -51,6 +53,24 @@ class DatabaseLoginFragment : Fragment() {
                     requireActivity().runOnUiThread {
                         Snackbar.make(requireView(), "Success :D", Snackbar.LENGTH_LONG).show()
                     }
+                }
+            })
+    }
+
+    private fun requestAlternative(email: String, password: String) {
+        val account = Auth0("esCyeleWIb1iKJUcz6fVR4e29mEHkn0O", "lbalmaceda.auth0.com")
+        account.isLoggingEnabled = true // Useless until we implement it
+        val api = AuthApi(account)
+
+        api.loginRealm(email, password, "Username-Password-Authentication")
+            //Additional customization to the request goes here
+            .start(object : BaseCallback<Credentials, AuthenticationException> {
+                override fun onFailure(error: AuthenticationException) {
+                    Snackbar.make(requireView(), "Failure :(", Snackbar.LENGTH_LONG).show()
+                }
+
+                override fun onSuccess(payload: Credentials?) {
+                    Snackbar.make(requireView(), "Success :D", Snackbar.LENGTH_LONG).show()
                 }
             })
     }

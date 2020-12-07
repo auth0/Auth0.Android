@@ -1,8 +1,12 @@
 package com.auth0.android.request.kt
 
 import android.net.Uri
+import java.io.BufferedWriter
 import java.io.IOException
+import java.io.UnsupportedEncodingException
 import java.net.URL
+import java.net.URLEncoder
+import java.nio.charset.Charset
 import javax.net.ssl.HttpsURLConnection
 
 //TODO: Should this be internal?
@@ -41,8 +45,15 @@ public class DefaultClient(private val timeout: Int) : NetworkingClient {
         options.headers.map { connection.setRequestProperty(it.key, it.value) }
 
         if (options.method == HttpMethod.POST) {
+            connection.doInput = true
             connection.doOutput = true
-            //TODO: iterate over the params and construct a body
+            val output = connection.outputStream
+            val writer = BufferedWriter(output.bufferedWriter())
+            val formData = getFormString(options.parameters)
+            writer.write(formData)
+            writer.flush()
+            writer.close()
+            output.close()
         }
 
         //probably best to explicitly call connect
@@ -53,6 +64,20 @@ public class DefaultClient(private val timeout: Int) : NetworkingClient {
             connection.errorStream ?: connection.inputStream,
             connection.headerFields
         )
+    }
+
+    @Throws(UnsupportedEncodingException::class)
+    private fun getFormString(params: Map<String, String>): String {
+        val builder = StringBuilder()
+        params.entries.forEachIndexed { idx, it ->
+            if (idx == 0) {
+                builder.append("&")
+            }
+            builder.append(URLEncoder.encode(it.key, Charset.defaultCharset().name()))
+            builder.append("=")
+            builder.append(URLEncoder.encode(it.value, Charset.defaultCharset().name()))
+        }
+        return builder.toString()
     }
 
 
