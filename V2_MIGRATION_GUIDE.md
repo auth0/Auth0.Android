@@ -6,32 +6,132 @@
 
 - Android API version 21 or later.
 
-## Classes removed
+## Request interfaces changes
+
+The `com.auth0.android.request` package defines the top-level interfaces for building and executing HTTP requests. Historically, a common issue has been the inability to add custom headers and request parameters to all request types. We've refactored the request interfaces to enable any request to be customized with additional headers and request parameters.
+
+The top-level `com.auth0.android.request.Request` interface now specifies the following methods:
+
+- `Request<T, U> addParameters(@NonNull Map<String, Object> parameters)`
+- `Request<T, U> addParameter(@NonNull String name, @NonNull Object value)`
+- `Request<T, U> addHeader(@NonNull String name, @NonNull String value)`
+
+As a result, the following interfaces have been removed:
+
+- `com.auth0.android.request.ParameterizableRequest`
+- `com.auth0.android.request.AuthRequest`
+
+The `com.auth0.android.authentication.AuthenticationAPIClient` contains many changes to the return type of methods as a result. The full changes can be found below, but in summary:
+
+- Any method that returned a `ParameterizableRequest` now returns a `Request`.
+- Any method that returned a `AuthRequest` now returns an `AuthenticationRequest`.
+
+If you are using the return type of any of these methods directly, you will need to change your code to expect the type as documented above. If you are chaining a call to `start` or `execute` to make the request, no changes are required.
+
+Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequest` have been updated to accommodate these changes, and are called out in the detailed changes listed below.
+
+## Detailed change listing
+
+### Classes removed
 
 - The `com.auth0.android.util.Base64` class has been removed. Use `android.util.Base64` instead.
+- The `com.auth0.android.request.ParameterizableRequest` interface has been removed. The ability to add request headers and parameters has been moved to the `com.auth0.android.request.Request` interface.
+- The `com.auth0.android.request.AuthRequest` interface has been removed. The `com.auth0.android.request.AuthenticationRequest` interface can be used instead.
 
-## Constructors removed
+### Class changes
 
-- `public SignUpRequest(@NonNull DatabaseConnectionRequest<DatabaseUser, AuthenticationException> signUpRequest, @NonNull AuthenticationRequest authenticationRequest)`. Use `public SignUpRequest(@NonNull DatabaseConnectionRequest<DatabaseUser, AuthenticationException> signUpRequest, @NonNull AuthRequest authRequest)` instead.
+- `SignupRequest` now implements `AuthencticationRequest` instead of the now-removed `AuthRequest`
+- `SimpleRequest` now implements `Request` instead of the now-removed `ParameterizableRequest`
+- `AuthorizableRequest` now extends `Request` instead of the now-removed `ParameterizableRequest`
 
-## Methods removed
+### Constructors removed or changed
 
-The following methods were removed in v2:
+#### SignupRequest
 
-### AuthenticationAPIClient
+- `public SignUpRequest(@NonNull DatabaseConnectionRequest<DatabaseUser, AuthenticationException> signUpRequest, @NonNull AuthRequest authRequest)`. Use `public SignUpRequest(@NonNull DatabaseConnectionRequest<DatabaseUser, AuthenticationException> signUpRequest, @NonNull AuthenticationRequest authenticationRequest)` instead.
+
+#### ProfileRequest
+
+- `public ProfileRequest(@NonNull AuthenticationRequest authenticationRequest, @NonNull ParameterizableRequest<UserProfile, AuthenticationException> userInfoRequest)`. Use `public ProfileRequest(@NonNull AuthenticationRequest authenticationRequest, @NonNull Request<UserProfile, AuthenticationException> userInfoRequest)` instead
+- `public ProfileRequest(@NonNull AuthRequest authRequest, @NonNull ParameterizableRequest<UserProfile, AuthenticationException> userInfoRequest)`. Use `public ProfileRequest(@NonNull AuthenticationRequest authRequest, @NonNull Request<UserProfile, AuthenticationException> userInfoRequest)` instead.
+
+#### TokenRequest
+
+- `public TokenRequest(@NonNull ParameterizableRequest<Credentials, AuthenticationException> request)`. Use `public TokenRequest(@NonNull Request<Credentials, AuthenticationException> request` instead.
+
+
+#### DatabaseConnectionTest
+
+- `public DatabaseConnectionRequest(@NonNull ParameterizableRequest<T, U> request)`. Use `public DatabaseConnectionRequest(@NonNull Request<T, U> request)` instead.
+- `public DelegationRequest(@NonNull ParameterizableRequest<T, AuthenticationException> request)`. Use `public DelegationRequest(@NonNull Request<T, AuthenticationException> request)` instead.
+
+### Methods added
+
+#### TokenRequest
+
+- `public TokenRequest addParameter(@NonNull String name, @NonNull Object value)`
+
+#### SignupRequest
+
+- `public SignUpRequest addParameters(@NonNull Map<String, Object> parameters)`
+- `public SignUpRequest addParameter(@NonNull String name, @NonNull Object value)`
+
+#### ProfileRequest
+
+- `public ProfileRequest addParameter(@NonNull String name, @NonNull Object value)`
+
+### Methods removed or changed
+
+#### AuthenticationAPIClient
 
 - `public ParameterizableRequest<UserProfile, AuthenticationException> tokenInfo(@NonNull String idToken)`. Use `public ParameterizableRequest<UserProfile, AuthenticationException> userInfo(@NonNull String accessToken)` instead.
+- `public ParameterizableRequest<UserProfile, AuthenticationException> userInfo(@NonNull String accessToken)`. Use `public Request<UserProfile, AuthenticationException> userInfo(@NonNull String accessToken)` instead.
+- `public ParameterizableRequest<Void, AuthenticationException> revokeToken(@NonNull String refreshToken)`. Use `public Request<Void, AuthenticationException> revokeToken(@NonNull String refreshToken)` instead.
+- `public ParameterizableRequest<Credentials, AuthenticationException> renewAuth(@NonNull String refreshToken)`. Use `public Request<Credentials, AuthenticationException> renewAuth(@NonNull String refreshToken)` instead.
+- `public ParameterizableRequest<Void, AuthenticationException> passwordlessWithEmail(@NonNull String email, @NonNull PasswordlessType passwordlessType, @NonNull String connection)`. Use `public Request<Void, AuthenticationException> passwordlessWithEmail(@NonNull String email, @NonNull PasswordlessType passwordlessType, @NonNull String connection)` instead.
+- `public ParameterizableRequest<Void, AuthenticationException> passwordlessWithEmail(@NonNull String email, @NonNull PasswordlessType passwordlessType)`. Use `public Request<Void, AuthenticationException> passwordlessWithEmail(@NonNull String email, @NonNull PasswordlessType passwordlessType)` instead.
+- `public ParameterizableRequest<Void, AuthenticationException> passwordlessWithSMS(@NonNull String phoneNumber, @NonNull PasswordlessType passwordlessType, @NonNull String connection)`. Use `public Request<Void, AuthenticationException> passwordlessWithSMS(@NonNull String phoneNumber, @NonNull PasswordlessType passwordlessType, @NonNull String connection)` instead.
+- `public ParameterizableRequest<Void, AuthenticationException> passwordlessWithSMS(@NonNull String phoneNumber, @NonNull PasswordlessType passwordlessType)`. Use `public Request<Void, AuthenticationException> passwordlessWithSMS(@NonNull String phoneNumber, @NonNull PasswordlessType passwordlessType)` instead.
+- `public ParameterizableRequest<Map<String, Object>, AuthenticationException> delegation()`. Use `public Request<Map<String, Object>, AuthenticationException> delegation()` instead.
+- `public ParameterizableRequest<Map<String, PublicKey>, AuthenticationException> fetchJsonWebKeys()`. Use `public Request<Map<String, PublicKey>, AuthenticationException> fetchJsonWebKeys()` instead.
+- `public AuthRequest login(@NonNull String usernameOrEmail, @NonNull String password, @NonNull String realmOrConnection)`. Use `public AuthenticationRequest login(@NonNull String usernameOrEmail, @NonNull String password, @NonNull String realmOrConnection)` instead.
+- `public AuthRequest login(@NonNull String usernameOrEmail, @NonNull String password)`. Use `public AuthenticationRequest login(@NonNull String usernameOrEmail, @NonNull String password)` instead.
+- `public AuthRequest loginWithOTP(@NonNull String mfaToken, @NonNull String otp)`. Use `public AuthenticationRequest loginWithOTP(@NonNull String mfaToken, @NonNull String otp)` instead.
+- `public AuthRequest loginWithOAuthAccessToken(@NonNull String token, @NonNull String connection)`. Use `public AuthenticationRequest loginWithOAuthAccessToken(@NonNull String token, @NonNull String connection)` instead.
+- `public AuthRequest loginWithNativeSocialToken(@NonNull String token, @NonNull String tokenType)`. Use `public AuthenticationRequest loginWithNativeSocialToken(@NonNull String token, @NonNull String tokenType)` instead.
+- `public AuthRequest loginWithPhoneNumber(@NonNull String phoneNumber, @NonNull String verificationCode, @NonNull String realmOrConnection)`. Use `public AuthenticationRequest loginWithPhoneNumber(@NonNull String phoneNumber, @NonNull String verificationCode, @NonNull String realmOrConnection)` instead.
+- `public AuthRequest loginWithPhoneNumber(@NonNull String phoneNumber, @NonNull String verificationCode)`. Use `public AuthenticationRequest loginWithPhoneNumber(@NonNull String phoneNumber, @NonNull String verificationCode)` instead.
+- `public AuthRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode, @NonNull String realmOrConnection)`. Use `public AuthenticationRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode, @NonNull String realmOrConnection)` instead.
+- `public AuthRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode)`. Use `public AuthenticationRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode)` instead.
 
-### WebAuthProvider
+#### WebAuthProvider
 
 - `public static Builder init(@NonNull Auth0 account)`. Use `public static Builder login(@NonNull Auth0 account)` instead.
 - `public static Builder init(@NonNull Context context)`. Use `public static Builder login(@NonNull Auth0 account)` instead.
 - `public static boolean resume(int requestCode, int resultCode, @Nullable Intent intent)`. Use `public static boolean resume(@Nullable Intent intent)` instead.
 
-### WebAuthProvider.Builder
+#### WebAuthProvider.Builder
 
 - `public Builder useCodeGrant(boolean useCodeGrant)`. There is no replacement; only Code + PKCE flow supported in v2.
 - `public Builder useBrowser(boolean useBrowser)`. There is no replacement; Google no longer supports WebView authentication.
 - `public Builder useFullscreen(boolean useFullscreen)`. There is no replacement; Google no longer supports WebView authentication.
 - `public void start(@NonNull Activity activity, @NonNull AuthCallback callback, int requestCode)`. Use `public void start(@NonNull Activity activity, @NonNull AuthCallback callback)` instead.    
 
+#### UsersAPIClient
+
+- `public ParameterizableRequest<List<UserIdentity>, ManagementException> link(@NonNull String primaryUserId, @NonNull String secondaryToken)`. Use `public Request<List<UserIdentity>, ManagementException> link(@NonNull String primaryUserId, @NonNull String secondaryToken)` instead.
+- `public ParameterizableRequest<List<UserIdentity>, ManagementException> unlink(@NonNull String primaryUserId, @NonNull String secondaryUserId, @NonNull String secondaryProvider)`. Use `public Request<List<UserIdentity>, ManagementException> unlink(@NonNull String primaryUserId, @NonNull String secondaryUserId, @NonNull String secondaryProvider)` instead.
+- `public ParameterizableRequest<UserProfile, ManagementException> updateMetadata(@NonNull String userId, @NonNull Map<String, Object> userMetadata)`. Use `public Request<UserProfile, ManagementException> updateMetadata(@NonNull String userId, @NonNull Map<String, Object> userMetadata)` instead.
+- `public ParameterizableRequest<UserProfile, ManagementException> getProfile(@NonNull String userId)`. Use `public Request<UserProfile, ManagementException> getProfile(@NonNull String userId)` instead.
+
+#### RequestFactory
+
+- `public <T, U extends Auth0Exception> ParameterizableRequest<T, U> POST(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull Class<T> clazz, @NonNull ErrorBuilder<U> errorBuilder) `. Use `public <T, U extends Auth0Exception> Request<T, U> POST(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull Class<T> clazz, @NonNull ErrorBuilder<U> errorBuilder)` instead.
+- `public <T, U extends Auth0Exception> ParameterizableRequest<T, U> POST(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull TypeToken<T> typeToken, @NonNull ErrorBuilder<U> errorBuilder)`. Use `public <T, U extends Auth0Exception> Request<T, U> POST(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull TypeToken<T> typeToken, @NonNull ErrorBuilder<U> errorBuilder)` instead.
+- `public <U extends Auth0Exception> ParameterizableRequest<Map<String, Object>, U> rawPOST(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull ErrorBuilder<U> errorBuilder)`. Use `public <U extends Auth0Exception> Request<Map<String, Object>, U> rawPOST(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull ErrorBuilder<U> errorBuilder)` instead.
+- `public <U extends Auth0Exception> ParameterizableRequest<Void, U> POST(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull ErrorBuilder<U> errorBuilder)`. Use `public <U extends Auth0Exception> Request<Void, U> POST(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull ErrorBuilder<U> errorBuilder)` instead.
+- `public <T, U extends Auth0Exception> ParameterizableRequest<T, U> PATCH(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull Class<T> clazz, @NonNull ErrorBuilder<U> errorBuilder)`. Use ` public <T, U extends Auth0Exception> Request<T, U> PATCH(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull Class<T> clazz, @NonNull ErrorBuilder<U> errorBuilder)` instead.
+- `public <T, U extends Auth0Exception> ParameterizableRequest<T, U> DELETE(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull TypeToken<T> typeToken, @NonNull ErrorBuilder<U> errorBuilder)`. Use `public <T, U extends Auth0Exception> Request<T, U> DELETE(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull TypeToken<T> typeToken, @NonNull ErrorBuilder<U> errorBuilder)` instead.
+- `public <T, U extends Auth0Exception> ParameterizableRequest<T, U> GET(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull Class<T> clazz, @NonNull ErrorBuilder<U> errorBuilder)`. Use `public <T, U extends Auth0Exception> Request<T, U> GET(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull Class<T> clazz, @NonNull ErrorBuilder<U> errorBuilder)` instead.
+- `public <T, U extends Auth0Exception> ParameterizableRequest<T, U> GET(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull TypeToken<T> typeToken, @NonNull ErrorBuilder<U> errorBuilder)`. Use `public <T, U extends Auth0Exception> Request<T, U> GET(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull TypeToken<T> typeToken, @NonNull ErrorBuilder<U> errorBuilder)` instead.
+- `public AuthRequest authenticationPOST(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson)`. Use `public AuthRequest authenticationPOST(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson)` instead.
