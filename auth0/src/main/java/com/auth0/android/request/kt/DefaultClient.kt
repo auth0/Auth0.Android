@@ -70,7 +70,7 @@ public class DefaultClient(private val timeout: Int) : NetworkingClient {
     private fun getFormString(params: Map<String, String>): String {
         val builder = StringBuilder()
         params.entries.forEachIndexed { idx, it ->
-            if (idx == 0) {
+            if (idx > 0) {
                 builder.append("&")
             }
             builder.append(URLEncoder.encode(it.key, Charset.defaultCharset().name()))
