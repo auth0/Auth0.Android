@@ -35,6 +35,7 @@ import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.request.AuthorizableRequest;
 import com.auth0.android.request.ErrorBuilder;
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.TypeAdapter;
 import com.google.gson.reflect.TypeToken;
@@ -47,16 +48,18 @@ import com.squareup.okhttp.Response;
 import com.squareup.okhttp.ResponseBody;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
 import static com.auth0.android.request.internal.ResponseUtils.closeStream;
 
-abstract class BaseRequest<T, U extends Auth0Exception> implements com.auth0.android.request.Request<T, U>, AuthorizableRequest<T, U>, Callback {
+class BaseRequest<T, U extends Auth0Exception> implements com.auth0.android.request.Request<T, U>, AuthorizableRequest<T, U>, Callback {
 
     private final Map<String, String> headers;
     protected final HttpUrl url;
+    protected final String method;
     protected final OkHttpClient client;
     private final TypeAdapter<T> adapter;
     private final ErrorBuilder<U> errorBuilder;
@@ -65,17 +68,14 @@ abstract class BaseRequest<T, U extends Auth0Exception> implements com.auth0.and
     private final ParameterBuilder builder;
     private BaseCallback<T, U> callback;
 
-    protected BaseRequest(HttpUrl url, OkHttpClient client, Gson gson, TypeAdapter<T> adapter, ErrorBuilder<U> errorBuilder) {
-        this(url, client, gson, adapter, errorBuilder, null);
-    }
-
-    public BaseRequest(HttpUrl url, OkHttpClient client, Gson gson, TypeAdapter<T> adapter, ErrorBuilder<U> errorBuilder, BaseCallback<T, U> callback) {
-        this(url, client, gson, adapter, errorBuilder, callback, new HashMap<String, String>(), ParameterBuilder.newBuilder());
+    public BaseRequest(HttpUrl url, String method, OkHttpClient client, Gson gson, TypeAdapter<T> adapter, ErrorBuilder<U> errorBuilder, BaseCallback<T, U> callback) {
+        this(url, method, client, gson, adapter, errorBuilder, callback, new HashMap<>(), ParameterBuilder.newBuilder());
     }
 
     @VisibleForTesting
-    BaseRequest(HttpUrl url, OkHttpClient client, Gson gson, TypeAdapter<T> adapter, ErrorBuilder<U> errorBuilder, BaseCallback<T, U> callback, Map<String, String> headers, ParameterBuilder parameterBuilder) {
+    BaseRequest(HttpUrl url, String method, OkHttpClient client, Gson gson, TypeAdapter<T> adapter, ErrorBuilder<U> errorBuilder, BaseCallback<T, U> callback, Map<String, String> headers, ParameterBuilder parameterBuilder) {
         this.url = url;
+        this.method = method;
         this.client = client;
         this.gson = gson;
         this.adapter = adapter;
@@ -191,5 +191,57 @@ abstract class BaseRequest<T, U extends Auth0Exception> implements com.auth0.and
         }
     }
 
-    protected abstract Request doBuildRequest();
+    @NonNull
+    @Override
+    public T execute() throws Auth0Exception {
+        Request request = doBuildRequest();
+
+        Response response;
+        try {
+            response = client.newCall(request).execute();
+        } catch (IOException e) {
+            throw getErrorBuilder().from("Request failed", new NetworkErrorException(e));
+        }
+
+        if (!response.isSuccessful()) {
+            throw parseUnsuccessfulResponse(response);
+        }
+
+        ResponseBody body = response.body();
+        try {
+            Reader charStream = body.charStream();
+            return getAdapter().fromJson(charStream);
+        } catch (IOException | JsonParseException e) {
+            throw new Auth0Exception("Failed to parse response to request to " + url, e);
+        } finally {
+            closeStream(body);
+        }
+    }
+
+    @Override
+    public void onResponse(Response response) {
+        if (!response.isSuccessful()) {
+            postOnFailure(parseUnsuccessfulResponse(response));
+            return;
+        }
+
+        ResponseBody body = response.body();
+        try {
+            Reader charStream = body.charStream();
+            T payload = getAdapter().fromJson(charStream);
+            postOnSuccess(payload);
+        } catch (IOException | JsonParseException e) {
+            final Auth0Exception auth0Exception = new Auth0Exception("Failed to parse response to request to " + url, e);
+            postOnFailure(getErrorBuilder().from("Failed to parse a successful response", auth0Exception));
+        } finally {
+            closeStream(body);
+        }
+    }
+
+    protected Request doBuildRequest() throws RequestBodyBuildException {
+        boolean skipBody = method.equals("HEAD") || method.equals("GET");
+        return newBuilder()
+                .method(method, skipBody ? null : buildBody())
+                .build();
+    }
 }

@@ -140,15 +140,17 @@ public class RequestFactory {
     }
 
     <T, U extends Auth0Exception> Request<T, U> createSimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, String method, Class<T> clazz, ErrorBuilder<U> errorBuilder) {
-        return new SimpleRequest<>(url, client, gson, method, clazz, errorBuilder);
+        return new BaseRequest<>(url, method, client, gson, gson.getAdapter(clazz), errorBuilder, null);
     }
 
     <T, U extends Auth0Exception> Request<T, U> createSimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, String method, TypeToken<T> typeToken, ErrorBuilder<U> errorBuilder) {
-        return new SimpleRequest<>(url, client, gson, method, typeToken, errorBuilder);
+        return new BaseRequest<>(url, method, client, gson, gson.getAdapter(typeToken), errorBuilder, null);
     }
 
-    <T, U extends Auth0Exception> Request<T, U> createSimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, ErrorBuilder<U> errorBuilder) {
-        return new SimpleRequest<>(url, client, gson, "POST", errorBuilder);
+    <U extends Auth0Exception> Request<Map<String, Object>, U> createSimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, ErrorBuilder<U> errorBuilder) {
+        final TypeToken<Map<String, Object>> mapType = new TypeToken<Map<String, Object>>() {
+        };
+        return this.createSimpleRequest(url, client, gson, "POST", mapType, errorBuilder);
     }
 
     BaseAuthenticationRequest createAuthenticationRequest(HttpUrl url, OkHttpClient client, Gson gson) {

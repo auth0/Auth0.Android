@@ -40,11 +40,8 @@ import java.io.IOException;
 
 class VoidRequest<U extends Auth0Exception> extends BaseRequest<Void, U> implements Callback {
 
-    private final String httpMethod;
-
     public VoidRequest(HttpUrl url, OkHttpClient client, Gson gson, String httpMethod, ErrorBuilder<U> errorBuilder) {
-        super(url, client, gson, gson.getAdapter(Void.class), errorBuilder);
-        this.httpMethod = httpMethod;
+        super(url, httpMethod, client, gson, gson.getAdapter(Void.class), errorBuilder, null);
     }
 
     @Override
@@ -61,7 +58,7 @@ class VoidRequest<U extends Auth0Exception> extends BaseRequest<Void, U> impleme
     protected Request doBuildRequest() {
         RequestBody body = buildBody();
         return newBuilder()
-                .method(httpMethod, body)
+                .method(method, body)
                 .build();
     }
 

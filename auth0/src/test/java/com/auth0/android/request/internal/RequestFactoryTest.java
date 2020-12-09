@@ -224,7 +224,7 @@ public class RequestFactoryTest {
         }
 
         @Override
-        <T, U extends Auth0Exception> Request<T, U> createSimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, ErrorBuilder<U> errorBuilder) {
+        <U extends Auth0Exception> Request<Map<String, Object>, U> createSimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, ErrorBuilder<U> errorBuilder) {
             request = new MockRequest<>(url, client, gson, "POST", errorBuilder);
             return request;
         }
