@@ -40,8 +40,7 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 
 ### Class changes
 
-- `SignupRequest` now implements `AuthencticationRequest` instead of the now-removed `AuthRequest`
-- `SimpleRequest` now implements `Request` instead of the now-removed `ParameterizableRequest`
+- `SignupRequest` now implements `AuthenticationRequest` instead of the now-removed `AuthRequest`
 - `AuthorizableRequest` now extends `Request` instead of the now-removed `ParameterizableRequest`
 
 ### Constructors removed or changed
@@ -58,7 +57,6 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 #### TokenRequest
 
 - `public TokenRequest(@NonNull ParameterizableRequest<Credentials, AuthenticationException> request)`. Use `public TokenRequest(@NonNull Request<Credentials, AuthenticationException> request` instead.
-
 
 #### DatabaseConnectionTest
 
