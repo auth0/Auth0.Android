@@ -46,6 +46,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 public class SimpleRequestTest {
+    //TODO: Merge these tests into the BaseRequestTest class
 
     private static final MediaType JSON_MEDIATYPE = MediaType.parse("application/json; charset=utf-8");
 
@@ -91,12 +92,12 @@ public class SimpleRequestTest {
 
     @Test
     public void shouldSkipSettingBodyWithGETorHEAD() {
-        SimpleRequest<TestPojo, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", errorBuilder);
+        BaseRequest<TestPojo, Auth0Exception> get = new BaseRequest<>(url, "GET", client, gson, gson.getAdapter(TestPojo.class), errorBuilder, null);
         get.addParameter("name", "john");
         Request getRequest = get.doBuildRequest();
         assertThat(getRequest.body(), is(nullValue()));
 
-        SimpleRequest<TestPojo, Auth0Exception> head = new SimpleRequest<>(url, client, gson, "HEAD", errorBuilder);
+        BaseRequest<TestPojo, Auth0Exception> head = new BaseRequest<>(url, "HEAD", client, gson, gson.getAdapter(TestPojo.class), errorBuilder, null);
         head.addParameter("name", "john");
         Request headRequest = head.doBuildRequest();
         assertThat(headRequest.body(), is(nullValue()));
@@ -104,13 +105,13 @@ public class SimpleRequestTest {
 
     @Test
     public void shouldSetBodyWithPOSTorPATCH() {
-        SimpleRequest<Object, Auth0Exception> post = new SimpleRequest<>(url, client, gson, "POST", errorBuilder);
+        BaseRequest<Object, Auth0Exception> post = new BaseRequest<>(url, "POST", client, gson, gson.getAdapter(Object.class), errorBuilder, null);
         post.addParameter("name", "john");
         Request postRequest = post.doBuildRequest();
         assertThat(postRequest.body(), is(notNullValue()));
         assertThat(postRequest.body().contentType(), is(JSON_MEDIATYPE));
 
-        SimpleRequest<Object, Auth0Exception> patch = new SimpleRequest<>(url, client, gson, "PATCH", errorBuilder);
+        BaseRequest<Object, Auth0Exception> patch = new BaseRequest<>(url, "PATCH", client, gson, gson.getAdapter(Object.class), errorBuilder, null);
         patch.addParameter("name", "john");
         Request patchRequest = patch.doBuildRequest();
         assertThat(patchRequest.body(), is(notNullValue()));
@@ -119,7 +120,7 @@ public class SimpleRequestTest {
 
     @Test
     public void shouldSucceed() {
-        SimpleRequest<TestPojo, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", errorBuilder);
+        BaseRequest<TestPojo, Auth0Exception> get = new BaseRequest<>(url, "GET", client, gson, gson.getAdapter(TestPojo.class), errorBuilder, null);
         get.setCallback(callback);
         String validJson = "{}";
         ResponseBody resBody = ResponseBody.create(JSON_MEDIATYPE, validJson);
@@ -147,7 +148,7 @@ public class SimpleRequestTest {
 
     @Test
     public void shouldFailOnUnsuccessfulResponse() {
-        SimpleRequest<TestPojo, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", errorBuilder);
+        BaseRequest<TestPojo, Auth0Exception> get = new BaseRequest<>(url, "GET", client, gson, gson.getAdapter(TestPojo.class), errorBuilder, null);
         get.setCallback(callback);
         String validJson = "{}";
         ResponseBody resBody = ResponseBody.create(JSON_MEDIATYPE, validJson);
@@ -187,7 +188,7 @@ public class SimpleRequestTest {
         };
         Gson gson = new GsonBuilder().registerTypeAdapter(TestPojo.class, brokenAdapter).create();
 
-        SimpleRequest<TestPojo, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", TestPojo.class, errorBuilder);
+        BaseRequest<TestPojo, Auth0Exception> get = new BaseRequest<>(url, "GET", client, gson, gson.getAdapter(TestPojo.class), errorBuilder, null);
         get.setCallback(callback);
         String invalidJson = "{---}";
         ResponseBody resBody = ResponseBody.create(JSON_MEDIATYPE, invalidJson);
@@ -221,7 +222,7 @@ public class SimpleRequestTest {
     public void shouldFailOnSuccessfulResponseWithJsonParseException() throws IOException {
         when(brokenAdapter.read(any(JsonReader.class))).thenThrow(new JsonParseException("err"));
         Gson gson = new GsonBuilder().registerTypeAdapter(TestPojo.class, brokenAdapter).create();
-        SimpleRequest<TestPojo, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", TestPojo.class, errorBuilder);
+        BaseRequest<TestPojo, Auth0Exception> get = new BaseRequest<>(url, "GET", client, gson, gson.getAdapter(TestPojo.class), errorBuilder, null);
         get.setCallback(callback);
         String invalidJson = "{---}";
         ResponseBody resBody = ResponseBody.create(JSON_MEDIATYPE, invalidJson);
@@ -255,7 +256,7 @@ public class SimpleRequestTest {
     public void shouldStart() {
         Call call = mock(Call.class);
         when(client.newCall(any(Request.class))).thenReturn(call);
-        SimpleRequest<TestPojo, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", errorBuilder);
+        BaseRequest<TestPojo, Auth0Exception> get = new BaseRequest<>(url, "GET", client, gson, gson.getAdapter(TestPojo.class), errorBuilder, null);
         get.start(callback);
     }
 
@@ -278,17 +279,16 @@ public class SimpleRequestTest {
         Call call = mock(Call.class);
         when(client.newCall(any(Request.class))).thenReturn(call);
         when(call.execute()).thenReturn(response);
-        SimpleRequest<TestPojo, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", errorBuilder);
-
+        BaseRequest<TestPojo, Auth0Exception> get = new BaseRequest<>(url, "GET", client, gson, gson.getAdapter(TestPojo.class), errorBuilder, null);
 
         Exception expectedException = null;
-        Object result = null;
+        TestPojo result = null;
         try {
             result = get.execute();
         } catch (Exception e) {
             expectedException = e;
         }
-        assertThat(result, Matchers.<Object>is(Collections.<String, Object>emptyMap()));
+        assertThat(result, is(notNullValue()));
         verifyNoInteractions(errorBuilder);
         assertThat(expectedException, is(nullValue()));
     }
@@ -312,7 +312,7 @@ public class SimpleRequestTest {
         Call call = mock(Call.class);
         when(client.newCall(any(Request.class))).thenReturn(call);
         when(call.execute()).thenReturn(response);
-        SimpleRequest<TestPojo, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", errorBuilder);
+        BaseRequest<TestPojo, Auth0Exception> get = new BaseRequest<>(url, "GET", client, gson, gson.getAdapter(TestPojo.class), errorBuilder, null);
 
 
         Exception expectedException = null;
@@ -346,7 +346,7 @@ public class SimpleRequestTest {
         Call call = mock(Call.class);
         when(client.newCall(any(Request.class))).thenReturn(call);
         when(call.execute()).thenThrow(IOException.class);
-        SimpleRequest<TestPojo, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", errorBuilder);
+        BaseRequest<TestPojo, Auth0Exception> get = new BaseRequest<>(url, "GET", client, gson, gson.getAdapter(TestPojo.class), errorBuilder, null);
 
 
         Exception expectedException = null;
@@ -385,7 +385,7 @@ public class SimpleRequestTest {
         Call call = mock(Call.class);
         when(client.newCall(any(Request.class))).thenReturn(call);
         when(call.execute()).thenReturn(response);
-        SimpleRequest<TestPojo, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", TestPojo.class, errorBuilder);
+        BaseRequest<TestPojo, Auth0Exception> get = new BaseRequest<>(url, "GET", client, gson, gson.getAdapter(TestPojo.class), errorBuilder, null);
 
 
         Exception expectedException = null;
@@ -424,7 +424,7 @@ public class SimpleRequestTest {
         Call call = mock(Call.class);
         when(client.newCall(any(Request.class))).thenReturn(call);
         when(call.execute()).thenReturn(response);
-        SimpleRequest<TestPojo, Auth0Exception> get = new SimpleRequest<>(url, client, gson, "GET", TestPojo.class, errorBuilder);
+        BaseRequest<TestPojo, Auth0Exception> get = new BaseRequest<>(url, "GET", client, gson, gson.getAdapter(TestPojo.class), errorBuilder, null);
 
         Exception expectedException = null;
         TestPojo result = null;

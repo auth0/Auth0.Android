@@ -18,10 +18,10 @@ import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.REALM_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.SCOPE_KEY;
 
-class BaseAuthenticationRequest extends SimpleRequest<Credentials, AuthenticationException> implements AuthenticationRequest {
+class BaseAuthenticationRequest extends BaseRequest<Credentials, AuthenticationException> implements AuthenticationRequest {
 
     public BaseAuthenticationRequest(HttpUrl url, OkHttpClient client, Gson gson, String httpMethod) {
-        super(url, client, gson, httpMethod, Credentials.class, new AuthenticationErrorBuilder());
+        super(url, httpMethod, client, gson, gson.getAdapter(Credentials.class), new AuthenticationErrorBuilder(), null);
     }
 
     /**

@@ -92,7 +92,7 @@ public class BaseRequestTest {
         HttpUrl url = HttpUrl.parse("https://auth0.com");
         parameterBuilder = ParameterBuilder.newBuilder();
 
-        baseRequest = new BaseRequest<String, Auth0Exception>(url, client, new Gson(), adapter, errorBuilder, callback, headers, parameterBuilder) {
+        baseRequest = new BaseRequest<String, Auth0Exception>(url, "POST", client, new Gson(), adapter, errorBuilder, callback, headers, parameterBuilder) {
             @NonNull
             @Override
             public String execute() throws Auth0Exception {
