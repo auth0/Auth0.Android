@@ -4,16 +4,16 @@ import androidx.annotation.NonNull;
 
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.request.ParameterizableRequest;
+import com.auth0.android.request.Request;
 
 import java.util.Map;
 
-public class ParameterizableRequestMock<T, U extends Auth0Exception> implements ParameterizableRequest<T, U> {
+public class RequestMock<T, U extends Auth0Exception> implements Request<T, U> {
     private T payload;
     private U error;
     private boolean started;
 
-    public ParameterizableRequestMock(T payload, U error) {
+    public RequestMock(T payload, U error) {
         this.payload = payload;
         this.error = error;
     }
@@ -24,19 +24,19 @@ public class ParameterizableRequestMock<T, U extends Auth0Exception> implements 
 
     @NonNull
     @Override
-    public ParameterizableRequest<T, U> addParameters(@NonNull Map<String, Object> parameters) {
+    public Request<T, U> addParameters(@NonNull Map<String, Object> parameters) {
         return this;
     }
 
     @NonNull
     @Override
-    public ParameterizableRequest<T, U> addParameter(@NonNull String name, @NonNull Object value) {
+    public Request<T, U> addParameter(@NonNull String name, @NonNull Object value) {
         return this;
     }
 
     @NonNull
     @Override
-    public ParameterizableRequest<T, U> addHeader(@NonNull String name, @NonNull String value) {
+    public Request<T, U> addHeader(@NonNull String name, @NonNull String value) {
         return this;
     }
 

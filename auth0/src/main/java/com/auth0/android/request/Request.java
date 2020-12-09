@@ -29,6 +29,8 @@ import androidx.annotation.NonNull;
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.callback.BaseCallback;
 
+import java.util.Map;
+
 /**
  * Defines a request that can be started
  *
@@ -52,4 +54,33 @@ public interface Request<T, U extends Auth0Exception> {
      */
     @NonNull
     T execute() throws Auth0Exception;
+
+    /**
+     * Add parameters to the request as a Map of Object with the keys as String
+     *
+     * @param parameters to send with the request
+     * @return itself
+     */
+    @NonNull
+    Request<T, U> addParameters(@NonNull Map<String, Object> parameters);
+
+    /**
+     * Add parameter to the request with a given name
+     *
+     * @param name  of the parameter
+     * @param value of the parameter
+     * @return itself
+     */
+    @NonNull
+    Request<T, U> addParameter(@NonNull String name, @NonNull Object value);
+
+    /**
+     * Adds an additional header for the request
+     *
+     * @param name  of the header
+     * @param value of the header
+     * @return itself
+     */
+    @NonNull
+    Request<T, U> addHeader(@NonNull String name, @NonNull String value);
 }

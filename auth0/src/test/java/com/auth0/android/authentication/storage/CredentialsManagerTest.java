@@ -6,7 +6,7 @@ import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.jwt.JWT;
-import com.auth0.android.request.ParameterizableRequest;
+import com.auth0.android.request.Request;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.CredentialsMock;
 import com.auth0.android.util.Clock;
@@ -61,7 +61,7 @@ public class CredentialsManagerTest {
     @Mock
     private BaseCallback<Credentials, CredentialsManagerException> callback;
     @Mock
-    private ParameterizableRequest<Credentials, AuthenticationException> request;
+    private Request<Credentials, AuthenticationException> request;
     @Mock
     private JWTDecoder jwtDecoder;
     @Captor

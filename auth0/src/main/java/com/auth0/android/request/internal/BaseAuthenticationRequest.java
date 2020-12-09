@@ -1,10 +1,11 @@
 package com.auth0.android.request.internal;
 
-import androidx.annotation.NonNull;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
 import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.request.AuthRequest;
+import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.result.Credentials;
 import com.google.gson.Gson;
 import com.squareup.okhttp.HttpUrl;
@@ -21,7 +22,7 @@ import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.REALM_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.SCOPE_KEY;
 
-class BaseAuthenticationRequest extends SimpleRequest<Credentials, AuthenticationException> implements AuthRequest {
+class BaseAuthenticationRequest extends SimpleRequest<Credentials, AuthenticationException> implements AuthenticationRequest {
 
     private static final String TAG = BaseAuthenticationRequest.class.getSimpleName();
 
@@ -41,7 +42,7 @@ class BaseAuthenticationRequest extends SimpleRequest<Credentials, Authenticatio
      */
     @NonNull
     @Override
-    public AuthRequest setGrantType(@NonNull String grantType) {
+    public AuthenticationRequest setGrantType(@NonNull String grantType) {
         addParameter(GRANT_TYPE_KEY, grantType);
         return this;
     }
@@ -54,7 +55,7 @@ class BaseAuthenticationRequest extends SimpleRequest<Credentials, Authenticatio
      */
     @NonNull
     @Override
-    public AuthRequest setConnection(@NonNull String connection) {
+    public AuthenticationRequest setConnection(@NonNull String connection) {
         if (!hasLegacyPath()) {
             Log.w(TAG, "Not setting the 'connection' parameter as the request is using a OAuth 2.0 API Authorization endpoint that doesn't support it.");
             return this;
@@ -71,7 +72,7 @@ class BaseAuthenticationRequest extends SimpleRequest<Credentials, Authenticatio
      */
     @NonNull
     @Override
-    public AuthRequest setRealm(@NonNull String realm) {
+    public AuthenticationRequest setRealm(@NonNull String realm) {
         if (hasLegacyPath()) {
             Log.w(TAG, "Not setting the 'realm' parameter as the request is using a Legacy Authorization API endpoint that doesn't support it.");
             return this;
@@ -87,7 +88,7 @@ class BaseAuthenticationRequest extends SimpleRequest<Credentials, Authenticatio
      * @return itself
      */
     @NonNull
-    public AuthRequest setScope(@NonNull String scope) {
+    public AuthenticationRequest setScope(@NonNull String scope) {
         addParameter(SCOPE_KEY, scope);
         return this;
     }
@@ -99,7 +100,7 @@ class BaseAuthenticationRequest extends SimpleRequest<Credentials, Authenticatio
      * @return itself
      */
     @NonNull
-    public AuthRequest setDevice(@NonNull String device) {
+    public AuthenticationRequest setDevice(@NonNull String device) {
         addParameter(DEVICE_KEY, device);
         return this;
     }
@@ -112,7 +113,7 @@ class BaseAuthenticationRequest extends SimpleRequest<Credentials, Authenticatio
      */
     @NonNull
     @Override
-    public AuthRequest setAudience(@NonNull String audience) {
+    public AuthenticationRequest setAudience(@NonNull String audience) {
         addParameter(AUDIENCE_KEY, audience);
         return this;
     }
@@ -124,14 +125,14 @@ class BaseAuthenticationRequest extends SimpleRequest<Credentials, Authenticatio
      * @return itself
      */
     @NonNull
-    public AuthRequest setAccessToken(@NonNull String accessToken) {
+    public AuthenticationRequest setAccessToken(@NonNull String accessToken) {
         addParameter(ACCESS_TOKEN_KEY, accessToken);
         return this;
     }
 
     @NonNull
     @Override
-    public AuthRequest addAuthenticationParameters(@NonNull Map<String, Object> parameters) {
+    public AuthenticationRequest addAuthenticationParameters(@NonNull Map<String, Object> parameters) {
         final HashMap<String, Object> params = new HashMap<>(parameters);
         if (parameters.containsKey(CONNECTION_KEY)) {
             setConnection((String) params.remove(CONNECTION_KEY));

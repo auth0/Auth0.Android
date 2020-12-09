@@ -8,7 +8,7 @@ import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.AuthenticationCallback;
 import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.request.ParameterizableRequest;
+import com.auth0.android.request.Request;
 import com.auth0.android.result.Credentials;
 
 import java.util.Date;
@@ -119,7 +119,7 @@ public class CredentialsManager extends BaseCredentialsManager {
             return;
         }
 
-        final ParameterizableRequest<Credentials, AuthenticationException> request = authenticationClient.renewAuth(refreshToken);
+        final Request<Credentials, AuthenticationException> request = authenticationClient.renewAuth(refreshToken);
         if (scope != null) {
             request.addParameter("scope", scope);
         }

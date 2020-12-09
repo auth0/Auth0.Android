@@ -5,7 +5,7 @@ import androidx.annotation.NonNull;
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.ParameterBuilder;
 import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.request.ParameterizableRequest;
+import com.auth0.android.request.Request;
 
 import java.util.Map;
 
@@ -15,9 +15,9 @@ import java.util.Map;
  */
 public class DatabaseConnectionRequest<T, U extends Auth0Exception> {
 
-    private final ParameterizableRequest<T, U> request;
+    private final Request<T, U> request;
 
-    public DatabaseConnectionRequest(@NonNull ParameterizableRequest<T, U> request) {
+    public DatabaseConnectionRequest(@NonNull Request<T, U> request) {
         this.request = request;
     }
 

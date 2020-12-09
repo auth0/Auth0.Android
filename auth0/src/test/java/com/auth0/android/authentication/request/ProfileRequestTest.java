@@ -2,9 +2,8 @@ package com.auth0.android.authentication.request;
 
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.request.AuthRequest;
 import com.auth0.android.request.AuthenticationRequest;
-import com.auth0.android.request.ParameterizableRequest;
+import com.auth0.android.request.Request;
 import com.auth0.android.result.Authentication;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.UserProfile;
@@ -17,33 +16,33 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.RobolectricTestRunner;
 
+import java.util.Collections;
 import java.util.Map;
 
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertTrue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyObject;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
 public class ProfileRequestTest {
 
-    private AuthRequest authenticationMockRequest;
-    private ParameterizableRequest userInfoMockRequest;
+    private AuthenticationRequest authenticationMockRequest;
+    private Request userInfoMockRequest;
     private ProfileRequest profileRequest;
 
     @Before
     public void setUp() {
-        userInfoMockRequest = mock(ParameterizableRequest.class);
-        authenticationMockRequest = mock(AuthRequest.class);
+        userInfoMockRequest = mock(Request.class);
+        authenticationMockRequest = mock(AuthenticationRequest.class);
         profileRequest = new ProfileRequest(authenticationMockRequest, userInfoMockRequest);
     }
 
@@ -57,19 +56,17 @@ public class ProfileRequestTest {
     }
 
     @Test
-    public void shouldAddHeader() {
-        final ProfileRequest req = profileRequest.addHeader("auth", "val123");
-        verify(authenticationMockRequest).addHeader(eq("auth"), eq("val123"));
+    public void shouldAddParameter() {
+        final ProfileRequest req = profileRequest.addParameter("param", "val");
+        verify(authenticationMockRequest).addAuthenticationParameters(Collections.singletonMap("param", "val"));
         assertThat(req, is(notNullValue()));
         assertThat(req, is(profileRequest));
     }
 
     @Test
-    public void shouldNotAddHeaderWithAuthenticationRequest() {
-        AuthenticationRequest authenticationMockRequest = mock(AuthenticationRequest.class);
-        ProfileRequest profileRequest = new ProfileRequest(authenticationMockRequest, userInfoMockRequest);
+    public void shouldAddHeader() {
         final ProfileRequest req = profileRequest.addHeader("auth", "val123");
-        verifyZeroInteractions(authenticationMockRequest);
+        verify(authenticationMockRequest).addHeader(eq("auth"), eq("val123"));
         assertThat(req, is(notNullValue()));
         assertThat(req, is(profileRequest));
     }
@@ -96,7 +93,7 @@ public class ProfileRequestTest {
         final Credentials credentials = mock(Credentials.class);
 
         final AuthenticationRequestMock authenticationRequestMock = new AuthenticationRequestMock(credentials, null);
-        final ParameterizableRequestMock tokenInfoRequestMock = new ParameterizableRequestMock(userProfile, null);
+        final RequestMock tokenInfoRequestMock = new RequestMock(userProfile, null);
         final BaseCallback callback = mock(BaseCallback.class);
 
         profileRequest = new ProfileRequest(authenticationRequestMock, tokenInfoRequestMock);
@@ -122,7 +119,7 @@ public class ProfileRequestTest {
         final AuthenticationException error = mock(AuthenticationException.class);
 
         final AuthenticationRequestMock authenticationRequestMock = new AuthenticationRequestMock(null, error);
-        final ParameterizableRequestMock tokenInfoRequestMock = new ParameterizableRequestMock(userProfile, null);
+        final RequestMock tokenInfoRequestMock = new RequestMock(userProfile, null);
         final BaseCallback callback = mock(BaseCallback.class);
 
         profileRequest = new ProfileRequest(authenticationRequestMock, tokenInfoRequestMock);
@@ -140,7 +137,7 @@ public class ProfileRequestTest {
         final AuthenticationException error = mock(AuthenticationException.class);
 
         final AuthenticationRequestMock authenticationRequestMock = new AuthenticationRequestMock(credentials, null);
-        final ParameterizableRequestMock tokenInfoRequestMock = new ParameterizableRequestMock(null, error);
+        final RequestMock tokenInfoRequestMock = new RequestMock(null, error);
         final BaseCallback callback = mock(BaseCallback.class);
 
         profileRequest = new ProfileRequest(authenticationRequestMock, tokenInfoRequestMock);

@@ -5,7 +5,6 @@ import androidx.annotation.NonNull;
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.request.Request;
 import com.auth0.android.result.Credentials;
 
@@ -19,9 +18,9 @@ public class TokenRequest implements Request<Credentials, AuthenticationExceptio
 
     private static final String OAUTH_CODE_VERIFIER_KEY = "code_verifier";
 
-    private final ParameterizableRequest<Credentials, AuthenticationException> request;
+    private final Request<Credentials, AuthenticationException> request;
 
-    public TokenRequest(@NonNull ParameterizableRequest<Credentials, AuthenticationException> request) {
+    public TokenRequest(@NonNull Request<Credentials, AuthenticationException> request) {
         this.request = request;
     }
 
@@ -34,6 +33,13 @@ public class TokenRequest implements Request<Credentials, AuthenticationExceptio
     @NonNull
     public TokenRequest addParameters(@NonNull Map<String, Object> parameters) {
         request.addParameters(parameters);
+        return this;
+    }
+
+    @NonNull
+    @Override
+    public TokenRequest addParameter(@NonNull String name, @NonNull Object value) {
+        request.addParameter(name, value);
         return this;
     }
 

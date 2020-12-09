@@ -30,7 +30,6 @@ import com.auth0.android.Auth0Exception;
 import com.auth0.android.NetworkErrorException;
 import com.auth0.android.RequestBodyBuildException;
 import com.auth0.android.request.ErrorBuilder;
-import com.auth0.android.request.ParameterizableRequest;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
@@ -46,7 +45,7 @@ import java.io.Reader;
 
 import static com.auth0.android.request.internal.ResponseUtils.closeStream;
 
-class SimpleRequest<T, U extends Auth0Exception> extends BaseRequest<T, U> implements ParameterizableRequest<T, U>, Callback {
+class SimpleRequest<T, U extends Auth0Exception> extends BaseRequest<T, U> implements com.auth0.android.request.Request<T, U>, Callback {
 
     private final String method;
 

@@ -3,7 +3,7 @@ package com.auth0.android.request.internal;
 import com.auth0.android.Auth0;
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.request.ErrorBuilder;
-import com.auth0.android.request.ParameterizableRequest;
+import com.auth0.android.request.Request;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.HttpUrl;
@@ -103,7 +103,7 @@ public class RequestFactoryTest {
 
     @Test
     public void shouldCreatePOSTRequestOfTClass() {
-        ParameterizableRequest<Auth0, Auth0Exception> request = factory.POST(url, client, gson, Auth0.class, builder);
+        Request<Auth0, Auth0Exception> request = factory.POST(url, client, gson, Auth0.class, builder);
 
         assertThat(request, is(notNullValue()));
         assertThat(request, hasHeaders(RequestFactory.getDefaultLocale(), CLIENT_INFO, USER_AGENT));
@@ -113,7 +113,7 @@ public class RequestFactoryTest {
     @Test
     public void shouldCreatePOSTRequestOfTToken() {
         TypeToken<Auth0> typeToken = createTypeToken();
-        final ParameterizableRequest<Auth0, Auth0Exception> request = factory.POST(url, client, gson, typeToken, builder);
+        final Request<Auth0, Auth0Exception> request = factory.POST(url, client, gson, typeToken, builder);
 
         assertThat(request, is(notNullValue()));
         assertThat(request, hasHeaders(RequestFactory.getDefaultLocale(), CLIENT_INFO, USER_AGENT));
@@ -122,7 +122,7 @@ public class RequestFactoryTest {
 
     @Test
     public void shouldCreateVoidPOSTRequest() {
-        final ParameterizableRequest<Void, Auth0Exception> request = factory.POST(url, client, gson, builder);
+        final Request<Void, Auth0Exception> request = factory.POST(url, client, gson, builder);
 
         assertThat(request, is(notNullValue()));
         assertThat(request, hasHeaders(RequestFactory.getDefaultLocale(), CLIENT_INFO, USER_AGENT));
@@ -131,7 +131,7 @@ public class RequestFactoryTest {
 
     @Test
     public void shouldCreateRawPOSTRequest() {
-        final ParameterizableRequest<Map<String, Object>, Auth0Exception> request = factory.rawPOST(url, client, gson, builder);
+        final Request<Map<String, Object>, Auth0Exception> request = factory.rawPOST(url, client, gson, builder);
 
         assertThat(request, is(notNullValue()));
         assertThat(request, hasHeaders(RequestFactory.getDefaultLocale(), CLIENT_INFO, USER_AGENT));
@@ -140,7 +140,7 @@ public class RequestFactoryTest {
 
     @Test
     public void shouldCreatePATCHRequestOfTClass() {
-        final ParameterizableRequest<Auth0, Auth0Exception> request = factory.PATCH(url, client, gson, Auth0.class, builder);
+        final Request<Auth0, Auth0Exception> request = factory.PATCH(url, client, gson, Auth0.class, builder);
 
         assertThat(request, is(notNullValue()));
         assertThat(request, hasHeaders(RequestFactory.getDefaultLocale(), CLIENT_INFO, USER_AGENT));
@@ -150,7 +150,7 @@ public class RequestFactoryTest {
     @Test
     public void shouldCreateDELETERequestOfTToken() {
         TypeToken<Auth0> typeToken = createTypeToken();
-        final ParameterizableRequest<Auth0, Auth0Exception> request = factory.DELETE(url, client, gson, typeToken, builder);
+        final Request<Auth0, Auth0Exception> request = factory.DELETE(url, client, gson, typeToken, builder);
 
         assertThat(request, is(notNullValue()));
         assertThat(request, hasHeaders(RequestFactory.getDefaultLocale(), CLIENT_INFO, USER_AGENT));
@@ -159,7 +159,7 @@ public class RequestFactoryTest {
 
     @Test
     public void shouldCreateGETRequest() {
-        final ParameterizableRequest<Auth0, Auth0Exception> request = factory.GET(url, client, gson, Auth0.class, builder);
+        final Request<Auth0, Auth0Exception> request = factory.GET(url, client, gson, Auth0.class, builder);
 
         assertThat(request, is(notNullValue()));
         assertThat(request, hasHeaders(RequestFactory.getDefaultLocale(), CLIENT_INFO, USER_AGENT));
@@ -169,7 +169,7 @@ public class RequestFactoryTest {
     @Test
     public void shouldCreateGETRequestOfTToken() {
         TypeToken<Auth0> typeToken = createTypeToken();
-        final ParameterizableRequest<Auth0, Auth0Exception> request = factory.GET(url, client, gson, typeToken, builder);
+        final Request<Auth0, Auth0Exception> request = factory.GET(url, client, gson, typeToken, builder);
 
         assertThat(request, is(notNullValue()));
         assertThat(request, hasHeaders(RequestFactory.getDefaultLocale(), CLIENT_INFO, USER_AGENT));
@@ -212,19 +212,19 @@ public class RequestFactoryTest {
         MockAuthenticationRequest authenticationRequest;
 
         @Override
-        <T, U extends Auth0Exception> ParameterizableRequest<T, U> createSimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, String method, Class<T> clazz, ErrorBuilder<U> errorBuilder) {
+        <T, U extends Auth0Exception> Request<T, U> createSimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, String method, Class<T> clazz, ErrorBuilder<U> errorBuilder) {
             request = new MockRequest<>(url, client, gson, method, clazz, errorBuilder);
             return request;
         }
 
         @Override
-        <T, U extends Auth0Exception> ParameterizableRequest<T, U> createSimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, String method, TypeToken<T> typeToken, ErrorBuilder<U> errorBuilder) {
+        <T, U extends Auth0Exception> Request<T, U> createSimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, String method, TypeToken<T> typeToken, ErrorBuilder<U> errorBuilder) {
             request = new MockRequest<>(url, client, gson, method, typeToken, errorBuilder);
             return request;
         }
 
         @Override
-        <T, U extends Auth0Exception> ParameterizableRequest<T, U> createSimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, ErrorBuilder<U> errorBuilder) {
+        <T, U extends Auth0Exception> Request<T, U> createSimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, ErrorBuilder<U> errorBuilder) {
             request = new MockRequest<>(url, client, gson, "POST", errorBuilder);
             return request;
         }
@@ -236,7 +236,7 @@ public class RequestFactoryTest {
         }
 
         @Override
-        <U extends Auth0Exception> ParameterizableRequest<Void, U> createVoidRequest(HttpUrl url, OkHttpClient client, Gson gson, ErrorBuilder<U> errorBuilder) {
+        <U extends Auth0Exception> Request<Void, U> createVoidRequest(HttpUrl url, OkHttpClient client, Gson gson, ErrorBuilder<U> errorBuilder) {
             request = new MockRequest<>(url, client, gson, "POST", errorBuilder);
             return request;
         }

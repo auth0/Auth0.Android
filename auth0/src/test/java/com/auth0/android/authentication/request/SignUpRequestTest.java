@@ -2,7 +2,6 @@ package com.auth0.android.authentication.request;
 
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.request.AuthRequest;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.DatabaseUser;
@@ -15,6 +14,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.RobolectricTestRunner;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import static junit.framework.Assert.assertTrue;
@@ -31,13 +31,13 @@ import static org.mockito.Mockito.when;
 public class SignUpRequestTest {
 
     private DatabaseConnectionRequest dbMockRequest;
-    private AuthRequest authenticationMockRequest;
+    private AuthenticationRequest authenticationMockRequest;
     private SignUpRequest signUpRequest;
 
     @Before
     public void setUp() {
         dbMockRequest = mock(DatabaseConnectionRequest.class);
-        authenticationMockRequest = mock(AuthRequest.class);
+        authenticationMockRequest = mock(AuthenticationRequest.class);
         signUpRequest = new SignUpRequest(dbMockRequest, authenticationMockRequest);
     }
 
@@ -71,6 +71,28 @@ public class SignUpRequestTest {
     public void shouldAddHeader() {
         final SignUpRequest req = signUpRequest.addHeader("auth", "val123");
         verify(authenticationMockRequest).addHeader(eq("auth"), eq("val123"));
+        assertThat(req, is(notNullValue()));
+        assertThat(req, is(signUpRequest));
+    }
+
+    @Test
+    public void shouldAddParameter() {
+        final SignUpRequest req = signUpRequest.addParameter("param", "val123");
+        verify(authenticationMockRequest).addParameter(eq("param"), eq("val123"));
+        verify(dbMockRequest).addParameter(eq("param"), eq("val123"));
+        assertThat(req, is(notNullValue()));
+        assertThat(req, is(signUpRequest));
+    }
+
+    @Test
+    public void shouldAddParameters() {
+        Map<String, Object> params = new HashMap<>();
+        params.put("param1", "val1");
+        params.put("param2", "val2");
+
+        final SignUpRequest req = signUpRequest.addParameters(params);
+        verify(authenticationMockRequest).addParameters(eq(params));
+        verify(dbMockRequest).addParameters(eq(params));
         assertThat(req, is(notNullValue()));
         assertThat(req, is(signUpRequest));
     }

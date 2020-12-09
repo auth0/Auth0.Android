@@ -1,7 +1,7 @@
 package com.auth0.android.authentication.request;
 
 import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.request.ParameterizableRequest;
+import com.auth0.android.request.Request;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -19,12 +19,12 @@ import static org.mockito.Mockito.verify;
 @RunWith(RobolectricTestRunner.class)
 public class DatabaseConnectionRequestTest {
 
-    private ParameterizableRequest mockRequest;
+    private Request mockRequest;
     private DatabaseConnectionRequest dbRequest;
 
     @Before
     public void setUp() {
-        mockRequest = mock(ParameterizableRequest.class);
+        mockRequest = mock(Request.class);
         dbRequest = new DatabaseConnectionRequest<>(mockRequest);
     }
 
