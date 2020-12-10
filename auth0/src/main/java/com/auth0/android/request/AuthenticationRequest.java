@@ -73,6 +73,6 @@ public interface AuthenticationRequest extends Request<Credentials, Authenticati
      * @return itself
      */
     @NonNull
-    AuthenticationRequest addAuthenticationParameters(@NonNull Map<String, Object> parameters);
+    AuthenticationRequest addAuthenticationParameters(@NonNull Map<String, String> parameters);
 
 }
