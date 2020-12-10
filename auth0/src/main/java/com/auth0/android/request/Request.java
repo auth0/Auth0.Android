@@ -62,7 +62,7 @@ public interface Request<T, U extends Auth0Exception> {
      * @return itself
      */
     @NonNull
-    Request<T, U> addParameters(@NonNull Map<String, Object> parameters);
+    Request<T, U> addParameters(@NonNull Map<String, String> parameters);
 
     /**
      * Add parameter to the request with a given name
@@ -72,7 +72,7 @@ public interface Request<T, U extends Auth0Exception> {
      * @return itself
      */
     @NonNull
-    Request<T, U> addParameter(@NonNull String name, @NonNull Object value);
+    Request<T, U> addParameter(@NonNull String name, @NonNull String value);
 
     /**
      * Adds an additional header for the request
