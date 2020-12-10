@@ -21,219 +21,95 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+package com.auth0.android.request.internal
 
-package com.auth0.android.request.internal;
+import com.auth0.android.Auth0Exception
+import com.auth0.android.callback.BaseCallback
+import com.auth0.android.request.Request
+import com.auth0.android.request.kt.*
+import java.io.IOException
+import java.io.InputStreamReader
+import java.nio.charset.Charset
 
-import androidx.annotation.NonNull;
-import androidx.annotation.VisibleForTesting;
+/**
+ * Base class for every request on this library.
+ * @param method the HTTP method to use on this request.
+ * @param url the destination URL to open the connection against.
+ * @param client the client that will execute this request.
+ * @param resultAdapter the adapter that will convert a successful response into the expected type.
+ * @param errorAdapter the adapter that will convert a failed response into the expected type.
+ */
+internal open class BaseRequest<T, U : Auth0Exception>(
+    method: HttpMethod,
+    val url: String,
+    val client: NetworkingClient,
+    private val resultAdapter: JsonAdapter<T>,
+    private val errorAdapter: ErrorAdapter<U>,
+) : Request<T, U> {
 
-import com.auth0.android.Auth0Exception;
-import com.auth0.android.NetworkErrorException;
-import com.auth0.android.RequestBodyBuildException;
-import com.auth0.android.authentication.ParameterBuilder;
-import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.request.ErrorBuilder;
-import com.google.gson.Gson;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonSyntaxException;
-import com.google.gson.TypeAdapter;
-import com.google.gson.reflect.TypeToken;
-import com.squareup.okhttp.Callback;
-import com.squareup.okhttp.HttpUrl;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.RequestBody;
-import com.squareup.okhttp.Response;
-import com.squareup.okhttp.ResponseBody;
+    private val options: RequestOptions = RequestOptions(method)
 
-import java.io.IOException;
-import java.io.Reader;
-import java.lang.reflect.Type;
-import java.util.HashMap;
-import java.util.Map;
-
-import static com.auth0.android.request.internal.ResponseUtils.closeStream;
-
-class BaseRequest<T, U extends Auth0Exception> implements com.auth0.android.request.Request<T, U>, Callback {
-
-    private final Map<String, String> headers;
-    protected final HttpUrl url;
-    protected final String method;
-    protected final OkHttpClient client;
-    private final TypeAdapter<T> adapter;
-    private final ErrorBuilder<U> errorBuilder;
-
-    private final Gson gson;
-    private final ParameterBuilder builder;
-    private BaseCallback<T, U> callback;
-
-    public BaseRequest(HttpUrl url, String method, OkHttpClient client, Gson gson, TypeAdapter<T> adapter, ErrorBuilder<U> errorBuilder, BaseCallback<T, U> callback) {
-        this(url, method, client, gson, adapter, errorBuilder, callback, new HashMap<>(), ParameterBuilder.newBuilder());
+    override fun addHeader(name: String, value: String): Request<T, U> {
+        options.headers[name] = value
+        return this
     }
 
-    @VisibleForTesting
-    BaseRequest(HttpUrl url, String method, OkHttpClient client, Gson gson, TypeAdapter<T> adapter, ErrorBuilder<U> errorBuilder, BaseCallback<T, U> callback, Map<String, String> headers, ParameterBuilder parameterBuilder) {
-        this.url = url;
-        this.method = method;
-        this.client = client;
-        this.gson = gson;
-        this.adapter = adapter;
-        this.callback = callback;
-        this.headers = headers;
-        this.builder = parameterBuilder;
-        this.errorBuilder = errorBuilder;
+    override fun addParameters(parameters: Map<String, String>): Request<T, U> {
+        options.parameters.putAll(parameters)
+        return this
     }
 
-    protected void setCallback(BaseCallback<T, U> callback) {
-        this.callback = callback;
+    override fun addParameter(name: String, value: String): Request<T, U> {
+        options.parameters[name] = value
+        return this
     }
 
-    protected void postOnSuccess(final T payload) {
-        this.callback.onSuccess(payload);
-    }
-
-    protected final void postOnFailure(final U error) {
-        this.callback.onFailure(error);
-    }
-
-    protected Request.Builder newBuilder() {
-        final Request.Builder builder = new Request.Builder()
-                .url(url);
-        for (Map.Entry<String, String> entry : headers.entrySet()) {
-            builder.addHeader(entry.getKey(), entry.getValue());
+    /**
+     * Runs asynchronously and executes the network request, without blocking the current thread.
+     * The result is parsed into a <T> value and posted in the callback's onSuccess method or a <U>
+     * exception is raised and posted in the callback's onFailure method if something went wrong.
+     * @param callback the callback to post the results in. Uses the Main thread.
+     */
+    override fun start(callback: BaseCallback<T, U>) {
+        ThreadUtils.executorService.execute {
+            try {
+                val result: T = execute()
+                ThreadUtils.mainThreadHandler.post {
+                    callback.onSuccess(result)
+                }
+            } catch (error: Auth0Exception) {
+                val err = errorAdapter.fromException(error)
+                ThreadUtils.mainThreadHandler.post {
+                    callback.onFailure(err)
+                }
+            }
         }
-        return builder;
     }
 
-    protected TypeAdapter<T> getAdapter() {
-        return adapter;
-    }
-
-    protected ErrorBuilder<U> getErrorBuilder() {
-        return errorBuilder;
-    }
-
-    @VisibleForTesting
-    BaseCallback<T, U> getCallback() {
-        return callback;
-    }
-
-    protected RequestBody buildBody() throws RequestBodyBuildException {
-        Map<String, Object> dictionary = builder.asDictionary();
-        if (!dictionary.isEmpty()) {
-            return JsonRequestBodyBuilder.createBody(dictionary, gson);
-        }
-        return null;
-    }
-
-    protected U parseUnsuccessfulResponse(Response response) {
-        String stringPayload = null;
-        ResponseBody body = response.body();
+    /**
+     * Blocks the thread and executes the network request.
+     * The result is parsed into a <T> value or a <U> exception is thrown if something went wrong.
+     */
+    @kotlin.jvm.Throws(Auth0Exception::class)
+    override fun execute(): T {
+        val response: ServerResponse
         try {
-            stringPayload = body.string();
-            Type mapType = new TypeToken<Map<String, Object>>() {
-            }.getType();
-            Map<String, Object> mapPayload = gson.fromJson(stringPayload, mapType);
-            return errorBuilder.from(mapPayload);
-        } catch (JsonSyntaxException e) {
-            return errorBuilder.from(stringPayload, response.code());
-        } catch (IOException e) {
-            final Auth0Exception auth0Exception = new Auth0Exception("Error parsing the server response", e);
-            return errorBuilder.from("Request to " + url.toString() + " failed", auth0Exception);
-        } finally {
-            closeStream(body);
+            response = client.load(url, options)
+        } catch (exception: IOException) {
+            //1. Network exceptions, timeouts, etc
+            val error: U = errorAdapter.fromException(exception)
+            throw error
+        }
+
+        val reader = InputStreamReader(response.body, Charset.defaultCharset())
+        if (response.isSuccess()) {
+            //2. Successful scenario. Response of type T
+            return resultAdapter.fromJson(reader)
+        } else {
+            //3. Error scenario. Response of type U
+            val error: U = errorAdapter.fromJson(reader)
+            throw error
         }
     }
 
-    @Override
-    public void onFailure(Request request, IOException e) {
-        postOnFailure(errorBuilder.from("Request failed", new NetworkErrorException(e)));
-    }
-
-    @NonNull
-    @Override
-    public com.auth0.android.request.Request<T, U> addHeader(@NonNull String name, @NonNull String value) {
-        headers.put(name, value);
-        return this;
-    }
-
-    @NonNull
-    @Override
-    public com.auth0.android.request.Request<T, U> addParameters(@NonNull Map<String, Object> parameters) {
-        builder.addAll(parameters);
-        return this;
-    }
-
-    @NonNull
-    @Override
-    public com.auth0.android.request.Request<T, U> addParameter(@NonNull String name, @NonNull Object value) {
-        builder.set(name, value);
-        return this;
-    }
-
-    @Override
-    public void start(@NonNull BaseCallback<T, U> callback) {
-        setCallback(callback);
-        try {
-            Request request = doBuildRequest();
-            client.newCall(request).enqueue(this);
-        } catch (RequestBodyBuildException e) {
-            final U exception = errorBuilder.from("Error parsing the request body", e);
-            callback.onFailure(exception);
-        }
-    }
-
-    @NonNull
-    @Override
-    public T execute() throws Auth0Exception {
-        Request request = doBuildRequest();
-
-        Response response;
-        try {
-            response = client.newCall(request).execute();
-        } catch (IOException e) {
-            throw getErrorBuilder().from("Request failed", new NetworkErrorException(e));
-        }
-
-        if (!response.isSuccessful()) {
-            throw parseUnsuccessfulResponse(response);
-        }
-
-        ResponseBody body = response.body();
-        try {
-            Reader charStream = body.charStream();
-            return getAdapter().fromJson(charStream);
-        } catch (IOException | JsonParseException e) {
-            throw new Auth0Exception("Failed to parse response to request to " + url, e);
-        } finally {
-            closeStream(body);
-        }
-    }
-
-    @Override
-    public void onResponse(Response response) {
-        if (!response.isSuccessful()) {
-            postOnFailure(parseUnsuccessfulResponse(response));
-            return;
-        }
-
-        ResponseBody body = response.body();
-        try {
-            Reader charStream = body.charStream();
-            T payload = getAdapter().fromJson(charStream);
-            postOnSuccess(payload);
-        } catch (IOException | JsonParseException e) {
-            final Auth0Exception auth0Exception = new Auth0Exception("Failed to parse response to request to " + url, e);
-            postOnFailure(getErrorBuilder().from("Failed to parse a successful response", auth0Exception));
-        } finally {
-            closeStream(body);
-        }
-    }
-
-    protected Request doBuildRequest() throws RequestBodyBuildException {
-        boolean skipBody = method.equals("HEAD") || method.equals("GET");
-        return newBuilder()
-                .method(method, skipBody ? null : buildBody())
-                .build();
-    }
 }

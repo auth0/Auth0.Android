@@ -25,27 +25,14 @@
 package com.auth0.android.request.internal;
 
 
-import androidx.annotation.NonNull;
-
 import com.auth0.android.Auth0Exception;
-import com.auth0.android.NetworkErrorException;
-import com.auth0.android.RequestBodyBuildException;
-import com.auth0.android.authentication.ParameterBuilder;
-import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.request.ErrorBuilder;
-import com.google.gson.Gson;
-import com.google.gson.TypeAdapter;
-import com.squareup.okhttp.HttpUrl;
-import com.squareup.okhttp.MediaType;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Protocol;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
-import com.squareup.okhttp.ResponseBody;
+import com.auth0.android.request.kt.ErrorAdapter;
+import com.auth0.android.request.kt.HttpMethod;
+import com.auth0.android.request.kt.JsonAdapter;
+import com.auth0.android.request.kt.NetworkingClient;
+import com.auth0.android.request.kt.RequestOptions;
+import com.auth0.android.request.kt.ServerResponse;
 
-import org.hamcrest.CoreMatchers;
-import org.hamcrest.collection.IsMapContaining;
-import org.hamcrest.collection.IsMapWithSize;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -54,189 +41,144 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.collection.IsMapContaining.hasEntry;
+import static org.hamcrest.collection.IsMapWithSize.aMapWithSize;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 public class BaseRequestTest {
 
+    private static final String BASE_URL = "https://auth0.com";
     private BaseRequest<String, Auth0Exception> baseRequest;
-
     @Mock
-    private BaseCallback<String, Auth0Exception> callback;
+    private NetworkingClient client;
     @Mock
-    private Auth0Exception throwable;
+    private JsonAdapter<String> resultAdapter;
     @Mock
-    private ErrorBuilder<Auth0Exception> errorBuilder;
-    @Mock
-    private OkHttpClient client;
-    @Mock
-    private TypeAdapter<String> adapter;
-    @Mock
-    private Map<String, String> headers;
-    private ParameterBuilder parameterBuilder;
-
+    private ErrorAdapter<Auth0Exception> errorAdapter;
     @Captor
-    private ArgumentCaptor<Map<String, Object>> mapCaptor;
+    private ArgumentCaptor<RequestOptions> optionsCaptor;
 
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        HttpUrl url = HttpUrl.parse("https://auth0.com");
-        parameterBuilder = ParameterBuilder.newBuilder();
 
-        baseRequest = new BaseRequest<String, Auth0Exception>(url, "POST", client, new Gson(), adapter, errorBuilder, callback, headers, parameterBuilder) {
-            @NonNull
-            @Override
-            public String execute() throws Auth0Exception {
-                return null;
-            }
-
-            @Override
-            public void onResponse(Response response) {
-
-            }
-
-            @Override
-            protected Request doBuildRequest() throws RequestBodyBuildException {
-                return null;
-            }
-        };
+        baseRequest = new BaseRequest<>(
+                HttpMethod.POST.INSTANCE,
+                BASE_URL,
+                client,
+                resultAdapter,
+                errorAdapter
+        );
     }
 
     @Test
-    public void shouldUpdateTheCallback() {
-        BaseCallback<String, Auth0Exception> diffCallback = mock(BaseCallback.class);
-        baseRequest.setCallback(diffCallback);
-        assertThat(baseRequest.getCallback(), CoreMatchers.equalTo(diffCallback));
+    public void shouldAddHeaders() throws Exception {
+        baseRequest.addHeader("A", "1");
+
+        verify(client).load(eq(BASE_URL), optionsCaptor.capture());
+        Map<String, String> values = optionsCaptor.getValue().getHeaders();
+        assertThat(values, aMapWithSize(1));
+        assertThat(values, hasEntry("A", "1"));
     }
 
     @Test
-    public void shouldGetTheCallback() {
-        assertThat(baseRequest.getCallback(), CoreMatchers.equalTo(callback));
+    public void shouldAddParameter() throws Exception {
+        baseRequest.addParameter("A", "1");
+
+        verify(client).load(eq(BASE_URL), optionsCaptor.capture());
+        Map<String, String> values = optionsCaptor.getValue().getParameters();
+        assertThat(values, aMapWithSize(1));
+        assertThat(values, hasEntry("A", "1"));
     }
 
     @Test
-    public void shouldGetTheErrorBuilder() {
-        assertThat(baseRequest.getErrorBuilder(), CoreMatchers.equalTo(errorBuilder));
+    public void shouldAddParameters() throws Exception {
+        HashMap<String, String> parameters = new HashMap<>();
+        parameters.put("A", "1");
+        parameters.put("B", "2");
+        baseRequest.addParameters(parameters);
+
+        verify(client).load(eq(BASE_URL), optionsCaptor.capture());
+        Map<String, String> values = optionsCaptor.getValue().getParameters();
+        assertThat(values, aMapWithSize(2));
+        assertThat(values, hasEntry("A", "1"));
+        assertThat(values, hasEntry("B", "2"));
     }
 
     @Test
-    public void shouldGetTheAdapter() {
-        assertThat(baseRequest.getAdapter(), CoreMatchers.equalTo(adapter));
+    public void shouldBuildErrorFromException() throws Exception {
+        IOException networkError = mock(IOException.class);
+        when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenThrow(IOException.class);
+        baseRequest.execute();
+        verify(errorAdapter).fromException(eq(networkError));
     }
 
     @Test
-    public void shouldAddHeaders() {
-        baseRequest.addHeader("name", "value");
-        verify(headers).put("name", "value");
+    public void shouldBuildErrorFromUnsuccessfulResponse() throws Exception {
+        InputStream inputStream = mock(InputStream.class);
+        when(inputStream.read()).thenReturn(123);
+        Auth0Exception error = mock(Auth0Exception.class);
+        when(errorAdapter.fromJson(any(Reader.class))).thenReturn(error);
+        ServerResponse response = new ServerResponse(401, inputStream, Collections.emptyMap());
+        when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
+
+        ArgumentCaptor<Reader> readerCaptor = ArgumentCaptor.forClass(Reader.class);
+        Exception exception = null;
+        String result = null;
+        try {
+            result = baseRequest.execute();
+        } catch (Exception e) {
+            exception = e;
+        }
+        assertThat(exception, is(error));
+        assertThat(result, is(nullValue()));
+
+        verifyNoInteractions(resultAdapter);
+        verify(errorAdapter).fromJson(readerCaptor.capture());
+
+        Reader reader = readerCaptor.getValue();
+        assertThat(reader.read(), is(123));
+        verify(inputStream).read();
     }
 
     @Test
-    public void shouldAddASingleParameter() {
-        baseRequest.addParameter("name", "value");
+    public void shouldBuildResultFromSuccessfulResponse() throws Exception {
+        InputStream inputStream = mock(InputStream.class);
+        when(inputStream.read()).thenReturn(123);
+        when(resultAdapter.fromJson(any(Reader.class))).thenReturn("woohoo");
+        ServerResponse response = new ServerResponse(200, inputStream, Collections.emptyMap());
+        when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
 
-        final Map<String, Object> result = parameterBuilder.asDictionary();
-        assertThat(result, IsMapWithSize.aMapWithSize(1));
-        assertThat(result, IsMapContaining.hasEntry("name", (Object) "value"));
-    }
+        ArgumentCaptor<Reader> readerCaptor = ArgumentCaptor.forClass(Reader.class);
+        Exception exception = null;
+        String result = null;
+        try {
+            result = baseRequest.execute();
+        } catch (Exception e) {
+            exception = e;
+        }
+        assertThat(exception, is(nullValue()));
+        assertThat(result, is("woohoo"));
 
-    @Test
-    public void shouldAddParameters() {
-        Map<String, Object> params = new HashMap<>();
-        params.put("name", "value");
-        params.put("asd", "123");
-        baseRequest.addParameters(params);
+        verifyNoInteractions(errorAdapter);
+        verify(resultAdapter).fromJson(readerCaptor.capture());
 
-        final Map<String, Object> result = parameterBuilder.asDictionary();
-        assertThat(result, IsMapWithSize.aMapWithSize(2));
-        assertThat(result, IsMapContaining.hasEntry("name", (Object) "value"));
-        assertThat(result, IsMapContaining.hasEntry("asd", (Object) "123"));
-    }
-
-    @Test
-    public void shouldPostOnSuccess() {
-        baseRequest.postOnSuccess("OK");
-        verify(callback).onSuccess(eq("OK"));
-        verifyNoMoreInteractions(callback);
-    }
-
-    @Test
-    public void shouldPostOnFailure() {
-        baseRequest.postOnFailure(throwable);
-        verify(callback).onFailure(eq(throwable));
-        verifyNoMoreInteractions(callback);
-    }
-
-    @Test
-    public void shouldBuildNetworkErrorException() {
-        baseRequest.onFailure(null, mock(IOException.class));
-        verify(errorBuilder).from(eq("Request failed"), any(NetworkErrorException.class));
-    }
-
-    @Test
-    public void shouldParseUnsuccessfulJsonResponse() {
-        String payload = "{key: \"value\", asd: \"123\"}";
-        final Response response = createJsonResponse(payload, 401);
-        baseRequest.parseUnsuccessfulResponse(response);
-
-        verify(errorBuilder).from(mapCaptor.capture());
-        assertThat(mapCaptor.getValue(), IsMapContaining.hasEntry("key", (Object) "value"));
-        assertThat(mapCaptor.getValue(), IsMapContaining.hasEntry("asd", (Object) "123"));
-    }
-
-    @Test
-    public void shouldParseUnsuccessfulNotJsonResponse() {
-        String payload = "n=ot_a valid json {{]";
-        final Response response = createJsonResponse(payload, 401);
-        baseRequest.parseUnsuccessfulResponse(response);
-
-        ArgumentCaptor<Integer> integerCaptor = ArgumentCaptor.forClass(Integer.class);
-        verify(errorBuilder).from(eq("n=ot_a valid json {{]"), integerCaptor.capture());
-        assertThat(integerCaptor.getValue(), is(401));
-    }
-
-    @Test
-    public void shouldParseUnsuccessfulInvalidResponse() throws Exception {
-        byte[] invalidBytes = new byte[]{12, 23, 2, 1, 23, 3, 21, 3, 12};
-        final Response response = createBytesResponse(invalidBytes, 401);
-        response.body().string();    //force a IOException the next time this gets called
-        baseRequest.parseUnsuccessfulResponse(response);
-        verify(errorBuilder).from(eq("Request to https://auth0.com/ failed"), any(Auth0Exception.class));
-    }
-
-    private Response createJsonResponse(String jsonPayload, int code) {
-        Request request = new Request.Builder()
-                .url("https://someurl.com")
-                .build();
-
-        final ResponseBody responseBody = ResponseBody.create(MediaType.parse("application/json; charset=utf-8"), jsonPayload);
-        return new Response.Builder()
-                .request(request)
-                .protocol(Protocol.HTTP_1_1)
-                .body(responseBody)
-                .code(code)
-                .build();
-    }
-
-    private Response createBytesResponse(byte[] content, int code) {
-        Request request = new Request.Builder()
-                .url("https://someurl.com")
-                .build();
-
-        final ResponseBody responseBody = ResponseBody.create(MediaType.parse("application/octet-stream; charset=utf-8"), content);
-        return new Response.Builder()
-                .request(request)
-                .protocol(Protocol.HTTP_1_1)
-                .body(responseBody)
-                .code(code)
-                .build();
+        Reader reader = readerCaptor.getValue();
+        assertThat(reader.read(), is(123));
+        verify(inputStream).read();
     }
 }
