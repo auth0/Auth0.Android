@@ -65,14 +65,14 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
      * @return itself
      */
     @NonNull
-    public ProfileRequest addParameters(@NonNull Map<String, Object> parameters) {
+    public ProfileRequest addParameters(@NonNull Map<String, String> parameters) {
         authenticationRequest.addAuthenticationParameters(parameters);
         return this;
     }
 
     @NonNull
     @Override
-    public ProfileRequest addParameter(@NonNull String name, @NonNull Object value) {
+    public ProfileRequest addParameter(@NonNull String name, @NonNull String value) {
         authenticationRequest.addAuthenticationParameters(Collections.singletonMap(name, value));
         return this;
     }

@@ -31,14 +31,14 @@ public class TokenRequest implements Request<Credentials, AuthenticationExceptio
      * @return itself
      */
     @NonNull
-    public TokenRequest addParameters(@NonNull Map<String, Object> parameters) {
+    public TokenRequest addParameters(@NonNull Map<String, String> parameters) {
         request.addParameters(parameters);
         return this;
     }
 
     @NonNull
     @Override
-    public TokenRequest addParameter(@NonNull String name, @NonNull Object value) {
+    public TokenRequest addParameter(@NonNull String name, @NonNull String value) {
         request.addParameter(name, value);
         return this;
     }
