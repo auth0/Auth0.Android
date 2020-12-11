@@ -69,6 +69,7 @@ public class ParameterBuilder {
     public static final String SEND_KEY = "send";
     public static final String CLIENT_ID_KEY = "client_id";
     public static final String GRANT_TYPE_KEY = "grant_type";
+    //TODO: This was once used to identify the device authenticating. No longer used.
     public static final String DEVICE_KEY = "device";
     public static final String AUDIENCE_KEY = "audience";
 
