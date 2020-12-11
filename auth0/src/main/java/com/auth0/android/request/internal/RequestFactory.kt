@@ -21,152 +21,93 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+package com.auth0.android.request.internal
 
-package com.auth0.android.request.internal;
+import androidx.annotation.VisibleForTesting
+import com.auth0.android.Auth0Exception
+import com.auth0.android.request.Request
+import com.auth0.android.request.kt.ErrorAdapter
+import com.auth0.android.request.kt.HttpMethod
+import com.auth0.android.request.kt.JsonAdapter
+import com.auth0.android.request.kt.NetworkingClient
+import com.auth0.android.util.Telemetry
+import java.io.Reader
+import java.util.*
 
-import androidx.annotation.NonNull;
+public open class RequestFactory<U : Auth0Exception>(private val errorAdapter: ErrorAdapter<U>) {
 
-import com.auth0.android.Auth0Exception;
-import com.auth0.android.request.AuthenticationRequest;
-import com.auth0.android.request.ErrorBuilder;
-import com.auth0.android.request.Request;
-import com.auth0.android.util.Telemetry;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import com.squareup.okhttp.HttpUrl;
-import com.squareup.okhttp.OkHttpClient;
+    private companion object {
+        private const val DEFAULT_LOCALE_IF_MISSING = "en_US"
+        private const val USER_AGENT_HEADER = "User-Agent"
+        private const val ACCEPT_LANGUAGE_HEADER = "Accept-Language"
+        private const val CLIENT_INFO_HEADER = Telemetry.HEADER_NAME
 
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-
-public class RequestFactory {
-
-    public static final String DEFAULT_LOCALE_IF_MISSING = "en_US";
-
-    private static final String AUTHORIZATION_HEADER = "Authorization";
-    private static final String USER_AGENT_HEADER = "User-Agent";
-    private static final String ACCEPT_LANGUAGE_HEADER = "Accept-Language";
-    private static final String CLIENT_INFO_HEADER = Telemetry.HEADER_NAME;
-
-    private final HashMap<String, String> headers;
-
-    public RequestFactory() {
-        headers = new HashMap<>();
-        headers.put(ACCEPT_LANGUAGE_HEADER, getDefaultLocale());
+        val defaultLocale: String
+            get() {
+                val language = Locale.getDefault().toString()
+                return if (language.isNotEmpty()) language else DEFAULT_LOCALE_IF_MISSING
+            }
     }
 
-    public RequestFactory(@NonNull String bearerToken) {
-        this();
-        headers.put(AUTHORIZATION_HEADER, "Bearer " + bearerToken);
+    private val baseHeaders = mutableMapOf(Pair(ACCEPT_LANGUAGE_HEADER, defaultLocale))
+
+    public fun <T> post(
+        url: String,
+        client: NetworkingClient,
+        resultAdapter: JsonAdapter<T>
+    ): Request<T, U> = setupRequest(HttpMethod.POST, url, client, resultAdapter, errorAdapter)
+
+    public fun post(url: String, client: NetworkingClient): Request<Unit, U> =
+        this.post(url, client, object : JsonAdapter<Unit> {
+            override fun fromJson(reader: Reader) {}
+        })
+
+    public fun <T> patch(
+        url: String,
+        client: NetworkingClient,
+        resultAdapter: JsonAdapter<T>
+    ): Request<T, U> = setupRequest(HttpMethod.PATCH, url, client, resultAdapter, errorAdapter)
+
+    public fun <T> delete(
+        url: String,
+        client: NetworkingClient,
+        resultAdapter: JsonAdapter<T>
+    ): Request<T, U> = setupRequest(HttpMethod.DELETE, url, client, resultAdapter, errorAdapter)
+
+    public fun <T> get(
+        url: String,
+        client: NetworkingClient,
+        resultAdapter: JsonAdapter<T>
+    ): Request<T, U> = setupRequest(HttpMethod.GET, url, client, resultAdapter, errorAdapter)
+
+    public fun setClientInfo(clientInfo: String) {
+        baseHeaders[CLIENT_INFO_HEADER] = clientInfo
     }
 
-    public void setClientInfo(@NonNull String clientInfo) {
-        headers.put(CLIENT_INFO_HEADER, clientInfo);
+    public fun setUserAgent(userAgent: String) {
+        baseHeaders[USER_AGENT_HEADER] = userAgent
     }
 
-    public void setUserAgent(@NonNull String userAgent) {
-        headers.put(USER_AGENT_HEADER, userAgent);
-    }
+    @VisibleForTesting
+    public open fun <T> createRequest(
+        method: HttpMethod,
+        url: String,
+        client: NetworkingClient,
+        resultAdapter: JsonAdapter<T>,
+        errorAdapter: ErrorAdapter<U>
+    ): Request<T, U> = BaseRequest(method, url, client, resultAdapter, errorAdapter)
 
 
-    @NonNull
-    public AuthenticationRequest authenticationPOST(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson) {
-        BaseAuthenticationRequest request = createAuthenticationRequest(url, client, gson);
-        addMetrics(request);
-        return request;
+    private fun <T> setupRequest(
+        method: HttpMethod,
+        url: String,
+        client: NetworkingClient,
+        resultAdapter: JsonAdapter<T>,
+        errorAdapter: ErrorAdapter<U>
+    ): Request<T, U> {
+        val request = createRequest(method, url, client, resultAdapter, errorAdapter)
+        baseHeaders.map { request.addHeader(it.key, it.value) }
+        return request
     }
 
-    @NonNull
-    public <T, U extends Auth0Exception> Request<T, U> POST(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull Class<T> clazz, @NonNull ErrorBuilder<U> errorBuilder) {
-        final Request<T, U> request = createSimpleRequest(url, client, gson, "POST", clazz, errorBuilder);
-        addMetrics(request);
-        return request;
-    }
-
-    @NonNull
-    public <T, U extends Auth0Exception> Request<T, U> POST(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull TypeToken<T> typeToken, @NonNull ErrorBuilder<U> errorBuilder) {
-        final Request<T, U> request = createSimpleRequest(url, client, gson, "POST", typeToken, errorBuilder);
-        addMetrics(request);
-        return request;
-    }
-
-    @NonNull
-    public <U extends Auth0Exception> Request<Map<String, Object>, U> rawPOST(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull ErrorBuilder<U> errorBuilder) {
-        final Request<Map<String, Object>, U> request = createSimpleRequest(url, client, gson, errorBuilder);
-        addMetrics(request);
-        return request;
-    }
-
-    @NonNull
-    public <U extends Auth0Exception> Request<Void, U> POST(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull ErrorBuilder<U> errorBuilder) {
-        final Request<Void, U> request = createVoidRequest(url, client, gson, errorBuilder);
-        addMetrics(request);
-        return request;
-    }
-
-    @NonNull
-    public <T, U extends Auth0Exception> Request<T, U> PATCH(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull Class<T> clazz, @NonNull ErrorBuilder<U> errorBuilder) {
-        final Request<T, U> request = createSimpleRequest(url, client, gson, "PATCH", clazz, errorBuilder);
-        addMetrics(request);
-        return request;
-    }
-
-    @NonNull
-    public <T, U extends Auth0Exception> Request<T, U> DELETE(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull TypeToken<T> typeToken, @NonNull ErrorBuilder<U> errorBuilder) {
-        final Request<T, U> request = createSimpleRequest(url, client, gson, "DELETE", typeToken, errorBuilder);
-        addMetrics(request);
-        return request;
-    }
-
-    @NonNull
-    public <T, U extends Auth0Exception> Request<T, U> GET(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull Class<T> clazz, @NonNull ErrorBuilder<U> errorBuilder) {
-        final Request<T, U> request = createSimpleRequest(url, client, gson, "GET", clazz, errorBuilder);
-        addMetrics(request);
-        return request;
-    }
-
-    @NonNull
-    public <T, U extends Auth0Exception> Request<T, U> GET(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull TypeToken<T> typeToken, @NonNull ErrorBuilder<U> errorBuilder) {
-        final Request<T, U> request = createSimpleRequest(url, client, gson, "GET", typeToken, errorBuilder);
-        addMetrics(request);
-        return request;
-    }
-
-    private <T, U extends Auth0Exception> void addMetrics(Request<T, U> request) {
-        for (Map.Entry<String, String> entry : headers.entrySet()) {
-            request.addHeader(entry.getKey(), entry.getValue());
-        }
-    }
-
-    <T, U extends Auth0Exception> Request<T, U> createSimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, String method, Class<T> clazz, ErrorBuilder<U> errorBuilder) {
-        return new BaseRequest<>(url, method, client, gson, gson.getAdapter(clazz), errorBuilder, null);
-    }
-
-    <T, U extends Auth0Exception> Request<T, U> createSimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, String method, TypeToken<T> typeToken, ErrorBuilder<U> errorBuilder) {
-        return new BaseRequest<>(url, method, client, gson, gson.getAdapter(typeToken), errorBuilder, null);
-    }
-
-    <U extends Auth0Exception> Request<Map<String, Object>, U> createSimpleRequest(HttpUrl url, OkHttpClient client, Gson gson, ErrorBuilder<U> errorBuilder) {
-        final TypeToken<Map<String, Object>> mapType = new TypeToken<Map<String, Object>>() {
-        };
-        return this.createSimpleRequest(url, client, gson, "POST", mapType, errorBuilder);
-    }
-
-    BaseAuthenticationRequest createAuthenticationRequest(HttpUrl url, OkHttpClient client, Gson gson) {
-        return new BaseAuthenticationRequest(url, client, gson, "POST");
-    }
-
-    <U extends Auth0Exception> Request<Void, U> createVoidRequest(HttpUrl url, OkHttpClient client, Gson gson, ErrorBuilder<U> errorBuilder) {
-        return new VoidRequest<>(url, client, gson, "POST", errorBuilder);
-    }
-
-    Map<String, String> getHeaders() {
-        return headers;
-    }
-
-    static String getDefaultLocale() {
-        String language = Locale.getDefault().toString();
-        return !language.isEmpty() ? language : DEFAULT_LOCALE_IF_MISSING;
-    }
 }
