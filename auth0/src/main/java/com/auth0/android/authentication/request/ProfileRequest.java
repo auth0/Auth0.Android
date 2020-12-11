@@ -36,7 +36,6 @@ import com.auth0.android.result.Authentication;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.UserProfile;
 
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -66,14 +65,14 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
      */
     @NonNull
     public ProfileRequest addParameters(@NonNull Map<String, String> parameters) {
-        authenticationRequest.addAuthenticationParameters(parameters);
+        authenticationRequest.addParameters(parameters);
         return this;
     }
 
     @NonNull
     @Override
     public ProfileRequest addParameter(@NonNull String name, @NonNull String value) {
-        authenticationRequest.addAuthenticationParameters(Collections.singletonMap(name, value));
+        authenticationRequest.addParameter(name, value);
         return this;
     }
 
@@ -126,13 +125,11 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
         authenticationRequest.start(new BaseCallback<Credentials, AuthenticationException>() {
             @Override
             public void onSuccess(@Nullable final Credentials credentials) {
-                //noinspection ConstantConditions
                 userInfoRequest
                         .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.getAccessToken())
                         .start(new BaseCallback<UserProfile, AuthenticationException>() {
                             @Override
                             public void onSuccess(@Nullable UserProfile profile) {
-                                //noinspection ConstantConditions
                                 callback.onSuccess(new Authentication(profile, credentials));
                             }
 
