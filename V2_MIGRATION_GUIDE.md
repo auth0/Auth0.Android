@@ -186,10 +186,13 @@ The ability to make requests to the [/delegation](https://auth0.com/docs/api/aut
 - `public ProfileRequest addParameter(@NonNull String name, @NonNull String value)`. Use `public ProfileRequest addParameter(@NonNull String name, @NonNull String value)` instead.
 
 #### SignUpRequest
-- `public SignUpRequest addAuthenticationParameters(@NonNull Map<String, Object> parameters)` Use `public SignUpRequest addAuthenticationParameters(@NonNull Map<String, String> parameters)` instead.
-- `public SignUpRequest addSignUpParameters(@NonNull Map<String, Object> parameters)` Use `public SignUpRequest addSignUpParameters(@NonNull Map<String, String> parameters)` instead.
+//TODO: remove? - `public SignUpRequest addAuthenticationParameters(@NonNull Map<String, Object> parameters)` Use `public SignUpRequest addAuthenticationParameters(@NonNull Map<String, String> parameters)` instead.
+//TODO: remove? - `public SignUpRequest addSignUpParameters(@NonNull Map<String, Object> parameters)` Use `public SignUpRequest addSignUpParameters(@NonNull Map<String, String> parameters)` instead.
 - `public SignUpRequest addParameters(@NonNull Map<String, Object> parameters)`. Use `public SignUpRequest addParameters(@NonNull Map<String, String> parameters)` instead.
 - `public SignUpRequest addParameter(@NonNull String name, @NonNull String value)`. Use `public SignUpRequest addParameter(@NonNull String name, @NonNull String value)` instead.
+
+#### AuthenticationRequest
+- `AuthenticationRequest addAuthenticationParameters(@NonNull Map<String, String> parameters)`. Use `public Request<Credentials, AuthenticationException> addParameters(@NonNull Map<String, String> parameters)` instead.
 
 ### Constants removed
 
