@@ -1,5 +1,6 @@
 package com.auth0.android.request.kt
 
+import java.io.IOException
 import java.io.Reader
 
 /**
@@ -8,7 +9,8 @@ import java.io.Reader
  */
 public interface JsonAdapter<T> {
 
-    public fun fromJson(json: Reader): T
+    @Throws(IOException::class)
+    public fun fromJson(reader: Reader): T
 
 }
 
