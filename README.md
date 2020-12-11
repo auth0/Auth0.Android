@@ -198,9 +198,6 @@ If you don't plan to use the _Web Authentication_ feature you will still be prom
 <activity
     android:name="com.auth0.android.provider.RedirectActivity"
     tools:node="remove"/>
-<activity
-    android:name="com.auth0.android.provider.WebAuthActivity"
-    tools:node="remove"/>
 ```
 
 

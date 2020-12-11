@@ -55,7 +55,6 @@
             </intent-filter>
         </activity>
 
-        <activity android:name="com.auth0.android.provider.WebAuthActivity" />
     </application>
 
 </manifest>

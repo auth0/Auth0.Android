@@ -12,8 +12,6 @@ import androidx.annotation.VisibleForTesting;
 public class AuthenticationActivity extends Activity {
 
     static final String EXTRA_USE_BROWSER = "com.auth0.android.EXTRA_USE_BROWSER";
-    static final String EXTRA_USE_FULL_SCREEN = "com.auth0.android.EXTRA_USE_FULL_SCREEN";
-    static final String EXTRA_CONNECTION_NAME = "com.auth0.android.EXTRA_CONNECTION_NAME";
     static final String EXTRA_AUTHORIZE_URI = "com.auth0.android.EXTRA_AUTHORIZE_URI";
     static final String EXTRA_CT_OPTIONS = "com.auth0.android.EXTRA_CT_OPTIONS";
     private static final String EXTRA_INTENT_LAUNCHED = "com.auth0.android.EXTRA_INTENT_LAUNCHED";
@@ -28,16 +26,6 @@ public class AuthenticationActivity extends Activity {
         intent.putExtra(AuthenticationActivity.EXTRA_CT_OPTIONS, options);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         context.startActivity(intent);
-    }
-
-    static void authenticateUsingWebView(@NonNull Activity activity, @NonNull Uri authorizeUri, int requestCode, String connection, boolean useFullScreen) {
-        Intent intent = new Intent(activity, AuthenticationActivity.class);
-        intent.putExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI, authorizeUri);
-        intent.putExtra(AuthenticationActivity.EXTRA_USE_BROWSER, false);
-        intent.putExtra(AuthenticationActivity.EXTRA_USE_FULL_SCREEN, useFullScreen);
-        intent.putExtra(AuthenticationActivity.EXTRA_CONNECTION_NAME, connection);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        activity.startActivityForResult(intent, requestCode);
     }
 
     @Override
@@ -104,16 +92,6 @@ public class AuthenticationActivity extends Activity {
         Bundle extras = getIntent().getExtras();
         //noinspection ConstantConditions
         Uri authorizeUri = extras.getParcelable(EXTRA_AUTHORIZE_URI);
-        if (!extras.getBoolean(EXTRA_USE_BROWSER, true)) {
-            Intent intent = new Intent(this, WebAuthActivity.class);
-            intent.setData(authorizeUri);
-            intent.putExtra(WebAuthActivity.CONNECTION_NAME_EXTRA, extras.getString(EXTRA_CONNECTION_NAME));
-            intent.putExtra(WebAuthActivity.FULLSCREEN_EXTRA, extras.getBoolean(EXTRA_USE_FULL_SCREEN));
-            //The request code value can be ignored
-            startActivityForResult(intent, 33);
-            return;
-        }
-
         CustomTabsOptions customTabsOptions = extras.getParcelable(EXTRA_CT_OPTIONS);
         //noinspection ConstantConditions
         customTabsController = createCustomTabsController(this, customTabsOptions);
