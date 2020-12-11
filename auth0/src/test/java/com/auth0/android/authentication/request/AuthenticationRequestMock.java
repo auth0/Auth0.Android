@@ -38,13 +38,13 @@ public class AuthenticationRequestMock implements AuthenticationRequest {
 
     @NonNull
     @Override
-    public AuthenticationRequest addParameters(@NonNull Map<String, Object> parameters) {
+    public AuthenticationRequest addParameters(@NonNull Map<String, String> parameters) {
         return this;
     }
 
     @NonNull
     @Override
-    public AuthenticationRequest addParameter(@NonNull String name, @NonNull Object value) {
+    public AuthenticationRequest addParameter(@NonNull String name, @NonNull String value) {
         return this;
     }
 
@@ -87,12 +87,6 @@ public class AuthenticationRequestMock implements AuthenticationRequest {
     @NonNull
     @Override
     public AuthenticationRequest setAudience(@NonNull String audience) {
-        return this;
-    }
-
-    @NonNull
-    @Override
-    public AuthenticationRequest addAuthenticationParameters(@NonNull Map<String, Object> parameters) {
         return this;
     }
 

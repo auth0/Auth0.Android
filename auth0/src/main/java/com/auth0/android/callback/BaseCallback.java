@@ -31,6 +31,7 @@ import com.auth0.android.Auth0Exception;
 /**
  * Callback that receives a single value on success.
  */
+//TODO: Consider merging this interface into Callback
 public interface BaseCallback<T, U extends Auth0Exception> extends Callback<U> {
 
     /**

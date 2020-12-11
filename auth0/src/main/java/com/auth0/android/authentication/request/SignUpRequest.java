@@ -83,6 +83,7 @@ public class SignUpRequest implements AuthenticationRequest {
      */
     @NonNull
     public SignUpRequest addSignUpParameters(@NonNull Map<String, String> parameters) {
+        //TODO: Revisit this scenario, may be worth renaming the methods
         signUpRequest.addParameters(parameters);
         return this;
     }
@@ -95,9 +96,9 @@ public class SignUpRequest implements AuthenticationRequest {
      * @see ParameterBuilder
      */
     @NonNull
-    @Override
     public SignUpRequest addAuthenticationParameters(@NonNull Map<String, String> parameters) {
-        authenticationRequest.addAuthenticationParameters(parameters);
+        //TODO: Revisit this scenario, may be worth renaming the methods
+        authenticationRequest.addParameters(parameters);
         return this;
     }
 

@@ -15,6 +15,7 @@ import java.util.Map;
  */
 @SuppressWarnings("WeakerAccess")
 public class TokenRequest implements Request<Credentials, AuthenticationException> {
+    //TODO: Revisit this class. What's its purpose?
 
     private static final String OAUTH_CODE_VERIFIER_KEY = "code_verifier";
 
