@@ -58,17 +58,9 @@ Auth0 account = new Auth0(context);
 
 ### OIDC Conformant Mode
 
-It is strongly encouraged that this SDK be used in OIDC Conformant mode. When this mode is enabled, it will force the SDK to use Auth0's current authentication pipeline and will prevent it from reaching legacy endpoints. By default is `false`
-
-```java
-Auth0 account = new Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}");
-//Configure the account in OIDC conformant mode
-account.setOIDCConformant(true);
-//Use the account in the API clients
-```
+Beginning in version 2, this SDK is OIDC-compliant by default, and will not use any legacy authentication endpoints.
 
 For more information, please see the [OIDC adoption guide](https://auth0.com/docs/api-auth/tutorials/adoption).
-
 
 ### Authentication with Universal Login
 
@@ -385,8 +377,6 @@ AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
 
 #### Login with database connection
 
-If the `Auth0` instance wasn't configured as "OIDC conformant", this call requires the Application to have the *Resource Owner* Client Grant Type enabled. Check [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
-
 ```java
 authentication
     .login("info@auth0.com", "a secret password", "my-database-connection")
@@ -433,7 +423,7 @@ authentication
 
 #### Passwordless Login
 
-This feature requires your Application to have a specific Grant Type enabled. If the [OIDC Conformant flag](#OIDC-Conformant-Mode) is enabled, the required Grant Type is *Passwordless OTP*. If instead the flag is disabled, the required Grant Type is *Resource Owner*. Check [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
+This feature requires your Application to have the *Passwordless OTP* enabled. See [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
 
 Passwordless it's a 2 steps flow:
 

@@ -2,12 +2,13 @@ package com.auth0.android.provider;
 
 import android.app.Activity;
 import android.net.Uri;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import com.auth0.android.Auth0;
 import com.auth0.android.Auth0Exception;
@@ -250,12 +251,8 @@ class OAuthManager extends ResumableManager {
         };
 
         String tokenAlg = decodedIdToken.getHeader().get("alg");
-        if (account.isOIDCConformant() || "RS256".equals(tokenAlg)) {
-            String tokenKeyId = decodedIdToken.getHeader().get("kid");
-            SignatureVerifier.forAsymmetricAlgorithm(tokenKeyId, apiClient, signatureVerifierCallback);
-        } else {
-            SignatureVerifier.forUnknownAlgorithm(signatureVerifierCallback);
-        }
+        String tokenKeyId = decodedIdToken.getHeader().get("kid");
+        SignatureVerifier.forAsymmetricAlgorithm(tokenKeyId, apiClient, signatureVerifierCallback);
     }
 
     private long getCurrentTimeInMillis() {
