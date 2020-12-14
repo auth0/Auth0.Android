@@ -54,7 +54,6 @@ public class ParameterBuilder {
     public static final String GRANT_TYPE_REFRESH_TOKEN = "refresh_token";
     public static final String GRANT_TYPE_PASSWORD = "password";
     public static final String GRANT_TYPE_PASSWORD_REALM = "http://auth0.com/oauth/grant-type/password-realm";
-    public static final String GRANT_TYPE_JWT = "urn:ietf:params:oauth:grant-type:jwt-bearer";
     public static final String GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code";
     public static final String GRANT_TYPE_MFA_OTP = "http://auth0.com/oauth/grant-type/mfa-otp";
     public static final String GRANT_TYPE_PASSWORDLESS_OTP = "http://auth0.com/oauth/grant-type/passwordless/otp";
@@ -63,7 +62,6 @@ public class ParameterBuilder {
     public static final String SCOPE_OPENID = "openid";
     public static final String SCOPE_OFFLINE_ACCESS = "openid offline_access";
 
-    public static final String ID_TOKEN_KEY = "id_token";
     public static final String SCOPE_KEY = "scope";
     public static final String REFRESH_TOKEN_KEY = "refresh_token";
     public static final String CONNECTION_KEY = "connection";
