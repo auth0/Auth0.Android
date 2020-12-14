@@ -24,14 +24,14 @@
 
 package com.auth0.android.provider;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import android.util.Log;
 
 import com.auth0.android.Auth0;
 import com.auth0.android.authentication.AuthenticationException;
@@ -50,8 +50,8 @@ import static com.auth0.android.provider.OAuthManager.RESPONSE_TYPE_ID_TOKEN;
 
 /**
  * OAuth2 Web Authentication Provider.
- * It can use an external browser by sending the {@link android.content.Intent#ACTION_VIEW} intent or also the {@link WebAuthActivity}.
- * This behaviour is changed using {@link WebAuthProvider.Builder#useBrowser(boolean)}, and defaults to use browser.
+ *
+ * It uses an external browser by sending the {@link android.content.Intent#ACTION_VIEW} intent.
  */
 @SuppressWarnings("WeakerAccess")
 public class WebAuthProvider {
@@ -156,8 +156,6 @@ public class WebAuthProvider {
 
         private final Auth0 account;
         private final Map<String, String> values;
-        private boolean useBrowser;
-        private boolean useFullscreen;
         private PKCE pkce;
         private String issuer;
         private String scheme;
@@ -171,8 +169,6 @@ public class WebAuthProvider {
 
             //Default values
             this.scheme = "https";
-            this.useBrowser = true;
-            this.useFullscreen = false;
             this.ctOptions = CustomTabsOptions.newBuilder().build();
             withResponseType(ResponseType.CODE);
             withScope(SCOPE_TYPE_OPENID);
@@ -392,15 +388,13 @@ public class WebAuthProvider {
         public void start(@NonNull Activity activity, @NonNull AuthCallback callback) {
             resetManagerInstance();
 
-            if (useBrowser && !ctOptions.hasCompatibleBrowser(activity.getPackageManager())) {
+            if (!ctOptions.hasCompatibleBrowser(activity.getPackageManager())) {
                 AuthenticationException ex = new AuthenticationException("a0.browser_not_available", "No compatible Browser application is installed.");
                 callback.onFailure(ex);
                 return;
             }
 
             OAuthManager manager = new OAuthManager(account, callback, values, ctOptions);
-            manager.useFullScreen(useFullscreen);
-            manager.useBrowser(useBrowser);
             manager.setPKCE(pkce);
             manager.setIdTokenVerificationLeeway(leeway);
             manager.setIdTokenVerificationIssuer(issuer);

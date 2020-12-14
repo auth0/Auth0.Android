@@ -14,12 +14,9 @@ import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 
 import java.util.Date;
-import java.util.HashMap;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 
 @RunWith(RobolectricTestRunner.class)
@@ -35,32 +32,6 @@ public class OAuthManagerTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-    }
-
-    @Test
-    public void shouldUseBrowserByDefault() {
-        OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>(), ctOptions);
-        assertTrue(manager.useBrowser());
-    }
-
-    @Test
-    public void shouldNotUseBrowser() {
-        OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>(), ctOptions);
-        manager.useBrowser(false);
-        assertFalse(manager.useBrowser());
-    }
-
-    @Test
-    public void shouldNotUseFullScreenByDefault() {
-        OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>(), ctOptions);
-        assertFalse(manager.useFullScreen());
-    }
-
-    @Test
-    public void shouldUseFullScreen() {
-        OAuthManager manager = new OAuthManager(account, callback, new HashMap<String, String>(), ctOptions);
-        manager.useFullScreen(true);
-        assertTrue(manager.useFullScreen());
     }
 
     @Test

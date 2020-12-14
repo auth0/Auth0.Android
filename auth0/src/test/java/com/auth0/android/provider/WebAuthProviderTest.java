@@ -1010,11 +1010,7 @@ public class WebAuthProviderTest {
 
         Bundle extras = intentCaptor.getValue().getExtras();
         assertThat(extras.getParcelable(AuthenticationActivity.EXTRA_AUTHORIZE_URI), is(notNullValue()));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(false));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(false));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
         assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CT_OPTIONS), is(true));
-        assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
         assertThat(extras.getParcelable(AuthenticationActivity.EXTRA_CT_OPTIONS), is(options));
     }
 
@@ -2403,11 +2399,7 @@ public class WebAuthProviderTest {
 
         Bundle extras = intentCaptor.getValue().getExtras();
         assertThat(extras.getParcelable(AuthenticationActivity.EXTRA_AUTHORIZE_URI), is(notNullValue()));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(false));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(false));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
         assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CT_OPTIONS), is(true));
-        assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
         assertThat(extras.getParcelable(AuthenticationActivity.EXTRA_CT_OPTIONS), is(notNullValue()));
     }
 
@@ -2428,11 +2420,7 @@ public class WebAuthProviderTest {
 
         Bundle extras = intentCaptor.getValue().getExtras();
         assertThat(extras.getParcelable(AuthenticationActivity.EXTRA_AUTHORIZE_URI), is(notNullValue()));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CONNECTION_NAME), is(false));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_FULL_SCREEN), is(false));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
         assertThat(extras.containsKey(AuthenticationActivity.EXTRA_CT_OPTIONS), is(true));
-        assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
         assertThat((CustomTabsOptions) extras.getParcelable(AuthenticationActivity.EXTRA_CT_OPTIONS), is(options));
     }
 
