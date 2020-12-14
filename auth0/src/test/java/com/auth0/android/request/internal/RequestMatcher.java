@@ -6,6 +6,7 @@ import com.squareup.okhttp.HttpUrl;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 
+//TODO: Check if unused and delete
 public class RequestMatcher<T> extends BaseMatcher<MockRequest> {
 
     private static final String ACCEPT_LANGUAGE_HEADER = "Accept-Language";
@@ -107,17 +108,6 @@ public class RequestMatcher<T> extends BaseMatcher<MockRequest> {
             }
             return;
         }
-
-        description.appendText(String.format("argument (URL) was (%s), (HttpMethod) was (%s)",
-                request.url, request.method));
-        if (clazz != null) {
-            description.appendText(String.format(", (Class) was (%s)",
-                    request.clazz));
-        }
-        if (typeToken != null) {
-            description.appendText(String.format(", (TypeToken) was (%s)",
-                    request.typeToken));
-        }
     }
 
     @Override
@@ -135,11 +125,7 @@ public class RequestMatcher<T> extends BaseMatcher<MockRequest> {
             return acceptLanguage && clientInfo && userAgent && authorization;
         }
 
-        final boolean url = objectEquals(mockRequest.url, this.url);
-        final boolean method = objectEquals(mockRequest.method, this.method);
-        final boolean clazz = sameClass(mockRequest.clazz, this.clazz);
-        final boolean typeToken = sameTypeToken(mockRequest.typeToken, this.typeToken);
-        return url && method && clazz && typeToken;
+        return false;
     }
 
     private boolean hasAcceptLanguageHeader(MockRequest request) {
