@@ -144,7 +144,7 @@ public class AuthenticationAPI {
         return this;
     }
 
-    public AuthenticationAPI willReturnTokenInfo() {
+    public AuthenticationAPI willReturnUserInfo() {
         String json = "{\n" +
                 "  \"email\": \"p@p.xom\",\n" +
                 "  \"email_verified\": false,\n" +

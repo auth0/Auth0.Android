@@ -289,7 +289,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldFetchUserInfo() throws Exception {
-        mockAPI.willReturnTokenInfo();
+        mockAPI.willReturnUserInfo();
         final MockAuthenticationCallback<UserProfile> callback = new MockAuthenticationCallback<>();
 
         client.userInfo("ACCESS_TOKEN")
@@ -305,7 +305,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldFetchUserInfoSync() throws Exception {
-        mockAPI.willReturnTokenInfo();
+        mockAPI.willReturnUserInfo();
 
         final UserProfile profile = client
                 .userInfo("ACCESS_TOKEN")
@@ -531,7 +531,7 @@ public class AuthenticationAPIClientTest {
     @Test
     public void shouldLoginWithEmailOnlySyncWithOTPGrant() throws Exception {
         mockAPI.willReturnSuccessfulLogin()
-                .willReturnTokenInfo();
+                .willReturnUserInfo();
 
         Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
@@ -749,7 +749,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSignUpUserSync() throws Exception {
         mockAPI.willReturnSuccessfulSignUp()
                 .willReturnSuccessfulLogin()
-                .willReturnTokenInfo();
+                .willReturnUserInfo();
 
         final Credentials credentials = client
                 .signUp(SUPPORT_AUTH0_COM, PASSWORD, SUPPORT, MY_CONNECTION)
@@ -782,7 +782,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSignUpUserWithoutUsername() throws Exception {
         mockAPI.willReturnSuccessfulSignUp()
                 .willReturnSuccessfulLogin()
-                .willReturnTokenInfo();
+                .willReturnUserInfo();
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         client.signUp(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
@@ -814,7 +814,7 @@ public class AuthenticationAPIClientTest {
     public void shouldLoginSignedUpUserWithPasswordRealmGrant() throws Exception {
         mockAPI.willReturnSuccessfulSignUp()
                 .willReturnSuccessfulLogin()
-                .willReturnTokenInfo();
+                .willReturnUserInfo();
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
@@ -1314,7 +1314,7 @@ public class AuthenticationAPIClientTest {
     @Test
     public void shouldFetchProfileAfterLoginRequest() throws Exception {
         mockAPI.willReturnSuccessfulLogin()
-                .willReturnTokenInfo();
+                .willReturnUserInfo();
 
         MockAuthenticationCallback<Authentication> callback = new MockAuthenticationCallback<>();
         client.getProfileAfter(client.login(SUPPORT_AUTH0_COM, "voidpassword", MY_CONNECTION))
@@ -1423,7 +1423,7 @@ public class AuthenticationAPIClientTest {
     @Test
     public void shouldFetchProfileSyncAfterLoginRequest() throws Exception {
         mockAPI.willReturnSuccessfulLogin()
-                .willReturnTokenInfo();
+                .willReturnUserInfo();
 
         Authentication authentication = client.getProfileAfter(client.login(SUPPORT_AUTH0_COM, "voidpassword", MY_CONNECTION))
                 .execute();
@@ -1448,7 +1448,7 @@ public class AuthenticationAPIClientTest {
     @Test
     public void shouldGetOAuthTokensUsingCodeVerifier() throws Exception {
         mockAPI.willReturnTokens()
-                .willReturnTokenInfo();
+                .willReturnUserInfo();
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         client.token("code", "http://redirect.uri")

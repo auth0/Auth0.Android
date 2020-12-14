@@ -96,7 +96,6 @@ public class AuthenticationAPIClient {
     private static final String OAUTH_PATH = "oauth";
     private static final String TOKEN_PATH = "token";
     private static final String RESOURCE_OWNER_PATH = "ro";
-    private static final String TOKEN_INFO_PATH = "tokeninfo";
     private static final String USER_INFO_PATH = "userinfo";
     private static final String REVOKE_PATH = "revoke";
     private static final String HEADER_AUTHORIZATION = "Authorization";
