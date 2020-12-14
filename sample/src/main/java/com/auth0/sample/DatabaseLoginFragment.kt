@@ -21,7 +21,6 @@ class DatabaseLoginFragment : Fragment() {
     private val apiClient: AuthenticationAPIClient by lazy {
         val account = Auth0("esCyeleWIb1iKJUcz6fVR4e29mEHkn0O", "lbalmaceda.auth0.com")
         account.isLoggingEnabled = true
-        account.isOIDCConformant = true
         AuthenticationAPIClient(account)
     }
 

@@ -6,6 +6,14 @@
 
 - Android API version 21 or later.
 
+## OIDC only
+
+Version 2 only supports OIDC-Conformant applications. When using this SDK to authenticate users, only the current Auth0 authentication pipeline and endpoints will be used.
+
+Previously, it was recommended to use OIDC-Conformant mode, by calling `setOIDCConformant(true)` on the `Auth0` class. This method has been removed, and the SDK now only supports OIDC-Conformant applications.
+
+You can learn more about the OpenID Connect Protocol [here](https://auth0.com/docs/protocols/openid-connect-protocol).
+
 ## Request interfaces changes
 
 The `com.auth0.android.request` package defines the top-level interfaces for building and executing HTTP requests. Historically, a common issue has been the inability to add custom headers and request parameters to all request types. We've refactored the request interfaces to enable any request to be customized with additional headers and request parameters.
@@ -79,6 +87,11 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 - `public ProfileRequest addParameter(@NonNull String name, @NonNull Object value)`
 
 ### Methods removed or changed
+
+#### Auth0
+
+- `public void setOIDCConformant(boolean enabled)`. The SDK now only supports OIDC-Conformant applications.
+- `public boolean isOIDCConformant()`. The SDK now only supports OIDC-Conformant applications.
 
 #### AuthenticationAPIClient
 

@@ -41,7 +41,11 @@ abstract class SignatureVerifier {
 
     private void checkAlgorithm(String tokenAlgorithm) throws TokenValidationException {
         if (!supportedAlgorithms.contains(tokenAlgorithm)) {
-            throw new TokenValidationException(String.format("Signature algorithm of \"%s\" is not supported. Expected the ID token to be signed with any of %s.", tokenAlgorithm, supportedAlgorithms));
+            if (supportedAlgorithms.size() == 1) {
+                throw new TokenValidationException(String.format("Signature algorithm of \"%s\" is not supported. Expected the ID token to be signed with %s.", tokenAlgorithm, supportedAlgorithms.get(0)));
+            } else {
+                throw new TokenValidationException(String.format("Signature algorithm of \"%s\" is not supported. Expected the ID token to be signed with any of %s.", tokenAlgorithm, supportedAlgorithms));
+            }
         }
     }
 
@@ -74,14 +78,4 @@ abstract class SignatureVerifier {
             }
         });
     }
-
-    /**
-     * Creates a new SignatureVerifier for when the algorithm is unknown or not set explicitly by the user. Only algorithm name is checked.
-     *
-     * @param callback where to receive the results
-     */
-    static void forUnknownAlgorithm(@NonNull final BaseCallback<SignatureVerifier, TokenValidationException> callback) {
-        callback.onSuccess(new AlgorithmNameVerifier());
-    }
-
 }

@@ -53,7 +53,7 @@ public class AsymmetricSignatureVerifierTest {
     @Test
     public void shouldThrowWhenAlgorithmIsNotSupported() throws Exception {
         exception.expect(TokenValidationException.class);
-        exception.expectMessage("Signature algorithm of \"none\" is not supported. Expected the ID token to be signed with any of [RS256].");
+        exception.expectMessage("Signature algorithm of \"none\" is not supported. Expected the ID token to be signed with RS256.");
 
         PublicKey publicKey = getPublicKey();
         AsymmetricSignatureVerifier verifier = new AsymmetricSignatureVerifier(publicKey);
@@ -66,7 +66,7 @@ public class AsymmetricSignatureVerifierTest {
     @Test
     public void shouldThrowWhenAlgorithmIsSymmetric() throws Exception {
         exception.expect(TokenValidationException.class);
-        exception.expectMessage("Signature algorithm of \"HS256\" is not supported. Expected the ID token to be signed with any of [RS256].");
+        exception.expectMessage("Signature algorithm of \"HS256\" is not supported. Expected the ID token to be signed with RS256.");
 
         PublicKey publicKey = getPublicKey();
         AsymmetricSignatureVerifier verifier = new AsymmetricSignatureVerifier(publicKey);

@@ -62,7 +62,6 @@ import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSW
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP;
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSWORD_REALM;
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE;
-import static com.auth0.android.authentication.ParameterBuilder.SCOPE_OPENID;
 
 /**
  * API client for Auth0 Authentication API.
@@ -176,8 +175,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Log in a user with email/username and password for a connection/realm.
-     * In OIDC conformant mode ({@link Auth0#isOIDCConformant()}) it will use the password-realm grant type for the {@code /oauth/token} endpoint
-     * otherwise it will use {@code /oauth/ro}, which requires your Application to have the <b>Resource Owner</b> Legacy Grant Type enabled. See <a href="https://auth0.com/docs/clients/client-grant-types">Client Grant Types</a> to learn how to enable it.
+     * It will use the password-realm grant type for the {@code /oauth/token} endpoint
      * Example:
      * <pre>
      * {@code
@@ -205,20 +203,11 @@ public class AuthenticationAPIClient {
                 .set(USERNAME_KEY, usernameOrEmail)
                 .set(PASSWORD_KEY, password);
 
-        if (auth0.isOIDCConformant()) {
-            final Map<String, Object> parameters = builder
-                    .setGrantType(GRANT_TYPE_PASSWORD_REALM)
-                    .setRealm(realmOrConnection)
-                    .asDictionary();
-            return loginWithToken(parameters);
-        } else {
-            final Map<String, Object> parameters = builder
-                    .setGrantType(GRANT_TYPE_PASSWORD)
-                    .setScope(SCOPE_OPENID)
-                    .setConnection(realmOrConnection)
-                    .asDictionary();
-            return loginWithResourceOwner(parameters);
-        }
+        final Map<String, Object> parameters = builder
+                .setGrantType(GRANT_TYPE_PASSWORD_REALM)
+                .setRealm(realmOrConnection)
+                .asDictionary();
+        return loginWithToken(parameters);
     }
 
     /**
@@ -367,8 +356,9 @@ public class AuthenticationAPIClient {
     /**
      * Log in a user using a phone number and a verification code received via SMS (Part of passwordless login flow)
      * The default scope used is 'openid'.
-     * How the user is logged in depends on the {@link Auth0#isOIDCConformant()} flag. If this flag is set to true, your Application requires to have the <b>Passwordless OTP</b> Grant Type enabled.
-     * If this flag is set to false, the <b>Resource Owner</b> Legacy Grant Type must be enabled instead.
+     *
+     * Your Application must have the <b>Passwordless OTP</b> Grant Type enabled.
+     *
      * Example usage:
      * <pre>
      * {@code
@@ -394,27 +384,17 @@ public class AuthenticationAPIClient {
                 .setClientId(getClientId())
                 .set(USERNAME_KEY, phoneNumber);
 
-        if (auth0.isOIDCConformant()) {
-            Map<String, Object> parameters = builder
-                    .setGrantType(GRANT_TYPE_PASSWORDLESS_OTP)
-                    .set(ONE_TIME_PASSWORD_KEY, verificationCode)
-                    .setRealm(realmOrConnection)
-                    .asDictionary();
-            return loginWithToken(parameters);
-        } else {
-            Map<String, Object> parameters = builder
-                    .setGrantType(GRANT_TYPE_PASSWORD)
-                    .set(PASSWORD_KEY, verificationCode)
-                    .setConnection(realmOrConnection)
-                    .asDictionary();
-            return loginWithResourceOwner(parameters);
-        }
+        Map<String, Object> parameters = builder
+                .setGrantType(GRANT_TYPE_PASSWORDLESS_OTP)
+                .set(ONE_TIME_PASSWORD_KEY, verificationCode)
+                .setRealm(realmOrConnection)
+                .asDictionary();
+        return loginWithToken(parameters);
     }
 
     /**
      * Log in a user using a phone number and a verification code received via SMS (Part of passwordless login flow).
-     * How the user is logged in depends on the {@link Auth0#isOIDCConformant()} flag. If this flag is set to true, your Application requires to have the <b>Passwordless OTP</b> Grant Type enabled.
-     * If this flag is set to false, the <b>Resource Owner</b> Legacy Grant Type must be enabled instead.
+     * Your Application must have the <b>Passwordless OTP</b> Grant Type enabled.
      * By default it will try to authenticate using the "sms" connection.
      * Example usage:
      * <pre>
@@ -442,8 +422,7 @@ public class AuthenticationAPIClient {
     /**
      * Log in a user using an email and a verification code received via Email (Part of passwordless login flow).
      * The default scope used is 'openid'.
-     * How the user is logged in depends on the {@link Auth0#isOIDCConformant()} flag. If this flag is set to true, your Application requires to have the <b>Passwordless OTP</b> Grant Type enabled.
-     * If this flag is set to false, the <b>Resource Owner</b> Legacy Grant Type must be enabled instead.
+     * Your Application must have the <b>Passwordless OTP</b> Grant Type enabled.
      * Example usage:
      * <pre>
      * {@code
@@ -469,28 +448,18 @@ public class AuthenticationAPIClient {
                 .setClientId(getClientId())
                 .set(USERNAME_KEY, email);
 
-        if (auth0.isOIDCConformant()) {
-            Map<String, Object> parameters = builder
-                    .setGrantType(GRANT_TYPE_PASSWORDLESS_OTP)
-                    .set(ONE_TIME_PASSWORD_KEY, verificationCode)
-                    .setRealm(realmOrConnection)
-                    .asDictionary();
-            return loginWithToken(parameters);
-        } else {
-            Map<String, Object> parameters = builder
-                    .setGrantType(GRANT_TYPE_PASSWORD)
-                    .set(PASSWORD_KEY, verificationCode)
-                    .setConnection(realmOrConnection)
-                    .asDictionary();
-            return loginWithResourceOwner(parameters);
-        }
+        Map<String, Object> parameters = builder
+                .setGrantType(GRANT_TYPE_PASSWORDLESS_OTP)
+                .set(ONE_TIME_PASSWORD_KEY, verificationCode)
+                .setRealm(realmOrConnection)
+                .asDictionary();
+        return loginWithToken(parameters);
     }
 
     /**
      * Log in a user using an email and a verification code received via Email (Part of passwordless login flow)
      * By default it will try to authenticate using the "email" connection.
-     * How the user is logged in depends on the {@link Auth0#isOIDCConformant()} flag. If this flag is set to true, your Application requires to have the <b>Passwordless OTP</b> Grant Type enabled.
-     * If this flag is set to false, the <b>Resource Owner</b> Legacy Grant Type must be enabled instead.
+     * Your Application must have the <b>Passwordless OTP</b> Grant Type enabled.
      * Example usage:
      * <pre>
      * {@code
@@ -609,7 +578,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Creates a user in a DB connection using <a href="https://auth0.com/docs/api/authentication#signup">'/dbconnections/signup' endpoint</a>
-     * and then logs in the user. How the user is logged in depends on the {@link Auth0#isOIDCConformant()} flag.
+     * and then logs in the user.
      * Example usage:
      * <pre>
      * {@code
@@ -640,7 +609,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Creates a user in a DB connection using <a href="https://auth0.com/docs/api/authentication#signup">'/dbconnections/signup' endpoint</a>
-     * and then logs in the user. How the user is logged in depends on the {@link Auth0#isOIDCConformant()} flag.
+     * and then logs in the user.
      * Example usage:
      * <pre>
      * {@code
@@ -743,10 +712,10 @@ public class AuthenticationAPIClient {
     }
 
     /**
-     * Requests new Credentials using a valid Refresh Token. The received token will have the same audience and scope as first requested. How the new Credentials are requested depends on the {@link Auth0#isOIDCConformant()} flag.
-     * - If the instance is OIDC Conformant the endpoint will be /oauth/token with 'refresh_token' grant, and the response will include an id_token and an access_token if 'openid' scope was requested when the refresh_token was obtained.
-     * In addition, if the application has Refresh Token Rotation configured, a new one-time use refresh token will also be included in the response.
-     * - If the instance is not OIDC Conformant the endpoint will be /delegation with 'urn:ietf:params:oauth:grant-type:jwt-bearer' grant, and the response will include an id_token.
+     * Requests new Credentials using a valid Refresh Token. The received token will have the same audience and scope as first requested.
+     *
+     * This method will use the /oauth/token endpoint with the 'refresh_token' grant, and the response will include an id_token and an access_token if 'openid' scope was requested when the refresh_token was obtained.
+     * Additionally, if the application has Refresh Token Rotation configured, a new one-time use refresh token will also be included in the response.
      * Example usage:
      * <pre>
      * {@code
@@ -770,20 +739,13 @@ public class AuthenticationAPIClient {
         final Map<String, Object> parameters = ParameterBuilder.newBuilder()
                 .setClientId(getClientId())
                 .setRefreshToken(refreshToken)
-                .setGrantType(auth0.isOIDCConformant() ? ParameterBuilder.GRANT_TYPE_REFRESH_TOKEN : ParameterBuilder.GRANT_TYPE_JWT)
+                .setGrantType(ParameterBuilder.GRANT_TYPE_REFRESH_TOKEN)
                 .asDictionary();
 
-        HttpUrl url;
-        if (auth0.isOIDCConformant()) {
-            url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
-                    .addPathSegment(OAUTH_PATH)
-                    .addPathSegment(TOKEN_PATH)
-                    .build();
-        } else {
-            url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
-                    .addPathSegment(DELEGATION_PATH)
-                    .build();
-        }
+        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+                .addPathSegment(OAUTH_PATH)
+                .addPathSegment(TOKEN_PATH)
+                .build();
 
         return factory.POST(url, client, gson, Credentials.class, authErrorBuilder)
                 .addParameters(parameters);
@@ -877,8 +839,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Start a passwordless flow with an <a href="https://auth0.com/docs/api/authentication#get-code-or-link">Email</a>.
-     * How the user is logged in depends on the {@link Auth0#isOIDCConformant()} flag. If this flag is set to true, your Application requires to have the <b>Passwordless OTP</b> Grant Type enabled.
-     * If this flag is set to false, the <b>Resource Owner</b> Legacy Grant Type must be enabled instead.
+     * Your Application must have the <b>Passwordless OTP</b> Grant Type enabled.
      * Example usage:
      * <pre>
      * {@code
@@ -913,8 +874,7 @@ public class AuthenticationAPIClient {
     /**
      * Start a passwordless flow with an <a href="https://auth0.com/docs/api/authentication#get-code-or-link">Email</a>
      * By default it will try to authenticate using "email" connection.
-     * How the user is logged in depends on the {@link Auth0#isOIDCConformant()} flag. If this flag is set to true, your Application requires to have the <b>Passwordless OTP</b> Grant Type enabled.
-     * If this flag is set to false, the <b>Resource Owner</b> Legacy Grant Type must be enabled instead.
+     * Your Application must have the <b>Passwordless OTP</b> Grant Type enabled.
      * Example usage:
      * <pre>
      * {@code
@@ -940,8 +900,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Start a passwordless flow with a <a href="https://auth0.com/docs/api/authentication#get-code-or-link">SMS</a>
-     * How the user is logged in depends on the {@link Auth0#isOIDCConformant()} flag. If this flag is set to true, your Application requires to have the <b>Passwordless OTP</b> Grant Type enabled.
-     * If this flag is set to false, the <b>Resource Owner</b> Legacy Grant Type must be enabled instead.
+     * Your Application requires to have the <b>Passwordless OTP</b> Grant Type enabled.
      * Example usage:
      * <pre>
      * {@code
@@ -975,8 +934,7 @@ public class AuthenticationAPIClient {
     /**
      * Start a passwordless flow with a <a href="https://auth0.com/docs/api/authentication#get-code-or-link">SMS</a>
      * By default it will try to authenticate using the "sms" connection.
-     * How the user is logged in depends on the {@link Auth0#isOIDCConformant()} flag. If this flag is set to true, your Application requires to have the <b>Passwordless OTP</b> Grant Type enabled.
-     * If this flag is set to false, the <b>Resource Owner</b> Legacy Grant Type must be enabled instead.
+     * Your Application requires to have the <b>Passwordless OTP</b> Grant Type enabled.
      * See <a href="https://auth0.com/docs/clients/client-grant-types">Client Grant Types</a> to learn how to enable it.
      * Example usage:
      * <pre>

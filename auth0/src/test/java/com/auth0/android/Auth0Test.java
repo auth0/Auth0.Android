@@ -74,28 +74,6 @@ public class Auth0Test {
     }
 
     @Test
-    public void shouldBeOIDCConformant() {
-        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
-        auth0.setOIDCConformant(true);
-
-        assertThat(auth0.isOIDCConformant(), is(true));
-    }
-
-    @Test
-    public void shouldNotBeOIDCConformant() {
-        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
-        auth0.setOIDCConformant(false);
-
-        assertThat(auth0.isOIDCConformant(), is(false));
-    }
-
-    @Test
-    public void shouldNotBeOIDCConformantByDefault() {
-        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
-        assertThat(auth0.isOIDCConformant(), is(false));
-    }
-
-    @Test
     public void shouldHaveLoggingEnabled() {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         auth0.setLoggingEnabled(true);

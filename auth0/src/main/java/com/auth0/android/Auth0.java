@@ -26,12 +26,11 @@ package com.auth0.android;
 
 
 import android.content.Context;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.auth0.android.auth0.BuildConfig;
-import com.auth0.android.authentication.AuthenticationAPIClient;
-import com.auth0.android.authentication.PasswordlessType;
 import com.auth0.android.util.Telemetry;
 import com.squareup.okhttp.HttpUrl;
 
@@ -41,15 +40,9 @@ import com.squareup.okhttp.HttpUrl;
  * <pre>{@code
  * Auth0 auth0 = new Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN");
  * }</pre>
- * It is strongly encouraged that this SDK be used in OIDC Conformant mode.
- * When this mode is enabled, it will force the SDK to use Auth0's current authentication pipeline
- * and will prevent it from reaching legacy endpoints. By default is `false`
- * <pre>{@code
- * auth0.setOIDCConformant(true);
- * }</pre>
- * For more information, please see the <a href="https://auth0.com/docs/api-auth/tutorials/adoption">OIDC adoption guide</a>.
  *
- * @see Auth0#setOIDCConformant(boolean)
+ * This SDK only supports OIDC-Conformant clients, and will use Auth0's current authentication pipeline.
+ * For more information, please see the <a href="https://auth0.com/docs/api-auth/tutorials/adoption">OIDC adoption guide</a>.
  */
 public class Auth0 {
 
@@ -60,7 +53,6 @@ public class Auth0 {
     private final HttpUrl domainUrl;
     private final HttpUrl configurationUrl;
     private Telemetry telemetry;
-    private boolean oidcConformant;
     private boolean loggingEnabled;
     private boolean tls12Enforced;
     private int connectTimeoutInSeconds;
@@ -202,43 +194,6 @@ public class Auth0 {
      */
     public void doNotSendTelemetry() {
         this.telemetry = null;
-    }
-
-    /**
-     * It is strongly encouraged that this SDK be used in OIDC Conformant mode.
-     * When this mode is enabled, it will force the SDK to use Auth0's current authentication pipeline
-     * and will prevent it from reaching legacy endpoints. By default is {@code false}
-     * For more information, please see the <a href="https://auth0.com/docs/api-auth/tutorials/adoption">OIDC adoption guide</a>.
-     * <p>
-     * This setting affects how authentication is performed in the following methods:
-     * <ul>
-     * <li>{@link AuthenticationAPIClient#login(String, String, String)}</li>
-     * <li>{@link AuthenticationAPIClient#signUp(String, String, String)}</li>
-     * <li>{@link AuthenticationAPIClient#signUp(String, String, String, String)}</li>
-     * <li>{@link AuthenticationAPIClient#renewAuth(String)}</li>
-     * <li>{@link AuthenticationAPIClient#passwordlessWithSMS(String, PasswordlessType, String)}</li>
-     * <li>{@link AuthenticationAPIClient#passwordlessWithSMS(String, PasswordlessType)}</li>
-     * <li>{@link AuthenticationAPIClient#passwordlessWithEmail(String, PasswordlessType)}</li>
-     * <li>{@link AuthenticationAPIClient#passwordlessWithEmail(String, PasswordlessType, String)}</li>
-     * <li>{@link AuthenticationAPIClient#loginWithPhoneNumber(String, String)}</li>
-     * <li>{@link AuthenticationAPIClient#loginWithPhoneNumber(String, String, String)}</li>
-     * <li>{@link AuthenticationAPIClient#loginWithEmail(String, String)}</li>
-     * <li>{@link AuthenticationAPIClient#loginWithEmail(String, String, String)}</li>
-     * </ul>
-     *
-     * @param enabled if Lock will use the Legacy Authentication API or the new OIDC Conformant Authentication API.
-     */
-    public void setOIDCConformant(boolean enabled) {
-        this.oidcConformant = enabled;
-    }
-
-    /**
-     * If the clients works in OIDC conformant mode or not
-     *
-     * @return whether the android client is OIDC conformant or not.
-     */
-    public boolean isOIDCConformant() {
-        return oidcConformant;
     }
 
     /**
