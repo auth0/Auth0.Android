@@ -192,4 +192,6 @@ public class BaseRequestTest {
         assertThat(reader.read(), is(123));
         verify(inputStream).read();
     }
+
+    //TODO: Add tests for the async scenario (using callbacks)
 }
