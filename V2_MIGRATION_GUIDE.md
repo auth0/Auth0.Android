@@ -50,6 +50,8 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 - The `com.auth0.android.request.ParameterizableRequest` interface has been removed. The ability to add request headers and parameters has been moved to the `com.auth0.android.request.Request` interface.
 - The `com.auth0.android.request.AuthRequest` interface has been removed. The `com.auth0.android.request.AuthenticationRequest` interface can be used instead.
 - The `com.auth0.android.provider.WebAuthActivity` class has been removed. External browser applications will always be used for authentication.
+- The `com.auth0.android.result.Delegation` class has been removed. There's no replacement for it.
+- The `com.auth0.android.authentication.request.DelegationRequest` class has been removed. There's no replacement for it.
 
 ### Class changes
 
@@ -108,7 +110,6 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 - `public ParameterizableRequest<Void, AuthenticationException> passwordlessWithEmail(@NonNull String email, @NonNull PasswordlessType passwordlessType)`. Use `public Request<Void, AuthenticationException> passwordlessWithEmail(@NonNull String email, @NonNull PasswordlessType passwordlessType)` instead.
 - `public ParameterizableRequest<Void, AuthenticationException> passwordlessWithSMS(@NonNull String phoneNumber, @NonNull PasswordlessType passwordlessType, @NonNull String connection)`. Use `public Request<Void, AuthenticationException> passwordlessWithSMS(@NonNull String phoneNumber, @NonNull PasswordlessType passwordlessType, @NonNull String connection)` instead.
 - `public ParameterizableRequest<Void, AuthenticationException> passwordlessWithSMS(@NonNull String phoneNumber, @NonNull PasswordlessType passwordlessType)`. Use `public Request<Void, AuthenticationException> passwordlessWithSMS(@NonNull String phoneNumber, @NonNull PasswordlessType passwordlessType)` instead.
-- `public ParameterizableRequest<Map<String, Object>, AuthenticationException> delegation()`. Use `public Request<Map<String, Object>, AuthenticationException> delegation()` instead.
 - `public ParameterizableRequest<Map<String, PublicKey>, AuthenticationException> fetchJsonWebKeys()`. Use `public Request<Map<String, PublicKey>, AuthenticationException> fetchJsonWebKeys()` instead.
 - `public AuthRequest login(@NonNull String usernameOrEmail, @NonNull String password, @NonNull String realmOrConnection)`. Use `public AuthenticationRequest login(@NonNull String usernameOrEmail, @NonNull String password, @NonNull String realmOrConnection)` instead.
 - `public AuthRequest login(@NonNull String usernameOrEmail, @NonNull String password)`. Use `public AuthenticationRequest login(@NonNull String usernameOrEmail, @NonNull String password)` instead.
@@ -119,6 +120,10 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 - `public AuthRequest loginWithPhoneNumber(@NonNull String phoneNumber, @NonNull String verificationCode)`. Use `public AuthenticationRequest loginWithPhoneNumber(@NonNull String phoneNumber, @NonNull String verificationCode)` instead.
 - `public AuthRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode, @NonNull String realmOrConnection)`. Use `public AuthenticationRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode, @NonNull String realmOrConnection)` instead.
 - `public AuthRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode)`. Use `public AuthenticationRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode)` instead.
+- `public ParameterizableRequest<Map<String, Object>, AuthenticationException> delegation()`. There's no replacement for it.
+- `public DelegationRequest<Delegation> delegationWithIdToken(@NonNull String idToken)`. There's no replacement for it.
+- `public DelegationRequest<Delegation> delegationWithRefreshToken(@NonNull String refreshToken)`. There's no replacement for it.
+- `public DelegationRequest<Map<String, Object>> delegationWithIdToken(@NonNull String idToken, @NonNull String apiType)`. There's no replacement for it.
 
 #### WebAuthProvider
 
@@ -151,3 +156,8 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 - `public <T, U extends Auth0Exception> ParameterizableRequest<T, U> GET(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull Class<T> clazz, @NonNull ErrorBuilder<U> errorBuilder)`. Use `public <T, U extends Auth0Exception> Request<T, U> GET(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull Class<T> clazz, @NonNull ErrorBuilder<U> errorBuilder)` instead.
 - `public <T, U extends Auth0Exception> ParameterizableRequest<T, U> GET(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull TypeToken<T> typeToken, @NonNull ErrorBuilder<U> errorBuilder)`. Use `public <T, U extends Auth0Exception> Request<T, U> GET(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull TypeToken<T> typeToken, @NonNull ErrorBuilder<U> errorBuilder)` instead.
 - `public AuthRequest authenticationPOST(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson)`. Use `public AuthRequest authenticationPOST(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson)` instead.
+
+### Constants removed
+
+- `ParameterBuilder.GRANT_TYPE_JWT` has been removed.
+- `ParameterBuilder.ID_TOKEN_KEY` has been removed.
