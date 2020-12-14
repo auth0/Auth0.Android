@@ -58,16 +58,16 @@ public class RequestFactoryTest {
         final Locale locale = new Locale("");
         Locale.setDefault(locale);
 
-        factory.get(BASE_URL, client, resultAdapter);
+        factory.get(BASE_URL, resultAdapter);
         verify(getRequest).addHeader("Accept-Language", "en_US");
 
-        factory.post(BASE_URL, client, resultAdapter);
+        factory.post(BASE_URL, resultAdapter);
         verify(postRequest).addHeader("Accept-Language", "en_US");
 
-        factory.delete(BASE_URL, client, resultAdapter);
+        factory.delete(BASE_URL, resultAdapter);
         verify(deleteRequest).addHeader("Accept-Language", "en_US");
 
-        factory.patch(BASE_URL, client, resultAdapter);
+        factory.patch(BASE_URL, resultAdapter);
         verify(patchRequest).addHeader("Accept-Language", "en_US");
     }
 
@@ -76,16 +76,16 @@ public class RequestFactoryTest {
         final Locale localeJP = new Locale("ja", "JP");
         Locale.setDefault(localeJP);
 
-        factory.get(BASE_URL, client, resultAdapter);
+        factory.get(BASE_URL, resultAdapter);
         verify(getRequest).addHeader("Accept-Language", "ja_JP");
 
-        factory.post(BASE_URL, client, resultAdapter);
+        factory.post(BASE_URL, resultAdapter);
         verify(postRequest).addHeader("Accept-Language", "ja_JP");
 
-        factory.delete(BASE_URL, client, resultAdapter);
+        factory.delete(BASE_URL, resultAdapter);
         verify(deleteRequest).addHeader("Accept-Language", "ja_JP");
 
-        factory.patch(BASE_URL, client, resultAdapter);
+        factory.patch(BASE_URL, resultAdapter);
         verify(patchRequest).addHeader("Accept-Language", "ja_JP");
     }
 
@@ -94,16 +94,16 @@ public class RequestFactoryTest {
         RequestFactory<Auth0Exception> factory = createRequestFactory();
         factory.setClientInfo(CLIENT_INFO);
 
-        factory.get(BASE_URL, client, resultAdapter);
+        factory.get(BASE_URL, resultAdapter);
         verify(getRequest).addHeader("Auth0-Client", CLIENT_INFO);
 
-        factory.post(BASE_URL, client, resultAdapter);
+        factory.post(BASE_URL, resultAdapter);
         verify(postRequest).addHeader("Auth0-Client", CLIENT_INFO);
 
-        factory.delete(BASE_URL, client, resultAdapter);
+        factory.delete(BASE_URL, resultAdapter);
         verify(deleteRequest).addHeader("Auth0-Client", CLIENT_INFO);
 
-        factory.patch(BASE_URL, client, resultAdapter);
+        factory.patch(BASE_URL, resultAdapter);
         verify(patchRequest).addHeader("Auth0-Client", CLIENT_INFO);
     }
 
@@ -112,22 +112,22 @@ public class RequestFactoryTest {
         RequestFactory<Auth0Exception> factory = createRequestFactory();
         factory.setUserAgent(USER_AGENT);
 
-        factory.get(BASE_URL, client, resultAdapter);
+        factory.get(BASE_URL, resultAdapter);
         verify(getRequest).addHeader("User-Agent", USER_AGENT);
 
-        factory.post(BASE_URL, client, resultAdapter);
+        factory.post(BASE_URL, resultAdapter);
         verify(postRequest).addHeader("User-Agent", USER_AGENT);
 
-        factory.delete(BASE_URL, client, resultAdapter);
+        factory.delete(BASE_URL, resultAdapter);
         verify(deleteRequest).addHeader("User-Agent", USER_AGENT);
 
-        factory.patch(BASE_URL, client, resultAdapter);
+        factory.patch(BASE_URL, resultAdapter);
         verify(patchRequest).addHeader("User-Agent", USER_AGENT);
     }
 
     @Test
     public void shouldCreatePostRequest() {
-        Request<String, Auth0Exception> request = factory.post(BASE_URL, client, resultAdapter);
+        Request<String, Auth0Exception> request = factory.post(BASE_URL, resultAdapter);
 
         assertThat(request, is(notNullValue()));
         assertThat(request, is(postRequest));
@@ -135,7 +135,7 @@ public class RequestFactoryTest {
 
     @Test
     public void shouldCreateVoidPostRequest() {
-        Request<Unit, Auth0Exception> request = factory.post(BASE_URL, client);
+        Request<Unit, Auth0Exception> request = factory.post(BASE_URL);
 
         assertThat(request, is(notNullValue()));
         assertThat(request, is(postRequest));
@@ -143,7 +143,7 @@ public class RequestFactoryTest {
 
     @Test
     public void shouldCreatePatchRequest() {
-        Request<String, Auth0Exception> request = factory.patch(BASE_URL, client, resultAdapter);
+        Request<String, Auth0Exception> request = factory.patch(BASE_URL, resultAdapter);
 
         assertThat(request, is(notNullValue()));
         assertThat(request, is(patchRequest));
@@ -151,7 +151,7 @@ public class RequestFactoryTest {
 
     @Test
     public void shouldCreateDeleteRequest() {
-        Request<String, Auth0Exception> request = factory.delete(BASE_URL, client, resultAdapter);
+        Request<String, Auth0Exception> request = factory.delete(BASE_URL, resultAdapter);
 
         assertThat(request, is(notNullValue()));
         assertThat(request, is(deleteRequest));
@@ -159,14 +159,14 @@ public class RequestFactoryTest {
 
     @Test
     public void shouldCreateGetRequest() {
-        Request<String, Auth0Exception> request = factory.get(BASE_URL, client, resultAdapter);
+        Request<String, Auth0Exception> request = factory.get(BASE_URL, resultAdapter);
 
         assertThat(request, is(notNullValue()));
         assertThat(request, is(getRequest));
     }
 
     private RequestFactory<Auth0Exception> createRequestFactory() {
-        RequestFactory<Auth0Exception> factory = spy(new RequestFactory<>(errorAdapter));
+        RequestFactory<Auth0Exception> factory = spy(new RequestFactory<>(client, errorAdapter));
         when(factory.createRequest(eq(HttpMethod.POST.INSTANCE), eq(BASE_URL), eq(client), eq(resultAdapter), eq(errorAdapter)))
                 .thenReturn(postRequest);
         when(factory.createRequest(eq(HttpMethod.DELETE.INSTANCE), eq(BASE_URL), eq(client), eq(resultAdapter), eq(errorAdapter)))

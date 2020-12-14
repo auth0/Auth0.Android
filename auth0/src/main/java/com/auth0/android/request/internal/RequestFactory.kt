@@ -34,7 +34,11 @@ import com.auth0.android.util.Auth0UserAgent
 import java.io.Reader
 import java.util.*
 
-public open class RequestFactory<U : Auth0Exception>(private val errorAdapter: ErrorAdapter<U>) {
+//TODO: Might be better to receive the NetworkingClient here
+public open class RequestFactory<U : Auth0Exception>(
+    private val client: NetworkingClient,
+    private val errorAdapter: ErrorAdapter<U>
+) {
 
     private companion object {
         private const val DEFAULT_LOCALE_IF_MISSING = "en_US"
@@ -53,32 +57,28 @@ public open class RequestFactory<U : Auth0Exception>(private val errorAdapter: E
 
     public fun <T> post(
         url: String,
-        client: NetworkingClient,
         resultAdapter: JsonAdapter<T>
-    ): Request<T, U> = setupRequest(HttpMethod.POST, url, client, resultAdapter, errorAdapter)
+    ): Request<T, U> = setupRequest(HttpMethod.POST, url, resultAdapter, errorAdapter)
 
-    public fun post(url: String, client: NetworkingClient): Request<Unit, U> =
-        this.post(url, client, object : JsonAdapter<Unit> {
+    public fun post(url: String): Request<Unit, U> =
+        this.post(url, object : JsonAdapter<Unit> {
             override fun fromJson(reader: Reader) {}
         })
 
     public fun <T> patch(
         url: String,
-        client: NetworkingClient,
         resultAdapter: JsonAdapter<T>
-    ): Request<T, U> = setupRequest(HttpMethod.PATCH, url, client, resultAdapter, errorAdapter)
+    ): Request<T, U> = setupRequest(HttpMethod.PATCH, url, resultAdapter, errorAdapter)
 
     public fun <T> delete(
         url: String,
-        client: NetworkingClient,
         resultAdapter: JsonAdapter<T>
-    ): Request<T, U> = setupRequest(HttpMethod.DELETE, url, client, resultAdapter, errorAdapter)
+    ): Request<T, U> = setupRequest(HttpMethod.DELETE, url, resultAdapter, errorAdapter)
 
     public fun <T> get(
         url: String,
-        client: NetworkingClient,
         resultAdapter: JsonAdapter<T>
-    ): Request<T, U> = setupRequest(HttpMethod.GET, url, client, resultAdapter, errorAdapter)
+    ): Request<T, U> = setupRequest(HttpMethod.GET, url, resultAdapter, errorAdapter)
 
     public fun setClientInfo(clientInfo: String) {
         baseHeaders[CLIENT_INFO_HEADER] = clientInfo
@@ -101,7 +101,6 @@ public open class RequestFactory<U : Auth0Exception>(private val errorAdapter: E
     private fun <T> setupRequest(
         method: HttpMethod,
         url: String,
-        client: NetworkingClient,
         resultAdapter: JsonAdapter<T>,
         errorAdapter: ErrorAdapter<U>
     ): Request<T, U> {
