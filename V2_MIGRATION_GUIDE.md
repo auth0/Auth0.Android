@@ -8,7 +8,7 @@
 
 ## OIDC only
 
-Verson 2 only supports OIDC-Conformant applications. When using this SDK to authenticate users, only the current Auth0 authentication pipeline and endpoints will be used.
+Version 2 only supports OIDC-Conformant applications. When using this SDK to authenticate users, only the current Auth0 authentication pipeline and endpoints will be used.
 
 Previously, it was recommended to use OIDC-Conformant mode, by calling `setOIDCConformant(true)` on the `Auth0` class. This method has been removed, and the SDK now only supports OIDC-Conformant applications.
 
