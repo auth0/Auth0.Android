@@ -14,6 +14,10 @@ Previously, it was recommended to use OIDC-Conformant mode, by calling `setOIDCC
 
 You can learn more about the OpenID Connect Protocol [here](https://auth0.com/docs/protocols/openid-connect-protocol).
 
+## Removal of WebView support
+
+The deprecated ability to sign using a WebView component has been removed. External browser applications will always be used instead for increased security and user trust. Please refer to [This blog post](https://auth0.com/blog/google-blocks-oauth-requests-from-embedded-browsers/) for additional information.
+
 ## Request interfaces changes
 
 The `com.auth0.android.request` package defines the top-level interfaces for building and executing HTTP requests. Historically, a common issue has been the inability to add custom headers and request parameters to all request types. We've refactored the request interfaces to enable any request to be customized with additional headers and request parameters.
@@ -45,6 +49,7 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 - The `com.auth0.android.util.Base64` class has been removed. Use `android.util.Base64` instead.
 - The `com.auth0.android.request.ParameterizableRequest` interface has been removed. The ability to add request headers and parameters has been moved to the `com.auth0.android.request.Request` interface.
 - The `com.auth0.android.request.AuthRequest` interface has been removed. The `com.auth0.android.request.AuthenticationRequest` interface can be used instead.
+- The `com.auth0.android.provider.WebAuthProvider` class has been removed. External browser applications will always be used for authentication.
 
 ### Class changes
 
