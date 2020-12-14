@@ -41,8 +41,7 @@ import com.squareup.okhttp.HttpUrl;
  * Auth0 auth0 = new Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN");
  * }</pre>
  *
- * This SDK only supports OIDC Conformant clients, and will use Auth0's current authentication pipeline.
- * It is strongly encouraged that this SDK be used in OIDC Conformant mode.
+ * This SDK only supports OIDC-Conformant clients, and will use Auth0's current authentication pipeline.
  * For more information, please see the <a href="https://auth0.com/docs/api-auth/tutorials/adoption">OIDC adoption guide</a>.
  */
 public class Auth0 {

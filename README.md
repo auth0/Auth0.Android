@@ -58,7 +58,7 @@ Auth0 account = new Auth0(context);
 
 ### OIDC Conformant Mode
 
-Beginning in version 2, this SDK is OIDC-compliant by default, and will not use any legacy authentication endpoints.
+Beginning in version 2, this SDK is OIDC-Conformant by default, and will not use any legacy authentication endpoints.
 
 For more information, please see the [OIDC adoption guide](https://auth0.com/docs/api-auth/tutorials/adoption).
 

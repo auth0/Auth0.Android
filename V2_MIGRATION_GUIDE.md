@@ -8,9 +8,9 @@
 
 ## OIDC only
 
-Verson 2 only supports OIDC-compliant applications. When using this SDK to authenticate users, only the current Auth0 authentication pipeline and endpoints will be used.
+Verson 2 only supports OIDC-Conformant applications. When using this SDK to authenticate users, only the current Auth0 authentication pipeline and endpoints will be used.
 
-Previously, it was recommended to use OIDC-compliant mode, by calling `setOIDCConformant(true)` on the `Auth0` class. This method has been removed, and the SDK now only supports OIDC-compliant applications.
+Previously, it was recommended to use OIDC-Conformant mode, by calling `setOIDCConformant(true)` on the `Auth0` class. This method has been removed, and the SDK now only supports OIDC-Conformant applications.
 
 You can learn more about the OpenID Connect Protocol [here](https://auth0.com/docs/protocols/openid-connect-protocol).
 
@@ -90,8 +90,8 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 
 #### Auth0
 
-- `public void setOIDCConformant(boolean enabled)`. The SDK now only supports OIDC-compliant applications.
-- `public boolean isOIDCConformant()`. The SDK now only supports OIDC-compliant applications.
+- `public void setOIDCConformant(boolean enabled)`. The SDK now only supports OIDC-Conformant applications.
+- `public boolean isOIDCConformant()`. The SDK now only supports OIDC-Conformant applications.
 
 #### AuthenticationAPIClient
 
