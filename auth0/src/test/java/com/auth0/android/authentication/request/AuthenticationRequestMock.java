@@ -92,12 +92,6 @@ public class AuthenticationRequestMock implements AuthenticationRequest {
 
     @NonNull
     @Override
-    public AuthenticationRequest setAccessToken(@NonNull String accessToken) {
-        return this;
-    }
-
-    @NonNull
-    @Override
     public AuthenticationRequest addAuthenticationParameters(@NonNull Map<String, Object> parameters) {
         return this;
     }

@@ -66,7 +66,6 @@ public class ParameterBuilder {
     public static final String REFRESH_TOKEN_KEY = "refresh_token";
     public static final String CONNECTION_KEY = "connection";
     public static final String REALM_KEY = "realm";
-    public static final String ACCESS_TOKEN_KEY = "access_token";
     public static final String SEND_KEY = "send";
     public static final String CLIENT_ID_KEY = "client_id";
     public static final String GRANT_TYPE_KEY = "grant_type";
@@ -155,17 +154,6 @@ public class ParameterBuilder {
     @NonNull
     public ParameterBuilder setDevice(@NonNull String device) {
         return set(DEVICE_KEY, device);
-    }
-
-    /**
-     * Sets the 'access_token' parameter
-     *
-     * @param accessToken a access token
-     * @return itself
-     */
-    @NonNull
-    public ParameterBuilder setAccessToken(@NonNull String accessToken) {
-        return set(ACCESS_TOKEN_KEY, accessToken);
     }
 
     /**

@@ -40,6 +40,8 @@ The `com.auth0.android.authentication.AuthenticationAPIClient` contains many cha
 
 If you are using the return type of any of these methods directly, you will need to change your code to expect the type as documented above. If you are chaining a call to `start` or `execute` to make the request, no changes are required.
 
+The `AuthenticationRequest` interface no longer has a `AuthenticationRequest setAccessToken(@NonNull String accessToken)` method.
+
 Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequest` have been updated to accommodate these changes, and are called out in the detailed changes listed below.
 
 ## Detailed change listing

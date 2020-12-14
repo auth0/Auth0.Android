@@ -14,7 +14,6 @@ import com.squareup.okhttp.OkHttpClient;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.auth0.android.authentication.ParameterBuilder.ACCESS_TOKEN_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.AUDIENCE_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.CONNECTION_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.DEVICE_KEY;
@@ -115,18 +114,6 @@ class BaseAuthenticationRequest extends SimpleRequest<Credentials, Authenticatio
     @Override
     public AuthenticationRequest setAudience(@NonNull String audience) {
         addParameter(AUDIENCE_KEY, audience);
-        return this;
-    }
-
-    /**
-     * Sets the 'access_token' parameter
-     *
-     * @param accessToken a access token
-     * @return itself
-     */
-    @NonNull
-    public AuthenticationRequest setAccessToken(@NonNull String accessToken) {
-        addParameter(ACCESS_TOKEN_KEY, accessToken);
         return this;
     }
 

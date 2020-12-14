@@ -165,17 +165,6 @@ public class BaseAuthenticationRequestTest {
     }
 
     @Test
-    public void shouldSetAccessToken() throws Exception {
-        mockAPI.willReturnSuccessfulLogin();
-        request.setAccessToken("accessToken")
-                .execute();
-
-        final RecordedRequest request = mockAPI.takeRequest();
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("access_token", "accessToken"));
-    }
-
-    @Test
     public void shouldAddAuthenticationParameters() throws Exception {
         HashMap<String, Object> parameters = new HashMap<>();
         parameters.put("extra", "value");
