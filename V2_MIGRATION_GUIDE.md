@@ -124,6 +124,7 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 - `public DelegationRequest<Delegation> delegationWithIdToken(@NonNull String idToken)`. There's no replacement for it.
 - `public DelegationRequest<Delegation> delegationWithRefreshToken(@NonNull String refreshToken)`. There's no replacement for it.
 - `public DelegationRequest<Map<String, Object>> delegationWithIdToken(@NonNull String idToken, @NonNull String apiType)`. There's no replacement for it.
+- `public AuthenticationRequest loginWithOAuthAccessToken(@NonNull String token, @NonNull String connection)`. There's no exact replacement for it, but your provider might be supported by `public AuthenticationRequest loginWithNativeSocialToken(@NonNull String token, @NonNull String tokenType)`
 
 #### WebAuthProvider
 

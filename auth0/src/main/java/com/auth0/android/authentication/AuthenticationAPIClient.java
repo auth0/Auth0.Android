@@ -87,7 +87,6 @@ public class AuthenticationAPIClient {
     private static final String ONE_TIME_PASSWORD_KEY = "otp";
     private static final String SUBJECT_TOKEN_KEY = "subject_token";
     private static final String SUBJECT_TOKEN_TYPE_KEY = "subject_token_type";
-    private static final String ACCESS_TOKEN_PATH = "access_token";
     private static final String SIGN_UP_PATH = "signup";
     private static final String DB_CONNECTIONS_PATH = "dbconnections";
     private static final String CHANGE_PASSWORD_PATH = "change_password";
@@ -267,45 +266,6 @@ public class AuthenticationAPIClient {
                 .asDictionary();
 
         return loginWithToken(parameters);
-    }
-
-    /**
-     * Log in a user with a OAuth 'access_token' of a Identity Provider like Facebook or Twitter using <a href="https://auth0.com/docs/api/authentication#social-with-provider-s-access-token">'\oauth\access_token' endpoint</a>
-     * The default scope used is 'openid'.
-     * Example usage:
-     * <pre>
-     * {@code
-     * client.loginWithOAuthAccessToken("{token}", "{connection name}")
-     *      .start(new BaseCallback<Credentials>() {
-     *          {@literal}Override
-     *          public void onSuccess(Credentials payload) { }
-     *
-     *          {@literal}Override
-     *          public void onFailure(AuthenticationException error) { }
-     *      });
-     * }
-     * </pre>
-     *
-     * @param token      obtained from the IdP
-     * @param connection that will be used to authenticate the user, e.g. 'facebook'
-     * @return a request to configure and start that will yield {@link Credentials}
-     */
-    @NonNull
-    public AuthenticationRequest loginWithOAuthAccessToken(@NonNull String token, @NonNull String connection) {
-        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
-                .addPathSegment(OAUTH_PATH)
-                .addPathSegment(ACCESS_TOKEN_PATH)
-                .build();
-
-        Map<String, Object> parameters = ParameterBuilder.newAuthenticationBuilder()
-                .setClientId(getClientId())
-                .setConnection(connection)
-                .setAccessToken(token)
-                .asDictionary();
-
-        AuthenticationRequest authRequest = factory.authenticationPOST(url, client, gson);
-        authRequest.addAuthenticationParameters(parameters);
-        return authRequest;
     }
 
     /**

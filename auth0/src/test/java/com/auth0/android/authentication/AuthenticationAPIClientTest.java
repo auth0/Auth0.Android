@@ -320,46 +320,6 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldLoginWithOAuthAccessToken() throws Exception {
-        mockAPI.willReturnSuccessfulLogin();
-
-        final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
-        client.loginWithOAuthAccessToken("fbtoken", "facebook")
-                .start(callback);
-
-        final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
-        assertThat(request.getPath(), equalTo("/oauth/access_token"));
-
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("connection", "facebook"));
-        assertThat(body, hasEntry("access_token", "fbtoken"));
-        assertThat(body, hasEntry("scope", OPENID));
-
-        assertThat(callback, hasPayloadOfType(Credentials.class));
-    }
-
-    @Test
-    public void shouldLoginWithOAuthAccessTokenSync() throws Exception {
-        mockAPI.willReturnSuccessfulLogin();
-
-        final Credentials credentials = client
-                .loginWithOAuthAccessToken("fbtoken", "facebook")
-                .execute();
-
-        final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
-        assertThat(request.getPath(), equalTo("/oauth/access_token"));
-
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("connection", "facebook"));
-        assertThat(body, hasEntry("access_token", "fbtoken"));
-        assertThat(body, hasEntry("scope", OPENID));
-
-        assertThat(credentials, is(notNullValue()));
-    }
-
-    @Test
     public void shouldLoginWithNativeSocialToken() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
 
