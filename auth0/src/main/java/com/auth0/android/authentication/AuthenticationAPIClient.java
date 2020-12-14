@@ -95,7 +95,6 @@ public class AuthenticationAPIClient {
     private static final String START_PATH = "start";
     private static final String OAUTH_PATH = "oauth";
     private static final String TOKEN_PATH = "token";
-    private static final String RESOURCE_OWNER_PATH = "ro";
     private static final String USER_INFO_PATH = "userinfo";
     private static final String REVOKE_PATH = "revoke";
     private static final String HEADER_AUTHORIZATION = "Authorization";
@@ -969,21 +968,6 @@ public class AuthenticationAPIClient {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(OAUTH_PATH)
                 .addPathSegment(TOKEN_PATH)
-                .build();
-
-        final Map<String, Object> requestParameters = ParameterBuilder.newBuilder()
-                .setClientId(getClientId())
-                .addAll(parameters)
-                .asDictionary();
-        AuthenticationRequest authRequest = factory.authenticationPOST(url, client, gson);
-        authRequest.addAuthenticationParameters(requestParameters);
-        return authRequest;
-    }
-
-    private AuthenticationRequest loginWithResourceOwner(Map<String, Object> parameters) {
-        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
-                .addPathSegment(OAUTH_PATH)
-                .addPathSegment(RESOURCE_OWNER_PATH)
                 .build();
 
         final Map<String, Object> requestParameters = ParameterBuilder.newBuilder()
