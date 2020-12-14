@@ -11,7 +11,6 @@ import androidx.annotation.VisibleForTesting;
 
 public class AuthenticationActivity extends Activity {
 
-    static final String EXTRA_USE_BROWSER = "com.auth0.android.EXTRA_USE_BROWSER";
     static final String EXTRA_AUTHORIZE_URI = "com.auth0.android.EXTRA_AUTHORIZE_URI";
     static final String EXTRA_CT_OPTIONS = "com.auth0.android.EXTRA_CT_OPTIONS";
     private static final String EXTRA_INTENT_LAUNCHED = "com.auth0.android.EXTRA_INTENT_LAUNCHED";
@@ -22,7 +21,6 @@ public class AuthenticationActivity extends Activity {
     static void authenticateUsingBrowser(@NonNull Context context, @NonNull Uri authorizeUri, @NonNull CustomTabsOptions options) {
         Intent intent = new Intent(context, AuthenticationActivity.class);
         intent.putExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI, authorizeUri);
-        intent.putExtra(AuthenticationActivity.EXTRA_USE_BROWSER, true);
         intent.putExtra(AuthenticationActivity.EXTRA_CT_OPTIONS, options);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         context.startActivity(intent);

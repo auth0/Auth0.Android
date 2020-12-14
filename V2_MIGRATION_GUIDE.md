@@ -49,7 +49,7 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 - The `com.auth0.android.util.Base64` class has been removed. Use `android.util.Base64` instead.
 - The `com.auth0.android.request.ParameterizableRequest` interface has been removed. The ability to add request headers and parameters has been moved to the `com.auth0.android.request.Request` interface.
 - The `com.auth0.android.request.AuthRequest` interface has been removed. The `com.auth0.android.request.AuthenticationRequest` interface can be used instead.
-- The `com.auth0.android.provider.WebAuthProvider` class has been removed. External browser applications will always be used for authentication.
+- The `com.auth0.android.provider.WebAuthActivity` class has been removed. External browser applications will always be used for authentication.
 
 ### Class changes
 

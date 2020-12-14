@@ -174,8 +174,6 @@ public class AuthenticationActivityTest {
         Bundle extras = intent.getExtras();
         assert extras != null;
         assertThat((Uri) extras.getParcelable(AuthenticationActivity.EXTRA_AUTHORIZE_URI), is(uri));
-        assertThat(extras.containsKey(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
-        assertThat(extras.getBoolean(AuthenticationActivity.EXTRA_USE_BROWSER), is(true));
         assertThat((CustomTabsOptions) extras.getParcelable(AuthenticationActivity.EXTRA_CT_OPTIONS), is(customTabsOptions));
     }
 
