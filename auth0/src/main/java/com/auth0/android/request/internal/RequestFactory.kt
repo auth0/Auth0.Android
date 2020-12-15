@@ -80,6 +80,10 @@ public open class RequestFactory<U : Auth0Exception>(
         resultAdapter: JsonAdapter<T>
     ): Request<T, U> = setupRequest(HttpMethod.GET, url, resultAdapter, errorAdapter)
 
+    public fun setHeader(name: String, value: String) {
+        baseHeaders[name] = value
+    }
+
     public fun setClientInfo(clientInfo: String) {
         baseHeaders[CLIENT_INFO_HEADER] = clientInfo
     }

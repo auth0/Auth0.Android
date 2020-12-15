@@ -90,6 +90,24 @@ public class RequestFactoryTest {
     }
 
     @Test
+    public void shouldHaveCustomHeader() {
+        RequestFactory<Auth0Exception> factory = createRequestFactory();
+        factory.setHeader("the-header", "the-value");
+
+        factory.get(BASE_URL, resultAdapter);
+        verify(getRequest).addHeader("the-header", "the-value");
+
+        factory.post(BASE_URL, resultAdapter);
+        verify(postRequest).addHeader("the-header", "the-value");
+
+        factory.delete(BASE_URL, resultAdapter);
+        verify(deleteRequest).addHeader("the-header", "the-value");
+
+        factory.patch(BASE_URL, resultAdapter);
+        verify(patchRequest).addHeader("the-header", "the-value");
+    }
+
+    @Test
     public void shouldHaveClientInfoHeader() {
         RequestFactory<Auth0Exception> factory = createRequestFactory();
         factory.setClientInfo(CLIENT_INFO);

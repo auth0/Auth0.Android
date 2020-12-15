@@ -29,8 +29,8 @@ import android.content.Context;
 import android.content.res.Resources;
 
 import com.auth0.android.Auth0;
-import com.auth0.android.request.internal.OkHttpClientFactory;
 import com.auth0.android.request.internal.RequestFactory;
+import com.auth0.android.request.kt.NetworkingClient;
 import com.auth0.android.result.UserIdentity;
 import com.auth0.android.result.UserProfile;
 import com.auth0.android.util.Auth0UserAgent;
@@ -97,7 +97,7 @@ public class UsersAPIClientTest {
         mockAPI = new UsersAPI();
         final String domain = mockAPI.getDomain();
         Auth0 auth0 = new Auth0(CLIENT_ID, domain, domain);
-        client = new UsersAPIClient(auth0, TOKEN_PRIMARY);
+        client = new UsersAPIClient(auth0, TOKEN_PRIMARY, mock(NetworkingClient.class));
         gson = new GsonBuilder().serializeNulls().create();
     }
 
@@ -109,28 +109,26 @@ public class UsersAPIClientTest {
     @Test
     public void shouldSetUserAgent() {
         Auth0 account = mock(Auth0.class);
-        RequestFactory factory = mock(RequestFactory.class);
-        OkHttpClientFactory clientFactory = mock(OkHttpClientFactory.class);
-        final UsersAPIClient client = new UsersAPIClient(account, factory, clientFactory);
+        //noinspection unchecked
+        RequestFactory<ManagementException> factory = mock(RequestFactory.class);
+        final UsersAPIClient client = new UsersAPIClient(account, factory, gson);
         client.setUserAgent("android-user-agent");
         verify(factory).setUserAgent("android-user-agent");
     }
 
-    @Test
-    public void shouldSetTelemetryIfPresent() {
+    public void shouldSetAuth0UserAgentIfPresent() {
         final Auth0UserAgent auth0UserAgent = mock(Auth0UserAgent.class);
-        when(auth0UserAgent.getValue()).thenReturn("the-telemetry-data");
-        RequestFactory factory = mock(RequestFactory.class);
-        OkHttpClientFactory clientFactory = mock(OkHttpClientFactory.class);
-        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
-        auth0.setAuth0UserAgent(auth0UserAgent);
-        new UsersAPIClient(auth0, factory, clientFactory);
-        verify(factory).setClientInfo("the-telemetry-data");
+        when(auth0UserAgent.getValue()).thenReturn("the-user-agent-data");
+        RequestFactory<ManagementException> factory = mock(RequestFactory.class);
+        Auth0 account = new Auth0(CLIENT_ID, DOMAIN);
+        account.setAuth0UserAgent(auth0UserAgent);
+        new UsersAPIClient(account, factory, gson);
+        verify(factory).setClientInfo("the-user-agent-data");
     }
 
     @Test
     public void shouldCreateClientWithAccountInfo() {
-        UsersAPIClient client = new UsersAPIClient(new Auth0(CLIENT_ID, DOMAIN), TOKEN_PRIMARY);
+        UsersAPIClient client = new UsersAPIClient(new Auth0(CLIENT_ID, DOMAIN), TOKEN_PRIMARY, mock(NetworkingClient.class));
         assertThat(client, is(notNullValue()));
         assertThat(client.getClientId(), equalTo(CLIENT_ID));
         assertThat(client.getBaseURL(), equalTo("https://" + DOMAIN + "/"));

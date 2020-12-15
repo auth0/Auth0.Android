@@ -41,6 +41,7 @@ import com.auth0.android.request.internal.GsonProvider;
 import com.auth0.android.request.internal.RequestFactory;
 import com.auth0.android.request.kt.DefaultClient;
 import com.auth0.android.request.kt.ErrorAdapter;
+import com.auth0.android.request.kt.GsonAdapter;
 import com.auth0.android.request.kt.JsonAdapter;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.DatabaseUser;
@@ -103,7 +104,6 @@ public class AuthenticationAPIClient {
     private final Auth0 auth0;
     private final Gson gson;
     private final RequestFactory<AuthenticationException> factory;
-    private final JsonAdapter<Credentials> credentialsAdapter = null;
     private static final ErrorAdapter<AuthenticationException> errorAdapter = null;
 
 
@@ -293,6 +293,7 @@ public class AuthenticationAPIClient {
                 .set(SUBJECT_TOKEN_TYPE_KEY, tokenType)
                 .asDictionary();
 
+        GsonAdapter<Credentials> credentialsAdapter = new GsonAdapter<>(Credentials.class, gson);
         BaseAuthenticationRequest request = new BaseAuthenticationRequest(factory.post(url.toString(), credentialsAdapter));
         request.addParameters(parameters);
         return request;
@@ -490,7 +491,7 @@ public class AuthenticationAPIClient {
                 .setClientId(getClientId())
                 .asDictionary();
 
-        JsonAdapter<DatabaseUser> databaseUserAdapter = null;
+        JsonAdapter<DatabaseUser> databaseUserAdapter = new GsonAdapter<>(DatabaseUser.class, gson);
         final Request<DatabaseUser, AuthenticationException> request = factory.post(url.toString(), databaseUserAdapter)
                 .addParameters(parameters);
         return new DatabaseConnectionRequest<>(request);
@@ -694,6 +695,7 @@ public class AuthenticationAPIClient {
                 .addPathSegment(TOKEN_PATH)
                 .build();
 
+        GsonAdapter<Credentials> credentialsAdapter = new GsonAdapter<>(Credentials.class, gson);
         return factory.post(url.toString(), credentialsAdapter)
                 .addParameters(parameters);
     }
@@ -890,6 +892,7 @@ public class AuthenticationAPIClient {
                 .addPathSegment(TOKEN_PATH)
                 .build();
 
+        JsonAdapter<Credentials> credentialsAdapter = new GsonAdapter<>(Credentials.class, gson);
         Request<Credentials, AuthenticationException> request = factory.post(url.toString(), credentialsAdapter);
         request.addParameters(parameters);
         return request;
@@ -907,7 +910,7 @@ public class AuthenticationAPIClient {
                 .addPathSegment(WELL_KNOWN_PATH)
                 .addPathSegment(JWKS_FILE_PATH)
                 .build();
-        JsonAdapter<Map<String, PublicKey>> jwksAdapter = null;
+        JsonAdapter<Map<String, PublicKey>> jwksAdapter = GsonAdapter.Companion.forMapOf(PublicKey.class, gson);
         return factory.get(url.toString(), jwksAdapter);
     }
 
@@ -922,6 +925,7 @@ public class AuthenticationAPIClient {
                 .addAll(parameters)
                 .asDictionary();
 
+        JsonAdapter<Credentials> credentialsAdapter = new GsonAdapter<>(Credentials.class, gson);
         BaseAuthenticationRequest request = new BaseAuthenticationRequest(factory.post(url.toString(), credentialsAdapter));
         request.addParameters(requestParameters);
         return request;
@@ -932,7 +936,7 @@ public class AuthenticationAPIClient {
                 .addPathSegment(USER_INFO_PATH)
                 .build();
 
-        JsonAdapter<UserProfile> userProfileAdapter = null;
+        JsonAdapter<UserProfile> userProfileAdapter = new GsonAdapter<>(UserProfile.class, gson);
         return factory.get(url.toString(), userProfileAdapter);
     }
 
