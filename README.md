@@ -5,7 +5,6 @@
 [![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](http://doge.mit-license.org)
 [![Maven Central](https://img.shields.io/maven-central/v/com.auth0.android/auth0.svg?style=flat-square)](http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22com.auth0.android%22%20AND%20a%3A%22auth0%22)
 [![Bintray](https://img.shields.io/bintray/v/auth0/android/auth0.svg?style=flat-square)](https://bintray.com/auth0/android/auth0/_latestVersion)
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fauth0%2FAuth0.Android.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fauth0%2FAuth0.Android?ref=badge_shield)
 
 Android Java toolkit for Auth0 API
 
@@ -21,7 +20,7 @@ Auth0.android is available through [Gradle](https://gradle.org/). To install it,
 
 ```gradle
 dependencies {
-    implementation 'com.auth0.android:auth0:1.26.1'
+    implementation 'com.auth0.android:auth0:1.29.2'
 }
 ```
 
@@ -693,7 +692,7 @@ The basic version supports asking for `Credentials` existence, storing them and 
 
 #### Usage
 1. **Instantiate the manager:**
-You'll need an `AuthenticationAPIClient` instance to renew the credentials when they expire and a `Storage` object. We provide a `SharedPreferencesStorage` class that makes use of `SharedPreferences` to create a file in the application's directory with **Context.MODE_PRIVATE** mode. This implementation is thread safe and can either be obtained through a shared method or on demand.
+You'll need an `AuthenticationAPIClient` instance to renew the credentials when they expire and a `Storage` object. We provide a `SharedPreferencesStorage` class that makes use of `SharedPreferences` to create a file in the application's directory with **Context.MODE_PRIVATE** mode.
 
 ```java
 AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
@@ -731,6 +730,8 @@ boolean authenticated = manager.hasValidCredentials();
 
 4. **Retrieve credentials:**
 Existing credentials will be returned if they are still valid, otherwise the `refresh_token` will be used to attempt to renew them. If the `expires_in` or both the `access_token` and `id_token` values are missing, the method will throw a `CredentialsManagerException`. The same will happen if the credentials have expired and there's no `refresh_token` available.
+
+> This method is not thread-safe, so if you're using _Refresh Token Rotation_ you should avoid calling this method concurrently (might result in more than one renew request being fired, and only the first one will succeed).
 
 ```java
 manager.getCredentials(new BaseCallback<Credentials, CredentialsManagerException>() {
@@ -857,6 +858,3 @@ If you have found a bug or if you have a feature request, please report them at 
 ## License
 
 This project is licensed under the MIT license. See the [LICENSE](LICENSE) file for more info.
-
-
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fauth0%2FAuth0.Android.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fauth0%2FAuth0.Android?ref=badge_large)

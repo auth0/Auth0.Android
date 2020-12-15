@@ -200,7 +200,8 @@ public class AuthenticationException extends Auth0Exception {
 
     /// When MFA code sent is invalid or expired
     public boolean isMultifactorCodeInvalid() {
-        return "a0.mfa_invalid_code".equals(code) || "invalid_grant".equals(code) && "Invalid otp_code.".equals(description);
+        return "a0.mfa_invalid_code".equals(code) 
+            || "invalid_grant".equals(code) && "Invalid otp_code.".equals(description);
     }
 
     /// When password used for SignUp does not match connection's strength requirements.
@@ -225,7 +226,10 @@ public class AuthenticationException extends Auth0Exception {
 
     /// When username and/or password used for authentication are invalid
     public boolean isInvalidCredentials() {
-        return "invalid_user_password".equals(code) || "invalid_grant".equals(code) && "Wrong email or password.".equals(description);
+        return "invalid_user_password".equals(code)
+                || "invalid_grant".equals(code) && "Wrong email or password.".equals(description)
+                || "invalid_grant".equals(code) && "Wrong phone number or verification code.".equals(description)
+                || "invalid_grant".equals(code) && "Wrong email or verification code.".equals(description);
     }
 
     /// When authenticating with web-based authentication and the resource server denied access per OAuth2 spec

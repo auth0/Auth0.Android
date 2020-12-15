@@ -275,6 +275,22 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
+    public void shouldHaveInvalidCredentialsOnPhonePasswordless() {
+        values.put(ERROR_KEY, "invalid_grant");
+        values.put(ERROR_DESCRIPTION_KEY, "Wrong phone number or verification code.");
+        AuthenticationException ex = new AuthenticationException(values);
+        assertThat(ex.isInvalidCredentials(), is(true));
+    }
+
+    @Test
+    public void shouldHaveInvalidCredentialsOnEmailPasswordless() {
+        values.put(ERROR_KEY, "invalid_grant");
+        values.put(ERROR_DESCRIPTION_KEY, "Wrong email or verification code.");
+        AuthenticationException ex = new AuthenticationException(values);
+        assertThat(ex.isInvalidCredentials(), is(true));
+    }
+
+    @Test
     public void shouldHaveAccessDenied() {
         values.put(CODE_KEY, "access_denied");
         AuthenticationException ex = new AuthenticationException(values);

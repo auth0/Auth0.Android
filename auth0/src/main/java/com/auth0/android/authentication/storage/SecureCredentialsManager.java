@@ -18,12 +18,12 @@ import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.AuthenticationCallback;
 import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.jwt.JWT;
+import com.auth0.android.request.ParameterizableRequest;
 import com.auth0.android.request.internal.GsonProvider;
 import com.auth0.android.result.Credentials;
 import com.google.gson.Gson;
 
-import java.util.Date;
+import java.util.Locale;
 
 import static android.text.TextUtils.isEmpty;
 
@@ -34,22 +34,20 @@ import static android.text.TextUtils.isEmpty;
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-public class SecureCredentialsManager {
+public class SecureCredentialsManager extends BaseCredentialsManager {
 
     private static final String TAG = SecureCredentialsManager.class.getSimpleName();
 
     private static final String KEY_CREDENTIALS = "com.auth0.credentials";
-    private static final String KEY_EXPIRES_AT = "com.auth0.credentials_expires_at";
+    private static final String KEY_EXPIRES_AT = "com.auth0.credentials_access_token_expires_at";
+    private static final String KEY_CACHE_EXPIRES_AT = "com.auth0.credentials_expires_at";
     private static final String KEY_CAN_REFRESH = "com.auth0.credentials_can_refresh";
     private static final String KEY_CRYPTO_ALIAS = "com.auth0.manager_key_alias";
     @VisibleForTesting
     static final String KEY_ALIAS = "com.auth0.key";
 
-    private final AuthenticationAPIClient apiClient;
-    private final Storage storage;
     private final CryptoUtil crypto;
     private final Gson gson;
-    private final JWTDecoder jwtDecoder;
 
     //Changeable by the user
     private boolean authenticateBeforeDecrypt;
@@ -59,16 +57,16 @@ public class SecureCredentialsManager {
     //State for retrying operations
     private BaseCallback<Credentials, CredentialsManagerException> decryptCallback;
     private Intent authIntent;
+    private String scope;
+    private int minTtl;
 
 
     @VisibleForTesting
     SecureCredentialsManager(@NonNull AuthenticationAPIClient apiClient, @NonNull Storage storage, @NonNull CryptoUtil crypto, @NonNull JWTDecoder jwtDecoder) {
-        this.apiClient = apiClient;
-        this.storage = storage;
+        super(apiClient, storage, jwtDecoder);
         this.crypto = crypto;
         this.gson = GsonProvider.buildGson();
         this.authenticateBeforeDecrypt = false;
-        this.jwtDecoder = jwtDecoder;
     }
 
     /**
@@ -126,7 +124,7 @@ public class SecureCredentialsManager {
             return false;
         }
         if (resultCode == Activity.RESULT_OK) {
-            continueGetCredentials(decryptCallback);
+            continueGetCredentials(scope, minTtl, decryptCallback);
         } else {
             decryptCallback.onFailure(new CredentialsManagerException("The user didn't pass the authentication challenge."));
             decryptCallback = null;
@@ -141,22 +139,13 @@ public class SecureCredentialsManager {
      * @throws CredentialsManagerException if the credentials couldn't be encrypted. Some devices are not compatible at all with the cryptographic
      *                                     implementation and will have {@link CredentialsManagerException#isDeviceIncompatible()} return true.
      */
+    @Override
     public void saveCredentials(@NonNull Credentials credentials) throws CredentialsManagerException {
         if ((isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken())) || credentials.getExpiresAt() == null) {
             throw new CredentialsManagerException("Credentials must have a valid date of expiration and a valid access_token or id_token value.");
         }
 
-        long expiresAt = credentials.getExpiresAt().getTime();
-
-        if (credentials.getIdToken() != null) {
-            JWT idToken = jwtDecoder.decode(credentials.getIdToken());
-            Date idTokenExpiresAtDate = idToken.getExpiresAt();
-
-            if (idTokenExpiresAtDate != null) {
-                expiresAt = Math.min(idTokenExpiresAtDate.getTime(), expiresAt);
-            }
-        }
-
+        long cacheExpiresAt = calculateCacheExpiresAt(credentials);
         String json = gson.toJson(credentials);
         boolean canRefresh = !isEmpty(credentials.getRefreshToken());
 
@@ -165,7 +154,8 @@ public class SecureCredentialsManager {
             byte[] encrypted = crypto.encrypt(json.getBytes());
             String encryptedEncoded = Base64.encodeToString(encrypted, Base64.DEFAULT);
             storage.store(KEY_CREDENTIALS, encryptedEncoded);
-            storage.store(KEY_EXPIRES_AT, expiresAt);
+            storage.store(KEY_EXPIRES_AT, credentials.getExpiresAt().getTime());
+            storage.store(KEY_CACHE_EXPIRES_AT, cacheExpiresAt);
             storage.store(KEY_CAN_REFRESH, canRefresh);
             storage.store(KEY_CRYPTO_ALIAS, KEY_ALIAS);
         } catch (IncompatibleDeviceException e) {
@@ -192,27 +182,50 @@ public class SecureCredentialsManager {
      *
      * @param callback the callback to receive the result in.
      */
+    @Override
     public void getCredentials(@NonNull BaseCallback<Credentials, CredentialsManagerException> callback) {
-        if (!hasValidCredentials()) {
+        getCredentials(null, 0, callback);
+    }
+
+    /**
+     * Tries to obtain the credentials from the Storage. The callback's {@link BaseCallback#onSuccess(Object)} method will be called with the result.
+     * If something unexpected happens, the {@link BaseCallback#onFailure(Auth0Exception)} method will be called with the error. Some devices are not compatible
+     * at all with the cryptographic implementation and will have {@link CredentialsManagerException#isDeviceIncompatible()} return true.
+     * <p>
+     * If a LockScreen is setup and {@link #requireAuthentication(Activity, int, String, String)} was called, the user will be asked to authenticate before accessing
+     * the credentials. Your activity must override the {@link Activity#onActivityResult(int, int, Intent)} method and call
+     * {@link #checkAuthenticationResult(int, int)} with the received values.
+     *
+     * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
+     * @param minTtl   the minimum time in seconds that the access token should last before expiration.
+     * @param callback the callback to receive the result in.
+     */
+    @Override
+    public void getCredentials(@Nullable String scope, int minTtl, @NonNull BaseCallback<Credentials, CredentialsManagerException> callback) {
+        if (!hasValidCredentials(minTtl)) {
             callback.onFailure(new CredentialsManagerException("No Credentials were previously set."));
             return;
         }
 
         if (authenticateBeforeDecrypt) {
             Log.d(TAG, "Authentication is required to read the Credentials. Showing the LockScreen.");
-            decryptCallback = callback;
+            this.decryptCallback = callback;
+            this.scope = scope;
+            this.minTtl = minTtl;
             activity.startActivityForResult(authIntent, authenticationRequestCode);
             return;
         }
-        continueGetCredentials(callback);
+        continueGetCredentials(scope, minTtl, callback);
     }
 
     /**
      * Delete the stored credentials
      */
+    @Override
     public void clearCredentials() {
         storage.remove(KEY_CREDENTIALS);
         storage.remove(KEY_EXPIRES_AT);
+        storage.remove(KEY_CACHE_EXPIRES_AT);
         storage.remove(KEY_CAN_REFRESH);
         storage.remove(KEY_CRYPTO_ALIAS);
         Log.d(TAG, "Credentials were just removed from the storage");
@@ -223,17 +236,36 @@ public class SecureCredentialsManager {
      *
      * @return whether this manager contains a valid non-expired pair of credentials or not.
      */
+    @Override
     public boolean hasValidCredentials() {
-        String encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS);
-        Long expiresAt = storage.retrieveLong(KEY_EXPIRES_AT);
-        Boolean canRefresh = storage.retrieveBoolean(KEY_CAN_REFRESH);
-        String keyAliasUsed = storage.retrieveString(KEY_CRYPTO_ALIAS);
-        return KEY_ALIAS.equals(keyAliasUsed) &&
-                !(isEmpty(encryptedEncoded) || expiresAt == null ||
-                        expiresAt <= getCurrentTimeInMillis() && (canRefresh == null || !canRefresh));
+        return hasValidCredentials(0);
     }
 
-    private void continueGetCredentials(final BaseCallback<Credentials, CredentialsManagerException> callback) {
+    /**
+     * Returns whether this manager contains a valid non-expired pair of credentials.
+     *
+     * @param minTtl the minimum time in seconds that the access token should last before expiration.
+     * @return whether this manager contains a valid non-expired pair of credentials or not.
+     */
+    @Override
+    public boolean hasValidCredentials(long minTtl) {
+        String encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS);
+        Long expiresAt = storage.retrieveLong(KEY_EXPIRES_AT);
+        if (expiresAt == null) {
+            // Avoids logging out users when this value was not saved (migration scenario)
+            expiresAt = 0L;
+        }
+        Long cacheExpiresAt = storage.retrieveLong(KEY_CACHE_EXPIRES_AT);
+        Boolean canRefresh = storage.retrieveBoolean(KEY_CAN_REFRESH);
+        String keyAliasUsed = storage.retrieveString(KEY_CRYPTO_ALIAS);
+        boolean emptyCredentials = isEmpty(encryptedEncoded) || cacheExpiresAt == null;
+
+        return KEY_ALIAS.equals(keyAliasUsed) &&
+                !(emptyCredentials || (hasExpired(cacheExpiresAt) || willExpire(expiresAt, minTtl)) &&
+                        (canRefresh == null || !canRefresh));
+    }
+
+    private void continueGetCredentials(@Nullable String scope, final int minTtl, final BaseCallback<Credentials, CredentialsManagerException> callback) {
         String encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS);
         byte[] encrypted = Base64.decode(encryptedEncoded, Base64.DEFAULT);
 
@@ -253,13 +285,20 @@ public class SecureCredentialsManager {
             return;
         }
         final Credentials credentials = gson.fromJson(json, Credentials.class);
-        Long expiresAt = storage.retrieveLong(KEY_EXPIRES_AT);
-        if (isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken()) || expiresAt == null) {
+        Long cacheExpiresAt = storage.retrieveLong(KEY_CACHE_EXPIRES_AT);
+        long expiresAt = credentials.getExpiresAt().getTime();
+        boolean hasEmptyCredentials = isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken()) || cacheExpiresAt == null;
+        if (hasEmptyCredentials) {
             callback.onFailure(new CredentialsManagerException("No Credentials were previously set."));
             decryptCallback = null;
             return;
         }
-        if (expiresAt > getCurrentTimeInMillis()) {
+
+        boolean hasEitherExpired = hasExpired(cacheExpiresAt);
+        boolean willAccessTokenExpire = willExpire(expiresAt, minTtl);
+        boolean scopeChanged = hasScopeChanged(credentials.getScope(), scope);
+
+        if (!hasEitherExpired && !willAccessTokenExpire && !scopeChanged) {
             callback.onSuccess(credentials);
             decryptCallback = null;
             return;
@@ -271,11 +310,24 @@ public class SecureCredentialsManager {
         }
 
         Log.d(TAG, "Credentials have expired. Renewing them now...");
-        apiClient.renewAuth(credentials.getRefreshToken()).start(new AuthenticationCallback<Credentials>() {
+        ParameterizableRequest<Credentials, AuthenticationException> request = authenticationClient.renewAuth(credentials.getRefreshToken());
+        if (scope != null) {
+            request.addParameter("scope", scope);
+        }
+        request.start(new AuthenticationCallback<Credentials>() {
             @Override
             public void onSuccess(@Nullable Credentials fresh) {
+                long expiresAt = fresh.getExpiresAt().getTime();
+                boolean willAccessTokenExpire = willExpire(expiresAt, minTtl);
+                if (willAccessTokenExpire) {
+                    long tokenLifetime = (expiresAt - getCurrentTimeInMillis() - minTtl * 1000) / -1000;
+                    CredentialsManagerException wrongTtlException = new CredentialsManagerException(String.format(Locale.getDefault(), "The lifetime of the renewed Access Token (%d) is less than the minTTL requested (%d). Increase the 'Token Expiration' setting of your Auth0 API in the dashboard, or request a lower minTTL.", tokenLifetime, minTtl));
+                    callback.onFailure(wrongTtlException);
+                    decryptCallback = null;
+                    return;
+                }
+
                 //non-empty refresh token for refresh token rotation scenarios
-                //noinspection ConstantConditions
                 String updatedRefreshToken = isEmpty(fresh.getRefreshToken()) ? credentials.getRefreshToken() : fresh.getRefreshToken();
                 Credentials refreshed = new Credentials(fresh.getIdToken(), fresh.getAccessToken(), fresh.getType(), updatedRefreshToken, fresh.getExpiresAt(), fresh.getScope());
                 saveCredentials(refreshed);
@@ -289,11 +341,6 @@ public class SecureCredentialsManager {
                 decryptCallback = null;
             }
         });
-    }
-
-    @VisibleForTesting
-    long getCurrentTimeInMillis() {
-        return System.currentTimeMillis();
     }
 
 }

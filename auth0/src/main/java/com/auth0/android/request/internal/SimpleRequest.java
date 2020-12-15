@@ -32,6 +32,7 @@ import com.auth0.android.RequestBodyBuildException;
 import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.ParameterizableRequest;
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.Callback;
 import com.squareup.okhttp.HttpUrl;
@@ -77,7 +78,7 @@ class SimpleRequest<T, U extends Auth0Exception> extends BaseRequest<T, U> imple
             Reader charStream = body.charStream();
             T payload = getAdapter().fromJson(charStream);
             postOnSuccess(payload);
-        } catch (IOException e) {
+        } catch (IOException | JsonParseException e) {
             final Auth0Exception auth0Exception = new Auth0Exception("Failed to parse response to request to " + url, e);
             postOnFailure(getErrorBuilder().from("Failed to parse a successful response", auth0Exception));
         } finally {
@@ -87,9 +88,9 @@ class SimpleRequest<T, U extends Auth0Exception> extends BaseRequest<T, U> imple
 
     @Override
     protected Request doBuildRequest() throws RequestBodyBuildException {
-        boolean sendBody = method.equals("HEAD") || method.equals("GET");
+        boolean skipBody = method.equals("HEAD") || method.equals("GET");
         return newBuilder()
-                .method(method, sendBody ? null : buildBody())
+                .method(method, skipBody ? null : buildBody())
                 .build();
     }
 
@@ -113,7 +114,7 @@ class SimpleRequest<T, U extends Auth0Exception> extends BaseRequest<T, U> imple
         try {
             Reader charStream = body.charStream();
             return getAdapter().fromJson(charStream);
-        } catch (IOException e) {
+        } catch (IOException | JsonParseException e) {
             throw new Auth0Exception("Failed to parse response to request to " + url, e);
         } finally {
             closeStream(body);

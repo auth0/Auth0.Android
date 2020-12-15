@@ -172,7 +172,7 @@ public class OkHttpClientFactoryTest {
     }
 
     private static void verifyTLS12NotEnforced(OkHttpClient client) {
-        verify(client, never()).setSslSocketFactory((SSLSocketFactory) any());
+        verify(client, never()).setSslSocketFactory(any(SSLSocketFactory.class));
     }
 
     private static void verifyTLS12Enforced(OkHttpClient client) {
