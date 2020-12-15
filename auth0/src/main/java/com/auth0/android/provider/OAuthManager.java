@@ -79,6 +79,7 @@ class OAuthManager extends ResumableManager {
             this.apiClient = new AuthenticationAPIClient(account, networkingClient);
         }
         this.ctOptions = ctOptions;
+        this.headers = new HashMap<>();
     }
 
     @VisibleForTesting
@@ -95,8 +96,7 @@ class OAuthManager extends ResumableManager {
     }
 
     void startAuthentication(Activity activity, String redirectUri, int requestCode) {
-        addPKCEParameters(parameters, redirectUri);
-        addPKCEHeaders(headers);
+        addPKCEParameters(parameters, redirectUri, headers);
         addClientParameters(parameters, redirectUri);
         addValidationParameters(parameters);
         Uri uri = buildAuthorizeUri();
@@ -202,7 +202,6 @@ class OAuthManager extends ResumableManager {
             }
         };
 
-        String tokenAlg = decodedIdToken.getHeader().get("alg");
         String tokenKeyId = decodedIdToken.getHeader().get("kid");
         SignatureVerifier.forAsymmetricAlgorithm(tokenKeyId, apiClient, signatureVerifierCallback);
     }
@@ -254,16 +253,12 @@ class OAuthManager extends ResumableManager {
         return uri;
     }
 
-    private void addPKCEParameters(Map<String, String> parameters, String redirectUri) {
-        createPKCE(redirectUri);
+    private void addPKCEParameters(Map<String, String> parameters, String redirectUri, Map<String, String> headers) {
+        createPKCE(redirectUri, headers);
         String codeChallenge = pkce.getCodeChallenge();
         parameters.put(KEY_CODE_CHALLENGE, codeChallenge);
         parameters.put(KEY_CODE_CHALLENGE_METHOD, METHOD_SHA_256);
         Log.v(TAG, "Using PKCE authentication flow");
-    }
-
-    private void addPKCEHeaders(@NonNull Map<String, String> httpHeaders) {
-        pkce.setHeaders(httpHeaders);
     }
 
     private void addValidationParameters(Map<String, String> parameters) {
@@ -281,9 +276,9 @@ class OAuthManager extends ResumableManager {
         parameters.put(KEY_REDIRECT_URI, redirectUri);
     }
 
-    private void createPKCE(String redirectUri) {
+    private void createPKCE(String redirectUri, Map<String, String> headers) {
         if (pkce == null) {
-            pkce = new PKCE(apiClient, redirectUri);
+            pkce = new PKCE(apiClient, redirectUri, headers);
         }
     }
 

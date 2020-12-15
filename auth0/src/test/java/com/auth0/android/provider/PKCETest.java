@@ -41,6 +41,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -75,18 +76,18 @@ public class PKCETest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        pkce = new PKCE(apiClient, new AlgorithmHelperMock(CODE_VERIFIER), REDIRECT_URI);
+        pkce = new PKCE(apiClient, new AlgorithmHelperMock(CODE_VERIFIER), REDIRECT_URI, Collections.emptyMap());
     }
 
     @Test
     public void shouldGenerateChallengeFromRandomVerifier() {
-        PKCE pkce = new PKCE(apiClient, REDIRECT_URI);
+        PKCE pkce = new PKCE(apiClient, REDIRECT_URI, Collections.emptyMap());
         assertThat(pkce.getCodeChallenge(), is(notNullValue()));
     }
 
     @Test
     public void shouldGenerateValidRandomCodeChallenge() {
-        PKCE randomPKCE = new PKCE(apiClient, REDIRECT_URI);
+        PKCE randomPKCE = new PKCE(apiClient, REDIRECT_URI, Collections.emptyMap());
         String challenge = randomPKCE.getCodeChallenge();
         assertThat(challenge, is(notNullValue()));
         assertThat(challenge, CoreMatchers.not(Matchers.isEmptyString()));
@@ -125,7 +126,7 @@ public class PKCETest {
         Map<String, String> headers = new HashMap<>();
         headers.put(header1Name, header1Value);
         headers.put(header2Name, header2Value);
-        pkce.setHeaders(headers);
+        pkce = new PKCE(apiClient, new AlgorithmHelperMock(CODE_VERIFIER), REDIRECT_URI, headers);
         pkce.getToken(AUTHORIZATION_CODE, callback);
         verify(tokenRequest).addHeader(header1Name, header1Value);
         verify(tokenRequest).addHeader(header2Name, header2Value);

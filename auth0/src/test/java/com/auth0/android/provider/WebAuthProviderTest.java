@@ -1352,39 +1352,6 @@ public class WebAuthProviderTest {
         mockAPI.shutdown();
     }
 
-    @Test
-    public void shouldSetHeaders() {
-        PKCE pkce = Mockito.mock(PKCE.class);
-        String header1Name = "header1";
-        String header1Value = "val1";
-        String header2Name = "header2";
-        String header2Value = "val2";
-        Map<String, String> headers = new HashMap<>();
-        headers.put(header1Name, header1Value);
-        headers.put(header2Name, header2Value);
-        WebAuthProvider.login(account)
-                .withState("1234567890")
-                .withHeaders(headers)
-                .withPKCE(pkce)
-                .start(activity, callback);
-
-        OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
-        managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
-
-        final Credentials codeCredentials = new Credentials("codeIdtoken", "codeAccess", "codeType", "codeRefresh", new Date(), "codeScope");
-        Mockito.doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) {
-                callbackCaptor.getValue().onSuccess(codeCredentials);
-                return null;
-            }
-        }).when(pkce).getToken(any(String.class), callbackCaptor.capture());
-        Intent intent = createAuthIntent(createHash("idToken", "aToken", null, "urlType", 1111L, "1234567890", null, null, "1234"));
-        assertTrue(WebAuthProvider.resume(intent));
-        verify(pkce).setHeaders(headers);
-    }
-
-
     @SuppressWarnings("deprecation")
     @Test
     public void shouldResumeLoginIgnoringEmptyCustomIDTokenVerificationIssuer() throws Exception {
