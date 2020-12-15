@@ -103,8 +103,7 @@ class OAuthManager extends ResumableManager {
     }
 
     void startAuthentication(Activity activity, String redirectUri, int requestCode) {
-        addPKCEParameters(parameters, redirectUri);
-        addPKCEHeaders(headers);
+        addPKCEParameters(parameters, redirectUri, headers);
         addClientParameters(parameters, redirectUri);
         addValidationParameters(parameters);
         Uri uri = buildAuthorizeUri();
@@ -312,12 +311,12 @@ class OAuthManager extends ResumableManager {
         return uri;
     }
 
-    private void addPKCEParameters(Map<String, String> parameters, String redirectUri) {
+    private void addPKCEParameters(Map<String, String> parameters, String redirectUri, Map<String, String> headers) {
         if (!shouldUsePKCE()) {
             return;
         }
         try {
-            createPKCE(redirectUri);
+            createPKCE(redirectUri, headers);
             String codeChallenge = pkce.getCodeChallenge();
             parameters.put(KEY_CODE_CHALLENGE, codeChallenge);
             parameters.put(KEY_CODE_CHALLENGE_METHOD, METHOD_SHA_256);
@@ -325,14 +324,6 @@ class OAuthManager extends ResumableManager {
         } catch (IllegalStateException e) {
             Log.e(TAG, "Some algorithms aren't available on this device and PKCE can't be used. Defaulting to token response_type.", e);
         }
-    }
-
-    private void addPKCEHeaders(@NonNull Map<String, String> httpHeaders) {
-        if (!shouldUsePKCE()) {
-            return;
-        }
-
-        pkce.setHeaders(httpHeaders);
     }
 
     private void addValidationParameters(Map<String, String> parameters) {
@@ -355,9 +346,9 @@ class OAuthManager extends ResumableManager {
         parameters.put(KEY_REDIRECT_URI, redirectUri);
     }
 
-    private void createPKCE(String redirectUri) {
+    private void createPKCE(String redirectUri, Map<String, String> headers) {
         if (pkce == null) {
-            pkce = new PKCE(apiClient, redirectUri);
+            pkce = new PKCE(apiClient, redirectUri, headers);
         }
     }
 
