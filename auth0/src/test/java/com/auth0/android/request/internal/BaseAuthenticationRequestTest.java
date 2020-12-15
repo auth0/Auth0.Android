@@ -2,7 +2,9 @@ package com.auth0.android.request.internal;
 
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.request.AuthenticationRequest;
+import com.auth0.android.request.Request;
 import com.auth0.android.request.kt.ErrorAdapter;
+import com.auth0.android.request.kt.HttpMethod;
 import com.auth0.android.request.kt.JsonAdapter;
 import com.auth0.android.request.kt.NetworkingClient;
 import com.auth0.android.request.kt.RequestOptions;
@@ -51,7 +53,8 @@ public class BaseAuthenticationRequestTest {
     }
 
     private AuthenticationRequest createRequest(String url) {
-        AuthenticationRequest request = new BaseAuthenticationRequest(url, client, resultAdapter, errorAdapter);
+        Request<Credentials, AuthenticationException> baseRequest = new BaseRequest<>(HttpMethod.POST.INSTANCE, url, client, resultAdapter, errorAdapter);
+        AuthenticationRequest request = new BaseAuthenticationRequest(baseRequest);
         return spy(request);
     }
 

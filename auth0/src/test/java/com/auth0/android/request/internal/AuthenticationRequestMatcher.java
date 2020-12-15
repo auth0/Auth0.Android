@@ -84,7 +84,7 @@ public class AuthenticationRequestMatcher<T> extends BaseMatcher<MockAuthenticat
         }
 
         description.appendText(String.format("argument (URL) was (%s), (HttpMethod) was (%s)",
-                request.url, request.method));
+                request.wrappedRequest.getUrl(), request.wrappedRequest.getOptions$auth0_debug().getMethod()));
     }
 
     @Override
@@ -102,8 +102,8 @@ public class AuthenticationRequestMatcher<T> extends BaseMatcher<MockAuthenticat
             return acceptLanguage && clientInfo && userAgent && authorization;
         }
 
-        final boolean url = objectEquals(mockRequest.url, this.url);
-        final boolean method = objectEquals(mockRequest.method, this.method);
+        final boolean url = objectEquals(mockRequest.wrappedRequest.getUrl(), this.url);
+        final boolean method = objectEquals(mockRequest.wrappedRequest.getOptions$auth0_debug().getMethod(), this.method);
         return url && method;
     }
 
