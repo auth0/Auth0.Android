@@ -40,7 +40,7 @@ The `com.auth0.android.authentication.AuthenticationAPIClient` contains many cha
 
 If you are using the return type of any of these methods directly, you will need to change your code to expect the type as documented above. If you are chaining a call to `start` or `execute` to make the request, no changes are required.
 
-The `AuthenticationRequest` interface no longer has a `AuthenticationRequest setAccessToken(@NonNull String accessToken)` method.
+The `AuthenticationRequest` interface no longer has a `AuthenticationRequest setAccessToken(@NonNull String accessToken)` method. This method was for setting the token to the request made to the [/oauth/access_token](https://auth0.com/docs/api/authentication#social-with-provider-s-access-token) Authentication API legacy endpoint, disabled as of June 2017. If you need to send a parameter with this name, please use the `addParameter("access_token", value)` method.
 
 Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequest` have been updated to accommodate these changes, and are called out in the detailed changes listed below.
 
@@ -52,8 +52,8 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 - The `com.auth0.android.request.ParameterizableRequest` interface has been removed. The ability to add request headers and parameters has been moved to the `com.auth0.android.request.Request` interface.
 - The `com.auth0.android.request.AuthRequest` interface has been removed. The `com.auth0.android.request.AuthenticationRequest` interface can be used instead.
 - The `com.auth0.android.provider.WebAuthActivity` class has been removed. External browser applications will always be used for authentication.
-- The `com.auth0.android.result.Delegation` class has been removed. There's no replacement for it.
-- The `com.auth0.android.authentication.request.DelegationRequest` class has been removed. There's no replacement for it.
+- The `com.auth0.android.result.Delegation` class has been removed. This was used as the result of the request to the [/delegation](https://auth0.com/docs/api/authentication#delegation) Authentication API legacy endpoint, disabled as of June 2017.
+- The `com.auth0.android.authentication.request.DelegationRequest` class has been removed. This was used to represent the request to the legacy Authentication API [/delegation](https://auth0.com/docs/api/authentication#delegation) endpoint, disabled as of June 2017.
 
 ### Class changes
 
@@ -122,11 +122,21 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 - `public AuthRequest loginWithPhoneNumber(@NonNull String phoneNumber, @NonNull String verificationCode)`. Use `public AuthenticationRequest loginWithPhoneNumber(@NonNull String phoneNumber, @NonNull String verificationCode)` instead.
 - `public AuthRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode, @NonNull String realmOrConnection)`. Use `public AuthenticationRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode, @NonNull String realmOrConnection)` instead.
 - `public AuthRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode)`. Use `public AuthenticationRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode)` instead.
-- `public ParameterizableRequest<Map<String, Object>, AuthenticationException> delegation()`. There's no replacement for it.
-- `public DelegationRequest<Delegation> delegationWithIdToken(@NonNull String idToken)`. There's no replacement for it.
-- `public DelegationRequest<Delegation> delegationWithRefreshToken(@NonNull String refreshToken)`. There's no replacement for it.
-- `public DelegationRequest<Map<String, Object>> delegationWithIdToken(@NonNull String idToken, @NonNull String apiType)`. There's no replacement for it.
-- `public AuthenticationRequest loginWithOAuthAccessToken(@NonNull String token, @NonNull String connection)`. There's no exact replacement for it, but your provider might be supported by `public AuthenticationRequest loginWithNativeSocialToken(@NonNull String token, @NonNull String tokenType)`
+
+##### Social Provider's Access Token Exchange
+The ability to exchange a third-party provider access token for Auth0 access tokens is part of the [/oauth/access_token](https://auth0.com/docs/api/authentication#social-with-provider-s-access-token) Authentication API legacy endpoint, disabled as of June 2017. The method below was removed because of this.
+- `public AuthenticationRequest loginWithOAuthAccessToken(@NonNull String token, @NonNull String connection)`.
+
+For selected social providers, there's support for a similar token exchange using the ["Native Social" token exchange](https://auth0.com/docs/api/authentication#token-exchange-for-native-social) endpoint.
+- `public AuthenticationRequest loginWithNativeSocialToken(@NonNull String token, @NonNull String tokenType)`
+
+##### Delegation
+The ability to make requests to the [/delegation](https://auth0.com/docs/api/authentication#delegation) Authentication API legacy endpoint is disabled server-side as of June 2017. The methods listed below were removed because of this.
+
+- `public ParameterizableRequest<Map<String, Object>, AuthenticationException> delegation()`.
+- `public DelegationRequest<Delegation> delegationWithIdToken(@NonNull String idToken)`.
+- `public DelegationRequest<Delegation> delegationWithRefreshToken(@NonNull String refreshToken)`.
+- `public DelegationRequest<Map<String, Object>> delegationWithIdToken(@NonNull String idToken, @NonNull String apiType)`.
 
 #### WebAuthProvider
 
