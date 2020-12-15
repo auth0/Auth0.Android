@@ -31,8 +31,12 @@ import android.util.Log;
 
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
+import com.auth0.android.authentication.request.TokenRequest;
 import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.result.Credentials;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Performs code exchange according to Proof Key for Code Exchange (PKCE) spec.
@@ -44,6 +48,7 @@ class PKCE {
     private final String codeVerifier;
     private final String redirectUri;
     private final String codeChallenge;
+    private final Map<String, String> headers;
 
     /**
      * Creates a new instance of this class with the given AuthenticationAPIClient.
@@ -51,19 +56,22 @@ class PKCE {
      *
      * @param apiClient   to get the OAuth Token.
      * @param redirectUri going to be used in the OAuth code request.
+     * @param headers     HTTP headers added to the OAuth token request.
      * @throws IllegalStateException when either 'US-ASCII` encoding or 'SHA-256' algorithm is not available.
      * @see #isAvailable()
      */
-    public PKCE(@NonNull AuthenticationAPIClient apiClient, String redirectUri) {
-        this(apiClient, new AlgorithmHelper(), redirectUri);
+    public PKCE(@NonNull AuthenticationAPIClient apiClient, String redirectUri, @NonNull Map<String, String> headers) {
+        this(apiClient, new AlgorithmHelper(), redirectUri, headers);
     }
 
     @VisibleForTesting
-    PKCE(@NonNull AuthenticationAPIClient apiClient, @NonNull AlgorithmHelper algorithmHelper, @NonNull String redirectUri) {
+    PKCE(@NonNull AuthenticationAPIClient apiClient, @NonNull AlgorithmHelper algorithmHelper,
+         @NonNull String redirectUri, @NonNull Map<String, String> headers) {
         this.apiClient = apiClient;
         this.redirectUri = redirectUri;
         this.codeVerifier = algorithmHelper.generateCodeVerifier();
         this.codeChallenge = algorithmHelper.generateCodeChallenge(codeVerifier);
+        this.headers = headers;
     }
 
     /**
@@ -83,8 +91,13 @@ class PKCE {
      * @param callback          to notify the result of this call to.
      */
     public void getToken(String authorizationCode, @NonNull final AuthCallback callback) {
-        apiClient.token(authorizationCode, redirectUri)
-                .setCodeVerifier(codeVerifier)
+        TokenRequest tokenRequest = apiClient.token(authorizationCode, redirectUri);
+
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            tokenRequest.addHeader(entry.getKey(), entry.getValue());
+        }
+
+        tokenRequest.setCodeVerifier(codeVerifier)
                 .start(new BaseCallback<Credentials, AuthenticationException>() {
                     @Override
                     public void onSuccess(@Nullable Credentials payload) {

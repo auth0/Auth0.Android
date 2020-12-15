@@ -44,6 +44,8 @@ import org.robolectric.annotation.Config;
 
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -77,18 +79,18 @@ public class PKCETest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        pkce = new PKCE(apiClient, new AlgorithmHelperMock(CODE_VERIFIER), REDIRECT_URI);
+        pkce = new PKCE(apiClient, new AlgorithmHelperMock(CODE_VERIFIER), REDIRECT_URI, new HashMap<String, String>());
     }
 
     @Test
     public void shouldGenerateChallengeFromRandomVerifier() {
-        PKCE pkce = new PKCE(apiClient, REDIRECT_URI);
+        PKCE pkce = new PKCE(apiClient, REDIRECT_URI, new HashMap<String, String>());
         assertThat(pkce.getCodeChallenge(), is(notNullValue()));
     }
 
     @Test
     public void shouldGenerateValidRandomCodeChallenge() {
-        PKCE randomPKCE = new PKCE(apiClient, REDIRECT_URI);
+        PKCE randomPKCE = new PKCE(apiClient, REDIRECT_URI, new HashMap<String, String>());
         String challenge = randomPKCE.getCodeChallenge();
         assertThat(challenge, is(notNullValue()));
         assertThat(challenge, CoreMatchers.not(Matchers.isEmptyString()));
@@ -116,6 +118,24 @@ public class PKCETest {
         Credentials credentials = mock(Credentials.class);
         callbackCaptor.getValue().onSuccess(credentials);
         verify(callback).onSuccess(credentials);
+    }
+
+    @Test
+    public void shouldAddHeaders() {
+        String header1Name = "header1";
+        String header1Value = "val1";
+        String header2Name = "header2";
+        String header2Value = "val2";
+        Map<String, String> headers = new HashMap<>();
+        headers.put(header1Name, header1Value);
+        headers.put(header2Name, header2Value);
+        PKCE pkce = new PKCE(apiClient, new AlgorithmHelperMock(CODE_VERIFIER), REDIRECT_URI, headers);
+        TokenRequest tokenRequest = mock(TokenRequest.class);
+        when(apiClient.token(AUTHORIZATION_CODE, REDIRECT_URI)).thenReturn(tokenRequest);
+        when(tokenRequest.setCodeVerifier(CODE_VERIFIER)).thenReturn(tokenRequest);
+        pkce.getToken(AUTHORIZATION_CODE, callback);
+        verify(tokenRequest).addHeader(header1Name, header1Value);
+        verify(tokenRequest).addHeader(header2Name, header2Value);
     }
 
     @Test

@@ -70,6 +70,7 @@ class OAuthManager extends ResumableManager {
     private CustomTabsOptions ctOptions;
     private Integer idTokenVerificationLeeway;
     private String idTokenVerificationIssuer;
+    private Map<String, String> headers;
 
     OAuthManager(@NonNull Auth0 account, @NonNull AuthCallback callback, @NonNull Map<String, String> parameters, @NonNull CustomTabsOptions ctOptions) {
         this.account = account;
@@ -77,6 +78,7 @@ class OAuthManager extends ResumableManager {
         this.parameters = new HashMap<>(parameters);
         this.apiClient = new AuthenticationAPIClient(account);
         this.ctOptions = ctOptions;
+        this.headers = new HashMap<>();
     }
 
     void useFullScreen(boolean useFullScreen) {
@@ -101,7 +103,7 @@ class OAuthManager extends ResumableManager {
     }
 
     void startAuthentication(Activity activity, String redirectUri, int requestCode) {
-        addPKCEParameters(parameters, redirectUri);
+        addPKCEParameters(parameters, redirectUri, headers);
         addClientParameters(parameters, redirectUri);
         addValidationParameters(parameters);
         Uri uri = buildAuthorizeUri();
@@ -112,6 +114,10 @@ class OAuthManager extends ResumableManager {
         } else {
             AuthenticationActivity.authenticateUsingWebView(activity, uri, requestCode, parameters.get(KEY_CONNECTION), useFullScreen);
         }
+    }
+
+    void setHeaders(@NonNull Map<String, String> headers) {
+        this.headers.putAll(headers);
     }
 
     @SuppressWarnings("ConstantConditions")
@@ -305,12 +311,12 @@ class OAuthManager extends ResumableManager {
         return uri;
     }
 
-    private void addPKCEParameters(Map<String, String> parameters, String redirectUri) {
+    private void addPKCEParameters(Map<String, String> parameters, String redirectUri, Map<String, String> headers) {
         if (!shouldUsePKCE()) {
             return;
         }
         try {
-            createPKCE(redirectUri);
+            createPKCE(redirectUri, headers);
             String codeChallenge = pkce.getCodeChallenge();
             parameters.put(KEY_CODE_CHALLENGE, codeChallenge);
             parameters.put(KEY_CODE_CHALLENGE_METHOD, METHOD_SHA_256);
@@ -340,9 +346,9 @@ class OAuthManager extends ResumableManager {
         parameters.put(KEY_REDIRECT_URI, redirectUri);
     }
 
-    private void createPKCE(String redirectUri) {
+    private void createPKCE(String redirectUri, Map<String, String> headers) {
         if (pkce == null) {
-            pkce = new PKCE(apiClient, redirectUri);
+            pkce = new PKCE(apiClient, redirectUri, headers);
         }
     }
 
