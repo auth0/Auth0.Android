@@ -71,14 +71,6 @@ public class AuthenticationAPI {
         return this;
     }
 
-    public AuthenticationAPI willReturnGenericDelegationToken() {
-        String json = "{\n" +
-                "  \"token\": \"" + GENERIC_TOKEN + "\"\n" +
-                "}";
-        server.enqueue(responseWithJSON(json, 200));
-        return this;
-    }
-
     public AuthenticationAPI willReturnSuccessfulPasswordlessStart() {
         String json = "{\n" +
                 "  \"phone+number\": \"+1098098098\"\n" +
@@ -152,7 +144,7 @@ public class AuthenticationAPI {
         return this;
     }
 
-    public AuthenticationAPI willReturnTokenInfo() {
+    public AuthenticationAPI willReturnUserInfo() {
         String json = "{\n" +
                 "  \"email\": \"p@p.xom\",\n" +
                 "  \"email_verified\": false,\n" +

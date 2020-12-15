@@ -32,7 +32,6 @@ import androidx.annotation.VisibleForTesting;
 
 import com.auth0.android.Auth0;
 import com.auth0.android.authentication.request.DatabaseConnectionRequest;
-import com.auth0.android.authentication.request.DelegationRequest;
 import com.auth0.android.authentication.request.ProfileRequest;
 import com.auth0.android.authentication.request.SignUpRequest;
 import com.auth0.android.authentication.request.TokenRequest;
@@ -45,7 +44,6 @@ import com.auth0.android.request.internal.OkHttpClientFactory;
 import com.auth0.android.request.internal.RequestFactory;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.DatabaseUser;
-import com.auth0.android.result.Delegation;
 import com.auth0.android.result.UserProfile;
 import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
@@ -89,8 +87,6 @@ public class AuthenticationAPIClient {
     private static final String ONE_TIME_PASSWORD_KEY = "otp";
     private static final String SUBJECT_TOKEN_KEY = "subject_token";
     private static final String SUBJECT_TOKEN_TYPE_KEY = "subject_token_type";
-    private static final String DELEGATION_PATH = "delegation";
-    private static final String ACCESS_TOKEN_PATH = "access_token";
     private static final String SIGN_UP_PATH = "signup";
     private static final String DB_CONNECTIONS_PATH = "dbconnections";
     private static final String CHANGE_PASSWORD_PATH = "change_password";
@@ -98,8 +94,6 @@ public class AuthenticationAPIClient {
     private static final String START_PATH = "start";
     private static final String OAUTH_PATH = "oauth";
     private static final String TOKEN_PATH = "token";
-    private static final String RESOURCE_OWNER_PATH = "ro";
-    private static final String TOKEN_INFO_PATH = "tokeninfo";
     private static final String USER_INFO_PATH = "userinfo";
     private static final String REVOKE_PATH = "revoke";
     private static final String HEADER_AUTHORIZATION = "Authorization";
@@ -272,45 +266,6 @@ public class AuthenticationAPIClient {
                 .asDictionary();
 
         return loginWithToken(parameters);
-    }
-
-    /**
-     * Log in a user with a OAuth 'access_token' of a Identity Provider like Facebook or Twitter using <a href="https://auth0.com/docs/api/authentication#social-with-provider-s-access-token">'\oauth\access_token' endpoint</a>
-     * The default scope used is 'openid'.
-     * Example usage:
-     * <pre>
-     * {@code
-     * client.loginWithOAuthAccessToken("{token}", "{connection name}")
-     *      .start(new BaseCallback<Credentials>() {
-     *          {@literal}Override
-     *          public void onSuccess(Credentials payload) { }
-     *
-     *          {@literal}Override
-     *          public void onFailure(AuthenticationException error) { }
-     *      });
-     * }
-     * </pre>
-     *
-     * @param token      obtained from the IdP
-     * @param connection that will be used to authenticate the user, e.g. 'facebook'
-     * @return a request to configure and start that will yield {@link Credentials}
-     */
-    @NonNull
-    public AuthenticationRequest loginWithOAuthAccessToken(@NonNull String token, @NonNull String connection) {
-        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
-                .addPathSegment(OAUTH_PATH)
-                .addPathSegment(ACCESS_TOKEN_PATH)
-                .build();
-
-        Map<String, Object> parameters = ParameterBuilder.newAuthenticationBuilder()
-                .setClientId(getClientId())
-                .setConnection(connection)
-                .setAccessToken(token)
-                .asDictionary();
-
-        AuthenticationRequest authRequest = factory.authenticationPOST(url, client, gson);
-        authRequest.addAuthenticationParameters(parameters);
-        return authRequest;
     }
 
     /**
@@ -752,92 +707,6 @@ public class AuthenticationAPIClient {
     }
 
     /**
-     * Performs a <a href="https://auth0.com/docs/api/authentication#delegation">delegation</a> request that will yield a new Auth0 'id_token'
-     * Example usage:
-     * <pre>
-     * {@code
-     * client.delegationWithIdToken("{id token}")
-     *      .start(new BaseCallback<Delegation>() {
-     *          {@literal}Override
-     *          public void onSuccess(Delegation payload) {}
-     *
-     *          {@literal}Override
-     *          public void onFailure(AuthenticationException error) {}
-     *      });
-     * }
-     * </pre>
-     *
-     * @param idToken issued by Auth0 for the user. The token must not be expired.
-     * @return a request to configure and start
-     */
-    @NonNull
-    public DelegationRequest<Delegation> delegationWithIdToken(@NonNull String idToken) {
-        Request<Delegation, AuthenticationException> request = delegation(Delegation.class)
-                .addParameter(ParameterBuilder.ID_TOKEN_KEY, idToken);
-
-        return new DelegationRequest<>(request)
-                .setApiType(DelegationRequest.DEFAULT_API_TYPE);
-    }
-
-    /**
-     * Performs a <a href="https://auth0.com/docs/api/authentication#delegation">delegation</a> request that will yield a new Auth0 'id_token'.
-     * Check our <a href="https://auth0.com/docs/refresh-token">refresh token</a> docs for more information
-     * Example usage:
-     * <pre>
-     * {@code
-     * client.delegationWithRefreshToken("{refresh token}")
-     *      .start(new BaseCallback<Delegation>() {
-     *          {@literal}Override
-     *          public void onSuccess(Delegation payload) {}
-     *
-     *          {@literal}Override
-     *          public void onFailure(AuthenticationException error) {}
-     *      });
-     * }
-     * </pre>
-     *
-     * @param refreshToken issued by Auth0 for the user when using the 'offline_access' scope when logging in.
-     * @return a request to configure and start
-     */
-    @NonNull
-    public DelegationRequest<Delegation> delegationWithRefreshToken(@NonNull String refreshToken) {
-        Request<Delegation, AuthenticationException> request = delegation(Delegation.class)
-                .addParameter(ParameterBuilder.REFRESH_TOKEN_KEY, refreshToken);
-
-        return new DelegationRequest<>(request)
-                .setApiType(DelegationRequest.DEFAULT_API_TYPE);
-    }
-
-    /**
-     * Performs a <a href="https://auth0.com/docs/api/authentication#delegation">delegation</a> request that will yield a delegation token.
-     * Example usage:
-     * <pre>
-     * {@code
-     * client.delegationWithIdToken("{id token}", "{app type, e.g. firebase}")
-     *      .start(new BaseCallback<Map<String, Object>>() {
-     *          {@literal}Override
-     *          public void onSuccess(Map<String, Object> payload) {}
-     *
-     *          {@literal}Override
-     *          public void onFailure(AuthenticationException error) {}
-     *      });
-     * }
-     * </pre>
-     *
-     * @param idToken issued by Auth0 for the user. The token must not be expired.
-     * @param apiType the delegation 'api_type' parameter
-     * @return a request to configure and start
-     */
-    @NonNull
-    public DelegationRequest<Map<String, Object>> delegationWithIdToken(@NonNull String idToken, @NonNull String apiType) {
-        Request<Map<String, Object>, AuthenticationException> request = delegation()
-                .addParameter(ParameterBuilder.ID_TOKEN_KEY, idToken);
-
-        return new DelegationRequest<>(request)
-                .setApiType(apiType);
-    }
-
-    /**
      * Start a passwordless flow with an <a href="https://auth0.com/docs/api/authentication#get-code-or-link">Email</a>.
      * Your Application must have the <b>Passwordless OTP</b> Grant Type enabled.
      * Example usage:
@@ -960,56 +829,6 @@ public class AuthenticationAPIClient {
     }
 
     /**
-     * Performs a custom <a href="https://auth0.com/docs/api/authentication#delegation">delegation</a> request that will
-     * yield a delegation token.
-     * Example usage:
-     * <pre>
-     * {@code
-     * client.delegation()
-     *      .addParameter("api_type", "firebase")
-     *      .start(new BaseCallback<Map<String, Object>>() {
-     *          {@literal}Override
-     *          public void onSuccess(Map<String, Object> payload) {}
-     *
-     *          {@literal}Override
-     *          public void onFailure(AuthenticationException error) {}
-     *      });
-     * }
-     * </pre>
-     *
-     * @return a request to configure and start
-     */
-    @NonNull
-    public Request<Map<String, Object>, AuthenticationException> delegation() {
-        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
-                .addPathSegment(DELEGATION_PATH)
-                .build();
-
-        final Map<String, Object> parameters = ParameterBuilder.newBuilder()
-                .setClientId(getClientId())
-                .setGrantType(ParameterBuilder.GRANT_TYPE_JWT)
-                .asDictionary();
-
-        return factory.rawPOST(url, client, gson, authErrorBuilder)
-                .addParameters(parameters);
-    }
-
-    @SuppressWarnings("SameParameterValue")
-    private <T> Request<T, AuthenticationException> delegation(Class<T> clazz) {
-        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
-                .addPathSegment(DELEGATION_PATH)
-                .build();
-
-        final Map<String, Object> parameters = ParameterBuilder.newBuilder()
-                .setClientId(getClientId())
-                .setGrantType(ParameterBuilder.GRANT_TYPE_JWT)
-                .asDictionary();
-
-        return factory.POST(url, client, gson, clazz, authErrorBuilder)
-                .addParameters(parameters);
-    }
-
-    /**
      * Start a custom passwordless flow
      *
      * @return a request to configure and start
@@ -1109,21 +928,6 @@ public class AuthenticationAPIClient {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(OAUTH_PATH)
                 .addPathSegment(TOKEN_PATH)
-                .build();
-
-        final Map<String, Object> requestParameters = ParameterBuilder.newBuilder()
-                .setClientId(getClientId())
-                .addAll(parameters)
-                .asDictionary();
-        AuthenticationRequest authRequest = factory.authenticationPOST(url, client, gson);
-        authRequest.addAuthenticationParameters(requestParameters);
-        return authRequest;
-    }
-
-    private AuthenticationRequest loginWithResourceOwner(Map<String, Object> parameters) {
-        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
-                .addPathSegment(OAUTH_PATH)
-                .addPathSegment(RESOURCE_OWNER_PATH)
                 .build();
 
         final Map<String, Object> requestParameters = ParameterBuilder.newBuilder()

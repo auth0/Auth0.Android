@@ -122,14 +122,6 @@ public class SignUpRequestTest {
     }
 
     @Test
-    public void shouldSetAccessToken() {
-        final AuthenticationRequest req = signUpRequest.setAccessToken("super-access-token");
-        verify(authenticationMockRequest).setAccessToken("super-access-token");
-        assertThat(req, is(notNullValue()));
-        assertThat(req, Matchers.<AuthenticationRequest>is(signUpRequest));
-    }
-
-    @Test
     public void shouldSetConnection() {
         final SignUpRequest req = signUpRequest.setConnection("my-connection");
         verify(dbMockRequest).setConnection("my-connection");

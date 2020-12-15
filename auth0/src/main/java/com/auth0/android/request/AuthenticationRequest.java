@@ -67,15 +67,6 @@ public interface AuthenticationRequest extends Request<Credentials, Authenticati
     AuthenticationRequest setAudience(@NonNull String audience);
 
     /**
-     * Sets the 'access_token' parameter
-     *
-     * @param accessToken a access token
-     * @return itself
-     */
-    @NonNull
-    AuthenticationRequest setAccessToken(@NonNull String accessToken);
-
-    /**
      * Add all entries of the map as parameters of this request
      *
      * @param parameters to be added to the request

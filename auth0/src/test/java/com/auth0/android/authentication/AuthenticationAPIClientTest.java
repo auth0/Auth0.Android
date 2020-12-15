@@ -34,7 +34,6 @@ import com.auth0.android.request.internal.RequestFactory;
 import com.auth0.android.result.Authentication;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.DatabaseUser;
-import com.auth0.android.result.Delegation;
 import com.auth0.android.result.UserProfile;
 import com.auth0.android.util.AuthenticationAPI;
 import com.auth0.android.util.MockAuthenticationCallback;
@@ -55,13 +54,9 @@ import org.robolectric.RobolectricTestRunner;
 import java.lang.reflect.Type;
 import java.security.PublicKey;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import static com.auth0.android.util.AuthenticationAPI.GENERIC_TOKEN;
-import static com.auth0.android.util.AuthenticationAPI.ID_TOKEN;
-import static com.auth0.android.util.AuthenticationAPI.REFRESH_TOKEN;
 import static com.auth0.android.util.AuthenticationCallbackMatcher.hasError;
 import static com.auth0.android.util.AuthenticationCallbackMatcher.hasNoError;
 import static com.auth0.android.util.AuthenticationCallbackMatcher.hasPayload;
@@ -294,7 +289,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldFetchUserInfo() throws Exception {
-        mockAPI.willReturnTokenInfo();
+        mockAPI.willReturnUserInfo();
         final MockAuthenticationCallback<UserProfile> callback = new MockAuthenticationCallback<>();
 
         client.userInfo("ACCESS_TOKEN")
@@ -310,7 +305,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldFetchUserInfoSync() throws Exception {
-        mockAPI.willReturnTokenInfo();
+        mockAPI.willReturnUserInfo();
 
         final UserProfile profile = client
                 .userInfo("ACCESS_TOKEN")
@@ -322,46 +317,6 @@ public class AuthenticationAPIClientTest {
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
         assertThat(request.getHeader("Authorization"), is("Bearer ACCESS_TOKEN"));
         assertThat(request.getPath(), equalTo("/userinfo"));
-    }
-
-    @Test
-    public void shouldLoginWithOAuthAccessToken() throws Exception {
-        mockAPI.willReturnSuccessfulLogin();
-
-        final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
-        client.loginWithOAuthAccessToken("fbtoken", "facebook")
-                .start(callback);
-
-        final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
-        assertThat(request.getPath(), equalTo("/oauth/access_token"));
-
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("connection", "facebook"));
-        assertThat(body, hasEntry("access_token", "fbtoken"));
-        assertThat(body, hasEntry("scope", OPENID));
-
-        assertThat(callback, hasPayloadOfType(Credentials.class));
-    }
-
-    @Test
-    public void shouldLoginWithOAuthAccessTokenSync() throws Exception {
-        mockAPI.willReturnSuccessfulLogin();
-
-        final Credentials credentials = client
-                .loginWithOAuthAccessToken("fbtoken", "facebook")
-                .execute();
-
-        final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
-        assertThat(request.getPath(), equalTo("/oauth/access_token"));
-
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("connection", "facebook"));
-        assertThat(body, hasEntry("access_token", "fbtoken"));
-        assertThat(body, hasEntry("scope", OPENID));
-
-        assertThat(credentials, is(notNullValue()));
     }
 
     @Test
@@ -536,7 +491,7 @@ public class AuthenticationAPIClientTest {
     @Test
     public void shouldLoginWithEmailOnlySyncWithOTPGrant() throws Exception {
         mockAPI.willReturnSuccessfulLogin()
-                .willReturnTokenInfo();
+                .willReturnUserInfo();
 
         Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
@@ -754,7 +709,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSignUpUserSync() throws Exception {
         mockAPI.willReturnSuccessfulSignUp()
                 .willReturnSuccessfulLogin()
-                .willReturnTokenInfo();
+                .willReturnUserInfo();
 
         final Credentials credentials = client
                 .signUp(SUPPORT_AUTH0_COM, PASSWORD, SUPPORT, MY_CONNECTION)
@@ -787,7 +742,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSignUpUserWithoutUsername() throws Exception {
         mockAPI.willReturnSuccessfulSignUp()
                 .willReturnSuccessfulLogin()
-                .willReturnTokenInfo();
+                .willReturnUserInfo();
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         client.signUp(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
@@ -819,7 +774,7 @@ public class AuthenticationAPIClientTest {
     public void shouldLoginSignedUpUserWithPasswordRealmGrant() throws Exception {
         mockAPI.willReturnSuccessfulSignUp()
                 .willReturnSuccessfulLogin()
-                .willReturnTokenInfo();
+                .willReturnUserInfo();
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
@@ -924,177 +879,6 @@ public class AuthenticationAPIClientTest {
         assertThat(body, not(hasKey("username")));
         assertThat(body, not(hasKey("password")));
         assertThat(body, hasEntry("connection", MY_CONNECTION));
-    }
-
-    @Test
-    public void shouldCallDelegation() throws Exception {
-        mockAPI.willReturnGenericDelegationToken();
-
-        final MockAuthenticationCallback<Map<String, Object>> callback = new MockAuthenticationCallback<>();
-        client.delegation()
-                .start(callback);
-
-        final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
-        assertThat(request.getPath(), equalTo("/delegation"));
-
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_JWT));
-        assertThat(body, hasEntry("client_id", CLIENT_ID));
-
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("token", GENERIC_TOKEN);
-        assertThat(callback, hasPayload(payload));
-    }
-
-    @Test
-    public void shouldCallDelegationSync() throws Exception {
-        mockAPI.willReturnGenericDelegationToken();
-
-        final Map<String, Object> response = client
-                .delegation()
-                .execute();
-
-        final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
-        assertThat(request.getPath(), equalTo("/delegation"));
-
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_JWT));
-        assertThat(body, hasEntry("client_id", CLIENT_ID));
-
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("token", GENERIC_TOKEN);
-        assertThat(response, is(equalTo(payload)));
-    }
-
-    @Test
-    public void shouldGetNewIdTokenWithIdToken() throws Exception {
-        mockAPI.willReturnNewIdToken();
-
-        final MockAuthenticationCallback<Delegation> callback = new MockAuthenticationCallback<>();
-        client.delegationWithIdToken(ID_TOKEN)
-                .start(callback);
-
-        final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
-        assertThat(request.getPath(), equalTo("/delegation"));
-
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_JWT));
-        assertThat(body, hasEntry("client_id", CLIENT_ID));
-        assertThat(body, hasEntry("api_type", "app"));
-        assertThat(body, hasEntry("id_token", ID_TOKEN));
-
-        assertThat(callback, hasPayloadOfType(Delegation.class));
-    }
-
-    @Test
-    public void shouldGetNewIdTokenWithIdTokenSync() throws Exception {
-        mockAPI.willReturnNewIdToken();
-
-        final Delegation delegation = client
-                .delegationWithIdToken(ID_TOKEN)
-                .execute();
-
-        final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
-        assertThat(request.getPath(), equalTo("/delegation"));
-
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_JWT));
-        assertThat(body, hasEntry("client_id", CLIENT_ID));
-        assertThat(body, hasEntry("api_type", "app"));
-        assertThat(body, hasEntry("id_token", ID_TOKEN));
-
-        assertThat(delegation, is(notNullValue()));
-    }
-
-    @Test
-    public void shouldGetCustomizedDelegationRequestWithIdToken() throws Exception {
-        mockAPI.willReturnNewIdToken();
-
-        final MockAuthenticationCallback<Map<String, Object>> callback = new MockAuthenticationCallback<>();
-        client.delegationWithIdToken(ID_TOKEN, "custom_api_type")
-                .setScope("custom_scope")
-                .setTarget("custom_target")
-                .start(callback);
-
-        final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
-        assertThat(request.getPath(), equalTo("/delegation"));
-
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_JWT));
-        assertThat(body, hasEntry("client_id", CLIENT_ID));
-        assertThat(body, hasEntry("api_type", "custom_api_type"));
-        assertThat(body, hasEntry("scope", "custom_scope"));
-        assertThat(body, hasEntry("target", "custom_target"));
-        assertThat(body, hasEntry("id_token", ID_TOKEN));
-    }
-
-    @Test
-    public void shouldGetCustomizedDelegationRequestWithIdTokenSync() throws Exception {
-        mockAPI.willReturnNewIdToken();
-
-        client.delegationWithIdToken(ID_TOKEN, "custom_api_type")
-                .setScope("custom_scope")
-                .setTarget("custom_target")
-                .execute();
-
-        final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
-        assertThat(request.getPath(), equalTo("/delegation"));
-
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_JWT));
-        assertThat(body, hasEntry("client_id", CLIENT_ID));
-        assertThat(body, hasEntry("api_type", "custom_api_type"));
-        assertThat(body, hasEntry("scope", "custom_scope"));
-        assertThat(body, hasEntry("target", "custom_target"));
-        assertThat(body, hasEntry("id_token", ID_TOKEN));
-    }
-
-    @Test
-    public void shouldGetNewIdTokenWithRefreshToken() throws Exception {
-        mockAPI.willReturnNewIdToken();
-
-        final MockAuthenticationCallback<Delegation> callback = new MockAuthenticationCallback<>();
-        client.delegationWithRefreshToken(REFRESH_TOKEN)
-                .start(callback);
-
-        final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
-        assertThat(request.getPath(), equalTo("/delegation"));
-
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_JWT));
-        assertThat(body, hasEntry("client_id", CLIENT_ID));
-        assertThat(body, hasEntry("api_type", "app"));
-        assertThat(body, hasEntry("refresh_token", REFRESH_TOKEN));
-
-        assertThat(callback, hasPayloadOfType(Delegation.class));
-    }
-
-    @Test
-    public void shouldGetNewIdTokenWithRefreshTokenSync() throws Exception {
-        mockAPI.willReturnNewIdToken();
-
-        final Delegation delegation = client
-                .delegationWithRefreshToken(REFRESH_TOKEN)
-                .execute();
-
-        final RecordedRequest request = mockAPI.takeRequest();
-        assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
-        assertThat(request.getPath(), equalTo("/delegation"));
-
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_JWT));
-        assertThat(body, hasEntry("client_id", CLIENT_ID));
-        assertThat(body, hasEntry("api_type", "app"));
-        assertThat(body, hasEntry("refresh_token", REFRESH_TOKEN));
-
-        assertThat(delegation, is(notNullValue()));
     }
 
     @Test
@@ -1490,7 +1274,7 @@ public class AuthenticationAPIClientTest {
     @Test
     public void shouldFetchProfileAfterLoginRequest() throws Exception {
         mockAPI.willReturnSuccessfulLogin()
-                .willReturnTokenInfo();
+                .willReturnUserInfo();
 
         MockAuthenticationCallback<Authentication> callback = new MockAuthenticationCallback<>();
         client.getProfileAfter(client.login(SUPPORT_AUTH0_COM, "voidpassword", MY_CONNECTION))
@@ -1599,7 +1383,7 @@ public class AuthenticationAPIClientTest {
     @Test
     public void shouldFetchProfileSyncAfterLoginRequest() throws Exception {
         mockAPI.willReturnSuccessfulLogin()
-                .willReturnTokenInfo();
+                .willReturnUserInfo();
 
         Authentication authentication = client.getProfileAfter(client.login(SUPPORT_AUTH0_COM, "voidpassword", MY_CONNECTION))
                 .execute();
@@ -1624,7 +1408,7 @@ public class AuthenticationAPIClientTest {
     @Test
     public void shouldGetOAuthTokensUsingCodeVerifier() throws Exception {
         mockAPI.willReturnTokens()
-                .willReturnTokenInfo();
+                .willReturnUserInfo();
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         client.token("code", "http://redirect.uri")

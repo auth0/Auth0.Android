@@ -1,6 +1,5 @@
 package com.auth0.android.request.internal;
 
-import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.util.AuthenticationAPI;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -20,17 +19,11 @@ import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasKey;
 
 @RunWith(RobolectricTestRunner.class)
 public class BaseAuthenticationRequestTest {
-
-    public static final String OAUTH_PATH = "oauth";
-    public static final String RESOURCE_OWNER_PATH = "ro";
-    public static final String TOKEN_PATH = "token";
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
@@ -45,8 +38,6 @@ public class BaseAuthenticationRequestTest {
         gson = GsonProvider.buildGson();
         HttpUrl url = HttpUrl.parse(mockAPI.getDomain())
                 .newBuilder()
-                .addPathSegment(OAUTH_PATH)
-                .addPathSegment(RESOURCE_OWNER_PATH)
                 .build();
         request = createRequest(url);
     }
@@ -89,46 +80,14 @@ public class BaseAuthenticationRequestTest {
     }
 
     @Test
-    public void shouldNotSetConnectionOnNonLegacyEndpoints() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("method POST must have a request body.");
-        //no body was sent
-
-        HttpUrl url = HttpUrl.parse(mockAPI.getDomain())
-                .newBuilder()
-                .addPathSegment(OAUTH_PATH)
-                .addPathSegment(TOKEN_PATH)
-                .build();
-        AuthenticationRequest req = createRequest(url);
-        req.setConnection("my-connection")
-                .execute();
-    }
-
-    @Test
     public void shouldSetRealm() throws Exception {
-        HttpUrl url = HttpUrl.parse(mockAPI.getDomain())
-                .newBuilder()
-                .addPathSegment(OAUTH_PATH)
-                .addPathSegment(TOKEN_PATH)
-                .build();
-        AuthenticationRequest req = createRequest(url);
         mockAPI.willReturnSuccessfulLogin();
-        req.setRealm("users")
+        request.setRealm("users")
                 .execute();
 
         final RecordedRequest request = mockAPI.takeRequest();
         Map<String, String> body = bodyFromRequest(request);
         assertThat(body, hasEntry("realm", "users"));
-    }
-
-    @Test
-    public void shouldNotSetRealmOnLegacyEndpoints() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("method POST must have a request body.");
-        //no body was sent
-
-        request.setRealm("users")
-                .execute();
     }
 
     @Test
@@ -165,17 +124,6 @@ public class BaseAuthenticationRequestTest {
     }
 
     @Test
-    public void shouldSetAccessToken() throws Exception {
-        mockAPI.willReturnSuccessfulLogin();
-        request.setAccessToken("accessToken")
-                .execute();
-
-        final RecordedRequest request = mockAPI.takeRequest();
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("access_token", "accessToken"));
-    }
-
-    @Test
     public void shouldAddAuthenticationParameters() throws Exception {
         HashMap<String, Object> parameters = new HashMap<>();
         parameters.put("extra", "value");
@@ -188,48 +136,6 @@ public class BaseAuthenticationRequestTest {
         Map<String, String> body = bodyFromRequest(request);
         assertThat(body, hasEntry("extra", "value"));
         assertThat(body, hasEntry("123", "890"));
-    }
-
-    @Test
-    public void shouldWhiteListOAuth2ParametersOnLegacyEndpoints() throws Exception {
-        HashMap<String, Object> parameters = new HashMap<>();
-        parameters.put("extra", "value");
-        parameters.put("realm", "users");
-        HttpUrl url = HttpUrl.parse(mockAPI.getDomain())
-                .newBuilder()
-                .addPathSegment(OAUTH_PATH)
-                .addPathSegment(RESOURCE_OWNER_PATH)
-                .build();
-        AuthenticationRequest req = createRequest(url);
-        mockAPI.willReturnSuccessfulLogin();
-        req.addAuthenticationParameters(parameters)
-                .execute();
-
-        final RecordedRequest request = mockAPI.takeRequest();
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("extra", "value"));
-        assertThat(body, not(hasKey("realm")));
-    }
-
-    @Test
-    public void shouldWhiteListLegacyParametersOnNonLegacyEndpoints() throws Exception {
-        HashMap<String, Object> parameters = new HashMap<>();
-        parameters.put("extra", "value");
-        parameters.put("connection", "my-connection");
-        HttpUrl url = HttpUrl.parse(mockAPI.getDomain())
-                .newBuilder()
-                .addPathSegment(OAUTH_PATH)
-                .addPathSegment(TOKEN_PATH)
-                .build();
-        AuthenticationRequest req = createRequest(url);
-        mockAPI.willReturnSuccessfulLogin();
-        req.addAuthenticationParameters(parameters)
-                .execute();
-
-        final RecordedRequest request = mockAPI.takeRequest();
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("extra", "value"));
-        assertThat(body, not(hasKey("connection")));
     }
 
 }
