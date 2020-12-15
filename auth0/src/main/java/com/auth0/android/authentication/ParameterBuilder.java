@@ -73,9 +73,9 @@ public class ParameterBuilder {
     public static final String DEVICE_KEY = "device";
     public static final String AUDIENCE_KEY = "audience";
 
-    private final Map<String, Object> parameters;
+    private final Map<String, String> parameters;
 
-    private ParameterBuilder(Map<String, Object> parameters) {
+    private ParameterBuilder(Map<String, String> parameters) {
         CheckHelper.checkArgument(parameters != null, "Must provide non-null parameters");
         this.parameters = new HashMap<>(parameters);
     }
@@ -187,7 +187,7 @@ public class ParameterBuilder {
      * @return itself
      */
     @NonNull
-    public ParameterBuilder set(@NonNull String key, @Nullable Object value) {
+    public ParameterBuilder set(@NonNull String key, @Nullable String value) {
         if (value == null) {
             this.parameters.remove(key);
         } else {
@@ -203,7 +203,7 @@ public class ParameterBuilder {
      * @return itself
      */
     @NonNull
-    public ParameterBuilder addAll(@Nullable Map<String, Object> parameters) {
+    public ParameterBuilder addAll(@Nullable Map<String, String> parameters) {
         if (parameters != null) {
             for (String k : parameters.keySet()) {
                 if (parameters.get(k) != null) {
@@ -232,7 +232,7 @@ public class ParameterBuilder {
      * @return all parameters added previously as a {@link Map}
      */
     @NonNull
-    public Map<String, Object> asDictionary() {
+    public Map<String, String> asDictionary() {
         return Collections.unmodifiableMap(new HashMap<>(this.parameters));
     }
 
@@ -255,7 +255,7 @@ public class ParameterBuilder {
      */
     @NonNull
     public static ParameterBuilder newBuilder() {
-        return newBuilder(new HashMap<String, Object>());
+        return newBuilder(new HashMap<>());
     }
 
     /**
@@ -265,7 +265,7 @@ public class ParameterBuilder {
      * @return a new builder
      */
     @NonNull
-    public static ParameterBuilder newBuilder(@NonNull Map<String, Object> parameters) {
+    public static ParameterBuilder newBuilder(@NonNull Map<String, String> parameters) {
         return new ParameterBuilder(parameters);
     }
 

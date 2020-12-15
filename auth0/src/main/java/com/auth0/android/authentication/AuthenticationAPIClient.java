@@ -36,23 +36,24 @@ import com.auth0.android.authentication.request.ProfileRequest;
 import com.auth0.android.authentication.request.SignUpRequest;
 import com.auth0.android.authentication.request.TokenRequest;
 import com.auth0.android.request.AuthenticationRequest;
-import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.Request;
-import com.auth0.android.request.internal.AuthenticationErrorBuilder;
+import com.auth0.android.request.internal.BaseAuthenticationRequest;
 import com.auth0.android.request.internal.GsonProvider;
-import com.auth0.android.request.internal.OkHttpClientFactory;
 import com.auth0.android.request.internal.RequestFactory;
+import com.auth0.android.request.kt.DefaultClient;
+import com.auth0.android.request.kt.ErrorAdapter;
+import com.auth0.android.request.kt.JsonAdapter;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.DatabaseUser;
 import com.auth0.android.result.UserProfile;
 import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.HttpUrl;
-import com.squareup.okhttp.OkHttpClient;
 
 import java.security.PublicKey;
 import java.util.Map;
+
+import kotlin.Unit;
 
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_AUTHORIZATION_CODE;
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_MFA_OTP;
@@ -101,10 +102,10 @@ public class AuthenticationAPIClient {
     private static final String JWKS_FILE_PATH = "jwks.json";
 
     private final Auth0 auth0;
-    private final OkHttpClient client;
     private final Gson gson;
-    private final RequestFactory factory;
-    private final ErrorBuilder<AuthenticationException> authErrorBuilder;
+    private final RequestFactory<AuthenticationException> factory;
+    private final JsonAdapter<Credentials> credentialsAdapter = null;
+    private static final ErrorAdapter<AuthenticationException> errorAdapter = null;
 
 
     /**
@@ -113,7 +114,7 @@ public class AuthenticationAPIClient {
      * @param auth0 account information
      */
     public AuthenticationAPIClient(@NonNull Auth0 auth0) {
-        this(auth0, new RequestFactory(), new OkHttpClientFactory(), GsonProvider.buildGson());
+        this(auth0, new RequestFactory<>(new DefaultClient(auth0.getConnectTimeoutInSeconds()), errorAdapter), GsonProvider.buildGson());
     }
 
     /**
@@ -122,25 +123,16 @@ public class AuthenticationAPIClient {
      *
      * @param context a valid Context
      */
+    //TODO: Remove this constructor. Replacement: AuthenticationAPIClient(Auth0(context))
     public AuthenticationAPIClient(@NonNull Context context) {
         this(new Auth0(context));
     }
 
     @VisibleForTesting
-    AuthenticationAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClientFactory clientFactory) {
-        this(auth0, factory, clientFactory, GsonProvider.buildGson());
-    }
-
-    private AuthenticationAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClientFactory clientFactory, Gson gson) {
+    AuthenticationAPIClient(@NonNull Auth0 auth0, @NonNull RequestFactory<AuthenticationException> factory, @NonNull Gson gson) {
         this.auth0 = auth0;
-        this.client = clientFactory.createClient(auth0.isLoggingEnabled(),
-                auth0.isTLS12Enforced(),
-                auth0.getConnectTimeoutInSeconds(),
-                auth0.getReadTimeoutInSeconds(),
-                auth0.getWriteTimeoutInSeconds());
-        this.gson = gson;
         this.factory = factory;
-        this.authErrorBuilder = new AuthenticationErrorBuilder();
+        this.gson = gson;
         final Telemetry telemetry = auth0.getTelemetry();
         if (telemetry != null) {
             factory.setClientInfo(telemetry.getValue());
@@ -192,12 +184,11 @@ public class AuthenticationAPIClient {
      */
     @NonNull
     public AuthenticationRequest login(@NonNull String usernameOrEmail, @NonNull String password, @NonNull String realmOrConnection) {
-
         ParameterBuilder builder = ParameterBuilder.newBuilder()
                 .set(USERNAME_KEY, usernameOrEmail)
                 .set(PASSWORD_KEY, password);
 
-        final Map<String, Object> parameters = builder
+        final Map<String, String> parameters = builder
                 .setGrantType(GRANT_TYPE_PASSWORD_REALM)
                 .setRealm(realmOrConnection)
                 .asDictionary();
@@ -226,7 +217,7 @@ public class AuthenticationAPIClient {
      */
     @NonNull
     public AuthenticationRequest login(@NonNull String usernameOrEmail, @NonNull String password) {
-        Map<String, Object> requestParameters = ParameterBuilder.newBuilder()
+        Map<String, String> requestParameters = ParameterBuilder.newBuilder()
                 .set(USERNAME_KEY, usernameOrEmail)
                 .set(PASSWORD_KEY, password)
                 .setGrantType(GRANT_TYPE_PASSWORD)
@@ -259,7 +250,7 @@ public class AuthenticationAPIClient {
      */
     @NonNull
     public AuthenticationRequest loginWithOTP(@NonNull String mfaToken, @NonNull String otp) {
-        Map<String, Object> parameters = ParameterBuilder.newBuilder()
+        Map<String, String> parameters = ParameterBuilder.newBuilder()
                 .setGrantType(GRANT_TYPE_MFA_OTP)
                 .set(MFA_TOKEN_KEY, mfaToken)
                 .set(ONE_TIME_PASSWORD_KEY, otp)
@@ -296,24 +287,24 @@ public class AuthenticationAPIClient {
                 .addPathSegment(TOKEN_PATH)
                 .build();
 
-        Map<String, Object> parameters = ParameterBuilder.newAuthenticationBuilder()
+        Map<String, String> parameters = ParameterBuilder.newAuthenticationBuilder()
                 .setGrantType(GRANT_TYPE_TOKEN_EXCHANGE)
                 .setClientId(getClientId())
                 .set(SUBJECT_TOKEN_KEY, token)
                 .set(SUBJECT_TOKEN_TYPE_KEY, tokenType)
                 .asDictionary();
 
-        AuthenticationRequest authRequest = factory.authenticationPOST(url, client, gson);
-        authRequest.addAuthenticationParameters(parameters);
-        return authRequest;
+        BaseAuthenticationRequest request = new BaseAuthenticationRequest(factory.post(url.toString(), credentialsAdapter));
+        request.addParameters(parameters);
+        return request;
     }
 
     /**
      * Log in a user using a phone number and a verification code received via SMS (Part of passwordless login flow)
      * The default scope used is 'openid'.
-     *
+     * <p>
      * Your Application must have the <b>Passwordless OTP</b> Grant Type enabled.
-     *
+     * <p>
      * Example usage:
      * <pre>
      * {@code
@@ -339,7 +330,7 @@ public class AuthenticationAPIClient {
                 .setClientId(getClientId())
                 .set(USERNAME_KEY, phoneNumber);
 
-        Map<String, Object> parameters = builder
+        Map<String, String> parameters = builder
                 .setGrantType(GRANT_TYPE_PASSWORDLESS_OTP)
                 .set(ONE_TIME_PASSWORD_KEY, verificationCode)
                 .setRealm(realmOrConnection)
@@ -403,7 +394,7 @@ public class AuthenticationAPIClient {
                 .setClientId(getClientId())
                 .set(USERNAME_KEY, email);
 
-        Map<String, Object> parameters = builder
+        Map<String, String> parameters = builder
                 .setGrantType(GRANT_TYPE_PASSWORDLESS_OTP)
                 .set(ONE_TIME_PASSWORD_KEY, verificationCode)
                 .setRealm(realmOrConnection)
@@ -492,7 +483,7 @@ public class AuthenticationAPIClient {
                 .addPathSegment(SIGN_UP_PATH)
                 .build();
 
-        final Map<String, Object> parameters = ParameterBuilder.newBuilder()
+        final Map<String, String> parameters = ParameterBuilder.newBuilder()
                 .set(USERNAME_KEY, username)
                 .set(EMAIL_KEY, email)
                 .set(PASSWORD_KEY, password)
@@ -500,7 +491,8 @@ public class AuthenticationAPIClient {
                 .setClientId(getClientId())
                 .asDictionary();
 
-        final Request<DatabaseUser, AuthenticationException> request = factory.POST(url, client, gson, DatabaseUser.class, authErrorBuilder)
+        JsonAdapter<DatabaseUser> databaseUserAdapter = null;
+        final Request<DatabaseUser, AuthenticationException> request = factory.post(url.toString(), databaseUserAdapter)
                 .addParameters(parameters);
         return new DatabaseConnectionRequest<>(request);
     }
@@ -612,19 +604,20 @@ public class AuthenticationAPIClient {
      * @return a request to configure and start
      */
     @NonNull
-    public DatabaseConnectionRequest<Void, AuthenticationException> resetPassword(@NonNull String email, @NonNull String connection) {
+    //TODO: Document the signature change (Unit)
+    public DatabaseConnectionRequest<Unit, AuthenticationException> resetPassword(@NonNull String email, @NonNull String connection) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(DB_CONNECTIONS_PATH)
                 .addPathSegment(CHANGE_PASSWORD_PATH)
                 .build();
 
-        final Map<String, Object> parameters = ParameterBuilder.newBuilder()
+        final Map<String, String> parameters = ParameterBuilder.newBuilder()
                 .set(EMAIL_KEY, email)
                 .setClientId(getClientId())
                 .setConnection(connection)
                 .asDictionary();
 
-        final Request<Void, AuthenticationException> request = factory.POST(url, client, gson, authErrorBuilder)
+        final Request<Unit, AuthenticationException> request = factory.post(url.toString())
                 .addParameters(parameters);
         return new DatabaseConnectionRequest<>(request);
     }
@@ -648,11 +641,11 @@ public class AuthenticationAPIClient {
      *
      * @param refreshToken the token to revoke
      * @return a request to start
-     *
      */
     @NonNull
-    public Request<Void, AuthenticationException> revokeToken(@NonNull String refreshToken) {
-        final Map<String, Object> parameters = ParameterBuilder.newBuilder()
+    //TODO: Document the signature change (Unit)
+    public Request<Unit, AuthenticationException> revokeToken(@NonNull String refreshToken) {
+        final Map<String, String> parameters = ParameterBuilder.newBuilder()
                 .setClientId(getClientId())
                 .set(TOKEN_KEY, refreshToken)
                 .asDictionary();
@@ -662,13 +655,13 @@ public class AuthenticationAPIClient {
                 .addPathSegment(REVOKE_PATH)
                 .build();
 
-        return factory.POST(url, client, gson, authErrorBuilder)
+        return factory.post(url.toString())
                 .addParameters(parameters);
     }
 
     /**
      * Requests new Credentials using a valid Refresh Token. The received token will have the same audience and scope as first requested.
-     *
+     * <p>
      * This method will use the /oauth/token endpoint with the 'refresh_token' grant, and the response will include an id_token and an access_token if 'openid' scope was requested when the refresh_token was obtained.
      * Additionally, if the application has Refresh Token Rotation configured, a new one-time use refresh token will also be included in the response.
      * Example usage:
@@ -691,7 +684,7 @@ public class AuthenticationAPIClient {
      */
     @NonNull
     public Request<Credentials, AuthenticationException> renewAuth(@NonNull String refreshToken) {
-        final Map<String, Object> parameters = ParameterBuilder.newBuilder()
+        final Map<String, String> parameters = ParameterBuilder.newBuilder()
                 .setClientId(getClientId())
                 .setRefreshToken(refreshToken)
                 .setGrantType(ParameterBuilder.GRANT_TYPE_REFRESH_TOKEN)
@@ -702,7 +695,7 @@ public class AuthenticationAPIClient {
                 .addPathSegment(TOKEN_PATH)
                 .build();
 
-        return factory.POST(url, client, gson, Credentials.class, authErrorBuilder)
+        return factory.post(url.toString(), credentialsAdapter)
                 .addParameters(parameters);
     }
 
@@ -729,8 +722,9 @@ public class AuthenticationAPIClient {
      * @return a request to configure and start
      */
     @NonNull
-    public Request<Void, AuthenticationException> passwordlessWithEmail(@NonNull String email, @NonNull PasswordlessType passwordlessType, @NonNull String connection) {
-        final Map<String, Object> parameters = ParameterBuilder.newBuilder()
+    //TODO: Document the signature change (Unit)
+    public Request<Unit, AuthenticationException> passwordlessWithEmail(@NonNull String email, @NonNull PasswordlessType passwordlessType, @NonNull String connection) {
+        final Map<String, String> parameters = ParameterBuilder.newBuilder()
                 .set(EMAIL_KEY, email)
                 .setSend(passwordlessType)
                 .setConnection(connection)
@@ -763,7 +757,8 @@ public class AuthenticationAPIClient {
      * @return a request to configure and start
      */
     @NonNull
-    public Request<Void, AuthenticationException> passwordlessWithEmail(@NonNull String email, @NonNull PasswordlessType passwordlessType) {
+    //TODO: Document the signature change (Unit)
+    public Request<Unit, AuthenticationException> passwordlessWithEmail(@NonNull String email, @NonNull PasswordlessType passwordlessType) {
         return passwordlessWithEmail(email, passwordlessType, EMAIL_CONNECTION);
     }
 
@@ -790,8 +785,9 @@ public class AuthenticationAPIClient {
      * @return a request to configure and start
      */
     @NonNull
-    public Request<Void, AuthenticationException> passwordlessWithSMS(@NonNull String phoneNumber, @NonNull PasswordlessType passwordlessType, @NonNull String connection) {
-        final Map<String, Object> parameters = ParameterBuilder.newBuilder()
+    //TODO: Document the signature change (Unit)
+    public Request<Unit, AuthenticationException> passwordlessWithSMS(@NonNull String phoneNumber, @NonNull PasswordlessType passwordlessType, @NonNull String connection) {
+        final Map<String, String> parameters = ParameterBuilder.newBuilder()
                 .set(PHONE_NUMBER_KEY, phoneNumber)
                 .setSend(passwordlessType)
                 .setConnection(connection)
@@ -824,7 +820,8 @@ public class AuthenticationAPIClient {
      * @return a request to configure and start
      */
     @NonNull
-    public Request<Void, AuthenticationException> passwordlessWithSMS(@NonNull String phoneNumber, @NonNull PasswordlessType passwordlessType) {
+    //TODO: Document the signature change (Unit)
+    public Request<Unit, AuthenticationException> passwordlessWithSMS(@NonNull String phoneNumber, @NonNull PasswordlessType passwordlessType) {
         return passwordlessWithSMS(phoneNumber, passwordlessType, SMS_CONNECTION);
     }
 
@@ -833,17 +830,18 @@ public class AuthenticationAPIClient {
      *
      * @return a request to configure and start
      */
-    private Request<Void, AuthenticationException> passwordless() {
+    //TODO: Document the signature change (Unit)
+    private Request<Unit, AuthenticationException> passwordless() {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(PASSWORDLESS_PATH)
                 .addPathSegment(START_PATH)
                 .build();
 
-        final Map<String, Object> parameters = ParameterBuilder.newBuilder()
+        final Map<String, String> parameters = ParameterBuilder.newBuilder()
                 .setClientId(getClientId())
                 .asDictionary();
 
-        return factory.POST(url, client, gson, authErrorBuilder)
+        return factory.post(url.toString())
                 .addParameters(parameters);
     }
 
@@ -857,7 +855,6 @@ public class AuthenticationAPIClient {
     @NonNull
     public ProfileRequest getProfileAfter(@NonNull AuthenticationRequest authenticationRequest) {
         final Request<UserProfile, AuthenticationException> profileRequest = profileRequest();
-        //noinspection deprecation
         return new ProfileRequest(authenticationRequest, profileRequest);
     }
 
@@ -890,7 +887,7 @@ public class AuthenticationAPIClient {
      */
     @NonNull
     public TokenRequest token(@NonNull String authorizationCode, @NonNull String redirectUri) {
-        Map<String, Object> parameters = ParameterBuilder.newBuilder()
+        Map<String, String> parameters = ParameterBuilder.newBuilder()
                 .setClientId(getClientId())
                 .setGrantType(GRANT_TYPE_AUTHORIZATION_CODE)
                 .set(OAUTH_CODE_KEY, authorizationCode)
@@ -902,7 +899,7 @@ public class AuthenticationAPIClient {
                 .addPathSegment(TOKEN_PATH)
                 .build();
 
-        Request<Credentials, AuthenticationException> request = factory.POST(url, client, gson, Credentials.class, authErrorBuilder);
+        Request<Credentials, AuthenticationException> request = factory.post(url.toString(), credentialsAdapter);
         request.addParameters(parameters);
         return new TokenRequest(request);
     }
@@ -919,24 +916,24 @@ public class AuthenticationAPIClient {
                 .addPathSegment(WELL_KNOWN_PATH)
                 .addPathSegment(JWKS_FILE_PATH)
                 .build();
-        TypeToken<Map<String, PublicKey>> jwksType = new TypeToken<Map<String, PublicKey>>() {
-        };
-        return factory.GET(url, client, gson, jwksType, authErrorBuilder);
+        JsonAdapter<Map<String, PublicKey>> jwksAdapter = null;
+        return factory.get(url.toString(), jwksAdapter);
     }
 
-    private AuthenticationRequest loginWithToken(Map<String, Object> parameters) {
+    private AuthenticationRequest loginWithToken(Map<String, String> parameters) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(OAUTH_PATH)
                 .addPathSegment(TOKEN_PATH)
                 .build();
 
-        final Map<String, Object> requestParameters = ParameterBuilder.newBuilder()
+        final Map<String, String> requestParameters = ParameterBuilder.newBuilder()
                 .setClientId(getClientId())
                 .addAll(parameters)
                 .asDictionary();
-        AuthenticationRequest authRequest = factory.authenticationPOST(url, client, gson);
-        authRequest.addAuthenticationParameters(requestParameters);
-        return authRequest;
+
+        BaseAuthenticationRequest request = new BaseAuthenticationRequest(factory.post(url.toString(), credentialsAdapter));
+        request.addParameters(requestParameters);
+        return request;
     }
 
     private Request<UserProfile, AuthenticationException> profileRequest() {
@@ -944,7 +941,8 @@ public class AuthenticationAPIClient {
                 .addPathSegment(USER_INFO_PATH)
                 .build();
 
-        return factory.GET(url, client, gson, UserProfile.class, authErrorBuilder);
+        JsonAdapter<UserProfile> userProfileAdapter = null;
+        return factory.get(url.toString(), userProfileAdapter);
     }
 
 }
