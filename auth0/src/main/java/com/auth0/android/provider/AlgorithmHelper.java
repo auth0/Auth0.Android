@@ -5,7 +5,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -14,7 +14,6 @@ class AlgorithmHelper {
 
     private static final String TAG = AlgorithmHelper.class.getSimpleName();
 
-    private static final String US_ASCII = "US-ASCII";
     private static final String SHA_256 = "SHA-256";
 
     private String getBase64String(byte[] source) {
@@ -22,14 +21,7 @@ class AlgorithmHelper {
     }
 
     byte[] getASCIIBytes(String value) {
-        byte[] input;
-        try {
-            input = value.getBytes(US_ASCII);
-        } catch (UnsupportedEncodingException e) {
-            Log.e(TAG, "Could not convert string to an ASCII byte array", e);
-            throw new IllegalStateException("Could not convert string to an ASCII byte array", e);
-        }
-        return input;
+        return value.getBytes(StandardCharsets.US_ASCII);
     }
 
     byte[] getSHA256(byte[] input) {

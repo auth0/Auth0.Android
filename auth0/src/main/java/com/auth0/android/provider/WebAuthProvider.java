@@ -46,7 +46,6 @@ import static com.auth0.android.provider.OAuthManager.KEY_NONCE;
 import static com.auth0.android.provider.OAuthManager.KEY_RESPONSE_TYPE;
 import static com.auth0.android.provider.OAuthManager.KEY_STATE;
 import static com.auth0.android.provider.OAuthManager.RESPONSE_TYPE_CODE;
-import static com.auth0.android.provider.OAuthManager.RESPONSE_TYPE_ID_TOKEN;
 
 /**
  * OAuth2 Web Authentication Provider.
@@ -170,7 +169,7 @@ public class WebAuthProvider {
             //Default values
             this.scheme = "https";
             this.ctOptions = CustomTabsOptions.newBuilder().build();
-            withResponseType(ResponseType.CODE);
+            this.values.put(KEY_RESPONSE_TYPE, RESPONSE_TYPE_CODE);
             withScope(SCOPE_TYPE_OPENID);
         }
 
@@ -306,28 +305,6 @@ public class WebAuthProvider {
                 sb.deleteCharAt(sb.length() - 1);
                 this.values.put(KEY_CONNECTION_SCOPE, sb.toString());
             }
-            return this;
-        }
-
-        /**
-         * Choose the grant type for this request.
-         *
-         * @param type the ResponseType to request to the Authentication API. Multiple ResponseType's can be defined using a pipe. "CODE | TOKEN"
-         * @return the current builder instance
-         */
-        @NonNull
-        public Builder withResponseType(@ResponseType int type) {
-            StringBuilder sb = new StringBuilder();
-            if (FlagChecker.hasFlag(type, ResponseType.CODE)) {
-                sb.append(RESPONSE_TYPE_CODE).append(" ");
-            }
-            if (FlagChecker.hasFlag(type, ResponseType.ID_TOKEN)) {
-                sb.append(RESPONSE_TYPE_ID_TOKEN).append(" ");
-            }
-            if (FlagChecker.hasFlag(type, ResponseType.TOKEN)) {
-                sb.append(RESPONSE_TYPE_TOKEN);
-            }
-            this.values.put(KEY_RESPONSE_TYPE, sb.toString().trim());
             return this;
         }
 
