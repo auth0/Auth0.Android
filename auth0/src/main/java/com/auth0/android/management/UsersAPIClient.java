@@ -31,6 +31,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
 import com.auth0.android.Auth0;
+import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.ParameterBuilder;
 import com.auth0.android.request.Request;
 import com.auth0.android.request.internal.GsonProvider;
@@ -46,6 +47,10 @@ import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
 import com.squareup.okhttp.HttpUrl;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
+import java.io.Reader;
 import java.util.List;
 import java.util.Map;
 
@@ -72,7 +77,23 @@ public class UsersAPIClient {
     private final Auth0 auth0;
     private final RequestFactory<ManagementException> factory;
     private final Gson gson;
-    private static final ErrorAdapter<ManagementException> errorAdapter = null;
+
+    private static ErrorAdapter<ManagementException> createErrorAdapter() {
+        GsonAdapter<Map<String, Object>> mapAdapter = GsonAdapter.Companion.forMap(new Gson());
+        return new ErrorAdapter<ManagementException>() {
+
+            @Override
+            public ManagementException fromException(@NotNull Throwable err) {
+                return new ManagementException("Something went wrong", new Auth0Exception("Something went wrong", err));
+            }
+
+            @Override
+            public ManagementException fromJson(@NotNull Reader reader) throws IOException {
+                Map<String, Object> values = mapAdapter.fromJson(reader);
+                return new ManagementException(values);
+            }
+        };
+    }
 
     /**
      * Creates a new API client instance providing Auth0 account info.
@@ -86,7 +107,7 @@ public class UsersAPIClient {
     }
 
     private static RequestFactory<ManagementException> factoryForToken(String token, NetworkingClient client) {
-        RequestFactory<ManagementException> factory = new RequestFactory<>(client, errorAdapter);
+        RequestFactory<ManagementException> factory = new RequestFactory<>(client, createErrorAdapter());
         factory.setHeader("Authorization", "Bearer " + token);
         return factory;
     }
