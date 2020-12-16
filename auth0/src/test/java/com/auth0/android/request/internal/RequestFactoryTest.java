@@ -5,12 +5,17 @@ import com.auth0.android.Auth0Exception;
 import com.auth0.android.request.Request;
 import com.auth0.android.request.kt.ErrorAdapter;
 import com.auth0.android.request.kt.HttpMethod;
+import com.auth0.android.request.kt.JsonAdapter;
 import com.auth0.android.request.kt.NetworkingClient;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.AdditionalMatchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.robolectric.RobolectricTestRunner;
 
 import java.util.Locale;
 
@@ -19,11 +24,13 @@ import kotlin.Unit;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
+@RunWith(RobolectricTestRunner.class)
 public class RequestFactoryTest {
 
     private static final String CLIENT_INFO = "client_info";
@@ -38,6 +45,8 @@ public class RequestFactoryTest {
     private ErrorAdapter<String> resultAdapter;
     @Mock
     private Request<String, Auth0Exception> postRequest;
+    @Mock
+    private Request<String, Auth0Exception> emptyPostRequest;
     @Mock
     private Request<String, Auth0Exception> patchRequest;
     @Mock
@@ -57,6 +66,8 @@ public class RequestFactoryTest {
     public void shouldHaveDefaultAcceptLanguageHeader() {
         final Locale locale = new Locale("");
         Locale.setDefault(locale);
+        // recreate the factory to read the default again
+        RequestFactory<Auth0Exception> factory = createRequestFactory();
 
         factory.get(BASE_URL, resultAdapter);
         verify(getRequest).addHeader("Accept-Language", "en_US");
@@ -75,6 +86,8 @@ public class RequestFactoryTest {
     public void shouldHaveAcceptLanguageHeader() {
         final Locale localeJP = new Locale("ja", "JP");
         Locale.setDefault(localeJP);
+        // recreate the factory to read the default again
+        RequestFactory<Auth0Exception> factory = createRequestFactory();
 
         factory.get(BASE_URL, resultAdapter);
         verify(getRequest).addHeader("Accept-Language", "ja_JP");
@@ -156,7 +169,7 @@ public class RequestFactoryTest {
         Request<Unit, Auth0Exception> request = factory.post(BASE_URL);
 
         assertThat(request, is(notNullValue()));
-        assertThat(request, is(postRequest));
+        assertThat(request, is(emptyPostRequest));
     }
 
     @Test
@@ -183,16 +196,14 @@ public class RequestFactoryTest {
         assertThat(request, is(getRequest));
     }
 
+    @SuppressWarnings("unchecked, ConstantConditions")
     private RequestFactory<Auth0Exception> createRequestFactory() {
         RequestFactory<Auth0Exception> factory = spy(new RequestFactory<>(client, errorAdapter));
-        when(factory.createRequest(eq(HttpMethod.POST.INSTANCE), eq(BASE_URL), eq(client), eq(resultAdapter), eq(errorAdapter)))
-                .thenReturn(postRequest);
-        when(factory.createRequest(eq(HttpMethod.DELETE.INSTANCE), eq(BASE_URL), eq(client), eq(resultAdapter), eq(errorAdapter)))
-                .thenReturn(deleteRequest);
-        when(factory.createRequest(eq(HttpMethod.PATCH.INSTANCE), eq(BASE_URL), eq(client), eq(resultAdapter), eq(errorAdapter)))
-                .thenReturn(patchRequest);
-        when(factory.createRequest(eq(HttpMethod.GET.INSTANCE), eq(BASE_URL), eq(client), eq(resultAdapter), eq(errorAdapter)))
-                .thenReturn(getRequest);
+        doReturn(postRequest).when(factory).createRequest(any(HttpMethod.POST.class), eq(BASE_URL), eq(client), eq(resultAdapter), eq(errorAdapter));
+        doReturn(emptyPostRequest).when(factory).createRequest(any(HttpMethod.POST.class), eq(BASE_URL), eq(client), AdditionalMatchers.and(AdditionalMatchers.not(ArgumentMatchers.eq(resultAdapter)), ArgumentMatchers.isA(JsonAdapter.class)), eq(errorAdapter));
+        doReturn(deleteRequest).when(factory).createRequest(any(HttpMethod.DELETE.class), eq(BASE_URL), eq(client), eq(resultAdapter), eq(errorAdapter));
+        doReturn(patchRequest).when(factory).createRequest(any(HttpMethod.PATCH.class), eq(BASE_URL), eq(client), eq(resultAdapter), eq(errorAdapter));
+        doReturn(getRequest).when(factory).createRequest(any(HttpMethod.GET.class), eq(BASE_URL), eq(client), eq(resultAdapter), eq(errorAdapter));
         return factory;
     }
 }
