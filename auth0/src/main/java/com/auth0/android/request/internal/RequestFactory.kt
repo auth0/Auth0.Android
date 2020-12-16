@@ -34,7 +34,6 @@ import com.auth0.android.util.Telemetry
 import java.io.Reader
 import java.util.*
 
-//TODO: Might be better to receive the NetworkingClient here
 public open class RequestFactory<U : Auth0Exception>(
     private val client: NetworkingClient,
     private val errorAdapter: ErrorAdapter<U>
