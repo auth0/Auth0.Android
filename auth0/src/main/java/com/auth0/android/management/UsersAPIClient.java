@@ -101,9 +101,8 @@ public class UsersAPIClient {
      * @param auth0 account information
      * @param token of the primary identity
      */
-    //TODO: Consider receiving the token via an external sourced lambda, in case it expires
-    public UsersAPIClient(@NonNull Auth0 auth0, @NonNull String token, @NonNull NetworkingClient networkingClient) {
-        this(auth0, factoryForToken(token, networkingClient), GsonProvider.buildGson());
+    public UsersAPIClient(@NonNull Auth0 auth0, @NonNull String token) {
+        this(auth0, factoryForToken(token, new DefaultClient(auth0.getConnectTimeoutInSeconds())), GsonProvider.buildGson());
     }
 
     private static RequestFactory<ManagementException> factoryForToken(String token, NetworkingClient client) {
@@ -121,7 +120,7 @@ public class UsersAPIClient {
      */
     //TODO: Remove this constructor. Replacement: UsersAPIClient(Auth0(context), "token")
     public UsersAPIClient(@NonNull Context context, @NonNull String token) {
-        this(new Auth0(context), token, new DefaultClient(10)); //Temp value until we remove this
+        this(new Auth0(context), token);
     }
 
     @VisibleForTesting
