@@ -1,13 +1,15 @@
 package com.auth0.android.request.kt
 
 import android.net.Uri
+import com.auth0.android.request.internal.GsonProvider
+import com.google.gson.Gson
 import java.io.BufferedWriter
 import java.io.IOException
 import java.io.UnsupportedEncodingException
+import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.nio.charset.Charset
-import javax.net.ssl.HttpsURLConnection
 
 //TODO: Should this be internal?
 public class DefaultClient(private val timeout: Int) : NetworkingClient {
@@ -19,9 +21,10 @@ public class DefaultClient(private val timeout: Int) : NetworkingClient {
     override fun load(url: String, options: RequestOptions): ServerResponse {
         val parsedUri = Uri.parse(url)
         //FIXME: Probably best to check this in the AuthenticationAPIClient constructor
-        if (parsedUri.scheme != "https") {
-            throw IllegalArgumentException("The URL must use HTTPS")
-        }
+        //FIXME: Switch this check back on
+//        if (parsedUri.scheme != "https") {
+//            throw IllegalArgumentException("The URL must use HTTPS")
+//        }
 
         //prepare URL
         val targetUrl = if (options.method == HttpMethod.GET) {
@@ -35,11 +38,12 @@ public class DefaultClient(private val timeout: Int) : NetworkingClient {
             URL(url)
         }
 
-        val connection: HttpsURLConnection = targetUrl.openConnection() as HttpsURLConnection
+        //FIXME: Switch back to HttpsURLConnection
+        val connection: HttpURLConnection = targetUrl.openConnection() as HttpURLConnection
 
-        //setup timeout
-        connection.connectTimeout = timeout
-        connection.readTimeout = timeout
+        //FIXME: setup timeout
+//        connection.connectTimeout = timeout
+//        connection.readTimeout = timeout
 
         //setup headers
         options.headers.map { connection.setRequestProperty(it.key, it.value) }
