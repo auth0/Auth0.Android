@@ -77,19 +77,27 @@ internal open class BaseRequest<T, U : Auth0Exception>(
      * @param callback the callback to post the results in. Uses the Main thread.
      */
     override fun start(callback: BaseCallback<T, U>) {
-        ThreadUtils.executorService.execute {
-            try {
-                val result: T = execute()
-                ThreadUtils.mainThreadHandler.post {
-                    callback.onSuccess(result)
-                }
-            } catch (error: Auth0Exception) {
-                val err = errorAdapter.fromException(error)
-                ThreadUtils.mainThreadHandler.post {
-                    callback.onFailure(err)
-                }
-            }
+        try {
+            val result: T = execute()
+            callback.onSuccess(result)
+        } catch (error: Auth0Exception) {
+            val err = errorAdapter.fromException(error)
+            callback.onFailure(err)
         }
+        //TODO: Make use of different threads later
+//        ThreadUtils.executorService.execute {
+//            try {
+//                val result: T = execute()
+//                ThreadUtils.mainThreadHandler.post {
+//                    callback.onSuccess(result)
+//                }
+//            } catch (error: Auth0Exception) {
+//                val err = errorAdapter.fromException(error)
+//                ThreadUtils.mainThreadHandler.post {
+//                    callback.onFailure(err)
+//                }
+//            }
+//        }
     }
 
 
