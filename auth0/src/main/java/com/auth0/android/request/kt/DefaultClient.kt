@@ -14,6 +14,9 @@ import java.nio.charset.Charset
 //TODO: Should this be internal?
 public class DefaultClient(private val timeout: Int) : NetworkingClient {
 
+    //TODO: receive this via constructor parameters
+    private val gson: Gson = GsonProvider.buildGson()
+
     /**
      * Creates and executes a networking request blocking
      */
@@ -49,12 +52,15 @@ public class DefaultClient(private val timeout: Int) : NetworkingClient {
         options.headers.map { connection.setRequestProperty(it.key, it.value) }
 
         if (options.method == HttpMethod.POST) {
+            //required headers
+            connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
             connection.doInput = true
             connection.doOutput = true
             val output = connection.outputStream
             val writer = BufferedWriter(output.bufferedWriter())
-            val formData = getFormString(options.parameters)
-            writer.write(formData)
+            val json = gson.toJson(options.parameters)
+//            val formData = getFormString(options.parameters)
+            writer.write(json)
             writer.flush()
             writer.close()
             output.close()
