@@ -160,6 +160,7 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
 
     @NonNull
     @Override
+    @Deprecated
     public SignUpRequest setAccessToken(@NonNull String accessToken) {
         getAuthRequest().setAccessToken(accessToken);
         return this;
