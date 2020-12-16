@@ -98,6 +98,16 @@ class OAuthManager extends ResumableManager {
     @SuppressWarnings("ConstantConditions")
     @Override
     boolean resume(AuthorizeResult result) {
+        // Should never happen where the algorithms required are not present, but just in case it does,
+        // this will allow us to at least call the error handler callback with an exception including
+        // the cause
+        try {
+            PKCE.throwIfNotAvailable();
+        } catch (Throwable t) {
+            callback.onFailure(new AuthenticationException("Algorithims required to use PKCE are not available on this device. Authentication can not be done securely.", t));
+            return true;
+        }
+
         if (!result.isValid(requestCode)) {
             Log.w(TAG, "The Authorize Result is invalid.");
             return false;
@@ -122,12 +132,6 @@ class OAuthManager extends ResumableManager {
             assertValidState(parameters.get(KEY_STATE), values.get(KEY_STATE));
         } catch (AuthenticationException e) {
             callback.onFailure(e);
-            return true;
-        }
-
-        if (!shouldUsePKCE()) {
-            // PKCE required but not available. This is not an expected scenario.
-            callback.onFailure(new AuthenticationException("PKCE not available on this device."));
             return true;
         }
 
@@ -248,15 +252,17 @@ class OAuthManager extends ResumableManager {
     }
 
     private void addPKCEParameters(Map<String, String> parameters, String redirectUri) {
-        try {
-            createPKCE(redirectUri);
-            String codeChallenge = pkce.getCodeChallenge();
-            parameters.put(KEY_CODE_CHALLENGE, codeChallenge);
-            parameters.put(KEY_CODE_CHALLENGE_METHOD, METHOD_SHA_256);
-            Log.v(TAG, "Using PKCE authentication flow");
-        } catch (IllegalStateException e) {
-            Log.e(TAG, "Some algorithms aren't available on this device and PKCE can't be used for authentication, which is required.", e);
+        // If PKCE is not available on the device (should never  happen), just return here and
+        // we will fail later so we can call the error callback and not cause a hard failure
+        if (!PKCE.isAvailable()) {
+            return;
         }
+
+        createPKCE(redirectUri);
+        String codeChallenge = pkce.getCodeChallenge();
+        parameters.put(KEY_CODE_CHALLENGE, codeChallenge);
+        parameters.put(KEY_CODE_CHALLENGE_METHOD, METHOD_SHA_256);
+        Log.v(TAG, "Using PKCE authentication flow");
     }
 
     private void addValidationParameters(Map<String, String> parameters) {
@@ -278,12 +284,6 @@ class OAuthManager extends ResumableManager {
         if (pkce == null) {
             pkce = new PKCE(apiClient, redirectUri);
         }
-    }
-
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    private boolean shouldUsePKCE() {
-        //noinspection ConstantConditions
-        return parameters.containsKey(KEY_RESPONSE_TYPE) && parameters.get(KEY_RESPONSE_TYPE).contains(RESPONSE_TYPE_CODE) && PKCE.isAvailable();
     }
 
     @VisibleForTesting

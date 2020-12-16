@@ -24,10 +24,11 @@
 
 package com.auth0.android.authentication;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.NetworkErrorException;
@@ -61,6 +62,10 @@ public class AuthenticationException extends Auth0Exception {
 
     public AuthenticationException(@NonNull String message) {
         super(message);
+    }
+
+    public AuthenticationException(@NonNull String message, @NonNull Throwable throwable) {
+        super(message, throwable);
     }
 
     public AuthenticationException(@NonNull String message, @Nullable Auth0Exception exception) {
