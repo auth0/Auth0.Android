@@ -51,16 +51,19 @@ public class DefaultClient(private val timeout: Int) : NetworkingClient {
         //setup headers
         options.headers.map { connection.setRequestProperty(it.key, it.value) }
 
-        if (options.method == HttpMethod.POST) {
+        if (options.method == HttpMethod.POST || options.method == HttpMethod.PATCH || options.method == HttpMethod.DELETE) {
             //required headers
+            connection.requestMethod = options.method.toString()
             connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
             connection.doInput = true
             connection.doOutput = true
             val output = connection.outputStream
             val writer = BufferedWriter(output.bufferedWriter())
-            val json = gson.toJson(options.parameters)
-//            val formData = getFormString(options.parameters)
-            writer.write(json)
+            if (options.parameters.isNotEmpty()) {
+                val json = gson.toJson(options.parameters)
+                writer.write(json)
+//              val formData = getFormString(options.parameters)
+            }
             writer.flush()
             writer.close()
             output.close()
