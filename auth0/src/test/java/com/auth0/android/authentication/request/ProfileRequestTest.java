@@ -16,7 +16,6 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.RobolectricTestRunner;
 
-import java.util.Collections;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -58,7 +57,7 @@ public class ProfileRequestTest {
     @Test
     public void shouldAddParameter() {
         final ProfileRequest req = profileRequest.addParameter("param", "val");
-        verify(authenticationMockRequest).addParameters(Collections.singletonMap("param", "val"));
+        verify(authenticationMockRequest).addParameter("param", "val");
         assertThat(req, is(notNullValue()));
         assertThat(req, is(profileRequest));
     }
