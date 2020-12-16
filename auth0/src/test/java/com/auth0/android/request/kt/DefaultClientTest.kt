@@ -1,23 +1,26 @@
 package com.auth0.android.request.kt
 
+import android.net.Uri
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.squareup.okhttp.mockwebserver.MockResponse
 import com.squareup.okhttp.mockwebserver.MockWebServer
 import com.squareup.okhttp.mockwebserver.RecordedRequest
-import org.hamcrest.CoreMatchers.equalTo
-import org.hamcrest.CoreMatchers.hasItem
+import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.collection.IsMapContaining.hasEntry
 import org.hamcrest.collection.IsMapWithSize.anEmptyMap
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
 import java.util.stream.Collectors
 
+@RunWith(RobolectricTestRunner::class)
 public class DefaultClientTest {
 
     private companion object {
@@ -26,6 +29,7 @@ public class DefaultClientTest {
         private const val STATUS_FAILURE = 401
         private const val JSON_OK = """{"result":"OK"}"""
         private const val JSON_ERROR = """{"result":"error"}"""
+        private const val URL_PATH = "/api/demo"
     }
 
     private lateinit var BASE_URL: String
@@ -36,8 +40,8 @@ public class DefaultClientTest {
     @Before
     public fun setUp() {
         mockServer = MockWebServer()
-        BASE_URL = mockServer.hostName
         mockServer.start()
+        BASE_URL = mockServer.url("/").toString()
     }
 
     @After
@@ -47,65 +51,76 @@ public class DefaultClientTest {
 
     @Test
     public fun shouldHandleHttpGetSuccess() {
-        enqueueMockResponse(JSON_OK, STATUS_SUCCESS)
-        val options = RequestOptions(HttpMethod.GET)
-        options.parameters["customer"] = "john-doe"
-        options.headers["a-header"] = "b-value"
+        enqueueMockResponse(STATUS_SUCCESS, JSON_OK)
 
-        //Server response
-        val urlPath = "/api/demo"
-        val response = client.load("$BASE_URL$urlPath", options)
-        assertThat(response.bodyToUtf8(), equalTo(JSON_OK))
-        assertThat(response.statusCode, equalTo(STATUS_SUCCESS))
-        assertThat(
-            response.headers,
-            hasEntry(
-                equalTo("Content-Type"),
-                hasItem("application/json")
-            )
-        )
+        //Received response
+        val response = executeRequest(HttpMethod.GET)
+        responseAssertions(response, STATUS_SUCCESS, JSON_OK)
 
         //Sent request
         val sentRequest = mockServer.takeRequest()
-        //TODO: Assert query parameters sent with latest MockWebServer dependency
-        assertThat(sentRequest.path, equalTo(urlPath))
-        assertThat(sentRequest.bodyFromJson(), anEmptyMap())
-        assertThat(
-            sentRequest.headers.toMultimap(),
-            hasEntry(
-                equalTo("a-header"),
-                hasItem("b-value")
-            )
-        )
+        requestAssertions(sentRequest, HttpMethod.GET)
     }
 
     @Test
     public fun shouldHandleHttpGetFailure() {
-        enqueueMockResponse(JSON_ERROR, STATUS_FAILURE)
-        val options = RequestOptions(HttpMethod.GET)
-        options.parameters["customer"] = "john-doe"
-        options.headers["a-header"] = "b-value"
+        enqueueMockResponse(STATUS_FAILURE, JSON_ERROR)
 
-        //Server response
-        val urlPath = "/api/demo"
-        val response = client.load("$BASE_URL$urlPath", options)
-        assertThat(response.bodyToUtf8(), equalTo(JSON_ERROR))
-        assertThat(response.statusCode, equalTo(STATUS_FAILURE))
-        assertThat(
-            response.headers,
-            hasEntry(
-                equalTo("Content-Type"),
-                hasItem("application/json")
-            )
-        )
+        //Received response
+        val response = executeRequest(HttpMethod.GET)
+        responseAssertions(response, STATUS_FAILURE, JSON_ERROR)
 
         //Sent request
         val sentRequest = mockServer.takeRequest()
-        //TODO: Assert query parameters sent with latest MockWebServer dependency
-        assertThat(sentRequest.path, equalTo(urlPath))
-        assertThat(sentRequest.bodyFromJson(), anEmptyMap())
+        requestAssertions(sentRequest, HttpMethod.GET)
+    }
+
+    @Test
+    public fun shouldHandleHttpPostSuccess() {
+        enqueueMockResponse(STATUS_SUCCESS, JSON_OK)
+
+        //Received response
+        val response = executeRequest(HttpMethod.POST)
+        responseAssertions(response, STATUS_SUCCESS, JSON_OK)
+
+        //Sent request
+        val sentRequest = mockServer.takeRequest()
+        requestAssertions(sentRequest, HttpMethod.POST)
+    }
+
+    @Test
+    public fun shouldHandleHttpPostFailure() {
+        enqueueMockResponse(STATUS_FAILURE, JSON_ERROR)
+
+        //Received response
+        val response = executeRequest(HttpMethod.POST)
+        responseAssertions(response, STATUS_FAILURE, JSON_ERROR)
+
+        //Sent request
+        val sentRequest = mockServer.takeRequest()
+        requestAssertions(sentRequest, HttpMethod.POST)
+    }
+
+
+    //Helper methods
+    private fun requestAssertions(request: RecordedRequest, method: HttpMethod) {
+        val requestUri = Uri.parse(request.path)
+        when (method) {
+            HttpMethod.GET -> assertThat(request.method, equalTo("GET"))
+            HttpMethod.POST -> assertThat(request.method, equalTo("POST"))
+            HttpMethod.PATCH -> assertThat(request.method, equalTo("PATCH"))
+            HttpMethod.DELETE -> assertThat(request.method, equalTo("DELETE"))
+        }
+        assertThat(requestUri.path, equalTo(URL_PATH))
+        if (method == HttpMethod.GET) {
+            assertThat(requestUri.getQueryParameter("customer"), equalTo("john-doe"))
+            assertThat(request.bodyFromJson(), anEmptyMap())
+        } else {
+            assertThat(requestUri.query, nullValue())
+            assertThat(request.bodyFromJson(), hasEntry("customer", "john-doe"))
+        }
         assertThat(
-            sentRequest.headers.toMultimap(),
+            request.headers.toMultimap(),
             hasEntry(
                 equalTo("a-header"),
                 hasItem("b-value")
@@ -113,9 +128,32 @@ public class DefaultClientTest {
         )
     }
 
-    //Helper methods
+    private fun responseAssertions(response: ServerResponse, httpStatus: Int, bodyJson: String) {
+        assertThat(response.bodyToUtf8(), equalTo(bodyJson))
+        assertThat(response.statusCode, equalTo(httpStatus))
+        assertThat(
+            response.headers,
+            hasEntry(
+                equalTo("Content-Type"),
+                hasItem("application/json")
+            )
+        )
+    }
 
-    private fun enqueueMockResponse(jsonBody: String, responseCode: Int = STATUS_SUCCESS) {
+    private fun executeRequest(method: HttpMethod): ServerResponse {
+        val options = RequestOptions(method)
+        options.parameters["customer"] = "john-doe"
+        options.headers["a-header"] = "b-value"
+
+        //Server response
+        val destination = Uri.parse(BASE_URL).buildUpon()
+            .path(URL_PATH)
+            .build()
+            .toString()
+        return client.load(destination, options)
+    }
+
+    private fun enqueueMockResponse(responseCode: Int = STATUS_SUCCESS, jsonBody: String) {
         val response = MockResponse()
         response.setBody(jsonBody)
         response.setResponseCode(responseCode)
@@ -130,6 +168,9 @@ public class DefaultClientTest {
 
     private fun RecordedRequest.bodyFromJson(): Map<String, Any> {
         val text = this.body.readUtf8()
+        if (text.isNullOrEmpty()) {
+            return emptyMap()
+        }
         val mapType = object : TypeToken<Map<String, Any>>() {}.type
         return gson.fromJson(text, mapType)
     }
