@@ -31,6 +31,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import com.auth0.android.Auth0;
+import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.request.DatabaseConnectionRequest;
 import com.auth0.android.authentication.request.ProfileRequest;
 import com.auth0.android.authentication.request.SignUpRequest;
@@ -50,6 +51,10 @@ import com.auth0.android.util.Auth0UserAgent;
 import com.google.gson.Gson;
 import com.squareup.okhttp.HttpUrl;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
+import java.io.Reader;
 import java.security.PublicKey;
 import java.util.Map;
 
@@ -104,8 +109,24 @@ public class AuthenticationAPIClient {
     private final Auth0 auth0;
     private final Gson gson;
     private final RequestFactory<AuthenticationException> factory;
-    private static final ErrorAdapter<AuthenticationException> errorAdapter = null;
 
+    private static ErrorAdapter<AuthenticationException> createErrorAdapter() {
+        GsonAdapter<Map<String, Object>> mapAdapter = GsonAdapter.Companion.forMap(new Gson());
+        return new ErrorAdapter<AuthenticationException>() {
+
+            @Override
+            public AuthenticationException fromException(@NotNull Throwable err) {
+                return new AuthenticationException("Something went wrong", new Auth0Exception("Something went wrong", err));
+            }
+
+            @Override
+            public AuthenticationException fromJson(@NotNull Reader reader) throws IOException {
+                //TODO: This won't work for plaintext responses
+                Map<String, Object> values = mapAdapter.fromJson(reader);
+                return new AuthenticationException(values);
+            }
+        };
+    }
 
     /**
      * Creates a new API client instance providing Auth0 account info.
@@ -113,7 +134,7 @@ public class AuthenticationAPIClient {
      * @param auth0 account information
      */
     public AuthenticationAPIClient(@NonNull Auth0 auth0) {
-        this(auth0, new RequestFactory<>(new DefaultClient(auth0.getConnectTimeoutInSeconds()), errorAdapter), GsonProvider.buildGson());
+        this(auth0, new RequestFactory<>(new DefaultClient(auth0.getConnectTimeoutInSeconds()), createErrorAdapter()), GsonProvider.buildGson());
     }
 
     /**
