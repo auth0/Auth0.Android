@@ -7,4 +7,12 @@ public sealed class HttpMethod {
     public object PATCH : HttpMethod()
     public object DELETE : HttpMethod()
 
+    override fun toString(): String {
+        return when (this) {
+            GET -> "GET"
+            POST -> "POST"
+            PATCH -> "PATCH"
+            DELETE -> "DELETE"
+        }
+    }
 }
