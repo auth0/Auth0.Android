@@ -43,9 +43,7 @@ import java.util.Map;
 import static com.auth0.android.provider.OAuthManager.KEY_CONNECTION;
 import static com.auth0.android.provider.OAuthManager.KEY_MAX_AGE;
 import static com.auth0.android.provider.OAuthManager.KEY_NONCE;
-import static com.auth0.android.provider.OAuthManager.KEY_RESPONSE_TYPE;
 import static com.auth0.android.provider.OAuthManager.KEY_STATE;
-import static com.auth0.android.provider.OAuthManager.RESPONSE_TYPE_CODE;
 
 /**
  * OAuth2 Web Authentication Provider.
@@ -150,7 +148,6 @@ public class WebAuthProvider {
         private static final String KEY_SCOPE = "scope";
         private static final String KEY_CONNECTION_SCOPE = "connection_scope";
         private static final String SCOPE_TYPE_OPENID = "openid";
-        private static final String RESPONSE_TYPE_TOKEN = "token";
 
 
         private final Auth0 account;
@@ -169,7 +166,6 @@ public class WebAuthProvider {
             //Default values
             this.scheme = "https";
             this.ctOptions = CustomTabsOptions.newBuilder().build();
-            this.values.put(KEY_RESPONSE_TYPE, RESPONSE_TYPE_CODE);
             withScope(SCOPE_TYPE_OPENID);
         }
 
