@@ -72,7 +72,8 @@ public class ParameterBuilder {
 
     /**
      * @deprecated The {@code id_token} parameter is only used when making requests to the legacy
-     * Authentication APIs. This constant will be removed in version 2 of this SDK.
+     * <a href="https://auth0.com/docs/api/authentication#database-ad-ldap-active-">/oauth/ro</a> endpoint.
+     * This constant will be removed in version 2 of this SDK.
      */
     @Deprecated
     public static final String ID_TOKEN_KEY = "id_token";
@@ -90,7 +91,12 @@ public class ParameterBuilder {
     public static final String SEND_KEY = "send";
     public static final String CLIENT_ID_KEY = "client_id";
     public static final String GRANT_TYPE_KEY = "grant_type";
-    //TODO: This was once used to identify the device authenticating. No longer used.
+
+    /**
+     * @deprecated The {@code device} parameter is only used when making requests to the legacy
+     * Authentication APIs. This constant will be removed in version 2 of this SDK.
+     */
+    @Deprecated
     public static final String DEVICE_KEY = "device";
     public static final String AUDIENCE_KEY = "audience";
 
@@ -172,7 +178,8 @@ public class ParameterBuilder {
      *
      * @param device a device name
      * @return itself
-     * @deprecated TODO
+     * @deprecated The {@code device} parameter is used in calls to the <a href="https://auth0.com/docs/api/authentication#database-ad-ldap-active-">/oauth/ro</a>
+     * Authentication API legacy endpoint. This method will be removed in version 2 of this SDK.
      */
     @NonNull
     @Deprecated

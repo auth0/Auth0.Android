@@ -63,5 +63,5 @@ public interface AuthenticationRequest extends Request<Credentials, Authenticati
      */
     @NonNull
     AuthenticationRequest setAudience(@NonNull String audience);
-    
+
 }
