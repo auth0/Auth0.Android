@@ -306,8 +306,15 @@ public class AuthenticationAPIClient {
      * @param token      obtained from the IdP
      * @param connection that will be used to authenticate the user, e.g. 'facebook'
      * @return a request to configure and start that will yield {@link Credentials}
+     * @deprecated The ability to exchange a third-party provider access token for Auth0 access tokens
+     *             is part of the <a href="https://auth0.com/docs/api/authentication#social-with-provider-s-access-token">/oauth/access_token</a>
+     *             Authentication API legacy endpoint, disabled as of June 2017. For selected social providers,
+     *             there's support for a similar token exchange using the <a href="https://auth0.com/docs/api/authentication#token-exchange-for-native-social">Native Social token exchange</a>
+     *             endpoint, using {@linkplain AuthenticationAPIClient#loginWithNativeSocialToken(String, String)}
+     *             instead.
      */
     @NonNull
+    @Deprecated
     public AuthRequest loginWithOAuthAccessToken(@NonNull String token, @NonNull String connection) {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(OAUTH_PATH)
@@ -839,8 +846,11 @@ public class AuthenticationAPIClient {
      *
      * @param idToken issued by Auth0 for the user. The token must not be expired.
      * @return a request to configure and start
+     * @deprecated The {@code /delegation} endpoint of the Auth0 Authorization API has been deprecated.
+     *             This method will be removed in version 2 of this SDK.
      */
     @NonNull
+    @Deprecated
     public DelegationRequest<Delegation> delegationWithIdToken(@NonNull String idToken) {
         ParameterizableRequest<Delegation, AuthenticationException> request = delegation(Delegation.class)
                 .addParameter(ParameterBuilder.ID_TOKEN_KEY, idToken);
@@ -868,8 +878,11 @@ public class AuthenticationAPIClient {
      *
      * @param refreshToken issued by Auth0 for the user when using the 'offline_access' scope when logging in.
      * @return a request to configure and start
+     * @deprecated The {@code /delegation} endpoint of the Auth0 Authorization API has been deprecated.
+     *             This method will be removed in version 2 of this SDK.
      */
     @NonNull
+    @Deprecated
     public DelegationRequest<Delegation> delegationWithRefreshToken(@NonNull String refreshToken) {
         ParameterizableRequest<Delegation, AuthenticationException> request = delegation(Delegation.class)
                 .addParameter(ParameterBuilder.REFRESH_TOKEN_KEY, refreshToken);
@@ -897,8 +910,11 @@ public class AuthenticationAPIClient {
      * @param idToken issued by Auth0 for the user. The token must not be expired.
      * @param apiType the delegation 'api_type' parameter
      * @return a request to configure and start
+     * @deprecated The {@code /delegation} endpoint of the Auth0 Authorization API has been deprecated.
+     *             This method will be removed in version 2 of this SDK.
      */
     @NonNull
+    @Deprecated
     public DelegationRequest<Map<String, Object>> delegationWithIdToken(@NonNull String idToken, @NonNull String apiType) {
         ParameterizableRequest<Map<String, Object>, AuthenticationException> request = delegation()
                 .addParameter(ParameterBuilder.ID_TOKEN_KEY, idToken);
@@ -1052,8 +1068,11 @@ public class AuthenticationAPIClient {
      * </pre>
      *
      * @return a request to configure and start
+     * @deprecated The {@code /delegation} endpoint of the Auth0 Authorization API has been deprecated.
+     *             This method will be removed in version 2 of this SDK.
      */
     @NonNull
+    @Deprecated
     public ParameterizableRequest<Map<String, Object>, AuthenticationException> delegation() {
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
                 .addPathSegment(DELEGATION_PATH)

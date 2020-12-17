@@ -43,7 +43,10 @@ import java.util.Map;
  * @param <T> type of object that will hold the delegation response. When requesting Auth0's 'id_token' you can
  *            use {@link Delegation}, otherwise you'll need to provide an object that can be created from the JSON
  *            payload or just use {@code Map<String, Object>}
+ * @deprecated The {@code /delegation} endpoint has been deprecated. This class and any methods that
+ *             make use of the {@code /delegation} endpoint will be removed in version 2 of this SDK.
  */
+@Deprecated
 public class DelegationRequest<T> implements Request<T, AuthenticationException> {
 
     private static final String API_TYPE_KEY = "api_type";

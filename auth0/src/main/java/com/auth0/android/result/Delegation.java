@@ -32,7 +32,10 @@ import com.google.gson.annotations.SerializedName;
 /**
  * The result of a successful delegation to an Auth0 application that contains a new Auth0 'id_token'
  * See <a href="https://auth0.com/docs/api/authentication#delegation">delegation</a> docs
+ * @deprecated The {@code /delegation} endpoint has been deprecated. This class and any methods that
+ *             make use of the {@code /delegation} endpoint will be removed in version 2 of this SDK.
  */
+@Deprecated
 public class Delegation {
     @SerializedName("id_token")
     private final String idToken;

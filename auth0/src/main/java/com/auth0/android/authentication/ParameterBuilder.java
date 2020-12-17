@@ -54,7 +54,14 @@ public class ParameterBuilder {
     public static final String GRANT_TYPE_REFRESH_TOKEN = "refresh_token";
     public static final String GRANT_TYPE_PASSWORD = "password";
     public static final String GRANT_TYPE_PASSWORD_REALM = "http://auth0.com/oauth/grant-type/password-realm";
+
+    /**
+     * @deprecated The {@code urn:ietf:params:oauth:grant-type:jwt-bearer} grant type is for use with legacy Authentication
+     * APIs. This constant will be removed in version 2 of this SDK.
+     */
+    @Deprecated
     public static final String GRANT_TYPE_JWT = "urn:ietf:params:oauth:grant-type:jwt-bearer";
+
     public static final String GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code";
     public static final String GRANT_TYPE_MFA_OTP = "http://auth0.com/oauth/grant-type/mfa-otp";
     public static final String GRANT_TYPE_PASSWORDLESS_OTP = "http://auth0.com/oauth/grant-type/passwordless/otp";
@@ -63,15 +70,33 @@ public class ParameterBuilder {
     public static final String SCOPE_OPENID = "openid";
     public static final String SCOPE_OFFLINE_ACCESS = "openid offline_access";
 
+    /**
+     * @deprecated The {@code id_token} parameter is only used when making requests to the legacy
+     * <a href="https://auth0.com/docs/api/authentication#database-ad-ldap-active-">/oauth/ro</a> endpoint.
+     * This constant will be removed in version 2 of this SDK.
+     */
+    @Deprecated
     public static final String ID_TOKEN_KEY = "id_token";
     public static final String SCOPE_KEY = "scope";
     public static final String REFRESH_TOKEN_KEY = "refresh_token";
     public static final String CONNECTION_KEY = "connection";
     public static final String REALM_KEY = "realm";
+
+    /**
+     * @deprecated The {@code access_token} parameter is only used when making requests to the legacy
+     * Authentication APIs. This constant will be removed in version 2 of this SDK.
+     */
+    @Deprecated
     public static final String ACCESS_TOKEN_KEY = "access_token";
     public static final String SEND_KEY = "send";
     public static final String CLIENT_ID_KEY = "client_id";
     public static final String GRANT_TYPE_KEY = "grant_type";
+
+    /**
+     * @deprecated The {@code device} parameter is only used when making requests to the legacy
+     * Authentication APIs. This constant will be removed in version 2 of this SDK.
+     */
+    @Deprecated
     public static final String DEVICE_KEY = "device";
     public static final String AUDIENCE_KEY = "audience";
 
@@ -153,8 +178,12 @@ public class ParameterBuilder {
      *
      * @param device a device name
      * @return itself
+     *
+     * @deprecated The {@code device} parameter is used in calls to the <a href="https://auth0.com/docs/api/authentication#database-ad-ldap-active-">/oauth/ro</a>
+     * Authentication API legacy endpoint. This method will be removed in version 2 of this SDK.
      */
     @NonNull
+    @Deprecated
     public ParameterBuilder setDevice(@NonNull String device) {
         return set(DEVICE_KEY, device);
     }
@@ -164,8 +193,13 @@ public class ParameterBuilder {
      *
      * @param accessToken a access token
      * @return itself
+     *
+     * @deprecated This method sets the token on the request made to the <a href="https://auth0.com/docs/api/authentication#social-with-provider-s-access-token">/oauth/access_token</a>
+     * Authentication API legacy endpoint, disabled as of June 2017. This method will be removed in
+     * version 2 of this SDK
      */
     @NonNull
+    @Deprecated
     public ParameterBuilder setAccessToken(@NonNull String accessToken) {
         return set(ACCESS_TOKEN_KEY, accessToken);
     }
