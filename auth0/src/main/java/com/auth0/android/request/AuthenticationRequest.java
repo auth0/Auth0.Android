@@ -72,7 +72,7 @@ public interface AuthenticationRequest extends Request<Credentials, Authenticati
      * @param accessToken a access token
      * @return itself
      *
-     * @deprecated This method sets the token on the request made to the [/oauth/access_token](https://auth0.com/docs/api/authentication#social-with-provider-s-access-token)
+     * @deprecated This method sets the token on the request made to the <a href="https://auth0.com/docs/api/authentication#social-with-provider-s-access-token">/oauth/access_token</a>
      * Authentication API legacy endpoint, disabled as of June 2017. This method will be removed in
      * version 2 of this SDK
      */

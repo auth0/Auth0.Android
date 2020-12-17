@@ -307,9 +307,9 @@ public class AuthenticationAPIClient {
      * @param connection that will be used to authenticate the user, e.g. 'facebook'
      * @return a request to configure and start that will yield {@link Credentials}
      * @deprecated The ability to exchange a third-party provider access token for Auth0 access tokens
-     *             is part of the [/oauth/access_token](https://auth0.com/docs/api/authentication#social-with-provider-s-access-token)
+     *             is part of the <a href="https://auth0.com/docs/api/authentication#social-with-provider-s-access-token">/oauth/access_token</a>
      *             Authentication API legacy endpoint, disabled as of June 2017. For selected social providers,
-     *             there's support for a similar token exchange using the ["Native Social" token exchange](https://auth0.com/docs/api/authentication#token-exchange-for-native-social)
+     *             there's support for a similar token exchange using the <a href="https://auth0.com/docs/api/authentication#token-exchange-for-native-social">Native Social token exchange</a>
      *             endpoint, using {@linkplain AuthenticationAPIClient#loginWithNativeSocialToken(String, String)}
      *             instead.
      */
