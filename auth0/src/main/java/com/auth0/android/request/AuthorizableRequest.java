@@ -33,7 +33,11 @@ import com.auth0.android.Auth0Exception;
  *
  * @param <T> the type this request will return on success.
  * @param <U> the {@link Auth0Exception} type this request will return on failure.
+ *
+ * @deprecated This interface will be removed in version 2 of this SDK. Use {@linkplain ParameterizableRequest}
+ * instead.
  */
+@Deprecated
 public interface AuthorizableRequest<T, U extends Auth0Exception> extends ParameterizableRequest<T, U> {
 
     /**
@@ -41,8 +45,12 @@ public interface AuthorizableRequest<T, U extends Auth0Exception> extends Parame
      *
      * @param jwt token to send to the API
      * @return itself
+     *
+     * @deprecated This interface will be removed in version 2 of this SDK.
+     * Use {@linkplain ParameterizableRequest#addHeader(String, String)} instead.
      */
     @NonNull
+    @Deprecated
     AuthorizableRequest<T, U> setBearer(@NonNull String jwt);
 
 }
