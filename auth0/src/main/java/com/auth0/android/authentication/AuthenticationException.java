@@ -64,10 +64,6 @@ public class AuthenticationException extends Auth0Exception {
         super(message);
     }
 
-    public AuthenticationException(@NonNull String message, @NonNull Throwable throwable) {
-        super(message, throwable);
-    }
-
     public AuthenticationException(@NonNull String message, @Nullable Auth0Exception exception) {
         super(message, exception);
     }

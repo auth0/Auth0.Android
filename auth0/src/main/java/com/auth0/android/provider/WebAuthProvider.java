@@ -367,6 +367,12 @@ public class WebAuthProvider {
                 return;
             }
 
+            if (!PKCE.isAvailable()) {
+                AuthenticationException ex = new AuthenticationException("The SHA-256 algorithm, required to generate the Proof of Key Exchange (PKCE) signature, is not available on this device. See https://developer.android.com/reference/java/security/MessageDigest for additional information on the support for the SHA-256 algorithm.");
+                callback.onFailure(ex);
+                return;
+            }
+
             OAuthManager manager = new OAuthManager(account, callback, values, ctOptions);
             manager.setPKCE(pkce);
             manager.setIdTokenVerificationLeeway(leeway);

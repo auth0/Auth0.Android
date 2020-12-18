@@ -113,29 +113,14 @@ class PKCE {
         return isAvailable(new AlgorithmHelper());
     }
 
-    /**
-     * Checks if this device is capable of using the PKCE flow when performing calls to the
-     * /authorize endpoint, throwing an exception if it does not. This can be used to send
-     * the exception stack trace back to the error handler.
-     *
-     * @throws {@linkplain RuntimeException} if the device does not support PKCE
-     */
-    static void throwIfNotAvailable() throws IllegalStateException {
-        checkIfAvailable(new AlgorithmHelper());
-    }
-
     @VisibleForTesting
     static boolean isAvailable(@NonNull AlgorithmHelper algorithmHelper) {
         try {
-            checkIfAvailable(algorithmHelper);
+            byte[] input = algorithmHelper.getASCIIBytes("test");
+            algorithmHelper.getSHA256(input);
         } catch (Exception ignored) {
             return false;
         }
         return true;
-    }
-
-    private static void checkIfAvailable(@NonNull AlgorithmHelper algorithmHelper) {
-        byte[] input = algorithmHelper.getASCIIBytes("test");
-        algorithmHelper.getSHA256(input);
     }
 }

@@ -99,16 +99,6 @@ class OAuthManager extends ResumableManager {
     @SuppressWarnings("ConstantConditions")
     @Override
     boolean resume(AuthorizeResult result) {
-        // Should never happen where the algorithms required are not present, but just in case it does,
-        // this will allow us to at least call the error handler callback with an exception including
-        // the cause
-        try {
-            PKCE.throwIfNotAvailable();
-        } catch (Throwable t) {
-            callback.onFailure(new AuthenticationException("Algorithms required to use PKCE are not available on this device. Authentication can not be done securely.", t));
-            return true;
-        }
-
         if (!result.isValid(requestCode)) {
             Log.w(TAG, "The Authorize Result is invalid.");
             return false;
@@ -253,12 +243,6 @@ class OAuthManager extends ResumableManager {
     }
 
     private void addPKCEParameters(Map<String, String> parameters, String redirectUri) {
-        // If PKCE is not available on the device (should never  happen), just return here and
-        // we will fail later so we can call the error callback and not cause a hard failure
-        if (!PKCE.isAvailable()) {
-            return;
-        }
-
         createPKCE(redirectUri);
         String codeChallenge = pkce.getCodeChallenge();
         parameters.put(KEY_CODE_CHALLENGE, codeChallenge);
