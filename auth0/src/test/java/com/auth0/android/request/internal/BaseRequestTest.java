@@ -76,6 +76,7 @@ public class BaseRequestTest {
     public void setUp() {
         MockitoAnnotations.initMocks(this);
 
+        // TODO consider using real mock adapter instead of mock
         baseRequest = new BaseRequest<>(
                 HttpMethod.POST.INSTANCE,
                 BASE_URL,
@@ -87,7 +88,15 @@ public class BaseRequestTest {
 
     @Test
     public void shouldAddHeaders() throws Exception {
+        // TODO consider using real input stream intead of mock, for this test and others
+        InputStream inputStream = mock(InputStream.class);
+        when(inputStream.read()).thenReturn(123);
+        when(resultAdapter.fromJson(any(Reader.class))).thenReturn("woohoo");
+        ServerResponse response = new ServerResponse(200, inputStream, Collections.emptyMap());
+        when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
+
         baseRequest.addHeader("A", "1");
+        baseRequest.execute();
 
         verify(client).load(eq(BASE_URL), optionsCaptor.capture());
         Map<String, String> values = optionsCaptor.getValue().getHeaders();
@@ -97,7 +106,14 @@ public class BaseRequestTest {
 
     @Test
     public void shouldAddParameter() throws Exception {
+        InputStream inputStream = mock(InputStream.class);
+        when(inputStream.read()).thenReturn(123);
+        when(resultAdapter.fromJson(any(Reader.class))).thenReturn("woohoo");
+        ServerResponse response = new ServerResponse(200, inputStream, Collections.emptyMap());
+        when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
+
         baseRequest.addParameter("A", "1");
+        baseRequest.execute();
 
         verify(client).load(eq(BASE_URL), optionsCaptor.capture());
         Map<String, String> values = optionsCaptor.getValue().getParameters();
@@ -107,10 +123,18 @@ public class BaseRequestTest {
 
     @Test
     public void shouldAddParameters() throws Exception {
+        InputStream inputStream = mock(InputStream.class);
+        when(inputStream.read()).thenReturn(123);
+        when(resultAdapter.fromJson(any(Reader.class))).thenReturn("woohoo");
+        ServerResponse response = new ServerResponse(200, inputStream, Collections.emptyMap());
+        when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
+
         HashMap<String, String> parameters = new HashMap<>();
         parameters.put("A", "1");
         parameters.put("B", "2");
+
         baseRequest.addParameters(parameters);
+        baseRequest.execute();
 
         verify(client).load(eq(BASE_URL), optionsCaptor.capture());
         Map<String, String> values = optionsCaptor.getValue().getParameters();
@@ -121,7 +145,14 @@ public class BaseRequestTest {
 
     @Test
     public void shouldSetBearer() throws Exception {
+        InputStream inputStream = mock(InputStream.class);
+        when(inputStream.read()).thenReturn(123);
+        when(resultAdapter.fromJson(any(Reader.class))).thenReturn("woohoo");
+        ServerResponse response = new ServerResponse(200, inputStream, Collections.emptyMap());
+        when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
+
         baseRequest.setBearer("my-token");
+        baseRequest.execute();
 
         verify(client).load(eq(BASE_URL), optionsCaptor.capture());
         Map<String, String> values = optionsCaptor.getValue().getHeaders();
@@ -132,9 +163,22 @@ public class BaseRequestTest {
     @Test
     public void shouldBuildErrorFromException() throws Exception {
         IOException networkError = mock(IOException.class);
-        when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenThrow(IOException.class);
+        Auth0Exception error = mock(Auth0Exception.class);
+        when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenThrow(networkError);
+        when(errorAdapter.fromException(any(IOException.class))).thenReturn(error);
 
-        baseRequest.execute();
+        Exception exception = null;
+        String result = null;
+        try {
+            result = baseRequest.execute();
+        } catch (Exception e) {
+            exception = e;
+        }
+
+        assertThat(exception, is(error));
+        assertThat(result, is(nullValue()));
+
+        verifyNoInteractions(resultAdapter);
         verify(errorAdapter).fromException(eq(networkError));
     }
 
@@ -161,6 +205,7 @@ public class BaseRequestTest {
         verifyNoInteractions(resultAdapter);
         verify(errorAdapter).fromJson(readerCaptor.capture());
 
+        // TODO what is the purpose of these verifications and why are they failing?
         Reader reader = readerCaptor.getValue();
         assertThat(reader.read(), is(123));
         verify(inputStream).read();
@@ -188,6 +233,7 @@ public class BaseRequestTest {
         verifyNoInteractions(errorAdapter);
         verify(resultAdapter).fromJson(readerCaptor.capture());
 
+        // TODO What is the purpose of these verifications, and why are they failing?
         Reader reader = readerCaptor.getValue();
         assertThat(reader.read(), is(123));
         verify(inputStream).read();
