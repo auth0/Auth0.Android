@@ -91,7 +91,9 @@ public class UsersAPIClient {
      *
      * @param context a valid Context
      * @param token   of the primary identity
+     * @deprecated This method will be removed in the next version. Please use {@link UsersAPIClient(Auth0, String)}.
      */
+    @Deprecated
     public UsersAPIClient(@NonNull Context context, @NonNull String token) {
         this(new Auth0(context), token);
     }
