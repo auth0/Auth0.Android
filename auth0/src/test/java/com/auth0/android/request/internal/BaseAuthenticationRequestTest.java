@@ -8,6 +8,7 @@ import com.auth0.android.request.kt.HttpMethod;
 import com.auth0.android.request.kt.JsonAdapter;
 import com.auth0.android.request.kt.NetworkingClient;
 import com.auth0.android.request.kt.RequestOptions;
+import com.auth0.android.request.kt.ServerResponse;
 import com.auth0.android.result.Credentials;
 
 import org.junit.Before;
@@ -21,15 +22,21 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 
+import java.io.InputStream;
+import java.io.Reader;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.hamcrest.collection.IsMapWithSize.aMapWithSize;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
 public class BaseAuthenticationRequestTest {
@@ -60,6 +67,8 @@ public class BaseAuthenticationRequestTest {
 
     @Test
     public void shouldSetGrantType() throws Exception {
+        mockSuccessfulServerResponse();
+
         createRequest(BASE_URL)
                 .setGrantType("grantType")
                 .execute();
@@ -72,6 +81,8 @@ public class BaseAuthenticationRequestTest {
 
     @Test
     public void shouldSetConnection() throws Exception {
+        mockSuccessfulServerResponse();
+
         createRequest(BASE_URL)
                 .setConnection("my-connection")
                 .execute();
@@ -84,6 +95,8 @@ public class BaseAuthenticationRequestTest {
 
     @Test
     public void shouldSetRealm() throws Exception {
+        mockSuccessfulServerResponse();
+
         createRequest(BASE_URL)
                 .setRealm("my-realm")
                 .execute();
@@ -96,6 +109,8 @@ public class BaseAuthenticationRequestTest {
 
     @Test
     public void shouldSetScope() throws Exception {
+        mockSuccessfulServerResponse();
+
         createRequest(BASE_URL)
                 .setScope("email profile")
                 .execute();
@@ -108,6 +123,8 @@ public class BaseAuthenticationRequestTest {
 
     @Test
     public void shouldSetDevice() throws Exception {
+        mockSuccessfulServerResponse();
+
         //TODO: This was once used to identify the device authenticating. No longer used.
         createRequest(BASE_URL)
                 .setDevice("android-phone")
@@ -116,11 +133,13 @@ public class BaseAuthenticationRequestTest {
         verify(client).load(eq(BASE_URL), optionsCaptor.capture());
         Map<String, String> values = optionsCaptor.getValue().getParameters();
         assertThat(values, aMapWithSize(1));
-        assertThat(values, hasEntry("device", "email profile"));
+        assertThat(values, hasEntry("device", "android-phone"));
     }
 
     @Test
     public void shouldSetAudience() throws Exception {
+        mockSuccessfulServerResponse();
+
         createRequest(BASE_URL)
                 .setAudience("my-api")
                 .execute();
@@ -133,6 +152,8 @@ public class BaseAuthenticationRequestTest {
 
     @Test
     public void shouldAddAuthenticationParameters() throws Exception {
+        mockSuccessfulServerResponse();
+
         HashMap<String, String> parameters = new HashMap<>();
         parameters.put("extra", "value");
         parameters.put("123", "890");
@@ -146,5 +167,14 @@ public class BaseAuthenticationRequestTest {
         assertThat(values, aMapWithSize(2));
         assertThat(values, hasEntry("extra", "value"));
         assertThat(values, hasEntry("123", "890"));
+    }
+
+    private void mockSuccessfulServerResponse() throws Exception {
+        InputStream inputStream = mock(InputStream.class);
+        Credentials credentials = mock(Credentials.class);
+        when(inputStream.read()).thenReturn(123);
+        when(resultAdapter.fromJson(any(Reader.class))).thenReturn(credentials);
+        ServerResponse response = new ServerResponse(200, inputStream, Collections.emptyMap());
+        when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
     }
 }
