@@ -129,7 +129,9 @@ public class AuthenticationAPIClient {
      * defined in the project String resources file.
      *
      * @param context a valid Context
+     * @deprecated This method will be removed in the next version. Please use {@link AuthenticationAPIClient(Auth0)}.
      */
+    @Deprecated
     public AuthenticationAPIClient(@NonNull Context context) {
         this(new Auth0(context));
     }
