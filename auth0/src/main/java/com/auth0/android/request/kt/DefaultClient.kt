@@ -53,10 +53,10 @@ public class DefaultClient(private val timeout: Int) : NetworkingClient {
 
         if (options.method == HttpMethod.POST || options.method == HttpMethod.PATCH || options.method == HttpMethod.DELETE) {
             //required headers
-            connection.requestMethod = options.method.toString()
             connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
             connection.doInput = true
             connection.doOutput = true
+            connection.requestMethod = options.method.toString()
             val output = connection.outputStream
             val writer = BufferedWriter(output.bufferedWriter())
             if (options.parameters.isNotEmpty()) {
@@ -92,6 +92,4 @@ public class DefaultClient(private val timeout: Int) : NetworkingClient {
         }
         return builder.toString()
     }
-
-
 }
