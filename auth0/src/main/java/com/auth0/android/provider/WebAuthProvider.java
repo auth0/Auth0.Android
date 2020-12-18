@@ -352,11 +352,14 @@ public class WebAuthProvider {
 
         /**
          * Request user Authentication. The result will be received in the callback.
-         * An error is raised if there are no browser applications installed in the device.
+         * An error is raised if there are no browser applications installed in the device, or if
+         * device does not support the necessary algorithms to support Proof of Key Exchange (PKCE)
+         * (this is not expected).
          *
          * @param activity context to run the authentication
          * @param callback to receive the parsed results
          * @see AuthenticationException#isBrowserAppNotAvailable()
+         * @see AuthenticationException#isPKCENotAvailable()
          */
         public void start(@NonNull Activity activity, @NonNull AuthCallback callback) {
             resetManagerInstance();
@@ -368,7 +371,8 @@ public class WebAuthProvider {
             }
 
             if (!PKCE.isAvailable()) {
-                AuthenticationException ex = new AuthenticationException("The SHA-256 algorithm, required to generate the Proof of Key Exchange (PKCE) signature, is not available on this device. See https://developer.android.com/reference/java/security/MessageDigest for additional information on the support for the SHA-256 algorithm.");
+                AuthenticationException ex = new AuthenticationException("a0.pkce_not_available",
+                        "The SHA-256 algorithm, required to generate the Proof of Key Exchange (PKCE) signature, is not available on this device. See https://developer.android.com/reference/java/security/MessageDigest for additional information on the support for the SHA-256 algorithm.");
                 callback.onFailure(ex);
                 return;
             }

@@ -163,6 +163,13 @@ public class AuthenticationException extends Auth0Exception {
         return "a0.browser_not_available".equals(code);
     }
 
+    /**
+     * When the required algorithms to support PKCE web authentication is    not available on the device
+     */
+    public boolean isPKCENotAvailable() {
+        return "a0.pkce_not_available".equals(code);
+    }
+
     // When the Authorize URL is invalid
     public boolean isInvalidAuthorizeURL() {
         return "a0.invalid_authorize_url".equals(code);
