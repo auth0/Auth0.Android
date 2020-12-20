@@ -69,7 +69,7 @@ import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -128,7 +128,7 @@ public class AuthenticationAPIClientTest {
         RequestFactory<AuthenticationException> factory = mock(RequestFactory.class);
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         auth0.setTelemetry(telemetry);
-        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0, factory, gson);
+        new AuthenticationAPIClient(auth0, factory, gson);
         verify(factory).setClientInfo("the-telemetry-data");
     }
 
@@ -138,8 +138,8 @@ public class AuthenticationAPIClientTest {
         RequestFactory<AuthenticationException> factory = mock(RequestFactory.class);
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         auth0.doNotSendTelemetry();
-        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0, factory, gson);
-        verify(factory, never()).setClientInfo(any(String.class));
+        new AuthenticationAPIClient(auth0, factory, gson);
+        verify(factory, never()).setClientInfo(anyString());
     }
 
     @Test
