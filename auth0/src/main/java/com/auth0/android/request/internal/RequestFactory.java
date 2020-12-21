@@ -47,7 +47,7 @@ public class RequestFactory {
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String USER_AGENT_HEADER = "User-Agent";
     private static final String ACCEPT_LANGUAGE_HEADER = "Accept-Language";
-    private static final String CLIENT_INFO_HEADER = Auth0UserAgent.HEADER_NAME;
+    private static final String AUTH0_USER_AGENT_HEADER = Auth0UserAgent.HEADER_NAME;
 
     private final HashMap<String, String> headers;
 
@@ -62,7 +62,7 @@ public class RequestFactory {
     }
 
     public void setClientInfo(@NonNull String clientInfo) {
-        headers.put(CLIENT_INFO_HEADER, clientInfo);
+        headers.put(AUTH0_USER_AGENT_HEADER, clientInfo);
     }
 
     public void setUserAgent(@NonNull String userAgent) {

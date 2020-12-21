@@ -119,19 +119,19 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldSetTelemetryIfPresent() {
+    public void shouldSetAuth0UserAgentIfPresent() {
         final Auth0UserAgent auth0UserAgent = mock(Auth0UserAgent.class);
-        when(auth0UserAgent.getValue()).thenReturn("the-telemetry-data");
+        when(auth0UserAgent.getValue()).thenReturn("the-user-agent-data");
         RequestFactory factory = mock(RequestFactory.class);
         OkHttpClientFactory clientFactory = mock(OkHttpClientFactory.class);
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         auth0.setAuth0UserAgent(auth0UserAgent);
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0, factory, clientFactory);
-        verify(factory).setClientInfo("the-telemetry-data");
+        verify(factory).setClientInfo("the-user-agent-data");
     }
 
     @Test
-    public void shouldNotSetTelemetryIfMissing() {
+    public void shouldNotSetAuth0UserAgentIfMissing() {
         RequestFactory factory = mock(RequestFactory.class);
         OkHttpClientFactory clientFactory = mock(OkHttpClientFactory.class);
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
