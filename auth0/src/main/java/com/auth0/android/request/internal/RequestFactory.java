@@ -30,7 +30,7 @@ import com.auth0.android.Auth0Exception;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.Request;
-import com.auth0.android.util.Telemetry;
+import com.auth0.android.util.Auth0UserAgent;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.HttpUrl;
@@ -47,7 +47,7 @@ public class RequestFactory {
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String USER_AGENT_HEADER = "User-Agent";
     private static final String ACCEPT_LANGUAGE_HEADER = "Accept-Language";
-    private static final String CLIENT_INFO_HEADER = Telemetry.HEADER_NAME;
+    private static final String CLIENT_INFO_HEADER = Auth0UserAgent.HEADER_NAME;
 
     private final HashMap<String, String> headers;
 

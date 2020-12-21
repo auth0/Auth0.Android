@@ -1,10 +1,11 @@
 package com.auth0.android.util;
 
+import android.text.TextUtils;
+import android.util.Base64;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import android.text.TextUtils;
-import android.util.Base64;
 
 import com.google.gson.Gson;
 
@@ -13,8 +14,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-
-public class Telemetry {
+/**
+ * Responsible for building the custom user agent header data sent on requests to Auth0.
+ */
+public class Auth0UserAgent {
     public static final String HEADER_NAME = "Auth0-Client";
 
     private static final String NAME_KEY = "name";
@@ -28,11 +31,11 @@ public class Telemetry {
     private final Map<String, String> env;
     private final String value;
 
-    public Telemetry(@NonNull String name, @NonNull String version) {
+    public Auth0UserAgent(@NonNull String name, @NonNull String version) {
         this(name, version, null);
     }
 
-    public Telemetry(@NonNull String name, @NonNull String version, @Nullable String libraryVersion) {
+    public Auth0UserAgent(@NonNull String name, @NonNull String version, @Nullable String libraryVersion) {
         this.name = name;
         this.version = version;
         if (TextUtils.isEmpty(name)) {

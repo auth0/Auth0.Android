@@ -31,7 +31,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.auth0.android.auth0.BuildConfig;
-import com.auth0.android.util.Telemetry;
+import com.auth0.android.util.Auth0UserAgent;
 import com.squareup.okhttp.HttpUrl;
 
 /**
@@ -52,7 +52,7 @@ public class Auth0 {
     private final String clientId;
     private final HttpUrl domainUrl;
     private final HttpUrl configurationUrl;
-    private Telemetry telemetry;
+    private Auth0UserAgent auth0UserAgent;
     private boolean loggingEnabled;
     private boolean tls12Enforced;
     private int connectTimeoutInSeconds;
@@ -96,7 +96,7 @@ public class Auth0 {
             throw new IllegalArgumentException(String.format("Invalid domain url: '%s'", domain));
         }
         this.configurationUrl = resolveConfiguration(configurationDomain, this.domainUrl);
-        this.telemetry = new Telemetry(BuildConfig.LIBRARY_NAME, BuildConfig.VERSION_NAME);
+        this.auth0UserAgent = new Auth0UserAgent(BuildConfig.LIBRARY_NAME, BuildConfig.VERSION_NAME);
     }
 
     /**
@@ -151,11 +151,11 @@ public class Auth0 {
     }
 
     /**
-     * @return Auth0 telemetry info sent in every request
+     * @return Auth0 user agent info sent in every request
      */
     @Nullable
-    public Telemetry getTelemetry() {
-        return telemetry;
+    public Auth0UserAgent getAuth0UserAgent() {
+        return auth0UserAgent;
     }
 
     /**
@@ -180,20 +180,21 @@ public class Auth0 {
     }
 
     /**
-     * Setter for the Telemetry to send in every request to Auth0.
+     * Setter for the user agent info to send in every request to Auth0.
      *
-     * @param telemetry to send in every request to Auth0.
+     * @param auth0UserAgent to send in every request to Auth0.
      * @see #doNotSendTelemetry()
      */
-    public void setTelemetry(@Nullable Telemetry telemetry) {
-        this.telemetry = telemetry;
+    public void setAuth0UserAgent(@Nullable Auth0UserAgent auth0UserAgent) {
+        this.auth0UserAgent = auth0UserAgent;
     }
 
     /**
-     * Avoid sending telemetry in every request to Auth0
+     * Avoid sending any user agent info in every request to Auth0
      */
+    // TODO - this should be removed
     public void doNotSendTelemetry() {
-        this.telemetry = null;
+        this.auth0UserAgent = null;
     }
 
     /**
