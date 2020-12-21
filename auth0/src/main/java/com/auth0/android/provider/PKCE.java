@@ -24,10 +24,11 @@
 
 package com.auth0.android.provider;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import android.util.Log;
 
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
@@ -108,7 +109,7 @@ class PKCE {
      *
      * @return if this device can use PKCE flow or not.
      */
-    public static boolean isAvailable() {
+    static boolean isAvailable() {
         return isAvailable(new AlgorithmHelper());
     }
 

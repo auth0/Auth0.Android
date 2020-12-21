@@ -43,10 +43,7 @@ import java.util.Map;
 import static com.auth0.android.provider.OAuthManager.KEY_CONNECTION;
 import static com.auth0.android.provider.OAuthManager.KEY_MAX_AGE;
 import static com.auth0.android.provider.OAuthManager.KEY_NONCE;
-import static com.auth0.android.provider.OAuthManager.KEY_RESPONSE_TYPE;
 import static com.auth0.android.provider.OAuthManager.KEY_STATE;
-import static com.auth0.android.provider.OAuthManager.RESPONSE_TYPE_CODE;
-import static com.auth0.android.provider.OAuthManager.RESPONSE_TYPE_ID_TOKEN;
 
 /**
  * OAuth2 Web Authentication Provider.
@@ -151,7 +148,6 @@ public class WebAuthProvider {
         private static final String KEY_SCOPE = "scope";
         private static final String KEY_CONNECTION_SCOPE = "connection_scope";
         private static final String SCOPE_TYPE_OPENID = "openid";
-        private static final String RESPONSE_TYPE_TOKEN = "token";
 
 
         private final Auth0 account;
@@ -170,7 +166,6 @@ public class WebAuthProvider {
             //Default values
             this.scheme = "https";
             this.ctOptions = CustomTabsOptions.newBuilder().build();
-            withResponseType(ResponseType.CODE);
             withScope(SCOPE_TYPE_OPENID);
         }
 
@@ -310,28 +305,6 @@ public class WebAuthProvider {
         }
 
         /**
-         * Choose the grant type for this request.
-         *
-         * @param type the ResponseType to request to the Authentication API. Multiple ResponseType's can be defined using a pipe. "CODE | TOKEN"
-         * @return the current builder instance
-         */
-        @NonNull
-        public Builder withResponseType(@ResponseType int type) {
-            StringBuilder sb = new StringBuilder();
-            if (FlagChecker.hasFlag(type, ResponseType.CODE)) {
-                sb.append(RESPONSE_TYPE_CODE).append(" ");
-            }
-            if (FlagChecker.hasFlag(type, ResponseType.ID_TOKEN)) {
-                sb.append(RESPONSE_TYPE_ID_TOKEN).append(" ");
-            }
-            if (FlagChecker.hasFlag(type, ResponseType.TOKEN)) {
-                sb.append(RESPONSE_TYPE_TOKEN);
-            }
-            this.values.put(KEY_RESPONSE_TYPE, sb.toString().trim());
-            return this;
-        }
-
-        /**
          * Use extra parameters on the request.
          *
          * @param parameters to add
@@ -379,17 +352,27 @@ public class WebAuthProvider {
 
         /**
          * Request user Authentication. The result will be received in the callback.
-         * An error is raised if there are no browser applications installed in the device.
+         * An error is raised if there are no browser applications installed in the device, or if
+         * device does not support the necessary algorithms to support Proof of Key Exchange (PKCE)
+         * (this is not expected).
          *
          * @param activity context to run the authentication
          * @param callback to receive the parsed results
          * @see AuthenticationException#isBrowserAppNotAvailable()
+         * @see AuthenticationException#isPKCENotAvailable()
          */
         public void start(@NonNull Activity activity, @NonNull AuthCallback callback) {
             resetManagerInstance();
 
             if (!ctOptions.hasCompatibleBrowser(activity.getPackageManager())) {
                 AuthenticationException ex = new AuthenticationException("a0.browser_not_available", "No compatible Browser application is installed.");
+                callback.onFailure(ex);
+                return;
+            }
+
+            if (!PKCE.isAvailable()) {
+                AuthenticationException ex = new AuthenticationException("a0.pkce_not_available",
+                        "The SHA-256 algorithm, required to generate the Proof of Key Exchange (PKCE) signature, is not available on this device. See https://developer.android.com/reference/java/security/MessageDigest for additional information on the support for the SHA-256 algorithm.");
                 callback.onFailure(ex);
                 return;
             }

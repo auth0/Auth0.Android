@@ -225,17 +225,6 @@ WebAuthProvider.login(account)
     .start(MainActivity.this, authCallback);
 ```
 
-#### Use Code grant with PKCE
-
-> To use the `Code Grant` in Android, go to your [Application](https://manage.auth0.com/#/applications) in the dashboard, Settings tab, set `Application Type` to `Native` and `Token Endpoint Authentication Method` to `None`.
-
-
-```java
-WebAuthProvider.login(account)
-    .useCodeGrant(true)
-    .start(MainActivity.this, authCallback);
-```
-
 #### Specify audience
 
 The snippet below requests the "userinfo" audience in order to guarantee OIDC compliant responses from the server. This can also be achieved by flipping the "OIDC Conformant" switch on in the OAuth Advanced Settings of your application. For more information check [this documentation](https://auth0.com/docs/api-auth/intro#how-to-use-the-new-flows).
