@@ -338,7 +338,7 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
-    public void shouldHavePKCENotAvailalbe() {
+    public void shouldHavePKCENotAvailable() {
         values.put(CODE_KEY, "a0.pkce_not_available");
         AuthenticationException ex = new AuthenticationException(values);
         assertThat(ex.isPKCENotAvailable(), is(true));
