@@ -24,13 +24,13 @@ public class RequestMock<T, U extends Auth0Exception> implements Request<T, U> {
 
     @NonNull
     @Override
-    public Request<T, U> addParameters(@NonNull Map<String, Object> parameters) {
+    public Request<T, U> addParameters(@NonNull Map<String, String> parameters) {
         return this;
     }
 
     @NonNull
     @Override
-    public Request<T, U> addParameter(@NonNull String name, @NonNull Object value) {
+    public Request<T, U> addParameter(@NonNull String name, @NonNull String value) {
         return this;
     }
 

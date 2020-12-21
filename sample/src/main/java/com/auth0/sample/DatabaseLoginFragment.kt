@@ -12,6 +12,7 @@ import com.auth0.android.callback.AuthenticationCallback
 import com.auth0.android.result.Credentials
 import com.auth0.sample.databinding.FragmentDatabaseLoginBinding
 import com.google.android.material.snackbar.Snackbar
+import kotlin.concurrent.thread
 
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
@@ -27,7 +28,7 @@ class DatabaseLoginFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         val binding = FragmentDatabaseLoginBinding.inflate(inflater, container, false)
         binding.buttonLogin.setOnClickListener {
             val email = binding.textEmail.text.toString()
@@ -38,20 +39,22 @@ class DatabaseLoginFragment : Fragment() {
     }
 
     private fun makeRequest(email: String, password: String) {
-        apiClient.login(email, password, "Username-Password-Authentication")
-            //Additional customization to the request goes here
-            .start(object : AuthenticationCallback<Credentials> {
-                override fun onFailure(error: AuthenticationException) {
-                    requireActivity().runOnUiThread {
-                        Snackbar.make(requireView(), "Failure :(", Snackbar.LENGTH_LONG).show()
+        thread { //FIXME: Remove this wrapping thread once the request runs in background
+            apiClient.login(email, password, "Username-Password-Authentication")
+                //Additional customization to the request goes here
+                .start(object : AuthenticationCallback<Credentials> {
+                    override fun onFailure(error: AuthenticationException) {
+                        requireActivity().runOnUiThread {
+                            Snackbar.make(requireView(), "Failure :(", Snackbar.LENGTH_LONG).show()
+                        }
                     }
-                }
 
-                override fun onSuccess(payload: Credentials?) {
-                    requireActivity().runOnUiThread {
-                        Snackbar.make(requireView(), "Success :D", Snackbar.LENGTH_LONG).show()
+                    override fun onSuccess(payload: Credentials?) {
+                        requireActivity().runOnUiThread {
+                            Snackbar.make(requireView(), "Success :D", Snackbar.LENGTH_LONG).show()
+                        }
                     }
-                }
-            })
+                })
+        }
     }
 }

@@ -20,12 +20,12 @@ The deprecated ability to sign using a WebView component has been removed. Exter
 
 ## Request interfaces changes
 
-The `com.auth0.android.request` package defines the top-level interfaces for building and executing HTTP requests. Historically, a common issue has been the inability to add custom headers and request parameters to all request types. We've refactored the request interfaces to enable any request to be customized with additional headers and request parameters.
+The `com.auth0.android.request` package defines the top-level interfaces for building and executing HTTP requests. Historically, a common issue has been the inability to add custom headers and request parameters to all request types. We've refactored the request interfaces to enable any request to be customized with additional headers and request parameters. Note that these parameters now need to be of type String.
 
 The top-level `com.auth0.android.request.Request` interface now specifies the following methods:
 
-- `Request<T, U> addParameters(@NonNull Map<String, Object> parameters)`
-- `Request<T, U> addParameter(@NonNull String name, @NonNull Object value)`
+- `Request<T, U> addParameters(@NonNull Map<String, String> parameters)`
+- `Request<T, U> addParameter(@NonNull String name, @NonNull String value)`
 - `Request<T, U> addHeader(@NonNull String name, @NonNull String value)`
 
 As a result, the following interfaces have been removed:
@@ -84,16 +84,16 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 
 #### TokenRequest
 
-- `public TokenRequest addParameter(@NonNull String name, @NonNull Object value)`
+- `public TokenRequest addParameter(@NonNull String name, @NonNull String value)`
 
 #### SignupRequest
 
-- `public SignUpRequest addParameters(@NonNull Map<String, Object> parameters)`
-- `public SignUpRequest addParameter(@NonNull String name, @NonNull Object value)`
+- `public SignUpRequest addParameters(@NonNull Map<String, String> parameters)`
+- `public SignUpRequest addParameter(@NonNull String name, @NonNull String value)`
 
 #### ProfileRequest
 
-- `public ProfileRequest addParameter(@NonNull String name, @NonNull Object value)`
+- `public ProfileRequest addParameter(@NonNull String name, @NonNull String value)`
 
 ### Methods removed or changed
 
@@ -169,6 +169,31 @@ The ability to make requests to the [/delegation](https://auth0.com/docs/api/aut
 - `public <T, U extends Auth0Exception> ParameterizableRequest<T, U> GET(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull Class<T> clazz, @NonNull ErrorBuilder<U> errorBuilder)`. Use `public <T, U extends Auth0Exception> Request<T, U> GET(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull Class<T> clazz, @NonNull ErrorBuilder<U> errorBuilder)` instead.
 - `public <T, U extends Auth0Exception> ParameterizableRequest<T, U> GET(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull TypeToken<T> typeToken, @NonNull ErrorBuilder<U> errorBuilder)`. Use `public <T, U extends Auth0Exception> Request<T, U> GET(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson, @NonNull TypeToken<T> typeToken, @NonNull ErrorBuilder<U> errorBuilder)` instead.
 - `public AuthRequest authenticationPOST(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson)`. Use `public AuthRequest authenticationPOST(@NonNull HttpUrl url, @NonNull OkHttpClient client, @NonNull Gson gson)` instead.
+
+#### DatabaseConnectionRequest
+- `public DatabaseConnectionRequest<T, U> addParameters(@NonNull Map<String, Object> parameters)`. Use `public DatabaseConnectionRequest<T, U> addParameters(@NonNull Map<String, String> parameters)` instead.
+- `public DatabaseConnectionRequest<T, U> addParameter(@NonNull String name, @NonNull String value)`. Use `public DatabaseConnectionRequest<T, U> addParameter(@NonNull String name, @NonNull String value)` instead.
+
+#### DelegationRequest
+- `public DelegationRequest<T> addParameters(@NonNull Map<String, Object> parameters)`. Use `public DelegationRequest<T> addParameters(@NonNull Map<String, String> parameters)` instead.
+- `public DelegationRequest<T> addParameter(@NonNull String name, @NonNull String value)`. Use `public DelegationRequest<T> addParameter(@NonNull String name, @NonNull String value)` instead.
+
+#### ProfileRequest
+- `public ProfileRequest addParameters(@NonNull Map<String, Object> parameters)`. Use `public ProfileRequest addParameters(@NonNull Map<String, String> parameters)` instead.
+- `public ProfileRequest addParameter(@NonNull String name, @NonNull String value)`. Use `public ProfileRequest addParameter(@NonNull String name, @NonNull String value)` instead.
+
+#### TokenRequest
+- `public TokenRequest addParameters(@NonNull Map<String, Object> parameters)`. Use `public TokenRequest addParameters(@NonNull Map<String, String> parameters)` instead.
+- `public TokenRequest addParameter(@NonNull String name, @NonNull String value)`. Use `public TokenRequest addParameter(@NonNull String name, @NonNull String value)` instead.
+
+#### SignUpRequest
+//TODO: remove? - `public SignUpRequest addAuthenticationParameters(@NonNull Map<String, Object> parameters)` Use `public SignUpRequest addAuthenticationParameters(@NonNull Map<String, String> parameters)` instead.
+//TODO: remove? - `public SignUpRequest addSignUpParameters(@NonNull Map<String, Object> parameters)` Use `public SignUpRequest addSignUpParameters(@NonNull Map<String, String> parameters)` instead.
+- `public SignUpRequest addParameters(@NonNull Map<String, Object> parameters)`. Use `public SignUpRequest addParameters(@NonNull Map<String, String> parameters)` instead.
+- `public SignUpRequest addParameter(@NonNull String name, @NonNull String value)`. Use `public SignUpRequest addParameter(@NonNull String name, @NonNull String value)` instead.
+
+#### AuthenticationRequest
+- `AuthenticationRequest addAuthenticationParameters(@NonNull Map<String, String> parameters)`. Use `public Request<Credentials, AuthenticationException> addParameters(@NonNull Map<String, String> parameters)` instead.
 
 ### Constants removed
 

@@ -72,7 +72,7 @@ public class ParameterBuilderTest {
 
     @Test
     public void shouldInstantiateWithArguments() {
-        assertThat(ParameterBuilder.newBuilder(new HashMap<String, Object>()), is(notNullValue()));
+        assertThat(ParameterBuilder.newBuilder(new HashMap<String, String>()), is(notNullValue()));
     }
 
     @Test
@@ -89,31 +89,31 @@ public class ParameterBuilderTest {
 
     @Test
     public void shouldSetScope() {
-        Map<String, Object> parameters = builder.setScope(ParameterBuilder.SCOPE_OFFLINE_ACCESS).asDictionary();
+        Map<String, String> parameters = builder.setScope(ParameterBuilder.SCOPE_OFFLINE_ACCESS).asDictionary();
         assertThat(parameters, hasEntry("scope", ParameterBuilder.SCOPE_OFFLINE_ACCESS));
     }
 
     @Test
     public void shouldSetAudience() {
-        Map<String, Object> parameters = builder.setAudience("https://domain.auth0.com/api").asDictionary();
+        Map<String, String> parameters = builder.setAudience("https://domain.auth0.com/api").asDictionary();
         assertThat(parameters, hasEntry("audience", "https://domain.auth0.com/api"));
     }
 
     @Test
     public void shouldSetDevice() {
-        Map<String, Object> parameters = builder.setDevice(DEVICE).asDictionary();
+        Map<String, String> parameters = builder.setDevice(DEVICE).asDictionary();
         assertThat(parameters, hasEntry("device", DEVICE));
     }
 
     @Test
     public void shouldSetRefreshToken() {
-        Map<String, Object> parameters = builder.setRefreshToken(DEVICE).asDictionary();
+        Map<String, String> parameters = builder.setRefreshToken(DEVICE).asDictionary();
         assertThat(parameters, hasEntry("refresh_token", DEVICE));
     }
 
     @Test
     public void shouldSetScopeWithOfflineAccess() {
-        Map<String, Object> parameters = builder.setScope(ParameterBuilder.SCOPE_OFFLINE_ACCESS).asDictionary();
+        Map<String, String> parameters = builder.setScope(ParameterBuilder.SCOPE_OFFLINE_ACCESS).asDictionary();
         assertThat(parameters, hasEntry("scope", ParameterBuilder.SCOPE_OFFLINE_ACCESS));
     }
 
@@ -144,14 +144,14 @@ public class ParameterBuilderTest {
 
     @Test
     public void shouldAddAllFromDictionary() {
-        Map<String, Object> parameters = new HashMap<>();
+        Map<String, String> parameters = new HashMap<>();
         parameters.put("key", "value");
         assertThat(builder.addAll(parameters).asDictionary(), hasEntry("key", "value"));
     }
 
     @Test
     public void shouldSkipNullValuesOnAddAllFromDictionary() {
-        Map<String, Object> parameters = new HashMap<>();
+        Map<String, String> parameters = new HashMap<>();
         parameters.put("key", "value");
         parameters.put("null", null);
         assertThat(builder.addAll(parameters).asDictionary(), hasEntry("key", "value"));
@@ -160,7 +160,7 @@ public class ParameterBuilderTest {
 
     @Test
     public void shouldClearAllValues() {
-        Map<String, Object> parameters = new HashMap<>();
+        Map<String, String> parameters = new HashMap<>();
         parameters.put("key", "value");
         builder.addAll(parameters);
         assertThat(builder.asDictionary(), hasEntry("key", "value"));
@@ -175,14 +175,14 @@ public class ParameterBuilderTest {
 
     @Test
     public void shouldProvideADictionaryCopy() {
-        Map<String, Object> parameters = builder.setClientId(CLIENT_ID).asDictionary();
+        Map<String, String> parameters = builder.setClientId(CLIENT_ID).asDictionary();
         builder.set("key", "value");
         assertThat(parameters, not(hasEntry("key", "value")));
     }
 
     @Test
     public void shouldProvideAnImmutableDictionary() {
-        Map<String, Object> parameters = builder.setClientId(CLIENT_ID).asDictionary();
+        Map<String, String> parameters = builder.setClientId(CLIENT_ID).asDictionary();
         try {
             parameters.put("key", "value");
         } catch (Exception e) {

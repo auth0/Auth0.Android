@@ -70,6 +70,16 @@ import static org.powermock.api.mockito.PowerMockito.doReturn;
 import static org.powermock.api.mockito.PowerMockito.doThrow;
 import static org.powermock.api.mockito.PowerMockito.mock;
 
+/**
+ * In the rest of the test files we use Mockito as that's enough for most cases. However,
+ * when Kotlin classes are introduced in the project, Mockito fails to mock them because
+ * they are final by default.
+ * The solution is to use the 'mockito-inline' plugin. However, when used in combination
+ * with Powermock, both configuration files clash and the tests fail.
+ * The MockMaker needs to be set up only in one place, the Powermock configuration file.
+ * <p>
+ * Read more: https://github.com/powermock/powermock/issues/992#issuecomment-662845804
+ */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({CryptoUtil.class, KeyGenerator.class, TextUtils.class, Build.VERSION.class, Base64.class, Cipher.class, Log.class})
 public class CryptoUtilTest {

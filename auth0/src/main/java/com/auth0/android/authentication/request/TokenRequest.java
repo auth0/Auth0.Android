@@ -15,6 +15,7 @@ import java.util.Map;
  */
 @SuppressWarnings("WeakerAccess")
 public class TokenRequest implements Request<Credentials, AuthenticationException> {
+    //TODO: Revisit this class. What's its purpose?
 
     private static final String OAUTH_CODE_VERIFIER_KEY = "code_verifier";
 
@@ -31,14 +32,14 @@ public class TokenRequest implements Request<Credentials, AuthenticationExceptio
      * @return itself
      */
     @NonNull
-    public TokenRequest addParameters(@NonNull Map<String, Object> parameters) {
+    public TokenRequest addParameters(@NonNull Map<String, String> parameters) {
         request.addParameters(parameters);
         return this;
     }
 
     @NonNull
     @Override
-    public TokenRequest addParameter(@NonNull String name, @NonNull Object value) {
+    public TokenRequest addParameter(@NonNull String name, @NonNull String value) {
         request.addParameter(name, value);
         return this;
     }

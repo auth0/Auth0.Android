@@ -31,21 +31,26 @@ import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
 import com.auth0.android.Auth0;
+import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.ParameterBuilder;
-import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.Request;
 import com.auth0.android.request.internal.GsonProvider;
-import com.auth0.android.request.internal.ManagementErrorBuilder;
-import com.auth0.android.request.internal.OkHttpClientFactory;
 import com.auth0.android.request.internal.RequestFactory;
+import com.auth0.android.request.kt.DefaultClient;
+import com.auth0.android.request.kt.ErrorAdapter;
+import com.auth0.android.request.kt.GsonAdapter;
+import com.auth0.android.request.kt.JsonAdapter;
+import com.auth0.android.request.kt.NetworkingClient;
 import com.auth0.android.result.UserIdentity;
 import com.auth0.android.result.UserProfile;
 import com.auth0.android.util.Telemetry;
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.HttpUrl;
-import com.squareup.okhttp.OkHttpClient;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
+import java.io.Reader;
 import java.util.List;
 import java.util.Map;
 
@@ -70,11 +75,30 @@ public class UsersAPIClient {
     private static final String USER_METADATA_KEY = "user_metadata";
 
     private final Auth0 auth0;
-    @VisibleForTesting
-    final OkHttpClient client;
+    private final RequestFactory<ManagementException> factory;
     private final Gson gson;
-    private final RequestFactory factory;
-    private final ErrorBuilder<ManagementException> mgmtErrorBuilder;
+
+    private static ErrorAdapter<ManagementException> createErrorAdapter() {
+        GsonAdapter<Map<String, Object>> mapAdapter = GsonAdapter.Companion.forMap(new Gson());
+        return new ErrorAdapter<ManagementException>() {
+
+            @Override
+            public ManagementException fromRawResponse(int statusCode, @NotNull String bodyText, @NotNull Map<String, ? extends List<String>> headers) {
+                return new ManagementException(bodyText, statusCode);
+            }
+
+            @Override
+            public ManagementException fromJsonResponse(int statusCode, @NotNull Reader reader) throws IOException {
+                Map<String, Object> values = mapAdapter.fromJson(reader);
+                return new ManagementException(values);
+            }
+
+            @Override
+            public ManagementException fromException(@NotNull Throwable err) {
+                return new ManagementException("Something went wrong", new Auth0Exception("Something went wrong", err));
+            }
+        };
+    }
 
     /**
      * Creates a new API client instance providing Auth0 account info.
@@ -83,7 +107,13 @@ public class UsersAPIClient {
      * @param token of the primary identity
      */
     public UsersAPIClient(@NonNull Auth0 auth0, @NonNull String token) {
-        this(auth0, new RequestFactory(token), new OkHttpClientFactory(), GsonProvider.buildGson());
+        this(auth0, factoryForToken(token, new DefaultClient(auth0.getConnectTimeoutInSeconds())), GsonProvider.buildGson());
+    }
+
+    private static RequestFactory<ManagementException> factoryForToken(String token, NetworkingClient client) {
+        RequestFactory<ManagementException> factory = new RequestFactory<>(client, createErrorAdapter());
+        factory.setHeader("Authorization", "Bearer " + token);
+        return factory;
     }
 
     /**
@@ -93,25 +123,16 @@ public class UsersAPIClient {
      * @param context a valid Context
      * @param token   of the primary identity
      */
+    //TODO: Remove this constructor. Replacement: UsersAPIClient(Auth0(context), "token")
     public UsersAPIClient(@NonNull Context context, @NonNull String token) {
         this(new Auth0(context), token);
     }
 
     @VisibleForTesting
-    UsersAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClientFactory clientFactory) {
-        this(auth0, factory, clientFactory, GsonProvider.buildGson());
-    }
-
-    private UsersAPIClient(Auth0 auth0, RequestFactory factory, OkHttpClientFactory clientFactory, Gson gson) {
+    UsersAPIClient(@NonNull Auth0 auth0, @NonNull RequestFactory<ManagementException> factory, @NonNull Gson gson) {
         this.auth0 = auth0;
-        client = clientFactory.createClient(auth0.isLoggingEnabled(),
-                auth0.isTLS12Enforced(),
-                auth0.getConnectTimeoutInSeconds(),
-                auth0.getReadTimeoutInSeconds(),
-                auth0.getWriteTimeoutInSeconds());
         this.gson = gson;
         this.factory = factory;
-        this.mgmtErrorBuilder = new ManagementErrorBuilder();
         final Telemetry telemetry = auth0.getTelemetry();
         if (telemetry != null) {
             factory.setClientInfo(telemetry.getValue());
@@ -169,13 +190,12 @@ public class UsersAPIClient {
                 .addPathSegment(IDENTITIES_PATH)
                 .build();
 
-        final Map<String, Object> parameters = ParameterBuilder.newBuilder()
+        final Map<String, String> parameters = ParameterBuilder.newBuilder()
                 .set(LINK_WITH_KEY, secondaryToken)
                 .asDictionary();
 
-        TypeToken<List<UserIdentity>> typeToken = new TypeToken<List<UserIdentity>>() {
-        };
-        return factory.POST(url, client, gson, typeToken, mgmtErrorBuilder)
+        JsonAdapter<List<UserIdentity>> userIdentitiesAdapter = GsonAdapter.Companion.forListOf(UserIdentity.class, gson);
+        return factory.post(url.toString(), userIdentitiesAdapter)
                 .addParameters(parameters);
     }
 
@@ -213,9 +233,8 @@ public class UsersAPIClient {
                 .addPathSegment(secondaryUserId)
                 .build();
 
-        TypeToken<List<UserIdentity>> typeToken = new TypeToken<List<UserIdentity>>() {
-        };
-        return factory.DELETE(url, client, gson, typeToken, mgmtErrorBuilder);
+        JsonAdapter<List<UserIdentity>> userIdentitiesAdapter = GsonAdapter.Companion.forListOf(UserIdentity.class, gson);
+        return factory.delete(url.toString(), userIdentitiesAdapter);
     }
 
     /**
@@ -248,8 +267,9 @@ public class UsersAPIClient {
                 .addPathSegment(userId)
                 .build();
 
-        return factory.PATCH(url, client, gson, UserProfile.class, mgmtErrorBuilder)
-                .addParameter(USER_METADATA_KEY, userMetadata);
+        JsonAdapter<UserProfile> userProfileAdapter = new GsonAdapter<>(UserProfile.class, gson);
+        return factory.patch(url.toString(), userProfileAdapter)
+                .addParameter(USER_METADATA_KEY, gson.toJson(userMetadata));
     }
 
     /**
@@ -281,7 +301,8 @@ public class UsersAPIClient {
                 .addPathSegment(userId)
                 .build();
 
-        return factory.GET(url, client, gson, UserProfile.class, mgmtErrorBuilder);
+        JsonAdapter<UserProfile> userProfileAdapter = new GsonAdapter<>(UserProfile.class, gson);
+        return factory.get(url.toString(), userProfileAdapter);
     }
 
 }

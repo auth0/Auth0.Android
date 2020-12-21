@@ -32,6 +32,8 @@ import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 
+import kotlin.Unit;
+
 import static com.jayway.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -79,8 +81,8 @@ public class AuthenticationCallbackMatcher<T> extends BaseMatcher<Authentication
         return new AuthenticationCallbackMatcher<>(is(nullValue(tClazz)), is(notNullValue(AuthenticationException.class)));
     }
 
-    public static Matcher<AuthenticationCallback<Void>> hasNoError() {
-        return new AuthenticationCallbackMatcher<>(is(nullValue(Void.class)), is(nullValue(AuthenticationException.class)));
+    public static Matcher<AuthenticationCallback<Unit>> hasNoError() {
+        return new AuthenticationCallbackMatcher<>(is(notNullValue(Unit.class)), is(nullValue(AuthenticationException.class)));
     }
 
     public static <T> Matcher<AuthenticationCallback<T>> hasError(Class<T> tClazz) {

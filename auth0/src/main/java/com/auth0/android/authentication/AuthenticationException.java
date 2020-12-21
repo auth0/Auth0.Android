@@ -74,9 +74,10 @@ public class AuthenticationException extends Auth0Exception {
         this.statusCode = statusCode;
     }
 
-    public AuthenticationException(@NonNull Map<String, Object> values) {
+    public AuthenticationException(@NonNull Map<String, Object> values, int statusCode) {
         this(DEFAULT_MESSAGE);
         this.values = new HashMap<>(values);
+        this.statusCode = statusCode;
 
         String codeValue = (String) (this.values.containsKey(ERROR_KEY) ? this.values.get(ERROR_KEY) : this.values.get(CODE_KEY));
         this.code = codeValue != null ? codeValue : UNKNOWN_ERROR;
@@ -94,6 +95,9 @@ public class AuthenticationException extends Auth0Exception {
             PasswordStrengthErrorParser pwStrengthParser = new PasswordStrengthErrorParser((Map<String, Object>) description);
             this.description = pwStrengthParser.getDescription();
         }
+    }
+    public AuthenticationException(@NonNull Map<String, Object> values) {
+       this(values, 0);
     }
 
     private void warnIfOIDCError() {

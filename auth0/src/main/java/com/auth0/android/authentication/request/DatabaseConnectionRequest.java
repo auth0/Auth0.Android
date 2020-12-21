@@ -28,7 +28,7 @@ public class DatabaseConnectionRequest<T, U extends Auth0Exception> {
      * @return itself
      */
     @NonNull
-    public DatabaseConnectionRequest<T, U> addParameters(@NonNull Map<String, Object> parameters) {
+    public DatabaseConnectionRequest<T, U> addParameters(@NonNull Map<String, String> parameters) {
         request.addParameters(parameters);
         return this;
     }
@@ -41,7 +41,7 @@ public class DatabaseConnectionRequest<T, U extends Auth0Exception> {
      * @return itself
      */
     @NonNull
-    public DatabaseConnectionRequest<T, U> addParameter(@NonNull String name, @NonNull Object value) {
+    public DatabaseConnectionRequest<T, U> addParameter(@NonNull String name, @NonNull String value) {
         request.addParameter(name, value);
         return this;
     }

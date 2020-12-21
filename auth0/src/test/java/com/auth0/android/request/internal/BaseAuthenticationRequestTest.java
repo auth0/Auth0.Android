@@ -1,141 +1,180 @@
 package com.auth0.android.request.internal;
 
-import com.auth0.android.util.AuthenticationAPI;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import com.squareup.okhttp.HttpUrl;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.mockwebserver.RecordedRequest;
+import com.auth0.android.authentication.AuthenticationException;
+import com.auth0.android.request.AuthenticationRequest;
+import com.auth0.android.request.Request;
+import com.auth0.android.request.kt.ErrorAdapter;
+import com.auth0.android.request.kt.HttpMethod;
+import com.auth0.android.request.kt.JsonAdapter;
+import com.auth0.android.request.kt.NetworkingClient;
+import com.auth0.android.request.kt.RequestOptions;
+import com.auth0.android.request.kt.ServerResponse;
+import com.auth0.android.result.Credentials;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 
-import java.lang.reflect.Type;
+import java.io.InputStream;
+import java.io.Reader;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.collection.IsMapContaining.hasEntry;
+import static org.hamcrest.collection.IsMapWithSize.aMapWithSize;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
 public class BaseAuthenticationRequestTest {
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
+    private static final String BASE_URL = "https://auth0.com/oauth/token";
 
-    private AuthenticationAPI mockAPI;
-    private BaseAuthenticationRequest request;
-    private Gson gson;
+    @Mock
+    private NetworkingClient client;
+    @Mock
+    private JsonAdapter<Credentials> resultAdapter;
+    @Mock
+    private ErrorAdapter<AuthenticationException> errorAdapter;
+    @Captor
+    private ArgumentCaptor<RequestOptions> optionsCaptor;
 
     @Before
-    public void setUp() throws Exception {
-        mockAPI = new AuthenticationAPI();
-        gson = GsonProvider.buildGson();
-        HttpUrl url = HttpUrl.parse(mockAPI.getDomain())
-                .newBuilder()
-                .build();
-        request = createRequest(url);
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
     }
 
-    @After
-    public void tearDown() throws Exception {
-        mockAPI.shutdown();
-    }
-
-    private BaseAuthenticationRequest createRequest(HttpUrl url) {
-        return new BaseAuthenticationRequest(url, new OkHttpClient(), gson, "POST");
-    }
-
-    private Map<String, String> bodyFromRequest(RecordedRequest request) {
-        final Type mapType = new TypeToken<Map<String, String>>() {
-        }.getType();
-        return gson.fromJson(request.getBody().readUtf8(), mapType);
+    private AuthenticationRequest createRequest(String url) {
+        Request<Credentials, AuthenticationException> baseRequest = new BaseRequest<>(HttpMethod.POST.INSTANCE, url, client, resultAdapter, errorAdapter);
+        AuthenticationRequest request = new BaseAuthenticationRequest(baseRequest);
+        return spy(request);
     }
 
     @Test
     public void shouldSetGrantType() throws Exception {
-        mockAPI.willReturnSuccessfulLogin();
-        request.setGrantType("grantType")
+        mockSuccessfulServerResponse();
+
+        createRequest(BASE_URL)
+                .setGrantType("grantType")
                 .execute();
 
-        final RecordedRequest request = mockAPI.takeRequest();
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("grant_type", "grantType"));
+        verify(client).load(eq(BASE_URL), optionsCaptor.capture());
+        Map<String, String> values = optionsCaptor.getValue().getParameters();
+        assertThat(values, aMapWithSize(1));
+        assertThat(values, hasEntry("grant_type", "grantType"));
     }
 
     @Test
     public void shouldSetConnection() throws Exception {
-        mockAPI.willReturnSuccessfulLogin();
-        request.setConnection("my-connection")
+        mockSuccessfulServerResponse();
+
+        createRequest(BASE_URL)
+                .setConnection("my-connection")
                 .execute();
 
-        final RecordedRequest request = mockAPI.takeRequest();
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("connection", "my-connection"));
+        verify(client).load(eq(BASE_URL), optionsCaptor.capture());
+        Map<String, String> values = optionsCaptor.getValue().getParameters();
+        assertThat(values, aMapWithSize(1));
+        assertThat(values, hasEntry("connection", "my-connection"));
     }
 
     @Test
     public void shouldSetRealm() throws Exception {
-        mockAPI.willReturnSuccessfulLogin();
-        request.setRealm("users")
+        mockSuccessfulServerResponse();
+
+        createRequest(BASE_URL)
+                .setRealm("my-realm")
                 .execute();
 
-        final RecordedRequest request = mockAPI.takeRequest();
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("realm", "users"));
+        verify(client).load(eq(BASE_URL), optionsCaptor.capture());
+        Map<String, String> values = optionsCaptor.getValue().getParameters();
+        assertThat(values, aMapWithSize(1));
+        assertThat(values, hasEntry("realm", "my-realm"));
     }
 
     @Test
     public void shouldSetScope() throws Exception {
-        mockAPI.willReturnSuccessfulLogin();
-        request.setScope("profile photos")
+        mockSuccessfulServerResponse();
+
+        createRequest(BASE_URL)
+                .setScope("email profile")
                 .execute();
 
-        final RecordedRequest request = mockAPI.takeRequest();
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("scope", "profile photos"));
+        verify(client).load(eq(BASE_URL), optionsCaptor.capture());
+        Map<String, String> values = optionsCaptor.getValue().getParameters();
+        assertThat(values, aMapWithSize(1));
+        assertThat(values, hasEntry("scope", "email profile"));
     }
 
     @Test
     public void shouldSetDevice() throws Exception {
-        mockAPI.willReturnSuccessfulLogin();
-        request.setDevice("nexus-5x")
+        mockSuccessfulServerResponse();
+
+        //TODO: This was once used to identify the device authenticating. No longer used.
+        createRequest(BASE_URL)
+                .setDevice("android-phone")
                 .execute();
 
-        final RecordedRequest request = mockAPI.takeRequest();
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("device", "nexus-5x"));
+        verify(client).load(eq(BASE_URL), optionsCaptor.capture());
+        Map<String, String> values = optionsCaptor.getValue().getParameters();
+        assertThat(values, aMapWithSize(1));
+        assertThat(values, hasEntry("device", "android-phone"));
     }
 
     @Test
     public void shouldSetAudience() throws Exception {
-        mockAPI.willReturnSuccessfulLogin();
-        request.setAudience("https://domain.auth0.com")
+        mockSuccessfulServerResponse();
+
+        createRequest(BASE_URL)
+                .setAudience("my-api")
                 .execute();
 
-        final RecordedRequest request = mockAPI.takeRequest();
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("audience", "https://domain.auth0.com"));
+        verify(client).load(eq(BASE_URL), optionsCaptor.capture());
+        Map<String, String> values = optionsCaptor.getValue().getParameters();
+        assertThat(values, aMapWithSize(1));
+        assertThat(values, hasEntry("audience", "my-api"));
     }
 
     @Test
     public void shouldAddAuthenticationParameters() throws Exception {
-        HashMap<String, Object> parameters = new HashMap<>();
+        mockSuccessfulServerResponse();
+
+        HashMap<String, String> parameters = new HashMap<>();
         parameters.put("extra", "value");
         parameters.put("123", "890");
-        mockAPI.willReturnSuccessfulLogin();
-        request.addAuthenticationParameters(parameters)
+
+        createRequest(BASE_URL)
+                .addParameters(parameters)
                 .execute();
 
-        final RecordedRequest request = mockAPI.takeRequest();
-        Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, hasEntry("extra", "value"));
-        assertThat(body, hasEntry("123", "890"));
+        verify(client).load(eq(BASE_URL), optionsCaptor.capture());
+        Map<String, String> values = optionsCaptor.getValue().getParameters();
+        assertThat(values, aMapWithSize(2));
+        assertThat(values, hasEntry("extra", "value"));
+        assertThat(values, hasEntry("123", "890"));
     }
 
+    private void mockSuccessfulServerResponse() throws Exception {
+        InputStream inputStream = mock(InputStream.class);
+        Credentials credentials = mock(Credentials.class);
+        when(inputStream.read()).thenReturn(123);
+        when(resultAdapter.fromJson(any(Reader.class))).thenReturn(credentials);
+        ServerResponse response = new ServerResponse(200, inputStream, Collections.emptyMap());
+        when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
+    }
 }

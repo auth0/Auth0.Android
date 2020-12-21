@@ -24,62 +24,20 @@
 
 package com.auth0.android.request.internal;
 
-import androidx.annotation.NonNull;
-
 import com.auth0.android.Auth0Exception;
-import com.auth0.android.request.ErrorBuilder;
-import com.google.gson.Gson;
-import com.squareup.okhttp.Callback;
-import com.squareup.okhttp.HttpUrl;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.RequestBody;
-import com.squareup.okhttp.Response;
+import com.auth0.android.request.kt.ErrorAdapter;
+import com.auth0.android.request.kt.HttpMethod;
+import com.auth0.android.request.kt.JsonAdapter;
+import com.auth0.android.request.kt.NetworkingClient;
 
-import java.io.IOException;
+//TODO: Check if un-used and remove
+class VoidRequest<U extends Auth0Exception> extends BaseRequest<Void, U> {
 
-class VoidRequest<U extends Auth0Exception> extends BaseRequest<Void, U> implements Callback {
-
-    private final String httpMethod;
-
-    public VoidRequest(HttpUrl url, OkHttpClient client, Gson gson, String httpMethod, ErrorBuilder<U> errorBuilder) {
-        super(url, client, gson, gson.getAdapter(Void.class), errorBuilder);
-        this.httpMethod = httpMethod;
+    public VoidRequest(HttpMethod method, String url, NetworkingClient client, ErrorAdapter<U> errorAdapter) {
+        super(method, url, client, createVoidResultAdapter(), errorAdapter);
     }
 
-    @Override
-    public void onResponse(Response response) {
-        if (!response.isSuccessful()) {
-            postOnFailure(parseUnsuccessfulResponse(response));
-            return;
-        }
-
-        postOnSuccess(null);
-    }
-
-    @Override
-    protected Request doBuildRequest() {
-        RequestBody body = buildBody();
-        return newBuilder()
-                .method(httpMethod, body)
-                .build();
-    }
-
-    @NonNull
-    @Override
-    public Void execute() throws Auth0Exception {
-        Request request = doBuildRequest();
-
-        Response response;
-        try {
-            response = client.newCall(request).execute();
-        } catch (IOException e) {
-            throw new Auth0Exception("Failed to execute request to " + url.toString(), e);
-        }
-
-        if (!response.isSuccessful()) {
-            throw parseUnsuccessfulResponse(response);
-        }
-        return null;
+    private static JsonAdapter<Void> createVoidResultAdapter() {
+        return json -> null;
     }
 }

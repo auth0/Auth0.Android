@@ -54,7 +54,7 @@ public class SignUpRequestTest {
     public void shouldAddAuthenticationParameters() {
         final Map params = mock(Map.class);
         final SignUpRequest req = signUpRequest.addAuthenticationParameters(params);
-        verify(authenticationMockRequest).addAuthenticationParameters(params);
+        verify(authenticationMockRequest).addParameters(params);
         assertThat(req, is(notNullValue()));
         assertThat(req, is(signUpRequest));
     }
@@ -86,7 +86,7 @@ public class SignUpRequestTest {
 
     @Test
     public void shouldAddParameters() {
-        Map<String, Object> params = new HashMap<>();
+        Map<String, String> params = new HashMap<>();
         params.put("param1", "val1");
         params.put("param2", "val2");
 

@@ -2,12 +2,12 @@ package com.auth0.android.request.internal;
 
 import androidx.annotation.NonNull;
 
+import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
+import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.request.AuthenticationRequest;
+import com.auth0.android.request.Request;
 import com.auth0.android.result.Credentials;
-import com.google.gson.Gson;
-import com.squareup.okhttp.HttpUrl;
-import com.squareup.okhttp.OkHttpClient;
 
 import java.util.Map;
 
@@ -18,10 +18,12 @@ import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.REALM_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.SCOPE_KEY;
 
-class BaseAuthenticationRequest extends SimpleRequest<Credentials, AuthenticationException> implements AuthenticationRequest {
+public class BaseAuthenticationRequest implements AuthenticationRequest {
 
-    public BaseAuthenticationRequest(HttpUrl url, OkHttpClient client, Gson gson, String httpMethod) {
-        super(url, client, gson, httpMethod, Credentials.class, new AuthenticationErrorBuilder());
+    private final Request<Credentials, AuthenticationException> request;
+
+    public BaseAuthenticationRequest(@NonNull Request<Credentials, AuthenticationException> request) {
+        this.request = request;
     }
 
     /**
@@ -70,6 +72,7 @@ class BaseAuthenticationRequest extends SimpleRequest<Credentials, Authenticatio
      * @return itself
      */
     @NonNull
+    @Override
     public AuthenticationRequest setScope(@NonNull String scope) {
         addParameter(SCOPE_KEY, scope);
         return this;
@@ -82,7 +85,9 @@ class BaseAuthenticationRequest extends SimpleRequest<Credentials, Authenticatio
      * @return itself
      */
     @NonNull
+    @Override
     public AuthenticationRequest setDevice(@NonNull String device) {
+        //TODO: Remove this. No longer used.
         addParameter(DEVICE_KEY, device);
         return this;
     }
@@ -102,15 +107,33 @@ class BaseAuthenticationRequest extends SimpleRequest<Credentials, Authenticatio
 
     @NonNull
     @Override
-    public AuthenticationRequest addAuthenticationParameters(@NonNull Map<String, Object> parameters) {
-        addParameters(parameters);
+    public AuthenticationRequest addParameters(@NonNull Map<String, String> parameters) {
+        request.addParameters(parameters);
+        return this;
+    }
+
+    @NonNull
+    @Override
+    public AuthenticationRequest addParameter(@NonNull String name, @NonNull String value) {
+        request.addParameter(name, value);
         return this;
     }
 
     @NonNull
     @Override
     public AuthenticationRequest addHeader(@NonNull String name, @NonNull String value) {
-        super.addHeader(name, value);
+        request.addHeader(name, value);
         return this;
+    }
+
+    @Override
+    public void start(@NonNull BaseCallback<Credentials, AuthenticationException> callback) {
+        request.start(callback);
+    }
+
+    @NonNull
+    @Override
+    public Credentials execute() throws Auth0Exception {
+        return request.execute();
     }
 }
