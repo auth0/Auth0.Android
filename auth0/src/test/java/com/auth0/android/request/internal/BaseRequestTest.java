@@ -162,12 +162,6 @@ public class BaseRequestTest {
     }
 
     @Test
-    public void shouldSetBearer() {
-        baseRequest.setBearer("my-jwt-token");
-        verify(headers).put("Authorization", "Bearer my-jwt-token");
-    }
-
-    @Test
     public void shouldPostOnSuccess() {
         baseRequest.postOnSuccess("OK");
         verify(callback).onSuccess(eq("OK"));

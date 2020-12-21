@@ -32,7 +32,6 @@ import com.auth0.android.NetworkErrorException;
 import com.auth0.android.RequestBodyBuildException;
 import com.auth0.android.authentication.ParameterBuilder;
 import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.request.AuthorizableRequest;
 import com.auth0.android.request.ErrorBuilder;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
@@ -53,7 +52,7 @@ import java.util.Map;
 
 import static com.auth0.android.request.internal.ResponseUtils.closeStream;
 
-abstract class BaseRequest<T, U extends Auth0Exception> implements com.auth0.android.request.Request<T, U>, AuthorizableRequest<T, U>, Callback {
+abstract class BaseRequest<T, U extends Auth0Exception> implements com.auth0.android.request.Request<T, U>, Callback {
 
     private final Map<String, String> headers;
     protected final HttpUrl url;
@@ -155,13 +154,6 @@ abstract class BaseRequest<T, U extends Auth0Exception> implements com.auth0.and
     @Override
     public com.auth0.android.request.Request<T, U> addHeader(@NonNull String name, @NonNull String value) {
         headers.put(name, value);
-        return this;
-    }
-
-    @NonNull
-    @Override
-    public AuthorizableRequest<T, U> setBearer(@NonNull String jwt) {
-        addHeader("Authorization", "Bearer " + jwt);
         return this;
     }
 
