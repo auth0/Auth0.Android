@@ -8,6 +8,7 @@
 
 **Deprecated**
 - Deprecate API client constructors that take Context [\#393](https://github.com/auth0/Auth0.Android/pull/393) ([lbalmaceda](https://github.com/lbalmaceda))
+- Deprecate AuthorizableRequest [\#392](https://github.com/auth0/Auth0.Android/pull/392) ([lbalmaceda](https://github.com/lbalmaceda))
 - Deprecate Legacy Authentication APIs [\#391](https://github.com/auth0/Auth0.Android/pull/391) ([jimmyjames](https://github.com/jimmyjames))
 
 ## [1.29.2](https://github.com/auth0/Auth0.Android/tree/1.29.2) (2020-11-11)
