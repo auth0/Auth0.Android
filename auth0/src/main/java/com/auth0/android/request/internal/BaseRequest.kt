@@ -47,7 +47,7 @@ internal open class BaseRequest<T, U : Auth0Exception>(
     private val errorAdapter: ErrorAdapter<U>,
 ) : Request<T, U>, AuthorizableRequest<T, U> {
 
-    internal val options: RequestOptions = RequestOptions(method)
+    val options: RequestOptions = RequestOptions(method)
 
     override fun addHeader(name: String, value: String): Request<T, U> {
         options.headers[name] = value
