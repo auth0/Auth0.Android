@@ -183,7 +183,7 @@ public class Auth0 {
      * Setter for the user agent info to send in every request to Auth0.
      *
      * @param auth0UserAgent to send in every request to Auth0.
-     * @see #doNotSendTelemetry()
+     * @see #doNotSendAuth0UserAgent()
      */
     public void setAuth0UserAgent(@Nullable Auth0UserAgent auth0UserAgent) {
         this.auth0UserAgent = auth0UserAgent;
@@ -193,7 +193,7 @@ public class Auth0 {
      * Avoid sending any user agent info in every request to Auth0
      */
     // TODO - this should be removed
-    public void doNotSendTelemetry() {
+    public void doNotSendAuth0UserAgent() {
         this.auth0UserAgent = null;
     }
 

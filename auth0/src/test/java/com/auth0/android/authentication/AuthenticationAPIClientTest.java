@@ -135,7 +135,7 @@ public class AuthenticationAPIClientTest {
         RequestFactory factory = mock(RequestFactory.class);
         OkHttpClientFactory clientFactory = mock(OkHttpClientFactory.class);
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
-        auth0.doNotSendTelemetry();
+        auth0.doNotSendAuth0UserAgent();
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0, factory, clientFactory);
         verify(factory, never()).setClientInfo(any(String.class));
     }

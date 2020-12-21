@@ -262,7 +262,7 @@ public class Auth0Test {
     @Test
     public void shouldNotReturnTelemetryWhenExplicitlyDisabledThem() {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
-        auth0.doNotSendTelemetry();
+        auth0.doNotSendAuth0UserAgent();
         assertThat(auth0.getAuth0UserAgent(), is(nullValue()));
     }
 
