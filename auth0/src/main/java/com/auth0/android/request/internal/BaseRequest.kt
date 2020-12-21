@@ -29,7 +29,6 @@ import com.auth0.android.request.AuthorizableRequest
 import com.auth0.android.request.Request
 import com.auth0.android.request.kt.*
 import java.io.IOException
-import java.io.InputStreamReader
 import java.nio.charset.Charset
 
 /**
@@ -116,7 +115,7 @@ internal open class BaseRequest<T, U : Auth0Exception>(
             throw error
         }
 
-        val reader = InputStreamReader(response.body, Charset.defaultCharset())
+        val reader = AwareInputStreamReader(response.body, Charset.defaultCharset())
         if (response.isSuccess()) {
             //2. Successful scenario. Response of type T
             val result: T = resultAdapter.fromJson(reader)
