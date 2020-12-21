@@ -27,12 +27,15 @@ package com.auth0.android.request.internal;
 
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.request.kt.ErrorAdapter;
+import com.auth0.android.request.kt.GsonAdapter;
 import com.auth0.android.request.kt.HttpMethod;
 import com.auth0.android.request.kt.JsonAdapter;
 import com.auth0.android.request.kt.NetworkingClient;
 import com.auth0.android.request.kt.RequestOptions;
 import com.auth0.android.request.kt.ServerResponse;
+import com.google.gson.Gson;
 
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -40,6 +43,7 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -49,6 +53,7 @@ import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.hamcrest.collection.IsMapWithSize.aMapWithSize;
@@ -76,7 +81,6 @@ public class BaseRequestTest {
     public void setUp() {
         MockitoAnnotations.initMocks(this);
 
-        // TODO consider using real mock adapter instead of mock
         baseRequest = new BaseRequest<>(
                 HttpMethod.POST.INSTANCE,
                 BASE_URL,
@@ -88,12 +92,7 @@ public class BaseRequestTest {
 
     @Test
     public void shouldAddHeaders() throws Exception {
-        // TODO consider using real input stream intead of mock, for this test and others
-        InputStream inputStream = mock(InputStream.class);
-        when(inputStream.read()).thenReturn(123);
-        when(resultAdapter.fromJson(any(Reader.class))).thenReturn("woohoo");
-        ServerResponse response = new ServerResponse(200, inputStream, Collections.emptyMap());
-        when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
+        mockSuccessfulServerResponse();
 
         baseRequest.addHeader("A", "1");
         baseRequest.execute();
@@ -106,11 +105,7 @@ public class BaseRequestTest {
 
     @Test
     public void shouldAddParameter() throws Exception {
-        InputStream inputStream = mock(InputStream.class);
-        when(inputStream.read()).thenReturn(123);
-        when(resultAdapter.fromJson(any(Reader.class))).thenReturn("woohoo");
-        ServerResponse response = new ServerResponse(200, inputStream, Collections.emptyMap());
-        when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
+        mockSuccessfulServerResponse();
 
         baseRequest.addParameter("A", "1");
         baseRequest.execute();
@@ -123,11 +118,7 @@ public class BaseRequestTest {
 
     @Test
     public void shouldAddParameters() throws Exception {
-        InputStream inputStream = mock(InputStream.class);
-        when(inputStream.read()).thenReturn(123);
-        when(resultAdapter.fromJson(any(Reader.class))).thenReturn("woohoo");
-        ServerResponse response = new ServerResponse(200, inputStream, Collections.emptyMap());
-        when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
+        mockSuccessfulServerResponse();
 
         HashMap<String, String> parameters = new HashMap<>();
         parameters.put("A", "1");
@@ -145,11 +136,7 @@ public class BaseRequestTest {
 
     @Test
     public void shouldSetBearer() throws Exception {
-        InputStream inputStream = mock(InputStream.class);
-        when(inputStream.read()).thenReturn(123);
-        when(resultAdapter.fromJson(any(Reader.class))).thenReturn("woohoo");
-        ServerResponse response = new ServerResponse(200, inputStream, Collections.emptyMap());
-        when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
+        mockSuccessfulServerResponse();
 
         baseRequest.setBearer("my-token");
         baseRequest.execute();
@@ -184,60 +171,115 @@ public class BaseRequestTest {
 
     @Test
     public void shouldBuildErrorFromUnsuccessfulResponse() throws Exception {
-        InputStream inputStream = mock(InputStream.class);
-        when(inputStream.read()).thenReturn(123);
-        Auth0Exception error = mock(Auth0Exception.class);
-        when(errorAdapter.fromJson(any(Reader.class))).thenReturn(error);
+        ErrorAdapter<FakeException> errorAdapter = getErrorAdapter();
+
+        BaseRequest<String, FakeException> baseRequest = new BaseRequest<>(
+                HttpMethod.POST.INSTANCE,
+                BASE_URL,
+                client,
+                resultAdapter,
+                errorAdapter
+        );
+
+        String errorResponse = "{\"error_code\":\"123\"}";
+        InputStream inputStream = new ByteArrayInputStream(errorResponse.getBytes());
         ServerResponse response = new ServerResponse(401, inputStream, Collections.emptyMap());
         when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
 
-        ArgumentCaptor<Reader> readerCaptor = ArgumentCaptor.forClass(Reader.class);
-        Exception exception = null;
+        FakeException exception = null;
         String result = null;
         try {
             result = baseRequest.execute();
-        } catch (Exception e) {
+        } catch (FakeException e) {
             exception = e;
         }
-        assertThat(exception, is(error));
+
         assertThat(result, is(nullValue()));
+        assertThat(exception, is(notNullValue()));
+        assertThat(exception.values, is(aMapWithSize(1)));
+        assertThat(exception.values, hasEntry("error_code", "123"));
 
         verifyNoInteractions(resultAdapter);
-        verify(errorAdapter).fromJson(readerCaptor.capture());
-
-        // TODO what is the purpose of these verifications and why are they failing?
-        Reader reader = readerCaptor.getValue();
-        assertThat(reader.read(), is(123));
-        verify(inputStream).read();
     }
+
 
     @Test
     public void shouldBuildResultFromSuccessfulResponse() throws Exception {
-        InputStream inputStream = mock(InputStream.class);
-        when(inputStream.read()).thenReturn(123);
-        when(resultAdapter.fromJson(any(Reader.class))).thenReturn("woohoo");
+        BaseRequest<SimplePojo, Auth0Exception> baseRequest = new BaseRequest<>(
+                HttpMethod.POST.INSTANCE,
+                BASE_URL,
+                client,
+                new GsonAdapter<>(SimplePojo.class, new Gson()),
+                errorAdapter
+        );
+
+        String jsonResponse = "{\"prop\":\"value\"}";
+        InputStream inputStream = new ByteArrayInputStream(jsonResponse.getBytes());
         ServerResponse response = new ServerResponse(200, inputStream, Collections.emptyMap());
         when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
 
-        ArgumentCaptor<Reader> readerCaptor = ArgumentCaptor.forClass(Reader.class);
         Exception exception = null;
-        String result = null;
+        SimplePojo result = null;
         try {
             result = baseRequest.execute();
         } catch (Exception e) {
             exception = e;
         }
         assertThat(exception, is(nullValue()));
-        assertThat(result, is("woohoo"));
+        assertThat(result, is(notNullValue()));
+        assertThat(result.prop, is("value"));
 
         verifyNoInteractions(errorAdapter);
-        verify(resultAdapter).fromJson(readerCaptor.capture());
-
-        // TODO What is the purpose of these verifications, and why are they failing?
-        Reader reader = readerCaptor.getValue();
-        assertThat(reader.read(), is(123));
-        verify(inputStream).read();
     }
 
     //TODO: Add tests for the async scenario (using callbacks)
+
+    static class SimplePojo {
+        final String prop;
+
+        SimplePojo(String prop) {
+            this.prop = prop;
+        }
+    }
+
+    static class FakeException extends Auth0Exception {
+        Map<String, Object> values;
+
+        FakeException(String message) {
+            super(message);
+        }
+
+        FakeException(String message, Throwable t) {
+            super(message, t);
+        }
+
+        FakeException(Map<String, Object> values) {
+            this("Something bad happened");
+            this.values = new HashMap<>(values);
+        }
+    }
+
+    private void mockSuccessfulServerResponse() throws Exception {
+        InputStream inputStream = mock(InputStream.class);
+        when(inputStream.read()).thenReturn(123);
+        when(resultAdapter.fromJson(any(Reader.class))).thenReturn("woohoo");
+        ServerResponse response = new ServerResponse(200, inputStream, Collections.emptyMap());
+        when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
+    }
+
+    private ErrorAdapter<FakeException> getErrorAdapter() {
+        GsonAdapter<Map<String, Object>> mapAdapter = GsonAdapter.Companion.forMap(new Gson());
+        return new ErrorAdapter<FakeException>() {
+            @Override
+            public FakeException fromException(@NotNull Throwable err) {
+                return new FakeException("Something went wrong", new Auth0Exception("Something went wrong", err));
+            }
+
+            @Override
+            public FakeException fromJson(@NotNull Reader reader) throws IOException {
+                Map<String, Object> values = mapAdapter.fromJson(reader);
+                return new FakeException(values);
+            }
+        };
+    }
 }
