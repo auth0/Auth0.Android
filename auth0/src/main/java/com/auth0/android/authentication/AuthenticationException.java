@@ -24,10 +24,11 @@
 
 package com.auth0.android.authentication;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.NetworkErrorException;
@@ -160,6 +161,13 @@ public class AuthenticationException extends Auth0Exception {
     // When there is no Browser app installed to handle the web authentication
     public boolean isBrowserAppNotAvailable() {
         return "a0.browser_not_available".equals(code);
+    }
+
+    /**
+     * When the required algorithms to support PKCE web authentication is    not available on the device
+     */
+    public boolean isPKCENotAvailable() {
+        return "a0.pkce_not_available".equals(code);
     }
 
     // When the Authorize URL is invalid

@@ -14,6 +14,10 @@ Previously, it was recommended to use OIDC-Conformant mode, by calling `setOIDCC
 
 You can learn more about the OpenID Connect Protocol [here](https://auth0.com/docs/protocols/openid-connect-protocol).
 
+## Authorization Code with PKCE
+
+Version 2 only supports the [Authorization Code with Proof Key for Code Exchange (PKCE)](https://auth0.com/docs/flows/authorization-code-flow-with-proof-key-for-code-exchange-pkce) flow. Accordingly, the `withResponseType(@ResponseType int type)` method on `WebAuthProvider.Builder` has been removed.
+
 ## Removal of WebView support
 
 The deprecated ability to sign using a WebView component has been removed. External browser applications will always be used instead for increased security and user trust. Please refer to [This blog post](https://auth0.com/blog/google-blocks-oauth-requests-from-embedded-browsers/) for additional information.
@@ -149,7 +153,8 @@ The ability to make requests to the [/delegation](https://auth0.com/docs/api/aut
 - `public Builder useCodeGrant(boolean useCodeGrant)`. There is no replacement; only Code + PKCE flow supported in v2.
 - `public Builder useBrowser(boolean useBrowser)`. There is no replacement; Google no longer supports WebView authentication.
 - `public Builder useFullscreen(boolean useFullscreen)`. There is no replacement; Google no longer supports WebView authentication.
-- `public void start(@NonNull Activity activity, @NonNull AuthCallback callback, int requestCode)`. Use `public void start(@NonNull Activity activity, @NonNull AuthCallback callback)` instead.    
+- `public void start(@NonNull Activity activity, @NonNull AuthCallback callback, int requestCode)`. Use `public void start(@NonNull Activity activity, @NonNull AuthCallback callback)` instead.
+- `public Builder withResponseType(@ResponseType int type)`. There is no replacement; only Code + PKCE flow supported in v2.
 
 #### UsersAPIClient
 
