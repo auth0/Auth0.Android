@@ -19,7 +19,10 @@ public interface JsonAdapter<T> {
  * into the actual <T> instance.
  * Alternatively, supports creating a new <T> instance passing a stacktrace.
  */
-public interface ErrorAdapter<T> : JsonAdapter<T> {
+public interface ErrorAdapter<T> {
 
+    @Throws(IOException::class)
+    public fun fromJsonResponse(statusCode: Int, reader: Reader): T
+    public fun fromRawResponse(statusCode: Int, bodyText: String, headers: Map<String, List<String>>): T
     public fun fromException(err: Throwable): T
 }

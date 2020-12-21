@@ -42,7 +42,7 @@ public class RequestFactoryTest {
     @Mock
     private ErrorAdapter<Auth0Exception> errorAdapter;
     @Mock
-    private ErrorAdapter<String> resultAdapter;
+    private JsonAdapter<String> resultAdapter;
     @Mock
     private Request<String, Auth0Exception> postRequest;
     @Mock
@@ -196,7 +196,7 @@ public class RequestFactoryTest {
         assertThat(request, is(getRequest));
     }
 
-    @SuppressWarnings("unchecked, ConstantConditions")
+    @SuppressWarnings("unchecked")
     private RequestFactory<Auth0Exception> createRequestFactory() {
         RequestFactory<Auth0Exception> factory = spy(new RequestFactory<>(client, errorAdapter));
         doReturn(postRequest).when(factory).createRequest(any(HttpMethod.POST.class), eq(BASE_URL), eq(client), eq(resultAdapter), eq(errorAdapter));
