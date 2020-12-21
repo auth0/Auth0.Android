@@ -92,7 +92,7 @@ public class RequestFactory<U : Auth0Exception>(
     }
 
     @VisibleForTesting
-    public open fun <T> createRequest(
+    public fun <T> createRequest(
         method: HttpMethod,
         url: String,
         client: NetworkingClient,

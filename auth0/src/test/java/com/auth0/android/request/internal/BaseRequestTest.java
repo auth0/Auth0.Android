@@ -49,8 +49,11 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -157,7 +160,7 @@ public class BaseRequestTest {
     }
 
     @Test
-    public void shouldBuildErrorFromUnsuccessfulResponse() throws Exception {
+    public void shouldBuildErrorFromUnsuccessfulJsonResponse() throws Exception {
         ErrorAdapter<FakeException> errorAdapter = getErrorAdapter();
 
         BaseRequest<String, FakeException> baseRequest = new BaseRequest<>(
@@ -168,9 +171,10 @@ public class BaseRequestTest {
                 errorAdapter
         );
 
-        String errorResponse = "{\"error_code\":\"123\"}";
+        String errorResponse = "{\"error_code\":\"invalid_token\"}";
         InputStream inputStream = new ByteArrayInputStream(errorResponse.getBytes());
-        ServerResponse response = new ServerResponse(401, inputStream, Collections.emptyMap());
+        Map<String, List<String>> headers = singletonMap("Content-Type", singletonList("application/json"));
+        ServerResponse response = new ServerResponse(401, inputStream, headers);
         when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
 
         FakeException exception = null;
@@ -183,8 +187,45 @@ public class BaseRequestTest {
 
         assertThat(result, is(nullValue()));
         assertThat(exception, is(notNullValue()));
+        assertThat(exception.statusCode, is(401));
         assertThat(exception.values, is(aMapWithSize(1)));
-        assertThat(exception.values, hasEntry("error_code", "123"));
+        assertThat(exception.values, hasEntry("error_code", "invalid_token"));
+        assertThat(exception.headers, is(nullValue()));
+
+        verifyNoInteractions(resultAdapter);
+    }
+
+    @Test
+    public void shouldBuildErrorFromUnsuccessfulRawResponse() throws Exception {
+        ErrorAdapter<FakeException> errorAdapter = getErrorAdapter();
+
+        BaseRequest<String, FakeException> baseRequest = new BaseRequest<>(
+                HttpMethod.POST.INSTANCE,
+                BASE_URL,
+                client,
+                resultAdapter,
+                errorAdapter
+        );
+
+        String errorResponse = "Unauthorized";
+        HashMap<String, List<String>> headers = new HashMap<>();
+        InputStream inputStream = new ByteArrayInputStream(errorResponse.getBytes());
+        ServerResponse response = new ServerResponse(401, inputStream, headers);
+        when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
+
+        FakeException exception = null;
+        String result = null;
+        try {
+            result = baseRequest.execute();
+        } catch (FakeException e) {
+            exception = e;
+        }
+
+        assertThat(result, is(nullValue()));
+        assertThat(exception, is(notNullValue()));
+        assertThat(exception.statusCode, is(401));
+        assertThat(exception.values, is(nullValue()));
+        assertThat(exception.headers, is(headers));
 
         verifyNoInteractions(resultAdapter);
     }
@@ -230,19 +271,29 @@ public class BaseRequestTest {
     }
 
     static class FakeException extends Auth0Exception {
-        Map<String, Object> values;
+        final int statusCode;
+        final Map<String, ? extends List<String>> headers;
+        final Map<String, Object> values;
 
-        FakeException(String message) {
+        FakeException(int statusCode, String message, Map<String, ? extends List<String>> headers) {
             super(message);
+            this.statusCode = statusCode;
+            this.values = null;
+            this.headers = headers;
+        }
+
+        FakeException(int statusCode, Map<String, Object> values) {
+            super("Something bad happened");
+            this.statusCode = statusCode;
+            this.values = new HashMap<>(values);
+            this.headers = null;
         }
 
         FakeException(String message, Throwable t) {
             super(message, t);
-        }
-
-        FakeException(Map<String, Object> values) {
-            this("Something bad happened");
-            this.values = new HashMap<>(values);
+            this.statusCode = 0;
+            this.values = null;
+            this.headers = null;
         }
     }
 
@@ -258,15 +309,21 @@ public class BaseRequestTest {
         GsonAdapter<Map<String, Object>> mapAdapter = GsonAdapter.Companion.forMap(new Gson());
         return new ErrorAdapter<FakeException>() {
             @Override
-            public FakeException fromException(@NotNull Throwable err) {
-                return new FakeException("Something went wrong", new Auth0Exception("Something went wrong", err));
+            public FakeException fromRawResponse(int statusCode, @NotNull String bodyText, @NotNull Map<String, ? extends List<String>> headers) {
+                return new FakeException(statusCode, bodyText, headers);
             }
 
             @Override
-            public FakeException fromJson(@NotNull Reader reader) throws IOException {
+            public FakeException fromJsonResponse(int statusCode, @NotNull Reader reader) throws IOException {
                 Map<String, Object> values = mapAdapter.fromJson(reader);
-                return new FakeException(values);
+                return new FakeException(statusCode, values);
             }
+
+            @Override
+            public FakeException fromException(@NotNull Throwable err) {
+                return new FakeException("Something went wrong", err);
+            }
+
         };
     }
 }

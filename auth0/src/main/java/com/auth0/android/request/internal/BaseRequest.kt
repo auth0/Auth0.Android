@@ -74,9 +74,10 @@ internal open class BaseRequest<T, U : Auth0Exception>(
         try {
             val result: T = execute()
             callback.onSuccess(result)
-        } catch (error: Auth0Exception) {
-            val err = errorAdapter.fromException(error)
-            callback.onFailure(err)
+        } catch (error: Exception) {
+            @Suppress("UNCHECKED_CAST") // https://youtrack.jetbrains.com/issue/KT-11774
+            val uError: U = error as? U ?: errorAdapter.fromException(error)
+            callback.onFailure(uError)
         }
         //TODO: Make use of different threads later
 //        ThreadUtils.executorService.execute {
@@ -86,10 +87,9 @@ internal open class BaseRequest<T, U : Auth0Exception>(
 //                    callback.onSuccess(result)
 //                }
 //            } catch (error: Auth0Exception) {
-//                val err = errorAdapter.fromException(error)
-//                ThreadUtils.mainThreadHandler.post {
-//                    callback.onFailure(err)
-//                }
+//                @Suppress("UNCHECKED_CAST") // https://youtrack.jetbrains.com/issue/KT-11774
+//                val uError: U = error as? U ?: errorAdapter.fromException(error)
+//                callback.onFailure(uError)
 //            }
 //        }
     }
@@ -112,12 +112,23 @@ internal open class BaseRequest<T, U : Auth0Exception>(
         val reader = InputStreamReader(response.body, Charset.defaultCharset())
         if (response.isSuccess()) {
             //2. Successful scenario. Response of type T
-            return resultAdapter.fromJson(reader)
-        } else {
-            //3. Error scenario. Response of type U
-            val error: U = errorAdapter.fromJson(reader)
-            throw error
+            val result: T = resultAdapter.fromJson(reader)
+            reader.close()
+            return result
         }
+
+        //3. Error scenario. Response of type U
+        val error: U = if (response.isJson()) {
+            errorAdapter.fromJsonResponse(response.statusCode, reader)
+        } else {
+            errorAdapter.fromRawResponse(
+                response.statusCode,
+                reader.readText(),
+                response.headers
+            )
+        }
+        reader.close()
+        throw error
     }
 
 }

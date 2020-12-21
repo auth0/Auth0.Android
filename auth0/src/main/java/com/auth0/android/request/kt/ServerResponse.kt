@@ -11,4 +11,5 @@ public data class ServerResponse(
     val headers: Map<String, List<String>>
 ) {
     public fun isSuccess(): Boolean = statusCode in 200.until(300)
+    public fun isJson(): Boolean = headers["Content-Type"]?.contains("application/json") ?: false
 }

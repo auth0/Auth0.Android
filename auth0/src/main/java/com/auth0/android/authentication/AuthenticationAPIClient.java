@@ -56,6 +56,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.io.Reader;
 import java.security.PublicKey;
+import java.util.List;
 import java.util.Map;
 
 import kotlin.Unit;
@@ -115,15 +116,19 @@ public class AuthenticationAPIClient {
         return new ErrorAdapter<AuthenticationException>() {
 
             @Override
-            public AuthenticationException fromException(@NotNull Throwable err) {
-                return new AuthenticationException("Something went wrong", new Auth0Exception("Something went wrong", err));
+            public AuthenticationException fromRawResponse(int statusCode, @NotNull String bodyText, @NotNull Map<String, ? extends List<String>> headers) {
+                return new AuthenticationException(bodyText, statusCode);
             }
 
             @Override
-            public AuthenticationException fromJson(@NotNull Reader reader) throws IOException {
-                //TODO: This won't work for plaintext responses
+            public AuthenticationException fromJsonResponse(int statusCode, @NotNull Reader reader) throws IOException {
                 Map<String, Object> values = mapAdapter.fromJson(reader);
-                return new AuthenticationException(values);
+                return new AuthenticationException(values, statusCode);
+            }
+
+            @Override
+            public AuthenticationException fromException(@NotNull Throwable err) {
+                return new AuthenticationException("Something went wrong", new Auth0Exception("Something went wrong", err));
             }
         };
     }

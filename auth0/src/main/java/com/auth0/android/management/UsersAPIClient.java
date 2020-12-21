@@ -83,14 +83,19 @@ public class UsersAPIClient {
         return new ErrorAdapter<ManagementException>() {
 
             @Override
-            public ManagementException fromException(@NotNull Throwable err) {
-                return new ManagementException("Something went wrong", new Auth0Exception("Something went wrong", err));
+            public ManagementException fromRawResponse(int statusCode, @NotNull String bodyText, @NotNull Map<String, ? extends List<String>> headers) {
+                return new ManagementException(bodyText, statusCode);
             }
 
             @Override
-            public ManagementException fromJson(@NotNull Reader reader) throws IOException {
+            public ManagementException fromJsonResponse(int statusCode, @NotNull Reader reader) throws IOException {
                 Map<String, Object> values = mapAdapter.fromJson(reader);
                 return new ManagementException(values);
+            }
+
+            @Override
+            public ManagementException fromException(@NotNull Throwable err) {
+                return new ManagementException("Something went wrong", new Auth0Exception("Something went wrong", err));
             }
         };
     }
