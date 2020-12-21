@@ -35,7 +35,9 @@ import com.auth0.android.request.kt.RequestOptions;
 import com.auth0.android.request.kt.ServerResponse;
 import com.google.gson.Gson;
 
-import org.jetbrains.annotations.NotNull;
+import org.hamcrest.collection.IsMapContaining;
+import org.hamcrest.collection.IsMapWithSize;
+import org.hamcrest.core.IsCollectionContaining;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -55,6 +57,7 @@ import java.util.Map;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -63,6 +66,7 @@ import static org.hamcrest.collection.IsMapWithSize.aMapWithSize;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -161,9 +165,12 @@ public class BaseRequestTest {
 
     @Test
     public void shouldBuildErrorFromUnsuccessfulJsonResponse() throws Exception {
-        ErrorAdapter<FakeException> errorAdapter = getErrorAdapter();
+        Auth0Exception uException = mock(Auth0Exception.class);
+        ArgumentCaptor<Reader> readerCaptor = ArgumentCaptor.forClass(Reader.class);
+        ErrorAdapter<Auth0Exception> errorAdapter = mock(ErrorAdapter.class);
+        when(errorAdapter.fromJsonResponse(eq(401), readerCaptor.capture())).thenReturn(uException);
 
-        BaseRequest<String, FakeException> baseRequest = new BaseRequest<>(
+        BaseRequest<String, Auth0Exception> baseRequest = new BaseRequest<>(
                 HttpMethod.POST.INSTANCE,
                 BASE_URL,
                 client,
@@ -177,29 +184,35 @@ public class BaseRequestTest {
         ServerResponse response = new ServerResponse(401, inputStream, headers);
         when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
 
-        FakeException exception = null;
+        Auth0Exception exception = null;
         String result = null;
         try {
             result = baseRequest.execute();
-        } catch (FakeException e) {
+        } catch (Auth0Exception e) {
             exception = e;
         }
 
         assertThat(result, is(nullValue()));
         assertThat(exception, is(notNullValue()));
-        assertThat(exception.statusCode, is(401));
-        assertThat(exception.values, is(aMapWithSize(1)));
-        assertThat(exception.values, hasEntry("error_code", "invalid_token"));
-        assertThat(exception.headers, is(nullValue()));
+        assertThat(exception, is(uException));
+        verify(errorAdapter).fromJsonResponse(eq(401), any(Reader.class));
+        Reader reader = readerCaptor.getValue();
+        assertThat(reader, is(notNullValue()));
+        assertThat(reader, is(instanceOf(AwareInputStreamReader.class)));
+        AwareInputStreamReader awareReader = (AwareInputStreamReader) reader;
+        assertThat(awareReader.isClosed(), is(true));
 
         verifyNoInteractions(resultAdapter);
     }
 
     @Test
     public void shouldBuildErrorFromUnsuccessfulRawResponse() throws Exception {
-        ErrorAdapter<FakeException> errorAdapter = getErrorAdapter();
+        Auth0Exception uException = mock(Auth0Exception.class);
+        ArgumentCaptor<Map<String, List<String>>> headersMapCaptor = ArgumentCaptor.forClass(Map.class);
+        ErrorAdapter<Auth0Exception> errorAdapter = mock(ErrorAdapter.class);
+        when(errorAdapter.fromRawResponse(eq(401), eq("Unauthorized"), headersMapCaptor.capture())).thenReturn(uException);
 
-        BaseRequest<String, FakeException> baseRequest = new BaseRequest<>(
+        BaseRequest<String, Auth0Exception> baseRequest = new BaseRequest<>(
                 HttpMethod.POST.INSTANCE,
                 BASE_URL,
                 client,
@@ -208,24 +221,27 @@ public class BaseRequestTest {
         );
 
         String errorResponse = "Unauthorized";
-        HashMap<String, List<String>> headers = new HashMap<>();
+        Map<String, List<String>> headers = singletonMap("Content-Type", singletonList("text/plain"));
         InputStream inputStream = new ByteArrayInputStream(errorResponse.getBytes());
         ServerResponse response = new ServerResponse(401, inputStream, headers);
         when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
 
-        FakeException exception = null;
+        Auth0Exception exception = null;
         String result = null;
         try {
             result = baseRequest.execute();
-        } catch (FakeException e) {
+        } catch (Auth0Exception e) {
             exception = e;
         }
 
         assertThat(result, is(nullValue()));
         assertThat(exception, is(notNullValue()));
-        assertThat(exception.statusCode, is(401));
-        assertThat(exception.values, is(nullValue()));
-        assertThat(exception.headers, is(headers));
+        assertThat(exception, is(uException));
+        verify(errorAdapter).fromRawResponse(eq(401), eq("Unauthorized"), any(Map.class));
+        Map<String, List<String>> headersMap = headersMapCaptor.getValue();
+        assertThat(headersMap, is(notNullValue()));
+        assertThat(headersMap, IsMapWithSize.aMapWithSize(1));
+        assertThat(headersMap, IsMapContaining.hasEntry(is("Content-Type"), IsCollectionContaining.hasItem("text/plain")));
 
         verifyNoInteractions(resultAdapter);
     }
@@ -233,11 +249,12 @@ public class BaseRequestTest {
 
     @Test
     public void shouldBuildResultFromSuccessfulResponse() throws Exception {
+        JsonAdapter<SimplePojo> resultAdapter = spy(new GsonAdapter<>(SimplePojo.class, new Gson()));
         BaseRequest<SimplePojo, Auth0Exception> baseRequest = new BaseRequest<>(
                 HttpMethod.POST.INSTANCE,
                 BASE_URL,
                 client,
-                new GsonAdapter<>(SimplePojo.class, new Gson()),
+                resultAdapter,
                 errorAdapter
         );
 
@@ -256,47 +273,18 @@ public class BaseRequestTest {
         assertThat(exception, is(nullValue()));
         assertThat(result, is(notNullValue()));
         assertThat(result.prop, is("value"));
+        ArgumentCaptor<Reader> readerCaptor = ArgumentCaptor.forClass(Reader.class);
+        verify(resultAdapter).fromJson(readerCaptor.capture());
+        Reader reader = readerCaptor.getValue();
+        assertThat(reader, is(notNullValue()));
+        assertThat(reader, is(instanceOf(AwareInputStreamReader.class)));
+        AwareInputStreamReader awareReader = (AwareInputStreamReader) reader;
+        assertThat(awareReader.isClosed(), is(true));
 
         verifyNoInteractions(errorAdapter);
     }
 
     //TODO: Add tests for the async scenario (using callbacks)
-
-    static class SimplePojo {
-        final String prop;
-
-        SimplePojo(String prop) {
-            this.prop = prop;
-        }
-    }
-
-    static class FakeException extends Auth0Exception {
-        final int statusCode;
-        final Map<String, ? extends List<String>> headers;
-        final Map<String, Object> values;
-
-        FakeException(int statusCode, String message, Map<String, ? extends List<String>> headers) {
-            super(message);
-            this.statusCode = statusCode;
-            this.values = null;
-            this.headers = headers;
-        }
-
-        FakeException(int statusCode, Map<String, Object> values) {
-            super("Something bad happened");
-            this.statusCode = statusCode;
-            this.values = new HashMap<>(values);
-            this.headers = null;
-        }
-
-        FakeException(String message, Throwable t) {
-            super(message, t);
-            this.statusCode = 0;
-            this.values = null;
-            this.headers = null;
-        }
-    }
-
     private void mockSuccessfulServerResponse() throws Exception {
         InputStream inputStream = mock(InputStream.class);
         when(inputStream.read()).thenReturn(123);
@@ -305,25 +293,12 @@ public class BaseRequestTest {
         when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
     }
 
-    private ErrorAdapter<FakeException> getErrorAdapter() {
-        GsonAdapter<Map<String, Object>> mapAdapter = GsonAdapter.Companion.forMap(new Gson());
-        return new ErrorAdapter<FakeException>() {
-            @Override
-            public FakeException fromRawResponse(int statusCode, @NotNull String bodyText, @NotNull Map<String, ? extends List<String>> headers) {
-                return new FakeException(statusCode, bodyText, headers);
-            }
+    private static class SimplePojo {
+        final String prop;
 
-            @Override
-            public FakeException fromJsonResponse(int statusCode, @NotNull Reader reader) throws IOException {
-                Map<String, Object> values = mapAdapter.fromJson(reader);
-                return new FakeException(statusCode, values);
-            }
-
-            @Override
-            public FakeException fromException(@NotNull Throwable err) {
-                return new FakeException("Something went wrong", err);
-            }
-
-        };
+        SimplePojo(String prop) {
+            this.prop = prop;
+        }
     }
+
 }
