@@ -40,7 +40,7 @@ import com.auth0.android.request.internal.OkHttpClientFactory;
 import com.auth0.android.request.internal.RequestFactory;
 import com.auth0.android.result.UserIdentity;
 import com.auth0.android.result.UserProfile;
-import com.auth0.android.util.Telemetry;
+import com.auth0.android.util.Auth0UserAgent;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.HttpUrl;
@@ -112,9 +112,9 @@ public class UsersAPIClient {
         this.gson = gson;
         this.factory = factory;
         this.mgmtErrorBuilder = new ManagementErrorBuilder();
-        final Telemetry telemetry = auth0.getTelemetry();
-        if (telemetry != null) {
-            factory.setClientInfo(telemetry.getValue());
+        final Auth0UserAgent auth0UserAgent = auth0.getAuth0UserAgent();
+        if (auth0UserAgent != null) {
+            factory.setClientInfo(auth0UserAgent.getValue());
         }
     }
 
