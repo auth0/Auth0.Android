@@ -25,10 +25,10 @@
 package com.auth0.android.request.internal;
 
 import com.auth0.android.Auth0Exception;
-import com.auth0.android.request.kt.ErrorAdapter;
-import com.auth0.android.request.kt.HttpMethod;
-import com.auth0.android.request.kt.JsonAdapter;
-import com.auth0.android.request.kt.NetworkingClient;
+import com.auth0.android.request.ErrorAdapter;
+import com.auth0.android.request.HttpMethod;
+import com.auth0.android.request.JsonAdapter;
+import com.auth0.android.request.NetworkingClient;
 
 //TODO: Check if un-used and remove
 class VoidRequest<U extends Auth0Exception> extends BaseRequest<Void, U> {

@@ -25,9 +25,7 @@ package com.auth0.android.request.internal
 
 import com.auth0.android.Auth0Exception
 import com.auth0.android.callback.BaseCallback
-import com.auth0.android.request.AuthorizableRequest
-import com.auth0.android.request.Request
-import com.auth0.android.request.kt.*
+import com.auth0.android.request.*
 import java.io.IOException
 import java.nio.charset.Charset
 
