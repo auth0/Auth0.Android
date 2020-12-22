@@ -34,7 +34,6 @@ import com.auth0.android.Auth0;
 import com.auth0.android.authentication.request.DatabaseConnectionRequest;
 import com.auth0.android.authentication.request.ProfileRequest;
 import com.auth0.android.authentication.request.SignUpRequest;
-import com.auth0.android.authentication.request.TokenRequest;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.request.ErrorBuilder;
 import com.auth0.android.request.Request;
@@ -311,9 +310,9 @@ public class AuthenticationAPIClient {
     /**
      * Log in a user using a phone number and a verification code received via SMS (Part of passwordless login flow)
      * The default scope used is 'openid'.
-     *
+     * <p>
      * Your Application must have the <b>Passwordless OTP</b> Grant Type enabled.
-     *
+     * <p>
      * Example usage:
      * <pre>
      * {@code
@@ -648,7 +647,6 @@ public class AuthenticationAPIClient {
      *
      * @param refreshToken the token to revoke
      * @return a request to start
-     *
      */
     @NonNull
     public Request<Void, AuthenticationException> revokeToken(@NonNull String refreshToken) {
@@ -668,7 +666,7 @@ public class AuthenticationAPIClient {
 
     /**
      * Requests new Credentials using a valid Refresh Token. The received token will have the same audience and scope as first requested.
-     *
+     * <p>
      * This method will use the /oauth/token endpoint with the 'refresh_token' grant, and the response will include an id_token and an access_token if 'openid' scope was requested when the refresh_token was obtained.
      * Additionally, if the application has Refresh Token Rotation configured, a new one-time use refresh token will also be included in the response.
      * Example usage:
@@ -863,38 +861,30 @@ public class AuthenticationAPIClient {
 
     /**
      * Fetch the token information from Auth0, using the authorization_code grant type
-     * For Public Client, e.g. Android apps ,you need to provide the code_verifier
-     * used to generate the challenge sent to Auth0 {@literal /authorize} method like:
+     * The authorization code received from the Auth0 server and the code verifier used
+     * to generate the challenge sent to the {@literal /authorize} call must be provided.
      * <pre>
      * {@code
      * AuthenticationAPIClient client = new AuthenticationAPIClient(new Auth0("clientId", "domain"));
      * client
-     *     .token("code", "redirect_uri")
-     *     .setCodeVerifier("code_verifier")
-     *     .start(new Callback<Credentials> {...});
-     * }
-     * </pre>
-     * For the rest of clients, clients who can safely keep a {@literal client_secret}, you need to provide it instead like:
-     * <pre>
-     * {@code
-     * AuthenticationAPIClient client = new AuthenticationAPIClient(new Auth0("clientId", "domain"));
-     * client
-     *     .token("code", "redirect_uri")
+     *     .token("authorization code", "code verifier", "redirect_uri")
      *     .start(new Callback<Credentials> {...});
      * }
      * </pre>
      *
      * @param authorizationCode the authorization code received from the /authorize call.
+     * @param codeVerifier      the code verifier used to generate the code challenge sent to /authorize.
      * @param redirectUri       the uri sent to /authorize as the 'redirect_uri'.
-     * @return a request to obtain access_token by exchanging a authorization code.
+     * @return a request to obtain access_token by exchanging an authorization code.
      */
     @NonNull
-    public TokenRequest token(@NonNull String authorizationCode, @NonNull String redirectUri) {
+    public Request<Credentials, AuthenticationException> token(@NonNull String authorizationCode, @NonNull String codeVerifier, @NonNull String redirectUri) {
         Map<String, Object> parameters = ParameterBuilder.newBuilder()
                 .setClientId(getClientId())
                 .setGrantType(GRANT_TYPE_AUTHORIZATION_CODE)
                 .set(OAUTH_CODE_KEY, authorizationCode)
                 .set(REDIRECT_URI_KEY, redirectUri)
+                .set("code_verifier", codeVerifier)
                 .asDictionary();
 
         HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
@@ -904,7 +894,7 @@ public class AuthenticationAPIClient {
 
         Request<Credentials, AuthenticationException> request = factory.POST(url, client, gson, Credentials.class, authErrorBuilder);
         request.addParameters(parameters);
-        return new TokenRequest(request);
+        return request;
     }
 
     /**

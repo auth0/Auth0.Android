@@ -40,6 +40,7 @@ As a result, the following interfaces have been removed:
 The `com.auth0.android.authentication.AuthenticationAPIClient` contains many changes to the return type of methods as a result. The full changes can be found below, but in summary:
 
 - Any method that returned a `ParameterizableRequest` now returns a `Request`.
+- Any method that returned a `TokenRequest` now returns a `Request`.
 - Any method that returned a `AuthRequest` now returns an `AuthenticationRequest`.
 
 If you are using the return type of any of these methods directly, you will need to change your code to expect the type as documented above. If you are chaining a call to `start` or `execute` to make the request, no changes are required.
@@ -59,6 +60,7 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 - The `com.auth0.android.result.Delegation` class has been removed. This was used as the result of the request to the [/delegation](https://auth0.com/docs/api/authentication#delegation) Authentication API legacy endpoint, disabled as of June 2017.
 - The `com.auth0.android.authentication.request.DelegationRequest` class has been removed. This was used to represent the request to the legacy Authentication API [/delegation](https://auth0.com/docs/api/authentication#delegation) endpoint, disabled as of June 2017.
 - The `com.auth0.android.request.AuthorizableRequest` class has been removed. You can achieve the same result using the method in Request: `Request#addHeader("Authorization", "Bearer TOKEN_VALUE")`.
+- The `com.auth0.android.authentication.request.TokenRequest` class has been removed. The ability to set a Code Verifier, and any request headers and parameters has been moved to the `com.auth0.android.request.Request` interface.
 
 ### Class changes
 
@@ -76,10 +78,6 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 - `public ProfileRequest(@NonNull AuthenticationRequest authenticationRequest, @NonNull ParameterizableRequest<UserProfile, AuthenticationException> userInfoRequest)`. Use `public ProfileRequest(@NonNull AuthenticationRequest authenticationRequest, @NonNull Request<UserProfile, AuthenticationException> userInfoRequest)` instead
 - `public ProfileRequest(@NonNull AuthRequest authRequest, @NonNull ParameterizableRequest<UserProfile, AuthenticationException> userInfoRequest)`. Use `public ProfileRequest(@NonNull AuthenticationRequest authRequest, @NonNull Request<UserProfile, AuthenticationException> userInfoRequest)` instead.
 
-#### TokenRequest
-
-- `public TokenRequest(@NonNull ParameterizableRequest<Credentials, AuthenticationException> request)`. Use `public TokenRequest(@NonNull Request<Credentials, AuthenticationException> request` instead.
-
 #### DatabaseConnectionTest
 
 - `public DatabaseConnectionRequest(@NonNull ParameterizableRequest<T, U> request)`. Use `public DatabaseConnectionRequest(@NonNull Request<T, U> request)` instead.
@@ -87,11 +85,7 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 
 ### Methods added
 
-#### TokenRequest
-
-- `public TokenRequest addParameter(@NonNull String name, @NonNull Object value)`
-
-#### SignupRequest
+#### SignUpRequest
 
 - `public SignUpRequest addParameters(@NonNull Map<String, Object> parameters)`
 - `public SignUpRequest addParameter(@NonNull String name, @NonNull Object value)`
@@ -127,6 +121,7 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 - `public AuthRequest loginWithPhoneNumber(@NonNull String phoneNumber, @NonNull String verificationCode)`. Use `public AuthenticationRequest loginWithPhoneNumber(@NonNull String phoneNumber, @NonNull String verificationCode)` instead.
 - `public AuthRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode, @NonNull String realmOrConnection)`. Use `public AuthenticationRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode, @NonNull String realmOrConnection)` instead.
 - `public AuthRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode)`. Use `public AuthenticationRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode)` instead.
+- `public TokenRequest token(@NonNull String authorizationCode, @NonNull String redirectUri)`. Use `public Request<Credentials, AuthenticationException> token(@NonNull String authorizationCode, @NonNull String codeVerifier, @NonNull String redirectUri)` instead.
 
 ##### Social Provider's Access Token Exchange
 The ability to exchange a third-party provider access token for Auth0 access tokens is part of the [/oauth/access_token](https://auth0.com/docs/api/authentication#social-with-provider-s-access-token) Authentication API legacy endpoint, disabled as of June 2017. The method below was removed because of this.

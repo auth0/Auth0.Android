@@ -84,12 +84,10 @@ class PKCE {
      * @param callback          to notify the result of this call to.
      */
     public void getToken(String authorizationCode, @NonNull final AuthCallback callback) {
-        apiClient.token(authorizationCode, redirectUri)
-                .setCodeVerifier(codeVerifier)
+        apiClient.token(authorizationCode, codeVerifier, redirectUri)
                 .start(new BaseCallback<Credentials, AuthenticationException>() {
                     @Override
                     public void onSuccess(@Nullable Credentials payload) {
-                        //noinspection ConstantConditions
                         callback.onSuccess(payload);
                     }
 

@@ -1411,8 +1411,7 @@ public class AuthenticationAPIClientTest {
                 .willReturnUserInfo();
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
-        client.token("code", "http://redirect.uri")
-                .setCodeVerifier("codeVerifier")
+        client.token("code", "codeVerifier", "http://redirect.uri")
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
@@ -1433,8 +1432,7 @@ public class AuthenticationAPIClientTest {
         mockAPI.willReturnPlainTextUnauthorized();
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
-        client.token("code", "http://redirect.uri")
-                .setCodeVerifier("codeVerifier")
+        client.token("code", "codeVerifier", "http://redirect.uri")
                 .start(callback);
 
         final RecordedRequest request = mockAPI.takeRequest();
