@@ -26,8 +26,8 @@ package com.auth0.android.provider;
 
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.authentication.request.TokenRequest;
 import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.request.Request;
 import com.auth0.android.result.Credentials;
 
 import org.hamcrest.CoreMatchers;
@@ -100,12 +100,10 @@ public class PKCETest {
 
     @Test
     public void shouldGetToken() {
-        TokenRequest tokenRequest = mock(TokenRequest.class);
-        when(apiClient.token(AUTHORIZATION_CODE, REDIRECT_URI)).thenReturn(tokenRequest);
-        when(tokenRequest.setCodeVerifier(CODE_VERIFIER)).thenReturn(tokenRequest);
+        Request<Credentials, AuthenticationException> tokenRequest = mock(Request.class);
+        when(apiClient.token(AUTHORIZATION_CODE, CODE_VERIFIER, REDIRECT_URI)).thenReturn(tokenRequest);
         pkce.getToken(AUTHORIZATION_CODE, callback);
-        verify(apiClient).token(AUTHORIZATION_CODE, REDIRECT_URI);
-        verify(tokenRequest).setCodeVerifier(CODE_VERIFIER);
+        verify(apiClient).token(AUTHORIZATION_CODE, CODE_VERIFIER, REDIRECT_URI);
         ArgumentCaptor<BaseCallback> callbackCaptor = ArgumentCaptor.forClass(BaseCallback.class);
         verify(tokenRequest).start(callbackCaptor.capture());
         Credentials credentials = mock(Credentials.class);
@@ -115,12 +113,10 @@ public class PKCETest {
 
     @Test
     public void shouldFailToGetToken() {
-        TokenRequest tokenRequest = mock(TokenRequest.class);
-        when(apiClient.token(AUTHORIZATION_CODE, REDIRECT_URI)).thenReturn(tokenRequest);
-        when(tokenRequest.setCodeVerifier(CODE_VERIFIER)).thenReturn(tokenRequest);
+        Request<Credentials, AuthenticationException> tokenRequest = mock(Request.class);
+        when(apiClient.token(AUTHORIZATION_CODE, CODE_VERIFIER, REDIRECT_URI)).thenReturn(tokenRequest);
         pkce.getToken(AUTHORIZATION_CODE, callback);
-        verify(apiClient).token(AUTHORIZATION_CODE, REDIRECT_URI);
-        verify(tokenRequest).setCodeVerifier(CODE_VERIFIER);
+        verify(apiClient).token(AUTHORIZATION_CODE, CODE_VERIFIER, REDIRECT_URI);
         ArgumentCaptor<BaseCallback> callbackCaptor = ArgumentCaptor.forClass(BaseCallback.class);
         verify(tokenRequest).start(callbackCaptor.capture());
         callbackCaptor.getValue().onFailure(new AuthenticationException("Some error"));
