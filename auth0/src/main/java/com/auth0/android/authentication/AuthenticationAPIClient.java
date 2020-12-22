@@ -40,6 +40,7 @@ import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.request.DefaultClient;
 import com.auth0.android.request.ErrorAdapter;
 import com.auth0.android.request.JsonAdapter;
+import com.auth0.android.request.NetworkingClient;
 import com.auth0.android.request.Request;
 import com.auth0.android.request.internal.BaseAuthenticationRequest;
 import com.auth0.android.request.internal.GsonAdapter;
@@ -141,6 +142,16 @@ public class AuthenticationAPIClient {
      */
     public AuthenticationAPIClient(@NonNull Auth0 auth0) {
         this(auth0, new RequestFactory<>(new DefaultClient(auth0.getConnectTimeoutInSeconds()), createErrorAdapter()), GsonProvider.buildGson());
+    }
+
+    /**
+     * Creates a new API client instance providing Auth0 account info and a custom Networking Client.
+     *
+     * @param auth0            account information
+     * @param networkingClient the networking client implementation
+     */
+    public AuthenticationAPIClient(@NonNull Auth0 auth0, @NonNull NetworkingClient networkingClient) {
+        this(auth0, new RequestFactory<>(networkingClient, createErrorAdapter()), GsonProvider.buildGson());
     }
 
     /**
