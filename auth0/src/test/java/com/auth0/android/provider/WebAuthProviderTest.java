@@ -11,6 +11,7 @@ import androidx.annotation.Nullable;
 
 import com.auth0.android.Auth0;
 import com.auth0.android.Auth0Exception;
+import com.auth0.android.MockAuth0;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.util.AuthCallbackMatcher;
@@ -1021,7 +1022,7 @@ public class WebAuthProviderTest {
 
         MockAuthCallback authCallback = new MockAuthCallback();
 
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
 
         WebAuthProvider.login(proxyAccount)
                 .withResponseType(ResponseType.ID_TOKEN)
@@ -1064,7 +1065,7 @@ public class WebAuthProviderTest {
         mockAPI.willReturnValidJsonWebKeys();
 
         MockAuthCallback authCallback = new MockAuthCallback();
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
 
         WebAuthProvider.login(proxyAccount)
                 .withResponseType(ResponseType.ID_TOKEN)
@@ -1129,7 +1130,7 @@ public class WebAuthProviderTest {
 
         MockAuthCallback authCallback = new MockAuthCallback();
 
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
 
         WebAuthProvider.login(proxyAccount)
                 .withPKCE(pkce)
@@ -1192,7 +1193,7 @@ public class WebAuthProviderTest {
 
         MockAuthCallback authCallback = new MockAuthCallback();
 
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
 
         WebAuthProvider.login(proxyAccount)
                 .withResponseType(ResponseType.ID_TOKEN | ResponseType.CODE)
@@ -1256,7 +1257,7 @@ public class WebAuthProviderTest {
 
         MockAuthCallback authCallback = new MockAuthCallback();
 
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
 
         WebAuthProvider.login(proxyAccount)
                 .withPKCE(pkce)
@@ -1510,7 +1511,7 @@ public class WebAuthProviderTest {
         mockAPI.willReturnValidJsonWebKeys();
 
         MockAuthCallback authCallback = new MockAuthCallback();
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
 
         WebAuthProvider.login(proxyAccount)
                 .withState("1234567890")
@@ -1655,7 +1656,7 @@ public class WebAuthProviderTest {
 
         MockAuthCallback authCallback = new MockAuthCallback();
 
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
         WebAuthProvider.login(proxyAccount)
                 .withState("1234567890")
                 .withNonce(EXPECTED_NONCE)
@@ -1690,7 +1691,7 @@ public class WebAuthProviderTest {
 
         MockAuthCallback authCallback = new MockAuthCallback();
 
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
         WebAuthProvider.login(proxyAccount)
                 .withState("1234567890")
                 .withNonce(EXPECTED_NONCE)
@@ -1724,7 +1725,7 @@ public class WebAuthProviderTest {
         mockAPI.willReturnValidJsonWebKeys();
 
         MockAuthCallback authCallback = new MockAuthCallback();
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
 
         WebAuthProvider.login(proxyAccount)
                 .withState("1234567890")
@@ -1757,7 +1758,7 @@ public class WebAuthProviderTest {
 
         MockAuthCallback authCallback = new MockAuthCallback();
 
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
         WebAuthProvider.login(proxyAccount)
                 .withState("1234567890")
                 .withNonce(EXPECTED_NONCE)
@@ -1790,7 +1791,7 @@ public class WebAuthProviderTest {
         AuthenticationAPI mockAPI = new AuthenticationAPI();
         mockAPI.willReturnValidJsonWebKeys();
 
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
 
         MockAuthCallback authCallback = new MockAuthCallback();
 
@@ -1837,7 +1838,7 @@ public class WebAuthProviderTest {
 
         MockAuthCallback authCallback = new MockAuthCallback();
 
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
 
         WebAuthProvider.login(proxyAccount)
                 .withResponseType(ResponseType.ID_TOKEN)
@@ -1880,7 +1881,7 @@ public class WebAuthProviderTest {
         AuthenticationAPI mockAPI = new AuthenticationAPI();
         mockAPI.willReturnValidJsonWebKeys();
 
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
 
         MockAuthCallback authCallback = new MockAuthCallback();
 
@@ -2034,7 +2035,7 @@ public class WebAuthProviderTest {
 
         MockAuthCallback authCallback = new MockAuthCallback();
 
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
 
         WebAuthProvider.login(proxyAccount)
                 .withState("state")
@@ -2075,7 +2076,7 @@ public class WebAuthProviderTest {
 
         MockAuthCallback authCallback = new MockAuthCallback();
 
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
 
         WebAuthProvider.login(proxyAccount)
                 .withState("state")
@@ -2112,7 +2113,7 @@ public class WebAuthProviderTest {
 
         MockAuthCallback authCallback = new MockAuthCallback();
 
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
 
         WebAuthProvider.login(proxyAccount)
                 .withState("state")
@@ -2149,7 +2150,7 @@ public class WebAuthProviderTest {
 
         MockAuthCallback callback = new MockAuthCallback();
 
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
         WebAuthProvider.login(proxyAccount)
                 .withState("state")
                 .withNonce(EXPECTED_NONCE)
