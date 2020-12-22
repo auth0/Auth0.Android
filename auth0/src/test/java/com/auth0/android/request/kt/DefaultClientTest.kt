@@ -1,6 +1,7 @@
 package com.auth0.android.request.kt
 
 import android.net.Uri
+import com.auth0.android.request.*
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.squareup.okhttp.mockwebserver.MockResponse

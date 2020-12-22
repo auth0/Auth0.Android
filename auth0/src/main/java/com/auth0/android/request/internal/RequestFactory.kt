@@ -25,11 +25,7 @@ package com.auth0.android.request.internal
 
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0Exception
-import com.auth0.android.request.Request
-import com.auth0.android.request.kt.ErrorAdapter
-import com.auth0.android.request.kt.HttpMethod
-import com.auth0.android.request.kt.JsonAdapter
-import com.auth0.android.request.kt.NetworkingClient
+import com.auth0.android.request.*
 import com.auth0.android.util.Auth0UserAgent
 import java.io.Reader
 import java.util.*

@@ -1,6 +1,6 @@
-package com.auth0.android.request.kt
+package com.auth0.android.request.internal
 
-import com.auth0.android.request.internal.GsonProvider
+import com.auth0.android.request.JsonAdapter
 import com.google.gson.Gson
 import com.google.gson.TypeAdapter
 import com.google.gson.reflect.TypeToken

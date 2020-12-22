@@ -2,13 +2,13 @@ package com.auth0.android.request.internal;
 
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.request.AuthenticationRequest;
+import com.auth0.android.request.ErrorAdapter;
+import com.auth0.android.request.HttpMethod;
+import com.auth0.android.request.JsonAdapter;
+import com.auth0.android.request.NetworkingClient;
 import com.auth0.android.request.Request;
-import com.auth0.android.request.kt.ErrorAdapter;
-import com.auth0.android.request.kt.HttpMethod;
-import com.auth0.android.request.kt.JsonAdapter;
-import com.auth0.android.request.kt.NetworkingClient;
-import com.auth0.android.request.kt.RequestOptions;
-import com.auth0.android.request.kt.ServerResponse;
+import com.auth0.android.request.RequestOptions;
+import com.auth0.android.request.ServerResponse;
 import com.auth0.android.result.Credentials;
 
 import org.junit.Before;

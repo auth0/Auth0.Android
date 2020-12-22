@@ -1,11 +1,14 @@
-package com.auth0.android.request.kt
+package com.auth0.android.request.internal
 
-import com.auth0.android.request.internal.OkHttpClientFactory
+import com.auth0.android.request.HttpMethod
+import com.auth0.android.request.NetworkingClient
+import com.auth0.android.request.RequestOptions
+import com.auth0.android.request.ServerResponse
 import com.squareup.okhttp.*
 import java.io.IOException
 
 //TODO: Should this be internal?
-public class OkClient(timeout: Int) : NetworkingClient {
+private class OkClient(timeout: Int) : NetworkingClient {
     private val okClient: OkHttpClient = OkHttpClientFactory().createClient(
         true, true, timeout, timeout, timeout
     )
