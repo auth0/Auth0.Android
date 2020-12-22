@@ -1,16 +1,17 @@
-package com.auth0.android.request.kt
+package com.auth0.android.request
 
 import android.net.Uri
 import com.auth0.android.request.internal.GsonProvider
 import com.google.gson.Gson
 import java.io.BufferedWriter
 import java.io.IOException
-import java.io.UnsupportedEncodingException
 import java.net.HttpURLConnection
 import java.net.URL
-import java.net.URLEncoder
-import java.nio.charset.Charset
 
+/**
+ * Default implementation of a Networking Client. Makes use of HttpUrlConnection.
+ * @param timeout the connection timeout to use when executing requests.
+ */
 //TODO: Should this be internal?
 public class DefaultClient(private val timeout: Int) : NetworkingClient {
 
@@ -18,13 +19,14 @@ public class DefaultClient(private val timeout: Int) : NetworkingClient {
     private val gson: Gson = GsonProvider.buildGson()
 
     /**
-     * Creates and executes a networking request blocking
+     * Creates and executes a networking request blocking the current thread.
+     * @return the response from the server.
      */
     @Throws(IllegalArgumentException::class, IOException::class)
     override fun load(url: String, options: RequestOptions): ServerResponse {
         val parsedUri = Uri.parse(url)
-        //FIXME: Probably best to check this in the AuthenticationAPIClient constructor
-        //FIXME: Switch this check back on
+        //FIXME: Probably best to check this in the Auth0 or API clients constructor
+        //FIXME: Switch this HTTPS check back on
 //        if (parsedUri.scheme != "https") {
 //            throw IllegalArgumentException("The URL must use HTTPS")
 //        }
@@ -62,14 +64,12 @@ public class DefaultClient(private val timeout: Int) : NetworkingClient {
             if (options.parameters.isNotEmpty()) {
                 val json = gson.toJson(options.parameters)
                 writer.write(json)
-//              val formData = getFormString(options.parameters)
             }
             writer.flush()
             writer.close()
             output.close()
         }
 
-        //probably best to explicitly call connect
         connection.connect()
 
         return ServerResponse(
@@ -77,19 +77,5 @@ public class DefaultClient(private val timeout: Int) : NetworkingClient {
             connection.errorStream ?: connection.inputStream,
             connection.headerFields
         )
-    }
-
-    @Throws(UnsupportedEncodingException::class)
-    private fun getFormString(params: Map<String, String>): String {
-        val builder = StringBuilder()
-        params.entries.forEachIndexed { idx, it ->
-            if (idx > 0) {
-                builder.append("&")
-            }
-            builder.append(URLEncoder.encode(it.key, Charset.defaultCharset().name()))
-            builder.append("=")
-            builder.append(URLEncoder.encode(it.value, Charset.defaultCharset().name()))
-        }
-        return builder.toString()
     }
 }

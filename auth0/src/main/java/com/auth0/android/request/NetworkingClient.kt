@@ -1,4 +1,4 @@
-package com.auth0.android.request.kt
+package com.auth0.android.request
 
 import java.io.IOException
 
