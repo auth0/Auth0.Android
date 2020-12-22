@@ -29,6 +29,11 @@ import android.content.Context;
 import android.content.res.Resources;
 
 import com.auth0.android.Auth0;
+import com.auth0.android.request.AuthenticationRequest;
+import com.auth0.android.request.HttpMethod;
+import com.auth0.android.request.NetworkingClient;
+import com.auth0.android.request.RequestOptions;
+import com.auth0.android.request.ServerResponse;
 import com.auth0.android.request.internal.RequestFactory;
 import com.auth0.android.request.internal.ThreadSwitcherShadow;
 import com.auth0.android.result.Authentication;
@@ -44,14 +49,19 @@ import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
+import org.apache.tools.ant.filters.StringInputStream;
+import org.hamcrest.collection.IsMapContaining;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.security.PublicKey;
 import java.util.Collections;
@@ -68,9 +78,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -109,6 +122,27 @@ public class AuthenticationAPIClientTest {
     @After
     public void tearDown() throws Exception {
         mockAPI.shutdown();
+    }
+
+    @Test
+    public void shouldUseCustomNetworkingClient() throws IOException {
+        Auth0 account = new Auth0("client-id", "https://tenant.auth0.com/");
+        InputStream inputStream = new StringInputStream("{\"access_token\":\"something\"}");
+        ServerResponse response = new ServerResponse(200, inputStream, Collections.emptyMap());
+        NetworkingClient networkingClient = mock(NetworkingClient.class);
+        when(networkingClient.load(anyString(), any(RequestOptions.class))).thenReturn(response);
+        AuthenticationAPIClient client = new AuthenticationAPIClient(account, networkingClient);
+
+        AuthenticationRequest request = client.login("johndoe", "secret");
+        request.execute();
+
+        ArgumentCaptor<RequestOptions> optionsCaptor = ArgumentCaptor.forClass(RequestOptions.class);
+        verify(networkingClient).load(eq("https://tenant.auth0.com/oauth/token"), optionsCaptor.capture());
+        assertThat(optionsCaptor.getValue(), is(notNullValue()));
+        assertThat(optionsCaptor.getValue().getMethod(), is(instanceOf(HttpMethod.POST.class)));
+        assertThat(optionsCaptor.getValue().getParameters(), IsMapContaining.hasEntry("username", "johndoe"));
+        assertThat(optionsCaptor.getValue().getParameters(), IsMapContaining.hasEntry("password", "secret"));
+        assertThat(optionsCaptor.getValue().getHeaders(), is(IsMapContaining.hasKey("Auth0-Client")));
     }
 
     @Test

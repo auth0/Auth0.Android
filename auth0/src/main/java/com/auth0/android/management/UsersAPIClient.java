@@ -101,6 +101,17 @@ public class UsersAPIClient {
     }
 
     /**
+     * Creates a new API client instance providing Auth0 account info and a custom Networking Client.
+     *
+     * @param auth0            account information
+     * @param token            of the primary identity
+     * @param networkingClient the networking client implementation
+     */
+    public UsersAPIClient(@NonNull Auth0 auth0, @NonNull String token, @NonNull NetworkingClient networkingClient) {
+        this(auth0, factoryForToken(token, networkingClient), GsonProvider.buildGson());
+    }
+
+    /**
      * Creates a new API client instance providing Auth0 account info.
      *
      * @param auth0 account information
