@@ -29,6 +29,7 @@ import android.content.Context;
 import android.content.res.Resources;
 
 import com.auth0.android.Auth0;
+import com.auth0.android.MockAuth0;
 import com.auth0.android.request.HttpMethod;
 import com.auth0.android.request.NetworkingClient;
 import com.auth0.android.request.Request;
@@ -114,7 +115,7 @@ public class UsersAPIClientTest {
     public void setUp() throws Exception {
         mockAPI = new UsersAPI();
         final String domain = mockAPI.getDomain();
-        Auth0 auth0 = new Auth0(CLIENT_ID, domain, domain);
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, domain, domain);
         client = new UsersAPIClient(auth0, TOKEN_PRIMARY);
         gson = new GsonBuilder().serializeNulls().create();
     }

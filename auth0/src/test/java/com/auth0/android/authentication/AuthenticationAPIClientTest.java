@@ -29,6 +29,7 @@ import android.content.Context;
 import android.content.res.Resources;
 
 import com.auth0.android.Auth0;
+import com.auth0.android.MockAuth0;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.request.HttpMethod;
 import com.auth0.android.request.NetworkingClient;
@@ -114,7 +115,7 @@ public class AuthenticationAPIClientTest {
     public void setUp() throws Exception {
         mockAPI = new AuthenticationAPI();
         final String domain = mockAPI.getDomain();
-        Auth0 auth0 = new Auth0(CLIENT_ID, domain, domain);
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, domain, domain);
         client = new AuthenticationAPIClient(auth0);
         gson = new GsonBuilder().serializeNulls().create();
     }
@@ -202,7 +203,7 @@ public class AuthenticationAPIClientTest {
         mockAPI.willReturnSuccessfulLogin();
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
 
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
         client.loginWithOTP("ey30.the-mfa-token.value", "123456")
                 .start(callback);
@@ -246,7 +247,7 @@ public class AuthenticationAPIClientTest {
         mockAPI.willReturnSuccessfulLogin();
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
 
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
         client.login(SUPPORT_AUTH0_COM, "some-password", MY_CONNECTION)
                 .start(callback);
@@ -393,7 +394,7 @@ public class AuthenticationAPIClientTest {
     public void shouldLoginWithPhoneNumberWithCustomConnectionWithOTPGrant() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
 
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
@@ -418,7 +419,7 @@ public class AuthenticationAPIClientTest {
     public void shouldLoginWithPhoneNumberWithOTPGrant() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
 
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
@@ -443,7 +444,7 @@ public class AuthenticationAPIClientTest {
     public void shouldLoginWithPhoneNumberSyncWithOTPGrant() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
 
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
 
         final Credentials credentials = client
@@ -468,7 +469,7 @@ public class AuthenticationAPIClientTest {
     public void shouldLoginWithEmailOnlyWithCustomConnectionWithOTPGrant() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
 
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
@@ -493,7 +494,7 @@ public class AuthenticationAPIClientTest {
     public void shouldLoginWithEmailOnlyWithOTPGrant() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
 
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
@@ -519,7 +520,7 @@ public class AuthenticationAPIClientTest {
         mockAPI.willReturnSuccessfulLogin()
                 .willReturnUserInfo();
 
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
 
         final Credentials credentials = client
@@ -671,7 +672,7 @@ public class AuthenticationAPIClientTest {
                 .willReturnSuccessfulLogin();
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
         client.signUp(SUPPORT_AUTH0_COM, PASSWORD, SUPPORT, MY_CONNECTION)
                 .start(callback);
@@ -803,7 +804,7 @@ public class AuthenticationAPIClientTest {
                 .willReturnUserInfo();
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
         client.signUp(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
                 .start(callback);
@@ -1326,7 +1327,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldRevokeToken() throws Exception {
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
 
         mockAPI.willReturnSuccessfulEmptyBody();
@@ -1347,7 +1348,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldRevokeTokenSync() throws Exception {
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
 
         mockAPI.willReturnSuccessfulEmptyBody();
@@ -1365,7 +1366,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldRenewAuthWithOAuthToken() throws Exception {
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
 
         mockAPI.willReturnSuccessfulLogin();
@@ -1387,7 +1388,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldRenewAuthWithOAuthTokenSync() throws Exception {
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
 
         mockAPI.willReturnSuccessfulLogin();

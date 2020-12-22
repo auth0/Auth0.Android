@@ -7,6 +7,7 @@ import java.io.BufferedWriter
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
+import javax.net.ssl.HttpsURLConnection
 
 /**
  * Default implementation of a Networking Client. Makes use of HttpUrlConnection.
@@ -25,11 +26,6 @@ public class DefaultClient(private val timeout: Int) : NetworkingClient {
     @Throws(IllegalArgumentException::class, IOException::class)
     override fun load(url: String, options: RequestOptions): ServerResponse {
         val parsedUri = Uri.parse(url)
-        //FIXME: Probably best to check this in the Auth0 or API clients constructor
-        //FIXME: Switch this HTTPS check back on
-//        if (parsedUri.scheme != "https") {
-//            throw IllegalArgumentException("The URL must use HTTPS")
-//        }
 
         //prepare URL
         val targetUrl = if (options.method == HttpMethod.GET) {
@@ -43,8 +39,7 @@ public class DefaultClient(private val timeout: Int) : NetworkingClient {
             URL(url)
         }
 
-        //FIXME: Switch back to HttpsURLConnection
-        val connection: HttpURLConnection = targetUrl.openConnection() as HttpURLConnection
+        val connection = getHttpUrlConnection(targetUrl)
 
         //FIXME: setup timeout
 //        connection.connectTimeout = timeout
@@ -77,5 +72,15 @@ public class DefaultClient(private val timeout: Int) : NetworkingClient {
             connection.errorStream ?: connection.inputStream,
             connection.headerFields
         )
+    }
+
+    private fun getHttpUrlConnection(targetUrl: URL): HttpURLConnection {
+        // Auth0 constructor will enforce HTTPS scheme. This is here to enable running
+        // tests with MockWebServer using HTTP.
+        if (targetUrl.protocol == "http") {
+            return targetUrl.openConnection() as HttpURLConnection
+        } else {
+            return targetUrl.openConnection() as HttpsURLConnection
+        }
     }
 }
