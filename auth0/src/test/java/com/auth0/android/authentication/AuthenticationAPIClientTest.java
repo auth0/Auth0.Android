@@ -37,7 +37,7 @@ import com.auth0.android.result.DatabaseUser;
 import com.auth0.android.result.UserProfile;
 import com.auth0.android.util.AuthenticationAPI;
 import com.auth0.android.util.MockAuthenticationCallback;
-import com.auth0.android.util.Telemetry;
+import com.auth0.android.util.Auth0UserAgent;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -119,23 +119,23 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldSetTelemetryIfPresent() {
-        final Telemetry telemetry = mock(Telemetry.class);
-        when(telemetry.getValue()).thenReturn("the-telemetry-data");
+    public void shouldSetAuth0UserAgentIfPresent() {
+        final Auth0UserAgent auth0UserAgent = mock(Auth0UserAgent.class);
+        when(auth0UserAgent.getValue()).thenReturn("the-user-agent-data");
         RequestFactory factory = mock(RequestFactory.class);
         OkHttpClientFactory clientFactory = mock(OkHttpClientFactory.class);
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
-        auth0.setTelemetry(telemetry);
+        auth0.setAuth0UserAgent(auth0UserAgent);
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0, factory, clientFactory);
-        verify(factory).setClientInfo("the-telemetry-data");
+        verify(factory).setClientInfo("the-user-agent-data");
     }
 
     @Test
-    public void shouldNotSetTelemetryIfMissing() {
+    public void shouldNotSetAuth0UserAgentIfMissing() {
         RequestFactory factory = mock(RequestFactory.class);
         OkHttpClientFactory clientFactory = mock(OkHttpClientFactory.class);
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
-        auth0.doNotSendTelemetry();
+        auth0.doNotSendAuth0UserAgent();
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0, factory, clientFactory);
         verify(factory, never()).setClientInfo(any(String.class));
     }

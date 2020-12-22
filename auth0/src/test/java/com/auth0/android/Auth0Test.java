@@ -27,7 +27,7 @@ package com.auth0.android;
 import android.content.Context;
 import android.content.res.Resources;
 
-import com.auth0.android.util.Telemetry;
+import com.auth0.android.util.Auth0UserAgent;
 import com.squareup.okhttp.HttpUrl;
 
 import org.junit.Before;
@@ -262,15 +262,15 @@ public class Auth0Test {
     @Test
     public void shouldNotReturnTelemetryWhenExplicitlyDisabledThem() {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
-        auth0.doNotSendTelemetry();
-        assertThat(auth0.getTelemetry(), is(nullValue()));
+        auth0.doNotSendAuth0UserAgent();
+        assertThat(auth0.getAuth0UserAgent(), is(nullValue()));
     }
 
     @Test
     public void shouldSetCustomTelemetry() {
-        Telemetry customTelemetry = new Telemetry("custom", "9.9.9", "1.1.1");
+        Auth0UserAgent customAuth0UserAgent = new Auth0UserAgent("custom", "9.9.9", "1.1.1");
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
-        auth0.setTelemetry(customTelemetry);
-        assertThat(auth0.getTelemetry(), is(equalTo(customTelemetry)));
+        auth0.setAuth0UserAgent(customAuth0UserAgent);
+        assertThat(auth0.getAuth0UserAgent(), is(equalTo(customAuth0UserAgent)));
     }
 }

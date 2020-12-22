@@ -2,8 +2,9 @@ package com.auth0.android.provider;
 
 import android.content.Context;
 import android.net.Uri;
-import androidx.annotation.NonNull;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
 
 import com.auth0.android.Auth0;
 import com.auth0.android.Auth0Exception;
@@ -17,7 +18,7 @@ class LogoutManager extends ResumableManager {
     private static final String TAG = LogoutManager.class.getSimpleName();
 
     private static final String KEY_CLIENT_ID = "client_id";
-    private static final String KEY_TELEMETRY = "auth0Client";
+    private static final String KEY_USER_AGENT = "auth0Client";
     private static final String KEY_RETURN_TO_URL = "returnTo";
 
     private final Auth0 account;
@@ -64,8 +65,8 @@ class LogoutManager extends ResumableManager {
     }
 
     private void addClientParameters(Map<String, String> parameters) {
-        if (account.getTelemetry() != null) {
-            parameters.put(KEY_TELEMETRY, account.getTelemetry().getValue());
+        if (account.getAuth0UserAgent() != null) {
+            parameters.put(KEY_USER_AGENT, account.getAuth0UserAgent().getValue());
         }
         parameters.put(KEY_CLIENT_ID, account.getClientId());
     }

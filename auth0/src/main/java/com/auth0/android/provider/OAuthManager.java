@@ -47,7 +47,7 @@ class OAuthManager extends ResumableManager {
     private static final String KEY_CODE_CHALLENGE_METHOD = "code_challenge_method";
     private static final String KEY_CLIENT_ID = "client_id";
     private static final String KEY_REDIRECT_URI = "redirect_uri";
-    private static final String KEY_TELEMETRY = "auth0Client";
+    private static final String KEY_USER_AGENT = "auth0Client";
     private static final String KEY_ERROR = "error";
     private static final String KEY_ERROR_DESCRIPTION = "error_description";
     private static final String KEY_CODE = "code";
@@ -258,8 +258,8 @@ class OAuthManager extends ResumableManager {
     }
 
     private void addClientParameters(Map<String, String> parameters, String redirectUri) {
-        if (account.getTelemetry() != null) {
-            parameters.put(KEY_TELEMETRY, account.getTelemetry().getValue());
+        if (account.getAuth0UserAgent() != null) {
+            parameters.put(KEY_USER_AGENT, account.getAuth0UserAgent().getValue());
         }
         parameters.put(KEY_CLIENT_ID, account.getClientId());
         parameters.put(KEY_REDIRECT_URI, redirectUri);

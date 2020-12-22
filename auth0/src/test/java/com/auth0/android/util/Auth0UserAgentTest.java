@@ -19,57 +19,57 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
 @RunWith(RobolectricTestRunner.class)
-public class TelemetryTest {
+public class Auth0UserAgentTest {
 
     //Testing Android version only for a few SDKs
 
     @Test
     @Config(sdk = 21)
     public void shouldAlwaysIncludeAndroidVersionAPI21() {
-        Telemetry telemetry = new Telemetry("auth0-java", null);
-        assertThat(telemetry.getEnvironment(), is(notNullValue()));
-        assertThat(telemetry.getEnvironment().get("android"), is("21"));
+        Auth0UserAgent auth0UserAgent = new Auth0UserAgent("auth0-java", null);
+        assertThat(auth0UserAgent.getEnvironment(), is(notNullValue()));
+        assertThat(auth0UserAgent.getEnvironment().get("android"), is("21"));
     }
 
     @Test
     @Config(sdk = 23)
     public void shouldAlwaysIncludeAndroidVersionAPI23() {
-        Telemetry telemetry = new Telemetry("auth0-java", null);
-        assertThat(telemetry.getEnvironment(), is(notNullValue()));
-        assertThat(telemetry.getEnvironment().get("android"), is("23"));
+        Auth0UserAgent auth0UserAgent = new Auth0UserAgent("auth0-java", null);
+        assertThat(auth0UserAgent.getEnvironment(), is(notNullValue()));
+        assertThat(auth0UserAgent.getEnvironment().get("android"), is("23"));
     }
 
     @Test
     public void shouldNotAcceptNullName() {
-        Telemetry telemetry = new Telemetry(null, null);
-        assertThat(telemetry.getValue(), is(nullValue()));
-        assertThat(telemetry.getEnvironment(), is(notNullValue()));
+        Auth0UserAgent auth0UserAgent = new Auth0UserAgent(null, null);
+        assertThat(auth0UserAgent.getValue(), is(nullValue()));
+        assertThat(auth0UserAgent.getEnvironment(), is(notNullValue()));
     }
 
     @Test
     public void shouldNotIncludeLibraryVersionIfNotProvided() {
-        Telemetry telemetry = new Telemetry(null, null);
-        assertThat(telemetry.getEnvironment(), is(notNullValue()));
-        assertThat(telemetry.getEnvironment().containsKey("auth0.android"), is(false));
+        Auth0UserAgent auth0UserAgent = new Auth0UserAgent(null, null);
+        assertThat(auth0UserAgent.getEnvironment(), is(notNullValue()));
+        assertThat(auth0UserAgent.getEnvironment().containsKey("auth0.android"), is(false));
     }
 
     @Test
     public void shouldGetName() {
-        Telemetry telemetry = new Telemetry("auth0-java", "1.0.0", "1.2.3");
-        assertThat(telemetry.getName(), is("auth0-java"));
+        Auth0UserAgent auth0UserAgent = new Auth0UserAgent("auth0-java", "1.0.0", "1.2.3");
+        assertThat(auth0UserAgent.getName(), is("auth0-java"));
     }
 
     @Test
     public void shouldGetVersion() {
-        Telemetry telemetry = new Telemetry("auth0-java", "1.0.0", "1.2.3");
-        assertThat(telemetry.getVersion(), is("1.0.0"));
+        Auth0UserAgent auth0UserAgent = new Auth0UserAgent("auth0-java", "1.0.0", "1.2.3");
+        assertThat(auth0UserAgent.getVersion(), is("1.0.0"));
     }
 
     @Test
     public void shouldGetLibraryVersion() {
-        Telemetry telemetry = new Telemetry("auth0-java", "1.0.0", "1.2.3");
-        assertThat(telemetry.getLibraryVersion(), is("1.2.3"));
-        assertThat(telemetry.getEnvironment().get("auth0.android"), is("1.2.3"));
+        Auth0UserAgent auth0UserAgent = new Auth0UserAgent("auth0-java", "1.0.0", "1.2.3");
+        assertThat(auth0UserAgent.getLibraryVersion(), is("1.2.3"));
+        assertThat(auth0UserAgent.getEnvironment().get("auth0.android"), is("1.2.3"));
     }
 
     @Test
@@ -79,8 +79,8 @@ public class TelemetryTest {
         Type mapType = new TypeToken<Map<String, Object>>() {
         }.getType();
 
-        Telemetry telemetryComplete = new Telemetry("auth0-java", "1.0.0", "1.2.3");
-        String value = telemetryComplete.getValue();
+        Auth0UserAgent auth0UserAgentComplete = new Auth0UserAgent("auth0-java", "1.0.0", "1.2.3");
+        String value = auth0UserAgentComplete.getValue();
         assertThat(value, is("eyJuYW1lIjoiYXV0aDAtamF2YSIsImVudiI6eyJhbmRyb2lkIjoiMjMiLCJhdXRoMC5hbmRyb2lkIjoiMS4yLjMifSwidmVyc2lvbiI6IjEuMC4wIn0="));
         String completeString = new String(Base64.decode(value, Base64.URL_SAFE | Base64.NO_WRAP), "UTF-8");
         Map<String, Object> complete = gson.fromJson(completeString, mapType);
@@ -98,8 +98,8 @@ public class TelemetryTest {
         Type mapType = new TypeToken<Map<String, Object>>() {
         }.getType();
 
-        Telemetry telemetryBasic = new Telemetry("auth0-python", "99.3.1");
-        String value = telemetryBasic.getValue();
+        Auth0UserAgent auth0UserAgentBasic = new Auth0UserAgent("auth0-python", "99.3.1");
+        String value = auth0UserAgentBasic.getValue();
         assertThat(value, is("eyJuYW1lIjoiYXV0aDAtcHl0aG9uIiwiZW52Ijp7ImFuZHJvaWQiOiIyMyJ9LCJ2ZXJzaW9uIjoiOTkuMy4xIn0="));
         String basicString = new String(Base64.decode(value, Base64.URL_SAFE | Base64.NO_WRAP), "UTF-8");
         Map<String, Object> basic = gson.fromJson(basicString, mapType);
