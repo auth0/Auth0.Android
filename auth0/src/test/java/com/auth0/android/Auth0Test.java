@@ -273,4 +273,25 @@ public class Auth0Test {
         auth0.setTelemetry(customTelemetry);
         assertThat(auth0.getTelemetry(), is(equalTo(customTelemetry)));
     }
+
+    @Test
+    public void shouldThrowWhenHttpDomainUsed() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Invalid domain url: 'http://" + DOMAIN + "'. Only HTTPS domain URLs are supported. If no scheme is passed, HTTPS will be used.");
+        new Auth0(CLIENT_ID, "http://" + DOMAIN);
+    }
+
+    @Test
+    public void shouldThrowWhenDomainIsNull() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Invalid domain url: 'null'");
+        new Auth0(CLIENT_ID, null);
+    }
+
+    @Test
+    public void shouldThrowWhenConfigDomainIsHttp() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Invalid domain url: 'http://" + OTHER_DOMAIN + "'. Only HTTPS domain URLs are supported. If no scheme is passed, HTTPS will be used.");
+        new Auth0(CLIENT_ID, DOMAIN, "http://" + OTHER_DOMAIN);
+    }
 }
