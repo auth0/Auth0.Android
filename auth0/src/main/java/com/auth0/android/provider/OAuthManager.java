@@ -17,6 +17,7 @@ import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.jwt.DecodeException;
 import com.auth0.android.jwt.JWT;
+import com.auth0.android.request.NetworkingClient;
 import com.auth0.android.result.Credentials;
 
 import java.security.SecureRandom;
@@ -70,11 +71,16 @@ class OAuthManager extends ResumableManager {
     private Integer idTokenVerificationLeeway;
     private String idTokenVerificationIssuer;
 
-    OAuthManager(@NonNull Auth0 account, @NonNull AuthCallback callback, @NonNull Map<String, String> parameters, @NonNull CustomTabsOptions ctOptions) {
+    OAuthManager(@NonNull Auth0 account, @NonNull AuthCallback callback, @NonNull Map<String, String> parameters, @NonNull CustomTabsOptions ctOptions, @Nullable NetworkingClient networkingClient) {
         this.account = account;
         this.callback = callback;
         this.parameters = new HashMap<>(parameters);
-        this.apiClient = new AuthenticationAPIClient(account);
+        if (networkingClient == null) {
+            // Delegate the creation of defaults to the constructor
+            this.apiClient = new AuthenticationAPIClient(account);
+        } else {
+            this.apiClient = new AuthenticationAPIClient(account, networkingClient);
+        }
         this.ctOptions = ctOptions;
     }
 

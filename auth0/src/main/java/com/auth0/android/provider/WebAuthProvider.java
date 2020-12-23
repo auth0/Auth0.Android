@@ -35,6 +35,7 @@ import androidx.annotation.VisibleForTesting;
 
 import com.auth0.android.Auth0;
 import com.auth0.android.authentication.AuthenticationException;
+import com.auth0.android.request.NetworkingClient;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -50,7 +51,7 @@ import static com.auth0.android.provider.OAuthManager.RESPONSE_TYPE_ID_TOKEN;
 
 /**
  * OAuth2 Web Authentication Provider.
- *
+ * <p>
  * It uses an external browser by sending the {@link android.content.Intent#ACTION_VIEW} intent.
  */
 @SuppressWarnings("WeakerAccess")
@@ -157,6 +158,7 @@ public class WebAuthProvider {
         private final Auth0 account;
         private final Map<String, String> values;
         private PKCE pkce;
+        private NetworkingClient networkingClient;
         private String issuer;
         private String scheme;
         private String redirectUri;
@@ -172,6 +174,18 @@ public class WebAuthProvider {
             this.ctOptions = CustomTabsOptions.newBuilder().build();
             withResponseType(ResponseType.CODE);
             withScope(SCOPE_TYPE_OPENID);
+        }
+
+        /**
+         * Use a custom networking client to handle the API calls.
+         *
+         * @param networkingClient to use in the requests
+         * @return the current builder instance
+         */
+        @NonNull
+        public Builder withNetworkingClient(@NonNull NetworkingClient networkingClient) {
+            this.networkingClient = networkingClient;
+            return this;
         }
 
         /**
@@ -394,7 +408,7 @@ public class WebAuthProvider {
                 return;
             }
 
-            OAuthManager manager = new OAuthManager(account, callback, values, ctOptions);
+            OAuthManager manager = new OAuthManager(account, callback, values, ctOptions, networkingClient);
             manager.setPKCE(pkce);
             manager.setIdTokenVerificationLeeway(leeway);
             manager.setIdTokenVerificationIssuer(issuer);

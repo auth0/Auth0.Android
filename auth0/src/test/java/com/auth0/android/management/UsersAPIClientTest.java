@@ -29,6 +29,11 @@ import android.content.Context;
 import android.content.res.Resources;
 
 import com.auth0.android.Auth0;
+import com.auth0.android.request.HttpMethod;
+import com.auth0.android.request.NetworkingClient;
+import com.auth0.android.request.Request;
+import com.auth0.android.request.RequestOptions;
+import com.auth0.android.request.ServerResponse;
 import com.auth0.android.request.internal.RequestFactory;
 import com.auth0.android.request.internal.ThreadSwitcherShadow;
 import com.auth0.android.result.UserIdentity;
@@ -42,16 +47,23 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
+import org.apache.tools.ant.filters.StringInputStream;
+import org.hamcrest.collection.IsMapContaining;
+import org.hamcrest.collection.IsMapWithSize;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,10 +73,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -109,6 +123,26 @@ public class UsersAPIClientTest {
     @After
     public void tearDown() throws Exception {
         mockAPI.shutdown();
+    }
+
+    @Test
+    public void shouldUseCustomNetworkingClient() throws IOException {
+        Auth0 account = new Auth0("client-id", "https://tenant.auth0.com/");
+        InputStream inputStream = new StringInputStream("{\"id\":\"undercover\"}");
+        ServerResponse response = new ServerResponse(200, inputStream, Collections.emptyMap());
+        NetworkingClient networkingClient = mock(NetworkingClient.class);
+        when(networkingClient.load(anyString(), any(RequestOptions.class))).thenReturn(response);
+        UsersAPIClient client = new UsersAPIClient(account, "token.token", networkingClient);
+
+        Request<UserProfile, ManagementException> request = client.getProfile("undercover");
+        request.execute();
+
+        ArgumentCaptor<RequestOptions> optionsCaptor = ArgumentCaptor.forClass(RequestOptions.class);
+        verify(networkingClient).load(eq("https://tenant.auth0.com/api/v2/users/undercover"), optionsCaptor.capture());
+        assertThat(optionsCaptor.getValue(), is(notNullValue()));
+        assertThat(optionsCaptor.getValue().getMethod(), is(instanceOf(HttpMethod.GET.class)));
+        assertThat(optionsCaptor.getValue().getParameters(), IsMapWithSize.anEmptyMap());
+        assertThat(optionsCaptor.getValue().getHeaders(), is(IsMapContaining.hasKey("Auth0-Client")));
     }
 
     @Test
