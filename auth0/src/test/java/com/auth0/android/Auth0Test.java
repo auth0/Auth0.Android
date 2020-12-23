@@ -282,6 +282,13 @@ public class Auth0Test {
     }
 
     @Test
+    public void shouldThrowWhenHttpUppercaseDomainUsed() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Invalid domain url: 'HTTP://" + DOMAIN + "'. Only HTTPS domain URLs are supported. If no scheme is passed, HTTPS will be used.");
+        new Auth0(CLIENT_ID, "HTTP://" + DOMAIN);
+    }
+
+    @Test
     public void shouldThrowWhenDomainIsNull() {
         expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage("Invalid domain url: 'null'");
