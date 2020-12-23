@@ -183,7 +183,7 @@ public class Auth0 {
      *
      * @param auth0UserAgent to send in every request to Auth0.
      */
-    public void setAuth0UserAgent(@Nullable Auth0UserAgent auth0UserAgent) {
+    public void setAuth0UserAgent(@NonNull Auth0UserAgent auth0UserAgent) {
         this.auth0UserAgent = auth0UserAgent;
     }
 
