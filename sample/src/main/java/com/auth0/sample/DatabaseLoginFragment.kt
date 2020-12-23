@@ -12,7 +12,6 @@ import com.auth0.android.callback.AuthenticationCallback
 import com.auth0.android.result.Credentials
 import com.auth0.sample.databinding.FragmentDatabaseLoginBinding
 import com.google.android.material.snackbar.Snackbar
-import kotlin.concurrent.thread
 
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
@@ -39,22 +38,16 @@ class DatabaseLoginFragment : Fragment() {
     }
 
     private fun makeRequest(email: String, password: String) {
-        thread { //FIXME: Remove this wrapping thread once the request runs in background
-            apiClient.login(email, password, "Username-Password-Authentication")
-                //Additional customization to the request goes here
-                .start(object : AuthenticationCallback<Credentials> {
-                    override fun onFailure(error: AuthenticationException) {
-                        requireActivity().runOnUiThread {
-                            Snackbar.make(requireView(), "Failure :(", Snackbar.LENGTH_LONG).show()
-                        }
-                    }
+        apiClient.login(email, password, "Username-Password-Authentication")
+            //Additional customization to the request goes here
+            .start(object : AuthenticationCallback<Credentials> {
+                override fun onFailure(error: AuthenticationException) {
+                    Snackbar.make(requireView(), "Failure :(", Snackbar.LENGTH_LONG).show()
+                }
 
-                    override fun onSuccess(payload: Credentials?) {
-                        requireActivity().runOnUiThread {
-                            Snackbar.make(requireView(), "Success :D", Snackbar.LENGTH_LONG).show()
-                        }
-                    }
-                })
-        }
+                override fun onSuccess(payload: Credentials?) {
+                    Snackbar.make(requireView(), "Success :D", Snackbar.LENGTH_LONG).show()
+                }
+            })
     }
 }
