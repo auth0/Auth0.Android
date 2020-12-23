@@ -1135,7 +1135,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldResumeUsingCustomNetworkingClient() throws Exception {
+    public void shouldResumeLoginWithIntentWithCodeGrant() throws Exception {
         Date expiresAt = new Date();
         PKCE pkce = Mockito.mock(PKCE.class);
 
@@ -1198,7 +1198,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldResumeLoginWithIntentWithCodeGrant() throws Exception {
+    public void shouldResumeUsingCustomNetworkingClient() throws Exception {
         NetworkingClient networkingClient = spy(new DefaultClient(10));
         MockAuthCallback authCallback = new MockAuthCallback();
 
