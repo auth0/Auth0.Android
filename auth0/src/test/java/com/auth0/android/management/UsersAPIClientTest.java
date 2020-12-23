@@ -33,8 +33,8 @@ import com.auth0.android.request.internal.OkHttpClientFactory;
 import com.auth0.android.request.internal.RequestFactory;
 import com.auth0.android.result.UserIdentity;
 import com.auth0.android.result.UserProfile;
-import com.auth0.android.util.MockManagementCallback;
 import com.auth0.android.util.Auth0UserAgent;
+import com.auth0.android.util.MockManagementCallback;
 import com.auth0.android.util.TypeTokenMatcher;
 import com.auth0.android.util.UsersAPI;
 import com.google.gson.Gson;
@@ -63,10 +63,8 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -128,16 +126,6 @@ public class UsersAPIClientTest {
         auth0.setAuth0UserAgent(auth0UserAgent);
         new UsersAPIClient(auth0, factory, clientFactory);
         verify(factory).setClientInfo("the-telemetry-data");
-    }
-
-    @Test
-    public void shouldNotSetTelemetryIfMissing() {
-        RequestFactory factory = mock(RequestFactory.class);
-        OkHttpClientFactory clientFactory = mock(OkHttpClientFactory.class);
-        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
-        auth0.doNotSendAuth0UserAgent();
-        new UsersAPIClient(auth0, factory, clientFactory);
-        verify(factory, never()).setClientInfo(any(String.class));
     }
 
     @Test

@@ -47,7 +47,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -257,13 +256,6 @@ public class Auth0Test {
         assertThat(url, hasScheme("https"));
         assertThat(url, hasHost(DOMAIN));
         assertThat(url, hasPath("v2", "logout"));
-    }
-
-    @Test
-    public void shouldNotReturnTelemetryWhenExplicitlyDisabledThem() {
-        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
-        auth0.doNotSendAuth0UserAgent();
-        assertThat(auth0.getAuth0UserAgent(), is(nullValue()));
     }
 
     @Test
