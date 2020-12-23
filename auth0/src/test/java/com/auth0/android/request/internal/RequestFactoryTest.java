@@ -199,11 +199,11 @@ public class RequestFactoryTest {
     @SuppressWarnings("unchecked")
     private RequestFactory<Auth0Exception> createRequestFactory() {
         RequestFactory<Auth0Exception> factory = spy(new RequestFactory<>(client, errorAdapter));
-        doReturn(postRequest).when(factory).createRequest(any(HttpMethod.POST.class), eq(BASE_URL), eq(client), eq(resultAdapter), eq(errorAdapter));
-        doReturn(emptyPostRequest).when(factory).createRequest(any(HttpMethod.POST.class), eq(BASE_URL), eq(client), AdditionalMatchers.and(AdditionalMatchers.not(ArgumentMatchers.eq(resultAdapter)), ArgumentMatchers.isA(JsonAdapter.class)), eq(errorAdapter));
-        doReturn(deleteRequest).when(factory).createRequest(any(HttpMethod.DELETE.class), eq(BASE_URL), eq(client), eq(resultAdapter), eq(errorAdapter));
-        doReturn(patchRequest).when(factory).createRequest(any(HttpMethod.PATCH.class), eq(BASE_URL), eq(client), eq(resultAdapter), eq(errorAdapter));
-        doReturn(getRequest).when(factory).createRequest(any(HttpMethod.GET.class), eq(BASE_URL), eq(client), eq(resultAdapter), eq(errorAdapter));
+        doReturn(postRequest).when(factory).createRequest(any(HttpMethod.POST.class), eq(BASE_URL), eq(client), eq(resultAdapter), eq(errorAdapter), any(ThreadSwitcher.class));
+        doReturn(emptyPostRequest).when(factory).createRequest(any(HttpMethod.POST.class), eq(BASE_URL), eq(client), AdditionalMatchers.and(AdditionalMatchers.not(ArgumentMatchers.eq(resultAdapter)), ArgumentMatchers.isA(JsonAdapter.class)), eq(errorAdapter), any(ThreadSwitcher.class));
+        doReturn(deleteRequest).when(factory).createRequest(any(HttpMethod.DELETE.class), eq(BASE_URL), eq(client), eq(resultAdapter), eq(errorAdapter), any(ThreadSwitcher.class));
+        doReturn(patchRequest).when(factory).createRequest(any(HttpMethod.PATCH.class), eq(BASE_URL), eq(client), eq(resultAdapter), eq(errorAdapter), any(ThreadSwitcher.class));
+        doReturn(getRequest).when(factory).createRequest(any(HttpMethod.GET.class), eq(BASE_URL), eq(client), eq(resultAdapter), eq(errorAdapter), any(ThreadSwitcher.class));
         return factory;
     }
 }
