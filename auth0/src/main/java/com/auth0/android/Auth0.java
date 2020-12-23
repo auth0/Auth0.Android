@@ -279,7 +279,7 @@ public class Auth0 {
             return null;
         }
 
-        if (url.startsWith("http://")) {
+        if (url.toLowerCase().startsWith("http://")) {
             throw new IllegalArgumentException("Invalid domain url: '" + url + "'. Only HTTPS domain URLs are supported. If no scheme is passed, HTTPS will be used.");
         }
 
