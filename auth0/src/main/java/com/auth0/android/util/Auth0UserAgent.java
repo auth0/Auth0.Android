@@ -7,9 +7,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import com.auth0.android.auth0.BuildConfig;
 import com.google.gson.Gson;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,36 +32,33 @@ public class Auth0UserAgent {
     private final Map<String, String> env;
     private final String value;
 
+    public Auth0UserAgent() {
+        this(BuildConfig.LIBRARY_NAME, BuildConfig.VERSION_NAME);
+    }
+
     public Auth0UserAgent(@NonNull String name, @NonNull String version) {
         this(name, version, null);
     }
 
     public Auth0UserAgent(@NonNull String name, @NonNull String version, @Nullable String libraryVersion) {
-        this.name = name;
-        this.version = version;
-        if (TextUtils.isEmpty(name)) {
-            env = Collections.emptyMap();
-            value = null;
-            return;
-        }
+        this.name = TextUtils.isEmpty(name) ? BuildConfig.LIBRARY_NAME : name;
+        this.version = TextUtils.isEmpty(version) ? BuildConfig.VERSION_NAME : version;
+
         Map<String, String> tmpEnv = new HashMap<>();
         tmpEnv.put(ANDROID_KEY, String.valueOf(android.os.Build.VERSION.SDK_INT));
         if (!TextUtils.isEmpty(libraryVersion)) {
-            //noinspection ConstantConditions
             tmpEnv.put(LIBRARY_VERSION_KEY, libraryVersion);
         }
         this.env = Collections.unmodifiableMap(tmpEnv);
 
         Map<String, Object> values = new HashMap<>();
         values.put(NAME_KEY, name);
-        if (!TextUtils.isEmpty(version)) {
-            values.put(VERSION_KEY, version);
-        }
+        values.put(VERSION_KEY, version);
         values.put(ENV_KEY, env);
         String json = new Gson().toJson(values);
-        Charset utf8 = Charset.forName("UTF-8");
-        byte[] bytes = json.getBytes(utf8);
-        value = new String(Base64.encode(bytes, Base64.URL_SAFE | Base64.NO_WRAP), utf8);
+        byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+        value = new String(Base64.encode(bytes, Base64.URL_SAFE | Base64.NO_WRAP),
+                StandardCharsets.UTF_8);
     }
 
     @NonNull
