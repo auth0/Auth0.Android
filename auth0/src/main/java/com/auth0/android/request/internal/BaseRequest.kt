@@ -37,15 +37,24 @@ import java.nio.charset.Charset
  * @param resultAdapter the adapter that will convert a successful response into the expected type.
  * @param errorAdapter the adapter that will convert a failed response into the expected type.
  */
-internal open class BaseRequest<T, U : Auth0Exception>(
+public open class BaseRequest<T, U : Auth0Exception> internal constructor(
     method: HttpMethod,
-    val url: String,
-    val client: NetworkingClient,
+    public val url: String,
+    private val client: NetworkingClient,
     private val resultAdapter: JsonAdapter<T>,
     private val errorAdapter: ErrorAdapter<U>,
+    private val threadSwitcher: ThreadSwitcher
 ) : Request<T, U> {
 
-    val options: RequestOptions = RequestOptions(method)
+    public constructor(
+        method: HttpMethod,
+        url: String,
+        client: NetworkingClient,
+        resultAdapter: JsonAdapter<T>,
+        errorAdapter: ErrorAdapter<U>
+    ) : this(method, url, client, resultAdapter, errorAdapter, DefaultThreadSwitcher)
+
+    public val options: RequestOptions = RequestOptions(method)
 
     override fun addHeader(name: String, value: String): Request<T, U> {
         options.headers[name] = value
@@ -69,27 +78,20 @@ internal open class BaseRequest<T, U : Auth0Exception>(
      * @param callback the callback to post the results in. Uses the Main thread.
      */
     override fun start(callback: BaseCallback<T, U>) {
-        try {
-            val result: T = execute()
-            callback.onSuccess(result)
-        } catch (error: Exception) {
-            @Suppress("UNCHECKED_CAST") // https://youtrack.jetbrains.com/issue/KT-11774
-            val uError: U = error as? U ?: errorAdapter.fromException(error)
-            callback.onFailure(uError)
+        threadSwitcher.backgroundThread {
+            try {
+                val result: T = execute()
+                threadSwitcher.mainThread {
+                    callback.onSuccess(result)
+                }
+            } catch (error: Auth0Exception) {
+                @Suppress("UNCHECKED_CAST") // https://youtrack.jetbrains.com/issue/KT-11774
+                val uError: U = error as? U ?: errorAdapter.fromException(error)
+                threadSwitcher.mainThread {
+                    callback.onFailure(uError)
+                }
+            }
         }
-        //TODO: Make use of different threads later
-//        ThreadUtils.executorService.execute {
-//            try {
-//                val result: T = execute()
-//                ThreadUtils.mainThreadHandler.post {
-//                    callback.onSuccess(result)
-//                }
-//            } catch (error: Auth0Exception) {
-//                @Suppress("UNCHECKED_CAST") // https://youtrack.jetbrains.com/issue/KT-11774
-//                val uError: U = error as? U ?: errorAdapter.fromException(error)
-//                callback.onFailure(uError)
-//            }
-//        }
     }
 
     /**
