@@ -288,11 +288,12 @@ public class Auth0 {
             return null;
         }
 
-        if (url.toLowerCase().startsWith("http://")) {
+        String normalizedUrl = url.toLowerCase();
+        if (normalizedUrl.startsWith("http://")) {
             throw new IllegalArgumentException("Invalid domain url: '" + url + "'. Only HTTPS domain URLs are supported. If no scheme is passed, HTTPS will be used.");
         }
 
-        String safeUrl = url.startsWith("https://") ? url : "https://" + url;
+        String safeUrl = normalizedUrl.startsWith("https://") ? normalizedUrl : "https://" + normalizedUrl;
         return HttpUrl.parse(safeUrl);
     }
 

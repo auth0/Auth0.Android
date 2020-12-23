@@ -282,6 +282,12 @@ public class Auth0Test {
     }
 
     @Test
+    public void shouldHandleUpperCaseHttpsDomain() {
+        Auth0 auth0 = new Auth0(CLIENT_ID, "Https://" + DOMAIN);
+        assertThat(auth0.getDomainUrl(), is("https://" + DOMAIN + "/"));
+    }
+
+    @Test
     public void shouldThrowWhenHttpUppercaseDomainUsed() {
         expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage("Invalid domain url: 'HTTP://" + DOMAIN + "'. Only HTTPS domain URLs are supported. If no scheme is passed, HTTPS will be used.");
