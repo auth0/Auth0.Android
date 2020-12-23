@@ -101,6 +101,7 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 
 - `public void setOIDCConformant(boolean enabled)`. The SDK now only supports OIDC-Conformant applications.
 - `public boolean isOIDCConformant()`. The SDK now only supports OIDC-Conformant applications.
+- `public void doNotSendTelemetry()` has been removed. There is no replacement.
 
 #### AuthenticationAPIClient
 
