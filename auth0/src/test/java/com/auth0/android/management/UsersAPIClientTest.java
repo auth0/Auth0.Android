@@ -30,6 +30,7 @@ import android.content.res.Resources;
 
 import com.auth0.android.Auth0;
 import com.auth0.android.request.internal.RequestFactory;
+import com.auth0.android.request.internal.ThreadSwitcherShadow;
 import com.auth0.android.result.UserIdentity;
 import com.auth0.android.result.UserProfile;
 import com.auth0.android.util.MockManagementCallback;
@@ -47,6 +48,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 import java.lang.reflect.Type;
 import java.util.Arrays;
@@ -71,6 +73,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(shadows = ThreadSwitcherShadow.class)
 public class UsersAPIClientTest {
 
     private static final String CLIENT_ID = "CLIENTID";

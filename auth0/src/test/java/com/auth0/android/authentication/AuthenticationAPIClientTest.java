@@ -30,6 +30,7 @@ import android.content.res.Resources;
 
 import com.auth0.android.Auth0;
 import com.auth0.android.request.internal.RequestFactory;
+import com.auth0.android.request.internal.ThreadSwitcherShadow;
 import com.auth0.android.result.Authentication;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.DatabaseUser;
@@ -49,6 +50,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 import java.lang.reflect.Type;
 import java.security.PublicKey;
@@ -77,6 +79,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(shadows = ThreadSwitcherShadow.class)
 public class AuthenticationAPIClientTest {
 
     private static final String CLIENT_ID = "CLIENTID";
