@@ -26,6 +26,7 @@ package com.auth0.android.request.internal;
 
 
 import com.auth0.android.Auth0Exception;
+import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.request.ErrorAdapter;
 import com.auth0.android.request.HttpMethod;
 import com.auth0.android.request.JsonAdapter;
@@ -34,15 +35,19 @@ import com.auth0.android.request.RequestOptions;
 import com.auth0.android.request.ServerResponse;
 import com.google.gson.Gson;
 
+import org.apache.tools.ant.filters.StringInputStream;
 import org.hamcrest.collection.IsMapContaining;
 import org.hamcrest.collection.IsMapWithSize;
 import org.hamcrest.core.IsCollectionContaining;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.android.util.concurrent.PausedExecutorService;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -53,6 +58,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static android.os.Looper.getMainLooper;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -62,14 +68,19 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.hamcrest.collection.IsMapWithSize.aMapWithSize;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.robolectric.shadows.ShadowLooper.shadowMainLooper;
 
+@RunWith(RobolectricTestRunner.class)
 public class BaseRequestTest {
 
     private static final String BASE_URL = "https://auth0.com";
@@ -80,6 +91,8 @@ public class BaseRequestTest {
     private JsonAdapter<String> resultAdapter;
     @Mock
     private ErrorAdapter<Auth0Exception> errorAdapter;
+    @Mock
+    private Auth0Exception auth0Exception;
     @Captor
     private ArgumentCaptor<RequestOptions> optionsCaptor;
 
@@ -245,7 +258,6 @@ public class BaseRequestTest {
         verifyNoInteractions(resultAdapter);
     }
 
-
     @Test
     public void shouldBuildResultFromSuccessfulResponse() throws Exception {
         JsonAdapter<SimplePojo> resultAdapter = spy(new GsonAdapter<>(SimplePojo.class, new Gson()));
@@ -283,12 +295,84 @@ public class BaseRequestTest {
         verifyNoInteractions(errorAdapter);
     }
 
-    //TODO: Add tests for the async scenario (using callbacks)
+    @SuppressWarnings("UnstableApiUsage")
+    @Test
+    public void shouldExecuteRequestOnBackgroundThreadAndPostSuccessToMainThread() throws Exception {
+        PausedExecutorService pausedExecutorService = new PausedExecutorService();
+        ThreadSwitcher threadSwitcher = spy(new ThreadSwitcher(getMainLooper(), pausedExecutorService));
+        BaseRequest<String, Auth0Exception> baseRequest = new BaseRequest<>(
+                HttpMethod.POST.INSTANCE,
+                BASE_URL,
+                client,
+                resultAdapter,
+                errorAdapter,
+                threadSwitcher
+        );
+        mockSuccessfulServerResponse();
+        BaseCallback<String, Auth0Exception> callback = mock(BaseCallback.class);
+
+        // verify background thread is queued
+        baseRequest.start(callback);
+        verify(threadSwitcher).backgroundThread(any(Runnable.class));
+        verify(threadSwitcher, never()).mainThread(any(Runnable.class));
+
+        // let the background thread run
+        assertThat(pausedExecutorService.runNext(), is(true));
+        verify(threadSwitcher).mainThread(any(Runnable.class));
+        verify(callback, never()).onSuccess(anyString());
+
+        // Release the main thread queue
+        shadowMainLooper().idle();
+        verify(callback).onSuccess(eq("woohoo"));
+
+        verify(callback, never()).onFailure(any(Auth0Exception.class));
+    }
+
+    @SuppressWarnings("UnstableApiUsage")
+    @Test
+    public void shouldExecuteRequestOnBackgroundThreadAndPostFailureToMainThread() throws Exception {
+        PausedExecutorService pausedExecutorService = new PausedExecutorService();
+        ThreadSwitcher threadSwitcher = spy(new ThreadSwitcher(getMainLooper(), pausedExecutorService));
+        BaseRequest<String, Auth0Exception> baseRequest = new BaseRequest<>(
+                HttpMethod.POST.INSTANCE,
+                BASE_URL,
+                client,
+                resultAdapter,
+                errorAdapter,
+                threadSwitcher
+        );
+        mockFailedServerResponse();
+        BaseCallback<String, Auth0Exception> callback = mock(BaseCallback.class);
+
+        // verify background thread is queued
+        baseRequest.start(callback);
+        verify(threadSwitcher).backgroundThread(any(Runnable.class));
+        verify(threadSwitcher, never()).mainThread(any(Runnable.class));
+
+        // let the background thread run
+        assertThat(pausedExecutorService.runNext(), is(true));
+        verify(threadSwitcher).mainThread(any(Runnable.class));
+        verify(callback, never()).onFailure(any(Auth0Exception.class));
+
+        // Release the main thread queue
+        shadowMainLooper().idle();
+        verify(callback).onFailure(any(Auth0Exception.class));
+
+        verify(callback, never()).onSuccess(anyString());
+    }
+
     private void mockSuccessfulServerResponse() throws Exception {
         InputStream inputStream = mock(InputStream.class);
         when(inputStream.read()).thenReturn(123);
         when(resultAdapter.fromJson(any(Reader.class))).thenReturn("woohoo");
         ServerResponse response = new ServerResponse(200, inputStream, Collections.emptyMap());
+        when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
+    }
+
+    private void mockFailedServerResponse() throws Exception {
+        InputStream inputStream = new StringInputStream("Failure");
+        when(errorAdapter.fromRawResponse(eq(500), anyString(), anyMap())).thenReturn(auth0Exception);
+        ServerResponse response = new ServerResponse(500, inputStream, Collections.emptyMap());
         when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
     }
 
