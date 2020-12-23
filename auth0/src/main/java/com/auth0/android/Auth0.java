@@ -30,7 +30,6 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.auth0.android.auth0.BuildConfig;
 import com.auth0.android.util.Auth0UserAgent;
 import com.squareup.okhttp.HttpUrl;
 
@@ -96,7 +95,7 @@ public class Auth0 {
             throw new IllegalArgumentException(String.format("Invalid domain url: '%s'", domain));
         }
         this.configurationUrl = resolveConfiguration(configurationDomain, this.domainUrl);
-        this.auth0UserAgent = new Auth0UserAgent(BuildConfig.LIBRARY_NAME, BuildConfig.VERSION_NAME);
+        this.auth0UserAgent = new Auth0UserAgent();
     }
 
     /**

@@ -42,7 +42,17 @@ public class Auth0UserAgentTest {
     }
 
     @Test
-    public void shouldUseDefaultNameIfNameIsEmpty() throws Exception {
+    public void shouldUseDefaultValuesWithDefaultConstructor() {
+        Auth0UserAgent auth0UserAgent = new Auth0UserAgent();
+        assertThat(auth0UserAgent.getValue(), is(notNullValue()));
+        assertThat(auth0UserAgent.getName(), is(BuildConfig.LIBRARY_NAME));
+        assertThat(auth0UserAgent.getVersion(), is(BuildConfig.VERSION_NAME));
+        assertThat(auth0UserAgent.getEnvironment(), is(notNullValue()));
+        assertThat(auth0UserAgent.getLibraryVersion(), is(nullValue()));
+    }
+
+    @Test
+    public void shouldUseDefaultNameEmpty() throws Exception {
         Auth0UserAgent auth0UserAgent = new Auth0UserAgent("", "2.0");
         assertThat(auth0UserAgent.getValue(), is(notNullValue()));
         assertThat(auth0UserAgent.getName(), is(BuildConfig.LIBRARY_NAME));
@@ -52,7 +62,7 @@ public class Auth0UserAgentTest {
     }
 
     @Test
-    public void shouldUseDefaultVersionIfNameIsEmpty() throws Exception {
+    public void shouldUseDefaultVersionIfEmpty() throws Exception {
         Auth0UserAgent auth0UserAgent = new Auth0UserAgent("auth0-java", "");
         assertThat(auth0UserAgent.getValue(), is(notNullValue()));
         assertThat(auth0UserAgent.getName(), is("auth0-java"));

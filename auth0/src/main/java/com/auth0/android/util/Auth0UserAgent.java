@@ -32,6 +32,10 @@ public class Auth0UserAgent {
     private final Map<String, String> env;
     private final String value;
 
+    public Auth0UserAgent() {
+        this(BuildConfig.LIBRARY_NAME, BuildConfig.VERSION_NAME);
+    }
+
     public Auth0UserAgent(@NonNull String name, @NonNull String version) {
         this(name, version, null);
     }
