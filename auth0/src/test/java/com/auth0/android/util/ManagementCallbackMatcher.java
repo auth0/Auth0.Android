@@ -33,6 +33,8 @@ import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 
+import kotlin.Unit;
+
 import static com.jayway.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -88,11 +90,11 @@ public class ManagementCallbackMatcher<T> extends BaseMatcher<ManagementCallback
         return new ManagementCallbackMatcher<>(TypeTokenMatcher.isA(typeToken), is(nullValue(ManagementException.class)));
     }
 
-    public static Matcher<ManagementCallback<Void>> hasNoError() {
-        return new ManagementCallbackMatcher<>(is(nullValue(Void.class)), is(nullValue(ManagementException.class)));
+    public static Matcher<ManagementCallback<Unit>> hasNoError() {
+        return new ManagementCallbackMatcher<>(is(notNullValue(Unit.class)), is(nullValue(ManagementException.class)));
     }
 
-    public static Matcher<ManagementCallback<Void>> hasError() {
-        return new ManagementCallbackMatcher<>(is(nullValue(Void.class)), is(notNullValue(ManagementException.class)));
+    public static Matcher<ManagementCallback<Unit>> hasError() {
+        return new ManagementCallbackMatcher<>(is(nullValue(Unit.class)), is(notNullValue(ManagementException.class)));
     }
 }

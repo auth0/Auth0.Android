@@ -29,33 +29,47 @@ import android.content.Context;
 import android.content.res.Resources;
 
 import com.auth0.android.Auth0;
-import com.auth0.android.request.internal.OkHttpClientFactory;
+import com.auth0.android.MockAuth0;
+import com.auth0.android.request.AuthenticationRequest;
+import com.auth0.android.request.HttpMethod;
+import com.auth0.android.request.NetworkingClient;
+import com.auth0.android.request.RequestOptions;
+import com.auth0.android.request.ServerResponse;
 import com.auth0.android.request.internal.RequestFactory;
+import com.auth0.android.request.internal.ThreadSwitcherShadow;
 import com.auth0.android.result.Authentication;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.DatabaseUser;
 import com.auth0.android.result.UserProfile;
+import com.auth0.android.util.Auth0UserAgent;
 import com.auth0.android.util.AuthenticationAPI;
 import com.auth0.android.util.MockAuthenticationCallback;
-import com.auth0.android.util.Auth0UserAgent;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
+import org.apache.tools.ant.filters.StringInputStream;
+import org.hamcrest.collection.IsMapContaining;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.security.PublicKey;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
+
+import kotlin.Unit;
 
 import static com.auth0.android.util.AuthenticationCallbackMatcher.hasError;
 import static com.auth0.android.util.AuthenticationCallbackMatcher.hasNoError;
@@ -65,17 +79,19 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(shadows = ThreadSwitcherShadow.class)
 public class AuthenticationAPIClientTest {
 
     private static final String CLIENT_ID = "CLIENTID";
@@ -88,6 +104,7 @@ public class AuthenticationAPIClientTest {
     private static final String LAST_NAME = "Doe";
     private static final String COMPANY = "Auth0";
     private static final String OPENID = "openid";
+    private static final String DEFAULT_LOCALE_IF_MISSING = "en_US";
 
     private AuthenticationAPIClient client;
     private Gson gson;
@@ -98,7 +115,7 @@ public class AuthenticationAPIClientTest {
     public void setUp() throws Exception {
         mockAPI = new AuthenticationAPI();
         final String domain = mockAPI.getDomain();
-        Auth0 auth0 = new Auth0(CLIENT_ID, domain, domain);
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, domain, domain);
         client = new AuthenticationAPIClient(auth0);
         gson = new GsonBuilder().serializeNulls().create();
     }
@@ -109,11 +126,32 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
+    public void shouldUseCustomNetworkingClient() throws IOException {
+        Auth0 account = new Auth0("client-id", "https://tenant.auth0.com/");
+        InputStream inputStream = new StringInputStream("{\"access_token\":\"something\"}");
+        ServerResponse response = new ServerResponse(200, inputStream, Collections.emptyMap());
+        NetworkingClient networkingClient = mock(NetworkingClient.class);
+        when(networkingClient.load(anyString(), any(RequestOptions.class))).thenReturn(response);
+        AuthenticationAPIClient client = new AuthenticationAPIClient(account, networkingClient);
+
+        AuthenticationRequest request = client.login("johndoe", "secret");
+        request.execute();
+
+        ArgumentCaptor<RequestOptions> optionsCaptor = ArgumentCaptor.forClass(RequestOptions.class);
+        verify(networkingClient).load(eq("https://tenant.auth0.com/oauth/token"), optionsCaptor.capture());
+        assertThat(optionsCaptor.getValue(), is(notNullValue()));
+        assertThat(optionsCaptor.getValue().getMethod(), is(instanceOf(HttpMethod.POST.class)));
+        assertThat(optionsCaptor.getValue().getParameters(), IsMapContaining.hasEntry("username", "johndoe"));
+        assertThat(optionsCaptor.getValue().getParameters(), IsMapContaining.hasEntry("password", "secret"));
+        assertThat(optionsCaptor.getValue().getHeaders(), is(IsMapContaining.hasKey("Auth0-Client")));
+    }
+
+    @Test
     public void shouldSetUserAgent() {
         Auth0 account = mock(Auth0.class);
-        RequestFactory factory = mock(RequestFactory.class);
-        OkHttpClientFactory clientFactory = mock(OkHttpClientFactory.class);
-        AuthenticationAPIClient client = new AuthenticationAPIClient(account, factory, clientFactory);
+        //noinspection unchecked
+        RequestFactory<AuthenticationException> factory = mock(RequestFactory.class);
+        AuthenticationAPIClient client = new AuthenticationAPIClient(account, factory, gson);
         client.setUserAgent("nexus-5x");
         verify(factory).setUserAgent("nexus-5x");
     }
@@ -122,11 +160,10 @@ public class AuthenticationAPIClientTest {
     public void shouldSetAuth0UserAgentIfPresent() {
         final Auth0UserAgent auth0UserAgent = mock(Auth0UserAgent.class);
         when(auth0UserAgent.getValue()).thenReturn("the-user-agent-data");
-        RequestFactory factory = mock(RequestFactory.class);
-        OkHttpClientFactory clientFactory = mock(OkHttpClientFactory.class);
-        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
-        auth0.setAuth0UserAgent(auth0UserAgent);
-        AuthenticationAPIClient client = new AuthenticationAPIClient(auth0, factory, clientFactory);
+        RequestFactory<AuthenticationException> factory = mock(RequestFactory.class);
+        Auth0 account = new Auth0(CLIENT_ID, DOMAIN);
+        account.setAuth0UserAgent(auth0UserAgent);
+        new AuthenticationAPIClient(account, factory, gson);
         verify(factory).setClientInfo("the-user-agent-data");
     }
 
@@ -166,7 +203,7 @@ public class AuthenticationAPIClientTest {
         mockAPI.willReturnSuccessfulLogin();
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
 
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
         client.loginWithOTP("ey30.the-mfa-token.value", "123456")
                 .start(callback);
@@ -210,7 +247,7 @@ public class AuthenticationAPIClientTest {
         mockAPI.willReturnSuccessfulLogin();
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
 
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
         client.login(SUPPORT_AUTH0_COM, "some-password", MY_CONNECTION)
                 .start(callback);
@@ -357,7 +394,7 @@ public class AuthenticationAPIClientTest {
     public void shouldLoginWithPhoneNumberWithCustomConnectionWithOTPGrant() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
 
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
@@ -382,7 +419,7 @@ public class AuthenticationAPIClientTest {
     public void shouldLoginWithPhoneNumberWithOTPGrant() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
 
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
@@ -407,7 +444,7 @@ public class AuthenticationAPIClientTest {
     public void shouldLoginWithPhoneNumberSyncWithOTPGrant() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
 
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
 
         final Credentials credentials = client
@@ -432,7 +469,7 @@ public class AuthenticationAPIClientTest {
     public void shouldLoginWithEmailOnlyWithCustomConnectionWithOTPGrant() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
 
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
@@ -457,7 +494,7 @@ public class AuthenticationAPIClientTest {
     public void shouldLoginWithEmailOnlyWithOTPGrant() throws Exception {
         mockAPI.willReturnSuccessfulLogin();
 
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
@@ -483,7 +520,7 @@ public class AuthenticationAPIClientTest {
         mockAPI.willReturnSuccessfulLogin()
                 .willReturnUserInfo();
 
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
 
         final Credentials credentials = client
@@ -635,7 +672,7 @@ public class AuthenticationAPIClientTest {
                 .willReturnSuccessfulLogin();
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
         client.signUp(SUPPORT_AUTH0_COM, PASSWORD, SUPPORT, MY_CONNECTION)
                 .start(callback);
@@ -669,7 +706,7 @@ public class AuthenticationAPIClientTest {
                 .willReturnSuccessfulLogin();
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
-        final Map<String, Object> custom = ParameterBuilder.newBuilder()
+        final Map<String, String> custom = ParameterBuilder.newBuilder()
                 .set("first_name", FIRST_NAME)
                 .set("last_name", LAST_NAME)
                 .set("company", COMPANY)
@@ -767,7 +804,7 @@ public class AuthenticationAPIClientTest {
                 .willReturnUserInfo();
 
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
         client.signUp(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
                 .start(callback);
@@ -799,7 +836,7 @@ public class AuthenticationAPIClientTest {
     public void shouldChangePassword() throws Exception {
         mockAPI.willReturnSuccessfulChangePassword();
 
-        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.resetPassword(SUPPORT_AUTH0_COM, MY_CONNECTION)
                 .start(callback);
 
@@ -836,7 +873,7 @@ public class AuthenticationAPIClientTest {
     public void shouldRequestChangePassword() throws Exception {
         mockAPI.willReturnSuccessfulChangePassword();
 
-        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.resetPassword(SUPPORT_AUTH0_COM, MY_CONNECTION)
                 .start(callback);
 
@@ -875,7 +912,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSendEmailCodeWithCustomConnection() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
 
-        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithEmail(SUPPORT_AUTH0_COM, PasswordlessType.CODE, MY_CONNECTION)
                 .start(callback);
 
@@ -896,7 +933,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSendEmailCode() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
 
-        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithEmail(SUPPORT_AUTH0_COM, PasswordlessType.CODE)
                 .start(callback);
 
@@ -935,7 +972,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSendEmailLink() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
 
-        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithEmail(SUPPORT_AUTH0_COM, PasswordlessType.WEB_LINK)
                 .start(callback);
 
@@ -956,7 +993,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSendEmailLinkWithCustomConnection() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
 
-        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithEmail(SUPPORT_AUTH0_COM, PasswordlessType.WEB_LINK, MY_CONNECTION)
                 .start(callback);
 
@@ -995,7 +1032,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSendEmailLinkAndroidWithCustomConnection() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
 
-        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithEmail(SUPPORT_AUTH0_COM, PasswordlessType.ANDROID_LINK, MY_CONNECTION)
                 .start(callback);
 
@@ -1016,7 +1053,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSendEmailLinkAndroid() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
 
-        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithEmail(SUPPORT_AUTH0_COM, PasswordlessType.ANDROID_LINK)
                 .start(callback);
 
@@ -1055,7 +1092,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSendSMSCodeWithCustomConnection() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
 
-        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithSMS("+1123123123", PasswordlessType.CODE, MY_CONNECTION)
                 .start(callback);
 
@@ -1076,7 +1113,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSendSMSCode() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
 
-        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithSMS("+1123123123", PasswordlessType.CODE)
                 .start(callback);
 
@@ -1115,7 +1152,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSendSMSLinkWithCustomConnection() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
 
-        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithSMS("+1123123123", PasswordlessType.WEB_LINK, MY_CONNECTION)
                 .start(callback);
 
@@ -1136,7 +1173,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSendSMSLink() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
 
-        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithSMS("+1123123123", PasswordlessType.WEB_LINK)
                 .start(callback);
 
@@ -1175,7 +1212,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSendSMSLinkAndroidWithCustomConnection() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
 
-        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithSMS("+1123123123", PasswordlessType.ANDROID_LINK, MY_CONNECTION)
                 .start(callback);
 
@@ -1196,7 +1233,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSendSMSLinkAndroid() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
 
-        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithSMS("+1123123123", PasswordlessType.ANDROID_LINK)
                 .start(callback);
 
@@ -1290,11 +1327,11 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldRevokeToken() throws Exception {
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
 
         mockAPI.willReturnSuccessfulEmptyBody();
-        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.revokeToken("refreshToken")
                 .start(callback);
 
@@ -1311,7 +1348,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldRevokeTokenSync() throws Exception {
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
 
         mockAPI.willReturnSuccessfulEmptyBody();
@@ -1329,7 +1366,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldRenewAuthWithOAuthToken() throws Exception {
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
 
         mockAPI.willReturnSuccessfulLogin();
@@ -1351,7 +1388,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public void shouldRenewAuthWithOAuthTokenSync() throws Exception {
-        Auth0 auth0 = new Auth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
+        Auth0 auth0 = new MockAuth0(CLIENT_ID, mockAPI.getDomain(), mockAPI.getDomain());
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
 
         mockAPI.willReturnSuccessfulLogin();
@@ -1447,6 +1484,6 @@ public class AuthenticationAPIClientTest {
 
     private String getDefaultLocale() {
         String language = Locale.getDefault().toString();
-        return !language.isEmpty() ? language : RequestFactory.DEFAULT_LOCALE_IF_MISSING;
+        return !language.isEmpty() ? language : DEFAULT_LOCALE_IF_MISSING;
     }
 }

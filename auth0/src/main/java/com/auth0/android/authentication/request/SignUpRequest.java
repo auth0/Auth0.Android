@@ -32,7 +32,6 @@ import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.authentication.ParameterBuilder;
 import com.auth0.android.callback.BaseCallback;
 import com.auth0.android.request.AuthenticationRequest;
-import com.auth0.android.request.Request;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.DatabaseUser;
 
@@ -41,7 +40,7 @@ import java.util.Map;
 /**
  * Represent a request that creates a user in a Auth0 Database connection and then logs in.
  */
-public class SignUpRequest implements Request<Credentials, AuthenticationException>, AuthenticationRequest {
+public class SignUpRequest implements AuthenticationRequest {
 
     private final DatabaseConnectionRequest<DatabaseUser, AuthenticationException> signUpRequest;
     private final AuthenticationRequest authenticationRequest;
@@ -83,7 +82,8 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
      * @see <a href="https://auth0.com/docs/users/concepts/overview-user-metadata">User Metadata documentation</a>
      */
     @NonNull
-    public SignUpRequest addSignUpParameters(@NonNull Map<String, Object> parameters) {
+    public SignUpRequest addSignUpParameters(@NonNull Map<String, String> parameters) {
+        //TODO: Revisit this scenario, may be worth renaming the methods
         signUpRequest.addParameters(parameters);
         return this;
     }
@@ -96,9 +96,9 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
      * @see ParameterBuilder
      */
     @NonNull
-    @Override
-    public SignUpRequest addAuthenticationParameters(@NonNull Map<String, Object> parameters) {
-        authenticationRequest.addAuthenticationParameters(parameters);
+    public SignUpRequest addAuthenticationParameters(@NonNull Map<String, String> parameters) {
+        //TODO: Revisit this scenario, may be worth renaming the methods
+        authenticationRequest.addParameters(parameters);
         return this;
     }
 
@@ -120,7 +120,7 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
 
     @NonNull
     @Override
-    public SignUpRequest addParameters(@NonNull Map<String, Object> parameters) {
+    public SignUpRequest addParameters(@NonNull Map<String, String> parameters) {
         signUpRequest.addParameters(parameters);
         authenticationRequest.addParameters(parameters);
         return this;
@@ -128,7 +128,7 @@ public class SignUpRequest implements Request<Credentials, AuthenticationExcepti
 
     @NonNull
     @Override
-    public SignUpRequest addParameter(@NonNull String name, @NonNull Object value) {
+    public SignUpRequest addParameter(@NonNull String name, @NonNull String value) {
         signUpRequest.addParameter(name, value);
         authenticationRequest.addParameter(name, value);
         return this;

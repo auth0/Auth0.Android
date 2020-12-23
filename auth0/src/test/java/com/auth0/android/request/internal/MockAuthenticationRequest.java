@@ -5,54 +5,48 @@ import androidx.annotation.NonNull;
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.request.Request;
+import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.result.Credentials;
-import com.google.gson.Gson;
-import com.squareup.okhttp.HttpUrl;
-import com.squareup.okhttp.OkHttpClient;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class MockAuthenticationRequest extends BaseAuthenticationRequest {
 
-    HashMap<String, String> headers;
-    HttpUrl url;
-    OkHttpClient client;
-    Gson gson;
-    String method;
+    final BaseRequest<Credentials, AuthenticationException> wrappedRequest;
+    final HashMap<String, String> parameters;
+    final HashMap<String, String> headers;
 
-    public MockAuthenticationRequest(HttpUrl url, OkHttpClient client, Gson gson, String method) {
-        super(url, client, gson, method);
+    public MockAuthenticationRequest(BaseRequest<Credentials, AuthenticationException> request) {
+        super(request);
+        this.wrappedRequest = request;
+        this.parameters = new HashMap<>();
         this.headers = new HashMap<>();
-        this.url = url;
-        this.client = client;
-        this.gson = gson;
-        this.method = method;
     }
 
     @NonNull
     @Override
-    public Request<Credentials, AuthenticationException> addParameters(@NonNull Map<String, Object> parameters) {
-        return null;
+    public AuthenticationRequest addParameters(@NonNull Map<String, String> parameters) {
+        this.parameters.putAll(parameters);
+        return this;
     }
 
     @NonNull
     @Override
-    public Request<Credentials, AuthenticationException> addParameter(@NonNull String name, @NonNull Object value) {
-        return null;
+    public AuthenticationRequest addParameter(@NonNull String name, @NonNull String value) {
+        this.parameters.put(name, value);
+        return this;
     }
 
     @NonNull
     @Override
-    public MockAuthenticationRequest addHeader(@NonNull String name, @NonNull String value) {
-        headers.put(name, value);
+    public AuthenticationRequest addHeader(@NonNull String name, @NonNull String value) {
+        this.headers.put(name, value);
         return this;
     }
 
     @Override
     public void start(@NonNull BaseCallback<Credentials, AuthenticationException> callback) {
-
     }
 
     @NonNull

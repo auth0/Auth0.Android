@@ -25,218 +25,329 @@
 package com.auth0.android.request.internal;
 
 
-import androidx.annotation.NonNull;
-
 import com.auth0.android.Auth0Exception;
-import com.auth0.android.NetworkErrorException;
-import com.auth0.android.RequestBodyBuildException;
-import com.auth0.android.authentication.ParameterBuilder;
 import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.request.ErrorBuilder;
+import com.auth0.android.request.ErrorAdapter;
+import com.auth0.android.request.HttpMethod;
+import com.auth0.android.request.JsonAdapter;
+import com.auth0.android.request.NetworkingClient;
+import com.auth0.android.request.RequestOptions;
+import com.auth0.android.request.ServerResponse;
 import com.google.gson.Gson;
-import com.google.gson.TypeAdapter;
-import com.squareup.okhttp.HttpUrl;
-import com.squareup.okhttp.MediaType;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Protocol;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
-import com.squareup.okhttp.ResponseBody;
 
-import org.hamcrest.CoreMatchers;
+import org.apache.tools.ant.filters.StringInputStream;
 import org.hamcrest.collection.IsMapContaining;
 import org.hamcrest.collection.IsMapWithSize;
+import org.hamcrest.core.IsCollectionContaining;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.android.util.concurrent.PausedExecutorService;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import static android.os.Looper.getMainLooper;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.collection.IsMapContaining.hasEntry;
+import static org.hamcrest.collection.IsMapWithSize.aMapWithSize;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import static org.robolectric.shadows.ShadowLooper.shadowMainLooper;
 
+@RunWith(RobolectricTestRunner.class)
 public class BaseRequestTest {
 
-    private BaseRequest<String, Auth0Exception> baseRequest;
+    private static final String BASE_URL = "https://auth0.com";
+    private BaseRequest<SimplePojo, Auth0Exception> baseRequest;
+    private JsonAdapter<SimplePojo> resultAdapter;
 
     @Mock
-    private BaseCallback<String, Auth0Exception> callback;
+    private NetworkingClient client;
     @Mock
-    private Auth0Exception throwable;
+    private ErrorAdapter<Auth0Exception> errorAdapter;
     @Mock
-    private ErrorBuilder<Auth0Exception> errorBuilder;
-    @Mock
-    private OkHttpClient client;
-    @Mock
-    private TypeAdapter<String> adapter;
-    @Mock
-    private Map<String, String> headers;
-    private ParameterBuilder parameterBuilder;
+    private Auth0Exception auth0Exception;
 
     @Captor
-    private ArgumentCaptor<Map<String, Object>> mapCaptor;
+    private ArgumentCaptor<RequestOptions> optionsCaptor;
+    @Captor
+    private ArgumentCaptor<Reader> readerCaptor;
 
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        HttpUrl url = HttpUrl.parse("https://auth0.com");
-        parameterBuilder = ParameterBuilder.newBuilder();
-
-        baseRequest = new BaseRequest<String, Auth0Exception>(url, client, new Gson(), adapter, errorBuilder, callback, headers, parameterBuilder) {
-            @NonNull
-            @Override
-            public String execute() throws Auth0Exception {
-                return null;
-            }
-
-            @Override
-            public void onResponse(Response response) {
-
-            }
-
-            @Override
-            protected Request doBuildRequest() throws RequestBodyBuildException {
-                return null;
-            }
-        };
+        resultAdapter = spy(new GsonAdapter<>(SimplePojo.class, new Gson()));
+        baseRequest = new BaseRequest<>(
+                HttpMethod.POST.INSTANCE,
+                BASE_URL,
+                client,
+                resultAdapter,
+                errorAdapter
+        );
     }
 
     @Test
-    public void shouldUpdateTheCallback() {
-        BaseCallback<String, Auth0Exception> diffCallback = mock(BaseCallback.class);
-        baseRequest.setCallback(diffCallback);
-        assertThat(baseRequest.getCallback(), CoreMatchers.equalTo(diffCallback));
+    public void shouldAddHeaders() throws Exception {
+        mockSuccessfulServerResponse();
+
+        baseRequest.addHeader("A", "1");
+        baseRequest.execute();
+
+        verify(client).load(eq(BASE_URL), optionsCaptor.capture());
+        Map<String, String> values = optionsCaptor.getValue().getHeaders();
+        assertThat(values, aMapWithSize(1));
+        assertThat(values, hasEntry("A", "1"));
     }
 
     @Test
-    public void shouldGetTheCallback() {
-        assertThat(baseRequest.getCallback(), CoreMatchers.equalTo(callback));
+    public void shouldAddParameter() throws Exception {
+        mockSuccessfulServerResponse();
+
+        baseRequest.addParameter("A", "1");
+        baseRequest.execute();
+
+        verify(client).load(eq(BASE_URL), optionsCaptor.capture());
+        Map<String, String> values = optionsCaptor.getValue().getParameters();
+        assertThat(values, aMapWithSize(1));
+        assertThat(values, hasEntry("A", "1"));
     }
 
     @Test
-    public void shouldGetTheErrorBuilder() {
-        assertThat(baseRequest.getErrorBuilder(), CoreMatchers.equalTo(errorBuilder));
+    public void shouldAddParameters() throws Exception {
+        mockSuccessfulServerResponse();
+
+        HashMap<String, String> parameters = new HashMap<>();
+        parameters.put("A", "1");
+        parameters.put("B", "2");
+
+        baseRequest.addParameters(parameters);
+        baseRequest.execute();
+
+        verify(client).load(eq(BASE_URL), optionsCaptor.capture());
+        Map<String, String> values = optionsCaptor.getValue().getParameters();
+        assertThat(values, aMapWithSize(2));
+        assertThat(values, hasEntry("A", "1"));
+        assertThat(values, hasEntry("B", "2"));
     }
 
     @Test
-    public void shouldGetTheAdapter() {
-        assertThat(baseRequest.getAdapter(), CoreMatchers.equalTo(adapter));
+    public void shouldBuildErrorFromException() throws Exception {
+        IOException networkError = mock(IOException.class);
+        when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenThrow(networkError);
+        when(errorAdapter.fromException(any(IOException.class))).thenReturn(auth0Exception);
+
+        Exception exception = null;
+        SimplePojo result = null;
+        try {
+            result = baseRequest.execute();
+        } catch (Exception e) {
+            exception = e;
+        }
+
+        assertThat(exception, is(auth0Exception));
+        assertThat(result, is(nullValue()));
+
+        verifyNoInteractions(resultAdapter);
+        verify(errorAdapter).fromException(eq(networkError));
     }
 
     @Test
-    public void shouldAddHeaders() {
-        baseRequest.addHeader("name", "value");
-        verify(headers).put("name", "value");
+    public void shouldBuildErrorFromUnsuccessfulJsonResponse() throws Exception {
+        mockFailedJsonServerResponse();
+
+        Auth0Exception exception = null;
+        SimplePojo result = null;
+        try {
+            result = baseRequest.execute();
+        } catch (Auth0Exception e) {
+            exception = e;
+        }
+
+        assertThat(result, is(nullValue()));
+        assertThat(exception, is(notNullValue()));
+        assertThat(exception, is(auth0Exception));
+        verify(errorAdapter).fromJsonResponse(eq(422), any(Reader.class));
+        Reader reader = readerCaptor.getValue();
+        assertThat(reader, is(notNullValue()));
+        assertThat(reader, is(instanceOf(AwareInputStreamReader.class)));
+        AwareInputStreamReader awareReader = (AwareInputStreamReader) reader;
+        assertThat(awareReader.isClosed(), is(true));
+
+        verifyNoInteractions(resultAdapter);
     }
 
     @Test
-    public void shouldAddASingleParameter() {
-        baseRequest.addParameter("name", "value");
+    public void shouldBuildErrorFromUnsuccessfulRawResponse() throws Exception {
+        mockFailedRawServerResponse();
 
-        final Map<String, Object> result = parameterBuilder.asDictionary();
-        assertThat(result, IsMapWithSize.aMapWithSize(1));
-        assertThat(result, IsMapContaining.hasEntry("name", (Object) "value"));
+        Auth0Exception exception = null;
+        SimplePojo result = null;
+        try {
+            result = baseRequest.execute();
+        } catch (Auth0Exception e) {
+            exception = e;
+        }
+
+        assertThat(result, is(nullValue()));
+        assertThat(exception, is(notNullValue()));
+        assertThat(exception, is(auth0Exception));
+
+        ArgumentCaptor<Map<String, List<String>>> headersMapCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(errorAdapter).fromRawResponse(eq(500), eq("Failure"), headersMapCaptor.capture());
+        Map<String, List<String>> headersMap = headersMapCaptor.getValue();
+        assertThat(headersMap, is(notNullValue()));
+        assertThat(headersMap, IsMapWithSize.aMapWithSize(1));
+        assertThat(headersMap, IsMapContaining.hasEntry(is("Content-Type"), IsCollectionContaining.hasItem("text/plain")));
+
+        verifyNoInteractions(resultAdapter);
     }
 
     @Test
-    public void shouldAddParameters() {
-        Map<String, Object> params = new HashMap<>();
-        params.put("name", "value");
-        params.put("asd", "123");
-        baseRequest.addParameters(params);
+    public void shouldBuildResultFromSuccessfulResponse() throws Exception {
+        mockSuccessfulServerResponse();
 
-        final Map<String, Object> result = parameterBuilder.asDictionary();
-        assertThat(result, IsMapWithSize.aMapWithSize(2));
-        assertThat(result, IsMapContaining.hasEntry("name", (Object) "value"));
-        assertThat(result, IsMapContaining.hasEntry("asd", (Object) "123"));
+        Exception exception = null;
+        SimplePojo result = null;
+        try {
+            result = baseRequest.execute();
+        } catch (Exception e) {
+            exception = e;
+        }
+        assertThat(exception, is(nullValue()));
+        assertThat(result, is(notNullValue()));
+        assertThat(result.prop, is("test-value"));
+        verify(resultAdapter).fromJson(readerCaptor.capture());
+        Reader reader = readerCaptor.getValue();
+        assertThat(reader, is(notNullValue()));
+        assertThat(reader, is(instanceOf(AwareInputStreamReader.class)));
+        AwareInputStreamReader awareReader = (AwareInputStreamReader) reader;
+        assertThat(awareReader.isClosed(), is(true));
+
+        verifyNoInteractions(errorAdapter);
     }
 
+    @SuppressWarnings("UnstableApiUsage")
     @Test
-    public void shouldPostOnSuccess() {
-        baseRequest.postOnSuccess("OK");
-        verify(callback).onSuccess(eq("OK"));
-        verifyNoMoreInteractions(callback);
+    public void shouldExecuteRequestOnBackgroundThreadAndPostSuccessToMainThread() throws Exception {
+        PausedExecutorService pausedExecutorService = new PausedExecutorService();
+        ThreadSwitcher threadSwitcher = spy(new ThreadSwitcher(getMainLooper(), pausedExecutorService));
+        BaseRequest<SimplePojo, Auth0Exception> baseRequest = new BaseRequest<>(
+                HttpMethod.POST.INSTANCE,
+                BASE_URL,
+                client,
+                resultAdapter,
+                errorAdapter,
+                threadSwitcher
+        );
+        mockSuccessfulServerResponse();
+        BaseCallback<SimplePojo, Auth0Exception> callback = mock(BaseCallback.class);
+
+        // verify background thread is queued
+        baseRequest.start(callback);
+        verify(threadSwitcher).backgroundThread(any(Runnable.class));
+        verify(threadSwitcher, never()).mainThread(any(Runnable.class));
+
+        // let the background thread run
+        assertThat(pausedExecutorService.runNext(), is(true));
+        verify(threadSwitcher).mainThread(any(Runnable.class));
+        verify(callback, never()).onSuccess(any(SimplePojo.class));
+
+        // Release the main thread queue
+        shadowMainLooper().idle();
+        ArgumentCaptor<SimplePojo> pojoCaptor = ArgumentCaptor.forClass(SimplePojo.class);
+        verify(callback).onSuccess(pojoCaptor.capture());
+        assertThat(pojoCaptor.getValue(), is(notNullValue()));
+        assertThat(pojoCaptor.getValue().prop, is("test-value"));
+
+        verify(callback, never()).onFailure(any(Auth0Exception.class));
     }
 
+    @SuppressWarnings("UnstableApiUsage")
     @Test
-    public void shouldPostOnFailure() {
-        baseRequest.postOnFailure(throwable);
-        verify(callback).onFailure(eq(throwable));
-        verifyNoMoreInteractions(callback);
+    public void shouldExecuteRequestOnBackgroundThreadAndPostFailureToMainThread() throws Exception {
+        PausedExecutorService pausedExecutorService = new PausedExecutorService();
+        ThreadSwitcher threadSwitcher = spy(new ThreadSwitcher(getMainLooper(), pausedExecutorService));
+        BaseRequest<SimplePojo, Auth0Exception> baseRequest = new BaseRequest<>(
+                HttpMethod.POST.INSTANCE,
+                BASE_URL,
+                client,
+                resultAdapter,
+                errorAdapter,
+                threadSwitcher
+        );
+        mockFailedRawServerResponse();
+        BaseCallback<SimplePojo, Auth0Exception> callback = mock(BaseCallback.class);
+
+        // verify background thread is queued
+        baseRequest.start(callback);
+        verify(threadSwitcher).backgroundThread(any(Runnable.class));
+        verify(threadSwitcher, never()).mainThread(any(Runnable.class));
+
+        // let the background thread run
+        assertThat(pausedExecutorService.runNext(), is(true));
+        verify(threadSwitcher).mainThread(any(Runnable.class));
+        verify(callback, never()).onFailure(any(Auth0Exception.class));
+
+        // Release the main thread queue
+        shadowMainLooper().idle();
+        verify(callback).onFailure(any(Auth0Exception.class));
+
+        verify(callback, never()).onSuccess(any(SimplePojo.class));
     }
 
-    @Test
-    public void shouldBuildNetworkErrorException() {
-        baseRequest.onFailure(null, mock(IOException.class));
-        verify(errorBuilder).from(eq("Request failed"), any(NetworkErrorException.class));
+    private void mockSuccessfulServerResponse() throws Exception {
+        Map<String, List<String>> headers = singletonMap("Content-Type", singletonList("application/json"));
+        InputStream inputStream = new StringInputStream("{\"prop\":\"test-value\"}");
+        ServerResponse response = new ServerResponse(200, inputStream, headers);
+        when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
     }
 
-    @Test
-    public void shouldParseUnsuccessfulJsonResponse() {
-        String payload = "{key: \"value\", asd: \"123\"}";
-        final Response response = createJsonResponse(payload, 401);
-        baseRequest.parseUnsuccessfulResponse(response);
-
-        verify(errorBuilder).from(mapCaptor.capture());
-        assertThat(mapCaptor.getValue(), IsMapContaining.hasEntry("key", (Object) "value"));
-        assertThat(mapCaptor.getValue(), IsMapContaining.hasEntry("asd", (Object) "123"));
+    private void mockFailedRawServerResponse() throws Exception {
+        Map<String, List<String>> headers = singletonMap("Content-Type", singletonList("text/plain"));
+        InputStream inputStream = new StringInputStream("Failure");
+        when(errorAdapter.fromRawResponse(eq(500), anyString(), anyMap())).thenReturn(auth0Exception);
+        ServerResponse response = new ServerResponse(500, inputStream, headers);
+        when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
     }
 
-    @Test
-    public void shouldParseUnsuccessfulNotJsonResponse() {
-        String payload = "n=ot_a valid json {{]";
-        final Response response = createJsonResponse(payload, 401);
-        baseRequest.parseUnsuccessfulResponse(response);
-
-        ArgumentCaptor<Integer> integerCaptor = ArgumentCaptor.forClass(Integer.class);
-        verify(errorBuilder).from(eq("n=ot_a valid json {{]"), integerCaptor.capture());
-        assertThat(integerCaptor.getValue(), is(401));
+    private void mockFailedJsonServerResponse() throws Exception {
+        Map<String, List<String>> headers = singletonMap("Content-Type", singletonList("application/json"));
+        InputStream inputStream = new StringInputStream("{\"error_code\":\"invalid_token\"}");
+        when(errorAdapter.fromJsonResponse(eq(422), readerCaptor.capture())).thenReturn(auth0Exception);
+        ServerResponse response = new ServerResponse(422, inputStream, headers);
+        when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
     }
 
-    @Test
-    public void shouldParseUnsuccessfulInvalidResponse() throws Exception {
-        byte[] invalidBytes = new byte[]{12, 23, 2, 1, 23, 3, 21, 3, 12};
-        final Response response = createBytesResponse(invalidBytes, 401);
-        response.body().string();    //force a IOException the next time this gets called
-        baseRequest.parseUnsuccessfulResponse(response);
-        verify(errorBuilder).from(eq("Request to https://auth0.com/ failed"), any(Auth0Exception.class));
+    private static class SimplePojo {
+        final String prop;
+
+        SimplePojo(String prop) {
+            this.prop = prop;
+        }
     }
 
-    private Response createJsonResponse(String jsonPayload, int code) {
-        Request request = new Request.Builder()
-                .url("https://someurl.com")
-                .build();
-
-        final ResponseBody responseBody = ResponseBody.create(MediaType.parse("application/json; charset=utf-8"), jsonPayload);
-        return new Response.Builder()
-                .request(request)
-                .protocol(Protocol.HTTP_1_1)
-                .body(responseBody)
-                .code(code)
-                .build();
-    }
-
-    private Response createBytesResponse(byte[] content, int code) {
-        Request request = new Request.Builder()
-                .url("https://someurl.com")
-                .build();
-
-        final ResponseBody responseBody = ResponseBody.create(MediaType.parse("application/octet-stream; charset=utf-8"), content);
-        return new Response.Builder()
-                .request(request)
-                .protocol(Protocol.HTTP_1_1)
-                .body(responseBody)
-                .code(code)
-                .build();
-    }
 }

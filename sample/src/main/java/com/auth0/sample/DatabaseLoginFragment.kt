@@ -27,7 +27,7 @@ class DatabaseLoginFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         val binding = FragmentDatabaseLoginBinding.inflate(inflater, container, false)
         binding.buttonLogin.setOnClickListener {
             val email = binding.textEmail.text.toString()
@@ -42,15 +42,11 @@ class DatabaseLoginFragment : Fragment() {
             //Additional customization to the request goes here
             .start(object : AuthenticationCallback<Credentials> {
                 override fun onFailure(error: AuthenticationException) {
-                    requireActivity().runOnUiThread {
-                        Snackbar.make(requireView(), "Failure :(", Snackbar.LENGTH_LONG).show()
-                    }
+                    Snackbar.make(requireView(), "Failure :(", Snackbar.LENGTH_LONG).show()
                 }
 
                 override fun onSuccess(payload: Credentials?) {
-                    requireActivity().runOnUiThread {
-                        Snackbar.make(requireView(), "Success :D", Snackbar.LENGTH_LONG).show()
-                    }
+                    Snackbar.make(requireView(), "Success :D", Snackbar.LENGTH_LONG).show()
                 }
             })
     }

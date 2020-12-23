@@ -5,8 +5,6 @@ import androidx.annotation.NonNull;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.result.Credentials;
 
-import java.util.Map;
-
 /**
  * Request to authenticate a user with Auth0 Authentication API
  */
@@ -65,14 +63,5 @@ public interface AuthenticationRequest extends Request<Credentials, Authenticati
      */
     @NonNull
     AuthenticationRequest setAudience(@NonNull String audience);
-
-    /**
-     * Add all entries of the map as parameters of this request
-     *
-     * @param parameters to be added to the request
-     * @return itself
-     */
-    @NonNull
-    AuthenticationRequest addAuthenticationParameters(@NonNull Map<String, Object> parameters);
-
+    
 }

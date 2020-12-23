@@ -11,13 +11,22 @@ import androidx.annotation.Nullable;
 
 import com.auth0.android.Auth0;
 import com.auth0.android.Auth0Exception;
+import com.auth0.android.MockAuth0;
 import com.auth0.android.authentication.AuthenticationException;
+import com.auth0.android.request.DefaultClient;
+import com.auth0.android.request.HttpMethod;
+import com.auth0.android.request.NetworkingClient;
+import com.auth0.android.request.RequestOptions;
+import com.auth0.android.request.ServerResponse;
+import com.auth0.android.request.internal.ThreadSwitcherShadow;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.util.AuthCallbackMatcher;
 import com.auth0.android.util.AuthenticationAPI;
 import com.auth0.android.util.MockAuthCallback;
 
+import org.apache.tools.ant.filters.StringInputStream;
 import org.hamcrest.Matchers;
+import org.hamcrest.collection.IsMapContaining;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,7 +39,12 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -57,6 +71,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -73,6 +88,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(shadows = ThreadSwitcherShadow.class)
 public class WebAuthProviderTest {
 
     private static final String KEY_STATE = "state";
@@ -880,7 +896,7 @@ public class WebAuthProviderTest {
 
         MockAuthCallback authCallback = new MockAuthCallback();
 
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
 
         WebAuthProvider.login(proxyAccount)
                 .withPKCE(pkce)
@@ -934,6 +950,63 @@ public class WebAuthProviderTest {
     }
 
     @Test
+    public void shouldResumeLoginWithCustomNetworkingClient() throws Exception {
+        NetworkingClient networkingClient = spy(new DefaultClient(10));
+        MockAuthCallback authCallback = new MockAuthCallback();
+
+        // 1. start the webauth flow. the browser would open
+        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, EXPECTED_BASE_DOMAIN);
+        WebAuthProvider.login(proxyAccount)
+                .withNetworkingClient(networkingClient)
+                .start(activity, authCallback);
+
+        OAuthManager managerInstance = (OAuthManager) WebAuthProvider.getManagerInstance();
+        managerInstance.setCurrentTimeInMillis(FIXED_CLOCK_CURRENT_TIME_MS);
+
+        // 2. capture the intent filter to obtain the state and nonce sent
+        verify(activity).startActivity(intentCaptor.capture());
+        Uri uri = intentCaptor.getValue().getParcelableExtra(AuthenticationActivity.EXTRA_AUTHORIZE_URI);
+        assertThat(uri, is(notNullValue()));
+
+        String sentState = uri.getQueryParameter(KEY_STATE);
+        String sentNonce = uri.getQueryParameter(KEY_NONCE);
+
+        assertThat(sentState, is(not(isEmptyOrNullString())));
+        assertThat(sentNonce, is(not(isEmptyOrNullString())));
+        Intent intent = createAuthIntent(createHash(null, null, null, null, null, sentState, null, null, "1234"));
+
+        Map<String, Object> jwtBody = createJWTBody();
+        jwtBody.put("nonce", sentNonce);
+        jwtBody.put("aud", proxyAccount.getClientId());
+        jwtBody.put("iss", proxyAccount.getDomainUrl());
+        String expectedIdToken = createTestJWT("RS256", jwtBody);
+
+        // 3. craft a code response with a valid ID token
+        InputStream codeInputStream = new StringInputStream("{\"id_token\":\"" + expectedIdToken + "\"}");
+        ServerResponse codeResponse = new ServerResponse(200, codeInputStream, Collections.emptyMap());
+        doReturn(codeResponse).when(networkingClient).load(eq(proxyAccount.getDomainUrl() + "oauth/token"), any(RequestOptions.class));
+
+        // 4. craft a JWKS response with expected keys
+        byte[] encoded = Files.readAllBytes(Paths.get("src/test/resources/rsa_jwks.json"));
+        InputStream jwksInputStream = new ByteArrayInputStream(encoded);
+        ServerResponse jwksResponse = new ServerResponse(200, jwksInputStream, Collections.emptyMap());
+        doReturn(jwksResponse).when(networkingClient).load(eq(proxyAccount.getDomainUrl() + ".well-known/jwks.json"), any(RequestOptions.class));
+
+        // 5. resume, perform the code exchange, and make assertions
+        assertTrue(WebAuthProvider.resume(intent));
+        assertThat(authCallback, AuthCallbackMatcher.hasCredentials());
+
+        ArgumentCaptor<RequestOptions> codeOptionsCaptor = ArgumentCaptor.forClass(RequestOptions.class);
+        verify(networkingClient).load(eq("https://test.domain.com/oauth/token"), codeOptionsCaptor.capture());
+        assertThat(codeOptionsCaptor.getValue(), Matchers.is(Matchers.notNullValue()));
+        assertThat(codeOptionsCaptor.getValue().getMethod(), Matchers.is(instanceOf(HttpMethod.POST.class)));
+        assertThat(codeOptionsCaptor.getValue().getParameters(), IsMapContaining.hasEntry("code", "1234"));
+        assertThat(codeOptionsCaptor.getValue().getParameters(), IsMapContaining.hasEntry("grant_type", "authorization_code"));
+        assertThat(codeOptionsCaptor.getValue().getParameters(), IsMapContaining.hasKey("code_verifier"));
+        assertThat(codeOptionsCaptor.getValue().getHeaders(), Matchers.is(IsMapContaining.hasKey("Auth0-Client")));
+    }
+
+    @Test
     public void shouldResumeLoginWithRequestCodeWithCodeGrant() throws Exception {
         Date expiresAt = new Date();
         PKCE pkce = Mockito.mock(PKCE.class);
@@ -943,7 +1016,7 @@ public class WebAuthProviderTest {
 
         MockAuthCallback authCallback = new MockAuthCallback();
 
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
 
         WebAuthProvider.login(proxyAccount)
                 .withPKCE(pkce)
@@ -965,7 +1038,7 @@ public class WebAuthProviderTest {
         jwtBody.put("nonce", sentNonce);
         jwtBody.put("iss", proxyAccount.getDomainUrl());
         String expectedIdToken = createTestJWT("RS256", jwtBody);
-        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, sentState, null, null,"1234"));
+        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, sentState, null, null, "1234"));
 
         final Credentials codeCredentials = new Credentials(expectedIdToken, "codeAccess", "codeType", "codeRefresh", expiresAt, "codeScope");
         Mockito.doAnswer(new Answer() {
@@ -1112,7 +1185,7 @@ public class WebAuthProviderTest {
 
         MockAuthCallback authCallback = new MockAuthCallback();
 
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
         WebAuthProvider.login(proxyAccount)
                 .withState("1234567890")
                 .withNonce(EXPECTED_NONCE)
@@ -1157,7 +1230,7 @@ public class WebAuthProviderTest {
 
         MockAuthCallback authCallback = new MockAuthCallback();
 
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
         WebAuthProvider.login(proxyAccount)
                 .withState("1234567890")
                 .withNonce(EXPECTED_NONCE)
@@ -1201,7 +1274,7 @@ public class WebAuthProviderTest {
         mockAPI.willReturnValidJsonWebKeys();
 
         MockAuthCallback authCallback = new MockAuthCallback();
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
 
         WebAuthProvider.login(proxyAccount)
                 .withState("1234567890")
@@ -1244,7 +1317,7 @@ public class WebAuthProviderTest {
 
         MockAuthCallback authCallback = new MockAuthCallback();
 
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
         WebAuthProvider.login(proxyAccount)
                 .withState("1234567890")
                 .withNonce(EXPECTED_NONCE)
@@ -1286,7 +1359,7 @@ public class WebAuthProviderTest {
         AuthenticationAPI mockAPI = new AuthenticationAPI();
         mockAPI.willReturnValidJsonWebKeys();
 
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
 
         MockAuthCallback authCallback = new MockAuthCallback();
 
@@ -1342,7 +1415,7 @@ public class WebAuthProviderTest {
 
         MockAuthCallback authCallback = new MockAuthCallback();
 
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
 
         WebAuthProvider.login(proxyAccount)
                 .withIdTokenVerificationIssuer("https://some.different.issuer/")
@@ -1395,7 +1468,7 @@ public class WebAuthProviderTest {
         AuthenticationAPI mockAPI = new AuthenticationAPI();
         mockAPI.willReturnValidJsonWebKeys();
 
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
 
         MockAuthCallback authCallback = new MockAuthCallback();
 
@@ -1488,7 +1561,7 @@ public class WebAuthProviderTest {
 
         MockAuthCallback authCallback = new MockAuthCallback();
 
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
 
         WebAuthProvider.login(proxyAccount)
                 .withState("state")
@@ -1508,8 +1581,7 @@ public class WebAuthProviderTest {
         jwtBody.put("auth_time", authTime);
         jwtBody.put("iss", proxyAccount.getDomainUrl());
         String expectedIdToken = createTestJWT("RS256", jwtBody);
-
-        Intent intent = createAuthIntent(createHash(null, null, null, null, null, "state", null, null, "1234"));
+        Intent intent = createAuthIntent(createHash(expectedIdToken, null, null, null, null, "state", null, null, "1234"));
 
         final Credentials codeCredentials = new Credentials(expectedIdToken, "codeAccess", "codeType", "codeRefresh", null, "codeScope");
         Mockito.doAnswer(new Answer() {
@@ -1541,7 +1613,7 @@ public class WebAuthProviderTest {
 
         MockAuthCallback authCallback = new MockAuthCallback();
 
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
 
         WebAuthProvider.login(proxyAccount)
                 .withState("state")
@@ -1588,7 +1660,7 @@ public class WebAuthProviderTest {
 
         MockAuthCallback callback = new MockAuthCallback();
 
-        Auth0 proxyAccount = new Auth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
+        Auth0 proxyAccount = new MockAuth0(EXPECTED_AUDIENCE, mockAPI.getDomain());
         WebAuthProvider.login(proxyAccount)
                 .withState("state")
                 .withNonce(EXPECTED_NONCE)

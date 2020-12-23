@@ -29,6 +29,7 @@ import android.content.Context;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import com.auth0.android.util.Auth0UserAgent;
 import com.squareup.okhttp.HttpUrl;
@@ -272,11 +273,18 @@ public class Auth0 {
         return url;
     }
 
-    private HttpUrl ensureValidUrl(String url) {
+    @VisibleForTesting
+    HttpUrl ensureValidUrl(String url) {
         if (url == null) {
             return null;
         }
-        String safeUrl = url.startsWith("http") ? url : "https://" + url;
+
+        String normalizedUrl = url.toLowerCase();
+        if (normalizedUrl.startsWith("http://")) {
+            throw new IllegalArgumentException("Invalid domain url: '" + url + "'. Only HTTPS domain URLs are supported. If no scheme is passed, HTTPS will be used.");
+        }
+
+        String safeUrl = normalizedUrl.startsWith("https://") ? normalizedUrl : "https://" + normalizedUrl;
         return HttpUrl.parse(safeUrl);
     }
 
