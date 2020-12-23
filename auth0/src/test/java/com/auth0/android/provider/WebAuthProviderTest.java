@@ -886,7 +886,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public void shouldResumeUsingCustomNetworkingClient() throws Exception {
+    public void shouldResumeLoginWithIntentWithCodeGrant() throws Exception {
         Date expiresAt = new Date();
         PKCE pkce = Mockito.mock(PKCE.class);
 
