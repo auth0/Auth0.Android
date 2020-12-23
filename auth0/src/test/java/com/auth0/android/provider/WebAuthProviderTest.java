@@ -12,6 +12,7 @@ import androidx.annotation.Nullable;
 import com.auth0.android.Auth0;
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
+import com.auth0.android.request.internal.ThreadSwitcherShadow;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.util.AuthCallbackMatcher;
 import com.auth0.android.util.AuthenticationAPI;
@@ -30,6 +31,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -73,6 +75,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(shadows = ThreadSwitcherShadow.class)
 public class WebAuthProviderTest {
 
     private static final String KEY_STATE = "state";
