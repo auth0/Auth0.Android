@@ -30,7 +30,7 @@ import com.auth0.android.util.Auth0UserAgent
 import java.io.Reader
 import java.util.*
 
-public class RequestFactory<U : Auth0Exception>(
+public class RequestFactory<U : Auth0Exception> internal constructor(
     private val client: NetworkingClient,
     private val errorAdapter: ErrorAdapter<U>
 ) {
@@ -93,8 +93,9 @@ public class RequestFactory<U : Auth0Exception>(
         url: String,
         client: NetworkingClient,
         resultAdapter: JsonAdapter<T>,
-        errorAdapter: ErrorAdapter<U>
-    ): Request<T, U> = BaseRequest(method, url, client, resultAdapter, errorAdapter)
+        errorAdapter: ErrorAdapter<U>,
+        threadSwitcher: ThreadSwitcher
+    ): Request<T, U> = BaseRequest(method, url, client, resultAdapter, errorAdapter, threadSwitcher)
 
 
     private fun <T> setupRequest(
@@ -103,7 +104,8 @@ public class RequestFactory<U : Auth0Exception>(
         resultAdapter: JsonAdapter<T>,
         errorAdapter: ErrorAdapter<U>
     ): Request<T, U> {
-        val request = createRequest(method, url, client, resultAdapter, errorAdapter)
+        val request =
+            createRequest(method, url, client, resultAdapter, errorAdapter, DefaultThreadSwitcher)
         baseHeaders.map { request.addHeader(it.key, it.value) }
         return request
     }
