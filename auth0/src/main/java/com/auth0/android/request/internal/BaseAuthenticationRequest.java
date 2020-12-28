@@ -13,7 +13,6 @@ import java.util.Map;
 
 import static com.auth0.android.authentication.ParameterBuilder.AUDIENCE_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.CONNECTION_KEY;
-import static com.auth0.android.authentication.ParameterBuilder.DEVICE_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.REALM_KEY;
 import static com.auth0.android.authentication.ParameterBuilder.SCOPE_KEY;
@@ -75,20 +74,6 @@ public class BaseAuthenticationRequest implements AuthenticationRequest {
     @Override
     public AuthenticationRequest setScope(@NonNull String scope) {
         addParameter(SCOPE_KEY, scope);
-        return this;
-    }
-
-    /**
-     * Sets the 'device' parameter
-     *
-     * @param device a device name
-     * @return itself
-     */
-    @NonNull
-    @Override
-    public AuthenticationRequest setDevice(@NonNull String device) {
-        //TODO: Remove this. No longer used.
-        addParameter(DEVICE_KEY, device);
         return this;
     }
 

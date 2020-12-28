@@ -67,7 +67,7 @@ public class Credentials {
     @SerializedName("expires_at")
     private Date expiresAt;
 
-    //TODO: Deprecate this constructor
+    //TODO [SDK-1431]: Deprecate this constructor
     public Credentials(@Nullable String idToken, @Nullable String accessToken, @Nullable String type, @Nullable String refreshToken, @Nullable Long expiresIn) {
         this(idToken, accessToken, type, refreshToken, expiresIn, null, null);
     }

@@ -80,12 +80,6 @@ public class AuthenticationRequestMock implements AuthenticationRequest {
 
     @NonNull
     @Override
-    public AuthenticationRequest setDevice(@NonNull String device) {
-        return this;
-    }
-
-    @NonNull
-    @Override
     public AuthenticationRequest setAudience(@NonNull String audience) {
         return this;
     }

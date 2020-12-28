@@ -193,7 +193,7 @@ public class AuthenticationAPIClientTest {
         when(context.getString(eq(222))).thenReturn(CLIENT_ID);
         when(context.getString(eq(333))).thenReturn(DOMAIN);
 
-        AuthenticationAPIClient client = new AuthenticationAPIClient(context);
+        AuthenticationAPIClient client = new AuthenticationAPIClient(new Auth0(context));
 
         assertThat(client, is(notNullValue()));
         assertThat(client.getClientId(), is(CLIENT_ID));

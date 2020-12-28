@@ -55,7 +55,7 @@ public class SignUpRequest implements AuthenticationRequest {
     }
 
     /**
-     * Add additional parameters to be sent when creating a user.
+     * Add additional parameters to be sent only when creating a user.
      *
      * <p>A common use case for this is storing extra information in the user metadata.
      * To set user metadata you have to wrap your custom properties in a map containing
@@ -83,13 +83,12 @@ public class SignUpRequest implements AuthenticationRequest {
      */
     @NonNull
     public SignUpRequest addSignUpParameters(@NonNull Map<String, String> parameters) {
-        //TODO: Revisit this scenario, may be worth renaming the methods
         signUpRequest.addParameters(parameters);
         return this;
     }
 
     /**
-     * Add additional parameters to be sent when logging the user in.
+     * Add additional parameters to be sent only when logging the user in.
      *
      * @param parameters sent with the request and must be non-null
      * @return itself
@@ -97,7 +96,6 @@ public class SignUpRequest implements AuthenticationRequest {
      */
     @NonNull
     public SignUpRequest addAuthenticationParameters(@NonNull Map<String, String> parameters) {
-        //TODO: Revisit this scenario, may be worth renaming the methods
         authenticationRequest.addParameters(parameters);
         return this;
     }
@@ -118,6 +116,12 @@ public class SignUpRequest implements AuthenticationRequest {
         return this;
     }
 
+    /**
+     * Add additional parameters to be sent both when creating the user and logging in the user.
+     *
+     * @param parameters to send with the request
+     * @return itself
+     */
     @NonNull
     @Override
     public SignUpRequest addParameters(@NonNull Map<String, String> parameters) {
@@ -138,13 +142,6 @@ public class SignUpRequest implements AuthenticationRequest {
     @Override
     public SignUpRequest setScope(@NonNull String scope) {
         authenticationRequest.setScope(scope);
-        return this;
-    }
-
-    @NonNull
-    @Override
-    public SignUpRequest setDevice(@NonNull String device) {
-        authenticationRequest.setDevice(device);
         return this;
     }
 

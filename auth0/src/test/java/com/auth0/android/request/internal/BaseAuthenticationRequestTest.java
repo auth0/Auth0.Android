@@ -122,21 +122,6 @@ public class BaseAuthenticationRequestTest {
     }
 
     @Test
-    public void shouldSetDevice() throws Exception {
-        mockSuccessfulServerResponse();
-
-        //TODO: This was once used to identify the device authenticating. No longer used.
-        createRequest(BASE_URL)
-                .setDevice("android-phone")
-                .execute();
-
-        verify(client).load(eq(BASE_URL), optionsCaptor.capture());
-        Map<String, String> values = optionsCaptor.getValue().getParameters();
-        assertThat(values, aMapWithSize(1));
-        assertThat(values, hasEntry("device", "android-phone"));
-    }
-
-    @Test
     public void shouldSetAudience() throws Exception {
         mockSuccessfulServerResponse();
 

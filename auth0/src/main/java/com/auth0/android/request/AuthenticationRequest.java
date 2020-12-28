@@ -47,15 +47,6 @@ public interface AuthenticationRequest extends Request<Credentials, Authenticati
     AuthenticationRequest setScope(@NonNull String scope);
 
     /**
-     * Sets the 'device' parameter
-     *
-     * @param device a device name
-     * @return itself
-     */
-    @NonNull
-    AuthenticationRequest setDevice(@NonNull String device);
-
-    /**
      * Sets the 'audience' parameter.
      *
      * @param audience an audience value
