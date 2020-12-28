@@ -214,3 +214,4 @@ The ability to make requests to the [/delegation](https://auth0.com/docs/api/aut
 - `ParameterBuilder.ID_TOKEN_KEY` has been removed.
 - `ParameterBuilder.DEVICE_KEY` has been removed.
 - `ParameterBuilder.ACCESS_TOKEN_KEY` has been removed.
+- `ResponseType.CODE`, `ResponseType.ID_TOKEN`, and `ResponseType.ACCESS_TOKEN` have been removed.
