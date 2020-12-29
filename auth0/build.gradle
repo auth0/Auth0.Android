@@ -102,6 +102,6 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:3.6.28'
     testImplementation 'com.squareup.okhttp:mockwebserver:2.7.5'
     testImplementation 'com.jayway.awaitility:awaitility:1.7.0'
-    testImplementation 'org.robolectric:robolectric:4.3.1'
+    testImplementation 'org.robolectric:robolectric:4.4'
     testImplementation 'androidx.test.espresso:espresso-intents:3.3.0'
 }
