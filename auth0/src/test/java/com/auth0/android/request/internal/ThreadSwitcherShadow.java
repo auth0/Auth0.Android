@@ -1,12 +1,11 @@
 package com.auth0.android.request.internal;
 
 import org.robolectric.android.util.concurrent.InlineExecutorService;
-import org.robolectric.android.util.concurrent.RoboExecutorService;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 
 /**
- * Shadow that makes use of the {@link RoboExecutorService} to run background threads
+ * Shadow that makes use of the {@link InlineExecutorService} to run background threads
  * as soon as they are posted (synchronously). Used only when classes or methods
  * are annotated with @Config(shadows = ThreadSwitcherShadow.class)
  *
