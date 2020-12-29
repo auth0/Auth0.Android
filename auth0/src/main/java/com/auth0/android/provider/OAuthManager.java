@@ -56,15 +56,15 @@ class OAuthManager extends ResumableManager {
     private final Auth0 account;
     private final AuthCallback callback;
     private final Map<String, String> parameters;
+    private final Map<String, String> headers;
+    private final CustomTabsOptions ctOptions;
     private final AuthenticationAPIClient apiClient;
 
     private int requestCode;
     private PKCE pkce;
     private Long currentTimeInMillis;
-    private CustomTabsOptions ctOptions;
     private Integer idTokenVerificationLeeway;
     private String idTokenVerificationIssuer;
-    private Map<String, String> headers;
 
     OAuthManager(@NonNull Auth0 account, @NonNull AuthCallback callback, @NonNull Map<String, String> parameters, @NonNull CustomTabsOptions ctOptions, @Nullable NetworkingClient networkingClient) {
         this.account = account;
@@ -79,7 +79,6 @@ class OAuthManager extends ResumableManager {
             this.apiClient = new AuthenticationAPIClient(account, networkingClient);
         }
         this.ctOptions = ctOptions;
-        this.headers = new HashMap<>();
     }
 
     @VisibleForTesting
