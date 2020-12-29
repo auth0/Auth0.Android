@@ -2,37 +2,36 @@ version: 2
 jobs:
   build:
     environment:
-      GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx2048m -XX:+HeapDumpOnOutOfMemoryError" -Dkotlin.compiler.execution.strategy=in-process
-      _JAVA_OPTIONS: -Xms512m -Xmx1024m
+      GRADLE_OPTS: -Dkotlin.compiler.execution.strategy=in-process
     docker:
-      - image: circleci/android:api-29
+      - image: circleci/android:api-30
 
     steps:
-    - checkout
-    
-    - restore_cache:
-        keys:
-        - v2-dep-{{ checksum "build.gradle" }}-{{ checksum  "auth0/build.gradle" }}
-    
-    - run:
-        name: Run checks
-        command: ./gradlew clean test jacocoTestReport lint --continue --console=plain --no-daemon --max-workers=2
+      - checkout
 
-    - save_cache:
-        key: v2-dep-{{ checksum "build.gradle" }}-{{ checksum  "auth0/build.gradle" }}
-        paths:
-          - ~/.gradle
-          - ~/.android
-          - /usr/local/android-sdk-linux/extras
+      - restore_cache:
+          keys:
+            - v2-dep-{{ checksum "build.gradle" }}-{{ checksum  "auth0/build.gradle" }}
 
-    - store_artifacts:
-        path: auth0/build/reports
-        destination: reports
+      - run:
+          name: Run checks
+          command: ./gradlew clean test jacocoTestReport lint --continue --console=plain --max-workers=2
 
-    - store_test_results:
-        path: auth0/build/test-results
+      - save_cache:
+          key: v2-dep-{{ checksum "build.gradle" }}-{{ checksum  "auth0/build.gradle" }}
+          paths:
+            - ~/.gradle
+            - ~/.android
+            - /usr/local/android-sdk-linux/extras
 
-    - run:
+      - store_artifacts:
+          path: auth0/build/reports
+          destination: reports
+
+      - store_test_results:
+          path: auth0/build/test-results
+
+      - run:
           name: Upload Coverage
           when: on_success
           command: bash <(curl -s https://codecov.io/bash) -Z -C $CIRCLE_SHA1
