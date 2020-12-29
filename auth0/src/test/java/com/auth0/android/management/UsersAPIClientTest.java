@@ -58,6 +58,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+import org.robolectric.shadows.ShadowLooper;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -137,6 +138,7 @@ public class UsersAPIClientTest {
 
         Request<UserProfile, ManagementException> request = client.getProfile("undercover");
         request.execute();
+        ShadowLooper.idleMainLooper();
 
         ArgumentCaptor<RequestOptions> optionsCaptor = ArgumentCaptor.forClass(RequestOptions.class);
         verify(networkingClient).load(eq("https://tenant.auth0.com/api/v2/users/undercover"), optionsCaptor.capture());
@@ -200,6 +202,7 @@ public class UsersAPIClientTest {
         final MockManagementCallback<List<UserIdentity>> callback = new MockManagementCallback<>();
         client.link(USER_ID_PRIMARY, TOKEN_SECONDARY)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY + "/identities"));
@@ -245,6 +248,7 @@ public class UsersAPIClientTest {
         final MockManagementCallback<List<UserIdentity>> callback = new MockManagementCallback<>();
         client.unlink(USER_ID_PRIMARY, USER_ID_SECONDARY, PROVIDER)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY + "/identities/" + PROVIDER + "/" + USER_ID_SECONDARY));
@@ -296,6 +300,7 @@ public class UsersAPIClientTest {
         final MockManagementCallback<UserProfile> callback = new MockManagementCallback<>();
         client.updateMetadata(USER_ID_PRIMARY, metadata)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY));
@@ -344,6 +349,7 @@ public class UsersAPIClientTest {
         final MockManagementCallback<UserProfile> callback = new MockManagementCallback<>();
         client.getProfile(USER_ID_PRIMARY)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY));
