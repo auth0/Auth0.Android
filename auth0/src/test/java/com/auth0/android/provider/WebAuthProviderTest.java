@@ -1352,6 +1352,7 @@ public class WebAuthProviderTest {
         mockAPI.shutdown();
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void shouldResumeLoginIgnoringEmptyCustomIDTokenVerificationIssuer() throws Exception {
         PKCE pkce = Mockito.mock(PKCE.class);

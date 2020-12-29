@@ -41,6 +41,10 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -72,18 +76,18 @@ public class PKCETest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        pkce = new PKCE(apiClient, new AlgorithmHelperMock(CODE_VERIFIER), REDIRECT_URI);
+        pkce = new PKCE(apiClient, new AlgorithmHelperMock(CODE_VERIFIER), REDIRECT_URI, Collections.emptyMap());
     }
 
     @Test
     public void shouldGenerateChallengeFromRandomVerifier() {
-        PKCE pkce = new PKCE(apiClient, REDIRECT_URI);
+        PKCE pkce = new PKCE(apiClient, REDIRECT_URI, Collections.emptyMap());
         assertThat(pkce.getCodeChallenge(), is(notNullValue()));
     }
 
     @Test
     public void shouldGenerateValidRandomCodeChallenge() {
-        PKCE randomPKCE = new PKCE(apiClient, REDIRECT_URI);
+        PKCE randomPKCE = new PKCE(apiClient, REDIRECT_URI, Collections.emptyMap());
         String challenge = randomPKCE.getCodeChallenge();
         assertThat(challenge, is(notNullValue()));
         assertThat(challenge, CoreMatchers.not(Matchers.isEmptyString()));
@@ -109,6 +113,23 @@ public class PKCETest {
         Credentials credentials = mock(Credentials.class);
         callbackCaptor.getValue().onSuccess(credentials);
         verify(callback).onSuccess(credentials);
+    }
+
+    @Test
+    public void shouldAddHeaders() {
+        Request<Credentials, AuthenticationException> tokenRequest = mock(Request.class);
+        when(apiClient.token(AUTHORIZATION_CODE, CODE_VERIFIER, REDIRECT_URI)).thenReturn(tokenRequest);
+        String header1Name = "header1";
+        String header1Value = "val1";
+        String header2Name = "header2";
+        String header2Value = "val2";
+        Map<String, String> headers = new HashMap<>();
+        headers.put(header1Name, header1Value);
+        headers.put(header2Name, header2Value);
+        pkce = new PKCE(apiClient, new AlgorithmHelperMock(CODE_VERIFIER), REDIRECT_URI, headers);
+        pkce.getToken(AUTHORIZATION_CODE, callback);
+        verify(tokenRequest).addHeader(header1Name, header1Value);
+        verify(tokenRequest).addHeader(header2Name, header2Value);
     }
 
     @Test

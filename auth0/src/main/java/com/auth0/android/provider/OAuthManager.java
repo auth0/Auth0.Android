@@ -56,18 +56,20 @@ class OAuthManager extends ResumableManager {
     private final Auth0 account;
     private final AuthCallback callback;
     private final Map<String, String> parameters;
+    private final Map<String, String> headers;
+    private final CustomTabsOptions ctOptions;
     private final AuthenticationAPIClient apiClient;
 
     private int requestCode;
     private PKCE pkce;
     private Long currentTimeInMillis;
-    private final CustomTabsOptions ctOptions;
     private Integer idTokenVerificationLeeway;
     private String idTokenVerificationIssuer;
 
     OAuthManager(@NonNull Auth0 account, @NonNull AuthCallback callback, @NonNull Map<String, String> parameters, @NonNull CustomTabsOptions ctOptions, @Nullable NetworkingClient networkingClient) {
         this.account = account;
         this.callback = callback;
+        this.headers = new HashMap<>();
         this.parameters = new HashMap<>(parameters);
         this.parameters.put(KEY_RESPONSE_TYPE, RESPONSE_TYPE_CODE);
         if (networkingClient == null) {
@@ -93,7 +95,7 @@ class OAuthManager extends ResumableManager {
     }
 
     void startAuthentication(Activity activity, String redirectUri, int requestCode) {
-        addPKCEParameters(parameters, redirectUri);
+        addPKCEParameters(parameters, redirectUri, headers);
         addClientParameters(parameters, redirectUri);
         addValidationParameters(parameters);
         Uri uri = buildAuthorizeUri();
@@ -102,7 +104,10 @@ class OAuthManager extends ResumableManager {
         AuthenticationActivity.authenticateUsingBrowser(activity, uri, ctOptions);
     }
 
-    @SuppressWarnings("ConstantConditions")
+    void setHeaders(@NonNull Map<String, String> headers) {
+        this.headers.putAll(headers);
+    }
+
     @Override
     boolean resume(AuthorizeResult result) {
         if (!result.isValid(requestCode)) {
@@ -196,7 +201,6 @@ class OAuthManager extends ResumableManager {
             }
         };
 
-        String tokenAlg = decodedIdToken.getHeader().get("alg");
         String tokenKeyId = decodedIdToken.getHeader().get("kid");
         SignatureVerifier.forAsymmetricAlgorithm(tokenKeyId, apiClient, signatureVerifierCallback);
     }
@@ -248,8 +252,8 @@ class OAuthManager extends ResumableManager {
         return uri;
     }
 
-    private void addPKCEParameters(Map<String, String> parameters, String redirectUri) {
-        createPKCE(redirectUri);
+    private void addPKCEParameters(Map<String, String> parameters, String redirectUri, Map<String, String> headers) {
+        createPKCE(redirectUri, headers);
         String codeChallenge = pkce.getCodeChallenge();
         parameters.put(KEY_CODE_CHALLENGE, codeChallenge);
         parameters.put(KEY_CODE_CHALLENGE_METHOD, METHOD_SHA_256);
@@ -271,9 +275,9 @@ class OAuthManager extends ResumableManager {
         parameters.put(KEY_REDIRECT_URI, redirectUri);
     }
 
-    private void createPKCE(String redirectUri) {
+    private void createPKCE(String redirectUri, Map<String, String> headers) {
         if (pkce == null) {
-            pkce = new PKCE(apiClient, redirectUri);
+            pkce = new PKCE(apiClient, redirectUri, headers);
         }
     }
 

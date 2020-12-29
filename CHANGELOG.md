@@ -1,5 +1,15 @@
 # Change Log
 
+## [1.30.0](https://github.com/auth0/Auth0.Android/tree/1.30.0) (2020-12-18)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.29.2...1.30.0)
+
+**Added**
+- Add custom headers to social token request [SDK-2080] [\#351](https://github.com/auth0/Auth0.Android/pull/351) ([TLFilip](https://github.com/TLFilip))
+
+**Deprecated**
+- Deprecate API client constructors that take Context [\#393](https://github.com/auth0/Auth0.Android/pull/393) ([lbalmaceda](https://github.com/lbalmaceda))
+- Deprecate Legacy Authentication APIs [\#391](https://github.com/auth0/Auth0.Android/pull/391) ([jimmyjames](https://github.com/jimmyjames))
+
 ## [1.29.2](https://github.com/auth0/Auth0.Android/tree/1.29.2) (2020-11-11)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.29.1...1.29.2)
 
