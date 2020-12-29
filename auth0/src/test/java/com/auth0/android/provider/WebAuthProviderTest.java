@@ -24,7 +24,6 @@ import com.auth0.android.util.AuthCallbackMatcher;
 import com.auth0.android.util.AuthenticationAPI;
 import com.auth0.android.util.MockAuthCallback;
 
-import org.apache.tools.ant.filters.StringInputStream;
 import org.hamcrest.Matchers;
 import org.hamcrest.collection.IsMapContaining;
 import org.junit.Before;
@@ -982,7 +981,8 @@ public class WebAuthProviderTest {
         String expectedIdToken = createTestJWT("RS256", jwtBody);
 
         // 3. craft a code response with a valid ID token
-        InputStream codeInputStream = new StringInputStream("{\"id_token\":\"" + expectedIdToken + "\"}");
+        String jsonResponse = "{\"id_token\":\"" + expectedIdToken + "\"}";
+        InputStream codeInputStream = new ByteArrayInputStream(jsonResponse.getBytes());
         ServerResponse codeResponse = new ServerResponse(200, codeInputStream, Collections.emptyMap());
         doReturn(codeResponse).when(networkingClient).load(eq(proxyAccount.getDomainUrl() + "oauth/token"), any(RequestOptions.class));
 

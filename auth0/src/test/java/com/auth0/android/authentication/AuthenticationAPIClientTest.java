@@ -50,7 +50,6 @@ import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
-import org.apache.tools.ant.filters.StringInputStream;
 import org.hamcrest.collection.IsMapContaining;
 import org.junit.After;
 import org.junit.Before;
@@ -61,6 +60,7 @@ import org.mockito.Mockito;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
@@ -128,7 +128,8 @@ public class AuthenticationAPIClientTest {
     @Test
     public void shouldUseCustomNetworkingClient() throws IOException {
         Auth0 account = new Auth0("client-id", "https://tenant.auth0.com/");
-        InputStream inputStream = new StringInputStream("{\"access_token\":\"something\"}");
+        String jsonResponse = "{\"access_token\":\"something\"}";
+        InputStream inputStream = new ByteArrayInputStream(jsonResponse.getBytes());
         ServerResponse response = new ServerResponse(200, inputStream, Collections.emptyMap());
         NetworkingClient networkingClient = mock(NetworkingClient.class);
         when(networkingClient.load(anyString(), any(RequestOptions.class))).thenReturn(response);

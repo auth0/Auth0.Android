@@ -35,7 +35,6 @@ import com.auth0.android.request.RequestOptions;
 import com.auth0.android.request.ServerResponse;
 import com.google.gson.Gson;
 
-import org.apache.tools.ant.filters.StringInputStream;
 import org.hamcrest.collection.IsMapContaining;
 import org.hamcrest.collection.IsMapWithSize;
 import org.hamcrest.core.IsCollectionContaining;
@@ -49,6 +48,7 @@ import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.util.concurrent.PausedExecutorService;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -321,14 +321,16 @@ public class BaseRequestTest {
 
     private void mockSuccessfulServerResponse() throws Exception {
         Map<String, List<String>> headers = singletonMap("Content-Type", singletonList("application/json"));
-        InputStream inputStream = new StringInputStream("{\"prop\":\"test-value\"}");
+        String jsonResponse = "{\"prop\":\"test-value\"}";
+        InputStream inputStream = new ByteArrayInputStream(jsonResponse.getBytes());
         ServerResponse response = new ServerResponse(200, inputStream, headers);
         when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
     }
 
     private void mockFailedRawServerResponse() throws Exception {
         Map<String, List<String>> headers = singletonMap("Content-Type", singletonList("text/plain"));
-        InputStream inputStream = new StringInputStream("Failure");
+        String textResponse = "Failure";
+        InputStream inputStream = new ByteArrayInputStream(textResponse.getBytes());
         when(errorAdapter.fromRawResponse(eq(500), anyString(), anyMap())).thenReturn(auth0Exception);
         ServerResponse response = new ServerResponse(500, inputStream, headers);
         when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
@@ -336,7 +338,8 @@ public class BaseRequestTest {
 
     private void mockFailedJsonServerResponse() throws Exception {
         Map<String, List<String>> headers = singletonMap("Content-Type", singletonList("application/json"));
-        InputStream inputStream = new StringInputStream("{\"error_code\":\"invalid_token\"}");
+        String jsonResponse = "{\"error_code\":\"invalid_token\"}";
+        InputStream inputStream = new ByteArrayInputStream(jsonResponse.getBytes());
         when(errorAdapter.fromJsonResponse(eq(422), readerCaptor.capture())).thenReturn(auth0Exception);
         ServerResponse response = new ServerResponse(422, inputStream, headers);
         when(client.load(eq(BASE_URL), any(RequestOptions.class))).thenReturn(response);
