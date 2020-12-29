@@ -1,5 +1,6 @@
 package com.auth0.android.request.internal;
 
+import org.robolectric.android.util.concurrent.InlineExecutorService;
 import org.robolectric.android.util.concurrent.RoboExecutorService;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
@@ -16,10 +17,10 @@ import org.robolectric.annotation.Implements;
 @SuppressWarnings({"unused", "RedundantSuppression"})
 public class ThreadSwitcherShadow {
 
-    private final RoboExecutorService executor;
+    private final InlineExecutorService executor;
 
     public ThreadSwitcherShadow() {
-        this.executor = new RoboExecutorService();
+        this.executor = new InlineExecutorService();
     }
 
     @Implementation
