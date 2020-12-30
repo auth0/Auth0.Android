@@ -1,88 +1,64 @@
-package com.auth0.android.util;
+package com.auth0.android.util
 
-import android.text.TextUtils;
-import android.util.Base64;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
-
-import com.auth0.android.auth0.BuildConfig;
-import com.google.gson.Gson;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import android.os.Build
+import android.text.TextUtils
+import android.util.Base64
+import androidx.annotation.VisibleForTesting
+import com.auth0.android.auth0.BuildConfig
+import com.google.gson.Gson
+import java.nio.charset.StandardCharsets
+import java.util.*
 
 /**
  * Responsible for building the custom user agent header data sent on requests to Auth0.
  */
-public class Auth0UserAgent {
-    public static final String HEADER_NAME = "Auth0-Client";
+public class Auth0UserAgent public constructor(
+    name: String = BuildConfig.LIBRARY_NAME,
+    version: String = BuildConfig.VERSION_NAME,
+    libraryVersion: String?
+) {
+    public constructor() : this(BuildConfig.LIBRARY_NAME, BuildConfig.VERSION_NAME)
+    public constructor(
+        name: String = BuildConfig.LIBRARY_NAME,
+        version: String = BuildConfig.VERSION_NAME
+    ) : this(name, version, null)
 
-    private static final String NAME_KEY = "name";
-    private static final String VERSION_KEY = "version";
-    private static final String ENV_KEY = "env";
-    private static final String LIBRARY_VERSION_KEY = "auth0.android";
-    private static final String ANDROID_KEY = "android";
+    public val name: String = if (TextUtils.isEmpty(name)) BuildConfig.LIBRARY_NAME else name
+    public val version: String =
+        if (TextUtils.isEmpty(version)) BuildConfig.VERSION_NAME else version
+    public val libraryVersion: String?
+        get() = environment[LIBRARY_VERSION_KEY]
 
-    private final String name;
-    private final String version;
-    private final Map<String, String> env;
-    private final String value;
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    public val environment: Map<String, String?>
+    public val value: String
 
-    public Auth0UserAgent() {
-        this(BuildConfig.LIBRARY_NAME, BuildConfig.VERSION_NAME);
+
+    public companion object {
+        public const val HEADER_NAME: String = "Auth0-Client"
+        private const val NAME_KEY = "name"
+        private const val VERSION_KEY = "version"
+        private const val ENV_KEY = "env"
+        private const val LIBRARY_VERSION_KEY = "auth0.android"
+        private const val ANDROID_KEY = "android"
     }
 
-    public Auth0UserAgent(@NonNull String name, @NonNull String version) {
-        this(name, version, null);
-    }
-
-    public Auth0UserAgent(@NonNull String name, @NonNull String version, @Nullable String libraryVersion) {
-        this.name = TextUtils.isEmpty(name) ? BuildConfig.LIBRARY_NAME : name;
-        this.version = TextUtils.isEmpty(version) ? BuildConfig.VERSION_NAME : version;
-
-        Map<String, String> tmpEnv = new HashMap<>();
-        tmpEnv.put(ANDROID_KEY, String.valueOf(android.os.Build.VERSION.SDK_INT));
+    init {
+        val tmpEnv: MutableMap<String, String?> = HashMap()
+        tmpEnv[ANDROID_KEY] = Build.VERSION.SDK_INT.toString()
         if (!TextUtils.isEmpty(libraryVersion)) {
-            tmpEnv.put(LIBRARY_VERSION_KEY, libraryVersion);
+            tmpEnv[LIBRARY_VERSION_KEY] = libraryVersion
         }
-        this.env = Collections.unmodifiableMap(tmpEnv);
-
-        Map<String, Object> values = new HashMap<>();
-        values.put(NAME_KEY, name);
-        values.put(VERSION_KEY, version);
-        values.put(ENV_KEY, env);
-        String json = new Gson().toJson(values);
-        byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
-        value = new String(Base64.encode(bytes, Base64.URL_SAFE | Base64.NO_WRAP),
-                StandardCharsets.UTF_8);
-    }
-
-    @NonNull
-    public String getName() {
-        return name;
-    }
-
-    @NonNull
-    public String getVersion() {
-        return version;
-    }
-
-    @Nullable
-    public String getLibraryVersion() {
-        return env.get(LIBRARY_VERSION_KEY);
-    }
-
-    @VisibleForTesting
-    Map<String, String> getEnvironment() {
-        return env;
-    }
-
-    @NonNull
-    public String getValue() {
-        return value;
+        environment = Collections.unmodifiableMap(tmpEnv)
+        val values: MutableMap<String, Any> = HashMap()
+        values[NAME_KEY] = name
+        values[VERSION_KEY] = version
+        values[ENV_KEY] = environment
+        val json = Gson().toJson(values)
+        val bytes = json.toByteArray(StandardCharsets.UTF_8)
+        value = String(
+            Base64.encode(bytes, Base64.URL_SAFE or Base64.NO_WRAP),
+            StandardCharsets.UTF_8
+        )
     }
 }

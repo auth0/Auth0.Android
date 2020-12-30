@@ -28,7 +28,7 @@ public class Auth0UserAgentTest {
     @Test
     @Config(sdk = 21)
     public void shouldAlwaysIncludeAndroidVersionAPI21() {
-        Auth0UserAgent auth0UserAgent = new Auth0UserAgent("auth0-java", null);
+        Auth0UserAgent auth0UserAgent = new Auth0UserAgent("auth0-java", "1.2.3");
         assertThat(auth0UserAgent.getEnvironment(), is(notNullValue()));
         assertThat(auth0UserAgent.getEnvironment().get("android"), is("21"));
     }
@@ -36,7 +36,7 @@ public class Auth0UserAgentTest {
     @Test
     @Config(sdk = 23)
     public void shouldAlwaysIncludeAndroidVersionAPI23() {
-        Auth0UserAgent auth0UserAgent = new Auth0UserAgent("auth0-java", null);
+        Auth0UserAgent auth0UserAgent = new Auth0UserAgent("auth0-java", "1.2.3");
         assertThat(auth0UserAgent.getEnvironment(), is(notNullValue()));
         assertThat(auth0UserAgent.getEnvironment().get("android"), is("23"));
     }
@@ -73,7 +73,7 @@ public class Auth0UserAgentTest {
 
     @Test
     public void shouldNotIncludeLibraryVersionIfNotProvided() {
-        Auth0UserAgent auth0UserAgent = new Auth0UserAgent(null, null);
+        Auth0UserAgent auth0UserAgent = new Auth0UserAgent();
         assertThat(auth0UserAgent.getEnvironment(), is(notNullValue()));
         assertThat(auth0UserAgent.getEnvironment().containsKey("auth0.android"), is(false));
     }
