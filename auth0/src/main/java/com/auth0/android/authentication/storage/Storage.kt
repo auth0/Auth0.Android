@@ -1,14 +1,17 @@
-package com.auth0.android.authentication.storage;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+package com.auth0.android.authentication.storage
 
 /**
  * Represents a Storage of key-value data.
  * Supported classes are String, Long and Integer.
  */
-@SuppressWarnings("WeakerAccess")
 public interface Storage {
+    /**
+     * Store a given value in the Storage.
+     *
+     * @param name  the name of the value to store.
+     * @param value the value to store. Can be null.
+     */
+    public fun store(name: String, value: Long?)
 
     /**
      * Store a given value in the Storage.
@@ -16,7 +19,7 @@ public interface Storage {
      * @param name  the name of the value to store.
      * @param value the value to store. Can be null.
      */
-    void store(@NonNull String name, @Nullable Long value);
+    public fun store(name: String, value: Int?)
 
     /**
      * Store a given value in the Storage.
@@ -24,7 +27,7 @@ public interface Storage {
      * @param name  the name of the value to store.
      * @param value the value to store. Can be null.
      */
-    void store(@NonNull String name, @Nullable Integer value);
+    public fun store(name: String, value: String?)
 
     /**
      * Store a given value in the Storage.
@@ -32,15 +35,7 @@ public interface Storage {
      * @param name  the name of the value to store.
      * @param value the value to store. Can be null.
      */
-    void store(@NonNull String name, @Nullable String value);
-
-    /**
-     * Store a given value in the Storage.
-     *
-     * @param name  the name of the value to store.
-     * @param value the value to store. Can be null.
-     */
-    void store(@NonNull String name, @Nullable Boolean value);
+    public fun store(name: String, value: Boolean?)
 
     /**
      * Retrieve a value from the Storage.
@@ -48,8 +43,7 @@ public interface Storage {
      * @param name the name of the value to retrieve.
      * @return the value that was previously saved. Can be null.
      */
-    @Nullable
-    Long retrieveLong(@NonNull String name);
+    public fun retrieveLong(name: String): Long?
 
     /**
      * Retrieve a value from the Storage.
@@ -57,8 +51,7 @@ public interface Storage {
      * @param name the name of the value to retrieve.
      * @return the value that was previously saved. Can be null.
      */
-    @Nullable
-    String retrieveString(@NonNull String name);
+    public fun retrieveString(name: String): String?
 
     /**
      * Retrieve a value from the Storage.
@@ -66,8 +59,7 @@ public interface Storage {
      * @param name the name of the value to retrieve.
      * @return the value that was previously saved. Can be null.
      */
-    @Nullable
-    Integer retrieveInteger(@NonNull String name);
+    public fun retrieveInteger(name: String): Int?
 
     /**
      * Retrieve a value from the Storage.
@@ -75,13 +67,12 @@ public interface Storage {
      * @param name the name of the value to retrieve.
      * @return the value that was previously saved. Can be null.
      */
-    @Nullable
-    Boolean retrieveBoolean(@NonNull String name);
+    public fun retrieveBoolean(name: String): Boolean?
 
     /**
      * Removes a value from the storage.
      *
      * @param name the name of the value to remove.
      */
-    void remove(@NonNull String name);
+    public fun remove(name: String)
 }

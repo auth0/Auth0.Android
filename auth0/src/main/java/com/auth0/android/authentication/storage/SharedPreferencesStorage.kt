@@ -1,118 +1,89 @@
-package com.auth0.android.authentication.storage;
+package com.auth0.android.authentication.storage
 
-
-import android.content.Context;
-import android.content.SharedPreferences;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import android.text.TextUtils;
+import android.content.Context
+import android.content.SharedPreferences
+import android.text.TextUtils
 
 /**
- * An implementation of {@link Storage} that uses {@link android.content.SharedPreferences} in Context.MODE_PRIVATE to store the values.
+ * An implementation of [Storage] that uses [android.content.SharedPreferences] in Context.MODE_PRIVATE to store the values.
  */
-@SuppressWarnings({"WeakerAccess", "unused"})
-public class SharedPreferencesStorage implements Storage {
+public class SharedPreferencesStorage @JvmOverloads constructor(
+    context: Context,
+    sharedPreferencesName: String = SHARED_PREFERENCES_NAME
+) : Storage {
+    private val sp: SharedPreferences
+    override fun store(name: String, value: Long?) {
+        if (value == null) {
+            sp.edit().remove(name).apply()
+        } else {
+            sp.edit().putLong(name, value).apply()
+        }
+    }
 
-    private static final String SHARED_PREFERENCES_NAME = "com.auth0.authentication.storage";
+    override fun store(name: String, value: Int?) {
+        if (value == null) {
+            sp.edit().remove(name).apply()
+        } else {
+            sp.edit().putInt(name, value).apply()
+        }
+    }
 
-    private final SharedPreferences sp;
+    override fun store(name: String, value: String?) {
+        if (value == null) {
+            sp.edit().remove(name).apply()
+        } else {
+            sp.edit().putString(name, value).apply()
+        }
+    }
 
-    /**
-     * Creates a new {@link Storage} that uses {@link SharedPreferences} in Context.MODE_PRIVATE to store values.
-     *
-     * @param context a valid context
-     */
-    public SharedPreferencesStorage(@NonNull Context context) {
-        this(context, SHARED_PREFERENCES_NAME);
+    override fun store(name: String, value: Boolean?) {
+        if (value == null) {
+            sp.edit().remove(name).apply()
+        } else {
+            sp.edit().putBoolean(name, value).apply()
+        }
+    }
+
+    override fun retrieveLong(name: String): Long? {
+        return if (!sp.contains(name)) {
+            null
+        } else sp.getLong(name, 0)
+    }
+
+    override fun retrieveString(name: String): String? {
+        return if (!sp.contains(name)) {
+            null
+        } else sp.getString(name, null)
+    }
+
+    override fun retrieveInteger(name: String): Int? {
+        return if (!sp.contains(name)) {
+            null
+        } else sp.getInt(name, 0)
+    }
+
+    override fun retrieveBoolean(name: String): Boolean? {
+        return if (!sp.contains(name)) {
+            null
+        } else sp.getBoolean(name, false)
+    }
+
+    override fun remove(name: String) {
+        sp.edit().remove(name).apply()
+    }
+
+    private companion object {
+        private const val SHARED_PREFERENCES_NAME = "com.auth0.authentication.storage"
     }
 
     /**
-     * Creates a new {@link Storage} that uses {@link SharedPreferences} in Context.MODE_PRIVATE to store values.
+     * Creates a new [Storage] that uses [SharedPreferences] in Context.MODE_PRIVATE to store values.
      *
      * @param context               a valid context
      * @param sharedPreferencesName the preferences file name
      */
-    public SharedPreferencesStorage(@NonNull Context context, @NonNull String sharedPreferencesName) {
-        if (TextUtils.isEmpty(sharedPreferencesName)) {
-            throw new IllegalArgumentException("The SharedPreferences name is invalid.");
-        }
-        sp = context.getSharedPreferences(sharedPreferencesName, Context.MODE_PRIVATE);
-    }
-
-    @Override
-    public void store(@NonNull String name, @Nullable Long value) {
-        if (value == null) {
-            sp.edit().remove(name).apply();
-        } else {
-            sp.edit().putLong(name, value).apply();
-        }
-    }
-
-    @Override
-    public void store(@NonNull String name, @Nullable Integer value) {
-        if (value == null) {
-            sp.edit().remove(name).apply();
-        } else {
-            sp.edit().putInt(name, value).apply();
-        }
-    }
-
-    @Override
-    public void store(@NonNull String name, @Nullable String value) {
-        if (value == null) {
-            sp.edit().remove(name).apply();
-        } else {
-            sp.edit().putString(name, value).apply();
-        }
-    }
-
-    @Override
-    public void store(@NonNull String name, @Nullable Boolean value) {
-        if (value == null) {
-            sp.edit().remove(name).apply();
-        } else {
-            sp.edit().putBoolean(name, value).apply();
-        }
-    }
-
-    @Nullable
-    @Override
-    public Long retrieveLong(@NonNull String name) {
-        if (!sp.contains(name)) {
-            return null;
-        }
-        return sp.getLong(name, 0);
-    }
-
-    @Nullable
-    @Override
-    public String retrieveString(@NonNull String name) {
-        if (!sp.contains(name)) {
-            return null;
-        }
-        return sp.getString(name, null);
-    }
-
-    @Nullable
-    @Override
-    public Integer retrieveInteger(@NonNull String name) {
-        if (!sp.contains(name)) {
-            return null;
-        }
-        return sp.getInt(name, 0);
-    }
-
-    @Nullable
-    @Override
-    public Boolean retrieveBoolean(@NonNull String name) {
-        if (!sp.contains(name)) {
-            return null;
-        }
-        return sp.getBoolean(name, false);
-    }
-
-    @Override
-    public void remove(@NonNull String name) {
-        sp.edit().remove(name).apply();
+    init {
+        require(!TextUtils.isEmpty(sharedPreferencesName)) { "The SharedPreferences name is invalid." }
+        sp = context.getSharedPreferences(sharedPreferencesName, Context.MODE_PRIVATE)
     }
 }
