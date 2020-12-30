@@ -106,14 +106,6 @@ public class SignUpRequestTest {
     }
 
     @Test
-    public void shouldSetDevice() {
-        final AuthenticationRequest req = signUpRequest.setDevice("nexus-5x");
-        verify(authenticationMockRequest).setDevice("nexus-5x");
-        assertThat(req, is(notNullValue()));
-        assertThat(req, Matchers.<AuthenticationRequest>is(signUpRequest));
-    }
-
-    @Test
     public void shouldSetGrantType() {
         final AuthenticationRequest req = signUpRequest.setGrantType("token");
         verify(authenticationMockRequest).setGrantType("token");

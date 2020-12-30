@@ -100,12 +100,6 @@ public class ParameterBuilderTest {
     }
 
     @Test
-    public void shouldSetDevice() {
-        Map<String, String> parameters = builder.setDevice(DEVICE).asDictionary();
-        assertThat(parameters, hasEntry("device", DEVICE));
-    }
-
-    @Test
     public void shouldSetRefreshToken() {
         Map<String, String> parameters = builder.setRefreshToken(DEVICE).asDictionary();
         assertThat(parameters, hasEntry("refresh_token", DEVICE));

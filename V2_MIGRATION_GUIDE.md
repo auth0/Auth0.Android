@@ -70,6 +70,14 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 
 ### Constructors removed or changed
 
+#### AuthenticationAPIClient
+
+- `public AuthenticationAPIClient(@NonNull Context context)`. Use `public AuthenticationAPIClient(new Auth0(context))`.
+
+#### UsersAPIClient
+
+- `public UsersAPIClient(@NonNull Context context, @NonNull String token)`. Use `public UsersAPIClient(new Auth0(context), token)`.
+
 #### SignupRequest
 
 - `public SignUpRequest(@NonNull DatabaseConnectionRequest<DatabaseUser, AuthenticationException> signUpRequest, @NonNull AuthRequest authRequest)`. Use `public SignUpRequest(@NonNull DatabaseConnectionRequest<DatabaseUser, AuthenticationException> signUpRequest, @NonNull AuthenticationRequest authenticationRequest)` instead.
@@ -96,6 +104,10 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 - `public ProfileRequest addParameter(@NonNull String name, @NonNull String value)`
 
 ### Methods removed or changed
+
+#### ParameterBuilder
+
+- `public ParameterBuilder setDevice(@NonNull String device)`. Please use `public ParameterBuilder set("device", value)`.
 
 #### Auth0
 
@@ -186,15 +198,20 @@ The ability to make requests to the [/delegation](https://auth0.com/docs/api/aut
 - `public ProfileRequest addParameter(@NonNull String name, @NonNull String value)`. Use `public ProfileRequest addParameter(@NonNull String name, @NonNull String value)` instead.
 
 #### SignUpRequest
-//TODO: remove? - `public SignUpRequest addAuthenticationParameters(@NonNull Map<String, Object> parameters)` Use `public SignUpRequest addAuthenticationParameters(@NonNull Map<String, String> parameters)` instead.
-//TODO: remove? - `public SignUpRequest addSignUpParameters(@NonNull Map<String, Object> parameters)` Use `public SignUpRequest addSignUpParameters(@NonNull Map<String, String> parameters)` instead.
+- `public SignUpRequest addAuthenticationParameters(@NonNull Map<String, Object> parameters)`. Use `public SignUpRequest addAuthenticationParameters(@NonNull Map<String, String> parameters)` instead.
+- `public SignUpRequest addSignUpParameters(@NonNull Map<String, Object> parameters)`. Use `public SignUpRequest addSignUpParameters(@NonNull Map<String, String> parameters)` instead.
 - `public SignUpRequest addParameters(@NonNull Map<String, Object> parameters)`. Use `public SignUpRequest addParameters(@NonNull Map<String, String> parameters)` instead.
 - `public SignUpRequest addParameter(@NonNull String name, @NonNull String value)`. Use `public SignUpRequest addParameter(@NonNull String name, @NonNull String value)` instead.
+- `public SignUpRequest setDevice(@NonNull String device)`. Use `public Request<Credentials, AuthenticationException> addParameter("device", value)` instead.
 
 #### AuthenticationRequest
-- `AuthenticationRequest addAuthenticationParameters(@NonNull Map<String, String> parameters)`. Use `public Request<Credentials, AuthenticationException> addParameters(@NonNull Map<String, String> parameters)` instead.
+- `public AuthenticationRequest addAuthenticationParameters(@NonNull Map<String, String> parameters)`. Use `public Request<Credentials, AuthenticationException> addParameters(@NonNull Map<String, String> parameters)` instead.
+- `public AuthenticationRequest setDevice(@NonNull String device)`. Use `public Request<Credentials, AuthenticationException> addParameter("device", value)` instead.
 
 ### Constants removed
 
 - `ParameterBuilder.GRANT_TYPE_JWT` has been removed.
 - `ParameterBuilder.ID_TOKEN_KEY` has been removed.
+- `ParameterBuilder.DEVICE_KEY` has been removed.
+- `ParameterBuilder.ACCESS_TOKEN_KEY` has been removed.
+- `ResponseType.CODE`, `ResponseType.ID_TOKEN`, and `ResponseType.ACCESS_TOKEN` have been removed.

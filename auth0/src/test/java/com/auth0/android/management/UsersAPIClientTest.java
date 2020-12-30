@@ -188,7 +188,7 @@ public class UsersAPIClientTest {
         when(context.getString(eq(222))).thenReturn(CLIENT_ID);
         when(context.getString(eq(333))).thenReturn(DOMAIN);
 
-        UsersAPIClient client = new UsersAPIClient(context, TOKEN_PRIMARY);
+        UsersAPIClient client = new UsersAPIClient(new Auth0(context), TOKEN_PRIMARY);
 
         assertThat(client, is(notNullValue()));
         assertThat(client.getClientId(), is(CLIENT_ID));

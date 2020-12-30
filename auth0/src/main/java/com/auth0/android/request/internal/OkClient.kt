@@ -19,7 +19,6 @@ private class OkClient(timeout: Int) : NetworkingClient {
     @Throws(IllegalArgumentException::class, IOException::class)
     override fun load(url: String, options: RequestOptions): ServerResponse {
         val httpUrl = HttpUrl.parse(url)
-        //FIXME: Probably best to check this in the AuthenticationAPIClient constructor
         if (!httpUrl.isHttps) {
             throw IllegalArgumentException("The URL must use HTTPS")
         }

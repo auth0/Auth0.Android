@@ -153,18 +153,6 @@ public class AuthenticationAPIClient {
         this(auth0, new RequestFactory<>(networkingClient, createErrorAdapter()), GsonProvider.buildGson());
     }
 
-    /**
-     * Creates a new API client instance using the 'com_auth0_client_id' and 'com_auth0_domain' values
-     * defined in the project String resources file.
-     *
-     * @param context a valid Context
-     * @deprecated This method will be removed in the next version. Please use {@link AuthenticationAPIClient(Auth0)}.
-     */
-    @Deprecated
-    public AuthenticationAPIClient(@NonNull Context context) {
-        this(new Auth0(context));
-    }
-
     @VisibleForTesting
     AuthenticationAPIClient(@NonNull Auth0 auth0, @NonNull RequestFactory<AuthenticationException> factory, @NonNull Gson gson) {
         this.auth0 = auth0;

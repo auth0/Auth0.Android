@@ -29,8 +29,10 @@ public class MockAuth0 extends Auth0 {
      */
     @Override
     HttpUrl ensureValidUrl(String url) {
-        // TODO get MockWebServer running with HTTPS and remove this class. Should be done
-        // after updating to more recent versions of OkHttp
+        /*
+        TODO [SDK-2221]: get MockWebServer running with HTTPS and remove this class. Should be done
+         after updating to more recent versions of OkHttp
+         */
         if (url == null) {
             return null;
         }
