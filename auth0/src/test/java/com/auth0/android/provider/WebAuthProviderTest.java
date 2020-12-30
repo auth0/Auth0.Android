@@ -24,7 +24,6 @@ import com.auth0.android.util.AuthCallbackMatcher;
 import com.auth0.android.util.AuthenticationAPI;
 import com.auth0.android.util.MockAuthCallback;
 
-import org.apache.tools.ant.filters.StringInputStream;
 import org.hamcrest.Matchers;
 import org.hamcrest.collection.IsMapContaining;
 import org.junit.Before;
@@ -40,6 +39,7 @@ import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+import org.robolectric.shadows.ShadowLooper;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -934,6 +934,7 @@ public class WebAuthProviderTest {
         assertTrue(WebAuthProvider.resume(intent));
 
         mockAPI.takeRequest();
+        ShadowLooper.idleMainLooper();
 
         assertThat(authCallback, AuthCallbackMatcher.hasCredentials());
 
@@ -982,7 +983,8 @@ public class WebAuthProviderTest {
         String expectedIdToken = createTestJWT("RS256", jwtBody);
 
         // 3. craft a code response with a valid ID token
-        InputStream codeInputStream = new StringInputStream("{\"id_token\":\"" + expectedIdToken + "\"}");
+        String jsonResponse = "{\"id_token\":\"" + expectedIdToken + "\"}";
+        InputStream codeInputStream = new ByteArrayInputStream(jsonResponse.getBytes());
         ServerResponse codeResponse = new ServerResponse(200, codeInputStream, Collections.emptyMap());
         doReturn(codeResponse).when(networkingClient).load(eq(proxyAccount.getDomainUrl() + "oauth/token"), any(RequestOptions.class));
 
@@ -994,6 +996,7 @@ public class WebAuthProviderTest {
 
         // 5. resume, perform the code exchange, and make assertions
         assertTrue(WebAuthProvider.resume(intent));
+        ShadowLooper.idleMainLooper();
         assertThat(authCallback, AuthCallbackMatcher.hasCredentials());
 
         ArgumentCaptor<RequestOptions> codeOptionsCaptor = ArgumentCaptor.forClass(RequestOptions.class);
@@ -1051,6 +1054,7 @@ public class WebAuthProviderTest {
 
         assertTrue(WebAuthProvider.resume(intent));
         mockAPI.takeRequest();
+        ShadowLooper.idleMainLooper();
 
         assertThat(authCallback, AuthCallbackMatcher.hasCredentials());
 
@@ -1211,6 +1215,7 @@ public class WebAuthProviderTest {
 
         assertTrue(WebAuthProvider.resume(intent));
         mockAPI.takeRequest();
+        ShadowLooper.idleMainLooper();
 
         assertThat(authCallback, AuthCallbackMatcher.hasError());
 
@@ -1256,6 +1261,7 @@ public class WebAuthProviderTest {
 
         assertTrue(WebAuthProvider.resume(intent));
         mockAPI.takeRequest();
+        ShadowLooper.idleMainLooper();
 
         assertThat(authCallback, AuthCallbackMatcher.hasError());
 
@@ -1298,6 +1304,7 @@ public class WebAuthProviderTest {
 
         assertTrue(WebAuthProvider.resume(intent));
         mockAPI.takeRequest();
+        ShadowLooper.idleMainLooper();
 
         assertThat(authCallback, AuthCallbackMatcher.hasError());
 
@@ -1342,6 +1349,7 @@ public class WebAuthProviderTest {
         }).when(pkce).getToken(eq("1234"), callbackCaptor.capture());
         assertTrue(WebAuthProvider.resume(intent));
         mockAPI.takeRequest();
+        ShadowLooper.idleMainLooper();
 
         assertThat(authCallback, AuthCallbackMatcher.hasCredentials());
 
@@ -1398,6 +1406,7 @@ public class WebAuthProviderTest {
         assertTrue(WebAuthProvider.resume(intent));
 
         mockAPI.takeRequest();
+        ShadowLooper.idleMainLooper();
 
         assertThat(authCallback, AuthCallbackMatcher.hasCredentials());
 
@@ -1453,7 +1462,7 @@ public class WebAuthProviderTest {
         assertTrue(WebAuthProvider.resume(intent));
 
         mockAPI.takeRequest();
-
+        ShadowLooper.idleMainLooper();
         assertThat(authCallback, AuthCallbackMatcher.hasCredentials());
 
         Credentials credentials = authCallback.getCredentials();
@@ -1498,7 +1507,7 @@ public class WebAuthProviderTest {
         Intent intent = createAuthIntent(createHash(null, null, null, null, null, "1234567890", null, null, "1234"));
         assertTrue(WebAuthProvider.resume(intent));
         mockAPI.takeRequest();
-
+        ShadowLooper.idleMainLooper();
         assertThat(authCallback, AuthCallbackMatcher.hasError());
 
         AuthenticationException error = authCallback.getError();
@@ -1597,6 +1606,7 @@ public class WebAuthProviderTest {
         assertTrue(WebAuthProvider.resume(intent));
 
         mockAPI.takeRequest();
+        ShadowLooper.idleMainLooper();
 
         assertThat(authCallback, AuthCallbackMatcher.hasError());
         AuthenticationException error = authCallback.getError();
@@ -1642,6 +1652,7 @@ public class WebAuthProviderTest {
         assertTrue(WebAuthProvider.resume(intent));
 
         mockAPI.takeRequest();
+        ShadowLooper.idleMainLooper();
 
         assertThat(authCallback, AuthCallbackMatcher.hasError());
 
@@ -1686,7 +1697,7 @@ public class WebAuthProviderTest {
         }).when(pkce).getToken(eq("1234"), callbackCaptor.capture());
 
         assertTrue(WebAuthProvider.resume(intent));
-
+        ShadowLooper.idleMainLooper();
         assertThat(callback, AuthCallbackMatcher.hasError());
         AuthenticationException error = callback.getError();
         assertThat(error, is(notNullValue()));

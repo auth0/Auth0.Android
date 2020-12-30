@@ -63,24 +63,27 @@ android {
         consumerProguardFiles '../proguard/proguard-gson.pro', '../proguard/proguard-okio.pro'
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
-    kotlinOptions {
-        jvmTarget = '1.8'
-        freeCompilerArgs += [
-                '-Xexplicit-api=strict', // or '-Xexplicit-api=warning'
-        ]
-    }
     lintOptions {
         htmlReport true
         abortOnError true
     }
     testOptions {
         unitTests {
+            all {
+                maxHeapSize = "1024m"
+            }
             includeAndroidResources = true
         }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+        freeCompilerArgs += [
+                '-Xexplicit-api=strict', // or '-Xexplicit-api=warning'
+        ]
     }
 }
 
@@ -102,6 +105,6 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:3.6.28'
     testImplementation 'com.squareup.okhttp:mockwebserver:2.7.5'
     testImplementation 'com.jayway.awaitility:awaitility:1.7.0'
-    testImplementation 'org.robolectric:robolectric:4.3.1'
+    testImplementation 'org.robolectric:robolectric:4.4'
     testImplementation 'androidx.test.espresso:espresso-intents:3.3.0'
 }

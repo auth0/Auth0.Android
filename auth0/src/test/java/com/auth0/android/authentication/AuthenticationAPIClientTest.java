@@ -50,7 +50,6 @@ import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
-import org.apache.tools.ant.filters.StringInputStream;
 import org.hamcrest.collection.IsMapContaining;
 import org.junit.After;
 import org.junit.Before;
@@ -60,7 +59,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+import org.robolectric.shadows.ShadowLooper;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
@@ -128,7 +129,8 @@ public class AuthenticationAPIClientTest {
     @Test
     public void shouldUseCustomNetworkingClient() throws IOException {
         Auth0 account = new Auth0("client-id", "https://tenant.auth0.com/");
-        InputStream inputStream = new StringInputStream("{\"access_token\":\"something\"}");
+        String jsonResponse = "{\"access_token\":\"something\"}";
+        InputStream inputStream = new ByteArrayInputStream(jsonResponse.getBytes());
         ServerResponse response = new ServerResponse(200, inputStream, Collections.emptyMap());
         NetworkingClient networkingClient = mock(NetworkingClient.class);
         when(networkingClient.load(anyString(), any(RequestOptions.class))).thenReturn(response);
@@ -207,6 +209,7 @@ public class AuthenticationAPIClientTest {
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
         client.loginWithOTP("ey30.the-mfa-token.value", "123456")
                 .start(callback);
+        ShadowLooper.idleMainLooper();
         assertThat(callback, hasPayloadOfType(Credentials.class));
 
         final RecordedRequest request = mockAPI.takeRequest();
@@ -251,6 +254,7 @@ public class AuthenticationAPIClientTest {
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
         client.login(SUPPORT_AUTH0_COM, "some-password", MY_CONNECTION)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
         assertThat(callback, hasPayloadOfType(Credentials.class));
 
         final RecordedRequest request = mockAPI.takeRequest();
@@ -275,6 +279,7 @@ public class AuthenticationAPIClientTest {
 
         client.login(SUPPORT_AUTH0_COM, "some-password")
                 .start(callback);
+        ShadowLooper.idleMainLooper();
         assertThat(callback, hasPayloadOfType(Credentials.class));
 
         final RecordedRequest request = mockAPI.takeRequest();
@@ -321,6 +326,7 @@ public class AuthenticationAPIClientTest {
 
         client.userInfo("ACCESS_TOKEN")
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         assertThat(callback, hasPayloadOfType(UserProfile.class));
 
@@ -353,6 +359,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         client.loginWithNativeSocialToken("test-token-value", "test-token-type")
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -400,6 +407,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         client.loginWithPhoneNumber("+10101010101", "1234", MY_CONNECTION)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -425,6 +433,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         client.loginWithPhoneNumber("+10101010101", "1234")
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -475,6 +484,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         client.loginWithEmail(SUPPORT_AUTH0_COM, "1234", MY_CONNECTION)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -500,6 +510,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         client.loginWithEmail(SUPPORT_AUTH0_COM, "1234")
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -548,6 +559,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<DatabaseUser> callback = new MockAuthenticationCallback<>();
         client.createUser(SUPPORT_AUTH0_COM, PASSWORD, SUPPORT, MY_CONNECTION)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -590,6 +602,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<DatabaseUser> callback = new MockAuthenticationCallback<>();
         client.createUser(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -632,6 +645,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<DatabaseUser> callback = new MockAuthenticationCallback<>();
         client.createUser(SUPPORT_AUTH0_COM, PASSWORD, null, MY_CONNECTION)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -676,6 +690,7 @@ public class AuthenticationAPIClientTest {
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
         client.signUp(SUPPORT_AUTH0_COM, PASSWORD, SUPPORT, MY_CONNECTION)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -715,6 +730,7 @@ public class AuthenticationAPIClientTest {
         client.signUp(SUPPORT_AUTH0_COM, PASSWORD, SUPPORT, MY_CONNECTION)
                 .addSignUpParameters(custom)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -774,6 +790,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         client.signUp(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -808,6 +825,7 @@ public class AuthenticationAPIClientTest {
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
         client.signUp(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -839,6 +857,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.resetPassword(SUPPORT_AUTH0_COM, MY_CONNECTION)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -876,6 +895,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.resetPassword(SUPPORT_AUTH0_COM, MY_CONNECTION)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -915,6 +935,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithEmail(SUPPORT_AUTH0_COM, PasswordlessType.CODE, MY_CONNECTION)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -936,6 +957,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithEmail(SUPPORT_AUTH0_COM, PasswordlessType.CODE)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -975,6 +997,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithEmail(SUPPORT_AUTH0_COM, PasswordlessType.WEB_LINK)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -996,6 +1019,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithEmail(SUPPORT_AUTH0_COM, PasswordlessType.WEB_LINK, MY_CONNECTION)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -1035,6 +1059,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithEmail(SUPPORT_AUTH0_COM, PasswordlessType.ANDROID_LINK, MY_CONNECTION)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -1056,6 +1081,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithEmail(SUPPORT_AUTH0_COM, PasswordlessType.ANDROID_LINK)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -1095,6 +1121,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithSMS("+1123123123", PasswordlessType.CODE, MY_CONNECTION)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -1116,6 +1143,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithSMS("+1123123123", PasswordlessType.CODE)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -1155,6 +1183,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithSMS("+1123123123", PasswordlessType.WEB_LINK, MY_CONNECTION)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -1176,6 +1205,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithSMS("+1123123123", PasswordlessType.WEB_LINK)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -1215,6 +1245,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithSMS("+1123123123", PasswordlessType.ANDROID_LINK, MY_CONNECTION)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -1236,6 +1267,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithSMS("+1123123123", PasswordlessType.ANDROID_LINK)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -1275,6 +1307,7 @@ public class AuthenticationAPIClientTest {
         MockAuthenticationCallback<Map<String, PublicKey>> callback = new MockAuthenticationCallback<>();
         client.fetchJsonWebKeys()
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getPath(), equalTo("/.well-known/jwks.json"));
@@ -1306,6 +1339,7 @@ public class AuthenticationAPIClientTest {
         MockAuthenticationCallback<Authentication> callback = new MockAuthenticationCallback<>();
         client.getProfileAfter(client.login(SUPPORT_AUTH0_COM, "voidpassword", MY_CONNECTION))
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest firstRequest = mockAPI.takeRequest();
         assertThat(firstRequest.getPath(), equalTo("/oauth/token"));
@@ -1334,6 +1368,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
         client.revokeToken("refreshToken")
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -1373,6 +1408,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         client.renewAuth("refreshToken")
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
@@ -1440,6 +1476,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         client.token("code", "codeVerifier", "http://redirect.uri")
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getPath(), equalTo("/oauth/token"));
@@ -1461,6 +1498,7 @@ public class AuthenticationAPIClientTest {
         final MockAuthenticationCallback<Credentials> callback = new MockAuthenticationCallback<>();
         client.token("code", "codeVerifier", "http://redirect.uri")
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getPath(), equalTo("/oauth/token"));

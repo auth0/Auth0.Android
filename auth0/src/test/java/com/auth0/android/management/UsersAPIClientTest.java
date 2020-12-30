@@ -48,7 +48,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
-import org.apache.tools.ant.filters.StringInputStream;
 import org.hamcrest.collection.IsMapContaining;
 import org.hamcrest.collection.IsMapWithSize;
 import org.junit.After;
@@ -59,7 +58,9 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+import org.robolectric.shadows.ShadowLooper;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
@@ -128,7 +129,8 @@ public class UsersAPIClientTest {
     @Test
     public void shouldUseCustomNetworkingClient() throws IOException {
         Auth0 account = new Auth0("client-id", "https://tenant.auth0.com/");
-        InputStream inputStream = new StringInputStream("{\"id\":\"undercover\"}");
+        String jsonResponse = "{\"id\":\"undercover\"}";
+        InputStream inputStream = new ByteArrayInputStream(jsonResponse.getBytes());
         ServerResponse response = new ServerResponse(200, inputStream, Collections.emptyMap());
         NetworkingClient networkingClient = mock(NetworkingClient.class);
         when(networkingClient.load(anyString(), any(RequestOptions.class))).thenReturn(response);
@@ -136,6 +138,7 @@ public class UsersAPIClientTest {
 
         Request<UserProfile, ManagementException> request = client.getProfile("undercover");
         request.execute();
+        ShadowLooper.idleMainLooper();
 
         ArgumentCaptor<RequestOptions> optionsCaptor = ArgumentCaptor.forClass(RequestOptions.class);
         verify(networkingClient).load(eq("https://tenant.auth0.com/api/v2/users/undercover"), optionsCaptor.capture());
@@ -199,6 +202,7 @@ public class UsersAPIClientTest {
         final MockManagementCallback<List<UserIdentity>> callback = new MockManagementCallback<>();
         client.link(USER_ID_PRIMARY, TOKEN_SECONDARY)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY + "/identities"));
@@ -244,6 +248,7 @@ public class UsersAPIClientTest {
         final MockManagementCallback<List<UserIdentity>> callback = new MockManagementCallback<>();
         client.unlink(USER_ID_PRIMARY, USER_ID_SECONDARY, PROVIDER)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY + "/identities/" + PROVIDER + "/" + USER_ID_SECONDARY));
@@ -295,6 +300,7 @@ public class UsersAPIClientTest {
         final MockManagementCallback<UserProfile> callback = new MockManagementCallback<>();
         client.updateMetadata(USER_ID_PRIMARY, metadata)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY));
@@ -343,6 +349,7 @@ public class UsersAPIClientTest {
         final MockManagementCallback<UserProfile> callback = new MockManagementCallback<>();
         client.getProfile(USER_ID_PRIMARY)
                 .start(callback);
+        ShadowLooper.idleMainLooper();
 
         final RecordedRequest request = mockAPI.takeRequest();
         assertThat(request.getPath(), equalTo("/api/v2/users/" + USER_ID_PRIMARY));
