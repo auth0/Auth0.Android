@@ -21,59 +21,42 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+package com.auth0.android.authentication.request
 
-package com.auth0.android.authentication.request;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import com.auth0.android.Auth0Exception;
-import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.request.AuthenticationRequest;
-import com.auth0.android.request.Request;
-import com.auth0.android.result.Authentication;
-import com.auth0.android.result.Credentials;
-import com.auth0.android.result.UserProfile;
-
-import java.util.Map;
+import com.auth0.android.Auth0Exception
+import com.auth0.android.authentication.AuthenticationException
+import com.auth0.android.callback.BaseCallback
+import com.auth0.android.request.AuthenticationRequest
+import com.auth0.android.request.Request
+import com.auth0.android.result.Authentication
+import com.auth0.android.result.Credentials
+import com.auth0.android.result.UserProfile
 
 /**
  * Request to fetch a profile after a successful authentication with Auth0 Authentication API
  */
-public class ProfileRequest implements Request<Authentication, AuthenticationException> {
-
-    private static final String HEADER_AUTHORIZATION = "Authorization";
-
-    private final AuthenticationRequest authenticationRequest;
-    final Request<UserProfile, AuthenticationException> userInfoRequest;
-
-    /**
-     * @param authenticationRequest the request that will output a pair of credentials
-     * @param userInfoRequest       the /userinfo request that will be wrapped
-     */
-    public ProfileRequest(@NonNull AuthenticationRequest authenticationRequest, @NonNull Request<UserProfile, AuthenticationException> userInfoRequest) {
-        this.userInfoRequest = userInfoRequest;
-        this.authenticationRequest = authenticationRequest;
-    }
-
+public class ProfileRequest
+/**
+ * @param authenticationRequest the request that will output a pair of credentials
+ * @param userInfoRequest       the /userinfo request that will be wrapped
+ */(
+    private val authenticationRequest: AuthenticationRequest,
+    private val userInfoRequest: Request<UserProfile, AuthenticationException>
+) : Request<Authentication, AuthenticationException> {
     /**
      * Adds additional parameters for the login request
      *
      * @param parameters as a non-null dictionary
      * @return itself
      */
-    @NonNull
-    public ProfileRequest addParameters(@NonNull Map<String, String> parameters) {
-        authenticationRequest.addParameters(parameters);
-        return this;
+    override fun addParameters(parameters: Map<String, String>): ProfileRequest {
+        authenticationRequest.addParameters(parameters)
+        return this
     }
 
-    @NonNull
-    @Override
-    public ProfileRequest addParameter(@NonNull String name, @NonNull String value) {
-        authenticationRequest.addParameter(name, value);
-        return this;
+    override fun addParameter(name: String, value: String): ProfileRequest {
+        authenticationRequest.addParameter(name, value)
+        return this
     }
 
     /**
@@ -82,13 +65,11 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
      * @param name  of the header
      * @param value of the header
      * @return itself
-     * @see ProfileRequest#ProfileRequest(AuthenticationRequest, Request)
+     * @see ProfileRequest.ProfileRequest
      */
-    @NonNull
-    @Override
-    public ProfileRequest addHeader(@NonNull String name, @NonNull String value) {
-        authenticationRequest.addHeader(name, value);
-        return this;
+    override fun addHeader(name: String, value: String): ProfileRequest {
+        authenticationRequest.addHeader(name, value)
+        return this
     }
 
     /**
@@ -97,10 +78,9 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
      * @param scope value
      * @return itself
      */
-    @NonNull
-    public ProfileRequest setScope(@NonNull String scope) {
-        authenticationRequest.setScope(scope);
-        return this;
+    public fun setScope(scope: String): ProfileRequest {
+        authenticationRequest.setScope(scope)
+        return this
     }
 
     /**
@@ -109,10 +89,9 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
      * @param connection name
      * @return itself
      */
-    @NonNull
-    public ProfileRequest setConnection(@NonNull String connection) {
-        authenticationRequest.setConnection(connection);
-        return this;
+    public fun setConnection(connection: String): ProfileRequest {
+        authenticationRequest.setConnection(connection)
+        return this
     }
 
     /**
@@ -120,31 +99,26 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
      *
      * @param callback called on either success or failure
      */
-    @Override
-    public void start(@NonNull final BaseCallback<Authentication, AuthenticationException> callback) {
-        authenticationRequest.start(new BaseCallback<Credentials, AuthenticationException>() {
-            @Override
-            public void onSuccess(@Nullable final Credentials credentials) {
+    override fun start(callback: BaseCallback<Authentication, AuthenticationException>) {
+        authenticationRequest.start(object : BaseCallback<Credentials, AuthenticationException> {
+            override fun onSuccess(credentials: Credentials?) {
                 userInfoRequest
-                        .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.getAccessToken())
-                        .start(new BaseCallback<UserProfile, AuthenticationException>() {
-                            @Override
-                            public void onSuccess(@Nullable UserProfile profile) {
-                                callback.onSuccess(new Authentication(profile, credentials));
-                            }
+                    .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials!!.accessToken)
+                    .start(object : BaseCallback<UserProfile?, AuthenticationException> {
+                        override fun onSuccess(profile: UserProfile?) {
+                            callback.onSuccess(Authentication(profile!!, credentials))
+                        }
 
-                            @Override
-                            public void onFailure(@NonNull AuthenticationException error) {
-                                callback.onFailure(error);
-                            }
-                        });
+                        override fun onFailure(error: AuthenticationException) {
+                            callback.onFailure(error)
+                        }
+                    })
             }
 
-            @Override
-            public void onFailure(@NonNull AuthenticationException error) {
-                callback.onFailure(error);
+            override fun onFailure(error: AuthenticationException) {
+                callback.onFailure(error)
             }
-        });
+        })
     }
 
     /**
@@ -153,13 +127,16 @@ public class ProfileRequest implements Request<Authentication, AuthenticationExc
      * @return authentication object containing the user's tokens and profile
      * @throws Auth0Exception when either authentication or profile fetch fails
      */
-    @NonNull
-    @Override
-    public Authentication execute() throws Auth0Exception {
-        Credentials credentials = authenticationRequest.execute();
-        UserProfile profile = userInfoRequest
-                .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.getAccessToken())
-                .execute();
-        return new Authentication(profile, credentials);
+    @Throws(Auth0Exception::class)
+    override fun execute(): Authentication {
+        val credentials = authenticationRequest.execute()
+        val profile = userInfoRequest
+            .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.accessToken)
+            .execute()
+        return Authentication(profile, credentials)
+    }
+
+    private companion object {
+        private const val HEADER_AUTHORIZATION = "Authorization"
     }
 }
