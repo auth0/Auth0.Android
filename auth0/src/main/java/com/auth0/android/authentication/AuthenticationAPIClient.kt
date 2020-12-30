@@ -21,127 +21,45 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+package com.auth0.android.authentication
 
-package com.auth0.android.authentication;
-
-import android.content.Context;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
-
-import com.auth0.android.Auth0;
-import com.auth0.android.Auth0Exception;
-import com.auth0.android.authentication.request.DatabaseConnectionRequest;
-import com.auth0.android.authentication.request.ProfileRequest;
-import com.auth0.android.authentication.request.SignUpRequest;
-import com.auth0.android.request.AuthenticationRequest;
-import com.auth0.android.request.DefaultClient;
-import com.auth0.android.request.ErrorAdapter;
-import com.auth0.android.request.JsonAdapter;
-import com.auth0.android.request.NetworkingClient;
-import com.auth0.android.request.Request;
-import com.auth0.android.request.internal.BaseAuthenticationRequest;
-import com.auth0.android.request.internal.GsonAdapter;
-import com.auth0.android.request.internal.GsonProvider;
-import com.auth0.android.request.internal.RequestFactory;
-import com.auth0.android.result.Credentials;
-import com.auth0.android.result.DatabaseUser;
-import com.auth0.android.result.UserProfile;
-import com.auth0.android.util.Auth0UserAgent;
-import com.google.gson.Gson;
-import com.squareup.okhttp.HttpUrl;
-
-import org.jetbrains.annotations.NotNull;
-
-import java.io.IOException;
-import java.io.Reader;
-import java.security.PublicKey;
-import java.util.List;
-import java.util.Map;
-
-import kotlin.Unit;
-
-import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_AUTHORIZATION_CODE;
-import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_MFA_OTP;
-import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSWORD;
-import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP;
-import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_PASSWORD_REALM;
-import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE;
+import androidx.annotation.VisibleForTesting
+import com.auth0.android.Auth0
+import com.auth0.android.Auth0Exception
+import com.auth0.android.authentication.request.DatabaseConnectionRequest
+import com.auth0.android.authentication.request.ProfileRequest
+import com.auth0.android.authentication.request.SignUpRequest
+import com.auth0.android.request.*
+import com.auth0.android.request.internal.BaseAuthenticationRequest
+import com.auth0.android.request.internal.GsonAdapter
+import com.auth0.android.request.internal.GsonAdapter.Companion.forMap
+import com.auth0.android.request.internal.GsonAdapter.Companion.forMapOf
+import com.auth0.android.request.internal.GsonProvider
+import com.auth0.android.request.internal.RequestFactory
+import com.auth0.android.result.Credentials
+import com.auth0.android.result.DatabaseUser
+import com.auth0.android.result.UserProfile
+import com.google.gson.Gson
+import com.squareup.okhttp.HttpUrl
+import java.io.IOException
+import java.io.Reader
+import java.security.PublicKey
 
 /**
  * API client for Auth0 Authentication API.
  * <pre>
- * {@code
- * Auth0 auth0 = new Auth0("your_client_id", "your_domain");
+ * `Auth0 auth0 = new Auth0("your_client_id", "your_domain");
  * AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
- * }
- * </pre>
+` *
+</pre> *
  *
- * @see <a href="https://auth0.com/docs/auth-api">Auth API docs</a>
+ * @see [Auth API docs](https://auth0.com/docs/auth-api)
  */
-public class AuthenticationAPIClient {
-
-    private static final String SMS_CONNECTION = "sms";
-    private static final String EMAIL_CONNECTION = "email";
-    private static final String USERNAME_KEY = "username";
-    private static final String PASSWORD_KEY = "password";
-    private static final String EMAIL_KEY = "email";
-    private static final String PHONE_NUMBER_KEY = "phone_number";
-    private static final String OAUTH_CODE_KEY = "code";
-    private static final String REDIRECT_URI_KEY = "redirect_uri";
-    private static final String TOKEN_KEY = "token";
-    private static final String MFA_TOKEN_KEY = "mfa_token";
-    private static final String ONE_TIME_PASSWORD_KEY = "otp";
-    private static final String SUBJECT_TOKEN_KEY = "subject_token";
-    private static final String SUBJECT_TOKEN_TYPE_KEY = "subject_token_type";
-    private static final String SIGN_UP_PATH = "signup";
-    private static final String DB_CONNECTIONS_PATH = "dbconnections";
-    private static final String CHANGE_PASSWORD_PATH = "change_password";
-    private static final String PASSWORDLESS_PATH = "passwordless";
-    private static final String START_PATH = "start";
-    private static final String OAUTH_PATH = "oauth";
-    private static final String TOKEN_PATH = "token";
-    private static final String USER_INFO_PATH = "userinfo";
-    private static final String REVOKE_PATH = "revoke";
-    private static final String HEADER_AUTHORIZATION = "Authorization";
-    private static final String WELL_KNOWN_PATH = ".well-known";
-    private static final String JWKS_FILE_PATH = "jwks.json";
-
-    private final Auth0 auth0;
-    private final Gson gson;
-    private final RequestFactory<AuthenticationException> factory;
-
-    private static ErrorAdapter<AuthenticationException> createErrorAdapter() {
-        GsonAdapter<Map<String, Object>> mapAdapter = GsonAdapter.Companion.forMap(new Gson());
-        return new ErrorAdapter<AuthenticationException>() {
-
-            @Override
-            public AuthenticationException fromRawResponse(int statusCode, @NotNull String bodyText, @NotNull Map<String, ? extends List<String>> headers) {
-                return new AuthenticationException(bodyText, statusCode);
-            }
-
-            @Override
-            public AuthenticationException fromJsonResponse(int statusCode, @NotNull Reader reader) throws IOException {
-                Map<String, Object> values = mapAdapter.fromJson(reader);
-                return new AuthenticationException(values, statusCode);
-            }
-
-            @Override
-            public AuthenticationException fromException(@NotNull Throwable err) {
-                return new AuthenticationException("Something went wrong", new Auth0Exception("Something went wrong", err));
-            }
-        };
-    }
-
-    /**
-     * Creates a new API client instance providing Auth0 account info.
-     *
-     * @param auth0 account information
-     */
-    public AuthenticationAPIClient(@NonNull Auth0 auth0) {
-        this(auth0, new RequestFactory<>(new DefaultClient(auth0.getConnectTimeoutInSeconds()), createErrorAdapter()), GsonProvider.buildGson());
-    }
+public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal constructor(
+    private val auth0: Auth0,
+    private val factory: RequestFactory<AuthenticationException>,
+    private val gson: Gson
+) {
 
     /**
      * Creates a new API client instance providing Auth0 account info and a custom Networking Client.
@@ -149,352 +67,283 @@ public class AuthenticationAPIClient {
      * @param auth0            account information
      * @param networkingClient the networking client implementation
      */
-    public AuthenticationAPIClient(@NonNull Auth0 auth0, @NonNull NetworkingClient networkingClient) {
-        this(auth0, new RequestFactory<>(networkingClient, createErrorAdapter()), GsonProvider.buildGson());
-    }
+    @JvmOverloads
+    public constructor(
+        auth0: Auth0,
+        networkingClient: NetworkingClient = DefaultClient(auth0.connectTimeoutInSeconds)
+    ) : this(
+        auth0,
+        RequestFactory<AuthenticationException>(networkingClient, createErrorAdapter()),
+        GsonProvider.buildGson()
+    )
 
-    @VisibleForTesting
-    AuthenticationAPIClient(@NonNull Auth0 auth0, @NonNull RequestFactory<AuthenticationException> factory, @NonNull Gson gson) {
-        this.auth0 = auth0;
-        this.factory = factory;
-        this.gson = gson;
-        final Auth0UserAgent auth0UserAgent = auth0.getAuth0UserAgent();
-        if (auth0UserAgent != null) {
-            factory.setClientInfo(auth0UserAgent.getValue());
-        }
-    }
-
-    @NonNull
-    public String getClientId() {
-        return auth0.getClientId();
-    }
-
-    @NonNull
-    public String getBaseURL() {
-        return auth0.getDomainUrl();
-    }
+    public val clientId: String
+        get() = auth0.clientId
+    public val baseURL: String
+        get() = auth0.getDomainUrl()
 
     /**
      * Set the value of 'User-Agent' header for every request to Auth0 Authentication API
      *
      * @param userAgent value to send in every request to Auth0
      */
-    @SuppressWarnings("unused")
-    public void setUserAgent(@NonNull String userAgent) {
-        factory.setUserAgent(userAgent);
+    public fun setUserAgent(userAgent: String) {
+        factory.setUserAgent(userAgent)
     }
 
     /**
      * Log in a user with email/username and password for a connection/realm.
-     * It will use the password-realm grant type for the {@code /oauth/token} endpoint
+     * It will use the password-realm grant type for the `/oauth/token` endpoint
      * Example:
      * <pre>
-     * {@code
-     * client
-     *      .login("{username or email}", "{password}", "{database connection name}")
-     *      .start(new BaseCallback<Credentials>() {
-     *          {@literal}Override
-     *          public void onSuccess(Credentials payload) { }
+     * `client
+     * .login("{username or email}", "{password}", "{database connection name}")
+     * .start(new BaseCallback<Credentials>() {
+     * {}Override
+     * public void onSuccess(Credentials payload) { }
      *
-     *          {@literal}Override
-     *          public void onFailure(AuthenticationException error) { }
-     *      });
-     * }
-     * </pre>
+     * {}Override
+     * public void onFailure(AuthenticationException error) { }
+     * });
+    ` *
+    </pre> *
      *
      * @param usernameOrEmail   of the user depending of the type of DB connection
      * @param password          of the user
      * @param realmOrConnection realm to use in the authorize flow or the name of the database to authenticate with.
-     * @return a request to configure and start that will yield {@link Credentials}
+     * @return a request to configure and start that will yield [Credentials]
      */
-    @NonNull
-    public AuthenticationRequest login(@NonNull String usernameOrEmail, @NonNull String password, @NonNull String realmOrConnection) {
-        ParameterBuilder builder = ParameterBuilder.newBuilder()
-                .set(USERNAME_KEY, usernameOrEmail)
-                .set(PASSWORD_KEY, password);
-
-        final Map<String, String> parameters = builder
-                .setGrantType(GRANT_TYPE_PASSWORD_REALM)
-                .setRealm(realmOrConnection)
-                .asDictionary();
-        return loginWithToken(parameters);
+    public fun login(
+        usernameOrEmail: String,
+        password: String,
+        realmOrConnection: String
+    ): AuthenticationRequest {
+        val builder = ParameterBuilder.newBuilder()
+            .set(USERNAME_KEY, usernameOrEmail)
+            .set(PASSWORD_KEY, password)
+        val parameters = builder
+            .setGrantType(ParameterBuilder.GRANT_TYPE_PASSWORD_REALM)
+            .setRealm(realmOrConnection)
+            .asDictionary()
+        return loginWithToken(parameters)
     }
 
     /**
      * Log in a user with email/username and password using the password grant and the default directory
      * Example usage:
      * <pre>
-     * {@code
-     * client.login("{username or email}", "{password}")
-     *      .start(new BaseCallback<Credentials>() {
-     *          {@literal}Override
-     *          public void onSuccess(Credentials payload) { }
+     * `client.login("{username or email}", "{password}")
+     * .start(new BaseCallback<Credentials>() {
+     * {}Override
+     * public void onSuccess(Credentials payload) { }
      *
-     *          {@literal}Override
-     *          public void onFailure(AuthenticationException error) { }
-     *      });
-     * }
-     * </pre>
+     * {}Override
+     * public void onFailure(AuthenticationException error) { }
+     * });
+    ` *
+    </pre> *
      *
      * @param usernameOrEmail of the user
      * @param password        of the user
-     * @return a request to configure and start that will yield {@link Credentials}
+     * @return a request to configure and start that will yield [Credentials]
      */
-    @NonNull
-    public AuthenticationRequest login(@NonNull String usernameOrEmail, @NonNull String password) {
-        Map<String, String> requestParameters = ParameterBuilder.newBuilder()
-                .set(USERNAME_KEY, usernameOrEmail)
-                .set(PASSWORD_KEY, password)
-                .setGrantType(GRANT_TYPE_PASSWORD)
-                .asDictionary();
-
-        return loginWithToken(requestParameters);
+    public fun login(usernameOrEmail: String, password: String): AuthenticationRequest {
+        val requestParameters = ParameterBuilder.newBuilder()
+            .set(USERNAME_KEY, usernameOrEmail)
+            .set(PASSWORD_KEY, password)
+            .setGrantType(ParameterBuilder.GRANT_TYPE_PASSWORD)
+            .asDictionary()
+        return loginWithToken(requestParameters)
     }
 
     /**
      * Log in a user using the One Time Password code after they have received the 'mfa_required' error.
      * The MFA token tells the server the username or email, password and realm values sent on the first request.
-     * Requires your client to have the <b>MFA</b> Grant Type enabled. See <a href="https://auth0.com/docs/clients/client-grant-types">Client Grant Types</a> to learn how to enable it.* Example usage:
+     * Requires your client to have the **MFA** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.* Example usage:
      * <pre>
-     * {@code
-     * client.loginWithOTP("{mfa token}", "{one time password}")
-     *      .start(new BaseCallback<Credentials>() {
-     *          {@literal}Override
-     *          public void onSuccess(Credentials payload) { }
+     * `client.loginWithOTP("{mfa token}", "{one time password}")
+     * .start(new BaseCallback<Credentials>() {
+     * {}Override
+     * public void onSuccess(Credentials payload) { }
      *
-     *          {@literal}Override
-     *          public void onFailure(AuthenticationException error) { }
-     *      });
-     * }
-     * </pre>
+     * {}Override
+     * public void onFailure(AuthenticationException error) { }
+     * });
+    ` *
+    </pre> *
      *
-     * @param mfaToken the token received in the previous {@link #login(String, String, String)} response.
+     * @param mfaToken the token received in the previous [.login] response.
      * @param otp      the one time password code provided by the resource owner, typically obtained from an
-     *                 MFA application such as Google Authenticator or Guardian.
-     * @return a request to configure and start that will yield {@link Credentials}
+     * MFA application such as Google Authenticator or Guardian.
+     * @return a request to configure and start that will yield [Credentials]
      */
-    @NonNull
-    public AuthenticationRequest loginWithOTP(@NonNull String mfaToken, @NonNull String otp) {
-        Map<String, String> parameters = ParameterBuilder.newBuilder()
-                .setGrantType(GRANT_TYPE_MFA_OTP)
-                .set(MFA_TOKEN_KEY, mfaToken)
-                .set(ONE_TIME_PASSWORD_KEY, otp)
-                .asDictionary();
-
-        return loginWithToken(parameters);
+    public fun loginWithOTP(mfaToken: String, otp: String): AuthenticationRequest {
+        val parameters = ParameterBuilder.newBuilder()
+            .setGrantType(ParameterBuilder.GRANT_TYPE_MFA_OTP)
+            .set(MFA_TOKEN_KEY, mfaToken)
+            .set(ONE_TIME_PASSWORD_KEY, otp)
+            .asDictionary()
+        return loginWithToken(parameters)
     }
 
     /**
-     * Log in a user using a token obtained from a Native Social Identity Provider, such as Facebook, using <a href="https://auth0.com/docs/api/authentication#token-exchange-for-native-social">'\oauth\token' endpoint</a>
+     * Log in a user using a token obtained from a Native Social Identity Provider, such as Facebook, using ['\oauth\token' endpoint](https://auth0.com/docs/api/authentication#token-exchange-for-native-social)
      * The default scope used is 'openid'.
      * Example usage:
      * <pre>
-     * {@code
-     * client.loginWithNativeSocialToken("{subject token}", "{subject token type}")
-     *      .start(new BaseCallback<Credentials>() {
-     *          {@literal}Override
-     *          public void onSuccess(Credentials payload) { }
+     * `client.loginWithNativeSocialToken("{subject token}", "{subject token type}")
+     * .start(new BaseCallback<Credentials>() {
+     * {}Override
+     * public void onSuccess(Credentials payload) { }
      *
-     *          {@literal}Override
-     *          public void onFailure(AuthenticationException error) { }
-     *      });
-     * }
-     * </pre>
+     * {}Override
+     * public void onFailure(AuthenticationException error) { }
+     * });
+    ` *
+    </pre> *
      *
      * @param token     the subject token, typically obtained through the Identity Provider's SDK
      * @param tokenType the subject token type that is associated with this Identity Provider. e.g. 'http://auth0.com/oauth/token-type/facebook-session-access-token'
-     * @return a request to configure and start that will yield {@link Credentials}
+     * @return a request to configure and start that will yield [Credentials]
      */
-    @NonNull
-    public AuthenticationRequest loginWithNativeSocialToken(@NonNull String token, @NonNull String tokenType) {
-        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
-                .addPathSegment(OAUTH_PATH)
-                .addPathSegment(TOKEN_PATH)
-                .build();
-
-        Map<String, String> parameters = ParameterBuilder.newAuthenticationBuilder()
-                .setGrantType(GRANT_TYPE_TOKEN_EXCHANGE)
-                .setClientId(getClientId())
-                .set(SUBJECT_TOKEN_KEY, token)
-                .set(SUBJECT_TOKEN_TYPE_KEY, tokenType)
-                .asDictionary();
-
-        GsonAdapter<Credentials> credentialsAdapter = new GsonAdapter<>(Credentials.class, gson);
-        BaseAuthenticationRequest request = new BaseAuthenticationRequest(factory.post(url.toString(), credentialsAdapter));
-        request.addParameters(parameters);
-        return request;
+    public fun loginWithNativeSocialToken(token: String, tokenType: String): AuthenticationRequest {
+        val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+            .addPathSegment(OAUTH_PATH)
+            .addPathSegment(TOKEN_PATH)
+            .build()
+        val parameters = ParameterBuilder.newAuthenticationBuilder()
+            .setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
+            .setClientId(clientId)
+            .set(SUBJECT_TOKEN_KEY, token)
+            .set(SUBJECT_TOKEN_TYPE_KEY, tokenType)
+            .asDictionary()
+        val credentialsAdapter = GsonAdapter(
+            Credentials::class.java, gson
+        )
+        val request = BaseAuthenticationRequest(factory.post(url.toString(), credentialsAdapter))
+        request.addParameters(parameters)
+        return request
     }
 
     /**
      * Log in a user using a phone number and a verification code received via SMS (Part of passwordless login flow)
      * The default scope used is 'openid'.
-     * <p>
-     * Your Application must have the <b>Passwordless OTP</b> Grant Type enabled.
-     * <p>
+     *
+     *
+     * Your Application must have the **Passwordless OTP** Grant Type enabled.
+     *
+     *
      * Example usage:
      * <pre>
-     * {@code
-     * client.loginWithPhoneNumber("{phone number}", "{code}", "{passwordless connection name}")
-     *      .start(new BaseCallback<Credentials>() {
-     *          {@literal}Override
-     *          public void onSuccess(Credentials payload) { }
+     * `client.loginWithPhoneNumber("{phone number}", "{code}", "{passwordless connection name}")
+     * .start(new BaseCallback<Credentials>() {
+     * {}Override
+     * public void onSuccess(Credentials payload) { }
      *
-     *          {@literal}@Override
-     *          public void onFailure(AuthenticationException error) { }
-     *      });
-     * }
-     * </pre>
+     * {}@Override
+     * public void onFailure(AuthenticationException error) { }
+     * });
+    ` *
+    </pre> *
      *
      * @param phoneNumber       where the user received the verification code
      * @param verificationCode  sent by Auth0 via SMS
      * @param realmOrConnection to end the passwordless authentication on
-     * @return a request to configure and start that will yield {@link Credentials}
+     * @return a request to configure and start that will yield [Credentials]
      */
-    @NonNull
-    public AuthenticationRequest loginWithPhoneNumber(@NonNull String phoneNumber, @NonNull String verificationCode, @NonNull String realmOrConnection) {
-        ParameterBuilder builder = ParameterBuilder.newAuthenticationBuilder()
-                .setClientId(getClientId())
-                .set(USERNAME_KEY, phoneNumber);
-
-        Map<String, String> parameters = builder
-                .setGrantType(GRANT_TYPE_PASSWORDLESS_OTP)
-                .set(ONE_TIME_PASSWORD_KEY, verificationCode)
-                .setRealm(realmOrConnection)
-                .asDictionary();
-        return loginWithToken(parameters);
-    }
-
-    /**
-     * Log in a user using a phone number and a verification code received via SMS (Part of passwordless login flow).
-     * Your Application must have the <b>Passwordless OTP</b> Grant Type enabled.
-     * By default it will try to authenticate using the "sms" connection.
-     * Example usage:
-     * <pre>
-     * {@code
-     * client.loginWithPhoneNumber("{phone number}", "{code}")
-     *      .start(new BaseCallback<Credentials>() {
-     *          {@literal}Override
-     *          public void onSuccess(Credentials payload) { }
-     *
-     *          {@literal}@Override
-     *          public void onFailure(AuthenticationException error) { }
-     *      });
-     * }
-     * </pre>
-     *
-     * @param phoneNumber      where the user received the verification code
-     * @param verificationCode sent by Auth0 via SMS
-     * @return a request to configure and start that will yield {@link Credentials}
-     */
-    @NonNull
-    public AuthenticationRequest loginWithPhoneNumber(@NonNull String phoneNumber, @NonNull String verificationCode) {
-        return loginWithPhoneNumber(phoneNumber, verificationCode, SMS_CONNECTION);
+    @JvmOverloads
+    public fun loginWithPhoneNumber(
+        phoneNumber: String,
+        verificationCode: String,
+        realmOrConnection: String = SMS_CONNECTION
+    ): AuthenticationRequest {
+        val builder = ParameterBuilder.newAuthenticationBuilder()
+            .setClientId(clientId)
+            .set(USERNAME_KEY, phoneNumber)
+        val parameters = builder
+            .setGrantType(ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP)
+            .set(ONE_TIME_PASSWORD_KEY, verificationCode)
+            .setRealm(realmOrConnection)
+            .asDictionary()
+        return loginWithToken(parameters)
     }
 
     /**
      * Log in a user using an email and a verification code received via Email (Part of passwordless login flow).
      * The default scope used is 'openid'.
-     * Your Application must have the <b>Passwordless OTP</b> Grant Type enabled.
+     * Your Application must have the **Passwordless OTP** Grant Type enabled.
      * Example usage:
      * <pre>
-     * {@code
-     * client.loginWithEmail("{email}", "{code}", "{passwordless connection name}")
-     *      .start(new BaseCallback<Credentials>() {
-     *          {@literal}Override
-     *          public void onSuccess(Credentials payload) { }
+     * `client.loginWithEmail("{email}", "{code}", "{passwordless connection name}")
+     * .start(new BaseCallback<Credentials>() {
+     * {}Override
+     * public void onSuccess(Credentials payload) { }
      *
-     *          {@literal}@Override
-     *          public void onFailure(AuthenticationException error) { }
-     *      });
-     * }
-     * </pre>
+     * {}@Override
+     * public void onFailure(AuthenticationException error) { }
+     * });
+    ` *
+    </pre> *
      *
      * @param email             where the user received the verification code
      * @param verificationCode  sent by Auth0 via Email
      * @param realmOrConnection to end the passwordless authentication on
-     * @return a request to configure and start that will yield {@link Credentials}
+     * @return a request to configure and start that will yield [Credentials]
      */
-    @NonNull
-    public AuthenticationRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode, @NonNull String realmOrConnection) {
-        ParameterBuilder builder = ParameterBuilder.newAuthenticationBuilder()
-                .setClientId(getClientId())
-                .set(USERNAME_KEY, email);
-
-        Map<String, String> parameters = builder
-                .setGrantType(GRANT_TYPE_PASSWORDLESS_OTP)
-                .set(ONE_TIME_PASSWORD_KEY, verificationCode)
-                .setRealm(realmOrConnection)
-                .asDictionary();
-        return loginWithToken(parameters);
-    }
-
-    /**
-     * Log in a user using an email and a verification code received via Email (Part of passwordless login flow)
-     * By default it will try to authenticate using the "email" connection.
-     * Your Application must have the <b>Passwordless OTP</b> Grant Type enabled.
-     * Example usage:
-     * <pre>
-     * {@code
-     * client.loginWithEmail("{email}", "{code}")
-     *      .start(new BaseCallback<Credentials>() {
-     *          {@literal}Override
-     *          public void onSuccess(Credentials payload) { }
-     *
-     *          {@literal}@Override
-     *          public void onFailure(AuthenticationException error) { }
-     *      });
-     * }
-     * </pre>
-     *
-     * @param email            where the user received the verification code
-     * @param verificationCode sent by Auth0 via Email
-     * @return a request to configure and start that will yield {@link Credentials}
-     */
-    @NonNull
-    public AuthenticationRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode) {
-        return loginWithEmail(email, verificationCode, EMAIL_CONNECTION);
+    @JvmOverloads
+    public fun loginWithEmail(
+        email: String,
+        verificationCode: String,
+        realmOrConnection: String = EMAIL_CONNECTION
+    ): AuthenticationRequest {
+        val builder = ParameterBuilder.newAuthenticationBuilder()
+            .setClientId(clientId)
+            .set(USERNAME_KEY, email)
+        val parameters = builder
+            .setGrantType(ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP)
+            .set(ONE_TIME_PASSWORD_KEY, verificationCode)
+            .setRealm(realmOrConnection)
+            .asDictionary()
+        return loginWithToken(parameters)
     }
 
     /**
      * Returns the information of the user associated with the given access_token.
      * Example usage:
      * <pre>
-     * {@code
-     * client.userInfo("{access_token}")
-     *      .start(new BaseCallback<UserProfile>() {
-     *          {@literal}Override
-     *          public void onSuccess(UserProfile payload) { }
+     * `client.userInfo("{access_token}")
+     * .start(new BaseCallback<UserProfile>() {
+     * {}Override
+     * public void onSuccess(UserProfile payload) { }
      *
-     *          {@literal}@Override
-     *          public void onFailure(AuthenticationException error) { }
-     *      });
-     * }
-     * </pre>
+     * {}@Override
+     * public void onFailure(AuthenticationException error) { }
+     * });
+    ` *
+    </pre> *
      *
      * @param accessToken used to fetch it's information
      * @return a request to start
      */
-    @NonNull
-    public Request<UserProfile, AuthenticationException> userInfo(@NonNull String accessToken) {
+    public fun userInfo(accessToken: String): Request<UserProfile, AuthenticationException> {
         return profileRequest()
-                .addHeader(HEADER_AUTHORIZATION, "Bearer " + accessToken);
+            .addHeader(HEADER_AUTHORIZATION, "Bearer $accessToken")
     }
 
     /**
-     * Creates a user in a DB connection using <a href="https://auth0.com/docs/api/authentication#signup">'/dbconnections/signup' endpoint</a>
+     * Creates a user in a DB connection using ['/dbconnections/signup' endpoint](https://auth0.com/docs/api/authentication#signup)
      * Example usage:
      * <pre>
-     * {@code
-     * client.createUser("{email}", "{password}", "{username}", "{database connection name}")
-     *      .start(new BaseCallback<DatabaseUser>() {
-     *          {@literal}Override
-     *          public void onSuccess(DatabaseUser payload) { }
+     * `client.createUser("{email}", "{password}", "{username}", "{database connection name}")
+     * .start(new BaseCallback<DatabaseUser>() {
+     * {}Override
+     * public void onSuccess(DatabaseUser payload) { }
      *
-     *          {@literal}@Override
-     *          public void onFailure(AuthenticationException error) { }
-     *      });
-     * }
-     * </pre>
+     * {}@Override
+     * public void onFailure(AuthenticationException error) { }
+     * });
+    ` *
+    </pre> *
      *
      * @param email      of the user and must be non null
      * @param password   of the user and must be non null
@@ -502,150 +351,102 @@ public class AuthenticationAPIClient {
      * @param connection of the database to create the user on
      * @return a request to start
      */
-    @NonNull
-    public DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUser(@NonNull String email, @NonNull String password, @Nullable String username, @NonNull String connection) {
-        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
-                .addPathSegment(DB_CONNECTIONS_PATH)
-                .addPathSegment(SIGN_UP_PATH)
-                .build();
-
-        final Map<String, String> parameters = ParameterBuilder.newBuilder()
-                .set(USERNAME_KEY, username)
-                .set(EMAIL_KEY, email)
-                .set(PASSWORD_KEY, password)
-                .setConnection(connection)
-                .setClientId(getClientId())
-                .asDictionary();
-
-        JsonAdapter<DatabaseUser> databaseUserAdapter = new GsonAdapter<>(DatabaseUser.class, gson);
-        final Request<DatabaseUser, AuthenticationException> request = factory.post(url.toString(), databaseUserAdapter)
-                .addParameters(parameters);
-        return new DatabaseConnectionRequest<>(request);
+    @JvmOverloads
+    public fun createUser(
+        email: String,
+        password: String,
+        username: String? = null,
+        connection: String
+    ): DatabaseConnectionRequest<DatabaseUser, AuthenticationException> {
+        val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+            .addPathSegment(DB_CONNECTIONS_PATH)
+            .addPathSegment(SIGN_UP_PATH)
+            .build()
+        val parameters = ParameterBuilder.newBuilder()
+            .set(USERNAME_KEY, username)
+            .set(EMAIL_KEY, email)
+            .set(PASSWORD_KEY, password)
+            .setConnection(connection)
+            .setClientId(clientId)
+            .asDictionary()
+        val databaseUserAdapter: JsonAdapter<DatabaseUser> = GsonAdapter(
+            DatabaseUser::class.java, gson
+        )
+        val request = factory.post(url.toString(), databaseUserAdapter)
+            .addParameters(parameters)
+        return DatabaseConnectionRequest(request)
     }
 
     /**
-     * Creates a user in a DB connection using <a href="https://auth0.com/docs/api/authentication#signup">'/dbconnections/signup' endpoint</a>
-     * Example usage:
-     * <pre>
-     * {@code
-     * client.createUser("{email}", "{password}", "{database connection name}")
-     *      .start(new BaseCallback<DatabaseUser>() {
-     *          {@literal}Override
-     *          public void onSuccess(DatabaseUser payload) { }
-     *
-     *          {@literal}@Override
-     *          public void onFailure(AuthenticationException error) { }
-     *      });
-     * }
-     * </pre>
-     *
-     * @param email      of the user and must be non null
-     * @param password   of the user and must be non null
-     * @param connection of the database to create the user on
-     * @return a request to start
-     */
-    @NonNull
-    public DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUser(@NonNull String email, @NonNull String password, @NonNull String connection) {
-        return createUser(email, password, null, connection);
-    }
-
-    /**
-     * Creates a user in a DB connection using <a href="https://auth0.com/docs/api/authentication#signup">'/dbconnections/signup' endpoint</a>
+     * Creates a user in a DB connection using ['/dbconnections/signup' endpoint](https://auth0.com/docs/api/authentication#signup)
      * and then logs in the user.
      * Example usage:
      * <pre>
-     * {@code
-     * client.signUp("{email}", "{password}", "{username}", "{database connection name}")
-     *      .start(new BaseCallback<Credentials>() {
-     *          {@literal}Override
-     *          public void onSuccess(Credentials payload) {}
+     * `client.signUp("{email}", "{password}", "{username}", "{database connection name}")
+     * .start(new BaseCallback<Credentials>() {
+     * {}Override
+     * public void onSuccess(Credentials payload) {}
      *
-     *          {@literal}Override
-     *          public void onFailure(AuthenticationException error) {}
-     *      });
-     * }
-     * </pre>
+     * {}Override
+     * public void onFailure(AuthenticationException error) {}
+     * });DefaultClient(auth0.connectTimeoutInSeconds)
+    ` *
+    </pre> *
      *
      * @param email      of the user and must be non null
      * @param password   of the user and must be non null
      * @param username   of the user and must be non null
      * @param connection of the database to sign up with
-     * @return a request to configure and start that will yield {@link Credentials}
+     * @return a request to configure and start that will yield [Credentials]
      */
-    @NonNull
-    public SignUpRequest signUp(@NonNull String email, @NonNull String password, @NonNull String username, @NonNull String connection) {
-        final DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUserRequest = createUser(email, password, username, connection);
-        final AuthenticationRequest authenticationRequest = login(email, password, connection);
-
-        return new SignUpRequest(createUserRequest, authenticationRequest);
+    @JvmOverloads
+    public fun signUp(
+        email: String,
+        password: String,
+        username: String? = null,
+        connection: String
+    ): SignUpRequest {
+        val createUserRequest = createUser(email, password, username, connection)
+        val authenticationRequest = login(email, password, connection)
+        return SignUpRequest(createUserRequest, authenticationRequest)
     }
 
     /**
-     * Creates a user in a DB connection using <a href="https://auth0.com/docs/api/authentication#signup">'/dbconnections/signup' endpoint</a>
-     * and then logs in the user.
+     * Request a reset password using ['/dbconnections/change_password'](https://auth0.com/docs/api/authentication#change-password)
      * Example usage:
      * <pre>
-     * {@code
-     * client.signUp("{email}", "{password}", "{database connection name}")
-     *      .start(new BaseCallback<Credentials>() {
-     *          {@literal}Override
-     *          public void onSuccess(Credentials payload) {}
+     * `client.resetPassword("{email}", "{database connection name}")
+     * .start(new BaseCallback<Void>() {
+     * {}Override
+     * public void onSuccess(Void payload) {}
      *
-     *          {@literal}Override
-     *          public void onFailure(AuthenticationException error) {}
-     *      });
-     * }
-     * </pre>
-     *
-     * @param email      of the user and must be non null
-     * @param password   of the user and must be non null
-     * @param connection of the database to sign up with
-     * @return a request to configure and start that will yield {@link Credentials}
-     */
-    @NonNull
-    public SignUpRequest signUp(@NonNull String email, @NonNull String password, @NonNull String connection) {
-        final DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUserRequest = createUser(email, password, connection);
-        final AuthenticationRequest authenticationRequest = login(email, password, connection);
-        return new SignUpRequest(createUserRequest, authenticationRequest);
-    }
-
-    /**
-     * Request a reset password using <a href="https://auth0.com/docs/api/authentication#change-password">'/dbconnections/change_password'</a>
-     * Example usage:
-     * <pre>
-     * {@code
-     * client.resetPassword("{email}", "{database connection name}")
-     *      .start(new BaseCallback<Void>() {
-     *          {@literal}Override
-     *          public void onSuccess(Void payload) {}
-     *
-     *          {@literal}Override
-     *          public void onFailure(AuthenticationException error) {}
-     *      });
-     * }
-     * </pre>
+     * {}Override
+     * public void onFailure(AuthenticationException error) {}
+     * });
+    ` *
+    </pre> *
      *
      * @param email      of the user to request the password reset. An email will be sent with the reset instructions.
      * @param connection of the database to request the reset password on
      * @return a request to configure and start
      */
-    @NonNull
     //TODO: Document the signature change (Unit)
-    public DatabaseConnectionRequest<Unit, AuthenticationException> resetPassword(@NonNull String email, @NonNull String connection) {
-        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
-                .addPathSegment(DB_CONNECTIONS_PATH)
-                .addPathSegment(CHANGE_PASSWORD_PATH)
-                .build();
-
-        final Map<String, String> parameters = ParameterBuilder.newBuilder()
-                .set(EMAIL_KEY, email)
-                .setClientId(getClientId())
-                .setConnection(connection)
-                .asDictionary();
-
-        final Request<Unit, AuthenticationException> request = factory.post(url.toString())
-                .addParameters(parameters);
-        return new DatabaseConnectionRequest<>(request);
+    public fun resetPassword(
+        email: String,
+        connection: String
+    ): DatabaseConnectionRequest<Unit, AuthenticationException> {
+        val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+            .addPathSegment(DB_CONNECTIONS_PATH)
+            .addPathSegment(CHANGE_PASSWORD_PATH)
+            .build()
+        val parameters = ParameterBuilder.newBuilder()
+            .set(EMAIL_KEY, email)
+            .setClientId(clientId)
+            .setConnection(connection)
+            .asDictionary()
+        val request = factory.post(url.toString())
+            .addParameters(parameters)
+        return DatabaseConnectionRequest(request)
     }
 
     /**
@@ -653,203 +454,144 @@ public class AuthenticationAPIClient {
      * Your Auth0 Application Type should be set to 'Native' and Token Endpoint Authentication Method must be set to 'None'.
      * Example usage:
      * <pre>
-     * {@code
-     * client.revokeToken("{refresh_token}")
-     *      .start(new BaseCallback<Void>() {
-     *          {@literal}Override
-     *          public void onSuccess(Void payload) {}
+     * `client.revokeToken("{refresh_token}")
+     * .start(new BaseCallback<Void>() {
+     * {}Override
+     * public void onSuccess(Void payload) {}
      *
-     *          {@literal}Override
-     *          public void onFailure(AuthenticationException error) {}
-     *      });
-     * }
-     * </pre>
+     * {}Override
+     * public void onFailure(AuthenticationException error) {}
+     * });
+    ` *
+    </pre> *
      *
      * @param refreshToken the token to revoke
      * @return a request to start
      */
-    @NonNull
     //TODO: Document the signature change (Unit)
-    public Request<Unit, AuthenticationException> revokeToken(@NonNull String refreshToken) {
-        final Map<String, String> parameters = ParameterBuilder.newBuilder()
-                .setClientId(getClientId())
-                .set(TOKEN_KEY, refreshToken)
-                .asDictionary();
-
-        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
-                .addPathSegment(OAUTH_PATH)
-                .addPathSegment(REVOKE_PATH)
-                .build();
-
+    public fun revokeToken(refreshToken: String): Request<Unit, AuthenticationException> {
+        val parameters = ParameterBuilder.newBuilder()
+            .setClientId(clientId)
+            .set(TOKEN_KEY, refreshToken)
+            .asDictionary()
+        val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+            .addPathSegment(OAUTH_PATH)
+            .addPathSegment(REVOKE_PATH)
+            .build()
         return factory.post(url.toString())
-                .addParameters(parameters);
+            .addParameters(parameters)
     }
 
     /**
      * Requests new Credentials using a valid Refresh Token. The received token will have the same audience and scope as first requested.
-     * <p>
+     *
+     *
      * This method will use the /oauth/token endpoint with the 'refresh_token' grant, and the response will include an id_token and an access_token if 'openid' scope was requested when the refresh_token was obtained.
      * Additionally, if the application has Refresh Token Rotation configured, a new one-time use refresh token will also be included in the response.
      * Example usage:
      * <pre>
-     * {@code
-     * client.renewAuth("{refresh_token}")
-     *      .addParameter("scope", "openid profile email")
-     *      .start(new BaseCallback<Credentials>() {
-     *          {@literal}Override
-     *          public void onSuccess(Credentials payload) { }
+     * `client.renewAuth("{refresh_token}")
+     * .addParameter("scope", "openid profile email")
+     * .start(new BaseCallback<Credentials>() {
+     * {}Override
+     * public void onSuccess(Credentials payload) { }
      *
-     *          {@literal}@Override
-     *          public void onFailure(AuthenticationException error) { }
-     *      });
-     * }
-     * </pre>
+     * {}@Override
+     * public void onFailure(AuthenticationException error) { }
+     * });
+    ` *
+    </pre> *
      *
      * @param refreshToken used to fetch the new Credentials.
      * @return a request to start
      */
-    @NonNull
-    public Request<Credentials, AuthenticationException> renewAuth(@NonNull String refreshToken) {
-        final Map<String, String> parameters = ParameterBuilder.newBuilder()
-                .setClientId(getClientId())
-                .setRefreshToken(refreshToken)
-                .setGrantType(ParameterBuilder.GRANT_TYPE_REFRESH_TOKEN)
-                .asDictionary();
-
-        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
-                .addPathSegment(OAUTH_PATH)
-                .addPathSegment(TOKEN_PATH)
-                .build();
-
-        GsonAdapter<Credentials> credentialsAdapter = new GsonAdapter<>(Credentials.class, gson);
+    public fun renewAuth(refreshToken: String): Request<Credentials, AuthenticationException> {
+        val parameters = ParameterBuilder.newBuilder()
+            .setClientId(clientId)
+            .setRefreshToken(refreshToken)
+            .setGrantType(ParameterBuilder.GRANT_TYPE_REFRESH_TOKEN)
+            .asDictionary()
+        val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+            .addPathSegment(OAUTH_PATH)
+            .addPathSegment(TOKEN_PATH)
+            .build()
+        val credentialsAdapter = GsonAdapter(
+            Credentials::class.java, gson
+        )
         return factory.post(url.toString(), credentialsAdapter)
-                .addParameters(parameters);
+            .addParameters(parameters)
     }
 
     /**
-     * Start a passwordless flow with an <a href="https://auth0.com/docs/api/authentication#get-code-or-link">Email</a>.
-     * Your Application must have the <b>Passwordless OTP</b> Grant Type enabled.
+     * Start a passwordless flow with an [Email](https://auth0.com/docs/api/authentication#get-code-or-link).
+     * Your Application must have the **Passwordless OTP** Grant Type enabled.
      * Example usage:
      * <pre>
-     * {@code
-     * client.passwordlessWithEmail("{email}", PasswordlessType.CODE, "{passwordless connection name}")
-     *      .start(new BaseCallback<Void>() {
-     *          {@literal}Override
-     *          public void onSuccess(Void payload) {}
+     * `client.passwordlessWithEmail("{email}", PasswordlessType.CODE, "{passwordless connection name}")
+     * .start(new BaseCallback<Void>() {
+     * {}Override
+     * public void onSuccess(Void payload) {}
      *
-     *          {@literal}Override
-     *          public void onFailure(AuthenticationException error) {}
-     *      });
-     * }
-     * </pre>
+     * {}Override
+     * public void onFailure(AuthenticationException error) {}
+     * });
+    ` *
+    </pre> *
      *
      * @param email            that will receive a verification code to use for login
-     * @param passwordlessType indicate whether the email should contain a code, link or magic link (android {@literal &} iOS)
+     * @param passwordlessType indicate whether the email should contain a code, link or magic link (android &amp; iOS)
      * @param connection       the passwordless connection to start the flow with.
      * @return a request to configure and start
      */
-    @NonNull
-    //TODO: Document the signature change (Unit)
-    public Request<Unit, AuthenticationException> passwordlessWithEmail(@NonNull String email, @NonNull PasswordlessType passwordlessType, @NonNull String connection) {
-        final Map<String, String> parameters = ParameterBuilder.newBuilder()
-                .set(EMAIL_KEY, email)
-                .setSend(passwordlessType)
-                .setConnection(connection)
-                .asDictionary();
-
+    @JvmOverloads  //TODO: Document the signature change (Unit)
+    public fun passwordlessWithEmail(
+        email: String,
+        passwordlessType: PasswordlessType,
+        connection: String = EMAIL_CONNECTION
+    ): Request<Unit, AuthenticationException> {
+        val parameters = ParameterBuilder.newBuilder()
+            .set(EMAIL_KEY, email)
+            .setSend(passwordlessType)
+            .setConnection(connection)
+            .asDictionary()
         return passwordless()
-                .addParameters(parameters);
+            .addParameters(parameters)
     }
 
     /**
-     * Start a passwordless flow with an <a href="https://auth0.com/docs/api/authentication#get-code-or-link">Email</a>
-     * By default it will try to authenticate using "email" connection.
-     * Your Application must have the <b>Passwordless OTP</b> Grant Type enabled.
+     * Start a passwordless flow with a [SMS](https://auth0.com/docs/api/authentication#get-code-or-link)
+     * Your Application requires to have the **Passwordless OTP** Grant Type enabled.
      * Example usage:
      * <pre>
-     * {@code
-     * client.passwordlessWithEmail("{email}", PasswordlessType.CODE)
-     *      .start(new BaseCallback<Void>() {
-     *          {@literal}Override
-     *          public void onSuccess(Void payload) {}
+     * `client.passwordlessWithSms("{phone number}", PasswordlessType.CODE, "{passwordless connection name}")
+     * .start(new BaseCallback<Void>() {
+     * {}Override
+     * public void onSuccess(Void payload) {}
      *
-     *          {@literal}Override
-     *          public void onFailure(AuthenticationException error) {}
-     *      });
-     * }
-     * </pre>
-     *
-     * @param email            that will receive a verification code to use for login
-     * @param passwordlessType indicate whether the email should contain a code, link or magic link (android {@literal &} iOS)
-     * @return a request to configure and start
-     */
-    @NonNull
-    //TODO: Document the signature change (Unit)
-    public Request<Unit, AuthenticationException> passwordlessWithEmail(@NonNull String email, @NonNull PasswordlessType passwordlessType) {
-        return passwordlessWithEmail(email, passwordlessType, EMAIL_CONNECTION);
-    }
-
-    /**
-     * Start a passwordless flow with a <a href="https://auth0.com/docs/api/authentication#get-code-or-link">SMS</a>
-     * Your Application requires to have the <b>Passwordless OTP</b> Grant Type enabled.
-     * Example usage:
-     * <pre>
-     * {@code
-     * client.passwordlessWithSms("{phone number}", PasswordlessType.CODE, "{passwordless connection name}")
-     *      .start(new BaseCallback<Void>() {
-     *          {@literal}Override
-     *          public void onSuccess(Void payload) {}
-     *
-     *          {@literal}Override
-     *          public void onFailure(AuthenticationException error) {}
-     *      });
-     * }
-     * </pre>
+     * {}Override
+     * public void onFailure(AuthenticationException error) {}
+     * });
+    ` *
+    </pre> *
      *
      * @param phoneNumber      where an SMS with a verification code will be sent
-     * @param passwordlessType indicate whether the SMS should contain a code, link or magic link (android {@literal &} iOS)
+     * @param passwordlessType indicate whether the SMS should contain a code, link or magic link (android &amp; iOS)
      * @param connection       the passwordless connection to start the flow with.
      * @return a request to configure and start
      */
-    @NonNull
-    //TODO: Document the signature change (Unit)
-    public Request<Unit, AuthenticationException> passwordlessWithSMS(@NonNull String phoneNumber, @NonNull PasswordlessType passwordlessType, @NonNull String connection) {
-        final Map<String, String> parameters = ParameterBuilder.newBuilder()
-                .set(PHONE_NUMBER_KEY, phoneNumber)
-                .setSend(passwordlessType)
-                .setConnection(connection)
-                .asDictionary();
+    @JvmOverloads  //TODO: Document the signature change (Unit)
+    public fun passwordlessWithSMS(
+        phoneNumber: String,
+        passwordlessType: PasswordlessType,
+        connection: String = SMS_CONNECTION
+    ): Request<Unit, AuthenticationException> {
+        val parameters = ParameterBuilder.newBuilder()
+            .set(PHONE_NUMBER_KEY, phoneNumber)
+            .setSend(passwordlessType)
+            .setConnection(connection)
+            .asDictionary()
         return passwordless()
-                .addParameters(parameters);
-    }
-
-    /**
-     * Start a passwordless flow with a <a href="https://auth0.com/docs/api/authentication#get-code-or-link">SMS</a>
-     * By default it will try to authenticate using the "sms" connection.
-     * Your Application requires to have the <b>Passwordless OTP</b> Grant Type enabled.
-     * See <a href="https://auth0.com/docs/clients/client-grant-types">Client Grant Types</a> to learn how to enable it.
-     * Example usage:
-     * <pre>
-     * {@code
-     * client.passwordlessWithSms("{phone number}", PasswordlessType.CODE)
-     *      .start(new BaseCallback<Void>() {
-     *          {@literal}Override
-     *          public void onSuccess(Void payload) {}
-     *
-     *          {@literal}Override
-     *          public void onFailure(AuthenticationException error) {}
-     *      });
-     * }
-     * </pre>
-     *
-     * @param phoneNumber      where an SMS with a verification code will be sent
-     * @param passwordlessType indicate whether the SMS should contain a code, link or magic link (android {@literal &} iOS)
-     * @return a request to configure and start
-     */
-    @NonNull
-    //TODO: Document the signature change (Unit)
-    public Request<Unit, AuthenticationException> passwordlessWithSMS(@NonNull String phoneNumber, @NonNull PasswordlessType passwordlessType) {
-        return passwordlessWithSMS(phoneNumber, passwordlessType, SMS_CONNECTION);
+            .addParameters(parameters)
     }
 
     /**
@@ -858,70 +600,69 @@ public class AuthenticationAPIClient {
      * @return a request to configure and start
      */
     //TODO: Document the signature change (Unit)
-    private Request<Unit, AuthenticationException> passwordless() {
-        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
-                .addPathSegment(PASSWORDLESS_PATH)
-                .addPathSegment(START_PATH)
-                .build();
-
-        final Map<String, String> parameters = ParameterBuilder.newBuilder()
-                .setClientId(getClientId())
-                .asDictionary();
-
+    private fun passwordless(): Request<Unit, AuthenticationException> {
+        val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+            .addPathSegment(PASSWORDLESS_PATH)
+            .addPathSegment(START_PATH)
+            .build()
+        val parameters = ParameterBuilder.newBuilder()
+            .setClientId(clientId)
+            .asDictionary()
         return factory.post(url.toString())
-                .addParameters(parameters);
+            .addParameters(parameters)
     }
 
     /**
      * Fetch the user's profile after it's authenticated by a login request.
      * If the login request fails, the returned request will fail
      *
-     * @param authenticationRequest that will authenticate a user with Auth0 and return a {@link Credentials}
-     * @return a {@link ProfileRequest} that first logins and the fetches the profile
+     * @param authenticationRequest that will authenticate a user with Auth0 and return a [Credentials]
+     * @return a [ProfileRequest] that first logins and the fetches the profile
      */
-    @NonNull
-    public ProfileRequest getProfileAfter(@NonNull AuthenticationRequest authenticationRequest) {
-        final Request<UserProfile, AuthenticationException> profileRequest = profileRequest();
-        return new ProfileRequest(authenticationRequest, profileRequest);
+    public fun getProfileAfter(authenticationRequest: AuthenticationRequest): ProfileRequest {
+        val profileRequest = profileRequest()
+        return ProfileRequest(authenticationRequest, profileRequest)
     }
 
     /**
      * Fetch the token information from Auth0, using the authorization_code grant type
      * The authorization code received from the Auth0 server and the code verifier used
-     * to generate the challenge sent to the {@literal /authorize} call must be provided.
+     * to generate the challenge sent to the /authorize call must be provided.
      * <pre>
-     * {@code
-     * AuthenticationAPIClient client = new AuthenticationAPIClient(new Auth0("clientId", "domain"));
+     * `AuthenticationAPIClient client = new AuthenticationAPIClient(new Auth0("clientId", "domain"));
      * client
-     *     .token("authorization code", "code verifier", "redirect_uri")
-     *     .start(new Callback<Credentials> {...});
-     * }
-     * </pre>
+     * .token("authorization code", "code verifier", "redirect_uri")
+     * .start(new Callback<Credentials> {...});
+    ` *
+    </pre> *
      *
      * @param authorizationCode the authorization code received from the /authorize call.
      * @param codeVerifier      the code verifier used to generate the code challenge sent to /authorize.
      * @param redirectUri       the uri sent to /authorize as the 'redirect_uri'.
      * @return a request to obtain access_token by exchanging an authorization code.
      */
-    @NonNull
-    public Request<Credentials, AuthenticationException> token(@NonNull String authorizationCode, @NonNull String codeVerifier, @NonNull String redirectUri) {
-        Map<String, String> parameters = ParameterBuilder.newBuilder()
-                .setClientId(getClientId())
-                .setGrantType(GRANT_TYPE_AUTHORIZATION_CODE)
-                .set(OAUTH_CODE_KEY, authorizationCode)
-                .set(REDIRECT_URI_KEY, redirectUri)
-                .set("code_verifier", codeVerifier)
-                .asDictionary();
-
-        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
-                .addPathSegment(OAUTH_PATH)
-                .addPathSegment(TOKEN_PATH)
-                .build();
-
-        JsonAdapter<Credentials> credentialsAdapter = new GsonAdapter<>(Credentials.class, gson);
-        Request<Credentials, AuthenticationException> request = factory.post(url.toString(), credentialsAdapter);
-        request.addParameters(parameters);
-        return request;
+    public fun token(
+        authorizationCode: String,
+        codeVerifier: String,
+        redirectUri: String
+    ): Request<Credentials, AuthenticationException> {
+        val parameters = ParameterBuilder.newBuilder()
+            .setClientId(clientId)
+            .setGrantType(ParameterBuilder.GRANT_TYPE_AUTHORIZATION_CODE)
+            .set(OAUTH_CODE_KEY, authorizationCode)
+            .set(REDIRECT_URI_KEY, redirectUri)
+            .set("code_verifier", codeVerifier)
+            .asDictionary()
+        val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+            .addPathSegment(OAUTH_PATH)
+            .addPathSegment(TOKEN_PATH)
+            .build()
+        val credentialsAdapter: JsonAdapter<Credentials> = GsonAdapter(
+            Credentials::class.java, gson
+        )
+        val request = factory.post(url.toString(), credentialsAdapter)
+        request.addParameters(parameters)
+        return request
     }
 
     /**
@@ -930,40 +671,104 @@ public class AuthenticationAPIClient {
      *
      * @return a request to obtain the JSON Web Keys associated with this Auth0 account.
      */
-    @NonNull
-    public Request<Map<String, PublicKey>, AuthenticationException> fetchJsonWebKeys() {
-        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
-                .addPathSegment(WELL_KNOWN_PATH)
-                .addPathSegment(JWKS_FILE_PATH)
-                .build();
-        JsonAdapter<Map<String, PublicKey>> jwksAdapter = GsonAdapter.Companion.forMapOf(PublicKey.class, gson);
-        return factory.get(url.toString(), jwksAdapter);
+    public fun fetchJsonWebKeys(): Request<Map<String, PublicKey>, AuthenticationException> {
+        val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+            .addPathSegment(WELL_KNOWN_PATH)
+            .addPathSegment(JWKS_FILE_PATH)
+            .build()
+        val jwksAdapter: JsonAdapter<Map<String, PublicKey>> = forMapOf(
+            PublicKey::class.java, gson
+        )
+        return factory.get(url.toString(), jwksAdapter)
     }
 
-    private AuthenticationRequest loginWithToken(Map<String, String> parameters) {
-        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
-                .addPathSegment(OAUTH_PATH)
-                .addPathSegment(TOKEN_PATH)
-                .build();
-
-        final Map<String, String> requestParameters = ParameterBuilder.newBuilder()
-                .setClientId(getClientId())
-                .addAll(parameters)
-                .asDictionary();
-
-        JsonAdapter<Credentials> credentialsAdapter = new GsonAdapter<>(Credentials.class, gson);
-        BaseAuthenticationRequest request = new BaseAuthenticationRequest(factory.post(url.toString(), credentialsAdapter));
-        request.addParameters(requestParameters);
-        return request;
+    private fun loginWithToken(parameters: Map<String, String>): AuthenticationRequest {
+        val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+            .addPathSegment(OAUTH_PATH)
+            .addPathSegment(TOKEN_PATH)
+            .build()
+        val requestParameters = ParameterBuilder.newBuilder()
+            .setClientId(clientId)
+            .addAll(parameters)
+            .asDictionary()
+        val credentialsAdapter: JsonAdapter<Credentials> = GsonAdapter(
+            Credentials::class.java, gson
+        )
+        val request = BaseAuthenticationRequest(factory.post(url.toString(), credentialsAdapter))
+        request.addParameters(requestParameters)
+        return request
     }
 
-    private Request<UserProfile, AuthenticationException> profileRequest() {
-        HttpUrl url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
-                .addPathSegment(USER_INFO_PATH)
-                .build();
-
-        JsonAdapter<UserProfile> userProfileAdapter = new GsonAdapter<>(UserProfile.class, gson);
-        return factory.get(url.toString(), userProfileAdapter);
+    private fun profileRequest(): Request<UserProfile, AuthenticationException> {
+        val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+            .addPathSegment(USER_INFO_PATH)
+            .build()
+        val userProfileAdapter: JsonAdapter<UserProfile> = GsonAdapter(
+            UserProfile::class.java, gson
+        )
+        return factory.get(url.toString(), userProfileAdapter)
     }
 
+    private companion object {
+        private const val SMS_CONNECTION = "sms"
+        private const val EMAIL_CONNECTION = "email"
+        private const val USERNAME_KEY = "username"
+        private const val PASSWORD_KEY = "password"
+        private const val EMAIL_KEY = "email"
+        private const val PHONE_NUMBER_KEY = "phone_number"
+        private const val OAUTH_CODE_KEY = "code"
+        private const val REDIRECT_URI_KEY = "redirect_uri"
+        private const val TOKEN_KEY = "token"
+        private const val MFA_TOKEN_KEY = "mfa_token"
+        private const val ONE_TIME_PASSWORD_KEY = "otp"
+        private const val SUBJECT_TOKEN_KEY = "subject_token"
+        private const val SUBJECT_TOKEN_TYPE_KEY = "subject_token_type"
+        private const val SIGN_UP_PATH = "signup"
+        private const val DB_CONNECTIONS_PATH = "dbconnections"
+        private const val CHANGE_PASSWORD_PATH = "change_password"
+        private const val PASSWORDLESS_PATH = "passwordless"
+        private const val START_PATH = "start"
+        private const val OAUTH_PATH = "oauth"
+        private const val TOKEN_PATH = "token"
+        private const val USER_INFO_PATH = "userinfo"
+        private const val REVOKE_PATH = "revoke"
+        private const val HEADER_AUTHORIZATION = "Authorization"
+        private const val WELL_KNOWN_PATH = ".well-known"
+        private const val JWKS_FILE_PATH = "jwks.json"
+        private fun createErrorAdapter(): ErrorAdapter<AuthenticationException> {
+            val mapAdapter = forMap(Gson())
+            return object : ErrorAdapter<AuthenticationException> {
+                override fun fromRawResponse(
+                    statusCode: Int,
+                    bodyText: String,
+                    headers: Map<String, List<String>>
+                ): AuthenticationException {
+                    return AuthenticationException(bodyText, statusCode)
+                }
+
+                @Throws(IOException::class)
+                override fun fromJsonResponse(
+                    statusCode: Int,
+                    reader: Reader
+                ): AuthenticationException {
+                    val values = mapAdapter.fromJson(reader)
+                    return AuthenticationException(values, statusCode)
+                }
+
+                override fun fromException(cause: Throwable): AuthenticationException {
+                    return AuthenticationException(
+                        "Something went wrong",
+                        Auth0Exception("Something went wrong", cause)
+                    )
+                }
+            }
+        }
+    }
+
+    init {
+        val auth0UserAgent = auth0.auth0UserAgent
+        if (auth0UserAgent != null) {
+            factory.setClientInfo(auth0UserAgent.value)
+        }
+    }
 }
