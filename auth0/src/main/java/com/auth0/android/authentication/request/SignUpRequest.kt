@@ -21,49 +21,36 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+package com.auth0.android.authentication.request
 
-package com.auth0.android.authentication.request;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import com.auth0.android.Auth0Exception;
-import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.authentication.ParameterBuilder;
-import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.request.AuthenticationRequest;
-import com.auth0.android.result.Credentials;
-import com.auth0.android.result.DatabaseUser;
-
-import java.util.Map;
+import com.auth0.android.Auth0Exception
+import com.auth0.android.authentication.AuthenticationException
+import com.auth0.android.callback.BaseCallback
+import com.auth0.android.request.AuthenticationRequest
+import com.auth0.android.result.Credentials
+import com.auth0.android.result.DatabaseUser
 
 /**
  * Represent a request that creates a user in a Auth0 Database connection and then logs in.
  */
-public class SignUpRequest implements AuthenticationRequest {
-
-    private final DatabaseConnectionRequest<DatabaseUser, AuthenticationException> signUpRequest;
-    private final AuthenticationRequest authenticationRequest;
-
-    /**
-     * @param signUpRequest the request that creates the user
-     * @param authRequest   the request that will output a pair of credentials
-     */
-    public SignUpRequest(@NonNull DatabaseConnectionRequest<DatabaseUser, AuthenticationException> signUpRequest, @NonNull AuthenticationRequest authRequest) {
-        this.signUpRequest = signUpRequest;
-        this.authenticationRequest = authRequest;
-    }
-
+public class SignUpRequest
+/**
+ * @param signUpRequest the request that creates the user
+ * @param authenticationRequest   the request that will output a pair of credentials
+ */(
+    private val signUpRequest: DatabaseConnectionRequest<DatabaseUser, AuthenticationException>,
+    private val authenticationRequest: AuthenticationRequest
+) : AuthenticationRequest {
     /**
      * Add additional parameters to be sent only when creating a user.
      *
-     * <p>A common use case for this is storing extra information in the user metadata.
+     *
+     * A common use case for this is storing extra information in the user metadata.
      * To set user metadata you have to wrap your custom properties in a map containing
-     * a field <code>user_metadadata</code>:</p>
+     * a field `user_metadadata`:
      *
      * <pre>
-     * {@code
-     * // Define your custom fields
+     * `// Define your custom fields
      * Map<String, Object> metadata = new HashMap<>();
      * metadata.put("key", value);
      *
@@ -73,18 +60,18 @@ public class SignUpRequest implements AuthenticationRequest {
      *
      * // Set the parameters in your request
      * signUpRequest.addSignUpParameters(params);
-     * }
-     * </pre>
+    ` *
+    </pre> *
      *
      * @param parameters sent with the request and must be non-null
      * @return itself
      * @see ParameterBuilder
-     * @see <a href="https://auth0.com/docs/users/concepts/overview-user-metadata">User Metadata documentation</a>
+     *
+     * @see [User Metadata documentation](https://auth0.com/docs/users/concepts/overview-user-metadata)
      */
-    @NonNull
-    public SignUpRequest addSignUpParameters(@NonNull Map<String, String> parameters) {
-        signUpRequest.addParameters(parameters);
-        return this;
+    public fun addSignUpParameters(parameters: Map<String, String>): SignUpRequest {
+        signUpRequest.addParameters(parameters)
+        return this
     }
 
     /**
@@ -94,26 +81,23 @@ public class SignUpRequest implements AuthenticationRequest {
      * @return itself
      * @see ParameterBuilder
      */
-    @NonNull
-    public SignUpRequest addAuthenticationParameters(@NonNull Map<String, String> parameters) {
-        authenticationRequest.addParameters(parameters);
-        return this;
+    public fun addAuthenticationParameters(parameters: Map<String?, String?>): SignUpRequest {
+        authenticationRequest.addParameters(parameters)
+        return this
     }
 
     /**
      * Add a header to the sign up request and to the authentication request, provided
-     * it's of type {@link AuthenticationRequest}.
+     * it's of type [AuthenticationRequest].
      *
      * @param name  of the header
      * @param value of the header
      * @return itself
      */
-    @NonNull
-    @Override
-    public SignUpRequest addHeader(@NonNull String name, @NonNull String value) {
-        signUpRequest.addHeader(name, value);
-        authenticationRequest.addHeader(name, value);
-        return this;
+    override fun addHeader(name: String, value: String): SignUpRequest {
+        signUpRequest.addHeader(name, value)
+        authenticationRequest.addHeader(name, value)
+        return this
     }
 
     /**
@@ -122,57 +106,43 @@ public class SignUpRequest implements AuthenticationRequest {
      * @param parameters to send with the request
      * @return itself
      */
-    @NonNull
-    @Override
-    public SignUpRequest addParameters(@NonNull Map<String, String> parameters) {
-        signUpRequest.addParameters(parameters);
-        authenticationRequest.addParameters(parameters);
-        return this;
+    override fun addParameters(parameters: Map<String, String>): SignUpRequest {
+        signUpRequest.addParameters(parameters)
+        authenticationRequest.addParameters(parameters)
+        return this
     }
 
-    @NonNull
-    @Override
-    public SignUpRequest addParameter(@NonNull String name, @NonNull String value) {
-        signUpRequest.addParameter(name, value);
-        authenticationRequest.addParameter(name, value);
-        return this;
+    override fun addParameter(name: String, value: String): SignUpRequest {
+        signUpRequest.addParameter(name, value)
+        authenticationRequest.addParameter(name, value)
+        return this
     }
 
-    @NonNull
-    @Override
-    public SignUpRequest setScope(@NonNull String scope) {
-        authenticationRequest.setScope(scope);
-        return this;
+    override fun setScope(scope: String): SignUpRequest {
+        authenticationRequest.setScope(scope)
+        return this
     }
 
-    @NonNull
-    @Override
-    public SignUpRequest setAudience(@NonNull String audience) {
-        authenticationRequest.setAudience(audience);
-        return this;
+    override fun setAudience(audience: String): SignUpRequest {
+        authenticationRequest.setAudience(audience)
+        return this
     }
 
-    @NonNull
-    @Override
-    public SignUpRequest setGrantType(@NonNull String grantType) {
-        authenticationRequest.setGrantType(grantType);
-        return this;
+    override fun setGrantType(grantType: String): SignUpRequest {
+        authenticationRequest.setGrantType(grantType)
+        return this
     }
 
-    @NonNull
-    @Override
-    public SignUpRequest setConnection(@NonNull String connection) {
-        signUpRequest.setConnection(connection);
-        authenticationRequest.setConnection(connection);
-        return this;
+    override fun setConnection(connection: String): SignUpRequest {
+        signUpRequest.setConnection(connection)
+        authenticationRequest.setConnection(connection)
+        return this
     }
 
-    @NonNull
-    @Override
-    public SignUpRequest setRealm(@NonNull String realm) {
-        signUpRequest.setConnection(realm);
-        authenticationRequest.setRealm(realm);
-        return this;
+    override fun setRealm(realm: String): SignUpRequest {
+        signUpRequest.setConnection(realm)
+        authenticationRequest.setRealm(realm)
+        return this
     }
 
     /**
@@ -180,19 +150,16 @@ public class SignUpRequest implements AuthenticationRequest {
      *
      * @param callback called on either success or failure.
      */
-    @Override
-    public void start(@NonNull final BaseCallback<Credentials, AuthenticationException> callback) {
-        signUpRequest.start(new BaseCallback<DatabaseUser, AuthenticationException>() {
-            @Override
-            public void onSuccess(@Nullable final DatabaseUser user) {
-                authenticationRequest.start(callback);
+    override fun start(callback: BaseCallback<Credentials, AuthenticationException>) {
+        signUpRequest.start(object : BaseCallback<DatabaseUser, AuthenticationException> {
+            override fun onSuccess(user: DatabaseUser?) {
+                authenticationRequest.start(callback)
             }
 
-            @Override
-            public void onFailure(@NonNull AuthenticationException error) {
-                callback.onFailure(error);
+            override fun onFailure(error: AuthenticationException) {
+                callback.onFailure(error)
             }
-        });
+        })
     }
 
     /**
@@ -201,10 +168,9 @@ public class SignUpRequest implements AuthenticationRequest {
      * @return authentication object on success
      * @throws Auth0Exception on failure
      */
-    @NonNull
-    @Override
-    public Credentials execute() throws Auth0Exception {
-        signUpRequest.execute();
-        return authenticationRequest.execute();
+    @Throws(Auth0Exception::class)
+    override fun execute(): Credentials {
+        signUpRequest.execute()
+        return authenticationRequest.execute()
     }
 }
