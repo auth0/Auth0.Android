@@ -260,7 +260,7 @@ public class SecureCredentialsManagerTest {
         )
         prepareJwtDecoderMock(Date(expirationTime))
         Mockito.`when`(crypto.encrypt(any())).thenThrow(
-            CryptoException(null, null)
+            CryptoException("err", null)
         )
         var exception: CredentialsManagerException? = null
         try {
@@ -355,7 +355,7 @@ public class SecureCredentialsManagerTest {
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         val storedJson = insertTestCredentials(true, true, true, expiresAt)
         Mockito.`when`(crypto.decrypt(storedJson.toByteArray()))
-            .thenThrow(CryptoException(null, null))
+            .thenThrow(CryptoException("err", null))
         manager.getCredentials(callback)
         Mockito.verify(callback).onFailure(
             exceptionCaptor.capture()

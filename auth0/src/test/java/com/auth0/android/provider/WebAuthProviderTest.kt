@@ -1177,11 +1177,11 @@ public class WebAuthProviderTest2 {
             authExceptionCaptor.value, `is`(notNullValue())
         )
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.code,
+            authExceptionCaptor.value.getCode(),
             `is`("a0.authentication_canceled")
         )
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.description,
+            authExceptionCaptor.value.getDescription(),
             `is`("The user closed the browser app and the authentication was canceled.")
         )
     }
@@ -1276,9 +1276,9 @@ public class WebAuthProviderTest2 {
         MatcherAssert.assertThat(
             authExceptionCaptor.value, `is`(notNullValue())
         )
-        MatcherAssert.assertThat(authExceptionCaptor.value.code, `is`("access_denied"))
+        MatcherAssert.assertThat(authExceptionCaptor.value.getCode(), `is`("access_denied"))
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.description,
+            authExceptionCaptor.value.getDescription(),
             `is`("Permissions were not granted. Try again.")
         )
     }
@@ -1306,9 +1306,9 @@ public class WebAuthProviderTest2 {
         MatcherAssert.assertThat(
             authExceptionCaptor.value, `is`(notNullValue())
         )
-        MatcherAssert.assertThat(authExceptionCaptor.value.code, `is`("unauthorized"))
+        MatcherAssert.assertThat(authExceptionCaptor.value.getCode(), `is`("unauthorized"))
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.description,
+            authExceptionCaptor.value.getDescription(),
             `is`("Custom Rule Error")
         )
     }
@@ -1337,11 +1337,11 @@ public class WebAuthProviderTest2 {
             authExceptionCaptor.value, `is`(notNullValue())
         )
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.code,
+            authExceptionCaptor.value.getCode(),
             `is`("a0.invalid_configuration")
         )
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.description,
+            authExceptionCaptor.value.getDescription(),
             `is`("The application isn't configured properly for the social connection. Please check your Auth0's application configuration")
         )
     }
@@ -1767,11 +1767,11 @@ public class WebAuthProviderTest2 {
             authExceptionCaptor.value, `is`(notNullValue())
         )
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.code,
+            authExceptionCaptor.value.getCode(),
             `is`("login_required")
         )
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.description,
+            authExceptionCaptor.value.getDescription(),
             `is`("Login Required")
         )
     }
@@ -1800,11 +1800,11 @@ public class WebAuthProviderTest2 {
             authExceptionCaptor.value, `is`(notNullValue())
         )
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.code,
+            authExceptionCaptor.value.getCode(),
             `is`("login_required")
         )
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.description,
+            authExceptionCaptor.value.getDescription(),
             `is`("Login Required")
         )
     }
@@ -1832,9 +1832,9 @@ public class WebAuthProviderTest2 {
         MatcherAssert.assertThat(
             authExceptionCaptor.value, `is`(notNullValue())
         )
-        MatcherAssert.assertThat(authExceptionCaptor.value.code, `is`("access_denied"))
+        MatcherAssert.assertThat(authExceptionCaptor.value.getCode(), `is`("access_denied"))
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.description,
+            authExceptionCaptor.value.getDescription(),
             `is`("The received state is invalid. Try again.")
         )
     }
@@ -2088,11 +2088,11 @@ public class WebAuthProviderTest2 {
             authExceptionCaptor.value, `is`(notNullValue())
         )
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.code,
+            authExceptionCaptor.value.getCode(),
             `is`("a0.browser_not_available")
         )
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.description,
+            authExceptionCaptor.value.getDescription(),
             `is`("No compatible Browser application is installed.")
         )
         assertThat(
@@ -2309,11 +2309,11 @@ public class WebAuthProviderTest2 {
             authExceptionCaptor.value, `is`(notNullValue())
         )
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.code,
+            authExceptionCaptor.value.getCode(),
             `is`("a0.browser_not_available")
         )
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.description,
+            authExceptionCaptor.value.getDescription(),
             `is`("No compatible Browser application is installed.")
         )
         assertThat(

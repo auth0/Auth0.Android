@@ -1,11 +1,9 @@
-package com.auth0.android.authentication.storage;
+package com.auth0.android.authentication.storage
 
 /**
- * Exception thrown by the {@link CryptoUtil} class whenever the Keys are deemed invalid
+ * Exception thrown by the [CryptoUtil] class whenever the Keys are deemed invalid
  * and so the content encrypted with them unrecoverable.
  */
-class IncompatibleDeviceException extends CryptoException {
-    IncompatibleDeviceException(Throwable cause) {
-        super(String.format("The device is not compatible with the %s class.", CryptoUtil.class.getSimpleName()), cause);
-    }
-}
+internal class IncompatibleDeviceException(cause: Throwable?) : CryptoException(
+    "The device is not compatible with the ${CryptoUtil::class.java.simpleName} class.", cause
+)

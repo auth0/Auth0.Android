@@ -21,30 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
-package com.auth0.android;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+package com.auth0.android
 
 /**
  * Base Exception for any error found during a request to Auth0's API
  */
-public class Auth0Exception extends RuntimeException {
+public open class Auth0Exception(message: String, cause: Throwable? = null) :
+    RuntimeException(message, cause) {
 
-    public static final String UNKNOWN_ERROR = "a0.sdk.internal_error.unknown";
-    @SuppressWarnings("WeakerAccess")
-    public static final String NON_JSON_ERROR = "a0.sdk.internal_error.plain";
-    @SuppressWarnings("WeakerAccess")
-    public static final String EMPTY_BODY_ERROR = "a0.sdk.internal_error.empty";
-    @SuppressWarnings("WeakerAccess")
-    public static final String EMPTY_RESPONSE_BODY_DESCRIPTION = "Empty response body";
-
-    public Auth0Exception(@NonNull String message, @Nullable Throwable cause) {
-        super(message, cause);
-    }
-
-    public Auth0Exception(@NonNull String message) {
-        super(message);
+    public companion object {
+        public const val UNKNOWN_ERROR: String = "a0.sdk.internal_error.unknown"
+        public const val NON_JSON_ERROR: String = "a0.sdk.internal_error.plain"
+        public const val EMPTY_BODY_ERROR: String = "a0.sdk.internal_error.empty"
+        public const val EMPTY_RESPONSE_BODY_DESCRIPTION: String = "Empty response body"
     }
 }

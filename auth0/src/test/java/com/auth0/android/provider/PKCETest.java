@@ -140,7 +140,7 @@ public class PKCETest {
         verify(apiClient).token(AUTHORIZATION_CODE, CODE_VERIFIER, REDIRECT_URI);
         ArgumentCaptor<BaseCallback> callbackCaptor = ArgumentCaptor.forClass(BaseCallback.class);
         verify(tokenRequest).start(callbackCaptor.capture());
-        callbackCaptor.getValue().onFailure(new AuthenticationException("Some error"));
+        callbackCaptor.getValue().onFailure(new AuthenticationException("Some error", "description"));
         verify(callback).onFailure(any(AuthenticationException.class));
     }
 

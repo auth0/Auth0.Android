@@ -952,7 +952,7 @@ public class CryptoUtilTest {
         PowerMockito.when(Base64.decode("encoded-key", Base64.DEFAULT)).thenReturn(new byte[0]);
         PowerMockito.when(storage.retrieveString(KEY_ALIAS)).thenReturn("encoded-key");
 
-        doThrow(new CryptoException(null, null)).when(cryptoUtil).getRSAKeyEntry();
+        doThrow(new CryptoException("err", null)).when(cryptoUtil).getRSAKeyEntry();
         cryptoUtil.encrypt(new byte[0]);
     }
 
@@ -960,7 +960,7 @@ public class CryptoUtilTest {
     public void shouldThrowOnCryptoExceptionOnAESKeyReadingWhenTryingToAESEncrypt() {
         exception.expect(CryptoException.class);
 
-        doThrow(new CryptoException(null, null)).when(cryptoUtil).getAESKey();
+        doThrow(new CryptoException("err", null)).when(cryptoUtil).getAESKey();
         cryptoUtil.encrypt(new byte[0]);
     }
 
@@ -1105,7 +1105,7 @@ public class CryptoUtilTest {
         PowerMockito.when(Base64.decode("encoded-key", Base64.DEFAULT)).thenReturn(new byte[0]);
         PowerMockito.when(storage.retrieveString(KEY_ALIAS)).thenReturn("encoded-key");
 
-        doThrow(new CryptoException(null, null)).when(cryptoUtil).getRSAKeyEntry();
+        doThrow(new CryptoException("err", null)).when(cryptoUtil).getRSAKeyEntry();
         cryptoUtil.decrypt(new byte[0]);
     }
 
@@ -1113,7 +1113,7 @@ public class CryptoUtilTest {
     public void shouldThrowOnCryptoExceptionOnAESKeyReadingWhenTryingToAESDecrypt() {
         exception.expect(CryptoException.class);
 
-        doThrow(new CryptoException(null, null)).when(cryptoUtil).getAESKey();
+        doThrow(new CryptoException("err", null)).when(cryptoUtil).getAESKey();
         cryptoUtil.decrypt(new byte[0]);
     }
 

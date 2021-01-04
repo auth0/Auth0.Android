@@ -21,19 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
-package com.auth0.android;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+package com.auth0.android
 
 /**
  * Exception that wraps errors when creating a body for a request
  */
-public class RequestBodyBuildException extends Auth0Exception {
-
-    public RequestBodyBuildException(@NonNull String message, @Nullable Throwable cause) {
-        super(message, cause);
-    }
-
-}
+public class RequestBodyBuildException(message: String, cause: Throwable?) :
+    Auth0Exception(message, cause)
