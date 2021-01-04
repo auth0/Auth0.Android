@@ -1,71 +1,49 @@
-package com.auth0.android.authentication.storage;
+package com.auth0.android.authentication.storage
 
-import android.app.Activity;
-import android.app.KeyguardManager;
-import android.content.Context;
-import android.content.Intent;
-import android.os.Build;
-import android.util.Base64;
-import android.util.Log;
-
-import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
-
-import com.auth0.android.Auth0Exception;
-import com.auth0.android.authentication.AuthenticationAPIClient;
-import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.callback.AuthenticationCallback;
-import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.request.Request;
-import com.auth0.android.request.internal.GsonProvider;
-import com.auth0.android.result.Credentials;
-import com.google.gson.Gson;
-
-import java.util.Locale;
-
-import static android.text.TextUtils.isEmpty;
+import android.app.Activity
+import android.app.KeyguardManager
+import android.content.Context
+import android.content.Intent
+import android.os.Build
+import android.text.TextUtils
+import android.util.Base64
+import android.util.Log
+import androidx.annotation.IntRange
+import androidx.annotation.VisibleForTesting
+import com.auth0.android.authentication.AuthenticationAPIClient
+import com.auth0.android.authentication.AuthenticationException
+import com.auth0.android.authentication.storage.CredentialsManagerException
+import com.auth0.android.authentication.storage.SecureCredentialsManager
+import com.auth0.android.callback.AuthenticationCallback
+import com.auth0.android.callback.BaseCallback
+import com.auth0.android.request.internal.GsonProvider
+import com.auth0.android.result.Credentials
+import com.google.gson.Gson
+import java.util.*
 
 /**
- * A safer alternative to the {@link CredentialsManager} class. A combination of RSA and AES keys is used to keep the values secure.
+ * A safer alternative to the [CredentialsManager] class. A combination of RSA and AES keys is used to keep the values secure.
  * On devices running Android API 21 or up with a Secure LockScreen configured (PIN, Pattern, Password or Fingerprint) an extra
  * authentication step can be required.
  */
-public class SecureCredentialsManager extends BaseCredentialsManager {
-
-    private static final String TAG = SecureCredentialsManager.class.getSimpleName();
-
-    private static final String KEY_CREDENTIALS = "com.auth0.credentials";
-    private static final String KEY_EXPIRES_AT = "com.auth0.credentials_access_token_expires_at";
-    private static final String KEY_CACHE_EXPIRES_AT = "com.auth0.credentials_expires_at";
-    private static final String KEY_CAN_REFRESH = "com.auth0.credentials_can_refresh";
-    private static final String KEY_CRYPTO_ALIAS = "com.auth0.manager_key_alias";
-    @VisibleForTesting
-    static final String KEY_ALIAS = "com.auth0.key";
-
-    private final CryptoUtil crypto;
-    private final Gson gson;
+public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal constructor(
+    apiClient: AuthenticationAPIClient,
+    storage: Storage,
+    private val crypto: CryptoUtil,
+    jwtDecoder: JWTDecoder
+) : BaseCredentialsManager(apiClient, storage, jwtDecoder) {
+    private val gson: Gson = GsonProvider.buildGson()
 
     //Changeable by the user
-    private boolean authenticateBeforeDecrypt;
-    private int authenticationRequestCode = -1;
-    private Activity activity;
+    private var authenticateBeforeDecrypt: Boolean
+    private var authenticationRequestCode = -1
+    private var activity: Activity? = null
 
     //State for retrying operations
-    private BaseCallback<Credentials, CredentialsManagerException> decryptCallback;
-    private Intent authIntent;
-    private String scope;
-    private int minTtl;
-
-
-    @VisibleForTesting
-    SecureCredentialsManager(@NonNull AuthenticationAPIClient apiClient, @NonNull Storage storage, @NonNull CryptoUtil crypto, @NonNull JWTDecoder jwtDecoder) {
-        super(apiClient, storage, jwtDecoder);
-        this.crypto = crypto;
-        this.gson = GsonProvider.buildGson();
-        this.authenticateBeforeDecrypt = false;
-    }
+    private var decryptCallback: BaseCallback<Credentials, CredentialsManagerException>? = null
+    private var authIntent: Intent? = null
+    private var scope: String? = null
+    private var minTtl = 0
 
     /**
      * Creates a new SecureCredentialsManager to handle Credentials
@@ -74,17 +52,25 @@ public class SecureCredentialsManager extends BaseCredentialsManager {
      * @param apiClient the Auth0 Authentication API Client to handle token refreshment when needed.
      * @param storage   the storage implementation to use
      */
-    public SecureCredentialsManager(@NonNull Context context, @NonNull AuthenticationAPIClient apiClient, @NonNull Storage storage) {
-        this(apiClient, storage, new CryptoUtil(context, storage, KEY_ALIAS), new JWTDecoder());
-    }
+    public constructor(
+        context: Context,
+        apiClient: AuthenticationAPIClient,
+        storage: Storage
+    ) : this(
+        apiClient,
+        storage,
+        CryptoUtil(context, storage, KEY_ALIAS),
+        JWTDecoder()
+    )
 
     /**
      * Require the user to authenticate using the configured LockScreen before accessing the credentials.
      * This feature is disabled by default and will only work if the device is running on Android version 21 or up and if the user
      * has configured a secure LockScreen (PIN, Pattern, Password or Fingerprint).
-     * <p>
-     * The activity passed as first argument here must override the {@link Activity#onActivityResult(int, int, Intent)} method and
-     * call {@link SecureCredentialsManager#checkAuthenticationResult(int, int)} with the received parameters.
+     *
+     *
+     * The activity passed as first argument here must override the [Activity.onActivityResult] method and
+     * call [SecureCredentialsManager.checkAuthenticationResult] with the received parameters.
      *
      * @param activity    a valid activity context. Will be used in the authentication request to launch a LockScreen intent.
      * @param requestCode the request code to use in the authentication request. Must be a value between 1 and 255.
@@ -92,44 +78,50 @@ public class SecureCredentialsManager extends BaseCredentialsManager {
      * @param description the text to use as description in the authentication screen. On some Android versions it might not be shown. Passing null will result in using the OS's default value.
      * @return whether this device supports requiring authentication or not. This result can be ignored safely.
      */
-    @SuppressWarnings("JavadocReference")
-    public boolean requireAuthentication(@NonNull Activity activity, @IntRange(from = 1, to = 255) int requestCode, @Nullable String title, @Nullable String description) {
-        if (requestCode < 1 || requestCode > 255) {
-            throw new IllegalArgumentException("Request code must be a value between 1 and 255.");
-        }
-        KeyguardManager kManager = (KeyguardManager) activity.getSystemService(Context.KEYGUARD_SERVICE);
-        this.authIntent = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ? kManager.createConfirmDeviceCredentialIntent(title, description) : null;
-        this.authenticateBeforeDecrypt = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && kManager.isDeviceSecure())
-                || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && kManager.isKeyguardSecure()))
-                && authIntent != null;
+    public fun requireAuthentication(
+        activity: Activity,
+        @IntRange(from = 1, to = 255) requestCode: Int,
+        title: String?,
+        description: String?
+    ): Boolean {
+        require(!(requestCode < 1 || requestCode > 255)) { "Request code must be a value between 1 and 255." }
+        val kManager = activity.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        authIntent =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) kManager.createConfirmDeviceCredentialIntent(
+                title,
+                description
+            ) else null
+        authenticateBeforeDecrypt =
+            ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && kManager.isDeviceSecure
+                    || Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && kManager.isKeyguardSecure)
+                    && authIntent != null)
         if (authenticateBeforeDecrypt) {
-            this.activity = activity;
-            this.authenticationRequestCode = requestCode;
+            this.activity = activity
+            authenticationRequestCode = requestCode
         }
-        return authenticateBeforeDecrypt;
+        return authenticateBeforeDecrypt
     }
 
     /**
      * Checks the result after showing the LockScreen to the user.
-     * Must be called from the {@link Activity#onActivityResult(int, int, Intent)} method with the received parameters.
-     * It's safe to call this method even if {@link SecureCredentialsManager#requireAuthentication(Activity, int, String, String)} was unsuccessful.
+     * Must be called from the [Activity.onActivityResult] method with the received parameters.
+     * It's safe to call this method even if [SecureCredentialsManager.requireAuthentication] was unsuccessful.
      *
      * @param requestCode the request code received in the onActivityResult call.
      * @param resultCode  the result code received in the onActivityResult call.
      * @return true if the result was handled, false otherwise.
      */
-    @SuppressWarnings("JavadocReference")
-    public boolean checkAuthenticationResult(int requestCode, int resultCode) {
+    public fun checkAuthenticationResult(requestCode: Int, resultCode: Int): Boolean {
         if (requestCode != authenticationRequestCode || decryptCallback == null) {
-            return false;
+            return false
         }
         if (resultCode == Activity.RESULT_OK) {
-            continueGetCredentials(scope, minTtl, decryptCallback);
+            continueGetCredentials(scope, minTtl, decryptCallback!!)
         } else {
-            decryptCallback.onFailure(new CredentialsManagerException("The user didn't pass the authentication challenge."));
-            decryptCallback = null;
+            decryptCallback!!.onFailure(CredentialsManagerException("The user didn't pass the authentication challenge."))
+            decryptCallback = null
         }
-        return true;
+        return true
     }
 
     /**
@@ -137,100 +129,112 @@ public class SecureCredentialsManager extends BaseCredentialsManager {
      *
      * @param credentials the credentials to save.
      * @throws CredentialsManagerException if the credentials couldn't be encrypted. Some devices are not compatible at all with the cryptographic
-     *                                     implementation and will have {@link CredentialsManagerException#isDeviceIncompatible()} return true.
+     * implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
      */
-    @Override
-    public void saveCredentials(@NonNull Credentials credentials) throws CredentialsManagerException {
-        if ((isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken())) || credentials.getExpiresAt() == null) {
-            throw new CredentialsManagerException("Credentials must have a valid date of expiration and a valid access_token or id_token value.");
+    @Throws(CredentialsManagerException::class)
+    override fun saveCredentials(credentials: Credentials) {
+        if (TextUtils.isEmpty(credentials.accessToken) && TextUtils.isEmpty(credentials.idToken) || credentials.expiresAt == null) {
+            throw CredentialsManagerException("Credentials must have a valid date of expiration and a valid access_token or id_token value.")
         }
-
-        long cacheExpiresAt = calculateCacheExpiresAt(credentials);
-        String json = gson.toJson(credentials);
-        boolean canRefresh = !isEmpty(credentials.getRefreshToken());
-
-        Log.d(TAG, "Trying to encrypt the given data using the private key.");
+        val cacheExpiresAt = calculateCacheExpiresAt(credentials)
+        val json = gson.toJson(credentials)
+        val canRefresh = !TextUtils.isEmpty(credentials.refreshToken)
+        Log.d(TAG, "Trying to encrypt the given data using the private key.")
         try {
-            byte[] encrypted = crypto.encrypt(json.getBytes());
-            String encryptedEncoded = Base64.encodeToString(encrypted, Base64.DEFAULT);
-            storage.store(KEY_CREDENTIALS, encryptedEncoded);
-            storage.store(KEY_EXPIRES_AT, credentials.getExpiresAt().getTime());
-            storage.store(KEY_CACHE_EXPIRES_AT, cacheExpiresAt);
-            storage.store(KEY_CAN_REFRESH, canRefresh);
-            storage.store(KEY_CRYPTO_ALIAS, KEY_ALIAS);
-        } catch (IncompatibleDeviceException e) {
-            throw new CredentialsManagerException(String.format("This device is not compatible with the %s class.", SecureCredentialsManager.class.getSimpleName()), e);
-        } catch (CryptoException e) {
+            val encrypted = crypto.encrypt(json.toByteArray())
+            val encryptedEncoded = Base64.encodeToString(encrypted, Base64.DEFAULT)
+            storage.store(KEY_CREDENTIALS, encryptedEncoded)
+            storage.store(
+                KEY_EXPIRES_AT, credentials.expiresAt!!
+                    .time
+            )
+            storage.store(KEY_CACHE_EXPIRES_AT, cacheExpiresAt)
+            storage.store(KEY_CAN_REFRESH, canRefresh)
+            storage.store(KEY_CRYPTO_ALIAS, KEY_ALIAS)
+        } catch (e: IncompatibleDeviceException) {
+            throw CredentialsManagerException(
+                String.format(
+                    "This device is not compatible with the %s class.",
+                    SecureCredentialsManager::class.java.simpleName
+                ), e
+            )
+        } catch (e: CryptoException) {
             /*
              * If the keys were invalidated in the call above a good new pair is going to be available
              * to use on the next call. We clear any existing credentials so #hasValidCredentials returns
              * a true value. Retrying this operation will succeed.
              */
-            clearCredentials();
-            throw new CredentialsManagerException("A change on the Lock Screen security settings have deemed the encryption keys invalid and have been recreated. Please, try saving the credentials again.", e);
+            clearCredentials()
+            throw CredentialsManagerException(
+                "A change on the Lock Screen security settings have deemed the encryption keys invalid and have been recreated. Please, try saving the credentials again.",
+                e
+            )
         }
     }
 
     /**
-     * Tries to obtain the credentials from the Storage. The callback's {@link BaseCallback#onSuccess(Object)} method will be called with the result.
-     * If something unexpected happens, the {@link BaseCallback#onFailure(Auth0Exception)} method will be called with the error. Some devices are not compatible
-     * at all with the cryptographic implementation and will have {@link CredentialsManagerException#isDeviceIncompatible()} return true.
-     * <p>
-     * If a LockScreen is setup and {@link #requireAuthentication(Activity, int, String, String)} was called, the user will be asked to authenticate before accessing
-     * the credentials. Your activity must override the {@link Activity#onActivityResult(int, int, Intent)} method and call
-     * {@link #checkAuthenticationResult(int, int)} with the received values.
+     * Tries to obtain the credentials from the Storage. The callback's [BaseCallback.onSuccess] method will be called with the result.
+     * If something unexpected happens, the [BaseCallback.onFailure] method will be called with the error. Some devices are not compatible
+     * at all with the cryptographic implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
+     *
+     *
+     * If a LockScreen is setup and [.requireAuthentication] was called, the user will be asked to authenticate before accessing
+     * the credentials. Your activity must override the [Activity.onActivityResult] method and call
+     * [.checkAuthenticationResult] with the received values.
      *
      * @param callback the callback to receive the result in.
      */
-    @SuppressWarnings("JavadocReference")
-    @Override
-    public void getCredentials(@NonNull BaseCallback<Credentials, CredentialsManagerException> callback) {
-        getCredentials(null, 0, callback);
+    override fun getCredentials(callback: BaseCallback<Credentials, CredentialsManagerException>) {
+        getCredentials(null, 0, callback)
     }
 
     /**
-     * Tries to obtain the credentials from the Storage. The callback's {@link BaseCallback#onSuccess(Object)} method will be called with the result.
-     * If something unexpected happens, the {@link BaseCallback#onFailure(Auth0Exception)} method will be called with the error. Some devices are not compatible
-     * at all with the cryptographic implementation and will have {@link CredentialsManagerException#isDeviceIncompatible()} return true.
-     * <p>
-     * If a LockScreen is setup and {@link #requireAuthentication(Activity, int, String, String)} was called, the user will be asked to authenticate before accessing
-     * the credentials. Your activity must override the {@link Activity#onActivityResult(int, int, Intent)} method and call
-     * {@link #checkAuthenticationResult(int, int)} with the received values.
+     * Tries to obtain the credentials from the Storage. The callback's [BaseCallback.onSuccess] method will be called with the result.
+     * If something unexpected happens, the [BaseCallback.onFailure] method will be called with the error. Some devices are not compatible
+     * at all with the cryptographic implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
+     *
+     *
+     * If a LockScreen is setup and [.requireAuthentication] was called, the user will be asked to authenticate before accessing
+     * the credentials. Your activity must override the [Activity.onActivityResult] method and call
+     * [.checkAuthenticationResult] with the received values.
      *
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
      * @param callback the callback to receive the result in.
      */
-    @SuppressWarnings("JavadocReference")
-    @Override
-    public void getCredentials(@Nullable String scope, int minTtl, @NonNull BaseCallback<Credentials, CredentialsManagerException> callback) {
-        if (!hasValidCredentials(minTtl)) {
-            callback.onFailure(new CredentialsManagerException("No Credentials were previously set."));
-            return;
+    override fun getCredentials(
+        scope: String?,
+        minTtl: Int,
+        callback: BaseCallback<Credentials, CredentialsManagerException>
+    ) {
+        if (!hasValidCredentials(minTtl.toLong())) {
+            callback.onFailure(CredentialsManagerException("No Credentials were previously set."))
+            return
         }
-
         if (authenticateBeforeDecrypt) {
-            Log.d(TAG, "Authentication is required to read the Credentials. Showing the LockScreen.");
-            this.decryptCallback = callback;
-            this.scope = scope;
-            this.minTtl = minTtl;
-            activity.startActivityForResult(authIntent, authenticationRequestCode);
-            return;
+            Log.d(
+                TAG,
+                "Authentication is required to read the Credentials. Showing the LockScreen."
+            )
+            decryptCallback = callback
+            this.scope = scope
+            this.minTtl = minTtl
+            activity!!.startActivityForResult(authIntent, authenticationRequestCode)
+            return
         }
-        continueGetCredentials(scope, minTtl, callback);
+        continueGetCredentials(scope, minTtl, callback)
     }
 
     /**
      * Delete the stored credentials
      */
-    @Override
-    public void clearCredentials() {
-        storage.remove(KEY_CREDENTIALS);
-        storage.remove(KEY_EXPIRES_AT);
-        storage.remove(KEY_CACHE_EXPIRES_AT);
-        storage.remove(KEY_CAN_REFRESH);
-        storage.remove(KEY_CRYPTO_ALIAS);
-        Log.d(TAG, "Credentials were just removed from the storage");
+    override fun clearCredentials() {
+        storage.remove(KEY_CREDENTIALS)
+        storage.remove(KEY_EXPIRES_AT)
+        storage.remove(KEY_CACHE_EXPIRES_AT)
+        storage.remove(KEY_CAN_REFRESH)
+        storage.remove(KEY_CRYPTO_ALIAS)
+        Log.d(TAG, "Credentials were just removed from the storage")
     }
 
     /**
@@ -238,9 +242,8 @@ public class SecureCredentialsManager extends BaseCredentialsManager {
      *
      * @return whether this manager contains a valid non-expired pair of credentials or not.
      */
-    @Override
-    public boolean hasValidCredentials() {
-        return hasValidCredentials(0);
+    override fun hasValidCredentials(): Boolean {
+        return hasValidCredentials(0)
     }
 
     /**
@@ -249,100 +252,147 @@ public class SecureCredentialsManager extends BaseCredentialsManager {
      * @param minTtl the minimum time in seconds that the access token should last before expiration.
      * @return whether this manager contains a valid non-expired pair of credentials or not.
      */
-    @Override
-    public boolean hasValidCredentials(long minTtl) {
-        String encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS);
-        Long expiresAt = storage.retrieveLong(KEY_EXPIRES_AT);
+    override fun hasValidCredentials(minTtl: Long): Boolean {
+        val encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS)
+        var expiresAt = storage.retrieveLong(KEY_EXPIRES_AT)
         if (expiresAt == null) {
             // Avoids logging out users when this value was not saved (migration scenario)
-            expiresAt = 0L;
+            expiresAt = 0L
         }
-        Long cacheExpiresAt = storage.retrieveLong(KEY_CACHE_EXPIRES_AT);
-        Boolean canRefresh = storage.retrieveBoolean(KEY_CAN_REFRESH);
-        String keyAliasUsed = storage.retrieveString(KEY_CRYPTO_ALIAS);
-        boolean emptyCredentials = isEmpty(encryptedEncoded) || cacheExpiresAt == null;
-
-        return KEY_ALIAS.equals(keyAliasUsed) &&
-                !(emptyCredentials || (hasExpired(cacheExpiresAt) || willExpire(expiresAt, minTtl)) &&
-                        (canRefresh == null || !canRefresh));
+        val cacheExpiresAt = storage.retrieveLong(KEY_CACHE_EXPIRES_AT)
+        val canRefresh = storage.retrieveBoolean(KEY_CAN_REFRESH)
+        val keyAliasUsed = storage.retrieveString(KEY_CRYPTO_ALIAS)
+        val emptyCredentials = TextUtils.isEmpty(encryptedEncoded) || cacheExpiresAt == null
+        return KEY_ALIAS == keyAliasUsed &&
+                !(emptyCredentials || (hasExpired(cacheExpiresAt!!) || willExpire(
+                    expiresAt,
+                    minTtl
+                )) &&
+                        (canRefresh == null || !canRefresh))
     }
 
-    private void continueGetCredentials(@Nullable String scope, final int minTtl, final BaseCallback<Credentials, CredentialsManagerException> callback) {
-        String encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS);
-        byte[] encrypted = Base64.decode(encryptedEncoded, Base64.DEFAULT);
-
-        String json;
+    private fun continueGetCredentials(
+        scope: String?,
+        minTtl: Int,
+        callback: BaseCallback<Credentials, CredentialsManagerException>
+    ) {
+        val encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS)
+        val encrypted = Base64.decode(encryptedEncoded, Base64.DEFAULT)
+        val json: String
         try {
-            json = new String(crypto.decrypt(encrypted));
-        } catch (IncompatibleDeviceException e) {
-            callback.onFailure(new CredentialsManagerException(String.format("This device is not compatible with the %s class.", SecureCredentialsManager.class.getSimpleName()), e));
-            decryptCallback = null;
-            return;
-        } catch (CryptoException e) {
+            json = String(crypto.decrypt(encrypted))
+        } catch (e: IncompatibleDeviceException) {
+            callback.onFailure(
+                CredentialsManagerException(
+                    String.format(
+                        "This device is not compatible with the %s class.",
+                        SecureCredentialsManager::class.java.simpleName
+                    ), e
+                )
+            )
+            decryptCallback = null
+            return
+        } catch (e: CryptoException) {
             //If keys were invalidated, existing credentials will not be recoverable.
-            clearCredentials();
-            callback.onFailure(new CredentialsManagerException("A change on the Lock Screen security settings have deemed the encryption keys invalid and have been recreated. " +
-                    "Any previously stored content is now lost. Please, try saving the credentials again.", e));
-            decryptCallback = null;
-            return;
+            clearCredentials()
+            callback.onFailure(
+                CredentialsManagerException(
+                    "A change on the Lock Screen security settings have deemed the encryption keys invalid and have been recreated. " +
+                            "Any previously stored content is now lost. Please, try saving the credentials again.",
+                    e
+                )
+            )
+            decryptCallback = null
+            return
         }
-        final Credentials credentials = gson.fromJson(json, Credentials.class);
-        Long cacheExpiresAt = storage.retrieveLong(KEY_CACHE_EXPIRES_AT);
-        long expiresAt = credentials.getExpiresAt().getTime();
-        boolean hasEmptyCredentials = isEmpty(credentials.getAccessToken()) && isEmpty(credentials.getIdToken()) || cacheExpiresAt == null;
+        val credentials = gson.fromJson(json, Credentials::class.java)
+        val cacheExpiresAt = storage.retrieveLong(KEY_CACHE_EXPIRES_AT)
+        val expiresAt = credentials.expiresAt!!.time
+        val hasEmptyCredentials =
+            TextUtils.isEmpty(credentials.accessToken) && TextUtils.isEmpty(credentials.idToken) || cacheExpiresAt == null
         if (hasEmptyCredentials) {
-            callback.onFailure(new CredentialsManagerException("No Credentials were previously set."));
-            decryptCallback = null;
-            return;
+            callback.onFailure(CredentialsManagerException("No Credentials were previously set."))
+            decryptCallback = null
+            return
         }
-
-        boolean hasEitherExpired = hasExpired(cacheExpiresAt);
-        boolean willAccessTokenExpire = willExpire(expiresAt, minTtl);
-        boolean scopeChanged = hasScopeChanged(credentials.getScope(), scope);
-
+        val hasEitherExpired = hasExpired(cacheExpiresAt!!)
+        val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
+        val scopeChanged = hasScopeChanged(credentials.scope!!, scope)
         if (!hasEitherExpired && !willAccessTokenExpire && !scopeChanged) {
-            callback.onSuccess(credentials);
-            decryptCallback = null;
-            return;
+            callback.onSuccess(credentials)
+            decryptCallback = null
+            return
         }
-        if (credentials.getRefreshToken() == null) {
-            callback.onFailure(new CredentialsManagerException("No Credentials were previously set."));
-            decryptCallback = null;
-            return;
+        if (credentials.refreshToken == null) {
+            callback.onFailure(CredentialsManagerException("No Credentials were previously set."))
+            decryptCallback = null
+            return
         }
-
-        Log.d(TAG, "Credentials have expired. Renewing them now...");
-        Request<Credentials, AuthenticationException> request = authenticationClient.renewAuth(credentials.getRefreshToken());
+        Log.d(TAG, "Credentials have expired. Renewing them now...")
+        val request = authenticationClient.renewAuth(
+            credentials.refreshToken!!
+        )
         if (scope != null) {
-            request.addParameter("scope", scope);
+            request.addParameter("scope", scope)
         }
-        request.start(new AuthenticationCallback<Credentials>() {
-            @Override
-            public void onSuccess(@Nullable Credentials fresh) {
-                long expiresAt = fresh.getExpiresAt().getTime();
-                boolean willAccessTokenExpire = willExpire(expiresAt, minTtl);
+        request.start(object : AuthenticationCallback<Credentials?> {
+            override fun onSuccess(fresh: Credentials?) {
+                val expiresAt = fresh!!.expiresAt!!.time
+                val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
                 if (willAccessTokenExpire) {
-                    long tokenLifetime = (expiresAt - getCurrentTimeInMillis() - minTtl * 1000) / -1000;
-                    CredentialsManagerException wrongTtlException = new CredentialsManagerException(String.format(Locale.getDefault(), "The lifetime of the renewed Access Token (%d) is less than the minTTL requested (%d). Increase the 'Token Expiration' setting of your Auth0 API in the dashboard, or request a lower minTTL.", tokenLifetime, minTtl));
-                    callback.onFailure(wrongTtlException);
-                    decryptCallback = null;
-                    return;
+                    val tokenLifetime = (expiresAt - currentTimeInMillis - minTtl * 1000) / -1000
+                    val wrongTtlException = CredentialsManagerException(
+                        String.format(
+                            Locale.getDefault(),
+                            "The lifetime of the renewed Access Token (%d) is less than the minTTL requested (%d). Increase the 'Token Expiration' setting of your Auth0 API in the dashboard, or request a lower minTTL.",
+                            tokenLifetime,
+                            minTtl
+                        )
+                    )
+                    callback.onFailure(wrongTtlException)
+                    decryptCallback = null
+                    return
                 }
 
                 //non-empty refresh token for refresh token rotation scenarios
-                String updatedRefreshToken = isEmpty(fresh.getRefreshToken()) ? credentials.getRefreshToken() : fresh.getRefreshToken();
-                Credentials refreshed = new Credentials(fresh.getIdToken(), fresh.getAccessToken(), fresh.getType(), updatedRefreshToken, fresh.getExpiresAt(), fresh.getScope());
-                saveCredentials(refreshed);
-                callback.onSuccess(refreshed);
-                decryptCallback = null;
+                val updatedRefreshToken =
+                    if (TextUtils.isEmpty(fresh.refreshToken)) credentials.refreshToken else fresh.refreshToken
+                val refreshed = Credentials(
+                    fresh.idToken,
+                    fresh.accessToken,
+                    fresh.type,
+                    updatedRefreshToken,
+                    fresh.expiresAt,
+                    fresh.scope
+                )
+                saveCredentials(refreshed)
+                callback.onSuccess(refreshed)
+                decryptCallback = null
             }
 
-            @Override
-            public void onFailure(@NonNull AuthenticationException error) {
-                callback.onFailure(new CredentialsManagerException("An error occurred while trying to use the Refresh Token to renew the Credentials.", error));
-                decryptCallback = null;
+            override fun onFailure(error: AuthenticationException) {
+                callback.onFailure(
+                    CredentialsManagerException(
+                        "An error occurred while trying to use the Refresh Token to renew the Credentials.",
+                        error
+                    )
+                )
+                decryptCallback = null
             }
-        });
+        })
     }
 
+    internal companion object {
+        private val TAG = SecureCredentialsManager::class.java.simpleName
+        private const val KEY_CREDENTIALS = "com.auth0.credentials"
+        private const val KEY_EXPIRES_AT = "com.auth0.credentials_access_token_expires_at"
+        private const val KEY_CACHE_EXPIRES_AT = "com.auth0.credentials_expires_at"
+        private const val KEY_CAN_REFRESH = "com.auth0.credentials_can_refresh"
+        private const val KEY_CRYPTO_ALIAS = "com.auth0.manager_key_alias"
+        private const val KEY_ALIAS = "com.auth0.key"
+    }
+
+    init {
+        authenticateBeforeDecrypt = false
+    }
 }
