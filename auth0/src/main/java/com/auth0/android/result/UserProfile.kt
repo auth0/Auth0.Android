@@ -21,55 +21,35 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+package com.auth0.android.result
 
-package com.auth0.android.result;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.Serializable
+import java.util.*
 
 /**
  * Class that holds the information of a user's profile in Auth0.
- * Used both in {@link com.auth0.android.management.UsersAPIClient} and {@link com.auth0.android.authentication.AuthenticationAPIClient}.
+ * Used both in [com.auth0.android.management.UsersAPIClient] and [com.auth0.android.authentication.AuthenticationAPIClient].
  */
-public class UserProfile implements Serializable {
-    private final String id;
-    private final String name;
-    private final String nickname;
-    private final String pictureURL;
-
-    private final String email;
-    private final boolean emailVerified;
-    private final String givenName;
-    private final String familyName;
-    private final Map<String, Object> userMetadata;
-    private final Map<String, Object> appMetadata;
-    private final Date createdAt;
-    private final List<UserIdentity> identities;
-
-    private final Map<String, Object> extraInfo;
-
-    public UserProfile(@Nullable String id, @Nullable String name, @Nullable String nickname, @Nullable String pictureURL, @Nullable String email, boolean emailVerified, @Nullable String familyName, @Nullable Date createdAt, @Nullable List<UserIdentity> identities, @Nullable Map<String, Object> extraInfo, @Nullable Map<String, Object> userMetadata, @Nullable Map<String, Object> appMetadata, @Nullable String givenName) {
-        this.id = id;
-        this.name = name;
-        this.nickname = nickname;
-        this.pictureURL = pictureURL;
-        this.email = email;
-        this.emailVerified = emailVerified;
-        this.givenName = givenName;
-        this.familyName = familyName;
-        this.userMetadata = userMetadata;
-        this.appMetadata = appMetadata;
-        this.createdAt = createdAt;
-        this.identities = identities;
-        this.extraInfo = extraInfo;
-    }
+public class UserProfile(
+    private val id: String?,
+    public val name: String?,
+    public val nickname: String?,
+    public val pictureURL: String?,
+    public val email: String?,
+    public val isEmailVerified: Boolean?,
+    public val familyName: String?,
+    public val createdAt: Date?,
+    /**
+     * List of the identities from a Identity Provider associated to the user.
+     *
+     * @return a list of identity provider information.
+     */
+    private val identities: List<UserIdentity>?,
+    private val extraInfo: Map<String, Any>?,
+    private val userMetadata: Map<String, Any>?,
+    private val appMetadata: Map<String, Any>?,
+    public val givenName: String?
+) : Serializable {
 
     /**
      * Getter for the unique Identifier of the user. If this represents a Full User Profile (Management API) the 'id' field will be returned.
@@ -77,61 +57,23 @@ public class UserProfile implements Serializable {
      *
      * @return the unique identifier of the user.
      */
-    @Nullable
-    public String getId() {
+    public fun getId(): String? {
         if (id != null) {
-            return id;
+            return id
         }
-        return getExtraInfo().containsKey("sub") ? (String) getExtraInfo().get("sub") : null;
+        return if (getExtraInfo().containsKey("sub")) getExtraInfo()["sub"] as String? else null
     }
 
-    @Nullable
-    public String getName() {
-        return name;
+    public fun getUserMetadata(): Map<String, Any> {
+        return userMetadata ?: emptyMap()
     }
 
-    @Nullable
-    public String getNickname() {
-        return nickname;
+    public fun getAppMetadata(): Map<String, Any> {
+        return appMetadata ?: emptyMap()
     }
 
-    @Nullable
-    public String getEmail() {
-        return email;
-    }
-
-    public boolean isEmailVerified() {
-        return emailVerified;
-    }
-
-    @Nullable
-    public String getPictureURL() {
-        return pictureURL;
-    }
-
-    @Nullable
-    public Date getCreatedAt() {
-        return createdAt;
-    }
-
-    @Nullable
-    public String getGivenName() {
-        return givenName;
-    }
-
-    @Nullable
-    public String getFamilyName() {
-        return familyName;
-    }
-
-    @NonNull
-    public Map<String, Object> getUserMetadata() {
-        return userMetadata != null ? userMetadata : Collections.<String, Object>emptyMap();
-    }
-
-    @NonNull
-    public Map<String, Object> getAppMetadata() {
-        return appMetadata != null ? appMetadata : Collections.<String, Object>emptyMap();
+    public fun getIdentities(): List<UserIdentity> {
+        return identities ?: emptyList()
     }
 
     /**
@@ -139,18 +81,7 @@ public class UserProfile implements Serializable {
      *
      * @return a map with user's extra information found in the profile
      */
-    @NonNull
-    public Map<String, Object> getExtraInfo() {
-        return extraInfo != null ? new HashMap<>(extraInfo) : Collections.<String, Object>emptyMap();
-    }
-
-    /**
-     * List of the identities from a Identity Provider associated to the user.
-     *
-     * @return a list of identity provider information.
-     */
-    @Nullable
-    public List<UserIdentity> getIdentities() {
-        return identities;
+    public fun getExtraInfo(): Map<String, Any> {
+        return extraInfo?.toMap() ?: emptyMap()
     }
 }

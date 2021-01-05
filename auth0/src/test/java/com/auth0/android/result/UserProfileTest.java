@@ -25,10 +25,10 @@ public class UserProfileTest {
     @Before
     public void setUp() {
         createdAt = Mockito.mock(Date.class);
-        identities = Mockito.mock(List.class);
-        extraInfo = Mockito.mock(Map.class);
-        userMetadata = Mockito.mock(Map.class);
-        appMetadata = Mockito.mock(Map.class);
+        identities = Collections.emptyList();
+        extraInfo = Collections.emptyMap();
+        userMetadata = Collections.emptyMap();
+        appMetadata = Collections.emptyMap();
         userProfile = new UserProfile("id", "name", "nickname", "pictureUrl", "email", true, "familyName", createdAt, identities, extraInfo, userMetadata, appMetadata, "givenName");
     }
 
@@ -40,13 +40,13 @@ public class UserProfileTest {
     @Test
     public void shouldReturnSubIfMissingId() {
         Map<String, Object> extraInfo = Collections.singletonMap("sub", "fromSub");
-        userProfile = new UserProfile(null, null, null, null, null, false, null, null, null, extraInfo, null, null, null);
+        UserProfile userProfile = new UserProfile(null, null, null, null, null, false, null, null, null, extraInfo, null, null, null);
         assertThat(userProfile.getId(), is("fromSub"));
     }
 
     @Test
     public void shouldGetNullIdIfMissing() {
-        userProfile = new UserProfile(null, null, null, null, null, false, null, null, null, null, null, null, null);
+        UserProfile userProfile = new UserProfile(null, null, null, null, null, false, null, null, null, null, null, null, null);
         assertThat(userProfile.getId(), is(nullValue()));
     }
 
