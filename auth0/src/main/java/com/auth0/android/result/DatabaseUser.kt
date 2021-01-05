@@ -21,49 +21,20 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+package com.auth0.android.result
 
-package com.auth0.android.result;
-
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import com.auth0.android.authentication.AuthenticationAPIClient;
-import com.auth0.android.util.JsonRequired;
-import com.google.gson.annotations.SerializedName;
+import com.auth0.android.util.JsonRequired
+import com.google.gson.annotations.SerializedName
 
 /**
  * Auth0 user created in a Database connection.
  *
- * @see AuthenticationAPIClient#signUp(String, String, String)
+ * @see AuthenticationAPIClient.signUp
  */
-public class DatabaseUser {
-
-    @SerializedName("email")
-    @JsonRequired
-    private final String email;
-    @SerializedName("username")
-    private final String username;
-    @SerializedName("email_verified")
-    private final boolean emailVerified;
-
-    public DatabaseUser(@NonNull String email, @Nullable String username, boolean emailVerified) {
-        this.email = email;
-        this.username = username;
-        this.emailVerified = emailVerified;
-    }
-
-    @NonNull
-    public String getEmail() {
-        return email;
-    }
-
-    @Nullable
-    public String getUsername() {
-        return username;
-    }
-
-    public boolean isEmailVerified() {
-        return emailVerified;
-    }
-}
+public class DatabaseUser(
+    @field:JsonRequired @field:SerializedName("email") public val email: String,
+    @field:SerializedName(
+        "username"
+    ) public val username: String?,
+    @field:SerializedName("email_verified") public val isEmailVerified: Boolean
+)
