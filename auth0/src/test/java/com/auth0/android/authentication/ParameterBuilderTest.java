@@ -37,7 +37,6 @@ import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.equalToIgnoringCase;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
@@ -73,13 +72,6 @@ public class ParameterBuilderTest {
     @Test
     public void shouldInstantiateWithArguments() {
         assertThat(ParameterBuilder.newBuilder(new HashMap<String, String>()), is(notNullValue()));
-    }
-
-    @Test
-    public void shouldFailToInstantiateWithNullParametersInFactoryMethod() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage(equalToIgnoringCase("Must provide non-null parameters"));
-        ParameterBuilder.newBuilder(null);
     }
 
     @Test
@@ -160,11 +152,6 @@ public class ParameterBuilderTest {
         assertThat(builder.asDictionary(), hasEntry("key", "value"));
         builder.clearAll();
         assertThat(builder.asDictionary(), anEmptyMap());
-    }
-
-    @Test
-    public void shouldDoNothingWhenAddingNullParameters() {
-        assertThat(builder.addAll(null).asDictionary(), hasEntry("scope", ParameterBuilder.SCOPE_OPENID));
     }
 
     @Test

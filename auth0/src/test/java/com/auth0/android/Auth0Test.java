@@ -70,6 +70,8 @@ public class Auth0Test {
     public void setUp() {
         MockitoAnnotations.initMocks(this);
         when(context.getPackageName()).thenReturn(PACKAGE_NAME);
+        when(context.getString(eq(222))).thenReturn(CLIENT_ID);
+        when(context.getString(eq(333))).thenReturn(DOMAIN);
     }
 
     @Test
@@ -284,13 +286,6 @@ public class Auth0Test {
         expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage("Invalid domain url: 'HTTP://" + DOMAIN + "'. Only HTTPS domain URLs are supported. If no scheme is passed, HTTPS will be used.");
         new Auth0(CLIENT_ID, "HTTP://" + DOMAIN);
-    }
-
-    @Test
-    public void shouldThrowWhenDomainIsNull() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Invalid domain url: 'null'");
-        new Auth0(CLIENT_ID, null);
     }
 
     @Test

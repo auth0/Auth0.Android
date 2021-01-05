@@ -310,7 +310,7 @@ public class UsersAPIClientTest {
         Map<String, Object> body = bodyFromRequest(request);
 
         assertThat(body, hasKey(KEY_USER_METADATA));
-        assertThat(((Map<String, Object>) body.get(KEY_USER_METADATA)), is(equalTo(metadata)));
+        assertThat((body.get(KEY_USER_METADATA)), is(equalTo(metadata)));
 
         assertThat(callback, hasPayloadOfType(UserProfile.class));
     }
@@ -336,7 +336,7 @@ public class UsersAPIClientTest {
         Map<String, Object> body = bodyFromRequest(request);
 
         assertThat(body, hasKey(KEY_USER_METADATA));
-        assertThat(((Map<String, Object>) body.get(KEY_USER_METADATA)), is(equalTo(metadata)));
+        assertThat((body.get(KEY_USER_METADATA)), is(equalTo(metadata)));
 
         assertThat(result, isA(UserProfile.class));
     }
