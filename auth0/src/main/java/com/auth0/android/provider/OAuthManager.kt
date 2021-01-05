@@ -104,7 +104,7 @@ internal class OAuthManager(
         ) {
             override fun onSuccess(credentials: Credentials) {
                 assertValidIdToken(credentials.idToken, object : VoidCallback {
-                    override fun onSuccess(ignored: Unit?) {
+                    override fun onSuccess(ignored: Unit) {
                         callback.onSuccess(credentials)
                     }
 
@@ -137,11 +137,11 @@ internal class OAuthManager(
                     validationCallback.onFailure(error)
                 }
 
-                override fun onSuccess(signatureVerifier: SignatureVerifier?) {
+                override fun onSuccess(signatureVerifier: SignatureVerifier) {
                     val options = IdTokenVerificationOptions(
                         idTokenVerificationIssuer!!,
                         apiClient.clientId,
-                        signatureVerifier!!
+                        signatureVerifier
                     )
                     val maxAge = parameters[KEY_MAX_AGE]
                     if (!TextUtils.isEmpty(maxAge)) {
@@ -153,7 +153,7 @@ internal class OAuthManager(
                     try {
                         IdTokenVerifier().verify(decodedIdToken, options)
                         logDebug("Authenticated using web flow")
-                        validationCallback.onSuccess(null)
+                        validationCallback.onSuccess(Unit)
                     } catch (exc: TokenValidationException) {
                         validationCallback.onFailure(exc)
                     }
@@ -271,7 +271,7 @@ internal class OAuthManager(
         private const val KEY_CODE = "code"
 
         @JvmStatic
-        @VisibleForTesting
+        @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
         @Throws(AuthenticationException::class)
         fun assertValidState(requestState: String, responseState: String?) {
             if (requestState != responseState) {
@@ -290,7 +290,7 @@ internal class OAuthManager(
             }
         }
 
-        @VisibleForTesting
+        @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
         fun getRandomString(defaultValue: String?): String {
             return defaultValue ?: secureRandomString()
         }
