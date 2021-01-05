@@ -62,6 +62,7 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 - The `com.auth0.android.util.Telemetry` class has been renamed to `com.auth0.android.util.Auth0UserAgent`.
 - The `com.auth0.android.request.AuthorizableRequest` class has been removed. You can achieve the same result using the method in Request: `Request#addHeader("Authorization", "Bearer TOKEN_VALUE")`.
 - The `com.auth0.android.authentication.request.TokenRequest` class has been removed. The ability to set a Code Verifier, and any request headers and parameters has been moved to the `com.auth0.android.request.Request` interface.
+- The `com.auth0.android.callback.Callback` interface has been removed. The `onFailure` method has been moved to the `com.auth0.android.callback.BaseCallback` interface.
 
 ### Class changes
 

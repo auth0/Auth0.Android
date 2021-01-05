@@ -26,14 +26,20 @@ package com.auth0.android.callback
 import com.auth0.android.Auth0Exception
 
 /**
- * Callback that receives a single value on success.
+ * Interface for all callbacks used with Auth0 API clients
  */
-//TODO [SDK-2185]: Merge this interface into Callback
-public interface BaseCallback<T, U : Auth0Exception> : Callback<U> {
+public interface BaseCallback<T, U : Auth0Exception> {
     /**
      * Method called on success with the payload.
      *
      * @param payload Request payload
      */
     public fun onSuccess(payload: T)
+
+    /**
+     * Method called on Auth0 API request failure
+     *
+     * @param error The reason of the failure
+     */
+    public fun onFailure(error: U)
 }
