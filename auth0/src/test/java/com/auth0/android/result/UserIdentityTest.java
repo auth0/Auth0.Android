@@ -2,8 +2,8 @@ package com.auth0.android.result;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 
+import java.util.Collections;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -11,12 +11,12 @@ import static org.hamcrest.core.Is.is;
 
 public class UserIdentityTest {
 
-    private Map profileInfo;
+    private Map<String, Object> profileInfo;
     private UserIdentity userIdentity;
 
     @Before
     public void setUp() {
-        profileInfo = Mockito.mock(Map.class);
+        profileInfo = Collections.singletonMap("key", "value");
         userIdentity = new UserIdentity("id", "connection", "provider", true, "accessToken", "accessTokenSecret", profileInfo);
     }
 

@@ -21,88 +21,32 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+package com.auth0.android.result
 
-package com.auth0.android.result;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import com.auth0.android.util.JsonRequired;
-import com.google.gson.annotations.SerializedName;
-
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import com.auth0.android.util.JsonRequired
+import com.google.gson.annotations.SerializedName
+import java.io.Serializable
 
 /**
  * Class that holds the information from a Identity Provider like Facebook or Twitter.
  */
-public class UserIdentity implements Serializable {
+public class UserIdentity(
+    @field:SerializedName("user_id") @field:JsonRequired public val id: String,
+    @field:SerializedName(
+        "connection"
+    ) @field:JsonRequired public val connection: String,
+    @field:SerializedName("provider") @field:JsonRequired public val provider: String,
+    @field:SerializedName(
+        "isSocial"
+    ) public val isSocial: Boolean,
+    @field:SerializedName("access_token") public val accessToken: String?,
+    @field:SerializedName("access_token_secret") public val accessTokenSecret: String?,
+    @field:SerializedName(
+        "profileData"
+    ) private val profileInfo: Map<String, Any>?
+) : Serializable {
 
-    @JsonRequired
-    @SerializedName("user_id")
-    private final String id;
-    @JsonRequired
-    @SerializedName("connection")
-    private final String connection;
-    @JsonRequired
-    @SerializedName("provider")
-    private final String provider;
-
-    @SerializedName("isSocial")
-    private final boolean social;
-
-    @SerializedName("access_token")
-    private final String accessToken;
-    @SerializedName("access_token_secret")
-    private final String accessTokenSecret;
-
-    @SerializedName("profileData")
-    private final Map<String, Object> profileInfo;
-
-    public UserIdentity(@NonNull String id, @NonNull String connection, @NonNull String provider, boolean social,
-                        @Nullable String accessToken, @Nullable String accessTokenSecret, @NonNull Map<String, Object> profileInfo) {
-        this.id = id;
-        this.connection = connection;
-        this.provider = provider;
-        this.social = social;
-        this.accessToken = accessToken;
-        this.accessTokenSecret = accessTokenSecret;
-        this.profileInfo = profileInfo;
-    }
-
-    @NonNull
-    public String getId() {
-        return id;
-    }
-
-    @NonNull
-    public String getConnection() {
-        return connection;
-    }
-
-    @NonNull
-    public String getProvider() {
-        return provider;
-    }
-
-    public boolean isSocial() {
-        return social;
-    }
-
-    @Nullable
-    public String getAccessToken() {
-        return accessToken;
-    }
-
-    @Nullable
-    public String getAccessTokenSecret() {
-        return accessTokenSecret;
-    }
-
-    @NonNull
-    public Map<String, Object> getProfileInfo() {
-        return profileInfo != null ? new HashMap<>(profileInfo) : Collections.<String, Object>emptyMap();
+    public fun getProfileInfo(): Map<String, Any> {
+        return profileInfo?.toMap() ?: emptyMap()
     }
 }
