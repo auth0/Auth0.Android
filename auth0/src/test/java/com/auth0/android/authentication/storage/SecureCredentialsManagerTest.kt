@@ -17,6 +17,7 @@ import com.auth0.android.result.Credentials
 import com.auth0.android.result.CredentialsMock
 import com.auth0.android.util.Clock
 import com.google.gson.Gson
+import com.nhaarman.mockitokotlin2.*
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.eq
 import org.hamcrest.MatcherAssert
@@ -57,17 +58,13 @@ public class SecureCredentialsManagerTest {
     @Mock
     private lateinit var jwtDecoder: JWTDecoder
 
-    @Captor
-    private lateinit var credentialsCaptor: ArgumentCaptor<Credentials>
+    private val credentialsCaptor: KArgumentCaptor<Credentials> = argumentCaptor()
 
-    @Captor
-    private lateinit var exceptionCaptor: ArgumentCaptor<CredentialsManagerException>
+    private val exceptionCaptor: KArgumentCaptor<CredentialsManagerException> = argumentCaptor()
 
-    @Captor
-    private lateinit var stringCaptor: ArgumentCaptor<String>
+    private val stringCaptor: KArgumentCaptor<String> = argumentCaptor()
 
-    @Captor
-    private lateinit var requestCallbackCaptor: ArgumentCaptor<BaseCallback<Credentials, AuthenticationException>>
+    private val requestCallbackCaptor: KArgumentCaptor<BaseCallback<Credentials, AuthenticationException>> = argumentCaptor()
 
     @get:Rule
     public val exception: ExpectedException = ExpectedException.none()
@@ -80,7 +77,7 @@ public class SecureCredentialsManagerTest {
         val activity =
             Robolectric.buildActivity(Activity::class.java).create().start().resume().get()
         val activityContext = Mockito.spy(activity)
-        val kManager = Mockito.mock(KeyguardManager::class.java)
+        val kManager = mock<KeyguardManager>()
         Mockito.`when`(activityContext.getSystemService(Context.KEYGUARD_SERVICE))
             .thenReturn(kManager)
         val secureCredentialsManager =
@@ -118,15 +115,15 @@ public class SecureCredentialsManagerTest {
         prepareJwtDecoderMock(Date(sharedExpirationTime))
         Mockito.`when`(crypto.encrypt(json.toByteArray())).thenReturn(json.toByteArray())
         manager.saveCredentials(credentials)
-        Mockito.verify(storage)
+        verify(storage)
             .store(eq("com.auth0.credentials"), stringCaptor.capture())
-        Mockito.verify(storage).store("com.auth0.credentials_expires_at", sharedExpirationTime)
-        Mockito.verify(storage)
+        verify(storage).store("com.auth0.credentials_expires_at", sharedExpirationTime)
+        verify(storage)
             .store("com.auth0.credentials_access_token_expires_at", sharedExpirationTime)
-        Mockito.verify(storage).store("com.auth0.credentials_can_refresh", true)
-        Mockito.verify(storage).store("com.auth0.manager_key_alias", KEY_ALIAS)
-        Mockito.verifyNoMoreInteractions(storage)
-        val encodedJson = stringCaptor.value
+        verify(storage).store("com.auth0.credentials_can_refresh", true)
+        verify(storage).store("com.auth0.manager_key_alias", KEY_ALIAS)
+        verifyNoMoreInteractions(storage)
+        val encodedJson = stringCaptor.firstValue
         MatcherAssert.assertThat(encodedJson, Is.`is`(Matchers.notNullValue()))
         val decoded = Base64.decode(encodedJson, Base64.DEFAULT)
         val storedCredentials = gson.fromJson(String(decoded), Credentials::class.java)
@@ -154,15 +151,15 @@ public class SecureCredentialsManagerTest {
         prepareJwtDecoderMock(Date(accessTokenExpirationTime))
         Mockito.`when`(crypto.encrypt(json.toByteArray())).thenReturn(json.toByteArray())
         manager.saveCredentials(credentials)
-        Mockito.verify(storage)
+        verify(storage)
             .store(eq("com.auth0.credentials"), stringCaptor.capture())
-        Mockito.verify(storage).store("com.auth0.credentials_expires_at", accessTokenExpirationTime)
-        Mockito.verify(storage)
+        verify(storage).store("com.auth0.credentials_expires_at", accessTokenExpirationTime)
+        verify(storage)
             .store("com.auth0.credentials_access_token_expires_at", accessTokenExpirationTime)
-        Mockito.verify(storage).store("com.auth0.credentials_can_refresh", true)
-        Mockito.verify(storage).store("com.auth0.manager_key_alias", KEY_ALIAS)
-        Mockito.verifyNoMoreInteractions(storage)
-        val encodedJson = stringCaptor.value
+        verify(storage).store("com.auth0.credentials_can_refresh", true)
+        verify(storage).store("com.auth0.manager_key_alias", KEY_ALIAS)
+        verifyNoMoreInteractions(storage)
+        val encodedJson = stringCaptor.firstValue
         MatcherAssert.assertThat(encodedJson, Is.`is`(Matchers.notNullValue()))
         val decoded = Base64.decode(encodedJson, Base64.DEFAULT)
         val storedCredentials = gson.fromJson(String(decoded), Credentials::class.java)
@@ -194,15 +191,15 @@ public class SecureCredentialsManagerTest {
         prepareJwtDecoderMock(Date(idTokenExpirationTime))
         Mockito.`when`(crypto.encrypt(json.toByteArray())).thenReturn(json.toByteArray())
         manager.saveCredentials(credentials)
-        Mockito.verify(storage)
+        verify(storage)
             .store(eq("com.auth0.credentials"), stringCaptor.capture())
-        Mockito.verify(storage).store("com.auth0.credentials_expires_at", idTokenExpirationTime)
-        Mockito.verify(storage)
+        verify(storage).store("com.auth0.credentials_expires_at", idTokenExpirationTime)
+        verify(storage)
             .store("com.auth0.credentials_access_token_expires_at", accessTokenExpirationTime)
-        Mockito.verify(storage).store("com.auth0.credentials_can_refresh", true)
-        Mockito.verify(storage).store("com.auth0.manager_key_alias", KEY_ALIAS)
-        Mockito.verifyNoMoreInteractions(storage)
-        val encodedJson = stringCaptor.value
+        verify(storage).store("com.auth0.credentials_can_refresh", true)
+        verify(storage).store("com.auth0.manager_key_alias", KEY_ALIAS)
+        verifyNoMoreInteractions(storage)
+        val encodedJson = stringCaptor.firstValue
         MatcherAssert.assertThat(encodedJson, Is.`is`(Matchers.notNullValue()))
         val decoded = Base64.decode(encodedJson, Base64.DEFAULT)
         val storedCredentials = gson.fromJson(String(decoded), Credentials::class.java)
@@ -227,15 +224,15 @@ public class SecureCredentialsManagerTest {
         prepareJwtDecoderMock(Date(expirationTime))
         Mockito.`when`(crypto.encrypt(json.toByteArray())).thenReturn(json.toByteArray())
         manager.saveCredentials(credentials)
-        Mockito.verify(storage)
+        verify(storage)
             .store(eq("com.auth0.credentials"), stringCaptor.capture())
-        Mockito.verify(storage).store("com.auth0.credentials_expires_at", expirationTime)
-        Mockito.verify(storage)
+        verify(storage).store("com.auth0.credentials_expires_at", expirationTime)
+        verify(storage)
             .store("com.auth0.credentials_access_token_expires_at", expirationTime)
-        Mockito.verify(storage).store("com.auth0.credentials_can_refresh", false)
-        Mockito.verify(storage).store("com.auth0.manager_key_alias", KEY_ALIAS)
-        Mockito.verifyNoMoreInteractions(storage)
-        val encodedJson = stringCaptor.value
+        verify(storage).store("com.auth0.credentials_can_refresh", false)
+        verify(storage).store("com.auth0.manager_key_alias", KEY_ALIAS)
+        verifyNoMoreInteractions(storage)
+        val encodedJson = stringCaptor.firstValue
         MatcherAssert.assertThat(encodedJson, Is.`is`(Matchers.notNullValue()))
         val decoded = Base64.decode(encodedJson, Base64.DEFAULT)
         val storedCredentials = gson.fromJson(String(decoded), Credentials::class.java)
@@ -275,9 +272,9 @@ public class SecureCredentialsManagerTest {
             exception.message,
             Is.`is`("A change on the Lock Screen security settings have deemed the encryption keys invalid and have been recreated. Please, try saving the credentials again.")
         )
-        Mockito.verify(storage).remove("com.auth0.credentials")
-        Mockito.verify(storage).remove("com.auth0.credentials_expires_at")
-        Mockito.verify(storage).remove("com.auth0.credentials_can_refresh")
+        verify(storage).remove("com.auth0.credentials")
+        verify(storage).remove("com.auth0.credentials_expires_at")
+        verify(storage).remove("com.auth0.credentials_can_refresh")
     }
 
     @Test
@@ -352,16 +349,16 @@ public class SecureCredentialsManagerTest {
      */
     @Test
     public fun shouldClearStoredCredentialsAndFailOnGetCredentialsWhenCryptoExceptionIsThrown() {
-        Mockito.verifyNoMoreInteractions(client)
+        verifyNoMoreInteractions(client)
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         val storedJson = insertTestCredentials(true, true, true, expiresAt)
         Mockito.`when`(crypto.decrypt(storedJson.toByteArray()))
             .thenThrow(CryptoException("err", null))
         manager.getCredentials(callback)
-        Mockito.verify(callback).onFailure(
+        verify(callback).onFailure(
             exceptionCaptor.capture()
         )
-        val exception = exceptionCaptor.value
+        val exception = exceptionCaptor.firstValue
         MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(
             exception.cause, IsInstanceOf.instanceOf(
@@ -374,23 +371,23 @@ public class SecureCredentialsManagerTest {
                         "Any previously stored content is now lost. Please, try saving the credentials again."
             )
         )
-        Mockito.verify(storage).remove("com.auth0.credentials")
-        Mockito.verify(storage).remove("com.auth0.credentials_expires_at")
-        Mockito.verify(storage).remove("com.auth0.credentials_can_refresh")
+        verify(storage).remove("com.auth0.credentials")
+        verify(storage).remove("com.auth0.credentials_expires_at")
+        verify(storage).remove("com.auth0.credentials_can_refresh")
     }
 
     @Test
     public fun shouldFailOnGetCredentialsWhenIncompatibleDeviceExceptionIsThrown() {
-        Mockito.verifyNoMoreInteractions(client)
+        verifyNoMoreInteractions(client)
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         val storedJson = insertTestCredentials(true, true, true, expiresAt)
         Mockito.`when`(crypto.decrypt(storedJson.toByteArray()))
             .thenThrow(IncompatibleDeviceException(null))
         manager.getCredentials(callback)
-        Mockito.verify(callback).onFailure(
+        verify(callback).onFailure(
             exceptionCaptor.capture()
         )
-        val exception = exceptionCaptor.value
+        val exception = exceptionCaptor.firstValue
         MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(
             exception.cause, IsInstanceOf.instanceOf(
@@ -401,49 +398,49 @@ public class SecureCredentialsManagerTest {
             exception.message,
             Is.`is`("This device is not compatible with the SecureCredentialsManager class.")
         )
-        Mockito.verify(storage, Mockito.never()).remove("com.auth0.credentials")
-        Mockito.verify(storage, Mockito.never()).remove("com.auth0.credentials_expires_at")
-        Mockito.verify(storage, Mockito.never()).remove("com.auth0.credentials_can_refresh")
+        verify(storage, never()).remove("com.auth0.credentials")
+        verify(storage, never()).remove("com.auth0.credentials_expires_at")
+        verify(storage, never()).remove("com.auth0.credentials_can_refresh")
     }
 
     @Test
     public fun shouldFailOnGetCredentialsWhenNoAccessTokenOrIdTokenWasSaved() {
-        Mockito.verifyNoMoreInteractions(client)
+        verifyNoMoreInteractions(client)
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         insertTestCredentials(false, false, true, expiresAt)
         manager.getCredentials(callback)
-        Mockito.verify(callback).onFailure(
+        verify(callback).onFailure(
             exceptionCaptor.capture()
         )
-        val exception = exceptionCaptor.value
+        val exception = exceptionCaptor.firstValue
         MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(exception.message, Is.`is`("No Credentials were previously set."))
     }
 
     @Test
     public fun shouldFailOnGetCredentialsWhenExpiredAndNoRefreshTokenWasSaved() {
-        Mockito.verifyNoMoreInteractions(client)
+        verifyNoMoreInteractions(client)
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS) //Same as current time --> expired
         insertTestCredentials(true, true, false, expiresAt)
         manager.getCredentials(callback)
-        Mockito.verify(callback).onFailure(
+        verify(callback).onFailure(
             exceptionCaptor.capture()
         )
-        val exception = exceptionCaptor.value
+        val exception = exceptionCaptor.firstValue
         MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(exception.message, Is.`is`("No Credentials were previously set."))
     }
 
     @Test
     public fun shouldGetNonExpiredCredentialsFromStorage() {
-        Mockito.verifyNoMoreInteractions(client)
+        verifyNoMoreInteractions(client)
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + ONE_HOUR_SECONDS * 1000)
         insertTestCredentials(true, true, true, expiresAt)
         manager.getCredentials(callback)
-        Mockito.verify(callback).onSuccess(
+        verify(callback).onSuccess(
             credentialsCaptor.capture()
         )
-        val retrievedCredentials = credentialsCaptor.value
+        val retrievedCredentials = credentialsCaptor.firstValue
         MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`("accessToken"))
         MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`("idToken"))
@@ -456,14 +453,14 @@ public class SecureCredentialsManagerTest {
 
     @Test
     public fun shouldGetNonExpiredCredentialsFromStorageWhenOnlyIdTokenIsAvailable() {
-        Mockito.verifyNoMoreInteractions(client)
+        verifyNoMoreInteractions(client)
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + ONE_HOUR_SECONDS * 1000)
         insertTestCredentials(true, false, true, expiresAt)
         manager.getCredentials(callback)
-        Mockito.verify(callback).onSuccess(
+        verify(callback).onSuccess(
             credentialsCaptor.capture()
         )
-        val retrievedCredentials = credentialsCaptor.value
+        val retrievedCredentials = credentialsCaptor.firstValue
         MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`(Matchers.nullValue()))
         MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`("idToken"))
@@ -476,14 +473,14 @@ public class SecureCredentialsManagerTest {
 
     @Test
     public fun shouldGetNonExpiredCredentialsFromStorageWhenOnlyAccessTokenIsAvailable() {
-        Mockito.verifyNoMoreInteractions(client)
+        verifyNoMoreInteractions(client)
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + ONE_HOUR_SECONDS * 1000)
         insertTestCredentials(false, true, true, expiresAt)
         manager.getCredentials(callback)
-        Mockito.verify(callback).onSuccess(
+        verify(callback).onSuccess(
             credentialsCaptor.capture()
         )
-        val retrievedCredentials = credentialsCaptor.value
+        val retrievedCredentials = credentialsCaptor.firstValue
         MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`("accessToken"))
         MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`(Matchers.nullValue()))
@@ -500,16 +497,16 @@ public class SecureCredentialsManagerTest {
         insertTestCredentials(false, true, true, expiresAt)
         val newDate =
             Date(CredentialsMock.CURRENT_TIME_MS + 61 * 1000) // new token expires in minTTL + 1 seconds
-        val jwtMock = Mockito.mock(JWT::class.java)
+        val jwtMock = mock<JWT>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
         Mockito.`when`(
             client.renewAuth("refreshToken")
         ).thenReturn(request)
         manager.getCredentials(null, 60, callback) // minTTL of 1 minute
-        Mockito.verify(request, Mockito.never())
+        verify(request, never())
             .addParameter(eq("scope"), anyString())
-        Mockito.verify(request).start(
+        verify(request).start(
             requestCallbackCaptor.capture()
         )
 
@@ -519,19 +516,19 @@ public class SecureCredentialsManagerTest {
         val expectedJson = gson.toJson(expectedCredentials)
         Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
             .thenReturn(expectedJson.toByteArray())
-        requestCallbackCaptor.value.onSuccess(expectedCredentials)
-        Mockito.verify(callback).onSuccess(
+        requestCallbackCaptor.firstValue.onSuccess(expectedCredentials)
+        verify(callback).onSuccess(
             credentialsCaptor.capture()
         )
-        Mockito.verify(storage)
+        verify(storage)
             .store(eq("com.auth0.credentials"), stringCaptor.capture())
-        Mockito.verify(storage).store("com.auth0.credentials_expires_at", newDate.time)
-        Mockito.verify(storage).store("com.auth0.credentials_access_token_expires_at", newDate.time)
-        Mockito.verify(storage).store("com.auth0.credentials_can_refresh", true)
-        Mockito.verify(storage, Mockito.never()).remove(anyString())
+        verify(storage).store("com.auth0.credentials_expires_at", newDate.time)
+        verify(storage).store("com.auth0.credentials_access_token_expires_at", newDate.time)
+        verify(storage).store("com.auth0.credentials_can_refresh", true)
+        verify(storage, never()).remove(anyString())
 
         // Verify the returned credentials are the latest
-        val retrievedCredentials = credentialsCaptor.value
+        val retrievedCredentials = credentialsCaptor.firstValue
         MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`("newId"))
         MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`("newAccess"))
@@ -541,7 +538,7 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("newScope"))
 
         // Verify the credentials are property stored
-        val encodedJson = stringCaptor.value
+        val encodedJson = stringCaptor.firstValue
         MatcherAssert.assertThat(encodedJson, Is.`is`(Matchers.notNullValue()))
         val decoded = Base64.decode(encodedJson, Base64.DEFAULT)
         val renewedStoredCredentials = gson.fromJson(String(decoded), Credentials::class.java)
@@ -565,16 +562,16 @@ public class SecureCredentialsManagerTest {
         insertTestCredentials(false, true, true, expiresAt)
         val newDate =
             Date(CredentialsMock.CURRENT_TIME_MS + 59 * 1000) // new token expires in minTTL - 1 seconds
-        val jwtMock = Mockito.mock(JWT::class.java)
+        val jwtMock = mock<JWT>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
         Mockito.`when`(
             client.renewAuth("refreshToken")
         ).thenReturn(request)
         manager.getCredentials(null, 60, callback) // minTTL of 1 minute
-        Mockito.verify(request, Mockito.never())
+        verify(request, never())
             .addParameter(eq("scope"), anyString())
-        Mockito.verify(request).start(
+        verify(request).start(
             requestCallbackCaptor.capture()
         )
 
@@ -584,27 +581,27 @@ public class SecureCredentialsManagerTest {
         val expectedJson = gson.toJson(expectedCredentials)
         Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
             .thenReturn(expectedJson.toByteArray())
-        requestCallbackCaptor.value.onSuccess(expectedCredentials)
-        Mockito.verify(callback).onFailure(
+        requestCallbackCaptor.firstValue.onSuccess(expectedCredentials)
+        verify(callback).onFailure(
             exceptionCaptor.capture()
         )
-        val exception = exceptionCaptor.value
+        val exception = exceptionCaptor.firstValue
         MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(
             exception.message,
             Is.`is`("The lifetime of the renewed Access Token (1) is less than the minTTL requested (60). Increase the 'Token Expiration' setting of your Auth0 API in the dashboard, or request a lower minTTL.")
         )
-        Mockito.verify(storage, Mockito.never())
+        verify(storage, never())
             .store(eq("com.auth0.credentials"), anyString())
-        Mockito.verify(storage, Mockito.never()).store(
+        verify(storage, never()).store(
             eq("com.auth0.credentials_expires_at"),
             anyLong()
         )
-        Mockito.verify(storage, Mockito.never()).store(
+        verify(storage, never()).store(
             eq("com.auth0.credentials_can_refresh"),
             anyBoolean()
         )
-        Mockito.verify(storage, Mockito.never()).remove(anyString())
+        verify(storage, never()).remove(anyString())
     }
 
     @Test
@@ -612,16 +609,16 @@ public class SecureCredentialsManagerTest {
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS) // non expired credentials
         insertTestCredentials(false, true, true, expiresAt) // "scope" is set
         val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS + ONE_HOUR_SECONDS * 1000)
-        val jwtMock = Mockito.mock(JWT::class.java)
+        val jwtMock = mock<JWT>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
         Mockito.`when`(
             client.renewAuth("refreshToken")
         ).thenReturn(request)
         manager.getCredentials("different scope", 0, callback) // minTTL of 0 seconds (default)
-        Mockito.verify(request)
+        verify(request)
             .addParameter(eq("scope"), eq("different scope"))
-        Mockito.verify(request).start(
+        verify(request).start(
             requestCallbackCaptor.capture()
         )
 
@@ -631,19 +628,19 @@ public class SecureCredentialsManagerTest {
         val expectedJson = gson.toJson(expectedCredentials)
         Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
             .thenReturn(expectedJson.toByteArray())
-        requestCallbackCaptor.value.onSuccess(expectedCredentials)
-        Mockito.verify(callback).onSuccess(
+        requestCallbackCaptor.firstValue.onSuccess(expectedCredentials)
+        verify(callback).onSuccess(
             credentialsCaptor.capture()
         )
-        Mockito.verify(storage)
+        verify(storage)
             .store(eq("com.auth0.credentials"), stringCaptor.capture())
-        Mockito.verify(storage).store("com.auth0.credentials_expires_at", newDate.time)
-        Mockito.verify(storage).store("com.auth0.credentials_access_token_expires_at", newDate.time)
-        Mockito.verify(storage).store("com.auth0.credentials_can_refresh", true)
-        Mockito.verify(storage, Mockito.never()).remove(anyString())
+        verify(storage).store("com.auth0.credentials_expires_at", newDate.time)
+        verify(storage).store("com.auth0.credentials_access_token_expires_at", newDate.time)
+        verify(storage).store("com.auth0.credentials_can_refresh", true)
+        verify(storage, never()).remove(anyString())
 
         // Verify the returned credentials are the latest
-        val retrievedCredentials = credentialsCaptor.value
+        val retrievedCredentials = credentialsCaptor.firstValue
         MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`("newId"))
         MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`("newAccess"))
@@ -653,7 +650,7 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("different scope"))
 
         // Verify the credentials are property stored
-        val encodedJson = stringCaptor.value
+        val encodedJson = stringCaptor.firstValue
         MatcherAssert.assertThat(encodedJson, Is.`is`(Matchers.notNullValue()))
         val decoded = Base64.decode(encodedJson, Base64.DEFAULT)
         val renewedStoredCredentials = gson.fromJson(String(decoded), Credentials::class.java)
@@ -677,16 +674,16 @@ public class SecureCredentialsManagerTest {
             Date(CredentialsMock.CURRENT_TIME_MS) // current time means expired credentials
         insertTestCredentials(false, true, true, expiresAt)
         val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
-        val jwtMock = Mockito.mock(JWT::class.java)
+        val jwtMock = mock<JWT>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
         Mockito.`when`(
             client.renewAuth("refreshToken")
         ).thenReturn(request)
         manager.getCredentials("different scope", 0, callback) // minTTL of 0 seconds (default)
-        Mockito.verify(request)
+        verify(request)
             .addParameter(eq("scope"), eq("different scope"))
-        Mockito.verify(request).start(
+        verify(request).start(
             requestCallbackCaptor.capture()
         )
 
@@ -696,19 +693,19 @@ public class SecureCredentialsManagerTest {
         val expectedJson = gson.toJson(expectedCredentials)
         Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
             .thenReturn(expectedJson.toByteArray())
-        requestCallbackCaptor.value.onSuccess(expectedCredentials)
-        Mockito.verify(callback).onSuccess(
+        requestCallbackCaptor.firstValue.onSuccess(expectedCredentials)
+        verify(callback).onSuccess(
             credentialsCaptor.capture()
         )
-        Mockito.verify(storage)
+        verify(storage)
             .store(eq("com.auth0.credentials"), stringCaptor.capture())
-        Mockito.verify(storage).store("com.auth0.credentials_expires_at", newDate.time)
-        Mockito.verify(storage).store("com.auth0.credentials_access_token_expires_at", newDate.time)
-        Mockito.verify(storage).store("com.auth0.credentials_can_refresh", true)
-        Mockito.verify(storage, Mockito.never()).remove(anyString())
+        verify(storage).store("com.auth0.credentials_expires_at", newDate.time)
+        verify(storage).store("com.auth0.credentials_access_token_expires_at", newDate.time)
+        verify(storage).store("com.auth0.credentials_can_refresh", true)
+        verify(storage, never()).remove(anyString())
 
         // Verify the returned credentials are the latest
-        val retrievedCredentials = credentialsCaptor.value
+        val retrievedCredentials = credentialsCaptor.firstValue
         MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`("newId"))
         MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`("newAccess"))
@@ -718,7 +715,7 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("different scope"))
 
         // Verify the credentials are property stored
-        val encodedJson = stringCaptor.value
+        val encodedJson = stringCaptor.firstValue
         MatcherAssert.assertThat(encodedJson, Is.`is`(Matchers.notNullValue()))
         val decoded = Base64.decode(encodedJson, Base64.DEFAULT)
         val renewedStoredCredentials = gson.fromJson(String(decoded), Credentials::class.java)
@@ -756,16 +753,16 @@ public class SecureCredentialsManagerTest {
             Date(CredentialsMock.CURRENT_TIME_MS) // current time means expired credentials
         insertTestCredentials(false, true, true, expiresAt)
         val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
-        val jwtMock = Mockito.mock(JWT::class.java)
+        val jwtMock = mock<JWT>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
         Mockito.`when`(
             client.renewAuth("refreshToken")
         ).thenReturn(request)
         manager.getCredentials(callback)
-        Mockito.verify(request, Mockito.never())
+        verify(request, never())
             .addParameter(eq("scope"), anyString())
-        Mockito.verify(request).start(
+        verify(request).start(
             requestCallbackCaptor.capture()
         )
 
@@ -777,18 +774,18 @@ public class SecureCredentialsManagerTest {
         val expectedJson = gson.toJson(expectedCredentials)
         Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
             .thenReturn(expectedJson.toByteArray())
-        requestCallbackCaptor.value.onSuccess(renewedCredentials)
-        Mockito.verify(callback).onSuccess(
+        requestCallbackCaptor.firstValue.onSuccess(renewedCredentials)
+        verify(callback).onSuccess(
             credentialsCaptor.capture()
         )
-        Mockito.verify(storage)
+        verify(storage)
             .store(eq("com.auth0.credentials"), stringCaptor.capture())
-        Mockito.verify(storage).store("com.auth0.credentials_expires_at", newDate.time)
-        Mockito.verify(storage).store("com.auth0.credentials_can_refresh", true)
-        Mockito.verify(storage, Mockito.never()).remove(anyString())
+        verify(storage).store("com.auth0.credentials_expires_at", newDate.time)
+        verify(storage).store("com.auth0.credentials_can_refresh", true)
+        verify(storage, never()).remove(anyString())
 
         // Verify the returned credentials are the latest
-        val retrievedCredentials = credentialsCaptor.value
+        val retrievedCredentials = credentialsCaptor.firstValue
         MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`("newId"))
         MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`("newAccess"))
@@ -798,7 +795,7 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("newScope"))
 
         // Verify the credentials are property stored
-        val encodedJson = stringCaptor.value
+        val encodedJson = stringCaptor.firstValue
         MatcherAssert.assertThat(encodedJson, Is.`is`(Matchers.notNullValue()))
         val decoded = Base64.decode(encodedJson, Base64.DEFAULT)
         val renewedStoredCredentials = gson.fromJson(String(decoded), Credentials::class.java)
@@ -821,16 +818,16 @@ public class SecureCredentialsManagerTest {
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS)
         insertTestCredentials(false, true, true, expiresAt)
         val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
-        val jwtMock = Mockito.mock(JWT::class.java)
+        val jwtMock = mock<JWT>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
         Mockito.`when`(
             client.renewAuth("refreshToken")
         ).thenReturn(request)
         manager.getCredentials(callback)
-        Mockito.verify(request, Mockito.never())
+        verify(request, never())
             .addParameter(eq("scope"), anyString())
-        Mockito.verify(request).start(
+        verify(request).start(
             requestCallbackCaptor.capture()
         )
 
@@ -840,18 +837,18 @@ public class SecureCredentialsManagerTest {
         val expectedJson = gson.toJson(renewedCredentials)
         Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
             .thenReturn(expectedJson.toByteArray())
-        requestCallbackCaptor.value.onSuccess(renewedCredentials)
-        Mockito.verify(callback).onSuccess(
+        requestCallbackCaptor.firstValue.onSuccess(renewedCredentials)
+        verify(callback).onSuccess(
             credentialsCaptor.capture()
         )
-        Mockito.verify(storage)
+        verify(storage)
             .store(eq("com.auth0.credentials"), stringCaptor.capture())
-        Mockito.verify(storage).store("com.auth0.credentials_expires_at", newDate.time)
-        Mockito.verify(storage).store("com.auth0.credentials_can_refresh", true)
-        Mockito.verify(storage, Mockito.never()).remove(anyString())
+        verify(storage).store("com.auth0.credentials_expires_at", newDate.time)
+        verify(storage).store("com.auth0.credentials_can_refresh", true)
+        verify(storage, never()).remove(anyString())
 
         // Verify the returned credentials are the latest
-        val retrievedCredentials = credentialsCaptor.value
+        val retrievedCredentials = credentialsCaptor.firstValue
         MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`("newId"))
         MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`("newAccess"))
@@ -861,7 +858,7 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("newScope"))
 
         // Verify the credentials are property stored
-        val encodedJson = stringCaptor.value
+        val encodedJson = stringCaptor.firstValue
         MatcherAssert.assertThat(encodedJson, Is.`is`(Matchers.notNullValue()))
         val decoded = Base64.decode(encodedJson, Base64.DEFAULT)
         val renewedStoredCredentials = gson.fromJson(String(decoded), Credentials::class.java)
@@ -890,28 +887,26 @@ public class SecureCredentialsManagerTest {
             client.renewAuth("refreshToken")
         ).thenReturn(request)
         manager.getCredentials(callback)
-        Mockito.verify(request).start(
+        verify(request).start(
             requestCallbackCaptor.capture()
         )
 
         //Trigger failure
-        val authenticationException = Mockito.mock(
-            AuthenticationException::class.java
-        )
-        requestCallbackCaptor.value.onFailure(authenticationException)
-        Mockito.verify(callback).onFailure(
+        val authenticationException = mock<AuthenticationException>()
+        requestCallbackCaptor.firstValue.onFailure(authenticationException)
+        verify(callback).onFailure(
             exceptionCaptor.capture()
         )
-        Mockito.verify(storage, Mockito.never())
+        verify(storage, never())
             .store(anyString(), anyLong())
-        Mockito.verify(storage, Mockito.never())
+        verify(storage, never())
             .store(anyString(), anyInt())
-        Mockito.verify(storage, Mockito.never())
+        verify(storage, never())
             .store(anyString(), anyString())
-        Mockito.verify(storage, Mockito.never())
+        verify(storage, never())
             .store(anyString(), anyBoolean())
-        Mockito.verify(storage, Mockito.never()).remove(anyString())
-        val exception = exceptionCaptor.value
+        verify(storage, never()).remove(anyString())
+        val exception = exceptionCaptor.firstValue
         MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(exception.cause, Is.`is`(authenticationException))
         MatcherAssert.assertThat(
@@ -926,12 +921,12 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldClearCredentials() {
         manager.clearCredentials()
-        Mockito.verify(storage).remove("com.auth0.credentials")
-        Mockito.verify(storage).remove("com.auth0.credentials_expires_at")
-        Mockito.verify(storage).remove("com.auth0.credentials_access_token_expires_at")
-        Mockito.verify(storage).remove("com.auth0.credentials_can_refresh")
-        Mockito.verify(storage).remove("com.auth0.manager_key_alias")
-        Mockito.verifyNoMoreInteractions(storage)
+        verify(storage).remove("com.auth0.credentials")
+        verify(storage).remove("com.auth0.credentials_expires_at")
+        verify(storage).remove("com.auth0.credentials_access_token_expires_at")
+        verify(storage).remove("com.auth0.credentials_can_refresh")
+        verify(storage).remove("com.auth0.manager_key_alias")
+        verifyNoMoreInteractions(storage)
     }
 
     /*
@@ -1069,7 +1064,7 @@ public class SecureCredentialsManagerTest {
         )
 
         //Set LockScreen as Disabled
-        val kService = Mockito.mock(KeyguardManager::class.java)
+        val kService = mock<KeyguardManager>()
         Mockito.`when`(activity.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService)
         Mockito.`when`(kService.isKeyguardSecure).thenReturn(false)
         Mockito.`when`(kService.createConfirmDeviceCredentialIntent("title", "description"))
@@ -1090,7 +1085,7 @@ public class SecureCredentialsManagerTest {
         )
 
         //Set LockScreen as Disabled
-        val kService = Mockito.mock(KeyguardManager::class.java)
+        val kService = mock<KeyguardManager>()
         Mockito.`when`(activity.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService)
         Mockito.`when`(kService.isDeviceSecure).thenReturn(false)
         Mockito.`when`(kService.createConfirmDeviceCredentialIntent("title", "description"))
@@ -1111,7 +1106,7 @@ public class SecureCredentialsManagerTest {
         )
 
         //Set LockScreen as Enabled
-        val kService = Mockito.mock(KeyguardManager::class.java)
+        val kService = mock<KeyguardManager>()
         Mockito.`when`(activity.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService)
         Mockito.`when`(kService.isKeyguardSecure).thenReturn(true)
         Mockito.`when`(kService.createConfirmDeviceCredentialIntent("title", "description"))
@@ -1132,7 +1127,7 @@ public class SecureCredentialsManagerTest {
         )
 
         //Set LockScreen as Enabled
-        val kService = Mockito.mock(KeyguardManager::class.java)
+        val kService = mock<KeyguardManager>()
         Mockito.`when`(activity.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService)
         Mockito.`when`(kService.isDeviceSecure).thenReturn(true)
         Mockito.`when`(kService.createConfirmDeviceCredentialIntent("title", "description"))
@@ -1155,10 +1150,10 @@ public class SecureCredentialsManagerTest {
                 Activity::class.java
             ).create().start().resume().get()
         )
-        val kService = Mockito.mock(KeyguardManager::class.java)
+        val kService = mock<KeyguardManager>()
         Mockito.`when`(activity.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService)
         Mockito.`when`(kService.isKeyguardSecure).thenReturn(true)
-        val confirmCredentialsIntent = Mockito.mock(Intent::class.java)
+        val confirmCredentialsIntent = mock<Intent>()
         Mockito.`when`(kService.createConfirmDeviceCredentialIntent("theTitle", "theDescription"))
             .thenReturn(confirmCredentialsIntent)
         val willRequireAuthentication =
@@ -1166,7 +1161,7 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(willRequireAuthentication, Is.`is`(true))
         manager.getCredentials(callback)
         val intentCaptor = ArgumentCaptor.forClass(Intent::class.java)
-        Mockito.verify(activity)
+        verify(activity)
             .startActivityForResult(intentCaptor.capture(), eq(123))
         MatcherAssert.assertThat(intentCaptor.value, Is.`is`(confirmCredentialsIntent))
 
@@ -1174,10 +1169,10 @@ public class SecureCredentialsManagerTest {
         //Continue after successful authentication
         val processed = manager.checkAuthenticationResult(123, Activity.RESULT_OK)
         MatcherAssert.assertThat(processed, Is.`is`(true))
-        Mockito.verify(callback).onSuccess(
+        verify(callback).onSuccess(
             credentialsCaptor.capture()
         )
-        val retrievedCredentials = credentialsCaptor.value
+        val retrievedCredentials = credentialsCaptor.firstValue
         MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`("accessToken"))
         MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`("idToken"))
@@ -1206,10 +1201,10 @@ public class SecureCredentialsManagerTest {
                 Activity::class.java
             ).create().start().resume().get()
         )
-        val kService = Mockito.mock(KeyguardManager::class.java)
+        val kService = mock<KeyguardManager>()
         Mockito.`when`(activity.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService)
         Mockito.`when`(kService.isKeyguardSecure).thenReturn(true)
-        val confirmCredentialsIntent = Mockito.mock(Intent::class.java)
+        val confirmCredentialsIntent = mock<Intent>()
         Mockito.`when`(kService.createConfirmDeviceCredentialIntent("theTitle", "theDescription"))
             .thenReturn(confirmCredentialsIntent)
         val willRequireAuthentication =
@@ -1218,10 +1213,10 @@ public class SecureCredentialsManagerTest {
         manager.getCredentials(callback)
 
         //Should fail because of expired credentials
-        Mockito.verify(callback).onFailure(
+        verify(callback).onFailure(
             exceptionCaptor.capture()
         )
-        val exception = exceptionCaptor.value
+        val exception = exceptionCaptor.firstValue
         MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(exception.message, Is.`is`("No Credentials were previously set."))
 
@@ -1241,10 +1236,10 @@ public class SecureCredentialsManagerTest {
                 Activity::class.java
             ).create().start().resume().get()
         )
-        val kService = Mockito.mock(KeyguardManager::class.java)
+        val kService = mock<KeyguardManager>()
         Mockito.`when`(activity.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService)
         Mockito.`when`(kService.isKeyguardSecure).thenReturn(true)
-        val confirmCredentialsIntent = Mockito.mock(Intent::class.java)
+        val confirmCredentialsIntent = mock<Intent>()
         Mockito.`when`(kService.createConfirmDeviceCredentialIntent("theTitle", "theDescription"))
             .thenReturn(confirmCredentialsIntent)
         val willRequireAuthentication =
@@ -1252,7 +1247,7 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(willRequireAuthentication, Is.`is`(true))
         manager.getCredentials(callback)
         val intentCaptor = ArgumentCaptor.forClass(Intent::class.java)
-        Mockito.verify(activity)
+        verify(activity)
             .startActivityForResult(intentCaptor.capture(), eq(123))
         MatcherAssert.assertThat(intentCaptor.value, Is.`is`(confirmCredentialsIntent))
 
@@ -1260,13 +1255,13 @@ public class SecureCredentialsManagerTest {
         //Continue after canceled authentication
         val processed = manager.checkAuthenticationResult(123, Activity.RESULT_CANCELED)
         MatcherAssert.assertThat(processed, Is.`is`(true))
-        Mockito.verify(callback, Mockito.never()).onSuccess(any())
-        Mockito.verify(callback).onFailure(
+        verify(callback, never()).onSuccess(any())
+        verify(callback).onFailure(
             exceptionCaptor.capture()
         )
-        MatcherAssert.assertThat(exceptionCaptor.value, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exceptionCaptor.firstValue, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(
-            exceptionCaptor.value.message,
+            exceptionCaptor.firstValue.message,
             Is.`is`("The user didn't pass the authentication challenge.")
         )
     }
@@ -1282,10 +1277,10 @@ public class SecureCredentialsManagerTest {
                 Activity::class.java
             ).create().start().resume().get()
         )
-        val kService = Mockito.mock(KeyguardManager::class.java)
+        val kService = mock<KeyguardManager>()
         Mockito.`when`(activity.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService)
         Mockito.`when`(kService.isKeyguardSecure).thenReturn(true)
-        val confirmCredentialsIntent = Mockito.mock(Intent::class.java)
+        val confirmCredentialsIntent = mock<Intent>()
         Mockito.`when`(kService.createConfirmDeviceCredentialIntent("theTitle", "theDescription"))
             .thenReturn(confirmCredentialsIntent)
         val willRequireAuthentication =
@@ -1293,13 +1288,13 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(willRequireAuthentication, Is.`is`(true))
         manager.getCredentials(callback)
         val intentCaptor = ArgumentCaptor.forClass(Intent::class.java)
-        Mockito.verify(activity)
+        verify(activity)
             .startActivityForResult(intentCaptor.capture(), eq(100))
         MatcherAssert.assertThat(intentCaptor.value, Is.`is`(confirmCredentialsIntent))
 
 
         //Continue after successful authentication
-        Mockito.verifyNoMoreInteractions(callback)
+        verifyNoMoreInteractions(callback)
         val processed = manager.checkAuthenticationResult(123, Activity.RESULT_OK)
         MatcherAssert.assertThat(processed, Is.`is`(false))
     }
@@ -1363,7 +1358,7 @@ public class SecureCredentialsManagerTest {
     }
 
     private fun prepareJwtDecoderMock(expiresAt: Date?) {
-        val jwtMock = Mockito.mock(JWT::class.java)
+        val jwtMock = mock<JWT>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(expiresAt)
         Mockito.`when`(jwtDecoder.decode("idToken")).thenReturn(jwtMock)
     }

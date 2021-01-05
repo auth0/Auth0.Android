@@ -27,6 +27,7 @@ import com.auth0.android.result.Credentials
 import com.auth0.android.util.AuthCallbackMatcher
 import com.auth0.android.util.AuthenticationAPI
 import com.auth0.android.util.MockAuthCallback
+import com.nhaarman.mockitokotlin2.KArgumentCaptor
 import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.verify
@@ -67,17 +68,13 @@ public class WebAuthProviderTest {
     private lateinit var activity: Activity
     private lateinit var account: Auth0
 
-    @Captor
-    private lateinit var auth0ExceptionCaptor: ArgumentCaptor<Auth0Exception>
+    private val auth0ExceptionCaptor: KArgumentCaptor<Auth0Exception> = argumentCaptor()
 
-    @Captor
-    private lateinit var authExceptionCaptor: ArgumentCaptor<AuthenticationException>
+    private val authExceptionCaptor: KArgumentCaptor<AuthenticationException> = argumentCaptor()
 
-    @Captor
-    private lateinit var intentCaptor: ArgumentCaptor<Intent>
+    private val intentCaptor: KArgumentCaptor<Intent> = argumentCaptor()
 
-    @Captor
-    private lateinit var callbackCaptor: ArgumentCaptor<AuthCallback>
+    private val callbackCaptor: KArgumentCaptor<AuthCallback> = argumentCaptor()
 
     @Before
     public fun setUp() {
@@ -118,7 +115,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasParamWithName("redirect_uri"))
         val redirectUri = Uri.parse(uri?.getQueryParameter("redirect_uri"))
@@ -132,7 +129,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasParamWithName("redirect_uri"))
         val redirectUri = Uri.parse(uri?.getQueryParameter("redirect_uri"))
@@ -146,7 +143,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, not(UriMatchers.hasParamWithName("connection")))
     }
@@ -160,7 +157,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("connection", "my-connection"))
     }
@@ -174,7 +171,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(
             uri,
@@ -190,7 +187,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("connection", "my-connection"))
     }
@@ -202,7 +199,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(
             uri,
@@ -217,7 +214,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, not(UriMatchers.hasParamWithName("audience")))
     }
@@ -232,7 +229,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(
             uri,
@@ -250,7 +247,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(
             uri,
@@ -267,7 +264,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(
             uri,
@@ -282,7 +279,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(
             uri,
@@ -297,7 +294,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("scope", "openid"))
     }
@@ -311,7 +308,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(
             uri,
@@ -328,7 +325,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("scope", "profile super_scope"))
     }
@@ -341,7 +338,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(
             uri,
@@ -356,7 +353,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("scope", "profile super_scope"))
     }
@@ -368,7 +365,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(
             uri,
@@ -386,7 +383,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(
             uri,
@@ -404,7 +401,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(
             uri,
@@ -421,7 +418,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(
             uri,
@@ -436,7 +433,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(
             uri,
@@ -451,7 +448,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(
             uri, UriMatchers.hasParamWithValue(
@@ -469,7 +466,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(
             uri, UriMatchers.hasParamWithValue(
@@ -489,7 +486,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("state", "1234567890"))
     }
@@ -503,7 +500,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("state", "abcdefg"))
     }
@@ -516,7 +513,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("state", "1234567890"))
     }
@@ -528,7 +525,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("state", "abcdefg"))
     }
@@ -540,7 +537,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasParamWithName("nonce"))
     }
@@ -552,7 +549,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(
             uri, UriMatchers.hasParamWithValue(
@@ -570,7 +567,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("nonce", "1234567890"))
     }
@@ -584,7 +581,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("nonce", "1234567890"))
     }
@@ -598,7 +595,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("nonce", "abcdefg"))
     }
@@ -611,7 +608,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("nonce", "1234567890"))
     }
@@ -623,7 +620,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("nonce", "abcdefg"))
     }
@@ -659,7 +656,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, not(UriMatchers.hasParamWithName("max_age")))
     }
@@ -673,7 +670,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("max_age", "09876"))
     }
@@ -687,7 +684,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("max_age", "12345"))
     }
@@ -699,7 +696,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(
             uri,
@@ -713,7 +710,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(
             uri, UriMatchers.hasParamWithValue(
@@ -730,7 +727,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(
             uri?.getQueryParameter("redirect_uri"),
@@ -746,7 +743,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(
             uri?.getQueryParameter("redirect_uri"),
@@ -761,7 +758,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("response_type", "code"))
     }
@@ -772,7 +769,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("response_type", "code"))
     }
@@ -787,7 +784,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("a", "valid"))
         MatcherAssert.assertThat(uri, not(UriMatchers.hasParamWithName("b")))
@@ -799,7 +796,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         val params = uri!!.queryParameterNames
         for (name in params) {
@@ -823,7 +820,7 @@ public class WebAuthProviderTest {
         val baseUriString = Uri.parse(account.authorizeUrl)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasScheme(baseUriString.scheme))
         MatcherAssert.assertThat(uri, UriMatchers.hasHost(baseUriString.host))
@@ -837,7 +834,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasParamWithName("nonce"))
         MatcherAssert.assertThat(
@@ -861,7 +858,7 @@ public class WebAuthProviderTest {
             .withCustomTabsOptions(options)
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
-        val intent = intentCaptor.value
+        val intent = intentCaptor.firstValue
         MatcherAssert.assertThat(intent, `is`(notNullValue()))
         MatcherAssert.assertThat(
             intent, IntentMatchers.hasComponent(
@@ -870,7 +867,7 @@ public class WebAuthProviderTest {
         )
         MatcherAssert.assertThat(intent, IntentMatchers.hasFlag(Intent.FLAG_ACTIVITY_CLEAR_TOP))
         MatcherAssert.assertThat(intent.data, `is`(CoreMatchers.nullValue()))
-        val extras = intentCaptor.value.extras
+        val extras = intentCaptor.firstValue.extras
         MatcherAssert.assertThat<Any?>(
             extras?.getParcelable(AuthenticationActivity.EXTRA_AUTHORIZE_URI), `is`(
                 notNullValue()
@@ -935,7 +932,7 @@ public class WebAuthProviderTest {
         managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         val sentState = uri?.getQueryParameter(KEY_STATE)
         val sentNonce = uri?.getQueryParameter(KEY_NONCE)
@@ -974,7 +971,7 @@ public class WebAuthProviderTest {
             "codeScope"
         )
         Mockito.doAnswer {
-            callbackCaptor.value.onSuccess(codeCredentials)
+            callbackCaptor.firstValue.onSuccess(codeCredentials)
             null
         }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
         Assert.assertTrue(resume(intent))
@@ -1009,7 +1006,7 @@ public class WebAuthProviderTest {
         // 2. capture the intent filter to obtain the state and nonce sent
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         val sentState = uri?.getQueryParameter(KEY_STATE)
         val sentNonce = uri?.getQueryParameter(KEY_NONCE)
@@ -1114,7 +1111,7 @@ public class WebAuthProviderTest {
         managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         val sentState = uri?.getQueryParameter(KEY_STATE)
         val sentNonce = uri?.getQueryParameter(KEY_NONCE)
@@ -1152,7 +1149,7 @@ public class WebAuthProviderTest {
             "codeScope"
         )
         Mockito.doAnswer {
-            callbackCaptor.value.onSuccess(codeCredentials)
+            callbackCaptor.firstValue.onSuccess(codeCredentials)
             null
         }.`when`(pkce).getToken(ArgumentMatchers.eq("1234"), callbackCaptor.capture())
         Assert.assertTrue(resume(intent))
@@ -1178,14 +1175,14 @@ public class WebAuthProviderTest {
         Assert.assertTrue(resume(intent))
         verify(callback).onFailure(authExceptionCaptor.capture())
         MatcherAssert.assertThat(
-            authExceptionCaptor.value, `is`(notNullValue())
+            authExceptionCaptor.firstValue, `is`(notNullValue())
         )
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.getCode(),
+            authExceptionCaptor.firstValue.getCode(),
             `is`("a0.authentication_canceled")
         )
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.getDescription(),
+            authExceptionCaptor.firstValue.getDescription(),
             `is`("The user closed the browser app and the authentication was canceled.")
         )
     }
@@ -1196,7 +1193,7 @@ public class WebAuthProviderTest {
         val pkce = Mockito.mock(PKCE::class.java)
         `when`(pkce.codeChallenge).thenReturn("challenge")
         Mockito.doAnswer {
-            callbackCaptor.value.onFailure(dialog)
+            callbackCaptor.firstValue.onFailure(dialog)
             null
         }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
         login(account)
@@ -1229,7 +1226,7 @@ public class WebAuthProviderTest {
         val pkce = Mockito.mock(PKCE::class.java)
         `when`(pkce.codeChallenge).thenReturn("challenge")
         Mockito.doAnswer {
-            callbackCaptor.value.onFailure(exception)
+            callbackCaptor.firstValue.onFailure(exception)
             null
         }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
         login(account)
@@ -1280,11 +1277,11 @@ public class WebAuthProviderTest {
         Assert.assertTrue(resume(intent))
         verify(callback).onFailure(authExceptionCaptor.capture())
         MatcherAssert.assertThat(
-            authExceptionCaptor.value, `is`(notNullValue())
+            authExceptionCaptor.firstValue, `is`(notNullValue())
         )
-        MatcherAssert.assertThat(authExceptionCaptor.value.getCode(), `is`("access_denied"))
+        MatcherAssert.assertThat(authExceptionCaptor.firstValue.getCode(), `is`("access_denied"))
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.getDescription(),
+            authExceptionCaptor.firstValue.getDescription(),
             `is`("Permissions were not granted. Try again.")
         )
     }
@@ -1310,11 +1307,11 @@ public class WebAuthProviderTest {
         Assert.assertTrue(resume(intent))
         verify(callback).onFailure(authExceptionCaptor.capture())
         MatcherAssert.assertThat(
-            authExceptionCaptor.value, `is`(notNullValue())
+            authExceptionCaptor.firstValue, `is`(notNullValue())
         )
-        MatcherAssert.assertThat(authExceptionCaptor.value.getCode(), `is`("unauthorized"))
+        MatcherAssert.assertThat(authExceptionCaptor.firstValue.getCode(), `is`("unauthorized"))
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.getDescription(),
+            authExceptionCaptor.firstValue.getDescription(),
             `is`("Custom Rule Error")
         )
     }
@@ -1340,14 +1337,14 @@ public class WebAuthProviderTest {
         Assert.assertTrue(resume(intent))
         verify(callback).onFailure(authExceptionCaptor.capture())
         MatcherAssert.assertThat(
-            authExceptionCaptor.value, `is`(notNullValue())
+            authExceptionCaptor.firstValue, `is`(notNullValue())
         )
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.getCode(),
+            authExceptionCaptor.firstValue.getCode(),
             `is`("a0.invalid_configuration")
         )
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.getDescription(),
+            authExceptionCaptor.firstValue.getDescription(),
             `is`("The application isn't configured properly for the social connection. Please check your Auth0's application configuration")
         )
     }
@@ -1387,7 +1384,7 @@ public class WebAuthProviderTest {
         val codeCredentials =
             Credentials(expectedIdToken, "codeAccess", "codeType", "codeRefresh", null, "codeScope")
         Mockito.doAnswer {
-            callbackCaptor.value.onSuccess(codeCredentials)
+            callbackCaptor.firstValue.onSuccess(codeCredentials)
             null
         }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
         Assert.assertTrue(resume(intent))
@@ -1445,7 +1442,7 @@ public class WebAuthProviderTest {
         val codeCredentials =
             Credentials(expectedIdToken, "codeAccess", "codeType", "codeRefresh", null, "codeScope")
         Mockito.doAnswer {
-            callbackCaptor.value.onSuccess(codeCredentials)
+            callbackCaptor.firstValue.onSuccess(codeCredentials)
             null
         }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
         Assert.assertTrue(resume(intent))
@@ -1502,7 +1499,7 @@ public class WebAuthProviderTest {
         val codeCredentials =
             Credentials(expectedIdToken, "codeAccess", "codeType", "codeRefresh", null, "codeScope")
         Mockito.doAnswer {
-            callbackCaptor.value.onSuccess(codeCredentials)
+            callbackCaptor.firstValue.onSuccess(codeCredentials)
             null
         }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
         Assert.assertTrue(resume(intent))
@@ -1560,7 +1557,7 @@ public class WebAuthProviderTest {
         val codeCredentials =
             Credentials(expectedIdToken, "aToken", "codeType", "codeRefresh", null, "codeScope")
         Mockito.doAnswer {
-            callbackCaptor.value.onSuccess(codeCredentials)
+            callbackCaptor.firstValue.onSuccess(codeCredentials)
             null
         }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
         Assert.assertTrue(resume(intent))
@@ -1591,7 +1588,7 @@ public class WebAuthProviderTest {
         managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         val sentState = uri?.getQueryParameter(KEY_STATE)
         val sentNonce = uri?.getQueryParameter(KEY_NONCE)
@@ -1623,7 +1620,7 @@ public class WebAuthProviderTest {
         val codeCredentials =
             Credentials(expectedIdToken, "codeAccess", "codeType", "codeRefresh", null, "codeScope")
         Mockito.doAnswer {
-            callbackCaptor.value.onSuccess(codeCredentials)
+            callbackCaptor.firstValue.onSuccess(codeCredentials)
             null
         }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
         Assert.assertTrue(resume(intent))
@@ -1653,7 +1650,7 @@ public class WebAuthProviderTest {
         managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         val sentState = uri?.getQueryParameter(KEY_STATE)
         val sentNonce = uri?.getQueryParameter(KEY_NONCE)
@@ -1685,7 +1682,7 @@ public class WebAuthProviderTest {
         val codeCredentials =
             Credentials(expectedIdToken, "codeAccess", "codeType", "codeRefresh", null, "codeScope")
         Mockito.doAnswer {
-            callbackCaptor.value.onSuccess(codeCredentials)
+            callbackCaptor.firstValue.onSuccess(codeCredentials)
             null
         }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
         Assert.assertTrue(resume(intent))
@@ -1720,7 +1717,7 @@ public class WebAuthProviderTest {
         val codeCredentials =
             Credentials(expectedIdToken, "codeAccess", "codeType", "codeRefresh", null, "codeScope")
         Mockito.doAnswer {
-            callbackCaptor.value.onSuccess(codeCredentials)
+            callbackCaptor.firstValue.onSuccess(codeCredentials)
             null
         }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
         val intent = createAuthIntent(
@@ -1777,14 +1774,14 @@ public class WebAuthProviderTest {
         Assert.assertTrue(resume(intent))
         verify(callback).onFailure(authExceptionCaptor.capture())
         MatcherAssert.assertThat(
-            authExceptionCaptor.value, `is`(notNullValue())
+            authExceptionCaptor.firstValue, `is`(notNullValue())
         )
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.getCode(),
+            authExceptionCaptor.firstValue.getCode(),
             `is`("login_required")
         )
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.getDescription(),
+            authExceptionCaptor.firstValue.getDescription(),
             `is`("Login Required")
         )
     }
@@ -1810,14 +1807,14 @@ public class WebAuthProviderTest {
         Assert.assertTrue(resume(intent))
         verify(callback).onFailure(authExceptionCaptor.capture())
         MatcherAssert.assertThat(
-            authExceptionCaptor.value, `is`(notNullValue())
+            authExceptionCaptor.firstValue, `is`(notNullValue())
         )
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.getCode(),
+            authExceptionCaptor.firstValue.getCode(),
             `is`("login_required")
         )
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.getDescription(),
+            authExceptionCaptor.firstValue.getDescription(),
             `is`("Login Required")
         )
     }
@@ -1843,11 +1840,11 @@ public class WebAuthProviderTest {
         Assert.assertTrue(resume(intent))
         verify(callback).onFailure(authExceptionCaptor.capture())
         MatcherAssert.assertThat(
-            authExceptionCaptor.value, `is`(notNullValue())
+            authExceptionCaptor.firstValue, `is`(notNullValue())
         )
-        MatcherAssert.assertThat(authExceptionCaptor.value.getCode(), `is`("access_denied"))
+        MatcherAssert.assertThat(authExceptionCaptor.firstValue.getCode(), `is`("access_denied"))
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.getDescription(),
+            authExceptionCaptor.firstValue.getDescription(),
             `is`("The received state is invalid. Try again.")
         )
     }
@@ -1893,7 +1890,7 @@ public class WebAuthProviderTest {
         val codeCredentials =
             Credentials(expectedIdToken, "codeAccess", "codeType", "codeRefresh", null, "codeScope")
         Mockito.doAnswer {
-            callbackCaptor.value.onSuccess(codeCredentials)
+            callbackCaptor.firstValue.onSuccess(codeCredentials)
             null
         }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
         Assert.assertTrue(resume(intent))
@@ -1939,7 +1936,7 @@ public class WebAuthProviderTest {
         val codeCredentials =
             Credentials(expectedIdToken, "codeAccess", "codeType", "codeRefresh", null, "codeScope")
         Mockito.doAnswer {
-            callbackCaptor.value.onSuccess(codeCredentials)
+            callbackCaptor.firstValue.onSuccess(codeCredentials)
             null
         }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
         Assert.assertTrue(resume(intent))
@@ -1986,7 +1983,7 @@ public class WebAuthProviderTest {
         val codeCredentials =
             Credentials(expectedIdToken, "codeAccess", "codeType", "codeRefresh", null, "codeScope")
         Mockito.doAnswer {
-            callbackCaptor.value.onSuccess(codeCredentials)
+            callbackCaptor.firstValue.onSuccess(codeCredentials)
             null
         }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
         Assert.assertTrue(resume(intent))
@@ -2101,14 +2098,14 @@ public class WebAuthProviderTest {
             .start(activity, callback)
         verify(callback).onFailure(authExceptionCaptor.capture())
         MatcherAssert.assertThat(
-            authExceptionCaptor.value, `is`(notNullValue())
+            authExceptionCaptor.firstValue, `is`(notNullValue())
         )
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.getCode(),
+            authExceptionCaptor.firstValue.getCode(),
             `is`("a0.browser_not_available")
         )
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.getDescription(),
+            authExceptionCaptor.firstValue.getDescription(),
             `is`("No compatible Browser application is installed.")
         )
         assertThat(
@@ -2129,7 +2126,7 @@ public class WebAuthProviderTest {
         verify(activity).startActivityForResult(
             intentCaptor.capture(), ArgumentMatchers.anyInt()
         )
-        val intent = intentCaptor.value
+        val intent = intentCaptor.firstValue
         MatcherAssert.assertThat(intent, `is`(notNullValue()))
         MatcherAssert.assertThat(
             intent, IntentMatchers.hasComponent(
@@ -2162,7 +2159,7 @@ public class WebAuthProviderTest {
             .start(activity, voidCallback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasParamWithName("returnTo"))
         val returnToUri = Uri.parse(uri?.getQueryParameter("returnTo"))
@@ -2176,7 +2173,7 @@ public class WebAuthProviderTest {
             .start(activity, voidCallback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(uri, UriMatchers.hasParamWithName("returnTo"))
         val returnToUri = Uri.parse(uri?.getQueryParameter("returnTo"))
@@ -2190,7 +2187,7 @@ public class WebAuthProviderTest {
             .start(activity, voidCallback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(
             uri,
@@ -2205,7 +2202,7 @@ public class WebAuthProviderTest {
             .start(activity, voidCallback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(
             uri, UriMatchers.hasParamWithValue(
@@ -2222,7 +2219,7 @@ public class WebAuthProviderTest {
             .start(activity, voidCallback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(
             uri?.getQueryParameter("returnTo"),
@@ -2238,7 +2235,7 @@ public class WebAuthProviderTest {
             .start(activity, voidCallback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         MatcherAssert.assertThat(
             uri?.getQueryParameter("returnTo"),
@@ -2252,7 +2249,7 @@ public class WebAuthProviderTest {
         logout(account)
             .start(activity, voidCallback)
         verify(activity).startActivity(intentCaptor.capture())
-        val intent = intentCaptor.value
+        val intent = intentCaptor.firstValue
         MatcherAssert.assertThat(intent, `is`(notNullValue()))
         MatcherAssert.assertThat(
             intent, IntentMatchers.hasComponent(
@@ -2261,7 +2258,7 @@ public class WebAuthProviderTest {
         )
         MatcherAssert.assertThat(intent, IntentMatchers.hasFlag(Intent.FLAG_ACTIVITY_CLEAR_TOP))
         MatcherAssert.assertThat(intent.data, `is`(CoreMatchers.nullValue()))
-        val extras = intentCaptor.value.extras
+        val extras = intentCaptor.firstValue.extras
         MatcherAssert.assertThat<Any?>(
             extras?.getParcelable(AuthenticationActivity.EXTRA_AUTHORIZE_URI), `is`(
                 notNullValue()
@@ -2285,7 +2282,7 @@ public class WebAuthProviderTest {
             .withCustomTabsOptions(options)
             .start(activity, voidCallback)
         verify(activity).startActivity(intentCaptor.capture())
-        val intent = intentCaptor.value
+        val intent = intentCaptor.firstValue
         MatcherAssert.assertThat(intent, `is`(notNullValue()))
         MatcherAssert.assertThat(
             intent, IntentMatchers.hasComponent(
@@ -2294,7 +2291,7 @@ public class WebAuthProviderTest {
         )
         MatcherAssert.assertThat(intent, IntentMatchers.hasFlag(Intent.FLAG_ACTIVITY_CLEAR_TOP))
         MatcherAssert.assertThat(intent.data, `is`(CoreMatchers.nullValue()))
-        val extras = intentCaptor.value.extras
+        val extras = intentCaptor.firstValue.extras
         MatcherAssert.assertThat<Any?>(
             extras?.getParcelable(AuthenticationActivity.EXTRA_AUTHORIZE_URI), `is`(
                 notNullValue()
@@ -2322,14 +2319,14 @@ public class WebAuthProviderTest {
             .start(activity, voidCallback)
         verify(voidCallback).onFailure(authExceptionCaptor.capture())
         MatcherAssert.assertThat(
-            authExceptionCaptor.value, `is`(notNullValue())
+            authExceptionCaptor.firstValue, `is`(notNullValue())
         )
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.getCode(),
+            authExceptionCaptor.firstValue.getCode(),
             `is`("a0.browser_not_available")
         )
         MatcherAssert.assertThat(
-            authExceptionCaptor.value.getDescription(),
+            authExceptionCaptor.firstValue.getDescription(),
             `is`("No compatible Browser application is installed.")
         )
         assertThat(
@@ -2344,7 +2341,7 @@ public class WebAuthProviderTest {
             .start(activity, voidCallback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         val intent = createAuthIntent("")
         Assert.assertTrue(resume(intent))
@@ -2357,7 +2354,7 @@ public class WebAuthProviderTest {
             .start(activity, voidCallback)
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
-            intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
 
         //null data translates to result canceled
@@ -2365,11 +2362,11 @@ public class WebAuthProviderTest {
         Assert.assertTrue(resume(intent))
         verify(voidCallback).onFailure(auth0ExceptionCaptor.capture())
         MatcherAssert.assertThat(
-            auth0ExceptionCaptor.value,
+            auth0ExceptionCaptor.firstValue,
             `is`(notNullValue())
         )
         MatcherAssert.assertThat(
-            auth0ExceptionCaptor.value.message,
+            auth0ExceptionCaptor.firstValue.message,
             `is`("The user closed the browser app so the logout was cancelled.")
         )
         assertThat(
