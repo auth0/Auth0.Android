@@ -1,79 +1,71 @@
-package com.auth0.android.provider;
+package com.auth0.android.provider
 
-import android.content.Context;
-import android.net.Uri;
-import android.util.Log;
+import android.content.Context
+import android.net.Uri
+import android.util.Log
+import com.auth0.android.Auth0
+import com.auth0.android.Auth0Exception
+import java.util.*
 
-import androidx.annotation.NonNull;
-
-import com.auth0.android.Auth0;
-import com.auth0.android.Auth0Exception;
-
-import java.util.HashMap;
-import java.util.Map;
-
-@SuppressWarnings("WeakerAccess")
-class LogoutManager extends ResumableManager {
-
-    private static final String TAG = LogoutManager.class.getSimpleName();
-
-    private static final String KEY_CLIENT_ID = "client_id";
-    private static final String KEY_USER_AGENT = "auth0Client";
-    private static final String KEY_RETURN_TO_URL = "returnTo";
-
-    private final Auth0 account;
-    private final VoidCallback callback;
-    private final Map<String, String> parameters;
-
-    private CustomTabsOptions ctOptions;
-
-    LogoutManager(@NonNull Auth0 account, @NonNull VoidCallback callback, @NonNull String returnToUrl, @NonNull CustomTabsOptions ctOptions) {
-        this.account = account;
-        this.callback = callback;
-        this.parameters = new HashMap<>();
-        this.parameters.put(KEY_RETURN_TO_URL, returnToUrl);
-        this.ctOptions = ctOptions;
+internal class LogoutManager(
+    private val account: Auth0,
+    private val callback: VoidCallback,
+    returnToUrl: String,
+    ctOptions: CustomTabsOptions
+) : ResumableManager() {
+    private val parameters: MutableMap<String, String>
+    private val ctOptions: CustomTabsOptions
+    fun startLogout(context: Context?) {
+        addClientParameters(parameters)
+        val uri = buildLogoutUri()
+        AuthenticationActivity.authenticateUsingBrowser(context!!, uri, ctOptions)
     }
 
-    void startLogout(Context context) {
-        addClientParameters(parameters);
-        Uri uri = buildLogoutUri();
-
-        AuthenticationActivity.authenticateUsingBrowser(context, uri, ctOptions);
-    }
-
-    @Override
-    boolean resume(AuthorizeResult result) {
-        if (result.isCanceled()) {
-            Auth0Exception exception = new Auth0Exception("The user closed the browser app so the logout was cancelled.", null);
-            callback.onFailure(exception);
+    public override fun resume(result: AuthorizeResult): Boolean {
+        if (result.isCanceled) {
+            val exception =
+                Auth0Exception("The user closed the browser app so the logout was cancelled.", null)
+            callback.onFailure(exception)
         } else {
-            callback.onSuccess(null);
+            callback.onSuccess(null)
         }
-        return true;
+        return true
     }
 
-    private Uri buildLogoutUri() {
-        Uri logoutUri = Uri.parse(account.getLogoutUrl());
-        Uri.Builder builder = logoutUri.buildUpon();
-        for (Map.Entry<String, String> entry : parameters.entrySet()) {
-            builder.appendQueryParameter(entry.getKey(), entry.getValue());
+    private fun buildLogoutUri(): Uri {
+        val logoutUri = Uri.parse(account.logoutUrl)
+        val builder = logoutUri.buildUpon()
+        for ((key, value) in parameters) {
+            builder.appendQueryParameter(key, value)
         }
-        Uri uri = builder.build();
-        logDebug("Using the following Logout URI: " + uri.toString());
-        return uri;
+        val uri = builder.build()
+        logDebug("Using the following Logout URI: $uri")
+        return uri
     }
 
-    private void addClientParameters(Map<String, String> parameters) {
-        if (account.getAuth0UserAgent() != null) {
-            parameters.put(KEY_USER_AGENT, account.getAuth0UserAgent().getValue());
+    private fun addClientParameters(parameters: MutableMap<String, String>) {
+        if (account.auth0UserAgent != null) {
+            parameters[KEY_USER_AGENT] = account.auth0UserAgent!!.value
         }
-        parameters.put(KEY_CLIENT_ID, account.getClientId());
+        parameters[KEY_CLIENT_ID] = account.clientId
     }
 
-    private void logDebug(String message) {
-        if (account.isLoggingEnabled()) {
-            Log.d(TAG, message);
+    private fun logDebug(message: String) {
+        if (account.isLoggingEnabled) {
+            Log.d(TAG, message)
         }
+    }
+
+    companion object {
+        private val TAG = LogoutManager::class.java.simpleName
+        private const val KEY_CLIENT_ID = "client_id"
+        private const val KEY_USER_AGENT = "auth0Client"
+        private const val KEY_RETURN_TO_URL = "returnTo"
+    }
+
+    init {
+        parameters = HashMap()
+        parameters[KEY_RETURN_TO_URL] = returnToUrl
+        this.ctOptions = ctOptions
     }
 }

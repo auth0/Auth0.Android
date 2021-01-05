@@ -1,301 +1,321 @@
-package com.auth0.android.provider;
+package com.auth0.android.provider
 
-import android.app.Activity;
-import android.net.Uri;
-import android.text.TextUtils;
-import android.util.Base64;
-import android.util.Log;
+import android.app.Activity
+import android.net.Uri
+import android.text.TextUtils
+import android.util.Base64
+import android.util.Log
+import androidx.annotation.VisibleForTesting
+import com.auth0.android.Auth0
+import com.auth0.android.Auth0Exception
+import com.auth0.android.authentication.AuthenticationAPIClient
+import com.auth0.android.authentication.AuthenticationException
+import com.auth0.android.callback.BaseCallback
+import com.auth0.android.jwt.DecodeException
+import com.auth0.android.jwt.JWT
+import com.auth0.android.request.NetworkingClient
+import com.auth0.android.result.Credentials
+import java.security.SecureRandom
+import java.util.*
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
+internal class OAuthManager(
+    private val account: Auth0,
+    private val callback: AuthCallback,
+    parameters: Map<String, String>,
+    ctOptions: CustomTabsOptions,
+    networkingClient: NetworkingClient?
+) : ResumableManager() {
+    private val parameters: MutableMap<String, String>
+    private val headers: MutableMap<String, String>
+    private val ctOptions: CustomTabsOptions
+    private val apiClient: AuthenticationAPIClient
+    private var requestCode = 0
+    private var pkce: PKCE? = null
 
-import com.auth0.android.Auth0;
-import com.auth0.android.Auth0Exception;
-import com.auth0.android.authentication.AuthenticationAPIClient;
-import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.jwt.DecodeException;
-import com.auth0.android.jwt.JWT;
-import com.auth0.android.request.NetworkingClient;
-import com.auth0.android.result.Credentials;
+    private var _currentTimeInMillis: Long? = null
 
-import java.security.SecureRandom;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-
-@SuppressWarnings("WeakerAccess")
-class OAuthManager extends ResumableManager {
-
-    private static final String TAG = OAuthManager.class.getSimpleName();
-
-    static final String KEY_RESPONSE_TYPE = "response_type";
-    static final String KEY_STATE = "state";
-    static final String KEY_NONCE = "nonce";
-    static final String KEY_MAX_AGE = "max_age";
-    static final String KEY_CONNECTION = "connection";
-    static final String RESPONSE_TYPE_CODE = "code";
-
-    private static final String ERROR_VALUE_INVALID_CONFIGURATION = "a0.invalid_configuration";
-    private static final String ERROR_VALUE_AUTHENTICATION_CANCELED = "a0.authentication_canceled";
-    private static final String ERROR_VALUE_ACCESS_DENIED = "access_denied";
-    private static final String ERROR_VALUE_UNAUTHORIZED = "unauthorized";
-    private static final String ERROR_VALUE_LOGIN_REQUIRED = "login_required";
-    private static final String ERROR_VALUE_ID_TOKEN_VALIDATION_FAILED = "Could not verify the ID token";
-    private static final String METHOD_SHA_256 = "S256";
-    private static final String KEY_CODE_CHALLENGE = "code_challenge";
-    private static final String KEY_CODE_CHALLENGE_METHOD = "code_challenge_method";
-    private static final String KEY_CLIENT_ID = "client_id";
-    private static final String KEY_REDIRECT_URI = "redirect_uri";
-    private static final String KEY_USER_AGENT = "auth0Client";
-    private static final String KEY_ERROR = "error";
-    private static final String KEY_ERROR_DESCRIPTION = "error_description";
-    private static final String KEY_CODE = "code";
-
-    private final Auth0 account;
-    private final AuthCallback callback;
-    private final Map<String, String> parameters;
-    private final Map<String, String> headers;
-    private final CustomTabsOptions ctOptions;
-    private final AuthenticationAPIClient apiClient;
-
-    private int requestCode;
-    private PKCE pkce;
-    private Long currentTimeInMillis;
-    private Integer idTokenVerificationLeeway;
-    private String idTokenVerificationIssuer;
-
-    OAuthManager(@NonNull Auth0 account, @NonNull AuthCallback callback, @NonNull Map<String, String> parameters, @NonNull CustomTabsOptions ctOptions, @Nullable NetworkingClient networkingClient) {
-        this.account = account;
-        this.callback = callback;
-        this.headers = new HashMap<>();
-        this.parameters = new HashMap<>(parameters);
-        this.parameters.put(KEY_RESPONSE_TYPE, RESPONSE_TYPE_CODE);
-        if (networkingClient == null) {
-            // Delegate the creation of defaults to the constructor
-            this.apiClient = new AuthenticationAPIClient(account);
-        } else {
-            this.apiClient = new AuthenticationAPIClient(account, networkingClient);
+    @set:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal var currentTimeInMillis: Long
+        get() = if (_currentTimeInMillis != null) _currentTimeInMillis!! else System.currentTimeMillis()
+        set(value) {
+            _currentTimeInMillis = value
         }
-        this.ctOptions = ctOptions;
+
+    private var idTokenVerificationLeeway: Int? = null
+    private var idTokenVerificationIssuer: String? = null
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    fun setPKCE(pkce: PKCE?) {
+        this.pkce = pkce
     }
 
-    @VisibleForTesting
-    void setPKCE(@Nullable PKCE pkce) {
-        this.pkce = pkce;
+    fun setIdTokenVerificationLeeway(leeway: Int?) {
+        idTokenVerificationLeeway = leeway
     }
 
-    void setIdTokenVerificationLeeway(Integer leeway) {
-        this.idTokenVerificationLeeway = leeway;
+    fun setIdTokenVerificationIssuer(issuer: String?) {
+        idTokenVerificationIssuer = if (TextUtils.isEmpty(issuer)) apiClient.baseURL else issuer
     }
 
-    void setIdTokenVerificationIssuer(String issuer) {
-        this.idTokenVerificationIssuer = TextUtils.isEmpty(issuer) ? apiClient.getBaseURL() : issuer;
+    fun startAuthentication(activity: Activity?, redirectUri: String, requestCode: Int) {
+        addPKCEParameters(parameters, redirectUri, headers)
+        addClientParameters(parameters, redirectUri)
+        addValidationParameters(parameters)
+        val uri = buildAuthorizeUri()
+        this.requestCode = requestCode
+        AuthenticationActivity.authenticateUsingBrowser(activity!!, uri, ctOptions)
     }
 
-    void startAuthentication(Activity activity, String redirectUri, int requestCode) {
-        addPKCEParameters(parameters, redirectUri, headers);
-        addClientParameters(parameters, redirectUri);
-        addValidationParameters(parameters);
-        Uri uri = buildAuthorizeUri();
-        this.requestCode = requestCode;
-
-        AuthenticationActivity.authenticateUsingBrowser(activity, uri, ctOptions);
+    fun setHeaders(headers: Map<String, String>) {
+        this.headers.putAll(headers)
     }
 
-    void setHeaders(@NonNull Map<String, String> headers) {
-        this.headers.putAll(headers);
-    }
-
-    @Override
-    boolean resume(AuthorizeResult result) {
+    public override fun resume(result: AuthorizeResult): Boolean {
         if (!result.isValid(requestCode)) {
-            Log.w(TAG, "The Authorize Result is invalid.");
-            return false;
+            Log.w(TAG, "The Authorize Result is invalid.")
+            return false
         }
-
-        if (result.isCanceled()) {
+        if (result.isCanceled) {
             //User cancelled the authentication
-            AuthenticationException exception = new AuthenticationException(ERROR_VALUE_AUTHENTICATION_CANCELED, "The user closed the browser app and the authentication was canceled.");
-            callback.onFailure(exception);
-            return true;
+            val exception = AuthenticationException(
+                ERROR_VALUE_AUTHENTICATION_CANCELED,
+                "The user closed the browser app and the authentication was canceled."
+            )
+            callback.onFailure(exception)
+            return true
         }
-
-        final Map<String, String> values = CallbackHelper.getValuesFromUri(result.getIntentData());
+        val values = CallbackHelper.getValuesFromUri(result.intentData)
         if (values.isEmpty()) {
-            Log.w(TAG, "The response didn't contain any of these values: code, state");
-            return false;
+            Log.w(TAG, "The response didn't contain any of these values: code, state")
+            return false
         }
-        logDebug("The parsed CallbackURI contains the following values: " + values);
-
+        logDebug("The parsed CallbackURI contains the following values: $values")
         try {
-            assertNoError(values.get(KEY_ERROR), values.get(KEY_ERROR_DESCRIPTION));
-            assertValidState(parameters.get(KEY_STATE), values.get(KEY_STATE));
-        } catch (AuthenticationException e) {
-            callback.onFailure(e);
-            return true;
+            assertNoError(values[KEY_ERROR], values[KEY_ERROR_DESCRIPTION])
+            assertValidState(parameters[KEY_STATE]!!, values[KEY_STATE])
+        } catch (e: AuthenticationException) {
+            callback.onFailure(e)
+            return true
         }
 
         // response_type=code
-        pkce.getToken(values.get(KEY_CODE), new SimpleAuthCallback(callback) {
-
-            @Override
-            public void onSuccess(@NonNull final Credentials credentials) {
-                assertValidIdToken(credentials.getIdToken(), new VoidCallback() {
-                    @Override
-                    public void onSuccess(@Nullable Void ignored) {
-                        callback.onSuccess(credentials);
+        pkce!!.getToken(values[KEY_CODE], object : SimpleAuthCallback(
+            callback
+        ) {
+            override fun onSuccess(credentials: Credentials) {
+                assertValidIdToken(credentials.idToken, object : VoidCallback {
+                    override fun onSuccess(ignored: Void?) {
+                        callback.onSuccess(credentials)
                     }
 
-                    @Override
-                    public void onFailure(@Nullable Auth0Exception error) {
-                        AuthenticationException wrappedError = new AuthenticationException(ERROR_VALUE_ID_TOKEN_VALIDATION_FAILED, error);
-                        callback.onFailure(wrappedError);
+                    override fun onFailure(error: Auth0Exception) {
+                        val wrappedError = AuthenticationException(
+                            ERROR_VALUE_ID_TOKEN_VALIDATION_FAILED, error
+                        )
+                        callback.onFailure(wrappedError)
                     }
-                });
+                })
             }
-        });
-        return true;
+        })
+        return true
     }
 
-    private void assertValidIdToken(String idToken, final VoidCallback validationCallback) {
+    private fun assertValidIdToken(idToken: String?, validationCallback: VoidCallback) {
         if (TextUtils.isEmpty(idToken)) {
-            validationCallback.onFailure(new TokenValidationException("ID token is required but missing"));
-            return;
+            validationCallback.onFailure(TokenValidationException("ID token is required but missing"))
+            return
         }
-        final JWT decodedIdToken;
-        try {
-            decodedIdToken = new JWT(idToken);
-        } catch (DecodeException ignored) {
-            validationCallback.onFailure(new TokenValidationException("ID token could not be decoded"));
-            return;
+        val decodedIdToken: JWT = try {
+            JWT(idToken!!)
+        } catch (ignored: DecodeException) {
+            validationCallback.onFailure(TokenValidationException("ID token could not be decoded"))
+            return
         }
-
-        BaseCallback<SignatureVerifier, TokenValidationException> signatureVerifierCallback = new BaseCallback<SignatureVerifier, TokenValidationException>() {
-
-            @Override
-            public void onFailure(@NonNull TokenValidationException error) {
-                validationCallback.onFailure(error);
-            }
-
-            @Override
-            public void onSuccess(@Nullable SignatureVerifier signatureVerifier) {
-                //noinspection ConstantConditions
-                IdTokenVerificationOptions options = new IdTokenVerificationOptions(idTokenVerificationIssuer, apiClient.getClientId(), signatureVerifier);
-                String maxAge = parameters.get(KEY_MAX_AGE);
-                if (!TextUtils.isEmpty(maxAge)) {
-                    //noinspection ConstantConditions
-                    options.setMaxAge(Integer.valueOf(maxAge));
+        val signatureVerifierCallback: BaseCallback<SignatureVerifier, TokenValidationException> =
+            object : BaseCallback<SignatureVerifier, TokenValidationException> {
+                override fun onFailure(error: TokenValidationException) {
+                    validationCallback.onFailure(error)
                 }
-                options.setClockSkew(idTokenVerificationLeeway);
-                options.setNonce(parameters.get(KEY_NONCE));
-                options.setClock(new Date(getCurrentTimeInMillis()));
-                try {
-                    new IdTokenVerifier().verify(decodedIdToken, options);
-                    logDebug("Authenticated using web flow");
-                    validationCallback.onSuccess(null);
-                } catch (TokenValidationException exc) {
-                    validationCallback.onFailure(exc);
+
+                override fun onSuccess(signatureVerifier: SignatureVerifier?) {
+                    val options = IdTokenVerificationOptions(
+                        idTokenVerificationIssuer!!,
+                        apiClient.clientId,
+                        signatureVerifier!!
+                    )
+                    val maxAge = parameters[KEY_MAX_AGE]
+                    if (!TextUtils.isEmpty(maxAge)) {
+                        options.maxAge = Integer.valueOf(maxAge!!)
+                    }
+                    options.clockSkew = idTokenVerificationLeeway
+                    options.nonce = parameters[KEY_NONCE]
+                    options.clock = Date(currentTimeInMillis)
+                    try {
+                        IdTokenVerifier().verify(decodedIdToken, options)
+                        logDebug("Authenticated using web flow")
+                        validationCallback.onSuccess(null)
+                    } catch (exc: TokenValidationException) {
+                        validationCallback.onFailure(exc)
+                    }
                 }
             }
-        };
-
-        String tokenKeyId = decodedIdToken.getHeader().get("kid");
-        SignatureVerifier.forAsymmetricAlgorithm(tokenKeyId, apiClient, signatureVerifierCallback);
-    }
-
-    private long getCurrentTimeInMillis() {
-        return currentTimeInMillis != null ? currentTimeInMillis : System.currentTimeMillis();
-    }
-
-    @VisibleForTesting
-    void setCurrentTimeInMillis(long currentTimeInMillis) {
-        this.currentTimeInMillis = currentTimeInMillis;
+        val tokenKeyId = decodedIdToken.header["kid"]
+        SignatureVerifier.forAsymmetricAlgorithm(tokenKeyId, apiClient, signatureVerifierCallback)
     }
 
     //Helper Methods
-
-    private void assertNoError(String errorValue, String errorDescription) throws AuthenticationException {
+    @Throws(AuthenticationException::class)
+    private fun assertNoError(errorValue: String?, errorDescription: String?) {
         if (errorValue == null) {
-            return;
+            return
         }
-        Log.e(TAG, "Error, access denied. Check that the required Permissions are granted and that the Application has this Connection configured in Auth0 Dashboard.");
-        if (ERROR_VALUE_ACCESS_DENIED.equalsIgnoreCase(errorValue)) {
-            throw new AuthenticationException(ERROR_VALUE_ACCESS_DENIED, "Permissions were not granted. Try again.");
-        } else if (ERROR_VALUE_UNAUTHORIZED.equalsIgnoreCase(errorValue)) {
-            throw new AuthenticationException(ERROR_VALUE_UNAUTHORIZED, errorDescription);
-        } else if (ERROR_VALUE_LOGIN_REQUIRED.equals(errorValue)) {
-            //Whitelist to allow SSO errors go through
-            throw new AuthenticationException(errorValue, errorDescription);
-        } else {
-            throw new AuthenticationException(ERROR_VALUE_INVALID_CONFIGURATION, "The application isn't configured properly for the social connection. Please check your Auth0's application configuration");
+        Log.e(
+            TAG,
+            "Error, access denied. Check that the required Permissions are granted and that the Application has this Connection configured in Auth0 Dashboard."
+        )
+        when {
+            ERROR_VALUE_ACCESS_DENIED.equals(errorValue, ignoreCase = true) -> {
+                throw AuthenticationException(
+                    ERROR_VALUE_ACCESS_DENIED,
+                    "Permissions were not granted. Try again."
+                )
+            }
+            ERROR_VALUE_UNAUTHORIZED.equals(errorValue, ignoreCase = true) -> {
+                throw AuthenticationException(ERROR_VALUE_UNAUTHORIZED, errorDescription!!)
+            }
+            ERROR_VALUE_LOGIN_REQUIRED == errorValue -> {
+                //Whitelist to allow SSO errors go through
+                throw AuthenticationException(errorValue, errorDescription!!)
+            }
+            else -> {
+                throw AuthenticationException(
+                    ERROR_VALUE_INVALID_CONFIGURATION,
+                    "The application isn't configured properly for the social connection. Please check your Auth0's application configuration"
+                )
+            }
         }
     }
 
-    @VisibleForTesting
-    static void assertValidState(@NonNull String requestState, @Nullable String responseState) throws AuthenticationException {
-        if (!requestState.equals(responseState)) {
-            Log.e(TAG, String.format("Received state doesn't match. Received %s but expected %s", responseState, requestState));
-            throw new AuthenticationException(ERROR_VALUE_ACCESS_DENIED, "The received state is invalid. Try again.");
+    private fun buildAuthorizeUri(): Uri {
+        val authorizeUri = Uri.parse(account.authorizeUrl)
+        val builder = authorizeUri.buildUpon()
+        for ((key, value) in parameters) {
+            builder.appendQueryParameter(key, value)
         }
+        val uri = builder.build()
+        logDebug("Using the following Authorize URI: $uri")
+        return uri
     }
 
-    private Uri buildAuthorizeUri() {
-        Uri authorizeUri = Uri.parse(account.getAuthorizeUrl());
-        Uri.Builder builder = authorizeUri.buildUpon();
-        for (Map.Entry<String, String> entry : parameters.entrySet()) {
-            builder.appendQueryParameter(entry.getKey(), entry.getValue());
+    private fun addPKCEParameters(
+        parameters: MutableMap<String, String>,
+        redirectUri: String,
+        headers: Map<String, String>
+    ) {
+        createPKCE(redirectUri, headers)
+        val codeChallenge = pkce!!.codeChallenge
+        parameters[KEY_CODE_CHALLENGE] = codeChallenge
+        parameters[KEY_CODE_CHALLENGE_METHOD] = METHOD_SHA_256
+        Log.v(TAG, "Using PKCE authentication flow")
+    }
+
+    private fun addValidationParameters(parameters: MutableMap<String, String>) {
+        val state = getRandomString(parameters[KEY_STATE])
+        val nonce = getRandomString(parameters[KEY_NONCE])
+        parameters[KEY_STATE] = state
+        parameters[KEY_NONCE] = nonce
+    }
+
+    private fun addClientParameters(parameters: MutableMap<String, String>, redirectUri: String) {
+        if (account.auth0UserAgent != null) {
+            parameters[KEY_USER_AGENT] = account.auth0UserAgent!!.value
         }
-        Uri uri = builder.build();
-        logDebug("Using the following Authorize URI: " + uri.toString());
-        return uri;
+        parameters[KEY_CLIENT_ID] = account.clientId
+        parameters[KEY_REDIRECT_URI] = redirectUri
     }
 
-    private void addPKCEParameters(Map<String, String> parameters, String redirectUri, Map<String, String> headers) {
-        createPKCE(redirectUri, headers);
-        String codeChallenge = pkce.getCodeChallenge();
-        parameters.put(KEY_CODE_CHALLENGE, codeChallenge);
-        parameters.put(KEY_CODE_CHALLENGE_METHOD, METHOD_SHA_256);
-        Log.v(TAG, "Using PKCE authentication flow");
-    }
-
-    private void addValidationParameters(Map<String, String> parameters) {
-        String state = getRandomString(parameters.get(KEY_STATE));
-        String nonce = getRandomString(parameters.get(KEY_NONCE));
-        parameters.put(KEY_STATE, state);
-        parameters.put(KEY_NONCE, nonce);
-    }
-
-    private void addClientParameters(Map<String, String> parameters, String redirectUri) {
-        if (account.getAuth0UserAgent() != null) {
-            parameters.put(KEY_USER_AGENT, account.getAuth0UserAgent().getValue());
-        }
-        parameters.put(KEY_CLIENT_ID, account.getClientId());
-        parameters.put(KEY_REDIRECT_URI, redirectUri);
-    }
-
-    private void createPKCE(String redirectUri, Map<String, String> headers) {
+    private fun createPKCE(redirectUri: String, headers: Map<String, String>) {
         if (pkce == null) {
-            pkce = new PKCE(apiClient, redirectUri, headers);
+            pkce = PKCE(apiClient, redirectUri, headers)
         }
     }
 
-    @VisibleForTesting
-    static String getRandomString(@Nullable String defaultValue) {
-        return defaultValue != null ? defaultValue : secureRandomString();
-    }
-
-    private static String secureRandomString() {
-        final SecureRandom sr = new SecureRandom();
-        final byte[] randomBytes = new byte[32];
-        sr.nextBytes(randomBytes);
-        return Base64.encodeToString(randomBytes, Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
-    }
-
-    private void logDebug(String message) {
-        if (account.isLoggingEnabled()) {
-            Log.d(TAG, message);
+    private fun logDebug(message: String) {
+        if (account.isLoggingEnabled) {
+            Log.d(TAG, message)
         }
+    }
+
+    companion object {
+        private val TAG = OAuthManager::class.java.simpleName
+        const val KEY_RESPONSE_TYPE = "response_type"
+        const val KEY_STATE = "state"
+        const val KEY_NONCE = "nonce"
+        const val KEY_MAX_AGE = "max_age"
+        const val KEY_CONNECTION = "connection"
+        const val RESPONSE_TYPE_CODE = "code"
+        private const val ERROR_VALUE_INVALID_CONFIGURATION = "a0.invalid_configuration"
+        private const val ERROR_VALUE_AUTHENTICATION_CANCELED = "a0.authentication_canceled"
+        private const val ERROR_VALUE_ACCESS_DENIED = "access_denied"
+        private const val ERROR_VALUE_UNAUTHORIZED = "unauthorized"
+        private const val ERROR_VALUE_LOGIN_REQUIRED = "login_required"
+        private const val ERROR_VALUE_ID_TOKEN_VALIDATION_FAILED = "Could not verify the ID token"
+        private const val METHOD_SHA_256 = "S256"
+        private const val KEY_CODE_CHALLENGE = "code_challenge"
+        private const val KEY_CODE_CHALLENGE_METHOD = "code_challenge_method"
+        private const val KEY_CLIENT_ID = "client_id"
+        private const val KEY_REDIRECT_URI = "redirect_uri"
+        private const val KEY_USER_AGENT = "auth0Client"
+        private const val KEY_ERROR = "error"
+        private const val KEY_ERROR_DESCRIPTION = "error_description"
+        private const val KEY_CODE = "code"
+
+        @JvmStatic
+        @VisibleForTesting
+        @Throws(AuthenticationException::class)
+        fun assertValidState(requestState: String, responseState: String?) {
+            if (requestState != responseState) {
+                Log.e(
+                    TAG,
+                    String.format(
+                        "Received state doesn't match. Received %s but expected %s",
+                        responseState,
+                        requestState
+                    )
+                )
+                throw AuthenticationException(
+                    ERROR_VALUE_ACCESS_DENIED,
+                    "The received state is invalid. Try again."
+                )
+            }
+        }
+
+        @VisibleForTesting
+        fun getRandomString(defaultValue: String?): String {
+            return defaultValue ?: secureRandomString()
+        }
+
+        private fun secureRandomString(): String {
+            val sr = SecureRandom()
+            val randomBytes = ByteArray(32)
+            sr.nextBytes(randomBytes)
+            return Base64.encodeToString(
+                randomBytes,
+                Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
+            )
+        }
+    }
+
+    init {
+        headers = HashMap()
+        this.parameters = HashMap(parameters)
+        this.parameters[KEY_RESPONSE_TYPE] = RESPONSE_TYPE_CODE
+        apiClient = if (networkingClient == null) {
+            // Delegate the creation of defaults to the constructor
+            AuthenticationAPIClient(account)
+        } else {
+            AuthenticationAPIClient(account, networkingClient)
+        }
+        this.ctOptions = ctOptions
     }
 }

@@ -1,34 +1,22 @@
-package com.auth0.android.provider;
+package com.auth0.android.provider
 
-import android.content.Context;
-import android.content.Intent;
-import androidx.annotation.NonNull;
+import android.content.Context
+import android.content.Intent
 
-/**
- * Created by lbalmaceda on 6/12/17.
- */
+public class AuthenticationActivityMock : AuthenticationActivity() {
+    internal var customTabsController: CustomTabsController? = null
+    public var deliveredIntent: Intent? = null
+        private set
 
-public class AuthenticationActivityMock extends AuthenticationActivity {
-
-    private CustomTabsController customTabsController;
-    private Intent deliveredIntent;
-
-    @Override
-    protected CustomTabsController createCustomTabsController(@NonNull Context context, @NonNull CustomTabsOptions options) {
-        return customTabsController;
+    override fun createCustomTabsController(
+        context: Context,
+        options: CustomTabsOptions
+    ): CustomTabsController {
+        return customTabsController!!
     }
 
-    @Override
-    protected void deliverAuthenticationResult(Intent result) {
-        this.deliveredIntent = result;
-        super.deliverAuthenticationResult(result);
-    }
-
-    public void setCustomTabsController(CustomTabsController customTabsController) {
-        this.customTabsController = customTabsController;
-    }
-
-    public Intent getDeliveredIntent() {
-        return deliveredIntent;
+    override fun deliverAuthenticationResult(result: Intent?) {
+        deliveredIntent = result
+        super.deliverAuthenticationResult(result)
     }
 }

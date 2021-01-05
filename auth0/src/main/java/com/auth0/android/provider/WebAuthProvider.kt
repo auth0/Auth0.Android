@@ -422,7 +422,7 @@ public object WebAuthProvider {
                     account.getDomainUrl()
                 )
             }
-            manager.startAuthentication(activity, redirectUri, 110)
+            manager.startAuthentication(activity, redirectUri!!, 110)
         }
 
         private companion object {

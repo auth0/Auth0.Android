@@ -45,6 +45,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.*
 import org.mockito.ArgumentMatchers.anyString
+import org.mockito.Mockito.`when`
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -57,7 +58,7 @@ import java.util.*
 
 @RunWith(RobolectricTestRunner::class)
 @Config(shadows = [ThreadSwitcherShadow::class])
-public class WebAuthProviderTest2 {
+public class WebAuthProviderTest {
     @Mock
     private lateinit var callback: AuthCallback
 
@@ -891,6 +892,7 @@ public class WebAuthProviderTest2 {
             Credentials::class.java
         )
         val pkce = Mockito.mock(PKCE::class.java)
+        `when`(pkce.codeChallenge).thenReturn("challenge")
         Mockito.doAnswer {
             callback.onSuccess(credentials)
             null
@@ -921,6 +923,7 @@ public class WebAuthProviderTest2 {
     public fun shouldResumeLoginWithIntentWithCodeGrant() {
         val expiresAt = Date()
         val pkce = Mockito.mock(PKCE::class.java)
+        `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
         val authCallback = MockAuthCallback()
@@ -929,7 +932,7 @@ public class WebAuthProviderTest2 {
             .withPKCE(pkce)
             .start(activity, authCallback)
         val managerInstance = WebAuthProvider.managerInstance as OAuthManager
-        managerInstance.setCurrentTimeInMillis(JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS)
+        managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
             intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
@@ -1001,7 +1004,7 @@ public class WebAuthProviderTest2 {
             .withNetworkingClient(networkingClient)
             .start(activity, authCallback)
         val managerInstance = WebAuthProvider.managerInstance as OAuthManager
-        managerInstance.setCurrentTimeInMillis(JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS)
+        managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
 
         // 2. capture the intent filter to obtain the state and nonce sent
         verify(activity).startActivity(intentCaptor.capture())
@@ -1099,6 +1102,7 @@ public class WebAuthProviderTest2 {
     public fun shouldResumeLoginWithRequestCodeWithCodeGrant() {
         val expiresAt = Date()
         val pkce = Mockito.mock(PKCE::class.java)
+        `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
         val authCallback = MockAuthCallback()
@@ -1107,7 +1111,7 @@ public class WebAuthProviderTest2 {
             .withPKCE(pkce)
             .start(activity, authCallback)
         val managerInstance = WebAuthProvider.managerInstance as OAuthManager
-        managerInstance.setCurrentTimeInMillis(JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS)
+        managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
             intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
@@ -1190,6 +1194,7 @@ public class WebAuthProviderTest2 {
     public fun shouldReThrowAnyFailedCodeExchangeDialogOnLogin() {
         val dialog = Mockito.mock(Dialog::class.java)
         val pkce = Mockito.mock(PKCE::class.java)
+        `when`(pkce.codeChallenge).thenReturn("challenge")
         Mockito.doAnswer {
             callbackCaptor.value.onFailure(dialog)
             null
@@ -1222,6 +1227,7 @@ public class WebAuthProviderTest2 {
             AuthenticationException::class.java
         )
         val pkce = Mockito.mock(PKCE::class.java)
+        `when`(pkce.codeChallenge).thenReturn("challenge")
         Mockito.doAnswer {
             callbackCaptor.value.onFailure(exception)
             null
@@ -1232,7 +1238,7 @@ public class WebAuthProviderTest2 {
             .withPKCE(pkce)
             .start(activity, callback)
         val managerInstance = WebAuthProvider.managerInstance as OAuthManager
-        managerInstance.setCurrentTimeInMillis(JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS)
+        managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
         val jwtBody = JwtTestUtils.createJWTBody()
         jwtBody["iss"] = account.getDomainUrl()
         val expectedIdToken = JwtTestUtils.createTestJWT("RS256", jwtBody)
@@ -1350,6 +1356,7 @@ public class WebAuthProviderTest2 {
     @Throws(Exception::class)
     public fun shouldFailToResumeLoginWhenRSAKeyIsMissingFromJWKSet() {
         val pkce = Mockito.mock(PKCE::class.java)
+        `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnEmptyJsonWebKeys()
         val authCallback = MockAuthCallback()
@@ -1360,7 +1367,7 @@ public class WebAuthProviderTest2 {
             .withPKCE(pkce)
             .start(activity, authCallback)
         val managerInstance = WebAuthProvider.managerInstance as OAuthManager
-        managerInstance.setCurrentTimeInMillis(JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS)
+        managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
         val jwtBody = JwtTestUtils.createJWTBody()
         jwtBody["iss"] = proxyAccount.getDomainUrl()
         val expectedIdToken = JwtTestUtils.createTestJWT("RS256", jwtBody)
@@ -1407,6 +1414,7 @@ public class WebAuthProviderTest2 {
     @Throws(Exception::class)
     public fun shouldFailToResumeLoginWhenJWKSRequestFails() {
         val pkce = Mockito.mock(PKCE::class.java)
+        `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnInvalidRequest()
         val authCallback = MockAuthCallback()
@@ -1417,7 +1425,7 @@ public class WebAuthProviderTest2 {
             .withPKCE(pkce)
             .start(activity, authCallback)
         val managerInstance = WebAuthProvider.managerInstance as OAuthManager
-        managerInstance.setCurrentTimeInMillis(JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS)
+        managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
         val jwtBody = JwtTestUtils.createJWTBody()
         jwtBody["iss"] = proxyAccount.getDomainUrl()
         val expectedIdToken = JwtTestUtils.createTestJWT("RS256", jwtBody)
@@ -1464,6 +1472,7 @@ public class WebAuthProviderTest2 {
     @Throws(Exception::class)
     public fun shouldFailToResumeLoginWhenKeyIdIsMissingFromIdTokenHeader() {
         val pkce = Mockito.mock(PKCE::class.java)
+        `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
         val authCallback = MockAuthCallback()
@@ -1474,7 +1483,7 @@ public class WebAuthProviderTest2 {
             .withPKCE(pkce)
             .start(activity, authCallback)
         val managerInstance = WebAuthProvider.managerInstance as OAuthManager
-        managerInstance.setCurrentTimeInMillis(JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS)
+        managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
         val expectedIdToken =
             "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhdXRoMHwxMjM0NTY3ODkifQ.PZivSuGSAWpSU62-iHwI16Po9DgO9lN7SLB3168P03wXBkue6nxbL3beq6jjW9uuhqRKfOiDtsvtr3paGXHONarPqQ1LEm4TDg8CM6AugaphH36EjEjL0zEYo0nxz9Fv1Xu9_bWSzfmLLgRefjZ5R0muV7JlyfBgtkfG0avD3PtjlNtToXX1sN9DyhgCT-STX9kSQAlk23V1XA3c8st09QgmQRgtZC3ZmTEHqq_FTmFUkVUNM6E0LbgLR7bLcOx4Xqayp1mqZxUgTg7ynHI6Ey4No-R5_twAki_BR8uG0TxqHlPxuU9QTzEvCQxrqzZZufRv_kIn2-fqrF3yr3z4Og"
         val intent = createAuthIntent(
@@ -1520,6 +1529,7 @@ public class WebAuthProviderTest2 {
     @Throws(Exception::class)
     public fun shouldResumeLoginWhenJWKSRequestSuceeds() {
         val pkce = Mockito.mock(PKCE::class.java)
+        `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
         val authCallback = MockAuthCallback()
@@ -1530,7 +1540,7 @@ public class WebAuthProviderTest2 {
             .withPKCE(pkce)
             .start(activity, authCallback)
         val managerInstance = WebAuthProvider.managerInstance as OAuthManager
-        managerInstance.setCurrentTimeInMillis(JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS)
+        managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
         val jwtBody = JwtTestUtils.createJWTBody()
         jwtBody["iss"] = proxyAccount.getDomainUrl()
         val expectedIdToken = JwtTestUtils.createTestJWT("RS256", jwtBody)
@@ -1567,6 +1577,7 @@ public class WebAuthProviderTest2 {
     @Throws(Exception::class)
     public fun shouldResumeLoginIgnoringEmptyCustomIDTokenVerificationIssuer() {
         val pkce = Mockito.mock(PKCE::class.java)
+        `when`(pkce.codeChallenge).thenReturn("challenge")
         // if specifying a null issuer for token verification, should use the domain URL of the account
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
@@ -1577,7 +1588,7 @@ public class WebAuthProviderTest2 {
             .withPKCE(pkce)
             .start(activity, authCallback)
         val managerInstance = WebAuthProvider.managerInstance as OAuthManager
-        managerInstance.setCurrentTimeInMillis(JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS)
+        managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
             intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
@@ -1629,6 +1640,7 @@ public class WebAuthProviderTest2 {
     @Throws(Exception::class)
     public fun shouldResumeLoginUsingCustomIDTokenVerificationIssuer() {
         val pkce = Mockito.mock(PKCE::class.java)
+        `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
         val authCallback = MockAuthCallback()
@@ -1638,7 +1650,7 @@ public class WebAuthProviderTest2 {
             .withPKCE(pkce)
             .start(activity, authCallback)
         val managerInstance = WebAuthProvider.managerInstance as OAuthManager
-        managerInstance.setCurrentTimeInMillis(JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS)
+        managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
         verify(activity).startActivity(intentCaptor.capture())
         val uri =
             intentCaptor.value.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
@@ -1690,6 +1702,7 @@ public class WebAuthProviderTest2 {
     @Throws(Exception::class)
     public fun shouldFailToResumeLoginWithHS256IdTokenAndOIDCConformantConfiguration() {
         val pkce = Mockito.mock(PKCE::class.java)
+        `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
         val proxyAccount: Auth0 = MockAuth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
@@ -1700,7 +1713,7 @@ public class WebAuthProviderTest2 {
             .withPKCE(pkce)
             .start(activity, authCallback)
         val managerInstance = WebAuthProvider.managerInstance as OAuthManager
-        managerInstance.setCurrentTimeInMillis(JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS)
+        managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
         val jwtBody = JwtTestUtils.createJWTBody()
         jwtBody["iss"] = proxyAccount.getDomainUrl()
         val expectedIdToken = JwtTestUtils.createTestJWT("HS256", jwtBody)
@@ -1843,6 +1856,7 @@ public class WebAuthProviderTest2 {
     @Throws(Exception::class)
     public fun shouldFailToResumeLoginWithIntentWithInvalidMaxAge() {
         val pkce = Mockito.mock(PKCE::class.java)
+        `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
         val authCallback = MockAuthCallback()
@@ -1858,7 +1872,7 @@ public class WebAuthProviderTest2 {
         val originalClock = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS / 1000
         val authTime = originalClock + 1
         val expiredMaxAge = originalClock + 10
-        managerInstance.setCurrentTimeInMillis(expiredMaxAge * 1000)
+        managerInstance.currentTimeInMillis = expiredMaxAge * 1000
         val jwtBody = JwtTestUtils.createJWTBody()
         jwtBody["auth_time"] = authTime
         jwtBody["iss"] = proxyAccount.getDomainUrl()
@@ -1905,6 +1919,7 @@ public class WebAuthProviderTest2 {
     @Throws(Exception::class)
     public fun shouldFailToResumeLoginWithIntentWithInvalidNonce() {
         val pkce = Mockito.mock(PKCE::class.java)
+        `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
         val authCallback = MockAuthCallback()
@@ -1915,7 +1930,7 @@ public class WebAuthProviderTest2 {
             .withPKCE(pkce)
             .start(activity, authCallback)
         val managerInstance = WebAuthProvider.managerInstance as OAuthManager
-        managerInstance.setCurrentTimeInMillis(JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS)
+        managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
         val jwtBody = JwtTestUtils.createJWTBody()
         jwtBody["iss"] = proxyAccount.getDomainUrl()
         val expectedIdToken = JwtTestUtils.createTestJWT("RS256", jwtBody)
@@ -1951,6 +1966,7 @@ public class WebAuthProviderTest2 {
     @Throws(Exception::class)
     public fun shouldFailToResumeLoginWithNotSupportedSigningAlgorithm() {
         val pkce = Mockito.mock(PKCE::class.java)
+        `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
         val callback = MockAuthCallback()
@@ -1961,7 +1977,7 @@ public class WebAuthProviderTest2 {
             .withPKCE(pkce)
             .start(activity, callback)
         val managerInstance = WebAuthProvider.managerInstance as OAuthManager
-        managerInstance.setCurrentTimeInMillis(JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS)
+        managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
         val jwtBody = JwtTestUtils.createJWTBody()
         jwtBody["iss"] = proxyAccount.getDomainUrl()
         val expectedIdToken = JwtTestUtils.createTestJWT("none", jwtBody)
