@@ -21,62 +21,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+package com.auth0.android.authentication
 
-package com.auth0.android.authentication;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import com.auth0.android.util.CheckHelper;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*
 
 /**
  * Builder for Auth0 Authentication API parameters
  * You can build your parameters like this
  * <pre>
- * {@code
- * Map<String, Object> parameters = ParameterBuilder.newBuilder()
- *      .setClientId("{CLIENT_ID}")
- *      .setConnection("{CONNECTION}")
- *      .set("{PARAMETER_NAME}", "{PARAMETER_VALUE}")
- *      .asDictionary();
- * }
- * </pre>
+ * `Map<String, Object> parameters = ParameterBuilder.newBuilder()
+ * .setClientId("{CLIENT_ID}")
+ * .setConnection("{CONNECTION}")
+ * .set("{PARAMETER_NAME}", "{PARAMETER_VALUE}")
+ * .asDictionary();
+` *
+</pre> *
  *
- * @see ParameterBuilder#newBuilder()
- * @see ParameterBuilder#newAuthenticationBuilder()
+ * @see ParameterBuilder.newBuilder
+ * @see ParameterBuilder.newAuthenticationBuilder
  */
-public class ParameterBuilder {
-
-    public static final String GRANT_TYPE_REFRESH_TOKEN = "refresh_token";
-    public static final String GRANT_TYPE_PASSWORD = "password";
-    public static final String GRANT_TYPE_PASSWORD_REALM = "http://auth0.com/oauth/grant-type/password-realm";
-    public static final String GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code";
-    public static final String GRANT_TYPE_MFA_OTP = "http://auth0.com/oauth/grant-type/mfa-otp";
-    public static final String GRANT_TYPE_PASSWORDLESS_OTP = "http://auth0.com/oauth/grant-type/passwordless/otp";
-    public static final String GRANT_TYPE_TOKEN_EXCHANGE = "urn:ietf:params:oauth:grant-type:token-exchange";
-
-    public static final String SCOPE_OPENID = "openid";
-    public static final String SCOPE_OFFLINE_ACCESS = "openid offline_access";
-
-    public static final String SCOPE_KEY = "scope";
-    public static final String REFRESH_TOKEN_KEY = "refresh_token";
-    public static final String CONNECTION_KEY = "connection";
-    public static final String REALM_KEY = "realm";
-    public static final String SEND_KEY = "send";
-    public static final String CLIENT_ID_KEY = "client_id";
-    public static final String GRANT_TYPE_KEY = "grant_type";
-    public static final String AUDIENCE_KEY = "audience";
-
-    private final Map<String, String> parameters;
-
-    private ParameterBuilder(Map<String, String> parameters) {
-        CheckHelper.checkArgument(parameters != null, "Must provide non-null parameters");
-        this.parameters = new HashMap<>(parameters);
-    }
+public class ParameterBuilder private constructor(parameters: Map<String, String>) {
+    private val parameters: MutableMap<String, String>
 
     /**
      * Sets the 'client_id' parameter
@@ -84,9 +49,8 @@ public class ParameterBuilder {
      * @param clientId the application's client id
      * @return itself
      */
-    @NonNull
-    public ParameterBuilder setClientId(@NonNull String clientId) {
-        return set(CLIENT_ID_KEY, clientId);
+    public fun setClientId(clientId: String): ParameterBuilder {
+        return set(CLIENT_ID_KEY, clientId)
     }
 
     /**
@@ -95,9 +59,8 @@ public class ParameterBuilder {
      * @param grantType grant type
      * @return itself
      */
-    @NonNull
-    public ParameterBuilder setGrantType(@NonNull String grantType) {
-        return set(GRANT_TYPE_KEY, grantType);
+    public fun setGrantType(grantType: String): ParameterBuilder {
+        return set(GRANT_TYPE_KEY, grantType)
     }
 
     /**
@@ -106,9 +69,8 @@ public class ParameterBuilder {
      * @param connection name of the connection
      * @return itself
      */
-    @NonNull
-    public ParameterBuilder setConnection(@NonNull String connection) {
-        return set(CONNECTION_KEY, connection);
+    public fun setConnection(connection: String): ParameterBuilder {
+        return set(CONNECTION_KEY, connection)
     }
 
     /**
@@ -117,9 +79,8 @@ public class ParameterBuilder {
      * @param realm name of the realm
      * @return itself
      */
-    @NonNull
-    public ParameterBuilder setRealm(@NonNull String realm) {
-        return set(REALM_KEY, realm);
+    public fun setRealm(realm: String): ParameterBuilder {
+        return set(REALM_KEY, realm)
     }
 
     /**
@@ -128,9 +89,8 @@ public class ParameterBuilder {
      * @param scope a scope value
      * @return itself
      */
-    @NonNull
-    public ParameterBuilder setScope(@NonNull String scope) {
-        return set(SCOPE_KEY, scope);
+    public fun setScope(scope: String): ParameterBuilder {
+        return set(SCOPE_KEY, scope)
     }
 
     /**
@@ -139,9 +99,8 @@ public class ParameterBuilder {
      * @param audience an audience value
      * @return itself
      */
-    @NonNull
-    public ParameterBuilder setAudience(@NonNull String audience) {
-        return set(AUDIENCE_KEY, audience);
+    public fun setAudience(audience: String): ParameterBuilder {
+        return set(AUDIENCE_KEY, audience)
     }
 
     /**
@@ -150,9 +109,8 @@ public class ParameterBuilder {
      * @param refreshToken a access token
      * @return itself
      */
-    @NonNull
-    public ParameterBuilder setRefreshToken(@NonNull String refreshToken) {
-        return set(REFRESH_TOKEN_KEY, refreshToken);
+    public fun setRefreshToken(refreshToken: String): ParameterBuilder {
+        return set(REFRESH_TOKEN_KEY, refreshToken)
     }
 
     /**
@@ -161,9 +119,8 @@ public class ParameterBuilder {
      * @param passwordlessType the type of passwordless login
      * @return itself
      */
-    @NonNull
-    public ParameterBuilder setSend(@NonNull PasswordlessType passwordlessType) {
-        return set(SEND_KEY, passwordlessType.getValue());
+    public fun setSend(passwordlessType: PasswordlessType): ParameterBuilder {
+        return set(SEND_KEY, passwordlessType.value)
     }
 
     /**
@@ -173,14 +130,13 @@ public class ParameterBuilder {
      * @param value parameter value. A null value will remove the key if present.
      * @return itself
      */
-    @NonNull
-    public ParameterBuilder set(@NonNull String key, @Nullable String value) {
+    public operator fun set(key: String, value: String?): ParameterBuilder {
         if (value == null) {
-            this.parameters.remove(key);
+            parameters.remove(key)
         } else {
-            this.parameters.put(key, value);
+            parameters[key] = value
         }
-        return this;
+        return this
     }
 
     /**
@@ -189,16 +145,9 @@ public class ParameterBuilder {
      * @param parameters map with parameters to add. Null values will be skipped.
      * @return itself
      */
-    @NonNull
-    public ParameterBuilder addAll(@Nullable Map<String, String> parameters) {
-        if (parameters != null) {
-            for (String k : parameters.keySet()) {
-                if (parameters.get(k) != null) {
-                    this.parameters.put(k, parameters.get(k));
-                }
-            }
-        }
-        return this;
+    public fun addAll(parameters: Map<String, String?>): ParameterBuilder {
+        parameters.filterValues { it != null }.map { this.parameters.put(it.key, it.value!!) }
+        return this
     }
 
     /**
@@ -206,54 +155,72 @@ public class ParameterBuilder {
      *
      * @return itself
      */
-    @SuppressWarnings("UnusedReturnValue")
-    @NonNull
-    public ParameterBuilder clearAll() {
-        parameters.clear();
-        return this;
+    public fun clearAll(): ParameterBuilder {
+        parameters.clear()
+        return this
     }
 
     /**
-     * Create a {@link Map} with all the parameters
+     * Create a [Map] with all the parameters
      *
-     * @return all parameters added previously as a {@link Map}
+     * @return all parameters added previously as a [Map]
      */
-    @NonNull
-    public Map<String, String> asDictionary() {
-        return Collections.unmodifiableMap(new HashMap<>(this.parameters));
+    public fun asDictionary(): Map<String, String> {
+        return parameters.toMap()
     }
 
-    /**
-     * Creates a new instance of the builder using default values for login request, e.g. 'openid' for scope.
-     *
-     * @return a new builder
-     */
-    @NonNull
-    public static ParameterBuilder newAuthenticationBuilder() {
-        return newBuilder()
-                .setScope(SCOPE_OPENID);
+    public companion object {
+        public const val GRANT_TYPE_REFRESH_TOKEN: String = "refresh_token"
+        public const val GRANT_TYPE_PASSWORD: String = "password"
+        public const val GRANT_TYPE_PASSWORD_REALM: String =
+            "http://auth0.com/oauth/grant-type/password-realm"
+        public const val GRANT_TYPE_AUTHORIZATION_CODE: String = "authorization_code"
+        public const val GRANT_TYPE_MFA_OTP: String = "http://auth0.com/oauth/grant-type/mfa-otp"
+        public const val GRANT_TYPE_PASSWORDLESS_OTP: String =
+            "http://auth0.com/oauth/grant-type/passwordless/otp"
+        public const val GRANT_TYPE_TOKEN_EXCHANGE: String =
+            "urn:ietf:params:oauth:grant-type:token-exchange"
+        public const val SCOPE_OPENID: String = "openid"
+        public const val SCOPE_OFFLINE_ACCESS: String = "openid offline_access"
+        public const val SCOPE_KEY: String = "scope"
+        public const val REFRESH_TOKEN_KEY: String = "refresh_token"
+        public const val CONNECTION_KEY: String = "connection"
+        public const val REALM_KEY: String = "realm"
+        public const val SEND_KEY: String = "send"
+        public const val CLIENT_ID_KEY: String = "client_id"
+        public const val GRANT_TYPE_KEY: String = "grant_type"
+        public const val AUDIENCE_KEY: String = "audience"
+
+        /**
+         * Creates a new instance of the builder using default values for login request, e.g. 'openid' for scope.
+         *
+         * @return a new builder
+         */
+        @JvmStatic
+        public fun newAuthenticationBuilder(): ParameterBuilder {
+            return newBuilder()
+                .setScope(SCOPE_OPENID)
+        }
+        /**
+         * Creates a new instance of the builder from some initial parameters.
+         *
+         * @param parameters initial parameters
+         * @return a new builder
+         */
+        /**
+         * Creates a new instance of the builder.
+         * This builder wont have any default values
+         *
+         * @return a new builder
+         */
+        @JvmStatic
+        @JvmOverloads
+        public fun newBuilder(parameters: Map<String, String> = mutableMapOf()): ParameterBuilder {
+            return ParameterBuilder(parameters)
+        }
     }
 
-    /**
-     * Creates a new instance of the builder.
-     * This builder wont have any default values
-     *
-     * @return a new builder
-     */
-    @NonNull
-    public static ParameterBuilder newBuilder() {
-        return newBuilder(new HashMap<>());
+    init {
+        this.parameters = parameters.toMutableMap()
     }
-
-    /**
-     * Creates a new instance of the builder from some initial parameters.
-     *
-     * @param parameters initial parameters
-     * @return a new builder
-     */
-    @NonNull
-    public static ParameterBuilder newBuilder(@NonNull Map<String, String> parameters) {
-        return new ParameterBuilder(parameters);
-    }
-
 }
