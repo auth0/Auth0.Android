@@ -1,41 +1,24 @@
-package com.auth0.android.request.internal;
+package com.auth0.android.request.internal
 
-import androidx.annotation.NonNull;
+import com.auth0.android.Auth0Exception
+import com.auth0.android.authentication.AuthenticationException
+import com.auth0.android.authentication.ParameterBuilder
+import com.auth0.android.callback.BaseCallback
+import com.auth0.android.request.AuthenticationRequest
+import com.auth0.android.request.Request
+import com.auth0.android.result.Credentials
 
-import com.auth0.android.Auth0Exception;
-import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.callback.BaseCallback;
-import com.auth0.android.request.AuthenticationRequest;
-import com.auth0.android.request.Request;
-import com.auth0.android.result.Credentials;
-
-import java.util.Map;
-
-import static com.auth0.android.authentication.ParameterBuilder.AUDIENCE_KEY;
-import static com.auth0.android.authentication.ParameterBuilder.CONNECTION_KEY;
-import static com.auth0.android.authentication.ParameterBuilder.GRANT_TYPE_KEY;
-import static com.auth0.android.authentication.ParameterBuilder.REALM_KEY;
-import static com.auth0.android.authentication.ParameterBuilder.SCOPE_KEY;
-
-public class BaseAuthenticationRequest implements AuthenticationRequest {
-
-    private final Request<Credentials, AuthenticationException> request;
-
-    public BaseAuthenticationRequest(@NonNull Request<Credentials, AuthenticationException> request) {
-        this.request = request;
-    }
-
+public open class BaseAuthenticationRequest(private val request: Request<Credentials, AuthenticationException>) :
+    AuthenticationRequest {
     /**
      * Sets the 'grant_type' parameter
      *
      * @param grantType grant type
      * @return itself
      */
-    @NonNull
-    @Override
-    public AuthenticationRequest setGrantType(@NonNull String grantType) {
-        addParameter(GRANT_TYPE_KEY, grantType);
-        return this;
+    override fun setGrantType(grantType: String): AuthenticationRequest {
+        addParameter(ParameterBuilder.GRANT_TYPE_KEY, grantType)
+        return this
     }
 
     /**
@@ -44,11 +27,9 @@ public class BaseAuthenticationRequest implements AuthenticationRequest {
      * @param connection name of the connection
      * @return itself
      */
-    @NonNull
-    @Override
-    public AuthenticationRequest setConnection(@NonNull String connection) {
-        addParameter(CONNECTION_KEY, connection);
-        return this;
+    override fun setConnection(connection: String): AuthenticationRequest {
+        addParameter(ParameterBuilder.CONNECTION_KEY, connection)
+        return this
     }
 
     /**
@@ -57,11 +38,9 @@ public class BaseAuthenticationRequest implements AuthenticationRequest {
      * @param realm name of the realm
      * @return itself
      */
-    @NonNull
-    @Override
-    public AuthenticationRequest setRealm(@NonNull String realm) {
-        addParameter(REALM_KEY, realm);
-        return this;
+    override fun setRealm(realm: String): AuthenticationRequest {
+        addParameter(ParameterBuilder.REALM_KEY, realm)
+        return this
     }
 
     /**
@@ -70,11 +49,9 @@ public class BaseAuthenticationRequest implements AuthenticationRequest {
      * @param scope a scope value
      * @return itself
      */
-    @NonNull
-    @Override
-    public AuthenticationRequest setScope(@NonNull String scope) {
-        addParameter(SCOPE_KEY, scope);
-        return this;
+    override fun setScope(scope: String): AuthenticationRequest {
+        addParameter(ParameterBuilder.SCOPE_KEY, scope)
+        return this
     }
 
     /**
@@ -83,42 +60,32 @@ public class BaseAuthenticationRequest implements AuthenticationRequest {
      * @param audience an audience value
      * @return itself
      */
-    @NonNull
-    @Override
-    public AuthenticationRequest setAudience(@NonNull String audience) {
-        addParameter(AUDIENCE_KEY, audience);
-        return this;
+    override fun setAudience(audience: String): AuthenticationRequest {
+        addParameter(ParameterBuilder.AUDIENCE_KEY, audience)
+        return this
     }
 
-    @NonNull
-    @Override
-    public AuthenticationRequest addParameters(@NonNull Map<String, String> parameters) {
-        request.addParameters(parameters);
-        return this;
+    override fun addParameters(parameters: Map<String, String>): AuthenticationRequest {
+        request.addParameters(parameters)
+        return this
     }
 
-    @NonNull
-    @Override
-    public AuthenticationRequest addParameter(@NonNull String name, @NonNull String value) {
-        request.addParameter(name, value);
-        return this;
+    override fun addParameter(name: String, value: String): AuthenticationRequest {
+        request.addParameter(name, value)
+        return this
     }
 
-    @NonNull
-    @Override
-    public AuthenticationRequest addHeader(@NonNull String name, @NonNull String value) {
-        request.addHeader(name, value);
-        return this;
+    override fun addHeader(name: String, value: String): AuthenticationRequest {
+        request.addHeader(name, value)
+        return this
     }
 
-    @Override
-    public void start(@NonNull BaseCallback<Credentials, AuthenticationException> callback) {
-        request.start(callback);
+    override fun start(callback: BaseCallback<Credentials, AuthenticationException>) {
+        request.start(callback)
     }
 
-    @NonNull
-    @Override
-    public Credentials execute() throws Auth0Exception {
-        return request.execute();
+    @Throws(Auth0Exception::class)
+    override fun execute(): Credentials {
+        return request.execute()
     }
 }
