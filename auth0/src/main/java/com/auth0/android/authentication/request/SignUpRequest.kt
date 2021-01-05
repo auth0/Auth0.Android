@@ -81,7 +81,7 @@ public class SignUpRequest
      * @return itself
      * @see ParameterBuilder
      */
-    public fun addAuthenticationParameters(parameters: Map<String?, String?>): SignUpRequest {
+    public fun addAuthenticationParameters(parameters: Map<String, String>): SignUpRequest {
         authenticationRequest.addParameters(parameters)
         return this
     }

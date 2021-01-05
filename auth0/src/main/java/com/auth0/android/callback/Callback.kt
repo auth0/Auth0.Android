@@ -21,23 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+package com.auth0.android.callback
 
-package com.auth0.android.callback;
-
-import androidx.annotation.NonNull;
-
-import com.auth0.android.Auth0Exception;
+import com.auth0.android.Auth0Exception
 
 /**
  * Interface for all callbacks used with Auth0 API clients
  */
-public interface Callback<U extends Auth0Exception> {
-
+public interface Callback<U : Auth0Exception> {
     /**
      * Method called on Auth0 API request failure
      *
      * @param error The reason of the failure
      */
-    void onFailure(@NonNull U error);
-
+    public fun onFailure(error: U)
 }

@@ -110,7 +110,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         if (scope != null) {
             request.addParameter("scope", scope)
         }
-        request.start(object : AuthenticationCallback<Credentials?> {
+        request.start(object : AuthenticationCallback<Credentials> {
             override fun onSuccess(fresh: Credentials?) {
                 val expiresAt = fresh!!.expiresAt!!.time
                 val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())

@@ -2,7 +2,6 @@ package com.auth0.android.authentication.storage
 
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
-import com.auth0.android.authentication.storage.CredentialsManagerException
 import com.auth0.android.callback.BaseCallback
 import com.auth0.android.result.Credentials
 import com.auth0.android.util.Clock
@@ -44,7 +43,7 @@ public abstract class BaseCredentialsManager internal constructor(
 
     @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal val currentTimeInMillis: Long
-        get() = _clock.currentTimeMillis
+        get() = _clock.getCurrentTimeMillis()
 
     /**
      * Checks if the stored scope is the same as the requested one.

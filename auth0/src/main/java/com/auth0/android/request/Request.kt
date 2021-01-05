@@ -21,30 +21,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+package com.auth0.android.request
 
-package com.auth0.android.request;
-
-import androidx.annotation.NonNull;
-
-import com.auth0.android.Auth0Exception;
-import com.auth0.android.callback.BaseCallback;
-
-import java.util.Map;
+import com.auth0.android.Auth0Exception
+import com.auth0.android.callback.BaseCallback
 
 /**
  * Defines a request that can be started
  *
  * @param <T> the type this request will return on success.
- * @param <U> the {@link Auth0Exception} type this request will return on failure.
- */
-public interface Request<T, U extends Auth0Exception> {
-
+ * @param <U> the [Auth0Exception] type this request will return on failure.
+</U></T> */
+public interface Request<T, U : Auth0Exception> {
     /**
      * Performs an async HTTP request against Auth0 API
      *
      * @param callback called either on success or failure
      */
-    void start(@NonNull BaseCallback<T, U> callback);
+    public fun start(callback: BaseCallback<T, U>)
 
     /**
      * Executes the HTTP request against Auth0 API (blocking the current thread)
@@ -52,8 +46,8 @@ public interface Request<T, U extends Auth0Exception> {
      * @return the response on success
      * @throws Auth0Exception on failure
      */
-    @NonNull
-    T execute() throws Auth0Exception;
+    @Throws(Auth0Exception::class)
+    public fun execute(): T
 
     /**
      * Add parameters to the request as a Map of Object with the keys as String
@@ -61,8 +55,7 @@ public interface Request<T, U extends Auth0Exception> {
      * @param parameters to send with the request
      * @return itself
      */
-    @NonNull
-    Request<T, U> addParameters(@NonNull Map<String, String> parameters);
+    public fun addParameters(parameters: Map<String, String>): Request<T, U>
 
     /**
      * Add parameter to the request with a given name
@@ -71,8 +64,7 @@ public interface Request<T, U extends Auth0Exception> {
      * @param value of the parameter
      * @return itself
      */
-    @NonNull
-    Request<T, U> addParameter(@NonNull String name, @NonNull String value);
+    public fun addParameter(name: String, value: String): Request<T, U>
 
     /**
      * Adds an additional header for the request
@@ -81,6 +73,5 @@ public interface Request<T, U extends Auth0Exception> {
      * @param value of the header
      * @return itself
      */
-    @NonNull
-    Request<T, U> addHeader(@NonNull String name, @NonNull String value);
+    public fun addHeader(name: String, value: String): Request<T, U>
 }

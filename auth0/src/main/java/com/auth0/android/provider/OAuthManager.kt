@@ -104,7 +104,7 @@ internal class OAuthManager(
         ) {
             override fun onSuccess(credentials: Credentials) {
                 assertValidIdToken(credentials.idToken, object : VoidCallback {
-                    override fun onSuccess(ignored: Void?) {
+                    override fun onSuccess(ignored: Unit?) {
                         callback.onSuccess(credentials)
                     }
 

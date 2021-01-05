@@ -12,7 +12,6 @@ import androidx.annotation.IntRange
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
-import com.auth0.android.authentication.storage.CredentialsManagerException
 import com.auth0.android.authentication.storage.SecureCredentialsManager
 import com.auth0.android.callback.AuthenticationCallback
 import com.auth0.android.callback.BaseCallback
@@ -335,7 +334,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         if (scope != null) {
             request.addParameter("scope", scope)
         }
-        request.start(object : AuthenticationCallback<Credentials?> {
+        request.start(object : AuthenticationCallback<Credentials> {
             override fun onSuccess(fresh: Credentials?) {
                 val expiresAt = fresh!!.expiresAt!!.time
                 val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())

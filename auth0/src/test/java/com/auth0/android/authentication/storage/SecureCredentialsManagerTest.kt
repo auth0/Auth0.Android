@@ -15,6 +15,7 @@ import com.auth0.android.request.Request
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.CredentialsMock
+import com.auth0.android.util.Clock
 import com.google.gson.Gson
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.eq
@@ -1320,7 +1321,11 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(false))
 
         //now, update the clock and retry
-        manager.setClock { CredentialsMock.CURRENT_TIME_MS - 1000 }
+        manager.setClock(object : Clock {
+            override fun getCurrentTimeMillis(): Long {
+                return CredentialsMock.CURRENT_TIME_MS - 1000
+            }
+        })
         MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(true))
     }
     /*

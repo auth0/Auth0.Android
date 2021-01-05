@@ -1,5 +1,5 @@
 /*
- * AuthCallback.java
+ * VoidCallback.java
  *
  * Copyright (c) 2016 Auth0 (http://auth0.com)
  *
@@ -21,15 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+package com.auth0.android.provider
 
-package com.auth0.android.provider;
-
-import com.auth0.android.Auth0Exception;
-import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.Auth0Exception
+import com.auth0.android.callback.BaseCallback
 
 /**
  * Generic callback called on success/failure, that receives no payload when succeeds.
  */
-@SuppressWarnings("WeakerAccess")
-public interface VoidCallback extends BaseCallback<Void, Auth0Exception> {
-}
+public interface VoidCallback : BaseCallback<Unit, Auth0Exception>

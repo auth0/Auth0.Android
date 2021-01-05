@@ -21,24 +21,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+package com.auth0.android.callback
 
-package com.auth0.android.callback;
-
-import androidx.annotation.Nullable;
-
-import com.auth0.android.Auth0Exception;
+import com.auth0.android.Auth0Exception
 
 /**
  * Callback that receives a single value on success.
  */
 //TODO [SDK-2185]: Merge this interface into Callback
-public interface BaseCallback<T, U extends Auth0Exception> extends Callback<U> {
-
+public interface BaseCallback<T, U : Auth0Exception> : Callback<U> {
     /**
      * Method called on success with the payload or null.
      *
      * @param payload Request payload or null
      */
-    void onSuccess(@Nullable T payload);
-
+    public fun onSuccess(payload: T?)
 }
