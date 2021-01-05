@@ -1,5 +1,6 @@
 package com.auth0.android.request.internal;
 
+import com.auth0.android.result.UserIdentity;
 import com.auth0.android.result.UserProfile;
 import com.google.gson.JsonParseException;
 
@@ -18,6 +19,7 @@ import static com.auth0.android.util.UserIdentityMatcher.isUserIdentity;
 import static com.auth0.android.util.UserProfileMatcher.isNormalizedProfile;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.emptyCollectionOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
@@ -146,7 +148,7 @@ public class UserProfileGsonTest extends GsonBaseTest {
         assertThat(profile.getName(), is(nullValue()));
         assertThat(profile.getNickname(), is(nullValue()));
         assertThat(profile.getPictureURL(), is(nullValue()));
-        assertThat(profile.getIdentities(), is(nullValue()));
+        assertThat(profile.getIdentities(), is(emptyCollectionOf(UserIdentity.class)));
         assertThat(profile.getUserMetadata(), anEmptyMap());
         assertThat(profile.getAppMetadata(), anEmptyMap());
         assertThat(profile.getExtraInfo(), aMapWithSize(1));
