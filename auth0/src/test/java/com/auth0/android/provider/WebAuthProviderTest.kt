@@ -2345,7 +2345,7 @@ public class WebAuthProviderTest {
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
         val intent = createAuthIntent("")
         Assert.assertTrue(resume(intent))
-        verify(voidCallback).onSuccess(eq<Unit?>(null))
+        verify(voidCallback).onSuccess(eq(Unit))
     }
 
     @Test

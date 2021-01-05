@@ -11,6 +11,8 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 
+import kotlin.Unit;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -53,7 +55,7 @@ public class LogoutManagerTest {
         AuthorizeResult result = mock(AuthorizeResult.class);
         when(result.isCanceled()).thenReturn(false);
         manager.resume(result);
-        verify(callback).onSuccess(eq(null));
+        verify(callback).onSuccess(eq(Unit.INSTANCE));
     }
 
 }
