@@ -21,38 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
-package com.auth0.android.result;
-
-
-import androidx.annotation.NonNull;
-
-import com.auth0.android.authentication.AuthenticationAPIClient;
-import com.auth0.android.request.AuthenticationRequest;
+package com.auth0.android.result
 
 /**
  * The result of a successful authentication against Auth0
- * Contains the logged in user's {@link Credentials} and {@link UserProfile}.
+ * Contains the logged in user's [Credentials] and [UserProfile].
  *
- * @see AuthenticationAPIClient#getProfileAfter(AuthenticationRequest)
+ * @see AuthenticationAPIClient.getProfileAfter
  */
-public class Authentication {
-
-    private final UserProfile profile;
-    private final Credentials credentials;
-
-    public Authentication(@NonNull UserProfile profile, @NonNull Credentials credentials) {
-        this.profile = profile;
-        this.credentials = credentials;
-    }
-
-    @NonNull
-    public UserProfile getProfile() {
-        return profile;
-    }
-
-    @NonNull
-    public Credentials getCredentials() {
-        return credentials;
-    }
-}
+public class Authentication(public val profile: UserProfile, public val credentials: Credentials)
