@@ -24,7 +24,7 @@
 package com.auth0.android.request.internal
 
 import com.auth0.android.Auth0Exception
-import com.auth0.android.callback.BaseCallback
+import com.auth0.android.callback.Callback
 import com.auth0.android.request.*
 import java.io.IOException
 import java.nio.charset.Charset
@@ -77,7 +77,7 @@ public open class BaseRequest<T, U : Auth0Exception> internal constructor(
      * exception is raised and posted in the callback's onFailure method if something went wrong.
      * @param callback the callback to post the results in. Uses the Main thread.
      */
-    override fun start(callback: BaseCallback<T, U>) {
+    override fun start(callback: Callback<T, U>) {
         threadSwitcher.backgroundThread {
             try {
                 val result: T? = execute()

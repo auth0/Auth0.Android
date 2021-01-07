@@ -38,7 +38,7 @@ import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
-public class CallbackMatcher<T, U extends Auth0Exception> extends BaseMatcher<MockBaseCallback<T, U>> {
+public class CallbackMatcher<T, U extends Auth0Exception> extends BaseMatcher<MockCallback<T, U>> {
     private final Matcher<T> payloadMatcher;
     private final Matcher<U> errorMatcher;
 
@@ -50,7 +50,7 @@ public class CallbackMatcher<T, U extends Auth0Exception> extends BaseMatcher<Mo
     @Override
     @SuppressWarnings("unchecked")
     public boolean matches(Object item) {
-        MockBaseCallback<T, U> callback = (MockBaseCallback<T, U>) item;
+        MockCallback<T, U> callback = (MockCallback<T, U>) item;
         try {
             await().until(callback.payload(), payloadMatcher);
             await().until(callback.error(), errorMatcher);
@@ -66,23 +66,23 @@ public class CallbackMatcher<T, U extends Auth0Exception> extends BaseMatcher<Mo
                 .appendText("successful method be called");
     }
 
-    public static <T, U extends Auth0Exception> Matcher<MockBaseCallback<T, U>> hasPayloadOfType(Class<T> tClazz, Class<U> uClazz) {
+    public static <T, U extends Auth0Exception> Matcher<MockCallback<T, U>> hasPayloadOfType(Class<T> tClazz, Class<U> uClazz) {
         return new CallbackMatcher<>(isA(tClazz), is(nullValue(uClazz)));
     }
 
-    public static <T, U extends Auth0Exception> Matcher<MockBaseCallback<T, U>> hasPayload(T payload, Class<U> uClazz) {
+    public static <T, U extends Auth0Exception> Matcher<MockCallback<T, U>> hasPayload(T payload, Class<U> uClazz) {
         return new CallbackMatcher<>(equalTo(payload), is(nullValue(uClazz)));
     }
 
-    public static <T, U extends Auth0Exception> Matcher<MockBaseCallback<T, U>> hasNoPayloadOfType(Class<T> tClazz, Class<U> uClazz) {
+    public static <T, U extends Auth0Exception> Matcher<MockCallback<T, U>> hasNoPayloadOfType(Class<T> tClazz, Class<U> uClazz) {
         return new CallbackMatcher<>(is(nullValue(tClazz)), is(notNullValue(uClazz)));
     }
 
-    public static <U extends Auth0Exception> Matcher<MockBaseCallback<Void, U>> hasNoError(Class<U> uClazz) {
+    public static <U extends Auth0Exception> Matcher<MockCallback<Void, U>> hasNoError(Class<U> uClazz) {
         return new CallbackMatcher<>(is(nullValue(Void.class)), is(nullValue(uClazz)));
     }
 
-    public static <U extends Auth0Exception> Matcher<MockBaseCallback<Void, U>> hasError(Class<U> uClazz) {
+    public static <U extends Auth0Exception> Matcher<MockCallback<Void, U>> hasError(Class<U> uClazz) {
         return new CallbackMatcher<>(is(nullValue(Void.class)), is(notNullValue(uClazz)));
     }
 }

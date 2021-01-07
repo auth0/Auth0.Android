@@ -1,6 +1,6 @@
 package com.auth0.android.authentication.request;
 
-import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.callback.Callback;
 import com.auth0.android.request.Request;
 
 import org.junit.Before;
@@ -63,7 +63,7 @@ public class DatabaseConnectionRequestTest {
 
     @Test
     public void shouldStartTheRequest() {
-        final BaseCallback callback = mock(BaseCallback.class);
+        final Callback callback = mock(Callback.class);
         dbRequest.start(callback);
         verify(mockRequest).start(callback);
     }

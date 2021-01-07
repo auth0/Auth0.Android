@@ -3,7 +3,7 @@ package com.auth0.android.authentication.request;
 import androidx.annotation.NonNull;
 
 import com.auth0.android.Auth0Exception;
-import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.callback.Callback;
 import com.auth0.android.request.Request;
 
 import static org.mockito.Mockito.mock;
@@ -20,7 +20,7 @@ public class DatabaseConnectionRequestMock<T, U extends Auth0Exception> extends 
     }
 
     @Override
-    public void start(@NonNull BaseCallback callback) {
+    public void start(@NonNull Callback callback) {
         this.started = true;
         if (payload != null) {
             callback.onSuccess(payload);

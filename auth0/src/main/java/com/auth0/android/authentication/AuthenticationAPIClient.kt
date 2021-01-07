@@ -98,7 +98,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * <pre>
      * `client
      * .login("{username or email}", "{password}", "{database connection name}")
-     * .start(new BaseCallback<Credentials>() {
+     * .start(new Callback<Credentials, AuthenticationException>() {
      * {}Override
      * public void onSuccess(Credentials payload) { }
      *
@@ -133,7 +133,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      * <pre>
      * `client.login("{username or email}", "{password}")
-     * .start(new BaseCallback<Credentials>() {
+     * .start(new Callback<Credentials, AuthenticationException>() {
      * {}Override
      * public void onSuccess(Credentials payload) { }
      *
@@ -162,7 +162,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Requires your client to have the **MFA** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.* Example usage:
      * <pre>
      * `client.loginWithOTP("{mfa token}", "{one time password}")
-     * .start(new BaseCallback<Credentials>() {
+     * .start(new Callback<Credentials, AuthenticationException>() {
      * {}Override
      * public void onSuccess(Credentials payload) { }
      *
@@ -192,7 +192,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      * <pre>
      * `client.loginWithNativeSocialToken("{subject token}", "{subject token type}")
-     * .start(new BaseCallback<Credentials>() {
+     * .start(new Callback<Credentials, AuthenticationException>() {
      * {}Override
      * public void onSuccess(Credentials payload) { }
      *
@@ -236,7 +236,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      * <pre>
      * `client.loginWithPhoneNumber("{phone number}", "{code}", "{passwordless connection name}")
-     * .start(new BaseCallback<Credentials>() {
+     * .start(new Callback<Credentials, AuthenticationException>() {
      * {}Override
      * public void onSuccess(Credentials payload) { }
      *
@@ -275,7 +275,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      * <pre>
      * `client.loginWithEmail("{email}", "{code}", "{passwordless connection name}")
-     * .start(new BaseCallback<Credentials>() {
+     * .start(new Callback<Credentials, AuthenticationException>() {
      * {}Override
      * public void onSuccess(Credentials payload) { }
      *
@@ -312,7 +312,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      * <pre>
      * `client.userInfo("{access_token}")
-     * .start(new BaseCallback<UserProfile>() {
+     * .start(new Callback<UserProfile, AuthenticationException>() {
      * {}Override
      * public void onSuccess(UserProfile payload) { }
      *
@@ -335,7 +335,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      * <pre>
      * `client.createUser("{email}", "{password}", "{username}", "{database connection name}")
-     * .start(new BaseCallback<DatabaseUser>() {
+     * .start(new Callback<DatabaseUser, AuthenticationException>() {
      * {}Override
      * public void onSuccess(DatabaseUser payload) { }
      *
@@ -383,7 +383,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      * <pre>
      * `client.signUp("{email}", "{password}", "{username}", "{database connection name}")
-     * .start(new BaseCallback<Credentials>() {
+     * .start(new Callback<Credentials, AuthenticationException>() {
      * {}Override
      * public void onSuccess(Credentials payload) {}
      *
@@ -416,7 +416,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      * <pre>
      * `client.resetPassword("{email}", "{database connection name}")
-     * .start(new BaseCallback<Void>() {
+     * .start(new Callback<Void, AuthenticationException>() {
      * {}Override
      * public void onSuccess(Void payload) {}
      *
@@ -454,7 +454,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      * <pre>
      * `client.revokeToken("{refresh_token}")
-     * .start(new BaseCallback<Void>() {
+     * .start(new Callback<Void, AuthenticationException>() {
      * {}Override
      * public void onSuccess(Void payload) {}
      *
@@ -490,7 +490,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * <pre>
      * `client.renewAuth("{refresh_token}")
      * .addParameter("scope", "openid profile email")
-     * .start(new BaseCallback<Credentials>() {
+     * .start(new Callback<Credentials, AuthenticationException>() {
      * {}Override
      * public void onSuccess(Credentials payload) { }
      *
@@ -526,7 +526,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      * <pre>
      * `client.passwordlessWithEmail("{email}", PasswordlessType.CODE, "{passwordless connection name}")
-     * .start(new BaseCallback<Void>() {
+     * .start(new Callback<Void, AuthenticationException>() {
      * {}Override
      * public void onSuccess(Void payload) {}
      *
@@ -562,7 +562,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      * <pre>
      * `client.passwordlessWithSms("{phone number}", PasswordlessType.CODE, "{passwordless connection name}")
-     * .start(new BaseCallback<Void>() {
+     * .start(new Callback<Void, AuthenticationException>() {
      * {}Override
      * public void onSuccess(Void payload) {}
      *

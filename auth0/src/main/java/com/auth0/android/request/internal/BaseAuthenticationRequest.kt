@@ -3,7 +3,7 @@ package com.auth0.android.request.internal
 import com.auth0.android.Auth0Exception
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.authentication.ParameterBuilder
-import com.auth0.android.callback.BaseCallback
+import com.auth0.android.callback.Callback
 import com.auth0.android.request.AuthenticationRequest
 import com.auth0.android.request.Request
 import com.auth0.android.result.Credentials
@@ -80,7 +80,7 @@ public open class BaseAuthenticationRequest(private val request: Request<Credent
         return this
     }
 
-    override fun start(callback: BaseCallback<Credentials, AuthenticationException>) {
+    override fun start(callback: Callback<Credentials, AuthenticationException>) {
         request.start(callback)
     }
 

@@ -25,7 +25,7 @@ package com.auth0.android.authentication.request
 
 import com.auth0.android.Auth0Exception
 import com.auth0.android.authentication.AuthenticationException
-import com.auth0.android.callback.BaseCallback
+import com.auth0.android.callback.Callback
 import com.auth0.android.request.AuthenticationRequest
 import com.auth0.android.request.Request
 import com.auth0.android.result.Authentication
@@ -99,12 +99,12 @@ public class ProfileRequest
      *
      * @param callback called on either success or failure
      */
-    override fun start(callback: BaseCallback<Authentication, AuthenticationException>) {
-        authenticationRequest.start(object : BaseCallback<Credentials, AuthenticationException> {
+    override fun start(callback: Callback<Authentication, AuthenticationException>) {
+        authenticationRequest.start(object : Callback<Credentials, AuthenticationException> {
             override fun onSuccess(credentials: Credentials?) {
                 userInfoRequest
                     .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials!!.accessToken)
-                    .start(object : BaseCallback<UserProfile, AuthenticationException> {
+                    .start(object : Callback<UserProfile, AuthenticationException> {
                         override fun onSuccess(profile: UserProfile?) {
                             callback.onSuccess(Authentication(profile!!, credentials))
                         }

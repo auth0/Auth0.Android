@@ -92,7 +92,7 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
      * Example usage:
      * <pre>
      * `client.link("{auth0 primary user id}", "{user secondary token}")
-     * .start(new BaseCallback<List<UserIdentity>, ManagementException>() {
+     * .start(new Callback<List<UserIdentity>, ManagementException>() {
      * {}Override
      * public void onSuccess(List<UserIdentity> payload) {}
      *
@@ -132,7 +132,7 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
      * Example usage:
      * <pre>
      * `client.unlink("{auth0 primary user id}", {auth0 secondary user id}, "{secondary provider}")
-     * .start(new BaseCallback<List<UserIdentity>, ManagementException>() {
+     * .start(new Callback<List<UserIdentity>, ManagementException>() {
      * {}Override
      * public void onSuccess(List<UserIdentity> payload) {}
      *
@@ -172,7 +172,7 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
      * Example usage:
      * <pre>
      * `client.updateMetadata("{user id}", "{user metadata}")
-     * .start(new BaseCallback<UserProfile, ManagementException>() {
+     * .start(new Callback<UserProfile, ManagementException>() {
      * {}Override
      * public void onSuccess(UserProfile payload) {}
      *
@@ -208,7 +208,7 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
      * Example usage:
      * <pre>
      * `client.getProfile("{user id}")
-     * .start(new BaseCallback<UserProfile, ManagementException>() {
+     * .start(new Callback<UserProfile, ManagementException>() {
      * {}Override
      * public void onSuccess(UserProfile payload) {}
      *

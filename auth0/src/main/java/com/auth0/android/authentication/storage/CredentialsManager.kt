@@ -5,7 +5,7 @@ import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.AuthenticationCallback
-import com.auth0.android.callback.BaseCallback
+import com.auth0.android.callback.Callback
 import com.auth0.android.result.Credentials
 import java.util.*
 
@@ -55,7 +55,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      *
      * @param callback the callback that will receive a valid [Credentials] or the [CredentialsManagerException].
      */
-    override fun getCredentials(callback: BaseCallback<Credentials, CredentialsManagerException>) {
+    override fun getCredentials(callback: Callback<Credentials, CredentialsManagerException>) {
         getCredentials(null, 0, callback)
     }
 
@@ -71,7 +71,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
     override fun getCredentials(
         scope: String?,
         minTtl: Int,
-        callback: BaseCallback<Credentials, CredentialsManagerException>
+        callback: Callback<Credentials, CredentialsManagerException>
     ) {
         val accessToken = storage.retrieveString(KEY_ACCESS_TOKEN)
         val refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN)

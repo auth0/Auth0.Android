@@ -150,7 +150,7 @@ WebAuthProvider.login(account)
     .start(MainActivity.this, callback);
 
 //Declare the callback that will receive the result
-BaseCallback<Credentials, AuthenticationException> callback = new BaseCallback<Credentials, AuthenticationException>() {
+Callback<Credentials, AuthenticationException> callback = new Callback<Credentials, AuthenticationException>() {
 
     @Override
     public void onFailure(@NonNull AuthenticationException exception) {
@@ -293,7 +293,7 @@ WebAuthProvider.logout(account)
     .start(MainActivity.this, logoutCallback);
 
 //Declare the callback that will receive the result
-BaseCallback<Void, AuthenticationException> logoutCallback = new BaseCallback<Void, AuthenticationException>() {
+Callback<Void, AuthenticationException> logoutCallback = new Callback<Void, AuthenticationException>() {
     @Override
     public void onFailure(@NonNull Auth0Exception exception) {
         //failed with an exception
@@ -362,7 +362,7 @@ AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
 ```java
 authentication
     .login("info@auth0.com", "a secret password", "my-database-connection")
-    .start(new BaseCallback<Credentials, AuthenticationException>() {
+    .start(new Callback<Credentials, AuthenticationException>() {
         @Override
         public void onSuccess(@Nullable Credentials payload) {
             //Logged in!
@@ -388,7 +388,7 @@ When you sign in to a multifactor authentication enabled connection using the `l
 ```java
 authentication
     .loginWithOTP("the mfa token", "123456")
-    .start(new BaseCallback<Credentials, AuthenticationException>() {
+    .start(new Callback<Credentials, AuthenticationException>() {
         @Override
         public void onSuccess(@Nullable Credentials payload) {
             //Logged in!
@@ -414,7 +414,7 @@ Step 1: Request the code
 ```java
 authentication
     .passwordlessWithEmail("info@auth0.com", PasswordlessType.CODE, "my-passwordless-connection")
-    .start(new BaseCallback<Void, AuthenticationException>() {
+    .start(new Callback<Void, AuthenticationException>() {
         @Override
         public void onSuccess(Void payload) {
             //Code sent!
@@ -434,7 +434,7 @@ Step 2: Input the code
 ```java
 authentication
     .loginWithEmail("info@auth0.com", "123456", "my-passwordless-connection")
-    .start(new BaseCallback<Credentials, AuthenticationException>() {
+    .start(new Callback<Credentials, AuthenticationException>() {
         @Override
         public void onSuccess(@Nullable Credentials payload) {
             //Logged in!
@@ -453,7 +453,7 @@ authentication
 ```java
 authentication
     .signUp("info@auth0.com", "a secret password", "my-database-connection")
-    .start(new BaseCallback<Credentials, AuthenticationException>() {
+    .start(new Callback<Credentials, AuthenticationException>() {
         @Override
         public void onSuccess(@Nullable Credentials payload) {
             //Signed Up & Logged in!
@@ -472,7 +472,7 @@ authentication
 ```java
 authentication
    .userInfo("user access_token")
-   .start(new BaseCallback<UserProfile, AuthenticationException>() {
+   .start(new Callback<UserProfile, AuthenticationException>() {
        @Override
        public void onSuccess(@Nullable UserProfile payload) {
            //Got the profile!
@@ -496,7 +496,7 @@ final String realm = "my-database-connection";
 
 AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
 authentication.login(email, password, realm)
-        .start(new BaseCallback<Credentials, AuthenticationException>() {
+        .start(new Callback<Credentials, AuthenticationException>() {
 
             @Override
             public void onSuccess(@Nullable Credentials payload) {
@@ -558,7 +558,7 @@ UsersAPIClient users = new UsersAPIClient(account, "api token");
 ```java
 users
     .link("primary user id", "secondary user token")
-    .start(new BaseCallback<List<UserIdentity>, ManagementException>() {
+    .start(new Callback<List<UserIdentity>, ManagementException>() {
         @Override
         public void onSuccess(List<UserIdentity> payload) {
             //Got the updated identities! Accounts linked.
@@ -576,7 +576,7 @@ users
 ```java
 users
     .unlink("primary user id", "secondary user id", "secondary provider")
-    .start(new BaseCallback<List<UserIdentity>, ManagementException>() {
+    .start(new Callback<List<UserIdentity>, ManagementException>() {
         @Override
         public void onSuccess(List<UserIdentity> payload) {
             //Got the updated identities! Accounts linked.
@@ -594,7 +594,7 @@ users
 ```java
 users
     .getProfile("user id")
-    .start(new BaseCallback<UserProfile, ManagementException>() {
+    .start(new Callback<UserProfile, ManagementException>() {
         @Override
         public void onSuccess(@Nullable UserProfile payload) {
             //Profile received
@@ -616,7 +616,7 @@ metadata.put("phoneNumber", "1234567890");
 
 users
     .updateMetadata("user id", metadata)
-    .start(new BaseCallback<UserProfile, ManagementException>() {
+    .start(new Callback<UserProfile, ManagementException>() {
         @Override
         public void onSuccess(@Nullable UserProfile payload) {
             //User Metadata updated
@@ -658,7 +658,7 @@ The credentials to save **must have** `expires_in` and at least an `access_token
 authentication
     .login("info@auth0.com", "a secret password", "my-database-connection")
     .setScope("openid offline_access")
-    .start(new BaseCallback<Credentials, AuthenticationException>() {
+    .start(new Callback<Credentials, AuthenticationException>() {
         @Override
         public void onSuccess(@Nullable Credentials payload) {
             //Save the credentials
@@ -685,7 +685,7 @@ Existing credentials will be returned if they are still valid, otherwise the `re
 > This method is not thread-safe, so if you're using _Refresh Token Rotation_ you should avoid calling this method concurrently (might result in more than one renew request being fired, and only the first one will succeed).
 
 ```java
-manager.getCredentials(new BaseCallback<Credentials, CredentialsManagerException>() {
+manager.getCredentials(new Callback<Credentials, CredentialsManagerException>() {
     @Override
     public void onSuccess(@Nullable Credentials credentials){
         //Use the Credentials

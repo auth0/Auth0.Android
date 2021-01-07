@@ -29,7 +29,7 @@ import androidx.annotation.VisibleForTesting;
 
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.callback.Callback;
 import com.auth0.android.request.Request;
 import com.auth0.android.result.Credentials;
 
@@ -87,7 +87,7 @@ class PKCE {
      * @param authorizationCode received in the call to /authorize with a "grant_type=code"
      * @param callback          to notify the result of this call to.
      */
-    public void getToken(String authorizationCode, @NonNull final BaseCallback<Credentials, AuthenticationException> callback) {
+    public void getToken(String authorizationCode, @NonNull final Callback<Credentials, AuthenticationException> callback) {
         Request<Credentials, AuthenticationException> tokenRequest = apiClient.token(authorizationCode, codeVerifier, redirectUri);
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             tokenRequest.addHeader(entry.getKey(), entry.getValue());

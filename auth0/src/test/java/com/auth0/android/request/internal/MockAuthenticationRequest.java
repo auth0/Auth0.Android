@@ -4,7 +4,7 @@ import androidx.annotation.NonNull;
 
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.callback.Callback;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.result.Credentials;
 
@@ -46,7 +46,7 @@ public class MockAuthenticationRequest extends BaseAuthenticationRequest {
     }
 
     @Override
-    public void start(@NonNull BaseCallback<Credentials, AuthenticationException> callback) {
+    public void start(@NonNull Callback<Credentials, AuthenticationException> callback) {
     }
 
     @NonNull

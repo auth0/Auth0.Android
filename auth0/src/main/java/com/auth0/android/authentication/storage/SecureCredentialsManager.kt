@@ -12,9 +12,8 @@ import androidx.annotation.IntRange
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
-import com.auth0.android.authentication.storage.SecureCredentialsManager
 import com.auth0.android.callback.AuthenticationCallback
-import com.auth0.android.callback.BaseCallback
+import com.auth0.android.callback.Callback
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.result.Credentials
 import com.google.gson.Gson
@@ -39,7 +38,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     private var activity: Activity? = null
 
     //State for retrying operations
-    private var decryptCallback: BaseCallback<Credentials, CredentialsManagerException>? = null
+    private var decryptCallback: Callback<Credentials, CredentialsManagerException>? = null
     private var authIntent: Intent? = null
     private var scope: String? = null
     private var minTtl = 0
@@ -172,8 +171,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     }
 
     /**
-     * Tries to obtain the credentials from the Storage. The callback's [BaseCallback.onSuccess] method will be called with the result.
-     * If something unexpected happens, the [BaseCallback.onFailure] method will be called with the error. Some devices are not compatible
+     * Tries to obtain the credentials from the Storage. The callback's [Callback.onSuccess] method will be called with the result.
+     * If something unexpected happens, the [Callback.onFailure] method will be called with the error. Some devices are not compatible
      * at all with the cryptographic implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
      *
      *
@@ -183,13 +182,13 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      *
      * @param callback the callback to receive the result in.
      */
-    override fun getCredentials(callback: BaseCallback<Credentials, CredentialsManagerException>) {
+    override fun getCredentials(callback: Callback<Credentials, CredentialsManagerException>) {
         getCredentials(null, 0, callback)
     }
 
     /**
-     * Tries to obtain the credentials from the Storage. The callback's [BaseCallback.onSuccess] method will be called with the result.
-     * If something unexpected happens, the [BaseCallback.onFailure] method will be called with the error. Some devices are not compatible
+     * Tries to obtain the credentials from the Storage. The callback's [Callback.onSuccess] method will be called with the result.
+     * If something unexpected happens, the [Callback.onFailure] method will be called with the error. Some devices are not compatible
      * at all with the cryptographic implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
      *
      *
@@ -204,7 +203,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     override fun getCredentials(
         scope: String?,
         minTtl: Int,
-        callback: BaseCallback<Credentials, CredentialsManagerException>
+        callback: Callback<Credentials, CredentialsManagerException>
     ) {
         if (!hasValidCredentials(minTtl.toLong())) {
             callback.onFailure(CredentialsManagerException("No Credentials were previously set."))
@@ -273,7 +272,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     private fun continueGetCredentials(
         scope: String?,
         minTtl: Int,
-        callback: BaseCallback<Credentials, CredentialsManagerException>
+        callback: Callback<Credentials, CredentialsManagerException>
     ) {
         val encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS)
         val encrypted = Base64.decode(encryptedEncoded, Base64.DEFAULT)

@@ -28,7 +28,15 @@ import com.auth0.android.Auth0Exception
 /**
  * Interface for all callbacks used with Auth0 API clients
  */
-public interface Callback<U : Auth0Exception> {
+public interface Callback<T, U : Auth0Exception> {
+
+    /**
+     * Method called on success with the payload or null.
+     *
+     * @param payload Request payload or null
+     */
+    public fun onSuccess(payload: T?)
+
     /**
      * Method called on Auth0 API request failure
      *

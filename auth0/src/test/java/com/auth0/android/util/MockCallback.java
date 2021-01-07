@@ -1,5 +1,5 @@
 /*
- * BaseCallback.java
+ * MockBaseCallback.java
  *
  * Copyright (c) 2015 Auth0 (http://auth0.com)
  *
@@ -21,19 +21,55 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.auth0.android.callback
 
-import com.auth0.android.Auth0Exception
+package com.auth0.android.util;
 
-/**
- * Callback that receives a single value on success.
- */
-//TODO [SDK-2185]: Merge this interface into Callback
-public interface BaseCallback<T, U : Auth0Exception> : Callback<U> {
-    /**
-     * Method called on success with the payload or null.
-     *
-     * @param payload Request payload or null
-     */
-    public fun onSuccess(payload: T?)
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import com.auth0.android.Auth0Exception;
+import com.auth0.android.callback.Callback;
+
+import java.util.concurrent.Callable;
+
+public class MockCallback<T, U extends Auth0Exception> implements Callback<T, U> {
+
+    private T payload;
+    private U error;
+
+    @Override
+    public void onSuccess(@Nullable T payload) {
+        this.payload = payload;
+    }
+
+    @Override
+    public void onFailure(@NonNull U error) {
+        this.error = error;
+    }
+
+    public Callable<T> payload() {
+        return new Callable<T>() {
+            @Override
+            public T call() {
+                return payload;
+            }
+        };
+    }
+
+    public Callable<U> error() {
+        return new Callable<U>() {
+            @Override
+            public U call() {
+                return error;
+            }
+        };
+    }
+
+    public T getPayload() {
+        return payload;
+    }
+
+    public U getError() {
+        return error;
+    }
 }
