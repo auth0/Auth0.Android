@@ -72,7 +72,7 @@ public open class DatabaseConnectionRequest<T, U : Auth0Exception>(private val r
      * @throws Auth0Exception if the request failed
      */
     @Throws(Auth0Exception::class)
-    public fun execute(): T {
+    public fun execute(): T? {
         return request.execute()
     }
 }

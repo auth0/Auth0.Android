@@ -171,6 +171,6 @@ public class SignUpRequest
     @Throws(Auth0Exception::class)
     override fun execute(): Credentials {
         signUpRequest.execute()
-        return authenticationRequest.execute()
+        return authenticationRequest.execute()!!
     }
 }

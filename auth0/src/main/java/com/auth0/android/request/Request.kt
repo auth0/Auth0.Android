@@ -47,7 +47,7 @@ public interface Request<T, U : Auth0Exception> {
      * @throws Auth0Exception on failure
      */
     @Throws(Auth0Exception::class)
-    public fun execute(): T
+    public fun execute(): T?
 
     /**
      * Add parameters to the request as a Map of Object with the keys as String

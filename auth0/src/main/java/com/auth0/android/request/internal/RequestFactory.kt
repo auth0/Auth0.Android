@@ -55,9 +55,11 @@ public class RequestFactory<U : Auth0Exception> internal constructor(
         resultAdapter: JsonAdapter<T>
     ): Request<T, U> = setupRequest(HttpMethod.POST, url, resultAdapter, errorAdapter)
 
-    public fun post(url: String): Request<Unit, U> =
-        this.post(url, object : JsonAdapter<Unit> {
-            override fun fromJson(reader: Reader) {}
+    public fun post(url: String): Request<Void, U> =
+        this.post(url, object : JsonAdapter<Void> {
+            override fun fromJson(reader: Reader): Void? {
+                return null
+            }
         })
 
     public fun <T> patch(

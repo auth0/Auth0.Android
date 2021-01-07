@@ -80,7 +80,7 @@ public open class BaseRequest<T, U : Auth0Exception> internal constructor(
     override fun start(callback: BaseCallback<T, U>) {
         threadSwitcher.backgroundThread {
             try {
-                val result: T = execute()
+                val result: T? = execute()
                 threadSwitcher.mainThread {
                     callback.onSuccess(result)
                 }
@@ -99,7 +99,7 @@ public open class BaseRequest<T, U : Auth0Exception> internal constructor(
      * The result is parsed into a <T> value or a <U> exception is thrown if something went wrong.
      */
     @kotlin.jvm.Throws(Auth0Exception::class)
-    override fun execute(): T {
+    override fun execute(): T? {
         val response: ServerResponse
         try {
             response = client.load(url, options)
@@ -112,7 +112,7 @@ public open class BaseRequest<T, U : Auth0Exception> internal constructor(
         val reader = AwareInputStreamReader(response.body, Charset.defaultCharset())
         if (response.isSuccess()) {
             //2. Successful scenario. Response of type T
-            val result: T = resultAdapter.fromJson(reader)
+            val result: T? = resultAdapter.fromJson(reader)
             reader.close()
             return result
         }

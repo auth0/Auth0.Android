@@ -14,6 +14,6 @@ public interface JsonAdapter<T> {
      * @throws IOException could be thrown to signal that the input was invalid.
      */
     @Throws(IOException::class)
-    public fun fromJson(reader: Reader): T
+    public fun fromJson(reader: Reader): T?
 
 }
