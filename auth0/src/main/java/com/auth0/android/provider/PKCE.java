@@ -24,10 +24,7 @@
 
 package com.auth0.android.provider;
 
-import android.util.Log;
-
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import com.auth0.android.authentication.AuthenticationAPIClient;
@@ -90,25 +87,12 @@ class PKCE {
      * @param authorizationCode received in the call to /authorize with a "grant_type=code"
      * @param callback          to notify the result of this call to.
      */
-    public void getToken(String authorizationCode, @NonNull final AuthCallback callback) {
+    public void getToken(String authorizationCode, @NonNull final BaseCallback<Credentials, AuthenticationException> callback) {
         Request<Credentials, AuthenticationException> tokenRequest = apiClient.token(authorizationCode, codeVerifier, redirectUri);
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             tokenRequest.addHeader(entry.getKey(), entry.getValue());
         }
-        tokenRequest.start(new BaseCallback<Credentials, AuthenticationException>() {
-            @Override
-            public void onSuccess(@Nullable Credentials payload) {
-                callback.onSuccess(payload);
-            }
-
-            @Override
-            public void onFailure(@NonNull AuthenticationException error) {
-                if ("Unauthorized".equals(error.getDescription())) {
-                    Log.e(TAG, "Unable to complete authentication with PKCE. PKCE support can be enabled by setting Application Type to 'Native' and Token Endpoint Authentication Method to 'None' for this app at 'https://manage.auth0.com/#/applications/" + apiClient.getClientId() + "/settings'.");
-                }
-                callback.onFailure(error);
-            }
-        });
+        tokenRequest.start(callback);
     }
 
     /**

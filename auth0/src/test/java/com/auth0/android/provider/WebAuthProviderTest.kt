@@ -1,7 +1,6 @@
 package com.auth0.android.provider
 
 import android.app.Activity
-import android.app.Dialog
 import android.content.Intent
 import android.content.ServiceConnection
 import android.net.Uri
@@ -12,6 +11,7 @@ import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.MockAuth0
 import com.auth0.android.authentication.AuthenticationException
+import com.auth0.android.callback.BaseCallback
 import com.auth0.android.provider.CustomTabsOptions
 import com.auth0.android.provider.PKCE
 import com.auth0.android.provider.WebAuthProvider.login
@@ -24,13 +24,8 @@ import com.auth0.android.request.RequestOptions
 import com.auth0.android.request.ServerResponse
 import com.auth0.android.request.internal.ThreadSwitcherShadow
 import com.auth0.android.result.Credentials
-import com.auth0.android.util.AuthCallbackMatcher
 import com.auth0.android.util.AuthenticationAPI
-import com.auth0.android.util.MockAuthCallback
-import com.nhaarman.mockitokotlin2.KArgumentCaptor
-import com.nhaarman.mockitokotlin2.argumentCaptor
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.*
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
 import org.hamcrest.MatcherAssert.assertThat
@@ -44,9 +39,12 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.*
+import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.anyString
+import org.mockito.Mock
+import org.mockito.Mockito
 import org.mockito.Mockito.`when`
+import org.mockito.MockitoAnnotations
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -61,7 +59,7 @@ import java.util.*
 @Config(shadows = [ThreadSwitcherShadow::class])
 public class WebAuthProviderTest {
     @Mock
-    private lateinit var callback: AuthCallback
+    private lateinit var callback: BaseCallback<Credentials, AuthenticationException>
 
     @Mock
     private lateinit var voidCallback: VoidCallback
@@ -69,12 +67,11 @@ public class WebAuthProviderTest {
     private lateinit var account: Auth0
 
     private val auth0ExceptionCaptor: KArgumentCaptor<Auth0Exception> = argumentCaptor()
-
     private val authExceptionCaptor: KArgumentCaptor<AuthenticationException> = argumentCaptor()
-
     private val intentCaptor: KArgumentCaptor<Intent> = argumentCaptor()
-
-    private val callbackCaptor: KArgumentCaptor<AuthCallback> = argumentCaptor()
+    private val credentialsCaptor: KArgumentCaptor<Credentials> = argumentCaptor()
+    private val callbackCaptor: KArgumentCaptor<BaseCallback<Credentials, AuthenticationException>> =
+        argumentCaptor()
 
     @Before
     public fun setUp() {
@@ -923,7 +920,7 @@ public class WebAuthProviderTest {
         `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
-        val authCallback = MockAuthCallback()
+        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = MockAuth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
         login(proxyAccount)
             .withPKCE(pkce)
@@ -977,8 +974,8 @@ public class WebAuthProviderTest {
         Assert.assertTrue(resume(intent))
         mockAPI.takeRequest()
         ShadowLooper.idleMainLooper()
-        MatcherAssert.assertThat(authCallback, AuthCallbackMatcher.hasCredentials())
-        val credentials = authCallback.credentials
+        verify(authCallback).onSuccess(credentialsCaptor.capture())
+        val credentials = credentialsCaptor.firstValue
         MatcherAssert.assertThat(credentials, `is`(notNullValue()))
         MatcherAssert.assertThat(credentials.idToken, `is`(expectedIdToken))
         MatcherAssert.assertThat(credentials.accessToken, `is`("codeAccess"))
@@ -993,7 +990,7 @@ public class WebAuthProviderTest {
     @Throws(Exception::class)
     public fun shouldResumeLoginWithCustomNetworkingClient() {
         val networkingClient: NetworkingClient = Mockito.spy(DefaultClient(10))
-        val authCallback = MockAuthCallback()
+        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
 
         // 1. start the webauth flow. the browser would open
         val proxyAccount = Auth0(JwtTestUtils.EXPECTED_AUDIENCE, JwtTestUtils.EXPECTED_BASE_DOMAIN)
@@ -1058,7 +1055,8 @@ public class WebAuthProviderTest {
         // 5. resume, perform the code exchange, and make assertions
         Assert.assertTrue(resume(intent))
         ShadowLooper.idleMainLooper()
-        MatcherAssert.assertThat(authCallback, AuthCallbackMatcher.hasCredentials())
+        verify(authCallback).onSuccess(credentialsCaptor.capture())
+        assertThat(credentialsCaptor.firstValue, `is`(notNullValue()));
         val codeOptionsCaptor = argumentCaptor<RequestOptions>()
         verify(networkingClient).load(
             com.nhaarman.mockitokotlin2.eq("https://test.domain.com/oauth/token"),
@@ -1102,7 +1100,7 @@ public class WebAuthProviderTest {
         `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
-        val authCallback = MockAuthCallback()
+        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = MockAuth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
         login(proxyAccount)
             .withPKCE(pkce)
@@ -1155,8 +1153,8 @@ public class WebAuthProviderTest {
         Assert.assertTrue(resume(intent))
         mockAPI.takeRequest()
         ShadowLooper.idleMainLooper()
-        MatcherAssert.assertThat(authCallback, AuthCallbackMatcher.hasCredentials())
-        val credentials = authCallback.credentials
+        verify(authCallback).onSuccess(credentialsCaptor.capture())
+        val credentials = credentialsCaptor.firstValue
         MatcherAssert.assertThat(credentials, `is`(notNullValue()))
         MatcherAssert.assertThat(credentials.idToken, `is`(expectedIdToken))
         MatcherAssert.assertThat(credentials.accessToken, `is`("codeAccess"))
@@ -1185,36 +1183,6 @@ public class WebAuthProviderTest {
             authExceptionCaptor.firstValue.getDescription(),
             `is`("The user closed the browser app and the authentication was canceled.")
         )
-    }
-
-    @Test
-    public fun shouldReThrowAnyFailedCodeExchangeDialogOnLogin() {
-        val dialog = Mockito.mock(Dialog::class.java)
-        val pkce = Mockito.mock(PKCE::class.java)
-        `when`(pkce.codeChallenge).thenReturn("challenge")
-        Mockito.doAnswer {
-            callbackCaptor.firstValue.onFailure(dialog)
-            null
-        }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
-        login(account)
-            .withState("1234567890")
-            .withPKCE(pkce)
-            .start(activity, callback)
-        val intent = createAuthIntent(
-            createHash(
-                null,
-                null,
-                null,
-                null,
-                1111L,
-                "1234567890",
-                null,
-                null,
-                "1234"
-            )
-        )
-        Assert.assertTrue(resume(intent))
-        verify(callback).onFailure(dialog)
     }
 
     @Test
@@ -1356,7 +1324,7 @@ public class WebAuthProviderTest {
         `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnEmptyJsonWebKeys()
-        val authCallback = MockAuthCallback()
+        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = MockAuth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
         login(proxyAccount)
             .withState("1234567890")
@@ -1390,8 +1358,8 @@ public class WebAuthProviderTest {
         Assert.assertTrue(resume(intent))
         mockAPI.takeRequest()
         ShadowLooper.idleMainLooper()
-        MatcherAssert.assertThat(authCallback, AuthCallbackMatcher.hasError())
-        val error = authCallback.error
+        verify(authCallback).onFailure(authExceptionCaptor.capture())
+        val error = authExceptionCaptor.firstValue
         MatcherAssert.assertThat(error, `is`(notNullValue()))
         MatcherAssert.assertThat(
             error.cause, `is`(
@@ -1414,7 +1382,7 @@ public class WebAuthProviderTest {
         `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnInvalidRequest()
-        val authCallback = MockAuthCallback()
+        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = MockAuth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
         login(proxyAccount)
             .withState("1234567890")
@@ -1448,8 +1416,8 @@ public class WebAuthProviderTest {
         Assert.assertTrue(resume(intent))
         mockAPI.takeRequest()
         ShadowLooper.idleMainLooper()
-        MatcherAssert.assertThat(authCallback, AuthCallbackMatcher.hasError())
-        val error = authCallback.error
+        verify(authCallback).onFailure(authExceptionCaptor.capture())
+        val error = authExceptionCaptor.firstValue
         MatcherAssert.assertThat(error, `is`(notNullValue()))
         MatcherAssert.assertThat(
             error.cause, `is`(
@@ -1472,7 +1440,7 @@ public class WebAuthProviderTest {
         `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
-        val authCallback = MockAuthCallback()
+        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = MockAuth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
         login(proxyAccount)
             .withState("1234567890")
@@ -1505,8 +1473,8 @@ public class WebAuthProviderTest {
         Assert.assertTrue(resume(intent))
         mockAPI.takeRequest()
         ShadowLooper.idleMainLooper()
-        MatcherAssert.assertThat(authCallback, AuthCallbackMatcher.hasError())
-        val error = authCallback.error
+        verify(authCallback).onFailure(authExceptionCaptor.capture())
+        val error = authExceptionCaptor.firstValue
         MatcherAssert.assertThat(error, `is`(notNullValue()))
         MatcherAssert.assertThat(
             error.cause, `is`(
@@ -1529,7 +1497,7 @@ public class WebAuthProviderTest {
         `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
-        val authCallback = MockAuthCallback()
+        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = MockAuth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
         login(proxyAccount)
             .withState("1234567890")
@@ -1563,8 +1531,8 @@ public class WebAuthProviderTest {
         Assert.assertTrue(resume(intent))
         mockAPI.takeRequest()
         ShadowLooper.idleMainLooper()
-        MatcherAssert.assertThat(authCallback, AuthCallbackMatcher.hasCredentials())
-        val credentials = authCallback.credentials
+        verify(authCallback).onSuccess(credentialsCaptor.capture())
+        val credentials = credentialsCaptor.firstValue
         MatcherAssert.assertThat(credentials.accessToken, `is`("aToken"))
         MatcherAssert.assertThat(credentials.idToken, `is`(expectedIdToken))
         mockAPI.shutdown()
@@ -1579,7 +1547,7 @@ public class WebAuthProviderTest {
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
         val proxyAccount: Auth0 = MockAuth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
-        val authCallback = MockAuthCallback()
+        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
         login(proxyAccount)
             .withIdTokenVerificationIssuer("")
             .withPKCE(pkce)
@@ -1626,8 +1594,8 @@ public class WebAuthProviderTest {
         Assert.assertTrue(resume(intent))
         mockAPI.takeRequest()
         ShadowLooper.idleMainLooper()
-        MatcherAssert.assertThat(authCallback, AuthCallbackMatcher.hasCredentials())
-        val credentials = authCallback.credentials
+        verify(authCallback).onSuccess(credentialsCaptor.capture())
+        val credentials = credentialsCaptor.firstValue
         MatcherAssert.assertThat(credentials, `is`(notNullValue()))
         MatcherAssert.assertThat(credentials.idToken, `is`(expectedIdToken))
         mockAPI.shutdown()
@@ -1640,7 +1608,7 @@ public class WebAuthProviderTest {
         `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
-        val authCallback = MockAuthCallback()
+        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = MockAuth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
         login(proxyAccount)
             .withIdTokenVerificationIssuer("https://some.different.issuer/")
@@ -1688,8 +1656,8 @@ public class WebAuthProviderTest {
         Assert.assertTrue(resume(intent))
         mockAPI.takeRequest()
         ShadowLooper.idleMainLooper()
-        MatcherAssert.assertThat(authCallback, AuthCallbackMatcher.hasCredentials())
-        val credentials = authCallback.credentials
+        verify(authCallback).onSuccess(credentialsCaptor.capture())
+        val credentials = credentialsCaptor.firstValue
         MatcherAssert.assertThat(credentials, `is`(notNullValue()))
         MatcherAssert.assertThat(credentials.idToken, `is`(expectedIdToken))
         mockAPI.shutdown()
@@ -1703,7 +1671,7 @@ public class WebAuthProviderTest {
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
         val proxyAccount: Auth0 = MockAuth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
-        val authCallback = MockAuthCallback()
+        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
         login(proxyAccount)
             .withState("1234567890")
             .withNonce(JwtTestUtils.EXPECTED_NONCE)
@@ -1736,8 +1704,8 @@ public class WebAuthProviderTest {
         Assert.assertTrue(resume(intent))
         mockAPI.takeRequest()
         ShadowLooper.idleMainLooper()
-        MatcherAssert.assertThat(authCallback, AuthCallbackMatcher.hasError())
-        val error = authCallback.error
+        verify(authCallback).onFailure(authExceptionCaptor.capture())
+        val error = authExceptionCaptor.firstValue
         MatcherAssert.assertThat(error, `is`(notNullValue()))
         MatcherAssert.assertThat(
             error.cause, `is`(
@@ -1856,7 +1824,7 @@ public class WebAuthProviderTest {
         `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
-        val authCallback = MockAuthCallback()
+        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = MockAuth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
         login(proxyAccount)
             .withState("state")
@@ -1896,8 +1864,8 @@ public class WebAuthProviderTest {
         Assert.assertTrue(resume(intent))
         mockAPI.takeRequest()
         ShadowLooper.idleMainLooper()
-        MatcherAssert.assertThat(authCallback, AuthCallbackMatcher.hasError())
-        val error = authCallback.error
+        verify(authCallback).onFailure(authExceptionCaptor.capture())
+        val error = authExceptionCaptor.firstValue
         MatcherAssert.assertThat(
             error.cause, `is`(
                 Matchers.instanceOf(
@@ -1919,7 +1887,7 @@ public class WebAuthProviderTest {
         `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
-        val authCallback = MockAuthCallback()
+        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = MockAuth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
         login(proxyAccount)
             .withState("state")
@@ -1942,8 +1910,8 @@ public class WebAuthProviderTest {
         Assert.assertTrue(resume(intent))
         mockAPI.takeRequest()
         ShadowLooper.idleMainLooper()
-        MatcherAssert.assertThat(authCallback, AuthCallbackMatcher.hasError())
-        val error = authCallback.error
+        verify(authCallback).onFailure(authExceptionCaptor.capture())
+        val error = authExceptionCaptor.firstValue
         MatcherAssert.assertThat(error, `is`(notNullValue()))
         MatcherAssert.assertThat(
             error.cause, `is`(
@@ -1966,13 +1934,13 @@ public class WebAuthProviderTest {
         `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
-        val callback = MockAuthCallback()
+        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = MockAuth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
         login(proxyAccount)
             .withState("state")
             .withNonce(JwtTestUtils.EXPECTED_NONCE)
             .withPKCE(pkce)
-            .start(activity, callback)
+            .start(activity, authCallback)
         val managerInstance = WebAuthProvider.managerInstance as OAuthManager
         managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
         val jwtBody = JwtTestUtils.createJWTBody()
@@ -1988,8 +1956,8 @@ public class WebAuthProviderTest {
         }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
         Assert.assertTrue(resume(intent))
         ShadowLooper.idleMainLooper()
-        MatcherAssert.assertThat(callback, AuthCallbackMatcher.hasError())
-        val error = callback.error
+        verify(authCallback).onFailure(authExceptionCaptor.capture())
+        val error = authExceptionCaptor.firstValue
         MatcherAssert.assertThat(error, `is`(notNullValue()))
         MatcherAssert.assertThat(
             error.cause, `is`(

@@ -30,7 +30,9 @@ import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationException
+import com.auth0.android.callback.BaseCallback
 import com.auth0.android.request.NetworkingClient
+import com.auth0.android.result.Credentials
 import java.util.*
 
 /**
@@ -399,7 +401,10 @@ public object WebAuthProvider {
          * @see AuthenticationException.isBrowserAppNotAvailable
          * @see AuthenticationException.isPKCENotAvailable
          */
-        public fun start(activity: Activity, callback: AuthCallback) {
+        public fun start(
+            activity: Activity,
+            callback: BaseCallback<Credentials, AuthenticationException>
+        ) {
             resetManagerInstance()
             if (!ctOptions.hasCompatibleBrowser(activity.packageManager)) {
                 val ex = AuthenticationException(

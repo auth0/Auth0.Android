@@ -157,13 +157,14 @@ The ability to make requests to the [/delegation](https://auth0.com/docs/api/aut
 - `public static Builder init(@NonNull Auth0 account)`. Use `public static Builder login(@NonNull Auth0 account)` instead.
 - `public static Builder init(@NonNull Context context)`. Use `public static Builder login(@NonNull Auth0 account)` instead.
 - `public static boolean resume(int requestCode, int resultCode, @Nullable Intent intent)`. Use `public static boolean resume(@Nullable Intent intent)` instead.
+- `public static Builder init(@NonNull Auth0 account)`. Use `public static Builder login(@NonNull Auth0 account)` instead.
 
 #### WebAuthProvider.Builder
 
 - `public Builder useCodeGrant(boolean useCodeGrant)`. There is no replacement; only Code + PKCE flow supported in v2.
 - `public Builder useBrowser(boolean useBrowser)`. There is no replacement; Google no longer supports WebView authentication.
 - `public Builder useFullscreen(boolean useFullscreen)`. There is no replacement; Google no longer supports WebView authentication.
-- `public void start(@NonNull Activity activity, @NonNull AuthCallback callback, int requestCode)`. Use `public void start(@NonNull Activity activity, @NonNull AuthCallback callback)` instead.
+- `public void start(@NonNull Activity activity, @NonNull AuthCallback callback, int requestCode)`. Use `public void start(@NonNull Activity activity, @NonNull BaseCallback<Credentials, AuthenticationException> callback)` instead.
 - `public Builder withResponseType(@ResponseType int type)`. There is no replacement; only Code + PKCE flow supported in v2.
 
 #### UsersAPIClient

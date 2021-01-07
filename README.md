@@ -147,22 +147,18 @@ Finally, authenticate by showing the **Auth0 Universal Login**:
 ```java
 //Configure and launch the authentication
 WebAuthProvider.login(account)
-    .start(MainActivity.this, authCallback);
+    .start(MainActivity.this, callback);
 
 //Declare the callback that will receive the result
-AuthCallback authCallback = new AuthCallback() {
-    @Override
-    public void onFailure(@NonNull Dialog dialog) {
-        //failed with a dialog
-    }
+BaseCallback<Credentials, AuthenticationException> callback = new BaseCallback<Credentials, AuthenticationException>() {
 
     @Override
-    public void onFailure(AuthenticationException exception) {
+    public void onFailure(@NonNull AuthenticationException exception) {
         //failed with an exception
     }
 
     @Override
-    public void onSuccess(@NonNull Credentials credentials) {
+    public void onSuccess(@Nullable Credentials credentials) {
         //succeeded!
     }
 };
@@ -183,7 +179,7 @@ Auth0 account = new Auth0("{YOUR_AUTH0_CLIENT_ID}", "{YOUR_CUSTOM_DOMAIN}");
 
 WebAuthProvider.login(account)
     .withIdTokenVerificationIssuer("https://{YOUR_AUTH0_DOMAIN}/")
-    .start(MainActivity.this, authCallback);
+    .start(MainActivity.this, callback);
 ```
 
 #### Those who don't need Web Authentication in their app
@@ -213,7 +209,7 @@ If you've followed this documents' configuration steps you've noticed that the d
 ```java
 WebAuthProvider.login(account)
     .withScheme("myapp")
-    .start(MainActivity.this, authCallback);
+    .start(MainActivity.this, callback);
 ```
 
 
@@ -222,7 +218,7 @@ WebAuthProvider.login(account)
 ```java
 WebAuthProvider.login(account)
     .withConnection("twitter")
-    .start(MainActivity.this, authCallback);
+    .start(MainActivity.this, callback);
 ```
 
 #### Specify audience
@@ -232,7 +228,7 @@ The snippet below requests the "userinfo" audience in order to guarantee OIDC co
 ```java
 WebAuthProvider.login(account)
     .withAudience("https://{YOUR_AUTH0_DOMAIN}/userinfo")
-    .start(MainActivity.this, authCallback);
+    .start(MainActivity.this, callback);
 ```
 
 > Replace `{YOUR_AUTH0_DOMAIN}` with your actual Auth0 domain (i.e. `mytenant.auth0.com`). If you've set up the tenant to use "Custom Domains", use that value here.
@@ -242,7 +238,7 @@ WebAuthProvider.login(account)
 ```java
 WebAuthProvider.login(account)
     .withScope("openid profile email")
-    .start(MainActivity.this, authCallback);
+    .start(MainActivity.this, callback);
 ```
 
 > The default scope used is `openid`
@@ -252,7 +248,7 @@ WebAuthProvider.login(account)
 ```java
 WebAuthProvider.login(account)
     .withConnectionScope("email", "profile", "calendar:read")
-    .start(MainActivity.this, authCallback);
+    .start(MainActivity.this, callback);
 ```
 
 
@@ -268,7 +264,7 @@ CustomTabsOptions options = CustomTabsOptions.newBuilder()
  
 WebAuthProvider.login(account)
     .withCustomTabsOptions(options)
-    .start(MainActivity.this, authCallback);
+    .start(MainActivity.this, callback);
 ```
 
 
@@ -297,14 +293,14 @@ WebAuthProvider.logout(account)
     .start(MainActivity.this, logoutCallback);
 
 //Declare the callback that will receive the result
-BaseCallback logoutCallback = new BaseCallback<Void, Auth0Exception>() {
+BaseCallback<Void, AuthenticationException> logoutCallback = new BaseCallback<Void, AuthenticationException>() {
     @Override
-    public void onFailure(Auth0Exception exception) {
+    public void onFailure(@NonNull Auth0Exception exception) {
         //failed with an exception
     }
 
     @Override
-    public void onSuccess(@NonNull Void payload) {
+    public void onSuccess(@Nullable Void payload) {
         //succeeded!
     }
 };
@@ -368,12 +364,12 @@ authentication
     .login("info@auth0.com", "a secret password", "my-database-connection")
     .start(new BaseCallback<Credentials, AuthenticationException>() {
         @Override
-        public void onSuccess(Credentials payload) {
+        public void onSuccess(@Nullable Credentials payload) {
             //Logged in!
         }
 
         @Override
-        public void onFailure(AuthenticationException error) {
+        public void onFailure(@NonNull AuthenticationException error) {
             //Error!
         }
     });
@@ -394,12 +390,12 @@ authentication
     .loginWithOTP("the mfa token", "123456")
     .start(new BaseCallback<Credentials, AuthenticationException>() {
         @Override
-        public void onSuccess(Credentials payload) {
+        public void onSuccess(@Nullable Credentials payload) {
             //Logged in!
         }
 
         @Override
-        public void onFailure(AuthenticationException error) {
+        public void onFailure(@NonNull AuthenticationException error) {
             //Error!
         }
     });
@@ -425,7 +421,7 @@ authentication
         }
 
         @Override
-        public void onFailure(AuthenticationException error) {
+        public void onFailure(@NonNull AuthenticationException error) {
             //Error!
         }
     });
@@ -440,12 +436,12 @@ authentication
     .loginWithEmail("info@auth0.com", "123456", "my-passwordless-connection")
     .start(new BaseCallback<Credentials, AuthenticationException>() {
         @Override
-        public void onSuccess(Credentials payload) {
+        public void onSuccess(@Nullable Credentials payload) {
             //Logged in!
         }
 
         @Override
-        public void onFailure(AuthenticationException error) {
+        public void onFailure(@NonNull AuthenticationException error) {
             //Error!
         }
     });
@@ -459,12 +455,12 @@ authentication
     .signUp("info@auth0.com", "a secret password", "my-database-connection")
     .start(new BaseCallback<Credentials, AuthenticationException>() {
         @Override
-        public void onSuccess(Credentials payload) {
+        public void onSuccess(@Nullable Credentials payload) {
             //Signed Up & Logged in!
         }
 
         @Override
-        public void onFailure(AuthenticationException error) {
+        public void onFailure(@NonNull AuthenticationException error) {
             //Error!
         }
     });
@@ -478,12 +474,12 @@ authentication
    .userInfo("user access_token")
    .start(new BaseCallback<UserProfile, AuthenticationException>() {
        @Override
-       public void onSuccess(UserProfile payload) {
+       public void onSuccess(@Nullable UserProfile payload) {
            //Got the profile!
        }
 
        @Override
-       public void onFailure(AuthenticationException error) {
+       public void onFailure(@NonNull AuthenticationException error) {
            //Error!
        }
    });
@@ -503,7 +499,12 @@ authentication.login(email, password, realm)
         .start(new BaseCallback<Credentials, AuthenticationException>() {
 
             @Override
-            public void onFailure(AuthenticationException error) {
+            public void onSuccess(@Nullable Credentials payload) {
+                // Handle API success
+            }
+
+            @Override
+            public void onFailure(@NonNull AuthenticationException error) {
                 if (error.isVerificationRequired()){
                     Map<String, Object> params = new HashMap<>();
                     params.put("login_hint", email); // So the user doesn't have to type it again
@@ -529,11 +530,6 @@ authentication.login(email, password, realm)
                                 }
                             });
                 }
-            }
-
-            @Override
-            public void onSuccess(Credentials payload) {
-                // Handle API success
             }
         });
 ```
@@ -569,7 +565,7 @@ users
         }
 
         @Override
-        public void onFailure(ManagementException error) {
+        public void onFailure(@NonNull ManagementException error) {
             //Error!
         }
     });
@@ -587,7 +583,7 @@ users
         }
 
         @Override
-        public void onFailure(ManagementException error) {
+        public void onFailure(@NonNull ManagementException error) {
             //Error!
         }
     });
@@ -600,12 +596,12 @@ users
     .getProfile("user id")
     .start(new BaseCallback<UserProfile, ManagementException>() {
         @Override
-        public void onSuccess(UserProfile payload) {
+        public void onSuccess(@Nullable UserProfile payload) {
             //Profile received
         }
 
         @Override
-        public void onFailure(ManagementException error) {
+        public void onFailure(@NonNull ManagementException error) {
             //Error!
         }
     });
@@ -622,12 +618,12 @@ users
     .updateMetadata("user id", metadata)
     .start(new BaseCallback<UserProfile, ManagementException>() {
         @Override
-        public void onSuccess(UserProfile payload) {
+        public void onSuccess(@Nullable UserProfile payload) {
             //User Metadata updated
         }
 
         @Override
-        public void onFailure(ManagementException error) {
+        public void onFailure(@NonNull ManagementException error) {
             //Error!
         }
     });
@@ -664,13 +660,13 @@ authentication
     .setScope("openid offline_access")
     .start(new BaseCallback<Credentials, AuthenticationException>() {
         @Override
-        public void onSuccess(Credentials payload) {
+        public void onSuccess(@Nullable Credentials payload) {
             //Save the credentials
             manager.saveCredentials(credentials);
         }
 
         @Override
-        public void onFailure(AuthenticationException error) {
+        public void onFailure(@NonNull AuthenticationException error) {
             //Error!
         }
     });
@@ -691,12 +687,12 @@ Existing credentials will be returned if they are still valid, otherwise the `re
 ```java
 manager.getCredentials(new BaseCallback<Credentials, CredentialsManagerException>() {
     @Override
-    public void onSuccess(Credentials credentials){
+    public void onSuccess(@Nullable Credentials credentials){
         //Use the Credentials
     }
 
     @Override
-    public void onFailure(CredentialsManagerException error){
+    public void onFailure(@NonNull CredentialsManagerException error){
         //Error!
     }
 });
