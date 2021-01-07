@@ -101,12 +101,12 @@ public class ProfileRequest
      */
     override fun start(callback: BaseCallback<Authentication, AuthenticationException>) {
         authenticationRequest.start(object : BaseCallback<Credentials, AuthenticationException> {
-            override fun onSuccess(credentials: Credentials) {
+            override fun onSuccess(credentials: Credentials?) {
                 userInfoRequest
-                    .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.accessToken)
+                    .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials!!.accessToken)
                     .start(object : BaseCallback<UserProfile, AuthenticationException> {
-                        override fun onSuccess(profile: UserProfile) {
-                            callback.onSuccess(Authentication(profile, credentials))
+                        override fun onSuccess(profile: UserProfile?) {
+                            callback.onSuccess(Authentication(profile!!, credentials))
                         }
 
                         override fun onFailure(error: AuthenticationException) {

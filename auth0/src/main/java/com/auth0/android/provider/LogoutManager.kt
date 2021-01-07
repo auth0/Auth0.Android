@@ -27,7 +27,7 @@ internal class LogoutManager(
                 Auth0Exception("The user closed the browser app so the logout was cancelled.", null)
             callback.onFailure(exception)
         } else {
-            callback.onSuccess(Unit)
+            callback.onSuccess(null)
         }
         return true
     }

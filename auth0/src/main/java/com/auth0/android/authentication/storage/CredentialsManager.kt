@@ -111,8 +111,8 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
             request.addParameter("scope", scope)
         }
         request.start(object : AuthenticationCallback<Credentials> {
-            override fun onSuccess(fresh: Credentials) {
-                val expiresAt = fresh.expiresAt!!.time
+            override fun onSuccess(fresh: Credentials?) {
+                val expiresAt = fresh!!.expiresAt!!.time
                 val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
                 if (willAccessTokenExpire) {
                     val tokenLifetime = (expiresAt - currentTimeInMillis - minTtl * 1000) / -1000
