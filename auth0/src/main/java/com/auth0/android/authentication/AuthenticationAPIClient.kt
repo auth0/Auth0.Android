@@ -430,11 +430,10 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param connection of the database to request the reset password on
      * @return a request to configure and start
      */
-    //TODO: Document the signature change (Unit)
     public fun resetPassword(
         email: String,
         connection: String
-    ): DatabaseConnectionRequest<Unit, AuthenticationException> {
+    ): DatabaseConnectionRequest<Void, AuthenticationException> {
         val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
             .addPathSegment(DB_CONNECTIONS_PATH)
             .addPathSegment(CHANGE_PASSWORD_PATH)
@@ -468,8 +467,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param refreshToken the token to revoke
      * @return a request to start
      */
-    //TODO: Document the signature change (Unit)
-    public fun revokeToken(refreshToken: String): Request<Unit, AuthenticationException> {
+    public fun revokeToken(refreshToken: String): Request<Void, AuthenticationException> {
         val parameters = ParameterBuilder.newBuilder()
             .setClientId(clientId)
             .set(TOKEN_KEY, refreshToken)
@@ -543,12 +541,12 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param connection       the passwordless connection to start the flow with.
      * @return a request to configure and start
      */
-    @JvmOverloads  //TODO: Document the signature change (Unit)
+    @JvmOverloads
     public fun passwordlessWithEmail(
         email: String,
         passwordlessType: PasswordlessType,
         connection: String = EMAIL_CONNECTION
-    ): Request<Unit, AuthenticationException> {
+    ): Request<Void, AuthenticationException> {
         val parameters = ParameterBuilder.newBuilder()
             .set(EMAIL_KEY, email)
             .setSend(passwordlessType)
@@ -579,12 +577,12 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param connection       the passwordless connection to start the flow with.
      * @return a request to configure and start
      */
-    @JvmOverloads  //TODO: Document the signature change (Unit)
+    @JvmOverloads
     public fun passwordlessWithSMS(
         phoneNumber: String,
         passwordlessType: PasswordlessType,
         connection: String = SMS_CONNECTION
-    ): Request<Unit, AuthenticationException> {
+    ): Request<Void, AuthenticationException> {
         val parameters = ParameterBuilder.newBuilder()
             .set(PHONE_NUMBER_KEY, phoneNumber)
             .setSend(passwordlessType)
@@ -599,8 +597,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      *
      * @return a request to configure and start
      */
-    //TODO: Document the signature change (Unit)
-    private fun passwordless(): Request<Unit, AuthenticationException> {
+    private fun passwordless(): Request<Void, AuthenticationException> {
         val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
             .addPathSegment(PASSWORDLESS_PATH)
             .addPathSegment(START_PATH)

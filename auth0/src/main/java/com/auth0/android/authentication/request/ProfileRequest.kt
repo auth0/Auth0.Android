@@ -129,11 +129,11 @@ public class ProfileRequest
      */
     @Throws(Auth0Exception::class)
     override fun execute(): Authentication {
-        val credentials = authenticationRequest.execute()
+        val credentials = authenticationRequest.execute()!!
         val profile = userInfoRequest
             .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.accessToken)
             .execute()
-        return Authentication(profile, credentials)
+        return Authentication(profile!!, credentials)
     }
 
     private companion object {

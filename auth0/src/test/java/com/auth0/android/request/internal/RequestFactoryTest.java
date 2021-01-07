@@ -19,8 +19,6 @@ import org.robolectric.RobolectricTestRunner;
 
 import java.util.Locale;
 
-import kotlin.Unit;
-
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -166,7 +164,7 @@ public class RequestFactoryTest {
 
     @Test
     public void shouldCreateVoidPostRequest() {
-        Request<Unit, Auth0Exception> request = factory.post(BASE_URL);
+        Request<Void, Auth0Exception> request = factory.post(BASE_URL);
 
         assertThat(request, is(notNullValue()));
         assertThat(request, is(emptyPostRequest));

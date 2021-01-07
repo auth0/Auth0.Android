@@ -70,8 +70,6 @@ import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 
-import kotlin.Unit;
-
 import static com.auth0.android.util.AuthenticationCallbackMatcher.hasError;
 import static com.auth0.android.util.AuthenticationCallbackMatcher.hasNoError;
 import static com.auth0.android.util.AuthenticationCallbackMatcher.hasPayload;
@@ -854,7 +852,7 @@ public class AuthenticationAPIClientTest {
     public void shouldChangePassword() throws Exception {
         mockAPI.willReturnSuccessfulChangePassword();
 
-        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
         client.resetPassword(SUPPORT_AUTH0_COM, MY_CONNECTION)
                 .start(callback);
         ShadowLooper.idleMainLooper();
@@ -892,7 +890,7 @@ public class AuthenticationAPIClientTest {
     public void shouldRequestChangePassword() throws Exception {
         mockAPI.willReturnSuccessfulChangePassword();
 
-        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
         client.resetPassword(SUPPORT_AUTH0_COM, MY_CONNECTION)
                 .start(callback);
         ShadowLooper.idleMainLooper();
@@ -932,7 +930,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSendEmailCodeWithCustomConnection() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
 
-        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithEmail(SUPPORT_AUTH0_COM, PasswordlessType.CODE, MY_CONNECTION)
                 .start(callback);
         ShadowLooper.idleMainLooper();
@@ -954,7 +952,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSendEmailCode() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
 
-        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithEmail(SUPPORT_AUTH0_COM, PasswordlessType.CODE)
                 .start(callback);
         ShadowLooper.idleMainLooper();
@@ -994,7 +992,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSendEmailLink() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
 
-        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithEmail(SUPPORT_AUTH0_COM, PasswordlessType.WEB_LINK)
                 .start(callback);
         ShadowLooper.idleMainLooper();
@@ -1016,7 +1014,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSendEmailLinkWithCustomConnection() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
 
-        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithEmail(SUPPORT_AUTH0_COM, PasswordlessType.WEB_LINK, MY_CONNECTION)
                 .start(callback);
         ShadowLooper.idleMainLooper();
@@ -1056,7 +1054,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSendEmailLinkAndroidWithCustomConnection() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
 
-        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithEmail(SUPPORT_AUTH0_COM, PasswordlessType.ANDROID_LINK, MY_CONNECTION)
                 .start(callback);
         ShadowLooper.idleMainLooper();
@@ -1078,7 +1076,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSendEmailLinkAndroid() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
 
-        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithEmail(SUPPORT_AUTH0_COM, PasswordlessType.ANDROID_LINK)
                 .start(callback);
         ShadowLooper.idleMainLooper();
@@ -1118,7 +1116,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSendSMSCodeWithCustomConnection() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
 
-        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithSMS("+1123123123", PasswordlessType.CODE, MY_CONNECTION)
                 .start(callback);
         ShadowLooper.idleMainLooper();
@@ -1140,7 +1138,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSendSMSCode() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
 
-        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithSMS("+1123123123", PasswordlessType.CODE)
                 .start(callback);
         ShadowLooper.idleMainLooper();
@@ -1180,7 +1178,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSendSMSLinkWithCustomConnection() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
 
-        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithSMS("+1123123123", PasswordlessType.WEB_LINK, MY_CONNECTION)
                 .start(callback);
         ShadowLooper.idleMainLooper();
@@ -1202,7 +1200,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSendSMSLink() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
 
-        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithSMS("+1123123123", PasswordlessType.WEB_LINK)
                 .start(callback);
         ShadowLooper.idleMainLooper();
@@ -1242,7 +1240,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSendSMSLinkAndroidWithCustomConnection() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
 
-        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithSMS("+1123123123", PasswordlessType.ANDROID_LINK, MY_CONNECTION)
                 .start(callback);
         ShadowLooper.idleMainLooper();
@@ -1264,7 +1262,7 @@ public class AuthenticationAPIClientTest {
     public void shouldSendSMSLinkAndroid() throws Exception {
         mockAPI.willReturnSuccessfulPasswordlessStart();
 
-        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
         client.passwordlessWithSMS("+1123123123", PasswordlessType.ANDROID_LINK)
                 .start(callback);
         ShadowLooper.idleMainLooper();
@@ -1365,7 +1363,7 @@ public class AuthenticationAPIClientTest {
         AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
 
         mockAPI.willReturnSuccessfulEmptyBody();
-        final MockAuthenticationCallback<Unit> callback = new MockAuthenticationCallback<>();
+        final MockAuthenticationCallback<Void> callback = new MockAuthenticationCallback<>();
         client.revokeToken("refreshToken")
                 .start(callback);
         ShadowLooper.idleMainLooper();

@@ -104,7 +104,7 @@ internal class OAuthManager(
             object : BaseCallback<Credentials, AuthenticationException> {
                 override fun onSuccess(credentials: Credentials?) {
                     assertValidIdToken(credentials!!.idToken, object : VoidCallback {
-                        override fun onSuccess(payload: Unit?) {
+                        override fun onSuccess(payload: Void?) {
                             callback.onSuccess(credentials)
                         }
 
@@ -281,7 +281,7 @@ internal class OAuthManager(
         private const val KEY_CODE = "code"
 
         @JvmStatic
-        @VisibleForTesting
+        @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
         @Throws(AuthenticationException::class)
         fun assertValidState(requestState: String, responseState: String?) {
             if (requestState != responseState) {
@@ -300,7 +300,7 @@ internal class OAuthManager(
             }
         }
 
-        @VisibleForTesting
+        @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
         fun getRandomString(defaultValue: String?): String {
             return defaultValue ?: secureRandomString()
         }
