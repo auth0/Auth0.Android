@@ -62,6 +62,7 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 - The `com.auth0.android.util.Telemetry` class has been renamed to `com.auth0.android.util.Auth0UserAgent`.
 - The `com.auth0.android.request.AuthorizableRequest` class has been removed. You can achieve the same result using the method in Request: `Request#addHeader("Authorization", "Bearer TOKEN_VALUE")`.
 - The `com.auth0.android.authentication.request.TokenRequest` class has been removed. The ability to set a Code Verifier, and any request headers and parameters has been moved to the `com.auth0.android.request.Request` interface.
+- The `com.auth0.android.authentication.request.DatabaseConnectionRequest` class has been removed. The ability to set any request headers and parameters has been moved to the `com.auth0.android.request.Request` interface.
 
 ### Class changes
 
@@ -137,6 +138,9 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 - `public AuthRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode, @NonNull String realmOrConnection)`. Use `public AuthenticationRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode, @NonNull String realmOrConnection)` instead.
 - `public AuthRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode)`. Use `public AuthenticationRequest loginWithEmail(@NonNull String email, @NonNull String verificationCode)` instead.
 - `public TokenRequest token(@NonNull String authorizationCode, @NonNull String redirectUri)`. Use `public Request<Credentials, AuthenticationException> token(@NonNull String authorizationCode, @NonNull String codeVerifier, @NonNull String redirectUri)` instead.
+- `public DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUser(@NonNull String email, @NonNull String password, @Nullable String username, @NonNull String connection)`. Use `public Request<DatabaseUser, AuthenticationException> createUser(@NonNull String email, @NonNull String password, @Nullable String username, @NonNull String connection)` instead.
+- `public DatabaseConnectionRequest<DatabaseUser, AuthenticationException> createUser(@NonNull String email, @NonNull String password, @NonNull String connection)`. Use `public Request<DatabaseUser, AuthenticationException> createUser(@NonNull String email, @NonNull String password, @NonNull String connection)` instead.
+- `public DatabaseConnectionRequest<Void, AuthenticationException> resetPassword(@NonNull String email, @NonNull String connection)`. Use `public Request<Void, AuthenticationException> resetPassword(@NonNull String email, @NonNull String connection)` instead.
 
 ##### Social Provider's Access Token Exchange
 The ability to exchange a third-party provider access token for Auth0 access tokens is part of the [/oauth/access_token](https://auth0.com/docs/api/authentication#social-with-provider-s-access-token) Authentication API legacy endpoint, disabled as of June 2017. The method below was removed because of this.
