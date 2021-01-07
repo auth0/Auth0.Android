@@ -20,7 +20,7 @@ import java.util.*
 
 internal class OAuthManager(
     private val account: Auth0,
-    private val callback: AuthCallback,
+    private val callback: BaseCallback<Credentials, AuthenticationException>,
     parameters: Map<String, String>,
     ctOptions: CustomTabsOptions,
     networkingClient: NetworkingClient?
@@ -99,24 +99,28 @@ internal class OAuthManager(
         }
 
         // response_type=code
-        pkce!!.getToken(values[KEY_CODE], object : SimpleAuthCallback(
-            callback
-        ) {
-            override fun onSuccess(credentials: Credentials) {
-                assertValidIdToken(credentials.idToken, object : VoidCallback {
-                    override fun onSuccess(ignored: Unit?) {
-                        callback.onSuccess(credentials)
-                    }
+        pkce!!.getToken(
+            values[KEY_CODE],
+            object : BaseCallback<Credentials, AuthenticationException> {
+                override fun onSuccess(credentials: Credentials?) {
+                    assertValidIdToken(credentials!!.idToken, object : VoidCallback {
+                        override fun onSuccess(payload: Unit?) {
+                            callback.onSuccess(credentials)
+                        }
 
-                    override fun onFailure(error: Auth0Exception) {
-                        val wrappedError = AuthenticationException(
-                            ERROR_VALUE_ID_TOKEN_VALIDATION_FAILED, error
-                        )
-                        callback.onFailure(wrappedError)
-                    }
-                })
-            }
-        })
+                        override fun onFailure(error: Auth0Exception) {
+                            val wrappedError = AuthenticationException(
+                                ERROR_VALUE_ID_TOKEN_VALIDATION_FAILED, error
+                            )
+                            callback.onFailure(wrappedError)
+                        }
+                    })
+                }
+
+                override fun onFailure(error: AuthenticationException) {
+                    callback.onFailure(error)
+                }
+            })
         return true
     }
 

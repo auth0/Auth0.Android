@@ -90,11 +90,12 @@ class PKCE {
      * @param authorizationCode received in the call to /authorize with a "grant_type=code"
      * @param callback          to notify the result of this call to.
      */
-    public void getToken(String authorizationCode, @NonNull final AuthCallback callback) {
+    public void getToken(String authorizationCode, @NonNull final BaseCallback<Credentials, AuthenticationException> callback) {
         Request<Credentials, AuthenticationException> tokenRequest = apiClient.token(authorizationCode, codeVerifier, redirectUri);
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             tokenRequest.addHeader(entry.getKey(), entry.getValue());
         }
+        //FIXME: Probably can pass the received callback instance instead of creating a new one
         tokenRequest.start(new BaseCallback<Credentials, AuthenticationException>() {
             @Override
             public void onSuccess(@Nullable Credentials payload) {

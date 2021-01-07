@@ -71,7 +71,7 @@ public class PKCETest {
     @Mock
     private AuthenticationAPIClient apiClient;
     @Mock
-    private AuthCallback callback;
+    private BaseCallback<Credentials, AuthenticationException> callback;
 
     @Before
     public void setUp() {
