@@ -67,7 +67,7 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 
 - `SignupRequest` now implements `AuthenticationRequest` instead of the now-removed `AuthRequest`
 - `AuthorizableRequest` now extends `Request` instead of the now-removed `ParameterizableRequest`
-- `Callback` now defines `onSuccess()`, which was previously defined in `BaseCallback`. `BaseCallback` has been deprecated, use `Callback` instead.
+- `BaseCallback` has been deprecated; use `Callback` instead.
 
 ### Constructors removed or changed
 
