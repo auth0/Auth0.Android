@@ -31,9 +31,9 @@ import com.auth0.android.Auth0Exception
 //TODO [SDK-2185]: Merge this interface into Callback
 public interface BaseCallback<T, U : Auth0Exception> : Callback<U> {
     /**
-     * Method called on success with the payload.
+     * Method called on success with the payload or null.
      *
-     * @param payload Request payload
+     * @param payload Request payload or null
      */
-    public fun onSuccess(payload: T)
+    public fun onSuccess(payload: T?)
 }

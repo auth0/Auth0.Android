@@ -152,7 +152,7 @@ public class SignUpRequest
      */
     override fun start(callback: BaseCallback<Credentials, AuthenticationException>) {
         signUpRequest.start(object : BaseCallback<DatabaseUser, AuthenticationException> {
-            override fun onSuccess(user: DatabaseUser) {
+            override fun onSuccess(user: DatabaseUser?) {
                 authenticationRequest.start(callback)
             }
 

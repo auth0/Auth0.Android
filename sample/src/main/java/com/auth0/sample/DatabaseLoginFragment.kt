@@ -45,7 +45,7 @@ class DatabaseLoginFragment : Fragment() {
                     Snackbar.make(requireView(), "Failure :(", Snackbar.LENGTH_LONG).show()
                 }
 
-                override fun onSuccess(payload: Credentials) {
+                override fun onSuccess(payload: Credentials?) {
                     Snackbar.make(requireView(), "Success :D", Snackbar.LENGTH_LONG).show()
                 }
             })
