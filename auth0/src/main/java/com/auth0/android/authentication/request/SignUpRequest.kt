@@ -25,8 +25,10 @@ package com.auth0.android.authentication.request
 
 import com.auth0.android.Auth0Exception
 import com.auth0.android.authentication.AuthenticationException
+import com.auth0.android.authentication.ParameterBuilder
 import com.auth0.android.callback.Callback
 import com.auth0.android.request.AuthenticationRequest
+import com.auth0.android.request.Request
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
 
@@ -38,7 +40,7 @@ public class SignUpRequest
  * @param signUpRequest the request that creates the user
  * @param authenticationRequest   the request that will output a pair of credentials
  */(
-    private val signUpRequest: DatabaseConnectionRequest<DatabaseUser, AuthenticationException>,
+    private val signUpRequest: Request<DatabaseUser, AuthenticationException>,
     private val authenticationRequest: AuthenticationRequest
 ) : AuthenticationRequest {
     /**
@@ -134,13 +136,15 @@ public class SignUpRequest
     }
 
     override fun setConnection(connection: String): SignUpRequest {
-        signUpRequest.setConnection(connection)
+        // sign-up endpoint only accepts a 'connection' parameter
+        signUpRequest.addParameter(ParameterBuilder.CONNECTION_KEY, connection)
         authenticationRequest.setConnection(connection)
         return this
     }
 
     override fun setRealm(realm: String): SignUpRequest {
-        signUpRequest.setConnection(realm)
+        // sign-up endpoint only accepts a 'connection' parameter
+        signUpRequest.addParameter(ParameterBuilder.CONNECTION_KEY, realm)
         authenticationRequest.setRealm(realm)
         return this
     }

@@ -26,7 +26,6 @@ package com.auth0.android.authentication
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
-import com.auth0.android.authentication.request.DatabaseConnectionRequest
 import com.auth0.android.authentication.request.ProfileRequest
 import com.auth0.android.authentication.request.SignUpRequest
 import com.auth0.android.request.*
@@ -357,7 +356,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         password: String,
         username: String? = null,
         connection: String
-    ): DatabaseConnectionRequest<DatabaseUser, AuthenticationException> {
+    ): Request<DatabaseUser, AuthenticationException> {
         val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
             .addPathSegment(DB_CONNECTIONS_PATH)
             .addPathSegment(SIGN_UP_PATH)
@@ -372,9 +371,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         val databaseUserAdapter: JsonAdapter<DatabaseUser> = GsonAdapter(
             DatabaseUser::class.java, gson
         )
-        val request = factory.post(url.toString(), databaseUserAdapter)
+        return factory.post(url.toString(), databaseUserAdapter)
             .addParameters(parameters)
-        return DatabaseConnectionRequest(request)
     }
 
     /**
@@ -433,7 +431,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     public fun resetPassword(
         email: String,
         connection: String
-    ): DatabaseConnectionRequest<Void, AuthenticationException> {
+    ): Request<Void, AuthenticationException> {
         val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
             .addPathSegment(DB_CONNECTIONS_PATH)
             .addPathSegment(CHANGE_PASSWORD_PATH)
@@ -443,9 +441,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             .setClientId(clientId)
             .setConnection(connection)
             .asDictionary()
-        val request = factory.post(url.toString())
+        return factory.post(url.toString())
             .addParameters(parameters)
-        return DatabaseConnectionRequest(request)
     }
 
     /**
