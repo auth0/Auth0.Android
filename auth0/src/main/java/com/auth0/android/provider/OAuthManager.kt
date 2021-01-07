@@ -10,7 +10,7 @@ import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
-import com.auth0.android.callback.BaseCallback
+import com.auth0.android.callback.Callback
 import com.auth0.android.jwt.DecodeException
 import com.auth0.android.jwt.JWT
 import com.auth0.android.request.NetworkingClient
@@ -20,7 +20,7 @@ import java.util.*
 
 internal class OAuthManager(
     private val account: Auth0,
-    private val callback: BaseCallback<Credentials, AuthenticationException>,
+    private val callback: Callback<Credentials, AuthenticationException>,
     parameters: Map<String, String>,
     ctOptions: CustomTabsOptions,
     networkingClient: NetworkingClient?
@@ -101,7 +101,7 @@ internal class OAuthManager(
         // response_type=code
         pkce!!.getToken(
             values[KEY_CODE],
-            object : BaseCallback<Credentials, AuthenticationException> {
+            object : Callback<Credentials, AuthenticationException> {
                 override fun onSuccess(credentials: Credentials?) {
                     assertValidIdToken(credentials!!.idToken, object : VoidCallback {
                         override fun onSuccess(payload: Void?) {
@@ -141,8 +141,8 @@ internal class OAuthManager(
             validationCallback.onFailure(TokenValidationException("ID token could not be decoded"))
             return
         }
-        val signatureVerifierCallback: BaseCallback<SignatureVerifier, TokenValidationException> =
-            object : BaseCallback<SignatureVerifier, TokenValidationException> {
+        val signatureVerifierCallback: Callback<SignatureVerifier, TokenValidationException> =
+            object : Callback<SignatureVerifier, TokenValidationException> {
                 override fun onFailure(error: TokenValidationException) {
                     validationCallback.onFailure(error)
                 }

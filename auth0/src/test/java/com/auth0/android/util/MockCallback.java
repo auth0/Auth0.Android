@@ -28,11 +28,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.auth0.android.Auth0Exception;
-import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.callback.Callback;
 
 import java.util.concurrent.Callable;
 
-public class MockBaseCallback<T, U extends Auth0Exception> implements BaseCallback<T, U> {
+public class MockCallback<T, U extends Auth0Exception> implements Callback<T, U> {
 
     private T payload;
     private U error;

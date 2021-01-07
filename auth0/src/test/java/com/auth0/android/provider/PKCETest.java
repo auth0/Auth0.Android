@@ -26,7 +26,7 @@ package com.auth0.android.provider;
 
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.callback.Callback;
 import com.auth0.android.request.Request;
 import com.auth0.android.result.Credentials;
 
@@ -71,7 +71,7 @@ public class PKCETest {
     @Mock
     private AuthenticationAPIClient apiClient;
     @Mock
-    private BaseCallback<Credentials, AuthenticationException> callback;
+    private Callback<Credentials, AuthenticationException> callback;
 
     @Before
     public void setUp() {
@@ -108,7 +108,7 @@ public class PKCETest {
         when(apiClient.token(AUTHORIZATION_CODE, CODE_VERIFIER, REDIRECT_URI)).thenReturn(tokenRequest);
         pkce.getToken(AUTHORIZATION_CODE, callback);
         verify(apiClient).token(AUTHORIZATION_CODE, CODE_VERIFIER, REDIRECT_URI);
-        ArgumentCaptor<BaseCallback> callbackCaptor = ArgumentCaptor.forClass(BaseCallback.class);
+        ArgumentCaptor<Callback> callbackCaptor = ArgumentCaptor.forClass(Callback.class);
         verify(tokenRequest).start(callbackCaptor.capture());
         Credentials credentials = mock(Credentials.class);
         callbackCaptor.getValue().onSuccess(credentials);
@@ -138,7 +138,7 @@ public class PKCETest {
         when(apiClient.token(AUTHORIZATION_CODE, CODE_VERIFIER, REDIRECT_URI)).thenReturn(tokenRequest);
         pkce.getToken(AUTHORIZATION_CODE, callback);
         verify(apiClient).token(AUTHORIZATION_CODE, CODE_VERIFIER, REDIRECT_URI);
-        ArgumentCaptor<BaseCallback> callbackCaptor = ArgumentCaptor.forClass(BaseCallback.class);
+        ArgumentCaptor<Callback> callbackCaptor = ArgumentCaptor.forClass(Callback.class);
         verify(tokenRequest).start(callbackCaptor.capture());
         callbackCaptor.getValue().onFailure(new AuthenticationException("Some error", "description"));
         verify(callback).onFailure(any(AuthenticationException.class));

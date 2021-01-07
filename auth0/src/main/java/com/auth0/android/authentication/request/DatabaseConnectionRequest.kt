@@ -2,7 +2,7 @@ package com.auth0.android.authentication.request
 
 import com.auth0.android.Auth0Exception
 import com.auth0.android.authentication.ParameterBuilder
-import com.auth0.android.callback.BaseCallback
+import com.auth0.android.callback.Callback
 import com.auth0.android.request.Request
 
 /**
@@ -61,7 +61,7 @@ public open class DatabaseConnectionRequest<T, U : Auth0Exception>(private val r
      *
      * @param callback called on success or failure of the request
      */
-    public open fun start(callback: BaseCallback<T, U>) {
+    public open fun start(callback: Callback<T, U>) {
         request.start(callback)
     }
 

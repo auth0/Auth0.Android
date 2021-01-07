@@ -2,7 +2,7 @@ package com.auth0.android.authentication.storage
 
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
-import com.auth0.android.callback.BaseCallback
+import com.auth0.android.callback.Callback
 import com.auth0.android.result.Credentials
 import com.auth0.android.util.Clock
 import java.util.*
@@ -30,11 +30,11 @@ public abstract class BaseCredentialsManager internal constructor(
 
     @Throws(CredentialsManagerException::class)
     public abstract fun saveCredentials(credentials: Credentials)
-    public abstract fun getCredentials(callback: BaseCallback<Credentials, CredentialsManagerException>)
+    public abstract fun getCredentials(callback: Callback<Credentials, CredentialsManagerException>)
     public abstract fun getCredentials(
         scope: String?,
         minTtl: Int,
-        callback: BaseCallback<Credentials, CredentialsManagerException>
+        callback: Callback<Credentials, CredentialsManagerException>
     )
 
     public abstract fun clearCredentials()

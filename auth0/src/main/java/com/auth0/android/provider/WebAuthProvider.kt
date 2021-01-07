@@ -30,7 +30,7 @@ import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationException
-import com.auth0.android.callback.BaseCallback
+import com.auth0.android.callback.Callback
 import com.auth0.android.request.NetworkingClient
 import com.auth0.android.result.Credentials
 import java.util.*
@@ -403,7 +403,7 @@ public object WebAuthProvider {
          */
         public fun start(
             activity: Activity,
-            callback: BaseCallback<Credentials, AuthenticationException>
+            callback: Callback<Credentials, AuthenticationException>
         ) {
             resetManagerInstance()
             if (!ctOptions.hasCompatibleBrowser(activity.packageManager)) {

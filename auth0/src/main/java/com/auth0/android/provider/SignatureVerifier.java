@@ -6,7 +6,7 @@ import androidx.annotation.Nullable;
 import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.AuthenticationCallback;
-import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.callback.Callback;
 import com.auth0.android.jwt.JWT;
 
 import java.security.InvalidKeyException;
@@ -59,7 +59,7 @@ abstract class SignatureVerifier {
      * @param apiClient the Authentication API client instance. Used to fetch the JWKs
      * @param callback  where to receive the results
      */
-    static void forAsymmetricAlgorithm(@Nullable final String keyId, @NonNull AuthenticationAPIClient apiClient, @NonNull final BaseCallback<SignatureVerifier, TokenValidationException> callback) {
+    static void forAsymmetricAlgorithm(@Nullable final String keyId, @NonNull AuthenticationAPIClient apiClient, @NonNull final Callback<SignatureVerifier, TokenValidationException> callback) {
         apiClient.fetchJsonWebKeys().start(new AuthenticationCallback<Map<String, PublicKey>>() {
             @Override
             public void onSuccess(@Nullable Map<String, PublicKey> jwks) {

@@ -3,7 +3,7 @@ package com.auth0.android.authentication.request;
 import androidx.annotation.NonNull;
 
 import com.auth0.android.Auth0Exception;
-import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.callback.Callback;
 import com.auth0.android.request.Request;
 
 import java.util.Map;
@@ -41,7 +41,7 @@ public class RequestMock<T, U extends Auth0Exception> implements Request<T, U> {
     }
 
     @Override
-    public void start(@NonNull BaseCallback<T, U> callback) {
+    public void start(@NonNull Callback<T, U> callback) {
         started = true;
         if (payload != null) {
             callback.onSuccess(payload);

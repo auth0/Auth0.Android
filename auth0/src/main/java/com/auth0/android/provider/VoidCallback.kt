@@ -24,9 +24,9 @@
 package com.auth0.android.provider
 
 import com.auth0.android.Auth0Exception
-import com.auth0.android.callback.BaseCallback
+import com.auth0.android.callback.Callback
 
 /**
  * Generic callback called on success/failure, that receives no payload when succeeds.
  */
-public interface VoidCallback : BaseCallback<Void, Auth0Exception>
+public interface VoidCallback : Callback<Void, Auth0Exception>

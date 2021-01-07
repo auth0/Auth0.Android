@@ -26,7 +26,7 @@ package com.auth0.android.request.internal;
 
 
 import com.auth0.android.Auth0Exception;
-import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.callback.Callback;
 import com.auth0.android.request.ErrorAdapter;
 import com.auth0.android.request.HttpMethod;
 import com.auth0.android.request.JsonAdapter;
@@ -264,7 +264,7 @@ public class BaseRequestTest {
                 threadSwitcher
         );
         mockSuccessfulServerResponse();
-        BaseCallback<SimplePojo, Auth0Exception> callback = mock(BaseCallback.class);
+        Callback<SimplePojo, Auth0Exception> callback = mock(Callback.class);
 
         // verify background thread is queued
         baseRequest.start(callback);
@@ -300,7 +300,7 @@ public class BaseRequestTest {
                 threadSwitcher
         );
         mockFailedRawServerResponse();
-        BaseCallback<SimplePojo, Auth0Exception> callback = mock(BaseCallback.class);
+        Callback<SimplePojo, Auth0Exception> callback = mock(Callback.class);
 
         // verify background thread is queued
         baseRequest.start(callback);

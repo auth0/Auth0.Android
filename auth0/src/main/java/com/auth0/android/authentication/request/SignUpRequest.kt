@@ -25,7 +25,7 @@ package com.auth0.android.authentication.request
 
 import com.auth0.android.Auth0Exception
 import com.auth0.android.authentication.AuthenticationException
-import com.auth0.android.callback.BaseCallback
+import com.auth0.android.callback.Callback
 import com.auth0.android.request.AuthenticationRequest
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
@@ -150,8 +150,8 @@ public class SignUpRequest
      *
      * @param callback called on either success or failure.
      */
-    override fun start(callback: BaseCallback<Credentials, AuthenticationException>) {
-        signUpRequest.start(object : BaseCallback<DatabaseUser, AuthenticationException> {
+    override fun start(callback: Callback<Credentials, AuthenticationException>) {
+        signUpRequest.start(object : Callback<DatabaseUser, AuthenticationException> {
             override fun onSuccess(user: DatabaseUser?) {
                 authenticationRequest.start(callback)
             }

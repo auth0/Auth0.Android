@@ -1,7 +1,7 @@
 package com.auth0.android.authentication.request;
 
 import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.callback.Callback;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.DatabaseUser;
@@ -136,10 +136,10 @@ public class SignUpRequestTest {
         final DatabaseUser user = mock(DatabaseUser.class);
         final Credentials credentials = mock(Credentials.class);
         final DatabaseConnectionRequestMock dbRequestMock = new DatabaseConnectionRequestMock(user, null);
-        final BaseCallback callback = mock(BaseCallback.class);
+        final Callback callback = mock(Callback.class);
 
         doAnswer(invocation -> {
-            ((BaseCallback)invocation.getArguments()[0]).onSuccess(credentials);
+            ((Callback)invocation.getArguments()[0]).onSuccess(credentials);
             return null;
         }).when(authenticationMockRequest).start(callback);
 
@@ -157,7 +157,7 @@ public class SignUpRequestTest {
         final AuthenticationException error = mock(AuthenticationException.class);
         final Credentials credentials = mock(Credentials.class);
         final DatabaseConnectionRequestMock dbRequestMock = new DatabaseConnectionRequestMock(null, error);
-        final BaseCallback callback = mock(BaseCallback.class);
+        final Callback callback = mock(Callback.class);
 
         signUpRequest = new SignUpRequest(dbRequestMock, authenticationMockRequest);
         signUpRequest.start(callback);
@@ -171,11 +171,11 @@ public class SignUpRequestTest {
         final DatabaseUser user = mock(DatabaseUser.class);
         final AuthenticationException error = mock(AuthenticationException.class);
         final DatabaseConnectionRequestMock dbRequestMock = new DatabaseConnectionRequestMock(user, null);
-        final BaseCallback callback = mock(BaseCallback.class);
+        final Callback callback = mock(Callback.class);
 
 
         doAnswer(invocation -> {
-            ((BaseCallback)invocation.getArguments()[0]).onFailure(error);
+            ((Callback)invocation.getArguments()[0]).onFailure(error);
             return null;
         }).when(authenticationMockRequest).start(callback);
 

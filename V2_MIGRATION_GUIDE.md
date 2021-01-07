@@ -67,6 +67,7 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 
 - `SignupRequest` now implements `AuthenticationRequest` instead of the now-removed `AuthRequest`
 - `AuthorizableRequest` now extends `Request` instead of the now-removed `ParameterizableRequest`
+- `BaseCallback` has been deprecated; use `Callback` instead.
 
 ### Constructors removed or changed
 
@@ -164,7 +165,7 @@ The ability to make requests to the [/delegation](https://auth0.com/docs/api/aut
 - `public Builder useCodeGrant(boolean useCodeGrant)`. There is no replacement; only Code + PKCE flow supported in v2.
 - `public Builder useBrowser(boolean useBrowser)`. There is no replacement; Google no longer supports WebView authentication.
 - `public Builder useFullscreen(boolean useFullscreen)`. There is no replacement; Google no longer supports WebView authentication.
-- `public void start(@NonNull Activity activity, @NonNull AuthCallback callback, int requestCode)`. Use `public void start(@NonNull Activity activity, @NonNull BaseCallback<Credentials, AuthenticationException> callback)` instead.
+- `public void start(@NonNull Activity activity, @NonNull AuthCallback callback, int requestCode)`. Use `public void start(@NonNull Activity activity, @NonNull Callback<Credentials, AuthenticationException> callback)` instead.
 - `public Builder withResponseType(@ResponseType int type)`. There is no replacement; only Code + PKCE flow supported in v2.
 
 #### UsersAPIClient

@@ -1,7 +1,7 @@
 package com.auth0.android.authentication.request;
 
 import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.callback.BaseCallback;
+import com.auth0.android.callback.Callback;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.request.Request;
 import com.auth0.android.result.Authentication;
@@ -93,7 +93,7 @@ public class ProfileRequestTest {
 
         final AuthenticationRequestMock authenticationRequestMock = new AuthenticationRequestMock(credentials, null);
         final RequestMock tokenInfoRequestMock = new RequestMock(userProfile, null);
-        final BaseCallback callback = mock(BaseCallback.class);
+        final Callback callback = mock(Callback.class);
 
         profileRequest = new ProfileRequest(authenticationRequestMock, tokenInfoRequestMock);
         profileRequest.start(callback);
@@ -119,7 +119,7 @@ public class ProfileRequestTest {
 
         final AuthenticationRequestMock authenticationRequestMock = new AuthenticationRequestMock(null, error);
         final RequestMock tokenInfoRequestMock = new RequestMock(userProfile, null);
-        final BaseCallback callback = mock(BaseCallback.class);
+        final Callback callback = mock(Callback.class);
 
         profileRequest = new ProfileRequest(authenticationRequestMock, tokenInfoRequestMock);
         profileRequest.start(callback);
@@ -137,7 +137,7 @@ public class ProfileRequestTest {
 
         final AuthenticationRequestMock authenticationRequestMock = new AuthenticationRequestMock(credentials, null);
         final RequestMock tokenInfoRequestMock = new RequestMock(null, error);
-        final BaseCallback callback = mock(BaseCallback.class);
+        final Callback callback = mock(Callback.class);
 
         profileRequest = new ProfileRequest(authenticationRequestMock, tokenInfoRequestMock);
         profileRequest.start(callback);

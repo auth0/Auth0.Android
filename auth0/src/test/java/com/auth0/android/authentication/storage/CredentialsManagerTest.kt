@@ -2,7 +2,7 @@ package com.auth0.android.authentication.storage
 
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
-import com.auth0.android.callback.BaseCallback
+import com.auth0.android.callback.Callback
 import com.auth0.android.jwt.JWT
 import com.auth0.android.request.Request
 import com.auth0.android.result.Credentials
@@ -35,7 +35,7 @@ public class CredentialsManagerTest {
     private lateinit var storage: Storage
 
     @Mock
-    private lateinit var callback: BaseCallback<Credentials, CredentialsManagerException>
+    private lateinit var callback: Callback<Credentials, CredentialsManagerException>
 
     @Mock
     private lateinit var request: Request<Credentials, AuthenticationException>
@@ -51,7 +51,7 @@ public class CredentialsManagerTest {
     public var exception: ExpectedException = ExpectedException.none()
     private lateinit var manager: CredentialsManager
 
-    private val requestCallbackCaptor: KArgumentCaptor<BaseCallback<Credentials, AuthenticationException>> =
+    private val requestCallbackCaptor: KArgumentCaptor<Callback<Credentials, AuthenticationException>> =
         argumentCaptor()
 
     @Before

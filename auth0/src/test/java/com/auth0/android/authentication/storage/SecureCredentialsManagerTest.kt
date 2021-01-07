@@ -9,7 +9,7 @@ import android.util.Base64
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
-import com.auth0.android.callback.BaseCallback
+import com.auth0.android.callback.Callback
 import com.auth0.android.jwt.JWT
 import com.auth0.android.request.Request
 import com.auth0.android.request.internal.GsonProvider
@@ -47,7 +47,7 @@ public class SecureCredentialsManagerTest {
     private lateinit var storage: Storage
 
     @Mock
-    private lateinit var callback: BaseCallback<Credentials, CredentialsManagerException>
+    private lateinit var callback: Callback<Credentials, CredentialsManagerException>
 
     @Mock
     private lateinit var request: Request<Credentials, AuthenticationException>
@@ -64,7 +64,7 @@ public class SecureCredentialsManagerTest {
 
     private val stringCaptor: KArgumentCaptor<String> = argumentCaptor()
 
-    private val requestCallbackCaptor: KArgumentCaptor<BaseCallback<Credentials, AuthenticationException>> = argumentCaptor()
+    private val requestCallbackCaptor: KArgumentCaptor<Callback<Credentials, AuthenticationException>> = argumentCaptor()
 
     @get:Rule
     public val exception: ExpectedException = ExpectedException.none()

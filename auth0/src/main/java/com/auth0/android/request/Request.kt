@@ -24,7 +24,7 @@
 package com.auth0.android.request
 
 import com.auth0.android.Auth0Exception
-import com.auth0.android.callback.BaseCallback
+import com.auth0.android.callback.Callback
 
 /**
  * Defines a request that can be started
@@ -38,7 +38,7 @@ public interface Request<T, U : Auth0Exception> {
      *
      * @param callback called either on success or failure
      */
-    public fun start(callback: BaseCallback<T, U>)
+    public fun start(callback: Callback<T, U>)
 
     /**
      * Executes the HTTP request against Auth0 API (blocking the current thread)

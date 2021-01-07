@@ -11,9 +11,7 @@ import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.MockAuth0
 import com.auth0.android.authentication.AuthenticationException
-import com.auth0.android.callback.BaseCallback
-import com.auth0.android.provider.CustomTabsOptions
-import com.auth0.android.provider.PKCE
+import com.auth0.android.callback.Callback
 import com.auth0.android.provider.WebAuthProvider.login
 import com.auth0.android.provider.WebAuthProvider.logout
 import com.auth0.android.provider.WebAuthProvider.resume
@@ -59,7 +57,7 @@ import java.util.*
 @Config(shadows = [ThreadSwitcherShadow::class])
 public class WebAuthProviderTest {
     @Mock
-    private lateinit var callback: BaseCallback<Credentials, AuthenticationException>
+    private lateinit var callback: Callback<Credentials, AuthenticationException>
 
     @Mock
     private lateinit var voidCallback: VoidCallback
@@ -70,7 +68,7 @@ public class WebAuthProviderTest {
     private val authExceptionCaptor: KArgumentCaptor<AuthenticationException> = argumentCaptor()
     private val intentCaptor: KArgumentCaptor<Intent> = argumentCaptor()
     private val credentialsCaptor: KArgumentCaptor<Credentials> = argumentCaptor()
-    private val callbackCaptor: KArgumentCaptor<BaseCallback<Credentials, AuthenticationException>> =
+    private val callbackCaptor: KArgumentCaptor<Callback<Credentials, AuthenticationException>> =
         argumentCaptor()
 
     @Before
@@ -920,7 +918,7 @@ public class WebAuthProviderTest {
         `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
-        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
+        val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = MockAuth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
         login(proxyAccount)
             .withPKCE(pkce)
@@ -990,7 +988,7 @@ public class WebAuthProviderTest {
     @Throws(Exception::class)
     public fun shouldResumeLoginWithCustomNetworkingClient() {
         val networkingClient: NetworkingClient = Mockito.spy(DefaultClient(10))
-        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
+        val authCallback = mock<Callback<Credentials, AuthenticationException>>()
 
         // 1. start the webauth flow. the browser would open
         val proxyAccount = Auth0(JwtTestUtils.EXPECTED_AUDIENCE, JwtTestUtils.EXPECTED_BASE_DOMAIN)
@@ -1100,7 +1098,7 @@ public class WebAuthProviderTest {
         `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
-        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
+        val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = MockAuth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
         login(proxyAccount)
             .withPKCE(pkce)
@@ -1324,7 +1322,7 @@ public class WebAuthProviderTest {
         `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnEmptyJsonWebKeys()
-        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
+        val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = MockAuth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
         login(proxyAccount)
             .withState("1234567890")
@@ -1382,7 +1380,7 @@ public class WebAuthProviderTest {
         `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnInvalidRequest()
-        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
+        val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = MockAuth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
         login(proxyAccount)
             .withState("1234567890")
@@ -1440,7 +1438,7 @@ public class WebAuthProviderTest {
         `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
-        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
+        val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = MockAuth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
         login(proxyAccount)
             .withState("1234567890")
@@ -1497,7 +1495,7 @@ public class WebAuthProviderTest {
         `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
-        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
+        val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = MockAuth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
         login(proxyAccount)
             .withState("1234567890")
@@ -1547,7 +1545,7 @@ public class WebAuthProviderTest {
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
         val proxyAccount: Auth0 = MockAuth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
-        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
+        val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         login(proxyAccount)
             .withIdTokenVerificationIssuer("")
             .withPKCE(pkce)
@@ -1608,7 +1606,7 @@ public class WebAuthProviderTest {
         `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
-        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
+        val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = MockAuth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
         login(proxyAccount)
             .withIdTokenVerificationIssuer("https://some.different.issuer/")
@@ -1671,7 +1669,7 @@ public class WebAuthProviderTest {
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
         val proxyAccount: Auth0 = MockAuth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
-        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
+        val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         login(proxyAccount)
             .withState("1234567890")
             .withNonce(JwtTestUtils.EXPECTED_NONCE)
@@ -1824,7 +1822,7 @@ public class WebAuthProviderTest {
         `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
-        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
+        val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = MockAuth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
         login(proxyAccount)
             .withState("state")
@@ -1887,7 +1885,7 @@ public class WebAuthProviderTest {
         `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
-        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
+        val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = MockAuth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
         login(proxyAccount)
             .withState("state")
@@ -1934,7 +1932,7 @@ public class WebAuthProviderTest {
         `when`(pkce.codeChallenge).thenReturn("challenge")
         val mockAPI = AuthenticationAPI()
         mockAPI.willReturnValidJsonWebKeys()
-        val authCallback = mock<BaseCallback<Credentials, AuthenticationException>>()
+        val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = MockAuth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
         login(proxyAccount)
             .withState("state")
