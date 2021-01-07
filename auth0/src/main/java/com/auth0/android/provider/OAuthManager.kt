@@ -118,6 +118,12 @@ internal class OAuthManager(
                 }
 
                 override fun onFailure(error: AuthenticationException) {
+                    if ("Unauthorized" == error.getDescription()) {
+                        Log.e(
+                            PKCE.TAG,
+                            "Unable to complete authentication with PKCE. PKCE support can be enabled by setting Application Type to 'Native' and Token Endpoint Authentication Method to 'None' for this app at 'https://manage.auth0.com/#/applications/" + apiClient.clientId + "/settings'."
+                        )
+                    }
                     callback.onFailure(error)
                 }
             })

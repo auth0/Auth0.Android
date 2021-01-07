@@ -24,10 +24,7 @@
 
 package com.auth0.android.provider;
 
-import android.util.Log;
-
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import com.auth0.android.authentication.AuthenticationAPIClient;
@@ -95,21 +92,7 @@ class PKCE {
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             tokenRequest.addHeader(entry.getKey(), entry.getValue());
         }
-        //FIXME: Probably can pass the received callback instance instead of creating a new one
-        tokenRequest.start(new BaseCallback<Credentials, AuthenticationException>() {
-            @Override
-            public void onSuccess(@Nullable Credentials payload) {
-                callback.onSuccess(payload);
-            }
-
-            @Override
-            public void onFailure(@NonNull AuthenticationException error) {
-                if ("Unauthorized".equals(error.getDescription())) {
-                    Log.e(TAG, "Unable to complete authentication with PKCE. PKCE support can be enabled by setting Application Type to 'Native' and Token Endpoint Authentication Method to 'None' for this app at 'https://manage.auth0.com/#/applications/" + apiClient.getClientId() + "/settings'.");
-                }
-                callback.onFailure(error);
-            }
-        });
+        tokenRequest.start(callback);
     }
 
     /**
