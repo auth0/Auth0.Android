@@ -1,4 +1,4 @@
-# Auth0.Android
+# Auth0.Android (v2 BETA)
 
 [![CircleCI](https://img.shields.io/circleci/project/github/auth0/Auth0.Android.svg?style=flat-square)](https://circleci.com/gh/auth0/Auth0.Android/tree/master)
 [![Coverage Status](https://img.shields.io/codecov/c/github/auth0/Auth0.Android/master.svg?style=flat-square)](https://codecov.io/github/auth0/Auth0.Android)
@@ -6,7 +6,7 @@
 [![Maven Central](https://img.shields.io/maven-central/v/com.auth0.android/auth0.svg?style=flat-square)](http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22com.auth0.android%22%20AND%20a%3A%22auth0%22)
 [![Bintray](https://img.shields.io/bintray/v/auth0/android/auth0.svg?style=flat-square)](https://bintray.com/auth0/android/auth0/_latestVersion)
 
-Android Java toolkit for Auth0 API
+Android Java & Kotlin toolkit for consuming the Auth0 Authentication API
 
 ## Requirements
 
@@ -20,7 +20,7 @@ Auth0.android is available through [Gradle](https://gradle.org/). To install it,
 
 ```gradle
 dependencies {
-    implementation 'com.auth0.android:auth0:1.30.0'
+    implementation 'com.auth0.android:auth0:2.0.0-BETA'
 }
 ```
 
@@ -34,10 +34,10 @@ Open your app's `AndroidManifest.xml` file and add the following permission.
 
 ## Usage
 
-First create an instance of `Auth0` with your Application information
+First, create an instance of `Auth0` with your Application information
 
-```java
-Auth0 account = new Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}");
+```kotlin
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
 ```
 
 Alternatively, you can save your Application information in the `strings.xml` file using the following names:
@@ -50,10 +50,10 @@ Alternatively, you can save your Application information in the `strings.xml` fi
 
 ```
 
-And then create a new Auth0 instance by passing an Android Context:
+You can then create a new Auth0 instance by passing an Android Context:
 
-```java
-Auth0 account = new Auth0(context);
+```kotlin
+val account = Auth0(context)
 ```
 
 ### OIDC Conformant Mode
@@ -94,11 +94,569 @@ android {
 }
 ```
 
-It's a good practice to define reusable resources like `@string/com_auth0_domain` but you can also hard code the value in the file. The scheme value can be either `https` or a custom one. Read [this section](#a-note-about-app-deep-linking) to learn more.
+It's a good practice to define reusable resources like `@string/com_auth0_domain`, but you can also hard-code the value. The scheme value can be either `https` or a custom one. Read [this section](#a-note-about-app-deep-linking) to learn more.
 
-Alternatively, you can declare the `RedirectActivity` in the `AndroidManifest.xml` file with your own **intent-filter** so it overrides the library's default. If you do this then the `manifestPlaceholders` don't need to be set as long as the activity contains the `tools:node="replace"` like in the snippet below.
+Add the internet permission.
 
-In your manifest inside your application's tag add the `RedirectActivity` declaration:
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+```
+
+Declare the callback instance that will receive the authentication result.
+
+```kotlin
+val callback = object : Callback<Credentials, AuthenticationException> {
+    override fun onFailure(exception: AuthenticationException) {
+        // Failure! Check the exception for details
+    }
+
+    override fun onSuccess(credentials: Credentials?) {
+        // Success! Access token and ID token are presents
+    }
+}
+```
+
+Finally, authenticate by showing the **Auth0 Universal Login**:
+
+```kotlin
+// Configure and launch the authentication
+WebAuthProvider.login(account)
+    .start(this, callback)
+```
+
+The callback will get invoked when the user returns to your application. There are a few scenarios where this may fail:
+
+* When the device cannot open the URL because it doesn't have any compatible browser application installed. You can check this scenario with `error.isBrowserAppNotAvailable`.
+* When the user manually closed the browser (e.g. pressing the back key). You can check this scenario with `error.isAuthenticationCanceled`.
+* When there was a server error. Check the received exception for details.
+
+If the `redirect` URL is not found in the **Allowed Callback URLs** of your Auth0 Application, the server will not make the redirection and the browser will remain open.
+
+#### Token Validation
+The ID token received as part of this web authentication flow is automatically verified following the [OpenID Connect specification](https://openid.net/specs/openid-connect-core-1_0.html).
+
+If you are a user of Auth0 Private Cloud with ["Custom Domains"](https://auth0.com/docs/custom-domains) still on the [legacy behavior](https://auth0.com/docs/private-cloud/private-cloud-migrations/migrate-private-cloud-custom-domains#background), you need to override the expected issuer to match your Auth0 domain before starting the authentication.
+
+```kotlin
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_CUSTOM_DOMAIN}")
+
+WebAuthProvider.login(account)
+    .withIdTokenVerificationIssuer("https://{YOUR_AUTH0_DOMAIN}/")
+    .start(this, callback)
+```
+
+##### A note about App Deep Linking:
+
+If you followed the configuration steps documented here, you may have noticed the default scheme used for the Callback URI is `https`. This works best for Android API 23 or newer if you're using [Android App Links](https://auth0.com/docs/applications/enable-android-app-links), but in previous Android versions this _may_ show the intent chooser dialog prompting the user to choose either your application or the browser. You can change this behaviour by using a custom unique scheme so that the OS opens directly the link with your app. Note that the schemes [can only have lowercase letters](https://developer.android.com/guide/topics/manifest/data-element).
+
+1. Update the `auth0Scheme` Manifest Placeholder on the `app/build.gradle` file or update the intent-filter declaration in the `AndroidManifest.xml` to use the new scheme.
+2. Update the **Allowed Callback URLs** in your [Auth0 Dashboard](https://manage.auth0.com/#/applications) application's settings.
+3. Call `withScheme()` in the `WebAuthProvider` builder passing the custom scheme you want to use.
+
+
+```kotlin
+WebAuthProvider.login(account)
+    .withScheme("myapp")
+    .start(this, callback)
+```
+
+
+#### Authenticate with any Auth0 connection
+
+The connection must first be enabled in the Auth0 dashboard for this Auth0 application.
+
+```kotlin
+WebAuthProvider.login(account)
+    .withConnection("twitter")
+    .start(this, callback)
+```
+
+#### Specify audience
+
+```kotlin
+WebAuthProvider.login(account)
+    .withAudience("https://{YOUR_AUTH0_DOMAIN}/api/v2/")
+    .start(this, callback)
+```
+
+The sample above requests tokens with the audience required to call the [Management API](https://auth0.com/docs/api/management/v2) endpoints.
+ 
+> Replace `{YOUR_AUTH0_DOMAIN}` with your actual Auth0 domain (i.e. `mytenant.auth0.com`). If you've set up the tenant to use "Custom Domains", use that value here.
+
+#### Specify scope
+
+```kotlin
+WebAuthProvider.login(account)
+    .withScope("openid profile email")
+    .start(this, callback)
+```
+
+> The default scope used is `openid`
+
+#### Specify Connection scope
+
+```kotlin
+WebAuthProvider.login(account)
+    .withConnectionScope("email", "profile", "calendar:read")
+    .start(this, callback)
+```
+
+#### Customize the Custom Tabs UI
+
+If the device where the app is running has a Custom Tabs compatible Browser, a Custom Tab will be preferred for the logout flow. You can customize the Page Title visibility, the Toolbar color, and the supported Browser applications by using the `CustomTabsOptions` class.
+ 
+```kotlin
+val ctOptions = CustomTabsOptions.newBuilder()
+    .withToolbarColor(R.color.ct_toolbar_color)
+    .showTitle(true)
+    .build()
+ 
+WebAuthProvider.login(account)
+    .withCustomTabsOptions(ctOptions)
+    .start(this, callback)
+```
+
+
+### Clearing the session
+
+To log the user out and clear the SSO cookies that the Auth0 Server keeps attached to your browser app, you need to call the [logout endpoint](https://auth0.com/docs/api/authentication?#logout). This can be done is a similar fashion to how you authenticated before: using the `WebAuthProvider` class.
+
+Make sure to [revisit that section](#authentication-with-universal-login) to configure the Manifest Placeholders if you still cannot authenticate successfully. The values set there are used to generate the URL that the server will redirect the user back to after a successful log out.
+
+In order for this redirection to happen, you must copy the **Allowed Callback URLs** value you added for authentication into the **Allowed Logout URLs** field in your [application settings](https://manage.auth0.com/#/applications). Both fields should have an URL with the following format:
+
+
+```
+https://{YOUR_AUTH0_DOMAIN}/android/{YOUR_APP_PACKAGE_NAME}/callback
+```
+
+Remember to replace `{YOUR_APP_PACKAGE_NAME}` with your actual application's package name, available in your `app/build.gradle` file as the `applicationId` value.
+
+
+Initialize the provider, this time calling the static method `logout`.
+
+```kotlin
+//Configure and launch the log out
+WebAuthProvider.logout(account)
+    .start(this, logoutCallback)
+
+//Declare the callback that will receive the result
+val logoutCallback = object: Callback<Void, AuthenticationException> {
+    override fun onFailure(exception: AuthenticationException) {
+        // Failure! Check the exception for details
+    }
+
+    override fun onSuccess(payload: Void?) {
+        // Success! The browser session was cleared
+    }
+}
+```
+
+The callback will get invoked when the user returns to your application. There are a few scenarios where this may fail:
+
+* When the device cannot open the URL because it doesn't have any compatible browser application installed. You can check this scenario with `error.isBrowserAppNotAvailable`.
+* When the user manually closed the browser (e.g. pressing the back key). You can check this scenario with `error.isAuthenticationCanceled`.
+
+If the `returnTo` URL is not found in the **Allowed Logout URLs** of your Auth0 Application, the server will not make the redirection and the browser will remain open.
+
+#### Changing the Return To URL scheme
+This configuration will probably match what you've done for the [authentication setup](#a-note-about-app-deep-linking).
+
+```kotlin
+WebAuthProvider.logout(account)
+    .withScheme("myapp")
+    .start(this, logoutCallback)
+```
+
+#### Customize the Custom Tabs UI
+
+If the device where the app is running has a Custom Tabs compatible Browser, a Custom Tab will be preferred for the logout flow. You can customize the Page Title visibility, the Toolbar color, and the supported Browser applications by using the `CustomTabsOptions` class.
+ 
+```kotlin
+val ctOptions = CustomTabsOptions.newBuilder()
+    .withToolbarColor(R.color.ct_toolbar_color)
+    .showTitle(true)
+    .build()
+ 
+WebAuthProvider.logout(account)
+    .withCustomTabsOptions(ctOptions)
+    .start(this, logoutCallback)
+```
+
+## Next steps
+
+### Learning resources
+
+Check out the [Android QuickStart Guide](https://auth0.com/docs/quickstart/native/android) to find out more about the Auth0.Android toolkit and explore our tutorials and sample projects.
+
+### Authentication API
+
+The client provides methods to authenticate the user against the Auth0 server.
+
+Create a new instance by passing the account:
+
+```kotlin
+val authentication = AuthenticationAPIClient(account)
+```
+
+**Note:** If your Auth0 account has the ["Bot Protection"](https://auth0.com/docs/anomaly-detection/bot-protection) feature enabled, your requests might be flagged for verification. Read how to handle this scenario on the [Bot Protection](#bot-protection) section.
+
+#### Login with database connection
+
+```kotlin
+authentication
+    .login("info@auth0.com", "a secret password", "my-database-connection")
+    .start(object: Callback<Credentials, AuthenticationException> {
+        override fun onFailure(exception: AuthenticationException) { }
+
+        override fun onSuccess(credentials: Credentials?) { }
+    })
+```
+
+> The default scope used is `openid`
+
+
+#### Login using MFA with One Time Password code
+
+This call requires the client to have the *MFA* Client Grant Type enabled. Check [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
+
+When you sign in to a multifactor authentication enabled connection using the `login` method, you receive an error standing that MFA is required for that user along with an `mfa_token` value. Use this value to call `loginWithOTP` and complete the MFA flow passing the One Time Password from the enrolled MFA code generator app.
+
+```kotlin
+authentication
+    .loginWithOTP("the mfa token", "123456")
+    .start(object: Callback<Credentials, AuthenticationException> {
+        override fun onFailure(exception: AuthenticationException) { }
+
+        override fun onSuccess(credentials: Credentials?) { }
+    })
+```
+
+
+
+#### Passwordless Login
+
+This feature requires your Application to have the *Passwordless OTP* enabled. See [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
+
+Passwordless it's a 2 steps flow:
+
+Step 1: Request the code
+
+```kotlin
+authentication
+    .passwordlessWithEmail("info@auth0.com", PasswordlessType.CODE, "my-passwordless-connection")
+    .start(object: Callback<Void, AuthenticationException> {
+        override fun onFailure(exception: AuthenticationException) { }
+
+        override fun onSuccess(payload: Void?) { }
+    })
+```
+
+> The default scope used is `openid`
+
+Step 2: Input the code
+
+```kotlin
+authentication
+    .loginWithEmail("info@auth0.com", "123456", "my-passwordless-connection")
+    .start(object: Callback<Credentials, AuthenticationException> {
+       override fun onFailure(exception: AuthenticationException) { }
+
+       override fun onSuccess(credentials: Credentials?) { }
+   })
+```
+
+
+#### Sign Up with database connection
+
+```kotlin
+authentication
+    .signUp("info@auth0.com", "a secret password", "my-database-connection")
+    .start(object: Callback<Credentials, AuthenticationException> {
+        override fun onFailure(exception: AuthenticationException) { }
+
+        override fun onSuccess(credentials: Credentials?) { }
+    })
+```
+
+
+#### Get user information
+
+```kotlin
+authentication
+   .userInfo("user access_token")
+   .start(object: Callback<UserProfile, AuthenticationException> {
+       override fun onFailure(exception: AuthenticationException) { }
+
+       override fun onSuccess(profile: UserProfile?) { }
+   })
+```
+
+
+#### Bot Protection
+If you are using the [Bot Protection](https://auth0.com/docs/anomaly-detection/bot-protection) feature and performing database login/signup via the Authentication API, you need to handle the `AuthenticationException#isVerificationRequired()` error. It indicates that the request was flagged as suspicious and an additional verification step is necessary to log the user in. That verification step is web-based, so you need to use Universal Login to complete it.
+
+```kotlin
+val email = "info@auth0.com"
+val password = "a secret password"
+val realm = "my-database-connection"
+
+val authentication = AuthenticationAPIClient(account)
+authentication.login(email, password, realm)
+    .start(object: Callback<Credentials, AuthenticationException> {
+        override fun onFailure(exception: AuthenticationException) {
+            if (exception.isVerificationRequired()) {
+                val params = mapOf("login_hint" to email) // So the user doesn't have to type it again
+                WebAuthProvider.login(account)
+                    .withConnection(realm)
+                    .withParameters(params)
+                    .start(LoginActivity.this, object: Callback<Credentials, AuthenticationException> {
+                        // You might already have a Callback instance defined
+
+                        override fun onFailure(exception: AuthenticationException) {
+                            // Handle error
+                        }
+
+                        override fun onSuccess(credentials: Credentials?) {
+                            // Handle WebAuth success
+                        }
+                    })
+            }
+            // Handle other errors
+        }
+
+        override fun onSuccess(credentials: Credentials?) {
+            // Handle API success
+        }
+    })
+```
+
+In the case of signup, you can add [an additional parameter](https://auth0.com/docs/universal-login/new-experience#signup) to make the user land directly on the signup page:
+
+```kotlin
+val params = mapOf(
+    "login_hint" to email, 
+    "screen_hint", "signup"
+)
+```
+
+Check out how to set up Universal Login in the [Authentication with Universal Login](#authentication-with-universal-login) section.
+
+### Management API
+
+The client provides a few methods to interact with the [Users Management API](https://auth0.com/docs/api/management/v2/#!/Users).
+
+Create a new instance passing the account and an access token with the Management API audience and the right scope:
+
+```kotlin
+val users = UsersAPIClient(account, "api access token")
+```
+
+#### Link users
+
+```kotlin
+users
+    .link("primary user id", "secondary user token")
+    .start(object: Callback<List<UserIdentity>, ManagementException> {
+    
+        override fun onFailure(exception: ManagementException) { }
+    
+        override fun onSuccess(identities: List<UserIdentity>?) { }
+    })
+```
+
+#### Unlink users
+
+```kotlin
+users
+    .unlink("primary user id", "secondary user id", "secondary provider")
+    .start(object: Callback<List<UserIdentity>, ManagementException> {
+    
+        override fun onFailure(exception: ManagementException) { }
+    
+        override fun onSuccess(identities: List<UserIdentity>?) { }
+    })
+```
+
+#### Get User Profile
+
+```kotlin
+users
+    .getProfile("user id")
+    .start(object: Callback<UserProfile, ManagementException> {
+    
+        override fun onFailure(exception: ManagementException) { }
+    
+        override fun onSuccess(identities: UserProfile?) { }
+    })
+```
+
+#### Update User Metadata
+
+```kotlin
+val metadata = mapOf(
+    "name" to listOf("My", "Name", "Is"),
+    "phoneNumber" to "1234567890"
+)
+
+users
+    .updateMetadata("user id", metadata)
+    .start(object: Callback<UserProfile, ManagementException> {
+    
+        override fun onFailure(exception: ManagementException) { }
+    
+        override fun onSuccess(identities: UserProfile?) { }
+    })
+```
+
+> In all the cases, the `user ID` parameter is the unique identifier of the auth0 account instance. i.e. in `google-oauth2|123456789` it would be the part after the '|' pipe: `123456789`.
+
+
+
+## Credentials Manager
+
+This library ships with two additional classes that help you manage the Credentials received during authentication.
+
+### Basic
+
+The basic version supports asking for `Credentials` existence, storing them and getting them back. If the credentials have expired and a refresh_token was saved, they are automatically refreshed. The class is called `CredentialsManager`.
+
+#### Usage
+1. **Instantiate the manager:**
+You'll need an `AuthenticationAPIClient` instance to renew the credentials when they expire and a `Storage` object. We provide a `SharedPreferencesStorage` class that makes use of `SharedPreferences` to create a file in the application's directory with **Context.MODE_PRIVATE** mode.
+
+```kotlin
+val authentication = AuthenticationAPIClient(account)
+val storage = SharedPreferencesStorage(this)
+val manager = CredentialsManager(authentication, storage)
+```
+
+2. **Save credentials:**
+The credentials to save **must have** `expires_in` and at least an `access_token` or `id_token` value. If one of the values is missing when trying to set the credentials, the method will throw a `CredentialsManagerException`. If you want the manager to successfully renew the credentials when expired you must also request the `offline_access` scope when logging in in order to receive a `refresh_token` value along with the rest of the tokens. i.e. Logging in with a database connection and saving the credentials:
+
+```kotlin
+authentication
+    .login("info@auth0.com", "a secret password", "my-database-connection")
+    .setScope("openid offline_access")
+    .start(object : Callback<Credentials, AuthenticationException> {
+        override fun onFailure(exception: AuthenticationException) {
+            // Error
+        }
+    
+        override fun onSuccess(credentials: Credentials?) {
+            //Save the credentials
+            manager.saveCredentials(credentials)
+        }
+    })
+```
+
+3. **Check credentials existence:**
+There are cases were you just want to check if a user session is still valid (i.e. to know if you should present the login screen or the main screen). For convenience, we include a `hasValidCredentials` method that can let you know in advance if a non-expired token is available without making an additional network call. The same rules of the `getCredentials` method apply:
+
+```kotlin
+val authenticated = manager.hasValidCredentials()
+```
+
+4. **Retrieve credentials:**
+Existing credentials will be returned if they are still valid, otherwise the `refresh_token` will be used to attempt to renew them. If the `expires_in` or both the `access_token` and `id_token` values are missing, the method will throw a `CredentialsManagerException`. The same will happen if the credentials have expired and there's no `refresh_token` available.
+
+> This method is not thread-safe, so if you're using _Refresh Token Rotation_ you should avoid calling this method concurrently (might result in more than one renew request being fired, and only the first one will succeed).
+
+```kotlin
+manager.getCredentials(object : Callback<Credentials, CredentialsManagerException> {
+   override fun onFailure(exception: CredentialsManagerException) {
+       // Error
+   }
+
+   override fun onSuccess(credentials: Credentials?) {
+       // Use the credentials
+   }
+})
+```
+
+
+5. **Clear credentials:**
+When you want to log the user out:
+
+```kotlin
+manager.clearCredentials()
+```
+
+
+### Encryption enforced
+
+This version adds encryption to the data storage. Additionally, in those devices where a Secure Lock Screen has been configured it can require the user to authenticate before letting them obtain the stored credentials. The class is called `SecureCredentialsManager`.
+
+
+#### Usage
+The usage is similar to the previous version, with the slight difference that the manager now requires a valid android `Context` as shown below:
+
+```kotlin
+val authentication = AuthenticationAPIClient(account)
+val storage = SharedPreferencesStorage(this)
+val manager = SecureCredentialsManager(this, authentication, storage)
+```
+
+#### Requiring Authentication
+
+You can require the user authentication to obtain credentials. This will make the manager prompt the user with the device's configured Lock Screen, which they must pass correctly in order to obtain the credentials. **This feature is only available on devices where the user has setup a secured Lock Screen** (PIN, Pattern, Password or Fingerprint).
+
+To enable authentication you must call the `requireAuthentication` method passing a valid _Activity_ context, a request code that represents the authentication call, and the title and description to display in the Lock Screen. As seen in the snippet below, you can leave these last two parameters with `null` to use the system default resources.
+
+```kotlin
+//You might want to define a constant with the Request Code
+companion object {
+    const val AUTH_REQ_CODE = 111
+}
+
+manager.requireAuthentication(this, AUTH_REQ_CODE, null, null)
+```
+
+When the above conditions are met and the manager requires the user authentication, it will use the activity context to launch a new activity and wait for its result in the `onActivityResult` method. Your activity must override this method and pass the request code and result code to the manager's `checkAuthenticationResult` method to verify if this request was successful or not.
+
+```kotlin
+public override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    if (manager.checkAuthenticationResult(requestCode, resultCode)) {
+        return
+    }
+    super.onActivityResult(requestCode, resultCode, data)
+}
+```
+
+If the manager consumed the event, it will return true and later invoke the callback's `onSuccess` with the decrypted credentials.
+
+
+#### Handling exceptions
+
+In the event that something happened while trying to save or retrieve the credentials, a `CredentialsManagerException` will be thrown. These are some of the expected failure scenarios:
+
+- Invalid Credentials format or values. e.g. when it's missing the `access_token`, the `id_token` or the `expires_at` values.
+- Tokens have expired but no `refresh_token` is available to perform a refresh credentials request.
+- Device's Lock Screen security settings have changed (e.g. the PIN code was changed). Even when `hasCredentials` returns true, the encryption keys will be deemed invalid and until `saveCredentials` is called again it won't be possible to decrypt any previously existing content, since they keys used back then are not the same as the new ones.
+- Device is not compatible with some of the algorithms required by the `SecureCredentialsManager` class. This is considered a catastrophic event and might happen when the OEM has modified the Android ROM removing some of the officially included algorithms. Nevertheless, it can be checked in the exception instance itself by calling `isDeviceIncompatible`. By doing so you can decide the fallback for storing the credentials, such as using the regular `CredentialsManager`.
+
+## FAQ
+
+* Why is the Android Lint _error_ `'InvalidPackage'` considered a _warning_?
+
+When building the project with `build`, an error appeared regarding an `invalid package` on the `okio` dependency. This snippet is in the `build.gradle` file so that the build runs fine:
+
+```gradle
+android {
+    //...
+    lintOptions {
+       warning 'InvalidPackage'
+    }
+}
+```
+
+ref: https://github.com/square/okio/issues/58#issuecomment-72672263
+
+* Why do I need to declare Manifest Placeholders for the Auth0 domain and scheme?
+
+The library internally declares a `RedirectActivity` in its Android Manifest file. While this approach prevents the developer from adding an activity declaration to their application's Android Manifest file, it requires the use of Manifest Placeholders.
+
+Alternatively, you can re-declare the `RedirectActivity` in the `AndroidManifest.xml` file with your own **intent-filter** so it overrides the library's default. If you do this then the `manifestPlaceholders` don't need to be set as long as the activity contains the `tools:node="replace"` like in the snippet below.
 
 ```xml
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
@@ -130,650 +688,24 @@ In your manifest inside your application's tag add the `RedirectActivity` declar
 </manifest>
 ```
 
-If you request a different scheme you must replace the above `android:scheme` property value and initialize the provider with the new scheme. Read [this section](#a-note-about-app-deep-linking) to learn more. 
-
-Finally, don't forget to add the internet permission.
-
-```xml
-<uses-permission android:name="android.permission.INTERNET" />
-```
+Recall that if you request a different scheme, you must replace the above `android:scheme` property value and initialize the provider with the new scheme. Read [this section](#a-note-about-app-deep-linking) to learn more. 
 
 
-> In versions 1.8.0 and before you had to define the **intent-filter** inside your activity to capture the result in the `onNewIntent` method and call `WebAuthProvider.resume()` with the received intent. This call is no longer required for versions greater than 1.8.0 as it's now done for you by the library.
+* Is the Web Authentication module setup optional?
 
+If you don't plan to use the _Web Authentication_ feature, you will notice that the compiler will still prompt you to provide the `manifestPlaceholders` values, since the `RedirectActivity` included in this library will require them, and the Gradle tasks won't be able to run without them. 
 
-Finally, authenticate by showing the **Auth0 Universal Login**:
-
-```java
-//Configure and launch the authentication
-WebAuthProvider.login(account)
-    .start(MainActivity.this, callback);
-
-//Declare the callback that will receive the result
-Callback<Credentials, AuthenticationException> callback = new Callback<Credentials, AuthenticationException>() {
-
-    @Override
-    public void onFailure(@NonNull AuthenticationException exception) {
-        //failed with an exception
-    }
-
-    @Override
-    public void onSuccess(@Nullable Credentials credentials) {
-        //succeeded!
-    }
-};
-```
-
-
-**Note:** The callback could be invoked from a background thread. If you need to update your UI, make sure to change to the UI thread using [Activity#runOnUiThread(Runnable)](https://developer.android.com/reference/android/app/Activity#runOnUiThread(java.lang.Runnable)).
-
-If you've followed the configuration steps, the authentication result will be redirected from the browser to your application and you'll receive it in the Callback.
-
-#### Token Validation
-The ID token received as part of this authentication flow is automatically verified following the [OpenID Connect specification](https://openid.net/specs/openid-connect-core-1_0.html).
-
-If you are a user of Auth0 Private Cloud with ["Custom Domains"](https://auth0.com/docs/custom-domains) still on the [legacy behavior](https://auth0.com/docs/private-cloud/private-cloud-migrations/migrate-private-cloud-custom-domains#background), you need to override the expected issuer to match your Auth0 domain before starting the authentication.
-
-```java
-Auth0 account = new Auth0("{YOUR_AUTH0_CLIENT_ID}", "{YOUR_CUSTOM_DOMAIN}");
-
-WebAuthProvider.login(account)
-    .withIdTokenVerificationIssuer("https://{YOUR_AUTH0_DOMAIN}/")
-    .start(MainActivity.this, callback);
-```
-
-#### Those who don't need Web Authentication in their app
-
-If you don't plan to use the _Web Authentication_ feature you will still be prompted to provide the `manifestPlaceholders` values since the `AuthenticationActivity` included in this library will require them and the Gradle tasks won't be able to run. Declare the activity manually with `tools:node="remove"` in your app's Android Manifest in order to make the manifest merger remove it from the final manifest file. Additionally, 2 more unused activities can be removed from the final APK by using the same process. A complete snippet to achieve this is:
+Re-declare the activity manually with `tools:node="remove"` in your app's Android Manifest in order to make the manifest merger remove it from the final manifest file. Additionally, one more unused activity can be removed from the final APK by using the same process. A complete snippet to achieve this is:
 
 ```xml
 <activity
     android:name="com.auth0.android.provider.AuthenticationActivity"
     tools:node="remove"/>
-<!--Optional: Remove RedirectActivity and WebAuthActivity -->
+<!-- Optional: Remove RedirectActivity -->
 <activity
     android:name="com.auth0.android.provider.RedirectActivity"
     tools:node="remove"/>
 ```
-
-
-##### A note about App Deep Linking:
-
-If you've followed this documents' configuration steps you've noticed that the default scheme used in the Callback URI is `https`. This works best for Android API 23 or newer if you're using [Android App Links](https://auth0.com/docs/applications/enable-android-app-links), but in previous Android versions this may show the intent chooser dialog prompting the user to choose either your application or the browser. You can change this behaviour by using a custom unique scheme so that the OS opens directly the link with your app.
-
-1. Update the `auth0Scheme` Manifest Placeholder on the `app/build.gradle` file or update the intent-filter declaration in the `AndroidManifest.xml` to use the new scheme.
-2. Update the **Allowed Callback URLs** in your [Auth0 Dashboard](https://manage.auth0.com/#/applications) application's settings.
-3. Call `withScheme()` passing the custom scheme you want to use.
-
-
-```java
-WebAuthProvider.login(account)
-    .withScheme("myapp")
-    .start(MainActivity.this, callback);
-```
-
-
-#### Authenticate with any Auth0 connection
-
-```java
-WebAuthProvider.login(account)
-    .withConnection("twitter")
-    .start(MainActivity.this, callback);
-```
-
-#### Specify audience
-
-The snippet below requests the "userinfo" audience in order to guarantee OIDC compliant responses from the server. This can also be achieved by flipping the "OIDC Conformant" switch on in the OAuth Advanced Settings of your application. For more information check [this documentation](https://auth0.com/docs/api-auth/intro#how-to-use-the-new-flows).
-
-```java
-WebAuthProvider.login(account)
-    .withAudience("https://{YOUR_AUTH0_DOMAIN}/userinfo")
-    .start(MainActivity.this, callback);
-```
-
-> Replace `{YOUR_AUTH0_DOMAIN}` with your actual Auth0 domain (i.e. `mytenant.auth0.com`). If you've set up the tenant to use "Custom Domains", use that value here.
-
-#### Specify scope
-
-```java
-WebAuthProvider.login(account)
-    .withScope("openid profile email")
-    .start(MainActivity.this, callback);
-```
-
-> The default scope used is `openid`
-
-#### Specify Connection scope
-
-```java
-WebAuthProvider.login(account)
-    .withConnectionScope("email", "profile", "calendar:read")
-    .start(MainActivity.this, callback);
-```
-
-
-#### Customize the Custom Tabs UI
-
-If the device where the app is running has a Custom Tabs compatible Browser, a Custom Tab will be preferred for the authentication flow. You can customize the Page Title visibility and the Toolbar color by using the `CustomTabsOptions` class.
- 
-```java
-CustomTabsOptions options = CustomTabsOptions.newBuilder()
-    .withToolbarColor(R.color.ct_toolbar_color)
-    .showTitle(true)
-    .build();
- 
-WebAuthProvider.login(account)
-    .withCustomTabsOptions(options)
-    .start(MainActivity.this, callback);
-```
-
-
-### Clearing the session
-
-To log the user out and clear the SSO cookies that the Auth0 Server keeps attached to your browser app, you need to call the [logout endpoint](https://auth0.com/docs/api/authentication?#logout). This can be done is a similar fashion to how you authenticated before: using the `WebAuthProvider` class.
-
-Make sure to [revisit that section](#authentication-with-universal-login) to configure the Manifest Placeholders if you still cannot authenticate successfully. The values set there are used to generate the URL that the server will redirect the user back to after a successful log out.
-
-In order for this redirection to happen, you must copy the **Allowed Callback URLs** value you added for authentication into the **Allowed Logout URLs** field in your [application settings](https://manage.auth0.com/#/applications). Both fields should have an URL with the following format:
-
-
-```
-https://{YOUR_AUTH0_DOMAIN}/android/{YOUR_APP_PACKAGE_NAME}/callback
-```
-
-Remember to replace `{YOUR_APP_PACKAGE_NAME}` with your actual application's package name, available in your `app/build.gradle` file as the `applicationId` value.
-
-
-
-Initialize the provider, this time calling the static method `logout`.
-
-```java
-//Configure and launch the log out
-WebAuthProvider.logout(account)
-    .start(MainActivity.this, logoutCallback);
-
-//Declare the callback that will receive the result
-Callback<Void, AuthenticationException> logoutCallback = new Callback<Void, AuthenticationException>() {
-    @Override
-    public void onFailure(@NonNull Auth0Exception exception) {
-        //failed with an exception
-    }
-
-    @Override
-    public void onSuccess(@Nullable Void payload) {
-        //succeeded!
-    }
-};
-```
-
-The callback will get invoked when the user returns to your application. If this is the result of being redirected back by the server, that would be considered a success. There are some scenarios in which this can fail:
-* When there is no browser application that can open a URL. The cause of the exception will be an instance of `ActivityNotFoundException`.
-* When the user closes the browser manually, e.g. by pressing the back key on their device.
-* When the `returnTo` URL is not found in the **Allowed Logout URLs** in your Auth0 application settings.
-
-**Note:** The callback could be invoked from a background thread. If you need to update your UI, make sure to change to the UI thread using [Activity#runOnUiThread(Runnable)](https://developer.android.com/reference/android/app/Activity#runOnUiThread(java.lang.Runnable)).
-
-#### Customize the Custom Tabs UI
-
-If the device where the app is running has a Custom Tabs compatible Browser, a Custom Tab will be preferred for the logout flow. You can customize the Page Title visibility and the Toolbar color by using the `CustomTabsOptions` class.
-
-```java
-CustomTabsOptions options = CustomTabsOptions.newBuilder()
-    .withToolbarColor(R.color.ct_toolbar_color)
-    .showTitle(true)
-    .build();
-
-WebAuthProvider.logout(account)
-    .withCustomTabsOptions(options)
-    .start(MainActivity.this, logoutCallback);
-```
-
-
-#### Changing the Return To URL scheme
-This configuration will probably match what you've done for the [authentication setup](#a-note-about-app-deep-linking).
-
-```java
-WebAuthProvider.logout(account)
-    .withScheme("myapp")
-    .start(MainActivity.this, logoutCallback);
-```
-
-
-## Next steps
-
-### Learning resources
-
-Check out the [Android QuickStart Guide](https://auth0.com/docs/quickstart/native/android) to find out more about the Auth0.Android toolkit and explore our tutorials and sample projects.
-
-### Authentication API
-
-The client provides methods to authenticate the user against Auth0 server.
-
-Create a new instance by passing the account:
-
-```java
-AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
-```
-
-**Note:** If your Auth0 account has the ["Bot Protection"](https://auth0.com/docs/anomaly-detection/bot-protection) feature enabled, your requests might be flagged for verification. Read how to handle this scenario on the [Bot Protection](#bot-protection) section.
-
-#### Login with database connection
-
-```java
-authentication
-    .login("info@auth0.com", "a secret password", "my-database-connection")
-    .start(new Callback<Credentials, AuthenticationException>() {
-        @Override
-        public void onSuccess(@Nullable Credentials payload) {
-            //Logged in!
-        }
-
-        @Override
-        public void onFailure(@NonNull AuthenticationException error) {
-            //Error!
-        }
-    });
-```
-
-> The default scope used is `openid`
-
-
-#### Login using MFA with One Time Password code
-
-This call requires the client to have the *MFA* Client Grant Type enabled. Check [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
-
-When you sign in to a multifactor authentication enabled connection using the `login` method, you receive an error standing that MFA is required for that user along with an `mfa_token` value. Use this value to call `loginWithOTP` and complete the MFA flow passing the One Time Password from the enrolled MFA code generator app.
-
-
-```java
-authentication
-    .loginWithOTP("the mfa token", "123456")
-    .start(new Callback<Credentials, AuthenticationException>() {
-        @Override
-        public void onSuccess(@Nullable Credentials payload) {
-            //Logged in!
-        }
-
-        @Override
-        public void onFailure(@NonNull AuthenticationException error) {
-            //Error!
-        }
-    });
-```
-
-
-
-#### Passwordless Login
-
-This feature requires your Application to have the *Passwordless OTP* enabled. See [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
-
-Passwordless it's a 2 steps flow:
-
-Step 1: Request the code
-
-```java
-authentication
-    .passwordlessWithEmail("info@auth0.com", PasswordlessType.CODE, "my-passwordless-connection")
-    .start(new Callback<Void, AuthenticationException>() {
-        @Override
-        public void onSuccess(Void payload) {
-            //Code sent!
-        }
-
-        @Override
-        public void onFailure(@NonNull AuthenticationException error) {
-            //Error!
-        }
-    });
-```
-
-> The default scope used is `openid`
-
-Step 2: Input the code
-
-```java
-authentication
-    .loginWithEmail("info@auth0.com", "123456", "my-passwordless-connection")
-    .start(new Callback<Credentials, AuthenticationException>() {
-        @Override
-        public void onSuccess(@Nullable Credentials payload) {
-            //Logged in!
-        }
-
-        @Override
-        public void onFailure(@NonNull AuthenticationException error) {
-            //Error!
-        }
-    });
-```
-
-
-#### Sign Up with database connection
-
-```java
-authentication
-    .signUp("info@auth0.com", "a secret password", "my-database-connection")
-    .start(new Callback<Credentials, AuthenticationException>() {
-        @Override
-        public void onSuccess(@Nullable Credentials payload) {
-            //Signed Up & Logged in!
-        }
-
-        @Override
-        public void onFailure(@NonNull AuthenticationException error) {
-            //Error!
-        }
-    });
-```
-
-
-#### Get user information
-
-```java
-authentication
-   .userInfo("user access_token")
-   .start(new Callback<UserProfile, AuthenticationException>() {
-       @Override
-       public void onSuccess(@Nullable UserProfile payload) {
-           //Got the profile!
-       }
-
-       @Override
-       public void onFailure(@NonNull AuthenticationException error) {
-           //Error!
-       }
-   });
-```
-
-
-#### Bot Protection
-If you are using the [Bot Protection](https://auth0.com/docs/anomaly-detection/bot-protection) feature and performing database login/signup via the Authentication API, you need to handle the `AuthenticationException#isVerificationRequired()` error. It indicates that the request was flagged as suspicious and an additional verification step is necessary to log the user in. That verification step is web-based, so you need to use Universal Login to complete it.
-
-```java
-final String email = "info@auth0.com";
-final String password = "a secret password";
-final String realm = "my-database-connection";
-
-AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
-authentication.login(email, password, realm)
-        .start(new Callback<Credentials, AuthenticationException>() {
-
-            @Override
-            public void onSuccess(@Nullable Credentials payload) {
-                // Handle API success
-            }
-
-            @Override
-            public void onFailure(@NonNull AuthenticationException error) {
-                if (error.isVerificationRequired()){
-                    Map<String, Object> params = new HashMap<>();
-                    params.put("login_hint", email); // So the user doesn't have to type it again
-                    WebAuthProvider.login(account)
-                            .withConnection(realm)
-                            .withParameters(params)
-                            .start(LoginActivity.this, new AuthCallback() {
-                                // You might already have an AuthCallback instance defined
-
-                                @Override
-                                public void onFailure(@NonNull Dialog dialog) {
-                                    // Error dialog available
-                                }
-
-                                @Override
-                                public void onFailure(AuthenticationException exception) {
-                                    // Error
-                                }
-
-                                @Override
-                                public void onSuccess(@NonNull Credentials credentials) {
-                                    // Handle WebAuth success
-                                }
-                            });
-                }
-            }
-        });
-```
-
-In the case of signup, you can add [an additional parameter](https://auth0.com/docs/universal-login/new-experience#signup) to make the user land directly on the signup page:
-
-```java
-params.put("screen_hint", "signup");
-```
-
-Check out how to set up Universal Login in the [Authentication with Universal Login](#authentication-with-universal-login) section.
-
-### Management API (Users)
-
-The client provides methods to link and unlink users account.
-
-Create a new instance by passing the account and the primary user token:
-
-```java
-Auth0 account = new Auth0("client id", "domain");
-UsersAPIClient users = new UsersAPIClient(account, "api token");
-```
-
-#### Link users
-
-```java
-users
-    .link("primary user id", "secondary user token")
-    .start(new Callback<List<UserIdentity>, ManagementException>() {
-        @Override
-        public void onSuccess(List<UserIdentity> payload) {
-            //Got the updated identities! Accounts linked.
-        }
-
-        @Override
-        public void onFailure(@NonNull ManagementException error) {
-            //Error!
-        }
-    });
-```
-
-#### Unlink users
-
-```java
-users
-    .unlink("primary user id", "secondary user id", "secondary provider")
-    .start(new Callback<List<UserIdentity>, ManagementException>() {
-        @Override
-        public void onSuccess(List<UserIdentity> payload) {
-            //Got the updated identities! Accounts linked.
-        }
-
-        @Override
-        public void onFailure(@NonNull ManagementException error) {
-            //Error!
-        }
-    });
-```
-
-#### Get User Profile
-
-```java
-users
-    .getProfile("user id")
-    .start(new Callback<UserProfile, ManagementException>() {
-        @Override
-        public void onSuccess(@Nullable UserProfile payload) {
-            //Profile received
-        }
-
-        @Override
-        public void onFailure(@NonNull ManagementException error) {
-            //Error!
-        }
-    });
-```
-
-#### Update User Metadata
-
-```java
-Map<String, Object> metadata = new HashMap<>();
-metadata.put("name", Arrays.asList("My", "Name", "Is"));
-metadata.put("phoneNumber", "1234567890");
-
-users
-    .updateMetadata("user id", metadata)
-    .start(new Callback<UserProfile, ManagementException>() {
-        @Override
-        public void onSuccess(@Nullable UserProfile payload) {
-            //User Metadata updated
-        }
-
-        @Override
-        public void onFailure(@NonNull ManagementException error) {
-            //Error!
-        }
-    });
-```
-
-> In all the cases, the `User ID` parameter is the unique identifier of the auth0 account instance. i.e. in `google-oauth2|123456789081523216417` it would be the part after the '|' pipe: `123456789081523216417`.
-
-
-
-## Credentials Manager
-
-This library ships with two additional classes that help you manage the Credentials received during authentication. Depending on the minimum API level that your application is targeting you may like to use a different implementation.
-
-### Basic
-
-The basic version supports asking for `Credentials` existence, storing them and getting them back. If the credentials have expired and a refresh_token was saved, they are automatically refreshed. The class is called `CredentialsManager`.
-
-#### Usage
-1. **Instantiate the manager:**
-You'll need an `AuthenticationAPIClient` instance to renew the credentials when they expire and a `Storage` object. We provide a `SharedPreferencesStorage` class that makes use of `SharedPreferences` to create a file in the application's directory with **Context.MODE_PRIVATE** mode.
-
-```java
-AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
-Storage storage = new SharedPreferencesStorage(this);
-CredentialsManager manager = new CredentialsManager(authentication, storage);
-```
-
-2. **Save credentials:**
-The credentials to save **must have** `expires_in` and at least an `access_token` or `id_token` value. If one of the values is missing when trying to set the credentials, the method will throw a `CredentialsManagerException`. If you want the manager to successfully renew the credentials when expired you must also request the `offline_access` scope when logging in in order to receive a `refresh_token` value along with the rest of the tokens. i.e. Logging in with a database connection and saving the credentials:
-
-```java
-authentication
-    .login("info@auth0.com", "a secret password", "my-database-connection")
-    .setScope("openid offline_access")
-    .start(new Callback<Credentials, AuthenticationException>() {
-        @Override
-        public void onSuccess(@Nullable Credentials payload) {
-            //Save the credentials
-            manager.saveCredentials(credentials);
-        }
-
-        @Override
-        public void onFailure(@NonNull AuthenticationException error) {
-            //Error!
-        }
-    });
-```
-
-3. **Check credentials existence:**
-There are cases were you just want to check if a user session is still valid (i.e. to know if you should present the login screen or the main screen). For convenience, we include a `hasValidCredentials` method that can let you know in advance if a non-expired token is available without making an additional network call. The same rules of the `getCredentials` method apply:
-
-```java
-boolean authenticated = manager.hasValidCredentials();
-```
-
-4. **Retrieve credentials:**
-Existing credentials will be returned if they are still valid, otherwise the `refresh_token` will be used to attempt to renew them. If the `expires_in` or both the `access_token` and `id_token` values are missing, the method will throw a `CredentialsManagerException`. The same will happen if the credentials have expired and there's no `refresh_token` available.
-
-> This method is not thread-safe, so if you're using _Refresh Token Rotation_ you should avoid calling this method concurrently (might result in more than one renew request being fired, and only the first one will succeed).
-
-```java
-manager.getCredentials(new Callback<Credentials, CredentialsManagerException>() {
-    @Override
-    public void onSuccess(@Nullable Credentials credentials){
-        //Use the Credentials
-    }
-
-    @Override
-    public void onFailure(@NonNull CredentialsManagerException error){
-        //Error!
-    }
-});
-```
-
-
-5. **Clear credentials:**
-When you want to log the user out:
-
-```java
-manager.clearCredentials();
-```
-
-
-### Encryption enforced
-
-This version expands the minimum version and adds encryption to the data storage. Additionally, in those devices where a Secure Lock Screen has been configured it can require the user authentication before letting them obtain the stored credentials. The class is called `SecureCredentialsManager`.
-
-
-#### Usage
-The usage is similar to the previous version, with the slight difference that the manager now requires a valid android `Context` as shown below:
-
-```java
-AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
-Storage storage = new SharedPreferencesStorage(this);
-SecureCredentialsManager manager = new SecureCredentialsManager(this, authentication, storage);
-```
-
-#### Requiring Authentication
-
-You can require the user authentication to obtain credentials. This will make the manager prompt the user with the device's configured Lock Screen, which they must pass correctly in order to obtain the credentials. **This feature is only available on devices where the user has setup a secured Lock Screen** (PIN, Pattern, Password or Fingerprint).
-
-To enable authentication you must call the `requireAuthentication` method passing a valid _Activity_ context, a Request Code that represents the authentication call, and the title and description to display in the LockScreen. As seen in the snippet below, you can leave these last two parameters with `null` to use the system default resources.
-
-```java
-//You might want to define a constant with the Request Code
-private static final int AUTH_REQ_CODE = 11;
-
-manager.requireAuthentication(this, AUTH_REQ_CODE, null, null);
-```
-
-When the above conditions are met and the manager requires the user authentication, it will use the activity context to launch a new activity for the result. The outcome of getting approved or rejected by the Lock Screen is given back to the activity in the `onActivityResult` method, which your activity must override to redirect the data to the manager using the `checkAuthenticationResult` method.
-
-```java
-@Override
-protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-    if (manager.checkAuthenticationResult(requestCode, resultCode)) {
-        return;
-    }
-    super.onActivityResult(requestCode, resultCode, data);
-}
-```
-
-The `checkAuthenticationResult` method will continue the retrieval of credentials on a successful authentication, and the decrypted credentials will be delivered to the callback passed on the `getCredentials` call.
-
-
-#### Handling exceptions
-
-In the event that something happened while trying to save or retrieve the credentials, a `CredentialsManagerException` will be thrown. These are some of the expected failure scenarios:
-
-- Invalid Credentials format or values. e.g. when it's missing the `access_token`, the `id_token` or the `expires_at` values.
-- Tokens have expired but no `refresh_token` is available to perform a refresh credentials request.
-- Device's Lock Screen security settings have changed (e.g. the PIN code was changed). Even when `hasCredentials` returns true, the encryption keys will be deemed invalid and until `saveCredentials` is called again it won't be possible to decrypt any previously existing content, since they keys used back then are not the same as the new ones.
-- Device is not compatible with some of the algorithms required by the `SecureCredentialsManager` class. This is considered a catastrophic event and might happen when the OEM has modified the Android ROM removing some of the officially included algorithms. Nevertheless, it can be checked in the exception instance itself by calling `isDeviceIncompatible`. By doing so you can decide the fallback for storing the credentials, such as using the regular `CredentialsManager`.
-
-## FAQ
-
-* Why is the Android Lint _error_ `'InvalidPackage'` considered a _warning_?
-
-When building the project with `build`, an error appeared regarding an `invalid package` on the `okio` dependency. This snippet is in the `build.gradle` file so that the build runs fine:
-
-```gradle
-android {
-    //...
-    lintOptions {
-       warning 'InvalidPackage'
-    }
-}
-```
-
-ref: https://github.com/square/okio/issues/58#issuecomment-72672263
 
 ## Proguard
 The rules should be applied automatically if your application is using `minifyEnabled = true`. If you want to include them manually check the [proguard directory](proguard).
