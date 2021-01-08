@@ -47,7 +47,7 @@ import java.security.PublicKey
 /**
  * API client for Auth0 Authentication API.
  * ```
- * val auth0 = Auth0("your_client_id", "your_domain")
+ * val auth0 = Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN")
  * val client = AuthenticationAPIClient(auth0)
  * ```
  *
@@ -62,6 +62,10 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     /**
      * Creates a new API client instance providing Auth0 account info and a custom Networking Client.
      *
+     * ```
+     * val auth0 = Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val client = AuthenticationAPIClient(auth0)
+     * ```
      * @param auth0            account information
      * @param networkingClient the networking client implementation
      */
@@ -96,7 +100,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * ```
      * client
      *     .login("{username or email}", "{password}", "{database connection name}")
-     *     .start(object : AuthenticationCallback<Credentials> {
+     *     .start(object : Callback<Credentials, AuthenticationException> {
      *         override fun onSuccess(payload: Credentials?) { }
      *         override fun onFailure(error: AuthenticationException) { }
      * })
@@ -127,7 +131,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      * ```
      * client.login("{username or email}", "{password}")
-     *     .start(object:  AuthenticationCallback<Credentials> {
+     *     .start(object:  Callback<Credentials, AuthenticationException> {
      *         override fun onSuccess(payload: Credentials?) { }
      *         override fun onFailure(error: AuthenticationException) { }
      * })
@@ -152,7 +156,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Requires your client to have the **MFA** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.* Example usage:
      *```
      * client.loginWithOTP("{mfa token}", "{one time password}")
-     *     .start(object : AuthenticationCallback<Credentials> {
+     *     .start(object : Callback<Credentials, AuthenticationException> {
      *         override fun onFailure(error: AuthenticationException) { }
      *         override fun onSuccess(payload: Credentials?) { }
      * })
@@ -179,7 +183,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      *
      * ```
      * client.loginWithNativeSocialToken("{subject token}", "{subject token type}")
-     *     .start(object: AuthenticationCallback<Credentials>() {
+     *     .start(object: Callback<Credentials, AuthenticationException>() {
      *         override fun onSuccess(payload: Credentials?) { }
      *         override fun onFailure(error: AuthenticationException) { }
      * })
@@ -217,7 +221,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      * ```
      * client.loginWithPhoneNumber("{phone number}", "{code}", "{passwordless connection name}")
-     *     .start(object: AuthenticationCallback<Credentials>() {
+     *     .start(object: Callback<Credentials, AuthenticationException>() {
      *         override fun onSuccess(payload: Credentials?) { }
      *         override fun onFailure(error: AuthenticationException) { }
      * })
@@ -253,7 +257,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      * ```
      * client.loginWithEmail("{email}", "{code}", "{passwordless connection name}")
-     *     .start(object: AuthenticationCallback<Credentials>() {
+     *     .start(object: Callback<Credentials, AuthenticationException>() {
      *         override fun onSuccess(payload: Credentials?) { }
      *         override fun onFailure(error: AuthenticationException) { }
      * })
@@ -566,7 +570,6 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * The authorization code received from the Auth0 server and the code verifier used
      * to generate the challenge sent to the /authorize call must be provided.
      * ```
-     * val client = AuthenticationAPIClient(Auth0("clientId", "domain"))
      * client
      *     .token("authorization code", "code verifier", "redirect_uri")
      *     .start(object: Callback<Credentials, AuthenticationException> {...})
