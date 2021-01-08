@@ -91,7 +91,7 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
      * Example usage:
      * ```
      * client.link("{auth0 primary user id}", "{user secondary token}")
-     *     .start(object: Callback<List<UserIdentity>, ManagementException>() {
+     *     .start(object: Callback<List<UserIdentity>, ManagementException> {
      *         override fun onSuccess(payload: List<UserIdentity>?) { }
      *         override fun onFailure(error: ManagementException) { }
      * })
@@ -127,7 +127,7 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
      * Example usage:
      * ```
      * client.unlink("{auth0 primary user id}", {auth0 secondary user id}, "{secondary provider}")
-     *     .start(object: Callback<List<UserIdentity>, ManagementException>() {
+     *     .start(object: Callback<List<UserIdentity>, ManagementException> {
      *         override fun onSuccess(payload: List<UserIdentity>?) { }
      *         override fun onFailure(error: ManagementException) {}
      * })
@@ -163,7 +163,7 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
      * Example usage:
      * ```
      * client.updateMetadata("{user id}", "{user metadata}")
-     *     .start(object: Callback<UserProfile, ManagementException>() {
+     *     .start(object: Callback<UserProfile, ManagementException> {
      *         override fun onSuccess(payload: UserProfile?) { }
      *         override fun onFailure(error: ManagementException) { }
      * })
@@ -195,7 +195,7 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
      * Example usage:
      * ```
      * client.getProfile("{user id}")
-     *     .start(object: Callback<UserProfile, ManagementException>() {
+     *     .start(object: Callback<UserProfile, ManagementException> {
      *         override fun onSuccess(payload: UserProfile?) { }
      *         override fun onFailure(error: ManagementException) { }
      * })
