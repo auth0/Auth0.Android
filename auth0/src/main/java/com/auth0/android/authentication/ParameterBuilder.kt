@@ -28,14 +28,13 @@ import java.util.*
 /**
  * Builder for Auth0 Authentication API parameters
  * You can build your parameters like this
- * <pre>
- * `Map<String, Object> parameters = ParameterBuilder.newBuilder()
+ * ```
+ * val parameters = ParameterBuilder.newBuilder()
  * .setClientId("{CLIENT_ID}")
  * .setConnection("{CONNECTION}")
  * .set("{PARAMETER_NAME}", "{PARAMETER_VALUE}")
- * .asDictionary();
-` *
-</pre> *
+ * .asDictionary()
+ * ```
  *
  * @see ParameterBuilder.newBuilder
  * @see ParameterBuilder.newAuthenticationBuilder
@@ -202,15 +201,9 @@ public class ParameterBuilder private constructor(parameters: Map<String, String
                 .setScope(SCOPE_OPENID)
         }
         /**
-         * Creates a new instance of the builder from some initial parameters.
-         *
-         * @param parameters initial parameters
-         * @return a new builder
-         */
-        /**
          * Creates a new instance of the builder.
-         * This builder wont have any default values
          *
+         * @param parameters an optional map of initial parameters
          * @return a new builder
          */
         @JvmStatic

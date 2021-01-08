@@ -31,8 +31,10 @@ import com.squareup.okhttp.HttpUrl
 /**
  * Represents your Auth0 account information (clientId &amp; domain),
  * and it's used to obtain clients for Auth0's APIs.
- * <pre>`Auth0 auth0 = new Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN");
-`</pre> *
+ *
+ * ```
+ * val auth0 = Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+ *```
  *
  * This SDK only supports OIDC-Conformant clients, and will use Auth0's current authentication pipeline.
  * For more information, please see the [OIDC adoption guide](https://auth0.com/docs/api-auth/tutorials/adoption).

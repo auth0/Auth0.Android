@@ -46,11 +46,10 @@ import java.security.PublicKey
 
 /**
  * API client for Auth0 Authentication API.
- * <pre>
- * `Auth0 auth0 = new Auth0("your_client_id", "your_domain");
- * AuthenticationAPIClient client = new AuthenticationAPIClient(auth0);
-` *
-</pre> *
+ * ```
+ * val auth0 = Auth0("your_client_id", "your_domain")
+ * val client = AuthenticationAPIClient(auth0)
+ * ```
  *
  * @see [Auth API docs](https://auth0.com/docs/auth-api)
  */
@@ -94,18 +93,14 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Log in a user with email/username and password for a connection/realm.
      * It will use the password-realm grant type for the `/oauth/token` endpoint
      * Example:
-     * <pre>
-     * `client
-     * .login("{username or email}", "{password}", "{database connection name}")
-     * .start(new Callback<Credentials, AuthenticationException>() {
-     * {}Override
-     * public void onSuccess(Credentials payload) { }
-     *
-     * {}Override
-     * public void onFailure(AuthenticationException error) { }
-     * });
-    ` *
-    </pre> *
+     * ```
+     * client
+     *     .login("{username or email}", "{password}", "{database connection name}")
+     *     .start(object : AuthenticationCallback<Credentials> {
+     *         override fun onSuccess(payload: Credentials?) { }
+     *         override fun onFailure(error: AuthenticationException) { }
+     * })
+     *```
      *
      * @param usernameOrEmail   of the user depending of the type of DB connection
      * @param password          of the user
@@ -128,19 +123,15 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     }
 
     /**
-     * Log in a user with email/username and password using the password grant and the default directory
+     * Log in a user with email/username and password using the password grant and the default directory.
      * Example usage:
-     * <pre>
-     * `client.login("{username or email}", "{password}")
-     * .start(new Callback<Credentials, AuthenticationException>() {
-     * {}Override
-     * public void onSuccess(Credentials payload) { }
-     *
-     * {}Override
-     * public void onFailure(AuthenticationException error) { }
-     * });
-    ` *
-    </pre> *
+     * ```
+     * client.login("{username or email}", "{password}")
+     *     .start(object:  AuthenticationCallback<Credentials> {
+     *         override fun onSuccess(payload: Credentials?) { }
+     *         override fun onFailure(error: AuthenticationException) { }
+     * })
+     *```
      *
      * @param usernameOrEmail of the user
      * @param password        of the user
@@ -159,17 +150,13 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Log in a user using the One Time Password code after they have received the 'mfa_required' error.
      * The MFA token tells the server the username or email, password and realm values sent on the first request.
      * Requires your client to have the **MFA** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.* Example usage:
-     * <pre>
-     * `client.loginWithOTP("{mfa token}", "{one time password}")
-     * .start(new Callback<Credentials, AuthenticationException>() {
-     * {}Override
-     * public void onSuccess(Credentials payload) { }
-     *
-     * {}Override
-     * public void onFailure(AuthenticationException error) { }
-     * });
-    ` *
-    </pre> *
+     *```
+     * client.loginWithOTP("{mfa token}", "{one time password}")
+     *     .start(object : AuthenticationCallback<Credentials> {
+     *         override fun onFailure(error: AuthenticationException) { }
+     *         override fun onSuccess(payload: Credentials?) { }
+     * })
+     *```
      *
      * @param mfaToken the token received in the previous [.login] response.
      * @param otp      the one time password code provided by the resource owner, typically obtained from an
@@ -189,17 +176,14 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Log in a user using a token obtained from a Native Social Identity Provider, such as Facebook, using ['\oauth\token' endpoint](https://auth0.com/docs/api/authentication#token-exchange-for-native-social)
      * The default scope used is 'openid'.
      * Example usage:
-     * <pre>
-     * `client.loginWithNativeSocialToken("{subject token}", "{subject token type}")
-     * .start(new Callback<Credentials, AuthenticationException>() {
-     * {}Override
-     * public void onSuccess(Credentials payload) { }
      *
-     * {}Override
-     * public void onFailure(AuthenticationException error) { }
-     * });
-    ` *
-    </pre> *
+     * ```
+     * client.loginWithNativeSocialToken("{subject token}", "{subject token type}")
+     *     .start(object: AuthenticationCallback<Credentials>() {
+     *         override fun onSuccess(payload: Credentials?) { }
+     *         override fun onFailure(error: AuthenticationException) { }
+     * })
+     * ```
      *
      * @param token     the subject token, typically obtained through the Identity Provider's SDK
      * @param tokenType the subject token type that is associated with this Identity Provider. e.g. 'http://auth0.com/oauth/token-type/facebook-session-access-token'
@@ -228,22 +212,16 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Log in a user using a phone number and a verification code received via SMS (Part of passwordless login flow)
      * The default scope used is 'openid'.
      *
-     *
      * Your Application must have the **Passwordless OTP** Grant Type enabled.
      *
-     *
      * Example usage:
-     * <pre>
-     * `client.loginWithPhoneNumber("{phone number}", "{code}", "{passwordless connection name}")
-     * .start(new Callback<Credentials, AuthenticationException>() {
-     * {}Override
-     * public void onSuccess(Credentials payload) { }
-     *
-     * {}@Override
-     * public void onFailure(AuthenticationException error) { }
-     * });
-    ` *
-    </pre> *
+     * ```
+     * client.loginWithPhoneNumber("{phone number}", "{code}", "{passwordless connection name}")
+     *     .start(object: AuthenticationCallback<Credentials>() {
+     *         override fun onSuccess(payload: Credentials?) { }
+     *         override fun onFailure(error: AuthenticationException) { }
+     * })
+     * ```
      *
      * @param phoneNumber       where the user received the verification code
      * @param verificationCode  sent by Auth0 via SMS
@@ -271,18 +249,15 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Log in a user using an email and a verification code received via Email (Part of passwordless login flow).
      * The default scope used is 'openid'.
      * Your Application must have the **Passwordless OTP** Grant Type enabled.
-     * Example usage:
-     * <pre>
-     * `client.loginWithEmail("{email}", "{code}", "{passwordless connection name}")
-     * .start(new Callback<Credentials, AuthenticationException>() {
-     * {}Override
-     * public void onSuccess(Credentials payload) { }
      *
-     * {}@Override
-     * public void onFailure(AuthenticationException error) { }
-     * });
-    ` *
-    </pre> *
+     * Example usage:
+     * ```
+     * client.loginWithEmail("{email}", "{code}", "{passwordless connection name}")
+     *     .start(object: AuthenticationCallback<Credentials>() {
+     *         override fun onSuccess(payload: Credentials?) { }
+     *         override fun onFailure(error: AuthenticationException) { }
+     * })
+     *```
      *
      * @param email             where the user received the verification code
      * @param verificationCode  sent by Auth0 via Email
@@ -309,17 +284,13 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     /**
      * Returns the information of the user associated with the given access_token.
      * Example usage:
-     * <pre>
-     * `client.userInfo("{access_token}")
-     * .start(new Callback<UserProfile, AuthenticationException>() {
-     * {}Override
-     * public void onSuccess(UserProfile payload) { }
-     *
-     * {}@Override
-     * public void onFailure(AuthenticationException error) { }
-     * });
-    ` *
-    </pre> *
+     * ```
+     * client.userInfo("{access_token}")
+     *     .start(object: Callback<UserProfile, AuthenticationException>() {
+     *         override fun onSuccess(payload: UserProfile?) { }
+     *         override fun onFailure(error: AuthenticationException) { }
+     * })
+     *```
      *
      * @param accessToken used to fetch it's information
      * @return a request to start
@@ -332,17 +303,13 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     /**
      * Creates a user in a DB connection using ['/dbconnections/signup' endpoint](https://auth0.com/docs/api/authentication#signup)
      * Example usage:
-     * <pre>
-     * `client.createUser("{email}", "{password}", "{username}", "{database connection name}")
-     * .start(new Callback<DatabaseUser, AuthenticationException>() {
-     * {}Override
-     * public void onSuccess(DatabaseUser payload) { }
-     *
-     * {}@Override
-     * public void onFailure(AuthenticationException error) { }
-     * });
-    ` *
-    </pre> *
+     * ```
+     * client.createUser("{email}", "{password}", "{username}", "{database connection name}")
+     *     .start(object: Callback<DatabaseUser, AuthenticationException>() {
+     *         override fun onSuccess(payload: DatabaseUser?) { }
+     *         override fun onFailure(error: AuthenticationException) { }
+     * })
+     * ```
      *
      * @param email      of the user and must be non null
      * @param password   of the user and must be non null
@@ -379,17 +346,13 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Creates a user in a DB connection using ['/dbconnections/signup' endpoint](https://auth0.com/docs/api/authentication#signup)
      * and then logs in the user.
      * Example usage:
-     * <pre>
-     * `client.signUp("{email}", "{password}", "{username}", "{database connection name}")
-     * .start(new Callback<Credentials, AuthenticationException>() {
-     * {}Override
-     * public void onSuccess(Credentials payload) {}
-     *
-     * {}Override
-     * public void onFailure(AuthenticationException error) {}
-     * });DefaultClient(auth0.connectTimeoutInSeconds)
-    ` *
-    </pre> *
+     * ```
+     * client.signUp("{email}", "{password}", "{username}", "{database connection name}")
+     *     .start(object: Callback<Credentials, AuthenticationException>() {
+     *         override fun onSuccess(payload: Credentials?) { }
+     *         override fun onFailure(error: AuthenticationException) { }
+     * })
+     *```
      *
      * @param email      of the user and must be non null
      * @param password   of the user and must be non null
@@ -412,17 +375,13 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     /**
      * Request a reset password using ['/dbconnections/change_password'](https://auth0.com/docs/api/authentication#change-password)
      * Example usage:
-     * <pre>
-     * `client.resetPassword("{email}", "{database connection name}")
-     * .start(new Callback<Void, AuthenticationException>() {
-     * {}Override
-     * public void onSuccess(Void payload) {}
-     *
-     * {}Override
-     * public void onFailure(AuthenticationException error) {}
-     * });
-    ` *
-    </pre> *
+     * ```
+     * client.resetPassword("{email}", "{database connection name}")
+     *     .start(object: Callback<Void, AuthenticationException>() {
+     *         override fun onSuccess(payload: Void?) { }
+     *         override fun onFailure(error: AuthenticationException) { }
+     * })
+     * ```
      *
      * @param email      of the user to request the password reset. An email will be sent with the reset instructions.
      * @param connection of the database to request the reset password on
@@ -449,17 +408,13 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Request the revoke of a given refresh_token. Once revoked, the refresh_token cannot be used to obtain new tokens.
      * Your Auth0 Application Type should be set to 'Native' and Token Endpoint Authentication Method must be set to 'None'.
      * Example usage:
-     * <pre>
-     * `client.revokeToken("{refresh_token}")
-     * .start(new Callback<Void, AuthenticationException>() {
-     * {}Override
-     * public void onSuccess(Void payload) {}
-     *
-     * {}Override
-     * public void onFailure(AuthenticationException error) {}
-     * });
-    ` *
-    </pre> *
+     * ```
+     * client.revokeToken("{refresh_token}")
+     *     .start(object: Callback<Void, AuthenticationException>() {
+     *         override fun onSuccess(payload: Void?) { }
+     *         override fun onFailure(error: AuthenticationException) { }
+     * })
+     * ```
      *
      * @param refreshToken the token to revoke
      * @return a request to start
@@ -484,18 +439,14 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * This method will use the /oauth/token endpoint with the 'refresh_token' grant, and the response will include an id_token and an access_token if 'openid' scope was requested when the refresh_token was obtained.
      * Additionally, if the application has Refresh Token Rotation configured, a new one-time use refresh token will also be included in the response.
      * Example usage:
-     * <pre>
-     * `client.renewAuth("{refresh_token}")
-     * .addParameter("scope", "openid profile email")
-     * .start(new Callback<Credentials, AuthenticationException>() {
-     * {}Override
-     * public void onSuccess(Credentials payload) { }
-     *
-     * {}@Override
-     * public void onFailure(AuthenticationException error) { }
-     * });
-    ` *
-    </pre> *
+     * ```
+     * client.renewAuth("{refresh_token}")
+     *     .addParameter("scope", "openid profile email")
+     *     .start(object: Callback<Credentials, AuthenticationException>() {
+     *         override fun onSuccess(payload: Credentials?) { }
+     *         override fun onFailure(error: AuthenticationException) { }
+     * })
+     * ```
      *
      * @param refreshToken used to fetch the new Credentials.
      * @return a request to start
@@ -521,17 +472,13 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Start a passwordless flow with an [Email](https://auth0.com/docs/api/authentication#get-code-or-link).
      * Your Application must have the **Passwordless OTP** Grant Type enabled.
      * Example usage:
-     * <pre>
-     * `client.passwordlessWithEmail("{email}", PasswordlessType.CODE, "{passwordless connection name}")
-     * .start(new Callback<Void, AuthenticationException>() {
-     * {}Override
-     * public void onSuccess(Void payload) {}
-     *
-     * {}Override
-     * public void onFailure(AuthenticationException error) {}
-     * });
-    ` *
-    </pre> *
+     * ```
+     * client.passwordlessWithEmail("{email}", PasswordlessType.CODE, "{passwordless connection name}")
+     *     .start(object: Callback<Void, AuthenticationException>() {
+     *         override onSuccess(payload: Void?) { }
+     *         override onFailure(error: AuthenticationException) { }
+     * })
+     * ```
      *
      * @param email            that will receive a verification code to use for login
      * @param passwordlessType indicate whether the email should contain a code, link or magic link (android &amp; iOS)
@@ -557,17 +504,13 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Start a passwordless flow with a [SMS](https://auth0.com/docs/api/authentication#get-code-or-link)
      * Your Application requires to have the **Passwordless OTP** Grant Type enabled.
      * Example usage:
-     * <pre>
-     * `client.passwordlessWithSms("{phone number}", PasswordlessType.CODE, "{passwordless connection name}")
-     * .start(new Callback<Void, AuthenticationException>() {
-     * {}Override
-     * public void onSuccess(Void payload) {}
-     *
-     * {}Override
-     * public void onFailure(AuthenticationException error) {}
-     * });
-    ` *
-    </pre> *
+     * ```
+     * client.passwordlessWithSms("{phone number}", PasswordlessType.CODE, "{passwordless connection name}")
+     *     .start(object: Callback<Void, AuthenticationException>() {
+     *         override fun onSuccess(payload: Void?) { }
+     *         override fun onFailure(error: AuthenticationException) { }
+     * })
+     * ```
      *
      * @param phoneNumber      where an SMS with a verification code will be sent
      * @param passwordlessType indicate whether the SMS should contain a code, link or magic link (android &amp; iOS)
@@ -622,13 +565,12 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Fetch the token information from Auth0, using the authorization_code grant type
      * The authorization code received from the Auth0 server and the code verifier used
      * to generate the challenge sent to the /authorize call must be provided.
-     * <pre>
-     * `AuthenticationAPIClient client = new AuthenticationAPIClient(new Auth0("clientId", "domain"));
+     * ```
+     * val client = AuthenticationAPIClient(Auth0("clientId", "domain"))
      * client
-     * .token("authorization code", "code verifier", "redirect_uri")
-     * .start(new Callback<Credentials> {...});
-    ` *
-    </pre> *
+     *     .token("authorization code", "code verifier", "redirect_uri")
+     *     .start(object: Callback<Credentials, AuthenticationException> {...})
+     * ```
      *
      * @param authorizationCode the authorization code received from the /authorize call.
      * @param codeVerifier      the code verifier used to generate the code challenge sent to /authorize.

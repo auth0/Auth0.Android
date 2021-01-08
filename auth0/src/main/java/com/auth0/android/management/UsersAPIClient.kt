@@ -42,11 +42,10 @@ import java.io.Reader
 
 /**
  * API client for Auth0 Management API.
- * <pre>
- * `Auth0 auth0 = new Auth0("your_client_id", "your_domain");
- * UsersAPIClient client = new UsersAPIClient(auth0);
-` *
-</pre> *
+ * ```
+ * val auth0 = Auth0("your_client_id", "your_domain")
+ * val client = UsersAPIClient(auth0)
+ * ```
  *
  * @see [Auth API docs](https://auth0.com/docs/api/management/v2)
  */
@@ -90,17 +89,13 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
     /**
      * Link a user identity calling ['/api/v2/users/:primaryUserId/identities'](https://auth0.com/docs/link-accounts#the-management-api) endpoint
      * Example usage:
-     * <pre>
-     * `client.link("{auth0 primary user id}", "{user secondary token}")
-     * .start(new Callback<List<UserIdentity>, ManagementException>() {
-     * {}Override
-     * public void onSuccess(List<UserIdentity> payload) {}
-     *
-     * {}Override
-     * public void onFailure(ManagementException error) {}
-     * });
-    ` *
-    </pre> *
+     * ```
+     * client.link("{auth0 primary user id}", "{user secondary token}")
+     *     .start(object: Callback<List<UserIdentity>, ManagementException>() {
+     *         override fun onSuccess(payload: List<UserIdentity>?) { }
+     *         override fun onFailure(error: ManagementException) { }
+     * })
+     * ```
      *
      * @param primaryUserId  of the identity to link
      * @param secondaryToken of the secondary identity obtained after login
@@ -130,17 +125,13 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
     /**
      * Unlink a user identity calling ['/api/v2/users/:primaryToken/identities/secondaryProvider/secondaryUserId'](https://auth0.com/docs/link-accounts#unlinking-accounts) endpoint
      * Example usage:
-     * <pre>
-     * `client.unlink("{auth0 primary user id}", {auth0 secondary user id}, "{secondary provider}")
-     * .start(new Callback<List<UserIdentity>, ManagementException>() {
-     * {}Override
-     * public void onSuccess(List<UserIdentity> payload) {}
-     *
-     * {}Override
-     * public void onFailure(ManagementException error) {}
-     * });
-    ` *
-    </pre> *
+     * ```
+     * client.unlink("{auth0 primary user id}", {auth0 secondary user id}, "{secondary provider}")
+     *     .start(object: Callback<List<UserIdentity>, ManagementException>() {
+     *         override fun onSuccess(payload: List<UserIdentity>?) { }
+     *         override fun onFailure(error: ManagementException) {}
+     * })
+     * ```
      *
      * @param primaryUserId     of the primary identity to unlink
      * @param secondaryUserId   of the secondary identity you wish to unlink from the main one.
@@ -170,17 +161,13 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
     /**
      * Update the user_metadata calling ['/api/v2/users/:userId'](https://auth0.com/docs/api/management/v2#!/Users/patch_users_by_id) endpoint
      * Example usage:
-     * <pre>
-     * `client.updateMetadata("{user id}", "{user metadata}")
-     * .start(new Callback<UserProfile, ManagementException>() {
-     * {}Override
-     * public void onSuccess(UserProfile payload) {}
-     *
-     * {}Override
-     * public void onFailure(ManagementException error) {}
-     * });
-    ` *
-    </pre> *
+     * ```
+     * client.updateMetadata("{user id}", "{user metadata}")
+     *     .start(object: Callback<UserProfile, ManagementException>() {
+     *         override fun onSuccess(payload: UserProfile?) { }
+     *         override fun onFailure(error: ManagementException) { }
+     * })
+     * ```
      *
      * @param userId       of the primary identity to unlink
      * @param userMetadata to merge with the existing one
@@ -206,17 +193,13 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
     /**
      * Get the User Profile calling ['/api/v2/users/:userId'](https://auth0.com/docs/api/management/v2#!/Users/get_users_by_id) endpoint
      * Example usage:
-     * <pre>
-     * `client.getProfile("{user id}")
-     * .start(new Callback<UserProfile, ManagementException>() {
-     * {}Override
-     * public void onSuccess(UserProfile payload) {}
-     *
-     * {}Override
-     * public void onFailure(ManagementException error) {}
-     * });
-    ` *
-    </pre> *
+     * ```
+     * client.getProfile("{user id}")
+     *     .start(object: Callback<UserProfile, ManagementException>() {
+     *         override fun onSuccess(payload: UserProfile?) { }
+     *         override fun onFailure(error: ManagementException) { }
+     * })
+     * ```
      *
      * @param userId identity of the user
      * @return a request to start
