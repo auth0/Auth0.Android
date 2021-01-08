@@ -241,7 +241,7 @@ WebAuthProvider.logout(account)
     .start(this, logoutCallback)
 
 //Declare the callback that will receive the result
-val logoutCallback = object: Callback<Void, AuthenticationException>() {
+val logoutCallback = object: Callback<Void, AuthenticationException> {
     override fun onFailure(exception: AuthenticationException) {
         // Failure! Check the exception for details
     }
@@ -410,7 +410,7 @@ authentication.login(email, password, realm)
                 WebAuthProvider.login(account)
                     .withConnection(realm)
                     .withParameters(params)
-                    .start(LoginActivity.this, object: Callback<Credentials, AuthenticationException>() {
+                    .start(LoginActivity.this, object: Callback<Credentials, AuthenticationException> {
                         // You might already have a Callback instance defined
 
                         override fun onFailure(exception: AuthenticationException) {
@@ -457,7 +457,7 @@ val users = UsersAPIClient(account, "api access token")
 ```kotlin
 users
     .link("primary user id", "secondary user token")
-    .start(object: Callback<List<UserIdentity>, ManagementException>() {
+    .start(object: Callback<List<UserIdentity>, ManagementException> {
     
         override fun onFailure(exception: ManagementException) { }
     
@@ -470,7 +470,7 @@ users
 ```kotlin
 users
     .unlink("primary user id", "secondary user id", "secondary provider")
-    .start(object: Callback<List<UserIdentity>, ManagementException>() {
+    .start(object: Callback<List<UserIdentity>, ManagementException> {
     
         override fun onFailure(exception: ManagementException) { }
     
