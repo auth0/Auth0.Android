@@ -23,7 +23,6 @@
  */
 package com.auth0.android.provider
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.util.Log
@@ -396,17 +395,17 @@ public object WebAuthProvider {
          * device does not support the necessary algorithms to support Proof of Key Exchange (PKCE)
          * (this is not expected).
          *
-         * @param activity context to run the authentication
+         * @param context context to run the authentication
          * @param callback to receive the parsed results
          * @see AuthenticationException.isBrowserAppNotAvailable
          * @see AuthenticationException.isPKCENotAvailable
          */
         public fun start(
-            activity: Activity,
+            context: Context,
             callback: Callback<Credentials, AuthenticationException>
         ) {
             resetManagerInstance()
-            if (!ctOptions.hasCompatibleBrowser(activity.packageManager)) {
+            if (!ctOptions.hasCompatibleBrowser(context.packageManager)) {
                 val ex = AuthenticationException(
                     "a0.browser_not_available",
                     "No compatible Browser application is installed."
@@ -423,11 +422,11 @@ public object WebAuthProvider {
             if (redirectUri == null) {
                 redirectUri = CallbackHelper.getCallbackUri(
                     scheme,
-                    activity.applicationContext.packageName,
+                    context.applicationContext.packageName,
                     account.getDomainUrl()
                 )
             }
-            manager.startAuthentication(activity, redirectUri!!, 110)
+            manager.startAuthentication(context, redirectUri!!, 110)
         }
 
         private companion object {

@@ -1,6 +1,6 @@
 package com.auth0.android.provider
 
-import android.app.Activity
+import android.content.Context
 import android.net.Uri
 import android.text.TextUtils
 import android.util.Base64
@@ -57,13 +57,13 @@ internal class OAuthManager(
         idTokenVerificationIssuer = if (TextUtils.isEmpty(issuer)) apiClient.baseURL else issuer
     }
 
-    fun startAuthentication(activity: Activity?, redirectUri: String, requestCode: Int) {
+    fun startAuthentication(context: Context, redirectUri: String, requestCode: Int) {
         addPKCEParameters(parameters, redirectUri, headers)
         addClientParameters(parameters, redirectUri)
         addValidationParameters(parameters)
         val uri = buildAuthorizeUri()
         this.requestCode = requestCode
-        AuthenticationActivity.authenticateUsingBrowser(activity!!, uri, ctOptions)
+        AuthenticationActivity.authenticateUsingBrowser(context, uri, ctOptions)
     }
 
     fun setHeaders(headers: Map<String, String>) {
