@@ -1,4 +1,4 @@
-# Auth0.Android (BETA)
+# Auth0.Android (v2 BETA)
 
 [![CircleCI](https://img.shields.io/circleci/project/github/auth0/Auth0.Android.svg?style=flat-square)](https://circleci.com/gh/auth0/Auth0.Android/tree/master)
 [![Coverage Status](https://img.shields.io/codecov/c/github/auth0/Auth0.Android/master.svg?style=flat-square)](https://codecov.io/github/auth0/Auth0.Android)
@@ -34,7 +34,7 @@ Open your app's `AndroidManifest.xml` file and add the following permission.
 
 ## Usage
 
-First create an instance of `Auth0` with your Application information
+First, create an instance of `Auth0` with your Application information
 
 ```kotlin
 val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
@@ -50,7 +50,7 @@ Alternatively, you can save your Application information in the `strings.xml` fi
 
 ```
 
-And then create a new Auth0 instance by passing an Android Context:
+You can then create a new Auth0 instance by passing an Android Context:
 
 ```kotlin
 val account = Auth0(context)
@@ -94,7 +94,7 @@ android {
 }
 ```
 
-It's a good practice to define reusable resources like `@string/com_auth0_domain` but you can also hard code the value in the file. The scheme value can be either `https` or a custom one. Read [this section](#a-note-about-app-deep-linking) to learn more.
+It's a good practice to define reusable resources like `@string/com_auth0_domain`, but you can also hard-code the value. The scheme value can be either `https` or a custom one. Read [this section](#a-note-about-app-deep-linking) to learn more.
 
 Add the internet permission.
 
@@ -130,7 +130,7 @@ The callback will get invoked when the user returns to your application. There a
 * When the user manually closed the browser (e.g. pressing the back key). You can check this scenario with `error.isAuthenticationCanceled`.
 * When there was a server error. Check the received exception for details.
 
-If the `redirect` URL is not found in the **Allowed Callback URLs**, the server will not make the redirection and the browser will remain open.
+If the `redirect` URL is not found in the **Allowed Callback URLs** of your Auth0 Application, the server will not make the redirection and the browser will remain open.
 
 #### Token Validation
 The ID token received as part of this web authentication flow is automatically verified following the [OpenID Connect specification](https://openid.net/specs/openid-connect-core-1_0.html).
@@ -147,7 +147,7 @@ WebAuthProvider.login(account)
 
 ##### A note about App Deep Linking:
 
-If you've followed this documents' configuration steps you've noticed that the default scheme used in the Callback URI is `https`. This works best for Android API 23 or newer if you're using [Android App Links](https://auth0.com/docs/applications/enable-android-app-links), but in previous Android versions this _may_ show the intent chooser dialog prompting the user to choose either your application or the browser. You can change this behaviour by using a custom unique scheme so that the OS opens directly the link with your app. Note that the schemes [can only have lowercase letters](https://developer.android.com/guide/topics/manifest/data-element).
+If you followed the configuration steps documented here, you may have noticed the default scheme used for the Callback URI is `https`. This works best for Android API 23 or newer if you're using [Android App Links](https://auth0.com/docs/applications/enable-android-app-links), but in previous Android versions this _may_ show the intent chooser dialog prompting the user to choose either your application or the browser. You can change this behaviour by using a custom unique scheme so that the OS opens directly the link with your app. Note that the schemes [can only have lowercase letters](https://developer.android.com/guide/topics/manifest/data-element).
 
 1. Update the `auth0Scheme` Manifest Placeholder on the `app/build.gradle` file or update the intent-filter declaration in the `AndroidManifest.xml` to use the new scheme.
 2. Update the **Allowed Callback URLs** in your [Auth0 Dashboard](https://manage.auth0.com/#/applications) application's settings.
@@ -257,7 +257,7 @@ The callback will get invoked when the user returns to your application. There a
 * When the device cannot open the URL because it doesn't have any compatible browser application installed. You can check this scenario with `error.isBrowserAppNotAvailable`.
 * When the user manually closed the browser (e.g. pressing the back key). You can check this scenario with `error.isAuthenticationCanceled`.
 
-If the `returnTo` URL is not found in the **Allowed Logout URLs**, the server will not make the redirection and the browser will remain open.
+If the `returnTo` URL is not found in the **Allowed Logout URLs** of your Auth0 Application, the server will not make the redirection and the browser will remain open.
 
 #### Changing the Return To URL scheme
 This configuration will probably match what you've done for the [authentication setup](#a-note-about-app-deep-linking).
@@ -688,12 +688,12 @@ Alternatively, you can re-declare the `RedirectActivity` in the `AndroidManifest
 </manifest>
 ```
 
-Remember that if you request a different scheme you must replace the above `android:scheme` property value and initialize the provider with the new scheme. Read [this section](#a-note-about-app-deep-linking) to learn more. 
+Recall that if you request a different scheme, you must replace the above `android:scheme` property value and initialize the provider with the new scheme. Read [this section](#a-note-about-app-deep-linking) to learn more. 
 
 
 * Is the Web Authentication module setup optional?
 
-If you don't plan to use the _Web Authentication_ feature you will notice that the compiler will still prompt you to provide the `manifestPlaceholders` values, since the `RedirectActivity` included in this library will require them and the Gradle tasks won't be able to run without them. 
+If you don't plan to use the _Web Authentication_ feature, you will notice that the compiler will still prompt you to provide the `manifestPlaceholders` values, since the `RedirectActivity` included in this library will require them, and the Gradle tasks won't be able to run without them. 
 
 Re-declare the activity manually with `tools:node="remove"` in your app's Android Manifest in order to make the manifest merger remove it from the final manifest file. Additionally, one more unused activity can be removed from the final APK by using the same process. A complete snippet to achieve this is:
 
