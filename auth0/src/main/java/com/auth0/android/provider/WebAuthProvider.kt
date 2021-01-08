@@ -310,12 +310,13 @@ public object WebAuthProvider {
 
         /**
          * Give a scope for this request.
+         * Regardless of the scopes passed, the "openid" scope is always enforced.
          *
          * @param scope to request.
          * @return the current builder instance
          */
         public fun withScope(scope: String): Builder {
-            values[KEY_SCOPE] = scope
+            values[OAuthManager.KEY_SCOPE] = scope
             return this
         }
 
@@ -434,14 +435,7 @@ public object WebAuthProvider {
 
         private companion object {
             private const val KEY_AUDIENCE = "audience"
-            private const val KEY_SCOPE = "scope"
             private const val KEY_CONNECTION_SCOPE = "connection_scope"
-            private const val DEFAULT_SCOPE = "openid"
-            private const val DEFAULT_SCHEME = "https"
-        }
-
-        init {
-            withScope(DEFAULT_SCOPE)
         }
     }
 }

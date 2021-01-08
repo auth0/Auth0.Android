@@ -191,7 +191,7 @@ WebAuthProvider.login(account)
     .start(this, callback)
 ```
 
-> The default scope used is `openid`
+> Regardless of the scopes passed, the `openid` scope is always enforced.
 
 #### Specify Connection scope
 

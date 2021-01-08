@@ -58,6 +58,7 @@ internal class OAuthManager(
     }
 
     fun startAuthentication(context: Context, redirectUri: String, requestCode: Int) {
+        addRequiredScope(parameters)
         addPKCEParameters(parameters, redirectUri, headers)
         addClientParameters(parameters, redirectUri)
         addValidationParameters(parameters)
@@ -217,6 +218,19 @@ internal class OAuthManager(
         return uri
     }
 
+    private fun addRequiredScope(parameters: MutableMap<String, String>) {
+        if (!parameters.containsKey(KEY_SCOPE)) {
+            parameters[KEY_SCOPE] = DEFAULT_SCOPE
+            return
+        }
+        val existingScopes = parameters[KEY_SCOPE]!!.split(" ")
+            .map { it.toLowerCase(Locale.ROOT) }
+        if (!existingScopes.contains(DEFAULT_SCOPE)) {
+            val requiredScopes = (existingScopes + DEFAULT_SCOPE).joinToString(separator = " ")
+            parameters[KEY_SCOPE] = requiredScopes
+        }
+    }
+
     private fun addPKCEParameters(
         parameters: MutableMap<String, String>,
         redirectUri: String,
@@ -263,7 +277,9 @@ internal class OAuthManager(
         const val KEY_NONCE = "nonce"
         const val KEY_MAX_AGE = "max_age"
         const val KEY_CONNECTION = "connection"
+        const val KEY_SCOPE = "scope"
         const val RESPONSE_TYPE_CODE = "code"
+        private const val DEFAULT_SCOPE = "openid"
         private const val ERROR_VALUE_INVALID_CONFIGURATION = "a0.invalid_configuration"
         private const val ERROR_VALUE_ACCESS_DENIED = "access_denied"
         private const val ERROR_VALUE_UNAUTHORIZED = "unauthorized"
@@ -317,7 +333,7 @@ internal class OAuthManager(
 
     init {
         headers = HashMap()
-        this.parameters = HashMap(parameters)
+        this.parameters = parameters.toMutableMap()
         this.parameters[KEY_RESPONSE_TYPE] = RESPONSE_TYPE_CODE
         apiClient = if (networkingClient == null) {
             // Delegate the creation of defaults to the constructor
