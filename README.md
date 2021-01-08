@@ -96,42 +96,6 @@ android {
 
 It's a good practice to define reusable resources like `@string/com_auth0_domain` but you can also hard code the value in the file. The scheme value can be either `https` or a custom one. Read [this section](#a-note-about-app-deep-linking) to learn more.
 
-Alternatively, you can declare the `RedirectActivity` in the `AndroidManifest.xml` file with your own **intent-filter** so it overrides the library's default. If you do this then the `manifestPlaceholders` don't need to be set as long as the activity contains the `tools:node="replace"` like in the snippet below.
-
-In your manifest inside your application's tag add the `RedirectActivity` declaration:
-
-```xml
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="your.app.package">
-    <application android:theme="@style/AppTheme">
-
-        <!-- ... -->
-
-        <activity
-            android:name="com.auth0.android.provider.RedirectActivity"
-            tools:node="replace">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data
-                    android:host="@string/com_auth0_domain"
-                    android:pathPrefix="/android/${applicationId}/callback"
-                    android:scheme="https" />
-            </intent-filter>
-        </activity>
-
-        <!-- ... -->
-
-    </application>
-</manifest>
-```
-
-If you request a different scheme you must replace the above `android:scheme` property value and initialize the provider with the new scheme. Read [this section](#a-note-about-app-deep-linking) to learn more. 
-
 Add the internet permission.
 
 ```xml
@@ -180,21 +144,6 @@ WebAuthProvider.login(account)
     .withIdTokenVerificationIssuer("https://{YOUR_AUTH0_DOMAIN}/")
     .start(this, callback)
 ```
-
-#### Those who don't need Web Authentication in their app
-
-If you don't plan to use the _Web Authentication_ feature you will still be prompted to provide the `manifestPlaceholders` values since the `AuthenticationActivity` included in this library will require them and the Gradle tasks won't be able to run without them. Re-declare the activity manually with `tools:node="remove"` in your app's Android Manifest in order to make the manifest merger remove it from the final manifest file. Additionally, one more unused activity can be removed from the final APK by using the same process. A complete snippet to achieve this is:
-
-```xml
-<activity
-    android:name="com.auth0.android.provider.AuthenticationActivity"
-    tools:node="remove"/>
-<!-- Optional: Remove RedirectActivity -->
-<activity
-    android:name="com.auth0.android.provider.RedirectActivity"
-    tools:node="remove"/>
-```
-
 
 ##### A note about App Deep Linking:
 
@@ -702,6 +651,61 @@ android {
 ```
 
 ref: https://github.com/square/okio/issues/58#issuecomment-72672263
+
+* Why do I need to declare Manifest Placeholders for the Auth0 domain and scheme?
+
+The library internally declares a `RedirectActivity` in its Android Manifest file. While this approach prevents the developer from adding an activity declaration to their application's Android Manifest file, it requires the use of Manifest Placeholders.
+
+Alternatively, you can re-declare the `RedirectActivity` in the `AndroidManifest.xml` file with your own **intent-filter** so it overrides the library's default. If you do this then the `manifestPlaceholders` don't need to be set as long as the activity contains the `tools:node="replace"` like in the snippet below.
+
+```xml
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="your.app.package">
+    <application android:theme="@style/AppTheme">
+
+        <!-- ... -->
+
+        <activity
+            android:name="com.auth0.android.provider.RedirectActivity"
+            tools:node="replace">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="@string/com_auth0_domain"
+                    android:pathPrefix="/android/${applicationId}/callback"
+                    android:scheme="https" />
+            </intent-filter>
+        </activity>
+
+        <!-- ... -->
+
+    </application>
+</manifest>
+```
+
+Remember that if you request a different scheme you must replace the above `android:scheme` property value and initialize the provider with the new scheme. Read [this section](#a-note-about-app-deep-linking) to learn more. 
+
+
+* Is the Web Authentication module setup optional?
+
+If you don't plan to use the _Web Authentication_ feature you will notice that the compiler will still prompt you to provide the `manifestPlaceholders` values, since the `RedirectActivity` included in this library will require them and the Gradle tasks won't be able to run without them. 
+
+Re-declare the activity manually with `tools:node="remove"` in your app's Android Manifest in order to make the manifest merger remove it from the final manifest file. Additionally, one more unused activity can be removed from the final APK by using the same process. A complete snippet to achieve this is:
+
+```xml
+<activity
+    android:name="com.auth0.android.provider.AuthenticationActivity"
+    tools:node="remove"/>
+<!-- Optional: Remove RedirectActivity -->
+<activity
+    android:name="com.auth0.android.provider.RedirectActivity"
+    tools:node="remove"/>
+```
 
 ## Proguard
 The rules should be applied automatically if your application is using `minifyEnabled = true`. If you want to include them manually check the [proguard directory](proguard).
