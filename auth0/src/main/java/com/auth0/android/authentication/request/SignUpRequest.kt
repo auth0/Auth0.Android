@@ -51,19 +51,16 @@ public class SignUpRequest
      * To set user metadata you have to wrap your custom properties in a map containing
      * a field `user_metadadata`:
      *
-     * <pre>
-     * `// Define your custom fields
-     * Map<String, Object> metadata = new HashMap<>();
-     * metadata.put("key", value);
+     * ```
+     * // Define your custom fields
+     * val metadata = mapOf("key"  to "value")
      *
      * // Define the sign up parameters, adding the user_metadata
-     * Map<String, Object> params = new HashMap<>();
-     * params.put("user_metadata", metadata);
+     * val params = mapOf("user_metadata", "metadata")
      *
      * // Set the parameters in your request
      * signUpRequest.addSignUpParameters(params);
-    ` *
-    </pre> *
+     * ```
      *
      * @param parameters sent with the request and must be non-null
      * @return itself
