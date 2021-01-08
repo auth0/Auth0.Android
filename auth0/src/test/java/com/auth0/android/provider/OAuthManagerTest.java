@@ -1,32 +1,16 @@
 package com.auth0.android.provider;
 
-import com.auth0.android.Auth0;
 import com.auth0.android.authentication.AuthenticationException;
 
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.function.ThrowingRunnable;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 
 
 @RunWith(RobolectricTestRunner.class)
 public class OAuthManagerTest {
-
-    @Mock
-    Auth0 account;
-    @Mock
-    AuthCallback callback;
-    @Mock
-    CustomTabsOptions ctOptions;
-
-    @Before
-    public void setUp() {
-        MockitoAnnotations.initMocks(this);
-    }
 
     @Test
     public void shouldHaveValidState() {
