@@ -42,8 +42,7 @@ As a result, the following interfaces have been removed:
 
 `AuthenticationAPIClient` contains many changes to the return type of methods as a result. The full changes can be found below, but in summary:
 
-- Any method that returned a `ParameterizableRequest` now returns a `Request`.
-- Any method that returned a `TokenRequest` now returns a `Request`.
+- Any methods that returned a `ParameterizableRequest`, `TokenRequest`, or `DatabaseConnectionRequest, now returns a `Request`.
 - Any method that returned a `AuthRequest` now returns an `AuthenticationRequest`.
 
 If you are using the return type of any of these methods directly, you will need to change your code to expect the type as documented above. If you are chaining a call to `start` or `execute` to make the request, no changes are required.
@@ -63,7 +62,7 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 - The `com.auth0.android.result.Delegation` class has been removed. This was used as the result of the request to the [/delegation](https://auth0.com/docs/api/authentication#delegation) Authentication API legacy endpoint, disabled as of June 2017.
 - The `com.auth0.android.authentication.request.DelegationRequest` class has been removed. This was used to represent the request to the legacy Authentication API [/delegation](https://auth0.com/docs/api/authentication#delegation) endpoint, disabled as of June 2017.
 - The `com.auth0.android.util.Telemetry` class has been renamed to `com.auth0.android.util.Auth0UserAgent`.
-- The `com.auth0.android.request.AuthorizableRequest` class has been removed. You can achieve the same result using the `addHeader("Authorization", "Bearer TOKEN_VALUE")`.
+- The `com.auth0.android.request.AuthorizableRequest` class has been removed. You can achieve the same result using `addHeader("Authorization", "Bearer {TOKEN_VALUE}")`.
 - The `com.auth0.android.authentication.request.TokenRequest` class has been removed. The ability to set a Code Verifier, and any request headers and parameters has been moved to the `com.auth0.android.request.Request` interface.
 - The `com.auth0.android.authentication.request.DatabaseConnectionRequest` class has been removed. The ability to set any request headers and parameters has been moved to the `com.auth0.android.request.Request` interface.
 
@@ -75,35 +74,31 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 - `ParameterBuilder.ACCESS_TOKEN_KEY` has been removed.
 - `ResponseType.CODE`, `ResponseType.ID_TOKEN`, and `ResponseType.ACCESS_TOKEN` have been removed.
 
-### Class and Interface changes
+### Classes and Interfaces changed
 
 - `SignupRequest` now implements `AuthenticationRequest` instead of the now-removed `AuthRequest`
 - `AuthorizableRequest` now extends `Request` instead of the now-removed `ParameterizableRequest`
 - `BaseCallback` has been deprecated; use `Callback` instead.
 
-### Constructor changes
+### Constructors changed
 
-- `AuthenticationAPIClient` can no longer be constructed from a `Context`. Use Use `AuthenticationAPIClient(client: Auth0)` instead. You can create an instance of `Auth0` using a `Context`.
-- `UsersAPIClient` can no longer be constructed from a `Context`. Use UsersAPIClient(client: Auth0, token: String)` instead. You can create an instance of `Auth0` using a `Context`.
+- `AuthenticationAPIClient` can no longer be constructed from a `Context`. Use `AuthenticationAPIClient(auth0: Auth0)` instead. You can create an instance of `Auth0` using a `Context`.
+- `UsersAPIClient` can no longer be constructed from a `Context`. Use UsersAPIClient(auth0: Auth0, token: String)` instead. You can create an instance of `Auth0` using a `Context`.
 - `SignupRequest` now requires the second parameter to be an `AuthenticationRequest`.
 - `ProfileRequest` now requires an `AuthenticationRequest` and a `Request<UserProfile, AuthenticationException>`.
 
 ### Methods removed or changed
 
-#### `Auth0` removals and changes
+#### `Auth0` methods removed
 
-- `setOIDCConformant(boolean enabled)` has been removed. The SDK now only supports OIDC-Conformant applications.
-- `isOIDCConformant()` has been removed. The SDK now only supports OIDC-Conformant applications.
+- `setOIDCConformant(boolean enabled)` and `isOIDCConformant()` have been removed. The SDK now only supports OIDC-Conformant applications.
 - `doNotSendTelemetry()` has been removed. There is no replacement.
 
-#### `AuthenticationAPIClient` removals and changes
+#### `AuthenticationAPIClient` methods removed or changed
 
 Methods and classes specific to calling any [Authentication APIs](https://auth0.com/docs/api/authentication) categorized as Legacy have been removed in v2. The following methods have been removed:
 
-- `delegation()`. Support for Legacy Authentication API endpoints have been removed.
-- `delegationWithIdToken("{ID-TOKEN}")`. Support for Legacy Authentication API endpoints have been removed.
-- `delegationWithRefreshToken("{REFRESH-TOKEN}")`. Support for Legacy Authentication API endpoints have been removed.
-- `delegationWithIdToken("{ID-TOKEN}", "{API-TYPE}}")`. Support for Legacy Authentication API endpoints have been removed.
+- `delegation()`, `delegationWithIdToken("{ID-TOKEN}")`, `delegationWithRefreshToken("{REFRESH-TOKEN}")`, and `delegationWithIdToken("{ID-TOKEN}", "{API-TYPE}}")`. Support for Legacy Authentication API endpoints have been removed.
 - `loginWithOAuthAccessToken("{TOKEN}", {CONNECTION})`. For selected social providers, you can use `loginWithNativeSocialToken("{TOKEN}", "{TOKEN-TYPE}")` instead.
 - `tokenInfo("{ID-TOKEN}")`. Use `userInfo("{ACCESS-TOKEN}")` instead.
 
@@ -134,35 +129,35 @@ Methods that returned a `TokenRequest` now return a `Request`:
 
 - `token("{AUTHORIZATION-CODE}", "{CODE-VERIFIER}", "{REDIRECT-URI}")`
 
-#### AuthenticationRequest removals and changes
+#### AuthenticationRequest methods removed
 
 - `addAuthenticationParameters(parameters)` has been removed. Use `addParameters(parameters)` instead.
-- `setDevice("{DEVICE}")`. Use `addParameter("{DEVICE}", "{VALUE}")` instead.
+- `setDevice("{DEVICE}")`. Use `addParameter("device", "{VALUE}")` instead.
 
-#### `WebAuthProvider.Builder` removals and changes
+#### `WebAuthProvider.Builder` methods removed
 
 - `useCodeGrant(boolean useCodeGrant)`. There is no replacement; only Code + PKCE flow supported in v2.
-- `useBrowser(boolean useBrowser)`. There is no replacement; Google no longer supports WebView authentication.
-- `useFullscreen(boolean useFullscreen)`. There is no replacement; Google no longer supports WebView authentication.
+- `useBrowser(boolean useBrowser)`. There is no replacement; this library no longer supports WebView authentication.
+- `useFullscreen(boolean useFullscreen)`. There is no replacement; this library no longer supports WebView authentication.
 - `withResponseType(@ResponseType int type)`. There is no replacement; only Code + PKCE flow supported in v2.
 - `start(activity: Activity, callback: AuthCallback, requestCode: Int)` has been removed. Use `start(activity: Activity, callback: Callback<Credentials, AuthenticationException>)` instead.
 
-#### WebAuthProvider removals and changes
+#### WebAuthProvider.LogoutBuilder methods removed
+
+- `start(context: Context, callback: VoidCallback)`. Use `start(context: Context, callback: Callback<Void, AuthenticationException>)` instead.
+
+#### WebAuthProvider methods removed
 
 - `init(account: Auth0)` has been removed. Use `login(account: Auth0)` instead.
 - `init(context: Context)` has been removed. Use `login(account: Auth0)` instead.
 - `resume(requestCode: Int, resultCode: Int, intent: Intent)` has been removed. Use `resume(intent: Intent)` instead.
 - `init(account: Auth0)` has been removed. Use `login(account: Auth0)` instead.
 - 
-#### ParameterBuilder
+#### ParameterBuilder methods removed
 
-- `setDevice("{DEVICE}")` has been removed. Use `set("{DEVICE}", "{VALUE}")` instead.
+- `setDevice("{DEVICE}")` has been removed. Use `set("device", "{VALUE}")` instead.
 
-#### WebAuthProvider.LogoutBuilder
-
-- `public void start(@NonNull Context context, @NonNull VoidCallback callback)`. Use `public void start(@NonNull Context context, @NonNull Callback<Void, AuthenticationException> callback)` instead.
-
-#### UsersAPIClient
+#### UsersAPIClient methods changed
 
 Methods that returned a `ParameterizableRequest` now return a `Request`:
 
@@ -171,7 +166,7 @@ Methods that returned a `ParameterizableRequest` now return a `Request`:
 - `updateMetadata("{USER-ID}", userMetadata)`
 - `getProfile("{USER-ID}")`
 
-#### RequestFactory
+#### RequestFactory methods removed or changed
 
 The `RequestFactory` class contains methods to facilitate making HTTP requests, including the serialization and deserialization of the JSON request body and response. As part of the `com.auth0.android.request.internal` package, it is not intended for public use, but as a public type the summary of changes are documented below.
 
@@ -180,11 +175,11 @@ The `RequestFactory` class contains methods to facilitate making HTTP requests, 
 - All request methods are now lower-cased (e.g., `POST()` -> `post()`).
 - The `authenticationPOST` method was removed without a replacement, as all `Request` instances can be parameterized with any headers as needed.
 
-#### ProfileRequest
+#### ProfileRequest methods changed
 
 - The `addParameters` method now requires the value to be Map of String to String, instead of String to Object (`addParameters(mapOf("key" to "val"))`)
 
-#### SignUpRequest
+#### SignUpRequest methods changed
 
 Methods that set parameters now requires the value to be a Map of String to String, instead of String to Object:
 
@@ -192,4 +187,4 @@ Methods that set parameters now requires the value to be a Map of String to Stri
 - `addSignupParameters(mapOf("key" to "val"))`
 - `addParameters(mapOf("key" to "val"))`
 
-Additioonally, `setDevice("device")` was removed. Use `addParameter("device", "value")` instead.
+Additionally, `setDevice("device")` was removed. Use `addParameter("device", "{VALUE}")` instead.
