@@ -4,12 +4,13 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import com.auth0.android.Auth0
-import com.auth0.android.Auth0Exception
+import com.auth0.android.authentication.AuthenticationException
+import com.auth0.android.callback.Callback
 import java.util.*
 
 internal class LogoutManager(
     private val account: Auth0,
-    private val callback: VoidCallback,
+    private val callback: Callback<Void, AuthenticationException>,
     returnToUrl: String,
     ctOptions: CustomTabsOptions
 ) : ResumableManager() {
@@ -23,8 +24,10 @@ internal class LogoutManager(
 
     public override fun resume(result: AuthorizeResult): Boolean {
         if (result.isCanceled) {
-            val exception =
-                Auth0Exception("The user closed the browser app so the logout was cancelled.", null)
+            val exception = AuthenticationException(
+                AuthenticationException.ERROR_VALUE_AUTHENTICATION_CANCELED,
+                "The user closed the browser app so the logout was cancelled."
+            )
             callback.onFailure(exception)
         } else {
             callback.onSuccess(null)

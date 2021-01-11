@@ -152,13 +152,15 @@ public object WebAuthProvider {
 
         /**
          * Request the user session to be cleared. When successful, the callback will get invoked.
-         * An error is raised if there are no browser applications installed in the device.
+         * An error is raised if there are no browser applications installed in the device or if
+         * the user closed the browser before completing the logout.
          *
          * @param context  to run the log out
          * @param callback to invoke when log out is successful
          * @see AuthenticationException.isBrowserAppNotAvailable
+         * @see AuthenticationException.isAuthenticationCanceled
          */
-        public fun start(context: Context, callback: VoidCallback) {
+        public fun start(context: Context, callback: Callback<Void, AuthenticationException>) {
             resetManagerInstance()
             if (!ctOptions.hasCompatibleBrowser(context.packageManager)) {
                 val ex = AuthenticationException(
@@ -393,12 +395,13 @@ public object WebAuthProvider {
          * Request user Authentication. The result will be received in the callback.
          * An error is raised if there are no browser applications installed in the device, or if
          * device does not support the necessary algorithms to support Proof of Key Exchange (PKCE)
-         * (this is not expected).
+         * (this is not expected), or if the user closed the browser before completing the authentication.
          *
          * @param context context to run the authentication
          * @param callback to receive the parsed results
          * @see AuthenticationException.isBrowserAppNotAvailable
          * @see AuthenticationException.isPKCENotAvailable
+         * @see AuthenticationException.isAuthenticationCanceled
          */
         public fun start(
             context: Context,

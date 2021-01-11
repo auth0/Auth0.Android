@@ -195,7 +195,8 @@ public class AuthenticationException : Auth0Exception {
     public val isLoginRequired: Boolean
         get() = "login_required" == code
 
-    private companion object {
+    internal companion object {
+        internal const val ERROR_VALUE_AUTHENTICATION_CANCELED = "a0.authentication_canceled"
         private const val ERROR_KEY = "error"
         private const val CODE_KEY = "code"
         private const val DESCRIPTION_KEY = "description"

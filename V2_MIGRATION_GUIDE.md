@@ -172,6 +172,10 @@ The ability to make requests to the [/delegation](https://auth0.com/docs/api/aut
 - `public void start(@NonNull Activity activity, @NonNull AuthCallback callback, int requestCode)`. Use `public void start(@NonNull Activity activity, @NonNull Callback<Credentials, AuthenticationException> callback)` instead.
 - `public Builder withResponseType(@ResponseType int type)`. There is no replacement; only Code + PKCE flow supported in v2.
 
+#### WebAuthProvider.LogoutBuilder
+
+- `public void start(@NonNull Context context, @NonNull VoidCallback callback)`. Use `public void start(@NonNull Context context, @NonNull Callback<Void, AuthenticationException> callback)` instead.
+
 #### UsersAPIClient
 
 - `public ParameterizableRequest<List<UserIdentity>, ManagementException> link(@NonNull String primaryUserId, @NonNull String secondaryToken)`. Use `public Request<List<UserIdentity>, ManagementException> link(@NonNull String primaryUserId, @NonNull String secondaryToken)` instead.
