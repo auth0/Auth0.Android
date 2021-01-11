@@ -8,7 +8,6 @@ import android.os.Parcelable
 import androidx.test.espresso.intent.matcher.IntentMatchers
 import androidx.test.espresso.intent.matcher.UriMatchers
 import com.auth0.android.Auth0
-import com.auth0.android.Auth0Exception
 import com.auth0.android.MockAuth0
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
@@ -60,11 +59,10 @@ public class WebAuthProviderTest {
     private lateinit var callback: Callback<Credentials, AuthenticationException>
 
     @Mock
-    private lateinit var voidCallback: VoidCallback
+    private lateinit var voidCallback: Callback<Void, AuthenticationException>
     private lateinit var activity: Activity
     private lateinit var account: Auth0
 
-    private val auth0ExceptionCaptor: KArgumentCaptor<Auth0Exception> = argumentCaptor()
     private val authExceptionCaptor: KArgumentCaptor<AuthenticationException> = argumentCaptor()
     private val intentCaptor: KArgumentCaptor<Intent> = argumentCaptor()
     private val credentialsCaptor: KArgumentCaptor<Credentials> = argumentCaptor()
@@ -2326,13 +2324,13 @@ public class WebAuthProviderTest {
         //null data translates to result canceled
         val intent = createAuthIntent(null)
         Assert.assertTrue(resume(intent))
-        verify(voidCallback).onFailure(auth0ExceptionCaptor.capture())
+        verify(voidCallback).onFailure(authExceptionCaptor.capture())
         MatcherAssert.assertThat(
-            auth0ExceptionCaptor.firstValue,
+            authExceptionCaptor.firstValue,
             `is`(notNullValue())
         )
         MatcherAssert.assertThat(
-            auth0ExceptionCaptor.firstValue.message,
+            authExceptionCaptor.firstValue.getDescription(),
             `is`("The user closed the browser app so the logout was cancelled.")
         )
         assertThat(

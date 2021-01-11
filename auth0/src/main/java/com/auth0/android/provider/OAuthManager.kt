@@ -78,7 +78,7 @@ internal class OAuthManager(
         if (result.isCanceled) {
             //User cancelled the authentication
             val exception = AuthenticationException(
-                ERROR_VALUE_AUTHENTICATION_CANCELED,
+                AuthenticationException.ERROR_VALUE_AUTHENTICATION_CANCELED,
                 "The user closed the browser app and the authentication was canceled."
             )
             callback.onFailure(exception)
@@ -265,7 +265,6 @@ internal class OAuthManager(
         const val KEY_CONNECTION = "connection"
         const val RESPONSE_TYPE_CODE = "code"
         private const val ERROR_VALUE_INVALID_CONFIGURATION = "a0.invalid_configuration"
-        private const val ERROR_VALUE_AUTHENTICATION_CANCELED = "a0.authentication_canceled"
         private const val ERROR_VALUE_ACCESS_DENIED = "access_denied"
         private const val ERROR_VALUE_UNAUTHORIZED = "unauthorized"
         private const val ERROR_VALUE_LOGIN_REQUIRED = "login_required"

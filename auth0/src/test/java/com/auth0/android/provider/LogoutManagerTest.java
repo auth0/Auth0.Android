@@ -1,7 +1,8 @@
 package com.auth0.android.provider;
 
 import com.auth0.android.Auth0;
-import com.auth0.android.Auth0Exception;
+import com.auth0.android.authentication.AuthenticationException;
+import com.auth0.android.callback.Callback;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -26,7 +27,7 @@ public class LogoutManagerTest {
     @Mock
     Auth0 account;
     @Mock
-    VoidCallback callback;
+    Callback<Void, AuthenticationException> callback;
     @Mock
     CustomTabsOptions customTabsOptions;
 
@@ -41,10 +42,11 @@ public class LogoutManagerTest {
         AuthorizeResult result = mock(AuthorizeResult.class);
         when(result.isCanceled()).thenReturn(true);
         manager.resume(result);
-        ArgumentCaptor<Auth0Exception> exceptionCaptor = ArgumentCaptor.forClass(Auth0Exception.class);
+        ArgumentCaptor<AuthenticationException> exceptionCaptor = ArgumentCaptor.forClass(AuthenticationException.class);
         verify(callback).onFailure(exceptionCaptor.capture());
         assertThat(exceptionCaptor.getValue(), is(notNullValue()));
-        assertThat(exceptionCaptor.getValue().getMessage(), is("The user closed the browser app so the logout was cancelled."));
+        assertThat(exceptionCaptor.getValue().getCode(), is("a0.authentication_canceled"));
+        assertThat(exceptionCaptor.getValue().getDescription(), is("The user closed the browser app so the logout was cancelled."));
     }
 
     @Test
