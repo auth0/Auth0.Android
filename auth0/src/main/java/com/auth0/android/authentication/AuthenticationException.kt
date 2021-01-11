@@ -143,7 +143,11 @@ public class AuthenticationException : Auth0Exception {
         get() = "a0.invalid_configuration" == code
 
     // When a user closes the browser app and in turn, cancels the authentication
+    @Deprecated("This property can refer to both log in and log out actions.", replaceWith = ReplaceWith("isCanceled"))
     public val isAuthenticationCanceled: Boolean
+        get() = isCanceled
+
+    public val isCanceled: Boolean
         get() = "a0.authentication_canceled" == code
 
     /// When MFA code is required to authenticate
