@@ -129,7 +129,7 @@ Methods that returned a `TokenRequest` now return a `Request`:
 
 - `token("{AUTHORIZATION-CODE}", "{CODE-VERIFIER}", "{REDIRECT-URI}")`
 
-#### AuthenticationRequest methods removed
+#### `AuthenticationRequest` methods removed
 
 - `addAuthenticationParameters(parameters)` has been removed. Use `addParameters(parameters)` instead.
 - `setDevice("{DEVICE}")`. Use `addParameter("device", "{VALUE}")` instead.
@@ -142,22 +142,22 @@ Methods that returned a `TokenRequest` now return a `Request`:
 - `withResponseType(@ResponseType int type)`. There is no replacement; only Code + PKCE flow supported in v2.
 - `start(activity: Activity, callback: AuthCallback, requestCode: Int)` has been removed. Use `start(activity: Activity, callback: Callback<Credentials, AuthenticationException>)` instead.
 
-#### WebAuthProvider.LogoutBuilder methods removed
+#### `WebAuthProvider.LogoutBuilder` methods removed
 
 - `start(context: Context, callback: VoidCallback)`. Use `start(context: Context, callback: Callback<Void, AuthenticationException>)` instead.
 
-#### WebAuthProvider methods removed
+#### `WebAuthProvider` methods removed
 
 - `init(account: Auth0)` has been removed. Use `login(account: Auth0)` instead.
 - `init(context: Context)` has been removed. Use `login(account: Auth0)` instead.
 - `resume(requestCode: Int, resultCode: Int, intent: Intent)` has been removed. Use `resume(intent: Intent)` instead.
 - `init(account: Auth0)` has been removed. Use `login(account: Auth0)` instead.
 - 
-#### ParameterBuilder methods removed
+#### `ParameterBuilder` methods removed
 
 - `setDevice("{DEVICE}")` has been removed. Use `set("device", "{VALUE}")` instead.
 
-#### UsersAPIClient methods changed
+#### `UsersAPIClient` methods changed
 
 Methods that returned a `ParameterizableRequest` now return a `Request`:
 
@@ -166,7 +166,7 @@ Methods that returned a `ParameterizableRequest` now return a `Request`:
 - `updateMetadata("{USER-ID}", userMetadata)`
 - `getProfile("{USER-ID}")`
 
-#### RequestFactory methods removed or changed
+#### `RequestFactory` methods removed or changed
 
 The `RequestFactory` class contains methods to facilitate making HTTP requests, including the serialization and deserialization of the JSON request body and response. As part of the `com.auth0.android.request.internal` package, it is not intended for public use, but as a public type the summary of changes are documented below.
 
@@ -175,11 +175,11 @@ The `RequestFactory` class contains methods to facilitate making HTTP requests, 
 - All request methods are now lower-cased (e.g., `POST()` -> `post()`).
 - The `authenticationPOST` method was removed without a replacement, as all `Request` instances can be parameterized with any headers as needed.
 
-#### ProfileRequest methods changed
+#### `ProfileRequest` methods changed
 
 - The `addParameters` method now requires the value to be Map of String to String, instead of String to Object (`addParameters(mapOf("key" to "val"))`)
 
-#### SignUpRequest methods changed
+#### `SignUpRequest` methods changed
 
 Methods that set parameters now requires the value to be a Map of String to String, instead of String to Object:
 
