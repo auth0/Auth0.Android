@@ -409,6 +409,15 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
+    public fun shouldHaveCanceled() {
+        values[CODE_KEY] = "a0.authentication_canceled"
+        val ex = AuthenticationException(
+            values
+        )
+        MatcherAssert.assertThat(ex.isCanceled, CoreMatchers.`is`(true))
+    }
+
+    @Test
     public fun shouldHavePasswordLeaked() {
         values[CODE_KEY] = "password_leaked"
         val ex = AuthenticationException(
