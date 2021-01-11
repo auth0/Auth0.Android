@@ -187,11 +187,11 @@ The sample above requests tokens with the audience required to call the [Managem
 
 ```kotlin
 WebAuthProvider.login(account)
-    .withScope("openid profile email")
+    .withScope("openid profile email read:users")
     .start(this, callback)
 ```
 
-> The default scope used is `openid`
+> The default scope used is `openid profile email`. Regardless of the scopes passed here, the `openid` scope is always enforced.
 
 #### Specify Connection scope
 
@@ -313,7 +313,7 @@ authentication
     })
 ```
 
-> The default scope used is `openid`
+> The default scope used is `openid profile email`
 
 
 #### Login using MFA with One Time Password code
@@ -352,7 +352,7 @@ authentication
     })
 ```
 
-> The default scope used is `openid`
+> The default scope used is `openid profile email`
 
 Step 2: Input the code
 
@@ -537,7 +537,7 @@ The credentials to save **must have** `expires_in` and at least an `access_token
 ```kotlin
 authentication
     .login("info@auth0.com", "a secret password", "my-database-connection")
-    .setScope("openid offline_access")
+    .setScope("openid email profile offline_access")
     .start(object : Callback<Credentials, AuthenticationException> {
         override fun onFailure(exception: AuthenticationException) {
             // Error

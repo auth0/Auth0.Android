@@ -289,7 +289,7 @@ public class WebAuthProviderTest {
         val uri =
             intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
-        MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("scope", "openid"))
+        MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("scope", "openid profile email"))
     }
 
     @Test
@@ -320,7 +320,7 @@ public class WebAuthProviderTest {
         val uri =
             intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
-        MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("scope", "profile super_scope"))
+        MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("scope", "profile super_scope openid"))
     }
 
     @Test
@@ -348,7 +348,7 @@ public class WebAuthProviderTest {
         val uri =
             intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
-        MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("scope", "profile super_scope"))
+        MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("scope", "profile super_scope openid"))
     }
 
     //connection scope
