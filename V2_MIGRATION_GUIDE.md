@@ -42,7 +42,7 @@ As a result, the following interfaces have been removed:
 
 `AuthenticationAPIClient` contains many changes to the return type of methods as a result. The full changes can be found below, but in summary:
 
-- Any methods that returned a `ParameterizableRequest`, `TokenRequest`, or `DatabaseConnectionRequest, now returns a `Request`.
+- Any methods that returned a `ParameterizableRequest`, `TokenRequest`, or `DatabaseConnectionRequest`, now return a `Request`.
 - Any method that returned a `AuthRequest` now returns an `AuthenticationRequest`.
 
 If you are using the return type of any of these methods directly, you will need to change your code to expect the type as documented above. If you are chaining a call to `start` or `execute` to make the request, no changes are required.
