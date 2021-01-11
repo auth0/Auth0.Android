@@ -225,8 +225,8 @@ internal class OAuthManager(
         }
         val existingScopes = parameters[KEY_SCOPE]!!.split(" ")
             .map { it.toLowerCase(Locale.ROOT) }
-        if (!existingScopes.contains(DEFAULT_SCOPE)) {
-            val requiredScopes = (existingScopes + DEFAULT_SCOPE).joinToString(separator = " ")
+        if (!existingScopes.contains(REQUIRED_SCOPE)) {
+            val requiredScopes = (existingScopes + REQUIRED_SCOPE).joinToString(separator = " ")
             parameters[KEY_SCOPE] = requiredScopes
         }
     }
@@ -279,7 +279,8 @@ internal class OAuthManager(
         const val KEY_CONNECTION = "connection"
         const val KEY_SCOPE = "scope"
         const val RESPONSE_TYPE_CODE = "code"
-        private const val DEFAULT_SCOPE = "openid"
+        private const val DEFAULT_SCOPE = "openid profile email"
+        private const val REQUIRED_SCOPE = "openid"
         private const val ERROR_VALUE_INVALID_CONFIGURATION = "a0.invalid_configuration"
         private const val ERROR_VALUE_ACCESS_DENIED = "access_denied"
         private const val ERROR_VALUE_UNAUTHORIZED = "unauthorized"

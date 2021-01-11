@@ -309,7 +309,7 @@ public object WebAuthProvider {
         }
 
         /**
-         * Give a scope for this request.
+         * Give a scope for this request. The default scope used is "openid profile email".
          * Regardless of the scopes passed, the "openid" scope is always enforced.
          *
          * @param scope to request.
