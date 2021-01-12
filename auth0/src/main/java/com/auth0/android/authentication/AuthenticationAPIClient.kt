@@ -39,7 +39,7 @@ import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
 import com.auth0.android.result.UserProfile
 import com.google.gson.Gson
-import com.squareup.okhttp.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import java.io.IOException
 import java.io.Reader
 import java.security.PublicKey
@@ -194,7 +194,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @return a request to configure and start that will yield [Credentials]
      */
     public fun loginWithNativeSocialToken(token: String, tokenType: String): AuthenticationRequest {
-        val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(OAUTH_PATH)
             .addPathSegment(TOKEN_PATH)
             .build()
@@ -328,7 +328,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         username: String? = null,
         connection: String
     ): Request<DatabaseUser, AuthenticationException> {
-        val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(DB_CONNECTIONS_PATH)
             .addPathSegment(SIGN_UP_PATH)
             .build()
@@ -395,7 +395,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         email: String,
         connection: String
     ): Request<Void, AuthenticationException> {
-        val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(DB_CONNECTIONS_PATH)
             .addPathSegment(CHANGE_PASSWORD_PATH)
             .build()
@@ -428,7 +428,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             .setClientId(clientId)
             .set(TOKEN_KEY, refreshToken)
             .asDictionary()
-        val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(OAUTH_PATH)
             .addPathSegment(REVOKE_PATH)
             .build()
@@ -461,7 +461,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             .setRefreshToken(refreshToken)
             .setGrantType(ParameterBuilder.GRANT_TYPE_REFRESH_TOKEN)
             .asDictionary()
-        val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(OAUTH_PATH)
             .addPathSegment(TOKEN_PATH)
             .build()
@@ -542,7 +542,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @return a request to configure and start
      */
     private fun passwordless(): Request<Void, AuthenticationException> {
-        val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(PASSWORDLESS_PATH)
             .addPathSegment(START_PATH)
             .build()
@@ -592,7 +592,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             .set(REDIRECT_URI_KEY, redirectUri)
             .set("code_verifier", codeVerifier)
             .asDictionary()
-        val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(OAUTH_PATH)
             .addPathSegment(TOKEN_PATH)
             .build()
@@ -611,7 +611,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @return a request to obtain the JSON Web Keys associated with this Auth0 account.
      */
     public fun fetchJsonWebKeys(): Request<Map<String, PublicKey>, AuthenticationException> {
-        val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(WELL_KNOWN_PATH)
             .addPathSegment(JWKS_FILE_PATH)
             .build()
@@ -622,7 +622,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     }
 
     private fun loginWithToken(parameters: Map<String, String>): AuthenticationRequest {
-        val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(OAUTH_PATH)
             .addPathSegment(TOKEN_PATH)
             .build()
@@ -639,7 +639,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     }
 
     private fun profileRequest(): Request<UserProfile, AuthenticationException> {
-        val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(USER_INFO_PATH)
             .build()
         val userProfileAdapter: JsonAdapter<UserProfile> = GsonAdapter(

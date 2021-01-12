@@ -1,12 +1,11 @@
-package com.auth0.android.request.kt
+package com.auth0.android.request
 
 import android.net.Uri
-import com.auth0.android.request.*
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.squareup.okhttp.mockwebserver.MockResponse
-import com.squareup.okhttp.mockwebserver.MockWebServer
-import com.squareup.okhttp.mockwebserver.RecordedRequest
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.RecordedRequest
 import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.collection.IsMapContaining.hasEntry

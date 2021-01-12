@@ -26,7 +26,10 @@ package com.auth0.android
 import android.content.Context
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.util.Auth0UserAgent
-import com.squareup.okhttp.HttpUrl
+import okhttp3.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import java.util.*
 
 /**
  * Represents your Auth0 account information (clientId &amp; domain),
@@ -46,7 +49,7 @@ public open class Auth0 @JvmOverloads constructor(
     public val clientId: String, domain: String, configurationDomain: String? = null
 ) {
     private val domainUrl: HttpUrl?
-    private val configurationUrl: HttpUrl?
+    private val configurationUrl: HttpUrl
 
     /**
      * @return Auth0 user agent info sent in every request
@@ -165,16 +168,16 @@ public open class Auth0 @JvmOverloads constructor(
         this.auth0UserAgent = auth0UserAgent
     }
 
-    private fun resolveConfiguration(configurationDomain: String?, domainUrl: HttpUrl): HttpUrl? {
+    private fun resolveConfiguration(configurationDomain: String?, domainUrl: HttpUrl): HttpUrl {
         var url = ensureValidUrl(configurationDomain)
         if (url == null) {
-            val host = domainUrl.host()
+            val host = domainUrl.host
             url = if (host.endsWith(DOT_AUTH0_DOT_COM)) {
                 val parts = host.split(".").toTypedArray()
                 if (parts.size > 3) {
-                    HttpUrl.parse("https://cdn." + parts[parts.size - 3] + DOT_AUTH0_DOT_COM)
+                    ("https://cdn." + parts[parts.size - 3] + DOT_AUTH0_DOT_COM).toHttpUrl()
                 } else {
-                    HttpUrl.parse(AUTH0_US_CDN_URL)
+                    AUTH0_US_CDN_URL.toHttpUrl()
                 }
             } else {
                 domainUrl
@@ -188,11 +191,11 @@ public open class Auth0 @JvmOverloads constructor(
         if (url == null) {
             return null
         }
-        val normalizedUrl = url.toLowerCase()
+        val normalizedUrl = url.toLowerCase(Locale.ROOT)
         require(!normalizedUrl.startsWith("http://")) { "Invalid domain url: '$url'. Only HTTPS domain URLs are supported. If no scheme is passed, HTTPS will be used." }
         val safeUrl =
             if (normalizedUrl.startsWith("https://")) normalizedUrl else "https://$normalizedUrl"
-        return HttpUrl.parse(safeUrl)
+        return safeUrl.toHttpUrlOrNull()
     }
 
     private companion object {

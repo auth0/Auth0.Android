@@ -47,8 +47,8 @@ import com.auth0.android.util.MockAuthenticationCallback;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import com.squareup.okhttp.HttpUrl;
-import com.squareup.okhttp.mockwebserver.RecordedRequest;
+import okhttp3.HttpUrl;
+import okhttp3.mockwebserver.RecordedRequest;
 
 import org.hamcrest.collection.IsMapContaining;
 import org.junit.After;

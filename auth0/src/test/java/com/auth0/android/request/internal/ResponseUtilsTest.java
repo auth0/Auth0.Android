@@ -1,6 +1,6 @@
 package com.auth0.android.request.internal;
 
-import com.squareup.okhttp.ResponseBody;
+import okhttp3.ResponseBody;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -9,6 +9,7 @@ import org.junit.rules.ExpectedException;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+//TODO: Check if unused and delete
 public class ResponseUtilsTest {
 
     @Rule

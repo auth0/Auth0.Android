@@ -36,7 +36,7 @@ import com.auth0.android.request.internal.RequestFactory
 import com.auth0.android.result.UserIdentity
 import com.auth0.android.result.UserProfile
 import com.google.gson.Gson
-import com.squareup.okhttp.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import java.io.IOException
 import java.io.Reader
 
@@ -105,7 +105,7 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
         primaryUserId: String,
         secondaryToken: String
     ): Request<List<UserIdentity>, ManagementException> {
-        val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(API_PATH)
             .addPathSegment(V2_PATH)
             .addPathSegment(USERS_PATH)
@@ -143,7 +143,7 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
         secondaryUserId: String,
         secondaryProvider: String
     ): Request<List<UserIdentity>, ManagementException> {
-        val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(API_PATH)
             .addPathSegment(V2_PATH)
             .addPathSegment(USERS_PATH)
@@ -177,7 +177,7 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
         userId: String,
         userMetadata: Map<String, Any?>
     ): Request<UserProfile, ManagementException> {
-        val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(API_PATH)
             .addPathSegment(V2_PATH)
             .addPathSegment(USERS_PATH)
@@ -205,7 +205,7 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
      * @return a request to start
      */
     public fun getProfile(userId: String): Request<UserProfile, ManagementException> {
-        val url = HttpUrl.parse(auth0.getDomainUrl()).newBuilder()
+        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(API_PATH)
             .addPathSegment(V2_PATH)
             .addPathSegment(USERS_PATH)
