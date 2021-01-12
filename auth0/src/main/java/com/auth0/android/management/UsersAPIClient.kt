@@ -28,6 +28,7 @@ import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.authentication.ParameterBuilder
 import com.auth0.android.request.*
+import com.auth0.android.request.internal.BaseRequest
 import com.auth0.android.request.internal.GsonAdapter
 import com.auth0.android.request.internal.GsonAdapter.Companion.forListOf
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMap
@@ -186,8 +187,12 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
         val userProfileAdapter: JsonAdapter<UserProfile> = GsonAdapter(
             UserProfile::class.java, gson
         )
-        return factory.patch(url.toString(), userProfileAdapter)
-            .addParameter(USER_METADATA_KEY, gson.toJson(userMetadata))
+        val patch = factory.patch(
+            url.toString(),
+            userProfileAdapter
+        ) as BaseRequest<UserProfile, ManagementException>
+        patch.addParameter(USER_METADATA_KEY, userMetadata)
+        return patch
     }
 
     /**

@@ -131,7 +131,7 @@ public class BaseRequestTest {
         baseRequest.execute();
 
         verify(client).load(eq(BASE_URL), optionsCaptor.capture());
-        Map<String, String> values = optionsCaptor.getValue().getParameters();
+        Map<String, Object> values = optionsCaptor.getValue().getParameters();
         assertThat(values, aMapWithSize(1));
         assertThat(values, hasEntry("A", "1"));
     }
@@ -148,7 +148,7 @@ public class BaseRequestTest {
         baseRequest.execute();
 
         verify(client).load(eq(BASE_URL), optionsCaptor.capture());
-        Map<String, String> values = optionsCaptor.getValue().getParameters();
+        Map<String, Object> values = optionsCaptor.getValue().getParameters();
         assertThat(values, aMapWithSize(2));
         assertThat(values, hasEntry("A", "1"));
         assertThat(values, hasEntry("B", "2"));

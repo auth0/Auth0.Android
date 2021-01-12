@@ -40,7 +40,8 @@ public class DefaultClient() : NetworkingClient {
         when (options.method) {
             is HttpMethod.GET -> {
                 // add parameters as query
-                options.parameters.map { urlBuilder.addQueryParameter(it.key, it.value) }
+                options.parameters.filterValues { it is String }
+                    .map { urlBuilder.addQueryParameter(it.key, it.value as String) }
                 requestBuilder.method(options.method.toString(), null)
             }
             else -> {
@@ -66,6 +67,7 @@ public class DefaultClient() : NetworkingClient {
         val builder = OkHttpClient.Builder()
 
         // logging
+        //TODO: OFF by default!
         if (enableLogging) {
             val logger: Interceptor = HttpLoggingInterceptor()
                 .setLevel(HttpLoggingInterceptor.Level.BODY)

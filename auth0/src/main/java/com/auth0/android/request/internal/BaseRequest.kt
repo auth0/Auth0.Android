@@ -71,6 +71,11 @@ public open class BaseRequest<T, U : Auth0Exception> internal constructor(
         return this
     }
 
+    internal fun addParameter(name: String, value: Any): Request<T, U> {
+        options.parameters[name] = value
+        return this
+    }
+
     /**
      * Runs asynchronously and executes the network request, without blocking the current thread.
      * The result is parsed into a <T> value and posted in the callback's onSuccess method or a <U>

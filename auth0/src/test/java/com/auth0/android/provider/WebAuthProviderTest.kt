@@ -1078,15 +1078,15 @@ public class WebAuthProviderTest {
                 )
             )
         )
-        MatcherAssert.assertThat<Map<String, String>>(
+        MatcherAssert.assertThat<Map<String, Any>>(
             codeOptionsCaptor.firstValue.parameters,
             IsMapContaining.hasEntry("code", "1234")
         )
-        MatcherAssert.assertThat<Map<String, String>>(
+        MatcherAssert.assertThat<Map<String, Any>>(
             codeOptionsCaptor.firstValue.parameters,
             IsMapContaining.hasEntry("grant_type", "authorization_code")
         )
-        MatcherAssert.assertThat<Map<String, String>>(
+        MatcherAssert.assertThat<Map<String, Any>>(
             codeOptionsCaptor.firstValue.parameters,
             IsMapContaining.hasKey("code_verifier")
         )

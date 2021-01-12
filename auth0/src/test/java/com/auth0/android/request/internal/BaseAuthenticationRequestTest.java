@@ -74,7 +74,7 @@ public class BaseAuthenticationRequestTest {
                 .execute();
 
         verify(client).load(eq(BASE_URL), optionsCaptor.capture());
-        Map<String, String> values = optionsCaptor.getValue().getParameters();
+        Map<String, Object> values = optionsCaptor.getValue().getParameters();
         assertThat(values, aMapWithSize(1));
         assertThat(values, hasEntry("grant_type", "grantType"));
     }
@@ -88,7 +88,7 @@ public class BaseAuthenticationRequestTest {
                 .execute();
 
         verify(client).load(eq(BASE_URL), optionsCaptor.capture());
-        Map<String, String> values = optionsCaptor.getValue().getParameters();
+        Map<String, Object> values = optionsCaptor.getValue().getParameters();
         assertThat(values, aMapWithSize(1));
         assertThat(values, hasEntry("connection", "my-connection"));
     }
@@ -102,7 +102,7 @@ public class BaseAuthenticationRequestTest {
                 .execute();
 
         verify(client).load(eq(BASE_URL), optionsCaptor.capture());
-        Map<String, String> values = optionsCaptor.getValue().getParameters();
+        Map<String, Object> values = optionsCaptor.getValue().getParameters();
         assertThat(values, aMapWithSize(1));
         assertThat(values, hasEntry("realm", "my-realm"));
     }
@@ -116,7 +116,7 @@ public class BaseAuthenticationRequestTest {
                 .execute();
 
         verify(client).load(eq(BASE_URL), optionsCaptor.capture());
-        Map<String, String> values = optionsCaptor.getValue().getParameters();
+        Map<String, Object> values = optionsCaptor.getValue().getParameters();
         assertThat(values, aMapWithSize(1));
         assertThat(values, hasEntry("scope", "email profile"));
     }
@@ -130,7 +130,7 @@ public class BaseAuthenticationRequestTest {
                 .execute();
 
         verify(client).load(eq(BASE_URL), optionsCaptor.capture());
-        Map<String, String> values = optionsCaptor.getValue().getParameters();
+        Map<String, Object> values = optionsCaptor.getValue().getParameters();
         assertThat(values, aMapWithSize(1));
         assertThat(values, hasEntry("audience", "my-api"));
     }
@@ -148,7 +148,7 @@ public class BaseAuthenticationRequestTest {
                 .execute();
 
         verify(client).load(eq(BASE_URL), optionsCaptor.capture());
-        Map<String, String> values = optionsCaptor.getValue().getParameters();
+        Map<String, Object> values = optionsCaptor.getValue().getParameters();
         assertThat(values, aMapWithSize(2));
         assertThat(values, hasEntry("extra", "value"));
         assertThat(values, hasEntry("123", "890"));
