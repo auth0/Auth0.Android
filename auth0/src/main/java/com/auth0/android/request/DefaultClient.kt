@@ -1,79 +1,89 @@
 package com.auth0.android.request
 
-import android.net.Uri
 import com.auth0.android.request.internal.GsonProvider
 import com.google.gson.Gson
-import java.io.BufferedWriter
+import okhttp3.*
+import okhttp3.Headers.Companion.toHeaders
+import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.logging.HttpLoggingInterceptor
 import java.io.IOException
-import java.net.HttpURLConnection
-import java.net.URL
-import javax.net.ssl.HttpsURLConnection
+import java.util.concurrent.TimeUnit
 
 /**
- * Default implementation of a Networking Client. Makes use of HttpUrlConnection.
- * @param timeout the connection timeout to use when executing requests.
+ * Default implementation of a Networking Client.
  */
-//TODO: Should this be internal?
-public class DefaultClient(private val timeout: Int) : NetworkingClient {
+public class DefaultClient() : NetworkingClient {
 
-    //TODO: receive this via constructor parameters
+    //TODO: receive this via internal constructor parameters
     private val gson: Gson = GsonProvider.buildGson()
+    private var client: OkHttpClient
 
-    /**
-     * Creates and executes a networking request blocking the current thread.
-     * @return the response from the server.
-     */
     @Throws(IllegalArgumentException::class, IOException::class)
     override fun load(url: String, options: RequestOptions): ServerResponse {
-        val parsedUri = Uri.parse(url)
+        val response = prepareCall(url.toHttpUrl(), options).execute()
 
-        //prepare URL
-        val targetUrl = if (options.method == HttpMethod.GET) {
-            val uriBuilder = parsedUri.buildUpon()
-            //setup query
-            options.parameters.map {
-                uriBuilder.appendQueryParameter(it.key, it.value)
-            }
-            URL(uriBuilder.build().toString())
-        } else {
-            URL(url)
-        }
-
-        // Auth0 constructor will enforce HTTPS scheme. This is here to enable running
-        // tests with MockWebServer using HTTP.
-        // TODO get tests running with MockWebServer using HTTPS, then use HttpsURLConnection
-        val connection: HttpURLConnection = targetUrl.openConnection() as HttpURLConnection
-
-        //FIXME: setup timeout
-//        connection.connectTimeout = timeout
-//        connection.readTimeout = timeout
-
-        //setup headers
-        options.headers.map { connection.setRequestProperty(it.key, it.value) }
-
-        if (options.method == HttpMethod.POST || options.method == HttpMethod.PATCH || options.method == HttpMethod.DELETE) {
-            //required headers
-            connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
-            connection.doInput = true
-            connection.doOutput = true
-            connection.requestMethod = options.method.toString()
-            val output = connection.outputStream
-            val writer = BufferedWriter(output.bufferedWriter())
-            if (options.parameters.isNotEmpty()) {
-                val json = gson.toJson(options.parameters)
-                writer.write(json)
-            }
-            writer.flush()
-            writer.close()
-            output.close()
-        }
-
-        connection.connect()
-
+        //FIXME: Ensure body is being closed
         return ServerResponse(
-            connection.responseCode,
-            connection.errorStream ?: connection.inputStream,
-            connection.headerFields
+            response.code,
+            response.body!!.byteStream(),
+            response.headers.toMultimap()
         )
     }
+
+    private fun prepareCall(url: HttpUrl, options: RequestOptions): Call {
+        val requestBuilder = Request.Builder()
+        val urlBuilder = url.newBuilder()
+
+        when (options.method) {
+            is HttpMethod.GET -> {
+                // add parameters as query
+                options.parameters.map { urlBuilder.addQueryParameter(it.key, it.value) }
+                requestBuilder.method(options.method.toString(), null)
+            }
+            else -> {
+                // add parameters as body
+                val body = gson.toJson(options.parameters).toRequestBody(APPLICATION_JSON_UTF8)
+                requestBuilder.method(options.method.toString(), body)
+            }
+        }
+        val request = requestBuilder
+            .url(urlBuilder.build())
+            .headers(options.headers.toHeaders())
+            .build()
+        return client.newCall(request)
+    }
+
+    init {
+        // TODO: possible constructor parameters
+        val enableLogging = true
+        val connectTimeout = DEFAULT_TIMEOUT_SECONDS
+        val readTimeout = DEFAULT_TIMEOUT_SECONDS
+
+        // client setup
+        val builder = OkHttpClient.Builder()
+
+        // logging
+        if (enableLogging) {
+            val logger: Interceptor = HttpLoggingInterceptor()
+                .setLevel(HttpLoggingInterceptor.Level.BODY)
+            builder.addInterceptor(logger)
+        }
+
+        // timeouts
+        builder.connectTimeout(connectTimeout, TimeUnit.SECONDS)
+        builder.readTimeout(readTimeout, TimeUnit.SECONDS)
+
+        client = builder.build()
+    }
+
+
+    private companion object {
+        private const val DEFAULT_TIMEOUT_SECONDS: Long = 10
+        private val APPLICATION_JSON_UTF8: MediaType =
+            "application/json; charset=utf-8".toMediaType()
+    }
+
 }

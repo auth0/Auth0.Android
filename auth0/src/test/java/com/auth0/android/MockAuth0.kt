@@ -1,6 +1,7 @@
 package com.auth0.android
 
-import com.squareup.okhttp.HttpUrl
+import okhttp3.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 /**
  * Mock implementation of [Auth0] for tests.
@@ -24,8 +25,6 @@ internal class MockAuth0 @JvmOverloads constructor(
         TODO [SDK-2221]: get MockWebServer running with HTTPS and remove this class. Should be done
          after updating to more recent versions of OkHttp
          */
-        return if (url == null) {
-            null
-        } else HttpUrl.parse(url)
+        return url?.toHttpUrlOrNull()
     }
 }

@@ -1,6 +1,6 @@
 package com.auth0.android.util;
 
-import com.squareup.okhttp.HttpUrl;
+import okhttp3.HttpUrl;
 
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;

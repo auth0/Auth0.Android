@@ -1,10 +1,11 @@
 package com.auth0.android.request.internal;
 
-import com.squareup.okhttp.HttpUrl;
+import okhttp3.HttpUrl;
 
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 
+//TODO: Check if unused and delete
 public class AuthenticationRequestMatcher<T> extends BaseMatcher<MockAuthenticationRequest> {
 
     private static final String ACCEPT_LANGUAGE_HEADER = "Accept-Language";
