@@ -26,8 +26,6 @@ package com.auth0.android.authentication
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
-import com.auth0.android.authentication.request.ProfileRequest
-import com.auth0.android.authentication.request.SignUpRequest
 import com.auth0.android.request.*
 import com.auth0.android.request.internal.BaseAuthenticationRequest
 import com.auth0.android.request.internal.GsonAdapter

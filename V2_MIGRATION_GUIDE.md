@@ -65,6 +65,7 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 - The `com.auth0.android.request.AuthorizableRequest` class has been removed. You can achieve the same result using `addHeader("Authorization", "Bearer {TOKEN_VALUE}")`.
 - The `com.auth0.android.authentication.request.TokenRequest` class has been removed. The ability to set a Code Verifier, and any request headers and parameters has been moved to the `com.auth0.android.request.Request` interface.
 - The `com.auth0.android.authentication.request.DatabaseConnectionRequest` class has been removed. The ability to set any request headers and parameters has been moved to the `com.auth0.android.request.Request` interface.
+- The `com.auth0.android.provider.VoidCallback` class has been removed. The ability to use a callback that doesn't take an argument can be replaced with `Callback<Void, AuthenticationException>`.
 
 ### Constants removed
 

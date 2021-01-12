@@ -1,5 +1,8 @@
 package com.auth0.android.request
 
+/**
+ * Holder for the supported HTTP Methods that this library could use.
+ */
 public sealed class HttpMethod {
 
     public object GET : HttpMethod()

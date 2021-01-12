@@ -3,7 +3,6 @@ package com.auth0.android.provider
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import com.auth0.android.provider.AuthenticationActivity
 
 public class RedirectActivity : Activity() {
     public override fun onCreate(savedInstanceBundle: Bundle?) {

@@ -1,5 +1,6 @@
 package com.auth0.android.provider
 
+@Suppress("unused")
 public interface AuthHandler {
     /**
      * Tries to supply an AuthProvider for a given strategy and connection name. If it can't provide one it will return null.
