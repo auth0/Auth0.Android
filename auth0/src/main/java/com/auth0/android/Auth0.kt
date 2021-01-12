@@ -88,7 +88,7 @@ public open class Auth0 @JvmOverloads constructor(
      *
      * @param timeout the new timeout value in seconds
      */
-    public var connectTimeoutInSeconds: Int = 0
+    public var connectTimeoutInSeconds: Int = 10
     /**
      * @return Auth0 request readTimeoutInSeconds
      */
@@ -98,7 +98,7 @@ public open class Auth0 @JvmOverloads constructor(
      *
      * @param timeout the new timeout value in seconds
      */
-    public var readTimeoutInSeconds: Int = 0
+    public var readTimeoutInSeconds: Int = 10
     /**
      * @return Auth0 request writeTimeoutInSeconds
      */

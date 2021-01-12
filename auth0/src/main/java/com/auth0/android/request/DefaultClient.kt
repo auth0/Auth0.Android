@@ -1,5 +1,6 @@
 package com.auth0.android.request
 
+import androidx.annotation.VisibleForTesting
 import com.auth0.android.request.internal.GsonProvider
 import com.google.gson.Gson
 import okhttp3.*
@@ -14,12 +15,24 @@ import java.util.concurrent.TimeUnit
 
 /**
  * Default implementation of a Networking Client.
+ *
+ * @param connectTimeout the connection timeout, in seconds, to use when executing requests. Default is ten seconds.
+ * @param readTimeout the read timeout, in seconds, to use when executing requests. Default is ten seconds.
+ * @param defaultHeaders any headers that should be sent on all requests. If a specific request specifies a header with the same key as any header in the default headers, the header specified on the request will take precedence. Default is an empty map.
+ * @param enableLogging whether HTTP request and response info should be logged. This should only be set to `true` for debugging purposes in non-production environments, as sensitive information is included in the logs. Defaults to `false`.
  */
-public class DefaultClient() : NetworkingClient {
+public class DefaultClient(
+        private val connectTimeout: Long = DEFAULT_TIMEOUT_SECONDS,
+        private val readTimeout: Long = DEFAULT_TIMEOUT_SECONDS,
+        private val defaultHeaders: Map<String, String> = mapOf(),
+        private val enableLogging: Boolean = false
+) : NetworkingClient {
 
     //TODO: receive this via internal constructor parameters
     private val gson: Gson = GsonProvider.buildGson()
-    private var client: OkHttpClient
+
+    @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal var okHttpClient: OkHttpClient
 
     @Throws(IllegalArgumentException::class, IOException::class)
     override fun load(url: String, options: RequestOptions): ServerResponse {
@@ -50,19 +63,15 @@ public class DefaultClient() : NetworkingClient {
                 requestBuilder.method(options.method.toString(), body)
             }
         }
+        val headers = defaultHeaders.plus(options.headers).toHeaders()
         val request = requestBuilder
             .url(urlBuilder.build())
-            .headers(options.headers.toHeaders())
+            .headers(headers)
             .build()
-        return client.newCall(request)
+        return okHttpClient.newCall(request)
     }
 
     init {
-        // TODO: possible constructor parameters
-        val enableLogging = true
-        val connectTimeout = DEFAULT_TIMEOUT_SECONDS
-        val readTimeout = DEFAULT_TIMEOUT_SECONDS
-
         // client setup
         val builder = OkHttpClient.Builder()
 
@@ -78,7 +87,7 @@ public class DefaultClient() : NetworkingClient {
         builder.connectTimeout(connectTimeout, TimeUnit.SECONDS)
         builder.readTimeout(readTimeout, TimeUnit.SECONDS)
 
-        client = builder.build()
+        okHttpClient = builder.build()
     }
 
 
