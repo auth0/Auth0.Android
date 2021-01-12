@@ -289,7 +289,10 @@ public class WebAuthProviderTest {
         val uri =
             intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
-        MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("scope", "openid profile email"))
+        MatcherAssert.assertThat(
+            uri,
+            UriMatchers.hasParamWithValue("scope", "openid profile email")
+        )
     }
 
     @Test
@@ -320,7 +323,10 @@ public class WebAuthProviderTest {
         val uri =
             intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
-        MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("scope", "profile super_scope openid"))
+        MatcherAssert.assertThat(
+            uri,
+            UriMatchers.hasParamWithValue("scope", "profile super_scope openid")
+        )
     }
 
     @Test
@@ -348,7 +354,10 @@ public class WebAuthProviderTest {
         val uri =
             intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         MatcherAssert.assertThat(uri, `is`(notNullValue()))
-        MatcherAssert.assertThat(uri, UriMatchers.hasParamWithValue("scope", "profile super_scope openid"))
+        MatcherAssert.assertThat(
+            uri,
+            UriMatchers.hasParamWithValue("scope", "profile super_scope openid")
+        )
     }
 
     //connection scope
@@ -985,7 +994,7 @@ public class WebAuthProviderTest {
     @Test
     @Throws(Exception::class)
     public fun shouldResumeLoginWithCustomNetworkingClient() {
-        val networkingClient: NetworkingClient = Mockito.spy(DefaultClient(10))
+        val networkingClient: NetworkingClient = Mockito.spy(DefaultClient())
         val authCallback = mock<Callback<Credentials, AuthenticationException>>()
 
         // 1. start the webauth flow. the browser would open

@@ -24,7 +24,6 @@ import java.util.stream.Collectors
 public class DefaultClientTest {
 
     private companion object {
-        private const val REQUEST_TIMEOUT_SECONDS = 123
         private const val STATUS_SUCCESS = 200
         private const val STATUS_FAILURE = 401
         private const val JSON_OK = """{"result":"OK"}"""
@@ -34,7 +33,7 @@ public class DefaultClientTest {
 
     private lateinit var BASE_URL: String
     private lateinit var mockServer: MockWebServer
-    private val client: NetworkingClient = DefaultClient(REQUEST_TIMEOUT_SECONDS)
+    private val client: NetworkingClient = DefaultClient()
     private val gson = Gson()
 
     @Before
@@ -101,6 +100,58 @@ public class DefaultClientTest {
         requestAssertions(sentRequest, HttpMethod.POST)
     }
 
+    @Test
+    public fun shouldHandleHttpDeleteSuccess() {
+        enqueueMockResponse(STATUS_SUCCESS, JSON_OK)
+
+        //Received response
+        val response = executeRequest(HttpMethod.DELETE)
+        responseAssertions(response, STATUS_SUCCESS, JSON_OK)
+
+        //Sent request
+        val sentRequest = mockServer.takeRequest()
+        requestAssertions(sentRequest, HttpMethod.DELETE)
+    }
+
+    @Test
+    public fun shouldHandleHttpDeleteFailure() {
+        enqueueMockResponse(STATUS_FAILURE, JSON_ERROR)
+
+        //Received response
+        val response = executeRequest(HttpMethod.DELETE)
+        responseAssertions(response, STATUS_FAILURE, JSON_ERROR)
+
+        //Sent request
+        val sentRequest = mockServer.takeRequest()
+        requestAssertions(sentRequest, HttpMethod.DELETE)
+    }
+
+    @Test
+    public fun shouldHandleHttpPatchSuccess() {
+        enqueueMockResponse(STATUS_SUCCESS, JSON_OK)
+
+        //Received response
+        val response = executeRequest(HttpMethod.PATCH)
+        responseAssertions(response, STATUS_SUCCESS, JSON_OK)
+
+        //Sent request
+        val sentRequest = mockServer.takeRequest()
+        requestAssertions(sentRequest, HttpMethod.PATCH)
+    }
+
+    @Test
+    public fun shouldHandleHttpPatchFailure() {
+        enqueueMockResponse(STATUS_FAILURE, JSON_ERROR)
+
+        //Received response
+        val response = executeRequest(HttpMethod.PATCH)
+        responseAssertions(response, STATUS_FAILURE, JSON_ERROR)
+
+        //Sent request
+        val sentRequest = mockServer.takeRequest()
+        requestAssertions(sentRequest, HttpMethod.PATCH)
+    }
+
 
     //Helper methods
     private fun requestAssertions(request: RecordedRequest, method: HttpMethod) {
@@ -134,7 +185,7 @@ public class DefaultClientTest {
         assertThat(
             response.headers,
             hasEntry(
-                equalTo("Content-Type"),
+                equalTo("content-type"),
                 hasItem("application/json")
             )
         )
@@ -157,7 +208,7 @@ public class DefaultClientTest {
         val response = MockResponse()
         response.setBody(jsonBody)
         response.setResponseCode(responseCode)
-        response.setHeader("Content-Type", "application/json")
+        response.setHeader("content-type", "application/json")
         mockServer.enqueue(response)
     }
 
@@ -168,7 +219,7 @@ public class DefaultClientTest {
 
     private fun RecordedRequest.bodyFromJson(): Map<String, Any> {
         val text = this.body.readUtf8()
-        if (text.isNullOrEmpty()) {
+        if (text.isEmpty()) {
             return emptyMap()
         }
         val mapType = object : TypeToken<Map<String, Any>>() {}.type

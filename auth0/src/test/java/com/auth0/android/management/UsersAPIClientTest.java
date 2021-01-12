@@ -46,7 +46,6 @@ import com.auth0.android.util.UsersAPI;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import okhttp3.mockwebserver.RecordedRequest;
 
 import org.hamcrest.collection.IsMapContaining;
 import org.hamcrest.collection.IsMapWithSize;
@@ -70,6 +69,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import okhttp3.mockwebserver.RecordedRequest;
+
 import static com.auth0.android.util.ManagementCallbackMatcher.hasPayloadOfType;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -79,7 +80,6 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -256,7 +256,7 @@ public class UsersAPIClientTest {
         assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + TOKEN_PRIMARY));
         assertThat(request.getMethod(), equalTo(METHOD_DELETE));
         Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, is(nullValue()));
+        assertThat(body, IsMapWithSize.anEmptyMap());
 
 
         TypeToken<List<UserIdentity>> typeToken = new TypeToken<List<UserIdentity>>() {
@@ -278,7 +278,7 @@ public class UsersAPIClientTest {
         assertThat(request.getHeader(HEADER_AUTHORIZATION), equalTo(BEARER + TOKEN_PRIMARY));
         assertThat(request.getMethod(), equalTo(METHOD_DELETE));
         Map<String, String> body = bodyFromRequest(request);
-        assertThat(body, is(nullValue()));
+        assertThat(body, IsMapWithSize.anEmptyMap());
 
 
         TypeToken<List<UserIdentity>> typeToken = new TypeToken<List<UserIdentity>>() {
@@ -310,7 +310,7 @@ public class UsersAPIClientTest {
         Map<String, Object> body = bodyFromRequest(request);
 
         assertThat(body, hasKey(KEY_USER_METADATA));
-        assertThat((body.get(KEY_USER_METADATA)), is(equalTo(metadata)));
+        assertThat(body.get(KEY_USER_METADATA), is(equalTo(metadata)));
 
         assertThat(callback, hasPayloadOfType(UserProfile.class));
     }
@@ -336,7 +336,7 @@ public class UsersAPIClientTest {
         Map<String, Object> body = bodyFromRequest(request);
 
         assertThat(body, hasKey(KEY_USER_METADATA));
-        assertThat((body.get(KEY_USER_METADATA)), is(equalTo(metadata)));
+        assertThat(body.get(KEY_USER_METADATA), is(equalTo(metadata)));
 
         assertThat(result, isA(UserProfile.class));
     }

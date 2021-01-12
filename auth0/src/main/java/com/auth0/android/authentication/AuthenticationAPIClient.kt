@@ -72,7 +72,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     @JvmOverloads
     public constructor(
         auth0: Auth0,
-        networkingClient: NetworkingClient = DefaultClient(auth0.connectTimeoutInSeconds)
+        networkingClient: NetworkingClient = DefaultClient()
     ) : this(
         auth0,
         RequestFactory<AuthenticationException>(networkingClient, createErrorAdapter()),

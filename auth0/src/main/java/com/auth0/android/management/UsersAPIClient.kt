@@ -65,7 +65,7 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
     public constructor(
         auth0: Auth0,
         token: String,
-        networkingClient: NetworkingClient = DefaultClient(auth0.connectTimeoutInSeconds)
+        networkingClient: NetworkingClient = DefaultClient()
     ) : this(
         auth0,
         factoryForToken(token, networkingClient),
