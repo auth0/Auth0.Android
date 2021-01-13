@@ -75,7 +75,7 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
     ) : this(
         auth0,
         factoryForToken(token, networkingClient),
-        GsonProvider.buildGson()
+        GsonProvider.gson
     )
 
     public val clientId: String

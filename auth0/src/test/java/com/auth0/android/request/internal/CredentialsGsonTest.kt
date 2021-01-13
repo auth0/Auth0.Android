@@ -1,164 +1,216 @@
-package com.auth0.android.request.internal;
+package com.auth0.android.request.internal
 
-import androidx.annotation.NonNull;
+import com.auth0.android.request.internal.GsonProvider.formatDate
+import com.auth0.android.result.Credentials
+import com.auth0.android.result.CredentialsMock
+import com.google.gson.JsonParseException
+import org.hamcrest.CoreMatchers
+import org.hamcrest.MatcherAssert
+import org.hamcrest.Matchers
+import org.junit.Assert
+import org.junit.Before
+import org.junit.Test
+import java.io.IOException
+import java.io.Reader
+import java.io.StringReader
+import java.util.*
 
-import com.auth0.android.result.Credentials;
-import com.auth0.android.result.CredentialsMock;
-import com.google.gson.JsonParseException;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-
-import java.io.IOException;
-import java.io.Reader;
-import java.io.StringReader;
-import java.util.Calendar;
-import java.util.Date;
-
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.closeTo;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
-
-public class CredentialsGsonTest extends GsonBaseTest {
-    private static final String OPEN_ID_OFFLINE_ACCESS_CREDENTIALS = "src/test/resources/credentials_openid_refresh_token.json";
-    private static final String OPEN_ID_CREDENTIALS = "src/test/resources/credentials_openid.json";
-    private static final String BASIC_CREDENTIALS = "src/test/resources/credentials.json";
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
+public class CredentialsGsonTest : GsonBaseTest() {
     @Before
-    public void setUp() {
-        gson = GsonProvider.buildGson();
+    public fun setUp() {
+        gson = GsonProvider.gson
     }
 
     @Test
-    public void shouldFailWithInvalidJson() throws Exception {
-        expectedException.expect(JsonParseException.class);
-        buildCredentialsFrom(json(INVALID));
+    @Throws(Exception::class)
+    public fun shouldFailWithInvalidJson() {
+        Assert.assertThrows(JsonParseException::class.java) {
+            buildCredentialsFrom(json(INVALID))
+        }
     }
 
     @Test
-    public void shouldFailWithEmptyJson() throws Exception {
-        expectedException.expect(JsonParseException.class);
-        buildCredentialsFrom(json(EMPTY_OBJECT));
+    @Throws(Exception::class)
+    public fun shouldFailWithEmptyJson() {
+        Assert.assertThrows(JsonParseException::class.java) {
+            buildCredentialsFrom(json(EMPTY_OBJECT))
+        }
     }
 
     @Test
-    public void shouldNotRequireAccessToken() throws Exception {
-        buildCredentialsFrom(new StringReader("{\"token_type\": \"bearer\"}"));
+    @Throws(Exception::class)
+    public fun shouldNotRequireAccessToken() {
+        buildCredentialsFrom(StringReader("{\"token_type\": \"bearer\"}"))
     }
 
     @Test
-    public void shouldNotRequireTokenType() throws Exception {
-        buildCredentialsFrom(new StringReader("{\"access_token\": \"some token\"}"));
+    @Throws(Exception::class)
+    public fun shouldNotRequireTokenType() {
+        buildCredentialsFrom(StringReader("{\"access_token\": \"some token\"}"))
     }
 
     @Test
-    public void shouldReturnBasic() throws Exception {
-        final Credentials credentials = buildCredentialsFrom(json(BASIC_CREDENTIALS));
-        assertThat(credentials, is(notNullValue()));
-        assertThat(credentials.getAccessToken(), is(notNullValue()));
-        assertThat(credentials.getIdToken(), is(nullValue()));
-        assertThat(credentials.getType(), equalTo("bearer"));
-        assertThat(credentials.getRefreshToken(), is(nullValue()));
-        assertThat(credentials.getExpiresIn(), is(notNullValue()));
-        assertThat(credentials.getExpiresIn().doubleValue(), is(closeTo(86000, 1)));
-        assertThat(credentials.getExpiresAt(), is(notNullValue()));
-        assertThat(credentials.getScope(), is(nullValue()));
+    @Throws(Exception::class)
+    public fun shouldReturnBasic() {
+        val credentials = buildCredentialsFrom(json(BASIC_CREDENTIALS))
+        MatcherAssert.assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(credentials.accessToken, Matchers.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(credentials.idToken, Matchers.`is`(Matchers.nullValue()))
+        MatcherAssert.assertThat(credentials.type, Matchers.equalTo("bearer"))
+        MatcherAssert.assertThat(credentials.refreshToken, Matchers.`is`(Matchers.nullValue()))
+        MatcherAssert.assertThat(credentials.expiresIn, Matchers.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(
+            credentials.expiresIn!!.toDouble(),
+            Matchers.`is`(Matchers.closeTo(86000.0, 1.0))
+        )
+        MatcherAssert.assertThat(credentials.expiresAt, Matchers.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(credentials.scope, Matchers.`is`(Matchers.nullValue()))
     }
 
     @Test
-    public void shouldReturnWithExpiresAt() throws Exception {
-        Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.DAY_OF_YEAR, 1);
-        Date exp = cal.getTime();
-        String credentialsJSON = generateJSONWithExpiresAt(exp);
-        final Credentials credentials = buildCredentialsFrom(new StringReader(credentialsJSON));
-        assertThat(credentials, is(notNullValue()));
-        assertThat(credentials.getAccessToken(), is(notNullValue()));
-        assertThat(credentials.getType(), equalTo("bearer"));
+    @Throws(Exception::class)
+    public fun shouldReturnWithExpiresAt() {
+        val cal = Calendar.getInstance()
+        cal.add(Calendar.DAY_OF_YEAR, 1)
+        val exp = cal.time
+        val credentialsJSON = generateJSONWithExpiresAt(exp)
+        val credentials = buildCredentialsFrom(StringReader(credentialsJSON))
+        MatcherAssert.assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(credentials.accessToken, Matchers.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(credentials.type, Matchers.equalTo("bearer"))
         //The hardcoded value comes from the JSON file
-        assertThat(credentials.getExpiresIn(), is(notNullValue()));
-        double expectedCalculatedExpiresIn = (exp.getTime() - System.currentTimeMillis()) / 1000f;
-        assertThat(credentials.getExpiresIn().doubleValue(), is(closeTo(expectedCalculatedExpiresIn, 1)));
-        assertThat(credentials.getExpiresAt(), is(notNullValue()));
-        double expiresAt = credentials.getExpiresAt().getTime();
-        assertThat(expiresAt, is(closeTo(exp.getTime(), 1)));
+        MatcherAssert.assertThat(credentials.expiresIn, Matchers.`is`(Matchers.notNullValue()))
+        val expectedCalculatedExpiresIn =
+            ((exp.time - System.currentTimeMillis()) / 1000f).toDouble()
+        MatcherAssert.assertThat(
+            credentials.expiresIn!!.toDouble(),
+            Matchers.`is`(Matchers.closeTo(expectedCalculatedExpiresIn, 1.0))
+        )
+        MatcherAssert.assertThat(credentials.expiresAt, Matchers.`is`(Matchers.notNullValue()))
+        val expiresAt = credentials.expiresAt!!.time.toDouble()
+        MatcherAssert.assertThat(
+            expiresAt,
+            Matchers.`is`(Matchers.closeTo(exp.time.toDouble(), 1.0))
+        )
     }
 
     @Test
-    public void shouldReturnWithIdToken() throws Exception {
-        final Credentials credentials = buildCredentialsFrom(json(OPEN_ID_CREDENTIALS));
-        assertThat(credentials, is(notNullValue()));
-        assertThat(credentials.getAccessToken(), is(notNullValue()));
-        assertThat(credentials.getIdToken(), is(notNullValue()));
-        assertThat(credentials.getType(), equalTo("bearer"));
-        assertThat(credentials.getRefreshToken(), is(nullValue()));
-        assertThat(credentials.getExpiresIn(), is(notNullValue()));
-        assertThat(credentials.getExpiresIn().doubleValue(), is(closeTo(86000, 1)));
-        assertThat(credentials.getExpiresAt(), is(notNullValue()));
-        assertThat(credentials.getScope(), is("openid profile"));
+    @Throws(Exception::class)
+    public fun shouldReturnWithIdToken() {
+        val credentials = buildCredentialsFrom(json(OPEN_ID_CREDENTIALS))
+        MatcherAssert.assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(credentials.accessToken, Matchers.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(credentials.idToken, Matchers.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(credentials.type, Matchers.equalTo("bearer"))
+        MatcherAssert.assertThat(credentials.refreshToken, Matchers.`is`(Matchers.nullValue()))
+        MatcherAssert.assertThat(credentials.expiresIn, Matchers.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(
+            credentials.expiresIn!!.toDouble(),
+            Matchers.`is`(Matchers.closeTo(86000.0, 1.0))
+        )
+        MatcherAssert.assertThat(credentials.expiresAt, Matchers.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(credentials.scope, Matchers.`is`("openid profile"))
     }
 
     @Test
-    public void shouldReturnWithRefreshToken() throws Exception {
-        final Credentials credentials = buildCredentialsFrom(json(OPEN_ID_OFFLINE_ACCESS_CREDENTIALS));
-        assertThat(credentials, is(notNullValue()));
-        assertThat(credentials.getAccessToken(), is(notNullValue()));
-        assertThat(credentials.getIdToken(), is(notNullValue()));
-        assertThat(credentials.getType(), equalTo("bearer"));
-        assertThat(credentials.getRefreshToken(), is(notNullValue()));
-        assertThat(credentials.getExpiresIn(), is(notNullValue()));
-        assertThat(credentials.getExpiresIn().doubleValue(), is(closeTo(86000, 1)));
-        assertThat(credentials.getExpiresAt(), is(notNullValue()));
-        assertThat(credentials.getScope(), is("openid profile"));
+    @Throws(Exception::class)
+    public fun shouldReturnWithRefreshToken() {
+        val credentials = buildCredentialsFrom(json(OPEN_ID_OFFLINE_ACCESS_CREDENTIALS))
+        MatcherAssert.assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(credentials.accessToken, Matchers.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(credentials.idToken, Matchers.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(credentials.type, Matchers.equalTo("bearer"))
+        MatcherAssert.assertThat(credentials.refreshToken, Matchers.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(credentials.expiresIn, Matchers.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(
+            credentials.expiresIn!!.toDouble(),
+            Matchers.`is`(Matchers.closeTo(86000.0, 1.0))
+        )
+        MatcherAssert.assertThat(credentials.expiresAt, Matchers.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(credentials.scope, Matchers.`is`("openid profile"))
     }
 
     @Test
-    public void shouldSerializeCredentials() {
-        Date expiresAt = new Date(CredentialsMock.CURRENT_TIME_MS + 123456 * 1000);
-        final String expectedExpiresAt = GsonProvider.formatDate(expiresAt);
-
-        final Credentials expiresInCredentials = new CredentialsMock("id", "access", "ty", "refresh", 123456L);
-        final String expiresInJson = gson.toJson(expiresInCredentials);
-        assertThat(expiresInJson, containsString("\"id_token\":\"id\""));
-        assertThat(expiresInJson, containsString("\"access_token\":\"access\""));
-        assertThat(expiresInJson, containsString("\"token_type\":\"ty\""));
-        assertThat(expiresInJson, containsString("\"refresh_token\":\"refresh\""));
-        assertThat(expiresInJson, containsString("\"expires_in\":123456"));
-        assertThat(expiresInJson, containsString("\"expires_at\":\"" + expectedExpiresAt + "\""));
-        assertThat(expiresInJson, not(containsString("\"scope\"")));
-
-
-        final Credentials expiresAtCredentials = new CredentialsMock("id", "access", "ty", "refresh", expiresAt, "openid");
-        final String expiresAtJson = gson.toJson(expiresAtCredentials);
-        assertThat(expiresAtJson, containsString("\"id_token\":\"id\""));
-        assertThat(expiresAtJson, containsString("\"access_token\":\"access\""));
-        assertThat(expiresAtJson, containsString("\"token_type\":\"ty\""));
-        assertThat(expiresAtJson, containsString("\"refresh_token\":\"refresh\""));
-        assertThat(expiresAtJson, containsString("\"expires_in\":123456"));
-        assertThat(expiresInJson, containsString("\"expires_at\":\"" + expectedExpiresAt + "\""));
-        assertThat(expiresAtJson, containsString("\"scope\":\"openid\""));
+    public fun shouldSerializeCredentials() {
+        val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + 123456 * 1000)
+        val expectedExpiresAt = formatDate(expiresAt)
+        val expiresInCredentials: Credentials =
+            CredentialsMock("id", "access", "ty", "refresh", 123456L)
+        val expiresInJson = gson.toJson(expiresInCredentials)
+        MatcherAssert.assertThat(expiresInJson, CoreMatchers.containsString("\"id_token\":\"id\""))
+        MatcherAssert.assertThat(
+            expiresInJson,
+            CoreMatchers.containsString("\"access_token\":\"access\"")
+        )
+        MatcherAssert.assertThat(
+            expiresInJson,
+            CoreMatchers.containsString("\"token_type\":\"ty\"")
+        )
+        MatcherAssert.assertThat(
+            expiresInJson,
+            CoreMatchers.containsString("\"refresh_token\":\"refresh\"")
+        )
+        MatcherAssert.assertThat(
+            expiresInJson,
+            CoreMatchers.containsString("\"expires_in\":123456")
+        )
+        MatcherAssert.assertThat(
+            expiresInJson, CoreMatchers.containsString(
+                "\"expires_at\":\"$expectedExpiresAt\""
+            )
+        )
+        MatcherAssert.assertThat(
+            expiresInJson,
+            CoreMatchers.not(CoreMatchers.containsString("\"scope\""))
+        )
+        val expiresAtCredentials: Credentials =
+            CredentialsMock("id", "access", "ty", "refresh", expiresAt, "openid")
+        val expiresAtJson = gson.toJson(expiresAtCredentials)
+        MatcherAssert.assertThat(expiresAtJson, CoreMatchers.containsString("\"id_token\":\"id\""))
+        MatcherAssert.assertThat(
+            expiresAtJson,
+            CoreMatchers.containsString("\"access_token\":\"access\"")
+        )
+        MatcherAssert.assertThat(
+            expiresAtJson,
+            CoreMatchers.containsString("\"token_type\":\"ty\"")
+        )
+        MatcherAssert.assertThat(
+            expiresAtJson,
+            CoreMatchers.containsString("\"refresh_token\":\"refresh\"")
+        )
+        MatcherAssert.assertThat(
+            expiresAtJson,
+            CoreMatchers.containsString("\"expires_in\":123456")
+        )
+        MatcherAssert.assertThat(
+            expiresInJson, CoreMatchers.containsString(
+                "\"expires_at\":\"$expectedExpiresAt\""
+            )
+        )
+        MatcherAssert.assertThat(expiresAtJson, CoreMatchers.containsString("\"scope\":\"openid\""))
     }
 
-    private Credentials buildCredentialsFrom(Reader json) throws IOException {
-        return pojoFrom(json, Credentials.class);
+    @Throws(IOException::class)
+    private fun buildCredentialsFrom(json: Reader): Credentials {
+        return pojoFrom(json, Credentials::class.java)
     }
 
-    private String generateJSONWithExpiresAt(@NonNull Date expiresAt) {
-        return "{\n" +
-                "\"access_token\": \"s6GS5FGJN2jfd4l6\",\n" +
-                "\"token_type\": \"bearer\",\n" +
-                "\"expires_in\": 86000,\n" +
-                "\"expires_at\": \"" + GsonProvider.formatDate(expiresAt) + "\"\n" +
-                "}";
+    private fun generateJSONWithExpiresAt(expiresAt: Date): String {
+        return """
+            {
+            "access_token": "s6GS5FGJN2jfd4l6",
+            "token_type": "bearer",
+            "expires_in": 86000,
+            "expires_at": "${formatDate(expiresAt)}"
+            }
+            """.trimIndent()
+    }
+
+    private companion object {
+        private const val OPEN_ID_OFFLINE_ACCESS_CREDENTIALS =
+            "src/test/resources/credentials_openid_refresh_token.json"
+        private const val OPEN_ID_CREDENTIALS = "src/test/resources/credentials_openid.json"
+        private const val BASIC_CREDENTIALS = "src/test/resources/credentials.json"
     }
 }

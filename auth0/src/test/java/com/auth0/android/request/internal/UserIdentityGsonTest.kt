@@ -1,63 +1,84 @@
-package com.auth0.android.request.internal;
+package com.auth0.android.request.internal
 
-import com.auth0.android.result.UserIdentity;
-import com.google.gson.JsonParseException;
+import com.auth0.android.result.UserIdentity
+import com.auth0.android.util.UserIdentityMatcher
+import com.google.gson.JsonParseException
+import org.hamcrest.MatcherAssert
+import org.hamcrest.Matchers
+import org.hamcrest.collection.IsMapWithSize
+import org.junit.Assert
+import org.junit.Before
+import org.junit.Test
 
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-
-import static com.auth0.android.util.UserIdentityMatcher.isUserIdentity;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.collection.IsMapWithSize.anEmptyMap;
-
-public class UserIdentityGsonTest extends GsonBaseTest {
-
-    private static final String AUTH0 = "src/test/resources/identity_auth0.json";
-    private static final String FACEBOOK = "src/test/resources/identity_facebook.json";
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
+public class UserIdentityGsonTest : GsonBaseTest() {
 
     @Before
-    public void setUp() {
-        gson = GsonProvider.buildGson();
+    public fun setUp() {
+        gson = GsonProvider.gson
     }
 
     @Test
-    public void shouldFailWithInvalidJson() throws Exception {
-        expectedException.expect(JsonParseException.class);
-        pojoFrom(json(INVALID), UserIdentity.class);
+    @Throws(Exception::class)
+    public fun shouldFailWithInvalidJson() {
+        Assert.assertThrows(JsonParseException::class.java) {
+            pojoFrom(json(INVALID), UserIdentity::class.java)
+        }
     }
 
     @Test
-    public void shouldFailWithEmptyJson() throws Exception {
-        expectedException.expect(JsonParseException.class);
-        pojoFrom(json(EMPTY_OBJECT), UserIdentity.class);
+    @Throws(Exception::class)
+    public fun shouldFailWithEmptyJson() {
+        Assert.assertThrows(JsonParseException::class.java) {
+            pojoFrom(json(EMPTY_OBJECT), UserIdentity::class.java)
+        }
     }
 
     @Test
-    public void shouldBuildBasic() throws Exception {
-        UserIdentity identity = pojoFrom(json(AUTH0), UserIdentity.class);
-        assertThat(identity, isUserIdentity("1234567890", "auth0", "Username-Password-Authentication"));
-        assertThat(identity.getProfileInfo(), anEmptyMap());
-        assertThat(identity.isSocial(), is(false));
-        assertThat(identity.getAccessToken(), nullValue());
-        assertThat(identity.getAccessTokenSecret(), nullValue());
+    @Throws(Exception::class)
+    public fun shouldBuildBasic() {
+        val identity = pojoFrom(json(AUTH0), UserIdentity::class.java)
+        MatcherAssert.assertThat(
+            identity,
+            UserIdentityMatcher.isUserIdentity(
+                "1234567890",
+                "auth0",
+                "Username-Password-Authentication"
+            )
+        )
+        MatcherAssert.assertThat(identity.getProfileInfo(), IsMapWithSize.anEmptyMap())
+        MatcherAssert.assertThat(identity.isSocial, Matchers.`is`(false))
+        MatcherAssert.assertThat(identity.accessToken, Matchers.nullValue())
+        MatcherAssert.assertThat(identity.accessTokenSecret, Matchers.nullValue())
     }
 
     @Test
-    public void shouldBuildWithExtraValues() throws Exception {
-        UserIdentity identity = pojoFrom(json(FACEBOOK), UserIdentity.class);
-        assertThat(identity, isUserIdentity("999997950999976", "facebook", "facebook"));
-        assertThat(identity.getProfileInfo(), hasEntry("given_name", (Object) "John"));
-        assertThat(identity.getProfileInfo(), hasEntry("family_name", (Object) "Foobar"));
-        assertThat(identity.getProfileInfo(), hasEntry("email_verified", (Object) true));
-        assertThat(identity.getProfileInfo(), hasEntry("gender", (Object) "male"));
+    @Throws(Exception::class)
+    public fun shouldBuildWithExtraValues() {
+        val identity = pojoFrom(json(FACEBOOK), UserIdentity::class.java)
+        MatcherAssert.assertThat(
+            identity,
+            UserIdentityMatcher.isUserIdentity("999997950999976", "facebook", "facebook")
+        )
+        MatcherAssert.assertThat(
+            identity.getProfileInfo(),
+            Matchers.hasEntry("given_name", "John" as Any)
+        )
+        MatcherAssert.assertThat(
+            identity.getProfileInfo(),
+            Matchers.hasEntry("family_name", "Foobar" as Any)
+        )
+        MatcherAssert.assertThat(
+            identity.getProfileInfo(),
+            Matchers.hasEntry("email_verified", true as Any)
+        )
+        MatcherAssert.assertThat(
+            identity.getProfileInfo(),
+            Matchers.hasEntry("gender", "male" as Any)
+        )
     }
 
+    private companion object {
+        private const val AUTH0 = "src/test/resources/identity_auth0.json"
+        private const val FACEBOOK = "src/test/resources/identity_facebook.json"
+    }
 }

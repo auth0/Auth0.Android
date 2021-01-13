@@ -79,7 +79,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     ) : this(
         auth0,
         RequestFactory<AuthenticationException>(networkingClient, createErrorAdapter()),
-        GsonProvider.buildGson()
+        GsonProvider.gson
     )
 
     public val clientId: String

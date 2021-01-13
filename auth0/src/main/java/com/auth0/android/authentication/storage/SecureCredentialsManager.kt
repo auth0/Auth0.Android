@@ -30,7 +30,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     private val crypto: CryptoUtil,
     jwtDecoder: JWTDecoder
 ) : BaseCredentialsManager(apiClient, storage, jwtDecoder) {
-    private val gson: Gson = GsonProvider.buildGson()
+    private val gson: Gson = GsonProvider.gson
 
     //Changeable by the user
     private var authenticateBeforeDecrypt: Boolean
