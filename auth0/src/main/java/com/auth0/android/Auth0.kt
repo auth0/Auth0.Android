@@ -25,6 +25,7 @@ package com.auth0.android
 
 import android.content.Context
 import androidx.annotation.VisibleForTesting
+import com.auth0.android.request.DefaultClient
 import com.auth0.android.util.Auth0UserAgent
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -88,7 +89,7 @@ public open class Auth0 @JvmOverloads constructor(
      *
      * @param timeout the new timeout value in seconds
      */
-    public var connectTimeoutInSeconds: Int = 0
+    public var connectTimeoutInSeconds: Int = DefaultClient.DEFAULT_TIMEOUT_SECONDS
     /**
      * @return Auth0 request readTimeoutInSeconds
      */
@@ -98,7 +99,7 @@ public open class Auth0 @JvmOverloads constructor(
      *
      * @param timeout the new timeout value in seconds
      */
-    public var readTimeoutInSeconds: Int = 0
+    public var readTimeoutInSeconds: Int = DefaultClient.DEFAULT_TIMEOUT_SECONDS
     /**
      * @return Auth0 request writeTimeoutInSeconds
      */
@@ -108,6 +109,7 @@ public open class Auth0 @JvmOverloads constructor(
      *
      * @param timeout the new timeout value in seconds
      */
+    // TODO - remove this, only expose connect and read timeouts
     public var writeTimeoutInSeconds: Int = 0
 
     /**

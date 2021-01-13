@@ -3,11 +3,15 @@ package com.auth0.android.request
 import android.net.Uri
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import okhttp3.Interceptor
+import okhttp3.logging.HttpLoggingInterceptor
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.empty
+import org.hamcrest.Matchers.hasSize
 import org.hamcrest.collection.IsMapContaining.hasEntry
 import org.hamcrest.collection.IsMapWithSize.anEmptyMap
 import org.junit.After
@@ -33,7 +37,6 @@ public class DefaultClientTest {
 
     private lateinit var BASE_URL: String
     private lateinit var mockServer: MockWebServer
-    private val client: NetworkingClient = DefaultClient()
     private val gson = Gson()
 
     @Before
@@ -46,6 +49,59 @@ public class DefaultClientTest {
     @After
     public fun tearDown() {
         mockServer.shutdown()
+    }
+
+    @Test
+    public fun shouldAddDefaultHeadersToRequests() {
+        enqueueMockResponse(STATUS_SUCCESS, JSON_OK)
+        executeRequest(
+            HttpMethod.GET,
+            DefaultClient(defaultHeaders = mapOf("custom-header" to "custom-value"))
+        )
+
+        val sentRequest = mockServer.takeRequest()
+        requestAssertions(sentRequest, HttpMethod.GET, mapOf("custom-header" to "custom-value"))
+    }
+
+    @Test
+    public fun shouldOverrideDefaultHeadersWithRequestHeadersIfSameKey() {
+        enqueueMockResponse(STATUS_SUCCESS, JSON_OK)
+
+        executeRequest(
+            HttpMethod.GET,
+            DefaultClient(defaultHeaders = mapOf("a-header" to "a-value")),
+            requestHeaders = mutableMapOf("a-header" to "updated-value"))
+
+        val sentRequest = mockServer.takeRequest()
+        requestAssertions(sentRequest, HttpMethod.GET, mapOf("a-header" to "updated-value"))
+    }
+
+    @Test
+    public fun shouldHaveLoggingDisabledByDefault() {
+        assertThat(DefaultClient().okHttpClient.interceptors, empty())
+    }
+
+    @Test
+    public fun shouldHaveLoggingEnabledIfSpecified() {
+        val netClient = DefaultClient(enableLogging = true)
+        assertThat(netClient.okHttpClient.interceptors, hasSize(1))
+
+        val interceptor: Interceptor = netClient.okHttpClient.interceptors[0]
+        assertThat((interceptor as HttpLoggingInterceptor).level, equalTo(HttpLoggingInterceptor.Level.BODY))
+    }
+
+    @Test
+    public fun shouldHaveDefaultTimeoutValues() {
+        val client = DefaultClient()
+        assertThat(client.okHttpClient.connectTimeoutMillis, equalTo(10 * 1000))
+        assertThat(client.okHttpClient.readTimeoutMillis, equalTo(10 * 1000))
+    }
+
+    @Test
+    public fun shouldUseTimeoutConfigIfSpecified() {
+        val client = DefaultClient(connectTimeout = 100, readTimeout = 200)
+        assertThat(client.okHttpClient.connectTimeoutMillis, equalTo(100 * 1000))
+        assertThat(client.okHttpClient.readTimeoutMillis, equalTo(200 * 1000))
     }
 
     @Test
@@ -154,7 +210,10 @@ public class DefaultClientTest {
 
 
     //Helper methods
-    private fun requestAssertions(request: RecordedRequest, method: HttpMethod) {
+    private fun requestAssertions(
+        request: RecordedRequest,
+        method: HttpMethod,
+        headers: Map<String, String> = mapOf("a-header" to "b-value")) {
         val requestUri = Uri.parse(request.path)
         when (method) {
             HttpMethod.GET -> assertThat(request.method, equalTo("GET"))
@@ -163,6 +222,7 @@ public class DefaultClientTest {
             HttpMethod.DELETE -> assertThat(request.method, equalTo("DELETE"))
         }
         assertThat(requestUri.path, equalTo(URL_PATH))
+
         if (method == HttpMethod.GET) {
             assertThat(requestUri.getQueryParameter("customer"), equalTo("john-doe"))
             assertThat(request.bodyFromJson(), anEmptyMap())
@@ -170,13 +230,15 @@ public class DefaultClientTest {
             assertThat(requestUri.query, nullValue())
             assertThat(request.bodyFromJson(), hasEntry("customer", "john-doe"))
         }
-        assertThat(
-            request.headers.toMultimap(),
-            hasEntry(
-                equalTo("a-header"),
-                hasItem("b-value")
+        val requestHeaders = request.headers.toMultimap()
+        headers.forEach { (k, v) ->
+            assertThat(
+                requestHeaders, hasEntry(
+                    equalTo(k), hasItem(v)
+                )
             )
-        )
+            assertThat(requestHeaders[k], hasSize(1))
+        }
     }
 
     private fun responseAssertions(response: ServerResponse, httpStatus: Int, bodyJson: String) {
@@ -191,10 +253,14 @@ public class DefaultClientTest {
         )
     }
 
-    private fun executeRequest(method: HttpMethod): ServerResponse {
+    private fun executeRequest(
+        method: HttpMethod,
+        client: NetworkingClient = DefaultClient(),
+        requestHeaders: MutableMap<String, String> = mutableMapOf("a-header" to "b-value")
+    ): ServerResponse {
         val options = RequestOptions(method)
         options.parameters["customer"] = "john-doe"
-        options.headers["a-header"] = "b-value"
+        options.headers.putAll(requestHeaders)
 
         //Server response
         val destination = Uri.parse(BASE_URL).buildUpon()
