@@ -72,6 +72,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     @JvmOverloads
     public constructor(
         auth0: Auth0,
+        @Suppress("DEPRECATION")
         networkingClient: NetworkingClient = DefaultClient(
             connectTimeout = auth0.connectTimeoutInSeconds,
             readTimeout = auth0.readTimeoutInSeconds,
