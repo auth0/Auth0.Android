@@ -51,7 +51,6 @@ import org.hamcrest.collection.IsMapContaining;
 import org.hamcrest.collection.IsMapWithSize;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -288,7 +287,6 @@ public class UsersAPIClientTest {
     }
 
     @Test
-    @Ignore("PATCH method not supported by HttpUrlConnection")
     public void shouldUpdateUserMetadata() throws Exception {
         mockAPI.willReturnUserProfile();
 
@@ -316,7 +314,6 @@ public class UsersAPIClientTest {
     }
 
     @Test
-    @Ignore("PATCH method not supported by HttpUrlConnection")
     public void shouldUpdateUserMetadataSync() throws Exception {
         mockAPI.willReturnUserProfile();
 
