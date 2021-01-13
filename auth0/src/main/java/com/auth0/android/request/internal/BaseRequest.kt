@@ -37,24 +37,16 @@ import java.nio.charset.Charset
  * @param resultAdapter the adapter that will convert a successful response into the expected type.
  * @param errorAdapter the adapter that will convert a failed response into the expected type.
  */
-public open class BaseRequest<T, U : Auth0Exception> internal constructor(
+internal open class BaseRequest<T, U : Auth0Exception>(
     method: HttpMethod,
-    public val url: String,
+    private val url: String,
     private val client: NetworkingClient,
     private val resultAdapter: JsonAdapter<T>,
     private val errorAdapter: ErrorAdapter<U>,
-    private val threadSwitcher: ThreadSwitcher
+    private val threadSwitcher: ThreadSwitcher = DefaultThreadSwitcher
 ) : Request<T, U> {
 
-    public constructor(
-        method: HttpMethod,
-        url: String,
-        client: NetworkingClient,
-        resultAdapter: JsonAdapter<T>,
-        errorAdapter: ErrorAdapter<U>
-    ) : this(method, url, client, resultAdapter, errorAdapter, DefaultThreadSwitcher)
-
-    public val options: RequestOptions = RequestOptions(method)
+    private val options: RequestOptions = RequestOptions(method)
 
     override fun addHeader(name: String, value: String): Request<T, U> {
         options.headers[name] = value

@@ -8,7 +8,7 @@ import com.auth0.android.request.AuthenticationRequest
 import com.auth0.android.request.Request
 import com.auth0.android.result.Credentials
 
-public open class BaseAuthenticationRequest(private val request: Request<Credentials, AuthenticationException>) :
+internal open class BaseAuthenticationRequest(private val request: Request<Credentials, AuthenticationException>) :
     AuthenticationRequest {
     /**
      * Sets the 'grant_type' parameter
