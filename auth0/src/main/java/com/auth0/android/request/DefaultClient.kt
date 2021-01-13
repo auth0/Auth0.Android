@@ -22,8 +22,8 @@ import java.util.concurrent.TimeUnit
  * @param enableLogging whether HTTP request and response info should be logged. This should only be set to `true` for debugging purposes in non-production environments, as sensitive information is included in the logs. Defaults to `false`.
  */
 public class DefaultClient(
-        private val connectTimeout: Long = DEFAULT_TIMEOUT_SECONDS,
-        private val readTimeout: Long = DEFAULT_TIMEOUT_SECONDS,
+        private val connectTimeout: Int = DEFAULT_TIMEOUT_SECONDS,
+        private val readTimeout: Int = DEFAULT_TIMEOUT_SECONDS,
         private val defaultHeaders: Map<String, String> = mapOf(),
         private val enableLogging: Boolean = false
 ) : NetworkingClient {
@@ -32,7 +32,7 @@ public class DefaultClient(
     private val gson: Gson = GsonProvider.buildGson()
 
     @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal var okHttpClient: OkHttpClient
+    internal val okHttpClient: OkHttpClient
 
     @Throws(IllegalArgumentException::class, IOException::class)
     override fun load(url: String, options: RequestOptions): ServerResponse {
@@ -84,16 +84,16 @@ public class DefaultClient(
         }
 
         // timeouts
-        builder.connectTimeout(connectTimeout, TimeUnit.SECONDS)
-        builder.readTimeout(readTimeout, TimeUnit.SECONDS)
+        builder.connectTimeout(connectTimeout.toLong(), TimeUnit.SECONDS)
+        builder.readTimeout(readTimeout.toLong(), TimeUnit.SECONDS)
 
         okHttpClient = builder.build()
     }
 
 
-    private companion object {
-        private const val DEFAULT_TIMEOUT_SECONDS: Long = 10
-        private val APPLICATION_JSON_UTF8: MediaType =
+    internal companion object {
+        const val DEFAULT_TIMEOUT_SECONDS: Int = 10
+        val APPLICATION_JSON_UTF8: MediaType =
             "application/json; charset=utf-8".toMediaType()
     }
 

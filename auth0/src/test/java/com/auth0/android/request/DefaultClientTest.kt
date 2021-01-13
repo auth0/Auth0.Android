@@ -94,14 +94,14 @@ public class DefaultClientTest {
     public fun shouldHaveDefaultTimeoutValues() {
         val client = DefaultClient()
         assertThat(client.okHttpClient.connectTimeoutMillis, equalTo(10 * 1000))
-        assertThat(client.okHttpClient.connectTimeoutMillis, equalTo(10 * 1000))
+        assertThat(client.okHttpClient.readTimeoutMillis, equalTo(10 * 1000))
     }
 
     @Test
     public fun shouldUseTimeoutConfigIfSpecified() {
-        val client = DefaultClient(connectTimeout = 100, readTimeout = 100)
+        val client = DefaultClient(connectTimeout = 100, readTimeout = 200)
         assertThat(client.okHttpClient.connectTimeoutMillis, equalTo(100 * 1000))
-        assertThat(client.okHttpClient.connectTimeoutMillis, equalTo(100 * 1000))
+        assertThat(client.okHttpClient.readTimeoutMillis, equalTo(200 * 1000))
     }
 
     @Test
@@ -230,12 +230,14 @@ public class DefaultClientTest {
             assertThat(requestUri.query, nullValue())
             assertThat(request.bodyFromJson(), hasEntry("customer", "john-doe"))
         }
-
         val requestHeaders = request.headers.toMultimap()
         headers.forEach { (k, v) ->
-            assertThat(requestHeaders, hasEntry(
-                equalTo(k), hasItem(v)
-            ))
+            assertThat(
+                requestHeaders, hasEntry(
+                    equalTo(k), hasItem(v)
+                )
+            )
+            assertThat(requestHeaders[k], hasSize(1))
         }
     }
 

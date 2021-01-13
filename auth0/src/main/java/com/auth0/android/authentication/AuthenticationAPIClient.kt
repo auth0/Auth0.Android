@@ -73,8 +73,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     public constructor(
         auth0: Auth0,
         networkingClient: NetworkingClient = DefaultClient(
-            connectTimeout = auth0.connectTimeoutInSeconds.toLong(),
-            readTimeout = auth0.readTimeoutInSeconds.toLong(),
+            connectTimeout = auth0.connectTimeoutInSeconds,
+            readTimeout = auth0.readTimeoutInSeconds,
             enableLogging = auth0.isLoggingEnabled
         )
     ) : this(
