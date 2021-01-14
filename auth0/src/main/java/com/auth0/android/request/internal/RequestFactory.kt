@@ -30,7 +30,7 @@ import com.auth0.android.util.Auth0UserAgent
 import java.io.Reader
 import java.util.*
 
-public class RequestFactory<U : Auth0Exception> internal constructor(
+internal class RequestFactory<U : Auth0Exception> internal constructor(
     private val client: NetworkingClient,
     private val errorAdapter: ErrorAdapter<U>
 ) {
@@ -50,47 +50,47 @@ public class RequestFactory<U : Auth0Exception> internal constructor(
 
     private val baseHeaders = mutableMapOf(Pair(ACCEPT_LANGUAGE_HEADER, defaultLocale))
 
-    public fun <T> post(
+    fun <T> post(
         url: String,
         resultAdapter: JsonAdapter<T>
     ): Request<T, U> = setupRequest(HttpMethod.POST, url, resultAdapter, errorAdapter)
 
-    public fun post(url: String): Request<Void, U> =
+    fun post(url: String): Request<Void, U> =
         this.post(url, object : JsonAdapter<Void> {
             override fun fromJson(reader: Reader): Void? {
                 return null
             }
         })
 
-    public fun <T> patch(
+    fun <T> patch(
         url: String,
         resultAdapter: JsonAdapter<T>
     ): Request<T, U> = setupRequest(HttpMethod.PATCH, url, resultAdapter, errorAdapter)
 
-    public fun <T> delete(
+    fun <T> delete(
         url: String,
         resultAdapter: JsonAdapter<T>
     ): Request<T, U> = setupRequest(HttpMethod.DELETE, url, resultAdapter, errorAdapter)
 
-    public fun <T> get(
+    fun <T> get(
         url: String,
         resultAdapter: JsonAdapter<T>
     ): Request<T, U> = setupRequest(HttpMethod.GET, url, resultAdapter, errorAdapter)
 
-    public fun setHeader(name: String, value: String) {
+    fun setHeader(name: String, value: String) {
         baseHeaders[name] = value
     }
 
-    public fun setClientInfo(clientInfo: String) {
+    fun setClientInfo(clientInfo: String) {
         baseHeaders[CLIENT_INFO_HEADER] = clientInfo
     }
 
-    public fun setUserAgent(userAgent: String) {
+    fun setUserAgent(userAgent: String) {
         baseHeaders[USER_AGENT_HEADER] = userAgent
     }
 
     @VisibleForTesting
-    public fun <T> createRequest(
+    fun <T> createRequest(
         method: HttpMethod,
         url: String,
         client: NetworkingClient,

@@ -53,6 +53,15 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 
 ## Detailed change listing
 
+### Files that changed their package
+- The `com.auth0.android.authentication.request.ProfileRequest` class was moved to `com.auth0.android.request.ProfileRequest`
+- The `com.auth0.android.authentication.request.SignUpRequest` class was moved to `com.auth0.android.request.SignUpRequest`
+
+### Internal package
+The previous version of this library used to expose a few classes in the `com.auth0.android.request.internal` package. These were never meant to be part of the library's Public API, and the direct usage of them was discouraged on the Javadocs. Since the codebase had migrated to Kotlin, we now take advantage of the `internal` modifier and use it were necessary. These classes might appear as `public` classes for Java projects but should still not be used, as they are still not part of this library's Public API. 
+
+We will not provide support and will change these as required without any previous notice.   
+
 ### Classes and Interfaces removed
 
 - The `com.auth0.android.util.Base64` class has been removed. Use `android.util.Base64` instead.
@@ -65,6 +74,7 @@ Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequ
 - The `com.auth0.android.request.AuthorizableRequest` class has been removed. You can achieve the same result using `addHeader("Authorization", "Bearer {TOKEN_VALUE}")`.
 - The `com.auth0.android.authentication.request.TokenRequest` class has been removed. The ability to set a Code Verifier, and any request headers and parameters has been moved to the `com.auth0.android.request.Request` interface.
 - The `com.auth0.android.authentication.request.DatabaseConnectionRequest` class has been removed. The ability to set any request headers and parameters has been moved to the `com.auth0.android.request.Request` interface.
+- The `com.auth0.android.provider.VoidCallback` class has been removed. The ability to use a callback that doesn't take an argument can be replaced with `Callback<Void, AuthenticationException>`.
 
 ### Constants removed
 

@@ -5,7 +5,7 @@ import java.io.InputStreamReader
 import java.nio.charset.Charset
 
 /**
- * InputStreamReader implementation that remembers if it was called Closeable#close().
+ * InputStreamReader wrapper that remembers if it was called Closeable#close().
  */
 internal class AwareInputStreamReader(inputStream: InputStream, charset: Charset) :
     InputStreamReader(inputStream, charset) {

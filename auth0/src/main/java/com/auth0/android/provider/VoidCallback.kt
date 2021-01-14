@@ -29,4 +29,4 @@ import com.auth0.android.callback.Callback
 /**
  * Generic callback called on success/failure, that receives no payload when succeeds.
  */
-public interface VoidCallback : Callback<Void, Auth0Exception>
+internal interface VoidCallback : Callback<Void, Auth0Exception>

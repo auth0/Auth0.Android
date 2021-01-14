@@ -3,6 +3,7 @@ package com.auth0.android.authentication.request;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.Callback;
 import com.auth0.android.request.AuthenticationRequest;
+import com.auth0.android.request.ProfileRequest;
 import com.auth0.android.request.Request;
 import com.auth0.android.result.Authentication;
 import com.auth0.android.result.Credentials;

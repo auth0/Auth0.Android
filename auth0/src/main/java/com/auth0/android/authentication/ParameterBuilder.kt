@@ -23,8 +23,6 @@
  */
 package com.auth0.android.authentication
 
-import java.util.*
-
 /**
  * Builder for Auth0 Authentication API parameters
  * You can build your parameters like this
@@ -40,7 +38,7 @@ import java.util.*
  * @see ParameterBuilder.newAuthenticationBuilder
  */
 public class ParameterBuilder private constructor(parameters: Map<String, String>) {
-    private val parameters: MutableMap<String, String>
+    private val parameters: MutableMap<String, String> = parameters.toMutableMap()
 
     /**
      * Sets the 'client_id' parameter
@@ -213,7 +211,4 @@ public class ParameterBuilder private constructor(parameters: Map<String, String
         }
     }
 
-    init {
-        this.parameters = parameters.toMutableMap()
-    }
 }
