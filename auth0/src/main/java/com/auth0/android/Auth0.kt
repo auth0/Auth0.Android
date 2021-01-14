@@ -58,16 +58,13 @@ public open class Auth0 @JvmOverloads constructor(
     public var auth0UserAgent: Auth0UserAgent? = null
         private set
     /**
-     * Getter for the HTTP logger is enabled or not.
-     *
-     * @return whether every Request, Response and other sensitive information should be logged or not.
+     * Whether HTTP request and response info should be logged.
+     * This should only be set to `true` for debugging purposes in non-production environments, as sensitive information is included in the logs.
+     * Defaults to `false`.
      */
-    /**
-     * Log every Request, Response and other sensitive information exchanged using the Auth0 APIs.
-     * You shouldn't enable logging in release builds as it may leak sensitive information.
-     *
-     * @param enabled if every Request, Response and other sensitive information should be logged.
-     */
+    @Deprecated(
+        "Create a DefaultClient and specify enableLogging = true|false instead. This can then be included when creating the WebAuthProvider or the API clients"
+    )
     public var isLoggingEnabled: Boolean = false
     /**
      * Getter for whether TLS 1.2 is enforced on devices with API 16-21.
@@ -80,26 +77,23 @@ public open class Auth0 @JvmOverloads constructor(
      * @param enforced whether TLS 1.2 is enforced on devices with API 16-21.
      */
     public var isTLS12Enforced: Boolean = false
+
     /**
-     * @return Auth0 request connectTimeoutInSeconds
+     * The connection timeout for network requests, in seconds. Defaults to 10 seconds.
      */
-    /**
-     * Set the connection timeout for network requests.
-     * By default, this value is 10 seconds.
-     *
-     * @param timeout the new timeout value in seconds
-     */
+    @Deprecated(
+        "Create a DefaultClient and specify the connectTimeout instead. This can then be included when creating the WebAuthProvider or the API clients"
+    )
     public var connectTimeoutInSeconds: Int = DefaultClient.DEFAULT_TIMEOUT_SECONDS
+
     /**
-     * @return Auth0 request readTimeoutInSeconds
+     * The read timeout, in seconds, to use when executing requests. Default is ten seconds.
      */
-    /**
-     * Set the read timeout for network requests.
-     * By default, this value is 10 seconds.
-     *
-     * @param timeout the new timeout value in seconds
-     */
+    @Deprecated(
+        "Create a DefaultClient and specify the readTimeout instead. This can then be included when creating the WebAuthProvider or the API clients"
+    )
     public var readTimeoutInSeconds: Int = DefaultClient.DEFAULT_TIMEOUT_SECONDS
+
     /**
      * @return Auth0 request writeTimeoutInSeconds
      */

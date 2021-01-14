@@ -66,6 +66,7 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
     public constructor(
         auth0: Auth0,
         token: String,
+        @Suppress("DEPRECATION")
         networkingClient: NetworkingClient = DefaultClient(
             connectTimeout = auth0.connectTimeoutInSeconds,
             readTimeout = auth0.readTimeoutInSeconds,
