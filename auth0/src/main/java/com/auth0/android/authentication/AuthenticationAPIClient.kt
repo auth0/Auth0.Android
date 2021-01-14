@@ -678,7 +678,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val WELL_KNOWN_PATH = ".well-known"
         private const val JWKS_FILE_PATH = "jwks.json"
         private fun createErrorAdapter(): ErrorAdapter<AuthenticationException> {
-            val mapAdapter = forMap(Gson())
+            val mapAdapter = forMap(GsonProvider.gson)
             return object : ErrorAdapter<AuthenticationException> {
                 override fun fromRawResponse(
                     statusCode: Int,
