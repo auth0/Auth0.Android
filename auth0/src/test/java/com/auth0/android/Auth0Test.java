@@ -28,7 +28,6 @@ import android.content.Context;
 import android.content.res.Resources;
 
 import com.auth0.android.util.Auth0UserAgent;
-import okhttp3.HttpUrl;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -39,6 +38,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
+
+import okhttp3.HttpUrl;
 
 import static com.auth0.android.util.HttpUrlMatcher.hasHost;
 import static com.auth0.android.util.HttpUrlMatcher.hasPath;
@@ -91,28 +92,6 @@ public class Auth0Test {
     }
 
     @Test
-    public void shouldNotEnforceTLS12ByDefault() {
-        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
-        assertThat(auth0.isTLS12Enforced(), is(false));
-    }
-
-    @Test
-    public void shouldHaveTLS12Enforced() {
-        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
-        auth0.setTLS12Enforced(true);
-
-        assertThat(auth0.isTLS12Enforced(), is(true));
-    }
-
-    @Test
-    public void shouldNotHaveTLS12Enforced() {
-        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
-        auth0.setTLS12Enforced(false);
-
-        assertThat(auth0.isTLS12Enforced(), is(false));
-    }
-
-    @Test
     public void shouldHaveConnectTimeout() {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         auth0.setConnectTimeoutInSeconds(5);
@@ -126,14 +105,6 @@ public class Auth0Test {
         auth0.setReadTimeoutInSeconds(15);
 
         assertThat(auth0.getReadTimeoutInSeconds(), is(15));
-    }
-
-    @Test
-    public void shouldHaveWriteTimeout() {
-        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
-        auth0.setWriteTimeoutInSeconds(20);
-
-        assertThat(auth0.getWriteTimeoutInSeconds(), is(20));
     }
 
     @Test

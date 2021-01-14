@@ -103,6 +103,8 @@ We will not provide support and will change these as required without any previo
 
 - `setOIDCConformant(boolean enabled)` and `isOIDCConformant()` have been removed. The SDK now only supports OIDC-Conformant applications.
 - `doNotSendTelemetry()` has been removed. There is no replacement.
+- `setWriteTimeoutInSeconds(seconds)` and `getWriteTimeoutInSeconds(seconds) have been removed. There is no replacement; only connect and read timeouts can be configured.
+- `setTLS12Enforced()` and `gisTLS12Enforced()` have been removed. The SDK now supports modern TLS by default.
 
 #### `AuthenticationAPIClient` methods removed or changed
 

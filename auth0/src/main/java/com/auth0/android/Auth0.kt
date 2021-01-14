@@ -57,6 +57,7 @@ public open class Auth0 @JvmOverloads constructor(
      */
     public var auth0UserAgent: Auth0UserAgent? = null
         private set
+
     /**
      * Whether HTTP request and response info should be logged.
      * This should only be set to `true` for debugging purposes in non-production environments, as sensitive information is included in the logs.
@@ -66,17 +67,6 @@ public open class Auth0 @JvmOverloads constructor(
         "Create a DefaultClient and specify enableLogging = true|false instead. This can then be included when creating the WebAuthProvider or the API clients"
     )
     public var isLoggingEnabled: Boolean = false
-    /**
-     * Getter for whether TLS 1.2 is enforced on devices with API 16-21.
-     *
-     * @return whether TLS 1.2 is enforced on devices with API 16-21.
-     */
-    /**
-     * Set whether to enforce TLS 1.2 on devices with API 16-21.
-     *
-     * @param enforced whether TLS 1.2 is enforced on devices with API 16-21.
-     */
-    public var isTLS12Enforced: Boolean = false
 
     /**
      * The connection timeout for network requests, in seconds. Defaults to 10 seconds.
@@ -93,18 +83,6 @@ public open class Auth0 @JvmOverloads constructor(
         "Create a DefaultClient and specify the readTimeout instead. This can then be included when creating the WebAuthProvider or the API clients"
     )
     public var readTimeoutInSeconds: Int = DefaultClient.DEFAULT_TIMEOUT_SECONDS
-
-    /**
-     * @return Auth0 request writeTimeoutInSeconds
-     */
-    /**
-     * Set the write timeout for network requests.
-     * By default, this value is 10 seconds.
-     *
-     * @param timeout the new timeout value in seconds
-     */
-    // TODO - remove this, only expose connect and read timeouts
-    public var writeTimeoutInSeconds: Int = 0
 
     /**
      * Creates a new Auth0 instance with the 'com_auth0_client_id' and 'com_auth0_domain' values
