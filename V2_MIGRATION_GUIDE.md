@@ -51,6 +51,86 @@ The `AuthenticationRequest` interface no longer has a `setAccessToken("{ACCESS-T
 
 Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequest` have been updated to accommodate these changes, and are called out in the detailed changes listed below.
 
+## Networking client customization
+
+v2 provides an improved ability to customize the way this library makes HTTP requests. A new interface, `NetworkingClient`, defines the contract for executing HTTP requests.
+The API clients and `WebAuthProvider` can be configured with an instance of `NetworkingClient`, making it possible to provide your own implementation for complete control over the networking client.  
+Additionally, the default networking client provided by this library supports several simple customization points to enable easy configuration of common customization points.
+
+### Timeout configuration
+
+```kotlin
+// Before
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+account.connectTimeoutInSeconds = 30
+account.readTimeoutInSeconds = 30
+
+val authAPI = AuthenticationAPIClient(account)
+
+// After
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+
+val netClient = DefaultClient(
+    connectTimeout = 30,
+    readTimeout = 30
+)
+val authAPI = AuthenticationAPIClient(account, netClient)
+```
+
+### Logging configuration
+
+```kotlin
+// Before
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+account.isLoggingEnabled = true
+
+val authAPI = AuthenticationAPIClent(account)
+
+// After
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+val netClient = DefaultClient(
+    enableLogging = true
+)
+
+val authAPI = AuthenticationAPIClient(account, netClient)
+```
+
+### Set additional headers for all requests
+
+Previously, if you wished to send additional headers, you would need to do so on a per-request basis, and then only when the `Request` implementation being used supported it.
+While all requests can now be configured with additional headers and request parameters, you can also specify any headers that you wish to be sent on all requests.
+
+```kotlin
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+
+val netClient = DefaultClient(
+    defaultHeaders = mapOf("{HEADER-NAME}" to "{HEADER-VALUE}")
+)
+
+val authAPI = AuthenticationAPIClient(account, netClient)
+```
+
+### Advanced configuration
+
+For more advanced configuration of the networking client, you can provide a custom implementation of `NetworkingClient`. This may be useful when you wish to reuse your own networking client, configure a proxy, etc.
+
+```kotlin
+class CustomNetClient : NetworkingClient {
+    override fun load(url: String, options: RequestOptions): ServerResponse {
+        val response = // create and execute the request
+                
+        return ServerResponse(
+            response.code(),
+            response.body().byteStream(),
+            response.headers().toMultimap()
+        )        
+    }
+}
+
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+val authAPI = AuthenticatonAPIClient(account, CustomNetClient())
+```
+
 ## Detailed change listing
 
 ### Files that changed their package
