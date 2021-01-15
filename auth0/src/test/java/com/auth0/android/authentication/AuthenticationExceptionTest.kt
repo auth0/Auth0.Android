@@ -303,10 +303,9 @@ public class AuthenticationExceptionTest {
     @Test
     @Throws(Exception::class)
     public fun shouldHaveNotStrongPasswordWithDetailedDescription() {
-        val gson = GsonProvider.buildGson()
         val fr = FileReader(PASSWORD_STRENGTH_ERROR_RESPONSE)
         val mapType = object : TypeToken<Map<String?, Any?>?>() {}.type
-        val mapPayload = gson.fromJson<Map<String, Any>>(fr, mapType)
+        val mapPayload = GsonProvider.gson.fromJson<Map<String, Any>>(fr, mapType)
         val ex = AuthenticationException(mapPayload)
         MatcherAssert.assertThat(ex.isPasswordNotStrongEnough, CoreMatchers.`is`(true))
         val expectedDescription =

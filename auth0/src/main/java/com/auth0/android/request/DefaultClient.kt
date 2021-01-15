@@ -22,14 +22,14 @@ import java.util.concurrent.TimeUnit
  * @param enableLogging whether HTTP request and response info should be logged. This should only be set to `true` for debugging purposes in non-production environments, as sensitive information is included in the logs. Defaults to `false`.
  */
 public class DefaultClient(
-        private val connectTimeout: Int = DEFAULT_TIMEOUT_SECONDS,
-        private val readTimeout: Int = DEFAULT_TIMEOUT_SECONDS,
-        private val defaultHeaders: Map<String, String> = mapOf(),
-        private val enableLogging: Boolean = false
+    private val connectTimeout: Int = DEFAULT_TIMEOUT_SECONDS,
+    private val readTimeout: Int = DEFAULT_TIMEOUT_SECONDS,
+    private val defaultHeaders: Map<String, String> = mapOf(),
+    private val enableLogging: Boolean = false
 ) : NetworkingClient {
 
     //TODO: receive this via internal constructor parameters
-    private val gson: Gson = GsonProvider.buildGson()
+    private val gson: Gson = GsonProvider.gson
 
     @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal val okHttpClient: OkHttpClient

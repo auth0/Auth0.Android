@@ -70,11 +70,11 @@ public class BaseRequestTest {
         MockitoAnnotations.openMocks(this)
         resultAdapter = Mockito.spy(GsonAdapter(SimplePojo::class.java, Gson()))
         baseRequest = BaseRequest(
-                HttpMethod.POST,
-                BASE_URL,
-                client,
-                resultAdapter,
-                errorAdapter
+            HttpMethod.POST,
+            BASE_URL,
+            client,
+            resultAdapter,
+            errorAdapter
         )
     }
 
@@ -123,14 +123,14 @@ public class BaseRequestTest {
     public fun shouldBuildErrorFromException() {
         val networkError = mock<IOException>()
         Mockito.`when`(
-                client.load(
-                        eq(BASE_URL), any()
-                )
+            client.load(
+                eq(BASE_URL), any()
+            )
         ).thenThrow(networkError)
         Mockito.`when`(
-                errorAdapter.fromException(
-                        any()
-                )
+            errorAdapter.fromException(
+                any()
+            )
         ).thenReturn(auth0Exception)
         var exception: Exception? = null
         var result: SimplePojo? = null
@@ -160,14 +160,14 @@ public class BaseRequestTest {
         MatcherAssert.assertThat(exception, Matchers.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(exception, Matchers.`is`(auth0Exception))
         verify(errorAdapter).fromJsonResponse(
-                eq(422), any()
+            eq(422), any()
         )
         val reader = readerCaptor.firstValue
         MatcherAssert.assertThat(reader, Matchers.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(
-                reader, Matchers.`is`(
+            reader, Matchers.`is`(
                 Matchers.instanceOf(
-                        AwareInputStreamReader::class.java
+                    AwareInputStreamReader::class.java
                 )
             )
         )
@@ -192,17 +192,17 @@ public class BaseRequestTest {
         MatcherAssert.assertThat(exception, Matchers.`is`(auth0Exception))
         val headersMapCaptor: KArgumentCaptor<Map<String, List<String>>> = argumentCaptor()
         verify(errorAdapter).fromRawResponse(
-                eq(500),
-                eq("Failure"),
-                headersMapCaptor.capture()
+            eq(500),
+            eq("Failure"),
+            headersMapCaptor.capture()
         )
         val headersMap = headersMapCaptor.firstValue
         MatcherAssert.assertThat(headersMap, Matchers.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(headersMap, IsMapWithSize.aMapWithSize(1))
         MatcherAssert.assertThat(
-                headersMap,
-                IsMapContaining.hasEntry(
-                        Matchers.`is`("Content-Type"),
+            headersMap,
+            IsMapContaining.hasEntry(
+                Matchers.`is`("Content-Type"),
                 IsCollectionContaining.hasItem("text/plain")
             )
         )
@@ -224,14 +224,14 @@ public class BaseRequestTest {
         MatcherAssert.assertThat(result, Matchers.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(result!!.prop, Matchers.`is`("test-value"))
         verify(resultAdapter).fromJson(
-                readerCaptor.capture()
+            readerCaptor.capture()
         )
         val reader = readerCaptor.firstValue
         MatcherAssert.assertThat(reader, Matchers.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(
-                reader, Matchers.`is`(
+            reader, Matchers.`is`(
                 Matchers.instanceOf(
-                        AwareInputStreamReader::class.java
+                    AwareInputStreamReader::class.java
                 )
             )
         )
@@ -245,14 +245,14 @@ public class BaseRequestTest {
     public fun shouldExecuteRequestOnBackgroundThreadAndPostSuccessToMainThread() {
         val pausedExecutorService = PausedExecutorService()
         val threadSwitcher =
-                Mockito.spy(ThreadSwitcher(Looper.getMainLooper(), pausedExecutorService))
+            Mockito.spy(ThreadSwitcher(Looper.getMainLooper(), pausedExecutorService))
         val baseRequest = BaseRequest(
-                HttpMethod.POST,
-                BASE_URL,
-                client,
-                resultAdapter,
-                errorAdapter,
-                threadSwitcher
+            HttpMethod.POST,
+            BASE_URL,
+            client,
+            resultAdapter,
+            errorAdapter,
+            threadSwitcher
         )
         mockSuccessfulServerResponse()
         val callback: Callback<SimplePojo, Auth0Exception> = mock()
@@ -260,31 +260,31 @@ public class BaseRequestTest {
         // verify background thread is queued
         baseRequest.start(callback)
         verify(threadSwitcher).backgroundThread(
-                any()
+            any()
         )
         verify(threadSwitcher, Mockito.never()).mainThread(
-                any()
+            any()
         )
 
         // let the background thread run
         MatcherAssert.assertThat(pausedExecutorService.runNext(), Matchers.`is`(true))
         verify(threadSwitcher).mainThread(
-                any()
+            any()
         )
         verify(callback, Mockito.never()).onSuccess(
-                any()
+            any()
         )
 
         // Release the main thread queue
         ShadowLooper.shadowMainLooper().idle()
         val pojoCaptor = ArgumentCaptor.forClass(
-                SimplePojo::class.java
+            SimplePojo::class.java
         )
         verify(callback).onSuccess(pojoCaptor.capture())
         MatcherAssert.assertThat(pojoCaptor.value, Matchers.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(pojoCaptor.value.prop, Matchers.`is`("test-value"))
         verify(callback, Mockito.never()).onFailure(
-                any()
+            any()
         )
     }
 
@@ -293,14 +293,14 @@ public class BaseRequestTest {
     public fun shouldExecuteRequestOnBackgroundThreadAndPostFailureToMainThread() {
         val pausedExecutorService = PausedExecutorService()
         val threadSwitcher =
-                Mockito.spy(ThreadSwitcher(Looper.getMainLooper(), pausedExecutorService))
+            Mockito.spy(ThreadSwitcher(Looper.getMainLooper(), pausedExecutorService))
         val baseRequest = BaseRequest(
-                HttpMethod.POST,
-                BASE_URL,
-                client,
-                resultAdapter,
-                errorAdapter,
-                threadSwitcher
+            HttpMethod.POST,
+            BASE_URL,
+            client,
+            resultAdapter,
+            errorAdapter,
+            threadSwitcher
         )
         mockFailedRawServerResponse()
         val callback: Callback<SimplePojo, Auth0Exception> = mock()
@@ -308,28 +308,28 @@ public class BaseRequestTest {
         // verify background thread is queued
         baseRequest.start(callback)
         verify(threadSwitcher).backgroundThread(
-                any()
+            any()
         )
         verify(threadSwitcher, Mockito.never()).mainThread(
-                any()
+            any()
         )
 
         // let the background thread run
         MatcherAssert.assertThat(pausedExecutorService.runNext(), Matchers.`is`(true))
         verify(threadSwitcher).mainThread(
-                any()
+            any()
         )
         verify(callback, Mockito.never()).onFailure(
-                any()
+            any()
         )
 
         // Release the main thread queue
         ShadowLooper.shadowMainLooper().idle()
         verify(callback).onFailure(
-                any()
+            any()
         )
         verify(callback, Mockito.never()).onSuccess(
-                any()
+            any()
         )
     }
 
@@ -340,9 +340,9 @@ public class BaseRequestTest {
         val inputStream: InputStream = ByteArrayInputStream(jsonResponse.toByteArray())
         val response = ServerResponse(200, inputStream, headers)
         Mockito.`when`(
-                client.load(
-                        eq(BASE_URL), any()
-                )
+            client.load(
+                eq(BASE_URL), any()
+            )
         ).thenReturn(response)
     }
 
@@ -352,17 +352,17 @@ public class BaseRequestTest {
         val textResponse = "Failure"
         val inputStream: InputStream = ByteArrayInputStream(textResponse.toByteArray())
         Mockito.`when`(
-                errorAdapter.fromRawResponse(
-                        eq(500),
-                        ArgumentMatchers.anyString(),
-                        ArgumentMatchers.anyMap()
-                )
+            errorAdapter.fromRawResponse(
+                eq(500),
+                ArgumentMatchers.anyString(),
+                ArgumentMatchers.anyMap()
+            )
         ).thenReturn(auth0Exception)
         val response = ServerResponse(500, inputStream, headers)
         Mockito.`when`(
-                client.load(
-                        eq(BASE_URL), any()
-                )
+            client.load(
+                eq(BASE_URL), any()
+            )
         ).thenReturn(response)
     }
 
@@ -372,16 +372,16 @@ public class BaseRequestTest {
         val jsonResponse = "{\"error_code\":\"invalid_token\"}"
         val inputStream: InputStream = ByteArrayInputStream(jsonResponse.toByteArray())
         Mockito.`when`(
-                errorAdapter.fromJsonResponse(
-                        eq(422),
-                        readerCaptor.capture()
-                )
+            errorAdapter.fromJsonResponse(
+                eq(422),
+                readerCaptor.capture()
+            )
         ).thenReturn(auth0Exception)
         val response = ServerResponse(422, inputStream, headers)
         Mockito.`when`(
-                client.load(
-                        eq(BASE_URL), any()
-                )
+            client.load(
+                eq(BASE_URL), any()
+            )
         ).thenReturn(response)
     }
 

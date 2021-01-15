@@ -41,7 +41,7 @@ internal class GsonAdapter<T> private constructor(private val adapter: TypeAdapt
             return GsonAdapter(typeToken, gson)
         }
 
-        private fun supplyDefaultGson() = GsonProvider.buildGson()
+        private fun supplyDefaultGson() = GsonProvider.gson
     }
 
     internal constructor(

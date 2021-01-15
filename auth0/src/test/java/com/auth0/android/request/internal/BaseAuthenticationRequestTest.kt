@@ -38,7 +38,7 @@ public class BaseAuthenticationRequestTest {
 
     private fun createRequest(url: String): AuthenticationRequest {
         val baseRequest: Request<Credentials, AuthenticationException> =
-        BaseRequest(HttpMethod.POST, url, client, resultAdapter, errorAdapter)
+            BaseRequest(HttpMethod.POST, url, client, resultAdapter, errorAdapter)
         val request: AuthenticationRequest = BaseAuthenticationRequest(baseRequest)
         return Mockito.spy(request)
     }
@@ -48,8 +48,8 @@ public class BaseAuthenticationRequestTest {
     public fun shouldSetGrantType() {
         mockSuccessfulServerResponse()
         createRequest(BASE_URL)
-                .setGrantType("grantType")
-                .execute()
+            .setGrantType("grantType")
+            .execute()
         verify(client).load(eq(BASE_URL), optionsCaptor.capture())
         val values: Map<String, Any> = optionsCaptor.firstValue.parameters
         MatcherAssert.assertThat(values, IsMapWithSize.aMapWithSize(1))
@@ -61,8 +61,8 @@ public class BaseAuthenticationRequestTest {
     public fun shouldSetConnection() {
         mockSuccessfulServerResponse()
         createRequest(BASE_URL)
-                .setConnection("my-connection")
-                .execute()
+            .setConnection("my-connection")
+            .execute()
         verify(client).load(eq(BASE_URL), optionsCaptor.capture())
         val values: Map<String, Any> = optionsCaptor.firstValue.parameters
         MatcherAssert.assertThat(values, IsMapWithSize.aMapWithSize(1))
@@ -74,8 +74,8 @@ public class BaseAuthenticationRequestTest {
     public fun shouldSetRealm() {
         mockSuccessfulServerResponse()
         createRequest(BASE_URL)
-                .setRealm("my-realm")
-                .execute()
+            .setRealm("my-realm")
+            .execute()
         verify(client).load(eq(BASE_URL), optionsCaptor.capture())
         val values: Map<String, Any> = optionsCaptor.firstValue.parameters
         MatcherAssert.assertThat(values, IsMapWithSize.aMapWithSize(1))
@@ -87,8 +87,8 @@ public class BaseAuthenticationRequestTest {
     public fun shouldSetScope() {
         mockSuccessfulServerResponse()
         createRequest(BASE_URL)
-                .setScope("email profile")
-                .execute()
+            .setScope("email profile")
+            .execute()
         verify(client).load(eq(BASE_URL), optionsCaptor.capture())
         val values: Map<String, Any> = optionsCaptor.firstValue.parameters
         MatcherAssert.assertThat(values, IsMapWithSize.aMapWithSize(1))
@@ -100,8 +100,8 @@ public class BaseAuthenticationRequestTest {
     public fun shouldSetAudience() {
         mockSuccessfulServerResponse()
         createRequest(BASE_URL)
-                .setAudience("my-api")
-                .execute()
+            .setAudience("my-api")
+            .execute()
         verify(client).load(eq(BASE_URL), optionsCaptor.capture())
         val values: Map<String, Any> = optionsCaptor.firstValue.parameters
         MatcherAssert.assertThat(values, IsMapWithSize.aMapWithSize(1))
@@ -116,8 +116,8 @@ public class BaseAuthenticationRequestTest {
         parameters["extra"] = "value"
         parameters["123"] = "890"
         createRequest(BASE_URL)
-                .addParameters(parameters)
-                .execute()
+            .addParameters(parameters)
+            .execute()
         verify(client).load(eq(BASE_URL), optionsCaptor.capture())
         val values: Map<String, Any> = optionsCaptor.firstValue.parameters
         MatcherAssert.assertThat(values, IsMapWithSize.aMapWithSize(2))

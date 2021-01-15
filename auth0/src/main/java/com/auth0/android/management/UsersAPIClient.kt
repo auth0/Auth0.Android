@@ -75,7 +75,7 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
     ) : this(
         auth0,
         factoryForToken(token, networkingClient),
-        GsonProvider.buildGson()
+        GsonProvider.gson
     )
 
     public val clientId: String
@@ -236,7 +236,7 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
         private const val USER_METADATA_KEY = "user_metadata"
 
         private fun createErrorAdapter(): ErrorAdapter<ManagementException> {
-            val mapAdapter = forMap(Gson())
+            val mapAdapter = forMap(GsonProvider.gson)
             return object : ErrorAdapter<ManagementException> {
                 override fun fromRawResponse(
                     statusCode: Int,

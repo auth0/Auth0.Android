@@ -30,8 +30,11 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
 import org.junit.runner.RunWith
-import org.mockito.*
+import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.*
+import org.mockito.Mock
+import org.mockito.Mockito
+import org.mockito.MockitoAnnotations
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -84,7 +87,7 @@ public class SecureCredentialsManagerTest {
             SecureCredentialsManager(client, storage, crypto, jwtDecoder)
         manager = Mockito.spy(secureCredentialsManager)
         Mockito.doReturn(CredentialsMock.CURRENT_TIME_MS).`when`(manager).currentTimeInMillis
-        gson = GsonProvider.buildGson()
+        gson = GsonProvider.gson
     }
 
     @Test

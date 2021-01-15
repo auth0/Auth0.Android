@@ -5,7 +5,7 @@ import android.text.TextUtils
 import android.util.Base64
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.auth0.BuildConfig
-import com.google.gson.Gson
+import com.auth0.android.request.internal.GsonProvider
 import java.nio.charset.StandardCharsets
 import java.util.*
 
@@ -54,7 +54,7 @@ public class Auth0UserAgent public constructor(
         values[NAME_KEY] = name
         values[VERSION_KEY] = version
         values[ENV_KEY] = environment
-        val json = Gson().toJson(values)
+        val json = GsonProvider.gson.toJson(values)
         val bytes = json.toByteArray(StandardCharsets.UTF_8)
         value = String(
             Base64.encode(bytes, Base64.URL_SAFE or Base64.NO_WRAP),
