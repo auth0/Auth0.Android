@@ -55,8 +55,7 @@ public open class Auth0 @JvmOverloads constructor(
     /**
      * @return Auth0 user agent info sent in every request
      */
-    public var auth0UserAgent: Auth0UserAgent? = null
-        private set
+    public var auth0UserAgent: Auth0UserAgent
 
     /**
      * Whether HTTP request and response info should be logged.
@@ -132,15 +131,7 @@ public open class Auth0 @JvmOverloads constructor(
             .addEncodedPathSegment("logout")
             .build()
             .toString()
-
-    /**
-     * Setter for the user agent info to send in every request to Auth0.
-     *
-     * @param auth0UserAgent to send in every request to Auth0.
-     */
-    public fun setAuth0UserAgent(auth0UserAgent: Auth0UserAgent) {
-        this.auth0UserAgent = auth0UserAgent
-    }
+    
 
     private fun resolveConfiguration(configurationDomain: String?, domainUrl: HttpUrl): HttpUrl {
         var url = ensureValidUrl(configurationDomain)
