@@ -58,11 +58,6 @@ public class CredentialsGsonTest : GsonBaseTest() {
         MatcherAssert.assertThat(credentials.idToken, Matchers.`is`(Matchers.nullValue()))
         MatcherAssert.assertThat(credentials.type, Matchers.equalTo("bearer"))
         MatcherAssert.assertThat(credentials.refreshToken, Matchers.`is`(Matchers.nullValue()))
-        MatcherAssert.assertThat(credentials.expiresIn, Matchers.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(
-            credentials.expiresIn!!.toDouble(),
-            Matchers.`is`(Matchers.closeTo(86000.0, 1.0))
-        )
         MatcherAssert.assertThat(credentials.expiresAt, Matchers.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(credentials.scope, Matchers.`is`(Matchers.nullValue()))
     }
@@ -79,13 +74,6 @@ public class CredentialsGsonTest : GsonBaseTest() {
         MatcherAssert.assertThat(credentials.accessToken, Matchers.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(credentials.type, Matchers.equalTo("bearer"))
         //The hardcoded value comes from the JSON file
-        MatcherAssert.assertThat(credentials.expiresIn, Matchers.`is`(Matchers.notNullValue()))
-        val expectedCalculatedExpiresIn =
-            ((exp.time - System.currentTimeMillis()) / 1000f).toDouble()
-        MatcherAssert.assertThat(
-            credentials.expiresIn!!.toDouble(),
-            Matchers.`is`(Matchers.closeTo(expectedCalculatedExpiresIn, 1.0))
-        )
         MatcherAssert.assertThat(credentials.expiresAt, Matchers.`is`(Matchers.notNullValue()))
         val expiresAt = credentials.expiresAt!!.time.toDouble()
         MatcherAssert.assertThat(
@@ -103,11 +91,6 @@ public class CredentialsGsonTest : GsonBaseTest() {
         MatcherAssert.assertThat(credentials.idToken, Matchers.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(credentials.type, Matchers.equalTo("bearer"))
         MatcherAssert.assertThat(credentials.refreshToken, Matchers.`is`(Matchers.nullValue()))
-        MatcherAssert.assertThat(credentials.expiresIn, Matchers.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(
-            credentials.expiresIn!!.toDouble(),
-            Matchers.`is`(Matchers.closeTo(86000.0, 1.0))
-        )
         MatcherAssert.assertThat(credentials.expiresAt, Matchers.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(credentials.scope, Matchers.`is`("openid profile"))
     }
@@ -121,11 +104,6 @@ public class CredentialsGsonTest : GsonBaseTest() {
         MatcherAssert.assertThat(credentials.idToken, Matchers.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(credentials.type, Matchers.equalTo("bearer"))
         MatcherAssert.assertThat(credentials.refreshToken, Matchers.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(credentials.expiresIn, Matchers.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(
-            credentials.expiresIn!!.toDouble(),
-            Matchers.`is`(Matchers.closeTo(86000.0, 1.0))
-        )
         MatcherAssert.assertThat(credentials.expiresAt, Matchers.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(credentials.scope, Matchers.`is`("openid profile"))
     }
@@ -135,7 +113,7 @@ public class CredentialsGsonTest : GsonBaseTest() {
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + 123456 * 1000)
         val expectedExpiresAt = formatDate(expiresAt)
         val expiresInCredentials: Credentials =
-            CredentialsMock("id", "access", "ty", "refresh", 123456L)
+            CredentialsMock("id", "access", "ty", "refresh", expiresAt, null)
         val expiresInJson = gson.toJson(expiresInCredentials)
         MatcherAssert.assertThat(expiresInJson, CoreMatchers.containsString("\"id_token\":\"id\""))
         MatcherAssert.assertThat(
@@ -152,7 +130,7 @@ public class CredentialsGsonTest : GsonBaseTest() {
         )
         MatcherAssert.assertThat(
             expiresInJson,
-            CoreMatchers.containsString("\"expires_in\":123456")
+            CoreMatchers.not(CoreMatchers.containsString("\"expires_in\""))
         )
         MatcherAssert.assertThat(
             expiresInJson, CoreMatchers.containsString(
@@ -181,7 +159,7 @@ public class CredentialsGsonTest : GsonBaseTest() {
         )
         MatcherAssert.assertThat(
             expiresAtJson,
-            CoreMatchers.containsString("\"expires_in\":123456")
+            CoreMatchers.not(CoreMatchers.containsString("\"expires_in\""))
         )
         MatcherAssert.assertThat(
             expiresInJson, CoreMatchers.containsString(

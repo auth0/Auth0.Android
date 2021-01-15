@@ -30,10 +30,6 @@ public class CredentialsDeserializerTest {
         val credentials = gson.getAdapter(
             Credentials::class.java
         ).fromJson(FileReader(BASIC_CREDENTIALS))
-        MatcherAssert.assertThat(
-            credentials.expiresIn!!.toDouble(),
-            Is.`is`(Matchers.closeTo(86000.0, 1.0))
-        )
         MatcherAssert.assertThat(credentials.expiresAt, Is.`is`(CoreMatchers.notNullValue()))
         val expiresAt = credentials.expiresAt!!.time.toDouble()
         val expectedExpiresAt = (CredentialsMock.CURRENT_TIME_MS + 86000 * 1000).toDouble()
@@ -54,12 +50,6 @@ public class CredentialsDeserializerTest {
         val expiresAt = credentials.expiresAt!!.time.toDouble()
         val expectedExpiresAt = exp.time.toDouble()
         MatcherAssert.assertThat(expiresAt, Is.`is`(Matchers.closeTo(expectedExpiresAt, 1.0)))
-        MatcherAssert.assertThat(credentials.expiresIn, Is.`is`(CoreMatchers.notNullValue()))
-        val expectedExpiresIn = ((exp.time - CredentialsMock.CURRENT_TIME_MS) / 1000f).toDouble()
-        MatcherAssert.assertThat(
-            credentials.expiresIn!!.toDouble(),
-            Is.`is`(Matchers.closeTo(expectedExpiresIn, 1.0))
-        )
     }
 
     private fun generateExpiresAtCredentialsJSON(expiresAt: Date): String {
