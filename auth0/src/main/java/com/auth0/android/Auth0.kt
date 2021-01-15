@@ -55,7 +55,7 @@ public open class Auth0 @JvmOverloads constructor(
     /**
      * @return Auth0 user agent info sent in every request
      */
-    public var auth0UserAgent: Auth0UserAgent? = null
+    public var auth0UserAgent: Auth0UserAgent
 
     /**
      * Whether HTTP request and response info should be logged.
