@@ -1,8 +1,9 @@
 package com.auth0.android.provider;
 
+import android.util.Base64;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import android.util.Base64;
 
 import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
@@ -12,7 +13,7 @@ import java.security.Signature;
 import java.util.Collections;
 
 /**
- * Token signature verifier for HS256 algorithms.
+ * Token signature verifier for RS256 algorithms.
  */
 class AsymmetricSignatureVerifier extends SignatureVerifier {
 
