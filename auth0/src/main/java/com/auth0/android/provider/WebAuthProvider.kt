@@ -315,14 +315,8 @@ public object WebAuthProvider {
          * @return the current builder instance
          */
         public fun withConnectionScope(vararg connectionScope: String): Builder {
-            val sb = StringBuilder()
-            for (s in connectionScope) {
-                sb.append(s.trim { it <= ' ' }).append(",")
-            }
-            if (sb.length > 0) {
-                sb.deleteCharAt(sb.length - 1)
-                values[KEY_CONNECTION_SCOPE] = sb.toString()
-            }
+            values[KEY_CONNECTION_SCOPE] =
+                connectionScope.joinToString(separator = ",") { it.trim() }
             return this
         }
 

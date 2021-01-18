@@ -47,9 +47,7 @@ internal class LogoutManager(
     }
 
     private fun addClientParameters(parameters: MutableMap<String, String>) {
-        if (account.auth0UserAgent != null) {
-            parameters[KEY_USER_AGENT] = account.auth0UserAgent!!.value
-        }
+        parameters[KEY_USER_AGENT] = account.auth0UserAgent.value
         parameters[KEY_CLIENT_ID] = account.clientId
     }
 

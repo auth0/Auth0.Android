@@ -6,7 +6,7 @@ import com.google.gson.annotations.SerializedName
 /**
  * Auth0 user created in a Database connection.
  *
- * @see AuthenticationAPIClient.signUp
+ * @see [com.auth0.android.authentication.AuthenticationAPIClient.signUp]
  */
 public class DatabaseUser(
     @field:JsonRequired @field:SerializedName("email") public val email: String,

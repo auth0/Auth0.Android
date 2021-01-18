@@ -41,7 +41,7 @@ public abstract class BaseCredentialsManager internal constructor(
     public abstract fun hasValidCredentials(): Boolean
     public abstract fun hasValidCredentials(minTtl: Long): Boolean
 
-    @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    @get:VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
     internal val currentTimeInMillis: Long
         get() = _clock.getCurrentTimeMillis()
 

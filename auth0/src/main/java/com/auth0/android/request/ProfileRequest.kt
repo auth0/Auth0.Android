@@ -40,7 +40,7 @@ public class ProfileRequest
      * @param name  of the header
      * @param value of the header
      * @return itself
-     * @see ProfileRequest.ProfileRequest
+     * @see [ProfileRequest]
      */
     override fun addHeader(name: String, value: String): ProfileRequest {
         authenticationRequest.addHeader(name, value)
