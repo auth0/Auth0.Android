@@ -75,6 +75,10 @@ We will not provide support and will change these as required without any previo
 - The `com.auth0.android.authentication.request.TokenRequest` class has been removed. The ability to set a Code Verifier, and any request headers and parameters has been moved to the `com.auth0.android.request.Request` interface.
 - The `com.auth0.android.authentication.request.DatabaseConnectionRequest` class has been removed. The ability to set any request headers and parameters has been moved to the `com.auth0.android.request.Request` interface.
 - The `com.auth0.android.provider.VoidCallback` class has been removed. The ability to use a callback that doesn't take an argument can be replaced with `Callback<Void, AuthenticationException>`.
+- The `com.auth0.android.request.ErrorBuilder` interface has been removed.
+- The `com.auth0.android.RequestBodyBuildException` class has been removed.
+- The `com.auth0.android.util.CheckHelper` class has been removed.
+
 
 ### Constants removed
 
