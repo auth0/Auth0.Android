@@ -1,5 +1,7 @@
 # Auth0.Android (v2 BETA)
 
+> Note: This library is currently in **Beta** and has not had a complete security review. We do not recommend using this library in production yet. As we move towards general availability, please be aware that releases may contain breaking changes.
+
 [![CircleCI](https://img.shields.io/circleci/project/github/auth0/Auth0.Android.svg?style=flat-square)](https://circleci.com/gh/auth0/Auth0.Android/tree/master)
 [![Coverage Status](https://img.shields.io/codecov/c/github/auth0/Auth0.Android/master.svg?style=flat-square)](https://codecov.io/github/auth0/Auth0.Android)
 [![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](http://doge.mit-license.org)
@@ -634,6 +636,65 @@ In the event that something happened while trying to save or retrieve the creden
 - Tokens have expired but no `refresh_token` is available to perform a refresh credentials request.
 - Device's Lock Screen security settings have changed (e.g. the PIN code was changed). Even when `hasCredentials` returns true, the encryption keys will be deemed invalid and until `saveCredentials` is called again it won't be possible to decrypt any previously existing content, since they keys used back then are not the same as the new ones.
 - Device is not compatible with some of the algorithms required by the `SecureCredentialsManager` class. This is considered a catastrophic event and might happen when the OEM has modified the Android ROM removing some of the officially included algorithms. Nevertheless, it can be checked in the exception instance itself by calling `isDeviceIncompatible`. By doing so you can decide the fallback for storing the credentials, such as using the regular `CredentialsManager`.
+
+## Networking client customization
+
+This library provides the ability to customize the behavior of the networking client for common configurations, as well the ability to define and use your own networking client implementation.
+
+The Auth0 class can be configured with a `NetworkingClient`, which will be used when making requests. You can configure the default client with custom timeout values, any headers that should be sent on all requests, and whether to log request/response info (for non-production debugging purposes only). For more advanced configuration, you can provide your own implementation of `NetworkingClient`.
+
+### Timeout configuration
+
+```kotlin
+val netClient = DefaultClient(
+    connectTimeout = 30,
+    readTimeout = 30
+)
+
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+account.networkingClient = netClient
+```
+
+### Logging configuration
+
+```kotlin
+val netClient = DefaultClient(
+    enableLogging = true
+)
+
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+account.networkingClient = netClient
+```
+
+### Set additional headers for all requests
+
+```kotlin
+val netClient = DefaultClient(
+    defaultHeaders = mapOf("{HEADER-NAME}" to "{HEADER-VALUE}")
+)
+
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+account.networkingClient = netClient
+```
+
+### Advanced configuration
+
+For more advanced configuration of the networking client, you can provide a custom implementation of `NetworkingClient`. This may be useful when you wish to reuse your own networking client, configure a proxy, etc.
+
+```kotlin
+class CustomNetClient : NetworkingClient {
+    override fun load(url: String, options: RequestOptions): ServerResponse {
+        // Create and execute the request to the specified URL with the given options
+        val response = ...  
+            
+        // Return a ServerResponse from the received response data
+        return ServerResponse(responseCode, responseBody, responseHeaders)        
+    }
+}
+
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+account.networkingClient = netClient
+```
 
 ## FAQ
 
