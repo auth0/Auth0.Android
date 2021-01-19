@@ -44,7 +44,7 @@ internal class OAuthManager(
     private var idTokenVerificationLeeway: Int? = null
     private var idTokenVerificationIssuer: String? = null
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
     fun setPKCE(pkce: PKCE?) {
         this.pkce = pkce
     }
@@ -251,9 +251,7 @@ internal class OAuthManager(
     }
 
     private fun addClientParameters(parameters: MutableMap<String, String>, redirectUri: String) {
-        if (account.auth0UserAgent != null) {
-            parameters[KEY_USER_AGENT] = account.auth0UserAgent!!.value
-        }
+        parameters[KEY_USER_AGENT] = account.auth0UserAgent.value
         parameters[KEY_CLIENT_ID] = account.clientId
         parameters[KEY_REDIRECT_URI] = redirectUri
     }

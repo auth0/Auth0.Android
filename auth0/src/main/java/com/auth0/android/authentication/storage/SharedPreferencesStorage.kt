@@ -6,6 +6,9 @@ import android.text.TextUtils
 
 /**
  * An implementation of [Storage] that uses [android.content.SharedPreferences] in Context.MODE_PRIVATE to store the values.
+ *
+ * @param context               a valid context
+ * @param sharedPreferencesName the preferences file name
  */
 public class SharedPreferencesStorage @JvmOverloads constructor(
     context: Context,
@@ -76,12 +79,6 @@ public class SharedPreferencesStorage @JvmOverloads constructor(
         private const val SHARED_PREFERENCES_NAME = "com.auth0.authentication.storage"
     }
 
-    /**
-     * Creates a new [Storage] that uses [SharedPreferences] in Context.MODE_PRIVATE to store values.
-     *
-     * @param context               a valid context
-     * @param sharedPreferencesName the preferences file name
-     */
     init {
         require(!TextUtils.isEmpty(sharedPreferencesName)) { "The SharedPreferences name is invalid." }
         sp = context.getSharedPreferences(sharedPreferencesName, Context.MODE_PRIVATE)

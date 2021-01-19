@@ -5,12 +5,13 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.browser.customtabs.CustomTabsClient;
 import androidx.browser.customtabs.CustomTabsServiceConnection;
 import androidx.browser.customtabs.CustomTabsSession;
-import android.util.Log;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.CountDownLatch;
@@ -29,7 +30,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
     private final String preferredPackage;
 
     @NonNull
-    private CustomTabsOptions customTabsOptions;
+    private final CustomTabsOptions customTabsOptions;
     private boolean isBound;
 
     @VisibleForTesting
@@ -47,10 +48,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
     }
 
     @Override
-    public void onCustomTabsServiceConnected(ComponentName componentName, CustomTabsClient customTabsClient) {
-        if (customTabsClient == null) {
-            return;
-        }
+    public void onCustomTabsServiceConnected(@NonNull ComponentName componentName, @NonNull CustomTabsClient customTabsClient) {
         Log.d(TAG, "CustomTabs Service connected");
         customTabsClient.warmup(0L);
         session.set(customTabsClient.newSession(null));
@@ -105,23 +103,20 @@ class CustomTabsController extends CustomTabsServiceConnection {
             return;
         }
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                boolean available = false;
-                try {
-                    available = sessionLatch.await(preferredPackage == null ? 0 : MAX_WAIT_TIME_SECONDS, TimeUnit.SECONDS);
-                } catch (InterruptedException ignored) {
-                }
-                Log.d(TAG, "Launching URI. Custom Tabs available: " + available);
+        new Thread(() -> {
+            boolean available = false;
+            try {
+                available = sessionLatch.await(preferredPackage == null ? 0 : MAX_WAIT_TIME_SECONDS, TimeUnit.SECONDS);
+            } catch (InterruptedException ignored) {
+            }
+            Log.d(TAG, "Launching URI. Custom Tabs available: " + available);
 
-                final Intent intent = customTabsOptions.toIntent(context, session.get());
-                intent.setData(uri);
-                try {
-                    context.startActivity(intent);
-                } catch (ActivityNotFoundException ex) {
-                    Log.e(TAG, "Could not find any Browser application installed in this device to handle the intent.");
-                }
+            final Intent intent = customTabsOptions.toIntent(context, session.get());
+            intent.setData(uri);
+            try {
+                context.startActivity(intent);
+            } catch (ActivityNotFoundException ex) {
+                Log.e(TAG, "Could not find any Browser application installed in this device to handle the intent.");
             }
         }).start();
     }

@@ -328,7 +328,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         }
         Log.d(TAG, "Credentials have expired. Renewing them now...")
         val request = authenticationClient.renewAuth(
-            credentials.refreshToken!!
+            credentials.refreshToken
         )
         if (scope != null) {
             request.addParameter("scope", scope)

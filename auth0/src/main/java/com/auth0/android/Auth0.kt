@@ -19,6 +19,10 @@ import java.util.*
  *
  * This SDK only supports OIDC-Conformant clients, and will use Auth0's current authentication pipeline.
  * For more information, please see the [OIDC adoption guide](https://auth0.com/docs/api-auth/tutorials/adoption).
+ *
+ * @param clientId            of your Auth0 application
+ * @param domain              of your Auth0 account
+ * @param configurationDomain where Auth0's configuration will be fetched, change it if using an on-premise Auth0 server. By default is Auth0 public cloud.
  */
 public open class Auth0 @JvmOverloads constructor(
     /**
@@ -108,7 +112,7 @@ public open class Auth0 @JvmOverloads constructor(
             .addEncodedPathSegment("logout")
             .build()
             .toString()
-    
+
 
     private fun resolveConfiguration(configurationDomain: String?, domainUrl: HttpUrl): HttpUrl {
         var url = ensureValidUrl(configurationDomain)
@@ -128,7 +132,7 @@ public open class Auth0 @JvmOverloads constructor(
         return url
     }
 
-    @VisibleForTesting
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal open fun ensureValidUrl(url: String?): HttpUrl? {
         if (url == null) {
             return null
@@ -154,21 +158,7 @@ public open class Auth0 @JvmOverloads constructor(
             return context.getString(stringRes)
         }
     }
-    /**
-     * Creates a new object using clientId, domain and configuration domain.
-     * Useful when using a on-premise auth0 server that is not in the public cloud,
-     * otherwise we recommend using the constructor [.Auth0]
-     *
-     * @param clientId            of your Auth0 application
-     * @param domain              of your Auth0 account
-     * @param configurationDomain where Auth0's configuration will be fetched. By default is Auth0 public cloud
-     */
-    /**
-     * Creates a new object using the Application's clientId &amp; domain
-     *
-     * @param clientId of your Auth0 application
-     * @param domain   of your Auth0 account
-     */
+
     init {
         domainUrl = ensureValidUrl(domain)
         requireNotNull(domainUrl) { String.format("Invalid domain url: '%s'", domain) }

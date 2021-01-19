@@ -4,7 +4,6 @@ import android.text.TextUtils
 import android.util.Log
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
-import com.auth0.android.authentication.AuthenticationAPIClient
 
 public class AuthenticationException : Auth0Exception {
     private var code: String? = null
