@@ -1,6 +1,6 @@
 package com.auth0.android.provider;
 
-import com.auth0.android.jwt.JWT;
+import com.auth0.android.request.internal.Jwt;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -29,9 +29,9 @@ public class AsymmetricSignatureVerifierTest {
         String signedToken2 = createTestJWT("RS256", createJWTBody("sub"));
         String signedToken3 = createTestJWT("RS256", createJWTBody("aud"));
 
-        verifier.verify(new JWT(signedToken1));
-        verifier.verify(new JWT(signedToken2));
-        verifier.verify(new JWT(signedToken3));
+        verifier.verify(new Jwt(signedToken1));
+        verifier.verify(new Jwt(signedToken2));
+        verifier.verify(new Jwt(signedToken3));
     }
 
     @Test
@@ -47,7 +47,7 @@ public class AsymmetricSignatureVerifierTest {
         String[] parts = signedToken.split("\\.");
         signedToken = parts[0] + "." + parts[1] + ".unexpected-signature";
 
-        verifier.verify(new JWT(signedToken));
+        verifier.verify(new Jwt(signedToken));
     }
 
     @Test
@@ -60,7 +60,7 @@ public class AsymmetricSignatureVerifierTest {
 
         String noneToken = createTestJWT("none", createJWTBody());
 
-        verifier.verify(new JWT(noneToken));
+        verifier.verify(new Jwt(noneToken));
     }
 
     @Test
@@ -73,6 +73,6 @@ public class AsymmetricSignatureVerifierTest {
 
         String hsToken = createTestJWT("HS256", createJWTBody());
 
-        verifier.verify(new JWT(hsToken));
+        verifier.verify(new Jwt(hsToken));
     }
 }

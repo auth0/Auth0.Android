@@ -7,7 +7,7 @@ import com.auth0.android.authentication.AuthenticationAPIClient;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.AuthenticationCallback;
 import com.auth0.android.callback.Callback;
-import com.auth0.android.jwt.JWT;
+import com.auth0.android.request.internal.Jwt;
 
 import java.security.InvalidKeyException;
 import java.security.PublicKey;
@@ -31,12 +31,9 @@ abstract class SignatureVerifier {
      * @param token the ID token to have its signature validated
      * @throws TokenValidationException if the signature is not valid
      */
-    void verify(@NonNull JWT token) throws TokenValidationException {
-        String tokenAlg = token.getHeader().get("alg");
-        String[] tokenParts = token.toString().split("\\.");
-
-        checkAlgorithm(tokenAlg);
-        checkSignature(tokenParts);
+    void verify(@NonNull Jwt token) throws TokenValidationException {
+        checkAlgorithm(token.getAlgorithm());
+        checkSignature(token.getParts());
     }
 
     private void checkAlgorithm(String tokenAlgorithm) throws TokenValidationException {
