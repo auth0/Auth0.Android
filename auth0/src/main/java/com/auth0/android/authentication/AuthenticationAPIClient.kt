@@ -43,9 +43,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * ```
      * @param auth0 account information
      */
-    public constructor(
-        auth0: Auth0
-    ) : this(
+    public constructor(auth0: Auth0) : this(
         auth0,
         RequestFactory<AuthenticationException>(auth0.networkingClient, createErrorAdapter()),
         GsonProvider.gson

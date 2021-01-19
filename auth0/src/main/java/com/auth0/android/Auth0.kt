@@ -42,45 +42,7 @@ public open class Auth0 @JvmOverloads constructor(
     /**
      * The networking client instance used to make HTTP requests.
      */
-    public var networkingClient: NetworkingClient = recreateNetworkingClient()
-
-    /**
-     * Whether HTTP request and response info should be logged.
-     * This should only be set to `true` for debugging purposes in non-production environments, as sensitive information is included in the logs.
-     * Defaults to `false`.
-     */
-    @Deprecated(
-        "Create a DefaultClient and specify enableLogging = true|false instead."
-    )
-    public var isLoggingEnabled: Boolean = false
-        set(value) {
-            field = value
-            recreateNetworkingClient()
-        }
-
-    /**
-     * The connection timeout for network requests, in seconds. Defaults to 10 seconds.
-     */
-    @Deprecated(
-        "Create a DefaultClient and specify the connectTimeout instead."
-    )
-    public var connectTimeoutInSeconds: Int = DefaultClient.DEFAULT_TIMEOUT_SECONDS
-        set(value) {
-            field = value
-            recreateNetworkingClient()
-        }
-
-    /**
-     * The read timeout, in seconds, to use when executing requests. Default is ten seconds.
-     */
-    @Deprecated(
-        "Create a DefaultClient and specify the readTimeout instead."
-    )
-    public var readTimeoutInSeconds: Int = DefaultClient.DEFAULT_TIMEOUT_SECONDS
-        set(value) {
-            field = value
-            recreateNetworkingClient()
-        }
+    public var networkingClient: NetworkingClient = DefaultClient()
 
     /**
      * Creates a new Auth0 instance with the 'com_auth0_client_id' and 'com_auth0_domain' values
@@ -183,11 +145,4 @@ public open class Auth0 @JvmOverloads constructor(
         configurationUrl = resolveConfiguration(configurationDomain, domainUrl)
         auth0UserAgent = Auth0UserAgent()
     }
-
-    private fun recreateNetworkingClient() = DefaultClient(
-        connectTimeout = connectTimeoutInSeconds,
-        readTimeout = readTimeoutInSeconds,
-        defaultHeaders = emptyMap(),
-        enableLogging = isLoggingEnabled
-    )
 }
