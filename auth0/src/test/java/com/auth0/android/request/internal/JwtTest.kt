@@ -21,7 +21,7 @@ public class JwtTest {
     public fun shouldThrowIfLessThan3Parts() {
         Assert.assertThrows(
             "The token was expected to have 3 parts, but got 2.",
-            TokenValidationException::class.java
+            IllegalArgumentException::class.java
         ) {
             Jwt("two.parts")
         }
@@ -31,7 +31,7 @@ public class JwtTest {
     public fun shouldThrowIfMoreThan3Parts() {
         Assert.assertThrows(
             "The token was expected to have 3 parts, but got 4.",
-            TokenValidationException::class.java
+            IllegalArgumentException::class.java
         ) {
             Jwt("this.has.four.parts")
         }

@@ -135,8 +135,8 @@ internal class OAuthManager(
         }
         val decodedIdToken: Jwt = try {
             Jwt(idToken!!)
-        } catch (ignored: Exception) {
-            validationCallback.onFailure(TokenValidationException("ID token could not be decoded"))
+        } catch (error: Exception) {
+            validationCallback.onFailure(TokenValidationException("ID token could not be decoded", error))
             return
         }
         val signatureVerifierCallback: Callback<SignatureVerifier, TokenValidationException> =
