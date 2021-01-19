@@ -2,7 +2,7 @@ package com.auth0.android.provider;
 
 import androidx.annotation.NonNull;
 
-import com.auth0.android.jwt.JWT;
+import com.auth0.android.request.internal.Jwt;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -25,7 +25,7 @@ class IdTokenVerifier {
      * @param verifyOptions the verification options, like audience, issuer, algorithm.
      * @throws TokenValidationException If the ID Token is null, its signing algorithm not supported, its signature invalid or one of its claim invalid.
      */
-    void verify(@NonNull JWT token, @NonNull IdTokenVerificationOptions verifyOptions) throws TokenValidationException {
+    void verify(@NonNull Jwt token, @NonNull IdTokenVerificationOptions verifyOptions) throws TokenValidationException {
         verifyOptions.getSignatureVerifier().verify(token);
 
         if (isEmpty(token.getIssuer())) {
@@ -69,7 +69,7 @@ class IdTokenVerifier {
         }
 
         if (verifyOptions.getNonce() != null) {
-            String nonceClaim = token.getClaim(NONCE_CLAIM).asString();
+            String nonceClaim = token.getNonce();
             if (isEmpty(nonceClaim)) {
                 throw new TokenValidationException("Nonce (nonce) claim must be a string present in the ID token");
             }
@@ -79,7 +79,7 @@ class IdTokenVerifier {
         }
 
         if (audience.size() > 1) {
-            String azpClaim = token.getClaim(AZP_CLAIM).asString();
+            String azpClaim = token.getAuthorizedParty();
             if (isEmpty(azpClaim)) {
                 throw new TokenValidationException("Authorized Party (azp) claim must be a string present in the ID token when Audience (aud) claim has multiple values");
             }
@@ -89,7 +89,7 @@ class IdTokenVerifier {
         }
 
         if (verifyOptions.getMaxAge() != null) {
-            Date authTime = token.getClaim(AUTH_TIME_CLAIM).asDate();
+            Date authTime = token.getAuthenticationTime();
             if (authTime == null) {
                 throw new TokenValidationException("Authentication Time (auth_time) claim must be a number present in the ID token when Max Age (max_age) is specified");
             }

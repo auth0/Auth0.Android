@@ -1,6 +1,6 @@
 package com.auth0.android.authentication.storage;
 
-import com.auth0.android.jwt.JWT;
+import com.auth0.android.request.internal.Jwt;
 
 /**
  * Bridge class for decoding JWTs.
@@ -11,7 +11,7 @@ class JWTDecoder {
     JWTDecoder() {
     }
 
-    JWT decode(String jwt) {
-        return new JWT(jwt);
+    Jwt decode(String jwt) {
+        return new Jwt(jwt);
     }
 }

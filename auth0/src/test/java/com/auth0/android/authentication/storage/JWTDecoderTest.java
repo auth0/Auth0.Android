@@ -1,6 +1,6 @@
 package com.auth0.android.authentication.storage;
 
-import com.auth0.android.jwt.JWT;
+import com.auth0.android.request.internal.Jwt;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,25 +14,24 @@ public class JWTDecoderTest {
 
     @Test
     public void shouldDecodeAToken() {
-        String token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
-        JWT jwt1 = new JWT(token);
+        String token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImFsaWNlIn0.eyJzdWIiOiIxMjM0NTY3ODkwIiwibm9uY2UiOiJyZWFsbHkgcmFuZG9tIHRleHQiLCJpYXQiOjE1MTYyMzkwMjJ9.rYG-HEs1EKKDhwQIoEg32_p-NQzNi5rB7akqGnH_q4k";
+        Jwt jwt1 = new Jwt(token);
 
-        JWT jwt2 = new JWTDecoder().decode(token);
+        Jwt jwt2 = new JWTDecoder().decode(token);
 
         //Header claims
-        assertThat(jwt1.getHeader().get("alg"), is("HS256"));
-        assertThat(jwt1.getHeader().get("typ"), is("JWT"));
-
-        assertThat(jwt2.getHeader().get("typ"), is("JWT"));
-        assertThat(jwt2.getHeader().get("alg"), is("HS256"));
+        assertThat(jwt1.getAlgorithm(), is("HS256"));
+        assertThat(jwt1.getKeyId(), is("alice"));
+        assertThat(jwt2.getAlgorithm(), is("HS256"));
+        assertThat(jwt2.getKeyId(), is("alice"));
 
         //Payload claims
         assertThat(jwt1.getSubject(), is("1234567890"));
         assertThat(jwt1.getIssuedAt().getTime(), is(1516239022000L));
-        assertThat(jwt1.getClaim("name").asString(), is("John Doe"));
+        assertThat(jwt1.getNonce(), is("really random text"));
 
         assertThat(jwt2.getSubject(), is("1234567890"));
         assertThat(jwt2.getIssuedAt().getTime(), is(1516239022000L));
-        assertThat(jwt2.getClaim("name").asString(), is("John Doe"));
+        assertThat(jwt2.getNonce(), is("really random text"));
     }
 }

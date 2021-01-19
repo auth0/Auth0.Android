@@ -1,6 +1,6 @@
 package com.auth0.android.provider;
 
-import com.auth0.android.jwt.JWT;
+import com.auth0.android.request.internal.Jwt;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -54,7 +54,7 @@ public class IdTokenVerifierTest {
         jwtBody.put("nonce", EXPECTED_NONCE);
 
         String token = createTestJWT("none", jwtBody);
-        JWT jwt = new JWT(token);
+        Jwt jwt = new Jwt(token);
         options.setNonce(EXPECTED_NONCE);
         options.setMaxAge(60 * 2);
         idTokenVerifier.verify(jwt, options);
@@ -71,7 +71,7 @@ public class IdTokenVerifierTest {
         String token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.FL7foy7kV9SVoC6GLEqwatuYz39BWoEUpZ9sv00zg2oJneJFkwPYYBCj92xu0Fry7zqLRkhFeveUKtSgZV6AinDvdWWH9Is8ku3l871ut-ECiR8-Co7qdIbQet3IhiLggHko4Z9Ez7F-pWmppV7BRJmYdFjbrurLfgN191VE9xC8AmnzSIPTFczg9g_aycqhea4ncd9YjiGV2QlmNB4q1aCZ3V7QyO4KwJnnLeI4tykXjNRVXfPuInaE_f0TpzpRbzJelAGhL5cmO_b0kJswCEqonYMvsVdGqM9jxWMebs7L2k2s2nZ3MQNo-gVIv3E2GfaBpCgGxO-8kyh8sBal3A";
         String[] parts = token.split("\\.");
         token = parts[0] + "." + parts[1] + ".no-signature";
-        JWT jwt = new JWT(token);
+        Jwt jwt = new Jwt(token);
         idTokenVerifier.verify(jwt, options);
     }
 
@@ -82,7 +82,7 @@ public class IdTokenVerifierTest {
 
         Map<String, Object> jwtBody = createJWTBody("iss");
         String token = createTestJWT("none", jwtBody);
-        JWT jwt = new JWT(token);
+        Jwt jwt = new Jwt(token);
         idTokenVerifier.verify(jwt, options);
     }
 
@@ -94,7 +94,7 @@ public class IdTokenVerifierTest {
         Map<String, Object> jwtBody = createJWTBody();
         jwtBody.put("iss", "--invalid--");
         String token = createTestJWT("none", jwtBody);
-        JWT jwt = new JWT(token);
+        Jwt jwt = new Jwt(token);
         idTokenVerifier.verify(jwt, options);
     }
 
@@ -105,7 +105,7 @@ public class IdTokenVerifierTest {
 
         Map<String, Object> jwtBody = createJWTBody("sub");
         String token = createTestJWT("none", jwtBody);
-        JWT jwt = new JWT(token);
+        Jwt jwt = new Jwt(token);
         idTokenVerifier.verify(jwt, options);
     }
 
@@ -116,7 +116,7 @@ public class IdTokenVerifierTest {
 
         Map<String, Object> jwtBody = createJWTBody("aud");
         String token = createTestJWT("none", jwtBody);
-        JWT jwt = new JWT(token);
+        Jwt jwt = new Jwt(token);
         idTokenVerifier.verify(jwt, options);
     }
 
@@ -128,7 +128,7 @@ public class IdTokenVerifierTest {
         Map<String, Object> jwtBody = createJWTBody();
         jwtBody.put("aud", "--invalid--");
         String token = createTestJWT("none", jwtBody);
-        JWT jwt = new JWT(token);
+        Jwt jwt = new Jwt(token);
         idTokenVerifier.verify(jwt, options);
     }
 
@@ -140,7 +140,7 @@ public class IdTokenVerifierTest {
         Map<String, Object> jwtBody = createJWTBody();
         jwtBody.put("aud", new String[]{"--invalid-1--", "--invalid-2--"});
         String token = createTestJWT("none", jwtBody);
-        JWT jwt = new JWT(token);
+        Jwt jwt = new Jwt(token);
         idTokenVerifier.verify(jwt, options);
     }
 
@@ -152,7 +152,7 @@ public class IdTokenVerifierTest {
         Map<String, Object> jwtBody = createJWTBody();
         jwtBody.put("aud", EXPECTED_AUDIENCE_ARRAY);
         String token = createTestJWT("none", jwtBody);
-        JWT jwt = new JWT(token);
+        Jwt jwt = new Jwt(token);
         idTokenVerifier.verify(jwt, options);
     }
 
@@ -165,7 +165,7 @@ public class IdTokenVerifierTest {
         jwtBody.put("aud", EXPECTED_AUDIENCE_ARRAY);
         jwtBody.put("azp", "--invalid--");
         String token = createTestJWT("none", jwtBody);
-        JWT jwt = new JWT(token);
+        Jwt jwt = new Jwt(token);
         idTokenVerifier.verify(jwt, options);
     }
 
@@ -173,7 +173,7 @@ public class IdTokenVerifierTest {
     public void shouldNotFailWhenNonceClaimIsMissingButNotRequired() throws Exception {
         Map<String, Object> jwtBody = createJWTBody("nonce");
         String token = createTestJWT("none", jwtBody);
-        JWT jwt = new JWT(token);
+        Jwt jwt = new Jwt(token);
         idTokenVerifier.verify(jwt, options);
     }
 
@@ -184,7 +184,7 @@ public class IdTokenVerifierTest {
 
         Map<String, Object> jwtBody = createJWTBody("nonce");
         String token = createTestJWT("none", jwtBody);
-        JWT jwt = new JWT(token);
+        Jwt jwt = new Jwt(token);
         options.setNonce(EXPECTED_NONCE);
         idTokenVerifier.verify(jwt, options);
     }
@@ -197,7 +197,7 @@ public class IdTokenVerifierTest {
         Map<String, Object> jwtBody = createJWTBody();
         jwtBody.put("nonce", "--invalid--");
         String token = createTestJWT("none", jwtBody);
-        JWT jwt = new JWT(token);
+        Jwt jwt = new Jwt(token);
         options.setNonce(EXPECTED_NONCE);
         idTokenVerifier.verify(jwt, options);
     }
@@ -209,7 +209,7 @@ public class IdTokenVerifierTest {
 
         Map<String, Object> jwtBody = createJWTBody("exp");
         String token = createTestJWT("none", jwtBody);
-        JWT jwt = new JWT(token);
+        Jwt jwt = new Jwt(token);
         idTokenVerifier.verify(jwt, options);
     }
 
@@ -223,7 +223,7 @@ public class IdTokenVerifierTest {
         long pastExp = clock - 2 * 60; // 2 min
         jwtBody.put("exp", pastExp);
         String token = createTestJWT("none", jwtBody);
-        JWT jwt = new JWT(token);
+        Jwt jwt = new Jwt(token);
         idTokenVerifier.verify(jwt, options);
     }
 
@@ -234,7 +234,7 @@ public class IdTokenVerifierTest {
 
         Map<String, Object> jwtBody = createJWTBody("iat");
         String token = createTestJWT("none", jwtBody);
-        JWT jwt = new JWT(token);
+        Jwt jwt = new Jwt(token);
         idTokenVerifier.verify(jwt, options);
     }
 
@@ -245,7 +245,7 @@ public class IdTokenVerifierTest {
 
         Map<String, Object> jwtBody = createJWTBody("auth_time");
         String token = createTestJWT("none", jwtBody);
-        JWT jwt = new JWT(token);
+        Jwt jwt = new Jwt(token);
         options.setMaxAge(60 * 2);
         idTokenVerifier.verify(jwt, options);
     }
@@ -259,7 +259,7 @@ public class IdTokenVerifierTest {
         long clock = FIXED_CLOCK_CURRENT_TIME_MS / 1000;
         jwtBody.put("auth_time", clock - 3600);
         String token = createTestJWT("none", jwtBody);
-        JWT jwt = new JWT(token);
+        Jwt jwt = new Jwt(token);
         options.setMaxAge(2 * 60);
         idTokenVerifier.verify(jwt, options);
     }

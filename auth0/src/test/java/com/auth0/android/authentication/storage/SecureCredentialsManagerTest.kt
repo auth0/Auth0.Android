@@ -10,9 +10,9 @@ import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
-import com.auth0.android.jwt.JWT
 import com.auth0.android.request.Request
 import com.auth0.android.request.internal.GsonProvider
+import com.auth0.android.request.internal.Jwt
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.CredentialsMock
 import com.auth0.android.util.Clock
@@ -501,7 +501,7 @@ public class SecureCredentialsManagerTest {
         insertTestCredentials(false, true, true, expiresAt)
         val newDate =
             Date(CredentialsMock.CURRENT_TIME_MS + 61 * 1000) // new token expires in minTTL + 1 seconds
-        val jwtMock = mock<JWT>()
+        val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
         Mockito.`when`(
@@ -566,7 +566,7 @@ public class SecureCredentialsManagerTest {
         insertTestCredentials(false, true, true, expiresAt)
         val newDate =
             Date(CredentialsMock.CURRENT_TIME_MS + 59 * 1000) // new token expires in minTTL - 1 seconds
-        val jwtMock = mock<JWT>()
+        val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
         Mockito.`when`(
@@ -613,7 +613,7 @@ public class SecureCredentialsManagerTest {
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS) // non expired credentials
         insertTestCredentials(false, true, true, expiresAt) // "scope" is set
         val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS + ONE_HOUR_SECONDS * 1000)
-        val jwtMock = mock<JWT>()
+        val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
         Mockito.`when`(
@@ -678,7 +678,7 @@ public class SecureCredentialsManagerTest {
             Date(CredentialsMock.CURRENT_TIME_MS) // current time means expired credentials
         insertTestCredentials(false, true, true, expiresAt)
         val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
-        val jwtMock = mock<JWT>()
+        val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
         Mockito.`when`(
@@ -757,7 +757,7 @@ public class SecureCredentialsManagerTest {
             Date(CredentialsMock.CURRENT_TIME_MS) // current time means expired credentials
         insertTestCredentials(false, true, true, expiresAt)
         val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
-        val jwtMock = mock<JWT>()
+        val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
         Mockito.`when`(
@@ -822,7 +822,7 @@ public class SecureCredentialsManagerTest {
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS)
         insertTestCredentials(false, true, true, expiresAt)
         val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
-        val jwtMock = mock<JWT>()
+        val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
         Mockito.`when`(
@@ -1362,7 +1362,7 @@ public class SecureCredentialsManagerTest {
     }
 
     private fun prepareJwtDecoderMock(expiresAt: Date?) {
-        val jwtMock = mock<JWT>()
+        val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(expiresAt)
         Mockito.`when`(jwtDecoder.decode("idToken")).thenReturn(jwtMock)
     }

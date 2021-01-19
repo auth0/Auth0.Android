@@ -11,8 +11,7 @@ import com.auth0.android.Auth0Exception
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
-import com.auth0.android.jwt.DecodeException
-import com.auth0.android.jwt.JWT
+import com.auth0.android.request.internal.Jwt
 import com.auth0.android.result.Credentials
 import java.security.SecureRandom
 import java.util.*
@@ -134,10 +133,10 @@ internal class OAuthManager(
             validationCallback.onFailure(TokenValidationException("ID token is required but missing"))
             return
         }
-        val decodedIdToken: JWT = try {
-            JWT(idToken!!)
-        } catch (ignored: DecodeException) {
-            validationCallback.onFailure(TokenValidationException("ID token could not be decoded"))
+        val decodedIdToken: Jwt = try {
+            Jwt(idToken!!)
+        } catch (error: Exception) {
+            validationCallback.onFailure(TokenValidationException("ID token could not be decoded", error))
             return
         }
         val signatureVerifierCallback: Callback<SignatureVerifier, TokenValidationException> =
@@ -167,7 +166,7 @@ internal class OAuthManager(
                     }
                 }
             }
-        val tokenKeyId = decodedIdToken.header["kid"]
+        val tokenKeyId = decodedIdToken.keyId
         SignatureVerifier.forAsymmetricAlgorithm(tokenKeyId, apiClient, signatureVerifierCallback)
     }
 
