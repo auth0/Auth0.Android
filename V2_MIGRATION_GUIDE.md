@@ -96,6 +96,7 @@ We will not provide support and will change these as required without any previo
 - `UsersAPIClient` can no longer be constructed from a `Context`. Use UsersAPIClient(auth0: Auth0, token: String)` instead. You can create an instance of `Auth0` using a `Context`.
 - `SignupRequest` now requires the second parameter to be an `AuthenticationRequest`.
 - `ProfileRequest` now requires an `AuthenticationRequest` and a `Request<UserProfile, AuthenticationException>`.
+- `Credentials` can no longer be constructed with an "expires in" value. The date of expiration or "expires at" should be given instead. You typically won't be constructing Credentials on your own.
 
 ### Methods removed or changed
 

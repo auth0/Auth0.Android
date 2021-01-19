@@ -67,7 +67,8 @@ public class SecureCredentialsManagerTest {
 
     private val stringCaptor: KArgumentCaptor<String> = argumentCaptor()
 
-    private val requestCallbackCaptor: KArgumentCaptor<Callback<Credentials, AuthenticationException>> = argumentCaptor()
+    private val requestCallbackCaptor: KArgumentCaptor<Callback<Credentials, AuthenticationException>> =
+        argumentCaptor()
 
     @get:Rule
     public val exception: ExpectedException = ExpectedException.none()
@@ -313,7 +314,7 @@ public class SecureCredentialsManagerTest {
         exception.expect(CredentialsManagerException::class.java)
         exception.expectMessage("Credentials must have a valid date of expiration and a valid access_token or id_token value.")
         val credentials: Credentials =
-            CredentialsMock(null, null, "type", "refreshToken", ONE_HOUR_SECONDS)
+            CredentialsMock(null, null, "type", "refreshToken", Date(), "scope")
         manager.saveCredentials(credentials)
     }
 
@@ -331,7 +332,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldNotThrowOnSaveIfCredentialsHaveAccessTokenAndExpiresIn() {
         val credentials: Credentials =
-            CredentialsMock(null, "accessToken", "type", "refreshToken", ONE_HOUR_SECONDS)
+            CredentialsMock(null, "accessToken", "type", "refreshToken", Date(), "scope")
         Mockito.`when`(crypto.encrypt(any()))
             .thenReturn(byteArrayOf(12, 34, 56, 78))
         manager.saveCredentials(credentials)
@@ -340,7 +341,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldNotThrowOnSaveIfCredentialsHaveIdTokenAndExpiresIn() {
         val credentials: Credentials =
-            CredentialsMock("idToken", null, "type", "refreshToken", ONE_HOUR_SECONDS)
+            CredentialsMock("idToken", null, "type", "refreshToken", Date(), "scope")
         prepareJwtDecoderMock(Date())
         Mockito.`when`(crypto.encrypt(any()))
             .thenReturn(byteArrayOf(12, 34, 56, 78))

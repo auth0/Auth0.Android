@@ -2,23 +2,14 @@ package com.auth0.android.result
 
 import java.util.*
 
-public class CredentialsMock : Credentials {
-    public constructor(
-        idToken: String?,
-        accessToken: String?,
-        type: String?,
-        refreshToken: String?,
-        expiresIn: Long?
-    ) : super(idToken, accessToken, type, refreshToken, expiresIn)
-
-    public constructor(
-        idToken: String?,
-        accessToken: String?,
-        type: String?,
-        refreshToken: String?,
-        expiresAt: Date?,
-        scope: String?
-    ) : super(idToken, accessToken, type, refreshToken, expiresAt, scope)
+public class CredentialsMock(
+    idToken: String?,
+    accessToken: String?,
+    type: String?,
+    refreshToken: String?,
+    expiresAt: Date?,
+    scope: String?
+) : Credentials(idToken, accessToken, type, refreshToken, expiresAt, scope) {
 
     override val currentTimeInMillis: Long
         get() = CURRENT_TIME_MS

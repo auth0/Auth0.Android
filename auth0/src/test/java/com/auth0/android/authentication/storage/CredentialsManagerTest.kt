@@ -9,7 +9,6 @@ import com.auth0.android.result.Credentials
 import com.auth0.android.result.CredentialsMock
 import com.auth0.android.util.Clock
 import com.nhaarman.mockitokotlin2.*
-import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
 import org.hamcrest.Matchers
 import org.hamcrest.core.Is
@@ -170,7 +169,8 @@ public class CredentialsManagerTest {
     public fun shouldThrowOnSetIfCredentialsDoesNotHaveIdTokenOrAccessToken() {
         exception.expect(CredentialsManagerException::class.java)
         exception.expectMessage("Credentials must have a valid date of expiration and a valid access_token or id_token value.")
-        val credentials: Credentials = CredentialsMock(null, null, "type", "refreshToken", 123456L)
+        val credentials: Credentials =
+            CredentialsMock(null, null, "type", "refreshToken", Date(), null)
         manager.saveCredentials(credentials)
     }
 
@@ -178,23 +178,22 @@ public class CredentialsManagerTest {
     public fun shouldThrowOnSetIfCredentialsDoesNotHaveExpiresAt() {
         exception.expect(CredentialsManagerException::class.java)
         exception.expectMessage("Credentials must have a valid date of expiration and a valid access_token or id_token value.")
-        val date: Date? = null
         val credentials: Credentials =
-            CredentialsMock("idToken", "accessToken", "type", "refreshToken", date, "scope")
+            CredentialsMock("idToken", "accessToken", "type", "refreshToken", null, "scope")
         manager.saveCredentials(credentials)
     }
 
     @Test
-    public fun shouldNotThrowOnSetIfCredentialsHaveAccessTokenAndExpiresIn() {
+    public fun shouldNotThrowOnSetIfCredentialsHasAccessTokenAndExpiresAt() {
         val credentials: Credentials =
-            CredentialsMock(null, "accessToken", "type", "refreshToken", 123456L)
+            CredentialsMock(null, "accessToken", "type", "refreshToken", Date(), null)
         manager.saveCredentials(credentials)
     }
 
     @Test
-    public fun shouldNotThrowOnSetIfCredentialsHaveIdTokenAndExpiresIn() {
+    public fun shouldNotThrowOnSetIfCredentialsHasIdTokenAndExpiresAt() {
         val credentials: Credentials =
-            CredentialsMock("idToken", null, "type", "refreshToken", 123456L)
+            CredentialsMock("idToken", null, "type", "refreshToken", Date(), null)
         prepareJwtDecoderMock(Date())
         manager.saveCredentials(credentials)
     }
@@ -282,13 +281,6 @@ public class CredentialsManagerTest {
         MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`("idToken"))
         MatcherAssert.assertThat(retrievedCredentials.refreshToken, Is.`is`("refreshToken"))
         MatcherAssert.assertThat(retrievedCredentials.type, Is.`is`("type"))
-        MatcherAssert.assertThat(retrievedCredentials.expiresIn, Is.`is`(Matchers.notNullValue()))
-        // TODO [SDK-2184]: fix clock mocking to avoid CredentialsManager expiresIn calculation
-        MatcherAssert.assertThat(
-            retrievedCredentials.expiresIn!!.toDouble(), CoreMatchers.`is`(
-                Matchers.closeTo(ONE_HOUR_SECONDS.toDouble(), 50.0)
-            )
-        )
         MatcherAssert.assertThat(retrievedCredentials.expiresAt, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(retrievedCredentials.expiresAt!!.time, Is.`is`(expirationTime))
         MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("scope"))
@@ -316,13 +308,6 @@ public class CredentialsManagerTest {
         MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`("idToken"))
         MatcherAssert.assertThat(retrievedCredentials.refreshToken, Is.`is`("refreshToken"))
         MatcherAssert.assertThat(retrievedCredentials.type, Is.`is`("type"))
-        MatcherAssert.assertThat(retrievedCredentials.expiresIn, Is.`is`(Matchers.notNullValue()))
-        // TODO [SDK-2184]: fix clock mocking to avoid CredentialsManager expiresIn calculation
-        MatcherAssert.assertThat(
-            retrievedCredentials.expiresIn!!.toDouble(), CoreMatchers.`is`(
-                Matchers.closeTo(ONE_HOUR_SECONDS.toDouble(), 50.0)
-            )
-        )
         MatcherAssert.assertThat(retrievedCredentials.expiresAt, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(retrievedCredentials.expiresAt!!.time, Is.`is`(expirationTime))
         MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("scope"))
@@ -350,13 +335,6 @@ public class CredentialsManagerTest {
         MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`(Matchers.nullValue()))
         MatcherAssert.assertThat(retrievedCredentials.refreshToken, Is.`is`("refreshToken"))
         MatcherAssert.assertThat(retrievedCredentials.type, Is.`is`("type"))
-        MatcherAssert.assertThat(retrievedCredentials.expiresIn, Is.`is`(Matchers.notNullValue()))
-        // TODO [SDK-2184]: fix clock mocking to avoid CredentialsManager expiresIn calculation
-        MatcherAssert.assertThat(
-            retrievedCredentials.expiresIn!!.toDouble(), CoreMatchers.`is`(
-                Matchers.closeTo(ONE_HOUR_SECONDS.toDouble(), 50.0)
-            )
-        )
         MatcherAssert.assertThat(retrievedCredentials.expiresAt, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(retrievedCredentials.expiresAt!!.time, Is.`is`(expirationTime))
         MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("scope"))
