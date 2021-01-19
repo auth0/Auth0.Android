@@ -11,11 +11,7 @@ import java.util.List;
 import static android.text.TextUtils.isEmpty;
 
 class IdTokenVerifier {
-    private static final Integer DEFAULT_CLOCK_SKEW = 60; //1 min = 60 sec
-
-    private static final String NONCE_CLAIM = "nonce";
-    private static final String AZP_CLAIM = "azp";
-    private static final String AUTH_TIME_CLAIM = "auth_time";
+    private static final Integer DEFAULT_CLOCK_SKEW = 60; // 1 min = 60 sec
 
     /**
      * Verifies a provided ID Token follows the OIDC specification.
