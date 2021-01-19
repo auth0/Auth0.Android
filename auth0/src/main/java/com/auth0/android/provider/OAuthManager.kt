@@ -166,7 +166,7 @@ internal class OAuthManager(
                     }
                 }
             }
-        val tokenKeyId = decodedIdToken.getKeyId()
+        val tokenKeyId = decodedIdToken.keyId
         SignatureVerifier.forAsymmetricAlgorithm(tokenKeyId, apiClient, signatureVerifierCallback)
     }
 

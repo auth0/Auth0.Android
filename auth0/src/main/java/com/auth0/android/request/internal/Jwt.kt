@@ -6,36 +6,28 @@ import com.google.gson.reflect.TypeToken
 import java.util.*
 
 
+/**
+ * Internal class meant to decode the given token of type JWT and provide access to its claims.
+ */
 internal class Jwt(rawToken: String) {
 
-    val parts: Array<String>
     private val decodedHeader: Map<String, Any>
     private val decodedPayload: Map<String, Any>
-
-    // TODO: Convert fun to properties. Assign once on the init method
+    val parts: Array<String>
 
     // header
-    fun getType(): String = decodedHeader["typ"] as String
-    fun getAlgorithm(): String = decodedHeader["alg"] as String
-    fun getKeyId(): String? = decodedHeader["kid"] as String?
+    val algorithm: String
+    val keyId: String?
 
     // payload
-    fun getSubject(): String? = decodedPayload["sub"] as String?
-    fun getIssuer(): String? = decodedPayload["iss"] as String?
-    fun getNonce(): String? = decodedPayload["nonce"] as String?
-    fun getIssuedAt(): Date? = (decodedPayload["iat"] as? Double)?.let { Date(it.toLong() * 1000) }
-    fun getExpiresAt(): Date? = (decodedPayload["exp"] as? Double)?.let { Date(it.toLong() * 1000) }
-    fun getAuthorizedParty(): String? = decodedPayload["azp"] as String?
-    fun getAuthenticationTime(): Date? =
-        (decodedPayload["auth_time"] as? Double)?.let { Date(it.toLong() * 1000) }
-
-    fun getAudience(): List<String> {
-        return when (val aud = decodedPayload["aud"]) {
-            is String -> listOf(aud)
-            is List<*> -> aud as List<String>
-            else -> emptyList()
-        }
-    }
+    val subject: String?
+    val issuer: String?
+    val nonce: String?
+    val issuedAt: Date?
+    val expiresAt: Date?
+    val authorizedParty: String?
+    val authenticationTime: Date?
+    val audience: List<String>
 
     init {
         parts = splitToken(rawToken)
@@ -44,6 +36,25 @@ internal class Jwt(rawToken: String) {
         val mapAdapter = GsonProvider.gson.getAdapter(object : TypeToken<Map<String, Any>>() {})
         decodedHeader = mapAdapter.fromJson(jsonHeader)
         decodedPayload = mapAdapter.fromJson(jsonPayload)
+
+        // header claims
+        algorithm = decodedHeader["alg"] as String
+        keyId = decodedHeader["kid"] as String?
+
+        // payload claims
+        subject = decodedPayload["sub"] as String?
+        issuer = decodedPayload["iss"] as String?
+        nonce = decodedPayload["nonce"] as String?
+        issuedAt = (decodedPayload["iat"] as? Double)?.let { Date(it.toLong() * 1000) }
+        expiresAt = (decodedPayload["exp"] as? Double)?.let { Date(it.toLong() * 1000) }
+        authorizedParty = decodedPayload["azp"] as String?
+        authenticationTime =
+            (decodedPayload["auth_time"] as? Double)?.let { Date(it.toLong() * 1000) }
+        audience = when (val aud = decodedPayload["aud"]) {
+            is String -> listOf(aud)
+            is List<*> -> aud as List<String>
+            else -> emptyList()
+        }
     }
 
     private fun splitToken(token: String): Array<String> {

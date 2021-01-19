@@ -100,7 +100,7 @@ public abstract class BaseCredentialsManager internal constructor(
         var expiresAt = credentials.expiresAt!!.time
         if (credentials.idToken != null) {
             val idToken = jwtDecoder.decode(credentials.idToken)
-            val idTokenExpiresAtDate = idToken.getExpiresAt()
+            val idTokenExpiresAtDate = idToken.expiresAt
             if (idTokenExpiresAtDate != null) {
                 expiresAt = min(idTokenExpiresAtDate.time, expiresAt)
             }

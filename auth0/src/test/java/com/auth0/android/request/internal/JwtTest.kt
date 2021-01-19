@@ -83,7 +83,7 @@ public class JwtTest {
         val jwt =
             Jwt("eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJKb2huIERvZSJ9.SgXosfRR_IwCgHq5lF3tlM-JHtpucWCRSaVuoHTbWbQ");
         assertThat(jwt, `is`(notNullValue()))
-        assertThat(jwt.getIssuer(), `is`("John Doe"))
+        assertThat(jwt.issuer, `is`("John Doe"))
     }
 
     @Test
@@ -91,7 +91,7 @@ public class JwtTest {
         val jwt = Jwt("eyJhbGciOiJIUzI1NiJ9.e30.something");
         assertThat(jwt, `is`(notNullValue()))
 
-        assertThat(jwt.getIssuer(), `is`(nullValue()))
+        assertThat(jwt.issuer, `is`(nullValue()))
     }
 
     @Test
@@ -99,7 +99,7 @@ public class JwtTest {
         val jwt =
             Jwt("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJUb2szbnMifQ.RudAxkslimoOY3BLl2Ghny3BrUKu9I1ZrXzCZGDJtNs");
         assertThat(jwt, `is`(notNullValue()))
-        assertThat(jwt.getSubject(), `is`("Tok3ns"))
+        assertThat(jwt.subject, `is`("Tok3ns"))
     }
 
     @Test
@@ -107,7 +107,7 @@ public class JwtTest {
         val jwt = Jwt("eyJhbGciOiJIUzI1NiJ9.e30.something");
         assertThat(jwt, `is`(notNullValue()))
 
-        assertThat(jwt.getSubject(), `is`(nullValue()))
+        assertThat(jwt.subject, `is`(nullValue()))
     }
 
     @Test
@@ -115,8 +115,8 @@ public class JwtTest {
         val jwt =
             Jwt("eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOlsiSG9wZSIsIlRyYXZpcyIsIlNvbG9tb24iXX0.Tm4W8WnfPjlmHSmKFakdij0on2rWPETpoM7Sh0u6-S4");
         assertThat(jwt, `is`(notNullValue()))
-        assertThat(jwt.getAudience(), `is`(hasSize(3)))
-        assertThat(jwt.getAudience(), `is`(hasItems("Hope", "Travis", "Solomon")))
+        assertThat(jwt.audience, `is`(hasSize(3)))
+        assertThat(jwt.audience, `is`(hasItems("Hope", "Travis", "Solomon")))
     }
 
     @Test
@@ -124,8 +124,8 @@ public class JwtTest {
         val jwt =
             Jwt("eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJKYWNrIFJleWVzIn0.a4I9BBhPt1OB1GW67g2P1bEHgi6zgOjGUL4LvhE9Dgc");
         assertThat(jwt, `is`(notNullValue()))
-        assertThat(jwt.getAudience(), `is`(hasSize(1)))
-        assertThat(jwt.getAudience(), `is`(hasItems("Jack Reyes")))
+        assertThat(jwt.audience, `is`(hasSize(1)))
+        assertThat(jwt.audience, `is`(hasItems("Jack Reyes")))
     }
 
     @Test
@@ -133,7 +133,7 @@ public class JwtTest {
         val jwt = Jwt("eyJhbGciOiJIUzI1NiJ9.e30.something");
         assertThat(jwt, `is`(notNullValue()))
 
-        assertThat(jwt.getAudience(), IsEmptyCollection.empty())
+        assertThat(jwt.audience, IsEmptyCollection.empty())
     }
 
     @Test
@@ -144,9 +144,9 @@ public class JwtTest {
 
         val secs = Integer.MAX_VALUE + 10000L;
         val expectedDate = Date(secs * 1000);
-        assertThat(jwt.getIssuedAt(), `is`(expectedDate))
-        assertThat(jwt.getExpiresAt(), `is`(expectedDate))
-        assertThat(jwt.getAuthenticationTime(), `is`(expectedDate))
+        assertThat(jwt.issuedAt, `is`(expectedDate))
+        assertThat(jwt.expiresAt, `is`(expectedDate))
+        assertThat(jwt.authenticationTime, `is`(expectedDate))
     }
 
     @Test
@@ -154,11 +154,11 @@ public class JwtTest {
         val jwt =
             Jwt("eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjE0NzY3MjcwODZ9.HF2RrW-0L0nTIgiM8Ov7MWabIEZl4PQs07E43BphnXw");
         assertThat(jwt, `is`(notNullValue()))
-        assertThat(jwt.getExpiresAt(), `is`(instanceOf(Date::class.java)))
+        assertThat(jwt.expiresAt, `is`(instanceOf(Date::class.java)))
         val ms = 1476727086L * 1000;
         val expectedDate = Date(ms)
-        assertThat(jwt.getExpiresAt(), `is`(notNullValue()))
-        assertThat(jwt.getExpiresAt(), `is`(equalTo(expectedDate)))
+        assertThat(jwt.expiresAt, `is`(notNullValue()))
+        assertThat(jwt.expiresAt, `is`(equalTo(expectedDate)))
     }
 
     @Test
@@ -166,7 +166,7 @@ public class JwtTest {
         val jwt = Jwt("eyJhbGciOiJIUzI1NiJ9.e30.something");
         assertThat(jwt, `is`(notNullValue()))
 
-        assertThat(jwt.getExpiresAt(), `is`(nullValue()))
+        assertThat(jwt.expiresAt, `is`(nullValue()))
     }
 
     @Test
@@ -175,12 +175,12 @@ public class JwtTest {
             Jwt("eyJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE0NzY3MjcwODZ9.HcNvTtoB-Wj4KUqsl9y2u2f2Ve2JrlL1X4xIPwGNy68");
         assertThat(jwt, `is`(notNullValue()))
         assertThat(
-            jwt.getIssuedAt(), `is`(instanceOf(Date::class.java))
+            jwt.issuedAt, `is`(instanceOf(Date::class.java))
         )
         val ms = 1476727086L * 1000;
         val expectedDate = Date(ms);
-        assertThat(jwt.getIssuedAt(), `is`(notNullValue()))
-        assertThat(jwt.getIssuedAt(), `is`(equalTo(expectedDate)))
+        assertThat(jwt.issuedAt, `is`(notNullValue()))
+        assertThat(jwt.issuedAt, `is`(equalTo(expectedDate)))
     }
 
     @Test
@@ -188,7 +188,7 @@ public class JwtTest {
         val jwt = Jwt("eyJhbGciOiJIUzI1NiJ9.e30.something");
         assertThat(jwt, `is`(notNullValue()))
 
-        assertThat(jwt.getIssuedAt(), `is`(nullValue()))
+        assertThat(jwt.issuedAt, `is`(nullValue()))
     }
     //Helper Methods
 

@@ -14,17 +14,16 @@ public class JWTDecoderTest {
 
     @Test
     public void shouldDecodeAToken() {
-        String token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibm9uY2UiOiJyZWFsbHkgcmFuZG9tIHRleHQiLCJpYXQiOjE1MTYyMzkwMjJ9.LQ7QuKKvXAHwc4_EaN4VkdTe5ElDrTlo48J8QuO5j0o";
+        String token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImFsaWNlIn0.eyJzdWIiOiIxMjM0NTY3ODkwIiwibm9uY2UiOiJyZWFsbHkgcmFuZG9tIHRleHQiLCJpYXQiOjE1MTYyMzkwMjJ9.rYG-HEs1EKKDhwQIoEg32_p-NQzNi5rB7akqGnH_q4k";
         Jwt jwt1 = new Jwt(token);
 
         Jwt jwt2 = new JWTDecoder().decode(token);
 
         //Header claims
         assertThat(jwt1.getAlgorithm(), is("HS256"));
-        assertThat(jwt1.getType(), is("JWT"));
-
-        assertThat(jwt2.getType(), is("JWT"));
+        assertThat(jwt1.getKeyId(), is("alice"));
         assertThat(jwt2.getAlgorithm(), is("HS256"));
+        assertThat(jwt2.getKeyId(), is("alice"));
 
         //Payload claims
         assertThat(jwt1.getSubject(), is("1234567890"));
