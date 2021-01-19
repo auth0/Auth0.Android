@@ -51,6 +51,49 @@ The `AuthenticationRequest` interface no longer has a `setAccessToken("{ACCESS-T
 
 Additionally, any classes that implemented `ParameterizableRequest` or `AuthRequest` have been updated to accommodate these changes, and are called out in the detailed changes listed below.
 
+## Networking client customization
+
+v2 provides an improved ability to customize the way this library makes HTTP requests. A new interface, `NetworkingClient`, defines the contract for executing HTTP requests.
+The `Auth0` class can be configured with an instance of `NetworkingClient`, making it possible to provide your own implementation for complete control over the networking client.
+Additionally, the default networking client provided by this library supports several simple customization points to enable easy configuration of common customization points.
+
+### Timeout configuration
+
+```kotlin
+// Before
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+account.connectTimeoutInSeconds = 30
+account.readTimeoutInSeconds = 30
+
+val authAPI = AuthenticationAPIClient(account)
+
+// After
+val netClient = DefaultClient(
+    connectTimeout = 30,
+    readTimeout = 30
+)
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+account.networkingClient = netClient
+```
+
+### Logging configuration
+
+```kotlin
+// Before
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+account.isLoggingEnabled = true
+
+val authAPI = AuthenticationAPIClent(account)
+
+// After
+val netClient = DefaultClient(
+    enableLogging = true
+)
+
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+account.networkingClient = netClient
+```
+
 ## Detailed change listing
 
 ### Files that changed their package
