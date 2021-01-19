@@ -1,6 +1,7 @@
 package com.auth0.android.request.internal
 
 import android.util.Base64
+import com.auth0.android.provider.TokenValidationException
 import com.google.gson.reflect.TypeToken
 import java.util.*
 
@@ -52,7 +53,7 @@ internal class Jwt(rawToken: String) {
             parts = arrayOf(parts[0], parts[1], "")
         }
         if (parts.size != 3) {
-            throw java.lang.IllegalArgumentException(
+            throw TokenValidationException(
                 String.format(
                     "The token was expected to have 3 parts, but got %s.",
                     parts.size
