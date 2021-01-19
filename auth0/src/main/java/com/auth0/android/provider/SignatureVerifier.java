@@ -40,7 +40,7 @@ abstract class SignatureVerifier {
     }
 
     private void checkAlgorithm(String tokenAlgorithm) throws TokenValidationException {
-        if (!supportedAlgorithms.contains(tokenAlgorithm)) {
+        if (!supportedAlgorithms.contains(tokenAlgorithm) || "none".equalsIgnoreCase(tokenAlgorithm)) {
             if (supportedAlgorithms.size() == 1) {
                 throw new TokenValidationException(String.format("Signature algorithm of \"%s\" is not supported. Expected the ID token to be signed with %s.", tokenAlgorithm, supportedAlgorithms.get(0)));
             } else {
