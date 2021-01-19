@@ -16,7 +16,7 @@ internal class RequestFactory<U : Auth0Exception> internal constructor(
         private const val DEFAULT_LOCALE_IF_MISSING = "en_US"
         private const val USER_AGENT_HEADER = "User-Agent"
         private const val ACCEPT_LANGUAGE_HEADER = "Accept-Language"
-        private const val CLIENT_INFO_HEADER = Auth0UserAgent.HEADER_NAME
+        private const val AUTH0_CLIENT_INFO_HEADER = Auth0UserAgent.HEADER_NAME
 
         val defaultLocale: String
             get() {
@@ -58,8 +58,8 @@ internal class RequestFactory<U : Auth0Exception> internal constructor(
         baseHeaders[name] = value
     }
 
-    fun setClientInfo(clientInfo: String) {
-        baseHeaders[CLIENT_INFO_HEADER] = clientInfo
+    fun setAuth0ClientInfo(clientInfo: String) {
+        baseHeaders[AUTH0_CLIENT_INFO_HEADER] = clientInfo
     }
 
     fun setUserAgent(userAgent: String) {

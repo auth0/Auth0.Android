@@ -121,7 +121,7 @@ public class RequestFactoryTest {
     @Test
     public void shouldHaveClientInfoHeader() {
         RequestFactory<Auth0Exception> factory = createRequestFactory();
-        factory.setClientInfo(CLIENT_INFO);
+        factory.setAuth0ClientInfo(CLIENT_INFO);
 
         factory.get(BASE_URL, resultAdapter);
         verify(getRequest).addHeader("Auth0-Client", CLIENT_INFO);

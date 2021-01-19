@@ -999,8 +999,8 @@ public class WebAuthProviderTest {
 
         // 1. start the webauth flow. the browser would open
         val proxyAccount = Auth0(JwtTestUtils.EXPECTED_AUDIENCE, JwtTestUtils.EXPECTED_BASE_DOMAIN)
+        proxyAccount.networkingClient = networkingClient
         login(proxyAccount)
-            .withNetworkingClient(networkingClient)
             .start(activity, authCallback)
         val managerInstance = WebAuthProvider.managerInstance as OAuthManager
         managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
