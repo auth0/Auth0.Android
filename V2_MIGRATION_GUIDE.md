@@ -72,7 +72,8 @@ val netClient = DefaultClient(
     connectTimeout = 30,
     readTimeout = 30
 )
-val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}", netClient)
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+account.networkingClient = netClient
 ```
 
 ### Logging configuration
@@ -89,20 +90,8 @@ val netClient = DefaultClient(
     enableLogging = true
 )
 
-val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}", netClient)
-```
-
-### Set additional headers for all requests
-
-Previously, if you wished to send additional headers, you would need to do so on a per-request basis, and then only when the `Request` implementation being used supported it.
-While all requests can now be configured with additional headers and request parameters, you can also specify any headers that you wish to be sent on all requests.
-
-```kotlin
-val netClient = DefaultClient(
-    defaultHeaders = mapOf("{HEADER-NAME}" to "{HEADER-VALUE}")
-)
-
-val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}", netClient)
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+account.networkingClient = netClient
 ```
 
 ## Detailed change listing

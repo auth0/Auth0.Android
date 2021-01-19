@@ -651,7 +651,8 @@ val netClient = DefaultClient(
     readTimeout = 30
 )
 
-val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}", netClient)
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+account.networkingClient = netClient
 ```
 
 ### Logging configuration
@@ -661,7 +662,8 @@ val netClient = DefaultClient(
     enableLogging = true
 )
 
-val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}", netClient)
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+account.networkingClient = netClient
 ```
 
 ### Set additional headers for all requests
@@ -671,7 +673,8 @@ val netClient = DefaultClient(
     defaultHeaders = mapOf("{HEADER-NAME}" to "{HEADER-VALUE}")
 )
 
-val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}", netClient)
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+account.networkingClient = netClient
 ```
 
 ### Advanced configuration
@@ -689,7 +692,8 @@ class CustomNetClient : NetworkingClient {
     }
 }
 
-val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}", CustomNetClient())
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+account.networkingClient = netClient
 ```
 
 ## FAQ
