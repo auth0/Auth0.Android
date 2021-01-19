@@ -62,10 +62,6 @@ internal class RequestFactory<U : Auth0Exception> internal constructor(
         baseHeaders[AUTH0_CLIENT_INFO_HEADER] = clientInfo
     }
 
-    fun setUserAgent(userAgent: String) {
-        baseHeaders[USER_AGENT_HEADER] = userAgent
-    }
-
     @VisibleForTesting
     fun <T> createRequest(
         method: HttpMethod,

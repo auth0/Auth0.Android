@@ -8,7 +8,6 @@ import androidx.fragment.app.Fragment
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
-import com.auth0.android.callback.AuthenticationCallback
 import com.auth0.android.callback.Callback
 import com.auth0.android.provider.WebAuthProvider
 import com.auth0.android.request.DefaultClient
@@ -51,7 +50,7 @@ class DatabaseLoginFragment : Fragment() {
     private fun dbLogin(email: String, password: String) {
         apiClient.login(email, password, "Username-Password-Authentication")
             //Additional customization to the request goes here
-            .start(object : AuthenticationCallback<Credentials> {
+            .start(object : Callback<Credentials, AuthenticationException> {
                 override fun onFailure(error: AuthenticationException) {
                     Snackbar.make(requireView(), error.getDescription(), Snackbar.LENGTH_LONG)
                         .show()

@@ -32,7 +32,6 @@ import static org.mockito.Mockito.verify;
 public class RequestFactoryTest {
 
     private static final String CLIENT_INFO = "client_info";
-    private static final String USER_AGENT = "user_agent";
     private static final String BASE_URL = "http://domain.auth0.com";
 
     @Mock
@@ -134,24 +133,6 @@ public class RequestFactoryTest {
 
         factory.patch(BASE_URL, resultAdapter);
         verify(patchRequest).addHeader("Auth0-Client", CLIENT_INFO);
-    }
-
-    @Test
-    public void shouldHaveUserAgentHeader() {
-        RequestFactory<Auth0Exception> factory = createRequestFactory();
-        factory.setUserAgent(USER_AGENT);
-
-        factory.get(BASE_URL, resultAdapter);
-        verify(getRequest).addHeader("User-Agent", USER_AGENT);
-
-        factory.post(BASE_URL, resultAdapter);
-        verify(postRequest).addHeader("User-Agent", USER_AGENT);
-
-        factory.delete(BASE_URL, resultAdapter);
-        verify(deleteRequest).addHeader("User-Agent", USER_AGENT);
-
-        factory.patch(BASE_URL, resultAdapter);
-        verify(patchRequest).addHeader("User-Agent", USER_AGENT);
     }
 
     @Test

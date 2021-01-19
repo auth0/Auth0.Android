@@ -55,15 +55,6 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         get() = auth0.getDomainUrl()
 
     /**
-     * Set the value of 'User-Agent' header for every request to Auth0 Authentication API
-     *
-     * @param userAgent value to send in every request to Auth0
-     */
-    public fun setUserAgent(userAgent: String) {
-        factory.setUserAgent(userAgent)
-    }
-
-    /**
      * Log in a user with email/username and password for a connection/realm.
      * It will use the password-realm grant type for the `/oauth/token` endpoint
      * Example:

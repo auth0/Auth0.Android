@@ -140,7 +140,7 @@ We will not provide support and will change these as required without any previo
 ### Constructors changed
 
 - `AuthenticationAPIClient` can no longer be constructed from a `Context`. Use `AuthenticationAPIClient(auth0: Auth0)` instead. You can create an instance of `Auth0` using a `Context`.
-- `UsersAPIClient` can no longer be constructed from a `Context`. Use UsersAPIClient(auth0: Auth0, token: String)` instead. You can create an instance of `Auth0` using a `Context`.
+- `UsersAPIClient` can no longer be constructed from a `Context`. Use `UsersAPIClient(auth0: Auth0, token: String)` instead. You can create an instance of `Auth0` using a `Context`.
 - `SignupRequest` now requires the second parameter to be an `AuthenticationRequest`.
 - `ProfileRequest` now requires an `AuthenticationRequest` and a `Request<UserProfile, AuthenticationException>`.
 - `Credentials` can no longer be constructed with an "expires in" value. The date of expiration or "expires at" should be given instead. You typically won't be constructing Credentials on your own.
@@ -158,6 +158,8 @@ We will not provide support and will change these as required without any previo
 - `setTLS12Enforced()` and `isTLS12Enforced()` have been removed. The SDK now supports modern TLS by default.
 
 #### `AuthenticationAPIClient` methods removed or changed
+
+- `setUserAgent(String)` has been removed. You can set headers to be sent directly on each Request instance using the `addHeader("{NAME}", "{VALUE}")` method or globally to the networking client instance via `DefaultClient(defaultHeaders = mapOf())` constructor parameter.
 
 Methods and classes specific to calling any [Authentication APIs](https://auth0.com/docs/api/authentication) categorized as Legacy have been removed in v2. The following methods have been removed:
 
@@ -221,6 +223,8 @@ Methods that returned a `TokenRequest` now return a `Request`:
 - `setDevice("{DEVICE}")` has been removed. Use `set("device", "{VALUE}")` instead.
 
 #### `UsersAPIClient` methods changed
+
+- `setUserAgent(String)` has been removed. You can set headers to be sent directly on each Request instance using the `addHeader("{NAME}", "{VALUE}")` method or globally to the networking client instance via `DefaultClient(defaultHeaders = mapOf())` constructor parameter.
 
 Methods that returned a `ParameterizableRequest` now return a `Request`:
 
