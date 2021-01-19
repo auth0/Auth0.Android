@@ -7,7 +7,6 @@ import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
-import com.auth0.android.request.NetworkingClient
 import com.auth0.android.result.Credentials
 import java.util.*
 
@@ -164,23 +163,11 @@ public object WebAuthProvider {
         private val values: MutableMap<String, String> = mutableMapOf()
         private val headers: MutableMap<String, String> = mutableMapOf()
         private var pkce: PKCE? = null
-        private var networkingClient: NetworkingClient? = null
         private var issuer: String? = null
         private var scheme: String = "https"
         private var redirectUri: String? = null
         private var ctOptions: CustomTabsOptions = CustomTabsOptions.newBuilder().build()
         private var leeway: Int? = null
-
-        /**
-         * Use a custom networking client to handle the API calls.
-         *
-         * @param networkingClient to use in the requests
-         * @return the current builder instance
-         */
-        public fun withNetworkingClient(networkingClient: NetworkingClient): Builder {
-            this.networkingClient = networkingClient
-            return this
-        }
 
         /**
          * Use a custom state in the requests
@@ -388,7 +375,7 @@ public object WebAuthProvider {
                 callback.onFailure(ex)
                 return
             }
-            val manager = OAuthManager(account, callback, values, ctOptions, networkingClient)
+            val manager = OAuthManager(account, callback, values, ctOptions)
             manager.setHeaders(headers)
             manager.setPKCE(pkce)
             manager.setIdTokenVerificationLeeway(leeway)

@@ -3,6 +3,7 @@ package com.auth0.android
 import android.content.Context
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.request.DefaultClient
+import com.auth0.android.request.NetworkingClient
 import com.auth0.android.util.Auth0UserAgent
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -34,9 +35,14 @@ public open class Auth0 @JvmOverloads constructor(
     private val configurationUrl: HttpUrl
 
     /**
-     * @return Auth0 user agent info sent in every request
+     * @return Auth0 user agent information sent in every request
      */
     public var auth0UserAgent: Auth0UserAgent
+
+    /**
+     * The networking client instance used to make HTTP requests.
+     */
+    public var networkingClient: NetworkingClient = recreateNetworkingClient()
 
     /**
      * Whether HTTP request and response info should be logged.
@@ -44,25 +50,37 @@ public open class Auth0 @JvmOverloads constructor(
      * Defaults to `false`.
      */
     @Deprecated(
-        "Create a DefaultClient and specify enableLogging = true|false instead. This can then be included when creating the WebAuthProvider or the API clients"
+        "Create a DefaultClient and specify enableLogging = true|false instead."
     )
     public var isLoggingEnabled: Boolean = false
+        set(value) {
+            field = value
+            recreateNetworkingClient()
+        }
 
     /**
      * The connection timeout for network requests, in seconds. Defaults to 10 seconds.
      */
     @Deprecated(
-        "Create a DefaultClient and specify the connectTimeout instead. This can then be included when creating the WebAuthProvider or the API clients"
+        "Create a DefaultClient and specify the connectTimeout instead."
     )
     public var connectTimeoutInSeconds: Int = DefaultClient.DEFAULT_TIMEOUT_SECONDS
+        set(value) {
+            field = value
+            recreateNetworkingClient()
+        }
 
     /**
      * The read timeout, in seconds, to use when executing requests. Default is ten seconds.
      */
     @Deprecated(
-        "Create a DefaultClient and specify the readTimeout instead. This can then be included when creating the WebAuthProvider or the API clients"
+        "Create a DefaultClient and specify the readTimeout instead."
     )
     public var readTimeoutInSeconds: Int = DefaultClient.DEFAULT_TIMEOUT_SECONDS
+        set(value) {
+            field = value
+            recreateNetworkingClient()
+        }
 
     /**
      * Creates a new Auth0 instance with the 'com_auth0_client_id' and 'com_auth0_domain' values
@@ -165,4 +183,11 @@ public open class Auth0 @JvmOverloads constructor(
         configurationUrl = resolveConfiguration(configurationDomain, domainUrl)
         auth0UserAgent = Auth0UserAgent()
     }
+
+    private fun recreateNetworkingClient() = DefaultClient(
+        connectTimeout = connectTimeoutInSeconds,
+        readTimeout = readTimeoutInSeconds,
+        defaultHeaders = emptyMap(),
+        enableLogging = isLoggingEnabled
+    )
 }

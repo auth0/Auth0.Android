@@ -109,7 +109,8 @@ public class UsersAPIClientTest {
         ServerResponse response = new ServerResponse(200, inputStream, Collections.emptyMap());
         NetworkingClient networkingClient = mock(NetworkingClient.class);
         when(networkingClient.load(anyString(), any(RequestOptions.class))).thenReturn(response);
-        UsersAPIClient client = new UsersAPIClient(account, "token.token", networkingClient);
+        account.setNetworkingClient(networkingClient);
+        UsersAPIClient client = new UsersAPIClient(account, "token.token");
 
         Request<UserProfile, ManagementException> request = client.getProfile("undercover");
         request.execute();
@@ -125,7 +126,7 @@ public class UsersAPIClientTest {
 
     @Test
     public void shouldSetUserAgent() {
-        Auth0 account = mock(Auth0.class);
+        Auth0 account = new Auth0("client-id", "https://tenant.auth0.com/");
         //noinspection unchecked
         RequestFactory<ManagementException> factory = mock(RequestFactory.class);
         final UsersAPIClient client = new UsersAPIClient(account, factory, gson);
@@ -140,7 +141,7 @@ public class UsersAPIClientTest {
         Auth0 account = new Auth0(CLIENT_ID, DOMAIN);
         account.setAuth0UserAgent(auth0UserAgent);
         new UsersAPIClient(account, factory, gson);
-        verify(factory).setClientInfo("the-user-agent-data");
+        verify(factory).setAuth0ClientInfo("the-user-agent-data");
     }
 
     @Test

@@ -4,7 +4,10 @@ import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.authentication.ParameterBuilder
-import com.auth0.android.request.*
+import com.auth0.android.request.ErrorAdapter
+import com.auth0.android.request.JsonAdapter
+import com.auth0.android.request.NetworkingClient
+import com.auth0.android.request.Request
 import com.auth0.android.request.internal.BaseRequest
 import com.auth0.android.request.internal.GsonAdapter
 import com.auth0.android.request.internal.GsonAdapter.Companion.forListOf
@@ -33,25 +36,17 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
     private val gson: Gson
 ) {
     /**
-     * Creates a new API client instance providing Auth0 account info and a custom Networking Client.
+     * Creates a new API client instance providing the Auth0 account info and the access token.
      *
      * @param auth0            account information
      * @param token            of the primary identity
-     * @param networkingClient the networking client implementation
      */
-    @JvmOverloads
     public constructor(
         auth0: Auth0,
         token: String,
-        @Suppress("DEPRECATION")
-        networkingClient: NetworkingClient = DefaultClient(
-            connectTimeout = auth0.connectTimeoutInSeconds,
-            readTimeout = auth0.readTimeoutInSeconds,
-            enableLogging = auth0.isLoggingEnabled
-        )
     ) : this(
         auth0,
-        factoryForToken(token, networkingClient),
+        factoryForToken(token, auth0.networkingClient),
         GsonProvider.gson
     )
 
@@ -252,9 +247,6 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
     }
 
     init {
-        val auth0UserAgent = auth0.auth0UserAgent
-        if (auth0UserAgent != null) {
-            factory.setClientInfo(auth0UserAgent.value)
-        }
+        factory.setAuth0ClientInfo(auth0.auth0UserAgent.value)
     }
 }

@@ -13,7 +13,6 @@ import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
 import com.auth0.android.jwt.DecodeException
 import com.auth0.android.jwt.JWT
-import com.auth0.android.request.NetworkingClient
 import com.auth0.android.result.Credentials
 import java.security.SecureRandom
 import java.util.*
@@ -22,8 +21,7 @@ internal class OAuthManager(
     private val account: Auth0,
     private val callback: Callback<Credentials, AuthenticationException>,
     parameters: Map<String, String>,
-    ctOptions: CustomTabsOptions,
-    networkingClient: NetworkingClient?
+    ctOptions: CustomTabsOptions
 ) : ResumableManager() {
     private val parameters: MutableMap<String, String>
     private val headers: MutableMap<String, String>
@@ -251,7 +249,7 @@ internal class OAuthManager(
     }
 
     private fun addClientParameters(parameters: MutableMap<String, String>, redirectUri: String) {
-        parameters[KEY_USER_AGENT] = account.auth0UserAgent.value
+        parameters[KEY_AUTH0_CLIENT_INFO] = account.auth0UserAgent.value
         parameters[KEY_CLIENT_ID] = account.clientId
         parameters[KEY_REDIRECT_URI] = redirectUri
     }
@@ -289,7 +287,7 @@ internal class OAuthManager(
         private const val KEY_CODE_CHALLENGE_METHOD = "code_challenge_method"
         private const val KEY_CLIENT_ID = "client_id"
         private const val KEY_REDIRECT_URI = "redirect_uri"
-        private const val KEY_USER_AGENT = "auth0Client"
+        private const val KEY_AUTH0_CLIENT_INFO = "auth0Client"
         private const val KEY_ERROR = "error"
         private const val KEY_ERROR_DESCRIPTION = "error_description"
         private const val KEY_CODE = "code"
@@ -334,12 +332,7 @@ internal class OAuthManager(
         headers = HashMap()
         this.parameters = parameters.toMutableMap()
         this.parameters[KEY_RESPONSE_TYPE] = RESPONSE_TYPE_CODE
-        apiClient = if (networkingClient == null) {
-            // Delegate the creation of defaults to the constructor
-            AuthenticationAPIClient(account)
-        } else {
-            AuthenticationAPIClient(account, networkingClient)
-        }
+        apiClient = AuthenticationAPIClient(account)
         this.ctOptions = ctOptions
     }
 }

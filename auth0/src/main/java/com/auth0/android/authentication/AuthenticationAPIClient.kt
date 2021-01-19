@@ -35,27 +35,19 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
 ) {
 
     /**
-     * Creates a new API client instance providing Auth0 account info and a custom Networking Client.
+     * Creates a new API client instance providing Auth0 account info.
      *
      * ```
      * val auth0 = Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN")
      * val client = AuthenticationAPIClient(auth0)
      * ```
-     * @param auth0            account information
-     * @param networkingClient the networking client implementation
+     * @param auth0 account information
      */
-    @JvmOverloads
     public constructor(
-        auth0: Auth0,
-        @Suppress("DEPRECATION")
-        networkingClient: NetworkingClient = DefaultClient(
-            connectTimeout = auth0.connectTimeoutInSeconds,
-            readTimeout = auth0.readTimeoutInSeconds,
-            enableLogging = auth0.isLoggingEnabled
-        )
+        auth0: Auth0
     ) : this(
         auth0,
-        RequestFactory<AuthenticationException>(networkingClient, createErrorAdapter()),
+        RequestFactory<AuthenticationException>(auth0.networkingClient, createErrorAdapter()),
         GsonProvider.gson
     )
 
@@ -686,8 +678,6 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
 
     init {
         val auth0UserAgent = auth0.auth0UserAgent
-        if (auth0UserAgent != null) {
-            factory.setClientInfo(auth0UserAgent.value)
-        }
+        factory.setAuth0ClientInfo(auth0UserAgent.value)
     }
 }
