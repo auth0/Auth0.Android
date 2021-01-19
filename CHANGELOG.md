@@ -1,10 +1,43 @@
 # Change Log
 
+## [2.0.0-beta.0](https://github.com/auth0/Auth0.Android/tree/2.0.0-beta.0) (2021-01-19)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.30.0...2.0.0-beta.0)
+
+**Changed**
+- Refactor JWT decoding logic [\#443](https://github.com/auth0/Auth0.Android/pull/443) ([lbalmaceda](https://github.com/lbalmaceda))
+- Explicitly reject "none" signing algorithm [\#442](https://github.com/auth0/Auth0.Android/pull/442) ([lbalmaceda](https://github.com/lbalmaceda))
+- Receive NetworkingClient through the Auth0 instance [\#440](https://github.com/auth0/Auth0.Android/pull/440) ([lbalmaceda](https://github.com/lbalmaceda))
+- Update the Credentials class [\#435](https://github.com/auth0/Auth0.Android/pull/435) ([lbalmaceda](https://github.com/lbalmaceda))
+- Move to a JSON client singleton [\#433](https://github.com/auth0/Auth0.Android/pull/433) ([lbalmaceda](https://github.com/lbalmaceda))
+- Migrate default NetworkingClient implementation to use OkHttp [\#428](https://github.com/auth0/Auth0.Android/pull/428) ([lbalmaceda](https://github.com/lbalmaceda))
+- Enforce the "openid" scope for the WebAuthProvider [\#422](https://github.com/auth0/Auth0.Android/pull/422) ([lbalmaceda](https://github.com/lbalmaceda))
+- Update WebAuthProvider#start required Context [\#421](https://github.com/auth0/Auth0.Android/pull/421) ([lbalmaceda](https://github.com/lbalmaceda))
+- Stop using kotlin.Unit in public APIs [\#414](https://github.com/auth0/Auth0.Android/pull/414) ([lbalmaceda](https://github.com/lbalmaceda))
+- Migrate Public API to Kotlin [\#410](https://github.com/auth0/Auth0.Android/pull/410) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Deprecated**
+- Deprecate isAuthenticationCanceled in favor of isCanceled [\#425](https://github.com/auth0/Auth0.Android/pull/425) ([lbalmaceda](https://github.com/lbalmaceda))
+- Merge BaseCallback into Callback [\#416](https://github.com/auth0/Auth0.Android/pull/416) ([jimmyjames](https://github.com/jimmyjames))
+
+**Removed**
+- Remove setUserAgent methods from API clients [\#444](https://github.com/auth0/Auth0.Android/pull/444) ([lbalmaceda](https://github.com/lbalmaceda))
+- Remove timeouts and logging setters from Auth0 class [\#441](https://github.com/auth0/Auth0.Android/pull/441) ([lbalmaceda](https://github.com/lbalmaceda))
+- Run and fix inspections, remove unused classes [\#439](https://github.com/auth0/Auth0.Android/pull/439) ([lbalmaceda](https://github.com/lbalmaceda))
+- Remove obsolete config properties [\#432](https://github.com/auth0/Auth0.Android/pull/432) ([jimmyjames](https://github.com/jimmyjames))
+- Remove DatabaseConnectionRequest class [\#417](https://github.com/auth0/Auth0.Android/pull/417) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Fixed**
+- Fix request to patch user metadata [\#429](https://github.com/auth0/Auth0.Android/pull/429) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Breaking changes**
+- Stop using VoidCallback on WebAuth Logout  [\#424](https://github.com/auth0/Auth0.Android/pull/424) ([lbalmaceda](https://github.com/lbalmaceda))
+- Change WebAuthProvider (Login) callback type [\#415](https://github.com/auth0/Auth0.Android/pull/415) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [1.30.0](https://github.com/auth0/Auth0.Android/tree/1.30.0) (2020-12-18)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.29.2...1.30.0)
 
 **Added**
-- Add custom headers to social token request [SDK-2080] [\#351](https://github.com/auth0/Auth0.Android/pull/351) ([TLFilip](https://github.com/TLFilip))
+- Add custom headers to social token request [\#351](https://github.com/auth0/Auth0.Android/pull/351) ([TLFilip](https://github.com/TLFilip))
 
 **Deprecated**
 - Deprecate API client constructors that take Context [\#393](https://github.com/auth0/Auth0.Android/pull/393) ([lbalmaceda](https://github.com/lbalmaceda))

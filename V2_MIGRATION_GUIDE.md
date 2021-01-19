@@ -4,7 +4,22 @@ v2 of the Auth0 Android SDK includes a number of improvements to integrating Aut
 
 ## Requirements changes
 
-v2 requires Android API version 21 or later.
+v2 requires Android API version 21 or later and Java 8+.
+
+Here’s what you need in `build.gradle` to target Java 8 byte code for Android and Kotlin plugins respectively.
+
+```groovy
+android {
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+}
+```
 
 ## OIDC only
 

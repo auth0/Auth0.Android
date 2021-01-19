@@ -12,7 +12,22 @@ Android Java & Kotlin toolkit for consuming the Auth0 Authentication API
 
 ## Requirements
 
-Android API version 21 or newer
+Android API version 21 or later and Java 8+.
+
+Here’s what you need in `build.gradle` to target Java 8 byte code for Android and Kotlin plugins respectively.
+
+```groovy
+android {
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+}
+```
 
 ## Installation
 
@@ -22,7 +37,7 @@ Auth0.android is available through [Gradle](https://gradle.org/). To install it,
 
 ```gradle
 dependencies {
-    implementation 'com.auth0.android:auth0:2.0.0-BETA'
+    implementation 'com.auth0.android:auth0:2.0.0-beta.0'
 }
 ```
 
