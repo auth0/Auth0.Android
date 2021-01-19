@@ -43,7 +43,7 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
      */
     public constructor(
         auth0: Auth0,
-        token: String,
+        token: String
     ) : this(
         auth0,
         factoryForToken(token, auth0.networkingClient),

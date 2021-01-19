@@ -108,7 +108,10 @@ We will not provide support and will change these as required without any previo
 
 - `setOIDCConformant(boolean enabled)` and `isOIDCConformant()` have been removed. The SDK now only supports OIDC-Conformant applications.
 - `doNotSendTelemetry()` has been removed. There is no replacement.
-- `setWriteTimeoutInSeconds(seconds)` and `getWriteTimeoutInSeconds(seconds)` have been removed. There is no replacement; only connect and read timeouts can be configured.
+- `setWriteTimeoutInSeconds(seconds)` and `getWriteTimeoutInSeconds(seconds)` have been removed. There is no replacement.
+- `setReadTimeoutInSeconds(seconds)` and `getReadTimeoutInSeconds(seconds)` have been removed. You can customize the read timeout directly on the `DefaultClient` class. Use `DefaultClient(readTimeout = 123)`.
+- `setConnectTimeoutInSeconds(seconds)` and `getConnectTimeoutInSeconds(seconds)` have been removed. You can customize the connect timeout directly on the `DefaultClient` class. Use `DefaultClient(connectTimeout = 123)`.
+- `setLoggingEnabled(boolean enabled)` and `isLoggingEnabled()` have been removed. You can enable the network traffic logger directly on the `DefaultClient` class. Use `DefaultClient(enableLogging = true)`. Use it for debugging purposes and never enable it on production environments.
 - `setTLS12Enforced()` and `isTLS12Enforced()` have been removed. The SDK now supports modern TLS by default.
 
 #### `AuthenticationAPIClient` methods removed or changed

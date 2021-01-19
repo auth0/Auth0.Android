@@ -52,44 +52,6 @@ public class Auth0Test {
     }
 
     @Test
-    public void shouldHaveLoggingEnabled() {
-        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
-        auth0.setLoggingEnabled(true);
-
-        assertThat(auth0.isLoggingEnabled(), is(true));
-    }
-
-    @Test
-    public void shouldNotHaveLoggingEnabled() {
-        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
-        auth0.setLoggingEnabled(false);
-
-        assertThat(auth0.isLoggingEnabled(), is(false));
-    }
-
-    @Test
-    public void shouldHaveConnectTimeout() {
-        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
-        auth0.setConnectTimeoutInSeconds(5);
-
-        assertThat(auth0.getConnectTimeoutInSeconds(), is(5));
-    }
-
-    @Test
-    public void shouldReadHaveTimeout() {
-        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
-        auth0.setReadTimeoutInSeconds(15);
-
-        assertThat(auth0.getReadTimeoutInSeconds(), is(15));
-    }
-
-    @Test
-    public void shouldNotHaveLoggingEnabledByDefault() {
-        Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
-        assertThat(auth0.isLoggingEnabled(), is(false));
-    }
-
-    @Test
     public void shouldBuildFromResources() {
         Resources resources = Mockito.mock(Resources.class);
         when(context.getResources()).thenReturn(resources);

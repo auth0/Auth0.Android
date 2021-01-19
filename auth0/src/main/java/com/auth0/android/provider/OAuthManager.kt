@@ -88,7 +88,7 @@ internal class OAuthManager(
             Log.w(TAG, "The response didn't contain any of these values: code, state")
             return false
         }
-        logDebug("The parsed CallbackURI contains the following values: $values")
+        Log.d(TAG, "The parsed CallbackURI contains the following parameters: ${values.keys}")
         try {
             assertNoError(values[KEY_ERROR], values[KEY_ERROR_DESCRIPTION])
             assertValidState(parameters[KEY_STATE]!!, values[KEY_STATE])
@@ -161,7 +161,6 @@ internal class OAuthManager(
                     options.clock = Date(currentTimeInMillis)
                     try {
                         IdTokenVerifier().verify(decodedIdToken, options)
-                        logDebug("Authenticated using web flow")
                         validationCallback.onSuccess(null)
                     } catch (exc: TokenValidationException) {
                         validationCallback.onFailure(exc)
@@ -212,7 +211,7 @@ internal class OAuthManager(
             builder.appendQueryParameter(key, value)
         }
         val uri = builder.build()
-        logDebug("Using the following Authorize URI: $uri")
+        Log.d(TAG, "Using the following Authorize URI: $uri")
         return uri
     }
 
@@ -257,12 +256,6 @@ internal class OAuthManager(
     private fun createPKCE(redirectUri: String, headers: Map<String, String>) {
         if (pkce == null) {
             pkce = PKCE(apiClient, redirectUri, headers)
-        }
-    }
-
-    private fun logDebug(message: String) {
-        if (account.isLoggingEnabled) {
-            Log.d(TAG, message)
         }
     }
 

@@ -42,19 +42,13 @@ internal class LogoutManager(
             builder.appendQueryParameter(key, value)
         }
         val uri = builder.build()
-        logDebug("Using the following Logout URI: $uri")
+        Log.d(TAG, "Using the following Logout URI: $uri")
         return uri
     }
 
     private fun addClientParameters(parameters: MutableMap<String, String>) {
         parameters[KEY_USER_AGENT] = account.auth0UserAgent.value
         parameters[KEY_CLIENT_ID] = account.clientId
-    }
-
-    private fun logDebug(message: String) {
-        if (account.isLoggingEnabled) {
-            Log.d(TAG, message)
-        }
     }
 
     companion object {
