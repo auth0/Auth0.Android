@@ -639,43 +639,37 @@ In the event that something happened while trying to save or retrieve the creden
 
 This library provides the ability to customize the behavior of the networking client for common configurations, as well the ability to define and use your own networking client implementation.
 
-The API clients and `WebAuthProvider` can be configured with a `NetworkingClient`, which will be used when making requests. You can configure the default client with custom timeout values, any headers that should be sent on all requests, and whether to log request/response info (for non-production debugging purposes only). For more advanced configuration, you can provide your own implementation of `NetworkingClient`
+The Auth0 class can be configured with a `NetworkingClient`, which will be used when making requests. You can configure the default client with custom timeout values, any headers that should be sent on all requests, and whether to log request/response info (for non-production debugging purposes only). For more advanced configuration, you can provide your own implementation of `NetworkingClient`.
 
 ### Timeout configuration
 
 ```kotlin
-val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
-
 val netClient = DefaultClient(
     connectTimeout = 30,
     readTimeout = 30
 )
 
-val authAPI = AuthenticationAPIClient(account, netClient)
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}", netClient)
 ```
 
 ### Logging configuration
 
 ```kotlin
-val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
-
 val netClient = DefaultClient(
     enableLogging = true
 )
 
-val authAPI = AuthenticationAPIClient(account, netClient)
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}", netClient)
 ```
 
 ### Set additional headers for all requests
 
 ```kotlin
-val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
-
 val netClient = DefaultClient(
     defaultHeaders = mapOf("{HEADER-NAME}" to "{HEADER-VALUE}")
 )
 
-val authAPI = AuthenticationAPIClient(account, netClient)
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}", netClient)
 ```
 
 ### Advanced configuration
@@ -685,19 +679,15 @@ For more advanced configuration of the networking client, you can provide a cust
 ```kotlin
 class CustomNetClient : NetworkingClient {
     override fun load(url: String, options: RequestOptions): ServerResponse {
-        val response = // create and execute the request
-                
-        return ServerResponse(
-            response.code(),
-            response.body().byteStream(),
-            response.headers().toMultimap()
-        )        
+        // Create and execute the request to the specified URL with the given options
+        val response = ...  
+            
+        // Return a ServerResponse from the received response data
+        return ServerResponse(responseCode, responseBody, responseHeaders)        
     }
 }
 
-val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
-
-val authAPI = AuthenticatonAPIClient(account, CustomNetClient())
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}", CustomNetClient())
 ```
 
 ## FAQ
