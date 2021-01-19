@@ -56,15 +56,6 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
         get() = auth0.getDomainUrl()
 
     /**
-     * Set the value of 'User-Agent' header for every request to Auth0 Authentication API
-     *
-     * @param userAgent value to send in every request to Auth0
-     */
-    public fun setUserAgent(userAgent: String) {
-        factory.setUserAgent(userAgent)
-    }
-
-    /**
      * Link a user identity calling ['/api/v2/users/:primaryUserId/identities'](https://auth0.com/docs/link-accounts#the-management-api) endpoint
      * Example usage:
      * ```

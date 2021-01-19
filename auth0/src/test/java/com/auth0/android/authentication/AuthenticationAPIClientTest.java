@@ -125,16 +125,6 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public void shouldSetUserAgent() {
-        Auth0 account = new Auth0("client-id", "https://tenant.auth0.com/");
-        //noinspection unchecked
-        RequestFactory<AuthenticationException> factory = mock(RequestFactory.class);
-        AuthenticationAPIClient client = new AuthenticationAPIClient(account, factory, gson);
-        client.setUserAgent("nexus-5x");
-        verify(factory).setUserAgent("nexus-5x");
-    }
-
-    @Test
     public void shouldSetAuth0UserAgentIfPresent() {
         final Auth0UserAgent auth0UserAgent = mock(Auth0UserAgent.class);
         when(auth0UserAgent.getValue()).thenReturn("the-user-agent-data");
