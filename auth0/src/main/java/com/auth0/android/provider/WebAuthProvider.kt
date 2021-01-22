@@ -136,7 +136,7 @@ public object WebAuthProvider {
          * @see AuthenticationException.isBrowserAppNotAvailable
          * @see AuthenticationException.isAuthenticationCanceled
          */
-        public fun start(context: Context, callback: Callback<Void, AuthenticationException>) {
+        public fun start(context: Context, callback: Callback<Void?, AuthenticationException>) {
             resetManagerInstance()
             if (!ctOptions.hasCompatibleBrowser(context.packageManager)) {
                 val ex = AuthenticationException(

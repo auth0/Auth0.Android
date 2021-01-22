@@ -32,8 +32,8 @@ internal class RequestFactory<U : Auth0Exception> internal constructor(
         resultAdapter: JsonAdapter<T>
     ): Request<T, U> = setupRequest(HttpMethod.POST, url, resultAdapter, errorAdapter)
 
-    fun post(url: String): Request<Void, U> =
-        this.post(url, object : JsonAdapter<Void> {
+    fun post(url: String): Request<Void?, U> =
+        this.post(url, object : JsonAdapter<Void?> {
             override fun fromJson(reader: Reader): Void? {
                 return null
             }

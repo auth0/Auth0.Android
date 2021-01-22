@@ -10,7 +10,7 @@ import java.util.*
 
 internal class LogoutManager(
     private val account: Auth0,
-    private val callback: Callback<Void, AuthenticationException>,
+    private val callback: Callback<Void?, AuthenticationException>,
     returnToUrl: String,
     ctOptions: CustomTabsOptions
 ) : ResumableManager() {
