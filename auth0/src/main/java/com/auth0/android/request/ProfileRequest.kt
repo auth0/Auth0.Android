@@ -76,11 +76,11 @@ public class ProfileRequest
      */
     override fun start(callback: Callback<Authentication, AuthenticationException>) {
         authenticationRequest.start(object : Callback<Credentials, AuthenticationException> {
-            override fun onSuccess(credentials: Credentials?) {
+            override fun onSuccess(credentials: Credentials) {
                 userInfoRequest
                     .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials!!.accessToken)
                     .start(object : Callback<UserProfile, AuthenticationException> {
-                        override fun onSuccess(profile: UserProfile?) {
+                        override fun onSuccess(profile: UserProfile) {
                             callback.onSuccess(Authentication(profile!!, credentials))
                         }
 

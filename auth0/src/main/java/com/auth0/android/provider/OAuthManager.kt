@@ -100,7 +100,7 @@ internal class OAuthManager(
         pkce!!.getToken(
             values[KEY_CODE],
             object : Callback<Credentials, AuthenticationException> {
-                override fun onSuccess(credentials: Credentials?) {
+                override fun onSuccess(credentials: Credentials) {
                     assertValidIdToken(credentials!!.idToken, object : VoidCallback {
                         override fun onSuccess(payload: Void?) {
                             callback.onSuccess(credentials)
@@ -145,7 +145,7 @@ internal class OAuthManager(
                     validationCallback.onFailure(error)
                 }
 
-                override fun onSuccess(signatureVerifier: SignatureVerifier?) {
+                override fun onSuccess(signatureVerifier: SignatureVerifier) {
                     val options = IdTokenVerificationOptions(
                         idTokenVerificationIssuer!!,
                         apiClient.clientId,

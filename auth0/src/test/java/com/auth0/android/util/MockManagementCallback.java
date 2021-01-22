@@ -1,7 +1,6 @@
 package com.auth0.android.util;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.auth0.android.callback.ManagementCallback;
 import com.auth0.android.management.ManagementException;
@@ -19,7 +18,7 @@ public class MockManagementCallback<T> implements ManagementCallback<T> {
     }
 
     @Override
-    public void onSuccess(@Nullable T payload) {
+    public void onSuccess(@NonNull T payload) {
         this.payload = payload;
     }
 

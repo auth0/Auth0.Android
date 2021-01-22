@@ -12,7 +12,7 @@ public interface Callback<T, U : Auth0Exception> {
      *
      * @param payload Request payload or null
      */
-    public fun onSuccess(payload: T?)
+    public fun onSuccess(payload: T)
 
     /**
      * Method called on Auth0 API request failure

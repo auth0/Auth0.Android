@@ -56,7 +56,7 @@ class DatabaseLoginFragment : Fragment() {
                         .show()
                 }
 
-                override fun onSuccess(payload: Credentials?) {
+                override fun onSuccess(payload: Credentials) {
                     Snackbar.make(
                         requireView(),
                         "Success: ${payload!!.accessToken}",
@@ -69,7 +69,7 @@ class DatabaseLoginFragment : Fragment() {
     private fun webAuth() {
         WebAuthProvider.login(account)
             .start(requireContext(), object : Callback<Credentials, AuthenticationException> {
-                override fun onSuccess(payload: Credentials?) {
+                override fun onSuccess(payload: Credentials) {
                     Snackbar.make(
                         requireView(),
                         "Success: ${payload!!.accessToken}",
