@@ -18,8 +18,8 @@ public class MockManagementCallback<T> implements ManagementCallback<T> {
     }
 
     @Override
-    public void onSuccess(@NonNull T payload) {
-        this.payload = payload;
+    public void onSuccess(@NonNull T result) {
+        this.payload = result;
     }
 
     public Callable<ManagementException> error() {

@@ -13,8 +13,8 @@ public class MockCallback<T, U extends Auth0Exception> implements Callback<T, U>
     private U error;
 
     @Override
-    public void onSuccess(@NonNull T payload) {
-        this.payload = payload;
+    public void onSuccess(@NonNull T result) {
+        this.payload = result;
     }
 
     @Override

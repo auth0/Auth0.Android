@@ -263,7 +263,7 @@ val logoutCallback = object: Callback<Void?, AuthenticationException> {
         // Failure! Check the exception for details
     }
 
-    override fun onSuccess(payload: Void?) {
+    override fun onSuccess(result: Void?) {
         // Success! The browser session was cleared
     }
 }
@@ -365,7 +365,7 @@ authentication
     .start(object: Callback<Void, AuthenticationException> {
         override fun onFailure(exception: AuthenticationException) { }
 
-        override fun onSuccess(payload: Void?) { }
+        override fun onSuccess(result: Void?) { }
     })
 ```
 

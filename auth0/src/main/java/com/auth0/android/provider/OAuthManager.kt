@@ -104,7 +104,7 @@ internal class OAuthManager(
                     assertValidIdToken(
                         credentials.idToken,
                         object : Callback<Void?, Auth0Exception> {
-                            override fun onSuccess(payload: Void?) {
+                            override fun onSuccess(result: Void?) {
                                 callback.onSuccess(credentials)
                             }
 
@@ -155,11 +155,11 @@ internal class OAuthManager(
                     validationCallback.onFailure(error)
                 }
 
-                override fun onSuccess(signatureVerifier: SignatureVerifier) {
+                override fun onSuccess(result: SignatureVerifier) {
                     val options = IdTokenVerificationOptions(
                         idTokenVerificationIssuer!!,
                         apiClient.clientId,
-                        signatureVerifier
+                        result
                     )
                     val maxAge = parameters[KEY_MAX_AGE]
                     if (!TextUtils.isEmpty(maxAge)) {

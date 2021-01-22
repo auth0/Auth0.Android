@@ -18,8 +18,8 @@ public class MockAuthenticationCallback<T> implements AuthenticationCallback<T> 
     }
 
     @Override
-    public void onSuccess(@NonNull T payload) {
-        this.payload = payload;
+    public void onSuccess(@NonNull T result) {
+        this.payload = result;
     }
 
     public Callable<AuthenticationException> error() {

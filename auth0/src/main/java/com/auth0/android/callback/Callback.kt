@@ -8,11 +8,11 @@ import com.auth0.android.Auth0Exception
 public interface Callback<T, U : Auth0Exception> {
 
     /**
-     * Method called on success with the payload or null.
+     * Method called on success with the result.
      *
-     * @param payload Request payload
+     * @param result Request result
      */
-    public fun onSuccess(payload: T)
+    public fun onSuccess(result: T)
 
     /**
      * Method called on Auth0 API request failure
