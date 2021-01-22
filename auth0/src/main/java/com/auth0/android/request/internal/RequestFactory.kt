@@ -14,7 +14,6 @@ internal class RequestFactory<U : Auth0Exception> internal constructor(
 
     private companion object {
         private const val DEFAULT_LOCALE_IF_MISSING = "en_US"
-        private const val USER_AGENT_HEADER = "User-Agent"
         private const val ACCEPT_LANGUAGE_HEADER = "Accept-Language"
         private const val AUTH0_CLIENT_INFO_HEADER = Auth0UserAgent.HEADER_NAME
 

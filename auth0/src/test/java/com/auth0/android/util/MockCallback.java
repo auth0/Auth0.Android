@@ -23,21 +23,11 @@ public class MockCallback<T, U extends Auth0Exception> implements Callback<T, U>
     }
 
     public Callable<T> payload() {
-        return new Callable<T>() {
-            @Override
-            public T call() {
-                return payload;
-            }
-        };
+        return () -> payload;
     }
 
     public Callable<U> error() {
-        return new Callable<U>() {
-            @Override
-            public U call() {
-                return error;
-            }
-        };
+        return () -> error;
     }
 
     public T getPayload() {

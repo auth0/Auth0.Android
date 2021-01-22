@@ -5,9 +5,7 @@ import com.auth0.android.result.UserProfile
 import com.auth0.android.util.UserIdentityMatcher
 import com.auth0.android.util.UserProfileMatcher
 import com.google.gson.JsonParseException
-import org.hamcrest.MatcherAssert
 import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.Matchers
 import org.hamcrest.Matchers.*
 import org.hamcrest.collection.IsMapWithSize
 import org.junit.Assert
@@ -61,7 +59,7 @@ public class UserProfileGsonTest : GsonBaseTest() {
 }"""
             ), UserProfile::class.java
         )
-        MatcherAssert.assertThat(userProfile, Matchers.`is`(Matchers.notNullValue()))
+        assertThat(userProfile, `is`(notNullValue()))
     }
 
     @Test
@@ -85,7 +83,7 @@ public class UserProfileGsonTest : GsonBaseTest() {
 }"""
             ), UserProfile::class.java
         )
-        MatcherAssert.assertThat(userProfile, Matchers.`is`(Matchers.notNullValue()))
+        assertThat(userProfile, `is`(notNullValue()))
     }
 
     @Test
@@ -109,7 +107,7 @@ public class UserProfileGsonTest : GsonBaseTest() {
 }"""
             ), UserProfile::class.java
         )
-        MatcherAssert.assertThat(userProfile, Matchers.`is`(Matchers.notNullValue()))
+        assertThat(userProfile, `is`(notNullValue()))
     }
 
     @Test
@@ -133,33 +131,33 @@ public class UserProfileGsonTest : GsonBaseTest() {
 }"""
             ), UserProfile::class.java
         )
-        MatcherAssert.assertThat(userProfile, Matchers.`is`(Matchers.notNullValue()))
+        assertThat(userProfile, `is`(notNullValue()))
     }
 
     @Test
     @Throws(Exception::class)
     public fun shouldReturnOAuthProfile() {
         val profile = pojoFrom(json(PROFILE_OAUTH), UserProfile::class.java)
-        MatcherAssert.assertThat(
+        assertThat(
             profile.getId(),
-            Matchers.`is`("google-oauth2|9883254263433883220")
+            `is`("google-oauth2|9883254263433883220")
         )
-        MatcherAssert.assertThat(profile.name, Matchers.`is`(Matchers.nullValue()))
-        MatcherAssert.assertThat(profile.nickname, Matchers.`is`(Matchers.nullValue()))
-        MatcherAssert.assertThat(profile.pictureURL, Matchers.`is`(Matchers.nullValue()))
-        MatcherAssert.assertThat(
-            profile.getIdentities(), Matchers.`is`(
-                Matchers.emptyCollectionOf(
+        assertThat(profile.name, `is`(nullValue()))
+        assertThat(profile.nickname, `is`(nullValue()))
+        assertThat(profile.pictureURL, `is`(nullValue()))
+        assertThat(
+            profile.getIdentities(), `is`(
+                emptyCollectionOf(
                     UserIdentity::class.java
                 )
             )
         )
-        MatcherAssert.assertThat(profile.getUserMetadata(), IsMapWithSize.anEmptyMap())
-        MatcherAssert.assertThat(profile.getAppMetadata(), IsMapWithSize.anEmptyMap())
-        MatcherAssert.assertThat(profile.getExtraInfo(), IsMapWithSize.aMapWithSize(1))
-        MatcherAssert.assertThat(
+        assertThat(profile.getUserMetadata(), IsMapWithSize.anEmptyMap())
+        assertThat(profile.getAppMetadata(), IsMapWithSize.anEmptyMap())
+        assertThat(profile.getExtraInfo(), IsMapWithSize.aMapWithSize(1))
+        assertThat(
             profile.getExtraInfo(),
-            Matchers.hasEntry("sub", "google-oauth2|9883254263433883220" as Any)
+            hasEntry("sub", "google-oauth2|9883254263433883220" as Any)
         )
     }
 
@@ -167,14 +165,14 @@ public class UserProfileGsonTest : GsonBaseTest() {
     @Throws(Exception::class)
     public fun shouldReturnProfileWithOnlyRequiredValues() {
         val profile = pojoFrom(json(PROFILE_BASIC), UserProfile::class.java)
-        MatcherAssert.assertThat(
+        assertThat(
             profile,
             UserProfileMatcher.isNormalizedProfile(ID, NAME, NICKNAME)
         )
-        MatcherAssert.assertThat(profile.getIdentities(), Matchers.hasSize(1))
-        MatcherAssert.assertThat(
+        assertThat(profile.getIdentities(), hasSize(1))
+        assertThat(
             profile.getIdentities(),
-            Matchers.hasItem(
+            hasItem(
                 UserIdentityMatcher.isUserIdentity(
                     "1234567890",
                     "auth0",
@@ -182,23 +180,23 @@ public class UserProfileGsonTest : GsonBaseTest() {
                 )
             )
         )
-        MatcherAssert.assertThat(profile.getUserMetadata(), IsMapWithSize.anEmptyMap())
-        MatcherAssert.assertThat(profile.getAppMetadata(), IsMapWithSize.anEmptyMap())
-        MatcherAssert.assertThat(profile.getExtraInfo(), IsMapWithSize.anEmptyMap())
+        assertThat(profile.getUserMetadata(), IsMapWithSize.anEmptyMap())
+        assertThat(profile.getAppMetadata(), IsMapWithSize.anEmptyMap())
+        assertThat(profile.getExtraInfo(), IsMapWithSize.anEmptyMap())
     }
 
     @Test
     @Throws(Exception::class)
     public fun shouldReturnNormalizedProfile() {
         val profile = pojoFrom(json(PROFILE), UserProfile::class.java)
-        MatcherAssert.assertThat(
+        assertThat(
             profile,
             UserProfileMatcher.isNormalizedProfile(ID, NAME, NICKNAME)
         )
-        MatcherAssert.assertThat(profile.getIdentities(), Matchers.hasSize(1))
-        MatcherAssert.assertThat(
+        assertThat(profile.getIdentities(), hasSize(1))
+        assertThat(
             profile.getIdentities(),
-            Matchers.hasItem(
+            hasItem(
                 UserIdentityMatcher.isUserIdentity(
                     "1234567890",
                     "auth0",
@@ -206,26 +204,26 @@ public class UserProfileGsonTest : GsonBaseTest() {
                 )
             )
         )
-        MatcherAssert.assertThat(profile.getUserMetadata(), IsMapWithSize.anEmptyMap())
-        MatcherAssert.assertThat(profile.getAppMetadata(), IsMapWithSize.anEmptyMap())
-        MatcherAssert.assertThat(profile.getExtraInfo(), Matchers.notNullValue())
+        assertThat(profile.getUserMetadata(), IsMapWithSize.anEmptyMap())
+        assertThat(profile.getAppMetadata(), IsMapWithSize.anEmptyMap())
+        assertThat(profile.getExtraInfo(), notNullValue())
     }
 
     @Test
     @Throws(Exception::class)
     public fun shouldReturnProfileWithOptionalFields() {
         val profile = pojoFrom(json(PROFILE_FULL), UserProfile::class.java)
-        MatcherAssert.assertThat(
+        assertThat(
             profile,
             UserProfileMatcher.isNormalizedProfile(ID, NAME, NICKNAME)
         )
-        MatcherAssert.assertThat(profile.email, Matchers.equalTo("info@auth0.com"))
-        MatcherAssert.assertThat(profile.givenName, Matchers.equalTo("John"))
-        MatcherAssert.assertThat(profile.familyName, Matchers.equalTo("Foobar"))
-        MatcherAssert.assertThat(profile.isEmailVerified, Matchers.`is`(false))
-        MatcherAssert.assertThat(
+        assertThat(profile.email, equalTo("info@auth0.com"))
+        assertThat(profile.givenName, equalTo("John"))
+        assertThat(profile.familyName, equalTo("Foobar"))
+        assertThat(profile.isEmailVerified, `is`(false))
+        assertThat(
             profile.createdAt,
-            Matchers.equalTo(
+            equalTo(
                 SimpleDateFormat(
                     "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
                     Locale.US
@@ -238,13 +236,13 @@ public class UserProfileGsonTest : GsonBaseTest() {
     @Throws(Exception::class)
     public fun shouldReturnProfileWithMultipleIdentities() {
         val profile = pojoFrom(json(PROFILE_FULL), UserProfile::class.java)
-        MatcherAssert.assertThat(
+        assertThat(
             profile,
             UserProfileMatcher.isNormalizedProfile(ID, NAME, NICKNAME)
         )
-        MatcherAssert.assertThat(
+        assertThat(
             profile.getIdentities(),
-            Matchers.hasItem(
+            hasItem(
                 UserIdentityMatcher.isUserIdentity(
                     "1234567890",
                     "auth0",
@@ -252,9 +250,9 @@ public class UserProfileGsonTest : GsonBaseTest() {
                 )
             )
         )
-        MatcherAssert.assertThat(
+        assertThat(
             profile.getIdentities(),
-            Matchers.hasItem(
+            hasItem(
                 UserIdentityMatcher.isUserIdentity(
                     "999997950999976",
                     "facebook",
@@ -268,13 +266,13 @@ public class UserProfileGsonTest : GsonBaseTest() {
     @Throws(Exception::class)
     public fun shouldReturnProfileWithExtraInfo() {
         val profile = pojoFrom(json(PROFILE_FULL), UserProfile::class.java)
-        MatcherAssert.assertThat(
+        assertThat(
             profile,
             UserProfileMatcher.isNormalizedProfile(ID, NAME, NICKNAME)
         )
-        MatcherAssert.assertThat(
+        assertThat(
             profile.getExtraInfo(),
-            Matchers.hasEntry("multifactor", listOf("google-authenticator"))
+            hasEntry("multifactor", listOf("google-authenticator"))
         )
         assertThat(
             profile.getExtraInfo(),
@@ -295,30 +293,30 @@ public class UserProfileGsonTest : GsonBaseTest() {
     @Throws(Exception::class)
     public fun shouldReturnProfileWithMetadata() {
         val profile = pojoFrom(json(PROFILE_FULL), UserProfile::class.java)
-        MatcherAssert.assertThat(
+        assertThat(
             profile,
             UserProfileMatcher.isNormalizedProfile(ID, NAME, NICKNAME)
         )
-        MatcherAssert.assertThat(
+        assertThat(
             profile.getUserMetadata(),
-            Matchers.hasEntry("first_name", "Info" as Any)
+            hasEntry("first_name", "Info" as Any)
         )
-        MatcherAssert.assertThat(
+        assertThat(
             profile.getUserMetadata(),
-            Matchers.hasEntry("last_name", "Auth0" as Any)
+            hasEntry("last_name", "Auth0" as Any)
         )
-        MatcherAssert.assertThat(
+        assertThat(
             profile.getUserMetadata(),
-            Matchers.hasEntry("first_name", "Info" as Any)
+            hasEntry("first_name", "Info" as Any)
         )
-        MatcherAssert.assertThat(
+        assertThat(
             profile.getAppMetadata(),
-            Matchers.hasEntry("role", "admin" as Any)
+            hasEntry("role", "admin" as Any)
         )
-        MatcherAssert.assertThat(profile.getAppMetadata(), Matchers.hasEntry("tier", 2.0 as Any))
-        MatcherAssert.assertThat(
+        assertThat(profile.getAppMetadata(), hasEntry("tier", 2.0 as Any))
+        assertThat(
             profile.getAppMetadata(),
-            Matchers.hasEntry("blocked", false as Any)
+            hasEntry("blocked", false as Any)
         )
     }
 

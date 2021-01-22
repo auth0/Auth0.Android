@@ -355,7 +355,12 @@ public class SecureCredentialsManagerTest {
     public fun shouldClearStoredCredentialsAndFailOnGetCredentialsWhenCryptoExceptionIsThrown() {
         verifyNoMoreInteractions(client)
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
-        val storedJson = insertTestCredentials(true, true, true, expiresAt)
+        val storedJson = insertTestCredentials(
+            hasIdToken = true,
+            hasAccessToken = true,
+            hasRefreshToken = true,
+            willExpireAt = expiresAt
+        )
         Mockito.`when`(crypto.decrypt(storedJson.toByteArray()))
             .thenThrow(CryptoException("err", null))
         manager.getCredentials(callback)
@@ -384,7 +389,12 @@ public class SecureCredentialsManagerTest {
     public fun shouldFailOnGetCredentialsWhenIncompatibleDeviceExceptionIsThrown() {
         verifyNoMoreInteractions(client)
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
-        val storedJson = insertTestCredentials(true, true, true, expiresAt)
+        val storedJson = insertTestCredentials(
+            hasIdToken = true,
+            hasAccessToken = true,
+            hasRefreshToken = true,
+            willExpireAt = expiresAt
+        )
         Mockito.`when`(crypto.decrypt(storedJson.toByteArray()))
             .thenThrow(IncompatibleDeviceException(null))
         manager.getCredentials(callback)

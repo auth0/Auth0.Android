@@ -23,21 +23,11 @@ public class MockManagementCallback<T> implements ManagementCallback<T> {
     }
 
     public Callable<ManagementException> error() {
-        return new Callable<ManagementException>() {
-            @Override
-            public ManagementException call() {
-                return error;
-            }
-        };
+        return () -> error;
     }
 
     public Callable<T> payload() {
-        return new Callable<T>() {
-            @Override
-            public T call() {
-                return payload;
-            }
-        };
+        return () -> payload;
     }
 
     public ManagementException getError() {

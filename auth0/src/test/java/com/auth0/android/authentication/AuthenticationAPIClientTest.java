@@ -1279,7 +1279,7 @@ public class AuthenticationAPIClientTest {
         assertThat(request.getPath(), equalTo("/.well-known/jwks.json"));
         assertThat(request.getHeader("Accept-Language"), is(getDefaultLocale()));
 
-        assertThat(callback, hasPayload(Collections.<String, PublicKey>emptyMap()));
+        assertThat(callback, hasPayload(Collections.emptyMap()));
     }
 
     @Test

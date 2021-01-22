@@ -11,8 +11,8 @@ import com.auth0.android.result.Credentials;
 import java.util.Map;
 
 public class AuthenticationRequestMock implements AuthenticationRequest {
-    private Credentials credentials;
-    private AuthenticationException error;
+    private final Credentials credentials;
+    private final AuthenticationException error;
     private boolean started;
 
     public AuthenticationRequestMock(Credentials credentials, AuthenticationException error) {

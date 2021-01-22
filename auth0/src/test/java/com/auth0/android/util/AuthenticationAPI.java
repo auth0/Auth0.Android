@@ -19,7 +19,7 @@ public class AuthenticationAPI {
     private static final String TOKEN_TYPE = "TOKEN_TYPE";
     private static final int EXPIRES_IN = 1234567890;
 
-    private MockWebServer server;
+    private final MockWebServer server;
 
     public AuthenticationAPI() throws IOException {
         this.server = new MockWebServer();

@@ -19,7 +19,8 @@
         android:text="asd@asd.asd"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView" />
+        app:layout_constraintTop_toBottomOf="@+id/textView"
+        android:autofillHints="emailAddress" />
 
     <EditText
         android:id="@+id/textPassword"
@@ -32,6 +33,7 @@
         android:hint="Password"
         android:inputType="textPassword"
         android:text="asdasd"
+        android:autofillHints="password"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textEmail" />

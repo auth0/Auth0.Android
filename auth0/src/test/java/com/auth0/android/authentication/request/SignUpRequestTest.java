@@ -12,8 +12,6 @@ import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.robolectric.RobolectricTestRunner;
 
 import java.util.HashMap;
@@ -104,7 +102,7 @@ public class SignUpRequestTest {
         final AuthenticationRequest req = signUpRequest.setAudience("https://domain.auth0.com/api");
         verify(authenticationMockRequest).setAudience("https://domain.auth0.com/api");
         assertThat(req, is(notNullValue()));
-        assertThat(req, Matchers.<AuthenticationRequest>is(signUpRequest));
+        assertThat(req, Matchers.is(signUpRequest));
     }
 
     @Test
@@ -112,7 +110,7 @@ public class SignUpRequestTest {
         final AuthenticationRequest req = signUpRequest.setGrantType("token");
         verify(authenticationMockRequest).setGrantType("token");
         assertThat(req, is(notNullValue()));
-        assertThat(req, Matchers.<AuthenticationRequest>is(signUpRequest));
+        assertThat(req, Matchers.is(signUpRequest));
     }
 
     @Test
@@ -189,19 +187,9 @@ public class SignUpRequestTest {
 
     @Test
     public void shouldExecuteTheRequest() {
-        when(dbMockRequest.execute()).thenAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) {
-                return null;
-            }
-        });
+        when(dbMockRequest.execute()).thenAnswer(invocation -> null);
         final Credentials credentials = mock(Credentials.class);
-        when(authenticationMockRequest.execute()).thenAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) {
-                return credentials;
-            }
-        });
+        when(authenticationMockRequest.execute()).thenAnswer(invocation -> credentials);
         final Credentials executeResult = signUpRequest.execute();
 
         verify(dbMockRequest).execute();

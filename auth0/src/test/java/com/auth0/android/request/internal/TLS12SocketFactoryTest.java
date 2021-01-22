@@ -1,9 +1,7 @@
 package com.auth0.android.request.internal;
 
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -18,9 +16,9 @@ import javax.net.ssl.SSLSocketFactory;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -39,12 +37,9 @@ public class TLS12SocketFactoryTest {
     @Mock SSLSocketFactory delegate;
     TLS12SocketFactory factory;
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
         factory = new TLS12SocketFactory(delegate);
     }
 
@@ -72,7 +67,7 @@ public class TLS12SocketFactoryTest {
 
     @Test
     public void shouldCreateSocket_socket_host_port_autoClose() throws IOException {
-        when(delegate.createSocket((Socket) anyObject(), anyString(), anyInt(), anyBoolean()))
+        when(delegate.createSocket(any(Socket.class), anyString(), anyInt(), anyBoolean()))
                 .thenReturn(socket);
 
         Socket result = factory.createSocket(socket, MOCK_HOST, MOCK_PORT, MOCK_AUTO_CLOSE);
@@ -97,7 +92,7 @@ public class TLS12SocketFactoryTest {
     @Test
     public void shouldCreateSocket_host_port_localHost_localPort() throws IOException {
         InetAddress localHost = mock(InetAddress.class);
-        when(delegate.createSocket(anyString(), anyInt(), (InetAddress) anyObject(), anyInt()))
+        when(delegate.createSocket(anyString(), anyInt(), any(InetAddress.class), anyInt()))
                 .thenReturn(socket);
 
         Socket result = factory.createSocket(MOCK_HOST, MOCK_PORT, localHost, MOCK_LOCAL_PORT);
@@ -110,7 +105,7 @@ public class TLS12SocketFactoryTest {
     @Test
     public void shouldCreateSocket_hostAddress_port() throws IOException {
         InetAddress host = mock(InetAddress.class);
-        when(delegate.createSocket((InetAddress) anyObject(), anyInt()))
+        when(delegate.createSocket(any(InetAddress.class), anyInt()))
                 .thenReturn(socket);
 
         Socket result = factory.createSocket(host, MOCK_PORT);
@@ -124,7 +119,7 @@ public class TLS12SocketFactoryTest {
     public void shouldCreateSocket_address_port_localAddress_localPort() throws IOException {
         InetAddress address = mock(InetAddress.class);
         InetAddress localAddress = mock(InetAddress.class);
-        when(delegate.createSocket((InetAddress) anyObject(), anyInt(), (InetAddress) anyObject(), anyInt()))
+        when(delegate.createSocket(any(InetAddress.class), anyInt(), any(InetAddress.class), anyInt()))
                 .thenReturn(socket);
 
         Socket result = factory.createSocket(address, MOCK_PORT, localAddress, MOCK_LOCAL_PORT);

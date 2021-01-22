@@ -52,7 +52,7 @@ public class Auth0UserAgentTest {
     }
 
     @Test
-    public void shouldUseDefaultNameEmpty() throws Exception {
+    public void shouldUseDefaultNameEmpty() {
         Auth0UserAgent auth0UserAgent = new Auth0UserAgent("", "2.0");
         assertThat(auth0UserAgent.getValue(), is(notNullValue()));
         assertThat(auth0UserAgent.getName(), is(BuildConfig.LIBRARY_NAME));
@@ -62,7 +62,7 @@ public class Auth0UserAgentTest {
     }
 
     @Test
-    public void shouldUseDefaultVersionIfEmpty() throws Exception {
+    public void shouldUseDefaultVersionIfEmpty() {
         Auth0UserAgent auth0UserAgent = new Auth0UserAgent("auth0-java", "");
         assertThat(auth0UserAgent.getValue(), is(notNullValue()));
         assertThat(auth0UserAgent.getName(), is("auth0-java"));
@@ -99,7 +99,7 @@ public class Auth0UserAgentTest {
 
     @Test
     @Config(sdk = 23)
-    public void shouldGenerateCompleteTelemetryBase64Value() throws Exception {
+    public void shouldGenerateCompleteTelemetryBase64Value() {
         Gson gson = new Gson();
         Type mapType = new TypeToken<Map<String, Object>>() {
         }.getType();
@@ -118,7 +118,7 @@ public class Auth0UserAgentTest {
 
     @Test
     @Config(sdk = 23)
-    public void shouldGenerateBasicTelemetryBase64Value() throws Exception {
+    public void shouldGenerateBasicTelemetryBase64Value() {
         Gson gson = new Gson();
         Type mapType = new TypeToken<Map<String, Object>>() {
         }.getType();
