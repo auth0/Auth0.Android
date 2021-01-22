@@ -143,7 +143,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             val encryptedEncoded = Base64.encodeToString(encrypted, Base64.DEFAULT)
             storage.store(KEY_CREDENTIALS, encryptedEncoded)
             storage.store(
-                KEY_EXPIRES_AT, credentials.expiresAt!!
+                KEY_EXPIRES_AT, credentials.expiresAt
                     .time
             )
             storage.store(KEY_CACHE_EXPIRES_AT, cacheExpiresAt)
@@ -335,7 +335,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         }
         request.start(object : AuthenticationCallback<Credentials> {
             override fun onSuccess(fresh: Credentials) {
-                val expiresAt = fresh!!.expiresAt!!.time
+                val expiresAt = fresh.expiresAt!!.time
                 val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
                 if (willAccessTokenExpire) {
                     val tokenLifetime = (expiresAt - currentTimeInMillis - minTtl * 1000) / -1000

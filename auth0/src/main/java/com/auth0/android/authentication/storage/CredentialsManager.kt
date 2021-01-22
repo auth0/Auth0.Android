@@ -43,7 +43,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         storage.store(KEY_REFRESH_TOKEN, credentials.refreshToken)
         storage.store(KEY_ID_TOKEN, credentials.idToken)
         storage.store(KEY_TOKEN_TYPE, credentials.type)
-        storage.store(KEY_EXPIRES_AT, credentials.expiresAt!!.time)
+        storage.store(KEY_EXPIRES_AT, credentials.expiresAt.time)
         storage.store(KEY_SCOPE, credentials.scope)
         storage.store(KEY_CACHE_EXPIRES_AT, cacheExpiresAt)
     }
@@ -112,7 +112,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         }
         request.start(object : AuthenticationCallback<Credentials> {
             override fun onSuccess(fresh: Credentials) {
-                val expiresAt = fresh!!.expiresAt!!.time
+                val expiresAt = fresh.expiresAt!!.time
                 val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
                 if (willAccessTokenExpire) {
                     val tokenLifetime = (expiresAt - currentTimeInMillis - minTtl * 1000) / -1000

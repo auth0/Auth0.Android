@@ -83,7 +83,7 @@ public class WebAuthProviderTest {
         )
         BrowserPickerTest.setupBrowserContext(
             activity,
-            Arrays.asList("com.auth0.browser"),
+            listOf("com.auth0.browser"),
             null,
             null
         )

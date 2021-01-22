@@ -38,7 +38,6 @@ public class DefaultClient(
     override fun load(url: String, options: RequestOptions): ServerResponse {
         val response = prepareCall(url.toHttpUrl(), options).execute()
 
-        //FIXME: Ensure body is being closed
         return ServerResponse(
             response.code,
             response.body!!.byteStream(),
