@@ -86,6 +86,6 @@ internal open class BaseAuthenticationRequest(private val request: Request<Crede
 
     @Throws(Auth0Exception::class)
     override fun execute(): Credentials {
-        return request.execute()!!
+        return request.execute()
     }
 }

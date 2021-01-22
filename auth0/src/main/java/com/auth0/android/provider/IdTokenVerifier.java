@@ -27,7 +27,6 @@ class IdTokenVerifier {
         if (isEmpty(token.getIssuer())) {
             throw new TokenValidationException("Issuer (iss) claim must be a string present in the ID token");
         }
-        //noinspection ConstantConditions
         if (!token.getIssuer().equals(verifyOptions.getIssuer())) {
             throw new TokenValidationException(String.format("Issuer (iss) claim mismatch in the ID token, expected \"%s\", found \"%s\"", verifyOptions.getIssuer(), token.getIssuer()));
         }

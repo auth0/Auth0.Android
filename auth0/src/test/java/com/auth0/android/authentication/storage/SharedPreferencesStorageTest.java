@@ -69,7 +69,6 @@ public class SharedPreferencesStorageTest {
     public void shouldThrowOnCreateIfCustomPreferencesFileNameIsEmpty() {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("The SharedPreferences name is invalid");
-        //noinspection ConstantConditions
         new SharedPreferencesStorage(context, "");
     }
 

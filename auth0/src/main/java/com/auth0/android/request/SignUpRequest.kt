@@ -128,7 +128,7 @@ public class SignUpRequest
      */
     override fun start(callback: Callback<Credentials, AuthenticationException>) {
         signUpRequest.start(object : Callback<DatabaseUser, AuthenticationException> {
-            override fun onSuccess(user: DatabaseUser?) {
+            override fun onSuccess(user: DatabaseUser) {
                 authenticationRequest.start(callback)
             }
 
@@ -147,6 +147,6 @@ public class SignUpRequest
     @Throws(Auth0Exception::class)
     override fun execute(): Credentials {
         signUpRequest.execute()
-        return authenticationRequest.execute()!!
+        return authenticationRequest.execute()
     }
 }

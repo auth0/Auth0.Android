@@ -10,16 +10,16 @@ import java.util.*
 
 internal class LogoutManager(
     private val account: Auth0,
-    private val callback: Callback<Void, AuthenticationException>,
+    private val callback: Callback<Void?, AuthenticationException>,
     returnToUrl: String,
     ctOptions: CustomTabsOptions
 ) : ResumableManager() {
     private val parameters: MutableMap<String, String>
     private val ctOptions: CustomTabsOptions
-    fun startLogout(context: Context?) {
+    fun startLogout(context: Context) {
         addClientParameters(parameters)
         val uri = buildLogoutUri()
-        AuthenticationActivity.authenticateUsingBrowser(context!!, uri, ctOptions)
+        AuthenticationActivity.authenticateUsingBrowser(context, uri, ctOptions)
     }
 
     public override fun resume(result: AuthorizeResult): Boolean {

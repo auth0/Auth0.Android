@@ -100,19 +100,21 @@ internal class OAuthManager(
         pkce!!.getToken(
             values[KEY_CODE],
             object : Callback<Credentials, AuthenticationException> {
-                override fun onSuccess(credentials: Credentials?) {
-                    assertValidIdToken(credentials!!.idToken, object : VoidCallback {
-                        override fun onSuccess(payload: Void?) {
-                            callback.onSuccess(credentials)
-                        }
+                override fun onSuccess(credentials: Credentials) {
+                    assertValidIdToken(
+                        credentials.idToken,
+                        object : Callback<Void?, Auth0Exception> {
+                            override fun onSuccess(result: Void?) {
+                                callback.onSuccess(credentials)
+                            }
 
-                        override fun onFailure(error: Auth0Exception) {
-                            val wrappedError = AuthenticationException(
-                                ERROR_VALUE_ID_TOKEN_VALIDATION_FAILED, error
-                            )
-                            callback.onFailure(wrappedError)
-                        }
-                    })
+                            override fun onFailure(error: Auth0Exception) {
+                                val wrappedError = AuthenticationException(
+                                    ERROR_VALUE_ID_TOKEN_VALIDATION_FAILED, error
+                                )
+                                callback.onFailure(wrappedError)
+                            }
+                        })
                 }
 
                 override fun onFailure(error: AuthenticationException) {
@@ -128,7 +130,10 @@ internal class OAuthManager(
         return true
     }
 
-    private fun assertValidIdToken(idToken: String?, validationCallback: VoidCallback) {
+    private fun assertValidIdToken(
+        idToken: String?,
+        validationCallback: Callback<Void?, Auth0Exception>
+    ) {
         if (TextUtils.isEmpty(idToken)) {
             validationCallback.onFailure(TokenValidationException("ID token is required but missing"))
             return
@@ -136,7 +141,12 @@ internal class OAuthManager(
         val decodedIdToken: Jwt = try {
             Jwt(idToken!!)
         } catch (error: Exception) {
-            validationCallback.onFailure(TokenValidationException("ID token could not be decoded", error))
+            validationCallback.onFailure(
+                TokenValidationException(
+                    "ID token could not be decoded",
+                    error
+                )
+            )
             return
         }
         val signatureVerifierCallback: Callback<SignatureVerifier, TokenValidationException> =
@@ -145,11 +155,11 @@ internal class OAuthManager(
                     validationCallback.onFailure(error)
                 }
 
-                override fun onSuccess(signatureVerifier: SignatureVerifier?) {
+                override fun onSuccess(result: SignatureVerifier) {
                     val options = IdTokenVerificationOptions(
                         idTokenVerificationIssuer!!,
                         apiClient.clientId,
-                        signatureVerifier!!
+                        result
                     )
                     val maxAge = parameters[KEY_MAX_AGE]
                     if (!TextUtils.isEmpty(maxAge)) {

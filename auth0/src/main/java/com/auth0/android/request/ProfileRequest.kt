@@ -76,12 +76,12 @@ public class ProfileRequest
      */
     override fun start(callback: Callback<Authentication, AuthenticationException>) {
         authenticationRequest.start(object : Callback<Credentials, AuthenticationException> {
-            override fun onSuccess(credentials: Credentials?) {
+            override fun onSuccess(credentials: Credentials) {
                 userInfoRequest
-                    .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials!!.accessToken)
+                    .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.accessToken)
                     .start(object : Callback<UserProfile, AuthenticationException> {
-                        override fun onSuccess(profile: UserProfile?) {
-                            callback.onSuccess(Authentication(profile!!, credentials))
+                        override fun onSuccess(profile: UserProfile) {
+                            callback.onSuccess(Authentication(profile, credentials))
                         }
 
                         override fun onFailure(error: AuthenticationException) {
@@ -104,11 +104,11 @@ public class ProfileRequest
      */
     @Throws(Auth0Exception::class)
     override fun execute(): Authentication {
-        val credentials = authenticationRequest.execute()!!
+        val credentials = authenticationRequest.execute()
         val profile = userInfoRequest
             .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.accessToken)
             .execute()
-        return Authentication(profile!!, credentials)
+        return Authentication(profile, credentials)
     }
 
     private companion object {

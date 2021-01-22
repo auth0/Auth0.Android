@@ -59,7 +59,7 @@ public class WebAuthProviderTest {
     private lateinit var callback: Callback<Credentials, AuthenticationException>
 
     @Mock
-    private lateinit var voidCallback: Callback<Void, AuthenticationException>
+    private lateinit var voidCallback: Callback<Void?, AuthenticationException>
     private lateinit var activity: Activity
     private lateinit var account: Auth0
 
@@ -83,7 +83,7 @@ public class WebAuthProviderTest {
         )
         BrowserPickerTest.setupBrowserContext(
             activity,
-            Arrays.asList("com.auth0.browser"),
+            listOf("com.auth0.browser"),
             null,
             null
         )

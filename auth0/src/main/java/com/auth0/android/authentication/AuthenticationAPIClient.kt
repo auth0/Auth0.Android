@@ -62,7 +62,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * client
      *     .login("{username or email}", "{password}", "{database connection name}")
      *     .start(object : Callback<Credentials, AuthenticationException> {
-     *         override fun onSuccess(payload: Credentials?) { }
+     *         override fun onSuccess(result: Credentials) { }
      *         override fun onFailure(error: AuthenticationException) { }
      * })
      *```
@@ -93,7 +93,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * ```
      * client.login("{username or email}", "{password}")
      *     .start(object:  Callback<Credentials, AuthenticationException> {
-     *         override fun onSuccess(payload: Credentials?) { }
+     *         override fun onSuccess(result: Credentials) { }
      *         override fun onFailure(error: AuthenticationException) { }
      * })
      *```
@@ -119,7 +119,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * client.loginWithOTP("{mfa token}", "{one time password}")
      *     .start(object : Callback<Credentials, AuthenticationException> {
      *         override fun onFailure(error: AuthenticationException) { }
-     *         override fun onSuccess(payload: Credentials?) { }
+     *         override fun onSuccess(result: Credentials) { }
      * })
      *```
      *
@@ -145,7 +145,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * ```
      * client.loginWithNativeSocialToken("{subject token}", "{subject token type}")
      *     .start(object: Callback<Credentials, AuthenticationException> {
-     *         override fun onSuccess(payload: Credentials?) { }
+     *         override fun onSuccess(result: Credentials) { }
      *         override fun onFailure(error: AuthenticationException) { }
      * })
      * ```
@@ -183,7 +183,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * ```
      * client.loginWithPhoneNumber("{phone number}", "{code}", "{passwordless connection name}")
      *     .start(object: Callback<Credentials, AuthenticationException> {
-     *         override fun onSuccess(payload: Credentials?) { }
+     *         override fun onSuccess(result: Credentials) { }
      *         override fun onFailure(error: AuthenticationException) { }
      * })
      * ```
@@ -219,7 +219,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * ```
      * client.loginWithEmail("{email}", "{code}", "{passwordless connection name}")
      *     .start(object: Callback<Credentials, AuthenticationException> {
-     *         override fun onSuccess(payload: Credentials?) { }
+     *         override fun onSuccess(result: Credentials) { }
      *         override fun onFailure(error: AuthenticationException) { }
      * })
      *```
@@ -252,7 +252,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * ```
      * client.userInfo("{access_token}")
      *     .start(object: Callback<UserProfile, AuthenticationException> {
-     *         override fun onSuccess(payload: UserProfile?) { }
+     *         override fun onSuccess(result: UserProfile) { }
      *         override fun onFailure(error: AuthenticationException) { }
      * })
      *```
@@ -271,7 +271,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * ```
      * client.createUser("{email}", "{password}", "{username}", "{database connection name}")
      *     .start(object: Callback<DatabaseUser, AuthenticationException> {
-     *         override fun onSuccess(payload: DatabaseUser?) { }
+     *         override fun onSuccess(result: DatabaseUser) { }
      *         override fun onFailure(error: AuthenticationException) { }
      * })
      * ```
@@ -314,7 +314,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * ```
      * client.signUp("{email}", "{password}", "{username}", "{database connection name}")
      *     .start(object: Callback<Credentials, AuthenticationException> {
-     *         override fun onSuccess(payload: Credentials?) { }
+     *         override fun onSuccess(result: Credentials) { }
      *         override fun onFailure(error: AuthenticationException) { }
      * })
      *```
@@ -342,8 +342,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      * ```
      * client.resetPassword("{email}", "{database connection name}")
-     *     .start(object: Callback<Void, AuthenticationException> {
-     *         override fun onSuccess(payload: Void?) { }
+     *     .start(object: Callback<Void?, AuthenticationException> {
+     *         override fun onSuccess(result: Void?) { }
      *         override fun onFailure(error: AuthenticationException) { }
      * })
      * ```
@@ -355,7 +355,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     public fun resetPassword(
         email: String,
         connection: String
-    ): Request<Void, AuthenticationException> {
+    ): Request<Void?, AuthenticationException> {
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(DB_CONNECTIONS_PATH)
             .addPathSegment(CHANGE_PASSWORD_PATH)
@@ -375,8 +375,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      * ```
      * client.revokeToken("{refresh_token}")
-     *     .start(object: Callback<Void, AuthenticationException> {
-     *         override fun onSuccess(payload: Void?) { }
+     *     .start(object: Callback<Void?, AuthenticationException> {
+     *         override fun onSuccess(result: Void?) { }
      *         override fun onFailure(error: AuthenticationException) { }
      * })
      * ```
@@ -384,7 +384,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param refreshToken the token to revoke
      * @return a request to start
      */
-    public fun revokeToken(refreshToken: String): Request<Void, AuthenticationException> {
+    public fun revokeToken(refreshToken: String): Request<Void?, AuthenticationException> {
         val parameters = ParameterBuilder.newBuilder()
             .setClientId(clientId)
             .set(TOKEN_KEY, refreshToken)
@@ -408,7 +408,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * client.renewAuth("{refresh_token}")
      *     .addParameter("scope", "openid profile email")
      *     .start(object: Callback<Credentials, AuthenticationException> {
-     *         override fun onSuccess(payload: Credentials?) { }
+     *         override fun onSuccess(result: Credentials) { }
      *         override fun onFailure(error: AuthenticationException) { }
      * })
      * ```
@@ -439,8 +439,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      * ```
      * client.passwordlessWithEmail("{email}", PasswordlessType.CODE, "{passwordless connection name}")
-     *     .start(object: Callback<Void, AuthenticationException> {
-     *         override onSuccess(payload: Void?) { }
+     *     .start(object: Callback<Void?, AuthenticationException> {
+     *         override onSuccess(result: Void?) { }
      *         override onFailure(error: AuthenticationException) { }
      * })
      * ```
@@ -455,7 +455,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         email: String,
         passwordlessType: PasswordlessType,
         connection: String = EMAIL_CONNECTION
-    ): Request<Void, AuthenticationException> {
+    ): Request<Void?, AuthenticationException> {
         val parameters = ParameterBuilder.newBuilder()
             .set(EMAIL_KEY, email)
             .setSend(passwordlessType)
@@ -471,8 +471,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      * ```
      * client.passwordlessWithSms("{phone number}", PasswordlessType.CODE, "{passwordless connection name}")
-     *     .start(object: Callback<Void, AuthenticationException> {
-     *         override fun onSuccess(payload: Void?) { }
+     *     .start(object: Callback<Void?, AuthenticationException> {
+     *         override fun onSuccess(result: Void?) { }
      *         override fun onFailure(error: AuthenticationException) { }
      * })
      * ```
@@ -487,7 +487,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         phoneNumber: String,
         passwordlessType: PasswordlessType,
         connection: String = SMS_CONNECTION
-    ): Request<Void, AuthenticationException> {
+    ): Request<Void?, AuthenticationException> {
         val parameters = ParameterBuilder.newBuilder()
             .set(PHONE_NUMBER_KEY, phoneNumber)
             .setSend(passwordlessType)
@@ -502,7 +502,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      *
      * @return a request to configure and start
      */
-    private fun passwordless(): Request<Void, AuthenticationException> {
+    private fun passwordless(): Request<Void?, AuthenticationException> {
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(PASSWORDLESS_PATH)
             .addPathSegment(START_PATH)

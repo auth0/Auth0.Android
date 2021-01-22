@@ -1,7 +1,6 @@
 package com.auth0.android.util;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.AuthenticationCallback;
@@ -19,8 +18,8 @@ public class MockAuthenticationCallback<T> implements AuthenticationCallback<T> 
     }
 
     @Override
-    public void onSuccess(@Nullable T payload) {
-        this.payload = payload;
+    public void onSuccess(@NonNull T result) {
+        this.payload = result;
     }
 
     public Callable<AuthenticationException> error() {

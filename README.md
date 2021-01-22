@@ -127,7 +127,7 @@ val callback = object : Callback<Credentials, AuthenticationException> {
         // Failure! Check the exception for details
     }
 
-    override fun onSuccess(credentials: Credentials?) {
+    override fun onSuccess(credentials: Credentials) {
         // Success! Access token and ID token are presents
     }
 }
@@ -258,12 +258,12 @@ WebAuthProvider.logout(account)
     .start(this, logoutCallback)
 
 //Declare the callback that will receive the result
-val logoutCallback = object: Callback<Void, AuthenticationException> {
+val logoutCallback = object: Callback<Void?, AuthenticationException> {
     override fun onFailure(exception: AuthenticationException) {
         // Failure! Check the exception for details
     }
 
-    override fun onSuccess(payload: Void?) {
+    override fun onSuccess(result: Void?) {
         // Success! The browser session was cleared
     }
 }
@@ -326,7 +326,7 @@ authentication
     .start(object: Callback<Credentials, AuthenticationException> {
         override fun onFailure(exception: AuthenticationException) { }
 
-        override fun onSuccess(credentials: Credentials?) { }
+        override fun onSuccess(credentials: Credentials) { }
     })
 ```
 
@@ -345,7 +345,7 @@ authentication
     .start(object: Callback<Credentials, AuthenticationException> {
         override fun onFailure(exception: AuthenticationException) { }
 
-        override fun onSuccess(credentials: Credentials?) { }
+        override fun onSuccess(credentials: Credentials) { }
     })
 ```
 
@@ -365,7 +365,7 @@ authentication
     .start(object: Callback<Void, AuthenticationException> {
         override fun onFailure(exception: AuthenticationException) { }
 
-        override fun onSuccess(payload: Void?) { }
+        override fun onSuccess(result: Void?) { }
     })
 ```
 
@@ -379,7 +379,7 @@ authentication
     .start(object: Callback<Credentials, AuthenticationException> {
        override fun onFailure(exception: AuthenticationException) { }
 
-       override fun onSuccess(credentials: Credentials?) { }
+       override fun onSuccess(credentials: Credentials) { }
    })
 ```
 
@@ -392,7 +392,7 @@ authentication
     .start(object: Callback<Credentials, AuthenticationException> {
         override fun onFailure(exception: AuthenticationException) { }
 
-        override fun onSuccess(credentials: Credentials?) { }
+        override fun onSuccess(credentials: Credentials) { }
     })
 ```
 
@@ -405,7 +405,7 @@ authentication
    .start(object: Callback<UserProfile, AuthenticationException> {
        override fun onFailure(exception: AuthenticationException) { }
 
-       override fun onSuccess(profile: UserProfile?) { }
+       override fun onSuccess(profile: UserProfile) { }
    })
 ```
 
@@ -434,7 +434,7 @@ authentication.login(email, password, realm)
                             // Handle error
                         }
 
-                        override fun onSuccess(credentials: Credentials?) {
+                        override fun onSuccess(credentials: Credentials) {
                             // Handle WebAuth success
                         }
                     })
@@ -442,7 +442,7 @@ authentication.login(email, password, realm)
             // Handle other errors
         }
 
-        override fun onSuccess(credentials: Credentials?) {
+        override fun onSuccess(credentials: Credentials) {
             // Handle API success
         }
     })
@@ -478,7 +478,7 @@ users
     
         override fun onFailure(exception: ManagementException) { }
     
-        override fun onSuccess(identities: List<UserIdentity>?) { }
+        override fun onSuccess(identities: List<UserIdentity>) { }
     })
 ```
 
@@ -491,7 +491,7 @@ users
     
         override fun onFailure(exception: ManagementException) { }
     
-        override fun onSuccess(identities: List<UserIdentity>?) { }
+        override fun onSuccess(identities: List<UserIdentity>) { }
     })
 ```
 
@@ -504,7 +504,7 @@ users
     
         override fun onFailure(exception: ManagementException) { }
     
-        override fun onSuccess(identities: UserProfile?) { }
+        override fun onSuccess(identities: UserProfile) { }
     })
 ```
 
@@ -522,7 +522,7 @@ users
     
         override fun onFailure(exception: ManagementException) { }
     
-        override fun onSuccess(identities: UserProfile?) { }
+        override fun onSuccess(identities: UserProfile) { }
     })
 ```
 
@@ -560,7 +560,7 @@ authentication
             // Error
         }
     
-        override fun onSuccess(credentials: Credentials?) {
+        override fun onSuccess(credentials: Credentials) {
             //Save the credentials
             manager.saveCredentials(credentials)
         }
@@ -585,7 +585,7 @@ manager.getCredentials(object : Callback<Credentials, CredentialsManagerExceptio
        // Error
    }
 
-   override fun onSuccess(credentials: Credentials?) {
+   override fun onSuccess(credentials: Credentials) {
        // Use the credentials
    }
 })
@@ -632,7 +632,7 @@ manager.requireAuthentication(this, AUTH_REQ_CODE, null, null)
 When the above conditions are met and the manager requires the user authentication, it will use the activity context to launch a new activity and wait for its result in the `onActivityResult` method. Your activity must override this method and pass the request code and result code to the manager's `checkAuthenticationResult` method to verify if this request was successful or not.
 
 ```kotlin
-public override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+ override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
     if (manager.checkAuthenticationResult(requestCode, resultCode)) {
         return
     }
@@ -700,7 +700,7 @@ For more advanced configuration of the networking client, you can provide a cust
 class CustomNetClient : NetworkingClient {
     override fun load(url: String, options: RequestOptions): ServerResponse {
         // Create and execute the request to the specified URL with the given options
-        val response = ...  
+        val response = // ...
             
         // Return a ServerResponse from the received response data
         return ServerResponse(responseCode, responseBody, responseHeaders)        
