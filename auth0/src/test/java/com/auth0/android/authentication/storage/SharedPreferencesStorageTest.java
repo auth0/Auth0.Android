@@ -4,10 +4,9 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -16,11 +15,11 @@ import org.robolectric.RobolectricTestRunner;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyFloat;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anySetOf;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
@@ -36,12 +35,10 @@ public class SharedPreferencesStorageTest {
     private SharedPreferences sharedPreferences;
     @Mock
     private SharedPreferences.Editor sharedPreferencesEditor;
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
         when(context.getSharedPreferences(anyString(), eq(Context.MODE_PRIVATE))).thenReturn(sharedPreferences);
         when(sharedPreferences.edit()).thenReturn(sharedPreferencesEditor);
         when(sharedPreferencesEditor.remove(anyString())).thenReturn(sharedPreferencesEditor);
@@ -50,7 +47,7 @@ public class SharedPreferencesStorageTest {
         when(sharedPreferencesEditor.putLong(anyString(), anyLong())).thenReturn(sharedPreferencesEditor);
         when(sharedPreferencesEditor.putFloat(anyString(), anyFloat())).thenReturn(sharedPreferencesEditor);
         when(sharedPreferencesEditor.putInt(anyString(), anyInt())).thenReturn(sharedPreferencesEditor);
-        when(sharedPreferencesEditor.putStringSet(anyString(), anySetOf(String.class))).thenReturn(sharedPreferencesEditor);
+        when(sharedPreferencesEditor.putStringSet(anyString(), anySet())).thenReturn(sharedPreferencesEditor);
     }
 
     @Test
@@ -67,9 +64,7 @@ public class SharedPreferencesStorageTest {
 
     @Test
     public void shouldThrowOnCreateIfCustomPreferencesFileNameIsEmpty() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("The SharedPreferences name is invalid");
-        new SharedPreferencesStorage(context, "");
+        Assert.assertThrows("The SharedPreferences name is invalid", IllegalArgumentException.class, () -> new SharedPreferencesStorage(context, ""));
     }
 
 

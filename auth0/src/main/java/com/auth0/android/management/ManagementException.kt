@@ -39,6 +39,7 @@ public class ManagementException @JvmOverloads constructor(
      *
      * @return the error code.
      */
+    @Suppress("MemberVisibilityCanBePrivate")
     public fun getCode(): String {
         return if (code != null) code!! else UNKNOWN_ERROR
     }
@@ -49,6 +50,7 @@ public class ManagementException @JvmOverloads constructor(
      *
      * @return the error description.
      */
+    @Suppress("unused")
     public fun getDescription(): String {
         if (description != null) {
             return description!!

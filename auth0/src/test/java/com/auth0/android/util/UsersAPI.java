@@ -8,7 +8,7 @@ import okhttp3.mockwebserver.RecordedRequest;
 
 public class UsersAPI {
 
-    private MockWebServer server;
+    private final MockWebServer server;
 
     public UsersAPI() throws IOException {
         this.server = new MockWebServer();

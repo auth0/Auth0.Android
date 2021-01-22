@@ -107,7 +107,7 @@ public class BrowserPickerTest {
 
     @Test
     public void shouldReturnNullBrowserIfNoBrowserAvailable() {
-        setupBrowserContext(activity, Collections.<String>emptyList(), null, null);
+        setupBrowserContext(activity, Collections.emptyList(), null, null);
         String bestPackage = allBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
         MatcherAssert.assertThat(bestPackage, is(nullValue()));
     }
@@ -209,7 +209,7 @@ public class BrowserPickerTest {
 
         //prefer first custom tabs compatible browser when default is not custom tabs compatible
         currentBrowsers = Arrays.asList(CUSTOM_BROWSER_1, CUSTOM_BROWSER_2);
-        currentCompatibleBrowsers = Arrays.asList(CUSTOM_BROWSER_1);
+        currentCompatibleBrowsers = Collections.singletonList(CUSTOM_BROWSER_1);
         setupBrowserContext(activity, currentBrowsers, currentCompatibleBrowsers, CUSTOM_BROWSER_2);
         bestPackage = allBrowserPicker.getBestBrowserPackage(activity.getPackageManager());
         MatcherAssert.assertThat(bestPackage, is(currentCompatibleBrowsers.get(0)));

@@ -35,7 +35,7 @@ public class DefaultClientTest {
         private const val URL_PATH = "/api/demo"
     }
 
-    private lateinit var BASE_URL: String
+    private lateinit var baseUrl: String
     private lateinit var mockServer: MockWebServer
     private val gson = Gson()
 
@@ -43,7 +43,7 @@ public class DefaultClientTest {
     public fun setUp() {
         mockServer = MockWebServer()
         mockServer.start()
-        BASE_URL = mockServer.url("/").toString()
+        baseUrl = mockServer.url("/").toString()
     }
 
     @After
@@ -263,7 +263,7 @@ public class DefaultClientTest {
         options.headers.putAll(requestHeaders)
 
         //Server response
-        val destination = Uri.parse(BASE_URL).buildUpon()
+        val destination = Uri.parse(baseUrl).buildUpon()
             .path(URL_PATH)
             .build()
             .toString()

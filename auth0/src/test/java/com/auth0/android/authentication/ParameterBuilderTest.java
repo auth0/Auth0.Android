@@ -4,9 +4,7 @@ package com.auth0.android.authentication;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,9 +23,6 @@ public class ParameterBuilderTest {
     public static final String CONNECTION = "AD";
     public static final String REALM = "users";
     public static final String DEVICE = "ANDROID TEST DEVICE";
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
     private ParameterBuilder builder;
 
     @Before
@@ -47,7 +42,7 @@ public class ParameterBuilderTest {
 
     @Test
     public void shouldInstantiateWithArguments() {
-        assertThat(ParameterBuilder.newBuilder(new HashMap<String, String>()), is(notNullValue()));
+        assertThat(ParameterBuilder.newBuilder(new HashMap<>()), is(notNullValue()));
     }
 
     @Test

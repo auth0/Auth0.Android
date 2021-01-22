@@ -14,7 +14,7 @@ import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 
-import java.util.Arrays;
+import java.util.Collections;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -153,7 +153,7 @@ public class CustomTabsOptionsTest {
     @Test
     public void shouldSetBrowserPicker() {
         Activity activity = spy(Robolectric.setupActivity(Activity.class));
-        BrowserPickerTest.setupBrowserContext(activity, Arrays.asList("com.auth0.browser"), null, null);
+        BrowserPickerTest.setupBrowserContext(activity, Collections.singletonList("com.auth0.browser"), null, null);
 
         BrowserPicker browserPicker = BrowserPicker.newBuilder().build();
         CustomTabsOptions options = CustomTabsOptions.newBuilder()

@@ -290,6 +290,7 @@ public object WebAuthProvider {
          * @param headers for token request.
          * @return the current builder instance
          */
+        @Suppress("unused")
         public fun withHeaders(headers: Map<String, String>): Builder {
             this.headers.putAll(headers)
             return this

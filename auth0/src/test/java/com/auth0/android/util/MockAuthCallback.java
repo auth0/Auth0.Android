@@ -1,6 +1,7 @@
 package com.auth0.android.util;
 
 import android.app.Dialog;
+
 import androidx.annotation.NonNull;
 
 import com.auth0.android.authentication.AuthenticationException;
@@ -17,30 +18,15 @@ public class MockAuthCallback implements AuthCallback {
 
 
     public Callable<AuthenticationException> error() {
-        return new Callable<AuthenticationException>() {
-            @Override
-            public AuthenticationException call() {
-                return error;
-            }
-        };
+        return () -> error;
     }
 
     public Callable<Dialog> dialog() {
-        return new Callable<Dialog>() {
-            @Override
-            public Dialog call() {
-                return dialog;
-            }
-        };
+        return () -> dialog;
     }
 
     public Callable<Credentials> credentials() {
-        return new Callable<Credentials>() {
-            @Override
-            public Credentials call() {
-                return credentials;
-            }
-        };
+        return () -> credentials;
     }
 
     public AuthenticationException getError() {

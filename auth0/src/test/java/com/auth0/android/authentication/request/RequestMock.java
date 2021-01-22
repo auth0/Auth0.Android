@@ -9,12 +9,12 @@ import com.auth0.android.request.Request;
 import java.util.Map;
 
 public class RequestMock<T, U extends Auth0Exception> implements Request<T, U> {
-    private T payload;
-    private U error;
+    private final T result;
+    private final U error;
     private boolean started;
 
-    public RequestMock(T payload, U error) {
-        this.payload = payload;
+    public RequestMock(T result, U error) {
+        this.result = result;
         this.error = error;
     }
 
@@ -43,8 +43,8 @@ public class RequestMock<T, U extends Auth0Exception> implements Request<T, U> {
     @Override
     public void start(@NonNull Callback<T, U> callback) {
         started = true;
-        if (payload != null) {
-            callback.onSuccess(payload);
+        if (result != null) {
+            callback.onSuccess(result);
         } else {
             callback.onFailure(error);
         }

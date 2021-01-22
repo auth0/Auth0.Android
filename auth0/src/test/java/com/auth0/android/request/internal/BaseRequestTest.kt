@@ -363,7 +363,7 @@ public class BaseRequestTest {
         ).thenReturn(response)
     }
 
-    private class SimplePojo internal constructor(val prop: String)
+    private class SimplePojo(val prop: String)
     private companion object {
         private const val BASE_URL = "https://auth0.com"
     }

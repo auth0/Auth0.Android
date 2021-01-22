@@ -11,8 +11,8 @@ import java.util.Map;
 
 public class MockRequest<T, U extends Auth0Exception> implements Request<T, U> {
 
-    public Map<String, String> parameters = new HashMap<>();
-    public Map<String, String> headers = new HashMap<>();
+    public final Map<String, String> parameters = new HashMap<>();
+    public final Map<String, String> headers = new HashMap<>();
 
     @NonNull
     @Override

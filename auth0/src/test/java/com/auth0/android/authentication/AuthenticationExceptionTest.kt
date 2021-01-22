@@ -404,6 +404,7 @@ public class AuthenticationExceptionTest {
         val ex = AuthenticationException(
             values
         )
+        @Suppress("DEPRECATION")
         MatcherAssert.assertThat(ex.isAuthenticationCanceled, CoreMatchers.`is`(true))
     }
 

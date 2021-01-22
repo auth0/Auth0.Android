@@ -23,21 +23,11 @@ public class MockAuthenticationCallback<T> implements AuthenticationCallback<T> 
     }
 
     public Callable<AuthenticationException> error() {
-        return new Callable<AuthenticationException>() {
-            @Override
-            public AuthenticationException call() {
-                return error;
-            }
-        };
+        return () -> error;
     }
 
     public Callable<T> payload() {
-        return new Callable<T>() {
-            @Override
-            public T call() {
-                return payload;
-            }
-        };
+        return () -> payload;
     }
 
     public AuthenticationException getError() {

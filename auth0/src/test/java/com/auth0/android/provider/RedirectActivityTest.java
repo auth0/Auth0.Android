@@ -35,7 +35,7 @@ public class RedirectActivityTest {
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
     }
 
     private void createActivity(Intent launchIntent) {

@@ -5,10 +5,9 @@ import android.content.res.Resources;
 
 import com.auth0.android.util.Auth0UserAgent;
 
+import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -30,8 +29,6 @@ import static org.mockito.Mockito.when;
 @RunWith(RobolectricTestRunner.class)
 public class Auth0Test {
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
     @Mock
     public Context context;
 
@@ -45,7 +42,7 @@ public class Auth0Test {
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
         when(context.getPackageName()).thenReturn(PACKAGE_NAME);
         when(context.getString(eq(222))).thenReturn(CLIENT_ID);
         when(context.getString(eq(333))).thenReturn(DOMAIN);
@@ -71,28 +68,26 @@ public class Auth0Test {
 
     @Test
     public void shouldFailToBuildFromResourcesWithoutClientID() {
-        Resources resources = Mockito.mock(Resources.class);
-        when(context.getResources()).thenReturn(resources);
-        when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), eq(PACKAGE_NAME))).thenReturn(0);
-        when(resources.getIdentifier(eq("com_auth0_domain"), eq("string"), eq(PACKAGE_NAME))).thenReturn(333);
+        Assert.assertThrows("The 'R.string.com_auth0_client_id' value it's not defined in your project's resources file.", IllegalArgumentException.class, () -> {
+            Resources resources = Mockito.mock(Resources.class);
+            when(context.getResources()).thenReturn(resources);
+            when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), eq(PACKAGE_NAME))).thenReturn(0);
+            when(resources.getIdentifier(eq("com_auth0_domain"), eq("string"), eq(PACKAGE_NAME))).thenReturn(333);
 
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("The 'R.string.com_auth0_client_id' value it's not defined in your project's resources file.");
-
-        new Auth0(context);
+            new Auth0(context);
+        });
     }
 
     @Test
     public void shouldFailToBuildFromResourcesWithoutDomain() {
-        Resources resources = Mockito.mock(Resources.class);
-        when(context.getResources()).thenReturn(resources);
-        when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), eq(PACKAGE_NAME))).thenReturn(222);
-        when(resources.getIdentifier(eq("com_auth0_domain"), eq("string"), eq(PACKAGE_NAME))).thenReturn(0);
+        Assert.assertThrows("The 'R.string.com_auth0_domain' value it's not defined in your project's resources file.", IllegalArgumentException.class, () -> {
+            Resources resources = Mockito.mock(Resources.class);
+            when(context.getResources()).thenReturn(resources);
+            when(resources.getIdentifier(eq("com_auth0_client_id"), eq("string"), eq(PACKAGE_NAME))).thenReturn(222);
+            when(resources.getIdentifier(eq("com_auth0_domain"), eq("string"), eq(PACKAGE_NAME))).thenReturn(0);
 
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("The 'R.string.com_auth0_domain' value it's not defined in your project's resources file.");
-
-        new Auth0(context);
+            new Auth0(context);
+        });
     }
 
     @Test
@@ -145,8 +140,7 @@ public class Auth0Test {
 
     @Test
     public void shouldThrowWhenInvalidDomain() {
-        expectedException.expect(IllegalArgumentException.class);
-        new Auth0(CLIENT_ID, "some invalid domain.com");
+        Assert.assertThrows(IllegalArgumentException.class, () -> new Auth0(CLIENT_ID, "some invalid domain.com"));
     }
 
     @Test
@@ -179,9 +173,7 @@ public class Auth0Test {
 
     @Test
     public void shouldThrowWhenHttpDomainUsed() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Invalid domain url: 'http://" + DOMAIN + "'. Only HTTPS domain URLs are supported. If no scheme is passed, HTTPS will be used.");
-        new Auth0(CLIENT_ID, "http://" + DOMAIN);
+        Assert.assertThrows("Invalid domain url: 'http://" + DOMAIN + "'. Only HTTPS domain URLs are supported. If no scheme is passed, HTTPS will be used.", IllegalArgumentException.class, () -> new Auth0(CLIENT_ID, "http://" + DOMAIN));
     }
 
     @Test
@@ -192,15 +184,11 @@ public class Auth0Test {
 
     @Test
     public void shouldThrowWhenHttpUppercaseDomainUsed() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Invalid domain url: 'HTTP://" + DOMAIN + "'. Only HTTPS domain URLs are supported. If no scheme is passed, HTTPS will be used.");
-        new Auth0(CLIENT_ID, "HTTP://" + DOMAIN);
+        Assert.assertThrows("Invalid domain url: 'http://" + DOMAIN + "'. Only HTTPS domain URLs are supported. If no scheme is passed, HTTPS will be used.", IllegalArgumentException.class, () -> new Auth0(CLIENT_ID, "HTTP://" + DOMAIN));
     }
 
     @Test
     public void shouldThrowWhenConfigDomainIsHttp() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Invalid domain url: 'http://" + OTHER_DOMAIN + "'. Only HTTPS domain URLs are supported. If no scheme is passed, HTTPS will be used.");
-        new Auth0(CLIENT_ID, DOMAIN, "http://" + OTHER_DOMAIN);
+        Assert.assertThrows("Invalid domain url: 'http://" + OTHER_DOMAIN + "'. Only HTTPS domain URLs are supported. If no scheme is passed, HTTPS will be used.", IllegalArgumentException.class, () -> new Auth0(CLIENT_ID, DOMAIN, "HTTP://" + OTHER_DOMAIN));
     }
 }

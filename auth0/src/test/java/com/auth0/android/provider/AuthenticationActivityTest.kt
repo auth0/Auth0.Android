@@ -201,16 +201,4 @@ public class AuthenticationActivityTest {
         activityController.newIntent(data)
         activityController.resume()
     }
-
-    private fun recreateAndCallActivityResult(reqCode: Int, data: Intent) {
-        val outState = Bundle()
-        activityController.saveInstanceState(outState)
-        activityController.pause().stop().destroy()
-        createActivity(null)
-        activityController.create(outState).start().restoreInstanceState(outState)
-        activity.onActivityResult(reqCode, Activity.RESULT_OK, data)
-        if (!activity.isFinishing) {
-            activityController.resume()
-        }
-    }
 }

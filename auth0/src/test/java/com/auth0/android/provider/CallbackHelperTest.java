@@ -108,7 +108,7 @@ public class CallbackHelperTest {
         final Map<String, String> values = CallbackHelper.getValuesFromUri(uri);
 
         assertThat(values, is(notNullValue()));
-        assertThat(values, IsMapWithSize.<String, String>anEmptyMap());
+        assertThat(values, IsMapWithSize.anEmptyMap());
     }
 
     @Test
@@ -118,7 +118,7 @@ public class CallbackHelperTest {
         final Map<String, String> values = CallbackHelper.getValuesFromUri(uri);
 
         assertThat(values, is(notNullValue()));
-        assertThat(values, IsMapWithSize.<String, String>anEmptyMap());
+        assertThat(values, IsMapWithSize.anEmptyMap());
     }
 
     @Test
@@ -127,7 +127,7 @@ public class CallbackHelperTest {
         Uri uri = Uri.parse(uriString);
         final Map<String, String> values = CallbackHelper.getValuesFromUri(uri);
         assertThat(values, notNullValue());
-        assertThat(values, IsMapWithSize.<String, String>anEmptyMap());
+        assertThat(values, IsMapWithSize.anEmptyMap());
     }
 
     @Test
@@ -136,7 +136,7 @@ public class CallbackHelperTest {
         Uri uri = Uri.parse(uriString);
         final Map<String, String> values = CallbackHelper.getValuesFromUri(uri);
         assertThat(values, notNullValue());
-        assertThat(values, IsMapWithSize.<String, String>anEmptyMap());
+        assertThat(values, IsMapWithSize.anEmptyMap());
     }
 
     @Test
@@ -145,7 +145,7 @@ public class CallbackHelperTest {
         Uri uri = Uri.parse(uriString);
         final Map<String, String> values = CallbackHelper.getValuesFromUri(uri);
         assertThat(values, notNullValue());
-        assertThat(values, IsMapWithSize.<String, String>anEmptyMap());
+        assertThat(values, IsMapWithSize.anEmptyMap());
     }
 
     @Test
@@ -154,7 +154,7 @@ public class CallbackHelperTest {
         Uri uri = Uri.parse(uriString);
         final Map<String, String> values = CallbackHelper.getValuesFromUri(uri);
         assertThat(values, notNullValue());
-        assertThat(values, IsMapWithSize.<String, String>anEmptyMap());
+        assertThat(values, IsMapWithSize.anEmptyMap());
     }
 
     @Test
@@ -163,7 +163,7 @@ public class CallbackHelperTest {
         Uri uri = Uri.parse(uriString);
         final Map<String, String> values = CallbackHelper.getValuesFromUri(uri);
         assertThat(values, notNullValue());
-        assertThat(values, IsMapWithSize.<String, String>anEmptyMap());
+        assertThat(values, IsMapWithSize.anEmptyMap());
     }
 
     @Test
@@ -171,6 +171,6 @@ public class CallbackHelperTest {
         Uri uri = null;
         final Map<String, String> values = CallbackHelper.getValuesFromUri(uri);
         assertThat(values, notNullValue());
-        assertThat(values, IsMapWithSize.<String, String>anEmptyMap());
+        assertThat(values, IsMapWithSize.anEmptyMap());
     }
 }

@@ -9,7 +9,6 @@ import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.net.Uri;
 
-import androidx.browser.customtabs.CustomTabsCallback;
 import androidx.browser.customtabs.CustomTabsClient;
 import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.browser.customtabs.CustomTabsServiceConnection;
@@ -20,7 +19,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.powermock.api.mockito.PowerMockito;
@@ -70,7 +68,7 @@ public class CustomTabsControllerTest {
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
         Activity activity = Robolectric.setupActivity(Activity.class);
         context = spy(activity);
 
@@ -228,10 +226,10 @@ public class CustomTabsControllerTest {
         //This depends on an implementation detail but is the only way to test it because of methods visibility
         PowerMockito.when(session, "getComponentName").thenReturn(componentName);
 
-        when(customTabsClient.newSession(Matchers.<CustomTabsCallback>eq(null))).thenReturn(session);
+        when(customTabsClient.newSession(eq(null))).thenReturn(session);
         CustomTabsServiceConnection conn = serviceConnectionCaptor.getValue();
         conn.onCustomTabsServiceConnected(componentName, customTabsClient);
-        verify(customTabsClient).newSession(Matchers.<CustomTabsCallback>eq(null));
+        verify(customTabsClient).newSession(eq(null));
         verify(customTabsClient).warmup(eq(0L));
     }
 }
