@@ -55,7 +55,7 @@ public class RequestFactoryTest {
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
         factory = createRequestFactory();
     }
 

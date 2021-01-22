@@ -14,7 +14,10 @@ import org.hamcrest.core.IsCollectionContaining
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.*
+import org.mockito.ArgumentMatchers
+import org.mockito.Mock
+import org.mockito.Mockito
+import org.mockito.MockitoAnnotations
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.android.util.concurrent.PausedExecutorService
 import org.robolectric.shadows.ShadowLooper
@@ -254,12 +257,10 @@ public class BaseRequestTest {
 
         // Release the main thread queue
         ShadowLooper.shadowMainLooper().idle()
-        val pojoCaptor = ArgumentCaptor.forClass(
-            SimplePojo::class.java
-        )
+        val pojoCaptor = argumentCaptor<SimplePojo>()
         verify(callback).onSuccess(pojoCaptor.capture())
-        MatcherAssert.assertThat(pojoCaptor.value, Matchers.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(pojoCaptor.value.prop, Matchers.`is`("test-value"))
+        MatcherAssert.assertThat(pojoCaptor.firstValue, Matchers.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(pojoCaptor.firstValue.prop, Matchers.`is`("test-value"))
         verify(callback, Mockito.never()).onFailure(
             any()
         )

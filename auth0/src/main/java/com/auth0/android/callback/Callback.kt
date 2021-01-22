@@ -10,7 +10,7 @@ public interface Callback<T, U : Auth0Exception> {
     /**
      * Method called on success with the payload or null.
      *
-     * @param payload Request payload or null
+     * @param payload Request payload
      */
     public fun onSuccess(payload: T)
 
