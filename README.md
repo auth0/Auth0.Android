@@ -713,7 +713,7 @@ account.networkingClient = netClient
 
 ## FAQ
 
-* Why is the Android Lint _error_ `'InvalidPackage'` considered a _warning_?
+### Why is the Android Lint _error_ `'InvalidPackage'` considered a _warning_?
 
 When building the project with `build`, an error appeared regarding an `invalid package` on the `okio` dependency. This snippet is in the `build.gradle` file so that the build runs fine:
 
@@ -728,7 +728,7 @@ android {
 
 ref: https://github.com/square/okio/issues/58#issuecomment-72672263
 
-* Why do I need to declare Manifest Placeholders for the Auth0 domain and scheme?
+### Why do I need to declare Manifest Placeholders for the Auth0 domain and scheme?
 
 The library internally declares a `RedirectActivity` in its Android Manifest file. While this approach prevents the developer from adding an activity declaration to their application's Android Manifest file, it requires the use of Manifest Placeholders.
 
@@ -767,7 +767,7 @@ Alternatively, you can re-declare the `RedirectActivity` in the `AndroidManifest
 Recall that if you request a different scheme, you must replace the above `android:scheme` property value and initialize the provider with the new scheme. Read [this section](#a-note-about-app-deep-linking) to learn more. 
 
 
-* Is the Web Authentication module setup optional?
+### Is the Web Authentication module setup optional?
 
 If you don't plan to use the _Web Authentication_ feature, you will notice that the compiler will still prompt you to provide the `manifestPlaceholders` values, since the `RedirectActivity` included in this library will require them, and the Gradle tasks won't be able to run without them. 
 
@@ -788,7 +788,6 @@ The rules should be applied automatically if your application is using `minifyEn
 By default you should at least use the following files:
 * `proguard-okio.pro`
 * `proguard-gson.pro`
-
 
 ## What is Auth0?
 
