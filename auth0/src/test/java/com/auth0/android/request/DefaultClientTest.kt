@@ -3,11 +3,16 @@ package com.auth0.android.request
 import android.net.Uri
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import okhttp3.Call
 import okhttp3.Interceptor
+import okhttp3.OkHttpClient
+import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
+import okhttp3.tls.HandshakeCertificates
+import okhttp3.tls.HeldCertificate
 import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.empty
@@ -16,11 +21,13 @@ import org.hamcrest.collection.IsMapContaining.hasEntry
 import org.hamcrest.collection.IsMapWithSize.anEmptyMap
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.net.InetAddress
 import java.nio.charset.StandardCharsets
 import java.util.stream.Collectors
 
@@ -39,9 +46,11 @@ public class DefaultClientTest {
     private lateinit var mockServer: MockWebServer
     private val gson = Gson()
 
+    private val defaultClient: NetworkingClient = SSLTestUtils.testClient
+
     @Before
     public fun setUp() {
-        mockServer = MockWebServer()
+        mockServer = SSLTestUtils.createMockWebServer()
         mockServer.start()
         baseUrl = mockServer.url("/").toString()
     }
@@ -56,7 +65,7 @@ public class DefaultClientTest {
         enqueueMockResponse(STATUS_SUCCESS, JSON_OK)
         executeRequest(
             HttpMethod.GET,
-            DefaultClient(defaultHeaders = mapOf("custom-header" to "custom-value"))
+            createDefaultClientForTest(defaultHeaders = mapOf("custom-header" to "custom-value"))
         )
 
         val sentRequest = mockServer.takeRequest()
@@ -69,8 +78,9 @@ public class DefaultClientTest {
 
         executeRequest(
             HttpMethod.GET,
-            DefaultClient(defaultHeaders = mapOf("a-header" to "a-value")),
-            requestHeaders = mutableMapOf("a-header" to "updated-value"))
+            createDefaultClientForTest(defaultHeaders = mapOf("a-header" to "a-value")),
+            requestHeaders = mutableMapOf("a-header" to "updated-value")
+        )
 
         val sentRequest = mockServer.takeRequest()
         requestAssertions(sentRequest, HttpMethod.GET, mapOf("a-header" to "updated-value"))
@@ -87,7 +97,10 @@ public class DefaultClientTest {
         assertThat(netClient.okHttpClient.interceptors, hasSize(1))
 
         val interceptor: Interceptor = netClient.okHttpClient.interceptors[0]
-        assertThat((interceptor as HttpLoggingInterceptor).level, equalTo(HttpLoggingInterceptor.Level.BODY))
+        assertThat(
+            (interceptor as HttpLoggingInterceptor).level,
+            equalTo(HttpLoggingInterceptor.Level.BODY)
+        )
     }
 
     @Test
@@ -213,7 +226,8 @@ public class DefaultClientTest {
     private fun requestAssertions(
         request: RecordedRequest,
         method: HttpMethod,
-        headers: Map<String, String> = mapOf("a-header" to "b-value")) {
+        headers: Map<String, String> = mapOf("a-header" to "b-value")
+    ) {
         val requestUri = Uri.parse(request.path)
         when (method) {
             HttpMethod.GET -> assertThat(request.method, equalTo("GET"))
@@ -255,7 +269,7 @@ public class DefaultClientTest {
 
     private fun executeRequest(
         method: HttpMethod,
-        client: NetworkingClient = DefaultClient(),
+        client: NetworkingClient = defaultClient,
         requestHeaders: MutableMap<String, String> = mutableMapOf("a-header" to "b-value")
     ): ServerResponse {
         val options = RequestOptions(method)
@@ -290,5 +304,16 @@ public class DefaultClientTest {
         }
         val mapType = object : TypeToken<Map<String, Any>>() {}.type
         return gson.fromJson(text, mapType)
+    }
+
+    private fun createDefaultClientForTest(defaultHeaders: Map<String, String>): DefaultClient {
+        return DefaultClient(
+            defaultHeaders = defaultHeaders,
+            readTimeout = 10,
+            connectTimeout = 10,
+            enableLogging = false,
+            sslSocketFactory = SSLTestUtils.clientCertificates.sslSocketFactory(),
+            trustManager = SSLTestUtils.clientCertificates.trustManager
+        )
     }
 }

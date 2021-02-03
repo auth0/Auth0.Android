@@ -105,6 +105,7 @@ dependencies {
     // Mockito-Kotlin: See https://github.com/nhaarman/mockito-kotlin/wiki/Parameter-specified-as-non-null-is-null
     testImplementation 'com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0'
     testImplementation 'com.squareup.okhttp3:mockwebserver:4.9.0'
+    testImplementation 'com.squareup.okhttp3:okhttp-tls:4.9.0'
     testImplementation 'com.jayway.awaitility:awaitility:1.7.0'
     testImplementation 'org.robolectric:robolectric:4.4'
     testImplementation 'androidx.test.espresso:espresso-intents:3.3.0'

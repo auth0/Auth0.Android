@@ -1,5 +1,7 @@
 package com.auth0.android.util;
 
+import com.auth0.android.request.SSLTestUtils;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -22,7 +24,7 @@ public class AuthenticationAPI {
     private final MockWebServer server;
 
     public AuthenticationAPI() throws IOException {
-        this.server = new MockWebServer();
+        this.server = SSLTestUtils.INSTANCE.createMockWebServer();
         this.server.start();
     }
 

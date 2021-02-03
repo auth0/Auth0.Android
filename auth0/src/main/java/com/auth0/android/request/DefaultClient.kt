@@ -12,21 +12,36 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.logging.HttpLoggingInterceptor
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import javax.net.ssl.SSLSocketFactory
+import javax.net.ssl.X509TrustManager
+
 
 /**
  * Default implementation of a Networking Client.
- *
- * @param connectTimeout the connection timeout, in seconds, to use when executing requests. Default is ten seconds.
- * @param readTimeout the read timeout, in seconds, to use when executing requests. Default is ten seconds.
- * @param defaultHeaders any headers that should be sent on all requests. If a specific request specifies a header with the same key as any header in the default headers, the header specified on the request will take precedence. Default is an empty map.
- * @param enableLogging whether HTTP request and response info should be logged. This should only be set to `true` for debugging purposes in non-production environments, as sensitive information is included in the logs. Defaults to `false`.
  */
-public class DefaultClient(
-    private val connectTimeout: Int = DEFAULT_TIMEOUT_SECONDS,
-    private val readTimeout: Int = DEFAULT_TIMEOUT_SECONDS,
-    private val defaultHeaders: Map<String, String> = mapOf(),
-    private val enableLogging: Boolean = false
+public class DefaultClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal constructor(
+    connectTimeout: Int,
+    readTimeout: Int,
+    private val defaultHeaders: Map<String, String>,
+    enableLogging: Boolean,
+    sslSocketFactory: SSLSocketFactory?,
+    trustManager: X509TrustManager?
 ) : NetworkingClient {
+
+    /**
+     * Create a new DefaultClient.
+     *
+     * @param connectTimeout the connection timeout, in seconds, to use when executing requests. Default is ten seconds.
+     * @param readTimeout the read timeout, in seconds, to use when executing requests. Default is ten seconds.
+     * @param defaultHeaders any headers that should be sent on all requests. If a specific request specifies a header with the same key as any header in the default headers, the header specified on the request will take precedence. Default is an empty map.
+     * @param enableLogging whether HTTP request and response info should be logged. This should only be set to `true` for debugging purposes in non-production environments, as sensitive information is included in the logs. Defaults to `false`.
+     */
+    public constructor(
+        connectTimeout: Int = DEFAULT_TIMEOUT_SECONDS,
+        readTimeout: Int = DEFAULT_TIMEOUT_SECONDS,
+        defaultHeaders: Map<String, String> = mapOf(),
+        enableLogging: Boolean = false
+    ) : this(connectTimeout,  readTimeout,  defaultHeaders, enableLogging, null, null)
 
     //TODO: receive this via internal constructor parameters
     private val gson: Gson = GsonProvider.gson
@@ -85,6 +100,11 @@ public class DefaultClient(
         // timeouts
         builder.connectTimeout(connectTimeout.toLong(), TimeUnit.SECONDS)
         builder.readTimeout(readTimeout.toLong(), TimeUnit.SECONDS)
+
+        // testing with ssl hook (internal constructor params visibility only)
+        if (sslSocketFactory != null && trustManager != null) {
+            builder.sslSocketFactory(sslSocketFactory, trustManager)
+        }
 
         okHttpClient = builder.build()
     }

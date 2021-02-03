@@ -1,5 +1,7 @@
 package com.auth0.android.util;
 
+import com.auth0.android.request.SSLTestUtils;
+
 import java.io.IOException;
 
 import okhttp3.mockwebserver.MockResponse;
@@ -11,7 +13,7 @@ public class UsersAPI {
     private final MockWebServer server;
 
     public UsersAPI() throws IOException {
-        this.server = new MockWebServer();
+        this.server = SSLTestUtils.INSTANCE.createMockWebServer();
         this.server.start();
     }
 
