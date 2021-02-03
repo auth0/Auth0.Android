@@ -18,7 +18,7 @@ import com.auth0.android.result.Credentials;
 import com.auth0.android.result.DatabaseUser;
 import com.auth0.android.result.UserProfile;
 import com.auth0.android.util.Auth0UserAgent;
-import com.auth0.android.util.AuthenticationAPI;
+import com.auth0.android.util.AuthenticationAPIMockServer;
 import com.auth0.android.util.MockAuthenticationCallback;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -85,11 +85,11 @@ public class AuthenticationAPIClientTest {
     private AuthenticationAPIClient client;
     private Gson gson;
 
-    private AuthenticationAPI mockAPI;
+    private AuthenticationAPIMockServer mockAPI;
 
     @Before
     public void setUp() throws Exception {
-        mockAPI = new AuthenticationAPI();
+        mockAPI = new AuthenticationAPIMockServer();
         final String domain = mockAPI.getDomain();
         Auth0 auth0 = new Auth0(CLIENT_ID, domain, domain);
         auth0.setNetworkingClient(SSLTestUtils.INSTANCE.getTestClient());
@@ -1329,7 +1329,7 @@ public class AuthenticationAPIClientTest {
         assertThat(body, hasEntry("grant_type", "http://auth0.com/oauth/grant-type/password-realm"));
 
         final RecordedRequest secondRequest = mockAPI.takeRequest();
-        assertThat(secondRequest.getHeader("Authorization"), is("Bearer " + AuthenticationAPI.ACCESS_TOKEN));
+        assertThat(secondRequest.getHeader("Authorization"), is("Bearer " + AuthenticationAPIMockServer.ACCESS_TOKEN));
         assertThat(secondRequest.getPath(), equalTo("/userinfo"));
 
         assertThat(callback, hasPayloadOfType(Authentication.class));
@@ -1443,7 +1443,7 @@ public class AuthenticationAPIClientTest {
         assertThat(body, hasEntry("grant_type", "http://auth0.com/oauth/grant-type/password-realm"));
 
         final RecordedRequest secondRequest = mockAPI.takeRequest();
-        assertThat(secondRequest.getHeader("Authorization"), is("Bearer " + AuthenticationAPI.ACCESS_TOKEN));
+        assertThat(secondRequest.getHeader("Authorization"), is("Bearer " + AuthenticationAPIMockServer.ACCESS_TOKEN));
         assertThat(secondRequest.getPath(), equalTo("/userinfo"));
 
         assertThat(authentication, is(notNullValue()));

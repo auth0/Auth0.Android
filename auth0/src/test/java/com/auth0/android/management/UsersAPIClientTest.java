@@ -18,7 +18,7 @@ import com.auth0.android.result.UserProfile;
 import com.auth0.android.util.Auth0UserAgent;
 import com.auth0.android.util.MockManagementCallback;
 import com.auth0.android.util.TypeTokenMatcher;
-import com.auth0.android.util.UsersAPI;
+import com.auth0.android.util.UsersAPIMockServer;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -85,11 +85,11 @@ public class UsersAPIClientTest {
     private UsersAPIClient client;
     private Gson gson;
 
-    private UsersAPI mockAPI;
+    private UsersAPIMockServer mockAPI;
 
     @Before
     public void setUp() throws Exception {
-        mockAPI = new UsersAPI();
+        mockAPI = new UsersAPIMockServer();
         final String domain = mockAPI.getDomain();
         Auth0 auth0 = new Auth0(CLIENT_ID, domain, domain);
         auth0.setNetworkingClient(SSLTestUtils.INSTANCE.getTestClient());

@@ -10,7 +10,7 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
-public class AuthenticationAPI {
+public class AuthenticationAPIMockServer {
 
     public static final String REFRESH_TOKEN = "REFRESH_TOKEN";
     public static final String ID_TOKEN = "ID_TOKEN";
@@ -23,7 +23,7 @@ public class AuthenticationAPI {
 
     private final MockWebServer server;
 
-    public AuthenticationAPI() throws IOException {
+    public AuthenticationAPIMockServer() throws IOException {
         this.server = SSLTestUtils.INSTANCE.createMockWebServer();
         this.server.start();
     }
@@ -40,16 +40,16 @@ public class AuthenticationAPI {
         return server.takeRequest();
     }
 
-    public AuthenticationAPI willReturnValidApplicationResponse() {
+    public AuthenticationAPIMockServer willReturnValidApplicationResponse() {
         return willReturnApplicationResponseWithBody("Auth0.setClient({\"id\":\"CLIENTID\",\"tenant\":\"overmind\",\"subscription\":\"free\",\"authorize\":\"https://samples.auth0.com/authorize\",\"callback\":\"http://localhost:3000/\",\"hasAllowedOrigins\":true,\"strategies\":[{\"name\":\"twitter\",\"connections\":[{\"name\":\"twitter\"}]}]});", 200);
     }
 
-    public AuthenticationAPI willReturnSuccessfulChangePassword() {
+    public AuthenticationAPIMockServer willReturnSuccessfulChangePassword() {
         server.enqueue(responseWithJSON("NOT REALLY A JSON", 200));
         return this;
     }
 
-    public AuthenticationAPI willReturnSuccessfulPasswordlessStart() {
+    public AuthenticationAPIMockServer willReturnSuccessfulPasswordlessStart() {
         String json = "{\n" +
                 "  \"phone+number\": \"+1098098098\"\n" +
                 "}";
@@ -57,7 +57,7 @@ public class AuthenticationAPI {
         return this;
     }
 
-    public AuthenticationAPI willReturnNewIdToken() {
+    public AuthenticationAPIMockServer willReturnNewIdToken() {
         String json = "{\n" +
                 "  \"id_token\": \"" + NEW_ID_TOKEN + "\",\n" +
                 "  \"expires_in\": " + EXPIRES_IN + ",\n" +
@@ -67,7 +67,7 @@ public class AuthenticationAPI {
         return this;
     }
 
-    public AuthenticationAPI willReturnSuccessfulSignUp() {
+    public AuthenticationAPIMockServer willReturnSuccessfulSignUp() {
         String json = "{\n" +
                 "    \"_id\": \"gjsmgdkjs72jljsf2dsdhh\", \n" +
                 "    \"email\": \"support@auth0.com\", \n" +
@@ -78,12 +78,12 @@ public class AuthenticationAPI {
         return this;
     }
 
-    public AuthenticationAPI willReturnSuccessfulEmptyBody() {
+    public AuthenticationAPIMockServer willReturnSuccessfulEmptyBody() {
         server.enqueue(responseEmpty(200));
         return this;
     }
 
-    public AuthenticationAPI willReturnSuccessfulLogin() {
+    public AuthenticationAPIMockServer willReturnSuccessfulLogin() {
         String json = "{\n" +
                 "  \"refresh_token\": \"" + REFRESH_TOKEN + "\",\n" +
                 "  \"id_token\": \"" + ID_TOKEN + "\",\n" +
@@ -94,7 +94,7 @@ public class AuthenticationAPI {
         return this;
     }
 
-    public AuthenticationAPI willReturnInvalidRequest() {
+    public AuthenticationAPIMockServer willReturnInvalidRequest() {
         String json = "{\n" +
                 "  \"error\": \"invalid_request\",\n" +
                 "  \"error_description\": \"a random error\"\n" +
@@ -103,7 +103,7 @@ public class AuthenticationAPI {
         return this;
     }
 
-    public AuthenticationAPI willReturnEmptyJsonWebKeys() {
+    public AuthenticationAPIMockServer willReturnEmptyJsonWebKeys() {
         String json = "{" +
                 "\"keys\": []" +
                 "}";
@@ -111,7 +111,7 @@ public class AuthenticationAPI {
         return this;
     }
 
-    public AuthenticationAPI willReturnValidJsonWebKeys() {
+    public AuthenticationAPIMockServer willReturnValidJsonWebKeys() {
         try {
             byte[] encoded = Files.readAllBytes(Paths.get("src/test/resources/rsa_jwks.json"));
             String json = new String(encoded);
@@ -122,7 +122,7 @@ public class AuthenticationAPI {
         return this;
     }
 
-    public AuthenticationAPI willReturnUserInfo() {
+    public AuthenticationAPIMockServer willReturnUserInfo() {
         String json = "{\n" +
                 "  \"email\": \"p@p.xom\",\n" +
                 "  \"email_verified\": false,\n" +
@@ -146,12 +146,12 @@ public class AuthenticationAPI {
         return this;
     }
 
-    public AuthenticationAPI willReturnPlainTextUnauthorized() {
+    public AuthenticationAPIMockServer willReturnPlainTextUnauthorized() {
         server.enqueue(responseWithPlainText("Unauthorized", 401));
         return this;
     }
 
-    public AuthenticationAPI willReturnTokens() {
+    public AuthenticationAPIMockServer willReturnTokens() {
         String json = "{\"" +
                 "access_token\": \"" + ACCESS_TOKEN + "\"," +
                 "\"refresh_token\": \"" + REFRESH_TOKEN + "\"," +
@@ -162,7 +162,7 @@ public class AuthenticationAPI {
         return this;
     }
 
-    public AuthenticationAPI willReturnApplicationResponseWithBody(String body, int statusCode) {
+    public AuthenticationAPIMockServer willReturnApplicationResponseWithBody(String body, int statusCode) {
         MockResponse response = new MockResponse()
                 .setResponseCode(statusCode)
                 .addHeader("Content-Type", "application/x-javascript")

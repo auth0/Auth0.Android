@@ -16,7 +16,7 @@ import com.auth0.android.request.*
 import com.auth0.android.request.HttpMethod.POST
 import com.auth0.android.request.internal.ThreadSwitcherShadow
 import com.auth0.android.result.Credentials
-import com.auth0.android.util.AuthenticationAPI
+import com.auth0.android.util.AuthenticationAPIMockServer
 import com.nhaarman.mockitokotlin2.*
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert.assertThat
@@ -917,7 +917,7 @@ public class WebAuthProviderTest {
         val expiresAt = Date()
         val pkce = Mockito.mock(PKCE::class.java)
         `when`(pkce.codeChallenge).thenReturn("challenge")
-        val mockAPI = AuthenticationAPI()
+        val mockAPI = AuthenticationAPIMockServer()
         mockAPI.willReturnValidJsonWebKeys()
         val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = Auth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
@@ -1098,7 +1098,7 @@ public class WebAuthProviderTest {
         val expiresAt = Date()
         val pkce = Mockito.mock(PKCE::class.java)
         `when`(pkce.codeChallenge).thenReturn("challenge")
-        val mockAPI = AuthenticationAPI()
+        val mockAPI = AuthenticationAPIMockServer()
         mockAPI.willReturnValidJsonWebKeys()
         val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = Auth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
@@ -1323,7 +1323,7 @@ public class WebAuthProviderTest {
     public fun shouldFailToResumeLoginWhenRSAKeyIsMissingFromJWKSet() {
         val pkce = Mockito.mock(PKCE::class.java)
         `when`(pkce.codeChallenge).thenReturn("challenge")
-        val mockAPI = AuthenticationAPI()
+        val mockAPI = AuthenticationAPIMockServer()
         mockAPI.willReturnEmptyJsonWebKeys()
         val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = Auth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
@@ -1382,7 +1382,7 @@ public class WebAuthProviderTest {
     public fun shouldFailToResumeLoginWhenJWKSRequestFails() {
         val pkce = Mockito.mock(PKCE::class.java)
         `when`(pkce.codeChallenge).thenReturn("challenge")
-        val mockAPI = AuthenticationAPI()
+        val mockAPI = AuthenticationAPIMockServer()
         mockAPI.willReturnInvalidRequest()
         val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = Auth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
@@ -1441,7 +1441,7 @@ public class WebAuthProviderTest {
     public fun shouldFailToResumeLoginWhenKeyIdIsMissingFromIdTokenHeader() {
         val pkce = Mockito.mock(PKCE::class.java)
         `when`(pkce.codeChallenge).thenReturn("challenge")
-        val mockAPI = AuthenticationAPI()
+        val mockAPI = AuthenticationAPIMockServer()
         mockAPI.willReturnValidJsonWebKeys()
         val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = Auth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
@@ -1499,7 +1499,7 @@ public class WebAuthProviderTest {
     public fun shouldResumeLoginWhenJWKSRequestSuceeds() {
         val pkce = Mockito.mock(PKCE::class.java)
         `when`(pkce.codeChallenge).thenReturn("challenge")
-        val mockAPI = AuthenticationAPI()
+        val mockAPI = AuthenticationAPIMockServer()
         mockAPI.willReturnValidJsonWebKeys()
         val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = Auth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
@@ -1549,7 +1549,7 @@ public class WebAuthProviderTest {
         val pkce = Mockito.mock(PKCE::class.java)
         `when`(pkce.codeChallenge).thenReturn("challenge")
         // if specifying a null issuer for token verification, should use the domain URL of the account
-        val mockAPI = AuthenticationAPI()
+        val mockAPI = AuthenticationAPIMockServer()
         mockAPI.willReturnValidJsonWebKeys()
         val proxyAccount: Auth0 = Auth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
         proxyAccount.networkingClient = SSLTestUtils.testClient
@@ -1612,7 +1612,7 @@ public class WebAuthProviderTest {
     public fun shouldResumeLoginUsingCustomIDTokenVerificationIssuer() {
         val pkce = Mockito.mock(PKCE::class.java)
         `when`(pkce.codeChallenge).thenReturn("challenge")
-        val mockAPI = AuthenticationAPI()
+        val mockAPI = AuthenticationAPIMockServer()
         mockAPI.willReturnValidJsonWebKeys()
         val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = Auth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
@@ -1675,7 +1675,7 @@ public class WebAuthProviderTest {
     public fun shouldFailToResumeLoginWithHS256IdTokenAndOIDCConformantConfiguration() {
         val pkce = Mockito.mock(PKCE::class.java)
         `when`(pkce.codeChallenge).thenReturn("challenge")
-        val mockAPI = AuthenticationAPI()
+        val mockAPI = AuthenticationAPIMockServer()
         mockAPI.willReturnValidJsonWebKeys()
         val proxyAccount: Auth0 = Auth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
         proxyAccount.networkingClient = SSLTestUtils.testClient
@@ -1830,7 +1830,7 @@ public class WebAuthProviderTest {
     public fun shouldFailToResumeLoginWithIntentWithInvalidMaxAge() {
         val pkce = Mockito.mock(PKCE::class.java)
         `when`(pkce.codeChallenge).thenReturn("challenge")
-        val mockAPI = AuthenticationAPI()
+        val mockAPI = AuthenticationAPIMockServer()
         mockAPI.willReturnValidJsonWebKeys()
         val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = Auth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
@@ -1894,7 +1894,7 @@ public class WebAuthProviderTest {
     public fun shouldFailToResumeLoginWithIntentWithInvalidNonce() {
         val pkce = Mockito.mock(PKCE::class.java)
         `when`(pkce.codeChallenge).thenReturn("challenge")
-        val mockAPI = AuthenticationAPI()
+        val mockAPI = AuthenticationAPIMockServer()
         mockAPI.willReturnValidJsonWebKeys()
         val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = Auth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
@@ -1942,7 +1942,7 @@ public class WebAuthProviderTest {
     public fun shouldFailToResumeLoginWithNotSupportedSigningAlgorithm() {
         val pkce = Mockito.mock(PKCE::class.java)
         `when`(pkce.codeChallenge).thenReturn("challenge")
-        val mockAPI = AuthenticationAPI()
+        val mockAPI = AuthenticationAPIMockServer()
         mockAPI.willReturnValidJsonWebKeys()
         val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         val proxyAccount: Auth0 = Auth0(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)

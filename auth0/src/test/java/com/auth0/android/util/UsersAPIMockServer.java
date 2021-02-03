@@ -8,11 +8,11 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
-public class UsersAPI {
+public class UsersAPIMockServer {
 
     private final MockWebServer server;
 
-    public UsersAPI() throws IOException {
+    public UsersAPIMockServer() throws IOException {
         this.server = SSLTestUtils.INSTANCE.createMockWebServer();
         this.server.start();
     }
@@ -29,7 +29,7 @@ public class UsersAPI {
         return server.takeRequest();
     }
 
-    public UsersAPI willReturnSuccessfulUnlink() {
+    public UsersAPIMockServer willReturnSuccessfulUnlink() {
         String json = "[\n" +
                 "  {\n" +
                 "    \"profileData\": {\n" +
@@ -48,7 +48,7 @@ public class UsersAPI {
         return this;
     }
 
-    public UsersAPI willReturnSuccessfulLink() {
+    public UsersAPIMockServer willReturnSuccessfulLink() {
         String json = "[\n" +
                 "  {\n" +
                 "    \"profileData\": {\n" +
@@ -86,7 +86,7 @@ public class UsersAPI {
         return this;
     }
 
-    public UsersAPI willReturnUserProfile() {
+    public UsersAPIMockServer willReturnUserProfile() {
         String json = "{\n" +
                 "  \"email\": \"p@p.xom\",\n" +
                 "  \"email_verified\": false,\n" +
