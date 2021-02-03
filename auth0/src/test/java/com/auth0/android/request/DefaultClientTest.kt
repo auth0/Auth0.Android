@@ -3,16 +3,11 @@ package com.auth0.android.request
 import android.net.Uri
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import okhttp3.Call
 import okhttp3.Interceptor
-import okhttp3.OkHttpClient
-import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
-import okhttp3.tls.HandshakeCertificates
-import okhttp3.tls.HeldCertificate
 import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.empty
@@ -21,13 +16,11 @@ import org.hamcrest.collection.IsMapContaining.hasEntry
 import org.hamcrest.collection.IsMapWithSize.anEmptyMap
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import java.net.InetAddress
 import java.nio.charset.StandardCharsets
 import java.util.stream.Collectors
 
