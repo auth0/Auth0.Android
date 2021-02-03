@@ -1,6 +1,6 @@
 package com.auth0.android.util
 
-import com.auth0.android.request.SSLTestUtils.createMockWebServer
+import com.auth0.android.util.SSLTestUtils.createMockWebServer
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest

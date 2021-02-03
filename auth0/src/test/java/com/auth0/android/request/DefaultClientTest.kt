@@ -1,6 +1,7 @@
 package com.auth0.android.request
 
 import android.net.Uri
+import com.auth0.android.util.SSLTestUtils
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import okhttp3.Interceptor

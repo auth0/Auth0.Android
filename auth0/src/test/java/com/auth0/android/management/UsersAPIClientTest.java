@@ -10,7 +10,7 @@ import com.auth0.android.request.NetworkingClient;
 import com.auth0.android.request.Request;
 import com.auth0.android.request.RequestOptions;
 import com.auth0.android.request.ServerResponse;
-import com.auth0.android.request.SSLTestUtils;
+import com.auth0.android.util.SSLTestUtils;
 import com.auth0.android.request.internal.RequestFactory;
 import com.auth0.android.request.internal.ThreadSwitcherShadow;
 import com.auth0.android.result.UserIdentity;

@@ -17,6 +17,7 @@ import com.auth0.android.request.HttpMethod.POST
 import com.auth0.android.request.internal.ThreadSwitcherShadow
 import com.auth0.android.result.Credentials
 import com.auth0.android.util.AuthenticationAPIMockServer
+import com.auth0.android.util.SSLTestUtils
 import com.nhaarman.mockitokotlin2.*
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert.assertThat

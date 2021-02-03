@@ -1,5 +1,6 @@
-package com.auth0.android.request
+package com.auth0.android.util
 
+import com.auth0.android.request.DefaultClient
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.tls.HandshakeCertificates
 import okhttp3.tls.HeldCertificate
