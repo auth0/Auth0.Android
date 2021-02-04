@@ -1,6 +1,6 @@
 package com.auth0.android.result
 
-import com.auth0.android.util.JsonRequired
+import com.auth0.android.request.internal.JsonRequired
 import com.google.gson.annotations.SerializedName
 
 /**

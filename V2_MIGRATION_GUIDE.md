@@ -136,6 +136,8 @@ We will not provide support and will change these as required without any previo
 - The `com.auth0.android.request.ErrorBuilder` interface has been removed.
 - The `com.auth0.android.RequestBodyBuildException` class has been removed.
 - The `com.auth0.android.util.CheckHelper` class has been removed.
+- The `com.auth0.android.util.JsonRequired` interface has been removed.
+- The `com.auth0.android.util.JsonREquiredTypeAdapterFactory` class has been removed.
 
 
 ### Constants removed
