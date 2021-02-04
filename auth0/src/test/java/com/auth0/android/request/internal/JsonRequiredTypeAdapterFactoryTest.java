@@ -1,7 +1,5 @@
-package com.auth0.android.authentication.result;
+package com.auth0.android.request.internal;
 
-import com.auth0.android.util.JsonRequired;
-import com.auth0.android.util.JsonRequiredTypeAdapterFactory;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
