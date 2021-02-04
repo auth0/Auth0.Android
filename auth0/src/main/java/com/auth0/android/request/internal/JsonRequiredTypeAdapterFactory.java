@@ -1,4 +1,4 @@
-package com.auth0.android.util;
+package com.auth0.android.request.internal;
 
 import androidx.annotation.NonNull;
 
@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 
 
-public class JsonRequiredTypeAdapterFactory implements TypeAdapterFactory {
+class JsonRequiredTypeAdapterFactory implements TypeAdapterFactory {
 
     @NonNull
     public <T> TypeAdapter<T> create(@NonNull Gson gson, @NonNull final TypeToken<T> type) {
@@ -32,7 +32,7 @@ public class JsonRequiredTypeAdapterFactory implements TypeAdapterFactory {
 
                 Field[] fields = pojo.getClass().getDeclaredFields();
                 for (Field f : fields) {
-                    if (f.getAnnotation(com.auth0.android.util.JsonRequired.class) != null) {
+                    if (f.getAnnotation(JsonRequired.class) != null) {
                         try {
                             f.setAccessible(true);
                             if (f.get(pojo) == null) {
