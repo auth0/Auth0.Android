@@ -112,8 +112,7 @@ public open class Auth0 @JvmOverloads constructor(
         return url
     }
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal open fun ensureValidUrl(url: String?): HttpUrl? {
+    private fun ensureValidUrl(url: String?): HttpUrl? {
         if (url == null) {
             return null
         }
