@@ -9,12 +9,11 @@ import java.net.InetAddress
 /**
  * Utility object for executing tests that use the networking client over HTTPS on localhost.
  */
-// TODO - make internal when tests using this are converted to Kotlin
-public object SSLTestUtils {
+internal object SSLTestUtils {
     private val localhostCertificate: HeldCertificate
     private val serverCertificates: HandshakeCertificates
-    public val clientCertificates: HandshakeCertificates
-    public val testClient: DefaultClient
+    val clientCertificates: HandshakeCertificates
+    val testClient: DefaultClient
 
     init {
         val localhost = InetAddress.getByName("localhost").canonicalHostName
@@ -41,7 +40,7 @@ public object SSLTestUtils {
         )
     }
 
-    public fun createMockWebServer(): MockWebServer {
+    fun createMockWebServer(): MockWebServer {
         val mockServer = MockWebServer()
         mockServer.useHttps(serverCertificates.sslSocketFactory(), false)
         return mockServer
