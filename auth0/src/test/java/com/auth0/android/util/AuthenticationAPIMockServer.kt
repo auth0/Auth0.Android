@@ -1,34 +1,10 @@
 package com.auth0.android.util
 
-import com.auth0.android.util.SSLTestUtils.createMockWebServer
 import okhttp3.mockwebserver.MockResponse
-import okhttp3.mockwebserver.MockWebServer
-import okhttp3.mockwebserver.RecordedRequest
-import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
 
-internal class AuthenticationAPIMockServer {
-    private val server: MockWebServer = createMockWebServer()
-    val domain: String
-        get() = server.url("/").toString()
-
-    @Throws(IOException::class)
-    fun shutdown() {
-        server.shutdown()
-    }
-
-    @Throws(InterruptedException::class)
-    fun takeRequest(): RecordedRequest {
-        return server.takeRequest()
-    }
-
-    fun willReturnValidApplicationResponse(): AuthenticationAPIMockServer {
-        return willReturnApplicationResponseWithBody(
-            "Auth0.setClient({\"id\":\"CLIENTID\",\"tenant\":\"overmind\",\"subscription\":\"free\",\"authorize\":\"https://samples.auth0.com/authorize\",\"callback\":\"http://localhost:3000/\",\"hasAllowedOrigins\":true,\"strategies\":[{\"name\":\"twitter\",\"connections\":[{\"name\":\"twitter\"}]}]});",
-            200
-        )
-    }
+internal class AuthenticationAPIMockServer : APIMockServer() {
 
     fun willReturnSuccessfulChangePassword(): AuthenticationAPIMockServer {
         server.enqueue(responseWithJSON("NOT REALLY A JSON", 200))
@@ -38,16 +14,6 @@ internal class AuthenticationAPIMockServer {
     fun willReturnSuccessfulPasswordlessStart(): AuthenticationAPIMockServer {
         val json = """{
           "phone+number": "+1098098098"
-        }"""
-        server.enqueue(responseWithJSON(json, 200))
-        return this
-    }
-
-    fun willReturnNewIdToken(): AuthenticationAPIMockServer {
-        val json = """{
-          "id_token": "$NEW_ID_TOKEN",
-          "expires_in": $EXPIRES_IN,
-          "token_type": "$TOKEN_TYPE"
         }"""
         server.enqueue(responseWithJSON(json, 200))
         return this
@@ -172,25 +138,10 @@ internal class AuthenticationAPIMockServer {
             .setBody(statusMessage)
     }
 
-    private fun responseWithJSON(json: String, statusCode: Int): MockResponse {
-        return MockResponse()
-            .setResponseCode(statusCode)
-            .addHeader("Content-Type", "application/json")
-            .setBody(json)
-    }
-
     companion object {
         const val REFRESH_TOKEN = "REFRESH_TOKEN"
         const val ID_TOKEN = "ID_TOKEN"
         const val ACCESS_TOKEN = "ACCESS_TOKEN"
         private const val BEARER = "BEARER"
-        const val GENERIC_TOKEN = "GENERIC_TOKEN"
-        private const val NEW_ID_TOKEN = "NEW_ID_TOKEN"
-        private const val TOKEN_TYPE = "TOKEN_TYPE"
-        private const val EXPIRES_IN = 1234567890
-    }
-
-    init {
-        server.start()
     }
 }
