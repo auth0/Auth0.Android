@@ -1,25 +1,6 @@
 package com.auth0.android.util
 
-import com.auth0.android.util.SSLTestUtils.createMockWebServer
-import okhttp3.mockwebserver.MockResponse
-import okhttp3.mockwebserver.MockWebServer
-import okhttp3.mockwebserver.RecordedRequest
-import java.io.IOException
-
-internal class UsersAPIMockServer {
-    private val server: MockWebServer = createMockWebServer()
-    val domain: String
-        get() = server.url("/").toString()
-
-    @Throws(IOException::class)
-    fun shutdown() {
-        server.shutdown()
-    }
-
-    @Throws(InterruptedException::class)
-    fun takeRequest(): RecordedRequest {
-        return server.takeRequest()
-    }
+internal class UsersAPIMockServer : APIMockServer() {
 
     fun willReturnSuccessfulUnlink(): UsersAPIMockServer {
         val json = """[
@@ -105,16 +86,5 @@ internal class UsersAPIMockServer {
         }"""
         server.enqueue(responseWithJSON(json, 200))
         return this
-    }
-
-    private fun responseWithJSON(json: String, statusCode: Int): MockResponse {
-        return MockResponse()
-            .setResponseCode(statusCode)
-            .addHeader("Content-Type", "application/json")
-            .setBody(json)
-    }
-
-    init {
-        server.start()
     }
 }
