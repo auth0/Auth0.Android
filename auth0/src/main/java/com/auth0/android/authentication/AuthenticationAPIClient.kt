@@ -77,10 +77,9 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         password: String,
         realmOrConnection: String
     ): AuthenticationRequest {
-        val builder = ParameterBuilder.newBuilder()
+        val parameters = ParameterBuilder.newAuthenticationBuilder()
             .set(USERNAME_KEY, usernameOrEmail)
             .set(PASSWORD_KEY, password)
-        val parameters = builder
             .setGrantType(ParameterBuilder.GRANT_TYPE_PASSWORD_REALM)
             .setRealm(realmOrConnection)
             .asDictionary()
@@ -103,7 +102,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @return a request to configure and start that will yield [Credentials]
      */
     public fun login(usernameOrEmail: String, password: String): AuthenticationRequest {
-        val requestParameters = ParameterBuilder.newBuilder()
+        val requestParameters = ParameterBuilder.newAuthenticationBuilder()
             .set(USERNAME_KEY, usernameOrEmail)
             .set(PASSWORD_KEY, password)
             .setGrantType(ParameterBuilder.GRANT_TYPE_PASSWORD)
@@ -129,7 +128,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @return a request to configure and start that will yield [Credentials]
      */
     public fun loginWithOTP(mfaToken: String, otp: String): AuthenticationRequest {
-        val parameters = ParameterBuilder.newBuilder()
+        val parameters = ParameterBuilder.newAuthenticationBuilder()
             .setGrantType(ParameterBuilder.GRANT_TYPE_MFA_OTP)
             .set(MFA_TOKEN_KEY, mfaToken)
             .set(ONE_TIME_PASSWORD_KEY, otp)
@@ -155,22 +154,13 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @return a request to configure and start that will yield [Credentials]
      */
     public fun loginWithNativeSocialToken(token: String, tokenType: String): AuthenticationRequest {
-        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
-            .addPathSegment(OAUTH_PATH)
-            .addPathSegment(TOKEN_PATH)
-            .build()
         val parameters = ParameterBuilder.newAuthenticationBuilder()
             .setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
             .setClientId(clientId)
             .set(SUBJECT_TOKEN_KEY, token)
             .set(SUBJECT_TOKEN_TYPE_KEY, tokenType)
             .asDictionary()
-        val credentialsAdapter = GsonAdapter(
-            Credentials::class.java, gson
-        )
-        val request = BaseAuthenticationRequest(factory.post(url.toString(), credentialsAdapter))
-        request.addParameters(parameters)
-        return request
+        return loginWithToken(parameters)
     }
 
     /**
@@ -199,10 +189,9 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         verificationCode: String,
         realmOrConnection: String = SMS_CONNECTION
     ): AuthenticationRequest {
-        val builder = ParameterBuilder.newAuthenticationBuilder()
+        val parameters = ParameterBuilder.newAuthenticationBuilder()
             .setClientId(clientId)
             .set(USERNAME_KEY, phoneNumber)
-        val parameters = builder
             .setGrantType(ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP)
             .set(ONE_TIME_PASSWORD_KEY, verificationCode)
             .setRealm(realmOrConnection)
@@ -235,10 +224,9 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         verificationCode: String,
         realmOrConnection: String = EMAIL_CONNECTION
     ): AuthenticationRequest {
-        val builder = ParameterBuilder.newAuthenticationBuilder()
+        val parameters = ParameterBuilder.newAuthenticationBuilder()
             .setClientId(clientId)
             .set(USERNAME_KEY, email)
-        val parameters = builder
             .setGrantType(ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP)
             .set(ONE_TIME_PASSWORD_KEY, verificationCode)
             .setRealm(realmOrConnection)

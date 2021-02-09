@@ -18,6 +18,7 @@ import org.mockito.ArgumentMatchers
 import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.MockitoAnnotations
+import org.mockito.internal.verification.VerificationModeFactory
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.android.util.concurrent.PausedExecutorService
 import org.robolectric.shadows.ShadowLooper
@@ -49,14 +50,17 @@ public class BaseRequestTest {
     public fun setUp() {
         MockitoAnnotations.openMocks(this)
         resultAdapter = Mockito.spy(GsonAdapter(SimplePojo::class.java, Gson()))
-        baseRequest = BaseRequest(
+        baseRequest = createRequest()
+    }
+
+    private fun createRequest(): BaseRequest<SimplePojo, Auth0Exception> =
+        BaseRequest(
             HttpMethod.POST,
             BASE_URL,
             client,
             resultAdapter,
             errorAdapter
         )
-    }
 
     @Test
     @Throws(Exception::class)
@@ -80,6 +84,52 @@ public class BaseRequestTest {
         val values: Map<String, Any> = optionsCaptor.firstValue.parameters
         MatcherAssert.assertThat(values, IsMapWithSize.aMapWithSize(1))
         MatcherAssert.assertThat(values, IsMapContaining.hasEntry("A", "1"))
+    }
+
+    @Test
+    @Throws(Exception::class)
+    public fun shouldEnforceOidcScope() {
+        mockSuccessfulServerResponse()
+        createRequest()
+            .addParameter("scope", "email profile")
+            .execute()
+
+        mockSuccessfulServerResponse()
+        createRequest()
+            .addParameter("scope", "")
+            .execute()
+
+        mockSuccessfulServerResponse()
+        createRequest()
+            .addParameters(mapOf("scope" to "name"))
+            .execute()
+
+        mockSuccessfulServerResponse()
+        createRequest()
+            .addParameters(mapOf("scope" to ""))
+            .execute()
+
+        verify(client, VerificationModeFactory.times(4))
+            .load(
+                eq(BASE_URL),
+                optionsCaptor.capture()
+            )
+
+        val values1: Map<String, Any> = optionsCaptor.allValues[0].parameters
+        MatcherAssert.assertThat(values1, IsMapWithSize.aMapWithSize(1))
+        MatcherAssert.assertThat(values1, IsMapContaining.hasEntry("scope", "email profile openid"))
+
+        val values2: Map<String, Any> = optionsCaptor.allValues[1].parameters
+        MatcherAssert.assertThat(values2, IsMapWithSize.aMapWithSize(1))
+        MatcherAssert.assertThat(values2, IsMapContaining.hasEntry("scope", "openid"))
+
+        val values3: Map<String, Any> = optionsCaptor.allValues[2].parameters
+        MatcherAssert.assertThat(values3, IsMapWithSize.aMapWithSize(1))
+        MatcherAssert.assertThat(values3, IsMapContaining.hasEntry("scope", "name openid"))
+
+        val values4: Map<String, Any> = optionsCaptor.allValues[3].parameters
+        MatcherAssert.assertThat(values4, IsMapWithSize.aMapWithSize(1))
+        MatcherAssert.assertThat(values4, IsMapContaining.hasEntry("scope", "openid"))
     }
 
     @Test

@@ -31,13 +31,23 @@ internal open class BaseRequest<T, U : Auth0Exception>(
     }
 
     override fun addParameters(parameters: Map<String, String>): Request<T, U> {
-        options.parameters.putAll(parameters)
+        val mapCopy = parameters.toMutableMap()
+        if (parameters.containsKey(OidcUtils.KEY_SCOPE)) {
+            val updatedScope =
+                OidcUtils.includeRequiredScope(parameters.getValue(OidcUtils.KEY_SCOPE))
+            mapCopy[OidcUtils.KEY_SCOPE] = updatedScope
+        }
+        options.parameters.putAll(mapCopy)
         return this
     }
 
     override fun addParameter(name: String, value: String): Request<T, U> {
-        options.parameters[name] = value
-        return this
+        val anyValue: Any = if (name == OidcUtils.KEY_SCOPE) {
+            OidcUtils.includeRequiredScope(value)
+        } else {
+            value
+        }
+        return addParameter(name, anyValue)
     }
 
     internal fun addParameter(name: String, value: Any): Request<T, U> {
