@@ -330,7 +330,7 @@ authentication
     })
 ```
 
-> The default scope used is `openid profile email`
+> The default scope used is `openid profile email`. Regardless of the scopes set to the request, the `openid` scope is always enforced.
 
 
 #### Login using MFA with One Time Password code
@@ -349,6 +349,7 @@ authentication
     })
 ```
 
+> The default scope used is `openid profile email`. Regardless of the scopes set to the request, the `openid` scope is always enforced.
 
 
 #### Passwordless Login
@@ -369,7 +370,6 @@ authentication
     })
 ```
 
-> The default scope used is `openid profile email`
 
 Step 2: Input the code
 
@@ -383,6 +383,7 @@ authentication
    })
 ```
 
+> The default scope used is `openid profile email`. Regardless of the scopes set to the request, the `openid` scope is always enforced.
 
 #### Sign Up with database connection
 
@@ -396,6 +397,7 @@ authentication
     })
 ```
 
+> The default scope used is `openid profile email`. Regardless of the scopes set to the request, the `openid` scope is always enforced.
 
 #### Get user information
 
