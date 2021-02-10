@@ -1,5 +1,14 @@
 # Change Log
 
+## [2.0.0](https://github.com/auth0/Auth0.Android/tree/2.0.0) (2021-02-10)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.0.0-beta.0...2.0.0)
+
+**Changed**
+- Improve Credentials class nullability [\#457](https://github.com/auth0/Auth0.Android/pull/457) ([lbalmaceda](https://github.com/lbalmaceda))
+- Enforce openid scope on the AuthenticationAPIClient [\#455](https://github.com/auth0/Auth0.Android/pull/455) ([lbalmaceda](https://github.com/lbalmaceda))
+- Make JsonRequired annotation internal  [\#452](https://github.com/auth0/Auth0.Android/pull/452) ([lbalmaceda](https://github.com/lbalmaceda))
+- Make requests that return Void have an optional type [\#447](https://github.com/auth0/Auth0.Android/pull/447) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [2.0.0-beta.0](https://github.com/auth0/Auth0.Android/tree/2.0.0-beta.0) (2021-01-19)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/1.30.0...2.0.0-beta.0)
 
