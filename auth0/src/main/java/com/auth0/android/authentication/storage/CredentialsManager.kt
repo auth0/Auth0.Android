@@ -91,7 +91,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         }
         val hasEitherExpired = hasExpired(cacheExpiresAt!!)
         val willAccessTokenExpire = willExpire(expiresAt!!, minTtl.toLong())
-        val scopeChanged = hasScopeChanged(storedScope!!, scope)
+        val scopeChanged = hasScopeChanged(storedScope, scope)
         if (!hasEitherExpired && !willAccessTokenExpire && !scopeChanged) {
             callback.onSuccess(
                 recreateCredentials(

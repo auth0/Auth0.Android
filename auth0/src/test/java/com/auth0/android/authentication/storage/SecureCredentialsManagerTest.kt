@@ -348,7 +348,8 @@ public class SecureCredentialsManagerTest {
             hasIdToken = true,
             hasAccessToken = true,
             hasRefreshToken = true,
-            willExpireAt = expiresAt
+            willExpireAt = expiresAt,
+            scope = "scope"
         )
         Mockito.`when`(crypto.decrypt(storedJson.toByteArray()))
             .thenThrow(CryptoException("err", null))
@@ -382,7 +383,8 @@ public class SecureCredentialsManagerTest {
             hasIdToken = true,
             hasAccessToken = true,
             hasRefreshToken = true,
-            willExpireAt = expiresAt
+            willExpireAt = expiresAt,
+            scope = "scope"
         )
         Mockito.`when`(crypto.decrypt(storedJson.toByteArray()))
             .thenThrow(IncompatibleDeviceException(null))
@@ -410,7 +412,7 @@ public class SecureCredentialsManagerTest {
     public fun shouldFailOnGetCredentialsWhenNoAccessTokenOrIdTokenWasSaved() {
         verifyNoMoreInteractions(client)
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
-        insertTestCredentials(false, false, true, expiresAt)
+        insertTestCredentials(false, false, true, expiresAt, "scope")
         manager.getCredentials(callback)
         verify(callback).onFailure(
             exceptionCaptor.capture()
@@ -424,7 +426,7 @@ public class SecureCredentialsManagerTest {
     public fun shouldFailOnGetCredentialsWhenExpiredAndNoRefreshTokenWasSaved() {
         verifyNoMoreInteractions(client)
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS) //Same as current time --> expired
-        insertTestCredentials(true, true, false, expiresAt)
+        insertTestCredentials(true, true, false, expiresAt, "scope")
         manager.getCredentials(callback)
         verify(callback).onFailure(
             exceptionCaptor.capture()
@@ -438,7 +440,7 @@ public class SecureCredentialsManagerTest {
     public fun shouldGetNonExpiredCredentialsFromStorage() {
         verifyNoMoreInteractions(client)
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + ONE_HOUR_SECONDS * 1000)
-        insertTestCredentials(true, true, true, expiresAt)
+        insertTestCredentials(true, true, true, expiresAt, "scope")
         manager.getCredentials(callback)
         verify(callback).onSuccess(
             credentialsCaptor.capture()
@@ -458,7 +460,7 @@ public class SecureCredentialsManagerTest {
     public fun shouldGetNonExpiredCredentialsFromStorageWhenOnlyIdTokenIsAvailable() {
         verifyNoMoreInteractions(client)
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + ONE_HOUR_SECONDS * 1000)
-        insertTestCredentials(true, false, true, expiresAt)
+        insertTestCredentials(true, false, true, expiresAt, "scope")
         manager.getCredentials(callback)
         verify(callback).onSuccess(
             credentialsCaptor.capture()
@@ -478,7 +480,7 @@ public class SecureCredentialsManagerTest {
     public fun shouldGetNonExpiredCredentialsFromStorageWhenOnlyAccessTokenIsAvailable() {
         verifyNoMoreInteractions(client)
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + ONE_HOUR_SECONDS * 1000)
-        insertTestCredentials(false, true, true, expiresAt)
+        insertTestCredentials(false, true, true, expiresAt, "scope")
         manager.getCredentials(callback)
         verify(callback).onSuccess(
             credentialsCaptor.capture()
@@ -497,7 +499,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldRenewCredentialsWithMinTtl() {
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS) // expired credentials
-        insertTestCredentials(false, true, true, expiresAt)
+        insertTestCredentials(false, true, true, expiresAt, "scope")
         val newDate =
             Date(CredentialsMock.CURRENT_TIME_MS + 61 * 1000) // new token expires in minTTL + 1 seconds
         val jwtMock = mock<Jwt>()
@@ -562,7 +564,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldGetAndFailToRenewExpiredCredentialsWhenReceivedTokenHasLowerTtl() {
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS) // expired credentials
-        insertTestCredentials(false, true, true, expiresAt)
+        insertTestCredentials(false, true, true, expiresAt, "scope")
         val newDate =
             Date(CredentialsMock.CURRENT_TIME_MS + 59 * 1000) // new token expires in minTTL - 1 seconds
         val jwtMock = mock<Jwt>()
@@ -610,7 +612,71 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldRenewCredentialsWhenScopeHasChanged() {
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS) // non expired credentials
-        insertTestCredentials(false, true, true, expiresAt) // "scope" is set
+        insertTestCredentials(false, true, true, expiresAt, "scope") // "scope" is set
+        val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS + ONE_HOUR_SECONDS * 1000)
+        val jwtMock = mock<Jwt>()
+        Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
+        Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
+        Mockito.`when`(
+            client.renewAuth("refreshToken")
+        ).thenReturn(request)
+        manager.getCredentials("different scope", 0, callback) // minTTL of 0 seconds (default)
+        verify(request)
+            .addParameter(eq("scope"), eq("different scope"))
+        verify(request).start(
+            requestCallbackCaptor.capture()
+        )
+
+        // Trigger success
+        val expectedCredentials =
+            Credentials("newId", "newAccess", "newType", "refreshToken", newDate, "different scope")
+        val expectedJson = gson.toJson(expectedCredentials)
+        Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
+            .thenReturn(expectedJson.toByteArray())
+        requestCallbackCaptor.firstValue.onSuccess(expectedCredentials)
+        verify(callback).onSuccess(
+            credentialsCaptor.capture()
+        )
+        verify(storage)
+            .store(eq("com.auth0.credentials"), stringCaptor.capture())
+        verify(storage).store("com.auth0.credentials_expires_at", newDate.time)
+        verify(storage).store("com.auth0.credentials_access_token_expires_at", newDate.time)
+        verify(storage).store("com.auth0.credentials_can_refresh", true)
+        verify(storage, never()).remove(anyString())
+
+        // Verify the returned credentials are the latest
+        val retrievedCredentials = credentialsCaptor.firstValue
+        MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`("newId"))
+        MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`("newAccess"))
+        MatcherAssert.assertThat(retrievedCredentials.type, Is.`is`("newType"))
+        MatcherAssert.assertThat(retrievedCredentials.refreshToken, Is.`is`("refreshToken"))
+        MatcherAssert.assertThat(retrievedCredentials.expiresAt, Is.`is`(newDate))
+        MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("different scope"))
+
+        // Verify the credentials are property stored
+        val encodedJson = stringCaptor.firstValue
+        MatcherAssert.assertThat(encodedJson, Is.`is`(Matchers.notNullValue()))
+        val decoded = Base64.decode(encodedJson, Base64.DEFAULT)
+        val renewedStoredCredentials = gson.fromJson(String(decoded), Credentials::class.java)
+        MatcherAssert.assertThat(renewedStoredCredentials.idToken, Is.`is`("newId"))
+        MatcherAssert.assertThat(renewedStoredCredentials.accessToken, Is.`is`("newAccess"))
+        MatcherAssert.assertThat(renewedStoredCredentials.refreshToken, Is.`is`("refreshToken"))
+        MatcherAssert.assertThat(renewedStoredCredentials.type, Is.`is`("newType"))
+        MatcherAssert.assertThat(
+            renewedStoredCredentials.expiresAt,
+            Is.`is`(Matchers.notNullValue())
+        )
+        MatcherAssert.assertThat(
+            renewedStoredCredentials.expiresAt.time, Is.`is`(newDate.time)
+        )
+        MatcherAssert.assertThat(renewedStoredCredentials.scope, Is.`is`("different scope"))
+    }
+
+    @Test
+    public fun shouldRenewCredentialsIfSavedScopeIsNullAndRequiredScopeIsNotNull() {
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS) // non expired credentials
+        insertTestCredentials(false, true, true, expiresAt, null) // "scope" is not set
         val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS + ONE_HOUR_SECONDS * 1000)
         val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
@@ -675,7 +741,7 @@ public class SecureCredentialsManagerTest {
     public fun shouldRenewExpiredCredentialsWhenScopeHasChanged() {
         val expiresAt =
             Date(CredentialsMock.CURRENT_TIME_MS) // current time means expired credentials
-        insertTestCredentials(false, true, true, expiresAt)
+        insertTestCredentials(false, true, true, expiresAt, "scope")
         val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
@@ -754,7 +820,7 @@ public class SecureCredentialsManagerTest {
     public fun shouldGetAndSuccessfullyRenewExpiredCredentials() {
         val expiresAt =
             Date(CredentialsMock.CURRENT_TIME_MS) // current time means expired credentials
-        insertTestCredentials(false, true, true, expiresAt)
+        insertTestCredentials(false, true, true, expiresAt, "scope")
         val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
@@ -819,7 +885,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldGetAndSuccessfullyRenewExpiredCredentialsWithRefreshTokenRotation() {
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS)
-        insertTestCredentials(false, true, true, expiresAt)
+        insertTestCredentials(false, true, true, expiresAt, "scope")
         val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
@@ -885,7 +951,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldGetAndFailToRenewExpiredCredentials() {
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS)
-        insertTestCredentials(false, true, true, expiresAt)
+        insertTestCredentials(false, true, true, expiresAt, "scope")
         Mockito.`when`(
             client.renewAuth("refreshToken")
         ).thenReturn(request)
@@ -1143,7 +1209,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldGetCredentialsAfterAuthentication() {
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
-        insertTestCredentials(true, true, false, expiresAt)
+        insertTestCredentials(true, true, false, expiresAt, "scope")
         Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
             .thenReturn(expiresAt.time)
 
@@ -1194,7 +1260,7 @@ public class SecureCredentialsManagerTest {
     public fun shouldNotGetCredentialsWhenCredentialsHaveExpired() {
         val credentialsExpiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         val storedExpiresAt = Date(CredentialsMock.CURRENT_TIME_MS - ONE_HOUR_SECONDS * 1000)
-        insertTestCredentials(true, true, false, credentialsExpiresAt)
+        insertTestCredentials(true, true, false, credentialsExpiresAt, "scope")
         Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
             .thenReturn(storedExpiresAt.time)
 
@@ -1231,7 +1297,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldNotGetCredentialsAfterCanceledAuthentication() {
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
-        insertTestCredentials(true, true, false, expiresAt)
+        insertTestCredentials(true, true, false, expiresAt, "scope")
 
         //Require authentication
         val activity = Mockito.spy(
@@ -1272,7 +1338,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldNotGetCredentialsOnDifferentAuthenticationRequestCode() {
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
-        insertTestCredentials(true, true, false, expiresAt)
+        insertTestCredentials(true, true, false, expiresAt, "scope")
 
         //Require authentication
         val activity = Mockito.spy(
@@ -1336,7 +1402,8 @@ public class SecureCredentialsManagerTest {
         hasIdToken: Boolean,
         hasAccessToken: Boolean,
         hasRefreshToken: Boolean,
-        willExpireAt: Date
+        willExpireAt: Date,
+        scope: String?
     ): String {
         val storedCredentials = Credentials(
             if (hasIdToken) "idToken" else "",
@@ -1344,7 +1411,7 @@ public class SecureCredentialsManagerTest {
             "type",
             if (hasRefreshToken) "refreshToken" else null,
             willExpireAt,
-            "scope"
+            scope
         )
         val storedJson = gson.toJson(storedCredentials)
         val encoded = String(Base64.encode(storedJson.toByteArray(), Base64.DEFAULT))

@@ -326,7 +326,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         }
         val hasEitherExpired = hasExpired(cacheExpiresAt!!)
         val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
-        val scopeChanged = hasScopeChanged(credentials.scope!!, scope)
+        val scopeChanged = hasScopeChanged(credentials.scope, scope)
         if (!hasEitherExpired && !willAccessTokenExpire && !scopeChanged) {
             callback.onSuccess(credentials)
             decryptCallback = null

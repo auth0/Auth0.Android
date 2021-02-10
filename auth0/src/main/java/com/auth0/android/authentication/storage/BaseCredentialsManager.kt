@@ -53,11 +53,11 @@ public abstract class BaseCredentialsManager internal constructor(
      * @param requiredScope the required scope, separated by space characters.
      * @return whether the scope are different or not
      */
-    protected fun hasScopeChanged(storedScope: String, requiredScope: String?): Boolean {
+    protected fun hasScopeChanged(storedScope: String?, requiredScope: String?): Boolean {
         if (requiredScope == null) {
             return false
         }
-        val stored = storedScope.split(" ").toTypedArray()
+        val stored = storedScope.orEmpty().split(" ").toTypedArray()
         Arrays.sort(stored)
         val required = requiredScope.split(" ").toTypedArray()
         Arrays.sort(required)
