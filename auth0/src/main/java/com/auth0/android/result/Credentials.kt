@@ -48,17 +48,14 @@ public open class Credentials(
      *
      * @return the expiration date of this Access Token
      */
-    @field:SerializedName("expires_at")
-    public val expiresAt: Date,
+    @field:SerializedName("expires_at") public val expiresAt: Date,
 
     /**
      * Getter for the access token's granted scope. Only available if the requested scope differs from the granted one.
      *
      * @return the granted scope.
      */
-    @field:SerializedName(
-        "scope"
-    ) public val scope: String?
+    @field:SerializedName("scope") public val scope: String?
 ) {
 
     //TODO this could be removed and the class be a data class instead
