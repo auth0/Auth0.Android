@@ -10,7 +10,7 @@ import java.util.*
  *  * *idToken*: Identity Token with user information
  *  * *accessToken*: Access Token for Auth0 API
  *  * *refreshToken*: Refresh Token that can be used to request new tokens without signing in again
- *  * *type*: The type of the received Token.
+ *  * *type*: The type of the received Access Token.
  *  * *expiresAt*: The token expiration date.
  *  * *scope*: The token's granted scope.
  *
@@ -21,19 +21,19 @@ public open class Credentials(
      *
      * @return the Identity Token.
      */
-    @field:SerializedName("id_token") public val idToken: String?,
+    @field:SerializedName("id_token") public val idToken: String,
     /**
      * Getter for the Access Token for Auth0 API.
      *
      * @return the Access Token.
      */
-    @field:SerializedName("access_token") public val accessToken: String?,
+    @field:SerializedName("access_token") public val accessToken: String,
     /**
      * Getter for the type of the received Token.
      *
      * @return the token type.
      */
-    @field:SerializedName("token_type") public val type: String?,
+    @field:SerializedName("token_type") public val type: String,
 
     /**
      * Getter for the Refresh Token that can be used to request new tokens without signing in again.
@@ -48,19 +48,17 @@ public open class Credentials(
      *
      * @return the expiration date of this Access Token
      */
-    @SerializedName("expires_at")
-    public val expiresAt: Date?,
+    @field:SerializedName("expires_at") public val expiresAt: Date,
 
     /**
      * Getter for the access token's granted scope. Only available if the requested scope differs from the granted one.
      *
      * @return the granted scope.
      */
-    @field:SerializedName(
-        "scope"
-    ) public val scope: String?
+    @field:SerializedName("scope") public val scope: String?
 ) {
 
+    //TODO this could be removed and the class be a data class instead
     @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal open val currentTimeInMillis: Long
         get() = System.currentTimeMillis()

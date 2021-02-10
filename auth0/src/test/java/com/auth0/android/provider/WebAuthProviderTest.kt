@@ -12,8 +12,11 @@ import com.auth0.android.callback.Callback
 import com.auth0.android.provider.WebAuthProvider.login
 import com.auth0.android.provider.WebAuthProvider.logout
 import com.auth0.android.provider.WebAuthProvider.resume
-import com.auth0.android.request.*
+import com.auth0.android.request.DefaultClient
 import com.auth0.android.request.HttpMethod.POST
+import com.auth0.android.request.NetworkingClient
+import com.auth0.android.request.RequestOptions
+import com.auth0.android.request.ServerResponse
 import com.auth0.android.request.internal.ThreadSwitcherShadow
 import com.auth0.android.result.Credentials
 import com.auth0.android.util.AuthenticationAPIMockServer
@@ -1036,7 +1039,14 @@ public class WebAuthProviderTest {
         val expectedIdToken = JwtTestUtils.createTestJWT("RS256", jwtBody)
 
         // 3. craft a code response with a valid ID token
-        val jsonResponse = "{\"id_token\":\"$expectedIdToken\"}"
+        val jsonResponse = """
+            {
+                "id_token":"$expectedIdToken",
+                "access_token":"accessToken",
+                "token_type":"tokenType",
+                "expires_in":8600
+            }
+        """.trimIndent()
         val codeInputStream: InputStream = ByteArrayInputStream(jsonResponse.toByteArray())
         val codeResponse = ServerResponse(200, codeInputStream, emptyMap())
         Mockito.doReturn(codeResponse).`when`(networkingClient).load(
@@ -1353,7 +1363,14 @@ public class WebAuthProviderTest {
             )
         )
         val codeCredentials =
-            Credentials(expectedIdToken, "codeAccess", "codeType", "codeRefresh", null, "codeScope")
+            Credentials(
+                expectedIdToken,
+                "codeAccess",
+                "codeType",
+                "codeRefresh",
+                Date(),
+                "codeScope"
+            )
         Mockito.doAnswer {
             callbackCaptor.firstValue.onSuccess(codeCredentials)
             null
@@ -1412,7 +1429,14 @@ public class WebAuthProviderTest {
             )
         )
         val codeCredentials =
-            Credentials(expectedIdToken, "codeAccess", "codeType", "codeRefresh", null, "codeScope")
+            Credentials(
+                expectedIdToken,
+                "codeAccess",
+                "codeType",
+                "codeRefresh",
+                Date(),
+                "codeScope"
+            )
         Mockito.doAnswer {
             callbackCaptor.firstValue.onSuccess(codeCredentials)
             null
@@ -1470,7 +1494,14 @@ public class WebAuthProviderTest {
             )
         )
         val codeCredentials =
-            Credentials(expectedIdToken, "codeAccess", "codeType", "codeRefresh", null, "codeScope")
+            Credentials(
+                expectedIdToken,
+                "codeAccess",
+                "codeType",
+                "codeRefresh",
+                Date(),
+                "codeScope"
+            )
         Mockito.doAnswer {
             callbackCaptor.firstValue.onSuccess(codeCredentials)
             null
@@ -1529,7 +1560,7 @@ public class WebAuthProviderTest {
             )
         )
         val codeCredentials =
-            Credentials(expectedIdToken, "aToken", "codeType", "codeRefresh", null, "codeScope")
+            Credentials(expectedIdToken, "aToken", "codeType", "codeRefresh", Date(), "codeScope")
         Mockito.doAnswer {
             callbackCaptor.firstValue.onSuccess(codeCredentials)
             null
@@ -1593,7 +1624,14 @@ public class WebAuthProviderTest {
             )
         )
         val codeCredentials =
-            Credentials(expectedIdToken, "codeAccess", "codeType", "codeRefresh", null, "codeScope")
+            Credentials(
+                expectedIdToken,
+                "codeAccess",
+                "codeType",
+                "codeRefresh",
+                Date(),
+                "codeScope"
+            )
         Mockito.doAnswer {
             callbackCaptor.firstValue.onSuccess(codeCredentials)
             null
@@ -1656,7 +1694,14 @@ public class WebAuthProviderTest {
             )
         )
         val codeCredentials =
-            Credentials(expectedIdToken, "codeAccess", "codeType", "codeRefresh", null, "codeScope")
+            Credentials(
+                expectedIdToken,
+                "codeAccess",
+                "codeType",
+                "codeRefresh",
+                Date(),
+                "codeScope"
+            )
         Mockito.doAnswer {
             callbackCaptor.firstValue.onSuccess(codeCredentials)
             null
@@ -1692,7 +1737,14 @@ public class WebAuthProviderTest {
         jwtBody["iss"] = proxyAccount.getDomainUrl()
         val expectedIdToken = JwtTestUtils.createTestJWT("HS256", jwtBody)
         val codeCredentials =
-            Credentials(expectedIdToken, "codeAccess", "codeType", "codeRefresh", null, "codeScope")
+            Credentials(
+                expectedIdToken,
+                "codeAccess",
+                "codeType",
+                "codeRefresh",
+                Date(),
+                "codeScope"
+            )
         Mockito.doAnswer {
             callbackCaptor.firstValue.onSuccess(codeCredentials)
             null
@@ -1866,7 +1918,14 @@ public class WebAuthProviderTest {
             )
         )
         val codeCredentials =
-            Credentials(expectedIdToken, "codeAccess", "codeType", "codeRefresh", null, "codeScope")
+            Credentials(
+                expectedIdToken,
+                "codeAccess",
+                "codeType",
+                "codeRefresh",
+                Date(),
+                "codeScope"
+            )
         Mockito.doAnswer {
             callbackCaptor.firstValue.onSuccess(codeCredentials)
             null
@@ -1913,7 +1972,14 @@ public class WebAuthProviderTest {
         val intent =
             createAuthIntent(createHash(null, null, null, null, null, "state", null, null, "1234"))
         val codeCredentials =
-            Credentials(expectedIdToken, "codeAccess", "codeType", "codeRefresh", null, "codeScope")
+            Credentials(
+                expectedIdToken,
+                "codeAccess",
+                "codeType",
+                "codeRefresh",
+                Date(),
+                "codeScope"
+            )
         Mockito.doAnswer {
             callbackCaptor.firstValue.onSuccess(codeCredentials)
             null
@@ -1961,7 +2027,14 @@ public class WebAuthProviderTest {
         val intent =
             createAuthIntent(createHash(null, null, null, null, null, "state", null, null, "1234"))
         val codeCredentials =
-            Credentials(expectedIdToken, "codeAccess", "codeType", "codeRefresh", null, "codeScope")
+            Credentials(
+                expectedIdToken,
+                "codeAccess",
+                "codeType",
+                "codeRefresh",
+                Date(),
+                "codeScope"
+            )
         Mockito.doAnswer {
             callbackCaptor.firstValue.onSuccess(codeCredentials)
             null

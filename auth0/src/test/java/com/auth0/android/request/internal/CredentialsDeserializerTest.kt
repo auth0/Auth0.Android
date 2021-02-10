@@ -29,9 +29,9 @@ public class CredentialsDeserializerTest {
     public fun shouldSetExpiresAtFromExpiresIn() {
         val credentials = gson.getAdapter(
             Credentials::class.java
-        ).fromJson(FileReader(BASIC_CREDENTIALS))
+        ).fromJson(FileReader(OPENID_CREDENTIALS))
         MatcherAssert.assertThat(credentials.expiresAt, Is.`is`(CoreMatchers.notNullValue()))
-        val expiresAt = credentials.expiresAt!!.time.toDouble()
+        val expiresAt = credentials.expiresAt.time.toDouble()
         val expectedExpiresAt = (CredentialsMock.CURRENT_TIME_MS + 86000 * 1000).toDouble()
         MatcherAssert.assertThat(expiresAt, Is.`is`(Matchers.closeTo(expectedExpiresAt, 1.0)))
     }
@@ -47,7 +47,7 @@ public class CredentialsDeserializerTest {
         ).fromJson(generateExpiresAtCredentialsJSON(exp))
         //The hardcoded value comes from the JSON file
         MatcherAssert.assertThat(credentials.expiresAt, Is.`is`(CoreMatchers.notNullValue()))
-        val expiresAt = credentials.expiresAt!!.time.toDouble()
+        val expiresAt = credentials.expiresAt.time.toDouble()
         val expectedExpiresAt = exp.time.toDouble()
         MatcherAssert.assertThat(expiresAt, Is.`is`(Matchers.closeTo(expectedExpiresAt, 1.0)))
     }
@@ -55,15 +55,16 @@ public class CredentialsDeserializerTest {
     private fun generateExpiresAtCredentialsJSON(expiresAt: Date): String {
         return """
             {
-            "access_token": "s6GS5FGJN2jfd4l6",
-            "token_type": "bearer",
-            "expires_in": 86000,
-            "expires_at": "${formatDate(expiresAt)}"
+                "access_token": "s6GS5FGJN2jfd4l6",
+                "id_token": "s6GS5FGJN2jfd4l6",
+                "token_type": "bearer",
+                "expires_in": 86000,
+                "expires_at": "${formatDate(expiresAt)}"
             }
             """.trimIndent()
     }
 
     private companion object {
-        private const val BASIC_CREDENTIALS = "src/test/resources/credentials.json"
+        private const val OPENID_CREDENTIALS = "src/test/resources/credentials_openid.json"
     }
 }

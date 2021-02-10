@@ -35,7 +35,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * @param credentials the credentials to save in the storage.
      */
     override fun saveCredentials(credentials: Credentials) {
-        if (TextUtils.isEmpty(credentials.accessToken) && TextUtils.isEmpty(credentials.idToken) || credentials.expiresAt == null) {
+        if (TextUtils.isEmpty(credentials.accessToken) && TextUtils.isEmpty(credentials.idToken)) {
             throw CredentialsManagerException("Credentials must have a valid date of expiration and a valid access_token or id_token value.")
         }
         val cacheExpiresAt = calculateCacheExpiresAt(credentials)
@@ -91,13 +91,16 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         }
         val hasEitherExpired = hasExpired(cacheExpiresAt!!)
         val willAccessTokenExpire = willExpire(expiresAt!!, minTtl.toLong())
-        val scopeChanged = hasScopeChanged(storedScope!!, scope)
+        val scopeChanged = hasScopeChanged(storedScope, scope)
         if (!hasEitherExpired && !willAccessTokenExpire && !scopeChanged) {
             callback.onSuccess(
                 recreateCredentials(
-                    idToken, accessToken, tokenType, refreshToken, Date(
-                        expiresAt
-                    ), storedScope
+                    idToken.orEmpty(),
+                    accessToken.orEmpty(),
+                    tokenType.orEmpty(),
+                    refreshToken,
+                    Date(expiresAt),
+                    storedScope
                 )
             )
             return
@@ -112,7 +115,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         }
         request.start(object : AuthenticationCallback<Credentials> {
             override fun onSuccess(fresh: Credentials) {
-                val expiresAt = fresh.expiresAt!!.time
+                val expiresAt = fresh.expiresAt.time
                 val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
                 if (willAccessTokenExpire) {
                     val tokenLifetime = (expiresAt - currentTimeInMillis - minTtl * 1000) / -1000
@@ -128,9 +131,9 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                     return
                 }
 
-                //non-empty refresh token for refresh token rotation scenarios
-                val updatedRefreshToken: String =
-                    if (TextUtils.isEmpty(fresh.refreshToken)) refreshToken else fresh.refreshToken!!
+                // non-empty refresh token for refresh token rotation scenarios
+                val updatedRefreshToken =
+                    if (TextUtils.isEmpty(fresh.refreshToken)) refreshToken else fresh.refreshToken
                 val credentials = Credentials(
                     fresh.idToken,
                     fresh.accessToken,
@@ -201,11 +204,11 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun recreateCredentials(
-        idToken: String?,
-        accessToken: String?,
-        tokenType: String?,
+        idToken: String,
+        accessToken: String,
+        tokenType: String,
         refreshToken: String?,
-        expiresAt: Date?,
+        expiresAt: Date,
         scope: String?
     ): Credentials {
         return Credentials(idToken, accessToken, tokenType, refreshToken, expiresAt, scope)

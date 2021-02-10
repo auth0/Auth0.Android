@@ -40,7 +40,8 @@ internal class AuthenticationAPIMockServer : APIMockServer() {
           "refresh_token": "$REFRESH_TOKEN",
           "id_token": "$ID_TOKEN",
           "access_token": "$ACCESS_TOKEN",
-          "token_type": "$BEARER"
+          "token_type": "$BEARER",
+          "expires_in": 86000
         }"""
         server.enqueue(responseWithJSON(json, 200))
         return this
@@ -108,7 +109,8 @@ internal class AuthenticationAPIMockServer : APIMockServer() {
           "access_token": "$ACCESS_TOKEN",
           "refresh_token": "$REFRESH_TOKEN",
           "id_token": "$ID_TOKEN",
-          "token_type": "Bearer"
+          "token_type": "Bearer",
+          "expires_in": 86000
         }"""
         server.enqueue(responseWithJSON(json, 200))
         return this

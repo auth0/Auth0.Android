@@ -16,13 +16,13 @@ import com.auth0.android.callback.AuthenticationCallback
 import com.auth0.android.callback.Callback
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.result.Credentials
+import com.auth0.android.result.OptionalCredentials
 import com.google.gson.Gson
 import java.util.*
 
 /**
  * A safer alternative to the [CredentialsManager] class. A combination of RSA and AES keys is used to keep the values secure.
- * On devices running Android API 21 or up with a Secure LockScreen configured (PIN, Pattern, Password or Fingerprint) an extra
- * authentication step can be required.
+ * On devices with a Secure LockScreen configured (PIN, Pattern, Password or Fingerprint) an extra authentication step can be required.
  */
 public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal constructor(
     apiClient: AuthenticationAPIClient,
@@ -131,7 +131,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      */
     @Throws(CredentialsManagerException::class)
     override fun saveCredentials(credentials: Credentials) {
-        if (TextUtils.isEmpty(credentials.accessToken) && TextUtils.isEmpty(credentials.idToken) || credentials.expiresAt == null) {
+        if (TextUtils.isEmpty(credentials.accessToken) && TextUtils.isEmpty(credentials.idToken)) {
             throw CredentialsManagerException("Credentials must have a valid date of expiration and a valid access_token or id_token value.")
         }
         val cacheExpiresAt = calculateCacheExpiresAt(credentials)
@@ -143,8 +143,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             val encryptedEncoded = Base64.encodeToString(encrypted, Base64.DEFAULT)
             storage.store(KEY_CREDENTIALS, encryptedEncoded)
             storage.store(
-                KEY_EXPIRES_AT, credentials.expiresAt
-                    .time
+                KEY_EXPIRES_AT, credentials.expiresAt.time
             )
             storage.store(KEY_CACHE_EXPIRES_AT, cacheExpiresAt)
             storage.store(KEY_CAN_REFRESH, canRefresh)
@@ -303,9 +302,21 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             decryptCallback = null
             return
         }
-        val credentials = gson.fromJson(json, Credentials::class.java)
+        val bridgeCredentials = gson.fromJson(json, OptionalCredentials::class.java)
+        /* OPTIONAL CREDENTIALS
+         * This bridge is required to prevent users from being logged out when
+         * migrating from Credentials with optional Access Token and ID token
+         */
+        val credentials = Credentials(
+            bridgeCredentials.idToken.orEmpty(),
+            bridgeCredentials.accessToken.orEmpty(),
+            bridgeCredentials.type.orEmpty(),
+            bridgeCredentials.refreshToken,
+            bridgeCredentials.expiresAt ?: Date(),
+            bridgeCredentials.scope
+        )
         val cacheExpiresAt = storage.retrieveLong(KEY_CACHE_EXPIRES_AT)
-        val expiresAt = credentials.expiresAt!!.time
+        val expiresAt = credentials.expiresAt.time
         val hasEmptyCredentials =
             TextUtils.isEmpty(credentials.accessToken) && TextUtils.isEmpty(credentials.idToken) || cacheExpiresAt == null
         if (hasEmptyCredentials) {
@@ -315,7 +326,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         }
         val hasEitherExpired = hasExpired(cacheExpiresAt!!)
         val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
-        val scopeChanged = hasScopeChanged(credentials.scope!!, scope)
+        val scopeChanged = hasScopeChanged(credentials.scope, scope)
         if (!hasEitherExpired && !willAccessTokenExpire && !scopeChanged) {
             callback.onSuccess(credentials)
             decryptCallback = null
@@ -335,7 +346,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         }
         request.start(object : AuthenticationCallback<Credentials> {
             override fun onSuccess(fresh: Credentials) {
-                val expiresAt = fresh.expiresAt!!.time
+                val expiresAt = fresh.expiresAt.time
                 val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
                 if (willAccessTokenExpire) {
                     val tokenLifetime = (expiresAt - currentTimeInMillis - minTtl * 1000) / -1000
