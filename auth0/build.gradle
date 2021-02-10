@@ -25,6 +25,7 @@
 plugins {
     id 'kotlin-android'
     id "com.auth0.gradle.oss-library.android" version "0.13.0"
+    id "org.jetbrains.dokka" version "1.4.20"
 }
 
 logger.lifecycle("Using version ${version} for ${name}")
@@ -90,6 +91,13 @@ android {
 ext {
     okhttpVersion = '4.9.0'
     powermockVersion = '2.0.9'
+}
+
+// Configure javadoc jar to use dokka output
+// TODO update oss-plugin to use dokka instead of doing it here
+javadocJar {
+    dependsOn "dokkaJavadoc"
+    from "$buildDir/dokka/javadoc"
 }
 
 dependencies {
