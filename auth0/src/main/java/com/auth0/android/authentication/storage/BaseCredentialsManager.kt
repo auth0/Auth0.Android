@@ -1,5 +1,6 @@
 package com.auth0.android.authentication.storage
 
+import android.text.TextUtils
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.callback.Callback
@@ -97,8 +98,8 @@ public abstract class BaseCredentialsManager internal constructor(
      * @return the lowest expiration time between the access token and the ID token.
      */
     protected fun calculateCacheExpiresAt(credentials: Credentials): Long {
-        var expiresAt = credentials.expiresAt!!.time
-        if (credentials.idToken != null) {
+        var expiresAt = credentials.expiresAt.time
+        if (credentials.idToken.isNotEmpty()) {
             val idToken = jwtDecoder.decode(credentials.idToken)
             val idTokenExpiresAtDate = idToken.expiresAt
             if (idTokenExpiresAtDate != null) {

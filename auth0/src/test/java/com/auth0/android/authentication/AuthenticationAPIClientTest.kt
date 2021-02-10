@@ -36,6 +36,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowLooper
 import java.io.ByteArrayInputStream
+import java.io.FileReader
 import java.io.InputStream
 import java.security.PublicKey
 import java.util.*
@@ -63,7 +64,7 @@ public class AuthenticationAPIClientTest {
     @Test
     public fun shouldUseCustomNetworkingClient() {
         val account = Auth0("client-id", "https://tenant.auth0.com/")
-        val jsonResponse = "{\"access_token\":\"something\"}"
+        val jsonResponse = FileReader("src/test/resources/credentials_openid.json").readText()
         val inputStream: InputStream = ByteArrayInputStream(jsonResponse.toByteArray())
         val response = ServerResponse(200, inputStream, emptyMap())
         val networkingClient: NetworkingClient = mock()

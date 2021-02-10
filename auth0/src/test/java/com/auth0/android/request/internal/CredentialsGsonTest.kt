@@ -39,23 +39,43 @@ public class CredentialsGsonTest : GsonBaseTest() {
 
     @Test
     @Throws(Exception::class)
-    public fun shouldNotRequireAccessToken() {
-        buildCredentialsFrom(StringReader("{\"token_type\": \"bearer\"}"))
+    public fun shouldNotRequireRefreshToken() {
+        buildCredentialsFrom(
+            StringReader(
+                """{
+                "access_token": "s6GS5FGJN2jfd4l6",
+                "id_token": "s6GS5FGJN2jfd4l6",
+                "token_type": "bearer",
+                "expires_in": 86000,
+                "scope": "openid"
+            }""".trimIndent()
+            )
+        )
     }
 
     @Test
     @Throws(Exception::class)
-    public fun shouldNotRequireTokenType() {
-        buildCredentialsFrom(StringReader("{\"access_token\": \"some token\"}"))
+    public fun shouldNotRequireScope() {
+        buildCredentialsFrom(
+            StringReader(
+                """{
+                "access_token": "s6GS5FGJN2jfd4l6",
+                "id_token": "s6GS5FGJN2jfd4l6",
+                "token_type": "bearer",
+                "expires_in": 86000,
+                "refresh_token": "openid"
+            }""".trimIndent()
+            )
+        )
     }
 
     @Test
     @Throws(Exception::class)
     public fun shouldReturnBasic() {
-        val credentials = buildCredentialsFrom(json(BASIC_CREDENTIALS))
+        val credentials = buildCredentialsFrom(json(OPENID_CREDENTIALS))
         MatcherAssert.assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(credentials.accessToken, Matchers.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(credentials.idToken, Matchers.`is`(Matchers.nullValue()))
+        MatcherAssert.assertThat(credentials.idToken, Matchers.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(credentials.type, Matchers.equalTo("bearer"))
         MatcherAssert.assertThat(credentials.refreshToken, Matchers.`is`(Matchers.nullValue()))
         MatcherAssert.assertThat(credentials.expiresAt, Matchers.`is`(Matchers.notNullValue()))
@@ -75,7 +95,7 @@ public class CredentialsGsonTest : GsonBaseTest() {
         MatcherAssert.assertThat(credentials.type, Matchers.equalTo("bearer"))
         //The hardcoded value comes from the JSON file
         MatcherAssert.assertThat(credentials.expiresAt, Matchers.`is`(Matchers.notNullValue()))
-        val expiresAt = credentials.expiresAt!!.time.toDouble()
+        val expiresAt = credentials.expiresAt.time.toDouble()
         MatcherAssert.assertThat(
             expiresAt,
             Matchers.`is`(Matchers.closeTo(exp.time.toDouble(), 1.0))
@@ -84,21 +104,8 @@ public class CredentialsGsonTest : GsonBaseTest() {
 
     @Test
     @Throws(Exception::class)
-    public fun shouldReturnWithIdToken() {
-        val credentials = buildCredentialsFrom(json(OPEN_ID_CREDENTIALS))
-        MatcherAssert.assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(credentials.accessToken, Matchers.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(credentials.idToken, Matchers.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(credentials.type, Matchers.equalTo("bearer"))
-        MatcherAssert.assertThat(credentials.refreshToken, Matchers.`is`(Matchers.nullValue()))
-        MatcherAssert.assertThat(credentials.expiresAt, Matchers.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(credentials.scope, Matchers.`is`("openid profile"))
-    }
-
-    @Test
-    @Throws(Exception::class)
     public fun shouldReturnWithRefreshToken() {
-        val credentials = buildCredentialsFrom(json(OPEN_ID_OFFLINE_ACCESS_CREDENTIALS))
+        val credentials = buildCredentialsFrom(json(OPENID_OFFLINE_ACCESS_CREDENTIALS))
         MatcherAssert.assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(credentials.accessToken, Matchers.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(credentials.idToken, Matchers.`is`(Matchers.notNullValue()))
@@ -178,6 +185,7 @@ public class CredentialsGsonTest : GsonBaseTest() {
         return """
             {
             "access_token": "s6GS5FGJN2jfd4l6",
+            "id_token": "s6GS5FGJN2jfd4l6",
             "token_type": "bearer",
             "expires_in": 86000,
             "expires_at": "${formatDate(expiresAt)}"
@@ -186,9 +194,8 @@ public class CredentialsGsonTest : GsonBaseTest() {
     }
 
     private companion object {
-        private const val OPEN_ID_OFFLINE_ACCESS_CREDENTIALS =
+        private const val OPENID_OFFLINE_ACCESS_CREDENTIALS =
             "src/test/resources/credentials_openid_refresh_token.json"
-        private const val OPEN_ID_CREDENTIALS = "src/test/resources/credentials_openid.json"
-        private const val BASIC_CREDENTIALS = "src/test/resources/credentials.json"
+        private const val OPENID_CREDENTIALS = "src/test/resources/credentials_openid.json"
     }
 }

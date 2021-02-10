@@ -105,7 +105,7 @@ public class CredentialsManagerTest {
     public fun shouldSaveRefreshableCredentialsUsingAccessTokenExpForCacheExpirationInStorage() {
         val accessTokenExpirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
         val credentials: Credentials = CredentialsMock(
-            null,
+            "",
             "accessToken",
             "type",
             "refreshToken",
@@ -114,7 +114,7 @@ public class CredentialsManagerTest {
         )
         prepareJwtDecoderMock(Date(accessTokenExpirationTime))
         manager.saveCredentials(credentials)
-        verify(storage).store("com.auth0.id_token", null as String?)
+        verify(storage).store("com.auth0.id_token", "")
         verify(storage).store("com.auth0.access_token", "accessToken")
         verify(storage).store("com.auth0.refresh_token", "refreshToken")
         verify(storage).store("com.auth0.token_type", "type")
@@ -170,30 +170,21 @@ public class CredentialsManagerTest {
         exception.expect(CredentialsManagerException::class.java)
         exception.expectMessage("Credentials must have a valid date of expiration and a valid access_token or id_token value.")
         val credentials: Credentials =
-            CredentialsMock(null, null, "type", "refreshToken", Date(), null)
-        manager.saveCredentials(credentials)
-    }
-
-    @Test
-    public fun shouldThrowOnSetIfCredentialsDoesNotHaveExpiresAt() {
-        exception.expect(CredentialsManagerException::class.java)
-        exception.expectMessage("Credentials must have a valid date of expiration and a valid access_token or id_token value.")
-        val credentials: Credentials =
-            CredentialsMock("idToken", "accessToken", "type", "refreshToken", null, "scope")
+            CredentialsMock("", "", "type", "refreshToken", Date(), null)
         manager.saveCredentials(credentials)
     }
 
     @Test
     public fun shouldNotThrowOnSetIfCredentialsHasAccessTokenAndExpiresAt() {
         val credentials: Credentials =
-            CredentialsMock(null, "accessToken", "type", "refreshToken", Date(), null)
+            CredentialsMock("", "accessToken", "type", "refreshToken", Date(), null)
         manager.saveCredentials(credentials)
     }
 
     @Test
     public fun shouldNotThrowOnSetIfCredentialsHasIdTokenAndExpiresAt() {
         val credentials: Credentials =
-            CredentialsMock("idToken", null, "type", "refreshToken", Date(), null)
+            CredentialsMock("idToken", "", "type", "refreshToken", Date(), null)
         prepareJwtDecoderMock(Date())
         manager.saveCredentials(credentials)
     }
@@ -282,7 +273,7 @@ public class CredentialsManagerTest {
         MatcherAssert.assertThat(retrievedCredentials.refreshToken, Is.`is`("refreshToken"))
         MatcherAssert.assertThat(retrievedCredentials.type, Is.`is`("type"))
         MatcherAssert.assertThat(retrievedCredentials.expiresAt, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(retrievedCredentials.expiresAt!!.time, Is.`is`(expirationTime))
+        MatcherAssert.assertThat(retrievedCredentials.expiresAt.time, Is.`is`(expirationTime))
         MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("scope"))
     }
 
@@ -304,12 +295,12 @@ public class CredentialsManagerTest {
         )
         val retrievedCredentials = credentialsCaptor.firstValue
         MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`(Matchers.nullValue()))
+        MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`(""))
         MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`("idToken"))
         MatcherAssert.assertThat(retrievedCredentials.refreshToken, Is.`is`("refreshToken"))
         MatcherAssert.assertThat(retrievedCredentials.type, Is.`is`("type"))
         MatcherAssert.assertThat(retrievedCredentials.expiresAt, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(retrievedCredentials.expiresAt!!.time, Is.`is`(expirationTime))
+        MatcherAssert.assertThat(retrievedCredentials.expiresAt.time, Is.`is`(expirationTime))
         MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("scope"))
     }
 
@@ -332,11 +323,11 @@ public class CredentialsManagerTest {
         val retrievedCredentials = credentialsCaptor.firstValue
         MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`("accessToken"))
-        MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`(Matchers.nullValue()))
+        MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`(""))
         MatcherAssert.assertThat(retrievedCredentials.refreshToken, Is.`is`("refreshToken"))
         MatcherAssert.assertThat(retrievedCredentials.type, Is.`is`("type"))
         MatcherAssert.assertThat(retrievedCredentials.expiresAt, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(retrievedCredentials.expiresAt!!.time, Is.`is`(expirationTime))
+        MatcherAssert.assertThat(retrievedCredentials.expiresAt.time, Is.`is`(expirationTime))
         MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("scope"))
     }
 
@@ -382,11 +373,11 @@ public class CredentialsManagerTest {
         verify(storage).store("com.auth0.refresh_token", "refreshToken")
         verify(storage).store("com.auth0.token_type", renewedCredentials.type)
         verify(storage).store(
-            "com.auth0.expires_at", renewedCredentials.expiresAt!!.time
+            "com.auth0.expires_at", renewedCredentials.expiresAt.time
         )
         verify(storage).store("com.auth0.scope", renewedCredentials.scope)
         verify(storage).store(
-            "com.auth0.cache_expires_at", renewedCredentials.expiresAt!!.time
+            "com.auth0.cache_expires_at", renewedCredentials.expiresAt.time
         )
         verify(storage, never()).remove(ArgumentMatchers.anyString())
 
@@ -443,11 +434,11 @@ public class CredentialsManagerTest {
         verify(storage).store("com.auth0.refresh_token", "refreshToken")
         verify(storage).store("com.auth0.token_type", renewedCredentials.type)
         verify(storage).store(
-            "com.auth0.expires_at", renewedCredentials.expiresAt!!.time
+            "com.auth0.expires_at", renewedCredentials.expiresAt.time
         )
         verify(storage).store("com.auth0.scope", renewedCredentials.scope)
         verify(storage).store(
-            "com.auth0.cache_expires_at", renewedCredentials.expiresAt!!.time
+            "com.auth0.cache_expires_at", renewedCredentials.expiresAt.time
         )
         verify(storage, never()).remove(ArgumentMatchers.anyString())
 
@@ -505,11 +496,11 @@ public class CredentialsManagerTest {
         verify(storage).store("com.auth0.refresh_token", "refreshToken")
         verify(storage).store("com.auth0.token_type", renewedCredentials.type)
         verify(storage).store(
-            "com.auth0.expires_at", renewedCredentials.expiresAt!!.time
+            "com.auth0.expires_at", renewedCredentials.expiresAt.time
         )
         verify(storage).store("com.auth0.scope", renewedCredentials.scope)
         verify(storage).store(
-            "com.auth0.cache_expires_at", renewedCredentials.expiresAt!!.time
+            "com.auth0.cache_expires_at", renewedCredentials.expiresAt.time
         )
         verify(storage, never()).remove(ArgumentMatchers.anyString())
 
@@ -566,11 +557,11 @@ public class CredentialsManagerTest {
         verify(storage).store("com.auth0.refresh_token", "refreshToken")
         verify(storage).store("com.auth0.token_type", renewedCredentials.type)
         verify(storage).store(
-            "com.auth0.expires_at", renewedCredentials.expiresAt!!.time
+            "com.auth0.expires_at", renewedCredentials.expiresAt.time
         )
         verify(storage).store("com.auth0.scope", renewedCredentials.scope)
         verify(storage).store(
-            "com.auth0.cache_expires_at", renewedCredentials.expiresAt!!.time
+            "com.auth0.cache_expires_at", renewedCredentials.expiresAt.time
         )
         verify(storage, never()).remove(ArgumentMatchers.anyString())
 
@@ -679,11 +670,11 @@ public class CredentialsManagerTest {
         verify(storage).store("com.auth0.refresh_token", "rotatedRefreshToken")
         verify(storage).store("com.auth0.token_type", renewedCredentials.type)
         verify(storage).store(
-            "com.auth0.expires_at", renewedCredentials.expiresAt!!.time
+            "com.auth0.expires_at", renewedCredentials.expiresAt.time
         )
         verify(storage).store("com.auth0.scope", renewedCredentials.scope)
         verify(storage).store(
-            "com.auth0.cache_expires_at", renewedCredentials.expiresAt!!.time
+            "com.auth0.cache_expires_at", renewedCredentials.expiresAt.time
         )
         verify(storage, never()).remove(ArgumentMatchers.anyString())
 

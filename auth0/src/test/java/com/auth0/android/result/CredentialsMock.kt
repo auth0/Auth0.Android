@@ -3,11 +3,11 @@ package com.auth0.android.result
 import java.util.*
 
 public class CredentialsMock(
-    idToken: String?,
-    accessToken: String?,
-    type: String?,
+    idToken: String,
+    accessToken: String,
+    type: String,
     refreshToken: String?,
-    expiresAt: Date?,
+    expiresAt: Date,
     scope: String?
 ) : Credentials(idToken, accessToken, type, refreshToken, expiresAt, scope) {
 

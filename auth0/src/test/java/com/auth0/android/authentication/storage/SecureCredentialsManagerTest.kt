@@ -136,7 +136,7 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(storedCredentials.refreshToken, Is.`is`("refreshToken"))
         MatcherAssert.assertThat(storedCredentials.type, Is.`is`("type"))
         MatcherAssert.assertThat(storedCredentials.expiresAt, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(storedCredentials.expiresAt!!.time, Is.`is`(sharedExpirationTime))
+        MatcherAssert.assertThat(storedCredentials.expiresAt.time, Is.`is`(sharedExpirationTime))
         MatcherAssert.assertThat(storedCredentials.scope, Is.`is`("scope"))
     }
 
@@ -144,7 +144,7 @@ public class SecureCredentialsManagerTest {
     public fun shouldSaveRefreshableCredentialsUsingAccessTokenExpForCacheExpirationInStorage() {
         val accessTokenExpirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
         val credentials: Credentials = CredentialsMock(
-            null,
+            "",
             "accessToken",
             "type",
             "refreshToken",
@@ -168,12 +168,12 @@ public class SecureCredentialsManagerTest {
         val decoded = Base64.decode(encodedJson, Base64.DEFAULT)
         val storedCredentials = gson.fromJson(String(decoded), Credentials::class.java)
         MatcherAssert.assertThat(storedCredentials.accessToken, Is.`is`("accessToken"))
-        MatcherAssert.assertThat(storedCredentials.idToken, Is.`is`(Matchers.nullValue()))
+        MatcherAssert.assertThat(storedCredentials.idToken, Is.`is`(""))
         MatcherAssert.assertThat(storedCredentials.refreshToken, Is.`is`("refreshToken"))
         MatcherAssert.assertThat(storedCredentials.type, Is.`is`("type"))
         MatcherAssert.assertThat(storedCredentials.expiresAt, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(
-            storedCredentials.expiresAt!!.time,
+            storedCredentials.expiresAt.time,
             Is.`is`(accessTokenExpirationTime)
         )
         MatcherAssert.assertThat(storedCredentials.scope, Is.`is`("scope"))
@@ -213,7 +213,7 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(storedCredentials.type, Is.`is`("type"))
         MatcherAssert.assertThat(storedCredentials.expiresAt, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(
-            storedCredentials.expiresAt!!.time,
+            storedCredentials.expiresAt.time,
             Is.`is`(accessTokenExpirationTime)
         )
         MatcherAssert.assertThat(storedCredentials.scope, Is.`is`("scope"))
@@ -245,7 +245,7 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(storedCredentials.refreshToken, Is.`is`(Matchers.nullValue()))
         MatcherAssert.assertThat(storedCredentials.type, Is.`is`("type"))
         MatcherAssert.assertThat(storedCredentials.expiresAt, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(storedCredentials.expiresAt!!.time, Is.`is`(expirationTime))
+        MatcherAssert.assertThat(storedCredentials.expiresAt.time, Is.`is`(expirationTime))
         MatcherAssert.assertThat(storedCredentials.scope, Is.`is`("scope"))
     }
 
@@ -314,25 +314,14 @@ public class SecureCredentialsManagerTest {
         exception.expect(CredentialsManagerException::class.java)
         exception.expectMessage("Credentials must have a valid date of expiration and a valid access_token or id_token value.")
         val credentials: Credentials =
-            CredentialsMock(null, null, "type", "refreshToken", Date(), "scope")
-        manager.saveCredentials(credentials)
-    }
-
-    @Test
-    public fun shouldThrowOnSaveIfCredentialsDoesNotHaveExpiresAt() {
-        exception.expect(CredentialsManagerException::class.java)
-        exception.expectMessage("Credentials must have a valid date of expiration and a valid access_token or id_token value.")
-        val date: Date? = null
-        val credentials: Credentials =
-            CredentialsMock("idToken", "accessToken", "type", "refreshToken", date, "scope")
-        prepareJwtDecoderMock(Date())
+            CredentialsMock("", "", "type", "refreshToken", Date(), "scope")
         manager.saveCredentials(credentials)
     }
 
     @Test
     public fun shouldNotThrowOnSaveIfCredentialsHaveAccessTokenAndExpiresIn() {
         val credentials: Credentials =
-            CredentialsMock(null, "accessToken", "type", "refreshToken", Date(), "scope")
+            CredentialsMock("", "accessToken", "type", "refreshToken", Date(), "scope")
         Mockito.`when`(crypto.encrypt(any()))
             .thenReturn(byteArrayOf(12, 34, 56, 78))
         manager.saveCredentials(credentials)
@@ -341,7 +330,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldNotThrowOnSaveIfCredentialsHaveIdTokenAndExpiresIn() {
         val credentials: Credentials =
-            CredentialsMock("idToken", null, "type", "refreshToken", Date(), "scope")
+            CredentialsMock("idToken", "", "type", "refreshToken", Date(), "scope")
         prepareJwtDecoderMock(Date())
         Mockito.`when`(crypto.encrypt(any()))
             .thenReturn(byteArrayOf(12, 34, 56, 78))
@@ -461,7 +450,7 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(retrievedCredentials.refreshToken, Is.`is`("refreshToken"))
         MatcherAssert.assertThat(retrievedCredentials.type, Is.`is`("type"))
         MatcherAssert.assertThat(retrievedCredentials.expiresAt, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(retrievedCredentials.expiresAt!!.time, Is.`is`(expiresAt.time))
+        MatcherAssert.assertThat(retrievedCredentials.expiresAt.time, Is.`is`(expiresAt.time))
         MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("scope"))
     }
 
@@ -476,12 +465,12 @@ public class SecureCredentialsManagerTest {
         )
         val retrievedCredentials = credentialsCaptor.firstValue
         MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`(Matchers.nullValue()))
+        MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`(""))
         MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`("idToken"))
         MatcherAssert.assertThat(retrievedCredentials.refreshToken, Is.`is`("refreshToken"))
         MatcherAssert.assertThat(retrievedCredentials.type, Is.`is`("type"))
         MatcherAssert.assertThat(retrievedCredentials.expiresAt, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(retrievedCredentials.expiresAt!!.time, Is.`is`(expiresAt.time))
+        MatcherAssert.assertThat(retrievedCredentials.expiresAt.time, Is.`is`(expiresAt.time))
         MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("scope"))
     }
 
@@ -497,11 +486,11 @@ public class SecureCredentialsManagerTest {
         val retrievedCredentials = credentialsCaptor.firstValue
         MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`("accessToken"))
-        MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`(Matchers.nullValue()))
+        MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`(""))
         MatcherAssert.assertThat(retrievedCredentials.refreshToken, Is.`is`("refreshToken"))
         MatcherAssert.assertThat(retrievedCredentials.type, Is.`is`("type"))
         MatcherAssert.assertThat(retrievedCredentials.expiresAt, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(retrievedCredentials.expiresAt!!.time, Is.`is`(expiresAt.time))
+        MatcherAssert.assertThat(retrievedCredentials.expiresAt.time, Is.`is`(expiresAt.time))
         MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("scope"))
     }
 
@@ -565,7 +554,7 @@ public class SecureCredentialsManagerTest {
             Is.`is`(Matchers.notNullValue())
         )
         MatcherAssert.assertThat(
-            renewedStoredCredentials.expiresAt!!.time, Is.`is`(newDate.time)
+            renewedStoredCredentials.expiresAt.time, Is.`is`(newDate.time)
         )
         MatcherAssert.assertThat(renewedStoredCredentials.scope, Is.`is`("newScope"))
     }
@@ -677,7 +666,7 @@ public class SecureCredentialsManagerTest {
             Is.`is`(Matchers.notNullValue())
         )
         MatcherAssert.assertThat(
-            renewedStoredCredentials.expiresAt!!.time, Is.`is`(newDate.time)
+            renewedStoredCredentials.expiresAt.time, Is.`is`(newDate.time)
         )
         MatcherAssert.assertThat(renewedStoredCredentials.scope, Is.`is`("different scope"))
     }
@@ -742,7 +731,7 @@ public class SecureCredentialsManagerTest {
             Is.`is`(Matchers.notNullValue())
         )
         MatcherAssert.assertThat(
-            renewedStoredCredentials.expiresAt!!.time, Is.`is`(newDate.time)
+            renewedStoredCredentials.expiresAt.time, Is.`is`(newDate.time)
         )
         MatcherAssert.assertThat(renewedStoredCredentials.scope, Is.`is`("different scope"))
     }
@@ -822,7 +811,7 @@ public class SecureCredentialsManagerTest {
             Is.`is`(Matchers.notNullValue())
         )
         MatcherAssert.assertThat(
-            renewedStoredCredentials.expiresAt!!.time, Is.`is`(newDate.time)
+            renewedStoredCredentials.expiresAt.time, Is.`is`(newDate.time)
         )
         MatcherAssert.assertThat(renewedStoredCredentials.scope, Is.`is`("newScope"))
     }
@@ -888,7 +877,7 @@ public class SecureCredentialsManagerTest {
             Is.`is`(Matchers.notNullValue())
         )
         MatcherAssert.assertThat(
-            renewedStoredCredentials.expiresAt!!.time, Is.`is`(newDate.time)
+            renewedStoredCredentials.expiresAt.time, Is.`is`(newDate.time)
         )
         MatcherAssert.assertThat(renewedStoredCredentials.scope, Is.`is`("newScope"))
     }
@@ -1193,7 +1182,7 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(retrievedCredentials.refreshToken, Is.`is`(Matchers.nullValue()))
         MatcherAssert.assertThat(retrievedCredentials.type, Is.`is`("type"))
         MatcherAssert.assertThat(retrievedCredentials.expiresAt, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(retrievedCredentials.expiresAt!!.time, Is.`is`(expiresAt.time))
+        MatcherAssert.assertThat(retrievedCredentials.expiresAt.time, Is.`is`(expiresAt.time))
         MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("scope"))
 
         //A second call to checkAuthenticationResult should fail as callback is set to null
@@ -1347,11 +1336,11 @@ public class SecureCredentialsManagerTest {
         hasIdToken: Boolean,
         hasAccessToken: Boolean,
         hasRefreshToken: Boolean,
-        willExpireAt: Date?
+        willExpireAt: Date
     ): String {
         val storedCredentials = Credentials(
-            if (hasIdToken) "idToken" else null,
-            if (hasAccessToken) "accessToken" else null,
+            if (hasIdToken) "idToken" else "",
+            if (hasAccessToken) "accessToken" else "",
             "type",
             if (hasRefreshToken) "refreshToken" else null,
             willExpireAt,
@@ -1363,7 +1352,7 @@ public class SecureCredentialsManagerTest {
             .thenReturn(storedJson.toByteArray())
         Mockito.`when`(storage.retrieveString("com.auth0.credentials")).thenReturn(encoded)
         Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at")).thenReturn(
-            willExpireAt?.time
+            willExpireAt.time
         )
         Mockito.`when`(storage.retrieveBoolean("com.auth0.credentials_can_refresh"))
             .thenReturn(hasRefreshToken)
