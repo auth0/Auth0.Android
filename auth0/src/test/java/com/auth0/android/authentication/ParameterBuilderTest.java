@@ -37,7 +37,7 @@ public class ParameterBuilderTest {
 
     @Test
     public void shouldInstantiateWithDefaultScope() {
-        assertThat(ParameterBuilder.newAuthenticationBuilder().asDictionary(), hasEntry("scope", ParameterBuilder.SCOPE_OPENID));
+        assertThat(ParameterBuilder.newAuthenticationBuilder().asDictionary(), hasEntry("scope", "openid profile email"));
     }
 
     @Test
@@ -51,9 +51,9 @@ public class ParameterBuilderTest {
     }
 
     @Test
-    public void shouldSetScope() {
-        Map<String, String> parameters = builder.setScope(ParameterBuilder.SCOPE_OFFLINE_ACCESS).asDictionary();
-        assertThat(parameters, hasEntry("scope", ParameterBuilder.SCOPE_OFFLINE_ACCESS));
+    public void shouldSetRequiredScope() {
+        Map<String, String> parameters = builder.setScope("name").asDictionary();
+        assertThat(parameters, hasEntry("scope", "name openid"));
     }
 
     @Test

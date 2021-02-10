@@ -1,5 +1,7 @@
 package com.auth0.android.authentication
 
+import com.auth0.android.request.internal.OidcUtils
+
 /**
  * Builder for Auth0 Authentication API parameters
  * You can build your parameters like this
@@ -64,7 +66,7 @@ public class ParameterBuilder private constructor(parameters: Map<String, String
      * @return itself
      */
     public fun setScope(scope: String): ParameterBuilder {
-        return set(SCOPE_KEY, scope)
+        return set(SCOPE_KEY, OidcUtils.includeRequiredScope(scope))
     }
 
     /**
@@ -166,15 +168,16 @@ public class ParameterBuilder private constructor(parameters: Map<String, String
         public const val AUDIENCE_KEY: String = "audience"
 
         /**
-         * Creates a new instance of the builder using default values for login request, e.g. 'openid' for scope.
+         * Creates a new instance of the builder using default values for login request, e.g. 'openid profile email' for scope.
          *
          * @return a new builder
          */
         @JvmStatic
         public fun newAuthenticationBuilder(): ParameterBuilder {
             return newBuilder()
-                .setScope(SCOPE_OPENID)
+                .setScope(OidcUtils.DEFAULT_SCOPE)
         }
+
         /**
          * Creates a new instance of the builder.
          *
