@@ -12,6 +12,7 @@ import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
 import com.auth0.android.request.internal.Jwt
+import com.auth0.android.request.internal.OidcUtils
 import com.auth0.android.result.Credentials
 import java.security.SecureRandom
 import java.util.*
@@ -55,7 +56,7 @@ internal class OAuthManager(
     }
 
     fun startAuthentication(context: Context, redirectUri: String, requestCode: Int) {
-        addRequiredScope(parameters)
+        OidcUtils.includeDefaultScope(parameters)
         addPKCEParameters(parameters, redirectUri, headers)
         addClientParameters(parameters, redirectUri)
         addValidationParameters(parameters)
@@ -222,19 +223,6 @@ internal class OAuthManager(
         val uri = builder.build()
         Log.d(TAG, "Using the following Authorize URI: $uri")
         return uri
-    }
-
-    private fun addRequiredScope(parameters: MutableMap<String, String>) {
-        if (!parameters.containsKey(KEY_SCOPE)) {
-            parameters[KEY_SCOPE] = DEFAULT_SCOPE
-            return
-        }
-        val existingScopes = parameters[KEY_SCOPE]!!.split(" ")
-            .map { it.toLowerCase(Locale.ROOT) }
-        if (!existingScopes.contains(REQUIRED_SCOPE)) {
-            val requiredScopes = (existingScopes + REQUIRED_SCOPE).joinToString(separator = " ")
-            parameters[KEY_SCOPE] = requiredScopes
-        }
     }
 
     private fun addPKCEParameters(

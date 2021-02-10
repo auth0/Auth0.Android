@@ -168,6 +168,7 @@ public class AuthenticationAPIClientTest {
         )
         assertThat(body, Matchers.hasEntry("mfa_token", "ey30.the-mfa-token.value"))
         assertThat(body, Matchers.hasEntry("otp", "123456"))
+        assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
         assertThat(body, Matchers.not(Matchers.hasKey("password")))
         assertThat(body, Matchers.not(Matchers.hasKey("connection")))
@@ -226,8 +227,8 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("password", "some-password"))
         assertThat(body, Matchers.hasEntry("realm", MY_CONNECTION))
+        assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
         assertThat(body, Matchers.not(Matchers.hasKey("connection")))
-        assertThat(body, Matchers.not(Matchers.hasKey("scope")))
         assertThat(body, Matchers.not(Matchers.hasKey("audience")))
     }
 
@@ -255,9 +256,9 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.hasEntry("grant_type", "password"))
         assertThat(body, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("password", "some-password"))
+        assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
         assertThat(body, Matchers.not(Matchers.hasKey("realm")))
         assertThat(body, Matchers.not(Matchers.hasKey("connection")))
-        assertThat(body, Matchers.not(Matchers.hasKey("scope")))
         assertThat(body, Matchers.not(Matchers.hasKey("audience")))
     }
 
@@ -280,9 +281,9 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.hasEntry("grant_type", "password"))
         assertThat(body, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("password", "some-password"))
+        assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
         assertThat(body, Matchers.not(Matchers.hasKey("realm")))
         assertThat(body, Matchers.not(Matchers.hasKey("connection")))
-        assertThat(body, Matchers.not(Matchers.hasKey("scope")))
         assertThat(body, Matchers.not(Matchers.hasKey("audience")))
     }
 
@@ -353,7 +354,7 @@ public class AuthenticationAPIClientTest {
         )
         assertThat(body, Matchers.hasEntry("subject_token", "test-token-value"))
         assertThat(body, Matchers.hasEntry("subject_token_type", "test-token-type"))
-        assertThat(body, Matchers.hasEntry("scope", OPENID))
+        assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
         assertThat(
             callback, AuthenticationCallbackMatcher.hasPayloadOfType(
                 Credentials::class.java
@@ -382,7 +383,7 @@ public class AuthenticationAPIClientTest {
         )
         assertThat(body, Matchers.hasEntry("subject_token", "test-token-value"))
         assertThat(body, Matchers.hasEntry("subject_token_type", "test-token-type"))
-        assertThat(body, Matchers.hasEntry("scope", OPENID))
+        assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
         assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
     }
 
@@ -410,7 +411,7 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.hasEntry("realm", MY_CONNECTION))
         assertThat(body, Matchers.hasEntry("username", "+10101010101"))
         assertThat(body, Matchers.hasEntry("otp", "1234"))
-        assertThat(body, Matchers.hasEntry("scope", OPENID))
+        assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
         assertThat(
             callback, AuthenticationCallbackMatcher.hasPayloadOfType(
                 Credentials::class.java
@@ -442,7 +443,7 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.hasEntry("realm", "sms"))
         assertThat(body, Matchers.hasEntry("username", "+10101010101"))
         assertThat(body, Matchers.hasEntry("otp", "1234"))
-        assertThat(body, Matchers.hasEntry("scope", OPENID))
+        assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
         assertThat(
             callback, AuthenticationCallbackMatcher.hasPayloadOfType(
                 Credentials::class.java
@@ -473,7 +474,7 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.hasEntry("realm", "sms"))
         assertThat(body, Matchers.hasEntry("username", "+10101010101"))
         assertThat(body, Matchers.hasEntry("otp", "1234"))
-        assertThat(body, Matchers.hasEntry("scope", OPENID))
+        assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
         assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
     }
 
@@ -501,7 +502,7 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.hasEntry("realm", MY_CONNECTION))
         assertThat(body, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("otp", "1234"))
-        assertThat(body, Matchers.hasEntry("scope", OPENID))
+        assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
         assertThat(
             callback, AuthenticationCallbackMatcher.hasPayloadOfType(
                 Credentials::class.java
@@ -533,7 +534,7 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.hasEntry("realm", "email"))
         assertThat(body, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("otp", "1234"))
-        assertThat(body, Matchers.hasEntry("scope", OPENID))
+        assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
         assertThat(
             callback, AuthenticationCallbackMatcher.hasPayloadOfType(
                 Credentials::class.java
@@ -565,7 +566,7 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.hasEntry("realm", "email"))
         assertThat(body, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("otp", "1234"))
-        assertThat(body, Matchers.hasEntry("scope", OPENID))
+        assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
         assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
     }
 
@@ -742,7 +743,7 @@ public class AuthenticationAPIClientTest {
         assertThat(loginBody, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
         assertThat(loginBody, Matchers.hasEntry("password", PASSWORD))
         assertThat(loginBody, Matchers.hasEntry("realm", MY_CONNECTION))
-        assertThat(loginBody, Matchers.not(Matchers.hasKey("scope")))
+        assertThat(loginBody, Matchers.hasEntry("scope", "openid profile email"))
         assertThat(loginBody, Matchers.not(Matchers.hasKey("connection")))
     }
 
@@ -809,6 +810,7 @@ public class AuthenticationAPIClientTest {
         assertThat(loginBody, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
         assertThat(loginBody, Matchers.hasEntry("password", PASSWORD))
         assertThat(loginBody, Matchers.hasEntry("realm", MY_CONNECTION))
+        assertThat(loginBody, Matchers.hasEntry("scope", "openid profile email"))
         assertThat(
             loginBody,
             Matchers.hasEntry("grant_type", "http://auth0.com/oauth/grant-type/password-realm")
@@ -847,6 +849,7 @@ public class AuthenticationAPIClientTest {
         assertThat(loginBody, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
         assertThat(loginBody, Matchers.hasEntry("password", PASSWORD))
         assertThat(loginBody, Matchers.hasEntry("realm", MY_CONNECTION))
+        assertThat(loginBody, Matchers.hasEntry("scope", "openid profile email"))
         assertThat(
             loginBody,
             Matchers.hasEntry("grant_type", "http://auth0.com/oauth/grant-type/password-realm")
@@ -888,7 +891,7 @@ public class AuthenticationAPIClientTest {
         assertThat(loginBody, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
         assertThat(loginBody, Matchers.hasEntry("password", PASSWORD))
         assertThat(loginBody, Matchers.hasEntry("realm", MY_CONNECTION))
-        assertThat(loginBody, Matchers.not(Matchers.hasKey("scope")))
+        assertThat(loginBody, Matchers.hasEntry("scope", "openid profile email"))
         assertThat(loginBody, Matchers.not(Matchers.hasKey("connection")))
     }
 
@@ -1477,6 +1480,7 @@ public class AuthenticationAPIClientTest {
         )
         assertThat(request.path, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest(request)
+        assertThat(body, Matchers.not(Matchers.hasKey("scope")))
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
         assertThat(body, Matchers.hasEntry("grant_type", "refresh_token"))
@@ -1505,6 +1509,30 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
         assertThat(body, Matchers.hasEntry("grant_type", "refresh_token"))
+        assertThat(body, Matchers.not(Matchers.hasKey("scope")))
+        assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
+    }
+
+    @Test
+    public fun shouldRenewAuthWithOAuthTokenAndCustomScope() {
+        val auth0 = auth0
+        val client = AuthenticationAPIClient(auth0)
+        mockAPI.willReturnSuccessfulLogin()
+        val credentials = client.renewAuth("refreshToken")
+            .addParameter("scope", "read:users")
+            .execute()
+        val request = mockAPI.takeRequest()
+        assertThat(
+            request.getHeader("Accept-Language"), Matchers.`is`(
+                defaultLocale
+            )
+        )
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        val body = bodyFromRequest(request)
+        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
+        assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
+        assertThat(body, Matchers.hasEntry("grant_type", "refresh_token"))
+        assertThat(body, Matchers.hasEntry("scope", "read:users openid"))
         assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
     }
 
@@ -1603,7 +1631,7 @@ public class AuthenticationAPIClientTest {
     private val defaultLocale: String
         get() {
             val language = Locale.getDefault().toString()
-            return if (!language.isEmpty()) language else DEFAULT_LOCALE_IF_MISSING
+            return if (language.isNotEmpty()) language else DEFAULT_LOCALE_IF_MISSING
         }
     private val auth0: Auth0
         get() {

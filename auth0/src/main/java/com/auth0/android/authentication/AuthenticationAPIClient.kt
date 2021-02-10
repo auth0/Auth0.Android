@@ -37,6 +37,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     /**
      * Creates a new API client instance providing Auth0 account info.
      *
+     * Example usage:
+     *
      * ```
      * val auth0 = Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN")
      * val client = AuthenticationAPIClient(auth0)
@@ -57,7 +59,10 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     /**
      * Log in a user with email/username and password for a connection/realm.
      * It will use the password-realm grant type for the `/oauth/token` endpoint
-     * Example:
+     * The default scope used is 'openid profile email'.
+     *
+     * Example usage:
+     *
      * ```
      * client
      *     .login("{username or email}", "{password}", "{database connection name}")
@@ -77,10 +82,9 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         password: String,
         realmOrConnection: String
     ): AuthenticationRequest {
-        val builder = ParameterBuilder.newBuilder()
+        val parameters = ParameterBuilder.newAuthenticationBuilder()
             .set(USERNAME_KEY, usernameOrEmail)
             .set(PASSWORD_KEY, password)
-        val parameters = builder
             .setGrantType(ParameterBuilder.GRANT_TYPE_PASSWORD_REALM)
             .setRealm(realmOrConnection)
             .asDictionary()
@@ -89,7 +93,10 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
 
     /**
      * Log in a user with email/username and password using the password grant and the default directory.
+     * The default scope used is 'openid profile email'.
+     *
      * Example usage:
+     *
      * ```
      * client.login("{username or email}", "{password}")
      *     .start(object:  Callback<Credentials, AuthenticationException> {
@@ -103,7 +110,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @return a request to configure and start that will yield [Credentials]
      */
     public fun login(usernameOrEmail: String, password: String): AuthenticationRequest {
-        val requestParameters = ParameterBuilder.newBuilder()
+        val requestParameters = ParameterBuilder.newAuthenticationBuilder()
             .set(USERNAME_KEY, usernameOrEmail)
             .set(PASSWORD_KEY, password)
             .setGrantType(ParameterBuilder.GRANT_TYPE_PASSWORD)
@@ -114,7 +121,12 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     /**
      * Log in a user using the One Time Password code after they have received the 'mfa_required' error.
      * The MFA token tells the server the username or email, password and realm values sent on the first request.
-     * Requires your client to have the **MFA** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.* Example usage:
+     * The default scope used is 'openid profile email'.
+     *
+     * Requires your client to have the **MFA** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
+     *
+     * Example usage:
+     *
      *```
      * client.loginWithOTP("{mfa token}", "{one time password}")
      *     .start(object : Callback<Credentials, AuthenticationException> {
@@ -129,7 +141,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @return a request to configure and start that will yield [Credentials]
      */
     public fun loginWithOTP(mfaToken: String, otp: String): AuthenticationRequest {
-        val parameters = ParameterBuilder.newBuilder()
+        val parameters = ParameterBuilder.newAuthenticationBuilder()
             .setGrantType(ParameterBuilder.GRANT_TYPE_MFA_OTP)
             .set(MFA_TOKEN_KEY, mfaToken)
             .set(ONE_TIME_PASSWORD_KEY, otp)
@@ -139,7 +151,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
 
     /**
      * Log in a user using a token obtained from a Native Social Identity Provider, such as Facebook, using ['\oauth\token' endpoint](https://auth0.com/docs/api/authentication#token-exchange-for-native-social)
-     * The default scope used is 'openid'.
+     * The default scope used is 'openid profile email'.
+     *
      * Example usage:
      *
      * ```
@@ -155,27 +168,18 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @return a request to configure and start that will yield [Credentials]
      */
     public fun loginWithNativeSocialToken(token: String, tokenType: String): AuthenticationRequest {
-        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
-            .addPathSegment(OAUTH_PATH)
-            .addPathSegment(TOKEN_PATH)
-            .build()
         val parameters = ParameterBuilder.newAuthenticationBuilder()
             .setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
             .setClientId(clientId)
             .set(SUBJECT_TOKEN_KEY, token)
             .set(SUBJECT_TOKEN_TYPE_KEY, tokenType)
             .asDictionary()
-        val credentialsAdapter = GsonAdapter(
-            Credentials::class.java, gson
-        )
-        val request = BaseAuthenticationRequest(factory.post(url.toString(), credentialsAdapter))
-        request.addParameters(parameters)
-        return request
+        return loginWithToken(parameters)
     }
 
     /**
      * Log in a user using a phone number and a verification code received via SMS (Part of passwordless login flow)
-     * The default scope used is 'openid'.
+     * The default scope used is 'openid profile email'.
      *
      * Your Application must have the **Passwordless OTP** Grant Type enabled.
      *
@@ -199,10 +203,9 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         verificationCode: String,
         realmOrConnection: String = SMS_CONNECTION
     ): AuthenticationRequest {
-        val builder = ParameterBuilder.newAuthenticationBuilder()
+        val parameters = ParameterBuilder.newAuthenticationBuilder()
             .setClientId(clientId)
             .set(USERNAME_KEY, phoneNumber)
-        val parameters = builder
             .setGrantType(ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP)
             .set(ONE_TIME_PASSWORD_KEY, verificationCode)
             .setRealm(realmOrConnection)
@@ -212,7 +215,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
 
     /**
      * Log in a user using an email and a verification code received via Email (Part of passwordless login flow).
-     * The default scope used is 'openid'.
+     * The default scope used is 'openid profile email'.
+     *
      * Your Application must have the **Passwordless OTP** Grant Type enabled.
      *
      * Example usage:
@@ -235,10 +239,9 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         verificationCode: String,
         realmOrConnection: String = EMAIL_CONNECTION
     ): AuthenticationRequest {
-        val builder = ParameterBuilder.newAuthenticationBuilder()
+        val parameters = ParameterBuilder.newAuthenticationBuilder()
             .setClientId(clientId)
             .set(USERNAME_KEY, email)
-        val parameters = builder
             .setGrantType(ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP)
             .set(ONE_TIME_PASSWORD_KEY, verificationCode)
             .setRealm(realmOrConnection)
@@ -248,6 +251,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
 
     /**
      * Returns the information of the user associated with the given access_token.
+     *
      * Example usage:
      * ```
      * client.userInfo("{access_token}")
@@ -267,6 +271,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
 
     /**
      * Creates a user in a DB connection using ['/dbconnections/signup' endpoint](https://auth0.com/docs/api/authentication#signup)
+     *
      * Example usage:
      * ```
      * client.createUser("{email}", "{password}", "{username}", "{database connection name}")
@@ -310,7 +315,10 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     /**
      * Creates a user in a DB connection using ['/dbconnections/signup' endpoint](https://auth0.com/docs/api/authentication#signup)
      * and then logs in the user.
+     * The default scope used is 'openid profile email'.
+     *
      * Example usage:
+     *
      * ```
      * client.signUp("{email}", "{password}", "{username}", "{database connection name}")
      *     .start(object: Callback<Credentials, AuthenticationException> {
@@ -339,7 +347,9 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
 
     /**
      * Request a reset password using ['/dbconnections/change_password'](https://auth0.com/docs/api/authentication#change-password)
+     *
      * Example usage:
+     *
      * ```
      * client.resetPassword("{email}", "{database connection name}")
      *     .start(object: Callback<Void?, AuthenticationException> {
@@ -372,7 +382,9 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     /**
      * Request the revoke of a given refresh_token. Once revoked, the refresh_token cannot be used to obtain new tokens.
      * Your Auth0 Application Type should be set to 'Native' and Token Endpoint Authentication Method must be set to 'None'.
+     *
      * Example usage:
+     *
      * ```
      * client.revokeToken("{refresh_token}")
      *     .start(object: Callback<Void?, AuthenticationException> {
@@ -400,9 +412,11 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     /**
      * Requests new Credentials using a valid Refresh Token. The received token will have the same audience and scope as first requested.
      *
-     *
      * This method will use the /oauth/token endpoint with the 'refresh_token' grant, and the response will include an id_token and an access_token if 'openid' scope was requested when the refresh_token was obtained.
      * Additionally, if the application has Refresh Token Rotation configured, a new one-time use refresh token will also be included in the response.
+     *
+     * The scope of the newly received Access Token can be reduced sending the scope parameter with this request.
+     *
      * Example usage:
      * ```
      * client.renewAuth("{refresh_token}")
@@ -435,7 +449,9 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
 
     /**
      * Start a passwordless flow with an [Email](https://auth0.com/docs/api/authentication#get-code-or-link).
+     *
      * Your Application must have the **Passwordless OTP** Grant Type enabled.
+     *
      * Example usage:
      * ```
      * client.passwordlessWithEmail("{email}", PasswordlessType.CODE, "{passwordless connection name}")
@@ -467,7 +483,9 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
 
     /**
      * Start a passwordless flow with a [SMS](https://auth0.com/docs/api/authentication#get-code-or-link)
+     *
      * Your Application requires to have the **Passwordless OTP** Grant Type enabled.
+     *
      * Example usage:
      * ```
      * client.passwordlessWithSms("{phone number}", PasswordlessType.CODE, "{passwordless connection name}")
@@ -519,17 +537,19 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * If the login request fails, the returned request will fail
      *
      * @param authenticationRequest that will authenticate a user with Auth0 and return a [Credentials]
-     * @return a [ProfileRequest] that first logins and the fetches the profile
+     * @return a [ProfileRequest] that first logs in and then fetches the profile
      */
     public fun getProfileAfter(authenticationRequest: AuthenticationRequest): ProfileRequest {
-        val profileRequest = profileRequest()
-        return ProfileRequest(authenticationRequest, profileRequest)
+        return ProfileRequest(authenticationRequest, profileRequest())
     }
 
     /**
      * Fetch the token information from Auth0, using the authorization_code grant type
      * The authorization code received from the Auth0 server and the code verifier used
      * to generate the challenge sent to the /authorize call must be provided.
+     *
+     * Example usage:
+     *
      * ```
      * client
      *     .token("authorization code", "code verifier", "redirect_uri")
@@ -582,6 +602,9 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         return factory.get(url.toString(), jwksAdapter)
     }
 
+    /**
+     * Helper function to make a request to the /oauth/token endpoint.
+     */
     private fun loginWithToken(parameters: Map<String, String>): AuthenticationRequest {
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(OAUTH_PATH)
