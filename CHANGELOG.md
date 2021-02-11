@@ -1,6 +1,36 @@
 # Change Log
 
 ## [2.0.0](https://github.com/auth0/Auth0.Android/tree/2.0.0) (2021-02-10)
+
+**This is a major release and contains breaking changes!** 
+
+Please see the [migration guide](V2_MIGRATION_GUIDE.md) document. The full changelog from version 1 to version 2 is [here](https://github.com/auth0/Auth0.Android/compare/1.30.0...2.0.0).
+
+### New requirements
+v2 requires Android API version 21 or later and Java 8+. Update your `build.gradle` file with the following:
+
+```groovy
+android {
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+}
+```
+
+### Main features
+- Supports exclusively the **OpenID Connect** authentication pipeline from Auth0.
+- Uses **AndroidX** dependencies, and drops the use of the Jetifier plugin.
+- Reworked networking stack. Offers a **customizable Networking Client**. 
+
+See the changelog entries below for additional details.
+
+What follows is the summary of changes made from `2.0.0-beta.0`.
+
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.0.0-beta.0...2.0.0)
 
 **Changed**
