@@ -10,9 +10,9 @@ Android Java toolkit for Auth0 API
 
 ---
 
-**Version 2.0.0 of this SDK is already available!**
+**Version 2.0.0 of this SDK is available!**
 
-Check out the [Quickstart article](https://auth0.com/docs/quickstart/native/android) or the [source code](https://github.com/auth0/Auth0.Android). Version v1 will continue to receive *Bug & Security fixes* until 11th May 2021. After that date, the only version supported will become v2.
+Check out the [Quickstart article](https://auth0.com/docs/quickstart/native/android) or the [source code](https://github.com/auth0/Auth0.Android). Version 1 will continue to receive Bug & Security fixes until 11th May 2021. After that date, only version 2 will be supported.
 
 ---
 
