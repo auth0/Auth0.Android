@@ -528,7 +528,43 @@ users
 
 > In all the cases, the `user ID` parameter is the unique identifier of the auth0 account instance. i.e. in `google-oauth2|123456789` it would be the part after the '|' pipe: `123456789`.
 
+### Organizations (Closed Beta)
 
+Organizations is a set of features that provide better support for developers who build and maintain SaaS and Business-to-Business (B2B) applications. 
+
+Using Organizations, you can:
+
+- Represent teams, business customers, partner companies, or any logical grouping of users that should have different ways of accessing your applications, as organizations.
+- Manage their membership in a variety of ways, including user invitation.
+- Configure branded, federated login flows for each organization.
+- Implement role-based access control, such that users can have different roles when authenticating in the context of different organizations.
+- Build administration capabilities into your products, using Organizations APIs, so that those businesses can manage their own organizations.
+
+Note that Organizations is currently only available to customers on our Enterprise and Startup subscription plans.
+
+#### Log in to an organization
+
+```kotlin
+WebAuthProvider.login(account)
+    .withOrganization(organizationId)
+    .start(this, callback)
+```
+
+#### Accept user invitations
+
+To accept organization invitations your app needs to support [Android App Links](https://developer.android.com/training/app-links). Tapping on the invitation link should open your app (invitations links are `https` only).
+
+When your app gets opened by an invitation link, grab the invitation URL from the received Intent (e.g. in `onCreate` or `onNewIntent`) and pass it to `.withInvitationUrl()`:
+
+```kotlin
+getIntent()?.data?.let {
+    WebAuthProvider.login(account)
+        .withInvitationUrl(invitationUrl)
+        .start(this, callback)
+}
+```
+
+If the URL doesn't contain the expected values, an error will be raised through the provided callback.
 
 ## Credentials Manager
 
