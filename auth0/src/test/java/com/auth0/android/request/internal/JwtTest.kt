@@ -76,6 +76,22 @@ public class JwtTest {
     // Public Claims
 
     @Test
+    public fun shouldGetOrganizationId() {
+        val jwt =
+            Jwt("eyJhbGciOiJIUzI1NiJ9.eyJvcmdfaWQiOiJ0cmF2ZWwwIn0.DRySUBRC0vqlRzsziKGmZgSIlLTY3MpxuTy83_zygos")
+        assertThat(jwt, `is`(notNullValue()))
+        assertThat(jwt.organizationId, `is`("travel0"))
+    }
+
+    @Test
+    public fun shouldGetNullOrganizationIdIfMissing() {
+        val jwt = Jwt("eyJhbGciOiJIUzI1NiJ9.e30.something")
+        assertThat(jwt, `is`(notNullValue()))
+
+        assertThat(jwt.organizationId, `is`(nullValue()))
+    }
+
+    @Test
     public fun shouldGetIssuer() {
         val jwt =
             Jwt("eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJKb2huIERvZSJ9.SgXosfRR_IwCgHq5lF3tlM-JHtpucWCRSaVuoHTbWbQ")

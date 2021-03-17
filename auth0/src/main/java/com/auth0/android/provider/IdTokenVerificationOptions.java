@@ -9,6 +9,7 @@ class IdTokenVerificationOptions {
     private final String issuer;
     private final String audience;
     private final SignatureVerifier verifier;
+    private String organization;
     private String nonce;
     private Integer maxAge;
     private Integer clockSkew;
@@ -34,6 +35,10 @@ class IdTokenVerificationOptions {
 
     void setClock(@Nullable Date now) {
         this.clock = now;
+    }
+
+    void setOrganization(@Nullable String organization) {
+        this.organization = organization;
     }
 
     @NonNull
@@ -69,5 +74,10 @@ class IdTokenVerificationOptions {
     @Nullable
     Date getClock() {
         return clock;
+    }
+
+    @Nullable
+    String getOrganization() {
+        return organization;
     }
 }

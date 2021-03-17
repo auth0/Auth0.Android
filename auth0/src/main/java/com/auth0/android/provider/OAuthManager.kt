@@ -166,9 +166,11 @@ internal class OAuthManager(
                     if (!TextUtils.isEmpty(maxAge)) {
                         options.maxAge = Integer.valueOf(maxAge!!)
                     }
+
                     options.clockSkew = idTokenVerificationLeeway
                     options.nonce = parameters[KEY_NONCE]
                     options.clock = Date(currentTimeInMillis)
+                    options.organization = parameters[KEY_ORGANIZATION]
                     try {
                         IdTokenVerifier().verify(decodedIdToken, options)
                         validationCallback.onSuccess(null)
@@ -263,6 +265,8 @@ internal class OAuthManager(
         const val KEY_NONCE = "nonce"
         const val KEY_MAX_AGE = "max_age"
         const val KEY_CONNECTION = "connection"
+        const val KEY_ORGANIZATION = "organization"
+        const val KEY_INVITATION = "invitation"
         const val KEY_SCOPE = "scope"
         const val RESPONSE_TYPE_CODE = "code"
         private const val DEFAULT_SCOPE = "openid profile email"

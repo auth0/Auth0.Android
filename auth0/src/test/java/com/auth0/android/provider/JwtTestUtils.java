@@ -27,6 +27,7 @@ class JwtTestUtils {
     static final String[] EXPECTED_AUDIENCE_ARRAY = new String[]{"__test_client_id__", "__test_other_client_id__"};
     static final String EXPECTED_AUDIENCE = "__test_client_id__";
     static final String EXPECTED_NONCE = "__test_nonce__";
+    static final String EXPECTED_ORGANIZATION = "__test_org_id__";
     static final Object EXPECTED_SUBJECT = "__test_subject__";
 
     private static final String RSA_PRIVATE_KEY = "src/test/resources/rsa_private.pem";

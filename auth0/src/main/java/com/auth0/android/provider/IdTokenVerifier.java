@@ -73,6 +73,16 @@ class IdTokenVerifier {
             }
         }
 
+        if (verifyOptions.getOrganization() != null) {
+            String orgClaim = token.getOrganizationId();
+            if (isEmpty(orgClaim)) {
+                throw new TokenValidationException("Organization Id (org_id) claim must be a string present in the ID token");
+            }
+            if (!verifyOptions.getOrganization().equals(orgClaim)) {
+                throw new TokenValidationException(String.format("Organization Id (org_id) claim mismatch in the ID token; expected \"%s\", found \"%s\"", verifyOptions.getOrganization(), orgClaim));
+            }
+        }
+
         if (audience.size() > 1) {
             String azpClaim = token.getAuthorizedParty();
             if (isEmpty(azpClaim)) {
