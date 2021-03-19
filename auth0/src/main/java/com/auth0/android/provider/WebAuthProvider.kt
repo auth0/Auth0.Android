@@ -289,9 +289,9 @@ public object WebAuthProvider {
         }
 
         /**
-         * Specify an organization id to join to.
+         * Specify the ID of an organization to join.
          *
-         * @param organization the id of the organization to join
+         * @param organization the ID of the organization to join
          * @return the current builder instance
          * @see withInvitationUrl
          */
