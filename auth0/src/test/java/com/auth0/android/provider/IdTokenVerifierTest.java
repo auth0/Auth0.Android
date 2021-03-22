@@ -16,6 +16,7 @@ import static com.auth0.android.provider.JwtTestUtils.EXPECTED_AUDIENCE;
 import static com.auth0.android.provider.JwtTestUtils.EXPECTED_AUDIENCE_ARRAY;
 import static com.auth0.android.provider.JwtTestUtils.EXPECTED_ISSUER;
 import static com.auth0.android.provider.JwtTestUtils.EXPECTED_NONCE;
+import static com.auth0.android.provider.JwtTestUtils.EXPECTED_ORGANIZATION;
 import static com.auth0.android.provider.JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS;
 import static com.auth0.android.provider.JwtTestUtils.createJWTBody;
 import static com.auth0.android.provider.JwtTestUtils.createTestJWT;
@@ -48,10 +49,12 @@ public class IdTokenVerifierTest {
         jwtBody.put("azp", EXPECTED_AUDIENCE);
         jwtBody.put("auth_time", authTime);
         jwtBody.put("nonce", EXPECTED_NONCE);
+        jwtBody.put("org_id", EXPECTED_ORGANIZATION);
 
         String token = createTestJWT("none", jwtBody);
         Jwt jwt = new Jwt(token);
         options.setNonce(EXPECTED_NONCE);
+        options.setOrganization(EXPECTED_ORGANIZATION);
         options.setMaxAge(60 * 2);
         idTokenVerifier.verify(jwt, options);
     }
@@ -184,6 +187,37 @@ public class IdTokenVerifierTest {
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
             options.setNonce(EXPECTED_NONCE);
+            idTokenVerifier.verify(jwt, options);
+        });
+    }
+
+    @Test
+    public void shouldNotFailWhenOrganizationIdClaimIsMissingButNotRequired() throws Exception {
+        Map<String, Object> jwtBody = createJWTBody("org_id");
+        String token = createTestJWT("none", jwtBody);
+        Jwt jwt = new Jwt(token);
+        idTokenVerifier.verify(jwt, options);
+    }
+
+    @Test
+    public void shouldFailWhenOrganizationIdClaimIsMissingAndRequired() {
+        Assert.assertThrows("Organization Id (org_id) claim must be a string present in the ID token", TokenValidationException.class, () -> {
+            Map<String, Object> jwtBody = createJWTBody("org_id");
+            String token = createTestJWT("none", jwtBody);
+            Jwt jwt = new Jwt(token);
+            options.setOrganization(EXPECTED_ORGANIZATION);
+            idTokenVerifier.verify(jwt, options);
+        });
+    }
+
+    @Test
+    public void shouldFailWhenOrganizationIdClaimIsRequiredAndHasUnexpectedValue() {
+        Assert.assertThrows("Organization Id (org_id) claim mismatch in the ID token; expected \"__test_org_id__\", found \"--invalid--\"", TokenValidationException.class, () -> {
+            Map<String, Object> jwtBody = createJWTBody();
+            jwtBody.put("org_id", "--invalid--");
+            String token = createTestJWT("none", jwtBody);
+            Jwt jwt = new Jwt(token);
+            options.setOrganization(EXPECTED_ORGANIZATION);
             idTokenVerifier.verify(jwt, options);
         });
     }

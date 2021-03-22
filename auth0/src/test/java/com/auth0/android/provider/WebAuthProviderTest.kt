@@ -650,6 +650,90 @@ public class WebAuthProviderTest {
         assertThat(random2, `is`("some"))
     }
 
+    // organizations
+
+    @Test
+    public fun shouldNotSetOrganizationByDefaultOnLogin() {
+        login(account)
+            .start(activity, callback)
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri =
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(uri, `is`(notNullValue()))
+        assertThat(uri, not(UriMatchers.hasParamWithName("organization")))
+    }
+
+    @Test
+    public fun shouldNotSetInvitationByDefaultOnLogin() {
+        login(account)
+            .start(activity, callback)
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri =
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(uri, `is`(notNullValue()))
+        assertThat(uri, not(UriMatchers.hasParamWithName("invitation")))
+    }
+
+    @Test
+    public fun shouldSetOrganizationOnLogin() {
+        login(account)
+            .withOrganization("travel0")
+            .start(activity, callback)
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri =
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(uri, `is`(notNullValue()))
+        assertThat(uri, UriMatchers.hasParamWithValue("organization", "travel0"))
+    }
+
+    @Test
+    public fun shouldSetOrganizationAndInvitationFromInvitationUrl() {
+        login(account)
+            .withInvitationUrl("https://tenant.auth0.com/login?organization=travel0&invitation=inv123")
+            .withOrganization("layer0") // this line will be ignored
+            .start(activity, callback)
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri =
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(uri, `is`(notNullValue()))
+        assertThat(uri, UriMatchers.hasParamWithValue("organization", "travel0"))
+        assertThat(uri, UriMatchers.hasParamWithValue("invitation", "inv123"))
+    }
+
+    @Test
+    public fun shouldFailWhenInvitationUrlDoesNotContainOrganization() {
+        login(account)
+            .withInvitationUrl("https://tenant.auth0.com/login?invitation=inv123")
+            .start(activity, callback)
+
+        verify(callback).onFailure(authExceptionCaptor.capture())
+        assertThat(
+            authExceptionCaptor.firstValue, `is`(notNullValue())
+        )
+        assertThat(authExceptionCaptor.firstValue.getCode(), `is`("a0.invalid_invitation_url"))
+        assertThat(
+            authExceptionCaptor.firstValue.getDescription(),
+            `is`("The invitation URL provided doesn't contain the 'organization' or 'invitation' values.")
+        )
+    }
+
+    @Test
+    public fun shouldFailWhenInvitationUrlDoesNotContainInvitation() {
+        login(account)
+            .withInvitationUrl("https://tenant.auth0.com/login?organization=travel0")
+            .start(activity, callback)
+
+        verify(callback).onFailure(authExceptionCaptor.capture())
+        assertThat(
+            authExceptionCaptor.firstValue, `is`(notNullValue())
+        )
+        assertThat(authExceptionCaptor.firstValue.getCode(), `is`("a0.invalid_invitation_url"))
+        assertThat(
+            authExceptionCaptor.firstValue.getDescription(),
+            `is`("The invitation URL provided doesn't contain the 'organization' or 'invitation' values.")
+        )
+    }
+
     // max_age
     @Test
     public fun shouldNotSetMaxAgeByDefaultOnLogin() {

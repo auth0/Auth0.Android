@@ -2,6 +2,7 @@ package com.auth0.android.provider
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
@@ -166,6 +167,7 @@ public object WebAuthProvider {
         private var issuer: String? = null
         private var scheme: String = "https"
         private var redirectUri: String? = null
+        private var invitationUrl: String? = null
         private var ctOptions: CustomTabsOptions = CustomTabsOptions.newBuilder().build()
         private var leeway: Int? = null
 
@@ -273,6 +275,32 @@ public object WebAuthProvider {
         }
 
         /**
+         * Specify an invitation URL to join an organization.
+         * When called in combination with WebAuthProvider#withOrganization, the invitation URL
+         * will take precedence.
+         *
+         * @param invitationUrl the organization invitation URL
+         * @return the current builder instance
+         * @see withOrganization
+         */
+        public fun withInvitationUrl(invitationUrl: String): Builder {
+            this.invitationUrl = invitationUrl
+            return this
+        }
+
+        /**
+         * Specify the ID of an organization to join.
+         *
+         * @param organization the ID of the organization to join
+         * @return the current builder instance
+         * @see withInvitationUrl
+         */
+        public fun withOrganization(organization: String): Builder {
+            values[OAuthManager.KEY_ORGANIZATION] = organization
+            return this
+        }
+
+        /**
          * Give a scope for this request. The default scope used is "openid profile email".
          * Regardless of the scopes passed, the "openid" scope is always enforced.
          *
@@ -375,6 +403,21 @@ public object WebAuthProvider {
                 )
                 callback.onFailure(ex)
                 return
+            }
+            invitationUrl?.let {
+                val url = Uri.parse(it)
+                val organizationId = url.getQueryParameter(OAuthManager.KEY_ORGANIZATION)
+                val invitationId = url.getQueryParameter(OAuthManager.KEY_INVITATION)
+                if (organizationId.isNullOrBlank() || invitationId.isNullOrBlank()) {
+                    val ex = AuthenticationException(
+                        "a0.invalid_invitation_url",
+                        "The invitation URL provided doesn't contain the 'organization' or 'invitation' values."
+                    )
+                    callback.onFailure(ex)
+                    return
+                }
+                values[OAuthManager.KEY_ORGANIZATION] = organizationId
+                values[OAuthManager.KEY_INVITATION] = invitationId
             }
             val manager = OAuthManager(account, callback, values, ctOptions)
             manager.setHeaders(headers)
