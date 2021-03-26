@@ -27,6 +27,8 @@ allprojects {
             content {
                 // https://youtrack.jetbrains.com/issue/KT-44730
                 includeModule("org.jetbrains.trove4j", "trove4j")
+                includeModule("com.soywiz.korlibs.korte", "korte-jvm")
+                includeModule("org.jetbrains.kotlinx", "kotlinx-html-jvm")
             }
         }
     }
