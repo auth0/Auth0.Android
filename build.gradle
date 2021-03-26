@@ -23,5 +23,11 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        jcenter() {
+            content {
+                // https://youtrack.jetbrains.com/issue/KT-44730
+                includeModule("org.jetbrains.trove4j", "trove4j")
+            }
+        }
     }
 }
