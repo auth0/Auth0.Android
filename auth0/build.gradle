@@ -24,7 +24,7 @@
 
 plugins {
     id 'kotlin-android'
-    id "com.auth0.gradle.oss-library.android" version "0.13.0"
+    id "com.auth0.gradle.oss-library.android" version "0.15.1"
     id "org.jetbrains.dokka" version "1.4.20"
 }
 
@@ -109,7 +109,7 @@ dependencies {
     implementation "com.squareup.okhttp3:logging-interceptor:$okhttpVersion"
     implementation 'com.google.code.gson:gson:2.8.6'
 
-    testImplementation 'junit:junit:4.13.1'
+    testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.hamcrest:java-hamcrest:2.0.0.0'
     testImplementation "org.powermock:powermock-module-junit4:$powermockVersion"
     testImplementation "org.powermock:powermock-module-junit4-rule:$powermockVersion"
