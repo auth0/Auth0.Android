@@ -1,5 +1,17 @@
 # Change Log
 
+## [2.1.0](https://github.com/auth0/Auth0.Android/tree/2.1.0) (2021-03-26)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.0.0...2.1.0)
+
+**Added**
+- Add support for Organizations [SDK-2396] [\#467](https://github.com/auth0/Auth0.Android/pull/467) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Changed**
+- Migrate to newer OSS Plugin with support for Sonatype [\#469](https://github.com/auth0/Auth0.Android/pull/469) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Fixed**
+- Add Java's R8 Proguard rules for Gson [\#465](https://github.com/auth0/Auth0.Android/pull/465) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [2.0.0](https://github.com/auth0/Auth0.Android/tree/2.0.0) (2021-02-10)
 
 **This is a major release and contains breaking changes!** 
