@@ -603,6 +603,8 @@ authentication
     })
 ```
 
+**Note:** This method is not thread-safe. Attempting to save credentials multiple times in a short period or from different threads can cause issues like invalidating valid stored tokens.  
+
 3. **Check credentials existence:**
 There are cases were you just want to check if a user session is still valid (i.e. to know if you should present the login screen or the main screen). For convenience, we include a `hasValidCredentials` method that can let you know in advance if a non-expired token is available without making an additional network call. The same rules of the `getCredentials` method apply:
 
@@ -612,8 +614,6 @@ val authenticated = manager.hasValidCredentials()
 
 4. **Retrieve credentials:**
 Existing credentials will be returned if they are still valid, otherwise the `refresh_token` will be used to attempt to renew them. If the `expires_in` or both the `access_token` and `id_token` values are missing, the method will throw a `CredentialsManagerException`. The same will happen if the credentials have expired and there's no `refresh_token` available.
-
-> This method is not thread-safe, so if you're using _Refresh Token Rotation_ you should avoid calling this method concurrently (might result in more than one renew request being fired, and only the first one will succeed).
 
 ```kotlin
 manager.getCredentials(object : Callback<Credentials, CredentialsManagerException> {
@@ -626,6 +626,8 @@ manager.getCredentials(object : Callback<Credentials, CredentialsManagerExceptio
    }
 })
 ```
+
+**Note:** This method is not thread-safe. In the scenario where the stored credentials have expired and a `refresh_token` is available, the newly obtained tokens are automatically saved for you by the Credentials Manager. If you're using _Refresh Token Rotation_ you should avoid calling this method concurrently as it might result in more than one renew request being fired, and only the first one succeeding. 
 
 
 5. **Clear credentials:**
