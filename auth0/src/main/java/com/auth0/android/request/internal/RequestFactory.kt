@@ -79,7 +79,14 @@ internal class RequestFactory<U : Auth0Exception> internal constructor(
         errorAdapter: ErrorAdapter<U>
     ): Request<T, U> {
         val request =
-            createRequest(method, url, client, resultAdapter, errorAdapter, DefaultThreadSwitcher)
+            createRequest(
+                method,
+                url,
+                client,
+                resultAdapter,
+                errorAdapter,
+                CommonThreadSwitcher.getInstance()
+            )
         baseHeaders.map { request.addHeader(it.key, it.value) }
         return request
     }
