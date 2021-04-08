@@ -528,9 +528,9 @@ users
 
 > In all the cases, the `user ID` parameter is the unique identifier of the auth0 account instance. i.e. in `google-oauth2|123456789` it would be the part after the '|' pipe: `123456789`.
 
-### Organizations (Closed Beta)
+### Organizations
 
-Organizations is a set of features that provide better support for developers who build and maintain SaaS and Business-to-Business (B2B) applications. 
+[Organizations](https://auth0.com/docs/organizations) is a set of features that provide better support for developers who build and maintain SaaS and Business-to-Business (B2B) applications. 
 
 Using Organizations, you can:
 
