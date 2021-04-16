@@ -160,7 +160,7 @@ public class AuthenticationAPIClientTest {
                 defaultLocale
             )
         )
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(request.path, Matchers.equalTo("/oauth/token"))
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(
@@ -188,7 +188,7 @@ public class AuthenticationAPIClientTest {
                 defaultLocale
             )
         )
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("realm", MY_CONNECTION))
         assertThat(
             body,
@@ -218,7 +218,7 @@ public class AuthenticationAPIClientTest {
                 defaultLocale
             )
         )
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(request.path, Matchers.equalTo("/oauth/token"))
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(
@@ -252,7 +252,7 @@ public class AuthenticationAPIClientTest {
                 defaultLocale
             )
         )
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("grant_type", "password"))
         assertThat(body, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
@@ -277,7 +277,7 @@ public class AuthenticationAPIClientTest {
                 defaultLocale
             )
         )
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("grant_type", "password"))
         assertThat(body, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
@@ -347,7 +347,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/oauth/token"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(
             body,
@@ -376,7 +376,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/oauth/token"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(
             body,
@@ -404,7 +404,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/oauth/token"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(
             body,
             Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP)
@@ -436,7 +436,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/oauth/token"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(
             body,
             Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP)
@@ -467,7 +467,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/oauth/token"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(
             body,
             Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP)
@@ -495,7 +495,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/oauth/token"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(
             body,
             Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP)
@@ -527,7 +527,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/oauth/token"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(
             body,
             Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP)
@@ -559,7 +559,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/oauth/token"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(
             body,
             Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP)
@@ -572,7 +572,58 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public fun shouldCreateUser() {
+    public fun shouldCreateUserWithUserMetadata() {
+        mockAPI.willReturnSuccessfulSignUp()
+        val callback = MockAuthenticationCallback<DatabaseUser>()
+        val testMetadata = mapOf("country" to "argentina", "age" to "23")
+        client.createUser(SUPPORT_AUTH0_COM, PASSWORD, SUPPORT, MY_CONNECTION, testMetadata)
+            .start(callback)
+        ShadowLooper.idleMainLooper()
+        val request = mockAPI.takeRequest()
+        assertThat(
+            request.getHeader("Accept-Language"), Matchers.`is`(
+                defaultLocale
+            )
+        )
+        assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
+        val body = bodyFromRequest<Any>(request)
+        assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
+        assertThat(body, Matchers.hasEntry("username", SUPPORT))
+        assertThat(body, Matchers.hasEntry("password", PASSWORD))
+        assertThat(body, Matchers.hasEntry("connection", MY_CONNECTION))
+        assertThat(body, Matchers.hasEntry("user_metadata", testMetadata))
+        assertThat(
+            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
+                DatabaseUser::class.java
+            )
+        )
+    }
+
+    @Test
+    public fun shouldCreateUserWithUserMetadataSync() {
+        mockAPI.willReturnSuccessfulSignUp()
+        val testMetadata = mapOf("country" to "argentina", "age" to "23")
+        val user = client
+            .createUser(SUPPORT_AUTH0_COM, PASSWORD, SUPPORT, MY_CONNECTION, testMetadata)
+            .execute()
+        val request = mockAPI.takeRequest()
+        assertThat(
+            request.getHeader("Accept-Language"), Matchers.`is`(
+                defaultLocale
+            )
+        )
+        assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
+        assertThat(body, Matchers.hasEntry("username", SUPPORT))
+        assertThat(body, Matchers.hasEntry("password", PASSWORD))
+        assertThat(body, Matchers.hasEntry("connection", MY_CONNECTION))
+        assertThat(body, Matchers.hasEntry("user_metadata", testMetadata))
+        assertThat(user, Matchers.`is`(Matchers.notNullValue()))
+    }
+
+    @Test
+    public fun shouldCreateUserWithUsername() {
         mockAPI.willReturnSuccessfulSignUp()
         val callback = MockAuthenticationCallback<DatabaseUser>()
         client.createUser(SUPPORT_AUTH0_COM, PASSWORD, SUPPORT, MY_CONNECTION)
@@ -585,7 +636,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("username", SUPPORT))
         assertThat(body, Matchers.hasEntry("password", PASSWORD))
@@ -598,7 +649,7 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public fun shouldCreateUserSync() {
+    public fun shouldCreateUserWithUsernameSync() {
         mockAPI.willReturnSuccessfulSignUp()
         val user = client
             .createUser(SUPPORT_AUTH0_COM, PASSWORD, SUPPORT, MY_CONNECTION)
@@ -610,7 +661,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("username", SUPPORT))
         assertThat(body, Matchers.hasEntry("password", PASSWORD))
@@ -632,7 +683,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
         assertThat(body, Matchers.hasEntry("password", PASSWORD))
@@ -657,7 +708,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
         assertThat(body, Matchers.hasEntry("password", PASSWORD))
@@ -679,7 +730,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
         assertThat(body, Matchers.hasEntry("password", PASSWORD))
@@ -703,7 +754,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
         assertThat(body, Matchers.hasEntry("password", PASSWORD))
@@ -728,7 +779,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("username", SUPPORT))
         assertThat(body, Matchers.hasEntry("password", PASSWORD))
@@ -740,7 +791,7 @@ public class AuthenticationAPIClientTest {
         )
         val loginRequest = mockAPI.takeRequest()
         assertThat(loginRequest.path, Matchers.equalTo("/oauth/token"))
-        val loginBody = bodyFromRequest(loginRequest)
+        val loginBody = bodyFromRequest<String>(loginRequest)
         assertThat(loginBody, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
         assertThat(loginBody, Matchers.hasEntry("password", PASSWORD))
         assertThat(loginBody, Matchers.hasEntry("realm", MY_CONNECTION))
@@ -769,7 +820,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("username", SUPPORT))
         assertThat(body, Matchers.hasEntry("password", PASSWORD))
@@ -782,6 +833,43 @@ public class AuthenticationAPIClientTest {
                 Credentials::class.java
             )
         )
+    }
+
+    @Test
+    public fun shouldSignUpUserWithUserMetadata() {
+        mockAPI.willReturnSuccessfulSignUp()
+            .willReturnSuccessfulLogin()
+            .willReturnUserInfo()
+        val testMetadata = mapOf("country" to "argentina", "age" to "23")
+        val credentials = client
+            .signUp(SUPPORT_AUTH0_COM, PASSWORD, SUPPORT, MY_CONNECTION, testMetadata)
+            .execute()
+        val request = mockAPI.takeRequest()
+        assertThat(
+            request.getHeader("Accept-Language"), Matchers.`is`(
+                defaultLocale
+            )
+        )
+        assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
+        assertThat(body, Matchers.hasEntry("username", SUPPORT))
+        assertThat(body, Matchers.hasEntry("password", PASSWORD))
+        assertThat(body, Matchers.hasEntry("connection", MY_CONNECTION))
+        assertThat(body, Matchers.hasEntry("user_metadata", testMetadata))
+        assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
+        val loginRequest = mockAPI.takeRequest()
+        assertThat(loginRequest.path, Matchers.equalTo("/oauth/token"))
+        val loginBody = bodyFromRequest<String>(loginRequest)
+        assertThat(loginBody, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
+        assertThat(loginBody, Matchers.hasEntry("password", PASSWORD))
+        assertThat(loginBody, Matchers.hasEntry("realm", MY_CONNECTION))
+        assertThat(loginBody, Matchers.hasEntry("scope", "openid profile email"))
+        assertThat(
+            loginBody,
+            Matchers.hasEntry("grant_type", "http://auth0.com/oauth/grant-type/password-realm")
+        )
+        assertThat(loginBody, Matchers.hasEntry("client_id", CLIENT_ID))
     }
 
     @Test
@@ -799,7 +887,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("username", SUPPORT))
         assertThat(body, Matchers.hasEntry("password", PASSWORD))
@@ -807,7 +895,7 @@ public class AuthenticationAPIClientTest {
         assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
         val loginRequest = mockAPI.takeRequest()
         assertThat(loginRequest.path, Matchers.equalTo("/oauth/token"))
-        val loginBody = bodyFromRequest(loginRequest)
+        val loginBody = bodyFromRequest<String>(loginRequest)
         assertThat(loginBody, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
         assertThat(loginBody, Matchers.hasEntry("password", PASSWORD))
         assertThat(loginBody, Matchers.hasEntry("realm", MY_CONNECTION))
@@ -835,7 +923,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("password", PASSWORD))
         assertThat(body, Matchers.hasEntry("connection", MY_CONNECTION))
@@ -846,7 +934,7 @@ public class AuthenticationAPIClientTest {
         )
         val loginRequest = mockAPI.takeRequest()
         assertThat(loginRequest.path, Matchers.equalTo("/oauth/token"))
-        val loginBody = bodyFromRequest(loginRequest)
+        val loginBody = bodyFromRequest<String>(loginRequest)
         assertThat(loginBody, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
         assertThat(loginBody, Matchers.hasEntry("password", PASSWORD))
         assertThat(loginBody, Matchers.hasEntry("realm", MY_CONNECTION))
@@ -876,7 +964,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
         assertThat(body, Matchers.hasEntry("password", PASSWORD))
@@ -888,7 +976,7 @@ public class AuthenticationAPIClientTest {
         )
         val loginRequest = mockAPI.takeRequest()
         assertThat(loginRequest.path, Matchers.equalTo("/oauth/token"))
-        val loginBody = bodyFromRequest(loginRequest)
+        val loginBody = bodyFromRequest<String>(loginRequest)
         assertThat(loginBody, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
         assertThat(loginBody, Matchers.hasEntry("password", PASSWORD))
         assertThat(loginBody, Matchers.hasEntry("realm", MY_CONNECTION))
@@ -910,7 +998,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/dbconnections/change_password"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
         assertThat(body, Matchers.hasEntry("connection", MY_CONNECTION))
@@ -929,7 +1017,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/dbconnections/change_password"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
         assertThat(body, Matchers.hasEntry("connection", MY_CONNECTION))
@@ -949,7 +1037,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/dbconnections/change_password"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
         assertThat(body, Matchers.not(Matchers.hasKey("password")))
@@ -969,7 +1057,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/dbconnections/change_password"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
         assertThat(body, Matchers.not(Matchers.hasKey("password")))
@@ -990,7 +1078,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/passwordless/start"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("send", "code"))
@@ -1012,7 +1100,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/passwordless/start"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("send", "code"))
@@ -1032,7 +1120,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/passwordless/start"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("send", "code"))
@@ -1053,7 +1141,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/passwordless/start"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("send", "link"))
@@ -1075,7 +1163,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/passwordless/start"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("send", "link"))
@@ -1095,7 +1183,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/passwordless/start"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("send", "link"))
@@ -1120,7 +1208,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/passwordless/start"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("send", "link_android"))
@@ -1142,7 +1230,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/passwordless/start"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("send", "link_android"))
@@ -1162,7 +1250,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/passwordless/start"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("send", "link_android"))
@@ -1183,7 +1271,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/passwordless/start"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("phone_number", "+1123123123"))
         assertThat(body, Matchers.hasEntry("send", "code"))
@@ -1205,7 +1293,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/passwordless/start"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("phone_number", "+1123123123"))
         assertThat(body, Matchers.hasEntry("send", "code"))
@@ -1225,7 +1313,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/passwordless/start"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("phone_number", "+1123123123"))
         assertThat(body, Matchers.hasEntry("send", "code"))
@@ -1246,7 +1334,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/passwordless/start"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("phone_number", "+1123123123"))
         assertThat(body, Matchers.hasEntry("send", "link"))
@@ -1268,7 +1356,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/passwordless/start"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("phone_number", "+1123123123"))
         assertThat(body, Matchers.hasEntry("send", "link"))
@@ -1288,7 +1376,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/passwordless/start"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("phone_number", "+1123123123"))
         assertThat(body, Matchers.hasEntry("send", "link"))
@@ -1309,7 +1397,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/passwordless/start"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("phone_number", "+1123123123"))
         assertThat(body, Matchers.hasEntry("send", "link_android"))
@@ -1331,7 +1419,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/passwordless/start"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("phone_number", "+1123123123"))
         assertThat(body, Matchers.hasEntry("send", "link_android"))
@@ -1351,7 +1439,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/passwordless/start"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("phone_number", "+1123123123"))
         assertThat(body, Matchers.hasEntry("send", "link_android"))
@@ -1401,7 +1489,7 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val firstRequest = mockAPI.takeRequest()
         assertThat(firstRequest.path, Matchers.equalTo("/oauth/token"))
-        val body = bodyFromRequest(firstRequest)
+        val body = bodyFromRequest<String>(firstRequest)
         assertThat(body, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("password", "voidpassword"))
         assertThat(body, Matchers.hasEntry("realm", MY_CONNECTION))
@@ -1439,7 +1527,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/oauth/revoke"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("token", "refreshToken"))
         assertThat(callback, AuthenticationCallbackMatcher.hasNoError())
@@ -1459,7 +1547,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/oauth/revoke"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("token", "refreshToken"))
     }
@@ -1480,7 +1568,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/oauth/token"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.not(Matchers.hasKey("scope")))
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
@@ -1506,7 +1594,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/oauth/token"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
         assertThat(body, Matchers.hasEntry("grant_type", "refresh_token"))
@@ -1529,7 +1617,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/oauth/token"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
         assertThat(body, Matchers.hasEntry("grant_type", "refresh_token"))
@@ -1551,7 +1639,7 @@ public class AuthenticationAPIClientTest {
             .execute()
         val firstRequest = mockAPI.takeRequest()
         assertThat(firstRequest.path, Matchers.equalTo("/oauth/token"))
-        val body = bodyFromRequest(firstRequest)
+        val body = bodyFromRequest<String>(firstRequest)
         assertThat(body, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("password", "voidpassword"))
         assertThat(body, Matchers.hasEntry("realm", MY_CONNECTION))
@@ -1579,7 +1667,7 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(request.path, Matchers.equalTo("/oauth/token"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(
             body,
             Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_AUTHORIZATION_CODE)
@@ -1604,7 +1692,7 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(request.path, Matchers.equalTo("/oauth/token"))
-        val body = bodyFromRequest(request)
+        val body = bodyFromRequest<String>(request)
         assertThat(
             body,
             Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_AUTHORIZATION_CODE)
@@ -1624,8 +1712,8 @@ public class AuthenticationAPIClientTest {
         )
     }
 
-    private fun bodyFromRequest(request: RecordedRequest): Map<String, String> {
-        val mapType = object : TypeToken<Map<String?, String?>?>() {}.type
+    private fun <T> bodyFromRequest(request: RecordedRequest): Map<String, T> {
+        val mapType = object : TypeToken<Map<String?, T>?>() {}.type
         return gson.fromJson(request.body.readUtf8(), mapType)
     }
 
