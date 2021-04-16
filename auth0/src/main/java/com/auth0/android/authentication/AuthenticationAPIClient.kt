@@ -4,12 +4,9 @@ import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.request.*
-import com.auth0.android.request.internal.BaseAuthenticationRequest
-import com.auth0.android.request.internal.GsonAdapter
+import com.auth0.android.request.internal.*
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMap
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMapOf
-import com.auth0.android.request.internal.GsonProvider
-import com.auth0.android.request.internal.RequestFactory
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
 import com.auth0.android.result.UserProfile
@@ -285,6 +282,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param password   of the user and must be non null
      * @param username   of the user and must be non null
      * @param connection of the database to create the user on
+     * @param userMetadata to set upon creation of the user
      * @return a request to start
      */
     @JvmOverloads
@@ -292,7 +290,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         email: String,
         password: String,
         username: String? = null,
-        connection: String
+        connection: String,
+        userMetadata: Map<String, String>? = null
     ): Request<DatabaseUser, AuthenticationException> {
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(DB_CONNECTIONS_PATH)
@@ -308,8 +307,10 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         val databaseUserAdapter: JsonAdapter<DatabaseUser> = GsonAdapter(
             DatabaseUser::class.java, gson
         )
-        return factory.post(url.toString(), databaseUserAdapter)
-            .addParameters(parameters)
+        val post = factory.post(url.toString(), databaseUserAdapter)
+            .addParameters(parameters) as BaseRequest<DatabaseUser, AuthenticationException>
+        userMetadata?.let { post.addParameter(USER_METADATA_KEY, userMetadata) }
+        return post
     }
 
     /**
@@ -331,6 +332,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param password   of the user and must be non null
      * @param username   of the user and must be non null
      * @param connection of the database to sign up with
+     * @param userMetadata to set upon creation of the user
      * @return a request to configure and start that will yield [Credentials]
      */
     @JvmOverloads
@@ -338,9 +340,10 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         email: String,
         password: String,
         username: String? = null,
-        connection: String
+        connection: String,
+        userMetadata: Map<String, String>? = null
     ): SignUpRequest {
-        val createUserRequest = createUser(email, password, username, connection)
+        val createUserRequest = createUser(email, password, username, connection, userMetadata)
         val authenticationRequest = login(email, password, connection)
         return SignUpRequest(createUserRequest, authenticationRequest)
     }
@@ -646,6 +649,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val ONE_TIME_PASSWORD_KEY = "otp"
         private const val SUBJECT_TOKEN_KEY = "subject_token"
         private const val SUBJECT_TOKEN_TYPE_KEY = "subject_token_type"
+        private const val USER_METADATA_KEY = "user_metadata"
         private const val SIGN_UP_PATH = "signup"
         private const val DB_CONNECTIONS_PATH = "dbconnections"
         private const val CHANGE_PASSWORD_PATH = "change_password"
