@@ -1,5 +1,14 @@
 # Change Log
 
+## [2.2.0](https://github.com/auth0/Auth0.Android/tree/2.2.0) (2021-04-21)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.1.0...2.2.0)
+
+**Added**
+- Accept UserMetadata for creating users [SDK-2429] [\#475](https://github.com/auth0/Auth0.Android/pull/475) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Fixed**
+- Let dokka plugin pull dependencies from JCenter [\#471](https://github.com/auth0/Auth0.Android/pull/471) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [2.1.0](https://github.com/auth0/Auth0.Android/tree/2.1.0) (2021-03-26)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.0.0...2.1.0)
 
