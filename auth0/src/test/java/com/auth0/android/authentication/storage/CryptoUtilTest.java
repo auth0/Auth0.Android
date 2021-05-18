@@ -101,6 +101,7 @@ public class CryptoUtilTest {
     private static final String APP_PACKAGE_NAME = "com.mycompany.myapp";
     private static final String BASE_ALIAS = "keyName";
     private static final String KEY_ALIAS = APP_PACKAGE_NAME + "." + BASE_ALIAS;
+    private static final String OLD_KEY_ALIAS = BASE_ALIAS;
     private Context context;
 
     //Android KeyStore not accessible using Robolectric
@@ -445,6 +446,36 @@ public class CryptoUtilTest {
         PowerMockito.when(keyStore.containsAlias(KEY_ALIAS)).thenReturn(true);
         PowerMockito.when(keyStore.getKey(KEY_ALIAS, null)).thenReturn(privateKey);
         PowerMockito.when(keyStore.getCertificate(KEY_ALIAS)).thenReturn(certificate);
+        PowerMockito.whenNew(KeyStore.PrivateKeyEntry.class).withAnyArguments().thenReturn(entry);
+
+        KeyStore.PrivateKeyEntry rsaEntry = cryptoUtil.getRSAKeyEntry();
+        PowerMockito.verifyNew(KeyStore.PrivateKeyEntry.class).withArguments(varargsCaptor.capture());
+        assertThat(rsaEntry, is(notNullValue()));
+        assertThat(rsaEntry, is(entry));
+        assertThat(varargsCaptor.getAllValues(), is(notNullValue()));
+        PrivateKey capturedPrivateKey = (PrivateKey) varargsCaptor.getAllValues().get(0);
+        Certificate[] capturedCertificatesArray = (Certificate[]) varargsCaptor.getAllValues().get(1);
+        assertThat(capturedPrivateKey, is(privateKey));
+        assertThat(capturedCertificatesArray[0], is(certificate));
+        assertThat(capturedCertificatesArray.length, is(1));
+    }
+
+    @Test
+    @Config(sdk = 28)
+    public void shouldUseExistingPrivateKeyForOldKeyAlias() throws Exception {
+        ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", 28);
+        KeyStore.PrivateKeyEntry entry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
+        PrivateKey privateKey = PowerMockito.mock(PrivateKey.class);
+        Certificate certificate = PowerMockito.mock(Certificate.class);
+
+        KeyGenParameterSpec.Builder builder = PowerMockito.mock(KeyGenParameterSpec.Builder.class);
+        PowerMockito.when(builder.setKeySize(anyInt())).thenReturn(builder);
+        PowerMockito.when(builder.setCertificateSubject(any(X500Principal.class))).thenReturn(builder);
+
+        ArgumentCaptor<Object> varargsCaptor = ArgumentCaptor.forClass(Object.class);
+        PowerMockito.when(keyStore.containsAlias(OLD_KEY_ALIAS)).thenReturn(true);
+        PowerMockito.when(keyStore.getKey(OLD_KEY_ALIAS, null)).thenReturn(privateKey);
+        PowerMockito.when(keyStore.getCertificate(OLD_KEY_ALIAS)).thenReturn(certificate);
         PowerMockito.whenNew(KeyStore.PrivateKeyEntry.class).withAnyArguments().thenReturn(entry);
 
         KeyStore.PrivateKeyEntry rsaEntry = cryptoUtil.getRSAKeyEntry();
@@ -1140,6 +1171,7 @@ public class CryptoUtilTest {
             PowerMockito.mockStatic(Cipher.class);
             PowerMockito.when(Cipher.getInstance(AES_TRANSFORMATION)).thenReturn(aesCipher);
             PowerMockito.when(storage.retrieveString(KEY_ALIAS + "_iv")).thenReturn("");
+            PowerMockito.when(storage.retrieveString(BASE_ALIAS + "_iv")).thenReturn("");
 
             cryptoUtil.decrypt(new byte[0]);
         });

@@ -125,7 +125,6 @@ public class SecureCredentialsManagerTest {
         verify(storage)
             .store("com.auth0.credentials_access_token_expires_at", sharedExpirationTime)
         verify(storage).store("com.auth0.credentials_can_refresh", true)
-        verify(storage).store("com.auth0.manager_key_alias", KEY_ALIAS)
         verifyNoMoreInteractions(storage)
         val encodedJson = stringCaptor.firstValue
         MatcherAssert.assertThat(encodedJson, Is.`is`(Matchers.notNullValue()))
@@ -161,7 +160,6 @@ public class SecureCredentialsManagerTest {
         verify(storage)
             .store("com.auth0.credentials_access_token_expires_at", accessTokenExpirationTime)
         verify(storage).store("com.auth0.credentials_can_refresh", true)
-        verify(storage).store("com.auth0.manager_key_alias", KEY_ALIAS)
         verifyNoMoreInteractions(storage)
         val encodedJson = stringCaptor.firstValue
         MatcherAssert.assertThat(encodedJson, Is.`is`(Matchers.notNullValue()))
@@ -201,7 +199,6 @@ public class SecureCredentialsManagerTest {
         verify(storage)
             .store("com.auth0.credentials_access_token_expires_at", accessTokenExpirationTime)
         verify(storage).store("com.auth0.credentials_can_refresh", true)
-        verify(storage).store("com.auth0.manager_key_alias", KEY_ALIAS)
         verifyNoMoreInteractions(storage)
         val encodedJson = stringCaptor.firstValue
         MatcherAssert.assertThat(encodedJson, Is.`is`(Matchers.notNullValue()))
@@ -234,7 +231,6 @@ public class SecureCredentialsManagerTest {
         verify(storage)
             .store("com.auth0.credentials_access_token_expires_at", expirationTime)
         verify(storage).store("com.auth0.credentials_can_refresh", false)
-        verify(storage).store("com.auth0.manager_key_alias", KEY_ALIAS)
         verifyNoMoreInteractions(storage)
         val encodedJson = stringCaptor.firstValue
         MatcherAssert.assertThat(encodedJson, Is.`is`(Matchers.notNullValue()))
@@ -994,7 +990,6 @@ public class SecureCredentialsManagerTest {
         verify(storage).remove("com.auth0.credentials_expires_at")
         verify(storage).remove("com.auth0.credentials_access_token_expires_at")
         verify(storage).remove("com.auth0.credentials_can_refresh")
-        verify(storage).remove("com.auth0.manager_key_alias")
         verifyNoMoreInteractions(storage)
     }
 
@@ -1012,7 +1007,6 @@ public class SecureCredentialsManagerTest {
             .thenReturn(false)
         Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
             .thenReturn("{\"id_token\":\"idToken\"}")
-        Mockito.`when`(storage.retrieveString("com.auth0.manager_key_alias")).thenReturn(KEY_ALIAS)
         MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(true))
         Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
             .thenReturn("{\"access_token\":\"accessToken\"}")
@@ -1028,7 +1022,6 @@ public class SecureCredentialsManagerTest {
             .thenReturn(false)
         Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
             .thenReturn("{\"id_token\":\"idToken\"}")
-        Mockito.`when`(storage.retrieveString("com.auth0.manager_key_alias")).thenReturn(KEY_ALIAS)
         MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(true))
         MatcherAssert.assertThat(manager.hasValidCredentials(ONE_HOUR_SECONDS - 1), Is.`is`(true))
         Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
@@ -1046,7 +1039,6 @@ public class SecureCredentialsManagerTest {
             .thenReturn(false)
         Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
             .thenReturn("{\"id_token\":\"idToken\"}")
-        Mockito.`when`(storage.retrieveString("com.auth0.manager_key_alias")).thenReturn(KEY_ALIAS)
         MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(false))
         Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
             .thenReturn("{\"access_token\":\"accessToken\"}")
@@ -1062,7 +1054,6 @@ public class SecureCredentialsManagerTest {
             .thenReturn(true)
         Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
             .thenReturn("{\"id_token\":\"idToken\", \"refresh_token\":\"refreshToken\"}")
-        Mockito.`when`(storage.retrieveString("com.auth0.manager_key_alias")).thenReturn(KEY_ALIAS)
         MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(true))
         Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
             .thenReturn("{\"access_token\":\"accessToken\", \"refresh_token\":\"refreshToken\"}")
@@ -1073,12 +1064,11 @@ public class SecureCredentialsManagerTest {
     public fun shouldNotHaveCredentialsWhenAccessTokenAndIdTokenAreMissing() {
         Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
             .thenReturn("{\"token_type\":\"type\", \"refresh_token\":\"refreshToken\"}")
-        Mockito.`when`(storage.retrieveString("com.auth0.manager_key_alias")).thenReturn(KEY_ALIAS)
         Assert.assertFalse(manager.hasValidCredentials())
     }
 
     @Test
-    public fun shouldNotHaveCredentialsWhenTheAliasUsedHasNotBeenMigratedYet() {
+    public fun shouldHaveCredentialsWhenTheAliasUsedHasNotBeenMigratedYet() {
         val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
         Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
             .thenReturn(expirationTime)
@@ -1086,16 +1076,14 @@ public class SecureCredentialsManagerTest {
             .thenReturn(false)
         Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
             .thenReturn("{\"id_token\":\"idToken\"}")
-        Mockito.`when`(storage.retrieveString("com.auth0.manager_key_alias"))
-            .thenReturn("old_alias")
-        MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(false))
+        MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(true))
         Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
             .thenReturn("{\"access_token\":\"accessToken\"}")
-        MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(false))
+        MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(true))
     }
 
     @Test
-    public fun shouldNotHaveCredentialsWhenTheAliasUsedHasNotBeenSetYet() {
+    public fun shouldHaveCredentialsWhenTheAliasUsedHasNotBeenSetYet() {
         val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
         Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
             .thenReturn(expirationTime)
@@ -1103,11 +1091,10 @@ public class SecureCredentialsManagerTest {
             .thenReturn(false)
         Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
             .thenReturn("{\"id_token\":\"idToken\"}")
-        Mockito.`when`(storage.retrieveString("com.auth0.manager_key_alias")).thenReturn(null)
-        MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(false))
+        MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(true))
         Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
             .thenReturn("{\"access_token\":\"accessToken\"}")
-        MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(false))
+        MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(true))
     }
 
     /*
@@ -1381,7 +1368,6 @@ public class SecureCredentialsManagerTest {
             .thenReturn(false)
         Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
             .thenReturn("{\"access_token\":\"accessToken\"}")
-        Mockito.`when`(storage.retrieveString("com.auth0.manager_key_alias")).thenReturn(KEY_ALIAS)
         MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(false))
 
         //now, update the clock and retry
@@ -1423,7 +1409,6 @@ public class SecureCredentialsManagerTest {
         )
         Mockito.`when`(storage.retrieveBoolean("com.auth0.credentials_can_refresh"))
             .thenReturn(hasRefreshToken)
-        Mockito.`when`(storage.retrieveString("com.auth0.manager_key_alias")).thenReturn(KEY_ALIAS)
         return storedJson
     }
 
