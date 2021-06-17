@@ -178,7 +178,7 @@ public class BaseRequestTest {
 
     @Test
     @Throws(Exception::class)
-    public fun shouldBuildErrorFromResponseException() {
+    public fun shouldBuildErrorFromResponseParseException() {
         mockSuccessfulServerResponse()
         val resultAdapter = Mockito.mock(GsonAdapter::class.java) as JsonAdapter<SimplePojo>
         val baseRequest = BaseRequest(
