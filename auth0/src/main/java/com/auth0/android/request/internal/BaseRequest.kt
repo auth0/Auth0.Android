@@ -20,7 +20,7 @@ internal open class BaseRequest<T, U : Auth0Exception>(
     private val client: NetworkingClient,
     private val resultAdapter: JsonAdapter<T>,
     private val errorAdapter: ErrorAdapter<U>,
-    private val threadSwitcher: ThreadSwitcher = DefaultThreadSwitcher
+    private val threadSwitcher: ThreadSwitcher = CommonThreadSwitcher.getInstance()
 ) : Request<T, U> {
 
     private val options: RequestOptions = RequestOptions(method)
