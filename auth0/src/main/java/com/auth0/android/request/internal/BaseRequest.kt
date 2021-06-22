@@ -4,6 +4,7 @@ import com.auth0.android.Auth0Exception
 import com.auth0.android.callback.Callback
 import com.auth0.android.request.*
 import java.io.IOException
+import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
 
 /**
@@ -93,41 +94,37 @@ internal open class BaseRequest<T, U : Auth0Exception>(
             throw error
         }
 
-        val reader = AwareInputStreamReader(response.body, StandardCharsets.UTF_8)
-        if (response.isSuccess()) {
-            //2. Successful scenario. Response of type T
-            val result: T = try {
-                resultAdapter.fromJson(reader)
+        InputStreamReader(response.body, StandardCharsets.UTF_8).use { reader ->
+            if (response.isSuccess()) {
+                //2. Successful scenario. Response of type T
+                return try {
+                    resultAdapter.fromJson(reader)
+                } catch (exception: Exception) {
+                    //multi catch IOException and JsonParseException (including JsonIOException)
+                    //3. Network exceptions, timeouts, etc reading response body
+                    val error: U = errorAdapter.fromException(exception)
+                    throw error
+                }
+            }
+
+            //4. Error scenario. Response of type U
+            val error: U = try {
+                if (response.isJson()) {
+                    errorAdapter.fromJsonResponse(response.statusCode, reader)
+                } else {
+                    errorAdapter.fromRawResponse(
+                        response.statusCode,
+                        reader.readText(),
+                        response.headers
+                    )
+                }
             } catch (exception: Exception) {
                 //multi catch IOException and JsonParseException (including JsonIOException)
-                //3. Network exceptions, timeouts, etc reading response body
-                val error: U = errorAdapter.fromException(exception)
-                throw error
-            } finally {
-                reader.close()
+                //5. Network exceptions, timeouts, etc reading response body
+                errorAdapter.fromException(exception)
             }
-            return result
+            throw error
         }
-
-        //4. Error scenario. Response of type U
-        val error: U = try {
-            if (response.isJson()) {
-                errorAdapter.fromJsonResponse(response.statusCode, reader)
-            } else {
-                errorAdapter.fromRawResponse(
-                    response.statusCode,
-                    reader.readText(),
-                    response.headers
-                )
-            }
-        } catch (exception: Exception) {
-            //multi catch IOException and JsonParseException (including JsonIOException)
-            //5. Network exceptions, timeouts, etc reading response body
-            errorAdapter.fromException(exception)
-        } finally {
-            reader.close()
-        }
-        throw error
     }
 
 }
