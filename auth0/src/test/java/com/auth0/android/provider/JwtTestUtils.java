@@ -126,7 +126,7 @@ class JwtTestUtils {
         dis.readFully(keyBytes);
         dis.close();
 
-        String temp = new String(keyBytes);
+        String temp = new String(keyBytes, StandardCharsets.UTF_8);
         String privKeyPEM = temp.replace("-----BEGIN PRIVATE KEY-----\n", "");
         privKeyPEM = privKeyPEM.replace("-----END PRIVATE KEY-----", "");
 
@@ -146,7 +146,7 @@ class JwtTestUtils {
         dis.readFully(keyBytes);
         dis.close();
 
-        String temp = new String(keyBytes);
+        String temp = new String(keyBytes, StandardCharsets.UTF_8);
         String pubKeyPEM = temp.replace("-----BEGIN PUBLIC KEY-----\n", "");
         pubKeyPEM = pubKeyPEM.replace("-----END PUBLIC KEY-----", "");
 
