@@ -1351,6 +1351,36 @@ public class WebAuthProviderTest {
     }
 
     @Test
+    public fun shouldFailToResumeLoginWithIntentWithAccessDeniedAndDescription() {
+        login(account)
+            .withState("1234567890")
+            .start(activity, callback)
+        val intent = createAuthIntent(
+            createHash(
+                null,
+                "aToken",
+                null,
+                "urlType",
+                1111L,
+                "1234567890",
+                "access_denied",
+                "email is already associated with another account",
+                null
+            )
+        )
+        Assert.assertTrue(resume(intent))
+        verify(callback).onFailure(authExceptionCaptor.capture())
+        assertThat(
+            authExceptionCaptor.firstValue, `is`(notNullValue())
+        )
+        assertThat(authExceptionCaptor.firstValue.getCode(), `is`("access_denied"))
+        assertThat(
+            authExceptionCaptor.firstValue.getDescription(),
+            `is`("email is already associated with another account")
+        )
+    }
+
+    @Test
     public fun shouldFailToResumeLoginWithIntentWithRuleError() {
         login(account)
             .withState("1234567890")
