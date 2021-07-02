@@ -1,5 +1,16 @@
 # Change Log
 
+## [2.3.0](https://github.com/auth0/Auth0.Android/tree/2.3.0) (2021-07-02)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.2.0...2.3.0)
+
+**Changed**
+- Explicitly specify charset, don't rely on default charset [\#491](https://github.com/auth0/Auth0.Android/pull/491) ([Marcono1234](https://github.com/Marcono1234))
+- Disable share button in Chrome custom tabs [\#489](https://github.com/auth0/Auth0.Android/pull/489) ([latsson](https://github.com/latsson))
+- Rewrite ThreadSwitcher class so that it is not tied to Looper [\#482](https://github.com/auth0/Auth0.Android/pull/482) ([alvindizon](https://github.com/alvindizon))
+
+**Fixed**
+- Improve access_denied error handling by using the description [\#494](https://github.com/auth0/Auth0.Android/pull/494) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [2.2.0](https://github.com/auth0/Auth0.Android/tree/2.2.0) (2021-04-21)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.1.0...2.2.0)
 
