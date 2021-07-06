@@ -103,8 +103,9 @@ internal open class BaseRequest<T, U : Auth0Exception>(
                 //3. Network exceptions, timeouts, etc reading response body
                 val error: U = errorAdapter.fromException(exception)
                 throw error
+            } finally {
+                reader.close()
             }
-            reader.close()
             return result
         }
 
