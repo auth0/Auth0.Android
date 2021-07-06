@@ -99,6 +99,7 @@ internal open class BaseRequest<T, U : Auth0Exception>(
             val result: T = try {
                 resultAdapter.fromJson(reader)
             } catch (exception: Exception) {
+                //multi catch IOException and JsonParseException (including JsonIOException)
                 //3. Network exceptions, timeouts, etc reading response body
                 val error: U = errorAdapter.fromException(exception)
                 throw error
