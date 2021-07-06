@@ -110,16 +110,23 @@ internal open class BaseRequest<T, U : Auth0Exception>(
         }
 
         //4. Error scenario. Response of type U
-        val error: U = if (response.isJson()) {
-            errorAdapter.fromJsonResponse(response.statusCode, reader)
-        } else {
-            errorAdapter.fromRawResponse(
-                response.statusCode,
-                reader.readText(),
-                response.headers
-            )
+        val error: U = try {
+            if (response.isJson()) {
+                errorAdapter.fromJsonResponse(response.statusCode, reader)
+            } else {
+                errorAdapter.fromRawResponse(
+                    response.statusCode,
+                    reader.readText(),
+                    response.headers
+                )
+            }
+        } catch (exception: Exception) {
+            //multi catch IOException and JsonParseException (including JsonIOException)
+            //5. Network exceptions, timeouts, etc reading response body
+            errorAdapter.fromException(exception)
+        } finally {
+            reader.close()
         }
-        reader.close()
         throw error
     }
 
