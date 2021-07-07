@@ -96,22 +96,37 @@ internal open class BaseRequest<T, U : Auth0Exception>(
         val reader = AwareInputStreamReader(response.body, StandardCharsets.UTF_8)
         if (response.isSuccess()) {
             //2. Successful scenario. Response of type T
-            val result: T = resultAdapter.fromJson(reader)
-            reader.close()
+            val result: T = try {
+                resultAdapter.fromJson(reader)
+            } catch (exception: Exception) {
+                //multi catch IOException and JsonParseException (including JsonIOException)
+                //3. Network exceptions, timeouts, etc reading response body
+                val error: U = errorAdapter.fromException(exception)
+                throw error
+            } finally {
+                reader.close()
+            }
             return result
         }
 
-        //3. Error scenario. Response of type U
-        val error: U = if (response.isJson()) {
-            errorAdapter.fromJsonResponse(response.statusCode, reader)
-        } else {
-            errorAdapter.fromRawResponse(
-                response.statusCode,
-                reader.readText(),
-                response.headers
-            )
+        //4. Error scenario. Response of type U
+        val error: U = try {
+            if (response.isJson()) {
+                errorAdapter.fromJsonResponse(response.statusCode, reader)
+            } else {
+                errorAdapter.fromRawResponse(
+                    response.statusCode,
+                    reader.readText(),
+                    response.headers
+                )
+            }
+        } catch (exception: Exception) {
+            //multi catch IOException and JsonParseException (including JsonIOException)
+            //5. Network exceptions, timeouts, etc reading response body
+            errorAdapter.fromException(exception)
+        } finally {
+            reader.close()
         }
-        reader.close()
         throw error
     }
 

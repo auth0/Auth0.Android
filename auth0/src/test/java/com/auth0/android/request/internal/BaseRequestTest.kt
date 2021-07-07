@@ -4,6 +4,7 @@ import com.auth0.android.Auth0Exception
 import com.auth0.android.callback.Callback
 import com.auth0.android.request.*
 import com.google.gson.Gson
+import com.google.gson.JsonIOException
 import com.nhaarman.mockitokotlin2.*
 import org.hamcrest.MatcherAssert
 import org.hamcrest.Matchers
@@ -171,6 +172,41 @@ public class BaseRequestTest {
         MatcherAssert.assertThat(exception, Matchers.`is`(auth0Exception))
         MatcherAssert.assertThat(result, Matchers.`is`(Matchers.nullValue()))
         verifyZeroInteractions(resultAdapter)
+        verify(errorAdapter).fromException(eq(networkError))
+    }
+
+    @Test
+    @Throws(Exception::class)
+    public fun shouldBuildErrorFromResponseParseException() {
+        mockSuccessfulServerResponse()
+        val resultAdapter = Mockito.mock(GsonAdapter::class.java) as JsonAdapter<SimplePojo>
+        val baseRequest = BaseRequest(
+            HttpMethod.POST,
+            BASE_URL,
+            client,
+            resultAdapter,
+            errorAdapter
+        )
+        val networkError = mock<JsonIOException>()
+        Mockito.`when`(
+            resultAdapter.fromJson(
+                any()
+            )
+        ).thenThrow(networkError)
+        Mockito.`when`(
+            errorAdapter.fromException(
+                any()
+            )
+        ).thenReturn(auth0Exception)
+        var exception: Exception? = null
+        var result: SimplePojo? = null
+        try {
+            result = baseRequest.execute()
+        } catch (e: Exception) {
+            exception = e
+        }
+        MatcherAssert.assertThat(exception, Matchers.`is`(auth0Exception))
+        MatcherAssert.assertThat(result, Matchers.`is`(Matchers.nullValue()))
         verify(errorAdapter).fromException(eq(networkError))
     }
 
