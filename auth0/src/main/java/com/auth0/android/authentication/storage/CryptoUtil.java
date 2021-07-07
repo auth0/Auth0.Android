@@ -16,6 +16,7 @@ import androidx.annotation.VisibleForTesting;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPairGenerator;
@@ -367,7 +368,7 @@ class CryptoUtil {
             byte[] aes = keyGen.generateKey().getEncoded();
             //Save encrypted encoded version
             byte[] encryptedAES = RSAEncrypt(aes);
-            String encodedEncryptedAESText = new String(Base64.encode(encryptedAES, Base64.DEFAULT));
+            String encodedEncryptedAESText = new String(Base64.encode(encryptedAES, Base64.DEFAULT), StandardCharsets.UTF_8);
             storage.store(KEY_ALIAS, encodedEncryptedAESText);
             return aes;
         } catch (NoSuchAlgorithmException e) {
@@ -453,7 +454,7 @@ class CryptoUtil {
             byte[] encrypted = cipher.doFinal(decryptedInput);
             byte[] encodedIV = Base64.encode(cipher.getIV(), Base64.DEFAULT);
             //Save IV for Decrypt stage
-            storage.store(KEY_IV_ALIAS, new String(encodedIV));
+            storage.store(KEY_IV_ALIAS, new String(encodedIV, StandardCharsets.UTF_8));
             return encrypted;
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException e) {
             /*

@@ -1,6 +1,5 @@
 package com.auth0.android.request.internal
 
-import android.os.Looper
 import com.auth0.android.Auth0Exception
 import com.auth0.android.callback.Callback
 import com.auth0.android.request.*
@@ -310,8 +309,10 @@ public class BaseRequestTest {
     @Throws(Exception::class)
     public fun shouldExecuteRequestOnBackgroundThreadAndPostSuccessToMainThread() {
         val pausedExecutorService = PausedExecutorService()
-        val threadSwitcher =
-            Mockito.spy(ThreadSwitcher(Looper.getMainLooper(), pausedExecutorService))
+        val defaultThreadSwitcher =
+            DefaultThreadSwitcher(pausedExecutorService)
+        val threadSwitcher = Mockito.spy(CommonThreadSwitcher(defaultThreadSwitcher))
+
         val baseRequest = BaseRequest(
             HttpMethod.POST,
             BASE_URL,
@@ -356,8 +357,10 @@ public class BaseRequestTest {
     @Throws(Exception::class)
     public fun shouldExecuteRequestOnBackgroundThreadAndPostFailureToMainThread() {
         val pausedExecutorService = PausedExecutorService()
-        val threadSwitcher =
-            Mockito.spy(ThreadSwitcher(Looper.getMainLooper(), pausedExecutorService))
+        val defaultThreadSwitcher =
+            DefaultThreadSwitcher(pausedExecutorService)
+        val threadSwitcher = Mockito.spy(CommonThreadSwitcher(defaultThreadSwitcher))
+
         val baseRequest = BaseRequest(
             HttpMethod.POST,
             BASE_URL,

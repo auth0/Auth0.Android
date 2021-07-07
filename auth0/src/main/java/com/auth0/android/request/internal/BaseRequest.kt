@@ -4,7 +4,7 @@ import com.auth0.android.Auth0Exception
 import com.auth0.android.callback.Callback
 import com.auth0.android.request.*
 import java.io.IOException
-import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
 
 /**
  * Base class for every request on this library.
@@ -20,7 +20,7 @@ internal open class BaseRequest<T, U : Auth0Exception>(
     private val client: NetworkingClient,
     private val resultAdapter: JsonAdapter<T>,
     private val errorAdapter: ErrorAdapter<U>,
-    private val threadSwitcher: ThreadSwitcher = DefaultThreadSwitcher
+    private val threadSwitcher: ThreadSwitcher = CommonThreadSwitcher.getInstance()
 ) : Request<T, U> {
 
     private val options: RequestOptions = RequestOptions(method)
@@ -93,7 +93,7 @@ internal open class BaseRequest<T, U : Auth0Exception>(
             throw error
         }
 
-        val reader = AwareInputStreamReader(response.body, Charset.defaultCharset())
+        val reader = AwareInputStreamReader(response.body, StandardCharsets.UTF_8)
         if (response.isSuccess()) {
             //2. Successful scenario. Response of type T
             val result: T = try {

@@ -197,7 +197,7 @@ internal class OAuthManager(
             ERROR_VALUE_ACCESS_DENIED.equals(errorValue, ignoreCase = true) -> {
                 throw AuthenticationException(
                     ERROR_VALUE_ACCESS_DENIED,
-                    "Permissions were not granted. Try again."
+                    errorDescription ?: "Permissions were not granted. Try again."
                 )
             }
             ERROR_VALUE_UNAUTHORIZED.equals(errorValue, ignoreCase = true) -> {

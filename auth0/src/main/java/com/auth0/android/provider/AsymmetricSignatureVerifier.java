@@ -5,7 +5,7 @@ import android.util.Base64;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
@@ -39,7 +39,7 @@ class AsymmetricSignatureVerifier extends SignatureVerifier {
     @Override
     protected void checkSignature(@NonNull String[] tokenParts) throws TokenValidationException {
         String content = tokenParts[0] + "." + tokenParts[1];
-        byte[] contentBytes = content.getBytes(Charset.defaultCharset());
+        byte[] contentBytes = content.getBytes(StandardCharsets.UTF_8);
         boolean valid = false;
         try {
             byte[] signatureBytes = Base64.decode(tokenParts[2], Base64.URL_SAFE | Base64.NO_WRAP);

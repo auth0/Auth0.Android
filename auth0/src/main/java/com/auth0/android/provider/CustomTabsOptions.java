@@ -9,6 +9,7 @@ import android.os.Parcelable;
 import androidx.annotation.ColorRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.browser.customtabs.CustomTabColorSchemeParams;
 import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.browser.customtabs.CustomTabsSession;
 import androidx.core.content.ContextCompat;
@@ -54,10 +55,13 @@ public class CustomTabsOptions implements Parcelable {
     @SuppressLint("ResourceType")
     Intent toIntent(@NonNull Context context, @Nullable CustomTabsSession session) {
         final CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder(session)
-                .setShowTitle(showTitle);
+                .setShowTitle(showTitle)
+                .setShareState(CustomTabsIntent.SHARE_STATE_OFF);
         if (toolbarColor > 0) {
             //Resource exists
-            builder.setToolbarColor(ContextCompat.getColor(context, toolbarColor));
+            final CustomTabColorSchemeParams.Builder colorBuilder = new CustomTabColorSchemeParams.Builder()
+                    .setToolbarColor(ContextCompat.getColor(context, toolbarColor));
+            builder.setDefaultColorSchemeParams(colorBuilder.build());
         }
         return builder.build().intent;
     }
