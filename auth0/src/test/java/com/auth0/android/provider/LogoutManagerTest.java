@@ -38,7 +38,7 @@ public class LogoutManagerTest {
 
     @Test
     public void shouldCallOnFailureWhenResumedWithCanceledResult() {
-        LogoutManager manager = new LogoutManager(account, callback, "https://auth0.com/android/my.app.name/callback", customTabsOptions);
+        LogoutManager manager = new LogoutManager(account, callback, "https://auth0.com/android/my.app.name/callback", customTabsOptions, false);
         AuthorizeResult result = mock(AuthorizeResult.class);
         when(result.isCanceled()).thenReturn(true);
         manager.resume(result);
@@ -51,7 +51,7 @@ public class LogoutManagerTest {
 
     @Test
     public void shouldCallOnSuccessWhenResumedWithValidResult() {
-        LogoutManager manager = new LogoutManager(account, callback, "https://auth0.com/android/my.app.name/callback", customTabsOptions);
+        LogoutManager manager = new LogoutManager(account, callback, "https://auth0.com/android/my.app.name/callback", customTabsOptions, false);
         AuthorizeResult result = mock(AuthorizeResult.class);
         when(result.isCanceled()).thenReturn(false);
         manager.resume(result);

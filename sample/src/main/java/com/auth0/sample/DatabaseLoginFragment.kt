@@ -21,7 +21,8 @@ import com.google.android.material.snackbar.Snackbar
 class DatabaseLoginFragment : Fragment() {
 
     private val account: Auth0 by lazy {
-        val account = Auth0("esCyeleWIb1iKJUcz6fVR4e29mEHkn0O", "lbalmaceda.auth0.com")
+        // -- REPLACE this credentials with your own Auth0 app credentials!
+        val account = Auth0("PX2vJhpALUNT66NHdCdD30XWqlIR4oEZ", "lbalmaceda.auth0.com")
         // Only enable network traffic logging on production environments!
         account.networkingClient = DefaultClient(enableLogging = true)
         account
@@ -43,6 +44,9 @@ class DatabaseLoginFragment : Fragment() {
         }
         binding.buttonWebAuth.setOnClickListener {
             webAuth()
+        }
+        binding.buttonWebLogout.setOnClickListener {
+            webLogout()
         }
         return binding.root
     }
@@ -68,11 +72,32 @@ class DatabaseLoginFragment : Fragment() {
 
     private fun webAuth() {
         WebAuthProvider.login(account)
+            .withScheme("demo")
             .start(requireContext(), object : Callback<Credentials, AuthenticationException> {
                 override fun onSuccess(result: Credentials) {
                     Snackbar.make(
                         requireView(),
                         "Success: ${result.accessToken}",
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
+
+                override fun onFailure(error: AuthenticationException) {
+                    val message =
+                        if (error.isCanceled) "Browser was closed" else error.getDescription()
+                    Snackbar.make(requireView(), message, Snackbar.LENGTH_LONG).show()
+                }
+            })
+    }
+
+    private fun webLogout() {
+        WebAuthProvider.logout(account)
+            .withScheme("demo")
+            .start(requireContext(), object : Callback<Void?, AuthenticationException> {
+                override fun onSuccess(result: Void?) {
+                    Snackbar.make(
+                        requireView(),
+                        "Logged out",
                         Snackbar.LENGTH_LONG
                     ).show()
                 }
