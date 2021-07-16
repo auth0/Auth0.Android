@@ -62,4 +62,13 @@ public open class Credentials(
     @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal open val currentTimeInMillis: Long
         get() = System.currentTimeMillis()
+
+    /**
+     * Getter for the new multi-factor authentication recovery code. Only available if these credentials are the result of logging in using an MFA recovery code.
+     *
+     * @return the new MFA recovery code.
+     */
+    @field:SerializedName("recovery_code")
+    public var recoveryCode: String? = null
+        internal set
 }

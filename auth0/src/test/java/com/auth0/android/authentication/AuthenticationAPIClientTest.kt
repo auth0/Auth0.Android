@@ -173,6 +173,39 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
+    public fun shouldLoginWithMFARecoveryCode() {
+        mockAPI.willReturnSuccessfulLoginWithRecoveryCode()
+        val callback = MockAuthenticationCallback<Credentials>()
+        val auth0 = auth0
+        val client = AuthenticationAPIClient(auth0)
+        client.loginWithRecoveryCode("ey30.the-mfa-token.value", "123456")
+            .start(callback)
+        ShadowLooper.idleMainLooper()
+        assertThat(
+            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
+                Credentials::class.java
+            )
+        )
+        assertThat(callback.payload.recoveryCode, Matchers.`is`("654321"))
+        val request = mockAPI.takeRequest()
+        assertThat(
+            request.getHeader("Accept-Language"), Matchers.`is`(
+                defaultLocale
+            )
+        )
+        val body = bodyFromRequest<String>(request)
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
+        assertThat(
+            body,
+            Matchers.hasEntry("grant_type", "http://auth0.com/oauth/grant-type/mfa-recovery-code")
+        )
+        assertThat(body, Matchers.hasEntry("mfa_token", "ey30.the-mfa-token.value"))
+        assertThat(body, Matchers.hasEntry("recovery_code", "123456"))
+        assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
+    }
+
+    @Test
     public fun shouldLoginWithMFAOOBCode() {
         mockAPI.willReturnSuccessfulLogin()
         val callback = MockAuthenticationCallback<Credentials>()

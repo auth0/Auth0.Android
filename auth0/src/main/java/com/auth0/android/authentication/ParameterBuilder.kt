@@ -153,6 +153,8 @@ public class ParameterBuilder private constructor(parameters: Map<String, String
         public const val GRANT_TYPE_AUTHORIZATION_CODE: String = "authorization_code"
         public const val GRANT_TYPE_MFA_OTP: String = "http://auth0.com/oauth/grant-type/mfa-otp"
         public const val GRANT_TYPE_MFA_OOB: String = "http://auth0.com/oauth/grant-type/mfa-oob"
+        public const val GRANT_TYPE_MFA_RECOVERY_CODE: String =
+            "http://auth0.com/oauth/grant-type/mfa-recovery-code"
         public const val GRANT_TYPE_PASSWORDLESS_OTP: String =
             "http://auth0.com/oauth/grant-type/passwordless/otp"
         public const val GRANT_TYPE_TOKEN_EXCHANGE: String =
