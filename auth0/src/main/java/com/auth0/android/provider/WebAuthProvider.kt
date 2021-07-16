@@ -84,6 +84,7 @@ public object WebAuthProvider {
         private var scheme = "https"
         private var returnToUrl: String? = null
         private var ctOptions: CustomTabsOptions = CustomTabsOptions.newBuilder().build()
+        private var federated: Boolean = false
 
         /**
          * When using a Custom Tabs compatible Browser, apply these customization options.
@@ -128,6 +129,20 @@ public object WebAuthProvider {
         }
 
         /**
+         * Although not a common practice, you can force the user to log out of their identity provider.
+         * Think of the user experience before you use this parameter.
+         *
+         * This feature is not supported by every identity provider. Read more about the limitations in
+         * the [Log Users Out of Identity Provider](https://auth0.com/docs/logout/log-users-out-of-idps) article.
+         *
+         * @return the current builder instance
+         */
+        public fun withFederated(): LogoutBuilder {
+            this.federated = true
+            return this
+        }
+
+        /**
          * Request the user session to be cleared. When successful, the callback will get invoked.
          * An error is raised if there are no browser applications installed in the device or if
          * the user closed the browser before completing the logout.
@@ -154,7 +169,7 @@ public object WebAuthProvider {
                     account.getDomainUrl()
                 )
             }
-            val logoutManager = LogoutManager(account, callback, returnToUrl!!, ctOptions)
+            val logoutManager = LogoutManager(account, callback, returnToUrl!!, ctOptions, federated)
             managerInstance = logoutManager
             logoutManager.startLogout(context)
         }

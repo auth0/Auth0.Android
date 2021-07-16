@@ -12,7 +12,8 @@ internal class LogoutManager(
     private val account: Auth0,
     private val callback: Callback<Void?, AuthenticationException>,
     returnToUrl: String,
-    ctOptions: CustomTabsOptions
+    ctOptions: CustomTabsOptions,
+    federated: Boolean = false
 ) : ResumableManager() {
     private val parameters: MutableMap<String, String>
     private val ctOptions: CustomTabsOptions
@@ -56,11 +57,16 @@ internal class LogoutManager(
         private const val KEY_CLIENT_ID = "client_id"
         private const val KEY_USER_AGENT = "auth0Client"
         private const val KEY_RETURN_TO_URL = "returnTo"
+        private const val KEY_FEDERATED = "federated"
     }
 
     init {
         parameters = HashMap()
         parameters[KEY_RETURN_TO_URL] = returnToUrl
+        if (federated) {
+            // null or empty values are not included in the request
+            parameters[KEY_FEDERATED] = "1"
+        }
         this.ctOptions = ctOptions
     }
 }

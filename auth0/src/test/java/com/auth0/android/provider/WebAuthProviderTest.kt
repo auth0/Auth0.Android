@@ -2362,6 +2362,36 @@ public class WebAuthProviderTest {
         )
     }
 
+    // federated
+    @Test
+    public fun shouldNotUseFederatedByDefaultOnLogout() {
+        logout(account)
+            .start(activity, voidCallback)
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri =
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(uri, `is`(notNullValue()))
+        assertThat(
+            uri,
+            not(UriMatchers.hasParamWithName("federated"))
+        )
+    }
+
+    @Test
+    public fun shouldUseFederatedOnLogout() {
+        logout(account)
+            .withFederated()
+            .start(activity, voidCallback)
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri =
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(uri, `is`(notNullValue()))
+        assertThat(
+            uri,
+            UriMatchers.hasParamWithValue("federated", "1")
+        )
+    }
+
     // auth0 related
     @Test
     public fun shouldHaveTelemetryInfoOnLogout() {
