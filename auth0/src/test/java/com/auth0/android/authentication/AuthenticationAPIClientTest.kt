@@ -10,10 +10,7 @@ import com.auth0.android.request.RequestOptions
 import com.auth0.android.request.ServerResponse
 import com.auth0.android.request.internal.RequestFactory
 import com.auth0.android.request.internal.ThreadSwitcherShadow
-import com.auth0.android.result.Authentication
-import com.auth0.android.result.Credentials
-import com.auth0.android.result.DatabaseUser
-import com.auth0.android.result.UserProfile
+import com.auth0.android.result.*
 import com.auth0.android.util.Auth0UserAgent
 import com.auth0.android.util.AuthenticationAPIMockServer
 import com.auth0.android.util.AuthenticationCallbackMatcher
@@ -173,6 +170,122 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
         assertThat(body, Matchers.not(Matchers.hasKey("password")))
         assertThat(body, Matchers.not(Matchers.hasKey("connection")))
+    }
+
+    @Test
+    public fun shouldLoginWithMFAOOBCode() {
+        mockAPI.willReturnSuccessfulLogin()
+        val callback = MockAuthenticationCallback<Credentials>()
+        val auth0 = auth0
+        val client = AuthenticationAPIClient(auth0)
+        client.loginWithOOB("ey30.the-mfa-token.value", "123456", null)
+            .start(callback)
+        ShadowLooper.idleMainLooper()
+        assertThat(
+            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
+                Credentials::class.java
+            )
+        )
+        val request = mockAPI.takeRequest()
+        assertThat(
+            request.getHeader("Accept-Language"), Matchers.`is`(
+                defaultLocale
+            )
+        )
+        val body = bodyFromRequest<String>(request)
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
+        assertThat(
+            body,
+            Matchers.hasEntry("grant_type", "http://auth0.com/oauth/grant-type/mfa-oob")
+        )
+        assertThat(body, Matchers.hasEntry("mfa_token", "ey30.the-mfa-token.value"))
+        assertThat(body, Matchers.hasEntry("oob_code", "123456"))
+        assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
+        assertThat(body, Matchers.not(Matchers.hasKey("binding_code")))
+    }
+
+    @Test
+    public fun shouldLoginWithMFAOOBCodeAndBindingCode() {
+        mockAPI.willReturnSuccessfulLogin()
+        val callback = MockAuthenticationCallback<Credentials>()
+        val auth0 = auth0
+        val client = AuthenticationAPIClient(auth0)
+        client.loginWithOOB("ey30.the-mfa-token.value", "123456", "abcdefg")
+            .start(callback)
+        ShadowLooper.idleMainLooper()
+        assertThat(
+            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
+                Credentials::class.java
+            )
+        )
+        val request = mockAPI.takeRequest()
+        assertThat(
+            request.getHeader("Accept-Language"), Matchers.`is`(
+                defaultLocale
+            )
+        )
+        val body = bodyFromRequest<String>(request)
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
+        assertThat(
+            body,
+            Matchers.hasEntry("grant_type", "http://auth0.com/oauth/grant-type/mfa-oob")
+        )
+        assertThat(body, Matchers.hasEntry("mfa_token", "ey30.the-mfa-token.value"))
+        assertThat(body, Matchers.hasEntry("oob_code", "123456"))
+        assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
+        assertThat(body, Matchers.hasEntry("binding_code", "abcdefg"))
+    }
+
+    @Test
+    public fun shouldStartMFAChallenge() {
+        mockAPI.willReturnSuccessfulMFAChallenge()
+        val callback = MockAuthenticationCallback<Challenge>()
+        client.multifactorChallenge("ey30.the-mfa-token.value", null, null)
+            .start(callback)
+        ShadowLooper.idleMainLooper()
+        val request = mockAPI.takeRequest()
+        assertThat(
+            request.getHeader("Accept-Language"), Matchers.`is`(
+                defaultLocale
+            )
+        )
+        assertThat(request.path, Matchers.equalTo("/mfa/challenge"))
+        val body = bodyFromRequest<Any>(request)
+        assertThat(body, Matchers.hasEntry("mfa_token", "ey30.the-mfa-token.value"))
+        assertThat(body, Matchers.not(Matchers.hasKey("challenge_type")))
+        assertThat(body, Matchers.not(Matchers.hasKey("authenticator_id")))
+        assertThat(
+            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
+                Challenge::class.java
+            )
+        )
+    }
+
+    @Test
+    public fun shouldStartMFAChallengeWithTypeAndAuthenticator() {
+        mockAPI.willReturnSuccessfulMFAChallenge()
+        val callback = MockAuthenticationCallback<Challenge>()
+        client.multifactorChallenge("ey30.the-mfa-token.value", "oob", "sms|dev_NU1Ofuw3Cw0XCt5x")
+            .start(callback)
+        ShadowLooper.idleMainLooper()
+        val request = mockAPI.takeRequest()
+        assertThat(
+            request.getHeader("Accept-Language"), Matchers.`is`(
+                defaultLocale
+            )
+        )
+        assertThat(request.path, Matchers.equalTo("/mfa/challenge"))
+        val body = bodyFromRequest<Any>(request)
+        assertThat(body, Matchers.hasEntry("mfa_token", "ey30.the-mfa-token.value"))
+        assertThat(body, Matchers.hasEntry("challenge_type", "oob"))
+        assertThat(body, Matchers.hasEntry("authenticator_id", "sms|dev_NU1Ofuw3Cw0XCt5x"))
+        assertThat(
+            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
+                Challenge::class.java
+            )
+        )
     }
 
     @Test

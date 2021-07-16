@@ -7,6 +7,7 @@ import com.auth0.android.request.*
 import com.auth0.android.request.internal.*
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMap
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMapOf
+import com.auth0.android.result.Challenge
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
 import com.auth0.android.result.UserProfile
@@ -117,10 +118,10 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
 
     /**
      * Log in a user using the One Time Password code after they have received the 'mfa_required' error.
-     * The MFA token tells the server the username or email, password and realm values sent on the first request.
+     * The MFA token tells the server the username or email, password, and realm values sent on the first request.
      * The default scope used is 'openid profile email'.
      *
-     * Requires your client to have the **MFA** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
+     * Requires your client to have the **MFA OTP** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
      *
      * Example usage:
      *
@@ -144,6 +145,85 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             .set(ONE_TIME_PASSWORD_KEY, otp)
             .asDictionary()
         return loginWithToken(parameters)
+    }
+
+    /**
+     * Log in a user using an Out Of Band authentication code after they have received the 'mfa_required' error.
+     * The MFA token tells the server the username or email, password, and realm values sent on the first request.
+     * The default scope used is 'openid profile email'.
+     *
+     * Requires your client to have the **MFA OOB** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
+     *
+     * Example usage:
+     *
+     *```
+     * client.loginWithOOB("{mfa token}", "{out of band code}", "{binding code}")
+     *     .start(object : Callback<Credentials, AuthenticationException> {
+     *         override fun onFailure(error: AuthenticationException) { }
+     *         override fun onSuccess(result: Credentials) { }
+     * })
+     *```
+     *
+     * @param mfaToken the token received in the previous [.login] response.
+     * @param oobCode the out of band code received in the challenge response.
+     * @param bindingCode the code used to bind the side channel (used to deliver the challenge) with the main channel you are using to authenticate.
+     * This is usually an OTP-like code delivered as part of the challenge message.
+     * @return a request to configure and start that will yield [Credentials]
+     */
+    public fun loginWithOOB(
+        mfaToken: String,
+        oobCode: String,
+        bindingCode: String? = null
+    ): AuthenticationRequest {
+        val parameters = ParameterBuilder.newAuthenticationBuilder()
+            .setGrantType(ParameterBuilder.GRANT_TYPE_MFA_OOB)
+            .set(MFA_TOKEN_KEY, mfaToken)
+            .set(OUT_OF_BAND_CODE_KEY, oobCode)
+            .set(BINDING_CODE_KEY, bindingCode)
+            .asDictionary()
+        return loginWithToken(parameters)
+    }
+
+    /**
+     * Request a challenge for multi-factor authentication (MFA) based on the challenge types supported by the application and user.
+     * The challenge type is how the user will get the challenge and prove possession. Supported challenge types include: "otp" and "oob".
+     *
+     * Example usage:
+     *
+     *```
+     * client.multifactorChallenge("{mfa token}", "{challenge type}", "{authenticator id}")
+     *     .start(object : Callback<Challenge, AuthenticationException> {
+     *         override fun onFailure(error: AuthenticationException) { }
+     *         override fun onSuccess(result: Challenge) { }
+     * })
+     *```
+     *
+     * @param mfaToken the token received in the previous [.login] response.
+     * @param challengeType A whitespace-separated list of the challenges types accepted by your application.
+     * Accepted challenge types are oob or otp. Excluding this parameter means that your client application
+     * accepts all supported challenge types.
+     * @param authenticatorId The ID of the authenticator to challenge.
+     * @return a request to configure and start that will yield [Challenge]
+     */
+    public fun multifactorChallenge(
+        mfaToken: String,
+        challengeType: String? = null,
+        authenticatorId: String? = null
+    ): Request<Challenge, AuthenticationException> {
+        val parameters = ParameterBuilder.newAuthenticationBuilder()
+            .set(MFA_TOKEN_KEY, mfaToken)
+            .set(CHALLENGE_TYPE_KEY, challengeType)
+            .set(AUTHENTICATOR_ID_KEY, authenticatorId)
+            .asDictionary()
+        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
+            .addPathSegment(MFA_PATH)
+            .addPathSegment(CHALLENGE_PATH)
+            .build()
+        val challengeAdapter: JsonAdapter<Challenge> = GsonAdapter(
+            Challenge::class.java, gson
+        )
+        return factory.post(url.toString(), challengeAdapter)
+            .addParameters(parameters)
     }
 
     /**
@@ -647,6 +727,10 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val TOKEN_KEY = "token"
         private const val MFA_TOKEN_KEY = "mfa_token"
         private const val ONE_TIME_PASSWORD_KEY = "otp"
+        private const val OUT_OF_BAND_CODE_KEY = "oob_code"
+        private const val BINDING_CODE_KEY = "binding_code"
+        private const val CHALLENGE_TYPE_KEY = "challenge_type"
+        private const val AUTHENTICATOR_ID_KEY = "authenticator_id"
         private const val SUBJECT_TOKEN_KEY = "subject_token"
         private const val SUBJECT_TOKEN_TYPE_KEY = "subject_token_type"
         private const val USER_METADATA_KEY = "user_metadata"
@@ -659,6 +743,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val TOKEN_PATH = "token"
         private const val USER_INFO_PATH = "userinfo"
         private const val REVOKE_PATH = "revoke"
+        private const val MFA_PATH = "mfa"
+        private const val CHALLENGE_PATH = "challenge"
         private const val HEADER_AUTHORIZATION = "Authorization"
         private const val WELL_KNOWN_PATH = ".well-known"
         private const val JWKS_FILE_PATH = "jwks.json"

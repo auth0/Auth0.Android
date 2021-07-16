@@ -116,15 +116,13 @@ internal class AuthenticationAPIMockServer : APIMockServer() {
         return this
     }
 
-    private fun willReturnApplicationResponseWithBody(
-        body: String?,
-        statusCode: Int
-    ): AuthenticationAPIMockServer {
-        val response = MockResponse()
-            .setResponseCode(statusCode)
-            .addHeader("Content-Type", "application/x-javascript")
-            .setBody(body!!)
-        server.enqueue(response)
+    fun willReturnSuccessfulMFAChallenge(): AuthenticationAPIMockServer {
+        val json = """{
+          "challenge_type":"oob",
+          "binding_method":"prompt",
+          "oob_code": "abcdefg"
+        }"""
+        server.enqueue(responseWithJSON(json, 200))
         return this
     }
 
