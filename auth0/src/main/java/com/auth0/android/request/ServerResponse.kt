@@ -1,6 +1,7 @@
 package com.auth0.android.request
 
 import java.io.InputStream
+import java.util.*
 
 /**
  * Contains the information received from the server after executing a network request.
@@ -23,5 +24,8 @@ public data class ServerResponse(
      * Checks if the Content-Type headers declare the received media type as 'application/json'.
      * @return whether this response contains a JSON body or not.
      */
-    public fun isJson(): Boolean = headers["Content-Type"]?.contains("application/json") ?: false
+    public fun isJson(): Boolean =
+        headers.mapKeys { it.key.lowercase(Locale.getDefault()) }["content-type"]
+            ?.contains("application/json")
+            ?: false
 }
