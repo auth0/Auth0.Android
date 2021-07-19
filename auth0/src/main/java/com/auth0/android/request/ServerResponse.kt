@@ -24,8 +24,11 @@ public data class ServerResponse(
      * Checks if the Content-Type headers declare the received media type as 'application/json'.
      * @return whether this response contains a JSON body or not.
      */
-    public fun isJson(): Boolean =
+    public fun isJson(): Boolean {
         headers.mapKeys { it.key.lowercase(Locale.getDefault()) }["content-type"]
-            ?.contains("application/json")
-            ?: false
+            ?.forEach {
+                if (it.contains("application/json", ignoreCase = true)) return true
+            }
+        return false
+    }
 }
