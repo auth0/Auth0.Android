@@ -244,7 +244,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         challengeType: String? = null,
         authenticatorId: String? = null
     ): Request<Challenge, AuthenticationException> {
-        val parameters = ParameterBuilder.newAuthenticationBuilder()
+        val parameters = ParameterBuilder.newBuilder()
+            .setClientId(clientId)
             .set(MFA_TOKEN_KEY, mfaToken)
             .set(CHALLENGE_TYPE_KEY, challengeType)
             .set(AUTHENTICATOR_ID_KEY, authenticatorId)

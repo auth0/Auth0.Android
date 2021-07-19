@@ -287,6 +287,7 @@ public class AuthenticationAPIClientTest {
         assertThat(request.path, Matchers.equalTo("/mfa/challenge"))
         val body = bodyFromRequest<Any>(request)
         assertThat(body, Matchers.hasEntry("mfa_token", "ey30.the-mfa-token.value"))
+        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.not(Matchers.hasKey("challenge_type")))
         assertThat(body, Matchers.not(Matchers.hasKey("authenticator_id")))
         assertThat(
