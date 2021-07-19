@@ -47,6 +47,19 @@ internal class AuthenticationAPIMockServer : APIMockServer() {
         return this
     }
 
+    fun willReturnSuccessfulLoginWithRecoveryCode(): AuthenticationAPIMockServer {
+        val json = """{
+          "refresh_token": "$REFRESH_TOKEN",
+          "id_token": "$ID_TOKEN",
+          "access_token": "$ACCESS_TOKEN",
+          "token_type": "$BEARER",
+          "expires_in": 86000,
+          "recovery_code": "654321"
+        }"""
+        server.enqueue(responseWithJSON(json, 200))
+        return this
+    }
+
     fun willReturnInvalidRequest(): AuthenticationAPIMockServer {
         val json = """{
           "error": "invalid_request",

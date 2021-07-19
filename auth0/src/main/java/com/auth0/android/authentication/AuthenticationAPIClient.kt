@@ -185,6 +185,40 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     }
 
     /**
+     * Log in a user using a multi-factor authentication Recovery Code after they have received the 'mfa_required' error.
+     * The MFA token tells the server the username or email, password, and realm values sent on the first request.
+     * The default scope used is 'openid profile email'.
+     *
+     * Requires your client to have the **MFA** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
+     *
+     * Example usage:
+     *
+     *```
+     * client.loginWithRecoveryCode("{mfa token}", "{recovery code}")
+     *     .start(object : Callback<Credentials, AuthenticationException> {
+     *         override fun onFailure(error: AuthenticationException) { }
+     *         override fun onSuccess(result: Credentials) { }
+     * })
+     *```
+     *
+     * @param mfaToken the token received in the previous [.login] response.
+     * @param recoveryCode the recovery code provided by the end-user.
+     * @return a request to configure and start that will yield [Credentials]. It might also include a [recoveryCode] field,
+     * which your application must display to the end-user to be stored securely for future use.
+     */
+    public fun loginWithRecoveryCode(
+        mfaToken: String,
+        recoveryCode: String
+    ): AuthenticationRequest {
+        val parameters = ParameterBuilder.newAuthenticationBuilder()
+            .setGrantType(ParameterBuilder.GRANT_TYPE_MFA_RECOVERY_CODE)
+            .set(MFA_TOKEN_KEY, mfaToken)
+            .set(RECOVERY_CODE_KEY, recoveryCode)
+            .asDictionary()
+        return loginWithToken(parameters)
+    }
+
+    /**
      * Request a challenge for multi-factor authentication (MFA) based on the challenge types supported by the application and user.
      * The challenge type is how the user will get the challenge and prove possession. Supported challenge types include: "otp" and "oob".
      *
@@ -731,6 +765,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val BINDING_CODE_KEY = "binding_code"
         private const val CHALLENGE_TYPE_KEY = "challenge_type"
         private const val AUTHENTICATOR_ID_KEY = "authenticator_id"
+        private const val RECOVERY_CODE_KEY = "recovery_code"
         private const val SUBJECT_TOKEN_KEY = "subject_token"
         private const val SUBJECT_TOKEN_TYPE_KEY = "subject_token_type"
         private const val USER_METADATA_KEY = "user_metadata"
