@@ -67,11 +67,17 @@ public class ServerResponseTest {
             mock(InputStream::class.java),
             mapOf("CONTENT-TYPE" to listOf("text/html"))
         )
+        val responseEmpty = ServerResponse(
+            200,
+            mock(InputStream::class.java),
+            mapOf()
+        )
 
         assertTrue(responseMixed.isJson())
         assertTrue(responseMixedCombined.isJson())
         assertTrue(responseLower.isJson())
         assertTrue(responseUpper.isJson())
         assertFalse(responseNotJSON.isJson())
+        assertFalse(responseEmpty.isJson())
     }
 }
