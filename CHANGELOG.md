@@ -1,5 +1,18 @@
 # Change Log
 
+## [2.4.0](https://github.com/auth0/Auth0.Android/tree/2.4.0) (2021-07-20)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.3.0...2.4.0)
+
+**Added**
+- Add federated option to the Web Auth Logout [SDK-2165] [\#501](https://github.com/auth0/Auth0.Android/pull/501) ([lbalmaceda](https://github.com/lbalmaceda))
+- Add support for Recovery Code multi-factor authentication [\#500](https://github.com/auth0/Auth0.Android/pull/500) ([lbalmaceda](https://github.com/lbalmaceda))
+- Add support for OOB multi-factor authentication [SDK-2657] [\#498](https://github.com/auth0/Auth0.Android/pull/498) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Fixed**
+- Fix MFA Challenge authentication and prevent sending the scope again [\#504](https://github.com/auth0/Auth0.Android/pull/504) ([lbalmaceda](https://github.com/lbalmaceda))
+- Fix bug parsing content type headers [\#503](https://github.com/auth0/Auth0.Android/pull/503) ([lbalmaceda](https://github.com/lbalmaceda))
+- Catch IOExceptions from response body InputStream [\#486](https://github.com/auth0/Auth0.Android/pull/486) ([jeffdgr8](https://github.com/jeffdgr8))
+
 ## [2.3.0](https://github.com/auth0/Auth0.Android/tree/2.3.0) (2021-07-02)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.2.0...2.3.0)
 
