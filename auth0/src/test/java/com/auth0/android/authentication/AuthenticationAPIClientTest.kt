@@ -166,7 +166,7 @@ public class AuthenticationAPIClientTest {
         )
         assertThat(body, Matchers.hasEntry("mfa_token", "ey30.the-mfa-token.value"))
         assertThat(body, Matchers.hasEntry("otp", "123456"))
-        assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
+        assertThat(body, Matchers.not(Matchers.hasKey("scope")))
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
         assertThat(body, Matchers.not(Matchers.hasKey("password")))
         assertThat(body, Matchers.not(Matchers.hasKey("connection")))
@@ -202,7 +202,7 @@ public class AuthenticationAPIClientTest {
         )
         assertThat(body, Matchers.hasEntry("mfa_token", "ey30.the-mfa-token.value"))
         assertThat(body, Matchers.hasEntry("recovery_code", "123456"))
-        assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
+        assertThat(body, Matchers.not(Matchers.hasKey("scope")))
     }
 
     @Test
@@ -234,7 +234,7 @@ public class AuthenticationAPIClientTest {
         )
         assertThat(body, Matchers.hasEntry("mfa_token", "ey30.the-mfa-token.value"))
         assertThat(body, Matchers.hasEntry("oob_code", "123456"))
-        assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
+        assertThat(body, Matchers.not(Matchers.hasKey("scope")))
         assertThat(body, Matchers.not(Matchers.hasKey("binding_code")))
     }
 
@@ -267,8 +267,8 @@ public class AuthenticationAPIClientTest {
         )
         assertThat(body, Matchers.hasEntry("mfa_token", "ey30.the-mfa-token.value"))
         assertThat(body, Matchers.hasEntry("oob_code", "123456"))
-        assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
         assertThat(body, Matchers.hasEntry("binding_code", "abcdefg"))
+        assertThat(body, Matchers.not(Matchers.hasKey("scope")))
     }
 
     @Test
@@ -287,8 +287,10 @@ public class AuthenticationAPIClientTest {
         assertThat(request.path, Matchers.equalTo("/mfa/challenge"))
         val body = bodyFromRequest<Any>(request)
         assertThat(body, Matchers.hasEntry("mfa_token", "ey30.the-mfa-token.value"))
+        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.not(Matchers.hasKey("challenge_type")))
         assertThat(body, Matchers.not(Matchers.hasKey("authenticator_id")))
+        assertThat(body, Matchers.not(Matchers.hasKey("scope")))
         assertThat(
             callback, AuthenticationCallbackMatcher.hasPayloadOfType(
                 Challenge::class.java
@@ -312,8 +314,10 @@ public class AuthenticationAPIClientTest {
         assertThat(request.path, Matchers.equalTo("/mfa/challenge"))
         val body = bodyFromRequest<Any>(request)
         assertThat(body, Matchers.hasEntry("mfa_token", "ey30.the-mfa-token.value"))
+        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("challenge_type", "oob"))
         assertThat(body, Matchers.hasEntry("authenticator_id", "sms|dev_NU1Ofuw3Cw0XCt5x"))
+        assertThat(body, Matchers.not(Matchers.hasKey("scope")))
         assertThat(
             callback, AuthenticationCallbackMatcher.hasPayloadOfType(
                 Challenge::class.java

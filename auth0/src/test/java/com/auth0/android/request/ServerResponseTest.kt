@@ -47,6 +47,11 @@ public class ServerResponseTest {
             mock(InputStream::class.java),
             mapOf("Content-Type" to listOf("application/json"))
         )
+        val responseMixedCombined = ServerResponse(
+            200,
+            mock(InputStream::class.java),
+            mapOf("Content-Type" to listOf("application/json; charset=UTF-8"))
+        )
         val responseLower = ServerResponse(
             200,
             mock(InputStream::class.java),
@@ -57,9 +62,22 @@ public class ServerResponseTest {
             mock(InputStream::class.java),
             mapOf("CONTENT-TYPE" to listOf("application/json"))
         )
+        val responseNotJSON = ServerResponse(
+            200,
+            mock(InputStream::class.java),
+            mapOf("CONTENT-TYPE" to listOf("text/html"))
+        )
+        val responseEmpty = ServerResponse(
+            200,
+            mock(InputStream::class.java),
+            mapOf()
+        )
 
         assertTrue(responseMixed.isJson())
+        assertTrue(responseMixedCombined.isJson())
         assertTrue(responseLower.isJson())
         assertTrue(responseUpper.isJson())
+        assertFalse(responseNotJSON.isJson())
+        assertFalse(responseEmpty.isJson())
     }
 }

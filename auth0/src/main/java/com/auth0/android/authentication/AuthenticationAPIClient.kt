@@ -119,7 +119,6 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     /**
      * Log in a user using the One Time Password code after they have received the 'mfa_required' error.
      * The MFA token tells the server the username or email, password, and realm values sent on the first request.
-     * The default scope used is 'openid profile email'.
      *
      * Requires your client to have the **MFA OTP** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
      *
@@ -139,7 +138,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @return a request to configure and start that will yield [Credentials]
      */
     public fun loginWithOTP(mfaToken: String, otp: String): AuthenticationRequest {
-        val parameters = ParameterBuilder.newAuthenticationBuilder()
+        val parameters = ParameterBuilder.newBuilder()
             .setGrantType(ParameterBuilder.GRANT_TYPE_MFA_OTP)
             .set(MFA_TOKEN_KEY, mfaToken)
             .set(ONE_TIME_PASSWORD_KEY, otp)
@@ -150,7 +149,6 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     /**
      * Log in a user using an Out Of Band authentication code after they have received the 'mfa_required' error.
      * The MFA token tells the server the username or email, password, and realm values sent on the first request.
-     * The default scope used is 'openid profile email'.
      *
      * Requires your client to have the **MFA OOB** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
      *
@@ -175,7 +173,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         oobCode: String,
         bindingCode: String? = null
     ): AuthenticationRequest {
-        val parameters = ParameterBuilder.newAuthenticationBuilder()
+        val parameters = ParameterBuilder.newBuilder()
             .setGrantType(ParameterBuilder.GRANT_TYPE_MFA_OOB)
             .set(MFA_TOKEN_KEY, mfaToken)
             .set(OUT_OF_BAND_CODE_KEY, oobCode)
@@ -187,7 +185,6 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     /**
      * Log in a user using a multi-factor authentication Recovery Code after they have received the 'mfa_required' error.
      * The MFA token tells the server the username or email, password, and realm values sent on the first request.
-     * The default scope used is 'openid profile email'.
      *
      * Requires your client to have the **MFA** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
      *
@@ -210,7 +207,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         mfaToken: String,
         recoveryCode: String
     ): AuthenticationRequest {
-        val parameters = ParameterBuilder.newAuthenticationBuilder()
+        val parameters = ParameterBuilder.newBuilder()
             .setGrantType(ParameterBuilder.GRANT_TYPE_MFA_RECOVERY_CODE)
             .set(MFA_TOKEN_KEY, mfaToken)
             .set(RECOVERY_CODE_KEY, recoveryCode)
@@ -244,7 +241,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         challengeType: String? = null,
         authenticatorId: String? = null
     ): Request<Challenge, AuthenticationException> {
-        val parameters = ParameterBuilder.newAuthenticationBuilder()
+        val parameters = ParameterBuilder.newBuilder()
+            .setClientId(clientId)
             .set(MFA_TOKEN_KEY, mfaToken)
             .set(CHALLENGE_TYPE_KEY, challengeType)
             .set(AUTHENTICATOR_ID_KEY, authenticatorId)
