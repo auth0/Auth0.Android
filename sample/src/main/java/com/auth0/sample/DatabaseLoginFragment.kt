@@ -22,7 +22,10 @@ class DatabaseLoginFragment : Fragment() {
 
     private val account: Auth0 by lazy {
         // -- REPLACE this credentials with your own Auth0 app credentials!
-        val account = Auth0("PX2vJhpALUNT66NHdCdD30XWqlIR4oEZ", "lbalmaceda.auth0.com")
+        val account = Auth0(
+            getString(R.string.com_auth0_client_id),
+            getString(R.string.com_auth0_domain)
+        )
         // Only enable network traffic logging on production environments!
         account.networkingClient = DefaultClient(enableLogging = true)
         account
@@ -72,7 +75,7 @@ class DatabaseLoginFragment : Fragment() {
 
     private fun webAuth() {
         WebAuthProvider.login(account)
-            .withScheme("demo")
+            .withScheme(getString(R.string.com_auth0_scheme))
             .start(requireContext(), object : Callback<Credentials, AuthenticationException> {
                 override fun onSuccess(result: Credentials) {
                     Snackbar.make(
@@ -92,7 +95,7 @@ class DatabaseLoginFragment : Fragment() {
 
     private fun webLogout() {
         WebAuthProvider.logout(account)
-            .withScheme("demo")
+            .withScheme(getString(R.string.com_auth0_scheme))
             .start(requireContext(), object : Callback<Void?, AuthenticationException> {
                 override fun onSuccess(result: Void?) {
                     Snackbar.make(
