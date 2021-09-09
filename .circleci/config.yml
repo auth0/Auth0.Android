@@ -15,7 +15,7 @@ jobs:
 
       - run:
           name: Run checks
-          command: ./gradlew clean test jacocoTestReport lint --continue --console=plain --max-workers=2
+          command: ./gradlew clean test jacocoTestReport lint --continue --console=plain --max-workers=2 --no-daemon
 
       - save_cache:
           key: v2-dep-{{ checksum "build.gradle" }}-{{ checksum  "auth0/build.gradle" }}
