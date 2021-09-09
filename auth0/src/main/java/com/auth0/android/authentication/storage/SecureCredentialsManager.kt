@@ -147,7 +147,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             )
             storage.store(KEY_CACHE_EXPIRES_AT, cacheExpiresAt)
             storage.store(KEY_CAN_REFRESH, canRefresh)
-            storage.store(KEY_CRYPTO_ALIAS, KEY_ALIAS)
         } catch (e: IncompatibleDeviceException) {
             throw CredentialsManagerException(
                 String.format(
@@ -230,7 +229,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         storage.remove(KEY_EXPIRES_AT)
         storage.remove(KEY_CACHE_EXPIRES_AT)
         storage.remove(KEY_CAN_REFRESH)
-        storage.remove(KEY_CRYPTO_ALIAS)
         Log.d(TAG, "Credentials were just removed from the storage")
     }
 
@@ -258,14 +256,12 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         }
         val cacheExpiresAt = storage.retrieveLong(KEY_CACHE_EXPIRES_AT)
         val canRefresh = storage.retrieveBoolean(KEY_CAN_REFRESH)
-        val keyAliasUsed = storage.retrieveString(KEY_CRYPTO_ALIAS)
         val emptyCredentials = TextUtils.isEmpty(encryptedEncoded) || cacheExpiresAt == null
-        return KEY_ALIAS == keyAliasUsed &&
-                !(emptyCredentials || (hasExpired(cacheExpiresAt!!) || willExpire(
-                    expiresAt,
-                    minTtl
-                )) &&
-                        (canRefresh == null || !canRefresh))
+        return !(emptyCredentials || (hasExpired(cacheExpiresAt!!) || willExpire(
+            expiresAt,
+            minTtl
+        )) &&
+                (canRefresh == null || !canRefresh))
     }
 
     private fun continueGetCredentials(
@@ -397,7 +393,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         private const val KEY_EXPIRES_AT = "com.auth0.credentials_access_token_expires_at"
         private const val KEY_CACHE_EXPIRES_AT = "com.auth0.credentials_expires_at"
         private const val KEY_CAN_REFRESH = "com.auth0.credentials_can_refresh"
-        private const val KEY_CRYPTO_ALIAS = "com.auth0.manager_key_alias"
         private const val KEY_ALIAS = "com.auth0.key"
     }
 
