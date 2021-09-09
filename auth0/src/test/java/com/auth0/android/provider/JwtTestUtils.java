@@ -127,7 +127,7 @@ class JwtTestUtils {
         dis.close();
 
         String temp = new String(keyBytes, StandardCharsets.UTF_8);
-        String privKeyPEM = temp.replace("-----BEGIN PRIVATE KEY-----\n", "");
+        String privKeyPEM = temp.replace("-----BEGIN PRIVATE KEY-----", "");
         privKeyPEM = privKeyPEM.replace("-----END PRIVATE KEY-----", "");
 
         byte[] decoded = Base64.decode(privKeyPEM, Base64.DEFAULT);
@@ -147,7 +147,7 @@ class JwtTestUtils {
         dis.close();
 
         String temp = new String(keyBytes, StandardCharsets.UTF_8);
-        String pubKeyPEM = temp.replace("-----BEGIN PUBLIC KEY-----\n", "");
+        String pubKeyPEM = temp.replace("-----BEGIN PUBLIC KEY-----", "");
         pubKeyPEM = pubKeyPEM.replace("-----END PUBLIC KEY-----", "");
 
         byte[] decoded = Base64.decode(pubKeyPEM, Base64.DEFAULT);

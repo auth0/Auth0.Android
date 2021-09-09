@@ -14,7 +14,6 @@ import org.hamcrest.core.IsCollectionContaining
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers
 import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.MockitoAnnotations
@@ -32,24 +31,46 @@ import java.util.*
 public class BaseRequestTest {
     private lateinit var baseRequest: BaseRequest<SimplePojo, Auth0Exception>
     private lateinit var resultAdapter: JsonAdapter<SimplePojo>
+    private lateinit var errorAdapter: ErrorAdapter<Auth0Exception>
 
     @Mock
     private lateinit var client: NetworkingClient
 
-    @Mock
-    private lateinit var errorAdapter: ErrorAdapter<Auth0Exception>
+    /**
+     * Whether the response InputStream was closed; only relevant for tests using the `mock...`
+     * setup methods of this class.
+     */
+    private var wasResponseStreamClosed = false
 
-    @Mock
-    private lateinit var auth0Exception: Auth0Exception
+    private val readAuth0Exception = Auth0Exception("read")
+    private val readRawAuth0Exception = Auth0Exception("read-raw")
+    private val wrappingAuth0Exception = Auth0Exception("wrapping")
 
     private val optionsCaptor: KArgumentCaptor<RequestOptions> = argumentCaptor()
-
-    private val readerCaptor: KArgumentCaptor<Reader> = argumentCaptor()
 
     @Before
     public fun setUp() {
         MockitoAnnotations.openMocks(this)
         resultAdapter = Mockito.spy(GsonAdapter(SimplePojo::class.java, Gson()))
+        errorAdapter = Mockito.spy(object : ErrorAdapter<Auth0Exception> {
+            override fun fromJsonResponse(statusCode: Int, reader: Reader): Auth0Exception {
+                reader.read() // Read to trigger exception thrown by Reader, if any
+                return readAuth0Exception
+            }
+
+            override fun fromRawResponse(
+                statusCode: Int,
+                bodyText: String,
+                headers: Map<String, List<String>>
+            ): Auth0Exception {
+                return readRawAuth0Exception
+            }
+
+            override fun fromException(cause: Throwable): Auth0Exception {
+                return wrappingAuth0Exception
+            }
+
+        })
         baseRequest = createRequest()
     }
 
@@ -151,34 +172,31 @@ public class BaseRequestTest {
     @Test
     @Throws(Exception::class)
     public fun shouldBuildErrorFromException() {
-        val networkError = mock<IOException>()
+        val networkError = IOException("Network error")
         Mockito.`when`(
             client.load(
                 eq(BASE_URL), any()
             )
         ).thenThrow(networkError)
-        Mockito.`when`(
-            errorAdapter.fromException(
-                any()
-            )
-        ).thenReturn(auth0Exception)
         var exception: Exception? = null
         var result: SimplePojo? = null
         try {
             result = baseRequest.execute()
-        } catch (e: Exception) {
+        } catch (e: Auth0Exception) {
             exception = e
         }
-        MatcherAssert.assertThat(exception, Matchers.`is`(auth0Exception))
+        MatcherAssert.assertThat(exception, Matchers.`is`(wrappingAuth0Exception))
         MatcherAssert.assertThat(result, Matchers.`is`(Matchers.nullValue()))
+        verify(errorAdapter).fromException(networkError)
         verifyZeroInteractions(resultAdapter)
-        verify(errorAdapter).fromException(eq(networkError))
+        verifyNoMoreInteractions(errorAdapter)
     }
 
     @Test
     @Throws(Exception::class)
     public fun shouldBuildErrorFromResponseParseException() {
         mockSuccessfulServerResponse()
+        @Suppress("UNCHECKED_CAST") // adapter is only used for throwing exceptions
         val resultAdapter = Mockito.mock(GsonAdapter::class.java) as JsonAdapter<SimplePojo>
         val baseRequest = BaseRequest(
             HttpMethod.POST,
@@ -187,17 +205,12 @@ public class BaseRequestTest {
             resultAdapter,
             errorAdapter
         )
-        val networkError = mock<JsonIOException>()
+        val networkError = JsonIOException("Network error")
         Mockito.`when`(
             resultAdapter.fromJson(
                 any()
             )
         ).thenThrow(networkError)
-        Mockito.`when`(
-            errorAdapter.fromException(
-                any()
-            )
-        ).thenReturn(auth0Exception)
         var exception: Exception? = null
         var result: SimplePojo? = null
         try {
@@ -205,9 +218,11 @@ public class BaseRequestTest {
         } catch (e: Exception) {
             exception = e
         }
-        MatcherAssert.assertThat(exception, Matchers.`is`(auth0Exception))
+        MatcherAssert.assertThat(exception, Matchers.`is`(wrappingAuth0Exception))
         MatcherAssert.assertThat(result, Matchers.`is`(Matchers.nullValue()))
         verify(errorAdapter).fromException(eq(networkError))
+        MatcherAssert.assertThat(wasResponseStreamClosed, Matchers.`is`(true))
+        verifyNoMoreInteractions(errorAdapter)
     }
 
     @Test
@@ -222,23 +237,13 @@ public class BaseRequestTest {
             exception = e
         }
         MatcherAssert.assertThat(result, Matchers.`is`(Matchers.nullValue()))
-        MatcherAssert.assertThat(exception, Matchers.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(exception, Matchers.`is`(auth0Exception))
+        MatcherAssert.assertThat(exception, Matchers.`is`(readAuth0Exception))
         verify(errorAdapter).fromJsonResponse(
             eq(422), any()
         )
-        val reader = readerCaptor.firstValue
-        MatcherAssert.assertThat(reader, Matchers.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(
-            reader, Matchers.`is`(
-                Matchers.instanceOf(
-                    AwareInputStreamReader::class.java
-                )
-            )
-        )
-        val awareReader = reader as AwareInputStreamReader
-        MatcherAssert.assertThat(awareReader.isClosed, Matchers.`is`(true))
+        MatcherAssert.assertThat(wasResponseStreamClosed, Matchers.`is`(true))
         verifyZeroInteractions(resultAdapter)
+        verifyNoMoreInteractions(errorAdapter)
     }
 
     @Test
@@ -253,8 +258,7 @@ public class BaseRequestTest {
             exception = e
         }
         MatcherAssert.assertThat(result, Matchers.`is`(Matchers.nullValue()))
-        MatcherAssert.assertThat(exception, Matchers.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(exception, Matchers.`is`(auth0Exception))
+        MatcherAssert.assertThat(exception, Matchers.`is`(readRawAuth0Exception))
         val headersMapCaptor: KArgumentCaptor<Map<String, List<String>>> = argumentCaptor()
         verify(errorAdapter).fromRawResponse(
             eq(500),
@@ -271,7 +275,9 @@ public class BaseRequestTest {
                 IsCollectionContaining.hasItem("text/plain")
             )
         )
+        MatcherAssert.assertThat(wasResponseStreamClosed, Matchers.`is`(true))
         verifyZeroInteractions(resultAdapter)
+        verifyNoMoreInteractions(errorAdapter)
     }
 
     @Test
@@ -282,26 +288,77 @@ public class BaseRequestTest {
         var result: SimplePojo? = null
         try {
             result = baseRequest.execute()
-        } catch (e: Exception) {
+        } catch (e: Auth0Exception) {
             exception = e
         }
         MatcherAssert.assertThat(exception, Matchers.`is`(Matchers.nullValue()))
         MatcherAssert.assertThat(result, Matchers.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(result!!.prop, Matchers.`is`("test-value"))
-        verify(resultAdapter).fromJson(
-            readerCaptor.capture()
-        )
-        val reader = readerCaptor.firstValue
-        MatcherAssert.assertThat(reader, Matchers.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(
-            reader, Matchers.`is`(
-                Matchers.instanceOf(
-                    AwareInputStreamReader::class.java
-                )
-            )
-        )
-        val awareReader = reader as AwareInputStreamReader
-        MatcherAssert.assertThat(awareReader.isClosed, Matchers.`is`(true))
+        verify(resultAdapter).fromJson(any())
+        MatcherAssert.assertThat(wasResponseStreamClosed, Matchers.`is`(true))
+        verifyNoMoreInteractions(resultAdapter)
+        verifyZeroInteractions(errorAdapter)
+    }
+
+    @Test
+    @Throws(Exception::class)
+    public fun shouldBuildErrorFromNetworkErrorForUnsuccessfulJsonResponse() {
+        val networkError = IOException("Network error")
+        mockFailedJsonServerResponseNetworkError(networkError)
+        var exception: Auth0Exception? = null
+        var result: SimplePojo? = null
+        try {
+            result = baseRequest.execute()
+        } catch (e: Auth0Exception) {
+            exception = e
+        }
+        MatcherAssert.assertThat(result, Matchers.`is`(Matchers.nullValue()))
+        MatcherAssert.assertThat(exception, Matchers.`is`(wrappingAuth0Exception))
+        verify(errorAdapter).fromJsonResponse(eq(422), any())
+        verify(errorAdapter).fromException(networkError)
+        MatcherAssert.assertThat(wasResponseStreamClosed, Matchers.`is`(true))
+        verifyZeroInteractions(resultAdapter)
+        verifyNoMoreInteractions(errorAdapter)
+    }
+
+    @Test
+    @Throws(Exception::class)
+    public fun shouldBuildErrorFromNetworkErrorForUnsuccessfulRawResponse() {
+        val networkError = IOException("Network error")
+        mockFailedRawServerResponseNetworkError(networkError)
+        var exception: Auth0Exception? = null
+        var result: SimplePojo? = null
+        try {
+            result = baseRequest.execute()
+        } catch (e: Auth0Exception) {
+            exception = e
+        }
+        MatcherAssert.assertThat(result, Matchers.`is`(Matchers.nullValue()))
+        MatcherAssert.assertThat(exception, Matchers.`is`(wrappingAuth0Exception))
+        verify(errorAdapter).fromException(networkError)
+        MatcherAssert.assertThat(wasResponseStreamClosed, Matchers.`is`(true))
+        verifyZeroInteractions(resultAdapter)
+        verifyNoMoreInteractions(errorAdapter)
+    }
+
+    @Test
+    @Throws(Exception::class)
+    public fun shouldBuildErrorFromNetworkErrorForSuccessfulResponse() {
+        val networkError = IOException("Network error")
+        mockSuccessfulServerResponseNetworkError(networkError)
+        var exception: Exception? = null
+        var result: SimplePojo? = null
+        try {
+            result = baseRequest.execute()
+        } catch (e: Auth0Exception) {
+            exception = e
+        }
+        MatcherAssert.assertThat(result, Matchers.`is`(Matchers.nullValue()))
+        verify(resultAdapter).fromJson(any())
+        MatcherAssert.assertThat(exception, Matchers.`is`(wrappingAuth0Exception))
+        verify(errorAdapter).fromException(networkError)
+        MatcherAssert.assertThat(wasResponseStreamClosed, Matchers.`is`(true))
+        verifyNoMoreInteractions(resultAdapter)
         verifyNoMoreInteractions(errorAdapter)
     }
 
@@ -404,7 +461,7 @@ public class BaseRequestTest {
     private fun mockSuccessfulServerResponse() {
         val headers = Collections.singletonMap("Content-Type", listOf("application/json"))
         val jsonResponse = "{\"prop\":\"test-value\"}"
-        val inputStream: InputStream = ByteArrayInputStream(jsonResponse.toByteArray())
+        val inputStream = AwareInputStream(jsonResponse) { wasResponseStreamClosed = true }
         val response = ServerResponse(200, inputStream, headers)
         Mockito.`when`(
             client.load(
@@ -417,14 +474,7 @@ public class BaseRequestTest {
     private fun mockFailedRawServerResponse() {
         val headers = Collections.singletonMap("Content-Type", listOf("text/plain"))
         val textResponse = "Failure"
-        val inputStream: InputStream = ByteArrayInputStream(textResponse.toByteArray())
-        Mockito.`when`(
-            errorAdapter.fromRawResponse(
-                eq(500),
-                ArgumentMatchers.anyString(),
-                ArgumentMatchers.anyMap()
-            )
-        ).thenReturn(auth0Exception)
+        val inputStream = AwareInputStream(textResponse) { wasResponseStreamClosed = true }
         val response = ServerResponse(500, inputStream, headers)
         Mockito.`when`(
             client.load(
@@ -437,19 +487,82 @@ public class BaseRequestTest {
     private fun mockFailedJsonServerResponse() {
         val headers = Collections.singletonMap("Content-Type", listOf("application/json"))
         val jsonResponse = "{\"error_code\":\"invalid_token\"}"
-        val inputStream: InputStream = ByteArrayInputStream(jsonResponse.toByteArray())
-        Mockito.`when`(
-            errorAdapter.fromJsonResponse(
-                eq(422),
-                readerCaptor.capture()
-            )
-        ).thenReturn(auth0Exception)
+        val inputStream = AwareInputStream(jsonResponse) { wasResponseStreamClosed = true }
         val response = ServerResponse(422, inputStream, headers)
         Mockito.`when`(
             client.load(
                 eq(BASE_URL), any()
             )
         ).thenReturn(response)
+    }
+
+    @Throws(Exception::class)
+    private fun mockSuccessfulServerResponseNetworkError(networkError: IOException) {
+        val headers = Collections.singletonMap("Content-Type", listOf("application/json"))
+        val inputStream = AwareThrowingInputStream(networkError) { wasResponseStreamClosed = true }
+        val response = ServerResponse(200, inputStream, headers)
+        Mockito.`when`(
+            client.load(
+                eq(BASE_URL), any()
+            )
+        ).thenReturn(response)
+    }
+
+    @Throws(Exception::class)
+    private fun mockFailedRawServerResponseNetworkError(networkError: IOException) {
+        val headers = Collections.singletonMap("Content-Type", listOf("text/plain"))
+        val inputStream = AwareThrowingInputStream(networkError) { wasResponseStreamClosed = true }
+        val response = ServerResponse(500, inputStream, headers)
+        Mockito.`when`(
+            client.load(
+                eq(BASE_URL), any()
+            )
+        ).thenReturn(response)
+    }
+
+    @Throws(Exception::class)
+    private fun mockFailedJsonServerResponseNetworkError(networkError: IOException) {
+        val headers = Collections.singletonMap("Content-Type", listOf("application/json"))
+        val inputStream = AwareThrowingInputStream(networkError) { wasResponseStreamClosed = true }
+        val response = ServerResponse(422, inputStream, headers)
+        Mockito.`when`(
+            client.load(
+                eq(BASE_URL), any()
+            )
+        ).thenReturn(response)
+    }
+
+    /**
+     * `InputStream` which informs a callback when `close()` has been called.
+     */
+    private class AwareInputStream(
+        data: String,
+        private val closedCallback: () -> Unit
+    ) : ByteArrayInputStream(data.toByteArray()) {
+
+        override fun close() {
+            super.close()
+            closedCallback()
+        }
+    }
+
+    /**
+     * `InputStream` which always throws an exception when its reading methods are called,
+     * and which informs a callback when `close()` has been called.
+     */
+    private class AwareThrowingInputStream(
+        private val networkError: IOException,
+        private val closedCallback: () -> Unit
+    ) : InputStream() {
+
+        override fun close() {
+            super.close()
+            closedCallback()
+        }
+
+        override fun read(): Int {
+            throw networkError
+        }
     }
 
     private class SimplePojo(val prop: String)
