@@ -56,7 +56,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * @param callback the callback that will receive a valid [Credentials] or the [CredentialsManagerException].
      */
     override fun getCredentials(callback: Callback<Credentials, CredentialsManagerException>) {
-        getCredentials(null, 0, callback)
+        getCredentials(null, 0, emptyMap(), callback)
     }
 
     /**
@@ -66,11 +66,13 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      *
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
+     * @param parameters to send with the request as a map of string with the keys as string
      * @param callback the callback that will receive a valid [Credentials] or the [CredentialsManagerException].
      */
     override fun getCredentials(
         scope: String?,
         minTtl: Int,
+        parameters: Map<String, String>,
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
         val accessToken = storage.retrieveString(KEY_ACCESS_TOKEN)
@@ -113,6 +115,10 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         if (scope != null) {
             request.addParameter("scope", scope)
         }
+        parameters.forEach { (key, value) ->
+            request.addParameter(key, value)
+        }
+
         request.start(object : AuthenticationCallback<Credentials> {
             override fun onSuccess(fresh: Credentials) {
                 val expiresAt = fresh.expiresAt.time

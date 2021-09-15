@@ -1,6 +1,5 @@
 package com.auth0.android.authentication.storage
 
-import android.text.TextUtils
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.callback.Callback
@@ -35,6 +34,7 @@ public abstract class BaseCredentialsManager internal constructor(
     public abstract fun getCredentials(
         scope: String?,
         minTtl: Int,
+        parameters: Map<String, String> = emptyMap(),
         callback: Callback<Credentials, CredentialsManagerException>
     )
 

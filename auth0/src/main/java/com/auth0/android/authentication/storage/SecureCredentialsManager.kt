@@ -114,7 +114,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             return false
         }
         if (resultCode == Activity.RESULT_OK) {
-            continueGetCredentials(scope, minTtl, decryptCallback!!)
+            continueGetCredentials(scope, minTtl, emptyMap(), decryptCallback!!)
         } else {
             decryptCallback!!.onFailure(CredentialsManagerException("The user didn't pass the authentication challenge."))
             decryptCallback = null
@@ -181,7 +181,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * @param callback the callback to receive the result in.
      */
     override fun getCredentials(callback: Callback<Credentials, CredentialsManagerException>) {
-        getCredentials(null, 0, callback)
+        getCredentials(null, 0, emptyMap(), callback)
     }
 
     /**
@@ -196,11 +196,13 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      *
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
+     * @param parameters to send with the request as a map of string with the keys as string
      * @param callback the callback to receive the result in.
      */
     override fun getCredentials(
         scope: String?,
         minTtl: Int,
+        parameters: Map<String, String>,
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
         if (!hasValidCredentials(minTtl.toLong())) {
@@ -218,7 +220,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             activity!!.startActivityForResult(authIntent, authenticationRequestCode)
             return
         }
-        continueGetCredentials(scope, minTtl, callback)
+        continueGetCredentials(scope, minTtl, parameters, callback)
     }
 
     /**
@@ -267,6 +269,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     private fun continueGetCredentials(
         scope: String?,
         minTtl: Int,
+        parameters: Map<String, String>,
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
         val encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS)
@@ -340,6 +343,10 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         if (scope != null) {
             request.addParameter("scope", scope)
         }
+        parameters.forEach { (key, value) ->
+            request.addParameter(key, value)
+        }
+
         request.start(object : AuthenticationCallback<Credentials> {
             override fun onSuccess(fresh: Credentials) {
                 val expiresAt = fresh.expiresAt.time

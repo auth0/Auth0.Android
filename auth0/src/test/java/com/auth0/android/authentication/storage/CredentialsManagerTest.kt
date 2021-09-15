@@ -349,7 +349,7 @@ public class CredentialsManagerTest {
         val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
-        manager.getCredentials("some scope", 0, callback)
+        manager.getCredentials(scope = "some scope", minTtl = 0, callback = callback)
         verify(request).start(
             requestCallbackCaptor.capture()
         )
@@ -410,7 +410,7 @@ public class CredentialsManagerTest {
         val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
-        manager.getCredentials("some scope", 0, callback)
+        manager.getCredentials(scope = "some scope", minTtl = 0, callback = callback)
         verify(request).start(
             requestCallbackCaptor.capture()
         )
@@ -471,7 +471,7 @@ public class CredentialsManagerTest {
         val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
-        manager.getCredentials("some scope", 0, callback)
+        manager.getCredentials(scope = "some scope", minTtl = 0, callback = callback)
         verify(request).start(
             requestCallbackCaptor.capture()
         )
@@ -533,7 +533,7 @@ public class CredentialsManagerTest {
         val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
-        manager.getCredentials(null, 60, callback) // 60 seconds of minTTL
+        manager.getCredentials(scope = null, minTtl = 60, callback = callback) // 60 seconds of minTTL
         verify(request, never())
             .addParameter(eq("scope"), ArgumentMatchers.anyString())
         verify(request).start(
@@ -656,7 +656,7 @@ public class CredentialsManagerTest {
         val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
-        manager.getCredentials(null, 60, callback) // 60 seconds of minTTL
+        manager.getCredentials(scope = null, minTtl = 60, callback = callback) // 60 seconds of minTTL
         verify(request, never())
             .addParameter(eq("scope"), ArgumentMatchers.anyString())
         verify(request).start(
@@ -912,6 +912,34 @@ public class CredentialsManagerTest {
             }
         })
         MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(true))
+    }
+
+    @Test
+    public fun shouldAddParametersToRequest() {
+        Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
+        val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS // non expired credentials
+        Mockito.`when`(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveLong("com.auth0.cache_expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveString("com.auth0.scope")).thenReturn("oldscope")
+        Mockito.`when`(
+            client.renewAuth("refreshToken")
+        ).thenReturn(request)
+
+        manager.getCredentials(
+            scope = "some changed scope to trigger refresh",
+            minTtl = 0,
+            parameters = mapOf(
+                "client_id" to "new Client ID",
+                "phone" to "+1 (777) 124-1588"
+            ), callback = callback
+        )
+        verify(request).start(requestCallbackCaptor.capture())
+
+        verify(request).addParameter(eq("scope"), eq("some changed scope to trigger refresh"))
+        verify(request).addParameter(eq("client_id"), eq("new Client ID"))
+        verify(request).addParameter(eq("phone"), eq("+1 (777) 124-1588"))
     }
 
     private fun prepareJwtDecoderMock(expiresAt: Date?) {
