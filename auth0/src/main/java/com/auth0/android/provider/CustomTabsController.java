@@ -31,7 +31,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
 
     @NonNull
     private final CustomTabsOptions customTabsOptions;
-    private boolean isBound;
+    private boolean didTryToBind;
 
     @VisibleForTesting
     CustomTabsController(@NonNull Context context, @NonNull CustomTabsOptions options) {
@@ -67,11 +67,13 @@ class CustomTabsController extends CustomTabsServiceConnection {
     public void bindService() {
         Log.v(TAG, "Trying to bind the service");
         Context context = this.context.get();
-        isBound = false;
+        didTryToBind = false;
+        boolean wasBound = false;
         if (context != null && preferredPackage != null) {
-            isBound = CustomTabsClient.bindCustomTabsService(context, preferredPackage, this);
+            didTryToBind = true;
+            wasBound = CustomTabsClient.bindCustomTabsService(context, preferredPackage, this);
         }
-        Log.v(TAG, "Bind request result: " + isBound);
+        Log.v(TAG, String.format("Bind request result (%s): %s", preferredPackage, wasBound));
     }
 
     /**
@@ -80,9 +82,9 @@ class CustomTabsController extends CustomTabsServiceConnection {
     public void unbindService() {
         Log.v(TAG, "Trying to unbind the service");
         Context context = this.context.get();
-        if (isBound && context != null) {
+        if (didTryToBind && context != null) {
             context.unbindService(this);
-            isBound = false;
+            didTryToBind = false;
         }
     }
 
