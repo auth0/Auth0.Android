@@ -40,6 +40,17 @@ public class UserProfileGsonTest : GsonBaseTest() {
 
     @Test
     @Throws(Exception::class)
+    public fun shouldHandleNullBooleans() {
+        val userProfile = pojoFrom(
+            StringReader(
+                """{"email_verified": null}"""
+            ), UserProfile::class.java
+        )
+        assertThat(userProfile, `is`(notNullValue()))
+    }
+
+    @Test
+    @Throws(Exception::class)
     public fun shouldNotRequireUserId() {
         val userProfile = pojoFrom(
             StringReader(
