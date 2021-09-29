@@ -8,8 +8,11 @@ import android.os.Build
 import android.text.TextUtils
 import android.util.Base64
 import android.util.Log
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.IntRange
 import androidx.annotation.VisibleForTesting
+import androidx.appcompat.app.AppCompatActivity
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.AuthenticationCallback
@@ -36,6 +39,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     private var authenticateBeforeDecrypt: Boolean
     private var authenticationRequestCode = -1
     private var activity: Activity? = null
+    private var activityResultContract: ActivityResultLauncher<Intent>? = null
 
     //State for retrying operations
     private var decryptCallback: Callback<Credentials, CredentialsManagerException>? = null
@@ -94,8 +98,15 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     || Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && kManager.isKeyguardSecure)
                     && authIntent != null)
         if (authenticateBeforeDecrypt) {
-            this.activity = activity
             authenticationRequestCode = requestCode
+            if (activity is AppCompatActivity) {
+                activityResultContract =
+                    activity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+                        checkAuthenticationResult(authenticationRequestCode, it.resultCode)
+                    }
+            } else {
+                this.activity = activity
+            }
         }
         return authenticateBeforeDecrypt
     }
@@ -239,7 +250,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             decryptCallback = callback
             this.scope = scope
             this.minTtl = minTtl
-            activity!!.startActivityForResult(authIntent, authenticationRequestCode)
+            activityResultContract?.launch(authIntent)
+                ?: activity!!.startActivityForResult(authIntent, authenticationRequestCode)
             return
         }
         continueGetCredentials(scope, minTtl, parameters, callback)
