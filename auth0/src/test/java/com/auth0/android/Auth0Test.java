@@ -63,7 +63,7 @@ public class Auth0Test {
         assertThat(auth0, notNullValue());
         assertThat(auth0.getClientId(), equalTo(CLIENT_ID));
         assertThat(auth0.getDomainUrl(), equalTo("https://samples.auth0.com/"));
-        assertThat(auth0.getConfigurationUrl(), equalTo("https://cdn.auth0.com/"));
+        assertThat(auth0.getConfigurationUrl(), equalTo("https://samples.auth0.com/"));
     }
 
     @Test
@@ -95,7 +95,7 @@ public class Auth0Test {
         Auth0 auth0 = new Auth0(CLIENT_ID, DOMAIN);
         assertThat(auth0.getClientId(), equalTo(CLIENT_ID));
         assertThat(HttpUrl.parse(auth0.getDomainUrl()), equalTo(HttpUrl.parse("https://samples.auth0.com")));
-        assertThat(HttpUrl.parse(auth0.getConfigurationUrl()), equalTo(HttpUrl.parse("https://cdn.auth0.com")));
+        assertThat(HttpUrl.parse(auth0.getConfigurationUrl()), equalTo(HttpUrl.parse("https://samples.auth0.com")));
     }
 
     @Test
@@ -111,7 +111,7 @@ public class Auth0Test {
         Auth0 auth0 = new Auth0(CLIENT_ID, EU_DOMAIN);
         assertThat(auth0.getClientId(), equalTo(CLIENT_ID));
         assertThat(HttpUrl.parse(auth0.getDomainUrl()), equalTo(HttpUrl.parse("https://samples.eu.auth0.com")));
-        assertThat(HttpUrl.parse(auth0.getConfigurationUrl()), equalTo(HttpUrl.parse("https://cdn.eu.auth0.com")));
+        assertThat(HttpUrl.parse(auth0.getConfigurationUrl()), equalTo(HttpUrl.parse("https://samples.eu.auth0.com")));
     }
 
     @Test
@@ -119,7 +119,7 @@ public class Auth0Test {
         Auth0 auth0 = new Auth0(CLIENT_ID, AU_DOMAIN);
         assertThat(auth0.getClientId(), equalTo(CLIENT_ID));
         assertThat(HttpUrl.parse(auth0.getDomainUrl()), equalTo(HttpUrl.parse("https://samples.au.auth0.com")));
-        assertThat(HttpUrl.parse(auth0.getConfigurationUrl()), equalTo(HttpUrl.parse("https://cdn.au.auth0.com")));
+        assertThat(HttpUrl.parse(auth0.getConfigurationUrl()), equalTo(HttpUrl.parse("https://samples.au.auth0.com")));
     }
 
     @Test
@@ -127,7 +127,7 @@ public class Auth0Test {
         Auth0 auth0 = new Auth0(CLIENT_ID, OTHER_DOMAIN);
         assertThat(auth0.getClientId(), equalTo(CLIENT_ID));
         assertThat(HttpUrl.parse(auth0.getDomainUrl()), equalTo(HttpUrl.parse("https://samples-test.other-subdomain.other.auth0.com")));
-        assertThat(HttpUrl.parse(auth0.getConfigurationUrl()), equalTo(HttpUrl.parse("https://cdn.other.auth0.com")));
+        assertThat(HttpUrl.parse(auth0.getConfigurationUrl()), equalTo(HttpUrl.parse("https://samples-test.other-subdomain.other.auth0.com")));
     }
 
     @Test
