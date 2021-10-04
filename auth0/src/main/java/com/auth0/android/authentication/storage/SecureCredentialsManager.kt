@@ -365,9 +365,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         if (scope != null) {
             request.addParameter("scope", scope)
         }
-        parameters.forEach { (key, value) ->
-            request.addParameter(key, value)
-        }
+
+        request.addParameters(parameters)
 
         request.start(object : AuthenticationCallback<Credentials> {
             override fun onSuccess(fresh: Credentials) {
