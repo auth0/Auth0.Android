@@ -181,7 +181,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * @param callback the callback to receive the result in.
      */
     override fun getCredentials(callback: Callback<Credentials, CredentialsManagerException>) {
-        getCredentials(null, 0, emptyMap(), callback)
+        getCredentials(null, 0, callback)
     }
 
     /**
