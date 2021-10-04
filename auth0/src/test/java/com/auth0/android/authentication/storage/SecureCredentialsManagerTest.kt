@@ -504,7 +504,7 @@ public class SecureCredentialsManagerTest {
         Mockito.`when`(
             client.renewAuth("refreshToken")
         ).thenReturn(request)
-        manager.getCredentials(scope = null, minTtl = 60, callback = callback) // minTTL of 1 minute
+        manager.getCredentials(null, 60, callback) // minTTL of 1 minute
         verify(request, never())
             .addParameter(eq("scope"), anyString())
         verify(request).start(
@@ -569,7 +569,7 @@ public class SecureCredentialsManagerTest {
         Mockito.`when`(
             client.renewAuth("refreshToken")
         ).thenReturn(request)
-        manager.getCredentials(scope = null, minTtl = 60, callback = callback) // minTTL of 1 minute
+        manager.getCredentials(null, 60, callback) // minTTL of 1 minute
         verify(request, never())
             .addParameter(eq("scope"), anyString())
         verify(request).start(
@@ -616,7 +616,7 @@ public class SecureCredentialsManagerTest {
         Mockito.`when`(
             client.renewAuth("refreshToken")
         ).thenReturn(request)
-        manager.getCredentials(scope = "different scope", minTtl = 0, callback = callback) // minTTL of 0 seconds (default)
+        manager.getCredentials("different scope", 0, callback) // minTTL of 0 seconds (default)
         verify(request)
             .addParameter(eq("scope"), eq("different scope"))
         verify(request).start(
@@ -680,7 +680,7 @@ public class SecureCredentialsManagerTest {
         Mockito.`when`(
             client.renewAuth("refreshToken")
         ).thenReturn(request)
-        manager.getCredentials(scope = "different scope", minTtl = 0, callback = callback) // minTTL of 0 seconds (default)
+        manager.getCredentials("different scope", 0, callback) // minTTL of 0 seconds (default)
         verify(request)
             .addParameter(eq("scope"), eq("different scope"))
         verify(request).start(
@@ -745,7 +745,7 @@ public class SecureCredentialsManagerTest {
         Mockito.`when`(
             client.renewAuth("refreshToken")
         ).thenReturn(request)
-        manager.getCredentials(scope = "different scope", minTtl = 0, callback = callback) // minTTL of 0 seconds (default)
+        manager.getCredentials("different scope", 0, callback) // minTTL of 0 seconds (default)
         verify(request)
             .addParameter(eq("scope"), eq("different scope"))
         verify(request).start(
@@ -1382,9 +1382,19 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldAddParametersToRequest() {
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS) // non expired credentials
-        insertTestCredentials(hasIdToken = false, hasAccessToken = true, hasRefreshToken = true, willExpireAt = expiresAt, scope = "scope") // "scope" is set
+        insertTestCredentials(
+            hasIdToken = false,
+            hasAccessToken = true,
+            hasRefreshToken = true,
+            willExpireAt = expiresAt,
+            scope = "scope"
+        ) // "scope" is set
         val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS + ONE_HOUR_SECONDS * 1000)
         val jwtMock = mock<Jwt>()
+        val parameters = mapOf(
+            "client_id" to "new Client ID",
+            "phone" to "+1 (777) 124-1588"
+        )
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
         Mockito.`when`(
@@ -1394,18 +1404,14 @@ public class SecureCredentialsManagerTest {
         manager.getCredentials(
             scope = "some changed scope to trigger refresh",
             minTtl = 0,
-            parameters = mapOf(
-                "client_id" to "new Client ID",
-                "phone" to "+1 (777) 124-1588"
-            ), callback = callback
+            parameters = parameters,
+            callback = callback
         )
 
-        verify(request).addParameter(eq("scope"), eq("some changed scope to trigger refresh"))
+        verify(request).addParameters(parameters)
         verify(request).start(
             requestCallbackCaptor.capture()
         )
-        verify(request).addParameter(eq("client_id"), eq("new Client ID"))
-        verify(request).addParameter(eq("phone"), eq("+1 (777) 124-1588"))
     }
 
     /*

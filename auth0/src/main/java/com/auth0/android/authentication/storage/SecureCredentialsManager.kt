@@ -196,6 +196,28 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      *
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
+     * @param callback the callback to receive the result in.
+     */
+    override fun getCredentials(
+        scope: String?,
+        minTtl: Int,
+        callback: Callback<Credentials, CredentialsManagerException>
+    ) {
+        getCredentials(scope, minTtl, emptyMap(), callback)
+    }
+
+    /**
+     * Tries to obtain the credentials from the Storage. The callback's [Callback.onSuccess] method will be called with the result.
+     * If something unexpected happens, the [Callback.onFailure] method will be called with the error. Some devices are not compatible
+     * at all with the cryptographic implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
+     *
+     *
+     * If a LockScreen is setup and [.requireAuthentication] was called, the user will be asked to authenticate before accessing
+     * the credentials. Your activity must override the [Activity.onActivityResult] method and call
+     * [.checkAuthenticationResult] with the received values.
+     *
+     * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
+     * @param minTtl   the minimum time in seconds that the access token should last before expiration.
      * @param parameters to send with the request as a map of string with the keys as string
      * @param callback the callback to receive the result in.
      */
