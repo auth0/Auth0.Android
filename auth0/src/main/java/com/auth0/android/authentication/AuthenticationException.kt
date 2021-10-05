@@ -174,6 +174,12 @@ public class AuthenticationException : Auth0Exception {
     /// When authenticating with web-based authentication using prompt=none and the auth0 session had expired
     public val isLoginRequired: Boolean
         get() = "login_required" == code
+    
+    /// User is deleted
+    public val isRefreshTokenDeleted: Boolean
+        get() = "invalid_grant" == code
+                && 403 == statusCode
+                && "The refresh_token was generated for a user who doesn't exist anymore." == description
 
     internal companion object {
         internal const val ERROR_VALUE_AUTHENTICATION_CANCELED = "a0.authentication_canceled"
