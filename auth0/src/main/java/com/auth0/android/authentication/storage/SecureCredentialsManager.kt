@@ -218,10 +218,10 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      *
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
-     * @param parameters to send with the request as a map of string with the keys as string
+     * @param parameters additional parameters to send in the request to refresh expired credentials
      * @param callback the callback to receive the result in.
      */
-    override fun getCredentials(
+    public fun getCredentials(
         scope: String?,
         minTtl: Int,
         parameters: Map<String, String>,
@@ -362,11 +362,11 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         val request = authenticationClient.renewAuth(
             credentials.refreshToken
         )
+
+        request.addParameters(parameters)
         if (scope != null) {
             request.addParameter("scope", scope)
         }
-
-        request.addParameters(parameters)
 
         request.start(object : AuthenticationCallback<Credentials> {
             override fun onSuccess(fresh: Credentials) {

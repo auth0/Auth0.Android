@@ -939,6 +939,7 @@ public class CredentialsManagerTest {
             parameters = parameters,
             callback = callback
         )
+        verify(request).addParameters(parameters)
         verify(request).start(requestCallbackCaptor.capture())
     }
 
