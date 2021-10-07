@@ -1,12 +1,10 @@
 package com.auth0.android
 
 import android.content.Context
-import androidx.annotation.VisibleForTesting
 import com.auth0.android.request.DefaultClient
 import com.auth0.android.request.NetworkingClient
 import com.auth0.android.util.Auth0UserAgent
 import okhttp3.HttpUrl
-import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.util.*
 
@@ -93,30 +91,11 @@ public open class Auth0 @JvmOverloads constructor(
             .build()
             .toString()
 
-
-    private fun resolveConfiguration(configurationDomain: String?, domainUrl: HttpUrl): HttpUrl {
-        var url = ensureValidUrl(configurationDomain)
-        if (url == null) {
-            val host = domainUrl.host
-            url = if (host.endsWith(DOT_AUTH0_DOT_COM)) {
-                val parts = host.split(".").toTypedArray()
-                if (parts.size > 3) {
-                    ("https://cdn." + parts[parts.size - 3] + DOT_AUTH0_DOT_COM).toHttpUrl()
-                } else {
-                    AUTH0_US_CDN_URL.toHttpUrl()
-                }
-            } else {
-                domainUrl
-            }
-        }
-        return url
-    }
-
     private fun ensureValidUrl(url: String?): HttpUrl? {
         if (url == null) {
             return null
         }
-        val normalizedUrl = url.toLowerCase(Locale.ROOT)
+        val normalizedUrl = url.lowercase(Locale.ROOT)
         require(!normalizedUrl.startsWith("http://")) { "Invalid domain url: '$url'. Only HTTPS domain URLs are supported. If no scheme is passed, HTTPS will be used." }
         val safeUrl =
             if (normalizedUrl.startsWith("https://")) normalizedUrl else "https://$normalizedUrl"
@@ -124,8 +103,6 @@ public open class Auth0 @JvmOverloads constructor(
     }
 
     private companion object {
-        private const val AUTH0_US_CDN_URL = "https://cdn.auth0.com"
-        private const val DOT_AUTH0_DOT_COM = ".auth0.com"
         private fun getResourceFromContext(context: Context, resName: String): String {
             val stringRes = context.resources.getIdentifier(resName, "string", context.packageName)
             require(stringRes != 0) {
@@ -141,7 +118,7 @@ public open class Auth0 @JvmOverloads constructor(
     init {
         domainUrl = ensureValidUrl(domain)
         requireNotNull(domainUrl) { String.format("Invalid domain url: '%s'", domain) }
-        configurationUrl = resolveConfiguration(configurationDomain, domainUrl)
+        configurationUrl = ensureValidUrl(configurationDomain) ?: domainUrl
         auth0UserAgent = Auth0UserAgent()
     }
 }
