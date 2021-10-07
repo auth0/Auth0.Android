@@ -1378,6 +1378,42 @@ public class SecureCredentialsManagerTest {
         })
         MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(true))
     }
+
+    @Test
+    public fun shouldAddParametersToRequest() {
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS) // non expired credentials
+        insertTestCredentials(
+            hasIdToken = false,
+            hasAccessToken = true,
+            hasRefreshToken = true,
+            willExpireAt = expiresAt,
+            scope = "scope"
+        ) // "scope" is set
+        val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS + ONE_HOUR_SECONDS * 1000)
+        val jwtMock = mock<Jwt>()
+        val parameters = mapOf(
+            "client_id" to "new Client ID",
+            "phone" to "+1 (777) 124-1588"
+        )
+        Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
+        Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
+        Mockito.`when`(
+            client.renewAuth("refreshToken")
+        ).thenReturn(request)
+
+        manager.getCredentials(
+            scope = "some changed scope to trigger refresh",
+            minTtl = 0,
+            parameters = parameters,
+            callback = callback
+        )
+
+        verify(request).addParameters(parameters)
+        verify(request).start(
+            requestCallbackCaptor.capture()
+        )
+    }
+
     /*
      * Helper methods
      */

@@ -1,6 +1,5 @@
 package com.auth0.android.authentication.storage
 
-import android.text.TextUtils
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.callback.Callback

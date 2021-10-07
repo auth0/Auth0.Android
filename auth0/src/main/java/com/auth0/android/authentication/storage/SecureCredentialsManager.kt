@@ -114,7 +114,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             return false
         }
         if (resultCode == Activity.RESULT_OK) {
-            continueGetCredentials(scope, minTtl, decryptCallback!!)
+            continueGetCredentials(scope, minTtl, emptyMap(), decryptCallback!!)
         } else {
             decryptCallback!!.onFailure(CredentialsManagerException("The user didn't pass the authentication challenge."))
             decryptCallback = null
@@ -203,6 +203,30 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         minTtl: Int,
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
+        getCredentials(scope, minTtl, emptyMap(), callback)
+    }
+
+    /**
+     * Tries to obtain the credentials from the Storage. The callback's [Callback.onSuccess] method will be called with the result.
+     * If something unexpected happens, the [Callback.onFailure] method will be called with the error. Some devices are not compatible
+     * at all with the cryptographic implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
+     *
+     *
+     * If a LockScreen is setup and [.requireAuthentication] was called, the user will be asked to authenticate before accessing
+     * the credentials. Your activity must override the [Activity.onActivityResult] method and call
+     * [.checkAuthenticationResult] with the received values.
+     *
+     * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
+     * @param minTtl   the minimum time in seconds that the access token should last before expiration.
+     * @param parameters additional parameters to send in the request to refresh expired credentials
+     * @param callback the callback to receive the result in.
+     */
+    public fun getCredentials(
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        callback: Callback<Credentials, CredentialsManagerException>
+    ) {
         if (!hasValidCredentials(minTtl.toLong())) {
             callback.onFailure(CredentialsManagerException("No Credentials were previously set."))
             return
@@ -218,7 +242,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             activity!!.startActivityForResult(authIntent, authenticationRequestCode)
             return
         }
-        continueGetCredentials(scope, minTtl, callback)
+        continueGetCredentials(scope, minTtl, parameters, callback)
     }
 
     /**
@@ -267,6 +291,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     private fun continueGetCredentials(
         scope: String?,
         minTtl: Int,
+        parameters: Map<String, String>,
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
         val encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS)
@@ -337,9 +362,12 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         val request = authenticationClient.renewAuth(
             credentials.refreshToken
         )
+
+        request.addParameters(parameters)
         if (scope != null) {
             request.addParameter("scope", scope)
         }
+
         request.start(object : AuthenticationCallback<Credentials> {
             override fun onSuccess(fresh: Credentials) {
                 val expiresAt = fresh.expiresAt.time
