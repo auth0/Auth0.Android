@@ -8,11 +8,11 @@ import android.os.Build
 import android.text.TextUtils
 import android.util.Base64
 import android.util.Log
+import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.IntRange
 import androidx.annotation.VisibleForTesting
-import androidx.appcompat.app.AppCompatActivity
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.AuthenticationCallback
@@ -74,7 +74,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * The activity passed as first argument here must override the [Activity.onActivityResult] method and
      * call [SecureCredentialsManager.checkAuthenticationResult] with the received parameters.
      *
-     * @param activity    a valid activity context. Will be used in the authentication request to launch a LockScreen intent.
+     * @param activity    a valid activity context. Will be used in the authentication request to launch a LockScreen intent. If this is a subclass of ComponentActivity, the Activity Results API will be used.
      * @param requestCode the request code to use in the authentication request. Must be a value between 1 and 255.
      * @param title       the text to use as title in the authentication screen. Passing null will result in using the OS's default value.
      * @param description the text to use as description in the authentication screen. On some Android versions it might not be shown. Passing null will result in using the OS's default value.
@@ -99,9 +99,12 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     && authIntent != null)
         if (authenticateBeforeDecrypt) {
             authenticationRequestCode = requestCode
-            if (activity is AppCompatActivity) {
+            if (activity is ComponentActivity) {
                 activityResultContract =
-                    activity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+                    activity.registerForActivityResult(
+                        ActivityResultContracts.StartActivityForResult(),
+                        activity.activityResultRegistry
+                    ) {
                         checkAuthenticationResult(authenticationRequestCode, it.resultCode)
                     }
             } else {
@@ -114,6 +117,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     /**
      * Checks the result after showing the LockScreen to the user.
      * Must be called from the [Activity.onActivityResult] method with the received parameters.
+     * Called internally when your activity is a subclass of ComponentActivity (using Activity Results API).
      * It's safe to call this method even if [SecureCredentialsManager.requireAuthentication] was unsuccessful.
      *
      * @param requestCode the request code received in the onActivityResult call.
@@ -251,7 +255,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             this.scope = scope
             this.minTtl = minTtl
             activityResultContract?.launch(authIntent)
-                ?: activity!!.startActivityForResult(authIntent, authenticationRequestCode)
+                ?: activity?.startActivityForResult(authIntent, authenticationRequestCode)
             return
         }
         continueGetCredentials(scope, minTtl, parameters, callback)
