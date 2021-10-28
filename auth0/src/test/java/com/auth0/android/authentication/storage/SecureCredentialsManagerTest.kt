@@ -1212,6 +1212,7 @@ public class SecureCredentialsManagerTest {
         val contractCaptor = argumentCaptor<ActivityResultContract<Intent, ActivityResult>>()
         val callbackCaptor = argumentCaptor<ActivityResultCallback<ActivityResult>>()
 
+        // Activity is "created"
         val activityController = Robolectric.buildActivity(
             ComponentActivity::class.java
         ).create()
@@ -1247,8 +1248,9 @@ public class SecureCredentialsManagerTest {
                 callbackCaptor.capture()
             )
 
-        // Trigger the prompt for credentials and move the activity to "start" so pending ActivityResults are dispatched
+        // Activity is "started" so pending ActivityResults are dispatched
         activityController.start()
+        // Trigger the prompt for credentials
         manager.getCredentials(callback)
         verify(activity, never()).startActivityForResult(any(), anyInt())
 
@@ -1283,6 +1285,7 @@ public class SecureCredentialsManagerTest {
         val contractCaptor = argumentCaptor<ActivityResultContract<Intent, ActivityResult>>()
         val callbackCaptor = argumentCaptor<ActivityResultCallback<ActivityResult>>()
 
+        // Activity is "created"
         val activityController = Robolectric.buildActivity(
             ComponentActivity::class.java
         ).create()
@@ -1306,7 +1309,7 @@ public class SecureCredentialsManagerTest {
         Mockito.`when`(kService.createConfirmDeviceCredentialIntent("theTitle", "theDescription"))
             .thenReturn(confirmCredentialsIntent)
 
-        //Require authentication
+        // Require authentication
         val willRequireAuthentication =
             manager.requireAuthentication(activity, 123, "theTitle", "theDescription")
         MatcherAssert.assertThat(willRequireAuthentication, Is.`is`(true))
@@ -1318,8 +1321,9 @@ public class SecureCredentialsManagerTest {
                 callbackCaptor.capture()
             )
 
-        // Trigger the prompt for credentials and move the activity to "start" so pending ActivityResults are dispatched
+        // Activity is "started" so pending ActivityResults are dispatched
         activityController.start()
+        // Trigger the prompt for credentials
         manager.getCredentials(callback)
         verify(activity, never()).startActivityForResult(any(), anyInt())
         verify(callback, never()).onSuccess(any())
@@ -1334,17 +1338,20 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public fun shouldGetCredentialsAfterAuthentication() {
+    public fun shouldNotThrowWhenRequiringAuthenticationAfterStartingTheActivity() {
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         insertTestCredentials(true, true, false, expiresAt, "scope")
         Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
             .thenReturn(expiresAt.time)
 
-        //Require authentication
+        /*
+         * Activity is "started" - This is a ComponentActivity, but the "registerForActivityResult"
+         * will not be called due to the lifecycle state
+         */
         val activity = Mockito.spy(
             Robolectric.buildActivity(
-                Activity::class.java
-            ).create().start().resume().get()
+                ComponentActivity::class.java
+            ).create().resume().start().get()
         )
         val kService = mock<KeyguardManager>()
         Mockito.`when`(activity.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService)
@@ -1352,6 +1359,7 @@ public class SecureCredentialsManagerTest {
         val confirmCredentialsIntent = mock<Intent>()
         Mockito.`when`(kService.createConfirmDeviceCredentialIntent("theTitle", "theDescription"))
             .thenReturn(confirmCredentialsIntent)
+        // Require authentication
         val willRequireAuthentication =
             manager.requireAuthentication(activity, 123, "theTitle", "theDescription")
         MatcherAssert.assertThat(willRequireAuthentication, Is.`is`(true))
@@ -1361,8 +1369,7 @@ public class SecureCredentialsManagerTest {
             .startActivityForResult(intentCaptor.capture(), eq(123))
         MatcherAssert.assertThat(intentCaptor.value, Is.`is`(confirmCredentialsIntent))
 
-
-        //Continue after successful authentication
+        // Continue after successful authentication
         val processed = manager.checkAuthenticationResult(123, Activity.RESULT_OK)
         MatcherAssert.assertThat(processed, Is.`is`(true))
         verify(callback).onSuccess(
@@ -1378,7 +1385,57 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(retrievedCredentials.expiresAt.time, Is.`is`(expiresAt.time))
         MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("scope"))
 
-        //A second call to checkAuthenticationResult should fail as callback is set to null
+        // A second call to checkAuthenticationResult should fail as callback is set to null
+        val retryCheck = manager.checkAuthenticationResult(123, Activity.RESULT_OK)
+        MatcherAssert.assertThat(retryCheck, Is.`is`(false))
+    }
+
+    @Test
+    public fun shouldGetCredentialsAfterAuthentication() {
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        insertTestCredentials(true, true, false, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
+            .thenReturn(expiresAt.time)
+
+        // Activity is "created"
+        val activity = Mockito.spy(
+            Robolectric.buildActivity(
+                Activity::class.java
+            ).create().get()
+        )
+        val kService = mock<KeyguardManager>()
+        Mockito.`when`(activity.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService)
+        Mockito.`when`(kService.isKeyguardSecure).thenReturn(true)
+        val confirmCredentialsIntent = mock<Intent>()
+        Mockito.`when`(kService.createConfirmDeviceCredentialIntent("theTitle", "theDescription"))
+            .thenReturn(confirmCredentialsIntent)
+        // Require authentication
+        val willRequireAuthentication =
+            manager.requireAuthentication(activity, 123, "theTitle", "theDescription")
+        MatcherAssert.assertThat(willRequireAuthentication, Is.`is`(true))
+        manager.getCredentials(callback)
+        val intentCaptor = ArgumentCaptor.forClass(Intent::class.java)
+        verify(activity)
+            .startActivityForResult(intentCaptor.capture(), eq(123))
+        MatcherAssert.assertThat(intentCaptor.value, Is.`is`(confirmCredentialsIntent))
+
+        // Continue after successful authentication
+        val processed = manager.checkAuthenticationResult(123, Activity.RESULT_OK)
+        MatcherAssert.assertThat(processed, Is.`is`(true))
+        verify(callback).onSuccess(
+            credentialsCaptor.capture()
+        )
+        val retrievedCredentials = credentialsCaptor.firstValue
+        MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`("accessToken"))
+        MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`("idToken"))
+        MatcherAssert.assertThat(retrievedCredentials.refreshToken, Is.`is`(Matchers.nullValue()))
+        MatcherAssert.assertThat(retrievedCredentials.type, Is.`is`("type"))
+        MatcherAssert.assertThat(retrievedCredentials.expiresAt, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(retrievedCredentials.expiresAt.time, Is.`is`(expiresAt.time))
+        MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("scope"))
+
+        // A second call to checkAuthenticationResult should fail as callback is set to null
         val retryCheck = manager.checkAuthenticationResult(123, Activity.RESULT_OK)
         MatcherAssert.assertThat(retryCheck, Is.`is`(false))
     }
@@ -1391,11 +1448,11 @@ public class SecureCredentialsManagerTest {
         Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
             .thenReturn(storedExpiresAt.time)
 
-        //Require authentication
+        // Activity is "created"
         val activity = Mockito.spy(
             Robolectric.buildActivity(
                 Activity::class.java
-            ).create().start().resume().get()
+            ).create().get()
         )
         val kService = mock<KeyguardManager>()
         Mockito.`when`(activity.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService)
@@ -1403,12 +1460,13 @@ public class SecureCredentialsManagerTest {
         val confirmCredentialsIntent = mock<Intent>()
         Mockito.`when`(kService.createConfirmDeviceCredentialIntent("theTitle", "theDescription"))
             .thenReturn(confirmCredentialsIntent)
+        // Require authentication
         val willRequireAuthentication =
             manager.requireAuthentication(activity, 123, "theTitle", "theDescription")
         MatcherAssert.assertThat(willRequireAuthentication, Is.`is`(true))
         manager.getCredentials(callback)
 
-        //Should fail because of expired credentials
+        // Should fail because of expired credentials
         verify(callback).onFailure(
             exceptionCaptor.capture()
         )
@@ -1416,7 +1474,7 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(exception.message, Is.`is`("No Credentials were previously set."))
 
-        //A second call to checkAuthenticationResult should fail as callback is set to null
+        // A second call to checkAuthenticationResult should fail as callback is set to null
         val retryCheck = manager.checkAuthenticationResult(123, Activity.RESULT_OK)
         MatcherAssert.assertThat(retryCheck, Is.`is`(false))
     }
@@ -1426,11 +1484,11 @@ public class SecureCredentialsManagerTest {
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         insertTestCredentials(true, true, false, expiresAt, "scope")
 
-        //Require authentication
+        // Activity is "created"
         val activity = Mockito.spy(
             Robolectric.buildActivity(
                 Activity::class.java
-            ).create().start().resume().get()
+            ).create().get()
         )
         val kService = mock<KeyguardManager>()
         Mockito.`when`(activity.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService)
@@ -1438,6 +1496,7 @@ public class SecureCredentialsManagerTest {
         val confirmCredentialsIntent = mock<Intent>()
         Mockito.`when`(kService.createConfirmDeviceCredentialIntent("theTitle", "theDescription"))
             .thenReturn(confirmCredentialsIntent)
+        // Require authentication
         val willRequireAuthentication =
             manager.requireAuthentication(activity, 123, "theTitle", "theDescription")
         MatcherAssert.assertThat(willRequireAuthentication, Is.`is`(true))
@@ -1447,8 +1506,7 @@ public class SecureCredentialsManagerTest {
             .startActivityForResult(intentCaptor.capture(), eq(123))
         MatcherAssert.assertThat(intentCaptor.value, Is.`is`(confirmCredentialsIntent))
 
-
-        //Continue after canceled authentication
+        // Continue after canceled authentication
         val processed = manager.checkAuthenticationResult(123, Activity.RESULT_CANCELED)
         MatcherAssert.assertThat(processed, Is.`is`(true))
         verify(callback, never()).onSuccess(any())
@@ -1467,11 +1525,11 @@ public class SecureCredentialsManagerTest {
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         insertTestCredentials(true, true, false, expiresAt, "scope")
 
-        //Require authentication
+        // Activity is "created"
         val activity = Mockito.spy(
             Robolectric.buildActivity(
                 Activity::class.java
-            ).create().start().resume().get()
+            ).create().get()
         )
         val kService = mock<KeyguardManager>()
         Mockito.`when`(activity.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService)
@@ -1479,6 +1537,7 @@ public class SecureCredentialsManagerTest {
         val confirmCredentialsIntent = mock<Intent>()
         Mockito.`when`(kService.createConfirmDeviceCredentialIntent("theTitle", "theDescription"))
             .thenReturn(confirmCredentialsIntent)
+        // Require authentication
         val willRequireAuthentication =
             manager.requireAuthentication(activity, 100, "theTitle", "theDescription")
         MatcherAssert.assertThat(willRequireAuthentication, Is.`is`(true))
@@ -1488,8 +1547,7 @@ public class SecureCredentialsManagerTest {
             .startActivityForResult(intentCaptor.capture(), eq(100))
         MatcherAssert.assertThat(intentCaptor.value, Is.`is`(confirmCredentialsIntent))
 
-
-        //Continue after successful authentication
+        // Continue after successful authentication
         verifyNoMoreInteractions(callback)
         val processed = manager.checkAuthenticationResult(123, Activity.RESULT_OK)
         MatcherAssert.assertThat(processed, Is.`is`(false))

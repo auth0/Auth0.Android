@@ -13,6 +13,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.IntRange
 import androidx.annotation.VisibleForTesting
+import androidx.lifecycle.Lifecycle
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.AuthenticationCallback
@@ -67,14 +68,15 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
 
     /**
      * Require the user to authenticate using the configured LockScreen before accessing the credentials.
-     * This feature is disabled by default and will only work if the device is running on Android version 21 or up and if the user
-     * has configured a secure LockScreen (PIN, Pattern, Password or Fingerprint).
+     * This method MUST be called in [Activity.onCreate]. This feature is disabled by default and will
+     * only work if the user has configured a secure LockScreen (PIN, Pattern, Password or Fingerprint).
      *
+     * If the activity passed as first argument is a subclass of ComponentActivity, the authentication result
+     * will be handled internally using "Activity Results API". Otherwise, your activity must override the
+     * [Activity.onActivityResult] method and call [SecureCredentialsManager.checkAuthenticationResult] with
+     * the received parameters.
      *
-     * The activity passed as first argument here must override the [Activity.onActivityResult] method and
-     * call [SecureCredentialsManager.checkAuthenticationResult] with the received parameters.
-     *
-     * @param activity    a valid activity context. Will be used in the authentication request to launch a LockScreen intent. If this is a subclass of ComponentActivity, the Activity Results API will be used.
+     * @param activity    a valid activity context. Will be used in the authentication request to launch a LockScreen intent.
      * @param requestCode the request code to use in the authentication request. Must be a value between 1 and 255.
      * @param title       the text to use as title in the authentication screen. Passing null will result in using the OS's default value.
      * @param description the text to use as description in the authentication screen. On some Android versions it might not be shown. Passing null will result in using the OS's default value.
@@ -99,7 +101,16 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     && authIntent != null)
         if (authenticateBeforeDecrypt) {
             authenticationRequestCode = requestCode
-            if (activity is ComponentActivity) {
+
+            /*
+             *  Docs say it's safe to call "registerForActivityResult" BEFORE the activity is created. In practice,
+             *  when that's not the case, a RuntimeException is thrown. The lifecycle state check below is meant to
+             *  prevent that exception while still falling back to the old "startActivityForResult" flow. That's in
+             *  case devs are invoking this method in places other than the Activity's "OnCreate" method.
+             */
+            if (activity is ComponentActivity &&
+                !activity.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
+            ) {
                 activityResultContract =
                     activity.registerForActivityResult(
                         ActivityResultContracts.StartActivityForResult(),
