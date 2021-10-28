@@ -90,26 +90,23 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     ): Boolean {
         require(!(requestCode < 1 || requestCode > 255)) { "Request code must be a value between 1 and 255." }
         val kManager = activity.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
-        authIntent =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) kManager.createConfirmDeviceCredentialIntent(
-                title,
-                description
-            ) else null
+        authIntent = kManager.createConfirmDeviceCredentialIntent(title, description)
         authenticateBeforeDecrypt =
-            ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && kManager.isDeviceSecure
-                    || Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && kManager.isKeyguardSecure)
+            ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && kManager.isDeviceSecure || kManager.isKeyguardSecure)
                     && authIntent != null)
         if (authenticateBeforeDecrypt) {
             authenticationRequestCode = requestCode
 
             /*
+             *  https://developer.android.com/training/basics/intents/result#register
              *  Docs say it's safe to call "registerForActivityResult" BEFORE the activity is created. In practice,
              *  when that's not the case, a RuntimeException is thrown. The lifecycle state check below is meant to
              *  prevent that exception while still falling back to the old "startActivityForResult" flow. That's in
              *  case devs are invoking this method in places other than the Activity's "OnCreate" method.
              */
-            if (activity is ComponentActivity &&
-                !activity.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
+            if (activity is ComponentActivity && !activity.lifecycle.currentState.isAtLeast(
+                    Lifecycle.State.STARTED
+                )
             ) {
                 activityResultContract =
                     activity.registerForActivityResult(
