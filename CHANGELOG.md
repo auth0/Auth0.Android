@@ -1,5 +1,11 @@
 # Change Log
 
+## [2.5.1](https://github.com/auth0/Auth0.Android/tree/2.5.1) (2021-11-08)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.5.0...2.5.1)
+
+**Security**
+- Bump GSON dependency to 2.8.9 [\#526](https://github.com/auth0/Auth0.Android/pull/526) ([evansims](https://github.com/evansims))
+
 ## [2.5.0](https://github.com/auth0/Auth0.Android/tree/2.5.0) (2021-10-11)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.4.0...2.5.0)
 
