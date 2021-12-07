@@ -1,5 +1,11 @@
 # Change Log
 
+## [2.6.0](https://github.com/auth0/Auth0.Android/tree/2.6.0) (2021-12-07)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.5.1...2.6.0)
+
+**Changed**
+- Improve authenticated flow of the Credentials Manager [\#519](https://github.com/auth0/Auth0.Android/pull/519) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [2.5.1](https://github.com/auth0/Auth0.Android/tree/2.5.1) (2021-11-08)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.5.0...2.5.1)
 
