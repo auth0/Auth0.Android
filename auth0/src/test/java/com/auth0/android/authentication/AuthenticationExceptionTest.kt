@@ -453,6 +453,15 @@ public class AuthenticationExceptionTest {
         MatcherAssert.assertThat(ex.isPKCENotAvailable, CoreMatchers.`is`(true))
     }
 
+    @Test
+    public fun shouldHaveRefreshTokenDeleted() {
+        values[ERROR_KEY] = "invalid_grant"
+        values[ERROR_DESCRIPTION_KEY] =
+            "The refresh_token was generated for a user who doesn't exist anymore."
+        val ex = AuthenticationException(values, 403)
+        MatcherAssert.assertThat(ex.isRefreshTokenDeleted, CoreMatchers.`is`(true))
+    }
+
     private companion object {
         private const val PASSWORD_STRENGTH_ERROR_RESPONSE =
             "src/test/resources/password_strength_error.json"
