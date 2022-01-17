@@ -35,7 +35,7 @@ Auth0.android is available through [Gradle](https://gradle.org/). To install it,
 
 ```gradle
 dependencies {
-    implementation 'com.auth0.android:auth0:2.4.0'
+    implementation 'com.auth0.android:auth0:2.6.0'
 }
 ```
 
@@ -656,7 +656,7 @@ val manager = SecureCredentialsManager(this, authentication, storage)
 
 You can require the user authentication to obtain credentials. This will make the manager prompt the user with the device's configured Lock Screen, which they must pass correctly in order to obtain the credentials. **This feature is only available on devices where the user has setup a secured Lock Screen** (PIN, Pattern, Password or Fingerprint).
 
-To enable authentication you must call the `requireAuthentication` method passing a valid _Activity_ context, a request code that represents the authentication call, and the title and description to display in the Lock Screen. As seen in the snippet below, you can leave these last two parameters with `null` to use the system default resources.
+To enable authentication you must call the `requireAuthentication` method passing a valid _Activity_ context, a request code that represents the authentication call, and the title and description to display in the Lock Screen. As seen in the snippet below, you can leave these last two parameters with `null` to use the system's default title and description. It's only safe to call this method before the Activity is started. 
 
 ```kotlin
 //You might want to define a constant with the Request Code
@@ -667,7 +667,7 @@ companion object {
 manager.requireAuthentication(this, AUTH_REQ_CODE, null, null)
 ```
 
-When the above conditions are met and the manager requires the user authentication, it will use the activity context to launch a new activity and wait for its result in the `onActivityResult` method. Your activity must override this method and pass the request code and result code to the manager's `checkAuthenticationResult` method to verify if this request was successful or not.
+When the above conditions are met and the manager requires the user authentication, it will use the activity context to launch the Lock Screen activity and wait for its result. If your activity is a subclass of `ComponentActivity`, this will be handled automatically for you internally. Otherwise, your activity must override the `onActivityResult` method and pass the request code and result code to the manager's `checkAuthenticationResult` method to verify if this request was successful or not.
 
 ```kotlin
  override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

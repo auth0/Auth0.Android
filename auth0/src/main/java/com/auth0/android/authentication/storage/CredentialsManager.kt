@@ -73,6 +73,25 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         minTtl: Int,
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
+        getCredentials(scope, minTtl, emptyMap(), callback)
+    }
+
+    /**
+     * Retrieves the credentials from the storage and refresh them if they have already expired.
+     * It will fail with [CredentialsManagerException] if the saved access_token or id_token is null,
+     * or if the tokens have already expired and the refresh_token is null.
+     *
+     * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
+     * @param minTtl   the minimum time in seconds that the access token should last before expiration.
+     * @param parameters additional parameters to send in the request to refresh expired credentials
+     * @param callback the callback that will receive a valid [Credentials] or the [CredentialsManagerException].
+     */
+    public fun getCredentials(
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        callback: Callback<Credentials, CredentialsManagerException>
+    ) {
         val accessToken = storage.retrieveString(KEY_ACCESS_TOKEN)
         val refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN)
         val idToken = storage.retrieveString(KEY_ID_TOKEN)
@@ -110,9 +129,11 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
             return
         }
         val request = authenticationClient.renewAuth(refreshToken)
+        request.addParameters(parameters)
         if (scope != null) {
             request.addParameter("scope", scope)
         }
+
         request.start(object : AuthenticationCallback<Credentials> {
             override fun onSuccess(fresh: Credentials) {
                 val expiresAt = fresh.expiresAt.time

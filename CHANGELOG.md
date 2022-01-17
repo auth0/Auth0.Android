@@ -1,5 +1,32 @@
 # Change Log
 
+## [2.6.0](https://github.com/auth0/Auth0.Android/tree/2.6.0) (2021-12-07)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.5.1...2.6.0)
+
+**Changed**
+- Improve authenticated flow of the Credentials Manager [\#519](https://github.com/auth0/Auth0.Android/pull/519) ([lbalmaceda](https://github.com/lbalmaceda))
+
+## [2.5.1](https://github.com/auth0/Auth0.Android/tree/2.5.1) (2021-11-08)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.5.0...2.5.1)
+
+**Security**
+- Bump GSON dependency to 2.8.9 [\#526](https://github.com/auth0/Auth0.Android/pull/526) ([evansims](https://github.com/evansims))
+
+## [2.5.0](https://github.com/auth0/Auth0.Android/tree/2.5.0) (2021-10-11)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.4.0...2.5.0)
+
+**Added**
+- Credentials Managers: renew tokens with extra parameters [\#514](https://github.com/auth0/Auth0.Android/pull/514) ([lustikuss](https://github.com/lustikuss))
+
+**Changed**
+- Update Configuration URL (CDN URL) [SDK-2710] [\#520](https://github.com/auth0/Auth0.Android/pull/520) ([lbalmaceda](https://github.com/lbalmaceda))
+
+**Fixed**
+- Fix memory leak in CustomTabsService [\#517](https://github.com/auth0/Auth0.Android/pull/517) ([lbalmaceda](https://github.com/lbalmaceda))
+- Prevent NPE when parsing email_verified boolean [\#516](https://github.com/auth0/Auth0.Android/pull/516) ([lbalmaceda](https://github.com/lbalmaceda))
+- Proper migration for the new key sets was applied [\#512](https://github.com/auth0/Auth0.Android/pull/512) ([lbalmaceda](https://github.com/lbalmaceda))
+- Always close request body InputStream when exception occurs [\#492](https://github.com/auth0/Auth0.Android/pull/492) ([Marcono1234](https://github.com/Marcono1234))
+
 ## [2.4.0](https://github.com/auth0/Auth0.Android/tree/2.4.0) (2021-07-20)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.3.0...2.4.0)
 

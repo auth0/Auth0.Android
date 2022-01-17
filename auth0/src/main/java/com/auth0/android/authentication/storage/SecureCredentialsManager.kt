@@ -8,8 +8,12 @@ import android.os.Build
 import android.text.TextUtils
 import android.util.Base64
 import android.util.Log
+import androidx.activity.ComponentActivity
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.IntRange
 import androidx.annotation.VisibleForTesting
+import androidx.lifecycle.Lifecycle
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.AuthenticationCallback
@@ -36,6 +40,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     private var authenticateBeforeDecrypt: Boolean
     private var authenticationRequestCode = -1
     private var activity: Activity? = null
+    private var activityResultContract: ActivityResultLauncher<Intent>? = null
 
     //State for retrying operations
     private var decryptCallback: Callback<Credentials, CredentialsManagerException>? = null
@@ -63,12 +68,13 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
 
     /**
      * Require the user to authenticate using the configured LockScreen before accessing the credentials.
-     * This feature is disabled by default and will only work if the device is running on Android version 21 or up and if the user
-     * has configured a secure LockScreen (PIN, Pattern, Password or Fingerprint).
+     * This method MUST be called in [Activity.onCreate]. This feature is disabled by default and will
+     * only work if the user has configured a secure LockScreen (PIN, Pattern, Password or Fingerprint).
      *
-     *
-     * The activity passed as first argument here must override the [Activity.onActivityResult] method and
-     * call [SecureCredentialsManager.checkAuthenticationResult] with the received parameters.
+     * If the activity passed as first argument is a subclass of ComponentActivity, the authentication result
+     * will be handled internally using "Activity Results API". Otherwise, your activity must override the
+     * [Activity.onActivityResult] method and call [SecureCredentialsManager.checkAuthenticationResult] with
+     * the received parameters.
      *
      * @param activity    a valid activity context. Will be used in the authentication request to launch a LockScreen intent.
      * @param requestCode the request code to use in the authentication request. Must be a value between 1 and 255.
@@ -84,18 +90,34 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     ): Boolean {
         require(!(requestCode < 1 || requestCode > 255)) { "Request code must be a value between 1 and 255." }
         val kManager = activity.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
-        authIntent =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) kManager.createConfirmDeviceCredentialIntent(
-                title,
-                description
-            ) else null
+        authIntent = kManager.createConfirmDeviceCredentialIntent(title, description)
         authenticateBeforeDecrypt =
-            ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && kManager.isDeviceSecure
-                    || Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && kManager.isKeyguardSecure)
+            ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && kManager.isDeviceSecure || kManager.isKeyguardSecure)
                     && authIntent != null)
         if (authenticateBeforeDecrypt) {
-            this.activity = activity
             authenticationRequestCode = requestCode
+
+            /*
+             *  https://developer.android.com/training/basics/intents/result#register
+             *  Docs say it's safe to call "registerForActivityResult" BEFORE the activity is created. In practice,
+             *  when that's not the case, a RuntimeException is thrown. The lifecycle state check below is meant to
+             *  prevent that exception while still falling back to the old "startActivityForResult" flow. That's in
+             *  case devs are invoking this method in places other than the Activity's "OnCreate" method.
+             */
+            if (activity is ComponentActivity && !activity.lifecycle.currentState.isAtLeast(
+                    Lifecycle.State.STARTED
+                )
+            ) {
+                activityResultContract =
+                    activity.registerForActivityResult(
+                        ActivityResultContracts.StartActivityForResult(),
+                        activity.activityResultRegistry
+                    ) {
+                        checkAuthenticationResult(authenticationRequestCode, it.resultCode)
+                    }
+            } else {
+                this.activity = activity
+            }
         }
         return authenticateBeforeDecrypt
     }
@@ -103,6 +125,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     /**
      * Checks the result after showing the LockScreen to the user.
      * Must be called from the [Activity.onActivityResult] method with the received parameters.
+     * Called internally when your activity is a subclass of ComponentActivity (using Activity Results API).
      * It's safe to call this method even if [SecureCredentialsManager.requireAuthentication] was unsuccessful.
      *
      * @param requestCode the request code received in the onActivityResult call.
@@ -114,7 +137,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             return false
         }
         if (resultCode == Activity.RESULT_OK) {
-            continueGetCredentials(scope, minTtl, decryptCallback!!)
+            continueGetCredentials(scope, minTtl, emptyMap(), decryptCallback!!)
         } else {
             decryptCallback!!.onFailure(CredentialsManagerException("The user didn't pass the authentication challenge."))
             decryptCallback = null
@@ -203,6 +226,30 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         minTtl: Int,
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
+        getCredentials(scope, minTtl, emptyMap(), callback)
+    }
+
+    /**
+     * Tries to obtain the credentials from the Storage. The callback's [Callback.onSuccess] method will be called with the result.
+     * If something unexpected happens, the [Callback.onFailure] method will be called with the error. Some devices are not compatible
+     * at all with the cryptographic implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
+     *
+     *
+     * If a LockScreen is setup and [.requireAuthentication] was called, the user will be asked to authenticate before accessing
+     * the credentials. Your activity must override the [Activity.onActivityResult] method and call
+     * [.checkAuthenticationResult] with the received values.
+     *
+     * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
+     * @param minTtl   the minimum time in seconds that the access token should last before expiration.
+     * @param parameters additional parameters to send in the request to refresh expired credentials
+     * @param callback the callback to receive the result in.
+     */
+    public fun getCredentials(
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        callback: Callback<Credentials, CredentialsManagerException>
+    ) {
         if (!hasValidCredentials(minTtl.toLong())) {
             callback.onFailure(CredentialsManagerException("No Credentials were previously set."))
             return
@@ -215,10 +262,11 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             decryptCallback = callback
             this.scope = scope
             this.minTtl = minTtl
-            activity!!.startActivityForResult(authIntent, authenticationRequestCode)
+            activityResultContract?.launch(authIntent)
+                ?: activity?.startActivityForResult(authIntent, authenticationRequestCode)
             return
         }
-        continueGetCredentials(scope, minTtl, callback)
+        continueGetCredentials(scope, minTtl, parameters, callback)
     }
 
     /**
@@ -267,6 +315,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     private fun continueGetCredentials(
         scope: String?,
         minTtl: Int,
+        parameters: Map<String, String>,
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
         val encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS)
@@ -337,9 +386,12 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         val request = authenticationClient.renewAuth(
             credentials.refreshToken
         )
+
+        request.addParameters(parameters)
         if (scope != null) {
             request.addParameter("scope", scope)
         }
+
         request.start(object : AuthenticationCallback<Credentials> {
             override fun onSuccess(fresh: Credentials) {
                 val expiresAt = fresh.expiresAt.time
