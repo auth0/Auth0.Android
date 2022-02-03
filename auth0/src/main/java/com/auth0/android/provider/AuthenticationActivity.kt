@@ -99,6 +99,7 @@ public open class AuthenticationActivity : Activity() {
             intent.putExtra(EXTRA_AUTHORIZE_URI, authorizeUri)
             intent.putExtra(EXTRA_CT_OPTIONS, options)
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(intent)
         }
     }
