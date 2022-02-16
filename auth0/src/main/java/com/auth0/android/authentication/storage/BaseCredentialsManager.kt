@@ -6,16 +6,21 @@ import com.auth0.android.callback.Callback
 import com.auth0.android.result.Credentials
 import com.auth0.android.util.Clock
 import java.util.*
+import java.util.concurrent.Executor
 import kotlin.math.min
 
 /**
  * Base class meant to abstract common logic across Credentials Manager implementations.
  * The scope of this class is package-private, as it's not meant to be exposed
+ * @param serialExecutor - [Executor] used to ensure the requests made for [CredentialsManager] and
+ * [SecureCredentialsManager] are executed synchronously to avoid racing conditions. Current usage
+ * is only around the [getCredentials] method but it can be used in future for others.
  */
 public abstract class BaseCredentialsManager internal constructor(
     protected val authenticationClient: AuthenticationAPIClient,
     protected val storage: Storage,
-    private val jwtDecoder: JWTDecoder
+    private val jwtDecoder: JWTDecoder,
+    protected val serialExecutor: Executor
 ) {
     private var _clock: Clock = ClockImpl()
 

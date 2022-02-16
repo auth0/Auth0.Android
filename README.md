@@ -601,9 +601,7 @@ authentication
             manager.saveCredentials(credentials)
         }
     })
-```
-
-**Note:** This method is not thread-safe. Attempting to save credentials multiple times in a short period or from different threads can cause issues like invalidating valid stored tokens.  
+``` 
 
 3. **Check credentials existence:**
 There are cases were you just want to check if a user session is still valid (i.e. to know if you should present the login screen or the main screen). For convenience, we include a `hasValidCredentials` method that can let you know in advance if a non-expired token is available without making an additional network call. The same rules of the `getCredentials` method apply:
@@ -625,9 +623,7 @@ manager.getCredentials(object : Callback<Credentials, CredentialsManagerExceptio
        // Use the credentials
    }
 })
-```
-
-**Note:** This method is not thread-safe. In the scenario where the stored credentials have expired and a `refresh_token` is available, the newly obtained tokens are automatically saved for you by the Credentials Manager. If you're using _Refresh Token Rotation_ you should avoid calling this method concurrently as it might result in more than one renew request being fired, and only the first one succeeding. 
+``` 
 
 
 5. **Clear credentials:**

@@ -4,10 +4,11 @@ import android.text.TextUtils
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
-import com.auth0.android.callback.AuthenticationCallback
 import com.auth0.android.callback.Callback
 import com.auth0.android.result.Credentials
 import java.util.*
+import java.util.concurrent.Executor
+import java.util.concurrent.Executors
 
 /**
  * Class that handles credentials and allows to save and retrieve them.
@@ -15,8 +16,9 @@ import java.util.*
 public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal constructor(
     authenticationClient: AuthenticationAPIClient,
     storage: Storage,
-    jwtDecoder: JWTDecoder
-) : BaseCredentialsManager(authenticationClient, storage, jwtDecoder) {
+    jwtDecoder: JWTDecoder,
+    serialExecutor: Executor
+) : BaseCredentialsManager(authenticationClient, storage, jwtDecoder, serialExecutor) {
     /**
      * Creates a new instance of the manager that will store the credentials in the given Storage.
      *
@@ -26,7 +28,8 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
     public constructor(authenticationClient: AuthenticationAPIClient, storage: Storage) : this(
         authenticationClient,
         storage,
-        JWTDecoder()
+        JWTDecoder(),
+        Executors.newSingleThreadExecutor()
     )
 
     /**
@@ -92,50 +95,51 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         parameters: Map<String, String>,
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
-        val accessToken = storage.retrieveString(KEY_ACCESS_TOKEN)
-        val refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN)
-        val idToken = storage.retrieveString(KEY_ID_TOKEN)
-        val tokenType = storage.retrieveString(KEY_TOKEN_TYPE)
-        val expiresAt = storage.retrieveLong(KEY_EXPIRES_AT)
-        val storedScope = storage.retrieveString(KEY_SCOPE)
-        var cacheExpiresAt = storage.retrieveLong(KEY_CACHE_EXPIRES_AT)
-        if (cacheExpiresAt == null) {
-            cacheExpiresAt = expiresAt
-        }
-        val hasEmptyCredentials =
-            TextUtils.isEmpty(accessToken) && TextUtils.isEmpty(idToken) || expiresAt == null
-        if (hasEmptyCredentials) {
-            callback.onFailure(CredentialsManagerException("No Credentials were previously set."))
-            return
-        }
-        val hasEitherExpired = hasExpired(cacheExpiresAt!!)
-        val willAccessTokenExpire = willExpire(expiresAt!!, minTtl.toLong())
-        val scopeChanged = hasScopeChanged(storedScope, scope)
-        if (!hasEitherExpired && !willAccessTokenExpire && !scopeChanged) {
-            callback.onSuccess(
-                recreateCredentials(
-                    idToken.orEmpty(),
-                    accessToken.orEmpty(),
-                    tokenType.orEmpty(),
-                    refreshToken,
-                    Date(expiresAt),
-                    storedScope
+        serialExecutor.execute {
+            val accessToken = storage.retrieveString(KEY_ACCESS_TOKEN)
+            val refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN)
+            val idToken = storage.retrieveString(KEY_ID_TOKEN)
+            val tokenType = storage.retrieveString(KEY_TOKEN_TYPE)
+            val expiresAt = storage.retrieveLong(KEY_EXPIRES_AT)
+            val storedScope = storage.retrieveString(KEY_SCOPE)
+            var cacheExpiresAt = storage.retrieveLong(KEY_CACHE_EXPIRES_AT)
+            if (cacheExpiresAt == null) {
+                cacheExpiresAt = expiresAt
+            }
+            val hasEmptyCredentials =
+                TextUtils.isEmpty(accessToken) && TextUtils.isEmpty(idToken) || expiresAt == null
+            if (hasEmptyCredentials) {
+                callback.onFailure(CredentialsManagerException("No Credentials were previously set."))
+                return@execute
+            }
+            val hasEitherExpired = hasExpired(cacheExpiresAt!!)
+            val willAccessTokenExpire = willExpire(expiresAt!!, minTtl.toLong())
+            val scopeChanged = hasScopeChanged(storedScope, scope)
+            if (!hasEitherExpired && !willAccessTokenExpire && !scopeChanged) {
+                callback.onSuccess(
+                    recreateCredentials(
+                        idToken.orEmpty(),
+                        accessToken.orEmpty(),
+                        tokenType.orEmpty(),
+                        refreshToken,
+                        Date(expiresAt),
+                        storedScope
+                    )
                 )
-            )
-            return
-        }
-        if (refreshToken == null) {
-            callback.onFailure(CredentialsManagerException("Credentials need to be renewed but no Refresh Token is available to renew them."))
-            return
-        }
-        val request = authenticationClient.renewAuth(refreshToken)
-        request.addParameters(parameters)
-        if (scope != null) {
-            request.addParameter("scope", scope)
-        }
+                return@execute
+            }
+            if (refreshToken == null) {
+                callback.onFailure(CredentialsManagerException("Credentials need to be renewed but no Refresh Token is available to renew them."))
+                return@execute
+            }
+            val request = authenticationClient.renewAuth(refreshToken)
+            request.addParameters(parameters)
+            if (scope != null) {
+                request.addParameter("scope", scope)
+            }
 
-        request.start(object : AuthenticationCallback<Credentials> {
-            override fun onSuccess(fresh: Credentials) {
+            try {
+                val fresh = request.execute()
                 val expiresAt = fresh.expiresAt.time
                 val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
                 if (willAccessTokenExpire) {
@@ -149,7 +153,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                         )
                     )
                     callback.onFailure(wrongTtlException)
-                    return
+                    return@execute
                 }
 
                 // non-empty refresh token for refresh token rotation scenarios
@@ -165,9 +169,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                 )
                 saveCredentials(credentials)
                 callback.onSuccess(credentials)
-            }
-
-            override fun onFailure(error: AuthenticationException) {
+            } catch (error: AuthenticationException) {
                 callback.onFailure(
                     CredentialsManagerException(
                         "An error occurred while trying to use the Refresh Token to renew the Credentials.",
@@ -175,7 +177,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                     )
                 )
             }
-        })
+        }
     }
 
     /**

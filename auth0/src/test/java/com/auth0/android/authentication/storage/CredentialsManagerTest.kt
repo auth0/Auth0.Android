@@ -24,6 +24,7 @@ import org.mockito.Mockito
 import org.mockito.MockitoAnnotations
 import org.robolectric.RobolectricTestRunner
 import java.util.*
+import java.util.concurrent.Executor
 
 @RunWith(RobolectricTestRunner::class)
 public class CredentialsManagerTest {
@@ -42,6 +43,8 @@ public class CredentialsManagerTest {
     @Mock
     private lateinit var jwtDecoder: JWTDecoder
 
+    private val serialExecutor = Executor { runnable -> runnable.run() }
+
     private val credentialsCaptor: KArgumentCaptor<Credentials> = argumentCaptor()
 
     private val exceptionCaptor: KArgumentCaptor<CredentialsManagerException> = argumentCaptor()
@@ -50,13 +53,10 @@ public class CredentialsManagerTest {
     public var exception: ExpectedException = ExpectedException.none()
     private lateinit var manager: CredentialsManager
 
-    private val requestCallbackCaptor: KArgumentCaptor<Callback<Credentials, AuthenticationException>> =
-        argumentCaptor()
-
     @Before
     public fun setUp() {
         MockitoAnnotations.openMocks(this)
-        val credentialsManager = CredentialsManager(client, storage, jwtDecoder)
+        val credentialsManager = CredentialsManager(client, storage, jwtDecoder, serialExecutor)
         manager = Mockito.spy(credentialsManager)
         //Needed to test expiration verification
         Mockito.doReturn(CredentialsMock.CURRENT_TIME_MS).`when`(manager).currentTimeInMillis
@@ -349,21 +349,18 @@ public class CredentialsManagerTest {
         val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
-        manager.getCredentials("some scope", 0, callback)
-        verify(request).start(
-            requestCallbackCaptor.capture()
-        )
-        verify(request)
-            .addParameter(eq("scope"), eq("some scope"))
 
         // Trigger success
         val newRefresh: String? = null
         val renewedCredentials =
             Credentials("newId", "newAccess", "newType", newRefresh, newDate, "newScope")
-        requestCallbackCaptor.firstValue.onSuccess(renewedCredentials)
+        Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
+        manager.getCredentials("some scope", 0, callback)
         verify(callback).onSuccess(
             credentialsCaptor.capture()
         )
+        verify(request)
+            .addParameter(eq("scope"), eq("some scope"))
 
         // Verify the credentials are property stored
         verify(storage).store("com.auth0.id_token", renewedCredentials.idToken)
@@ -410,18 +407,15 @@ public class CredentialsManagerTest {
         val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
-        manager.getCredentials("some scope", 0, callback)
-        verify(request).start(
-            requestCallbackCaptor.capture()
-        )
-        verify(request)
-            .addParameter(eq("scope"), eq("some scope"))
 
         // Trigger success
         val newRefresh: String? = null
         val renewedCredentials =
             Credentials("newId", "newAccess", "newType", newRefresh, newDate, "some scope")
-        requestCallbackCaptor.firstValue.onSuccess(renewedCredentials)
+        Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
+        manager.getCredentials("some scope", 0, callback)
+        verify(request)
+            .addParameter(eq("scope"), eq("some scope"))
         verify(callback).onSuccess(
             credentialsCaptor.capture()
         )
@@ -471,22 +465,18 @@ public class CredentialsManagerTest {
         val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
-        manager.getCredentials("some scope", 0, callback)
-        verify(request).start(
-            requestCallbackCaptor.capture()
-        )
-        verify(request)
-            .addParameter(eq("scope"), eq("some scope"))
 
         // Trigger success
         val newRefresh: String? = null
         val renewedCredentials =
             Credentials("newId", "newAccess", "newType", newRefresh, newDate, "newScope")
-        requestCallbackCaptor.firstValue.onSuccess(renewedCredentials)
+        Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
+        manager.getCredentials("some scope", 0, callback)
         verify(callback).onSuccess(
             credentialsCaptor.capture()
         )
-
+        verify(request)
+            .addParameter(eq("scope"), eq("some scope"))
         // Verify the credentials are property stored
         verify(storage).store("com.auth0.id_token", renewedCredentials.idToken)
         verify(storage).store("com.auth0.access_token", renewedCredentials.accessToken)
@@ -533,18 +523,15 @@ public class CredentialsManagerTest {
         val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
-        manager.getCredentials(null, 60, callback) // 60 seconds of minTTL
         verify(request, never())
             .addParameter(eq("scope"), ArgumentMatchers.anyString())
-        verify(request).start(
-            requestCallbackCaptor.capture()
-        )
 
         // Trigger success
         val newRefresh: String? = null
         val renewedCredentials =
             Credentials("newId", "newAccess", "newType", newRefresh, newDate, "newScope")
-        requestCallbackCaptor.firstValue.onSuccess(renewedCredentials)
+        Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
+        manager.getCredentials(null, 60, callback) // 60 seconds of minTTL
         verify(callback).onSuccess(
             credentialsCaptor.capture()
         )
@@ -594,21 +581,18 @@ public class CredentialsManagerTest {
         val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
-        manager.getCredentials(callback)
-        verify(request, never())
-            .addParameter(eq("scope"), ArgumentMatchers.anyString())
-        verify(request).start(
-            requestCallbackCaptor.capture()
-        )
 
         //Trigger success
         val newRefresh: String? = null
         val renewedCredentials =
             Credentials("newId", "newAccess", "newType", newRefresh, newDate, "newScope")
-        requestCallbackCaptor.firstValue.onSuccess(renewedCredentials)
+        Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
+        manager.getCredentials(null, 60, callback) // 60 seconds of minTTL
         verify(callback).onSuccess(
             credentialsCaptor.capture()
         )
+        verify(request, never())
+            .addParameter(eq("scope"), ArgumentMatchers.anyString())
 
         // Verify the credentials are property stored
         verify(storage).store("com.auth0.id_token", renewedCredentials.idToken)
@@ -656,18 +640,15 @@ public class CredentialsManagerTest {
         val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
-        manager.getCredentials(null, 60, callback) // 60 seconds of minTTL
         verify(request, never())
             .addParameter(eq("scope"), ArgumentMatchers.anyString())
-        verify(request).start(
-            requestCallbackCaptor.capture()
-        )
 
         // Trigger failure
         val newRefresh: String? = null
         val renewedCredentials =
             Credentials("newId", "newAccess", "newType", newRefresh, newDate, "newScope")
-        requestCallbackCaptor.firstValue.onSuccess(renewedCredentials)
+        Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
+        manager.getCredentials(null, 60, callback) // 60 seconds of minTTL
         verify(callback).onFailure(
             exceptionCaptor.capture()
         )
@@ -709,17 +690,15 @@ public class CredentialsManagerTest {
         val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
-        manager.getCredentials(callback)
+
         verify(request, never())
             .addParameter(eq("scope"), ArgumentMatchers.anyString())
-        verify(request).start(
-            requestCallbackCaptor.capture()
-        )
 
         //Trigger success
         val renewedCredentials =
             Credentials("newId", "newAccess", "newType", "rotatedRefreshToken", newDate, "newScope")
-        requestCallbackCaptor.firstValue.onSuccess(renewedCredentials)
+        Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
+        manager.getCredentials(callback)
         verify(callback).onSuccess(
             credentialsCaptor.capture()
         )
@@ -764,6 +743,11 @@ public class CredentialsManagerTest {
         Mockito.`when`(
             client.renewAuth("refreshToken")
         ).thenReturn(request)
+        //Trigger failure
+        val authenticationException = Mockito.mock(
+            AuthenticationException::class.java
+        )
+        Mockito.`when`(request.execute()).thenThrow(authenticationException)
         manager.getCredentials(callback)
         verify(storage, never())
             .store(ArgumentMatchers.anyString(), ArgumentMatchers.anyInt())
@@ -774,15 +758,6 @@ public class CredentialsManagerTest {
         verify(storage, never())
             .store(ArgumentMatchers.anyString(), ArgumentMatchers.anyBoolean())
         verify(storage, never()).remove(ArgumentMatchers.anyString())
-        verify(request).start(
-            requestCallbackCaptor.capture()
-        )
-
-        //Trigger failure
-        val authenticationException = Mockito.mock(
-            AuthenticationException::class.java
-        )
-        requestCallbackCaptor.firstValue.onFailure(authenticationException)
         verify(callback).onFailure(
             exceptionCaptor.capture()
         )
@@ -933,6 +908,13 @@ public class CredentialsManagerTest {
             client.renewAuth("refreshToken")
         ).thenReturn(request)
 
+        val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        val jwtMock = mock<Jwt>()
+        Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
+        Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
+        val renewedCredentials =
+            Credentials("newId", "newAccess", "newType", "newRefresh", newDate, "newScope")
+        Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
         manager.getCredentials(
             scope = "some changed scope to trigger refresh",
             minTtl = 0,
@@ -940,7 +922,7 @@ public class CredentialsManagerTest {
             callback = callback
         )
         verify(request).addParameters(parameters)
-        verify(request).start(requestCallbackCaptor.capture())
+        verify(request).execute()
     }
 
     private fun prepareJwtDecoderMock(expiresAt: Date?) {
