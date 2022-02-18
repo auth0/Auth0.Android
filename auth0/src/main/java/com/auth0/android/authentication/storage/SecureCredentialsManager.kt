@@ -346,7 +346,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 callback.onFailure(
                     CredentialsManagerException(
                         "A change on the Lock Screen security settings have deemed the encryption keys invalid and have been recreated. " +
-                                "Any previously stored content is now lost. Please, try saving the credentials again.",
+                                "Any previously stored content is now lost. Please try saving the credentials again.",
                         e
                     )
                 )
