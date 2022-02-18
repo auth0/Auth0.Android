@@ -190,7 +190,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
              */
             clearCredentials()
             throw CredentialsManagerException(
-                "A change on the Lock Screen security settings have deemed the encryption keys invalid and have been recreated. Please, try saving the credentials again.",
+                "A change on the Lock Screen security settings have deemed the encryption keys invalid and have been recreated. Please try saving the credentials again.",
                 e
             )
         }

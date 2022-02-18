@@ -277,7 +277,7 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(exception!!.isDeviceIncompatible, Is.`is`(false))
         MatcherAssert.assertThat(
             exception.message,
-            Is.`is`("A change on the Lock Screen security settings have deemed the encryption keys invalid and have been recreated. Please, try saving the credentials again.")
+            Is.`is`("A change on the Lock Screen security settings have deemed the encryption keys invalid and have been recreated. Please try saving the credentials again.")
         )
         verify(storage).remove("com.auth0.credentials")
         verify(storage).remove("com.auth0.credentials_expires_at")
@@ -370,7 +370,7 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(
             exception.message, Is.`is`(
                 "A change on the Lock Screen security settings have deemed the encryption keys invalid and have been recreated. " +
-                        "Any previously stored content is now lost. Please, try saving the credentials again."
+                        "Any previously stored content is now lost. Please try saving the credentials again."
             )
         )
         verify(storage).remove("com.auth0.credentials")
