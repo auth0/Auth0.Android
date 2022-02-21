@@ -46,6 +46,7 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.util.ReflectionHelpers
+import java.lang.reflect.Modifier
 import java.util.*
 import java.util.concurrent.Executor
 
@@ -1592,6 +1593,13 @@ public class SecureCredentialsManagerTest {
 
         verify(request).addParameters(parameters)
         verify(request).execute()
+    }
+
+    @Test
+    public fun shouldBeMarkedSynchronous(){
+        val method =
+            SecureCredentialsManager::class.java.getMethod("saveCredentials", Credentials::class.java)
+        Modifier.isSynchronized(method.modifiers)
     }
 
     /*
