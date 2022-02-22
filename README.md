@@ -602,6 +602,7 @@ authentication
         }
     })
 ``` 
+**Note:** This method has been made thread-safe after version 2.7.0.
 
 3. **Check credentials existence:**
 There are cases were you just want to check if a user session is still valid (i.e. to know if you should present the login screen or the main screen). For convenience, we include a `hasValidCredentials` method that can let you know in advance if a non-expired token is available without making an additional network call. The same rules of the `getCredentials` method apply:
@@ -624,7 +625,7 @@ manager.getCredentials(object : Callback<Credentials, CredentialsManagerExceptio
    }
 })
 ``` 
-
+**Note:** In the scenario where the stored credentials have expired and a `refresh_token` is available, the newly obtained tokens are automatically saved for you by the Credentials Manager. This method has been made thread-safe after version 2.7.0.
 
 5. **Clear credentials:**
 When you want to log the user out:
