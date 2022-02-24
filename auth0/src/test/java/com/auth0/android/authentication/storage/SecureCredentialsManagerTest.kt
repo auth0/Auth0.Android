@@ -1569,12 +1569,8 @@ public class SecureCredentialsManagerTest {
             throw java.lang.IllegalArgumentException("Proper Executor Set")
         }
         manager.getCredentials(object : Callback<Credentials, CredentialsManagerException> {
-            override fun onSuccess(result: Credentials) {
-                println("Hi")
-            }
-            override fun onFailure(error: CredentialsManagerException) {
-                println("Hello")
-            }
+            override fun onSuccess(result: Credentials) { }
+            override fun onFailure(error: CredentialsManagerException) { }
         })
     }
 
