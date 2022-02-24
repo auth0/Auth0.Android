@@ -7,22 +7,21 @@ import com.auth0.android.result.Credentials
 import com.auth0.android.util.Clock
 import java.util.*
 import java.util.concurrent.Executor
+import java.util.concurrent.Executors
 import kotlin.math.min
 
 /**
  * Base class meant to abstract common logic across Credentials Manager implementations.
  * The scope of this class is package-private, as it's not meant to be exposed
- * @param serialExecutor - [Executor] used to ensure the requests made for [CredentialsManager] and
- * [SecureCredentialsManager] are executed synchronously to avoid racing conditions. Current usage
- * is only around the [getCredentials] method but it can be used in future for others.
  */
 public abstract class BaseCredentialsManager internal constructor(
     protected val authenticationClient: AuthenticationAPIClient,
     protected val storage: Storage,
-    private val jwtDecoder: JWTDecoder,
-    protected val serialExecutor: Executor
+    private val jwtDecoder: JWTDecoder
 ) {
     private var _clock: Clock = ClockImpl()
+
+    protected var serialExecutor: Executor = Executors.newSingleThreadExecutor()
 
     /**
      * Updates the clock instance used for expiration verification purposes.
@@ -31,6 +30,15 @@ public abstract class BaseCredentialsManager internal constructor(
      */
     public fun setClock(clock: Clock) {
         this._clock = clock
+    }
+
+    /**
+     * @param executor - [Executor] used to ensure the requests made for [CredentialsManager] and
+     * [SecureCredentialsManager] are executed synchronously to avoid racing conditions. Current usage
+     * is only around the [getCredentials] method but it can be used in future for others.
+     */
+    public fun setExecutor(executor: Executor) {
+        this.serialExecutor = executor
     }
 
     @Throws(CredentialsManagerException::class)

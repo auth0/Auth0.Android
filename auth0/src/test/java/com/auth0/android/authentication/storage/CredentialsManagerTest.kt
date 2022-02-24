@@ -23,6 +23,8 @@ import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.MockitoAnnotations
 import org.robolectric.RobolectricTestRunner
+import java.lang.Exception
+import java.lang.IllegalArgumentException
 import java.util.*
 import java.util.concurrent.Executor
 
@@ -56,7 +58,8 @@ public class CredentialsManagerTest {
     @Before
     public fun setUp() {
         MockitoAnnotations.openMocks(this)
-        val credentialsManager = CredentialsManager(client, storage, jwtDecoder, serialExecutor)
+        val credentialsManager = CredentialsManager(client, storage, jwtDecoder)
+        credentialsManager.setExecutor(serialExecutor)
         manager = Mockito.spy(credentialsManager)
         //Needed to test expiration verification
         Mockito.doReturn(CredentialsMock.CURRENT_TIME_MS).`when`(manager).currentTimeInMillis
@@ -887,6 +890,18 @@ public class CredentialsManagerTest {
             }
         })
         MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(true))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    public fun shouldUseCustomExecutorForGetCredentials() {
+        val manager = CredentialsManager(client, storage)
+        manager.setExecutor {
+            throw IllegalArgumentException("Proper Executor Set")
+        }
+        manager.getCredentials(object : Callback<Credentials, CredentialsManagerException> {
+            override fun onSuccess(result: Credentials) { }
+            override fun onFailure(error: CredentialsManagerException) { }
+        })
     }
 
 
