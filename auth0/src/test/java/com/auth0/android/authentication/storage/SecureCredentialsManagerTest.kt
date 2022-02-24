@@ -1560,7 +1560,7 @@ public class SecureCredentialsManagerTest {
     @Test(expected = java.lang.IllegalArgumentException::class)
     public fun shouldUseCustomExecutorForGetCredentials() {
         val manager = SecureCredentialsManager(client, storage, crypto, jwtDecoder)
-        val expirationTime = CredentialsMock.CURRENT_TIME_MS + 10000
+        val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
         Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
             .thenReturn(expirationTime)
         Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
