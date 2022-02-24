@@ -58,8 +58,7 @@ public class CredentialsManagerTest {
     @Before
     public fun setUp() {
         MockitoAnnotations.openMocks(this)
-        val credentialsManager = CredentialsManager(client, storage, jwtDecoder)
-        credentialsManager.setExecutor(serialExecutor)
+        val credentialsManager = CredentialsManager(client, storage, jwtDecoder, serialExecutor)
         manager = Mockito.spy(credentialsManager)
         //Needed to test expiration verification
         Mockito.doReturn(CredentialsMock.CURRENT_TIME_MS).`when`(manager).currentTimeInMillis
@@ -894,8 +893,7 @@ public class CredentialsManagerTest {
 
     @Test(expected = IllegalArgumentException::class)
     public fun shouldUseCustomExecutorForGetCredentials() {
-        val manager = CredentialsManager(client, storage)
-        manager.setExecutor {
+        val manager = CredentialsManager(client, storage, jwtDecoder) {
             throw IllegalArgumentException("Proper Executor Set")
         }
         manager.getCredentials(object : Callback<Credentials, CredentialsManagerException> {

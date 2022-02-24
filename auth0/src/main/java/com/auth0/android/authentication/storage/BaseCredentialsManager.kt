@@ -21,8 +21,6 @@ public abstract class BaseCredentialsManager internal constructor(
 ) {
     private var _clock: Clock = ClockImpl()
 
-    protected var serialExecutor: Executor = Executors.newSingleThreadExecutor()
-
     /**
      * Updates the clock instance used for expiration verification purposes.
      * The use of this method can help on situations where the clock comes from an external synced source.
@@ -30,15 +28,6 @@ public abstract class BaseCredentialsManager internal constructor(
      */
     public fun setClock(clock: Clock) {
         this._clock = clock
-    }
-
-    /**
-     * @param executor - [Executor] used to ensure the requests made for [CredentialsManager] and
-     * [SecureCredentialsManager] are executed synchronously to avoid racing conditions. Current usage
-     * is only around the [getCredentials] method but it can be used in future for others.
-     */
-    public fun setExecutor(executor: Executor) {
-        this.serialExecutor = executor
     }
 
     @Throws(CredentialsManagerException::class)

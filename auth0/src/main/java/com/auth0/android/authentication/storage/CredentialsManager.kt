@@ -16,7 +16,8 @@ import java.util.concurrent.Executors
 public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal constructor(
     authenticationClient: AuthenticationAPIClient,
     storage: Storage,
-    jwtDecoder: JWTDecoder
+    jwtDecoder: JWTDecoder,
+    private val serialExecutor: Executor
 ) : BaseCredentialsManager(authenticationClient, storage, jwtDecoder) {
     /**
      * Creates a new instance of the manager that will store the credentials in the given Storage.
@@ -27,7 +28,8 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
     public constructor(authenticationClient: AuthenticationAPIClient, storage: Storage) : this(
         authenticationClient,
         storage,
-        JWTDecoder()
+        JWTDecoder(),
+        Executors.newSingleThreadExecutor()
     )
 
     /**

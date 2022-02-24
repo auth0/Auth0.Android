@@ -93,8 +93,7 @@ public class SecureCredentialsManagerTest {
         Mockito.`when`(activityContext.getSystemService(Context.KEYGUARD_SERVICE))
             .thenReturn(kManager)
         val secureCredentialsManager =
-            SecureCredentialsManager(client, storage, crypto, jwtDecoder)
-        secureCredentialsManager.setExecutor(serialExecutor)
+            SecureCredentialsManager(client, storage, crypto, jwtDecoder, serialExecutor)
         manager = Mockito.spy(secureCredentialsManager)
         Mockito.doReturn(CredentialsMock.CURRENT_TIME_MS).`when`(manager).currentTimeInMillis
         gson = GsonProvider.gson
@@ -1538,7 +1537,7 @@ public class SecureCredentialsManagerTest {
      */
     @Test
     public fun shouldUseCustomClock() {
-        val manager = SecureCredentialsManager(client, storage, crypto, jwtDecoder)
+        val manager = SecureCredentialsManager(client, storage, crypto, jwtDecoder) { }
         val expirationTime = CredentialsMock.CURRENT_TIME_MS //Same as current time --> expired
         Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
             .thenReturn(expirationTime)
@@ -1559,15 +1558,14 @@ public class SecureCredentialsManagerTest {
 
     @Test(expected = java.lang.IllegalArgumentException::class)
     public fun shouldUseCustomExecutorForGetCredentials() {
-        val manager = SecureCredentialsManager(client, storage, crypto, jwtDecoder)
+        val manager = SecureCredentialsManager(client, storage, crypto, jwtDecoder) {
+            throw java.lang.IllegalArgumentException("Proper Executor Set")
+        }
         val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
         Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
             .thenReturn(expirationTime)
         Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
             .thenReturn("{\"access_token\":\"accessToken\"}")
-        manager.setExecutor {
-            throw java.lang.IllegalArgumentException("Proper Executor Set")
-        }
         manager.getCredentials(object : Callback<Credentials, CredentialsManagerException> {
             override fun onSuccess(result: Credentials) { }
             override fun onFailure(error: CredentialsManagerException) { }
