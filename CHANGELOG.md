@@ -1,5 +1,11 @@
 # Change Log
 
+## [2.7.0](https://github.com/auth0/Auth0.Android/tree/2.7.0) (2022-02-25)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.6.0...2.7.0)
+
+**Changed**
+- Implement Thread Safe Credential Manager [\#542](https://github.com/auth0/Auth0.Android/pull/542) ([poovamraj](https://github.com/poovamraj))
+
 ## [2.6.0](https://github.com/auth0/Auth0.Android/tree/2.6.0) (2021-12-07)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.5.1...2.6.0)
 
