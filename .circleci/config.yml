@@ -4,25 +4,14 @@ jobs:
     environment:
       GRADLE_OPTS: -Dkotlin.compiler.execution.strategy=in-process
     docker:
-      - image: circleci/android:api-30
+      - image: cimg/android:2022.03.1
 
     steps:
       - checkout
 
-      - restore_cache:
-          keys:
-            - v2-dep-{{ checksum "build.gradle" }}-{{ checksum  "auth0/build.gradle" }}
-
       - run:
           name: Run checks
-          command: ./gradlew clean test jacocoTestReport lint --continue --console=plain --max-workers=2 --no-daemon
-
-      - save_cache:
-          key: v2-dep-{{ checksum "build.gradle" }}-{{ checksum  "auth0/build.gradle" }}
-          paths:
-            - ~/.gradle
-            - ~/.android
-            - /usr/local/android-sdk-linux/extras
+          command: rm -rf .gradle && ./gradlew clean test jacocoTestReport lint --continue --console=plain --max-workers=2 --no-daemon
 
       - store_artifacts:
           path: auth0/build/reports
