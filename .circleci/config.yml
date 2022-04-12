@@ -11,7 +11,7 @@ jobs:
 
       - run:
           name: Run checks
-          command: rm -rf .gradle && ./gradlew clean test jacocoTestReport lint --continue --console=plain --max-workers=2 --no-daemon
+          command: ./gradlew clean test jacocoTestReport lint --continue --console=plain --max-workers=2 --no-daemon
 
       - store_artifacts:
           path: auth0/build/reports
