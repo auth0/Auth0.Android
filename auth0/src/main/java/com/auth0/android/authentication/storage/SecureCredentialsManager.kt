@@ -231,7 +231,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
     public suspend fun awaitCredentials(scope: String?, minTtl: Int): Credentials {
-        return awaitCredentials(null, 0, emptyMap())
+        return awaitCredentials(scope, minTtl, emptyMap())
     }
 
     /**
