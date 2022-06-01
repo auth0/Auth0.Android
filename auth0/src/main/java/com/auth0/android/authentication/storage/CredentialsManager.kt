@@ -6,9 +6,12 @@ import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
 import com.auth0.android.result.Credentials
+import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.*
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 /**
  * Class that handles credentials and allows to save and retrieve them.
@@ -49,6 +52,67 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         storage.store(KEY_EXPIRES_AT, credentials.expiresAt.time)
         storage.store(KEY_SCOPE, credentials.scope)
         storage.store(KEY_CACHE_EXPIRES_AT, cacheExpiresAt)
+    }
+
+    /**
+     * Retrieves the credentials from the storage and refresh them if they have already expired.
+     * It will throw [CredentialsManagerException] if the saved access_token or id_token is null,
+     * or if the tokens have already expired and the refresh_token is null.
+     * This is a Coroutine that is exposed only for Kotlin.
+     */
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    public suspend fun awaitCredentials(): Credentials {
+        return awaitCredentials(null, 0)
+    }
+
+    /**
+     * Retrieves the credentials from the storage and refresh them if they have already expired.
+     * It will throw [CredentialsManagerException] if the saved access_token or id_token is null,
+     * or if the tokens have already expired and the refresh_token is null.
+     * This is a Coroutine that is exposed only for Kotlin.
+     *
+     * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
+     * @param minTtl   the minimum time in seconds that the access token should last before expiration.
+     */
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    public suspend fun awaitCredentials(scope: String?, minTtl: Int): Credentials {
+        return awaitCredentials(scope, minTtl, emptyMap())
+    }
+
+    /**
+     * Retrieves the credentials from the storage and refresh them if they have already expired.
+     * It will throw [CredentialsManagerException] if the saved access_token or id_token is null,
+     * or if the tokens have already expired and the refresh_token is null.
+     * This is a Coroutine that is exposed only for Kotlin.
+     *
+     * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
+     * @param minTtl   the minimum time in seconds that the access token should last before expiration.
+     * @param parameters additional parameters to send in the request to refresh expired credentials
+     */
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    public suspend fun awaitCredentials(
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>
+    ): Credentials {
+        return suspendCancellableCoroutine { continuation ->
+            getCredentials(
+                scope,
+                minTtl,
+                parameters,
+                object : Callback<Credentials, CredentialsManagerException> {
+                    override fun onSuccess(result: Credentials) {
+                        continuation.resume(result)
+                    }
+
+                    override fun onFailure(error: CredentialsManagerException) {
+                        continuation.resumeWithException(error)
+                    }
+                })
+        }
     }
 
     /**

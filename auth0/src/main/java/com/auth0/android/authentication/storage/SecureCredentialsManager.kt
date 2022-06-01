@@ -22,9 +22,12 @@ import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.OptionalCredentials
 import com.google.gson.Gson
+import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.*
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 /**
  * A safer alternative to the [CredentialsManager] class. A combination of RSA and AES keys is used to keep the values secure.
@@ -197,14 +200,87 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     }
 
     /**
+     * Tries to obtain the credentials from the Storage. The method will return [Credentials].
+     * If something unexpected happens, then [CredentialsManagerException] exception will be thrown. Some devices are not compatible
+     * at all with the cryptographic implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
+     * This is a Coroutine that is exposed only for Kotlin.
+     *
+     * If a LockScreen is setup and [SecureCredentialsManager.requireAuthentication] was called, the user will be asked to authenticate before accessing
+     * the credentials. Your activity must override the [Activity.onActivityResult] method and call
+     * [SecureCredentialsManager.checkAuthenticationResult] with the received values.
+     */
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    public suspend fun awaitCredentials(): Credentials {
+        return awaitCredentials(null, 0)
+    }
+
+    /**
+     * Tries to obtain the credentials from the Storage. The method will return [Credentials].
+     * If something unexpected happens, then [CredentialsManagerException] exception will be thrown. Some devices are not compatible
+     * at all with the cryptographic implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
+     * This is a Coroutine that is exposed only for Kotlin.
+     *
+     * If a LockScreen is setup and [SecureCredentialsManager.requireAuthentication] was called, the user will be asked to authenticate before accessing
+     * the credentials. Your activity must override the [Activity.onActivityResult] method and call
+     * [SecureCredentialsManager.checkAuthenticationResult] with the received values.
+     *
+     * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
+     * @param minTtl   the minimum time in seconds that the access token should last before expiration.
+     */
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    public suspend fun awaitCredentials(scope: String?, minTtl: Int): Credentials {
+        return awaitCredentials(null, 0, emptyMap())
+    }
+
+    /**
+     * Tries to obtain the credentials from the Storage. The method will return [Credentials].
+     * If something unexpected happens, then [CredentialsManagerException] exception will be thrown. Some devices are not compatible
+     * at all with the cryptographic implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
+     * This is a Coroutine that is exposed only for Kotlin.
+     *
+     * If a LockScreen is setup and [SecureCredentialsManager.requireAuthentication] was called, the user will be asked to authenticate before accessing
+     * the credentials. Your activity must override the [Activity.onActivityResult] method and call
+     * [SecureCredentialsManager.checkAuthenticationResult] with the received values.
+     *
+     * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
+     * @param minTtl   the minimum time in seconds that the access token should last before expiration.
+     * @param parameters additional parameters to send in the request to refresh expired credentials
+     */
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    public suspend fun awaitCredentials(
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>
+    ): Credentials {
+        return suspendCancellableCoroutine { continuation ->
+            getCredentials(
+                scope,
+                minTtl,
+                parameters,
+                object : Callback<Credentials, CredentialsManagerException> {
+                    override fun onSuccess(result: Credentials) {
+                        continuation.resume(result)
+                    }
+
+                    override fun onFailure(error: CredentialsManagerException) {
+                        continuation.resumeWithException(error)
+                    }
+                })
+        }
+    }
+
+    /**
      * Tries to obtain the credentials from the Storage. The callback's [Callback.onSuccess] method will be called with the result.
      * If something unexpected happens, the [Callback.onFailure] method will be called with the error. Some devices are not compatible
      * at all with the cryptographic implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
      *
      *
-     * If a LockScreen is setup and [.requireAuthentication] was called, the user will be asked to authenticate before accessing
+     * If a LockScreen is setup and [SecureCredentialsManager.requireAuthentication] was called, the user will be asked to authenticate before accessing
      * the credentials. Your activity must override the [Activity.onActivityResult] method and call
-     * [.checkAuthenticationResult] with the received values.
+     * [checkAuthenticationResult] with the received values.
      *
      * @param callback the callback to receive the result in.
      */
@@ -218,9 +294,9 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * at all with the cryptographic implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
      *
      *
-     * If a LockScreen is setup and [.requireAuthentication] was called, the user will be asked to authenticate before accessing
+     * If a LockScreen is setup and [SecureCredentialsManager.requireAuthentication] was called, the user will be asked to authenticate before accessing
      * the credentials. Your activity must override the [Activity.onActivityResult] method and call
-     * [.checkAuthenticationResult] with the received values.
+     * [SecureCredentialsManager.checkAuthenticationResult] with the received values.
      *
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
@@ -240,9 +316,9 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * at all with the cryptographic implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
      *
      *
-     * If a LockScreen is setup and [.requireAuthentication] was called, the user will be asked to authenticate before accessing
+     * If a LockScreen is setup and [SecureCredentialsManager.requireAuthentication] was called, the user will be asked to authenticate before accessing
      * the credentials. Your activity must override the [Activity.onActivityResult] method and call
-     * [.checkAuthenticationResult] with the received values.
+     * [SecureCredentialsManager.checkAuthenticationResult] with the received values.
      *
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
