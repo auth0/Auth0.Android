@@ -9,6 +9,7 @@ import com.auth0.android.result.Credentials
 import com.auth0.android.result.CredentialsMock
 import com.auth0.android.util.Clock
 import com.nhaarman.mockitokotlin2.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.hamcrest.MatcherAssert
@@ -283,6 +284,7 @@ public class CredentialsManagerTest {
     }
 
     @Test
+    @ExperimentalCoroutinesApi
     public fun shouldAwaitNonExpiredCredentialsFromStorage(): Unit = runTest {
         verifyNoMoreInteractions(client)
         Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
@@ -306,6 +308,7 @@ public class CredentialsManagerTest {
     }
 
     @Test
+    @ExperimentalCoroutinesApi
     public fun shouldFailOnAwaitCredentialsWhenExpiredAndNoRefreshTokenWasSaved(): Unit = runTest {
         verifyNoMoreInteractions(client)
         Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
@@ -316,7 +319,7 @@ public class CredentialsManagerTest {
         Mockito.`when`(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime)
         Mockito.`when`(storage.retrieveString("com.auth0.scope")).thenReturn("scope")
         val exception = assertThrows(CredentialsManagerException::class.java) {
-            runBlocking { manager.getCredentials(callback) }
+            runBlocking { manager.awaitCredentials() }
         }
         MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(
