@@ -30,7 +30,6 @@ import org.mockito.Mockito
 import org.mockito.MockitoAnnotations
 import org.mockito.internal.verification.VerificationModeFactory
 import org.powermock.api.mockito.PowerMockito.verifyPrivate
-import org.powermock.core.classloader.annotations.PowerMockIgnore
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.android.util.concurrent.PausedExecutorService
 import org.robolectric.shadows.ShadowLooper
@@ -42,7 +41,6 @@ import java.util.*
 import kotlin.coroutines.ContinuationInterceptor
 
 @RunWith(RobolectricTestRunner::class)
-@PowerMockIgnore("org.mockito.*", "org.robolectric.*", "android.*")
 public class BaseRequestTest {
     private lateinit var baseRequest: BaseRequest<SimplePojo, Auth0Exception>
     private lateinit var resultAdapter: JsonAdapter<SimplePojo>
