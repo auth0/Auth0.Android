@@ -53,8 +53,10 @@ import java.lang.reflect.Modifier
 import java.util.*
 import java.util.concurrent.Executor
 import org.junit.Assert.assertThrows
+import org.powermock.core.classloader.annotations.PowerMockIgnore
 
 @RunWith(RobolectricTestRunner::class)
+@PowerMockIgnore("org.mockito.*", "org.robolectric.*", "android.*")
 public class SecureCredentialsManagerTest {
     @Mock
     private lateinit var client: AuthenticationAPIClient
