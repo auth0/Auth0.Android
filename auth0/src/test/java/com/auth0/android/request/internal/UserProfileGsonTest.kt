@@ -12,7 +12,6 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import java.io.StringReader
-import java.text.SimpleDateFormat
 import java.util.*
 
 public class UserProfileGsonTest : GsonBaseTest() {
@@ -235,12 +234,26 @@ public class UserProfileGsonTest : GsonBaseTest() {
         assertThat(
             profile.createdAt,
             equalTo(
-                SimpleDateFormat(
-                    "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-                    Locale.US
-                ).parse("2014-07-06T18:33:49.005Z")
+                getUTCDate(2014, 6, 6, 18, 33, 49, 5)
             )
         )
+    }
+
+    @Test
+    @Throws(Exception::class)
+    public fun shouldCreateProfileFromISO8601CreatedAt() {
+        val profileUtc = pojoFrom(
+            StringReader("""{ "created_at": "2022-04-29T07:09:23.000Z" }"""),
+            UserProfile::class.java
+        )
+        val profileLocal = pojoFrom(
+            StringReader("""{ "created_at": "2022-04-29T10:09:23.000+0300" }"""),
+            UserProfile::class.java
+        )
+        val dateUtc = getUTCDate(2022, 3, 29, 7, 9,23, 0);
+
+        assertThat(profileUtc.createdAt, equalTo(dateUtc))
+        assertThat(profileLocal.createdAt, equalTo(dateUtc))
     }
 
     @Test
@@ -329,6 +342,18 @@ public class UserProfileGsonTest : GsonBaseTest() {
             profile.getAppMetadata(),
             hasEntry("blocked", false as Any)
         )
+    }
+
+    private fun getUTCDate(year: Int, month: Int, day: Int, hr: Int, min: Int, sec: Int, ms: Int): Date {
+        val cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+        cal[Calendar.YEAR] = year
+        cal[Calendar.MONTH] = month
+        cal[Calendar.DAY_OF_MONTH] = day
+        cal[Calendar.HOUR_OF_DAY] = hr
+        cal[Calendar.MINUTE] = min
+        cal[Calendar.SECOND] = sec
+        cal[Calendar.MILLISECOND] = ms
+        return cal.time
     }
 
     private companion object {

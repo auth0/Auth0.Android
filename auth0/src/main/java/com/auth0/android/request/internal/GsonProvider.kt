@@ -12,6 +12,7 @@ import java.util.*
 
 internal object GsonProvider {
     internal val gson: Gson
+    internal val credentialsGson: Gson
     private var sdf: SimpleDateFormat
     private const val DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
 
@@ -24,8 +25,11 @@ internal object GsonProvider {
         gson = GsonBuilder()
             .registerTypeAdapterFactory(JsonRequiredTypeAdapterFactory())
             .registerTypeAdapter(UserProfile::class.java, UserProfileDeserializer())
-            .registerTypeAdapter(Credentials::class.java, CredentialsDeserializer())
             .registerTypeAdapter(jwksType, JwksDeserializer())
+            .create()
+
+        credentialsGson = GsonBuilder()
+            .registerTypeAdapter(Credentials::class.java, CredentialsDeserializer())
             .setDateFormat(DATE_FORMAT)
             .create()
         sdf = SimpleDateFormat(DATE_FORMAT, Locale.US)

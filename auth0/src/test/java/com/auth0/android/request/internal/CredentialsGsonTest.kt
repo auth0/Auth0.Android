@@ -18,7 +18,7 @@ import java.util.*
 public class CredentialsGsonTest : GsonBaseTest() {
     @Before
     public fun setUp() {
-        gson = GsonProvider.gson
+        gson = GsonProvider.credentialsGson
     }
 
     @Test
