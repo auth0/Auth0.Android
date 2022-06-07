@@ -1,28 +1,19 @@
 package com.auth0.sample
 
-import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
-import com.auth0.android.authentication.storage.CredentialsManager
-import com.auth0.android.authentication.storage.SecureCredentialsManager
-import com.auth0.android.authentication.storage.SharedPreferencesStorage
 import com.auth0.android.callback.Callback
 import com.auth0.android.provider.WebAuthProvider
 import com.auth0.android.request.DefaultClient
 import com.auth0.android.result.Credentials
-import com.auth0.android.result.UserProfile
 import com.auth0.sample.databinding.FragmentDatabaseLoginBinding
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import java.lang.Exception
 
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
@@ -40,8 +31,6 @@ class DatabaseLoginFragment : Fragment() {
         account
     }
 
-    lateinit var manager: SecureCredentialsManager
-
     private val apiClient: AuthenticationAPIClient by lazy {
         AuthenticationAPIClient(account)
     }
@@ -51,10 +40,6 @@ class DatabaseLoginFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         val binding = FragmentDatabaseLoginBinding.inflate(inflater, container, false)
-        val authentication = AuthenticationAPIClient(account)
-        val storage = SharedPreferencesStorage(requireContext())
-        manager = SecureCredentialsManager(requireContext(), authentication, storage)
-        manager.requireAuthentication(requireActivity(), 201, "Hi Hello", "Poovam");
         binding.buttonLogin.setOnClickListener {
             val email = binding.textEmail.text.toString()
             val password = binding.textPassword.text.toString()
@@ -70,29 +55,22 @@ class DatabaseLoginFragment : Fragment() {
     }
 
     private fun dbLogin(email: String, password: String) {
-        val a = apiClient.login(email, password, "Username-Password-Authentication")
-        GlobalScope.launch {
-            try {
-                val b = a.await()
-                println(b)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
+        apiClient.login(email, password, "Username-Password-Authentication")
             //Additional customization to the request goes here
+            .start(object : Callback<Credentials, AuthenticationException> {
+                override fun onFailure(error: AuthenticationException) {
+                    Snackbar.make(requireView(), error.getDescription(), Snackbar.LENGTH_LONG)
+                        .show()
+                }
 
-    }
-
-    private fun getCred(email: String, password: String) {
-        GlobalScope.launch {
-            val a = manager.awaitCredentials()
-            println(a)
-        }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        manager.checkAuthenticationResult(requestCode, resultCode)
+                override fun onSuccess(result: Credentials) {
+                    Snackbar.make(
+                        requireView(),
+                        "Success: ${result.accessToken}",
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
+            })
     }
 
     private fun webAuth() {
@@ -105,18 +83,6 @@ class DatabaseLoginFragment : Fragment() {
                         "Success: ${result.accessToken}",
                         Snackbar.LENGTH_LONG
                     ).show()
-//                    manager.saveCredentials(result)
-                    apiClient.userInfo(result.accessToken).start(object : Callback<UserProfile, AuthenticationException>{
-                        override fun onSuccess(result: UserProfile) {
-                            val a = result
-                            println(a)
-                        }
-
-                        override fun onFailure(error: AuthenticationException) {
-                            TODO("Not yet implemented")
-                        }
-
-                    })
                 }
 
                 override fun onFailure(error: AuthenticationException) {
