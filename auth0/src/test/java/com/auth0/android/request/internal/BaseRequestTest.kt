@@ -1,15 +1,26 @@
 package com.auth0.android.request.internal
 
+import androidx.test.espresso.matcher.ViewMatchers.assertThat
 import com.auth0.android.Auth0Exception
 import com.auth0.android.callback.Callback
 import com.auth0.android.request.*
 import com.google.gson.Gson
 import com.google.gson.JsonIOException
 import com.nhaarman.mockitokotlin2.*
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestCoroutineDispatcher
+import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
+import net.bytebuddy.matcher.ElementMatchers.`is`
 import org.hamcrest.MatcherAssert
 import org.hamcrest.Matchers
 import org.hamcrest.collection.IsMapContaining
 import org.hamcrest.collection.IsMapWithSize
+import org.hamcrest.core.Is
 import org.hamcrest.core.IsCollectionContaining
 import org.junit.Before
 import org.junit.Test
@@ -18,6 +29,7 @@ import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.MockitoAnnotations
 import org.mockito.internal.verification.VerificationModeFactory
+import org.powermock.api.mockito.PowerMockito.verifyPrivate
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.android.util.concurrent.PausedExecutorService
 import org.robolectric.shadows.ShadowLooper
@@ -26,6 +38,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.Reader
 import java.util.*
+import kotlin.coroutines.ContinuationInterceptor
 
 @RunWith(RobolectricTestRunner::class)
 public class BaseRequestTest {
@@ -455,6 +468,22 @@ public class BaseRequestTest {
         verify(callback, Mockito.never()).onSuccess(
             any()
         )
+    }
+
+    @Test
+    @ExperimentalCoroutinesApi
+    public fun shouldAwaitOnIODispatcher(): Unit = runTest {
+        val baseRequest = Mockito.spy(BaseRequest(
+            HttpMethod.POST,
+            BASE_URL,
+            client,
+            resultAdapter,
+            errorAdapter
+        ))
+        Mockito.doReturn(SimplePojo("")).`when`(baseRequest).switchRequestContext(any(), any())
+        mockSuccessfulServerResponse()
+        baseRequest.await()
+        verify(baseRequest).switchRequestContext(eq(Dispatchers.IO), any())
     }
 
     @Throws(Exception::class)

@@ -1,8 +1,12 @@
 package com.auth0.android.request.internal
 
+import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0Exception
 import com.auth0.android.callback.Callback
 import com.auth0.android.request.*
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
@@ -76,6 +80,33 @@ internal open class BaseRequest<T, U : Auth0Exception>(
                     callback.onFailure(uError)
                 }
             }
+        }
+    }
+
+    /**
+     * Runs an asynchronous network request on a thread from [Dispatchers.IO]
+     * The result is parsed into a <T> value or a <U> exception is thrown if something went wrong.
+     * This is a Coroutine that is exposed only for Kotlin.
+     */
+    @JvmSynthetic
+    @kotlin.jvm.Throws(Auth0Exception::class)
+    override suspend fun await(): T {
+        return switchRequestContext(Dispatchers.IO) {
+            execute()
+        }
+    }
+
+    /**
+     * Used to switch to the provided [CoroutineDispatcher].
+     * This extra method is used to mock and verify during testing. It is not exposed to public.
+     */
+    @VisibleForTesting
+    internal suspend fun switchRequestContext(
+        dispatcher: CoroutineDispatcher,
+        runnable: () -> T
+    ): T {
+        return withContext(dispatcher) {
+            return@withContext runnable.invoke()
         }
     }
 

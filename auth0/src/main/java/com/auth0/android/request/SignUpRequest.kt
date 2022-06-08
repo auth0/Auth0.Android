@@ -6,6 +6,8 @@ import com.auth0.android.authentication.ParameterBuilder
 import com.auth0.android.callback.Callback
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Represent a request that creates a user in a Auth0 Database connection and then logs in.
@@ -148,5 +150,19 @@ public class SignUpRequest
     override fun execute(): Credentials {
         signUpRequest.execute()
         return authenticationRequest.execute()
+    }
+
+    /**
+     * Execute the create user request and then logs the user in.
+     * This is a Coroutine that is exposed only for Kotlin.
+     *
+     * @return authentication object on success
+     * @throws Auth0Exception on failure
+     */
+    @JvmSynthetic
+    @Throws(Auth0Exception::class)
+    override suspend fun await(): Credentials {
+        signUpRequest.await()
+        return authenticationRequest.await()
     }
 }
