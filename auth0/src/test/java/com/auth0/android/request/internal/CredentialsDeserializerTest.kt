@@ -1,6 +1,5 @@
 package com.auth0.android.request.internal
 
-import com.auth0.android.request.internal.GsonProvider.formatDate
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.CredentialsMock
 import com.google.gson.Gson
@@ -19,7 +18,7 @@ public class CredentialsDeserializerTest {
     @Before
     public fun setUp() {
         val deserializer = CredentialsDeserializerMock()
-        gson = GsonProvider.gson.newBuilder()
+        gson = GsonProvider.credentialsGson.newBuilder()
             .registerTypeAdapter(Credentials::class.java, deserializer)
             .create()
     }
@@ -59,7 +58,7 @@ public class CredentialsDeserializerTest {
                 "id_token": "s6GS5FGJN2jfd4l6",
                 "token_type": "bearer",
                 "expires_in": 86000,
-                "expires_at": "${formatDate(expiresAt)}"
+                "expires_at": ${gson.toJson(expiresAt)}
             }
             """.trimIndent()
     }
