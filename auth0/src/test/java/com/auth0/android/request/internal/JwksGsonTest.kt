@@ -6,7 +6,6 @@ import org.hamcrest.MatcherAssert
 import org.hamcrest.Matchers
 import org.junit.Assert
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -17,7 +16,7 @@ import java.math.BigInteger
 import java.security.PublicKey
 import java.security.interfaces.RSAPublicKey
 
-@Ignore
+@RunWith(RobolectricTestRunner::class)
 public class JwksGsonTest : GsonBaseTest() {
     @Before
     public fun setUp() {

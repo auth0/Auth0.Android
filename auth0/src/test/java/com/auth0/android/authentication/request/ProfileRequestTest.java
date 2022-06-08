@@ -10,7 +10,6 @@ import com.auth0.android.result.Credentials;
 import com.auth0.android.result.UserProfile;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -30,7 +29,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@Ignore
+@RunWith(RobolectricTestRunner.class)
 public class ProfileRequestTest {
 
     private AuthenticationRequest authenticationMockRequest;

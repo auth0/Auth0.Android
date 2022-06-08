@@ -26,7 +26,6 @@ import org.hamcrest.collection.IsMapContaining
 import org.hamcrest.collection.IsMapWithSize
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -37,7 +36,7 @@ import java.io.InputStream
 import java.util.*
 
 
-@Ignore
+@RunWith(RobolectricTestRunner::class)
 @Config(shadows = [ThreadSwitcherShadow::class])
 public class UsersAPIClientTest {
     private lateinit var client: UsersAPIClient

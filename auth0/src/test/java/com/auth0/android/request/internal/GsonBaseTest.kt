@@ -2,13 +2,11 @@ package com.auth0.android.request.internal
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import org.junit.Ignore
 import java.io.FileNotFoundException
 import java.io.FileReader
 import java.io.IOException
 import java.io.Reader
 
-@Ignore
 public abstract class GsonBaseTest {
     internal lateinit var gson: Gson
 

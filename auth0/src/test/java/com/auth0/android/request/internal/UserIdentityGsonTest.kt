@@ -8,10 +8,8 @@ import org.hamcrest.Matchers
 import org.hamcrest.collection.IsMapWithSize
 import org.junit.Assert
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 
-@Ignore
 public class UserIdentityGsonTest : GsonBaseTest() {
 
     @Before

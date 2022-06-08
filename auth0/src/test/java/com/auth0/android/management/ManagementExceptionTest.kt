@@ -3,11 +3,9 @@ package com.auth0.android.management
 import com.auth0.android.NetworkErrorException
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
-import org.junit.Ignore
 import org.junit.Test
 import java.io.IOException
 
-@Ignore
 public class ManagementExceptionTest {
     @Test
     public fun shouldNotHaveNetworkError() {

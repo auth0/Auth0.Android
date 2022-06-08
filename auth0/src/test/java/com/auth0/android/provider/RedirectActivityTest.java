@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.net.Uri;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -23,7 +22,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 
-@Ignore
+@RunWith(RobolectricTestRunner.class)
 @Config(shadows = RedirectActivityShadow.class)
 public class RedirectActivityTest {
 

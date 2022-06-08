@@ -9,7 +9,6 @@ import com.nhaarman.mockitokotlin2.*
 import org.hamcrest.MatcherAssert
 import org.hamcrest.Matchers
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestWatcher
@@ -21,7 +20,6 @@ import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.util.*
 
-@Ignore
 public class CommonThreadSwitcherDelegateTest {
 
     @get:Rule

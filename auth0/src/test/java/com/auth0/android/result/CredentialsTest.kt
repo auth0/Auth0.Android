@@ -2,11 +2,9 @@ package com.auth0.android.result
 
 import org.hamcrest.MatcherAssert
 import org.hamcrest.Matchers
-import org.junit.Ignore
 import org.junit.Test
 import java.util.*
 
-@Ignore
 public class CredentialsTest {
     @Test
     public fun shouldCreate() {

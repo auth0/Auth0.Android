@@ -14,7 +14,6 @@ import androidx.test.espresso.intent.matcher.IntentMatchers;
 
 import org.hamcrest.MatcherAssert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.hamcrest.MockitoHamcrest;
@@ -37,7 +36,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Robolectric.setupActivity;
 
-@Ignore
+@RunWith(RobolectricTestRunner.class)
 public class BrowserPickerTest {
     private static final String CHROME_STABLE = "com.android.chrome";
     private static final String CHROME_SYSTEM = "com.google.android.apps.chrome";

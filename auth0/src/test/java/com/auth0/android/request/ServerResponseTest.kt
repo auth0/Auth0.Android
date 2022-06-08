@@ -2,12 +2,10 @@ package com.auth0.android.request
 
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Ignore
 import org.junit.Test
 import org.mockito.Mockito.mock
 import java.io.InputStream
 
-@Ignore
 public class ServerResponseTest {
 
     @Test

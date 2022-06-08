@@ -5,7 +5,6 @@ import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.Callback;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -22,7 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 
-@Ignore
+@RunWith(RobolectricTestRunner.class)
 public class LogoutManagerTest {
 
     @Mock

@@ -4,7 +4,7 @@ jobs:
     environment:
       GRADLE_OPTS: -Dkotlin.compiler.execution.strategy=in-process
     docker:
-      - image: circleci/android:api-30
+      - image: cimg/android:2022.03.1
 
     steps:
       - checkout

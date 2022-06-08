@@ -7,7 +7,6 @@ import com.google.gson.reflect.TypeToken
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
@@ -17,7 +16,7 @@ import java.io.FileReader
 import java.io.IOException
 import java.util.*
 
-@Ignore
+@RunWith(RobolectricTestRunner::class)
 public class AuthenticationExceptionTest {
     @get:Rule
     public val exception: ExpectedException = ExpectedException.none()

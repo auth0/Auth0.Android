@@ -5,14 +5,13 @@ import com.google.gson.stream.MalformedJsonException
 import org.hamcrest.Matchers.*
 import org.hamcrest.collection.IsEmptyCollection
 import org.junit.Assert
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import java.util.*
 
 
-@Ignore
+@RunWith(RobolectricTestRunner::class)
 public class JwtTest {
 
     @Test

@@ -6,7 +6,6 @@ import android.content.SharedPreferences;
 
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -26,7 +25,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@Ignore
+@RunWith(RobolectricTestRunner.class)
 @SuppressLint("CommitPrefEdits")
 public class SharedPreferencesStorageTest {
 

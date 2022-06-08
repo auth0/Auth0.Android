@@ -2,7 +2,6 @@ package com.auth0.android.authentication.storage;
 
 import com.auth0.android.request.internal.Jwt;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -10,7 +9,7 @@ import org.robolectric.RobolectricTestRunner;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@Ignore
+@RunWith(RobolectricTestRunner.class)
 public class JWTDecoderTest {
 
     @Test

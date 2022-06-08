@@ -9,7 +9,6 @@ import com.auth0.android.request.NetworkingClient;
 import com.auth0.android.request.Request;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.AdditionalMatchers;
@@ -29,7 +28,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
-@Ignore
+@RunWith(RobolectricTestRunner.class)
 public class RequestFactoryTest {
 
     private static final String CLIENT_INFO = "client_info";

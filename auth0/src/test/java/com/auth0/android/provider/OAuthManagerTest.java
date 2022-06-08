@@ -3,13 +3,12 @@ package com.auth0.android.provider;
 import com.auth0.android.authentication.AuthenticationException;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 
 
-@Ignore
+@RunWith(RobolectricTestRunner.class)
 public class OAuthManagerTest {
 
     @Test

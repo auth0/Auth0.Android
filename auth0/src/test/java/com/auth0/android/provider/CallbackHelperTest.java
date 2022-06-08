@@ -3,7 +3,6 @@ package com.auth0.android.provider;
 import android.net.Uri;
 
 import org.hamcrest.collection.IsMapWithSize;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -21,7 +20,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.collection.IsMapWithSize.aMapWithSize;
 import static org.hamcrest.core.IsNull.nullValue;
 
-@Ignore
+@RunWith(RobolectricTestRunner.class)
 public class CallbackHelperTest {
 
     private static final String PACKAGE_NAME = "com.auth0.lock.android.app";
