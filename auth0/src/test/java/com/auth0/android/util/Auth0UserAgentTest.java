@@ -6,6 +6,7 @@ import com.auth0.android.auth0.BuildConfig;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -20,7 +21,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
-@RunWith(RobolectricTestRunner.class)
+@Ignore
 public class Auth0UserAgentTest {
 
     //Testing Android version only for a few SDKs

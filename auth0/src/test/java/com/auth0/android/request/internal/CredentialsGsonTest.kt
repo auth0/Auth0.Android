@@ -9,12 +9,14 @@ import org.hamcrest.MatcherAssert
 import org.hamcrest.Matchers
 import org.junit.Assert
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import java.io.IOException
 import java.io.Reader
 import java.io.StringReader
 import java.util.*
 
+@Ignore
 public class CredentialsGsonTest : GsonBaseTest() {
     @Before
     public fun setUp() {

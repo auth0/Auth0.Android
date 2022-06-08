@@ -13,6 +13,7 @@ import org.hamcrest.MatcherAssert
 import org.hamcrest.Matchers
 import org.hamcrest.core.Is
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.*
@@ -21,7 +22,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.android.controller.ActivityController
 
-@RunWith(RobolectricTestRunner::class)
+@Ignore
 public class AuthenticationActivityTest {
     @Mock
     private lateinit var uri: Uri

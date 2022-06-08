@@ -4,6 +4,7 @@ package com.auth0.android.authentication;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -16,6 +17,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.collection.IsMapWithSize.anEmptyMap;
 
+@Ignore
 public class ParameterBuilderTest {
 
     public static final String CLIENT_ID = "CLIENT ID";

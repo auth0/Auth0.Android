@@ -9,10 +9,12 @@ import org.hamcrest.MatcherAssert
 import org.hamcrest.Matchers
 import org.hamcrest.core.Is
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import java.io.FileReader
 import java.util.*
 
+@Ignore
 public class CredentialsDeserializerTest {
     private lateinit var gson: Gson
 

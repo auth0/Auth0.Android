@@ -1,6 +1,7 @@
 package com.auth0.android.request.internal;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
@@ -25,6 +26,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@Ignore
 public class TLS12SocketFactoryTest {
 
     private static final String TLS_1_2 = "TLSv1.2";

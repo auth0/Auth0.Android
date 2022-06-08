@@ -12,6 +12,7 @@ import org.hamcrest.collection.IsMapContaining
 import org.hamcrest.collection.IsMapWithSize
 import org.hamcrest.core.IsCollectionContaining
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
@@ -27,7 +28,7 @@ import java.io.InputStream
 import java.io.Reader
 import java.util.*
 
-@RunWith(RobolectricTestRunner::class)
+@Ignore
 public class BaseRequestTest {
     private lateinit var baseRequest: BaseRequest<SimplePojo, Auth0Exception>
     private lateinit var resultAdapter: JsonAdapter<SimplePojo>

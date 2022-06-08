@@ -17,6 +17,7 @@ import org.hamcrest.collection.IsMapContaining.hasEntry
 import org.hamcrest.collection.IsMapWithSize.anEmptyMap
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -25,7 +26,7 @@ import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
 import java.util.stream.Collectors
 
-@RunWith(RobolectricTestRunner::class)
+@Ignore
 public class DefaultClientTest {
 
     private companion object {

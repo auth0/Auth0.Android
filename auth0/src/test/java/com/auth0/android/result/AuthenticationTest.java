@@ -1,12 +1,14 @@
 package com.auth0.android.result;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
+@Ignore
 public class AuthenticationTest {
 
     private UserProfile profile;

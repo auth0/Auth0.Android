@@ -27,6 +27,7 @@ import org.hamcrest.Matchers
 import org.hamcrest.collection.IsMapContaining
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -38,7 +39,7 @@ import java.io.InputStream
 import java.security.PublicKey
 import java.util.*
 
-@RunWith(RobolectricTestRunner::class)
+@Ignore
 @Config(shadows = [ThreadSwitcherShadow::class])
 public class AuthenticationAPIClientTest {
     private lateinit var client: AuthenticationAPIClient

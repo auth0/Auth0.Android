@@ -1,10 +1,12 @@
 package com.auth0.android.provider;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@Ignore
 public class FlagCheckerTest {
 
     private static final int FLAG_A = 1 << 1;
