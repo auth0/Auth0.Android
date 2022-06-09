@@ -88,4 +88,10 @@ internal open class BaseAuthenticationRequest(private val request: Request<Crede
     override fun execute(): Credentials {
         return request.execute()
     }
+
+    @JvmSynthetic
+    @Throws(Auth0Exception::class)
+    override suspend fun await(): Credentials {
+        return request.await()
+    }
 }

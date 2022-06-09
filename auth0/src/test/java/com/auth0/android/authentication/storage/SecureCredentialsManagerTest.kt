@@ -27,6 +27,9 @@ import com.google.gson.Gson
 import com.nhaarman.mockitokotlin2.*
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.eq
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.hamcrest.MatcherAssert
 import org.hamcrest.Matchers
 import org.hamcrest.core.Is
@@ -49,6 +52,7 @@ import org.robolectric.util.ReflectionHelpers
 import java.lang.reflect.Modifier
 import java.util.*
 import java.util.concurrent.Executor
+import org.junit.Assert.assertThrows
 
 @RunWith(RobolectricTestRunner::class)
 public class SecureCredentialsManagerTest {
@@ -458,6 +462,36 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(retrievedCredentials.expiresAt, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(retrievedCredentials.expiresAt.time, Is.`is`(expiresAt.time))
         MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("scope"))
+    }
+
+    @Test
+    @ExperimentalCoroutinesApi
+    public fun shouldAwaitNonExpiredCredentialsFromStorage(): Unit = runTest {
+            verifyNoMoreInteractions(client)
+            val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + ONE_HOUR_SECONDS * 1000)
+            insertTestCredentials(true, true, true, expiresAt, "scope")
+            val retrievedCredentials = manager.awaitCredentials()
+            MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
+            MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`("accessToken"))
+            MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`("idToken"))
+            MatcherAssert.assertThat(retrievedCredentials.refreshToken, Is.`is`("refreshToken"))
+            MatcherAssert.assertThat(retrievedCredentials.type, Is.`is`("type"))
+            MatcherAssert.assertThat(retrievedCredentials.expiresAt, Is.`is`(Matchers.notNullValue()))
+            MatcherAssert.assertThat(retrievedCredentials.expiresAt.time, Is.`is`(expiresAt.time))
+            MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("scope"))
+    }
+
+    @Test
+    @ExperimentalCoroutinesApi
+    public fun shouldFailOnAwaitCredentialsWhenExpiredAndNoRefreshTokenWasSaved(): Unit = runTest {
+        verifyNoMoreInteractions(client)
+        val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS) //Same as current time --> expired
+        insertTestCredentials(true, true, false, expiresAt, "scope")
+        val exception = assertThrows(CredentialsManagerException::class.java) {
+            runBlocking { manager.awaitCredentials() }
+        }
+        MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exception.message, Is.`is`("No Credentials were previously set."))
     }
 
     @Test

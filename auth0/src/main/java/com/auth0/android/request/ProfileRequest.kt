@@ -6,6 +6,8 @@ import com.auth0.android.callback.Callback
 import com.auth0.android.result.Authentication
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.UserProfile
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Request to fetch a profile after a successful authentication with Auth0 Authentication API
@@ -108,6 +110,23 @@ public class ProfileRequest
         val profile = userInfoRequest
             .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.accessToken)
             .execute()
+        return Authentication(profile, credentials)
+    }
+
+    /**
+     * Logs in the user with Auth0 and fetches it's profile inside a Coroutine.
+     * This is a Coroutine that is exposed only for Kotlin.
+     *
+     * @return authentication object containing the user's tokens and profile
+     * @throws Auth0Exception when either authentication or profile fetch fails
+     */
+    @JvmSynthetic
+    @Throws(Auth0Exception::class)
+    override suspend fun await(): Authentication {
+        val credentials = authenticationRequest.await()
+        val profile = userInfoRequest
+            .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.accessToken)
+            .await()
         return Authentication(profile, credentials)
     }
 
