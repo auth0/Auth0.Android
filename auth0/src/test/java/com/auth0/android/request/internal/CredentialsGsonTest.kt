@@ -1,6 +1,5 @@
 package com.auth0.android.request.internal
 
-import com.auth0.android.request.internal.GsonProvider.formatDate
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.CredentialsMock
 import com.google.gson.JsonParseException
@@ -18,7 +17,7 @@ import java.util.*
 public class CredentialsGsonTest : GsonBaseTest() {
     @Before
     public fun setUp() {
-        gson = GsonProvider.gson
+        gson = GsonProvider.credentialsGson
     }
 
     @Test
@@ -118,7 +117,7 @@ public class CredentialsGsonTest : GsonBaseTest() {
     @Test
     public fun shouldSerializeCredentials() {
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + 123456 * 1000)
-        val expectedExpiresAt = formatDate(expiresAt)
+        val expectedExpiresAt = gson.toJsonTree(expiresAt).getAsString()
         val expiresInCredentials: Credentials =
             CredentialsMock("id", "access", "ty", "refresh", expiresAt, null)
         val expiresInJson = gson.toJson(expiresInCredentials)
@@ -188,7 +187,7 @@ public class CredentialsGsonTest : GsonBaseTest() {
             "id_token": "s6GS5FGJN2jfd4l6",
             "token_type": "bearer",
             "expires_in": 86000,
-            "expires_at": "${formatDate(expiresAt)}"
+            "expires_at": ${gson.toJson(expiresAt)}
             }
             """.trimIndent()
     }
