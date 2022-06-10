@@ -23,27 +23,11 @@ public class SignUpRequest
     /**
      * Add additional parameters to be sent only when creating a user.
      *
-     *
-     * A common use case for this is storing extra information in the user metadata.
-     * To set user metadata you have to wrap your custom properties in a map containing
-     * a field `user_metadadata`:
-     *
-     * ```
-     * // Define your custom fields
-     * val metadata = mapOf("key"  to "value")
-     *
-     * // Define the sign up parameters, adding the user_metadata
-     * val params = mapOf("user_metadata", "metadata")
-     *
-     * // Set the parameters in your request
-     * signUpRequest.addSignUpParameters(params);
-     * ```
+     * `user_metadata` should be supplied to [com.auth0.android.authentication.AuthenticationAPIClient.signUp]
      *
      * @param parameters sent with the request and must be non-null
      * @return itself
      * @see ParameterBuilder
-     *
-     * @see [User Metadata documentation](https://auth0.com/docs/users/concepts/overview-user-metadata)
      */
     public fun addSignUpParameters(parameters: Map<String, String>): SignUpRequest {
         signUpRequest.addParameters(parameters)
