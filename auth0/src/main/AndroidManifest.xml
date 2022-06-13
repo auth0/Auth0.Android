@@ -9,6 +9,7 @@
     <application>
         <activity
             android:name="com.auth0.android.provider.AuthenticationActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboard|keyboardHidden"
             android:exported="false"
             android:launchMode="singleTask"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
