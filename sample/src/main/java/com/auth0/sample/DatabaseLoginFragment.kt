@@ -66,7 +66,7 @@ class DatabaseLoginFragment : Fragment() {
                 override fun onSuccess(result: Credentials) {
                     Snackbar.make(
                         requireView(),
-                        "Success: ${result.accessToken}",
+                        "Hello ${result.user.name}",
                         Snackbar.LENGTH_LONG
                     ).show()
                 }
@@ -80,7 +80,7 @@ class DatabaseLoginFragment : Fragment() {
                 override fun onSuccess(result: Credentials) {
                     Snackbar.make(
                         requireView(),
-                        "Success: ${result.accessToken}",
+                        "Hello ${result.user.name}",
                         Snackbar.LENGTH_LONG
                     ).show()
                 }

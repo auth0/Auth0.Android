@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.res.Resources
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.ParameterBuilder.Companion.newBuilder
+import com.auth0.android.provider.JwtTestUtils
 import com.auth0.android.request.HttpMethod
 import com.auth0.android.request.NetworkingClient
 import com.auth0.android.request.RequestOptions
@@ -329,11 +330,13 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public fun shouldLoginWithUserAndPasswordSync() {
-        mockAPI.willReturnSuccessfulLogin()
+        val jwt = JwtTestUtils.createTestJWT("HS256", mapOf("sub" to "auth0|123456"))
+        mockAPI.willReturnSuccessfulLogin(jwt)
         val credentials = client
             .login(SUPPORT_AUTH0_COM, "voidpassword", MY_CONNECTION)
             .execute()
         assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
+        assertThat(credentials.user.getId(), Matchers.`is`("auth0|123456"))
         val request = mockAPI.takeRequest()
         assertThat(
             request.getHeader("Accept-Language"), Matchers.`is`(

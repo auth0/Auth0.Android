@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-class JwtTestUtils {
+public class JwtTestUtils {
 
     static final long FIXED_CLOCK_CURRENT_TIME_MS = 1567314000000L;
     static final String EXPECTED_BASE_DOMAIN = "test.domain.com";
@@ -33,7 +33,7 @@ class JwtTestUtils {
     private static final String RSA_PRIVATE_KEY = "src/test/resources/rsa_private.pem";
     private static final String RSA_PUBLIC_KEY = "src/test/resources/rsa_public.pem";
 
-    static String createTestJWT(@NonNull String algorithm, @NonNull Map<String, Object> bodyClaims) throws Exception {
+    public static String createTestJWT(@NonNull String algorithm, @NonNull Map<String, Object> bodyClaims) throws Exception {
         String header = "{" +
                 "\"alg\":\"" + algorithm + "\"," +
                 "\"typ\":\"JWT\"," +

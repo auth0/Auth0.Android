@@ -1,7 +1,10 @@
 package com.auth0.android.result
 
 import androidx.annotation.VisibleForTesting
+import com.auth0.android.request.internal.GsonProvider
+import com.auth0.android.request.internal.Jwt
 import com.google.gson.annotations.SerializedName
+
 import java.util.*
 
 /**
@@ -71,4 +74,11 @@ public open class Credentials(
     @field:SerializedName("recovery_code")
     public var recoveryCode: String? = null
         internal set
+
+    public val user: UserProfile get() {
+        val (_, payload) = Jwt.splitToken(idToken)
+        val gson = GsonProvider.gson
+        return gson.fromJson(Jwt.decodeBase64(payload), UserProfile::class.java)
+    }
+
 }
