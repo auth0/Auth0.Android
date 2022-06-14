@@ -90,24 +90,4 @@ public abstract class BaseCredentialsManager internal constructor(
     protected fun hasExpired(expiresAt: Long): Boolean {
         return expiresAt <= currentTimeInMillis
     }
-
-    /**
-     * Takes a credentials object and returns the lowest expiration time, considering
-     * both the access token and the ID token expiration time.
-     *
-     * @param credentials the credentials object to check.
-     * @return the lowest expiration time between the access token and the ID token.
-     */
-    protected fun calculateCacheExpiresAt(credentials: Credentials): Long {
-        var expiresAt = credentials.expiresAt.time
-        if (credentials.idToken.isNotEmpty()) {
-            val idToken = jwtDecoder.decode(credentials.idToken)
-            val idTokenExpiresAtDate = idToken.expiresAt
-            if (idTokenExpiresAtDate != null) {
-                expiresAt = min(idTokenExpiresAtDate.time, expiresAt)
-            }
-        }
-        return expiresAt
-    }
-
 }

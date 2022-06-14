@@ -165,7 +165,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         if (TextUtils.isEmpty(credentials.accessToken) && TextUtils.isEmpty(credentials.idToken)) {
             throw CredentialsManagerException("Credentials must have a valid date of expiration and a valid access_token or id_token value.")
         }
-        val cacheExpiresAt = calculateCacheExpiresAt(credentials)
         val json = gson.toJson(credentials)
         val canRefresh = !TextUtils.isEmpty(credentials.refreshToken)
         Log.d(TAG, "Trying to encrypt the given data using the private key.")
@@ -176,7 +175,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             storage.store(
                 KEY_EXPIRES_AT, credentials.expiresAt.time
             )
-            storage.store(KEY_CACHE_EXPIRES_AT, cacheExpiresAt)
+            storage.store(LEGACY_KEY_CACHE_EXPIRES_AT, credentials.expiresAt.time)
             storage.store(KEY_CAN_REFRESH, canRefresh)
         } catch (e: IncompatibleDeviceException) {
             throw CredentialsManagerException(
@@ -356,7 +355,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     override fun clearCredentials() {
         storage.remove(KEY_CREDENTIALS)
         storage.remove(KEY_EXPIRES_AT)
-        storage.remove(KEY_CACHE_EXPIRES_AT)
+        storage.remove(LEGACY_KEY_CACHE_EXPIRES_AT)
         storage.remove(KEY_CAN_REFRESH)
         Log.d(TAG, "Credentials were just removed from the storage")
     }
@@ -383,13 +382,12 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             // Avoids logging out users when this value was not saved (migration scenario)
             expiresAt = 0L
         }
-        val cacheExpiresAt = storage.retrieveLong(KEY_CACHE_EXPIRES_AT)
         val canRefresh = storage.retrieveBoolean(KEY_CAN_REFRESH)
-        val emptyCredentials = TextUtils.isEmpty(encryptedEncoded) || cacheExpiresAt == null
-        return !(emptyCredentials || (hasExpired(cacheExpiresAt!!) || willExpire(
+        val emptyCredentials = TextUtils.isEmpty(encryptedEncoded)
+        return !(emptyCredentials || willExpire(
             expiresAt,
             minTtl
-        )) &&
+        ) &&
                 (canRefresh == null || !canRefresh))
     }
 
@@ -442,19 +440,17 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 bridgeCredentials.expiresAt ?: Date(),
                 bridgeCredentials.scope
             )
-            val cacheExpiresAt = storage.retrieveLong(KEY_CACHE_EXPIRES_AT)
             val expiresAt = credentials.expiresAt.time
             val hasEmptyCredentials =
-                TextUtils.isEmpty(credentials.accessToken) && TextUtils.isEmpty(credentials.idToken) || cacheExpiresAt == null
+                TextUtils.isEmpty(credentials.accessToken) && TextUtils.isEmpty(credentials.idToken)
             if (hasEmptyCredentials) {
                 callback.onFailure(CredentialsManagerException("No Credentials were previously set."))
                 decryptCallback = null
                 return@execute
             }
-            val hasEitherExpired = hasExpired(cacheExpiresAt!!)
             val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
             val scopeChanged = hasScopeChanged(credentials.scope, scope)
-            if (!hasEitherExpired && !willAccessTokenExpire && !scopeChanged) {
+            if (!willAccessTokenExpire && !scopeChanged) {
                 callback.onSuccess(credentials)
                 decryptCallback = null
                 return@execute
@@ -523,7 +519,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         private val TAG = SecureCredentialsManager::class.java.simpleName
         private const val KEY_CREDENTIALS = "com.auth0.credentials"
         private const val KEY_EXPIRES_AT = "com.auth0.credentials_access_token_expires_at"
-        private const val KEY_CACHE_EXPIRES_AT = "com.auth0.credentials_expires_at"
+        private const val LEGACY_KEY_CACHE_EXPIRES_AT = "com.auth0.credentials_expires_at"
         private const val KEY_CAN_REFRESH = "com.auth0.credentials_can_refresh"
         private const val KEY_ALIAS = "com.auth0.key"
     }

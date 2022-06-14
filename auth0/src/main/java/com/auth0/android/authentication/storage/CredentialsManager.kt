@@ -44,14 +44,13 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         if (TextUtils.isEmpty(credentials.accessToken) && TextUtils.isEmpty(credentials.idToken)) {
             throw CredentialsManagerException("Credentials must have a valid date of expiration and a valid access_token or id_token value.")
         }
-        val cacheExpiresAt = calculateCacheExpiresAt(credentials)
         storage.store(KEY_ACCESS_TOKEN, credentials.accessToken)
         storage.store(KEY_REFRESH_TOKEN, credentials.refreshToken)
         storage.store(KEY_ID_TOKEN, credentials.idToken)
         storage.store(KEY_TOKEN_TYPE, credentials.type)
         storage.store(KEY_EXPIRES_AT, credentials.expiresAt.time)
         storage.store(KEY_SCOPE, credentials.scope)
-        storage.store(KEY_CACHE_EXPIRES_AT, cacheExpiresAt)
+        storage.store(LEGACY_KEY_CACHE_EXPIRES_AT, credentials.expiresAt.time)
     }
 
     /**
@@ -166,20 +165,15 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
             val tokenType = storage.retrieveString(KEY_TOKEN_TYPE)
             val expiresAt = storage.retrieveLong(KEY_EXPIRES_AT)
             val storedScope = storage.retrieveString(KEY_SCOPE)
-            var cacheExpiresAt = storage.retrieveLong(KEY_CACHE_EXPIRES_AT)
-            if (cacheExpiresAt == null) {
-                cacheExpiresAt = expiresAt
-            }
             val hasEmptyCredentials =
                 TextUtils.isEmpty(accessToken) && TextUtils.isEmpty(idToken) || expiresAt == null
             if (hasEmptyCredentials) {
                 callback.onFailure(CredentialsManagerException("No Credentials were previously set."))
                 return@execute
             }
-            val hasEitherExpired = hasExpired(cacheExpiresAt!!)
             val willAccessTokenExpire = willExpire(expiresAt!!, minTtl.toLong())
             val scopeChanged = hasScopeChanged(storedScope, scope)
-            if (!hasEitherExpired && !willAccessTokenExpire && !scopeChanged) {
+            if (!willAccessTokenExpire && !scopeChanged) {
                 callback.onSuccess(
                     recreateCredentials(
                         idToken.orEmpty(),
@@ -264,16 +258,12 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         val refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN)
         val idToken = storage.retrieveString(KEY_ID_TOKEN)
         val expiresAt = storage.retrieveLong(KEY_EXPIRES_AT)
-        var cacheExpiresAt = storage.retrieveLong(KEY_CACHE_EXPIRES_AT)
-        if (cacheExpiresAt == null) {
-            cacheExpiresAt = expiresAt
-        }
         val emptyCredentials =
-            TextUtils.isEmpty(accessToken) && TextUtils.isEmpty(idToken) || cacheExpiresAt == null || expiresAt == null
-        return !(emptyCredentials || (hasExpired(cacheExpiresAt!!) || willExpire(
+            TextUtils.isEmpty(accessToken) && TextUtils.isEmpty(idToken) || expiresAt == null
+        return !(emptyCredentials || willExpire(
             expiresAt!!,
             minTtl
-        )) && refreshToken == null)
+        ) && refreshToken == null)
     }
 
     /**
@@ -286,7 +276,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         storage.remove(KEY_TOKEN_TYPE)
         storage.remove(KEY_EXPIRES_AT)
         storage.remove(KEY_SCOPE)
-        storage.remove(KEY_CACHE_EXPIRES_AT)
+        storage.remove(LEGACY_KEY_CACHE_EXPIRES_AT)
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
@@ -308,6 +298,6 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         private const val KEY_TOKEN_TYPE = "com.auth0.token_type"
         private const val KEY_EXPIRES_AT = "com.auth0.expires_at"
         private const val KEY_SCOPE = "com.auth0.scope"
-        private const val KEY_CACHE_EXPIRES_AT = "com.auth0.cache_expires_at"
+        private const val LEGACY_KEY_CACHE_EXPIRES_AT = "com.auth0.cache_expires_at"
     }
 }
