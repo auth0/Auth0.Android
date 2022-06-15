@@ -2,6 +2,7 @@ package com.auth0.android.request.internal;
 
 import com.auth0.android.result.UserIdentity;
 import com.auth0.android.result.UserProfile;
+import com.google.gson.Gson;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
@@ -15,6 +16,13 @@ import java.util.List;
 import java.util.Map;
 
 class UserProfileDeserializer implements JsonDeserializer<UserProfile> {
+
+    private final Gson iso8601DateGson;
+
+    public UserProfileDeserializer() {
+        this.iso8601DateGson = new Gson();
+    }
+
     @Override
     public UserProfile deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
         if (!json.isJsonObject() || json.isJsonNull() || json.getAsJsonObject().entrySet().isEmpty()) {
@@ -31,7 +39,7 @@ class UserProfileDeserializer implements JsonDeserializer<UserProfile> {
         final String givenName = context.deserialize(object.remove("given_name"), String.class);
         final String familyName = context.deserialize(object.remove("family_name"), String.class);
         final Boolean emailVerified = object.has("email_verified") ? context.<Boolean>deserialize(object.remove("email_verified"), Boolean.class) : false;
-        final Date createdAt = context.deserialize(object.remove("created_at"), Date.class);
+        final Date createdAt = iso8601DateGson.fromJson(object.remove("created_at"), Date.class);
 
         final Type identitiesType = new TypeToken<List<UserIdentity>>() {}.getType();
         final List<UserIdentity> identities = context.deserialize(object.remove("identities"), identitiesType);
