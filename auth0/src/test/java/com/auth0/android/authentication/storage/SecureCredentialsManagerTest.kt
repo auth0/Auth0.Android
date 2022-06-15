@@ -100,7 +100,7 @@ public class SecureCredentialsManagerTest {
             SecureCredentialsManager(client, storage, crypto, jwtDecoder, serialExecutor)
         manager = Mockito.spy(secureCredentialsManager)
         Mockito.doReturn(CredentialsMock.CURRENT_TIME_MS).`when`(manager).currentTimeInMillis
-        gson = GsonProvider.credentialsGson
+        gson = GsonProvider.gson
     }
 
     @Test
