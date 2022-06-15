@@ -12,6 +12,12 @@ import androidx.annotation.VisibleForTesting;
 import androidx.browser.customtabs.CustomTabsClient;
 import androidx.browser.customtabs.CustomTabsServiceConnection;
 import androidx.browser.customtabs.CustomTabsSession;
+import androidx.browser.customtabs.TrustedWebUtils;
+import androidx.browser.trusted.TrustedWebActivityIntentBuilder;
+
+//import com.google.androidbrowserhelper.trusted.TwaLauncher;
+
+import com.google.androidbrowserhelper.trusted.TwaLauncher;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.CountDownLatch;
@@ -28,10 +34,12 @@ class CustomTabsController extends CustomTabsServiceConnection {
     private final AtomicReference<CustomTabsSession> session;
     private final CountDownLatch sessionLatch;
     private final String preferredPackage;
+    private final TwaLauncher twaLauncher;
 
     @NonNull
     private final CustomTabsOptions customTabsOptions;
     private boolean didTryToBind;
+    private boolean launchedAsTwa;
 
     @VisibleForTesting
     CustomTabsController(@NonNull Context context, @NonNull CustomTabsOptions options) {
@@ -40,6 +48,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
         this.sessionLatch = new CountDownLatch(1);
         this.customTabsOptions = options;
         this.preferredPackage = options.getPreferredPackage(context.getPackageManager());
+        this.twaLauncher  = new TwaLauncher(context);
     }
 
     @VisibleForTesting
@@ -86,6 +95,9 @@ class CustomTabsController extends CustomTabsServiceConnection {
             context.unbindService(this);
             didTryToBind = false;
         }
+        if(launchedAsTwa) {
+            twaLauncher.destroy();//todo test what happens if destroyed without being a twa launch. This can happen during fallback scenario and we have to ensure of no crash
+        }
     }
 
     /**
@@ -98,7 +110,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
      *
      * @param uri the uri to open in a Custom Tab or Browser.
      */
-    public void launchUri(@NonNull final Uri uri) {
+    public void launchUri(@NonNull final Uri uri, @NonNull final boolean launchAsTwa) {
         final Context context = this.context.get();
         if (context == null) {
             Log.v(TAG, "Custom Tab Context was no longer valid.");
@@ -106,21 +118,36 @@ class CustomTabsController extends CustomTabsServiceConnection {
         }
 
         new Thread(() -> {
-            boolean available = false;
             try {
-                available = sessionLatch.await(preferredPackage == null ? 0 : MAX_WAIT_TIME_SECONDS, TimeUnit.SECONDS);
-            } catch (InterruptedException ignored) {
-            }
-            Log.d(TAG, "Launching URI. Custom Tabs available: " + available);
-
-            final Intent intent = customTabsOptions.toIntent(context, session.get());
-            intent.setData(uri);
-            try {
-                context.startActivity(intent);
+                if (launchAsTwa) {
+                    launchedAsTwa = true;
+                    twaLauncher.launch(
+                            customTabsOptions.toTwaIntent(context, uri),
+                            null,
+                            null,
+                            null,
+                            TwaLauncher.CCT_FALLBACK_STRATEGY
+                    );
+                } else {
+                    launchAsDefault(context, uri);
+                }
             } catch (ActivityNotFoundException ex) {
                 Log.e(TAG, "Could not find any Browser application installed in this device to handle the intent.");
             }
         }).start();
+    }
+
+    private void launchAsDefault(Context context, Uri uri) {
+        bindService();
+        boolean available = false;
+        try {
+            available = sessionLatch.await(preferredPackage == null ? 0 : MAX_WAIT_TIME_SECONDS, TimeUnit.SECONDS);
+        } catch (InterruptedException ignored) {
+        }
+        Log.d(TAG, "Launching URI. Custom Tabs available: " + available);
+        final Intent intent = customTabsOptions.toIntent(context, session.get());
+        intent.setData(uri);
+        context.startActivity(intent);
     }
 
 }

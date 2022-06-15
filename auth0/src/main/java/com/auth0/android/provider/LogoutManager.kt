@@ -13,14 +13,15 @@ internal class LogoutManager(
     private val callback: Callback<Void?, AuthenticationException>,
     returnToUrl: String,
     ctOptions: CustomTabsOptions,
-    federated: Boolean = false
+    federated: Boolean = false,
+    private val launchAsTwa: Boolean = false,
 ) : ResumableManager() {
     private val parameters: MutableMap<String, String>
     private val ctOptions: CustomTabsOptions
     fun startLogout(context: Context) {
         addClientParameters(parameters)
         val uri = buildLogoutUri()
-        AuthenticationActivity.authenticateUsingBrowser(context, uri, ctOptions)
+        AuthenticationActivity.authenticateUsingBrowser(context, uri, launchAsTwa, ctOptions)
     }
 
     public override fun resume(result: AuthorizeResult): Boolean {

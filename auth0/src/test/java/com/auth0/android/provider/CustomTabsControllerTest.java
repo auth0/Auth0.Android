@@ -104,7 +104,7 @@ public class CustomTabsControllerTest {
     @Test
     public void shouldBindAndLaunchUri() throws Exception {
         bindService(controller, true);
-        controller.launchUri(uri);
+        controller.launchUri(uri, false);
         connectBoundService();
 
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
@@ -126,7 +126,7 @@ public class CustomTabsControllerTest {
         when(browserPicker.getBestBrowserPackage(context.getPackageManager())).thenReturn(null);
         CustomTabsOptions ctOptions = CustomTabsOptions.newBuilder().withBrowserPicker(browserPicker).build();
         CustomTabsController controller = new CustomTabsController(context, ctOptions);
-        controller.launchUri(uri);
+        controller.launchUri(uri, false);
 
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
         Intent intent = launchIntentCaptor.getValue();
@@ -149,7 +149,7 @@ public class CustomTabsControllerTest {
         CustomTabsController controller = new CustomTabsController(context, ctOptions);
 
         bindService(controller, true);
-        controller.launchUri(uri);
+        controller.launchUri(uri, false);
         connectBoundService();
 
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
@@ -169,7 +169,7 @@ public class CustomTabsControllerTest {
     @Test
     public void shouldFailToBindButLaunchUri() {
         bindService(controller, false);
-        controller.launchUri(uri);
+        controller.launchUri(uri, false);
 
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
         Intent intent = launchIntentCaptor.getValue();
@@ -183,7 +183,7 @@ public class CustomTabsControllerTest {
     public void shouldNotLaunchUriIfContextNoLongerValid() {
         bindService(controller, true);
         controller.clearContext();
-        controller.launchUri(uri);
+        controller.launchUri(uri, false);
         verify(context, never()).startActivity(any(Intent.class));
     }
 
@@ -192,7 +192,7 @@ public class CustomTabsControllerTest {
         doThrow(ActivityNotFoundException.class)
                 .doNothing()
                 .when(context).startActivity(any(Intent.class));
-        controller.launchUri(uri);
+        controller.launchUri(uri, false);
 
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
         List<Intent> intents = launchIntentCaptor.getAllValues();

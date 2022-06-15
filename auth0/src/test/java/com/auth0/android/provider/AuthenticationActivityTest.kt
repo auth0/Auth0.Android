@@ -40,6 +40,10 @@ public class AuthenticationActivityTest {
 
     @Captor
     private lateinit var uriCaptor: ArgumentCaptor<Uri>
+
+    @Captor
+    private lateinit var launchAsTwaCaptor: ArgumentCaptor<Boolean>
+
     private lateinit var callerActivity: Activity
     private lateinit var activity: AuthenticationActivityMock
     private lateinit var activityController: ActivityController<AuthenticationActivityMock>
@@ -75,16 +79,19 @@ public class AuthenticationActivityTest {
         AuthenticationActivity.authenticateUsingBrowser(
             callerActivity,
             uri,
-            customTabsOptions
+            false,
+            customTabsOptions,
         )
         Mockito.verify(callerActivity).startActivity(intentCaptor.capture())
         createActivity(intentCaptor.value)
         activityController.create().start().resume()
         Mockito.verify(customTabsController).bindService()
-        Mockito.verify(customTabsController).launchUri(uriCaptor.capture())
+        Mockito.verify(customTabsController).launchUri(uriCaptor.capture(), launchAsTwaCaptor.capture())
         MatcherAssert.assertThat(uriCaptor.value, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(uriCaptor.value, Is.`is`(uri))
         MatcherAssert.assertThat(activity.deliveredIntent, Is.`is`(Matchers.nullValue()))
+        MatcherAssert.assertThat(launchAsTwaCaptor.value, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(launchAsTwaCaptor.value, Is.`is`(false))
         activityController.pause().stop()
         //Browser is shown
         val authenticationResultIntent = Intent()
@@ -103,15 +110,18 @@ public class AuthenticationActivityTest {
         AuthenticationActivity.authenticateUsingBrowser(
             callerActivity,
             uri,
+            false,
             customTabsOptions
         )
         Mockito.verify(callerActivity).startActivity(intentCaptor.capture())
         createActivity(intentCaptor.value)
         activityController.create().start().resume()
         Mockito.verify(customTabsController).bindService()
-        Mockito.verify(customTabsController).launchUri(uriCaptor.capture())
+        Mockito.verify(customTabsController).launchUri(uriCaptor.capture(), launchAsTwaCaptor.capture())
         MatcherAssert.assertThat(uriCaptor.value, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(uriCaptor.value, Is.`is`(uri))
+        MatcherAssert.assertThat(launchAsTwaCaptor.value, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(launchAsTwaCaptor.value, Is.`is`(false))
         MatcherAssert.assertThat(activity.deliveredIntent, Is.`is`(Matchers.nullValue()))
         //Browser is shown
         //Memory needed. Let's kill the activity
@@ -130,15 +140,18 @@ public class AuthenticationActivityTest {
         AuthenticationActivity.authenticateUsingBrowser(
             callerActivity,
             uri,
+            false,
             customTabsOptions
         )
         Mockito.verify(callerActivity).startActivity(intentCaptor.capture())
         createActivity(intentCaptor.value)
         activityController.create().start().resume()
         Mockito.verify(customTabsController).bindService()
-        Mockito.verify(customTabsController).launchUri(uriCaptor.capture())
+        Mockito.verify(customTabsController).launchUri(uriCaptor.capture(), launchAsTwaCaptor.capture())
         MatcherAssert.assertThat(uriCaptor.value, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(uriCaptor.value, Is.`is`(uri))
+        MatcherAssert.assertThat(launchAsTwaCaptor.value, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(launchAsTwaCaptor.value, Is.`is`(false))
         MatcherAssert.assertThat(activity.deliveredIntent, Is.`is`(Matchers.nullValue()))
         activityController.pause().stop()
         //Browser is shown
@@ -158,6 +171,7 @@ public class AuthenticationActivityTest {
         AuthenticationActivity.authenticateUsingBrowser(
             callerActivity,
             uri,
+            false,
             customTabsOptions
         )
         Mockito.verify(callerActivity).startActivity(intentCaptor.capture())

@@ -5,6 +5,7 @@ import android.net.Uri
 import android.text.TextUtils
 import android.util.Base64
 import android.util.Log
+import androidx.annotation.ChecksSdkIntAtLeast
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
@@ -21,7 +22,8 @@ internal class OAuthManager(
     private val account: Auth0,
     private val callback: Callback<Credentials, AuthenticationException>,
     parameters: Map<String, String>,
-    ctOptions: CustomTabsOptions
+    ctOptions: CustomTabsOptions,
+    private val launchAsTwa: Boolean = false,
 ) : ResumableManager() {
     private val parameters: MutableMap<String, String>
     private val headers: MutableMap<String, String>
@@ -62,7 +64,7 @@ internal class OAuthManager(
         addValidationParameters(parameters)
         val uri = buildAuthorizeUri()
         this.requestCode = requestCode
-        AuthenticationActivity.authenticateUsingBrowser(context, uri, ctOptions)
+        AuthenticationActivity.authenticateUsingBrowser(context, uri, launchAsTwa, ctOptions)
     }
 
     fun setHeaders(headers: Map<String, String>) {

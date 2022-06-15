@@ -6,6 +6,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
+import com.auth0.android.annotation.ExperimentalAuth0Api
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.authentication.storage.CredentialsManagerException
 import com.auth0.android.callback.Callback
@@ -91,6 +92,7 @@ public object WebAuthProvider {
         private var returnToUrl: String? = null
         private var ctOptions: CustomTabsOptions = CustomTabsOptions.newBuilder().build()
         private var federated: Boolean = false
+        private var launchAsTwa: Boolean = false
 
         /**
          * When using a Custom Tabs compatible Browser, apply these customization options.
@@ -149,6 +151,21 @@ public object WebAuthProvider {
         }
 
         /**
+         * Launches the Login experience with a native feel (without address bar). For this to work,
+         * you have to setup the app as trusted following the methods here [Refer README link].
+         *
+         * This is still an experimental feature, test it thoroughly in the targeted devices before
+         * moving it to production
+         * todo poovam
+         * //todo test experimental for java and kt
+         */
+        @ExperimentalAuth0Api
+        public fun withTrustedWebActivity(): LogoutBuilder {
+            launchAsTwa = true
+            return this
+        }
+
+        /**
          * Request the user session to be cleared. When successful, the callback will get invoked.
          * An error is raised if there are no browser applications installed in the device or if
          * the user closed the browser before completing the logout.
@@ -175,7 +192,14 @@ public object WebAuthProvider {
                     account.getDomainUrl()
                 )
             }
-            val logoutManager = LogoutManager(account, callback, returnToUrl!!, ctOptions, federated)
+            val logoutManager = LogoutManager(
+                account,
+                callback,
+                returnToUrl!!,
+                ctOptions,
+                federated,
+                launchAsTwa
+            )
             managerInstance = logoutManager
             logoutManager.startLogout(context)
         }
@@ -219,6 +243,7 @@ public object WebAuthProvider {
         private var invitationUrl: String? = null
         private var ctOptions: CustomTabsOptions = CustomTabsOptions.newBuilder().build()
         private var leeway: Int? = null
+        private var launchAsTwa: Boolean = false
 
         /**
          * Use a custom state in the requests
@@ -422,6 +447,21 @@ public object WebAuthProvider {
             return this
         }
 
+        /**
+         * Launches the Login experience with a native feel (without address bar). For this to work,
+         * you have to setup the app as trusted following the methods here [Refer README link].
+         *
+         * This is still an experimental feature, test it thoroughly in the targeted devices before
+         * moving it to production
+         * todo poovam
+         * //todo test experimental for java and kt
+         */
+        @ExperimentalAuth0Api
+        public fun withTrustedWebActivity(): Builder {
+            launchAsTwa = true
+            return this
+        }
+
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         internal fun withPKCE(pkce: PKCE): Builder {
             this.pkce = pkce
@@ -468,7 +508,7 @@ public object WebAuthProvider {
                 values[OAuthManager.KEY_ORGANIZATION] = organizationId
                 values[OAuthManager.KEY_INVITATION] = invitationId
             }
-            val manager = OAuthManager(account, callback, values, ctOptions)
+            val manager = OAuthManager(account, callback, values, ctOptions, launchAsTwa)
             manager.setHeaders(headers)
             manager.setPKCE(pkce)
             manager.setIdTokenVerificationLeeway(leeway)

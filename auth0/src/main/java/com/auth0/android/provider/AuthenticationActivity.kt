@@ -66,9 +66,9 @@ public open class AuthenticationActivity : Activity() {
         val extras = intent.extras
         val authorizeUri = extras!!.getParcelable<Uri>(EXTRA_AUTHORIZE_URI)
         val customTabsOptions: CustomTabsOptions = extras.getParcelable(EXTRA_CT_OPTIONS)!!
+        val launchAsTwa: Boolean = extras.getBoolean(EXTRA_LAUNCH_AS_TWA, false)
         customTabsController = createCustomTabsController(this, customTabsOptions)
-        customTabsController!!.bindService()
-        customTabsController!!.launchUri(authorizeUri!!)
+        customTabsController!!.launchUri(authorizeUri!!, launchAsTwa)
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
@@ -86,6 +86,7 @@ public open class AuthenticationActivity : Activity() {
 
     internal companion object {
         const val EXTRA_AUTHORIZE_URI = "com.auth0.android.EXTRA_AUTHORIZE_URI"
+        const val EXTRA_LAUNCH_AS_TWA = "com.auth0.android.EXTRA_LAUNCH_AS_TWA"
         const val EXTRA_CT_OPTIONS = "com.auth0.android.EXTRA_CT_OPTIONS"
         private const val EXTRA_INTENT_LAUNCHED = "com.auth0.android.EXTRA_INTENT_LAUNCHED"
 
@@ -93,10 +94,12 @@ public open class AuthenticationActivity : Activity() {
         internal fun authenticateUsingBrowser(
             context: Context,
             authorizeUri: Uri,
+            launchAsTwa: Boolean,
             options: CustomTabsOptions
         ) {
             val intent = Intent(context, AuthenticationActivity::class.java)
             intent.putExtra(EXTRA_AUTHORIZE_URI, authorizeUri)
+            intent.putExtra(EXTRA_LAUNCH_AS_TWA, launchAsTwa)
             intent.putExtra(EXTRA_CT_OPTIONS, options)
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
             context.startActivity(intent)
