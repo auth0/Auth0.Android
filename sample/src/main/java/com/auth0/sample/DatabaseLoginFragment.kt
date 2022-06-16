@@ -56,6 +56,7 @@ class DatabaseLoginFragment : Fragment() {
 
     private fun dbLogin(email: String, password: String) {
         apiClient.login(email, password, "Username-Password-Authentication")
+            .validateClaims()
             //Additional customization to the request goes here
             .start(object : Callback<Credentials, AuthenticationException> {
                 override fun onFailure(error: AuthenticationException) {

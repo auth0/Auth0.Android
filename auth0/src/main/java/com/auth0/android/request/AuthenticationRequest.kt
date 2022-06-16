@@ -1,6 +1,8 @@
 package com.auth0.android.request
 
+import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationException
+import com.auth0.android.callback.Callback
 import com.auth0.android.result.Credentials
 
 /**
@@ -46,4 +48,30 @@ public interface AuthenticationRequest : Request<Credentials, AuthenticationExce
      * @return itself
      */
     public fun setAudience(audience: String): AuthenticationRequest
+
+    /**
+     * Calling this method will enable validating the claims in the ID Token.
+     * This method is mandatory to be called and will be made as default in the next major.
+     * The issuer and leeway can be customized using [AuthenticationRequest.withIdTokenVerificationIssuer]
+     * and [AuthenticationRequest.withIdTokenVerificationLeeway] respectively.
+     */
+    public fun validateClaims(): AuthenticationRequest
+
+    /**
+     * Set the leeway or clock skew to be used for ID Token verification.
+     * Defaults to 60 seconds.
+     *
+     * @param leeway to use for ID token verification, in seconds.
+     * @return the current builder instance
+     */
+    public fun withIdTokenVerificationLeeway(leeway: Int): AuthenticationRequest
+
+    /**
+     * Set the expected issuer to be used for ID Token verification.
+     * Defaults to the value returned by [Auth0.getDomainUrl].
+     *
+     * @param issuer to use for ID token verification.
+     * @return the current builder instance
+     */
+    public fun withIdTokenVerificationIssuer(issuer: String): AuthenticationRequest
 }

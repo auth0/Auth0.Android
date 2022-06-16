@@ -88,6 +88,21 @@ public class SignUpRequest
         return this
     }
 
+    override fun validateClaims(): SignUpRequest {
+        authenticationRequest.validateClaims()
+        return this
+    }
+
+    override fun withIdTokenVerificationLeeway(leeway: Int): SignUpRequest {
+        authenticationRequest.withIdTokenVerificationLeeway(leeway)
+        return this
+    }
+
+    override fun withIdTokenVerificationIssuer(issuer: String): SignUpRequest {
+        authenticationRequest.withIdTokenVerificationIssuer(issuer)
+        return this
+    }
+
     override fun setGrantType(grantType: String): SignUpRequest {
         authenticationRequest.setGrantType(grantType)
         return this
