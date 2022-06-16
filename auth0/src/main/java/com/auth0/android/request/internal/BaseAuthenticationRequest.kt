@@ -139,8 +139,8 @@ internal open class BaseAuthenticationRequest(
                         callback.onFailure(e)
                         return
                     }
-                    callback.onSuccess(result)
                 }
+                callback.onSuccess(result)
             }
 
             override fun onFailure(error: AuthenticationException) {
