@@ -12,6 +12,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import java.io.StringReader
+import java.text.SimpleDateFormat
 import java.util.*
 
 public class UserProfileGsonTest : GsonBaseTest() {
@@ -250,7 +251,7 @@ public class UserProfileGsonTest : GsonBaseTest() {
             StringReader("""{ "created_at": "2022-04-29T10:09:23.000+0300" }"""),
             UserProfile::class.java
         )
-        val dateUtc = getUTCDate(2022, 3, 29, 7, 9,23, 0);
+        val dateUtc = getUTCDate(2022, 3, 29, 7, 9, 23, 0);
 
         assertThat(profileUtc.createdAt, equalTo(dateUtc))
         assertThat(profileLocal.createdAt, equalTo(dateUtc))
