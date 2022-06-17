@@ -1053,7 +1053,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldNotHaveCredentialsWhenTokenHasExpiredAndNoRefreshTokenIsAvailable() {
         val expirationTime = CredentialsMock.CURRENT_TIME_MS //Same as current time --> expired
-        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_access_token_expires_at"))
             .thenReturn(expirationTime)
         Mockito.`when`(storage.retrieveBoolean("com.auth0.credentials_can_refresh"))
             .thenReturn(false)
@@ -1068,7 +1068,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldHaveCredentialsWhenTokenHasExpiredButRefreshTokenIsAvailable() {
         val expirationTime = CredentialsMock.CURRENT_TIME_MS //Same as current time --> expired
-        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_access_token_expires_at"))
             .thenReturn(expirationTime)
         Mockito.`when`(storage.retrieveBoolean("com.auth0.credentials_can_refresh"))
             .thenReturn(true)
@@ -1078,13 +1078,6 @@ public class SecureCredentialsManagerTest {
         Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
             .thenReturn("{\"access_token\":\"accessToken\", \"refresh_token\":\"refreshToken\"}")
         MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(true))
-    }
-
-    @Test
-    public fun shouldNotHaveCredentialsWhenAccessTokenAndIdTokenAreMissing() {
-        Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
-            .thenReturn("{\"token_type\":\"type\", \"refresh_token\":\"refreshToken\"}")
-        Assert.assertFalse(manager.hasValidCredentials())
     }
 
     @Test
@@ -1458,7 +1451,7 @@ public class SecureCredentialsManagerTest {
         val credentialsExpiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         val storedExpiresAt = Date(CredentialsMock.CURRENT_TIME_MS - ONE_HOUR_SECONDS * 1000)
         insertTestCredentials(true, true, false, credentialsExpiresAt, "scope")
-        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_access_token_expires_at"))
             .thenReturn(storedExpiresAt.time)
 
         // Activity is "created"
@@ -1573,7 +1566,7 @@ public class SecureCredentialsManagerTest {
     public fun shouldUseCustomClock() {
         val manager = SecureCredentialsManager(client, storage, crypto, jwtDecoder) { }
         val expirationTime = CredentialsMock.CURRENT_TIME_MS //Same as current time --> expired
-        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_access_token_expires_at"))
             .thenReturn(expirationTime)
         Mockito.`when`(storage.retrieveBoolean("com.auth0.credentials_can_refresh"))
             .thenReturn(false)
