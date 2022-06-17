@@ -147,19 +147,6 @@ The callback will get invoked when the user returns to your application. There a
 
 If the `redirect` URL is not found in the **Allowed Callback URLs** of your Auth0 Application, the server will not make the redirection and the browser will remain open.
 
-#### Token Validation
-The ID token received as part of this web authentication flow is automatically verified following the [OpenID Connect specification](https://openid.net/specs/openid-connect-core-1_0.html).
-
-If you are a user of Auth0 Private Cloud with ["Custom Domains"](https://auth0.com/docs/custom-domains) still on the [legacy behavior](https://auth0.com/docs/private-cloud/private-cloud-migrations/migrate-private-cloud-custom-domains#background), you need to override the expected issuer to match your Auth0 domain before starting the authentication.
-
-```kotlin
-val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_CUSTOM_DOMAIN}")
-
-WebAuthProvider.login(account)
-    .withIdTokenVerificationIssuer("https://{YOUR_AUTH0_DOMAIN}/")
-    .start(this, callback)
-```
-
 ##### A note about App Deep Linking:
 
 If you followed the configuration steps documented here, you may have noticed the default scheme used for the Callback URI is `https`. This works best for Android API 23 or newer if you're using [Android App Links](https://auth0.com/docs/applications/enable-android-app-links), but in previous Android versions this _may_ show the intent chooser dialog prompting the user to choose either your application or the browser. You can change this behaviour by using a custom unique scheme so that the OS opens directly the link with your app. Note that the schemes [can only have lowercase letters](https://developer.android.com/guide/topics/manifest/data-element).
@@ -195,7 +182,7 @@ WebAuthProvider.login(account)
 ```
 
 The sample above requests tokens with the audience required to call the [Management API](https://auth0.com/docs/api/management/v2) endpoints.
- 
+
 > Replace `{YOUR_AUTH0_DOMAIN}` with your actual Auth0 domain (i.e. `mytenant.auth0.com`). If you've set up the tenant to use "Custom Domains", use that value here.
 
 #### Specify scope
@@ -219,7 +206,7 @@ WebAuthProvider.login(account)
 #### Customize the Custom Tabs UI
 
 If the device where the app is running has a Custom Tabs compatible Browser, a Custom Tab will be preferred for the logout flow. You can customize the Page Title visibility, the Toolbar color, and the supported Browser applications by using the `CustomTabsOptions` class.
- 
+
 ```kotlin
 val ctOptions = CustomTabsOptions.newBuilder()
     .withToolbarColor(R.color.ct_toolbar_color)
@@ -286,7 +273,7 @@ WebAuthProvider.logout(account)
 #### Customize the Custom Tabs UI
 
 If the device where the app is running has a Custom Tabs compatible Browser, a Custom Tab will be preferred for the logout flow. You can customize the Page Title visibility, the Toolbar color, and the supported Browser applications by using the `CustomTabsOptions` class.
- 
+
 ```kotlin
 val ctOptions = CustomTabsOptions.newBuilder()
     .withToolbarColor(R.color.ct_toolbar_color)
@@ -340,6 +327,7 @@ When you sign in to a multifactor authentication enabled connection using the `l
 ```kotlin
 authentication
     .loginWithOTP("the mfa token", "123456")
+    .validateClaims() //mandatory
     .start(object: Callback<Credentials, AuthenticationException> {
         override fun onFailure(exception: AuthenticationException) { }
 
@@ -374,6 +362,7 @@ Step 2: Input the code
 ```kotlin
 authentication
     .loginWithEmail("info@auth0.com", "123456", "my-passwordless-connection")
+    .validateClaims() //mandatory
     .start(object: Callback<Credentials, AuthenticationException> {
        override fun onFailure(exception: AuthenticationException) { }
 
@@ -388,6 +377,7 @@ authentication
 ```kotlin
 authentication
     .signUp("info@auth0.com", "a secret password", "my-database-connection")
+    .validateClaims() //mandatory
     .start(object: Callback<Credentials, AuthenticationException> {
         override fun onFailure(exception: AuthenticationException) { }
 
@@ -528,9 +518,38 @@ users
 
 > In all the cases, the `user ID` parameter is the unique identifier of the auth0 account instance. i.e. in `google-oauth2|123456789` it would be the part after the '|' pipe: `123456789`.
 
+### Token Validation
+The ID token received as part of the authentication flow is should be verified following the [OpenID Connect specification](https://openid.net/specs/openid-connect-core-1_0.html).
+
+If you are a user of Auth0 Private Cloud with ["Custom Domains"](https://auth0.com/docs/custom-domains) still on the [legacy behavior](https://auth0.com/docs/private-cloud/private-cloud-migrations/migrate-private-cloud-custom-domains#background), you need to override the expected issuer to match your Auth0 domain before starting the authentication.
+
+The validation is done automatically for Web Authentication
+```kotlin
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_CUSTOM_DOMAIN}")
+
+WebAuthProvider.login(account)
+    .withIdTokenVerificationIssuer("https://{YOUR_AUTH0_DOMAIN}/")
+    .start(this, callback)
+```
+
+For Authentication Client, the method `validateClaims()` has to be called to enable it.
+
+```kotlin
+val auth0 = Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+val client = AuthenticationAPIClient(auth0)
+client
+     .login("{username or email}", "{password}", "{database connection name}")
+     .validateClaims()
+     .withIdTokenVerificationIssuer("https://{YOUR_AUTH0_DOMAIN}/")
+     .start(object : Callback<Credentials, AuthenticationException> {
+         override fun onSuccess(result: Credentials) { }
+         override fun onFailure(error: AuthenticationException) { }
+    })
+```
+
 ### Organizations
 
-[Organizations](https://auth0.com/docs/organizations) is a set of features that provide better support for developers who build and maintain SaaS and Business-to-Business (B2B) applications. 
+[Organizations](https://auth0.com/docs/organizations) is a set of features that provide better support for developers who build and maintain SaaS and Business-to-Business (B2B) applications.
 
 Using Organizations, you can:
 
@@ -576,7 +595,7 @@ The basic version supports asking for `Credentials` existence, storing them and 
 
 #### Usage
 1. **Instantiate the manager:**
-You'll need an `AuthenticationAPIClient` instance to renew the credentials when they expire and a `Storage` object. We provide a `SharedPreferencesStorage` class that makes use of `SharedPreferences` to create a file in the application's directory with **Context.MODE_PRIVATE** mode.
+   You'll need an `AuthenticationAPIClient` instance to renew the credentials when they expire and a `Storage` object. We provide a `SharedPreferencesStorage` class that makes use of `SharedPreferences` to create a file in the application's directory with **Context.MODE_PRIVATE** mode.
 
 ```kotlin
 val authentication = AuthenticationAPIClient(account)
@@ -585,7 +604,7 @@ val manager = CredentialsManager(authentication, storage)
 ```
 
 2. **Save credentials:**
-The credentials to save **must have** `expires_at` and at least an `access_token` or `id_token` value. If one of the values is missing when trying to set the credentials, the method will throw a `CredentialsManagerException`. If you want the manager to successfully renew the credentials when expired you must also request the `offline_access` scope when logging in in order to receive a `refresh_token` value along with the rest of the tokens. i.e. Logging in with a database connection and saving the credentials:
+   The credentials to save **must have** `expires_at` and at least an `access_token` or `id_token` value. If one of the values is missing when trying to set the credentials, the method will throw a `CredentialsManagerException`. If you want the manager to successfully renew the credentials when expired you must also request the `offline_access` scope when logging in in order to receive a `refresh_token` value along with the rest of the tokens. i.e. Logging in with a database connection and saving the credentials:
 
 ```kotlin
 authentication
@@ -595,7 +614,7 @@ authentication
         override fun onFailure(exception: AuthenticationException) {
             // Error
         }
-    
+
         override fun onSuccess(credentials: Credentials) {
             //Save the credentials
             manager.saveCredentials(credentials)
@@ -605,30 +624,30 @@ authentication
 **Note:** This method has been made thread-safe after version 2.7.0.
 
 3. **Check credentials existence:**
-There are cases were you just want to check if a user session is still valid (i.e. to know if you should present the login screen or the main screen). For convenience, we include a `hasValidCredentials` method that can let you know in advance if a non-expired token is available without making an additional network call. The same rules of the `getCredentials` method apply:
+   There are cases were you just want to check if a user session is still valid (i.e. to know if you should present the login screen or the main screen). For convenience, we include a `hasValidCredentials` method that can let you know in advance if a non-expired token is available without making an additional network call. The same rules of the `getCredentials` method apply:
 
 ```kotlin
 val authenticated = manager.hasValidCredentials()
 ```
 
 4. **Retrieve credentials:**
-Existing credentials will be returned if they are still valid, otherwise the `refresh_token` will be used to attempt to renew them. If the `expires_at` or both the `access_token` and `id_token` values are missing, the method will throw a `CredentialsManagerException`. The same will happen if the credentials have expired and there's no `refresh_token` available.
+   Existing credentials will be returned if they are still valid, otherwise the `refresh_token` will be used to attempt to renew them. If the `expires_at` or both the `access_token` and `id_token` values are missing, the method will throw a `CredentialsManagerException`. The same will happen if the credentials have expired and there's no `refresh_token` available.
 
 ```kotlin
 manager.getCredentials(object : Callback<Credentials, CredentialsManagerException> {
-   override fun onFailure(exception: CredentialsManagerException) {
-       // Error
-   }
+    override fun onFailure(exception: CredentialsManagerException) {
+        // Error
+    }
 
-   override fun onSuccess(credentials: Credentials) {
-       // Use the credentials
-   }
+    override fun onSuccess(credentials: Credentials) {
+        // Use the credentials
+    }
 })
 ``` 
 **Note:** In the scenario where the stored credentials have expired and a `refresh_token` is available, the newly obtained tokens are automatically saved for you by the Credentials Manager. This method has been made thread-safe after version 2.7.0.
 
 5. **Clear credentials:**
-When you want to log the user out:
+   When you want to log the user out:
 
 ```kotlin
 manager.clearCredentials()
@@ -653,7 +672,7 @@ val manager = SecureCredentialsManager(this, authentication, storage)
 
 You can require the user authentication to obtain credentials. This will make the manager prompt the user with the device's configured Lock Screen, which they must pass correctly in order to obtain the credentials. **This feature is only available on devices where the user has setup a secured Lock Screen** (PIN, Pattern, Password or Fingerprint).
 
-To enable authentication you must call the `requireAuthentication` method passing a valid _Activity_ context, a request code that represents the authentication call, and the title and description to display in the Lock Screen. As seen in the snippet below, you can leave these last two parameters with `null` to use the system's default title and description. It's only safe to call this method before the Activity is started. 
+To enable authentication you must call the `requireAuthentication` method passing a valid _Activity_ context, a request code that represents the authentication call, and the title and description to display in the Lock Screen. As seen in the snippet below, you can leave these last two parameters with `null` to use the system's default title and description. It's only safe to call this method before the Activity is started.
 
 ```kotlin
 //You might want to define a constant with the Request Code
@@ -736,9 +755,9 @@ class CustomNetClient : NetworkingClient {
     override fun load(url: String, options: RequestOptions): ServerResponse {
         // Create and execute the request to the specified URL with the given options
         val response = // ...
-            
-        // Return a ServerResponse from the received response data
-        return ServerResponse(responseCode, responseBody, responseHeaders)        
+
+            // Return a ServerResponse from the received response data
+            return ServerResponse(responseCode, responseBody, responseHeaders)
     }
 }
 
@@ -799,12 +818,12 @@ Alternatively, you can re-declare the `RedirectActivity` in the `AndroidManifest
 </manifest>
 ```
 
-Recall that if you request a different scheme, you must replace the above `android:scheme` property value and initialize the provider with the new scheme. Read [this section](#a-note-about-app-deep-linking) to learn more. 
+Recall that if you request a different scheme, you must replace the above `android:scheme` property value and initialize the provider with the new scheme. Read [this section](#a-note-about-app-deep-linking) to learn more.
 
 
 ### Is the Web Authentication module setup optional?
 
-If you don't plan to use the _Web Authentication_ feature, you will notice that the compiler will still prompt you to provide the `manifestPlaceholders` values, since the `RedirectActivity` included in this library will require them, and the Gradle tasks won't be able to run without them. 
+If you don't plan to use the _Web Authentication_ feature, you will notice that the compiler will still prompt you to provide the `manifestPlaceholders` values, since the `RedirectActivity` included in this library will require them, and the Gradle tasks won't be able to run without them.
 
 Re-declare the activity manually with `tools:node="remove"` in your app's Android Manifest in order to make the manifest merger remove it from the final manifest file. Additionally, one more unused activity can be removed from the final APK by using the same process. A complete snippet to achieve this is:
 
@@ -812,10 +831,10 @@ Re-declare the activity manually with `tools:node="remove"` in your app's Androi
 <activity
     android:name="com.auth0.android.provider.AuthenticationActivity"
     tools:node="remove"/>
-<!-- Optional: Remove RedirectActivity -->
+    <!-- Optional: Remove RedirectActivity -->
 <activity
-    android:name="com.auth0.android.provider.RedirectActivity"
-    tools:node="remove"/>
+android:name="com.auth0.android.provider.RedirectActivity"
+tools:node="remove"/>
 ```
 
 ### Unit testing with JUnit 4 or JUnit 5

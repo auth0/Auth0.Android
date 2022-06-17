@@ -6,6 +6,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
 
 import java.security.PublicKey;
@@ -22,6 +23,8 @@ import static com.auth0.android.provider.JwtTestUtils.createJWTBody;
 import static com.auth0.android.provider.JwtTestUtils.createTestJWT;
 import static com.auth0.android.provider.JwtTestUtils.getPublicKey;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @RunWith(RobolectricTestRunner.class)
 public class IdTokenVerifierTest {
@@ -30,10 +33,13 @@ public class IdTokenVerifierTest {
     private IdTokenVerifier idTokenVerifier;
     private IdTokenVerificationOptions options;
 
+    @Mock
+    private SignatureVerifier noSignatureVerifier;
+
     @Before
     public void setUp() {
         idTokenVerifier = new IdTokenVerifier();
-        SignatureVerifier noSignatureVerifier = mock(SignatureVerifier.class);
+        noSignatureVerifier = mock(SignatureVerifier.class);
         options = new IdTokenVerificationOptions(EXPECTED_ISSUER, EXPECTED_AUDIENCE, noSignatureVerifier);
         options.setClock(new Date(FIXED_CLOCK_CURRENT_TIME_MS));
     }
@@ -56,7 +62,7 @@ public class IdTokenVerifierTest {
         options.setNonce(EXPECTED_NONCE);
         options.setOrganization(EXPECTED_ORGANIZATION);
         options.setMaxAge(60 * 2);
-        idTokenVerifier.verify(jwt, options);
+        idTokenVerifier.verify(jwt, options, true);
     }
 
     @Test
@@ -70,7 +76,7 @@ public class IdTokenVerifierTest {
             String[] parts = token.split("\\.");
             token = parts[0] + "." + parts[1] + ".no-signature";
             Jwt jwt = new Jwt(token);
-            idTokenVerifier.verify(jwt, options);
+            idTokenVerifier.verify(jwt, options, true);
         });
     }
 
@@ -80,7 +86,7 @@ public class IdTokenVerifierTest {
             Map<String, Object> jwtBody = createJWTBody("iss");
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
-            idTokenVerifier.verify(jwt, options);
+            idTokenVerifier.verify(jwt, options, true);
         });
     }
 
@@ -91,7 +97,7 @@ public class IdTokenVerifierTest {
             jwtBody.put("iss", "--invalid--");
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
-            idTokenVerifier.verify(jwt, options);
+            idTokenVerifier.verify(jwt, options, true);
         });
     }
 
@@ -101,7 +107,7 @@ public class IdTokenVerifierTest {
             Map<String, Object> jwtBody = createJWTBody("sub");
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
-            idTokenVerifier.verify(jwt, options);
+            idTokenVerifier.verify(jwt, options, true);
         });
     }
 
@@ -111,7 +117,7 @@ public class IdTokenVerifierTest {
             Map<String, Object> jwtBody = createJWTBody("aud");
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
-            idTokenVerifier.verify(jwt, options);
+            idTokenVerifier.verify(jwt, options, true);
         });
     }
 
@@ -122,7 +128,7 @@ public class IdTokenVerifierTest {
             jwtBody.put("aud", "--invalid--");
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
-            idTokenVerifier.verify(jwt, options);
+            idTokenVerifier.verify(jwt, options, true);
         });
     }
 
@@ -133,7 +139,7 @@ public class IdTokenVerifierTest {
             jwtBody.put("aud", new String[]{"--invalid-1--", "--invalid-2--"});
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
-            idTokenVerifier.verify(jwt, options);
+            idTokenVerifier.verify(jwt, options, true);
         });
     }
 
@@ -144,7 +150,7 @@ public class IdTokenVerifierTest {
             jwtBody.put("aud", EXPECTED_AUDIENCE_ARRAY);
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
-            idTokenVerifier.verify(jwt, options);
+            idTokenVerifier.verify(jwt, options, true);
         });
     }
 
@@ -156,7 +162,7 @@ public class IdTokenVerifierTest {
             jwtBody.put("azp", "--invalid--");
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
-            idTokenVerifier.verify(jwt, options);
+            idTokenVerifier.verify(jwt, options, true);
         });
     }
 
@@ -165,7 +171,7 @@ public class IdTokenVerifierTest {
         Map<String, Object> jwtBody = createJWTBody("nonce");
         String token = createTestJWT("none", jwtBody);
         Jwt jwt = new Jwt(token);
-        idTokenVerifier.verify(jwt, options);
+        idTokenVerifier.verify(jwt, options, true);
     }
 
     @Test
@@ -175,7 +181,7 @@ public class IdTokenVerifierTest {
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
             options.setNonce(EXPECTED_NONCE);
-            idTokenVerifier.verify(jwt, options);
+            idTokenVerifier.verify(jwt, options, true);
         });
     }
 
@@ -187,7 +193,7 @@ public class IdTokenVerifierTest {
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
             options.setNonce(EXPECTED_NONCE);
-            idTokenVerifier.verify(jwt, options);
+            idTokenVerifier.verify(jwt, options, true);
         });
     }
 
@@ -196,7 +202,7 @@ public class IdTokenVerifierTest {
         Map<String, Object> jwtBody = createJWTBody("org_id");
         String token = createTestJWT("none", jwtBody);
         Jwt jwt = new Jwt(token);
-        idTokenVerifier.verify(jwt, options);
+        idTokenVerifier.verify(jwt, options, true);
     }
 
     @Test
@@ -206,7 +212,7 @@ public class IdTokenVerifierTest {
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
             options.setOrganization(EXPECTED_ORGANIZATION);
-            idTokenVerifier.verify(jwt, options);
+            idTokenVerifier.verify(jwt, options, true);
         });
     }
 
@@ -218,7 +224,7 @@ public class IdTokenVerifierTest {
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
             options.setOrganization(EXPECTED_ORGANIZATION);
-            idTokenVerifier.verify(jwt, options);
+            idTokenVerifier.verify(jwt, options, true);
         });
     }
 
@@ -228,7 +234,7 @@ public class IdTokenVerifierTest {
             Map<String, Object> jwtBody = createJWTBody("exp");
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
-            idTokenVerifier.verify(jwt, options);
+            idTokenVerifier.verify(jwt, options, true);
         });
     }
 
@@ -241,7 +247,7 @@ public class IdTokenVerifierTest {
             jwtBody.put("exp", pastExp);
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
-            idTokenVerifier.verify(jwt, options);
+            idTokenVerifier.verify(jwt, options, true);
         });
     }
 
@@ -251,7 +257,7 @@ public class IdTokenVerifierTest {
             Map<String, Object> jwtBody = createJWTBody("iat");
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
-            idTokenVerifier.verify(jwt, options);
+            idTokenVerifier.verify(jwt, options, true);
         });
     }
 
@@ -262,7 +268,7 @@ public class IdTokenVerifierTest {
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
             options.setMaxAge(60 * 2);
-            idTokenVerifier.verify(jwt, options);
+            idTokenVerifier.verify(jwt, options, true);
         });
     }
 
@@ -275,8 +281,37 @@ public class IdTokenVerifierTest {
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
             options.setMaxAge(2 * 60);
-            idTokenVerifier.verify(jwt, options);
+            idTokenVerifier.verify(jwt, options, true);
         });
     }
 
+    @Test
+    public void shouldVerifySignatureIfTrueIsPassedInArgument() throws Exception {
+        Map<String, Object> jwtBody = createJWTBody();
+        String token = createTestJWT("none", jwtBody);
+        Jwt jwt = new Jwt(token);
+        idTokenVerifier.verify(jwt, options, true);
+        verify(noSignatureVerifier, times(1)).verify(jwt);
+    }
+
+    @Test
+    public void shouldNotVerifySignatureIfFalseIsPassedInArgument() throws Exception {
+        Map<String, Object> jwtBody = createJWTBody();
+        String token = createTestJWT("none", jwtBody);
+        Jwt jwt = new Jwt(token);
+        idTokenVerifier.verify(jwt, options, false);
+        verify(noSignatureVerifier, times(0)).verify(jwt);
+    }
+
+    @Test
+    public void shouldThrowExceptionIfSignatureVerifierIsNull() {
+        Assert.assertThrows("Signature Verifier should not be null", TokenValidationException.class, () -> {
+            idTokenVerifier = new IdTokenVerifier();
+            options = new IdTokenVerificationOptions(EXPECTED_ISSUER, EXPECTED_AUDIENCE, null);
+            Map<String, Object> jwtBody = createJWTBody();
+            String token = createTestJWT("none", jwtBody);
+            Jwt jwt = new Jwt(token);
+            idTokenVerifier.verify(jwt, options, true);
+        });
+    }
 }

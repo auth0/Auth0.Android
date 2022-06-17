@@ -1,15 +1,48 @@
 package com.auth0.android.request.internal
 
+import android.text.TextUtils
+import android.util.Log
+import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0Exception
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.authentication.ParameterBuilder
 import com.auth0.android.callback.Callback
+import com.auth0.android.provider.IdTokenVerificationOptions
+import com.auth0.android.provider.IdTokenVerifier
+import com.auth0.android.provider.OAuthManager
+import com.auth0.android.provider.TokenValidationException
 import com.auth0.android.request.AuthenticationRequest
 import com.auth0.android.request.Request
+import com.auth0.android.request.SignUpRequest
 import com.auth0.android.result.Credentials
+import java.util.*
 
-internal open class BaseAuthenticationRequest(private val request: Request<Credentials, AuthenticationException>) :
-    AuthenticationRequest {
+internal open class BaseAuthenticationRequest(
+    private val request: Request<Credentials, AuthenticationException>,
+    private val clientId: String, baseURL: String) : AuthenticationRequest {
+
+    private companion object {
+        private val TAG = BaseAuthenticationRequest::class.java.simpleName
+        private const val ERROR_VALUE_ID_TOKEN_VALIDATION_FAILED = "Could not verify the ID token"
+    }
+
+    private var _currentTimeInMillis: Long? = null
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal var validateClaims = false
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal var idTokenVerificationLeeway: Int? = null
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal var idTokenVerificationIssuer: String = baseURL
+
+    @set:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal var currentTimeInMillis: Long
+        get() = if (_currentTimeInMillis != null) _currentTimeInMillis!! else System.currentTimeMillis()
+        set(value) {
+            _currentTimeInMillis = value
+        }
+
+
     /**
      * Sets the 'grant_type' parameter
      *
@@ -65,6 +98,21 @@ internal open class BaseAuthenticationRequest(private val request: Request<Crede
         return this
     }
 
+    override fun validateClaims(): AuthenticationRequest {
+        this.validateClaims = true
+        return this
+    }
+
+    override fun withIdTokenVerificationLeeway(leeway: Int): AuthenticationRequest {
+        this.idTokenVerificationLeeway = leeway
+        return this
+    }
+
+    override fun withIdTokenVerificationIssuer(issuer: String): AuthenticationRequest {
+        this.idTokenVerificationIssuer = issuer
+        return this
+    }
+
     override fun addParameters(parameters: Map<String, String>): AuthenticationRequest {
         request.addParameters(parameters)
         return this
@@ -81,17 +129,83 @@ internal open class BaseAuthenticationRequest(private val request: Request<Crede
     }
 
     override fun start(callback: Callback<Credentials, AuthenticationException>) {
-        request.start(callback)
+        warnClaimValidation()
+        request.start(object : Callback<Credentials, AuthenticationException> {
+            override fun onSuccess(result: Credentials) {
+                if(validateClaims) {
+                    try {
+                        verifyClaims(result.idToken)
+                    } catch (e: AuthenticationException) {
+                        callback.onFailure(e)
+                        return
+                    }
+                }
+                callback.onSuccess(result)
+            }
+
+            override fun onFailure(error: AuthenticationException) {
+                callback.onFailure(error)
+            }
+        })
     }
 
     @Throws(Auth0Exception::class)
     override fun execute(): Credentials {
-        return request.execute()
+        warnClaimValidation()
+        val credentials = request.execute()
+        if(validateClaims) {
+            verifyClaims(credentials.idToken)
+        }
+        return credentials
     }
 
     @JvmSynthetic
     @Throws(Auth0Exception::class)
     override suspend fun await(): Credentials {
-        return request.await()
+        warnClaimValidation()
+        val credentials = request.await()
+        if(validateClaims) {
+            verifyClaims(credentials.idToken)
+        }
+        return credentials
+    }
+
+    /**
+     * Used to verify the claims from the ID Token.
+     *
+     * @param idToken - The ID Token obtained through authentication
+     * @throws AuthenticationException - This is a exception wrapping around [TokenValidationException]
+     */
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal fun verifyClaims(idToken: String) {
+        try {
+            if (TextUtils.isEmpty(idToken)) {
+                throw TokenValidationException("ID token is required but missing")
+            }
+            val decodedIdToken: Jwt = try {
+                Jwt(idToken)
+            } catch (error: Exception) {
+                throw TokenValidationException(
+                    "ID token could not be decoded",
+                    error
+                )
+            }
+            val options = IdTokenVerificationOptions(
+                idTokenVerificationIssuer,
+                clientId,
+                null
+            )
+            options.clockSkew = idTokenVerificationLeeway
+            options.clock = Date(currentTimeInMillis)
+            IdTokenVerifier().verify(decodedIdToken, options, false)
+        } catch (e: TokenValidationException) {
+            throw AuthenticationException(ERROR_VALUE_ID_TOKEN_VALIDATION_FAILED, e)
+        }
+    }
+
+    private fun warnClaimValidation() {
+        if(!validateClaims) {
+            Log.e(TAG, "The request is made without validating claims. Enable claim validation by calling AuthenticationRequest#validateClaims()")
+        }
     }
 }

@@ -5,6 +5,7 @@ import com.auth0.android.callback.Callback;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.request.Request;
 import com.auth0.android.request.SignUpRequest;
+import com.auth0.android.request.internal.BaseAuthenticationRequest;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.result.DatabaseUser;
 
@@ -21,9 +22,11 @@ import static junit.framework.Assert.assertTrue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -31,13 +34,13 @@ import static org.mockito.Mockito.when;
 public class SignUpRequestTest {
 
     private Request dbMockRequest;
-    private AuthenticationRequest authenticationMockRequest;
+    private BaseAuthenticationRequest authenticationMockRequest;
     private SignUpRequest signUpRequest;
 
     @Before
     public void setUp() {
         dbMockRequest = mock(Request.class);
-        authenticationMockRequest = mock(AuthenticationRequest.class);
+        authenticationMockRequest = mock(BaseAuthenticationRequest.class);
         signUpRequest = new SignUpRequest(dbMockRequest, authenticationMockRequest);
     }
 
@@ -198,4 +201,14 @@ public class SignUpRequestTest {
         assertThat(executeResult, is(credentials));
     }
 
+    @Test
+    public void shouldSetClaimValidationParametersForAuthenticationRequest() {
+        final SignUpRequest req = signUpRequest
+                .validateClaims()
+                .withIdTokenVerificationIssuer("custom")
+                .withIdTokenVerificationLeeway(0);
+        verify(authenticationMockRequest, times(1)).validateClaims();
+        verify(authenticationMockRequest, times(1)).withIdTokenVerificationIssuer("custom");
+        verify(authenticationMockRequest, times(1)).withIdTokenVerificationLeeway(0);
+    }
 }

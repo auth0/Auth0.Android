@@ -172,7 +172,7 @@ internal class OAuthManager(
                     options.clock = Date(currentTimeInMillis)
                     options.organization = parameters[KEY_ORGANIZATION]
                     try {
-                        IdTokenVerifier().verify(decodedIdToken, options)
+                        IdTokenVerifier().verify(decodedIdToken, options, true)
                         validationCallback.onSuccess(null)
                     } catch (exc: TokenValidationException) {
                         validationCallback.onFailure(exc)
