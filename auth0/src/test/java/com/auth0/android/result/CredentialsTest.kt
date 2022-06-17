@@ -1,6 +1,6 @@
 package com.auth0.android.result
 
-import com.auth0.android.request.internal.GsonProvider.credentialsGson
+import com.auth0.android.request.internal.GsonProvider.gson
 import org.hamcrest.MatcherAssert
 import org.hamcrest.Matchers
 import org.junit.Test
@@ -56,7 +56,9 @@ public class CredentialsTest {
         val credentials: Credentials =
             CredentialsMock(idToken, "accessToken", "type", "refreshToken", date, "scope")
         MatcherAssert.assertThat(credentials.user.getId(), Matchers.`is`("auth0|123456"))
-        val json = credentialsGson.toJson(credentials, Credentials::class.java)
+        val json = gson.toJson(credentials, Credentials::class.java)
         MatcherAssert.assertThat(json, Matchers.not(Matchers.containsString("auth0|123456")))
+        val obj = gson.fromJson(json, Credentials::class.java)
+        MatcherAssert.assertThat(obj.user.getId(), Matchers.`is`("auth0|123456"))
     }
 }
