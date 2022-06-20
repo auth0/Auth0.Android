@@ -1493,6 +1493,51 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
+    public fun shouldNotGetCredentialsWhenCredentialsWereClearedBeforeContinuing() {
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        insertTestCredentials(true, true, false, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
+            .thenReturn(expiresAt.time)
+
+        // Activity is "created"
+        val activity = Mockito.spy(
+            Robolectric.buildActivity(
+                Activity::class.java
+            ).create().get()
+        )
+        val kService = mock<KeyguardManager>()
+        Mockito.`when`(activity.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService)
+        Mockito.`when`(kService.isKeyguardSecure).thenReturn(true)
+        val confirmCredentialsIntent = mock<Intent>()
+        Mockito.`when`(kService.createConfirmDeviceCredentialIntent("theTitle", "theDescription"))
+            .thenReturn(confirmCredentialsIntent)
+        // Require authentication
+        val willRequireAuthentication =
+            manager.requireAuthentication(activity, 123, "theTitle", "theDescription")
+        MatcherAssert.assertThat(willRequireAuthentication, Is.`is`(true))
+        manager.getCredentials(callback)
+        val intentCaptor = ArgumentCaptor.forClass(Intent::class.java)
+        verify(activity)
+            .startActivityForResult(intentCaptor.capture(), eq(123))
+        MatcherAssert.assertThat(intentCaptor.value, Is.`is`(confirmCredentialsIntent))
+
+        // Return null for Credentials JSON since it is cleared
+        Mockito.`when`(storage.retrieveString("com.auth0.credentials")).thenReturn(null)
+        val processed = manager.checkAuthenticationResult(123, Activity.RESULT_OK)
+        MatcherAssert.assertThat(processed, Is.`is`(true))
+        verify(callback).onFailure(
+            exceptionCaptor.capture()
+        )
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exception.message, Is.`is`("No Credentials were previously set."))
+
+        // A second call to checkAuthenticationResult should fail as callback is set to null
+        val retryCheck = manager.checkAuthenticationResult(123, Activity.RESULT_OK)
+        MatcherAssert.assertThat(retryCheck, Is.`is`(false))
+    }
+
+    @Test
     public fun shouldNotGetCredentialsAfterCanceledAuthentication() {
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         insertTestCredentials(true, true, false, expiresAt, "scope")
