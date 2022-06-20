@@ -131,7 +131,7 @@ public class CredentialsManagerTest {
     }
 
     @Test
-    public fun shouldSaveRefreshableCredentialsUsingIdTokenExpForCacheExpirationInStorage() {
+    public fun shouldSaveRefreshableCredentialsIgnoringIdTokenExpForCacheExpirationInStorage() {
         val accessTokenExpirationTime = CredentialsMock.CURRENT_TIME_MS + 5000 * 1000
         val idTokenExpirationTime = CredentialsMock.CURRENT_TIME_MS + 2000 * 1000
         val credentials: Credentials = CredentialsMock(
@@ -150,7 +150,7 @@ public class CredentialsManagerTest {
         verify(storage).store("com.auth0.token_type", "type")
         verify(storage).store("com.auth0.expires_at", accessTokenExpirationTime)
         verify(storage).store("com.auth0.scope", "scope")
-        verify(storage).store("com.auth0.cache_expires_at", idTokenExpirationTime)
+        verify(storage).store("com.auth0.cache_expires_at", accessTokenExpirationTime)
         verifyNoMoreInteractions(storage)
     }
 
