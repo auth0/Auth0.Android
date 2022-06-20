@@ -519,6 +519,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         private val TAG = SecureCredentialsManager::class.java.simpleName
         private const val KEY_CREDENTIALS = "com.auth0.credentials"
         private const val KEY_EXPIRES_AT = "com.auth0.credentials_access_token_expires_at"
+        // This is no longer used as we get the credentials expiry from the access token only,
+        // but we still store it so users can rollback to versions where it is required.
         private const val LEGACY_KEY_CACHE_EXPIRES_AT = "com.auth0.credentials_expires_at"
         private const val KEY_CAN_REFRESH = "com.auth0.credentials_can_refresh"
         private const val KEY_ALIAS = "com.auth0.key"

@@ -298,6 +298,8 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         private const val KEY_TOKEN_TYPE = "com.auth0.token_type"
         private const val KEY_EXPIRES_AT = "com.auth0.expires_at"
         private const val KEY_SCOPE = "com.auth0.scope"
+        // This is no longer used as we get the credentials expiry from the access token only,
+        // but we still store it so users can rollback to versions where it is required.
         private const val LEGACY_KEY_CACHE_EXPIRES_AT = "com.auth0.cache_expires_at"
     }
 }
