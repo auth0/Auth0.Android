@@ -401,6 +401,11 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     ) {
         serialExecutor.execute {
             val encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS)
+            if (encryptedEncoded.isNullOrBlank()) {
+                callback.onFailure(CredentialsManagerException("No Credentials were previously set."))
+                decryptCallback = null
+                return@execute
+            }
             val encrypted = Base64.decode(encryptedEncoded, Base64.DEFAULT)
             val json: String
             try {
