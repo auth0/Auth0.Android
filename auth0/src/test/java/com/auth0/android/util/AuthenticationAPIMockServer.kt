@@ -35,10 +35,10 @@ internal class AuthenticationAPIMockServer : APIMockServer() {
         return this
     }
 
-    fun willReturnSuccessfulLogin(): AuthenticationAPIMockServer {
+    fun willReturnSuccessfulLogin(idToken: String = ID_TOKEN): AuthenticationAPIMockServer {
         val json = """{
           "refresh_token": "$REFRESH_TOKEN",
-          "id_token": "$ID_TOKEN",
+          "id_token": "$idToken",
           "access_token": "$ACCESS_TOKEN",
           "token_type": "$BEARER",
           "expires_in": 86000

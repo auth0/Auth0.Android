@@ -31,8 +31,8 @@ internal class Jwt(rawToken: String) {
 
     init {
         parts = splitToken(rawToken)
-        val jsonHeader = parts[0].decodeBase64()
-        val jsonPayload = parts[1].decodeBase64()
+        val jsonHeader = decodeBase64(parts[0])
+        val jsonPayload = decodeBase64(parts[1])
         val mapAdapter = GsonProvider.gson.getAdapter(object : TypeToken<Map<String, Any>>() {})
         decodedHeader = mapAdapter.fromJson(jsonHeader)
         decodedPayload = mapAdapter.fromJson(jsonPayload)
@@ -58,27 +58,29 @@ internal class Jwt(rawToken: String) {
         }
     }
 
-    private fun splitToken(token: String): Array<String> {
-        var parts = token.split(".").toTypedArray()
-        if (parts.size == 2 && token.endsWith(".")) {
-            // Tokens with alg='none' have empty String as Signature.
-            parts = arrayOf(parts[0], parts[1], "")
-        }
-        if (parts.size != 3) {
-            throw IllegalArgumentException(
-                String.format(
-                    "The token was expected to have 3 parts, but got %s.",
-                    parts.size
+    companion object {
+        fun splitToken(token: String): Array<String> {
+            var parts = token.split(".").toTypedArray()
+            if (parts.size == 2 && token.endsWith(".")) {
+                // Tokens with alg='none' have empty String as Signature.
+                parts = arrayOf(parts[0], parts[1], "")
+            }
+            if (parts.size != 3) {
+                throw IllegalArgumentException(
+                    String.format(
+                        "The token was expected to have 3 parts, but got %s.",
+                        parts.size
+                    )
                 )
-            )
+            }
+            return parts
         }
-        return parts
-    }
 
-    private fun String.decodeBase64(): String {
-        val bytes: ByteArray =
-            Base64.decode(this, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
-        return String(bytes, Charsets.UTF_8)
+        fun decodeBase64(encoded: String): String {
+            val bytes: ByteArray =
+                Base64.decode(encoded, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
+            return String(bytes, Charsets.UTF_8)
+        }
     }
 
 }
