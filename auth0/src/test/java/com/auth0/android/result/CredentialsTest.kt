@@ -48,6 +48,11 @@ public class CredentialsTest {
         val credentials: Credentials =
             CredentialsMock(idToken, "accessToken", "type", "refreshToken", date, "scope")
         MatcherAssert.assertThat(credentials.user.getId(), Matchers.`is`("auth0|123456"))
+        MatcherAssert.assertThat(credentials.user.name, Matchers.`is`("Jane Doe"))
+        MatcherAssert.assertThat(credentials.user.givenName, Matchers.`is`("Jane"))
+        MatcherAssert.assertThat(credentials.user.familyName, Matchers.`is`("Doe"))
+        MatcherAssert.assertThat(credentials.user.pictureURL, Matchers.`is`("http://example.com/janedoe/me.jpg"))
+        MatcherAssert.assertThat(credentials.user.email, Matchers.`is`("janedoe@example.com"))
     }
 
     @Test
