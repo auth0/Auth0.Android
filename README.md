@@ -15,6 +15,8 @@ Easily integrate Auth0 into Android apps. Add **login** and **logout**, store **
    + [Permissions](#permissions)
 - [Getting Started](#getting-started)
    * [Authentication with Universal Login](#authentication-with-universal-login)
+   * [Clearing the session](#clearing-the-session)
+- [Next steps](#next-steps)
    * [Authentication API](#authentication-api)
    * [Management API](#management-api)
    * [Token Validation](#token-validation)
@@ -330,7 +332,7 @@ WebAuthProvider.login(account)
 </details>
 
 
-#### Clearing the session
+### Clearing the session
 
 To log the user out and clear the SSO cookies that the Auth0 Server keeps attached to your browser app, you need to call the [logout endpoint](https://auth0.com/docs/api/authentication?#logout). This can be done in a similar fashion to how you authenticated before: using the `WebAuthProvider` class.
 
@@ -446,6 +448,8 @@ WebAuthProvider.logout(account)
 #### Learning resources
 
 Check out the [Android QuickStart Guide](https://auth0.com/docs/quickstart/native/android) to find out more about the Auth0.Android toolkit and explore our tutorials and sample projects.
+
+## Next steps
 
 ### Authentication API
 
