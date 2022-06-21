@@ -2,6 +2,7 @@ package com.auth0.android.provider;
 
 import com.auth0.android.request.internal.Jwt;
 
+import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,6 +23,12 @@ import static com.auth0.android.provider.JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_M
 import static com.auth0.android.provider.JwtTestUtils.createJWTBody;
 import static com.auth0.android.provider.JwtTestUtils.createTestJWT;
 import static com.auth0.android.provider.JwtTestUtils.getPublicKey;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -70,93 +77,117 @@ public class IdTokenVerifierTest {
         PublicKey pk = getPublicKey();
         SignatureVerifier signatureVerifier = new AsymmetricSignatureVerifier(pk);
         IdTokenVerificationOptions options = new IdTokenVerificationOptions(EXPECTED_ISSUER, EXPECTED_AUDIENCE, signatureVerifier);
-
-        Assert.assertThrows("Invalid ID token signature.", TokenValidationException.class, () -> {
+        String message = "Invalid ID token signature.";
+        Exception e = Assert.assertThrows(message, InvalidIdTokenSignatureException.class, () -> {
             String token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.FL7foy7kV9SVoC6GLEqwatuYz39BWoEUpZ9sv00zg2oJneJFkwPYYBCj92xu0Fry7zqLRkhFeveUKtSgZV6AinDvdWWH9Is8ku3l871ut-ECiR8-Co7qdIbQet3IhiLggHko4Z9Ez7F-pWmppV7BRJmYdFjbrurLfgN191VE9xC8AmnzSIPTFczg9g_aycqhea4ncd9YjiGV2QlmNB4q1aCZ3V7QyO4KwJnnLeI4tykXjNRVXfPuInaE_f0TpzpRbzJelAGhL5cmO_b0kJswCEqonYMvsVdGqM9jxWMebs7L2k2s2nZ3MQNo-gVIv3E2GfaBpCgGxO-8kyh8sBal3A";
             String[] parts = token.split("\\.");
             token = parts[0] + "." + parts[1] + ".no-signature";
             Jwt jwt = new Jwt(token);
             idTokenVerifier.verify(jwt, options, true);
         });
+        assertEquals("com.auth0.android.provider.TokenValidationException: " + message, e.toString());
+        assertEquals(message, e.getMessage());
     }
 
     @Test
     public void shouldFailWhenIssuerClaimIsMissing() {
-        Assert.assertThrows("Issuer (iss) claim must be a string present in the ID token", TokenValidationException.class, () -> {
+        String message = "Issuer (iss) claim must be a string present in the ID token";
+        Exception e = Assert.assertThrows(message, IssClaimMissingException.class, () -> {
             Map<String, Object> jwtBody = createJWTBody("iss");
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
             idTokenVerifier.verify(jwt, options, true);
         });
+        assertEquals("com.auth0.android.provider.TokenValidationException: " + message, e.toString());
+        assertEquals(message, e.getMessage());
     }
 
     @Test
     public void shouldFailWhenIssuerClaimHasUnexpectedValue() {
-        Assert.assertThrows("Issuer (iss) claim mismatch in the ID token, expected \"https://test.domain.com/\", found \"--invalid--\"", TokenValidationException.class, () -> {
+        String message = "Issuer (iss) claim mismatch in the ID token, expected \"https://test.domain.com/\", found \"--invalid--\"";
+        Exception e = Assert.assertThrows(message, IssClaimMismatchException.class, () -> {
             Map<String, Object> jwtBody = createJWTBody();
             jwtBody.put("iss", "--invalid--");
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
             idTokenVerifier.verify(jwt, options, true);
         });
+        assertEquals("com.auth0.android.provider.TokenValidationException: " + message, e.toString());
+        assertEquals(message, e.getMessage());
     }
 
     @Test
     public void shouldFailWhenSubjectClaimIsMissing() {
-        Assert.assertThrows("Subject (sub) claim must be a string present in the ID token", TokenValidationException.class, () -> {
+        String message = "Subject (sub) claim must be a string present in the ID token";
+        Exception e = Assert.assertThrows(message, SubClaimMissingException.class, () -> {
             Map<String, Object> jwtBody = createJWTBody("sub");
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
             idTokenVerifier.verify(jwt, options, true);
         });
+        assertEquals("com.auth0.android.provider.TokenValidationException: " + message, e.toString());
+        assertEquals(message, e.getMessage());
     }
 
     @Test
     public void shouldFailWhenAudienceClaimIsMissing() {
-        Assert.assertThrows("Audience (aud) claim must be a string or array of strings present in the ID token", TokenValidationException.class, () -> {
+        String message = "Audience (aud) claim must be a string or array of strings present in the ID token";
+        Exception e = Assert.assertThrows(message, AudClaimMissingException.class, () -> {
             Map<String, Object> jwtBody = createJWTBody("aud");
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
             idTokenVerifier.verify(jwt, options, true);
         });
+        assertEquals("com.auth0.android.provider.TokenValidationException: " + message, e.toString());
+        assertEquals(message, e.getMessage());
     }
 
     @Test
     public void shouldFailWhenAudienceClaimHasUnexpectedValue() {
-        Assert.assertThrows("Audience (aud) claim mismatch in the ID token; expected \"__test_client_id__\" but was not one of \"[--invalid--]\"", TokenValidationException.class, () -> {
+        String message = "Audience (aud) claim mismatch in the ID token; expected \"__test_client_id__\" but was not one of \"[--invalid--]\"";
+        Exception e = Assert.assertThrows(message, AudClaimMismatchException.class, () -> {
             Map<String, Object> jwtBody = createJWTBody();
             jwtBody.put("aud", "--invalid--");
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
             idTokenVerifier.verify(jwt, options, true);
         });
+        assertEquals("com.auth0.android.provider.TokenValidationException: " + message, e.toString());
+        assertEquals(message, e.getMessage());
     }
 
     @Test
     public void shouldFailWhenAudienceClaimArrayDoesNotContainExpectedValue() {
-        Assert.assertThrows("Audience (aud) claim mismatch in the ID token; expected \"__test_client_id__\" but was not one of \"[--invalid-1--, --invalid-2--]\"", TokenValidationException.class, () -> {
+        String message = "Audience (aud) claim mismatch in the ID token; expected \"__test_client_id__\" but was not one of \"[--invalid-1--, --invalid-2--]\"";
+        Exception e = Assert.assertThrows(message, AudClaimMismatchException.class, () -> {
             Map<String, Object> jwtBody = createJWTBody();
             jwtBody.put("aud", new String[]{"--invalid-1--", "--invalid-2--"});
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
             idTokenVerifier.verify(jwt, options, true);
         });
+        assertEquals("com.auth0.android.provider.TokenValidationException: " + message, e.toString());
+        assertEquals(message, e.getMessage());
     }
 
     @Test
     public void shouldFailWhenAudienceClaimIsMultipleElementsArrayAndAuthorizedPartyClaimIsMissing() {
-        Assert.assertThrows("Authorized Party (azp) claim must be a string present in the ID token when Audience (aud) claim has multiple values", TokenValidationException.class, () -> {
+        String message = "Authorized Party (azp) claim must be a string present in the ID token when Audience (aud) claim has multiple values";
+        Exception e = Assert.assertThrows(AzpClaimMissingException.class, () -> {
             Map<String, Object> jwtBody = createJWTBody();
             jwtBody.put("aud", EXPECTED_AUDIENCE_ARRAY);
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
             idTokenVerifier.verify(jwt, options, true);
         });
+        assertEquals("com.auth0.android.provider.TokenValidationException: " + message, e.toString());
+        assertEquals(message, e.getMessage());
     }
 
     @Test
     public void shouldFailWhenAudienceClaimIsMultipleElementsArrayAndAuthorizedPartyClaimHasUnexpectedValue() {
-        Assert.assertThrows("Authorized Party (azp) claim mismatch in the ID token; expected \"__test_client_id__\", found \"--invalid--\"", TokenValidationException.class, () -> {
+        String message = "Authorized Party (azp) claim mismatch in the ID token; expected \"__test_client_id__\", found \"--invalid--\"";
+        Exception e = Assert.assertThrows(message, AzpClaimMismatchException.class, () -> {
             Map<String, Object> jwtBody = createJWTBody();
             jwtBody.put("aud", EXPECTED_AUDIENCE_ARRAY);
             jwtBody.put("azp", "--invalid--");
@@ -164,6 +195,8 @@ public class IdTokenVerifierTest {
             Jwt jwt = new Jwt(token);
             idTokenVerifier.verify(jwt, options, true);
         });
+        assertEquals("com.auth0.android.provider.TokenValidationException: " + message, e.toString());
+        assertEquals(message, e.getMessage());
     }
 
     @Test
@@ -176,18 +209,22 @@ public class IdTokenVerifierTest {
 
     @Test
     public void shouldFailWhenNonceClaimIsMissingAndRequired() {
-        Assert.assertThrows("Nonce (nonce) claim must be a string present in the ID token", TokenValidationException.class, () -> {
+        String message = "Nonce (nonce) claim must be a string present in the ID token";
+        Exception e = Assert.assertThrows(message, NonceClaimMissingException.class, () -> {
             Map<String, Object> jwtBody = createJWTBody("nonce");
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
             options.setNonce(EXPECTED_NONCE);
             idTokenVerifier.verify(jwt, options, true);
         });
+        assertEquals("com.auth0.android.provider.TokenValidationException: " + message, e.toString());
+        assertEquals(message, e.getMessage());
     }
 
     @Test
     public void shouldFailWhenNonceClaimIsRequiredAndHasUnexpectedValue() {
-        Assert.assertThrows("Nonce (nonce) claim mismatch in the ID token; expected \"__test_nonce__\", found \"--invalid--\"", TokenValidationException.class, () -> {
+        String message = "Nonce (nonce) claim mismatch in the ID token; expected \"__test_nonce__\", found \"--invalid--\"";
+        Exception e = Assert.assertThrows(message, NonceClaimMismatchException.class, () -> {
             Map<String, Object> jwtBody = createJWTBody();
             jwtBody.put("nonce", "--invalid--");
             String token = createTestJWT("none", jwtBody);
@@ -195,6 +232,8 @@ public class IdTokenVerifierTest {
             options.setNonce(EXPECTED_NONCE);
             idTokenVerifier.verify(jwt, options, true);
         });
+        assertEquals("com.auth0.android.provider.TokenValidationException: " + message, e.toString());
+        assertEquals(message, e.getMessage());
     }
 
     @Test
@@ -207,18 +246,22 @@ public class IdTokenVerifierTest {
 
     @Test
     public void shouldFailWhenOrganizationIdClaimIsMissingAndRequired() {
-        Assert.assertThrows("Organization Id (org_id) claim must be a string present in the ID token", TokenValidationException.class, () -> {
+        String message = "Organization Id (org_id) claim must be a string present in the ID token";
+        Exception e = Assert.assertThrows(message, OrgClaimMissingException.class, () -> {
             Map<String, Object> jwtBody = createJWTBody("org_id");
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
             options.setOrganization(EXPECTED_ORGANIZATION);
             idTokenVerifier.verify(jwt, options, true);
         });
+        assertEquals("com.auth0.android.provider.TokenValidationException: " + message, e.toString());
+        assertEquals(message, e.getMessage());
     }
 
     @Test
     public void shouldFailWhenOrganizationIdClaimIsRequiredAndHasUnexpectedValue() {
-        Assert.assertThrows("Organization Id (org_id) claim mismatch in the ID token; expected \"__test_org_id__\", found \"--invalid--\"", TokenValidationException.class, () -> {
+        String message = "Organization Id (org_id) claim mismatch in the ID token; expected \"__test_org_id__\", found \"--invalid--\"";
+        Exception e = Assert.assertThrows(message, OrgClaimMismatchException.class, () -> {
             Map<String, Object> jwtBody = createJWTBody();
             jwtBody.put("org_id", "--invalid--");
             String token = createTestJWT("none", jwtBody);
@@ -226,21 +269,27 @@ public class IdTokenVerifierTest {
             options.setOrganization(EXPECTED_ORGANIZATION);
             idTokenVerifier.verify(jwt, options, true);
         });
+        assertEquals("com.auth0.android.provider.TokenValidationException: " + message, e.toString());
+        assertEquals(message, e.getMessage());
     }
 
     @Test
     public void shouldFailWhenExpiresAtClaimIsMissing() {
-        Assert.assertThrows("Expiration Time (exp) claim must be a number present in the ID token", TokenValidationException.class, () -> {
+        String message = "Expiration Time (exp) claim must be a number present in the ID token";
+        Exception e = Assert.assertThrows(message, ExpClaimMissingException.class, () -> {
             Map<String, Object> jwtBody = createJWTBody("exp");
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
             idTokenVerifier.verify(jwt, options, true);
         });
+        assertEquals("com.auth0.android.provider.TokenValidationException: " + message, e.toString());
+        assertEquals(message, e.getMessage());
     }
 
     @Test
     public void shouldFailWhenExpiresAtClaimHasUnexpectedValue() {
-        Assert.assertThrows("Expiration Time (exp) claim error in the ID token; current time (1567314000) is after expiration time (1567313940)", TokenValidationException.class, () -> {
+        String message = "Expiration Time (exp) claim error in the ID token; current time (1567314000) is after expiration time (1567313940)";
+        Exception e = Assert.assertThrows(message, IdTokenExpiredException.class, () -> {
             Map<String, Object> jwtBody = createJWTBody();
             long clock = FIXED_CLOCK_CURRENT_TIME_MS / 1000;
             long pastExp = clock - 2 * 60; // 2 min
@@ -249,32 +298,41 @@ public class IdTokenVerifierTest {
             Jwt jwt = new Jwt(token);
             idTokenVerifier.verify(jwt, options, true);
         });
+        assertEquals("com.auth0.android.provider.TokenValidationException: " + message, e.toString());
+        assertEquals(message, e.getMessage());
     }
 
     @Test
     public void shouldFailWhenIssuedAtClaimIsMissing() {
-        Assert.assertThrows("Issued At (iat) claim must be a number present in the ID token", TokenValidationException.class, () -> {
+        String message = "Issued At (iat) claim must be a number present in the ID token";
+        Exception e = Assert.assertThrows(message, IatClaimMissingException.class, () -> {
             Map<String, Object> jwtBody = createJWTBody("iat");
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
             idTokenVerifier.verify(jwt, options, true);
         });
+        assertEquals("com.auth0.android.provider.TokenValidationException: " + message, e.toString());
+        assertEquals(message, e.getMessage());
     }
 
     @Test
     public void shouldFailWhenMaxAgeIsSetButAuthTimeClaimIsMissing() {
-        Assert.assertThrows("Authentication Time (auth_time) claim must be a number present in the ID token when Max Age (max_age) is specified", TokenValidationException.class, () -> {
+        String message = "Authentication Time (auth_time) claim must be a number present in the ID token when Max Age (max_age) is specified";
+        Exception e = Assert.assertThrows(message, AuthTimeClaimMissingException.class, () -> {
             Map<String, Object> jwtBody = createJWTBody("auth_time");
             String token = createTestJWT("none", jwtBody);
             Jwt jwt = new Jwt(token);
             options.setMaxAge(60 * 2);
             idTokenVerifier.verify(jwt, options, true);
         });
+        assertEquals("com.auth0.android.provider.TokenValidationException: " + message, e.toString());
+        assertEquals(message, e.getMessage());
     }
 
     @Test
     public void shouldFailWhenMaxAgeIsSetAndAuthTimeClaimHasUnexpectedValue() {
-        Assert.assertThrows("Authentication Time (auth_time) claim in the ID token indicates that too much time has passed since the last end-user authentication. Current time (1567314000) is after last auth at (1567310580)", TokenValidationException.class, () -> {
+        String message = "Authentication Time (auth_time) claim in the ID token indicates that too much time has passed since the last end-user authentication. Current time (1567314000) is after last auth at (1567310580)";
+        Exception e = Assert.assertThrows(message, AuthTimeClaimMismatchException.class, () -> {
             Map<String, Object> jwtBody = createJWTBody();
             long clock = FIXED_CLOCK_CURRENT_TIME_MS / 1000;
             jwtBody.put("auth_time", clock - 3600);
@@ -283,6 +341,8 @@ public class IdTokenVerifierTest {
             options.setMaxAge(2 * 60);
             idTokenVerifier.verify(jwt, options, true);
         });
+        assertEquals("com.auth0.android.provider.TokenValidationException: " + message, e.toString());
+        assertEquals(message, e.getMessage());
     }
 
     @Test
@@ -305,7 +365,8 @@ public class IdTokenVerifierTest {
 
     @Test
     public void shouldThrowExceptionIfSignatureVerifierIsNull() {
-        Assert.assertThrows("Signature Verifier should not be null", TokenValidationException.class, () -> {
+        String message = "Signature Verifier should not be null";
+        Exception e = Assert.assertThrows(message, SignatureVerifierMissingException.class, () -> {
             idTokenVerifier = new IdTokenVerifier();
             options = new IdTokenVerificationOptions(EXPECTED_ISSUER, EXPECTED_AUDIENCE, null);
             Map<String, Object> jwtBody = createJWTBody();
@@ -313,5 +374,7 @@ public class IdTokenVerifierTest {
             Jwt jwt = new Jwt(token);
             idTokenVerifier.verify(jwt, options, true);
         });
+        assertEquals("com.auth0.android.provider.TokenValidationException: " + message, e.toString());
+        assertEquals(message, e.getMessage());
     }
 }

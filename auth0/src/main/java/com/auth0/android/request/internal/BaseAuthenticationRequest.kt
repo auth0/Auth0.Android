@@ -7,13 +7,11 @@ import com.auth0.android.Auth0Exception
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.authentication.ParameterBuilder
 import com.auth0.android.callback.Callback
+import com.auth0.android.provider.*
 import com.auth0.android.provider.IdTokenVerificationOptions
 import com.auth0.android.provider.IdTokenVerifier
-import com.auth0.android.provider.OAuthManager
-import com.auth0.android.provider.TokenValidationException
 import com.auth0.android.request.AuthenticationRequest
 import com.auth0.android.request.Request
-import com.auth0.android.request.SignUpRequest
 import com.auth0.android.result.Credentials
 import java.util.*
 
@@ -180,15 +178,12 @@ internal open class BaseAuthenticationRequest(
     internal fun verifyClaims(idToken: String) {
         try {
             if (TextUtils.isEmpty(idToken)) {
-                throw TokenValidationException("ID token is required but missing")
+                throw IdTokenMissingException()
             }
             val decodedIdToken: Jwt = try {
                 Jwt(idToken)
             } catch (error: Exception) {
-                throw TokenValidationException(
-                    "ID token could not be decoded",
-                    error
-                )
+                throw UnexpectedIdTokenException(error)
             }
             val options = IdTokenVerificationOptions(
                 idTokenVerificationIssuer,
