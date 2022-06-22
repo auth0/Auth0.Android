@@ -14,6 +14,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import java.io.FileReader
 import java.io.IOException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.util.*
 
 @RunWith(RobolectricTestRunner::class)
@@ -194,6 +196,26 @@ public class AuthenticationExceptionTest {
         val ex = AuthenticationException(
             "Request has definitely failed", NetworkErrorException(
                 IOException()
+            )
+        )
+        MatcherAssert.assertThat(ex.isNetworkError, CoreMatchers.`is`(true))
+    }
+
+    @Test
+    public fun shouldHaveNetworkErrorForSocketTimeout() {
+        val ex = AuthenticationException(
+            "Request has definitely failed", Auth0Exception("",
+                SocketTimeoutException()
+            )
+        )
+        MatcherAssert.assertThat(ex.isNetworkError, CoreMatchers.`is`(true))
+    }
+
+    @Test
+    public fun shouldHaveNetworkErrorForUnknownHost() {
+        val ex = AuthenticationException(
+            "Request has definitely failed", NetworkErrorException(
+                UnknownHostException()
             )
         )
         MatcherAssert.assertThat(ex.isNetworkError, CoreMatchers.`is`(true))
