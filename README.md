@@ -485,6 +485,21 @@ authentication
 ```
 
 <details>
+  <summary>Using suspend</summary>
+
+```kotlin
+try {
+    val credentials = authentication
+        .loginAsync("info@auth0.com", "a secret password", "my-database-connection")
+        .validateClaims()
+    println(credentials)
+} catch (e: AuthenticationException) {
+    e.printStacktrace()
+}
+```
+</details>
+
+<details>
   <summary>Using Java</summary>
 
 ```java
@@ -523,6 +538,21 @@ authentication
         override fun onSuccess(credentials: Credentials) { }
     })
 ```
+
+<details>
+  <summary>Using suspend</summary>
+
+```kotlin
+try {
+    val credentials = authentication
+        .loginWithOTP("the mfa token", "123456")
+        .validateClaims()
+    println(credentials)
+} catch (e: AuthenticationException) {
+    e.printStacktrace()
+}
+```
+</details>
 
 <details>
   <summary>Using Java</summary>
@@ -566,6 +596,20 @@ authentication
 ```
 
 <details>
+  <summary>Using suspend</summary>
+
+```kotlin
+try {
+    val result = authentication
+        .passwordlessWithEmailAsync("info@auth0.com", PasswordlessType.CODE, "my-passwordless-connection")
+    println(result)
+} catch (e: AuthenticationException) {
+    e.printStacktrace()
+}
+```
+</details>
+
+<details>
   <summary>Using Java</summary>
 
 ```java
@@ -597,6 +641,22 @@ authentication
        override fun onSuccess(credentials: Credentials) { }
    })
 ```
+
+<details>
+  <summary>Using suspend</summary>
+
+```kotlin
+try {
+    val credentials = authentication
+        .loginWithEmailAsync("info@auth0.com", "123456", "my-passwordless-connection")
+        .validateClaims()
+    println(credentials)
+} catch (e: AuthenticationException) {
+    e.printStacktrace()
+}
+```
+</details>
+
 
 <details>
   <summary>Using Java</summary>
@@ -635,6 +695,21 @@ authentication
 ```
 
 <details>
+  <summary>Using suspend</summary>
+
+```kotlin
+try {
+    val credentials = authentication
+        .signUpAsync("info@auth0.com", "a secret password", "my-database-connection")
+        .validateClaims()
+    println(credentials)
+} catch (e: AuthenticationException) {
+    e.printStacktrace()
+}
+```
+</details>
+
+<details>
   <summary>Using Java</summary>
 
 ```java
@@ -668,6 +743,20 @@ authentication
        override fun onSuccess(profile: UserProfile) { }
    })
 ```
+
+<details>
+  <summary>Using suspend</summary>
+
+```kotlin
+try {
+    val user = authentication
+        .userInfoAsync("user access_token")
+    println(user)
+} catch (e: AuthenticationException) {
+    e.printStacktrace()
+}
+```
+</details>
 
 <details>
   <summary>Using Java</summary>
@@ -829,6 +918,20 @@ users
 ```
 
 <details>
+  <summary>Using suspend</summary>
+
+```kotlin
+try {
+    val identities = users
+        .linkAsync("primary user id", "secondary user token")
+    println(identities)
+} catch (e: ManagementException) {
+    e.printStacktrace()
+}
+```
+</details>
+
+<details>
   <summary>Using Java</summary>
 
 ```java
@@ -862,6 +965,20 @@ users
 ```
 
 <details>
+  <summary>Using suspend</summary>
+
+```kotlin
+try {
+    val identities = users
+        .unlinkAsync("primary user id", "secondary user id", "secondary provider")
+    println(identities)
+} catch (e: ManagementException) {
+    e.printStacktrace()
+}
+```
+</details>
+
+<details>
   <summary>Using Java</summary>
 
 ```java
@@ -893,6 +1010,20 @@ users
         override fun onSuccess(identities: UserProfile) { }
     })
 ```
+
+<details>
+  <summary>Using suspend</summary>
+
+```kotlin
+try {
+    val user = users
+        .getProfileAsync("user id")
+    println(user)
+} catch (e: ManagementException) {
+    e.printStacktrace()
+}
+```
+</details>
 
 <details>
   <summary>Using Java</summary>
@@ -931,6 +1062,25 @@ users
         override fun onSuccess(identities: UserProfile) { }
     })
 ```
+
+<details>
+  <summary>Using suspend</summary>
+
+```kotlin
+val metadata = mapOf(
+    "name" to listOf("My", "Name", "Is"),
+    "phoneNumber" to "1234567890"
+)
+
+try {
+    val user = users
+        .updateMetadataAsync("user id", metadata)
+    println(user)
+} catch (e: ManagementException) {
+    e.printStacktrace()
+}
+```
+</details>
 
 <details>
   <summary>Using Java</summary>
@@ -998,6 +1148,25 @@ client
          override fun onFailure(error: AuthenticationException) { }
     })
 ```
+
+<details>
+  <summary>Using suspend</summary>
+
+```kotlin
+val auth0 = Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+val client = AuthenticationAPIClient(auth0)
+
+try {
+    val credentials = client
+        .loginAsync("{username or email}", "{password}", "{database connection name}")
+        .validateClaims()
+        .withIdTokenVerificationIssuer("https://{YOUR_AUTH0_DOMAIN}/")
+    println(credentials)
+} catch (e: AuthenticationException) {
+    e.printStacktrace()
+}
+```
+</details>
 
 <details>
   <summary>Using Java</summary>
@@ -1069,7 +1238,17 @@ getIntent()?.data?.let {
 }
 ```
 
-TODO - java example
+<details>
+  <summary>Using Java</summary>
+
+```java
+if (getIntent() != null && getIntent().getData() != null) {
+    WebAuthProvider.login(account)
+        .withInvitationUrl(getIntent().getData())
+        .start(this, callback);
+}
+```
+</details>
 
 If the URL doesn't contain the expected values, an error will be raised through the provided callback.
 
@@ -1119,6 +1298,21 @@ authentication
         }
     })
 ``` 
+
+<details>
+  <summary>Using suspend</summary>
+
+```kotlin
+try {
+    val credentials = authentication
+        .loginAsync("info@auth0.com", "a secret password", "my-database-connection")
+        .setScope("openid email profile offline_access")
+    manager.saveCredentials(credentials)
+} catch (e: AuthenticationException) {
+    e.printStacktrace()
+}
+```
+</details>
 
 <details>
   <summary>Using Java</summary>
@@ -1173,6 +1367,19 @@ manager.getCredentials(object : Callback<Credentials, CredentialsManagerExceptio
     }
 })
 ``` 
+
+<details>
+  <summary>Using suspend</summary>
+
+```kotlin
+try {
+    val credentials = manager.getCredentialsAsync()
+    println(credentials)
+} catch (e: CredentialsManagerException) {
+    e.printStacktrace()
+}
+```
+</details>
 
 <details>
   <summary>Using Java</summary>
