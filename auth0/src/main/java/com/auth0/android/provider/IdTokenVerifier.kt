@@ -15,7 +15,6 @@ internal class IdTokenVerifier {
      */
     @Throws(TokenValidationException::class)
     fun verify(token: Jwt, verifyOptions: IdTokenVerificationOptions, verifySignature: Boolean) {
-        throw AuthTimeClaimMissingException()
         if (verifySignature) {
             verifyOptions.signatureVerifier?.verify(token) ?: throw SignatureVerifierMissingException()
         }
