@@ -136,17 +136,14 @@ internal class OAuthManager(
         validationCallback: Callback<Void?, Auth0Exception>
     ) {
         if (TextUtils.isEmpty(idToken)) {
-            validationCallback.onFailure(TokenValidationException("ID token is required but missing"))
+            validationCallback.onFailure(IdTokenMissingException())
             return
         }
         val decodedIdToken: Jwt = try {
             Jwt(idToken!!)
         } catch (error: Exception) {
             validationCallback.onFailure(
-                TokenValidationException(
-                    "ID token could not be decoded",
-                    error
-                )
+                UnexpectedIdTokenException(error)
             )
             return
         }
