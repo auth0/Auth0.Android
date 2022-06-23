@@ -22,6 +22,11 @@ import com.auth0.android.result.Credentials
 import com.auth0.android.util.AuthenticationAPIMockServer
 import com.auth0.android.util.SSLTestUtils
 import com.nhaarman.mockitokotlin2.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers
@@ -34,12 +39,10 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers
+import org.mockito.*
+import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.anyString
-import org.mockito.Mock
-import org.mockito.Mockito
 import org.mockito.Mockito.`when`
-import org.mockito.MockitoAnnotations
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -2543,6 +2546,21 @@ public class WebAuthProviderTest {
         val intent = createAuthIntent("")
         Assert.assertTrue(resume(intent))
         verify(voidCallback).onSuccess(eq<Void?>(null))
+    }
+
+    @Test
+    @ExperimentalCoroutinesApi
+    public fun shouldResumeLogoutSuccessfullyWithCoroutines(): Unit = runTest {
+        val job = launch { logout(account)
+            .await(activity, Dispatchers.Unconfined) }
+        advanceUntilIdle()
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri =
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(uri, `is`(notNullValue()))
+        val intent = createAuthIntent("")
+        Assert.assertTrue(resume(intent))
+        job.join()
     }
 
     @Test
