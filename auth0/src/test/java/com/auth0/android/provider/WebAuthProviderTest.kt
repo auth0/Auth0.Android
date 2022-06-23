@@ -39,10 +39,12 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.*
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.anyString
+import org.mockito.Mock
+import org.mockito.Mockito
 import org.mockito.Mockito.`when`
+import org.mockito.MockitoAnnotations
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -2549,21 +2551,6 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    @ExperimentalCoroutinesApi
-    public fun shouldResumeLogoutSuccessfullyWithCoroutines(): Unit = runTest {
-        val job = launch { logout(account)
-            .await(activity, Dispatchers.Unconfined) }
-        advanceUntilIdle()
-        verify(activity).startActivity(intentCaptor.capture())
-        val uri =
-            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
-        assertThat(uri, `is`(notNullValue()))
-        val intent = createAuthIntent("")
-        Assert.assertTrue(resume(intent))
-        job.join()
-    }
-
-    @Test
     public fun shouldResumeLogoutFailingWithIntent() {
         logout(account)
             .start(activity, voidCallback)
@@ -2604,6 +2591,21 @@ public class WebAuthProviderTest {
             WebAuthProvider.managerInstance,
             `is`(CoreMatchers.nullValue())
         )
+    }
+
+    @Test
+    @ExperimentalCoroutinesApi
+    public fun shouldResumeLogoutSuccessfullyWithCoroutines(): Unit = runTest {
+        val job = launch { logout(account)
+            .await(activity, Dispatchers.Unconfined) }
+        advanceUntilIdle()
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri =
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(uri, `is`(notNullValue()))
+        val intent = createAuthIntent("")
+        Assert.assertTrue(resume(intent))
+        job.join()
     }
 
     //**  ** ** ** ** **  **//
