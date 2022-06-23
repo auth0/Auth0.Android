@@ -249,7 +249,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * @param parameters additional parameters to send in the request to refresh expired credentials
      * @param callback the callback to receive the result in.
      */
-    public fun getCredentials(
+    override fun getCredentials(
         scope: String?,
         minTtl: Int,
         parameters: Map<String, String>,

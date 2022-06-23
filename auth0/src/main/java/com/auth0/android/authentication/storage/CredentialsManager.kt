@@ -89,7 +89,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * @param parameters additional parameters to send in the request to refresh expired credentials
      * @param callback the callback that will receive a valid [Credentials] or the [CredentialsManagerException].
      */
-    public fun getCredentials(
+    override fun getCredentials(
         scope: String?,
         minTtl: Int,
         parameters: Map<String, String>,
