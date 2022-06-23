@@ -490,8 +490,9 @@ authentication
 ```kotlin
 try {
     val credentials = authentication
-        .loginAsync("info@auth0.com", "a secret password", "my-database-connection")
+        .login("info@auth0.com", "a secret password", "my-database-connection")
         .validateClaims()
+        .await()
     println(credentials)
 } catch (e: AuthenticationException) {
     e.printStacktrace()
@@ -547,6 +548,7 @@ try {
     val credentials = authentication
         .loginWithOTP("the mfa token", "123456")
         .validateClaims()
+        .await()
     println(credentials)
 } catch (e: AuthenticationException) {
     e.printStacktrace()
@@ -601,7 +603,8 @@ authentication
 ```kotlin
 try {
     val result = authentication
-        .passwordlessWithEmailAsync("info@auth0.com", PasswordlessType.CODE, "my-passwordless-connection")
+        .passwordlessWithEmail("info@auth0.com", PasswordlessType.CODE, "my-passwordless-connection")
+        .await()
     println(result)
 } catch (e: AuthenticationException) {
     e.printStacktrace()
@@ -648,8 +651,9 @@ authentication
 ```kotlin
 try {
     val credentials = authentication
-        .loginWithEmailAsync("info@auth0.com", "123456", "my-passwordless-connection")
+        .loginWithEmail("info@auth0.com", "123456", "my-passwordless-connection")
         .validateClaims()
+        .await()
     println(credentials)
 } catch (e: AuthenticationException) {
     e.printStacktrace()
@@ -700,8 +704,9 @@ authentication
 ```kotlin
 try {
     val credentials = authentication
-        .signUpAsync("info@auth0.com", "a secret password", "my-database-connection")
+        .signUp("info@auth0.com", "a secret password", "my-database-connection")
         .validateClaims()
+        .await()
     println(credentials)
 } catch (e: AuthenticationException) {
     e.printStacktrace()
@@ -750,7 +755,8 @@ authentication
 ```kotlin
 try {
     val user = authentication
-        .userInfoAsync("user access_token")
+        .userInfo("user access_token")
+        .await()
     println(user)
 } catch (e: AuthenticationException) {
     e.printStacktrace()
@@ -923,7 +929,8 @@ users
 ```kotlin
 try {
     val identities = users
-        .linkAsync("primary user id", "secondary user token")
+        .link("primary user id", "secondary user token")
+        .await()
     println(identities)
 } catch (e: ManagementException) {
     e.printStacktrace()
@@ -970,7 +977,8 @@ users
 ```kotlin
 try {
     val identities = users
-        .unlinkAsync("primary user id", "secondary user id", "secondary provider")
+        .unlink("primary user id", "secondary user id", "secondary provider")
+        .await()
     println(identities)
 } catch (e: ManagementException) {
     e.printStacktrace()
@@ -1017,7 +1025,8 @@ users
 ```kotlin
 try {
     val user = users
-        .getProfileAsync("user id")
+        .getProfile("user id")
+        .await()
     println(user)
 } catch (e: ManagementException) {
     e.printStacktrace()
@@ -1074,7 +1083,8 @@ val metadata = mapOf(
 
 try {
     val user = users
-        .updateMetadataAsync("user id", metadata)
+        .updateMetadata("user id", metadata)
+        .await()
     println(user)
 } catch (e: ManagementException) {
     e.printStacktrace()
@@ -1158,9 +1168,10 @@ val client = AuthenticationAPIClient(auth0)
 
 try {
     val credentials = client
-        .loginAsync("{username or email}", "{password}", "{database connection name}")
+        .login("{username or email}", "{password}", "{database connection name}")
         .validateClaims()
         .withIdTokenVerificationIssuer("https://{YOUR_AUTH0_DOMAIN}/")
+        .await()
     println(credentials)
 } catch (e: AuthenticationException) {
     e.printStacktrace()
@@ -1305,8 +1316,9 @@ authentication
 ```kotlin
 try {
     val credentials = authentication
-        .loginAsync("info@auth0.com", "a secret password", "my-database-connection")
+        .login("info@auth0.com", "a secret password", "my-database-connection")
         .setScope("openid email profile offline_access")
+        .await()
     manager.saveCredentials(credentials)
 } catch (e: AuthenticationException) {
     e.printStacktrace()
@@ -1373,7 +1385,7 @@ manager.getCredentials(object : Callback<Credentials, CredentialsManagerExceptio
 
 ```kotlin
 try {
-    val credentials = manager.getCredentialsAsync()
+    val credentials = manager.getCredentials().awaitCredentials()
     println(credentials)
 } catch (e: CredentialsManagerException) {
     e.printStacktrace()
