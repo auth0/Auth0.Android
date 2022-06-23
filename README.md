@@ -1385,7 +1385,7 @@ manager.getCredentials(object : Callback<Credentials, CredentialsManagerExceptio
 
 ```kotlin
 try {
-    val credentials = manager.getCredentials().awaitCredentials()
+    val credentials = manager.awaitCredentials()
     println(credentials)
 } catch (e: CredentialsManagerException) {
     e.printStacktrace()
