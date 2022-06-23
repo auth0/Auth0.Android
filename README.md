@@ -27,7 +27,7 @@ Easily integrate Auth0 into Android apps. Add **login** and **logout**, store **
 - [Networking client customization](#networking-client-customization)
 - [FAQ](#faq)
 - [Proguard](#proguard)
-- [What is Auth0?](#what-is-auth0-)
+- [What is Auth0?](#what-is-auth0)
 - [Issue Reporting](#issue-reporting)
 - [License](#license)
 
@@ -78,6 +78,7 @@ val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
 
 <details>
   <summary>Using Java</summary>
+
 ```java
 Auth0 account = new Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}");
 ```
@@ -85,6 +86,7 @@ Auth0 account = new Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}");
 
 <details>
   <summary>Configure using Android Context</summary>
+
 Alternatively, you can save your Application information in the `strings.xml` file using the following names:
 
 ```xml
@@ -135,10 +137,10 @@ android {
 ```
 
 It's a good practice to define reusable resources like `@string/com_auth0_domain`, but you can also hard-code the value.
- 
+
 > The scheme value can be either `https` or a custom one. Read [this section](#a-note-about-app-deep-linking) to learn more.
 
-Declare the callback instance that will receive the authentication result.
+Declare the callback instance that will receive the authentication result and authenticate by showing the **Auth0 Universal Login**:
 
 ```kotlin
 val callback = object : Callback<Credentials, AuthenticationException> {
@@ -150,6 +152,9 @@ val callback = object : Callback<Credentials, AuthenticationException> {
         // Success! Access token and ID token are presents
     }
 }
+
+WebAuthProvider.login(account)
+    .start(this, callback)
 ```
 
 <details>
@@ -167,25 +172,11 @@ Callback<Credentials, AuthenticationException> callback = new Callback<Credentia
         //succeeded!
     }
 };
+
+WebAuthProvider.login(account)
+    .start(this, callback);
 ```
 </details>
-
-Finally, authenticate by showing the **Auth0 Universal Login**:
-
-```kotlin
-WebAuthProvider.login(account)
-    .start(this, callback)
-```
-
-<details>
-  <summary>Using Java</summary>
-
-```java
-WebAuthProvider.login(account)
-    .start(MainActivity.this, callback);
-```
-</details>
-
 
 The callback will get invoked when the user returns to your application. There are a few scenarios where this may fail:
 
@@ -209,16 +200,6 @@ WebAuthProvider.login(account)
     .start(this, callback)
 ```
 
-<details>
-  <summary>Using Java</summary>
-
-```java
-//Configure and launch the authentication
-WebAuthProvider.login(account)
-    .start(MainActivity.this, callback);
-```
-</details>
-
 > Note that the schemes [can only have lowercase letters](https://developer.android.com/guide/topics/manifest/data-element).
 
 #### Authenticate with any Auth0 connection
@@ -231,16 +212,6 @@ WebAuthProvider.login(account)
     .start(this, callback)
 ```
 
-<details>
-  <summary>Using Java</summary>
-
-```java
-WebAuthProvider.login(account)
-     .withConnection("twitter")
-     .start(MainActivity.this, callback);
-```
-</details>
-
 #### Specify audience
 
 ```kotlin
@@ -248,16 +219,6 @@ WebAuthProvider.login(account)
     .withAudience("https://{YOUR_AUTH0_DOMAIN}/api/v2/")
     .start(this, callback)
 ```
-
-<details>
-  <summary>Using Java</summary>
-
-```java
-WebAuthProvider.login(account)
-   .withAudience("https://{YOUR_AUTH0_DOMAIN}/api/v2/")
-   .start(MainActivity.this, callback);
-```
-</details>
 
 The sample above requests tokens with the audience required to call the [Management API](https://auth0.com/docs/api/management/v2) endpoints.
 
@@ -271,16 +232,6 @@ WebAuthProvider.login(account)
     .start(this, callback)
 ```
 
-<details>
-  <summary>Using Java</summary>
-
-```java
-WebAuthProvider.login(account)
-   .withScope("openid profile email read:users")
-   .start(MainActivity.this, callback);
-```
-</details>
-
 > The default scope used is `openid profile email`. Regardless of the scopes passed here, the `openid` scope is always enforced.
 
 #### Specify Connection scope
@@ -290,16 +241,6 @@ WebAuthProvider.login(account)
     .withConnectionScope("email", "profile", "calendar:read")
     .start(this, callback)
 ```
-
-<details>
-  <summary>Using Java</summary>
-
-```java
-WebAuthProvider.login(account)
-   .withConnectionScope("email", "profile", "calendar:read")
-   .start(MainActivity.this, callback);
-```
-</details>
 
 #### Customize the Custom Tabs UI
 
@@ -349,10 +290,6 @@ Remember to replace `{YOUR_APP_PACKAGE_NAME}` with your actual application's pac
 Initialize the provider, this time calling the static method `logout`.
 
 ```kotlin
-//Configure and launch the log out
-WebAuthProvider.logout(account)
-    .start(this, logoutCallback)
-
 //Declare the callback that will receive the result
 val logoutCallback = object: Callback<Void?, AuthenticationException> {
     override fun onFailure(exception: AuthenticationException) {
@@ -363,16 +300,16 @@ val logoutCallback = object: Callback<Void?, AuthenticationException> {
         // Success! The browser session was cleared
     }
 }
+
+//Configure and launch the log out
+WebAuthProvider.logout(account)
+        .start(this, logoutCallback)
 ```
 
 <details>
   <summary>Using Java</summary>
 
 ```java
-//Configure and launch the log out
-WebAuthProvider.logout(account)
-    .start(MainActivity.this, logoutCallback);
-
 //Declare the callback that will receive the result
 Callback<Void, AuthenticationException> logoutCallback = new Callback<Void, AuthenticationException>() {
     @Override
@@ -385,6 +322,10 @@ Callback<Void, AuthenticationException> logoutCallback = new Callback<Void, Auth
         //succeeded!
     }
 };
+
+//Configure and launch the log out
+WebAuthProvider.logout(account)
+    .start(MainActivity.this, logoutCallback);
 ```
 </details>
 
@@ -403,17 +344,6 @@ WebAuthProvider.logout(account)
     .withScheme("myapp")
     .start(this, logoutCallback)
 ```
-
-<details>
-  <summary>Using Java</summary>
-
-```java
-WebAuthProvider.login(account)
-    .withScheme("myapp")
-    .start(MainActivity.this, callback);
-```
-</details>
-
 
 #### Customize the Custom Tabs UI
 
@@ -485,7 +415,7 @@ authentication
 ```
 
 <details>
-  <summary>Using suspend</summary>
+  <summary>Using coroutines</summary>
 
 ```kotlin
 try {
@@ -541,7 +471,7 @@ authentication
 ```
 
 <details>
-  <summary>Using suspend</summary>
+  <summary>Using coroutines</summary>
 
 ```kotlin
 try {
@@ -598,7 +528,7 @@ authentication
 ```
 
 <details>
-  <summary>Using suspend</summary>
+  <summary>Using coroutines</summary>
 
 ```kotlin
 try {
@@ -646,7 +576,7 @@ authentication
 ```
 
 <details>
-  <summary>Using suspend</summary>
+  <summary>Using coroutines</summary>
 
 ```kotlin
 try {
@@ -699,7 +629,7 @@ authentication
 ```
 
 <details>
-  <summary>Using suspend</summary>
+  <summary>Using coroutines</summary>
 
 ```kotlin
 try {
@@ -750,7 +680,7 @@ authentication
 ```
 
 <details>
-  <summary>Using suspend</summary>
+  <summary>Using coroutines</summary>
 
 ```kotlin
 try {
@@ -877,7 +807,7 @@ In the case of signup, you can add [an additional parameter](https://auth0.com/d
 ```kotlin
 val params = mapOf(
     "login_hint" to email, 
-    "screen_hint", "signup"
+    "screen_hint" to "signup"
 )
 ```
 
@@ -885,6 +815,7 @@ val params = mapOf(
   <summary>Using Java</summary>
 
 ```java
+params.put("login_hint", email);
 params.put("screen_hint", "signup");
 ```
 </details>
@@ -924,7 +855,7 @@ users
 ```
 
 <details>
-  <summary>Using suspend</summary>
+  <summary>Using coroutines</summary>
 
 ```kotlin
 try {
@@ -972,7 +903,7 @@ users
 ```
 
 <details>
-  <summary>Using suspend</summary>
+  <summary>Using coroutines</summary>
 
 ```kotlin
 try {
@@ -1020,7 +951,7 @@ users
 ```
 
 <details>
-  <summary>Using suspend</summary>
+  <summary>Using coroutines</summary>
 
 ```kotlin
 try {
@@ -1073,7 +1004,7 @@ users
 ```
 
 <details>
-  <summary>Using suspend</summary>
+  <summary>Using coroutines</summary>
 
 ```kotlin
 val metadata = mapOf(
@@ -1132,18 +1063,6 @@ WebAuthProvider.login(account)
     .start(this, callback)
 ```
 
-<details>
-  <summary>Using Java</summary>
-
-```java
-Auth0 account = new Auth0("client id", "domain");
-
-WebAuthProvider.login(account)
-   .withIdTokenVerificationIssuer("https://{YOUR_AUTH0_DOMAIN}/")
-   .start(MainActivity.this, callback);
-```
-</details>
-
 For Authentication Client, the method `validateClaims()` has to be called to enable it.
 
 ```kotlin
@@ -1160,7 +1079,7 @@ client
 ```
 
 <details>
-  <summary>Using suspend</summary>
+  <summary>Using coroutines</summary>
 
 ```kotlin
 val auth0 = Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN")
@@ -1224,16 +1143,6 @@ WebAuthProvider.login(account)
     .withOrganization(organizationId)
     .start(this, callback)
 ```
-
-<details>
-  <summary>Using Java</summary>
-
-```java
-WebAuthProvider.login(account)
-    .withOrganization(organizationId)
-    .start(MainActivity.this, callback);
-```
-</details>
 
 #### Accept user invitations
 
@@ -1311,7 +1220,7 @@ authentication
 ``` 
 
 <details>
-  <summary>Using suspend</summary>
+  <summary>Using coroutines</summary>
 
 ```kotlin
 try {
@@ -1381,7 +1290,7 @@ manager.getCredentials(object : Callback<Credentials, CredentialsManagerExceptio
 ``` 
 
 <details>
-  <summary>Using suspend</summary>
+  <summary>Using coroutines</summary>
 
 ```kotlin
 try {
@@ -1419,14 +1328,6 @@ manager.getCredentials(new BaseCallback<Credentials, CredentialsManagerException
 ```kotlin
 manager.clearCredentials()
 ```
-
-<details>
-  <summary>Using Java</summary>
-
-```java
-manager.clearCredentials();
-```
-</details>
 
 ### Encryption enforced
 
