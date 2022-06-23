@@ -6,6 +6,7 @@ import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
+import com.auth0.android.provider.TokenValidationException
 
 public class AuthenticationException : Auth0Exception {
     private var code: String? = null
@@ -188,6 +189,10 @@ public class AuthenticationException : Auth0Exception {
         get() = "invalid_grant" == code
                 && 403 == statusCode
                 && "The refresh_token was generated for a user who doesn't exist anymore." == description
+
+    // ID token validation error
+    public val isIdTokenValidationError: Boolean
+        get() = cause is TokenValidationException
 
     internal companion object {
         internal const val ERROR_VALUE_AUTHENTICATION_CANCELED = "a0.authentication_canceled"

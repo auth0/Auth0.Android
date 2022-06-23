@@ -38,11 +38,7 @@ abstract class SignatureVerifier {
 
     private void checkAlgorithm(String tokenAlgorithm) throws TokenValidationException {
         if (!supportedAlgorithms.contains(tokenAlgorithm) || "none".equalsIgnoreCase(tokenAlgorithm)) {
-            if (supportedAlgorithms.size() == 1) {
-                throw new TokenValidationException(String.format("Signature algorithm of \"%s\" is not supported. Expected the ID token to be signed with %s.", tokenAlgorithm, supportedAlgorithms.get(0)));
-            } else {
-                throw new TokenValidationException(String.format("Signature algorithm of \"%s\" is not supported. Expected the ID token to be signed with any of %s.", tokenAlgorithm, supportedAlgorithms));
-            }
+            throw new IdTokenAlgorithmNotSupportedException(tokenAlgorithm, supportedAlgorithms);
         }
     }
 
@@ -64,13 +60,13 @@ abstract class SignatureVerifier {
                 try {
                     callback.onSuccess(new AsymmetricSignatureVerifier(publicKey));
                 } catch (InvalidKeyException e) {
-                    callback.onFailure(new TokenValidationException(String.format("Could not find a public key for kid \"%s\"", keyId)));
+                    callback.onFailure(new PublicKeyNotFoundException(keyId));
                 }
             }
 
             @Override
             public void onFailure(@NonNull AuthenticationException error) {
-                callback.onFailure(new TokenValidationException(String.format("Could not find a public key for kid \"%s\"", keyId)));
+                callback.onFailure(new PublicKeyNotFoundException(keyId));
             }
         });
     }
