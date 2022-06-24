@@ -158,6 +158,20 @@ WebAuthProvider.login(account)
 ```
 
 <details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    val credentials = WebAuthProvider.login(account)
+        .await(requireContext())
+    println(credentials)    
+} catch(e: AuthenticationException) {
+    e.printStacktrace()
+}
+```
+</details>
+
+<details>
   <summary>Using Java</summary>
 
 ```java
@@ -305,6 +319,20 @@ val logoutCallback = object: Callback<Void?, AuthenticationException> {
 WebAuthProvider.logout(account)
         .start(this, logoutCallback)
 ```
+
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    WebAuthProvider.logout(account)
+        .await(requireContext())
+    println("Logged out")
+} catch(e: AuthenticationException) {
+    e.printStacktrace()
+}
+```
+</details>
 
 <details>
   <summary>Using Java</summary>
