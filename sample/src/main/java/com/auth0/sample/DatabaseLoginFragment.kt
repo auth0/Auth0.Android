@@ -8,8 +8,8 @@ import androidx.fragment.app.Fragment
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
-import com.auth0.android.authentication.storage.CredentialsManager
 import com.auth0.android.authentication.storage.CredentialsManagerException
+import com.auth0.android.authentication.storage.SecureCredentialsManager
 import com.auth0.android.authentication.storage.SharedPreferencesStorage
 import com.auth0.android.callback.Callback
 import com.auth0.android.management.ManagementException
@@ -51,9 +51,9 @@ class DatabaseLoginFragment : Fragment() {
         AuthenticationAPIClient(account)
     }
 
-    private val credentialsManager: CredentialsManager by lazy {
+    private val credentialsManager: SecureCredentialsManager by lazy {
         val storage = SharedPreferencesStorage(requireContext())
-        val manager = CredentialsManager(authenticationApiClient, storage)
+        val manager = SecureCredentialsManager(requireContext(), authenticationApiClient, storage)
         manager
     }
 
