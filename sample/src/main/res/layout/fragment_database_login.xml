@@ -75,7 +75,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.512"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/buttonWebLogout" />
+        app:layout_constraintTop_toBottomOf="@+id/buttonWebLogoutAsync" />
 
     <TextView
         android:id="@+id/textView5"
@@ -93,9 +93,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="Log in with Username &amp; Password"
-        android:textSize="14sp"
-        app:layout_constraintEnd_toEndOf="@+id/textPassword"
+        android:layout_marginEnd="4dp"
+        android:text="Log in with Password"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toStartOf="@+id/buttonLoginAsync"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="@+id/textPassword"
         app:layout_constraintTop_toBottomOf="@+id/textPassword" />
@@ -105,22 +106,32 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="Log in with Username &amp; Password (async)"
-        android:textSize="14sp"
+        android:text="Login with Password (async)"
+        android:textSize="12sp"
         app:layout_constraintEnd_toEndOf="@+id/textPassword"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="@+id/textPassword"
-        app:layout_constraintTop_toBottomOf="@+id/buttonLogin" />
+        app:layout_constraintTop_toBottomOf="@+id/textPassword" />
 
     <Button
         android:id="@+id/buttonWebAuth"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:layout_marginEnd="12dp"
+        android:layout_marginEnd="4dp"
         android:text="Log in with Browser"
-        android:textSize="14sp"
-        app:layout_constraintEnd_toStartOf="@+id/buttonWebLogout"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toStartOf="@+id/buttonWebAuthAsync"
+        app:layout_constraintTop_toBottomOf="@+id/textView3" />
+
+    <Button
+        android:id="@+id/buttonWebAuthAsync"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Log in with Browser (Async)"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="@+id/buttonLoginAsync"
         app:layout_constraintTop_toBottomOf="@+id/textView3" />
 
     <Button
@@ -129,8 +140,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:text="Delete Credentials"
-        android:textSize="14sp"
-        app:layout_constraintEnd_toEndOf="@+id/buttonWebLogout"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="@+id/buttonWebLogoutAsync"
         app:layout_constraintTop_toBottomOf="@+id/textView4" />
 
     <Button
@@ -139,8 +150,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:text="Get Credentials (async)"
-        android:textSize="14sp"
-        app:layout_constraintEnd_toEndOf="@+id/buttonWebLogout"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="@+id/buttonWebLogoutAsync"
         app:layout_constraintTop_toBottomOf="@+id/deleteCreds" />
 
     <Button
@@ -148,9 +159,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:layout_marginEnd="12dp"
+        android:layout_marginEnd="4dp"
         android:text="Get Credentials"
-        android:textSize="14sp"
+        android:textSize="12sp"
         app:layout_constraintEnd_toStartOf="@+id/getCredsAsync"
         app:layout_constraintTop_toBottomOf="@+id/deleteCreds" />
 
@@ -160,7 +171,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:text="Get User Profile (async)"
-        android:textSize="14sp"
+        android:textSize="12sp"
         app:layout_constraintEnd_toEndOf="@+id/getCredsAsync"
         app:layout_constraintTop_toBottomOf="@+id/textView5" />
 
@@ -170,7 +181,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:text="Update Metadata (async)"
-        android:textSize="14sp"
+        android:textSize="12sp"
         app:layout_constraintEnd_toEndOf="@+id/getCredsAsync"
         app:layout_constraintTop_toBottomOf="@+id/getProfileAsync" />
 
@@ -179,9 +190,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:layout_marginEnd="12dp"
+        android:layout_marginEnd="4dp"
         android:text="Update Metadata"
-        android:textSize="14sp"
+        android:textSize="12sp"
         app:layout_constraintEnd_toStartOf="@+id/updateMetaAsync"
         app:layout_constraintTop_toBottomOf="@+id/getProfileAsync" />
 
@@ -190,28 +201,39 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:layout_marginEnd="12dp"
+        android:layout_marginEnd="4dp"
         android:text="Get User Profile"
-        android:textSize="14sp"
+        android:textSize="12sp"
         app:layout_constraintEnd_toStartOf="@+id/getProfileAsync"
         app:layout_constraintTop_toBottomOf="@+id/textView5" />
+
+    <Button
+        android:id="@+id/buttonWebLogoutAsync"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Log out with Browser (Async)"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="@+id/buttonLoginAsync"
+        app:layout_constraintTop_toBottomOf="@+id/buttonWebAuth" />
 
     <Button
         android:id="@+id/buttonWebLogout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
+        android:layout_marginEnd="4dp"
         android:text="Log out with Browser"
-        android:textSize="14sp"
-        app:layout_constraintEnd_toEndOf="@+id/buttonLoginAsync"
-        app:layout_constraintTop_toBottomOf="@+id/textView3" />
+        android:textSize="12sp"
+        app:layout_constraintEnd_toStartOf="@+id/buttonWebLogoutAsync"
+        app:layout_constraintTop_toBottomOf="@+id/buttonWebAuth" />
 
     <CheckBox
         android:id="@+id/saveCreds"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:layout_marginEnd="12dp"
+        android:layout_marginEnd="4dp"
         android:text="Store Credentials"
         android:textSize="14sp"
         app:layout_constraintBottom_toBottomOf="@+id/deleteCreds"

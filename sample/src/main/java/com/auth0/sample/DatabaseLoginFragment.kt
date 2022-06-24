@@ -77,8 +77,18 @@ class DatabaseLoginFragment : Fragment() {
         binding.buttonWebAuth.setOnClickListener {
             webAuth()
         }
+        binding.buttonWebAuthAsync.setOnClickListener {
+            GlobalScope.launch(Dispatchers.Main) {
+                webAuthAsync()
+            }
+        }
         binding.buttonWebLogout.setOnClickListener {
             webLogout()
+        }
+        binding.buttonWebLogoutAsync.setOnClickListener {
+            GlobalScope.launch(Dispatchers.Main) {
+                webLogoutAsync()
+            }
         }
         binding.saveCreds.setOnCheckedChangeListener { compoundButton, b ->
             saveCreds = binding.saveCreds.isChecked
@@ -184,6 +194,28 @@ class DatabaseLoginFragment : Fragment() {
             })
     }
 
+    private suspend fun webAuthAsync() {
+        try {
+            val credentials = WebAuthProvider.login(account)
+                .withScheme(getString(R.string.com_auth0_scheme))
+                .withAudience(audience)
+                .withScope(scope)
+                .await(requireContext())
+            if (saveCreds) {
+                credentialsManager.saveCredentials(credentials)
+            }
+            Snackbar.make(
+                requireView(),
+                "Hello ${credentials.user.name}",
+                Snackbar.LENGTH_LONG
+            ).show()
+        } catch(error: AuthenticationException) {
+            val message =
+                if (error.isCanceled) "Browser was closed" else error.getDescription()
+            Snackbar.make(requireView(), message, Snackbar.LENGTH_LONG).show()
+        }
+    }
+
     private fun webLogout() {
         WebAuthProvider.logout(account)
             .withScheme(getString(R.string.com_auth0_scheme))
@@ -203,6 +235,23 @@ class DatabaseLoginFragment : Fragment() {
                 }
 
             })
+    }
+
+    private suspend fun webLogoutAsync() {
+        try {
+            WebAuthProvider.login(account)
+                .withScheme(getString(R.string.com_auth0_scheme))
+                .await(requireContext())
+            Snackbar.make(
+                requireView(),
+                "Logged out",
+                Snackbar.LENGTH_LONG
+            ).show()
+        } catch(error: AuthenticationException) {
+            val message =
+                if (error.isCanceled) "Browser was closed" else error.getDescription()
+            Snackbar.make(requireView(), message, Snackbar.LENGTH_LONG).show()
+        }
     }
 
     private fun deleteCreds() {
