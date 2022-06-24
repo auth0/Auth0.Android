@@ -29,7 +29,6 @@ import kotlinx.coroutines.launch
  */
 class DatabaseLoginFragment : Fragment() {
 
-    private var saveCreds = false
     private val scope = "openid profile email read:current_user update:current_user_metadata"
 
     private val account: Auth0 by lazy {
@@ -62,61 +61,58 @@ class DatabaseLoginFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         val binding = FragmentDatabaseLoginBinding.inflate(inflater, container, false)
-        binding.buttonLogin.setOnClickListener {
+        binding.btLogin.setOnClickListener {
             val email = binding.textEmail.text.toString()
             val password = binding.textPassword.text.toString()
             dbLogin(email, password)
         }
-        binding.buttonLoginAsync.setOnClickListener {
-            GlobalScope.launch(Dispatchers.Main) {
+        binding.btLoginAsync.setOnClickListener {
+            launchAsync {
                 val email = binding.textEmail.text.toString()
                 val password = binding.textPassword.text.toString()
                 dbLoginAsync(email, password)
             }
         }
-        binding.buttonWebAuth.setOnClickListener {
+        binding.btWebAuth.setOnClickListener {
             webAuth()
         }
-        binding.buttonWebAuthAsync.setOnClickListener {
-            GlobalScope.launch(Dispatchers.Main) {
+        binding.btWebAuthAsync.setOnClickListener {
+            launchAsync {
                 webAuthAsync()
             }
         }
-        binding.buttonWebLogout.setOnClickListener {
+        binding.btWebLogout.setOnClickListener {
             webLogout()
         }
-        binding.buttonWebLogoutAsync.setOnClickListener {
-            GlobalScope.launch(Dispatchers.Main) {
+        binding.btWebLogoutAsync.setOnClickListener {
+            launchAsync {
                 webLogoutAsync()
             }
         }
-        binding.saveCreds.setOnCheckedChangeListener { compoundButton, b ->
-            saveCreds = binding.saveCreds.isChecked
-        }
-        binding.deleteCreds.setOnClickListener {
+        binding.btDeleteCredentials.setOnClickListener {
             deleteCreds()
         }
-        binding.getCreds.setOnClickListener {
+        binding.btGetCredentials.setOnClickListener {
             getCreds()
         }
-        binding.getCredsAsync.setOnClickListener {
-            GlobalScope.launch(Dispatchers.Main) {
+        binding.btGetCredentialsAsync.setOnClickListener {
+            launchAsync {
                 getCredsAsync()
             }
         }
-        binding.getProfile.setOnClickListener {
+        binding.btGetProfile.setOnClickListener {
             getProfile()
         }
-        binding.getProfileAsync.setOnClickListener {
-            GlobalScope.launch(Dispatchers.Main) {
+        binding.btGetProfileAsync.setOnClickListener {
+            launchAsync {
                 getProfileAsync()
             }
         }
-        binding.updateMeta.setOnClickListener {
+        binding.btUpdateMeta.setOnClickListener {
             updateMeta()
         }
-        binding.updateMetaAsync.setOnClickListener {
-            GlobalScope.launch(Dispatchers.Main) {
+        binding.btUpdateMetaAsync.setOnClickListener {
+            launchAsync {
                 updateMetaAsync()
             }
         }
@@ -130,9 +126,7 @@ class DatabaseLoginFragment : Fragment() {
                 .addParameter("scope", scope)
                 .addParameter("audience", audience)
                 .await()
-            if (saveCreds) {
-                credentialsManager.saveCredentials(result)
-            }
+            credentialsManager.saveCredentials(result)
             Snackbar.make(
                 requireView(),
                 "Hello ${result.user.name}",
@@ -157,9 +151,7 @@ class DatabaseLoginFragment : Fragment() {
                 }
 
                 override fun onSuccess(result: Credentials) {
-                    if (saveCreds) {
-                        credentialsManager.saveCredentials(result)
-                    }
+                    credentialsManager.saveCredentials(result)
                     Snackbar.make(
                         requireView(),
                         "Hello ${result.user.name}",
@@ -176,9 +168,7 @@ class DatabaseLoginFragment : Fragment() {
             .withScope(scope)
             .start(requireContext(), object : Callback<Credentials, AuthenticationException> {
                 override fun onSuccess(result: Credentials) {
-                    if (saveCreds) {
-                        credentialsManager.saveCredentials(result)
-                    }
+                    credentialsManager.saveCredentials(result)
                     Snackbar.make(
                         requireView(),
                         "Hello ${result.user.name}",
@@ -201,9 +191,7 @@ class DatabaseLoginFragment : Fragment() {
                 .withAudience(audience)
                 .withScope(scope)
                 .await(requireContext())
-            if (saveCreds) {
-                credentialsManager.saveCredentials(credentials)
-            }
+            credentialsManager.saveCredentials(credentials)
             Snackbar.make(
                 requireView(),
                 "Hello ${credentials.user.name}",
@@ -239,7 +227,7 @@ class DatabaseLoginFragment : Fragment() {
 
     private suspend fun webLogoutAsync() {
         try {
-            WebAuthProvider.login(account)
+            WebAuthProvider.logout(account)
                 .withScheme(getString(R.string.com_auth0_scheme))
                 .await(requireContext())
             Snackbar.make(
@@ -260,10 +248,10 @@ class DatabaseLoginFragment : Fragment() {
 
     private fun getCreds() {
         credentialsManager.getCredentials(object : Callback<Credentials, CredentialsManagerException> {
-            override fun onSuccess(credentials: Credentials) {
+            override fun onSuccess(result: Credentials) {
                 Snackbar.make(
                     requireView(),
-                    "Got credentials for ${credentials.user.name}",
+                    "Got credentials - ${result.accessToken}",
                     Snackbar.LENGTH_LONG
                 ).show()
             }
@@ -279,7 +267,7 @@ class DatabaseLoginFragment : Fragment() {
             val credentials = credentialsManager.awaitCredentials()
             Snackbar.make(
                 requireView(),
-                "Got credentials for ${credentials.user.name}",
+                "Got credentials - ${credentials.accessToken}",
                 Snackbar.LENGTH_LONG
             ).show()
         } catch (error: CredentialsManagerException) {
@@ -374,6 +362,13 @@ class DatabaseLoginFragment : Fragment() {
             Snackbar.make(requireView(), "${error.message}", Snackbar.LENGTH_LONG).show()
         } catch (error: ManagementException) {
             Snackbar.make(requireView(), error.getDescription(), Snackbar.LENGTH_LONG).show()
+        }
+    }
+
+    private fun launchAsync(runnable: suspend () -> Unit) {
+        //Use a better scope like lifecycleScope or viewModelScope
+        GlobalScope.launch(Dispatchers.Main) {
+            runnable.invoke()
         }
     }
 }
