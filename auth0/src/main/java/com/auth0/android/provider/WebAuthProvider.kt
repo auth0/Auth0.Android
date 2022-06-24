@@ -7,9 +7,15 @@ import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationException
+import com.auth0.android.authentication.storage.CredentialsManagerException
 import com.auth0.android.callback.Callback
 import com.auth0.android.result.Credentials
+import kotlinx.coroutines.*
 import java.util.*
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.jvm.Throws
 
 /**
  * OAuth2 Web Authentication Provider.
@@ -172,6 +178,34 @@ public object WebAuthProvider {
             val logoutManager = LogoutManager(account, callback, returnToUrl!!, ctOptions, federated)
             managerInstance = logoutManager
             logoutManager.startLogout(context)
+        }
+
+        @JvmSynthetic
+        @Throws(AuthenticationException::class)
+        public suspend fun await(context: Context) {
+            return await(context, Dispatchers.Main.immediate)
+        }
+
+        /**
+         * Used internally so that [CoroutineContext] can be injected for testing purpose
+         */
+        internal suspend fun await(
+            context: Context,
+            coroutineContext: CoroutineContext
+        ) {
+            return withContext(coroutineContext) {
+                suspendCancellableCoroutine { continuation ->
+                    start(context, object : Callback<Void?, AuthenticationException> {
+                        override fun onSuccess(result: Void?) {
+                            continuation.resume(Unit)
+                        }
+
+                        override fun onFailure(error: AuthenticationException) {
+                            continuation.resumeWithException(error)
+                        }
+                    })
+                }
+            }
         }
     }
 
@@ -448,6 +482,34 @@ public object WebAuthProvider {
                 )
             }
             manager.startAuthentication(context, redirectUri!!, 110)
+        }
+
+        @JvmSynthetic
+        @Throws(AuthenticationException::class)
+        public suspend fun await(context: Context): Credentials {
+            return await(context, Dispatchers.Main.immediate)
+        }
+
+        /**
+         * Used internally so that [CoroutineContext] can be injected for testing purpose
+         */
+        internal suspend fun await(
+            context: Context,
+            coroutineContext: CoroutineContext
+        ): Credentials {
+            return withContext(coroutineContext) {
+                suspendCancellableCoroutine { continuation ->
+                    start(context, object : Callback<Credentials, AuthenticationException> {
+                        override fun onSuccess(result: Credentials) {
+                            continuation.resume(result)
+                        }
+
+                        override fun onFailure(error: AuthenticationException) {
+                            continuation.resumeWithException(error)
+                        }
+                    })
+                }
+            }
         }
 
         private companion object {
