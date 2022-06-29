@@ -22,9 +22,13 @@
  * THE SOFTWARE.
  */
 
+buildscript {
+    version = "2.7.0"
+}
+
 plugins {
     id 'kotlin-android'
-    id "com.auth0.gradle.oss-library.android" version "0.15.1"
+    id "com.auth0.gradle.oss-library.android" version "0.17.0"
     id "org.jetbrains.dokka" version "1.4.20"
 }
 
@@ -125,4 +129,12 @@ dependencies {
     testImplementation 'org.robolectric:robolectric:4.6.1'
     testImplementation 'androidx.test.espresso:espresso-intents:3.4.0'
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion"
+}
+
+// Creates a version.txt file containing the current version of the SDK.
+// This file is picked up and parsed by our Ship Orb to determine the version.
+task exportVersion()  {
+    doLast {
+        new File(rootDir, "version.txt").text = "$oss.name[$version]"
+    }
 }
