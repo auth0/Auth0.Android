@@ -22,9 +22,13 @@
  * THE SOFTWARE.
  */
 
+buildscript {
+    version = "2.7.0"
+}
+
 plugins {
     id 'kotlin-android'
-    id "com.auth0.gradle.oss-library.android" version "0.15.1"
+    id "com.auth0.gradle.oss-library.android" version "0.17.0"
     id "org.jetbrains.dokka" version "1.4.20"
 }
 
