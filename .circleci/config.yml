@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  ship: auth0/ship@0.6.1
+  ship: auth0/ship@dev:a3ce828
 jobs:
   build:
     environment:
