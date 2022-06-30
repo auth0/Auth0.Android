@@ -39,6 +39,6 @@ workflows:
           filters:
             branches:
               only:
-                - vNext
+                - feat/prepare-ship-2
           requires:
             - build
