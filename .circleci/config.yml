@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  ship: auth0/ship@dev:842eb09
+  ship: auth0/ship@dev:f64154d
 jobs:
   build:
     environment:
@@ -39,6 +39,6 @@ workflows:
           filters:
             branches:
               only:
-                - master
+                - vNext
           requires:
             - build
