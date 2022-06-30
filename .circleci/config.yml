@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  ship: auth0/ship@dev:f64154d
+  ship: auth0/ship@dev:03e96a0
 jobs:
   build:
     environment:
@@ -32,7 +32,9 @@ workflows:
       - build
       - ship/android-publish:
           prefix-tag: false
-          publish-command: ./gradlew clean assemble publishAndroidLibraryPublicationToMavenRepository -PossrhUsername="$OSSR_USERNAME" -PossrhPassword="$OSSR_PASSWORD" -PisSnapshot=false
+          package-group: com/auth0/android
+          package-name: auth0
+          publish-command: ./gradlew publishAndroidLibraryPublicationToMavenRepository -PossrhUsername="$OSSR_USERNAME" -PossrhPassword="$OSSR_PASSWORD" -PisSnapshot=false
           context:
             - publish-gh
             - publish-sonatype
@@ -40,5 +42,3 @@ workflows:
             branches:
               only:
                 - feat/prepare-ship-2
-          requires:
-            - build
