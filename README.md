@@ -6,7 +6,30 @@
 [![Maven Central](https://img.shields.io/maven-central/v/com.auth0.android/auth0.svg?style=flat-square)](https://search.maven.org/artifact/com.auth0.android/auth0)
 [![javadoc](https://javadoc.io/badge2/com.auth0.android/auth0/javadoc.svg)](https://javadoc.io/doc/com.auth0.android/auth0)
 
-Android Java & Kotlin toolkit for consuming the Auth0 Authentication API
+Easily integrate Auth0 into Android apps. Add **login** and **logout**, store **credentials** securely, and access **user information**.
+
+## Table of contents
+
+- [Requirements](#requirements)
+- [Installation](#installation)
+   + [Permissions](#permissions)
+- [Getting Started](#getting-started)
+   * [Authentication with Universal Login](#authentication-with-universal-login)
+   * [Clearing the session](#clearing-the-session)
+- [Next steps](#next-steps)
+   * [Authentication API](#authentication-api)
+   * [Management API](#management-api)
+   * [Token Validation](#token-validation)
+   * [Organizations](#organizations)
+- [Credentials Manager](#credentials-manager)
+   * [Basic](#basic)
+   * [Encryption enforced](#encryption-enforced)
+- [Networking client customization](#networking-client-customization)
+- [FAQ](#faq)
+- [Proguard](#proguard)
+- [What is Auth0?](#what-is-auth0)
+- [Issue Reporting](#issue-reporting)
+- [License](#license)
 
 ## Requirements
 
@@ -29,9 +52,7 @@ android {
 
 ## Installation
 
-### Gradle
-
-Auth0.android is available through [Gradle](https://gradle.org/). To install it, simply add the following line to your `build.gradle` file:
+To install Auth0.Android with [Gradle](https://gradle.org/), simply add the following line to your `build.gradle` file:
 
 ```gradle
 dependencies {
@@ -39,7 +60,7 @@ dependencies {
 }
 ```
 
-### Permissions
+#### Permissions
 
 Open your app's `AndroidManifest.xml` file and add the following permission.
 
@@ -47,13 +68,24 @@ Open your app's `AndroidManifest.xml` file and add the following permission.
 <uses-permission android:name="android.permission.INTERNET" />
 ```
 
-## Usage
+## Getting Started
 
 First, create an instance of `Auth0` with your Application information
 
 ```kotlin
 val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
 ```
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+Auth0 account = new Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}");
+```
+</details>
+
+<details>
+  <summary>Configure using Android Context</summary>
 
 Alternatively, you can save your Application information in the `strings.xml` file using the following names:
 
@@ -62,7 +94,6 @@ Alternatively, you can save your Application information in the `strings.xml` fi
     <string name="com_auth0_client_id">YOUR_CLIENT_ID</string>
     <string name="com_auth0_domain">YOUR_DOMAIN</string>
 </resources>
-
 ```
 
 You can then create a new Auth0 instance by passing an Android Context:
@@ -70,12 +101,7 @@ You can then create a new Auth0 instance by passing an Android Context:
 ```kotlin
 val account = Auth0(context)
 ```
-
-### OIDC Conformant Mode
-
-Beginning in version 2, this SDK is OIDC-Conformant by default, and will not use any legacy authentication endpoints.
-
-For more information, please see the [OIDC adoption guide](https://auth0.com/docs/api-auth/tutorials/adoption).
+</details>
 
 ### Authentication with Universal Login
 
@@ -85,8 +111,9 @@ First go to the [Auth0 Dashboard](https://manage.auth0.com/#/applications) and g
 https://{YOUR_AUTH0_DOMAIN}/android/{YOUR_APP_PACKAGE_NAME}/callback
 ```
 
-Remember to replace `{YOUR_APP_PACKAGE_NAME}` with your actual application's package name, available in your `app/build.gradle` file as the `applicationId` value.
+> ⚠️ Make sure that the [application type](https://auth0.com/docs/configure/applications) of the Auth0 application is **Native**.
 
+Replace `{YOUR_APP_PACKAGE_NAME}` with your actual application's package name, available in your `app/build.gradle` file as the `applicationId` value.
 
 Next, define the Manifest Placeholders for the Auth0 Domain and Scheme which are going to be used internally by the library to register an **intent-filter**. Go to your application's `build.gradle` file and add the `manifestPlaceholders` line as shown below:
 
@@ -109,15 +136,11 @@ android {
 }
 ```
 
-It's a good practice to define reusable resources like `@string/com_auth0_domain`, but you can also hard-code the value. The scheme value can be either `https` or a custom one. Read [this section](#a-note-about-app-deep-linking) to learn more.
+It's a good practice to define reusable resources like `@string/com_auth0_domain`, but you can also hard-code the value.
 
-Add the internet permission.
+> The scheme value can be either `https` or a custom one. Read [this section](#a-note-about-app-deep-linking) to learn more.
 
-```xml
-<uses-permission android:name="android.permission.INTERNET" />
-```
-
-Declare the callback instance that will receive the authentication result.
+Declare the callback instance that will receive the authentication result and authenticate by showing the **Auth0 Universal Login**:
 
 ```kotlin
 val callback = object : Callback<Credentials, AuthenticationException> {
@@ -129,15 +152,45 @@ val callback = object : Callback<Credentials, AuthenticationException> {
         // Success! Access token and ID token are presents
     }
 }
-```
 
-Finally, authenticate by showing the **Auth0 Universal Login**:
-
-```kotlin
-// Configure and launch the authentication
 WebAuthProvider.login(account)
     .start(this, callback)
 ```
+
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    val credentials = WebAuthProvider.login(account)
+        .await(requireContext())
+    println(credentials)    
+} catch(e: AuthenticationException) {
+    e.printStacktrace()
+}
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+Callback<Credentials, AuthenticationException> callback = new Callback<Credentials, AuthenticationException>() {
+    @Override
+    public void onFailure(@NonNull AuthenticationException exception) {
+        //failed with an exception
+    }
+
+    @Override
+    public void onSuccess(@Nullable Credentials credentials) {
+        //succeeded!
+    }
+};
+
+WebAuthProvider.login(account)
+    .start(this, callback);
+```
+</details>
 
 The callback will get invoked when the user returns to your application. There are a few scenarios where this may fail:
 
@@ -145,29 +198,15 @@ The callback will get invoked when the user returns to your application. There a
 * When the user manually closed the browser (e.g. pressing the back key). You can check this scenario with `error.isAuthenticationCanceled`.
 * When there was a server error. Check the received exception for details.
 
-If the `redirect` URL is not found in the **Allowed Callback URLs** of your Auth0 Application, the server will not make the redirection and the browser will remain open.
-
-#### Token Validation
-The ID token received as part of this web authentication flow is automatically verified following the [OpenID Connect specification](https://openid.net/specs/openid-connect-core-1_0.html).
-
-If you are a user of Auth0 Private Cloud with ["Custom Domains"](https://auth0.com/docs/custom-domains) still on the [legacy behavior](https://auth0.com/docs/private-cloud/private-cloud-migrations/migrate-private-cloud-custom-domains#background), you need to override the expected issuer to match your Auth0 domain before starting the authentication.
-
-```kotlin
-val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_CUSTOM_DOMAIN}")
-
-WebAuthProvider.login(account)
-    .withIdTokenVerificationIssuer("https://{YOUR_AUTH0_DOMAIN}/")
-    .start(this, callback)
-```
+> If the `redirect` URL is not found in the **Allowed Callback URLs** of your Auth0 Application, the server will not make the redirection and the browser will remain open.
 
 ##### A note about App Deep Linking:
 
-If you followed the configuration steps documented here, you may have noticed the default scheme used for the Callback URI is `https`. This works best for Android API 23 or newer if you're using [Android App Links](https://auth0.com/docs/applications/enable-android-app-links), but in previous Android versions this _may_ show the intent chooser dialog prompting the user to choose either your application or the browser. You can change this behaviour by using a custom unique scheme so that the OS opens directly the link with your app. Note that the schemes [can only have lowercase letters](https://developer.android.com/guide/topics/manifest/data-element).
+If you followed the configuration steps documented here, you may have noticed the default scheme used for the Callback URI is `https`. This works best for Android API 23 or newer if you're using [Android App Links](https://auth0.com/docs/applications/enable-android-app-links), but in previous Android versions this _may_ show the intent chooser dialog prompting the user to choose either your application or the browser. You can change this behaviour by using a custom unique scheme so that the OS opens directly the link with your app.
 
 1. Update the `auth0Scheme` Manifest Placeholder on the `app/build.gradle` file or update the intent-filter declaration in the `AndroidManifest.xml` to use the new scheme.
 2. Update the **Allowed Callback URLs** in your [Auth0 Dashboard](https://manage.auth0.com/#/applications) application's settings.
 3. Call `withScheme()` in the `WebAuthProvider` builder passing the custom scheme you want to use.
-
 
 ```kotlin
 WebAuthProvider.login(account)
@@ -175,6 +214,7 @@ WebAuthProvider.login(account)
     .start(this, callback)
 ```
 
+> Note that the schemes [can only have lowercase letters](https://developer.android.com/guide/topics/manifest/data-element).
 
 #### Authenticate with any Auth0 connection
 
@@ -195,7 +235,7 @@ WebAuthProvider.login(account)
 ```
 
 The sample above requests tokens with the audience required to call the [Management API](https://auth0.com/docs/api/management/v2) endpoints.
- 
+
 > Replace `{YOUR_AUTH0_DOMAIN}` with your actual Auth0 domain (i.e. `mytenant.auth0.com`). If you've set up the tenant to use "Custom Domains", use that value here.
 
 #### Specify scope
@@ -219,7 +259,7 @@ WebAuthProvider.login(account)
 #### Customize the Custom Tabs UI
 
 If the device where the app is running has a Custom Tabs compatible Browser, a Custom Tab will be preferred for the logout flow. You can customize the Page Title visibility, the Toolbar color, and the supported Browser applications by using the `CustomTabsOptions` class.
- 
+
 ```kotlin
 val ctOptions = CustomTabsOptions.newBuilder()
     .withToolbarColor(R.color.ct_toolbar_color)
@@ -231,15 +271,29 @@ WebAuthProvider.login(account)
     .start(this, callback)
 ```
 
+<details>
+  <summary>Using Java</summary>
+
+```java
+CustomTabsOptions options = CustomTabsOptions.newBuilder()
+   .withToolbarColor(R.color.ct_toolbar_color)
+   .showTitle(true)
+   .build();
+
+WebAuthProvider.login(account)
+   .withCustomTabsOptions(options)
+   .start(MainActivity.this, callback);
+```
+</details>
+
 
 ### Clearing the session
 
-To log the user out and clear the SSO cookies that the Auth0 Server keeps attached to your browser app, you need to call the [logout endpoint](https://auth0.com/docs/api/authentication?#logout). This can be done is a similar fashion to how you authenticated before: using the `WebAuthProvider` class.
+To log the user out and clear the SSO cookies that the Auth0 Server keeps attached to your browser app, you need to call the [logout endpoint](https://auth0.com/docs/api/authentication?#logout). This can be done in a similar fashion to how you authenticated before: using the `WebAuthProvider` class.
 
-Make sure to [revisit that section](#authentication-with-universal-login) to configure the Manifest Placeholders if you still cannot authenticate successfully. The values set there are used to generate the URL that the server will redirect the user back to after a successful log out.
+Make sure to [revisit this section](#authentication-with-universal-login) to configure the Manifest Placeholders if you still cannot authenticate successfully. The values set there are used to generate the URL that the server will redirect the user back to after a successful log out.
 
 In order for this redirection to happen, you must copy the **Allowed Callback URLs** value you added for authentication into the **Allowed Logout URLs** field in your [application settings](https://manage.auth0.com/#/applications). Both fields should have an URL with the following format:
-
 
 ```
 https://{YOUR_AUTH0_DOMAIN}/android/{YOUR_APP_PACKAGE_NAME}/callback
@@ -247,14 +301,9 @@ https://{YOUR_AUTH0_DOMAIN}/android/{YOUR_APP_PACKAGE_NAME}/callback
 
 Remember to replace `{YOUR_APP_PACKAGE_NAME}` with your actual application's package name, available in your `app/build.gradle` file as the `applicationId` value.
 
-
 Initialize the provider, this time calling the static method `logout`.
 
 ```kotlin
-//Configure and launch the log out
-WebAuthProvider.logout(account)
-    .start(this, logoutCallback)
-
 //Declare the callback that will receive the result
 val logoutCallback = object: Callback<Void?, AuthenticationException> {
     override fun onFailure(exception: AuthenticationException) {
@@ -265,7 +314,48 @@ val logoutCallback = object: Callback<Void?, AuthenticationException> {
         // Success! The browser session was cleared
     }
 }
+
+//Configure and launch the log out
+WebAuthProvider.logout(account)
+        .start(this, logoutCallback)
 ```
+
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    WebAuthProvider.logout(account)
+        .await(requireContext())
+    println("Logged out")
+} catch(e: AuthenticationException) {
+    e.printStacktrace()
+}
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+//Declare the callback that will receive the result
+Callback<Void, AuthenticationException> logoutCallback = new Callback<Void, AuthenticationException>() {
+    @Override
+    public void onFailure(@NonNull Auth0Exception exception) {
+        //failed with an exception
+    }
+
+    @Override
+    public void onSuccess(@Nullable Void payload) {
+        //succeeded!
+    }
+};
+
+//Configure and launch the log out
+WebAuthProvider.logout(account)
+    .start(MainActivity.this, logoutCallback);
+```
+</details>
 
 The callback will get invoked when the user returns to your application. There are a few scenarios where this may fail:
 
@@ -286,7 +376,7 @@ WebAuthProvider.logout(account)
 #### Customize the Custom Tabs UI
 
 If the device where the app is running has a Custom Tabs compatible Browser, a Custom Tab will be preferred for the logout flow. You can customize the Page Title visibility, the Toolbar color, and the supported Browser applications by using the `CustomTabsOptions` class.
- 
+
 ```kotlin
 val ctOptions = CustomTabsOptions.newBuilder()
     .withToolbarColor(R.color.ct_toolbar_color)
@@ -298,11 +388,26 @@ WebAuthProvider.logout(account)
     .start(this, logoutCallback)
 ```
 
-## Next steps
+<details>
+  <summary>Using Java</summary>
 
-### Learning resources
+```java
+CustomTabsOptions options = CustomTabsOptions.newBuilder()
+    .withToolbarColor(R.color.ct_toolbar_color)
+    .showTitle(true)
+    .build();
+
+WebAuthProvider.logout(account)
+    .withCustomTabsOptions(options)
+    .start(MainActivity.this, logoutCallback);
+```
+</details>
+
+#### Learning resources
 
 Check out the [Android QuickStart Guide](https://auth0.com/docs/quickstart/native/android) to find out more about the Auth0.Android toolkit and explore our tutorials and sample projects.
+
+## Next steps
 
 ### Authentication API
 
@@ -314,6 +419,14 @@ Create a new instance by passing the account:
 val authentication = AuthenticationAPIClient(account)
 ```
 
+<details>
+  <summary>Using Java</summary>
+
+```java
+AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
+```
+</details>
+
 **Note:** If your Auth0 account has the ["Bot Protection"](https://auth0.com/docs/anomaly-detection/bot-protection) feature enabled, your requests might be flagged for verification. Read how to handle this scenario on the [Bot Protection](#bot-protection) section.
 
 #### Login with database connection
@@ -321,6 +434,7 @@ val authentication = AuthenticationAPIClient(account)
 ```kotlin
 authentication
     .login("info@auth0.com", "a secret password", "my-database-connection")
+    .validateClaims() //mandatory
     .start(object: Callback<Credentials, AuthenticationException> {
         override fun onFailure(exception: AuthenticationException) { }
 
@@ -328,8 +442,44 @@ authentication
     })
 ```
 
-> The default scope used is `openid profile email`. Regardless of the scopes set to the request, the `openid` scope is always enforced.
+<details>
+  <summary>Using coroutines</summary>
 
+```kotlin
+try {
+    val credentials = authentication
+        .login("info@auth0.com", "a secret password", "my-database-connection")
+        .validateClaims()
+        .await()
+    println(credentials)
+} catch (e: AuthenticationException) {
+    e.printStacktrace()
+}
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+authentication
+    .login("info@auth0.com", "a secret password", "my-database-connection")
+    .validateClaims() //mandatory
+    .start(new Callback<Credentials, AuthenticationException>() {
+        @Override
+        public void onSuccess(@Nullable Credentials payload) {
+            //Logged in!
+        }
+
+        @Override
+        public void onFailure(@NonNull AuthenticationException error) {
+            //Error!
+        }
+    });
+```
+</details>
+
+> The default scope used is `openid profile email`. Regardless of the scopes set to the request, the `openid` scope is always enforced.
 
 #### Login using MFA with One Time Password code
 
@@ -340,6 +490,7 @@ When you sign in to a multifactor authentication enabled connection using the `l
 ```kotlin
 authentication
     .loginWithOTP("the mfa token", "123456")
+    .validateClaims() //mandatory
     .start(object: Callback<Credentials, AuthenticationException> {
         override fun onFailure(exception: AuthenticationException) { }
 
@@ -347,16 +498,52 @@ authentication
     })
 ```
 
-> The default scope used is `openid profile email`. Regardless of the scopes set to the request, the `openid` scope is always enforced.
+<details>
+  <summary>Using coroutines</summary>
 
+```kotlin
+try {
+    val credentials = authentication
+        .loginWithOTP("the mfa token", "123456")
+        .validateClaims()
+        .await()
+    println(credentials)
+} catch (e: AuthenticationException) {
+    e.printStacktrace()
+}
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+authentication
+    .loginWithOTP("the mfa token", "123456")
+    .validateClaims() //mandatory
+    .start(new Callback<Credentials, AuthenticationException>() {
+        @Override
+        public void onSuccess(@Nullable Credentials payload) {
+            //Logged in!
+        }
+
+        @Override
+        public void onFailure(@NonNull AuthenticationException error) {
+            //Error!
+        }
+    });
+```
+</details>
+
+> The default scope used is `openid profile email`. Regardless of the scopes set to the request, the `openid` scope is always enforced.
 
 #### Passwordless Login
 
 This feature requires your Application to have the *Passwordless OTP* enabled. See [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
 
-Passwordless it's a 2 steps flow:
+Passwordless is a 2 step flow:
 
-Step 1: Request the code
+##### Step 1: Request the code
 
 ```kotlin
 authentication
@@ -368,12 +555,47 @@ authentication
     })
 ```
 
+<details>
+  <summary>Using coroutines</summary>
 
-Step 2: Input the code
+```kotlin
+try {
+    val result = authentication
+        .passwordlessWithEmail("info@auth0.com", PasswordlessType.CODE, "my-passwordless-connection")
+        .await()
+    println(result)
+} catch (e: AuthenticationException) {
+    e.printStacktrace()
+}
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+authentication
+    .passwordlessWithEmail("info@auth0.com", PasswordlessType.CODE, "my-passwordless-connection")
+    .start(new Callback<Void, AuthenticationException>() {
+        @Override
+        public void onSuccess(Void payload) {
+            //Code sent!
+        }
+
+        @Override
+        public void onFailure(@NonNull AuthenticationException error) {
+            //Error!
+        }
+    });
+```
+</details>
+
+##### Step 2: Input the code
 
 ```kotlin
 authentication
     .loginWithEmail("info@auth0.com", "123456", "my-passwordless-connection")
+    .validateClaims() //mandatory
     .start(object: Callback<Credentials, AuthenticationException> {
        override fun onFailure(exception: AuthenticationException) { }
 
@@ -381,19 +603,95 @@ authentication
    })
 ```
 
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    val credentials = authentication
+        .loginWithEmail("info@auth0.com", "123456", "my-passwordless-connection")
+        .validateClaims()
+        .await()
+    println(credentials)
+} catch (e: AuthenticationException) {
+    e.printStacktrace()
+}
+```
+</details>
+
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+authentication
+    .loginWithEmail("info@auth0.com", "123456", "my-passwordless-connection")
+    .validateClaims() //mandatory
+    .start(new Callback<Credentials, AuthenticationException>() {
+        @Override
+        public void onSuccess(@Nullable Credentials payload) {
+            //Logged in!
+        }
+
+        @Override
+        public void onFailure(@NonNull AuthenticationException error) {
+            //Error!
+        }
+    });
+```
+</details>
+
 > The default scope used is `openid profile email`. Regardless of the scopes set to the request, the `openid` scope is always enforced.
 
-#### Sign Up with database connection
+#### Sign Up with a database connection
 
 ```kotlin
 authentication
     .signUp("info@auth0.com", "a secret password", "my-database-connection")
+    .validateClaims() //mandatory
     .start(object: Callback<Credentials, AuthenticationException> {
         override fun onFailure(exception: AuthenticationException) { }
 
         override fun onSuccess(credentials: Credentials) { }
     })
 ```
+
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    val credentials = authentication
+        .signUp("info@auth0.com", "a secret password", "my-database-connection")
+        .validateClaims()
+        .await()
+    println(credentials)
+} catch (e: AuthenticationException) {
+    e.printStacktrace()
+}
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+authentication
+    .signUp("info@auth0.com", "a secret password", "my-database-connection")
+    .validateClaims() //mandatory
+    .start(new Callback<Credentials, AuthenticationException>() {
+        @Override
+        public void onSuccess(@Nullable Credentials payload) {
+            //Signed Up & Logged in!
+        }
+
+        @Override
+        public void onFailure(@NonNull AuthenticationException error) {
+            //Error!
+        }
+    });
+```
+</details>
 
 > The default scope used is `openid profile email`. Regardless of the scopes set to the request, the `openid` scope is always enforced.
 
@@ -409,6 +707,41 @@ authentication
    })
 ```
 
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    val user = authentication
+        .userInfo("user access_token")
+        .await()
+    println(user)
+} catch (e: AuthenticationException) {
+    e.printStacktrace()
+}
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+authentication
+   .userInfo("user access_token")
+   .start(new Callback<UserProfile, AuthenticationException>() {
+       @Override
+       public void onSuccess(@Nullable UserProfile payload) {
+           //Got the profile!
+       }
+
+       @Override
+       public void onFailure(@NonNull AuthenticationException error) {
+           //Error!
+       }
+   });
+```
+</details>
+
 
 #### Bot Protection
 If you are using the [Bot Protection](https://auth0.com/docs/anomaly-detection/bot-protection) feature and performing database login/signup via the Authentication API, you need to handle the `AuthenticationException#isVerificationRequired()` error. It indicates that the request was flagged as suspicious and an additional verification step is necessary to log the user in. That verification step is web-based, so you need to use Universal Login to complete it.
@@ -419,7 +752,7 @@ val password = "a secret password"
 val realm = "my-database-connection"
 
 val authentication = AuthenticationAPIClient(account)
-authentication.login(email, password, realm)
+authentication.login(email, password, realm).validateClaims()
     .start(object: Callback<Credentials, AuthenticationException> {
         override fun onFailure(exception: AuthenticationException) {
             if (exception.isVerificationRequired()) {
@@ -448,14 +781,72 @@ authentication.login(email, password, realm)
     })
 ```
 
+<details>
+  <summary>Using Java</summary>
+
+```java
+final String email = "info@auth0.com";
+final String password = "a secret password";
+final String realm = "my-database-connection";
+
+AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
+authentication.login(email, password, realm).validateClaims()
+        .start(new Callback<Credentials, AuthenticationException>() {
+
+            @Override
+            public void onSuccess(@Nullable Credentials payload) {
+                // Handle API success
+            }
+
+            @Override
+            public void onFailure(@NonNull AuthenticationException error) {
+                if (error.isVerificationRequired()){
+                    Map<String, Object> params = new HashMap<>();
+                    params.put("login_hint", email); // So the user doesn't have to type it again
+                    WebAuthProvider.login(account)
+                            .withConnection(realm)
+                            .withParameters(params)
+                            .start(LoginActivity.this, new AuthCallback() {
+                                // You might already have an AuthCallback instance defined
+
+                                @Override
+                                public void onFailure(@NonNull Dialog dialog) {
+                                    // Error dialog available
+                                }
+
+                                @Override
+                                public void onFailure(AuthenticationException exception) {
+                                    // Error
+                                }
+
+                                @Override
+                                public void onSuccess(@NonNull Credentials credentials) {
+                                    // Handle WebAuth success
+                                }
+                            });
+                }
+            }
+        });
+```
+</details>
+
 In the case of signup, you can add [an additional parameter](https://auth0.com/docs/universal-login/new-experience#signup) to make the user land directly on the signup page:
 
 ```kotlin
 val params = mapOf(
     "login_hint" to email, 
-    "screen_hint", "signup"
+    "screen_hint" to "signup"
 )
 ```
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+params.put("login_hint", email);
+params.put("screen_hint", "signup");
+```
+</details>
 
 Check out how to set up Universal Login in the [Authentication with Universal Login](#authentication-with-universal-login) section.
 
@@ -468,6 +859,15 @@ Create a new instance passing the account and an access token with the Managemen
 ```kotlin
 val users = UsersAPIClient(account, "api access token")
 ```
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+Auth0 account = new Auth0("client id", "domain");
+UsersAPIClient users = new UsersAPIClient(account, "api token");
+```
+</details>
 
 #### Link users
 
@@ -482,6 +882,41 @@ users
     })
 ```
 
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    val identities = users
+        .link("primary user id", "secondary user token")
+        .await()
+    println(identities)
+} catch (e: ManagementException) {
+    e.printStacktrace()
+}
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+users
+    .link("primary user id", "secondary user token")
+    .start(new Callback<List<UserIdentity>, ManagementException>() {
+        @Override
+        public void onSuccess(List<UserIdentity> payload) {
+            //Got the updated identities! Accounts linked.
+        }
+
+        @Override
+        public void onFailure(@NonNull ManagementException error) {
+            //Error!
+        }
+    });
+```
+</details>
+
 #### Unlink users
 
 ```kotlin
@@ -495,6 +930,41 @@ users
     })
 ```
 
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    val identities = users
+        .unlink("primary user id", "secondary user id", "secondary provider")
+        .await()
+    println(identities)
+} catch (e: ManagementException) {
+    e.printStacktrace()
+}
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+users
+    .unlink("primary user id", "secondary user id", "secondary provider")
+    .start(new Callback<List<UserIdentity>, ManagementException>() {
+        @Override
+        public void onSuccess(List<UserIdentity> payload) {
+            //Got the updated identities! Accounts linked.
+        }
+
+        @Override
+        public void onFailure(@NonNull ManagementException error) {
+            //Error!
+        }
+    });
+```
+</details>
+
 #### Get User Profile
 
 ```kotlin
@@ -507,6 +977,41 @@ users
         override fun onSuccess(identities: UserProfile) { }
     })
 ```
+
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    val user = users
+        .getProfile("user id")
+        .await()
+    println(user)
+} catch (e: ManagementException) {
+    e.printStacktrace()
+}
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+users
+    .getProfile("user id")
+    .start(new Callback<UserProfile, ManagementException>() {
+        @Override
+        public void onSuccess(@Nullable UserProfile payload) {
+            //Profile received
+        }
+
+        @Override
+        public void onFailure(@NonNull ManagementException error) {
+            //Error!
+        }
+    });
+```
+</details>
 
 #### Update User Metadata
 
@@ -526,11 +1031,128 @@ users
     })
 ```
 
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+val metadata = mapOf(
+    "name" to listOf("My", "Name", "Is"),
+    "phoneNumber" to "1234567890"
+)
+
+try {
+    val user = users
+        .updateMetadata("user id", metadata)
+        .await()
+    println(user)
+} catch (e: ManagementException) {
+    e.printStacktrace()
+}
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+Map<String, Object> metadata = new HashMap<>();
+metadata.put("name", Arrays.asList("My", "Name", "Is"));
+metadata.put("phoneNumber", "1234567890");
+
+users
+    .updateMetadata("user id", metadata)
+    .start(new Callback<UserProfile, ManagementException>() {
+        @Override
+        public void onSuccess(@Nullable UserProfile payload) {
+            //User Metadata updated
+        }
+
+        @Override
+        public void onFailure(@NonNull ManagementException error) {
+            //Error!
+        }
+    });
+```
+</details>
+
 > In all the cases, the `user ID` parameter is the unique identifier of the auth0 account instance. i.e. in `google-oauth2|123456789` it would be the part after the '|' pipe: `123456789`.
+
+### Token Validation
+The ID token received as part of the authentication flow is should be verified following the [OpenID Connect specification](https://openid.net/specs/openid-connect-core-1_0.html).
+
+If you are a user of Auth0 Private Cloud with ["Custom Domains"](https://auth0.com/docs/custom-domains) still on the [legacy behavior](https://auth0.com/docs/private-cloud/private-cloud-migrations/migrate-private-cloud-custom-domains#background), you need to override the expected issuer to match your Auth0 domain before starting the authentication.
+
+The validation is done automatically for Web Authentication
+```kotlin
+val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_CUSTOM_DOMAIN}")
+
+WebAuthProvider.login(account)
+    .withIdTokenVerificationIssuer("https://{YOUR_AUTH0_DOMAIN}/")
+    .start(this, callback)
+```
+
+For Authentication Client, the method `validateClaims()` has to be called to enable it.
+
+```kotlin
+val auth0 = Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+val client = AuthenticationAPIClient(auth0)
+client
+     .login("{username or email}", "{password}", "{database connection name}")
+     .validateClaims()
+     .withIdTokenVerificationIssuer("https://{YOUR_AUTH0_DOMAIN}/")
+     .start(object : Callback<Credentials, AuthenticationException> {
+         override fun onSuccess(result: Credentials) { }
+         override fun onFailure(error: AuthenticationException) { }
+    })
+```
+
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+val auth0 = Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+val client = AuthenticationAPIClient(auth0)
+
+try {
+    val credentials = client
+        .login("{username or email}", "{password}", "{database connection name}")
+        .validateClaims()
+        .withIdTokenVerificationIssuer("https://{YOUR_AUTH0_DOMAIN}/")
+        .await()
+    println(credentials)
+} catch (e: AuthenticationException) {
+    e.printStacktrace()
+}
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+Auth0 auth0 = new Auth0("client id", "domain");
+AuthenticationAPIClient client = new AuthenticationAPIClient(account);
+client
+   .login("{username or email}", "{password}", "{database connection name}")
+   .validateClaims()
+   .withIdTokenVerificationIssuer("https://{YOUR_AUTH0_DOMAIN}/")
+   .start(new Callback<Credentials, AuthenticationException>() {
+       @Override
+       public void onSuccess(@Nullable Credentials payload) {
+           //Logged in!
+       }
+
+       @Override
+       public void onFailure(@NonNull AuthenticationException error) {
+           //Error!
+       }
+   });
+```
+</details>
 
 ### Organizations
 
-[Organizations](https://auth0.com/docs/organizations) is a set of features that provide better support for developers who build and maintain SaaS and Business-to-Business (B2B) applications. 
+[Organizations](https://auth0.com/docs/organizations) is a set of features that provide better support for developers who build and maintain SaaS and Business-to-Business (B2B) applications.
 
 Using Organizations, you can:
 
@@ -564,6 +1186,18 @@ getIntent()?.data?.let {
 }
 ```
 
+<details>
+  <summary>Using Java</summary>
+
+```java
+if (getIntent() != null && getIntent().getData() != null) {
+    WebAuthProvider.login(account)
+        .withInvitationUrl(getIntent().getData())
+        .start(this, callback);
+}
+```
+</details>
+
 If the URL doesn't contain the expected values, an error will be raised through the provided callback.
 
 ## Credentials Manager
@@ -576,7 +1210,7 @@ The basic version supports asking for `Credentials` existence, storing them and 
 
 #### Usage
 1. **Instantiate the manager:**
-You'll need an `AuthenticationAPIClient` instance to renew the credentials when they expire and a `Storage` object. We provide a `SharedPreferencesStorage` class that makes use of `SharedPreferences` to create a file in the application's directory with **Context.MODE_PRIVATE** mode.
+   You'll need an `AuthenticationAPIClient` instance to renew the credentials when they expire and a `Storage` object. We provide a `SharedPreferencesStorage` class that makes use of `SharedPreferences` to create a file in the application's directory with **Context.MODE_PRIVATE** mode.
 
 ```kotlin
 val authentication = AuthenticationAPIClient(account)
@@ -584,8 +1218,18 @@ val storage = SharedPreferencesStorage(this)
 val manager = CredentialsManager(authentication, storage)
 ```
 
+<details>
+  <summary>Using Java</summary>
+
+```java
+AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
+Storage storage = new SharedPreferencesStorage(this);
+CredentialsManager manager = new CredentialsManager(authentication, storage);
+```
+</details>
+
 2. **Save credentials:**
-The credentials to save **must have** `expires_at` and at least an `access_token` or `id_token` value. If one of the values is missing when trying to set the credentials, the method will throw a `CredentialsManagerException`. If you want the manager to successfully renew the credentials when expired you must also request the `offline_access` scope when logging in in order to receive a `refresh_token` value along with the rest of the tokens. i.e. Logging in with a database connection and saving the credentials:
+   The credentials to save **must have** `expires_at` and at least an `access_token` or `id_token` value. If one of the values is missing when trying to set the credentials, the method will throw a `CredentialsManagerException`. If you want the manager to successfully renew the credentials when expired you must also request the `offline_access` scope when logging in in order to receive a `refresh_token` value along with the rest of the tokens. i.e. Logging in with a database connection and saving the credentials:
 
 ```kotlin
 authentication
@@ -595,50 +1239,127 @@ authentication
         override fun onFailure(exception: AuthenticationException) {
             // Error
         }
-    
+
         override fun onSuccess(credentials: Credentials) {
             //Save the credentials
             manager.saveCredentials(credentials)
         }
     })
 ``` 
+
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    val credentials = authentication
+        .login("info@auth0.com", "a secret password", "my-database-connection")
+        .setScope("openid email profile offline_access")
+        .await()
+    manager.saveCredentials(credentials)
+} catch (e: AuthenticationException) {
+    e.printStacktrace()
+}
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+authentication
+    .login("info@auth0.com", "a secret password", "my-database-connection")
+    .setScope("openid email profile offline_access")
+    .start(new BaseCallback<Credentials, AuthenticationException>() {
+        @Override
+        public void onSuccess(Credentials payload) {
+            //Save the credentials
+            manager.saveCredentials(credentials);
+        }
+
+        @Override
+        public void onFailure(AuthenticationException error) {
+            //Error!
+        }
+    });
+```
+</details>
+
 **Note:** This method has been made thread-safe after version 2.7.0.
 
 3. **Check credentials existence:**
-There are cases were you just want to check if a user session is still valid (i.e. to know if you should present the login screen or the main screen). For convenience, we include a `hasValidCredentials` method that can let you know in advance if a non-expired token is available without making an additional network call. The same rules of the `getCredentials` method apply:
+   There are cases were you just want to check if a user session is still valid (i.e. to know if you should present the login screen or the main screen). For convenience, we include a `hasValidCredentials` method that can let you know in advance if a non-expired token is available without making an additional network call. The same rules of the `getCredentials` method apply:
 
 ```kotlin
 val authenticated = manager.hasValidCredentials()
 ```
 
+<details>
+  <summary>Using Java</summary>
+
+```java
+boolean authenticated = manager.hasValidCredentials();
+```
+</details>
+
 4. **Retrieve credentials:**
-Existing credentials will be returned if they are still valid, otherwise the `refresh_token` will be used to attempt to renew them. If the `expires_at` or both the `access_token` and `id_token` values are missing, the method will throw a `CredentialsManagerException`. The same will happen if the credentials have expired and there's no `refresh_token` available.
+   Existing credentials will be returned if they are still valid, otherwise the `refresh_token` will be used to attempt to renew them. If the `expires_at` or both the `access_token` and `id_token` values are missing, the method will throw a `CredentialsManagerException`. The same will happen if the credentials have expired and there's no `refresh_token` available.
 
 ```kotlin
 manager.getCredentials(object : Callback<Credentials, CredentialsManagerException> {
-   override fun onFailure(exception: CredentialsManagerException) {
-       // Error
-   }
+    override fun onFailure(exception: CredentialsManagerException) {
+        // Error
+    }
 
-   override fun onSuccess(credentials: Credentials) {
-       // Use the credentials
-   }
+    override fun onSuccess(credentials: Credentials) {
+        // Use the credentials
+    }
 })
 ``` 
+
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    val credentials = manager.awaitCredentials()
+    println(credentials)
+} catch (e: CredentialsManagerException) {
+    e.printStacktrace()
+}
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+manager.getCredentials(new BaseCallback<Credentials, CredentialsManagerException>() {
+    @Override
+    public void onSuccess(Credentials credentials){
+        //Use the Credentials
+    }
+
+    @Override
+    public void onFailure(CredentialsManagerException error){
+        //Error!
+    }
+});
+```
+</details>
+
 **Note:** In the scenario where the stored credentials have expired and a `refresh_token` is available, the newly obtained tokens are automatically saved for you by the Credentials Manager. This method has been made thread-safe after version 2.7.0.
 
 5. **Clear credentials:**
-When you want to log the user out:
+   When you want to log the user out:
 
 ```kotlin
 manager.clearCredentials()
 ```
 
-
 ### Encryption enforced
 
 This version adds encryption to the data storage. Additionally, in those devices where a Secure Lock Screen has been configured it can require the user to authenticate before letting them obtain the stored credentials. The class is called `SecureCredentialsManager`.
-
 
 #### Usage
 The usage is similar to the previous version, with the slight difference that the manager now requires a valid android `Context` as shown below:
@@ -649,11 +1370,21 @@ val storage = SharedPreferencesStorage(this)
 val manager = SecureCredentialsManager(this, authentication, storage)
 ```
 
+<details>
+  <summary>Using Java</summary>
+
+```java
+AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
+Storage storage = new SharedPreferencesStorage(this);
+SecureCredentialsManager manager = new SecureCredentialsManager(this, authentication, storage);
+```
+</details>
+
 #### Requiring Authentication
 
 You can require the user authentication to obtain credentials. This will make the manager prompt the user with the device's configured Lock Screen, which they must pass correctly in order to obtain the credentials. **This feature is only available on devices where the user has setup a secured Lock Screen** (PIN, Pattern, Password or Fingerprint).
 
-To enable authentication you must call the `requireAuthentication` method passing a valid _Activity_ context, a request code that represents the authentication call, and the title and description to display in the Lock Screen. As seen in the snippet below, you can leave these last two parameters with `null` to use the system's default title and description. It's only safe to call this method before the Activity is started. 
+To enable authentication you must call the `requireAuthentication` method passing a valid _Activity_ context, a request code that represents the authentication call, and the title and description to display in the Lock Screen. As seen in the snippet below, you can leave these last two parameters with `null` to use the system's default title and description. It's only safe to call this method before the Activity is started.
 
 ```kotlin
 //You might want to define a constant with the Request Code
@@ -663,6 +1394,17 @@ companion object {
 
 manager.requireAuthentication(this, AUTH_REQ_CODE, null, null)
 ```
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+//You might want to define a constant with the Request Code
+private static final int AUTH_REQ_CODE = 11;
+
+manager.requireAuthentication(this, AUTH_REQ_CODE, null, null);
+```
+</details>
 
 When the above conditions are met and the manager requires the user authentication, it will use the activity context to launch the Lock Screen activity and wait for its result. If your activity is a subclass of `ComponentActivity`, this will be handled automatically for you internally. Otherwise, your activity must override the `onActivityResult` method and pass the request code and result code to the manager's `checkAuthenticationResult` method to verify if this request was successful or not.
 
@@ -674,6 +1416,20 @@ When the above conditions are met and the manager requires the user authenticati
     super.onActivityResult(requestCode, resultCode, data)
 }
 ```
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+@Override
+protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    if (manager.checkAuthenticationResult(requestCode, resultCode)) {
+        return;
+    }
+    super.onActivityResult(requestCode, resultCode, data);
+}
+```
+</details>
 
 If the manager consumed the event, it will return true and later invoke the callback's `onSuccess` with the decrypted credentials.
 
@@ -705,6 +1461,19 @@ val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
 account.networkingClient = netClient
 ```
 
+<details>
+  <summary>Using Java</summary>
+
+```java
+DefaultClient netClient = new DefaultClient(
+   connectTimeout = 30,
+   readTimeout = 30
+);
+Auth0 account = new Auth0("client id", "domain");
+account.networkingClient = netClient;
+```
+</details>
+
 ### Logging configuration
 
 ```kotlin
@@ -715,6 +1484,18 @@ val netClient = DefaultClient(
 val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
 account.networkingClient = netClient
 ```
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+DefaultClient netClient = new DefaultClient(
+    enableLogging = true
+);
+Auth0 account = new Auth0("client id", "domain");
+account.networkingClient = netClient;
+```
+</details>
 
 ### Set additional headers for all requests
 
@@ -727,6 +1508,21 @@ val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
 account.networkingClient = netClient
 ```
 
+<details>
+  <summary>Using Java</summary>
+
+```java
+Map<String, String> defaultHeaders = new HashMap<>();
+defaultHeaders.put("{HEADER-NAME}", "{HEADER-VALUE}");
+
+DefaultClient netClient = new DefaultClient(
+    defaultHeaders = defaultHeaders
+);
+Auth0 account = new Auth0("client id", "domain");
+account.networkingClient = netClient;
+```
+</details>
+
 ### Advanced configuration
 
 For more advanced configuration of the networking client, you can provide a custom implementation of `NetworkingClient`. This may be useful when you wish to reuse your own networking client, configure a proxy, etc.
@@ -734,17 +1530,37 @@ For more advanced configuration of the networking client, you can provide a cust
 ```kotlin
 class CustomNetClient : NetworkingClient {
     override fun load(url: String, options: RequestOptions): ServerResponse {
-        // Create and execute the request to the specified URL with the given options
-        val response = // ...
-            
-        // Return a ServerResponse from the received response data
-        return ServerResponse(responseCode, responseBody, responseHeaders)        
+         // Create and execute the request to the specified URL with the given options
+         val response = // ...
+
+         // Return a ServerResponse from the received response data
+         return ServerResponse(responseCode, responseBody, responseHeaders)
     }
 }
 
 val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
-account.networkingClient = netClient
+account.networkingClient = CustomNetClient()
 ```
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+class CustomNetClient extends NetworkingClient {
+   @Override
+   public ServerResponse load(String url) {
+      // Create and execute the request to the specified URL with the given options
+      ServerResponse response = // ...
+
+      // Return a ServerResponse from the received response data
+      return ServerResponse(responseCode, responseBody, responseHeaders)
+   }  
+};
+
+Auth0 account = new Auth0("client id", "domain");
+account.networkingClient = new CustomNetClient();
+```
+</details>
 
 ## FAQ
 
@@ -799,12 +1615,12 @@ Alternatively, you can re-declare the `RedirectActivity` in the `AndroidManifest
 </manifest>
 ```
 
-Recall that if you request a different scheme, you must replace the above `android:scheme` property value and initialize the provider with the new scheme. Read [this section](#a-note-about-app-deep-linking) to learn more. 
+Recall that if you request a different scheme, you must replace the above `android:scheme` property value and initialize the provider with the new scheme. Read [this section](#a-note-about-app-deep-linking) to learn more.
 
 
 ### Is the Web Authentication module setup optional?
 
-If you don't plan to use the _Web Authentication_ feature, you will notice that the compiler will still prompt you to provide the `manifestPlaceholders` values, since the `RedirectActivity` included in this library will require them, and the Gradle tasks won't be able to run without them. 
+If you don't plan to use the _Web Authentication_ feature, you will notice that the compiler will still prompt you to provide the `manifestPlaceholders` values, since the `RedirectActivity` included in this library will require them, and the Gradle tasks won't be able to run without them.
 
 Re-declare the activity manually with `tools:node="remove"` in your app's Android Manifest in order to make the manifest merger remove it from the final manifest file. Additionally, one more unused activity can be removed from the final APK by using the same process. A complete snippet to achieve this is:
 
@@ -812,10 +1628,10 @@ Re-declare the activity manually with `tools:node="remove"` in your app's Androi
 <activity
     android:name="com.auth0.android.provider.AuthenticationActivity"
     tools:node="remove"/>
-<!-- Optional: Remove RedirectActivity -->
+    <!-- Optional: Remove RedirectActivity -->
 <activity
-    android:name="com.auth0.android.provider.RedirectActivity"
-    tools:node="remove"/>
+android:name="com.auth0.android.provider.RedirectActivity"
+tools:node="remove"/>
 ```
 
 ### Unit testing with JUnit 4 or JUnit 5

@@ -1,4 +1,6 @@
-version: 2
+version: 2.1
+orbs:
+  ship: auth0/ship@dev:03e96a0
 jobs:
   build:
     environment:
@@ -24,3 +26,21 @@ jobs:
           name: Upload Coverage
           when: on_success
           command: bash <(curl -s https://codecov.io/bash) -Z -C $CIRCLE_SHA1
+workflows:
+  build-and-test:
+    jobs:
+      - build
+      - ship/android-publish:
+          prefix-tag: false
+          package-group: com/auth0/android
+          package-name: auth0
+          publish-command: ./gradlew publishAndroidLibraryPublicationToMavenRepository -PossrhUsername="$OSSR_USERNAME" -PossrhPassword="$OSSR_PASSWORD" -PisSnapshot=false
+          context:
+            - publish-gh
+            - publish-sonatype
+          filters:
+            branches:
+              only:
+                - main
+          requires:
+            - build

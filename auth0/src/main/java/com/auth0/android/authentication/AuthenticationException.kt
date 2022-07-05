@@ -4,6 +4,9 @@ import android.text.TextUtils
 import android.util.Log
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
+import com.auth0.android.provider.TokenValidationException
 
 public class AuthenticationException : Auth0Exception {
     private var code: String? = null
@@ -97,8 +100,14 @@ public class AuthenticationException : Auth0Exception {
     }
 
     // When the request failed due to network issues
+    // Currently [NetworkErrorException] is not properly thrown from [createErrorAdapter] in
+    // [AuthenticationAPIClient] and [UserAPIClient]. This will be fixed in the next major to avoid
+    // breaking change in the current major. We are not using IOException to check for the error
+    // since it is too broad.
     public val isNetworkError: Boolean
         get() = cause is NetworkErrorException
+                || cause?.cause is UnknownHostException
+                || cause?.cause is SocketTimeoutException
 
     // When there is no Browser app installed to handle the web authentication
     public val isBrowserAppNotAvailable: Boolean
@@ -180,6 +189,10 @@ public class AuthenticationException : Auth0Exception {
         get() = "invalid_grant" == code
                 && 403 == statusCode
                 && "The refresh_token was generated for a user who doesn't exist anymore." == description
+
+    // ID token validation error
+    public val isIdTokenValidationError: Boolean
+        get() = cause is TokenValidationException
 
     internal companion object {
         internal const val ERROR_VALUE_AUTHENTICATION_CANCELED = "a0.authentication_canceled"

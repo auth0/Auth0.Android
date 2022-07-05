@@ -6,6 +6,8 @@ import com.auth0.android.authentication.ParameterBuilder
 import com.auth0.android.callback.Callback
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Represent a request that creates a user in a Auth0 Database connection and then logs in.
@@ -21,27 +23,11 @@ public class SignUpRequest
     /**
      * Add additional parameters to be sent only when creating a user.
      *
-     *
-     * A common use case for this is storing extra information in the user metadata.
-     * To set user metadata you have to wrap your custom properties in a map containing
-     * a field `user_metadadata`:
-     *
-     * ```
-     * // Define your custom fields
-     * val metadata = mapOf("key"  to "value")
-     *
-     * // Define the sign up parameters, adding the user_metadata
-     * val params = mapOf("user_metadata", "metadata")
-     *
-     * // Set the parameters in your request
-     * signUpRequest.addSignUpParameters(params);
-     * ```
+     * `user_metadata` should be supplied to [com.auth0.android.authentication.AuthenticationAPIClient.signUp]
      *
      * @param parameters sent with the request and must be non-null
      * @return itself
      * @see ParameterBuilder
-     *
-     * @see [User Metadata documentation](https://auth0.com/docs/users/concepts/overview-user-metadata)
      */
     public fun addSignUpParameters(parameters: Map<String, String>): SignUpRequest {
         signUpRequest.addParameters(parameters)
@@ -102,6 +88,21 @@ public class SignUpRequest
         return this
     }
 
+    override fun validateClaims(): SignUpRequest {
+        authenticationRequest.validateClaims()
+        return this
+    }
+
+    override fun withIdTokenVerificationLeeway(leeway: Int): SignUpRequest {
+        authenticationRequest.withIdTokenVerificationLeeway(leeway)
+        return this
+    }
+
+    override fun withIdTokenVerificationIssuer(issuer: String): SignUpRequest {
+        authenticationRequest.withIdTokenVerificationIssuer(issuer)
+        return this
+    }
+
     override fun setGrantType(grantType: String): SignUpRequest {
         authenticationRequest.setGrantType(grantType)
         return this
@@ -148,5 +149,19 @@ public class SignUpRequest
     override fun execute(): Credentials {
         signUpRequest.execute()
         return authenticationRequest.execute()
+    }
+
+    /**
+     * Execute the create user request and then logs the user in.
+     * This is a Coroutine that is exposed only for Kotlin.
+     *
+     * @return authentication object on success
+     * @throws Auth0Exception on failure
+     */
+    @JvmSynthetic
+    @Throws(Auth0Exception::class)
+    override suspend fun await(): Credentials {
+        signUpRequest.await()
+        return authenticationRequest.await()
     }
 }

@@ -88,4 +88,21 @@ public class AuthenticationRequestMock implements AuthenticationRequest {
         return started;
     }
 
+    @NonNull
+    @Override
+    public AuthenticationRequest validateClaims() {
+        return this;
+    }
+
+    @NonNull
+    @Override
+    public AuthenticationRequest withIdTokenVerificationLeeway(int leeway) {
+        return this;
+    }
+
+    @NonNull
+    @Override
+    public AuthenticationRequest withIdTokenVerificationIssuer(@NonNull String issuer) {
+        return this;
+    }
 }

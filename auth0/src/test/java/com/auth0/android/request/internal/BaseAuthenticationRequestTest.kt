@@ -4,6 +4,7 @@ import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.request.*
 import com.auth0.android.result.Credentials
 import com.nhaarman.mockitokotlin2.*
+import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
 import org.hamcrest.collection.IsMapContaining
 import org.hamcrest.collection.IsMapWithSize
@@ -40,7 +41,7 @@ public class BaseAuthenticationRequestTest {
     private fun createRequest(url: String): AuthenticationRequest {
         val baseRequest: Request<Credentials, AuthenticationException> =
             BaseRequest(HttpMethod.POST, url, client, resultAdapter, errorAdapter)
-        val request: AuthenticationRequest = BaseAuthenticationRequest(baseRequest)
+        val request: AuthenticationRequest = BaseAuthenticationRequest(baseRequest, "client-id", url)
         return Mockito.spy(request)
     }
 
@@ -150,6 +151,30 @@ public class BaseAuthenticationRequestTest {
         MatcherAssert.assertThat(values, IsMapWithSize.aMapWithSize(2))
         MatcherAssert.assertThat(values, IsMapContaining.hasEntry("extra", "value"))
         MatcherAssert.assertThat(values, IsMapContaining.hasEntry("123", "890"))
+    }
+
+    @Test
+    public fun shouldSetIdTokenVerificationIssuer() {
+        val request = createRequest(BASE_URL) as BaseAuthenticationRequest
+        MatcherAssert.assertThat(request.idTokenVerificationIssuer, CoreMatchers.`is`(CoreMatchers.equalTo(BASE_URL)))
+        request.withIdTokenVerificationIssuer("custom")
+        MatcherAssert.assertThat(request.idTokenVerificationIssuer, CoreMatchers.`is`(CoreMatchers.equalTo("custom")))
+    }
+
+    @Test
+    public fun shouldSetIdTokenVerificationLeeway() {
+        val request = createRequest(BASE_URL) as BaseAuthenticationRequest
+        MatcherAssert.assertThat(request.idTokenVerificationLeeway, CoreMatchers.nullValue())
+        request.withIdTokenVerificationLeeway(0)
+        MatcherAssert.assertThat(request.idTokenVerificationLeeway, CoreMatchers.`is`(CoreMatchers.equalTo(0)))
+    }
+
+    @Test
+    public fun shouldValidateClaimsWhenSet() {
+        val request = createRequest(BASE_URL) as BaseAuthenticationRequest
+        MatcherAssert.assertThat(request.validateClaims, CoreMatchers.`is`(CoreMatchers.equalTo(false)))
+        request.validateClaims()
+        MatcherAssert.assertThat(request.validateClaims, CoreMatchers.`is`(CoreMatchers.equalTo(true)))
     }
 
     @Throws(Exception::class)

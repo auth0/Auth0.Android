@@ -64,6 +64,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * ```
      * client
      *     .login("{username or email}", "{password}", "{database connection name}")
+     *     .validateClaims() //mandatory
      *     .start(object : Callback<Credentials, AuthenticationException> {
      *         override fun onSuccess(result: Credentials) { }
      *         override fun onFailure(error: AuthenticationException) { }
@@ -97,6 +98,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      *
      * ```
      * client.login("{username or email}", "{password}")
+     *     .validateClaims() //mandatory
      *     .start(object:  Callback<Credentials, AuthenticationException> {
      *         override fun onSuccess(result: Credentials) { }
      *         override fun onFailure(error: AuthenticationException) { }
@@ -126,6 +128,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      *
      *```
      * client.loginWithOTP("{mfa token}", "{one time password}")
+     *     .validateClaims() //mandatory
      *     .start(object : Callback<Credentials, AuthenticationException> {
      *         override fun onFailure(error: AuthenticationException) { }
      *         override fun onSuccess(result: Credentials) { }
@@ -156,6 +159,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      *
      *```
      * client.loginWithOOB("{mfa token}", "{out of band code}", "{binding code}")
+     *     .validateClaims() //mandatory
      *     .start(object : Callback<Credentials, AuthenticationException> {
      *         override fun onFailure(error: AuthenticationException) { }
      *         override fun onSuccess(result: Credentials) { }
@@ -192,6 +196,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      *
      *```
      * client.loginWithRecoveryCode("{mfa token}", "{recovery code}")
+     *     .validateClaims() //mandatory
      *     .start(object : Callback<Credentials, AuthenticationException> {
      *         override fun onFailure(error: AuthenticationException) { }
      *         override fun onSuccess(result: Credentials) { }
@@ -266,6 +271,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      *
      * ```
      * client.loginWithNativeSocialToken("{subject token}", "{subject token type}")
+     *     .validateClaims() //mandatory
      *     .start(object: Callback<Credentials, AuthenticationException> {
      *         override fun onSuccess(result: Credentials) { }
      *         override fun onFailure(error: AuthenticationException) { }
@@ -295,6 +301,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      * ```
      * client.loginWithPhoneNumber("{phone number}", "{code}", "{passwordless connection name}")
+     *     .validateClaims() //mandatory
      *     .start(object: Callback<Credentials, AuthenticationException> {
      *         override fun onSuccess(result: Credentials) { }
      *         override fun onFailure(error: AuthenticationException) { }
@@ -331,6 +338,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      * ```
      * client.loginWithEmail("{email}", "{code}", "{passwordless connection name}")
+     *     .validateClaims() //mandatory
      *     .start(object: Callback<Credentials, AuthenticationException> {
      *         override fun onSuccess(result: Credentials) { }
      *         override fun onFailure(error: AuthenticationException) { }
@@ -434,6 +442,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      *
      * ```
      * client.signUp("{email}", "{password}", "{username}", "{database connection name}")
+     *     .validateClaims() //mandatory
      *     .start(object: Callback<Credentials, AuthenticationException> {
      *         override fun onSuccess(result: Credentials) { }
      *         override fun onFailure(error: AuthenticationException) { }
@@ -732,7 +741,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         val credentialsAdapter: JsonAdapter<Credentials> = GsonAdapter(
             Credentials::class.java, gson
         )
-        val request = BaseAuthenticationRequest(factory.post(url.toString(), credentialsAdapter))
+        val request = BaseAuthenticationRequest(factory.post(url.toString(), credentialsAdapter), clientId, baseURL)
         request.addParameters(requestParameters)
         return request
     }

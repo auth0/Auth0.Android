@@ -49,7 +49,7 @@ class AsymmetricSignatureVerifier extends SignatureVerifier {
             //safe to ignore: throws when the Signature object is not properly initialized
         }
         if (!valid) {
-            throw new TokenValidationException("Invalid ID token signature.");
+            throw new InvalidIdTokenSignatureException();
         }
     }
 }
