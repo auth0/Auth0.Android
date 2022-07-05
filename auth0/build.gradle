@@ -32,6 +32,13 @@ plugins {
     id "org.jetbrains.dokka" version "1.4.20"
 }
 
+def signingKey = findProperty('SIGNING_KEY')
+def signingKeyPwd = findProperty('SIGNING_PASSWORD')
+
+signing {
+    useInMemoryPgpKeys(signingKey, signingKeyPwd)
+}
+
 logger.lifecycle("Using version ${version} for ${name}")
 
 oss {
@@ -135,6 +142,6 @@ dependencies {
 // This file is picked up and parsed by our Ship Orb to determine the version.
 task exportVersion()  {
     doLast {
-        new File(rootDir, "version.txt").text = "$oss.name[$version]"
+        new File(rootDir, "version.txt").text = "$version"
     }
 }
