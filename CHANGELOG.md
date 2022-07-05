@@ -6,7 +6,7 @@
 **Added**
 - [SDK-3329] Improved ID token exception API [\#577](https://github.com/auth0/Auth0.Android/pull/577) ([poovamraj](https://github.com/poovamraj))
 - [SDK-3144] Add user property to Credentials [\#569](https://github.com/auth0/Auth0.Android/pull/569) ([adamjmcgrath](https://github.com/adamjmcgrath))
-- [3353] Validate claims for ID Token received in Authentication API Client [\#575](https://github.com/auth0/Auth0.Android/pull/575) ([poovamraj](https://github.com/poovamraj))
+- [SDK-3353] Validate claims for ID Token received in Authentication API Client [\#575](https://github.com/auth0/Auth0.Android/pull/575) ([poovamraj](https://github.com/poovamraj))
 - [SDK-3346] Implemented coroutine support [\#563](https://github.com/auth0/Auth0.Android/pull/563) ([poovamraj](https://github.com/poovamraj))
 
 **Changed**
