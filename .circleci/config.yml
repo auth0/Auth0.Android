@@ -41,4 +41,6 @@ workflows:
           filters:
             branches:
               only:
-                - feat/prepare-ship-2
+                - master
+          requires:
+            - build
