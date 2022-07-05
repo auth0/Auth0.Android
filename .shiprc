@@ -1,6 +1,6 @@
 {
   "files": {
-    "auth0/src/build.gradle": [],
+    "auth0/build.gradle": [],
     "README.md": []
   },
   "prefixVersion": false
