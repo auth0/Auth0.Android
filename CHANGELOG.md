@@ -1,5 +1,33 @@
 # Change Log
 
+## [2.8.0](https://github.com/auth0/Auth0.Android/tree/2.8.0) (2022-07-05)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.7.0...2.8.0)
+
+**Added**
+- [SDK-3329] Improved ID token exception API [\#577](https://github.com/auth0/Auth0.Android/pull/577) ([poovamraj](https://github.com/poovamraj))
+- [SDK-3144] Add user property to Credentials [\#569](https://github.com/auth0/Auth0.Android/pull/569) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- [3353] Validate claims for ID Token received in Authentication API Client [\#575](https://github.com/auth0/Auth0.Android/pull/575) ([poovamraj](https://github.com/poovamraj))
+- [SDK-3346] Implemented coroutine support [\#563](https://github.com/auth0/Auth0.Android/pull/563) ([poovamraj](https://github.com/poovamraj))
+
+**Changed**
+- [SDK-3358] Improve Android README [\#579](https://github.com/auth0/Auth0.Android/pull/579) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- [SDK-3352] Expire credentials based on access token alone [\#572](https://github.com/auth0/Auth0.Android/pull/572) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
+**Deprecated**
+- Remove `user_metadata` use case from `addSignUpParameters` [\#567](https://github.com/auth0/Auth0.Android/pull/567) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
+**Fixed**
+- [SDK-3452] Network Exception Issue Fix [\#580](https://github.com/auth0/Auth0.Android/pull/580) ([poovamraj](https://github.com/poovamraj))
+- [SDK-3350] Empty credentials before continuing should throw CredentialsManagerException [\#576](https://github.com/auth0/Auth0.Android/pull/576) ([poovamraj](https://github.com/poovamraj))
+- [SDK-3354] Deserialize UserProfile.createdAt as ISO8601 [\#571](https://github.com/auth0/Auth0.Android/pull/571) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- [SDK-3082] Avoid config change to handle authentication [\#566](https://github.com/auth0/Auth0.Android/pull/566) ([poovamraj](https://github.com/poovamraj))
+- createdAt should be deserialized as ISO8601 UTC (not local time) [\#564](https://github.com/auth0/Auth0.Android/pull/564) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
+**Security**
+- Security: Update OkHttp to 4.10.0 [\#574](https://github.com/auth0/Auth0.Android/pull/574) ([evansims](https://github.com/evansims))
+- Security: Bump Kotlin Stdlib to 1.6.20 to address CVE-2022-24329 [\#552](https://github.com/auth0/Auth0.Android/pull/552) ([evansims](https://github.com/evansims))
+- Bump OkHttp version [\#551](https://github.com/auth0/Auth0.Android/pull/551) ([lbalmaceda](https://github.com/lbalmaceda))
+
 ## [2.7.0](https://github.com/auth0/Auth0.Android/tree/2.7.0) (2022-02-25)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.6.0...2.7.0)
 
