@@ -14,6 +14,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.IntRange
 import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.Lifecycle
+import com.auth0.android.Auth0Exception
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.AuthenticationCallback
@@ -508,7 +509,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 saveCredentials(refreshed)
                 callback.onSuccess(refreshed)
                 decryptCallback = null
-            } catch (error: AuthenticationException) {
+            } catch (error: Auth0Exception) {
                 callback.onFailure(
                     CredentialsManagerException(
                         "An error occurred while trying to use the Refresh Token to renew the Credentials.",
