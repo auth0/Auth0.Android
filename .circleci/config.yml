@@ -35,7 +35,7 @@ workflows:
           prefix-tag: false
           package-group: com/auth0/android
           package-name: auth0
-          publish-command: ./gradlew publishAndroidLibraryPublicationToMavenRepository -PossrhUsername="$OSSR_USERNAME" -PossrhPassword="$OSSR_PASSWORD" -PisSnapshot=false
+          publish-command: ./gradlew publishAndroidLibraryPublicationToMavenRepository -PossrhUsername="$OSSR_USERNAME" -PossrhPassword="$OSSR_PASSWORD" -PsigningKey="$SIGNING_KEY" -PsigningPassword="$SIGNING_PASSWORD" -PisSnapshot=false
           context:
             - publish-gh
             - publish-sonatype

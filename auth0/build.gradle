@@ -32,8 +32,8 @@ plugins {
     id "org.jetbrains.dokka" version "1.4.20"
 }
 
-def signingKey = findProperty('SIGNING_KEY')
-def signingKeyPwd = findProperty('SIGNING_PASSWORD')
+def signingKey = findProperty('signingKey')
+def signingKeyPwd = findProperty('signingPassword')
 
 signing {
     useInMemoryPgpKeys(signingKey, signingKeyPwd)
@@ -46,6 +46,7 @@ oss {
     repository 'Auth0.Android'
     organization 'auth0'
     description 'Android toolkit for Auth0 API'
+    skipAssertSigningConfiguration true
 
     developers {
         auth0 {
