@@ -75,7 +75,7 @@ public open class Auth0 @JvmOverloads constructor(
      */
     public val authorizeUrl: String
         get() = domainUrl!!.newBuilder()
-            .addEncodedPathSegment("authorize")
+            .addEncodedPathSegment("oauth2/authorize")
             .build()
             .toString()
 

@@ -64,7 +64,7 @@ class PKCE {
      * @param callback          to notify the result of this call to.
      */
     public void getToken(String authorizationCode, @NonNull final Callback<Credentials, AuthenticationException> callback) {
-        Request<Credentials, AuthenticationException> tokenRequest = apiClient.token(authorizationCode, codeVerifier, redirectUri);
+        Request<Credentials, AuthenticationException> tokenRequest = apiClient.token(authorizationCode, codeVerifier, redirectUri, true);
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             tokenRequest.addHeader(entry.getKey(), entry.getValue());
         }

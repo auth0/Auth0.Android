@@ -688,7 +688,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     public fun token(
         authorizationCode: String,
         codeVerifier: String,
-        redirectUri: String
+        redirectUri: String,
+        isOAuth2: Boolean = true
     ): Request<Credentials, AuthenticationException> {
         val parameters = ParameterBuilder.newBuilder()
             .setClientId(clientId)
@@ -698,7 +699,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             .set("code_verifier", codeVerifier)
             .asDictionary()
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
-            .addPathSegment(OAUTH_PATH)
+            .addPathSegment(if (isOAuth2.not()) OAUTH_PATH else OAUTH2_PATH)
             .addPathSegment(TOKEN_PATH)
             .build()
         val credentialsAdapter: JsonAdapter<Credentials> = GsonAdapter(
@@ -782,6 +783,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val PASSWORDLESS_PATH = "passwordless"
         private const val START_PATH = "start"
         private const val OAUTH_PATH = "oauth"
+        private const val OAUTH2_PATH = "oauth2"
         private const val TOKEN_PATH = "token"
         private const val USER_INFO_PATH = "userinfo"
         private const val REVOKE_PATH = "revoke"
