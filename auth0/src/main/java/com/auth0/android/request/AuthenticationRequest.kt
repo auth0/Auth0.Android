@@ -2,7 +2,6 @@ package com.auth0.android.request
 
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationException
-import com.auth0.android.callback.Callback
 import com.auth0.android.result.Credentials
 
 /**
@@ -74,4 +73,6 @@ public interface AuthenticationRequest : Request<Credentials, AuthenticationExce
      * @return the current builder instance
      */
     public fun withIdTokenVerificationIssuer(issuer: String): AuthenticationRequest
+
+    public fun ignoreNonce(ignore: Boolean): AuthenticationRequest
 }

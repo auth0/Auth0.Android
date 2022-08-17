@@ -8,8 +8,6 @@ import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.authentication.ParameterBuilder
 import com.auth0.android.callback.Callback
 import com.auth0.android.provider.*
-import com.auth0.android.provider.IdTokenVerificationOptions
-import com.auth0.android.provider.IdTokenVerifier
 import com.auth0.android.request.AuthenticationRequest
 import com.auth0.android.request.Request
 import com.auth0.android.result.Credentials
@@ -25,6 +23,7 @@ internal open class BaseAuthenticationRequest(
     }
 
     private var _currentTimeInMillis: Long? = null
+    private var ignoreNonce: Boolean = false
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal var validateClaims = false
@@ -82,6 +81,17 @@ internal open class BaseAuthenticationRequest(
      */
     override fun setScope(scope: String): AuthenticationRequest {
         addParameter(ParameterBuilder.SCOPE_KEY, scope)
+        return this
+    }
+
+    /**
+     * Ignore nonce for requests.
+     *
+     * @param ignore a scope value
+     * @return itself
+     */
+    override fun ignoreNonce(ignore: Boolean): AuthenticationRequest {
+        this.ignoreNonce = ignore
         return this
     }
 
@@ -192,7 +202,7 @@ internal open class BaseAuthenticationRequest(
             )
             options.clockSkew = idTokenVerificationLeeway
             options.clock = Date(currentTimeInMillis)
-            IdTokenVerifier().verify(decodedIdToken, options, false)
+            IdTokenVerifier().verify(decodedIdToken, options, false, this.ignoreNonce)
         } catch (e: TokenValidationException) {
             throw AuthenticationException(ERROR_VALUE_ID_TOKEN_VALIDATION_FAILED, e)
         }

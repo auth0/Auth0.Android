@@ -162,6 +162,7 @@ public class ParameterBuilder private constructor(parameters: Map<String, String
         public const val SCOPE_OPENID: String = "openid"
         public const val SCOPE_OFFLINE_ACCESS: String = "openid offline_access"
         public const val SCOPE_KEY: String = "scope"
+        public const val IGNORE_NONCE_KEY: String = "ignore_nonce"
         public const val REFRESH_TOKEN_KEY: String = "refresh_token"
         public const val CONNECTION_KEY: String = "connection"
         public const val REALM_KEY: String = "realm"

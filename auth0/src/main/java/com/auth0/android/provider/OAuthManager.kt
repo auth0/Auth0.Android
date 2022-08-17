@@ -41,6 +41,7 @@ internal class OAuthManager(
 
     private var idTokenVerificationLeeway: Int? = null
     private var idTokenVerificationIssuer: String? = null
+    private var ignoreNonce: Boolean = false
 
     @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
     fun setPKCE(pkce: PKCE?) {
@@ -53,6 +54,10 @@ internal class OAuthManager(
 
     fun setIdTokenVerificationIssuer(issuer: String?) {
         idTokenVerificationIssuer = if (TextUtils.isEmpty(issuer)) apiClient.baseURL else issuer
+    }
+
+    fun ignoreNonce(ignore: Boolean) {
+        ignoreNonce = ignore
     }
 
     fun startAuthentication(context: Context, redirectUri: String, requestCode: Int) {
@@ -169,7 +174,7 @@ internal class OAuthManager(
                     options.clock = Date(currentTimeInMillis)
                     options.organization = parameters[KEY_ORGANIZATION]
                     try {
-                        IdTokenVerifier().verify(decodedIdToken, options, true)
+                        IdTokenVerifier().verify(decodedIdToken, options, true, ignoreNonce)
                         validationCallback.onSuccess(null)
                     } catch (exc: TokenValidationException) {
                         validationCallback.onFailure(exc)

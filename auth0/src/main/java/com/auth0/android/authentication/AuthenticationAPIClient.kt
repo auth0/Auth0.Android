@@ -717,13 +717,15 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @return a request to obtain the JSON Web Keys associated with this Auth0 account.
      */
     public fun fetchJsonWebKeys(): Request<Map<String, PublicKey>, AuthenticationException> {
-        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
+        val url = auth0.getValidationUrl().toHttpUrl().newBuilder()
             .addPathSegment(WELL_KNOWN_PATH)
             .addPathSegment(JWKS_FILE_PATH)
             .build()
         val jwksAdapter: JsonAdapter<Map<String, PublicKey>> = forMapOf(
             PublicKey::class.java, gson
         )
+        factory.setHeader("Host", url.host)
+        factory.setHeader("Accept", "*/*")
         return factory.get(url.toString(), jwksAdapter)
     }
 

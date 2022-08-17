@@ -1,7 +1,7 @@
 package com.auth0.android.provider
 
-import com.auth0.android.request.internal.Jwt
 import android.text.TextUtils
+import com.auth0.android.request.internal.Jwt
 import java.util.*
 
 internal class IdTokenVerifier {
@@ -14,7 +14,7 @@ internal class IdTokenVerifier {
      * @throws TokenValidationException If the ID Token is null, its signing algorithm not supported, its signature invalid or one of its claim invalid.
      */
     @Throws(TokenValidationException::class)
-    fun verify(token: Jwt, verifyOptions: IdTokenVerificationOptions, verifySignature: Boolean) {
+    fun verify(token: Jwt, verifyOptions: IdTokenVerificationOptions, verifySignature: Boolean, ignoreNonce: Boolean) {
         if (verifySignature) {
             verifyOptions.signatureVerifier?.verify(token) ?: throw SignatureVerifierMissingException()
         }
@@ -50,7 +50,7 @@ internal class IdTokenVerifier {
         if (token.issuedAt == null) {
             throw IatClaimMissingException()
         }
-        if (verifyOptions.nonce != null) {
+        if (verifyOptions.nonce != null && ignoreNonce.not()) {
             val nonceClaim = token.nonce
             if (TextUtils.isEmpty(nonceClaim)) {
                 throw NonceClaimMissingException()

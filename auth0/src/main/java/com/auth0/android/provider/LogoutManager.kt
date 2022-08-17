@@ -6,13 +6,13 @@ import android.util.Log
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
-import java.util.*
 
 internal class LogoutManager(
     private val account: Auth0,
     private val callback: Callback<Void?, AuthenticationException>,
     returnToUrl: String,
     ctOptions: CustomTabsOptions,
+    logoutUri: String?,
     federated: Boolean = false
 ) : ResumableManager() {
     private val parameters: MutableMap<String, String>
@@ -58,11 +58,15 @@ internal class LogoutManager(
         private const val KEY_USER_AGENT = "auth0Client"
         private const val KEY_RETURN_TO_URL = "returnTo"
         private const val KEY_FEDERATED = "federated"
+        private const val KEY_LOGOUT_URI = "logout_uri"
     }
 
     init {
         parameters = HashMap()
         parameters[KEY_RETURN_TO_URL] = returnToUrl
+        logoutUri?.let {
+            parameters[KEY_LOGOUT_URI] = it
+        }
         if (federated) {
             // null or empty values are not included in the request
             parameters[KEY_FEDERATED] = "1"

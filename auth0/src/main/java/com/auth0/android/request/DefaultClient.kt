@@ -25,7 +25,8 @@ public class DefaultClient @VisibleForTesting(otherwise = VisibleForTesting.PRIV
     private val defaultHeaders: Map<String, String>,
     enableLogging: Boolean,
     sslSocketFactory: SSLSocketFactory?,
-    trustManager: X509TrustManager?
+    trustManager: X509TrustManager?,
+    private var isFormUrlEncoded: Boolean
 ) : NetworkingClient {
 
     /**
@@ -40,8 +41,9 @@ public class DefaultClient @VisibleForTesting(otherwise = VisibleForTesting.PRIV
         connectTimeout: Int = DEFAULT_TIMEOUT_SECONDS,
         readTimeout: Int = DEFAULT_TIMEOUT_SECONDS,
         defaultHeaders: Map<String, String> = mapOf(),
-        enableLogging: Boolean = false
-    ) : this(connectTimeout,  readTimeout,  defaultHeaders, enableLogging, null, null)
+        enableLogging: Boolean = false,
+        isFormUrlEncoded: Boolean = true
+    ) : this(connectTimeout, readTimeout, defaultHeaders, enableLogging, null, null, true)
 
     //TODO: receive this via internal constructor parameters
     private val gson: Gson = GsonProvider.gson
@@ -72,9 +74,20 @@ public class DefaultClient @VisibleForTesting(otherwise = VisibleForTesting.PRIV
                 requestBuilder.method(options.method.toString(), null)
             }
             else -> {
-                // add parameters as body
-                val body = gson.toJson(options.parameters).toRequestBody(APPLICATION_JSON_UTF8)
-                requestBuilder.method(options.method.toString(), body)
+                // json encoded
+                if (isFormUrlEncoded) {
+                    // add parameters as body
+                    val formBuilder: FormBody.Builder = FormBody.Builder()
+                    options.parameters.forEach {
+                        formBuilder.add(it.key, it.value.toString())
+                    }
+                    options.headers["Content-Type"] = CONTENT_TYPE_ENCODED
+                    requestBuilder.method(options.method.toString(), formBuilder.build())
+                } else {
+                    // add parameters as body
+                    val body = gson.toJson(options.parameters).toRequestBody(APPLICATION_JSON_UTF8)
+                    requestBuilder.method(options.method.toString(), body)
+                }
             }
         }
         val headers = defaultHeaders.plus(options.headers).toHeaders()
@@ -112,8 +125,9 @@ public class DefaultClient @VisibleForTesting(otherwise = VisibleForTesting.PRIV
 
     internal companion object {
         const val DEFAULT_TIMEOUT_SECONDS: Int = 10
+        const val CONTENT_TYPE_ENCODED = "application/x-www-form-urlencoded; charset=utf-8"
         val APPLICATION_JSON_UTF8: MediaType =
-            "application/json; charset=utf-8".toMediaType()
+            "application/x-www-form-urlencoded; charset=utf-8".toMediaType()
     }
 
 }

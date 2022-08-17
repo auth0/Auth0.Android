@@ -27,9 +27,14 @@ public open class Auth0 @JvmOverloads constructor(
     /**
      * @return your Auth0 application client identifier
      */
-    public val clientId: String, domain: String, configurationDomain: String? = null
+    public val clientId: String,
+    domain: String,
+    configurationDomain: String? = null,
+    validationDomain: String? = null,
+    private val domainPathSegment: String? = null
 ) {
     private val domainUrl: HttpUrl?
+    private val validationUrl: HttpUrl?
     private val configurationUrl: HttpUrl
 
     /**
@@ -62,6 +67,13 @@ public open class Auth0 @JvmOverloads constructor(
     }
 
     /**
+     * @return your Auth0 account validation url
+     */
+    public fun getValidationUrl(): String {
+        return validationUrl.toString()
+    }
+
+    /**
      * @return your account configuration url
      */
     public fun getConfigurationUrl(): String {
@@ -74,10 +86,14 @@ public open class Auth0 @JvmOverloads constructor(
      * @return Url to call to perform the web flow of OAuth
      */
     public val authorizeUrl: String
-        get() = domainUrl!!.newBuilder()
-            .addEncodedPathSegment("oauth2/authorize")
-            .build()
-            .toString()
+        get() {
+            val builder = domainUrl!!.newBuilder()
+            if (domainPathSegment != null) {
+                builder.addEncodedPathSegment(domainPathSegment)
+            }
+            builder.addEncodedPathSegment("authorize")
+            return builder.build().toString()
+        }
 
     /**
      * Obtain the logout URL for the current domain
@@ -85,11 +101,14 @@ public open class Auth0 @JvmOverloads constructor(
      * @return Url to call to perform the web logout
      */
     public val logoutUrl: String
-        get() = domainUrl!!.newBuilder()
-            .addEncodedPathSegment("v2")
-            .addEncodedPathSegment("logout")
-            .build()
-            .toString()
+        get() {
+            val builder = domainUrl!!.newBuilder()
+            if (domainPathSegment != null) {
+                builder.addEncodedPathSegment(domainPathSegment)
+            }
+            builder.addEncodedPathSegment("logout")
+            return builder.build().toString()
+        }
 
     private fun ensureValidUrl(url: String?): HttpUrl? {
         if (url == null) {
@@ -118,6 +137,7 @@ public open class Auth0 @JvmOverloads constructor(
     init {
         domainUrl = ensureValidUrl(domain)
         requireNotNull(domainUrl) { String.format("Invalid domain url: '%s'", domain) }
+        validationUrl = validationDomain?.toHttpUrlOrNull() ?: domainUrl
         configurationUrl = ensureValidUrl(configurationDomain) ?: domainUrl
         auth0UserAgent = Auth0UserAgent()
     }

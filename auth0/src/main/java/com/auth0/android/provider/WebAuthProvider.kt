@@ -7,15 +7,15 @@ import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationException
-import com.auth0.android.authentication.storage.CredentialsManagerException
 import com.auth0.android.callback.Callback
 import com.auth0.android.result.Credentials
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import java.util.*
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlin.jvm.Throws
 
 /**
  * OAuth2 Web Authentication Provider.
@@ -89,6 +89,7 @@ public object WebAuthProvider {
     public class LogoutBuilder internal constructor(private val account: Auth0) {
         private var scheme = "https"
         private var returnToUrl: String? = null
+        private var logoutUri: String? = null
         private var ctOptions: CustomTabsOptions = CustomTabsOptions.newBuilder().build()
         private var federated: Boolean = false
 
@@ -149,6 +150,17 @@ public object WebAuthProvider {
         }
 
         /**
+         * Specify a custom Logout URI to use to invoke the app on redirection.
+         *
+         * @param logoutUri to use to invoke the app on redirection.
+         * @return the current builder instance
+         */
+        public fun withLogoutUri(logoutUri: String): LogoutBuilder {
+            this.logoutUri = logoutUri
+            return this
+        }
+
+        /**
          * Request the user session to be cleared. When successful, the callback will get invoked.
          * An error is raised if there are no browser applications installed in the device or if
          * the user closed the browser before completing the logout.
@@ -175,7 +187,8 @@ public object WebAuthProvider {
                     account.getDomainUrl()
                 )
             }
-            val logoutManager = LogoutManager(account, callback, returnToUrl!!, ctOptions, federated)
+            val logoutManager =
+                LogoutManager(account, callback, returnToUrl!!, ctOptions, logoutUri, federated)
             managerInstance = logoutManager
             logoutManager.startLogout(context)
         }
@@ -219,6 +232,7 @@ public object WebAuthProvider {
         private var invitationUrl: String? = null
         private var ctOptions: CustomTabsOptions = CustomTabsOptions.newBuilder().build()
         private var leeway: Int? = null
+        private var ignoreNonce: Boolean = false
 
         /**
          * Use a custom state in the requests
@@ -429,6 +443,17 @@ public object WebAuthProvider {
         }
 
         /**
+         * Ignore nonce for requests.
+         *
+         * @param ignore a scope value
+         * @return itself
+         */
+        public fun ignoreNonce(ignore: Boolean): Builder {
+            this.ignoreNonce = ignore
+            return this
+        }
+
+        /**
          * Request user Authentication. The result will be received in the callback.
          * An error is raised if there are no browser applications installed in the device, or if
          * device does not support the necessary algorithms to support Proof of Key Exchange (PKCE)
@@ -473,6 +498,7 @@ public object WebAuthProvider {
             manager.setPKCE(pkce)
             manager.setIdTokenVerificationLeeway(leeway)
             manager.setIdTokenVerificationIssuer(issuer)
+            manager.ignoreNonce(ignoreNonce)
             managerInstance = manager
             if (redirectUri == null) {
                 redirectUri = CallbackHelper.getCallbackUri(
