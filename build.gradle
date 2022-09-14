@@ -11,10 +11,9 @@ buildscript {
                 includeModule("org.jetbrains.trove4j", "trove4j")
             }
         }
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:4.2.2'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+dependencies {
+    implementation 'com.auth0.android:auth0:2.8.0'
+}
     }
 }
 
