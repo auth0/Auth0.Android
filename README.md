@@ -6,7 +6,7 @@
 [![Maven Central](https://img.shields.io/maven-central/v/com.auth0.android/auth0.svg?style=flat-square)](https://search.maven.org/artifact/com.auth0.android/auth0)
 [![javadoc](https://javadoc.io/badge2/com.auth0.android/auth0/javadoc.svg)](https://javadoc.io/doc/com.auth0.android/auth0)
 
-📚 [Documentation](#documentation) • 🚀 [Getting Started](#getting-started) • ⏭️ [Next Steps](#next-steps) • 💬 [Feedback](#feedback)
+📚 [Documentation](#documentation) • 🚀 [Getting Started](#getting-started) • ⏭️ [Next Steps](#next-steps)• ❓ [FAQs](/FAQ.md) • 💬 [Feedback](#feedback)
 
 ## Documentation
 - [Quickstart](https://auth0.com/docs/quickstart/native/android/interactive)
@@ -603,7 +603,7 @@ By default you should at least use the following files:
 We appreciate feedback and contribution to this repo! Before you get started, please see the following:
 
 - [Auth0's general contribution guidelines](https://github.com/auth0/open-source-template/blob/master/GENERAL-CONTRIBUTING.md)
-- [Auth0's code of conduct guidelines](https://github.com/auth0/nextjs-auth0/blob/main/CODE-OF-CONDUCT.md)
+- [Auth0's code of conduct guidelines](https://github.com/auth0/Auth0.Android/blob/main/CODE-OF-CONDUCT.md)
 
 ### Raise an issue
 To provide feedback or report a bug, [please raise an issue on our issue tracker](https://github.com/auth0/Auth0.Android/issues).
