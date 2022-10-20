@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/:license-mit-blue.svg?style=flat-square)](https://doge.mit-license.org/)
 [![javadoc](https://javadoc.io/badge2/com.auth0.android/auth0/javadoc.svg)](https://javadoc.io/doc/com.auth0.android/auth0)
 
-:books: [Documentation](#documentation) • :rocket: [Getting Started](#getting-started) • :fast_forward: [Next Steps](#next-steps) • :question: [FAQs](/FAQ.md) • :speech_balloon: [Feedback](#feedback)
+📚 [Documentation](#documentation) • 🚀 [Getting Started](#getting-started) • ⏩ [Next Steps](#next-steps) • ❓ [FAQs](/FAQ.md) • 💬 [Feedback](#feedback)
 
 ## Documentation
 - [Quickstart](https://auth0.com/docs/quickstart/native/android/interactive)
