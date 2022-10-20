@@ -6,13 +6,13 @@
 [![License](https://img.shields.io/:license-mit-blue.svg?style=flat-square)](https://doge.mit-license.org/)
 [![javadoc](https://javadoc.io/badge2/com.auth0.android/auth0/javadoc.svg)](https://javadoc.io/doc/com.auth0.android/auth0)
 
-📚 [Documentation](#documentation) • 🚀 [Getting Started](#getting-started) • ⏩ [Next Steps](#next-steps) • ❓ [FAQs](/FAQ.md) • 💬 [Feedback](#feedback)
+📚 [Documentation](#documentation) • 🚀 [Getting Started](#getting-started) • ⏩ [Next Steps](#next-steps) • ❓ [FAQs](https://github.com/auth0/auth0.android/blob/main/FAQ.md) • 💬 [Feedback](#feedback)
 
 ## Documentation
 - [Quickstart](https://auth0.com/docs/quickstart/native/android/interactive)
 - [Sample App](https://github.com/auth0-samples/auth0-android-sample/tree/master/00-Login-Kt)
-- [FAQs](/FAQ.md)
-- [Examples](/EXAMPLES.md)
+- [FAQs](https://github.com/auth0/auth0.android/blob/main/FAQ.md)
+- [Examples](https://github.com/auth0/auth0.android/blob/main/EXAMPLES.md)
 - [Docs Site](https://javadoc.io/doc/com.auth0.android/auth0/latest/index.html)
 
 
@@ -464,4 +464,4 @@ Please do not report security vulnerabilities on the public Github issue tracker
 </p>
 <p align="center">Auth0 is an easy to implement, adaptable authentication and authorization platform. To learn more checkout <a href="https://auth0.com/why-auth0">Why Auth0?</a></p>
 <p align="center">
-This project is licensed under the MIT license. See the <a href="./LICENSE"> LICENSE</a> file for more info.</p>
+This project is licensed under the MIT license. See the <a href="https://github.com/auth0/auth0.android/blob/main/LICENSE"> LICENSE</a> file for more info.</p>
