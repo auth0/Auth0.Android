@@ -1,4 +1,4 @@
-# Auth0.Android
+![Auth0.Android](https://cdn.auth0.com/website/sdks/banners/auth0-android-banner.png)
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.auth0.android/auth0.svg?style=flat-square)](https://search.maven.org/artifact/com.auth0.android/auth0)
 [![Coverage Status](https://img.shields.io/codecov/c/github/auth0/Auth0.Android/master.svg?style=flat-square)](https://codecov.io/github/auth0/Auth0.Android)
