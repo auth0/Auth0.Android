@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/:license-mit-blue.svg?style=flat-square)](https://doge.mit-license.org/)
 [![javadoc](https://javadoc.io/badge2/com.auth0.android/auth0/javadoc.svg)](https://javadoc.io/doc/com.auth0.android/auth0)
 
-📚 [Documentation](#documentation) • 🚀 [Getting Started](#getting-started) • ⏩ [Next Steps](#next-steps) • ❓ [FAQs](https://github.com/auth0/auth0.android/blob/main/FAQ.md) • 💬 [Feedback](#feedback)
+📚 [Documentation](#documentation) • 🚀 [Getting Started](#getting-started) • 💬 [Feedback](#feedback)
 
 ## Documentation
 - [Quickstart](https://auth0.com/docs/quickstart/native/android/interactive)
