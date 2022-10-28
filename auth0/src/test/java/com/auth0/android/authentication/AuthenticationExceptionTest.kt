@@ -484,6 +484,15 @@ public class AuthenticationExceptionTest {
         MatcherAssert.assertThat(ex.isRefreshTokenDeleted, CoreMatchers.`is`(true))
     }
 
+    @Test
+    public fun shouldHaveTooManyAttempts() {
+        values[CODE_KEY] = "too_many_attempts"
+        val ex = AuthenticationException(
+            values
+        )
+        MatcherAssert.assertThat(ex.isTooManyAttempts, CoreMatchers.`is`(true))
+    }
+
     private companion object {
         private const val PASSWORD_STRENGTH_ERROR_RESPONSE =
             "src/test/resources/password_strength_error.json"

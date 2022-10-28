@@ -194,6 +194,10 @@ public class AuthenticationException : Auth0Exception {
     public val isIdTokenValidationError: Boolean
         get() = cause is TokenValidationException
 
+    /// When the user is blocked due to too many attempts to log in
+    public val isTooManyAttempts: Boolean
+        get() = "too_many_attempts" == code
+
     internal companion object {
         internal const val ERROR_VALUE_AUTHENTICATION_CANCELED = "a0.authentication_canceled"
         private const val ERROR_KEY = "error"
