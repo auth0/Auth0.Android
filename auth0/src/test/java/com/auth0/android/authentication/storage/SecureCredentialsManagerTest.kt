@@ -53,6 +53,7 @@ import java.lang.reflect.Modifier
 import java.util.*
 import java.util.concurrent.Executor
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 
 @RunWith(RobolectricTestRunner::class)
 public class SecureCredentialsManagerTest {
@@ -1687,7 +1688,7 @@ public class SecureCredentialsManagerTest {
     public fun shouldBeMarkedSynchronous(){
         val method =
             SecureCredentialsManager::class.java.getMethod("saveCredentials", Credentials::class.java)
-        Modifier.isSynchronized(method.modifiers)
+        assertTrue(Modifier.isSynchronized(method.modifiers))
     }
 
     /*
