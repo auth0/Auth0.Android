@@ -519,7 +519,7 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldThrowOnUnrecoverableEntryExceptionWhenTryingToObtainRSAKeys() {
+    public void shouldDeleteRSAAndAESKeysAndThrowOnUnrecoverableEntryExceptionWhenTryingToObtainRSAKeys() throws Exception {
         Assert.assertThrows("The existing RSA key pair could not be recovered and has been deleted. " +
                 "This occasionally happens when the Lock Screen settings are changed. You can safely retry this operation.", CryptoException.class, () -> {
             KeyStore.PrivateKeyEntry entry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
@@ -530,20 +530,52 @@ public class CryptoUtilTest {
 
             cryptoUtil.getRSAKeyEntry();
         });
+
+        Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
+        Mockito.verify(keyStore).deleteEntry(OLD_KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS);
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS + "_iv");
     }
 
     @Test
-    public void shouldDeleteRSAAndAESKeysAndThrowOnIOExceptionWhenTryingToObtainRSAKeys() {
+    public void shouldDeleteRSAAndAESKeysAndThrowOnSingleIOExceptionWhenTryingToObtainRSAKeys() throws Exception {
         Assert.assertThrows("The existing RSA key pair could not be recovered and has been deleted. " +
                 "This occasionally happens when the Lock Screen settings are changed. You can safely retry this operation.", CryptoException.class, () -> {
+            //In this variant, the first call to keyStore.load() - when we're reading the key - throws an
+            //exception, but the second one - when we delete the entry on cleanup - does not. Though
+            //unlikely, this test provides coverage of that scenario.
+            doThrow(new IOException()).doNothing().when(keyStore).load(nullable(KeyStore.LoadStoreParameter.class));
+
+            cryptoUtil.getRSAKeyEntry();
+        });
+
+        Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
+        Mockito.verify(keyStore).deleteEntry(OLD_KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS);
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS + "_iv");
+    }
+
+    @Test
+    public void shouldDeleteAESKeysAndThrowOnDoubleIOExceptionWhenTryingToObtainRSAKeys() throws Exception {
+        Assert.assertThrows("The existing RSA key pair could not be recovered and has been deleted. " +
+                "This occasionally happens when the Lock Screen settings are changed. You can safely retry this operation.", CryptoException.class, () -> {
+            //In this variant, the first call to keyStore.load() - when we're reading the key - throws an
+            //exception, and the second one - when we delete the entry on cleanup - does as well.
+            //This would seem to be the more likely scenario. In this case we don't have any way
+            //to clean up the RSA key.
             doThrow(new IOException()).when(keyStore).load(nullable(KeyStore.LoadStoreParameter.class));
 
             cryptoUtil.getRSAKeyEntry();
-
-            Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
-            Mockito.verify(storage).remove(KEY_ALIAS);
-            Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
         });
+
+        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS);
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS + "_iv");
     }
 
     @Test
@@ -751,7 +783,7 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldDeleteAESKeysAndThrowOnBadPaddingExceptionWhenTryingToRSAEncrypt() {
+    public void shouldDeleteAESKeysAndThrowOnBadPaddingExceptionWhenTryingToRSAEncrypt() throws Exception {
         Assert.assertThrows("The RSA decrypted input is invalid.", CryptoException.class, () -> {
 
             byte[] sampleBytes = new byte[0];
@@ -764,15 +796,18 @@ public class CryptoUtilTest {
             PowerMockito.when(rsaCipher.doFinal(sampleBytes)).thenThrow(new BadPaddingException());
 
             cryptoUtil.RSAEncrypt(sampleBytes);
-
-            Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
-            Mockito.verify(storage).remove(KEY_ALIAS);
-            Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
         });
+
+        Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
+        Mockito.verify(keyStore, never()).deleteEntry(OLD_KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS);
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS + "_iv");
     }
 
     @Test
-    public void shouldDeleteAESKeysAndThrowOnIllegalBlockSizeExceptionWhenTryingToRSAEncrypt() {
+    public void shouldDeleteAESKeysAndThrowOnIllegalBlockSizeExceptionWhenTryingToRSAEncrypt() throws Exception {
         Assert.assertThrows("The RSA decrypted input is invalid.", CryptoException.class, () -> {
             Certificate certificate = PowerMockito.mock(Certificate.class);
             KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
@@ -783,11 +818,14 @@ public class CryptoUtilTest {
             PowerMockito.when(rsaCipher.doFinal(any(byte[].class))).thenThrow(new IllegalBlockSizeException());
 
             cryptoUtil.RSAEncrypt(new byte[0]);
-
-            Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
-            Mockito.verify(storage).remove(KEY_ALIAS);
-            Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
         });
+
+        Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
+        Mockito.verify(keyStore, never()).deleteEntry(OLD_KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS);
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS + "_iv");
     }
 
     @Test
@@ -884,7 +922,7 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldDeleteAESKeysAndThrowOnBadPaddingExceptionWhenTryingToRSADecrypt() {
+    public void shouldDeleteAESKeysAndThrowOnBadPaddingExceptionWhenTryingToRSADecrypt() throws Exception {
         Assert.assertThrows("The RSA encrypted input is corrupted and cannot be recovered. Please discard it.", CryptoException.class, () -> {
             PrivateKey privateKey = PowerMockito.mock(PrivateKey.class);
             KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
@@ -893,15 +931,18 @@ public class CryptoUtilTest {
 
             doThrow(new BadPaddingException()).when(rsaCipher).doFinal(any(byte[].class));
             cryptoUtil.RSADecrypt(new byte[0]);
-
-            Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
-            Mockito.verify(storage).remove(KEY_ALIAS);
-            Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
         });
+
+        Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
+        Mockito.verify(keyStore, never()).deleteEntry(OLD_KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS);
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS + "_iv");
     }
 
     @Test
-    public void shouldDeleteAESKeysAndThrowOnIllegalBlockSizeExceptionWhenTryingToRSADecrypt() {
+    public void shouldDeleteAESKeysAndThrowOnIllegalBlockSizeExceptionWhenTryingToRSADecrypt() throws Exception {
         Assert.assertThrows("The RSA encrypted input is corrupted and cannot be recovered. Please discard it.", CryptoException.class, () -> {
             PrivateKey privateKey = PowerMockito.mock(PrivateKey.class);
             KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
@@ -910,11 +951,14 @@ public class CryptoUtilTest {
 
             doThrow(new IllegalBlockSizeException()).when(rsaCipher).doFinal(any(byte[].class));
             cryptoUtil.RSADecrypt(new byte[0]);
-
-            Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
-            Mockito.verify(storage).remove(KEY_ALIAS);
-            Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
         });
+
+        Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
+        Mockito.verify(keyStore, never()).deleteEntry(OLD_KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS);
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS + "_iv");
     }
 
     /*
@@ -1037,33 +1081,39 @@ public class CryptoUtilTest {
 
 
     @Test
-    public void shouldDeleteAESKeysAndThrowOnBadPaddingExceptionWhenTryingToAESEncrypt() {
+    public void shouldThrowButNotDeleteAESKeysOnBadPaddingExceptionWhenTryingToAESEncrypt() throws Exception {
         Assert.assertThrows("The AES decrypted input is invalid.", CryptoException.class, () -> {
             doReturn(new byte[]{11, 22, 33}).when(cryptoUtil).getAESKey();
             doThrow(new BadPaddingException()).when(aesCipher)
                     .doFinal(any(byte[].class));
 
             cryptoUtil.encrypt(new byte[0]);
-
-            Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
-            Mockito.verify(storage, never()).remove(KEY_ALIAS);
-            Mockito.verify(storage, never()).remove(KEY_ALIAS + "_iv");
         });
+
+        Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
+        Mockito.verify(keyStore, never()).deleteEntry(OLD_KEY_ALIAS);
+        Mockito.verify(storage, never()).remove(KEY_ALIAS);
+        Mockito.verify(storage, never()).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(storage, never()).remove(OLD_KEY_ALIAS);
+        Mockito.verify(storage, never()).remove(OLD_KEY_ALIAS + "_iv");
     }
 
     @Test
-    public void shouldDeleteAESKeysAndThrowOnIllegalBlockSizeExceptionWhenTryingToAESEncrypt() {
+    public void shouldThrowButNotDeleteAESKeysOnIllegalBlockSizeExceptionWhenTryingToAESEncrypt() throws Exception {
         Assert.assertThrows("The AES decrypted input is invalid.", CryptoException.class, () -> {
             doReturn(new byte[]{11, 22, 33}).when(cryptoUtil).getAESKey();
             doThrow(new IllegalBlockSizeException()).when(aesCipher)
                     .doFinal(any(byte[].class));
 
             cryptoUtil.encrypt(new byte[0]);
-
-            Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
-            Mockito.verify(storage, never()).remove(KEY_ALIAS);
-            Mockito.verify(storage, never()).remove(KEY_ALIAS + "_iv");
         });
+
+        Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
+        Mockito.verify(keyStore, never()).deleteEntry(OLD_KEY_ALIAS);
+        Mockito.verify(storage, never()).remove(KEY_ALIAS);
+        Mockito.verify(storage, never()).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(storage, never()).remove(OLD_KEY_ALIAS);
+        Mockito.verify(storage, never()).remove(OLD_KEY_ALIAS + "_iv");
     }
 
 
@@ -1237,7 +1287,7 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldDeleteAESKeysAndThrowOnBadPaddingExceptionWhenTryingToAESDecrypt() {
+    public void shouldThrowButNotDeleteAESKeysOnBadPaddingExceptionWhenTryingToAESDecrypt() throws Exception {
         Assert.assertThrows("The AES encrypted input is corrupted and cannot be recovered. Please discard it.", CryptoException.class, () -> {
             byte[] aesKeyBytes = new byte[]{11, 22, 33};
             byte[] ivBytes = new byte[]{99, 22};
@@ -1253,15 +1303,18 @@ public class CryptoUtilTest {
             doThrow(new BadPaddingException()).when(aesCipher).doFinal(any(byte[].class));
 
             cryptoUtil.decrypt(new byte[0]);
-
-            Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
-            Mockito.verify(storage, never()).remove(KEY_ALIAS);
-            Mockito.verify(storage, never()).remove(KEY_ALIAS + "_iv");
         });
+
+        Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
+        Mockito.verify(keyStore, never()).deleteEntry(OLD_KEY_ALIAS);
+        Mockito.verify(storage, never()).remove(KEY_ALIAS);
+        Mockito.verify(storage, never()).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(storage, never()).remove(OLD_KEY_ALIAS);
+        Mockito.verify(storage, never()).remove(OLD_KEY_ALIAS + "_iv");
     }
 
     @Test
-    public void shouldDeleteAESKeysAndThrowOnIllegalBlockSizeExceptionWhenTryingToAESDecrypt() {
+    public void shouldThrowButNotDeleteAESKeysOnIllegalBlockSizeExceptionWhenTryingToAESDecrypt() throws Exception {
         Assert.assertThrows("The AES encrypted input is corrupted and cannot be recovered. Please discard it.", CryptoException.class, () -> {
             byte[] aesKeyBytes = new byte[]{11, 22, 33};
             doReturn(aesKeyBytes).when(cryptoUtil).getAESKey();
@@ -1276,11 +1329,14 @@ public class CryptoUtilTest {
             doThrow(new IllegalBlockSizeException()).when(aesCipher).doFinal(any(byte[].class));
 
             cryptoUtil.decrypt(new byte[0]);
-
-            Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
-            Mockito.verify(storage, never()).remove(KEY_ALIAS);
-            Mockito.verify(storage, never()).remove(KEY_ALIAS + "_iv");
         });
+
+        Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
+        Mockito.verify(keyStore, never()).deleteEntry(OLD_KEY_ALIAS);
+        Mockito.verify(storage, never()).remove(KEY_ALIAS);
+        Mockito.verify(storage, never()).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(storage, never()).remove(OLD_KEY_ALIAS);
+        Mockito.verify(storage, never()).remove(OLD_KEY_ALIAS + "_iv");
     }
 
 
