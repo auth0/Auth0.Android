@@ -238,6 +238,7 @@ class CryptoUtil {
             KeyStore keyStore = KeyStore.getInstance(ANDROID_KEY_STORE);
             keyStore.load(null);
             keyStore.deleteEntry(KEY_ALIAS);
+            keyStore.deleteEntry(OLD_KEY_ALIAS);
             Log.d(TAG, "Deleting the existing RSA key pair from the KeyStore.");
         } catch (KeyStoreException | CertificateException | IOException | NoSuchAlgorithmException e) {
             Log.e(TAG, "Failed to remove the RSA KeyEntry from the Android KeyStore.", e);
@@ -252,6 +253,8 @@ class CryptoUtil {
     private void deleteAESKeys() {
         storage.remove(KEY_ALIAS);
         storage.remove(KEY_IV_ALIAS);
+        storage.remove(OLD_KEY_ALIAS);
+        storage.remove(OLD_KEY_IV_ALIAS);
     }
 
     /**
