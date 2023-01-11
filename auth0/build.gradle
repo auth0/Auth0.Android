@@ -22,21 +22,10 @@
  * THE SOFTWARE.
  */
 
-buildscript {
-    version = "2.8.0"
-}
-
 plugins {
     id 'kotlin-android'
     id "com.auth0.gradle.oss-library.android" version "0.17.1"
     id "org.jetbrains.dokka" version "1.4.20"
-}
-
-def signingKey = findProperty('signingKey')
-def signingKeyPwd = findProperty('signingPassword')
-
-signing {
-    useInMemoryPgpKeys(signingKey, signingKeyPwd)
 }
 
 logger.lifecycle("Using version ${version} for ${name}")
@@ -46,7 +35,6 @@ oss {
     repository 'Auth0.Android'
     organization 'auth0'
     description 'Android toolkit for Auth0 API'
-    skipAssertSigningConfiguration true
 
     developers {
         auth0 {
