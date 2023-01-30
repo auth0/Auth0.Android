@@ -152,7 +152,7 @@ public object WebAuthProvider {
 
         /**
          * Launches the Login experience with a native feel (without address bar). For this to work,
-         * you have to setup the app as trusted following the methods here [Refer README link].
+         * you have to setup the app as trusted following the methods here [Refer README link].//todo Poovam link README
          *
          * This is still an experimental feature, test it thoroughly in the targeted devices before
          * moving it to production
