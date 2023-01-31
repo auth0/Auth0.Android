@@ -68,6 +68,7 @@ public open class AuthenticationActivity : Activity() {
         val customTabsOptions: CustomTabsOptions = extras.getParcelable(EXTRA_CT_OPTIONS)!!
         val launchAsTwa: Boolean = extras.getBoolean(EXTRA_LAUNCH_AS_TWA, false)
         customTabsController = createCustomTabsController(this, customTabsOptions)
+        customTabsController!!.bindService()
         customTabsController!!.launchUri(authorizeUri!!, launchAsTwa)
     }
 
