@@ -151,13 +151,10 @@ public object WebAuthProvider {
         }
 
         /**
-         * Launches the Login experience with a native feel (without address bar). For this to work,
-         * you have to setup the app as trusted following the methods here [Refer README link].//todo Poovam link README
+         * Launches the Logout experience with a native feel (without address bar). For this to work,
+         * you have to setup the app as trusted following the steps mentioned [here](https://github.com/auth0/Auth0.Android/blob/main/EXAMPLES.md#trusted-web-activity-experimental).
          *
-         * This is still an experimental feature, test it thoroughly in the targeted devices before
-         * moving it to production
-         * todo poovam
-         * //todo test experimental for java and kt
+         * This is still an experimental feature, test it thoroughly in the targeted devices and OS variants and let us know your feedback
          */
         @ExperimentalAuth0Api
         public fun withTrustedWebActivity(): LogoutBuilder {
@@ -449,12 +446,9 @@ public object WebAuthProvider {
 
         /**
          * Launches the Login experience with a native feel (without address bar). For this to work,
-         * you have to setup the app as trusted following the methods here [Refer README link].
+         * you have to setup the app as trusted following the steps mentioned [here](https://github.com/auth0/Auth0.Android/blob/main/EXAMPLES.md#trusted-web-activity-experimental).
          *
-         * This is still an experimental feature, test it thoroughly in the targeted devices before
-         * moving it to production
-         * todo poovam
-         * //todo test experimental for java and kt
+         * This is still an experimental feature, test it thoroughly in the targeted devices and OS variants and let us know your feedback
          */
         @ExperimentalAuth0Api
         public fun withTrustedWebActivity(): Builder {

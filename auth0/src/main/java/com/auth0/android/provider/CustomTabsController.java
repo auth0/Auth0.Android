@@ -96,7 +96,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
             didTryToBind = false;
         }
         if(launchedAsTwa) {
-            twaLauncher.destroy();//todo test what happens if destroyed without being a twa launch. This can happen during fallback scenario and we have to ensure of no crash
+            twaLauncher.destroy();
         }
     }
 

@@ -7,6 +7,7 @@
   - [Specify Connection scope](#specify-connection-scope)
   - [Customize the Custom Tabs UI](#customize-the-custom-tabs-ui)
   - [Changing the Return To URL scheme](#changing-the-return-to-url-scheme)
+  - [Trusted Web Activity](#trusted-web-activity-experimental)
   - [Authentication API](#authentication-api)
     - [Login with database connection](#login-with-database-connection)
     - [Login using MFA with One Time Password code](#login-using-mfa-with-one-time-password-code)
@@ -117,6 +118,32 @@ This configuration will probably match what you've done for the [authentication 
 WebAuthProvider.logout(account)
     .withScheme("myapp")
     .start(this, logoutCallback)
+```
+
+## Trusted Web Activity (Experimental)
+> **Note**
+> Trusted Web Activity support in Auth0.Android is still experimental and can change in the future. 
+>
+> Please test it thoroughly in all the targeted browsers and OS variants and let us know your feedback.
+
+Trusted Web Activity is a feature provided by some browsers to provide a native feel to the custom tabs.
+
+To make it work, there are certain prerequisite
+
+- We need the SHA256 fingerprints of the app’s signing certificate. To get this, you can run the following command on your APK
+```shell
+keytool -printcert -jarfile sample-debug.apk
+```
+- The fingerprint has to be updated in the [Auth0 Dashboard](https://manage.auth0.com/dashboard/eu/poovamraj/applications) under
+Applications > *Specific Application* > Settings > Advanced Settings > Device Settings > Key Hashes
+- App's package name has to be entered in the field above
+
+Once the above prerequisites are met, you can call your login method as below to open your web authentication in Trusted Web Activity.
+
+```kotlin
+WebAuthProvider.login(account)
+    .withTrustedWebActivity()
+    .await(this)
 ```
 
 ## Authentication API
