@@ -203,6 +203,20 @@ public class Auth0Test {
     }
 
     @Test
+    public void shouldAllowOverridingAuthorizeUrl() {
+        class MyAuth extends Auth0 {
+            public MyAuth() {
+                super(CLIENT_ID, DOMAIN);
+            }
+            @Override
+            public String getAuthorizeUrl() {
+                // Calling super to make sure it's fully visible as well as overridable.
+                return super.getAuthorizeUrl() + "something";
+            }
+        }
+    }
+
+    @Test
     public void shouldEnsureLogoutUrlIsOpen() throws NoSuchMethodException {
         Method method = Auth0.class.getMethod("getLogoutUrl");
         Assert.assertTrue(Modifier.isPublic(method.getModifiers()));
