@@ -121,7 +121,7 @@ WebAuthProvider.logout(account)
 ```
 
 ## Trusted Web Activity (Experimental)
-> **Note**
+> **Warning**
 > Trusted Web Activity support in Auth0.Android is still experimental and can change in the future. 
 >
 > Please test it thoroughly in all the targeted browsers and OS variants and let us know your feedback.
