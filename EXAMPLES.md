@@ -126,7 +126,7 @@ WebAuthProvider.logout(account)
 >
 > Please test it thoroughly in all the targeted browsers and OS variants and let us know your feedback.
 
-Trusted Web Activity is a feature provided by some browsers to provide a native feel to the custom tabs.
+Trusted Web Activity is a feature provided by some browsers to provide a native look and feel to the custom tabs.
 
 To make it work, there are certain prerequisite
 
