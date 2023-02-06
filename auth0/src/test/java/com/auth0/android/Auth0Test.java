@@ -26,6 +26,9 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+
 @RunWith(RobolectricTestRunner.class)
 public class Auth0Test {
 
@@ -190,5 +193,33 @@ public class Auth0Test {
     @Test
     public void shouldThrowWhenConfigDomainIsHttp() {
         Assert.assertThrows("Invalid domain url: 'http://" + OTHER_DOMAIN + "'. Only HTTPS domain URLs are supported. If no scheme is passed, HTTPS will be used.", IllegalArgumentException.class, () -> new Auth0(CLIENT_ID, DOMAIN, "HTTP://" + OTHER_DOMAIN));
+    }
+
+    @Test
+    public void shouldEnsureAuthorizeUrlIsOpen() throws NoSuchMethodException {
+        Method method = Auth0.class.getMethod("getAuthorizeUrl");
+        Assert.assertTrue(Modifier.isPublic(method.getModifiers()));
+        Assert.assertFalse(Modifier.isFinal(method.getModifiers()));
+    }
+
+    @Test
+    public void shouldAllowOverridingAuthorizeUrl() {
+        class MyAuth extends Auth0 {
+            public MyAuth() {
+                super(CLIENT_ID, DOMAIN);
+            }
+            @Override
+            public String getAuthorizeUrl() {
+                // Calling super to make sure it's fully visible as well as overridable.
+                return super.getAuthorizeUrl() + "something";
+            }
+        }
+    }
+
+    @Test
+    public void shouldEnsureLogoutUrlIsOpen() throws NoSuchMethodException {
+        Method method = Auth0.class.getMethod("getLogoutUrl");
+        Assert.assertTrue(Modifier.isPublic(method.getModifiers()));
+        Assert.assertFalse(Modifier.isFinal(method.getModifiers()));
     }
 }

@@ -73,7 +73,7 @@ public open class Auth0 @JvmOverloads constructor(
      *
      * @return Url to call to perform the web flow of OAuth
      */
-    public val authorizeUrl: String
+    public open val authorizeUrl: String
         get() = domainUrl!!.newBuilder()
             .addEncodedPathSegment("authorize")
             .build()
@@ -84,7 +84,7 @@ public open class Auth0 @JvmOverloads constructor(
      *
      * @return Url to call to perform the web logout
      */
-    public val logoutUrl: String
+    public open val logoutUrl: String
         get() = domainUrl!!.newBuilder()
             .addEncodedPathSegment("v2")
             .addEncodedPathSegment("logout")
