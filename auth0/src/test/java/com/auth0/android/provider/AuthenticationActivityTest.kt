@@ -106,6 +106,37 @@ public class AuthenticationActivityTest {
     }
 
     @Test
+    public fun shouldAuthenticateUsingBrowserAsTwa() {
+        AuthenticationActivity.authenticateUsingBrowser(
+            callerActivity,
+            uri,
+            true,
+            customTabsOptions,
+        )
+        Mockito.verify(callerActivity).startActivity(intentCaptor.capture())
+        createActivity(intentCaptor.value)
+        activityController.create().start().resume()
+        Mockito.verify(customTabsController).bindService()
+        Mockito.verify(customTabsController).launchUri(uriCaptor.capture(), launchAsTwaCaptor.capture())
+        MatcherAssert.assertThat(uriCaptor.value, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(uriCaptor.value, Is.`is`(uri))
+        MatcherAssert.assertThat(activity.deliveredIntent, Is.`is`(Matchers.nullValue()))
+        MatcherAssert.assertThat(launchAsTwaCaptor.value, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(launchAsTwaCaptor.value, Is.`is`(true))
+        activityController.pause().stop()
+        //Browser is shown
+        val authenticationResultIntent = Intent()
+        authenticationResultIntent.data = resultUri
+        activityController.newIntent(authenticationResultIntent)
+        activityController.start().resume()
+        MatcherAssert.assertThat(activity.deliveredIntent, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(activity.deliveredIntent!!.data, Is.`is`(resultUri))
+        MatcherAssert.assertThat(activity.isFinishing, Is.`is`(true))
+        activityController.destroy()
+        Mockito.verify(customTabsController).unbindService()
+    }
+
+    @Test
     public fun shouldAuthenticateAfterRecreatedUsingBrowser() {
         AuthenticationActivity.authenticateUsingBrowser(
             callerActivity,
