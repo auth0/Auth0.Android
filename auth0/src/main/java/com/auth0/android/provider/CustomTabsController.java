@@ -107,7 +107,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
      *
      * @param uri the uri to open in a Custom Tab or Browser.
      */
-    public void launchUri(@NonNull final Uri uri, @NonNull final boolean launchAsTwa) {
+    public void launchUri(@NonNull final Uri uri, final boolean launchAsTwa) {
         final Context context = this.context.get();
         if (context == null) {
             Log.v(TAG, "Custom Tab Context was no longer valid.");
