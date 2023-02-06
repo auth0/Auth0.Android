@@ -35,7 +35,8 @@ class CustomTabsController extends CustomTabsServiceConnection {
     @NonNull
     private final CustomTabsOptions customTabsOptions;
     private boolean didTryToBind;
-    private boolean launchedAsTwa;
+    @VisibleForTesting
+    boolean launchedAsTwa;
 
     @VisibleForTesting
     CustomTabsController(@NonNull Context context, @NonNull CustomTabsOptions options, @NonNull TwaLauncher twaLauncher) {

@@ -102,6 +102,20 @@ public class CustomTabsControllerTest {
     }
 
     @Test
+    public void shouldUnbindTwa() throws Exception {
+        controller.launchedAsTwa = true;
+        bindService(controller, true);
+        connectBoundService();
+
+        controller.unbindService();
+        verify(context).unbindService(serviceConnectionCaptor.capture());
+        verify(twaLauncher).destroy();
+        final CustomTabsServiceConnection connection = serviceConnectionCaptor.getValue();
+        CustomTabsServiceConnection controllerConnection = controller;
+        assertThat(connection, is(equalTo(controllerConnection)));
+    }
+
+    @Test
     public void shouldUnbindEvenIfNotBound() throws Exception {
         bindService(controller, false);
         connectBoundService();
@@ -200,6 +214,44 @@ public class CustomTabsControllerTest {
         assertThat(intent.getIntExtra(CustomTabsIntent.EXTRA_SHARE_STATE, CustomTabsIntent.SHARE_STATE_OFF), is(CustomTabsIntent.SHARE_STATE_OFF));
         assertThat(intent.getData(), is(uri));
         assertThat(intent, not(hasFlag(Intent.FLAG_ACTIVITY_NO_HISTORY)));
+    }
+
+    @Test
+    public void shouldBindAndLaunchUriWithCustomizationTwa() throws Exception {
+        BrowserPicker browserPicker = mock(BrowserPicker.class);
+        when(browserPicker.getBestBrowserPackage(context.getPackageManager())).thenReturn(DEFAULT_BROWSER_PACKAGE);
+        CustomTabsOptions ctOptions = CustomTabsOptions.newBuilder()
+                .showTitle(true)
+                .withToolbarColor(android.R.color.black)
+                .withBrowserPicker(browserPicker)
+                .build();
+        CustomTabsController controller = new CustomTabsController(context, ctOptions, twaLauncher);
+
+        bindService(controller, true);
+        controller.launchUri(uri, true);
+        connectBoundService();
+
+
+        ArgumentCaptor<TrustedWebActivityIntentBuilder> trustedWebActivityIntentBuilderArgumentCaptor
+                = ArgumentCaptor.forClass(TrustedWebActivityIntentBuilder.class);
+        ArgumentCaptor<CustomTabsCallback> customTabsCallbackArgumentCaptor
+                = ArgumentCaptor.forClass(CustomTabsCallback.class);
+        ArgumentCaptor<SplashScreenStrategy> splashScreenStrategyArgumentCaptor = ArgumentCaptor.forClass(SplashScreenStrategy.class);
+        ArgumentCaptor<Runnable> runnableArgumentCaptor = ArgumentCaptor.forClass(Runnable.class);
+        ArgumentCaptor<TwaLauncher.FallbackStrategy> fallbackStrategyArgumentCaptor = ArgumentCaptor.forClass(TwaLauncher.FallbackStrategy.class);
+
+        verify(twaLauncher, timeout(MAX_TEST_WAIT_TIME_MS)).launch(
+                trustedWebActivityIntentBuilderArgumentCaptor.capture(),
+                customTabsCallbackArgumentCaptor.capture(),
+                splashScreenStrategyArgumentCaptor.capture(),
+                runnableArgumentCaptor.capture(),
+                fallbackStrategyArgumentCaptor.capture());
+
+        assertThat(trustedWebActivityIntentBuilderArgumentCaptor.getValue(), is(notNullValue()));
+        assertThat(customTabsCallbackArgumentCaptor.getValue(), is(nullValue()));
+        assertThat(splashScreenStrategyArgumentCaptor.getValue(), is(nullValue()));
+        assertThat(runnableArgumentCaptor.getValue(), is(nullValue()));
+        assertThat(fallbackStrategyArgumentCaptor.getValue(), is(TwaLauncher.CCT_FALLBACK_STRATEGY));
     }
 
     @Test
