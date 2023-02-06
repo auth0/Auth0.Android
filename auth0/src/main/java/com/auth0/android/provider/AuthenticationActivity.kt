@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.provider.WebAuthProvider.resume
+import com.google.androidbrowserhelper.trusted.TwaLauncher
 
 public open class AuthenticationActivity : Activity() {
     private var intentLaunched = false
@@ -77,7 +78,7 @@ public open class AuthenticationActivity : Activity() {
         context: Context,
         options: CustomTabsOptions
     ): CustomTabsController {
-        return CustomTabsController(context, options)
+        return CustomTabsController(context, options, TwaLauncher(context))
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)

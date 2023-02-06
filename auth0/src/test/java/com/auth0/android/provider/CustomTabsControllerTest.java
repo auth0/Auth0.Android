@@ -45,6 +45,8 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.androidbrowserhelper.trusted.TwaLauncher;
+
 @RunWith(RobolectricTestRunner.class)
 public class CustomTabsControllerTest {
 
@@ -54,6 +56,8 @@ public class CustomTabsControllerTest {
     private Context context;
     @Mock
     private Uri uri;
+    @Mock
+    private TwaLauncher twaLauncher;
     @Mock
     private CustomTabsClient customTabsClient;
     @Captor
@@ -77,7 +81,7 @@ public class CustomTabsControllerTest {
         when(browserPicker.getBestBrowserPackage(context.getPackageManager())).thenReturn(DEFAULT_BROWSER_PACKAGE);
         CustomTabsOptions ctOptions = CustomTabsOptions.newBuilder().withBrowserPicker(browserPicker).build();
 
-        controller = new CustomTabsController(context, ctOptions);
+        controller = new CustomTabsController(context, ctOptions, twaLauncher);
     }
 
     @Test
@@ -125,7 +129,7 @@ public class CustomTabsControllerTest {
         BrowserPicker browserPicker = mock(BrowserPicker.class);
         when(browserPicker.getBestBrowserPackage(context.getPackageManager())).thenReturn(null);
         CustomTabsOptions ctOptions = CustomTabsOptions.newBuilder().withBrowserPicker(browserPicker).build();
-        CustomTabsController controller = new CustomTabsController(context, ctOptions);
+        CustomTabsController controller = new CustomTabsController(context, ctOptions, twaLauncher);
         controller.launchUri(uri, false);
 
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
@@ -146,7 +150,7 @@ public class CustomTabsControllerTest {
                 .withToolbarColor(android.R.color.black)
                 .withBrowserPicker(browserPicker)
                 .build();
-        CustomTabsController controller = new CustomTabsController(context, ctOptions);
+        CustomTabsController controller = new CustomTabsController(context, ctOptions, twaLauncher);
 
         bindService(controller, true);
         controller.launchUri(uri, false);

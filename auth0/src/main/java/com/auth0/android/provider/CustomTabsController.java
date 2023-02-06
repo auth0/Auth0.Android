@@ -38,13 +38,13 @@ class CustomTabsController extends CustomTabsServiceConnection {
     private boolean launchedAsTwa;
 
     @VisibleForTesting
-    CustomTabsController(@NonNull Context context, @NonNull CustomTabsOptions options) {
+    CustomTabsController(@NonNull Context context, @NonNull CustomTabsOptions options, @NonNull TwaLauncher twaLauncher) {
         this.context = new WeakReference<>(context);
         this.session = new AtomicReference<>();
         this.sessionLatch = new CountDownLatch(1);
         this.customTabsOptions = options;
         this.preferredPackage = options.getPreferredPackage(context.getPackageManager());
-        this.twaLauncher  = new TwaLauncher(context);
+        this.twaLauncher  = twaLauncher;
     }
 
     @VisibleForTesting
