@@ -116,9 +116,9 @@ class CustomTabsController extends CustomTabsServiceConnection {
         new Thread(() -> {
             try {
                 if (launchAsTwa) {
-                    launchedAsTwa = true;
+                    this.launchedAsTwa = true;
                     twaLauncher.launch(
-                            customTabsOptions.toTwaIntent(context, uri),
+                            customTabsOptions.toTwaIntentBuilder(context, uri),
                             null,
                             null,
                             null,

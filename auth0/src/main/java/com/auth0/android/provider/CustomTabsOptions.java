@@ -70,7 +70,7 @@ public class CustomTabsOptions implements Parcelable {
     }
 
     @SuppressLint("ResourceType")
-    TrustedWebActivityIntentBuilder toTwaIntent(@NonNull Context context, @NonNull Uri uri) {
+    TrustedWebActivityIntentBuilder toTwaIntentBuilder(@NonNull Context context, @NonNull Uri uri) {
         TrustedWebActivityIntentBuilder builder = new TrustedWebActivityIntentBuilder(uri);
         if (toolbarColor > 0) {
             //Resource exists
