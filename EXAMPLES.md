@@ -128,7 +128,7 @@ WebAuthProvider.logout(account)
 
 Trusted Web Activity is a feature provided by some browsers to provide a native look and feel to the custom tabs.
 
-To make it work, there are certain prerequisite
+To use this feature, there are some additional steps you must take:
 
 - We need the SHA256 fingerprints of the app’s signing certificate. To get this, you can run the following command on your APK
 ```shell
