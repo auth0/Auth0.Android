@@ -80,9 +80,9 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * only work if the user has configured a secure LockScreen (PIN, Pattern, Password or Fingerprint).
      *
      * If the activity passed as first argument is a subclass of ComponentActivity, the authentication result
-     * will be handled internally using "Activity Results API". Otherwise, your activity must override the
-     * [Activity.onActivityResult] method and call [SecureCredentialsManager.checkAuthenticationResult] with
-     * the received parameters.
+     * will be handled internally using "Activity Results API" which should be called from the main thread.
+     * Otherwise, your activity must override the [Activity.onActivityResult] method
+     * and call [SecureCredentialsManager.checkAuthenticationResult] with the received parameters.
      *
      * @param activity    a valid activity context. Will be used in the authentication request to launch a LockScreen intent.
      * @param requestCode the request code to use in the authentication request. Must be a value between 1 and 255.
