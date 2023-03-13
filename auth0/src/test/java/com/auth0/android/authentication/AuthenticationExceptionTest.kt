@@ -485,6 +485,15 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
+    public fun shouldHaveRefreshTokenInvalid() {
+        values[ERROR_KEY] = "invalid_grant"
+        values[ERROR_DESCRIPTION_KEY] =
+            "Unknown or invalid refresh token."
+        val ex = AuthenticationException(values)
+        MatcherAssert.assertThat(ex.isInvalidRefreshToken, CoreMatchers.`is`(true))
+    }
+
+    @Test
     public fun shouldHaveTooManyAttempts() {
         values[CODE_KEY] = "too_many_attempts"
         val ex = AuthenticationException(

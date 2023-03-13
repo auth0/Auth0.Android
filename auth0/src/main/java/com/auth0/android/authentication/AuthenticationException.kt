@@ -190,6 +190,11 @@ public class AuthenticationException : Auth0Exception {
                 && 403 == statusCode
                 && "The refresh_token was generated for a user who doesn't exist anymore." == description
 
+    // When the provided refresh token is invalid or expired
+    public val isInvalidRefreshToken: Boolean
+        get() = "invalid_grant" == code
+                && "Unknown or invalid refresh token." == description
+
     // ID token validation error
     public val isIdTokenValidationError: Boolean
         get() = cause is TokenValidationException
