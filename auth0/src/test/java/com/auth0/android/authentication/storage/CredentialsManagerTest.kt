@@ -987,6 +987,73 @@ public class CredentialsManagerTest {
         verify(request).execute()
     }
 
+    @Test
+    public fun shouldReturnNewCredentialsIfForced() {
+        Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
+        val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS // non expired credentials
+        val parameters = mapOf(
+            "client_id" to "new Client ID",
+            "phone" to "+1 (777) 124-1588"
+        )
+        Mockito.`when`(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveLong("com.auth0.cache_expires_at"))
+            .thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveString("com.auth0.scope")).thenReturn("oldscope")
+        Mockito.`when`(
+            client.renewAuth("refreshToken")
+        ).thenReturn(request)
+
+        val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        val jwtMock = mock<Jwt>()
+        Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
+        Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
+        val renewedCredentials =
+            Credentials("newId", "newAccess", "newType", "newRefresh", newDate, "oldscope")
+        Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
+        manager.getCredentials(
+            scope = "oldscope",
+            minTtl = 0,
+            parameters = parameters,
+            forceRefresh = true,
+            callback = callback
+        )
+        verify(request).execute()
+    }
+
+    @Test
+    public fun shouldReturnSameCredentialsIfNotForced() {
+        verifyNoMoreInteractions(client)
+        Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn(null)
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("type")
+        val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
+        Mockito.`when`(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveLong("com.auth0.cache_expires_at"))
+            .thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveString("com.auth0.scope")).thenReturn("scope")
+        manager.getCredentials("scope",
+            0,
+            emptyMap(),
+            false,
+            callback
+        )
+        verify(callback).onSuccess(
+            credentialsCaptor.capture()
+        )
+        val retrievedCredentials = credentialsCaptor.firstValue
+        MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`("accessToken"))
+        MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`(""))
+        MatcherAssert.assertThat(retrievedCredentials.refreshToken, Is.`is`("refreshToken"))
+        MatcherAssert.assertThat(retrievedCredentials.type, Is.`is`("type"))
+        MatcherAssert.assertThat(retrievedCredentials.expiresAt, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(retrievedCredentials.expiresAt.time, Is.`is`(expirationTime))
+        MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("scope"))
+    }
+
     private fun prepareJwtDecoderMock(expiresAt: Date?) {
         val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(expiresAt)

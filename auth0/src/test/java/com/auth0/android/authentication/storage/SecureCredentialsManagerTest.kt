@@ -1685,6 +1685,69 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
+    public fun shouldReturnNewCredentialsIfForced() {
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS) // non expired credentials
+        insertTestCredentials(
+            hasIdToken = false,
+            hasAccessToken = true,
+            hasRefreshToken = true,
+            willExpireAt = expiresAt,
+            scope = "scope"
+        ) // "scope" is set
+        val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS + ONE_HOUR_SECONDS * 1000)
+        val jwtMock = mock<Jwt>()
+        val parameters = mapOf(
+            "client_id" to "new Client ID",
+            "phone" to "+1 (777) 124-1588"
+        )
+        Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
+        Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
+        Mockito.`when`(
+            client.renewAuth("refreshToken")
+        ).thenReturn(request)
+
+        val expectedCredentials =
+            Credentials("newId", "newAccess", "newType", "newRefresh", newDate, "oldscope")
+        Mockito.`when`(request.execute()).thenReturn(expectedCredentials)
+        val expectedJson = gson.toJson(expectedCredentials)
+        Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
+            .thenReturn(expectedJson.toByteArray())
+        manager.getCredentials(
+            scope = "scope",
+            minTtl = 0,
+            parameters = parameters,
+            forceRefresh = true,
+            callback = callback
+        )
+        verify(request).execute()
+    }
+
+    @Test
+    public fun shouldReturnSameCredentialsIfNotForced() {
+        verifyNoMoreInteractions(client)
+        val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + ONE_HOUR_SECONDS * 1000)
+        insertTestCredentials(true, true, true, expiresAt, "scope")
+        manager.getCredentials("scope",
+            0,
+            emptyMap(),
+            false,
+            callback
+        )
+        verify(callback).onSuccess(
+            credentialsCaptor.capture()
+        )
+        val retrievedCredentials = credentialsCaptor.firstValue
+        MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`("accessToken"))
+        MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`("idToken"))
+        MatcherAssert.assertThat(retrievedCredentials.refreshToken, Is.`is`("refreshToken"))
+        MatcherAssert.assertThat(retrievedCredentials.type, Is.`is`("type"))
+        MatcherAssert.assertThat(retrievedCredentials.expiresAt, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(retrievedCredentials.expiresAt.time, Is.`is`(expiresAt.time))
+        MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("scope"))
+    }
+
+    @Test
     public fun shouldBeMarkedSynchronous(){
         val method =
             SecureCredentialsManager::class.java.getMethod("saveCredentials", Credentials::class.java)
