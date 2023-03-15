@@ -1720,6 +1720,16 @@ public class SecureCredentialsManagerTest {
             callback = callback
         )
         verify(request).execute()
+        verify(callback).onSuccess(credentialsCaptor.capture())
+        val retrievedCredentials = credentialsCaptor.firstValue
+        MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`(expectedCredentials.accessToken))
+        MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`(expectedCredentials.idToken))
+        MatcherAssert.assertThat(retrievedCredentials.refreshToken, Is.`is`(expectedCredentials.refreshToken))
+        MatcherAssert.assertThat(retrievedCredentials.type, Is.`is`(expectedCredentials.type))
+        MatcherAssert.assertThat(retrievedCredentials.expiresAt, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(retrievedCredentials.expiresAt.time, Is.`is`(expectedCredentials.expiresAt.time))
+        MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`(expectedCredentials.scope))
     }
 
     @Test
