@@ -108,7 +108,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      *
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
-     * @param parameters additional parameters to send in the request to refresh expired credentials
+     * @param parameters additional parameters to send in the request to refresh expired credentials.
      * @param forceRefresh this will avoid returning the existing credentials and retrieves a new one even if valid credentials exist.
      */
     @JvmSynthetic
