@@ -97,11 +97,34 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         minTtl: Int,
         parameters: Map<String, String>
     ): Credentials {
+        return awaitCredentials(scope, minTtl, parameters, false)
+    }
+
+    /**
+     * Retrieves the credentials from the storage and refresh them if they have already expired.
+     * It will throw [CredentialsManagerException] if the saved access_token or id_token is null,
+     * or if the tokens have already expired and the refresh_token is null.
+     * This is a Coroutine that is exposed only for Kotlin.
+     *
+     * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
+     * @param minTtl   the minimum time in seconds that the access token should last before expiration.
+     * @param parameters additional parameters to send in the request to refresh expired credentials.
+     * @param forceRefresh this will avoid returning the existing credentials and retrieves a new one even if valid credentials exist.
+     */
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    public suspend fun awaitCredentials(
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        forceRefresh: Boolean
+    ): Credentials {
         return suspendCancellableCoroutine { continuation ->
             getCredentials(
                 scope,
                 minTtl,
                 parameters,
+                forceRefresh,
                 object : Callback<Credentials, CredentialsManagerException> {
                     override fun onSuccess(result: Credentials) {
                         continuation.resume(result)
@@ -158,6 +181,27 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         parameters: Map<String, String>,
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
+        getCredentials(scope, minTtl, parameters, false, callback)
+    }
+
+    /**
+     * Retrieves the credentials from the storage and refresh them if they have already expired.
+     * It will fail with [CredentialsManagerException] if the saved access_token or id_token is null,
+     * or if the tokens have already expired and the refresh_token is null.
+     *
+     * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
+     * @param minTtl   the minimum time in seconds that the access token should last before expiration.
+     * @param parameters additional parameters to send in the request to refresh expired credentials.
+     * @param forceRefresh this will avoid returning the existing credentials and retrieves a new one even if valid credentials exist.
+     * @param callback the callback that will receive a valid [Credentials] or the [CredentialsManagerException].
+     */
+    public fun getCredentials(
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        forceRefresh: Boolean,
+        callback: Callback<Credentials, CredentialsManagerException>
+    ) {
         serialExecutor.execute {
             val accessToken = storage.retrieveString(KEY_ACCESS_TOKEN)
             val refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN)
@@ -173,7 +217,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
             }
             val willAccessTokenExpire = willExpire(expiresAt!!, minTtl.toLong())
             val scopeChanged = hasScopeChanged(storedScope, scope)
-            if (!willAccessTokenExpire && !scopeChanged) {
+            if (!forceRefresh && !willAccessTokenExpire && !scopeChanged) {
                 callback.onSuccess(
                     recreateCredentials(
                         idToken.orEmpty(),
