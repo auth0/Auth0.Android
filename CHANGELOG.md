@@ -1,5 +1,18 @@
 # Change Log
 
+## [2.9.0](https://github.com/auth0/Auth0.Android/tree/2.9.0) (2023-03-16)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.8.1...2.9.0)
+
+**Added**
+- Added forceRefresh option to getCredentials [\#637](https://github.com/auth0/Auth0.Android/pull/637) ([poovamraj](https://github.com/poovamraj))
+- Add Invalid refresh token flag [\#635](https://github.com/auth0/Auth0.Android/pull/635) ([poovamraj](https://github.com/poovamraj))
+- [SDK-3348] Implement trusted web activity support [\#631](https://github.com/auth0/Auth0.Android/pull/631) ([poovamraj](https://github.com/poovamraj))
+- Allow `authorizeUrl` and `logoutUrl` customisation [\#622](https://github.com/auth0/Auth0.Android/pull/622) ([poovamraj](https://github.com/poovamraj))
+- Add AuthenticationException.isTooManyAttempts error [\#615](https://github.com/auth0/Auth0.Android/pull/615) ([tomhusson-toast](https://github.com/tomhusson-toast))
+
+**Fixed**
+- Gson crashes when minified with R8 strict mode [\#634](https://github.com/auth0/Auth0.Android/pull/634) ([wiyarmir](https://github.com/wiyarmir))
+
 ## [2.8.1](https://github.com/auth0/Auth0.Android/tree/2.8.1) (2023-01-11)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.8.0...2.8.1)
 
