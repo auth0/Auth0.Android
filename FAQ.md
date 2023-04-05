@@ -3,6 +3,7 @@
 1. [Why is the Android Lint _error_ `'InvalidPackage'` considered a _warning_?](#1-why-is-the-android-lint-_error_-invalidpackage-considered-a-_warning_)
 2. [Why do I need to declare Manifest Placeholders for the Auth0 domain and scheme?](#2-why-do-i-need-to-declare-manifest-placeholders-for-the-auth0-domain-and-scheme)
 3. [Is the Web Authentication module setup optional?](#3-is-the-web-authentication-module-setup-optional)
+4. [How do I always require the user to login on the web?](#4-how-do-i-always-require-the-user-to-login-on-the-web)
 
 ### 1. Why is the Android Lint _error_ `'InvalidPackage'` considered a _warning_?
 
@@ -72,4 +73,14 @@ Re-declare the activity manually with `tools:node="remove"` in your app's Androi
 <activity
 android:name="com.auth0.android.provider.RedirectActivity"
 tools:node="remove"/>
+```
+
+### 4. How do I always require the user to login on the web?
+
+If you want the user to always be prompted to log in whenever he opens the WebAuth flow, use the `.withParameters` function on the `WebAuthProvider.Builder` providing a map with `"prompt"` as `key` and `"login"` as `value. This will force the webpage to ignore a valid login don previously and ask the user to authenticate again.
+
+```kotlin
+WebAuthProvider.login(account)
+    .withParameters(mapOf("prompt" to "login"))
+    .start(this, callback)
 ```

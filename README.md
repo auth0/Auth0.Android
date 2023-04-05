@@ -206,17 +206,8 @@ WebAuthProvider.login(account)
     .withScheme("myapp")
     .start(this, callback)
 ```
+
 > Note that the schemes [can only have lowercase letters](https://developer.android.com/guide/topics/manifest/data-element).
-
-#### Always require the user to login on the web
-If you want the user to always be prompted to log in whenever he opens the WebAuth flow, use the `.withParameters` function on the `WebAuthProvider.Builder` providing a map with `"prompt"` as `key` and `"login"` as `value. This will force the webpage to ignore a valid login don previously and ask the user to authenticate again.
-
-```kotlin
-WebAuthProvider.login(account)
-    .withParameters(mapOf("prompt" to "login"))
-    .start(this, callback)
-```
-
 
 ### Clearing the session
 
