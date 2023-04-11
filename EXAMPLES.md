@@ -5,6 +5,7 @@
   - [Specify audience](#specify-audience)
   - [Specify scope](#specify-scope)
   - [Specify Connection scope](#specify-connection-scope)
+  - [Specify Parameter](#specify-parameter)
   - [Customize the Custom Tabs UI](#customize-the-custom-tabs-ui)
   - [Changing the Return To URL scheme](#changing-the-return-to-url-scheme)
   - [Trusted Web Activity](#trusted-web-activity-experimental)
@@ -78,6 +79,16 @@ WebAuthProvider.login(account)
 ```kotlin
 WebAuthProvider.login(account)
     .withConnectionScope("email", "profile", "calendar:read")
+    .start(this, callback)
+```
+
+## Specify Parameter
+
+To [prompt](https://auth0.com/docs/customize/universal-login-pages/customize-login-text-prompts#prompt-values) the user to login or to send custom parameters in the request, `.withParameters` method can be used.
+
+```kotlin
+WebAuthProvider.login(account)
+    .withParameters(mapOf("prompt" to "login", "custom" to "value"))
     .start(this, callback)
 ```
 
