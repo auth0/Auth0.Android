@@ -25,7 +25,9 @@
 
 ### Requirements
 
-Android API version 21 or later and Java 8+.
+Android API version 31 or later and Java 8+.
+
+> :warning: For Apps compiling and targeting using Android SDK version 30 and below can use Auth0.Android version 2.9.0
 
 Here’s what you need in `build.gradle` to target Java 8 byte code for Android and Kotlin plugins respectively.
 
