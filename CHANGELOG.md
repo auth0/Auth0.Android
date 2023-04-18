@@ -1,5 +1,11 @@
 # Change Log
 
+## [2.9.1](https://github.com/auth0/Auth0.Android/tree/2.9.1) (2023-04-18)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.9.0...2.9.1)
+
+**Fixed**
+- Update dependencies [\#641](https://github.com/auth0/Auth0.Android/pull/641) ([poovamraj](https://github.com/poovamraj))
+
 ## [2.9.0](https://github.com/auth0/Auth0.Android/tree/2.9.0) (2023-03-16)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.8.1...2.9.0)
 
