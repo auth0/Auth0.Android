@@ -25,7 +25,9 @@
 
 ### Requirements
 
-Android API version 21 or later and Java 8+.
+Android API version 31 or later and Java 8+.
+
+> :warning: Applications targeting Android SDK version 30 and below should use version 2.9.0.
 
 Here’s what you need in `build.gradle` to target Java 8 byte code for Android and Kotlin plugins respectively.
 
