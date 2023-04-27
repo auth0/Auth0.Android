@@ -14,3 +14,5 @@
   @com.google.gson.annotations.SerializedName <fields>;
 }
 -keep,allowobfuscation @interface com.google.gson.annotations.SerializedName
+-keep class com.google.gson.reflect.TypeToken { *; }
+-keep class * extends com.google.gson.reflect.TypeToken
