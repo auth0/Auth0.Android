@@ -1,5 +1,6 @@
 package com.auth0.android.request.internal
 
+import androidx.annotation.VisibleForTesting
 import java.util.*
 
 /**
@@ -8,7 +9,8 @@ import java.util.*
 internal object OidcUtils {
     internal const val KEY_SCOPE = "scope"
     internal const val DEFAULT_SCOPE = "openid profile email"
-    private const val REQUIRED_SCOPE = "openid"
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal const val REQUIRED_SCOPE = "openid"
 
     /**
      * Given a string, it will check if it contains the scope of "openid".
