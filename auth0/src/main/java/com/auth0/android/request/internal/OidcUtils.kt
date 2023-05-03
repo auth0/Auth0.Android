@@ -9,7 +9,6 @@ import java.util.*
 internal object OidcUtils {
     internal const val KEY_SCOPE = "scope"
     internal const val DEFAULT_SCOPE = "openid profile email"
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal const val REQUIRED_SCOPE = "openid"
 
     /**
