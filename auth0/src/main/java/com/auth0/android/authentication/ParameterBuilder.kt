@@ -181,6 +181,12 @@ public class ParameterBuilder private constructor(parameters: Map<String, String
                 .setScope(OidcUtils.DEFAULT_SCOPE)
         }
 
+        @JvmStatic
+        public fun newBuilderWithRequiredScope(): ParameterBuilder {
+            return newBuilder()
+                .setScope(OidcUtils.REQUIRED_SCOPE)
+        }
+
         /**
          * Creates a new instance of the builder.
          *
