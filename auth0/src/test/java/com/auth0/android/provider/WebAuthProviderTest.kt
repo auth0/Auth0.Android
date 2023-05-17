@@ -1428,8 +1428,8 @@ public class WebAuthProviderTest {
                 "urlType",
                 1111L,
                 "1234567890",
-                "some other error",
-                null,
+                "a0.invalid_configuration",
+                "The application isn't configured properly for the social connection. Please check your Auth0's application configuration",
                 null
             )
         )

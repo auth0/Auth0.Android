@@ -208,8 +208,8 @@ internal class OAuthManager(
             }
             else -> {
                 throw AuthenticationException(
-                    ERROR_VALUE_INVALID_CONFIGURATION,
-                    "The application isn't configured properly for the social connection. Please check your Auth0's application configuration"
+                    errorValue,
+                    errorDescription ?: "An unexpected error occurred."
                 )
             }
         }
