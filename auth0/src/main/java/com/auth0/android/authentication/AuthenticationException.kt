@@ -7,6 +7,7 @@ import com.auth0.android.NetworkErrorException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import com.auth0.android.provider.TokenValidationException
+import java.net.SocketException
 
 public class AuthenticationException : Auth0Exception {
     private var code: String? = null
@@ -108,6 +109,7 @@ public class AuthenticationException : Auth0Exception {
         get() = cause is NetworkErrorException
                 || cause?.cause is UnknownHostException
                 || cause?.cause is SocketTimeoutException
+                || cause?.cause is SocketException
 
     // When there is no Browser app installed to handle the web authentication
     public val isBrowserAppNotAvailable: Boolean
