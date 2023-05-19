@@ -1,5 +1,12 @@
 # Change Log
 
+## [2.9.3](https://github.com/auth0/Auth0.Android/tree/2.9.3) (2023-05-19)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.9.2...2.9.3)
+
+**Fixed**
+- Consider SocketException as network error [\#659](https://github.com/auth0/Auth0.Android/pull/659) ([poovamraj](https://github.com/poovamraj))
+- [ESD-28245] Fix not propagating error values from server [\#658](https://github.com/auth0/Auth0.Android/pull/658) ([poovamraj](https://github.com/poovamraj))
+
 ## [2.9.2](https://github.com/auth0/Auth0.Android/tree/2.9.2) (2023-05-05)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.9.1...2.9.2)
 
