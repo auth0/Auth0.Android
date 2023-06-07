@@ -1,6 +1,7 @@
 package com.auth0.sample
 
 import android.os.Bundle
+import android.util.Base64
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,10 +20,15 @@ import com.auth0.android.request.DefaultClient
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.UserProfile
 import com.auth0.sample.databinding.FragmentDatabaseLoginBinding
+import com.google.android.gms.tasks.Task
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.play.core.integrity.IntegrityManagerFactory
+import com.google.android.play.core.integrity.IntegrityTokenRequest
+import com.google.android.play.core.integrity.IntegrityTokenResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import java.security.SecureRandom
 
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
@@ -161,27 +167,56 @@ class DatabaseLoginFragment : Fragment() {
             })
     }
 
-    private fun webAuth() {
-        WebAuthProvider.login(account)
-            .withScheme(getString(R.string.com_auth0_scheme))
-            .withAudience(audience)
-            .withScope(scope)
-            .start(requireContext(), object : Callback<Credentials, AuthenticationException> {
-                override fun onSuccess(result: Credentials) {
-                    credentialsManager.saveCredentials(result)
-                    Snackbar.make(
-                        requireView(),
-                        "Hello ${result.user.name}",
-                        Snackbar.LENGTH_LONG
-                    ).show()
-                }
+    /**
+     * The value set in the nonce field must be correctly formatted:
+     *  String
+     *  URL-safe
+     *  Encoded as Base64 and non-wrapping
+     *  Minimum of 16 characters
+     *  Maximum of 500 characters
+     * https://developer.android.com/google/play/integrity/verdict#nonce
+     */
+    private fun generateNonce(): String {
+        val randomString = RandomString(256).nextString()
+        val encoded = Base64.encode(
+            randomString.toByteArray(), Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP
+        )
+        return String(encoded)
+    }
 
-                override fun onFailure(error: AuthenticationException) {
-                    val message =
-                        if (error.isCanceled) "Browser was closed" else error.getDescription()
-                    Snackbar.make(requireView(), message, Snackbar.LENGTH_LONG).show()
-                }
-            })
+
+    private fun webAuth() {
+        val integrityManager =
+            IntegrityManagerFactory.create(activity?.applicationContext) // could instead just be applicationContext if used inside an activity
+
+        val nonce = generateNonce()
+        val integrityTokenResponse: Task<IntegrityTokenResponse> =
+            integrityManager.requestIntegrityToken(
+                IntegrityTokenRequest.builder()
+                    .setNonce(nonce)
+                    .build())
+
+        integrityTokenResponse.addOnSuccessListener {
+            val token = it.token()
+            WebAuthProvider.login(account)
+                .withScheme(getString(R.string.com_auth0_scheme))
+                .withAudience(audience)
+                .withScope(scope)
+                .withParameters(mapOf("integrity_token" to token, "nonce" to nonce))
+                .start(requireContext(), object : Callback<Credentials, AuthenticationException> {
+                    override fun onSuccess(result: Credentials) {
+                        println(result)
+                    }
+
+                    override fun onFailure(error: AuthenticationException) {
+                        println(error)
+                    }
+                })
+        }
+
+        integrityTokenResponse.addOnFailureListener {
+            println(it.message)
+        }
     }
 
     private suspend fun webAuthAsync() {
