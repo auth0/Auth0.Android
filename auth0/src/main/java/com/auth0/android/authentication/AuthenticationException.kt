@@ -157,6 +157,8 @@ public class AuthenticationException : Auth0Exception {
     /// When MFA code sent is invalid or expired
     public val isMultifactorCodeInvalid: Boolean
         get() = "a0.mfa_invalid_code" == code || "invalid_grant" == code && "Invalid otp_code." == description
+                || code == "invalid_grant" && description == "Invalid binding_code."
+                || code == "invalid_grant" && description == "MFA Authorization rejected."
 
     /// When password used for SignUp does not match connection's strength requirements.
     public val isPasswordNotStrongEnough: Boolean

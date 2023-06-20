@@ -315,6 +315,26 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
+    public fun shouldHaveInvalidMultifactorCodeForWrongBindingCode() {
+        values[ERROR_KEY] = "invalid_grant"
+        values[ERROR_DESCRIPTION_KEY] = "Invalid binding_code."
+        val ex = AuthenticationException(
+            values
+        )
+        MatcherAssert.assertThat(ex.isMultifactorCodeInvalid, CoreMatchers.`is`(true))
+    }
+
+    @Test
+    public fun shouldHaveInvalidMultifactorCodeWhenAuthorizationRejected() {
+        values[ERROR_KEY] = "invalid_grant"
+        values[ERROR_DESCRIPTION_KEY] = "MFA Authorization rejected."
+        val ex = AuthenticationException(
+            values
+        )
+        MatcherAssert.assertThat(ex.isMultifactorCodeInvalid, CoreMatchers.`is`(true))
+    }
+
+    @Test
     public fun shouldHaveInvalidMultifactorCode() {
         values[CODE_KEY] = "a0.mfa_invalid_code"
         val ex = AuthenticationException(
