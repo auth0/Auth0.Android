@@ -532,6 +532,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 request.addParameter("scope", scope)
             }
 
+            var freshCredentials: Credentials? = null
             try {
                 val fresh = request.execute()
                 val expiresAt = fresh.expiresAt.time
@@ -554,7 +555,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 //non-empty refresh token for refresh token rotation scenarios
                 val updatedRefreshToken =
                     if (TextUtils.isEmpty(fresh.refreshToken)) credentials.refreshToken else fresh.refreshToken
-                val refreshed = Credentials(
+                freshCredentials = Credentials(
                     fresh.idToken,
                     fresh.accessToken,
                     fresh.type,
@@ -562,9 +563,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     fresh.expiresAt,
                     fresh.scope
                 )
-                saveCredentials(refreshed)
-                callback.onSuccess(refreshed)
-                decryptCallback = null
             } catch (error: Auth0Exception) {
                 callback.onFailure(
                     CredentialsManagerException(
@@ -572,6 +570,25 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                         error
                     )
                 )
+                decryptCallback = null
+            }
+
+            if (freshCredentials != null) {
+                try {
+                    saveCredentials(freshCredentials)
+                    callback.onSuccess(freshCredentials)
+                } catch (error: CredentialsManagerException) {
+                    val exception = CredentialsManagerException(
+                        "An error occurred while saving the refreshed Credentials.", error)
+                    if(error.cause is IncompatibleDeviceException || error.cause is CryptoException) {
+                        exception.refreshedCredentials = freshCredentials
+                    }
+                    callback.onFailure(exception)
+                }
+                decryptCallback = null
+            } else {
+                val exception = CredentialsManagerException("Received empty credentials.")
+                callback.onFailure(exception)
                 decryptCallback = null
             }
         }

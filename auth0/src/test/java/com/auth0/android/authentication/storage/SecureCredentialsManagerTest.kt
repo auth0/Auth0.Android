@@ -54,6 +54,7 @@ import java.util.*
 import java.util.concurrent.Executor
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
+import java.lang.Exception
 
 @RunWith(RobolectricTestRunner::class)
 public class SecureCredentialsManagerTest {
@@ -415,6 +416,124 @@ public class SecureCredentialsManagerTest {
         verify(storage, never()).remove("com.auth0.credentials")
         verify(storage, never()).remove("com.auth0.credentials_expires_at")
         verify(storage, never()).remove("com.auth0.credentials_can_refresh")
+    }
+
+    @Test
+    public fun shouldFailOnSavingRefreshedCredentialsInGetCredentialsWhenCryptoExceptionIsThrown() {
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS) // non expired credentials
+        insertTestCredentials(false, true, true, expiresAt, "scope") // "scope" is set
+        val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS + ONE_HOUR_SECONDS * 1000)
+        val jwtMock = mock<Jwt>()
+        Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
+        Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
+        Mockito.`when`(
+            client.renewAuth("refreshToken")
+        ).thenReturn(request)
+
+        // Trigger success
+        val expectedCredentials =
+            Credentials("newId", "newAccess", "newType", "refreshToken", newDate, "different scope")
+        Mockito.`when`(request.execute()).thenReturn(expectedCredentials)
+
+        val expectedJson = gson.toJson(expectedCredentials)
+        Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
+            .thenThrow(CryptoException("CryptoException is thrown"))
+        manager.getCredentials("different scope", 0, callback) // minTTL of 0 seconds (default)
+        verify(request)
+            .addParameter(eq("scope"), eq("different scope"))
+        verify(callback).onFailure(
+            exceptionCaptor.capture()
+        )
+
+        // Verify the returned credentials are the latest
+        val exception = exceptionCaptor.firstValue
+        val retrievedCredentials = exception.refreshedCredentials
+        MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exception.message, Is.`is`("An error occurred while saving the refreshed Credentials."))
+        MatcherAssert.assertThat(exception.cause!!.message, Is.`is`("A change on the Lock Screen security settings have deemed the encryption keys invalid and have been recreated. Please try saving the credentials again."))
+        MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(retrievedCredentials!!.idToken, Is.`is`("newId"))
+        MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`("newAccess"))
+        MatcherAssert.assertThat(retrievedCredentials.type, Is.`is`("newType"))
+        MatcherAssert.assertThat(retrievedCredentials.refreshToken, Is.`is`("refreshToken"))
+        MatcherAssert.assertThat(retrievedCredentials.expiresAt, Is.`is`(newDate))
+        MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("different scope"))
+    }
+
+    @Test
+    public fun shouldFailOnSavingRefreshedCredentialsInGetCredentialsWhenIncompatibleDeviceExceptionIsThrown() {
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS) // non expired credentials
+        insertTestCredentials(false, true, true, expiresAt, "scope") // "scope" is set
+        val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS + ONE_HOUR_SECONDS * 1000)
+        val jwtMock = mock<Jwt>()
+        Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
+        Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
+        Mockito.`when`(
+            client.renewAuth("refreshToken")
+        ).thenReturn(request)
+
+        // Trigger success
+        val expectedCredentials =
+            Credentials("newId", "newAccess", "newType", "refreshToken", newDate, "different scope")
+        Mockito.`when`(request.execute()).thenReturn(expectedCredentials)
+
+        val expectedJson = gson.toJson(expectedCredentials)
+        Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
+            .thenThrow(IncompatibleDeviceException(Exception()))
+        manager.getCredentials("different scope", 0, callback) // minTTL of 0 seconds (default)
+        verify(request)
+            .addParameter(eq("scope"), eq("different scope"))
+        verify(callback).onFailure(
+            exceptionCaptor.capture()
+        )
+
+        // Verify the returned credentials are the latest
+        val exception = exceptionCaptor.firstValue
+        val retrievedCredentials = exception.refreshedCredentials
+        MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exception.message, Is.`is`("An error occurred while saving the refreshed Credentials."))
+        MatcherAssert.assertThat(exception.cause!!.message, Is.`is`("This device is not compatible with the SecureCredentialsManager class."))
+        MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(retrievedCredentials!!.idToken, Is.`is`("newId"))
+        MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`("newAccess"))
+        MatcherAssert.assertThat(retrievedCredentials.type, Is.`is`("newType"))
+        MatcherAssert.assertThat(retrievedCredentials.refreshToken, Is.`is`("refreshToken"))
+        MatcherAssert.assertThat(retrievedCredentials.expiresAt, Is.`is`(newDate))
+        MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("different scope"))
+    }
+
+
+    @Test
+    public fun shouldFailWithoutRefreshedCredentialsInExceptionOnSavingRefreshedCredentialsInGetCredentialsWhenDifferentExceptionIsThrown() {
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS) // non expired credentials
+        insertTestCredentials(false, true, true, expiresAt, "scope") // "scope" is set
+        val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS + ONE_HOUR_SECONDS * 1000)
+        val jwtMock = mock<Jwt>()
+        Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
+        Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
+        Mockito.`when`(
+            client.renewAuth("refreshToken")
+        ).thenReturn(request)
+
+        // Trigger success
+        val expectedCredentials =
+            Credentials("", "", "newType", "refreshToken", newDate, "different scope")
+        Mockito.`when`(request.execute()).thenReturn(expectedCredentials)
+
+        manager.getCredentials("different scope", 0, callback) // minTTL of 0 seconds (default)
+        verify(request)
+            .addParameter(eq("scope"), eq("different scope"))
+        verify(callback).onFailure(
+            exceptionCaptor.capture()
+        )
+
+        // Verify the returned credentials are the latest
+        val exception = exceptionCaptor.firstValue
+        val retrievedCredentials = exception.refreshedCredentials
+        MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exception.message, Is.`is`("An error occurred while saving the refreshed Credentials."))
+        MatcherAssert.assertThat(exception.cause!!.message, Is.`is`("Credentials must have a valid date of expiration and a valid access_token or id_token value."))
+        MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.nullValue()))
     }
 
     @Test

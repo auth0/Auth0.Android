@@ -75,6 +75,10 @@ public open class Credentials(
     public var recoveryCode: String? = null
         internal set
 
+    override fun toString(): String {
+        return "Credentials(idToken='xxxxx', accessToken='xxxxx', type='$type', refreshToken='xxxxx', expiresAt='$expiresAt', scope='$scope')"
+    }
+
     public val user: UserProfile get() {
         val (_, payload) = Jwt.splitToken(idToken)
         val gson = GsonProvider.gson

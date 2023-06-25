@@ -6,6 +6,7 @@ import org.hamcrest.Matchers
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import java.text.SimpleDateFormat
 import java.util.*
 
 private val idToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vbXktZG9tYWluLmF1dGgwLmNvbSIsInN1YiI6ImF1dGgwfDEyMzQ1NiIsImF1ZCI6Im15X2NsaWVudF9pZCIsImV4cCI6MTMxMTI4MTk3MCwiaWF0IjoxMzExMjgwOTcwLCJuYW1lIjoiSmFuZSBEb2UiLCJnaXZlbl9uYW1lIjoiSmFuZSIsImZhbWlseV9uYW1lIjoiRG9lIiwiZ2VuZGVyIjoiZmVtYWxlIiwiYmlydGhkYXRlIjoiMDAwMC0xMC0zMSIsImVtYWlsIjoiamFuZWRvZUBleGFtcGxlLmNvbSIsInBpY3R1cmUiOiJodHRwOi8vZXhhbXBsZS5jb20vamFuZWRvZS9tZS5qcGcifQ.FKw0UVWANEqibD9VTC9WLzstlyc_IRnyPSpUMDP3hKc"
@@ -65,5 +66,13 @@ public class CredentialsTest {
         MatcherAssert.assertThat(json, Matchers.not(Matchers.containsString("auth0|123456")))
         val obj = gson.fromJson(json, Credentials::class.java)
         MatcherAssert.assertThat(obj.user.getId(), Matchers.`is`("auth0|123456"))
+    }
+
+    @Test
+    public fun shouldNotPrintCredentials() {
+        val date = Date()
+        val credentials: Credentials =
+            CredentialsMock(idToken, "accessToken", "type", "refreshToken", date, "scope")
+        MatcherAssert.assertThat(credentials.toString(), Matchers.`is`("Credentials(idToken='xxxxx', accessToken='xxxxx', type='type', refreshToken='xxxxx', expiresAt='$date', scope='scope')"))
     }
 }
