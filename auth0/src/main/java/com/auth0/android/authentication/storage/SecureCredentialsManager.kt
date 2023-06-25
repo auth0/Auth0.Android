@@ -532,7 +532,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 request.addParameter("scope", scope)
             }
 
-            var freshCredentials: Credentials? = null
+            val freshCredentials: Credentials
             try {
                 val fresh = request.execute()
                 val expiresAt = fresh.expiresAt.time
@@ -571,26 +571,21 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     )
                 )
                 decryptCallback = null
+                return@execute
             }
 
-            if (freshCredentials != null) {
-                try {
-                    saveCredentials(freshCredentials)
-                    callback.onSuccess(freshCredentials)
-                } catch (error: CredentialsManagerException) {
-                    val exception = CredentialsManagerException(
-                        "An error occurred while saving the refreshed Credentials.", error)
-                    if(error.cause is IncompatibleDeviceException || error.cause is CryptoException) {
-                        exception.refreshedCredentials = freshCredentials
-                    }
-                    callback.onFailure(exception)
+            try {
+                saveCredentials(freshCredentials)
+                callback.onSuccess(freshCredentials)
+            } catch (error: CredentialsManagerException) {
+                val exception = CredentialsManagerException(
+                    "An error occurred while saving the refreshed Credentials.", error)
+                if(error.cause is IncompatibleDeviceException || error.cause is CryptoException) {
+                    exception.refreshedCredentials = freshCredentials
                 }
-                decryptCallback = null
-            } else {
-                val exception = CredentialsManagerException("Received empty credentials.")
                 callback.onFailure(exception)
-                decryptCallback = null
             }
+            decryptCallback = null
         }
     }
 
