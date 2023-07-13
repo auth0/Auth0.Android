@@ -230,6 +230,43 @@ public class OrgClaimMismatchException internal constructor(expected: String?, r
 }
 
 /**
+ * This Exception is thrown when Organization Name (org_name) claim is missing in the ID Token
+ */
+public class OrgNameClaimMissingException internal constructor() : TokenValidationException(MESSAGE) {
+    private companion object {
+        private const val MESSAGE = "Organization Name (org_name) claim must be a string present in the ID token"
+    }
+
+    /**
+     * To avoid backward compatibility issue, we still have the toString conversion similar to the
+     * old [TokenValidationException] that was thrown
+     */
+    override fun toString(): String {
+        return "${this.javaClass.superclass.name}: $message"
+    }
+}
+
+/**
+ * This Exception is thrown when the Organization Name (org_name) claim found in the ID token is not the
+ * one that was expected
+ */
+public class OrgNameClaimMismatchException internal constructor(expected: String?, received: String?) :
+    TokenValidationException(message(expected, received)) {
+    private companion object {
+        private fun message(expected: String?, received: String?): String =
+            "Organization Name (org_name) claim mismatch in the ID token; expected \"$expected\", found \"$received\""
+    }
+
+    /**
+     * To avoid backward compatibility issue, we still have the toString conversion similar to the
+     * old [TokenValidationException] that was thrown
+     */
+    override fun toString(): String {
+        return "${this.javaClass.superclass.name}: $message"
+    }
+}
+
+/**
  * This Exception is thrown when Authorized Party (azp) claim is missing in the ID Token
  */
 public class AzpClaimMissingException internal constructor() : TokenValidationException(MESSAGE) {
