@@ -282,7 +282,7 @@ public class IdTokenVerifierTest {
 
     @Test
     public void shouldFailWhenOrganizationNameClaimIsRequiredAndHasUnexpectedValue() {
-        String message = "Organization Name (org_name) claim mismatch in the ID token; expected \"org___test_org_name__\", found \"--invalid--\"";
+        String message = "Organization Name (org_name) claim mismatch in the ID token; expected \"__test_org_name__\", found \"--invalid--\"";
         Exception e = Assert.assertThrows(message, OrgNameClaimMismatchException.class, () -> {
             Map<String, Object> jwtBody = createJWTBody();
             jwtBody.put("org_name", "--invalid--");
@@ -319,7 +319,7 @@ public class IdTokenVerifierTest {
 
     @Test
     public void shouldFailWhenOrganizationIdClaimIsRequiredAndHasUnexpectedValue() {
-        String message = "Organization Id (org_id) claim mismatch in the ID token; expected \"__test_org_id__\", found \"--invalid--\"";
+        String message = "Organization Id (org_id) claim mismatch in the ID token; expected \"org___test_org_id__\", found \"--invalid--\"";
         Exception e = Assert.assertThrows(message, OrgClaimMismatchException.class, () -> {
             Map<String, Object> jwtBody = createJWTBody();
             jwtBody.put("org_id", "--invalid--");
