@@ -23,6 +23,7 @@ internal class Jwt(rawToken: String) {
     val issuer: String?
     val nonce: String?
     val organizationId: String?
+    val organizationName: String?
     val issuedAt: Date?
     val expiresAt: Date?
     val authorizedParty: String?
@@ -46,6 +47,7 @@ internal class Jwt(rawToken: String) {
         issuer = decodedPayload["iss"] as String?
         nonce = decodedPayload["nonce"] as String?
         organizationId = decodedPayload["org_id"] as String?
+        organizationName = decodedPayload["org_name"] as String?
         issuedAt = (decodedPayload["iat"] as? Double)?.let { Date(it.toLong() * 1000) }
         expiresAt = (decodedPayload["exp"] as? Double)?.let { Date(it.toLong() * 1000) }
         authorizedParty = decodedPayload["azp"] as String?

@@ -993,7 +993,7 @@ Note that Organizations is currently only available to customers on our Enterpri
 
 ```kotlin
 WebAuthProvider.login(account)
-    .withOrganization(organizationId)
+    .withOrganization(organizationIdOrName)
     .start(this, callback)
 ```
 
