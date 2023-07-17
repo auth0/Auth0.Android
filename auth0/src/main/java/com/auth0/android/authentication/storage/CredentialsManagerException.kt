@@ -1,6 +1,7 @@
 package com.auth0.android.authentication.storage
 
 import com.auth0.android.Auth0Exception
+import com.auth0.android.result.Credentials
 
 /**
  * Represents an error raised by the [CredentialsManager].
@@ -18,4 +19,13 @@ public class CredentialsManagerException internal constructor(
      */
     public val isDeviceIncompatible: Boolean
         get() = cause is IncompatibleDeviceException
+
+    /**
+     * Returns the refreshed [Credentials] if exception is thrown right before saving them.
+     * This will avoid users being logged out unnecessarily and allows to handle failure case as needed
+     *
+     * Set incase [IncompatibleDeviceException] or [CryptoException] is thrown while saving the refreshed [Credentials]
+     */
+    public var refreshedCredentials: Credentials? = null
+        internal set
 }
