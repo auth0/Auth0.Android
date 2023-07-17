@@ -9,7 +9,6 @@ import com.auth0.android.request.HttpMethod
 import com.auth0.android.request.NetworkingClient
 import com.auth0.android.request.RequestOptions
 import com.auth0.android.request.ServerResponse
-import com.auth0.android.request.internal.OidcUtils
 import com.auth0.android.request.internal.RequestFactory
 import com.auth0.android.request.internal.ThreadSwitcherShadow
 import com.auth0.android.result.*
@@ -2201,7 +2200,7 @@ public class AuthenticationAPIClientTest {
         )
         assertThat(request.path, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
-        assertThat(body, Matchers.hasEntry("scope", OidcUtils.REQUIRED_SCOPE))
+        assertThat(body, Matchers.not(Matchers.hasKey("scope")))
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
         assertThat(body, Matchers.hasEntry("grant_type", "refresh_token"))
@@ -2230,7 +2229,7 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
         assertThat(body, Matchers.hasEntry("grant_type", "refresh_token"))
-        assertThat(body, Matchers.hasEntry("scope", OidcUtils.REQUIRED_SCOPE))
+        assertThat(body, Matchers.not(Matchers.hasKey("scope")))
         assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
     }
 
@@ -2253,7 +2252,7 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
         assertThat(body, Matchers.hasEntry("grant_type", "refresh_token"))
-        assertThat(body, Matchers.hasEntry("scope", OidcUtils.REQUIRED_SCOPE))
+        assertThat(body, Matchers.not(Matchers.hasKey("scope")))
         assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
     }
 
@@ -2364,7 +2363,6 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.hasEntry("code", "code"))
         assertThat(body, Matchers.hasEntry("code_verifier", "codeVerifier"))
         assertThat(body, Matchers.hasEntry("redirect_uri", "http://redirect.uri"))
-        assertThat(body, Matchers.hasEntry("scope", OidcUtils.REQUIRED_SCOPE))
         assertThat(
             callback, AuthenticationCallbackMatcher.hasPayloadOfType(
                 Credentials::class.java
@@ -2390,7 +2388,6 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.hasEntry("code", "code"))
         assertThat(body, Matchers.hasEntry("code_verifier", "codeVerifier"))
         assertThat(body, Matchers.hasEntry("redirect_uri", "http://redirect.uri"))
-        assertThat(body, Matchers.hasEntry("scope", OidcUtils.REQUIRED_SCOPE))
         assertThat(
             callback, AuthenticationCallbackMatcher.hasError(
                 Credentials::class.java

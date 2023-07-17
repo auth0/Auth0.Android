@@ -555,7 +555,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @return a request to start
      */
     public fun renewAuth(refreshToken: String): Request<Credentials, AuthenticationException> {
-        val parameters = ParameterBuilder.newBuilderWithRequiredScope()
+        val parameters = ParameterBuilder.newBuilder()
             .setClientId(clientId)
             .setRefreshToken(refreshToken)
             .setGrantType(ParameterBuilder.GRANT_TYPE_REFRESH_TOKEN)
@@ -690,7 +690,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         codeVerifier: String,
         redirectUri: String
     ): Request<Credentials, AuthenticationException> {
-        val parameters = ParameterBuilder.newBuilderWithRequiredScope()
+        val parameters = ParameterBuilder.newBuilder()
             .setClientId(clientId)
             .setGrantType(ParameterBuilder.GRANT_TYPE_AUTHORIZATION_CODE)
             .set(OAUTH_CODE_KEY, authorizationCode)
