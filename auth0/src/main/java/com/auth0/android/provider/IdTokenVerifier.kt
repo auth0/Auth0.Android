@@ -59,13 +59,23 @@ internal class IdTokenVerifier {
                 throw NonceClaimMismatchException(verifyOptions.nonce, nonceClaim)
             }
         }
-        if (verifyOptions.organization != null) {
-            val orgClaim = token.organizationId
-            if (TextUtils.isEmpty(orgClaim)) {
-                throw OrgClaimMissingException()
-            }
-            if (verifyOptions.organization != orgClaim) {
-                throw OrgClaimMismatchException(verifyOptions.organization, orgClaim)
+        verifyOptions.organization?.let {organizationInput ->
+            if(organizationInput.startsWith("org_")) {
+                val orgClaim = token.organizationId
+                if (TextUtils.isEmpty(orgClaim)) {
+                    throw OrgClaimMissingException()
+                }
+                if (organizationInput != orgClaim) {
+                    throw OrgClaimMismatchException(organizationInput, orgClaim)
+                }
+            } else {
+                val orgNameClaim = token.organizationName
+                if (TextUtils.isEmpty(orgNameClaim)) {
+                    throw OrgNameClaimMissingException()
+                }
+                if (!organizationInput.equals(orgNameClaim, true)) {
+                    throw OrgNameClaimMismatchException(organizationInput, orgNameClaim)
+                }
             }
         }
         if (audience.size > 1) {
