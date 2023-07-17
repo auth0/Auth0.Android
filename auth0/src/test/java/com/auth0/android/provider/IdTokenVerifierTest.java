@@ -294,6 +294,25 @@ public class IdTokenVerifierTest {
         assertEquals("com.auth0.android.provider.TokenValidationException: " + message, e.toString());
         assertEquals(message, e.getMessage());
     }
+    @Test
+    public void shouldNotFailWhenOrganizationNameClaimIsRequiredAndHasSameValue() throws Exception {
+        Map<String, Object> jwtBody = createJWTBody();
+        jwtBody.put("org_name", EXPECTED_ORGANIZATION_NAME);
+        String token = createTestJWT("none", jwtBody);
+        Jwt jwt = new Jwt(token);
+        options.setOrganization(EXPECTED_ORGANIZATION_NAME);
+        idTokenVerifier.verify(jwt, options, true);
+    }
+
+    @Test
+    public void shouldNotFailWhenOrganizationNameClaimIsRequiredAndHasSameValueInDifferentCase() throws Exception {
+        Map<String, Object> jwtBody = createJWTBody();
+        jwtBody.put("org_name", "__tESt_OrG_nAme__");
+        String token = createTestJWT("none", jwtBody);
+        Jwt jwt = new Jwt(token);
+        options.setOrganization(EXPECTED_ORGANIZATION_NAME);
+        idTokenVerifier.verify(jwt, options, true);
+    }
 
     @Test
     public void shouldNotFailWhenOrganizationIdClaimIsMissingButNotRequired() throws Exception {
