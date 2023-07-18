@@ -305,12 +305,26 @@ public class IdTokenVerifierTest {
     }
 
     @Test
-    public void shouldNotFailWhenOrganizationNameClaimIsRequiredAndHasSameValueInDifferentCase() throws Exception {
+    public void shouldFailWhenInputClaimHasDifferentCaseThanOrgNameReceived() throws Exception {
+        String message = "Organization Name (org_name) claim mismatch in the ID token; expected \"__test_org_name__\", found \"__tESt_OrG_nAme__\"";
+        Exception e = Assert.assertThrows(message, OrgNameClaimMismatchException.class, () -> {
+            Map<String, Object> jwtBody = createJWTBody();
+            jwtBody.put("org_name", "__tESt_OrG_nAme__");
+            String token = createTestJWT("none", jwtBody);
+            Jwt jwt = new Jwt(token);
+            options.setOrganization(EXPECTED_ORGANIZATION_NAME);
+            idTokenVerifier.verify(jwt, options, true);
+        });
+        assertEquals("com.auth0.android.provider.TokenValidationException: " + message, e.toString());
+    }
+
+    @Test
+    public void shouldNotFailWhenOrgNameInputHasDifferentCaseThanClaimReceived() throws Exception {
         Map<String, Object> jwtBody = createJWTBody();
-        jwtBody.put("org_name", "__tESt_OrG_nAme__");
+        jwtBody.put("org_name", EXPECTED_ORGANIZATION_NAME);
         String token = createTestJWT("none", jwtBody);
         Jwt jwt = new Jwt(token);
-        options.setOrganization(EXPECTED_ORGANIZATION_NAME);
+        options.setOrganization("__tESt_OrG_nAme__");
         idTokenVerifier.verify(jwt, options, true);
     }
 
