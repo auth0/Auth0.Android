@@ -116,11 +116,11 @@ Next, define the Manifest Placeholders for the Auth0 Domain and Scheme which are
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 30
+    compileSdk 30
     defaultConfig {
         applicationId "com.auth0.samples"
-        minSdkVersion 21
-        targetSdkVersion 30
+        minSdk 21
+        targetSdk 30
         //...
 
         //---> Add the next line
@@ -159,7 +159,7 @@ WebAuthProvider.login(account)
 try {
     val credentials = WebAuthProvider.login(account)
         .await(requireContext())
-    println(credentials)    
+    println(credentials)
 } catch(e: AuthenticationException) {
     e.printStacktrace()
 }
@@ -333,7 +333,7 @@ authentication
             manager.saveCredentials(credentials)
         }
     })
-``` 
+```
 
 <details>
   <summary>Using coroutines</summary>
@@ -403,7 +403,7 @@ manager.getCredentials(object : Callback<Credentials, CredentialsManagerExceptio
         // Use the credentials
     }
 })
-``` 
+```
 
 <details>
   <summary>Using coroutines</summary>

@@ -49,11 +49,11 @@ oss {
 }
 
 android {
-    compileSdkVersion 31
+    compileSdk 31
 
     defaultConfig {
-        minSdkVersion 21
-        targetSdkVersion 31
+        minSdk 21
+        targetSdk 31
         versionCode 1
         versionName project.version
 
@@ -63,7 +63,7 @@ android {
         consumerProguardFiles '../proguard/proguard-gson.pro', '../proguard/proguard-okio.pro'
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
-    lintOptions {
+    lint {
         htmlReport true
         abortOnError true
     }

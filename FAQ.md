@@ -11,7 +11,7 @@ When building the project with `build`, an error appeared regarding an `invalid 
 ```gradle
 android {
     //...
-    lintOptions {
+    lint {
        warning 'InvalidPackage'
     }
 }
