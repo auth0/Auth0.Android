@@ -1,5 +1,20 @@
 # Change Log
 
+## [2.10.0](https://github.com/auth0/Auth0.Android/tree/2.10.0) (2023-07-18)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.9.3...2.10.0)
+
+**Added**
+- Return refreshed Credentials in CredentialsManagerException to avoid logout [\#666](https://github.com/auth0/Auth0.Android/pull/666) ([poovamraj](https://github.com/poovamraj))
+- [SDK-4413] Support Organization Name [\#669](https://github.com/auth0/Auth0.Android/pull/669) ([poovamraj](https://github.com/poovamraj))
+- Add more error pairs to isMultifactorCodeInvalid [SDK-4194] [\#664](https://github.com/auth0/Auth0.Android/pull/664) ([poovamraj](https://github.com/poovamraj))
+
+**Fixed**
+- Avoid null pointer exception because of error description [\#667](https://github.com/auth0/Auth0.Android/pull/667) ([poovamraj](https://github.com/poovamraj))
+- Revert changes from #654. Fix renew Credentials logic [\#670](https://github.com/auth0/Auth0.Android/pull/670) ([poovamraj](https://github.com/poovamraj))
+
+**Security**
+- chore(security): Update and pin Graddle workflow actions [\#671](https://github.com/auth0/Auth0.Android/pull/671) ([evansims](https://github.com/evansims))
+
 ## [2.9.3](https://github.com/auth0/Auth0.Android/tree/2.9.3) (2023-05-19)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.9.2...2.9.3)
 
