@@ -63,7 +63,7 @@ android {
         consumerProguardFiles '../proguard/proguard-gson.pro', '../proguard/proguard-okio.pro'
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
-    lint {
+    lintOptions {
         htmlReport true
         abortOnError true
     }
