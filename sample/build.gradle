@@ -5,6 +5,7 @@ plugins {
 
 android {
     compileSdk 31
+    namespace "com.auth0.sample"
 
     defaultConfig {
         minSdk 21

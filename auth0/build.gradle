@@ -50,6 +50,7 @@ oss {
 
 android {
     compileSdk 31
+    namespace "com.auth0.android.auth0"
 
     defaultConfig {
         minSdk 21
