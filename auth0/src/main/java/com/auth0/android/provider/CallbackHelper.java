@@ -54,9 +54,11 @@ abstract class CallbackHelper {
         final String[] entries = valueString.length() > 0 ? valueString.split("&") : new String[]{};
         Map<String, String> values = new HashMap<>(entries.length);
         for (String entry : entries) {
-            final String[] value = entry.split("=");
-            if (value.length == 2) {
-                values.put(value[0], value[1]);
+            int idx = entry.indexOf("=");
+            final String key = idx > 0 ? entry.substring(0, idx) : entry;
+            final String value = idx > 0 && entry.length() > idx + 1 ? entry.substring(idx + 1) : null;
+            if (value != null) {
+                values.put(key, value);
             }
         }
         return values;

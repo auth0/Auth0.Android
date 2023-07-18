@@ -78,6 +78,19 @@ public class CallbackHelperTest {
     }
 
     @Test
+    public void shouldParseQueryValuesWithEqual() {
+        String uriString = "testandroid://auth.testandroid.com/android/com.testandroid.app/callback?error=unauthorized&error_description=Please%20verify%20your%20email%20before%20logging%20in.e%3Dfoo%2Bt2%40gmail.com&state=abscefg-QWERTYUIOPasdfgHJKLMNBVCXZdd";
+        Uri uri = Uri.parse(uriString);
+        final Map<String, String> values = CallbackHelper.getValuesFromUri(uri);
+
+        assertThat(values, is(notNullValue()));
+        assertThat(values, aMapWithSize(3));
+        assertThat(values, hasEntry("error", "unauthorized"));
+        assertThat(values, hasEntry("state", "abscefg-QWERTYUIOPasdfgHJKLMNBVCXZdd"));
+        assertThat(values, hasEntry("error_description", "Please verify your email before logging in.e=foo+t2@gmail.com"));
+    }
+
+    @Test
     public void shouldParseQueryValues() {
         String uriString = "https://lbalmaceda.auth0.com/android/com.auth0.android.lock.app/callback?code=soMec0d3ML8B&state=810132b-486aa-4aa8-1768-a1dcd3368fae";
         Uri uri = Uri.parse(uriString);
