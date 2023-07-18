@@ -305,12 +305,22 @@ public class IdTokenVerifierTest {
     }
 
     @Test
-    public void shouldNotFailWhenOrganizationNameClaimIsRequiredAndHasSameValueInDifferentCase() throws Exception {
+    public void shouldFailWhenInputClaimHasDifferentCaseThanOrgNameReceived() throws Exception {
         Map<String, Object> jwtBody = createJWTBody();
         jwtBody.put("org_name", "__tESt_OrG_nAme__");
         String token = createTestJWT("none", jwtBody);
         Jwt jwt = new Jwt(token);
         options.setOrganization(EXPECTED_ORGANIZATION_NAME);
+        idTokenVerifier.verify(jwt, options, true);
+    }
+
+    @Test
+    public void shouldNotFailWhenOrgNameInputHasDifferentCaseThanClaimReceived() throws Exception {
+        Map<String, Object> jwtBody = createJWTBody();
+        jwtBody.put("org_name", EXPECTED_ORGANIZATION_NAME);
+        String token = createTestJWT("none", jwtBody);
+        Jwt jwt = new Jwt(token);
+        options.setOrganization("__tESt_OrG_nAme__");
         idTokenVerifier.verify(jwt, options, true);
     }
 
