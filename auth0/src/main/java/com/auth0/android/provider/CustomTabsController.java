@@ -13,9 +13,7 @@ import androidx.browser.customtabs.CustomTabsClient;
 import androidx.browser.customtabs.CustomTabsServiceConnection;
 import androidx.browser.customtabs.CustomTabsSession;
 
-import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.callback.Callback;
 import com.auth0.android.callback.RunnableTask;
 import com.auth0.android.request.internal.CommonThreadSwitcher;
 import com.google.androidbrowserhelper.trusted.TwaLauncher;
@@ -24,8 +22,6 @@ import java.lang.ref.WeakReference;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 
 @SuppressWarnings("WeakerAccess")
