@@ -81,7 +81,6 @@ public object WebAuthProvider {
         return success
     }
 
-    @JvmStatic
     internal fun failure(exception: AuthenticationException) {
         managerInstance!!.failure(exception)
     }
