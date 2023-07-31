@@ -46,6 +46,9 @@ public class AuthenticationActivityTest {
     @Captor
     private lateinit var launchAsTwaCaptor: ArgumentCaptor<Boolean>
 
+    @Captor
+    private lateinit var failureCallbackCaptor: ArgumentCaptor<RunnableTask<AuthenticationException>>
+
     private lateinit var callerActivity: Activity
     private lateinit var activity: AuthenticationActivityMock
     private lateinit var activityController: ActivityController<AuthenticationActivityMock>
@@ -88,11 +91,7 @@ public class AuthenticationActivityTest {
         createActivity(intentCaptor.value)
         activityController.create().start().resume()
         Mockito.verify(customTabsController).bindService()
-        Mockito.verify(customTabsController).launchUri(uriCaptor.capture(), launchAsTwaCaptor.capture(), object :
-            RunnableTask<AuthenticationException> {
-            override fun apply(error: AuthenticationException) {
-            }
-        })
+        Mockito.verify(customTabsController).launchUri(uriCaptor.capture(), launchAsTwaCaptor.capture(), failureCallbackCaptor.capture())
         MatcherAssert.assertThat(uriCaptor.value, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(uriCaptor.value, Is.`is`(uri))
         MatcherAssert.assertThat(activity.deliveredIntent, Is.`is`(Matchers.nullValue()))
@@ -123,11 +122,7 @@ public class AuthenticationActivityTest {
         createActivity(intentCaptor.value)
         activityController.create().start().resume()
         Mockito.verify(customTabsController).bindService()
-        Mockito.verify(customTabsController).launchUri(uriCaptor.capture(), launchAsTwaCaptor.capture(), object :
-            RunnableTask<AuthenticationException> {
-            override fun apply(error: AuthenticationException) {
-            }
-        })
+        Mockito.verify(customTabsController).launchUri(uriCaptor.capture(), launchAsTwaCaptor.capture(), failureCallbackCaptor.capture())
         MatcherAssert.assertThat(uriCaptor.value, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(uriCaptor.value, Is.`is`(uri))
         MatcherAssert.assertThat(activity.deliveredIntent, Is.`is`(Matchers.nullValue()))
@@ -158,11 +153,7 @@ public class AuthenticationActivityTest {
         createActivity(intentCaptor.value)
         activityController.create().start().resume()
         Mockito.verify(customTabsController).bindService()
-        Mockito.verify(customTabsController).launchUri(uriCaptor.capture(), launchAsTwaCaptor.capture(), object :
-            RunnableTask<AuthenticationException> {
-            override fun apply(error: AuthenticationException) {
-            }
-        })
+        Mockito.verify(customTabsController).launchUri(uriCaptor.capture(), launchAsTwaCaptor.capture(), failureCallbackCaptor.capture())
         MatcherAssert.assertThat(uriCaptor.value, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(uriCaptor.value, Is.`is`(uri))
         MatcherAssert.assertThat(launchAsTwaCaptor.value, Is.`is`(Matchers.notNullValue()))
@@ -192,11 +183,7 @@ public class AuthenticationActivityTest {
         createActivity(intentCaptor.value)
         activityController.create().start().resume()
         Mockito.verify(customTabsController).bindService()
-        Mockito.verify(customTabsController).launchUri(uriCaptor.capture(), launchAsTwaCaptor.capture(), object :
-            RunnableTask<AuthenticationException> {
-            override fun apply(error: AuthenticationException) {
-            }
-        })
+        Mockito.verify(customTabsController).launchUri(uriCaptor.capture(), launchAsTwaCaptor.capture(), failureCallbackCaptor.capture())
         MatcherAssert.assertThat(uriCaptor.value, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(uriCaptor.value, Is.`is`(uri))
         MatcherAssert.assertThat(launchAsTwaCaptor.value, Is.`is`(Matchers.notNullValue()))
