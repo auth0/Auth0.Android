@@ -13,12 +13,20 @@ import androidx.browser.customtabs.CustomTabsClient;
 import androidx.browser.customtabs.CustomTabsServiceConnection;
 import androidx.browser.customtabs.CustomTabsSession;
 
+import com.auth0.android.Auth0Exception;
+import com.auth0.android.authentication.AuthenticationException;
+import com.auth0.android.callback.Callback;
+import com.auth0.android.callback.RunnableTask;
+import com.auth0.android.request.internal.CommonThreadSwitcher;
 import com.google.androidbrowserhelper.trusted.TwaLauncher;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 
 @SuppressWarnings("WeakerAccess")
 class CustomTabsController extends CustomTabsServiceConnection {
@@ -107,14 +115,19 @@ class CustomTabsController extends CustomTabsServiceConnection {
      *
      * @param uri the uri to open in a Custom Tab or Browser.
      */
-    public void launchUri(@NonNull final Uri uri, final boolean launchAsTwa) {
+    public void launchUri(@NonNull final Uri uri, final boolean launchAsTwa, final RunnableTask<AuthenticationException> failureCallback) {
         final Context context = this.context.get();
         if (context == null) {
             Log.v(TAG, "Custom Tab Context was no longer valid.");
             return;
         }
+        Thread.UncaughtExceptionHandler exceptionHandler = (th, ex) -> {
+            AuthenticationException e = new AuthenticationException(
+                    "a0.browser_not_available", "Error launching browser for authentication", new Exception(ex));
+            CommonThreadSwitcher.getInstance().mainThread(() -> failureCallback.apply(e));
+        };
 
-        new Thread(() -> {
+        Thread thread = new Thread(() -> {
             try {
                 if (launchAsTwa) {
                     this.launchedAsTwa = true;
@@ -131,7 +144,9 @@ class CustomTabsController extends CustomTabsServiceConnection {
             } catch (ActivityNotFoundException ex) {
                 Log.e(TAG, "Could not find any Browser application installed in this device to handle the intent.");
             }
-        }).start();
+        });
+        thread.setUncaughtExceptionHandler(exceptionHandler);
+        thread.start();
     }
 
     private void launchAsDefault(Context context, Uri uri) {

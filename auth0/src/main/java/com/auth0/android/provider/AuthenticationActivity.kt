@@ -6,8 +6,15 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.annotation.VisibleForTesting
+import com.auth0.android.Auth0Exception
+import com.auth0.android.authentication.AuthenticationException
+import com.auth0.android.callback.Callback
+import com.auth0.android.callback.RunnableTask
+import com.auth0.android.provider.WebAuthProvider.failure
 import com.auth0.android.provider.WebAuthProvider.resume
 import com.google.androidbrowserhelper.trusted.TwaLauncher
+import java.lang.Exception
+import java.util.function.Consumer
 
 public open class AuthenticationActivity : Activity() {
     private var intentLaunched = false
@@ -70,7 +77,11 @@ public open class AuthenticationActivity : Activity() {
         val launchAsTwa: Boolean = extras.getBoolean(EXTRA_LAUNCH_AS_TWA, false)
         customTabsController = createCustomTabsController(this, customTabsOptions)
         customTabsController!!.bindService()
-        customTabsController!!.launchUri(authorizeUri!!, launchAsTwa)
+        customTabsController!!.launchUri(authorizeUri!!, launchAsTwa, object : RunnableTask<AuthenticationException> {
+            override fun apply(error: AuthenticationException) {
+                deliverAuthenticationFailure(error)
+            }
+        })
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
@@ -84,6 +95,11 @@ public open class AuthenticationActivity : Activity() {
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal open fun deliverAuthenticationResult(result: Intent?) {
         resume(result)
+    }
+
+    internal open fun deliverAuthenticationFailure(ex: AuthenticationException) {
+        failure(ex)
+        finish()
     }
 
     internal companion object {
