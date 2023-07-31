@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Looper;
 
 import androidx.browser.customtabs.CustomTabsCallback;
 import androidx.browser.customtabs.CustomTabsClient;
@@ -296,6 +297,17 @@ public class CustomTabsControllerTest {
         assertThat(customTabIntent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR), is(false));
         assertThat(customTabIntent.getIntExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE, CustomTabsIntent.NO_TITLE), is(CustomTabsIntent.NO_TITLE));
         assertThat(customTabIntent.getIntExtra(CustomTabsIntent.EXTRA_SHARE_STATE, CustomTabsIntent.SHARE_STATE_OFF), is(CustomTabsIntent.SHARE_STATE_OFF));
+    }
+
+    @Test
+    public void shouldThrowExceptionIfFailedToLaunchBecauseOfException() {
+        Exception e = new SecurityException();
+        doThrow(e)
+                .when(context).startActivity(any(Intent.class));
+        controller.launchUri(uri, false, (ex) -> {
+            assertThat(ex, is(e));
+            assertThat(Looper.myLooper(), is(Looper.getMainLooper()));
+        });
     }
 
     //Helper Methods
