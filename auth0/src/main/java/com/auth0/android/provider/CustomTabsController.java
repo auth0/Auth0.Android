@@ -117,13 +117,8 @@ class CustomTabsController extends CustomTabsServiceConnection {
             Log.v(TAG, "Custom Tab Context was no longer valid.");
             return;
         }
-        Thread.UncaughtExceptionHandler exceptionHandler = (th, ex) -> {
-            AuthenticationException e = new AuthenticationException(
-                    "a0.browser_not_available", "Error launching browser for authentication", new Exception(ex));
-            CommonThreadSwitcher.getInstance().mainThread(() -> failureCallback.apply(e));
-        };
 
-        Thread thread = new Thread(() -> {
+        new Thread(() -> {
             try {
                 if (launchAsTwa) {
                     this.launchedAsTwa = true;
@@ -139,10 +134,12 @@ class CustomTabsController extends CustomTabsServiceConnection {
                 }
             } catch (ActivityNotFoundException ex) {
                 Log.e(TAG, "Could not find any Browser application installed in this device to handle the intent.");
+            } catch (SecurityException ex) {
+                AuthenticationException e = new AuthenticationException(
+                        "a0.browser_not_available", "Error launching browser for authentication", ex);
+                CommonThreadSwitcher.getInstance().mainThread(() -> failureCallback.apply(e));
             }
-        });
-        thread.setUncaughtExceptionHandler(exceptionHandler);
-        thread.start();
+        }).start();
     }
 
     private void launchAsDefault(Context context, Uri uri) {

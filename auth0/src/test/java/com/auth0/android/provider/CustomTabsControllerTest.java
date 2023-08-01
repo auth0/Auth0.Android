@@ -38,6 +38,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.Is.isA;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
@@ -50,6 +51,7 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.auth0.android.authentication.AuthenticationException;
 import com.google.androidbrowserhelper.trusted.TwaLauncher;
 import com.google.androidbrowserhelper.trusted.splashscreens.SplashScreenStrategy;
 
@@ -305,7 +307,10 @@ public class CustomTabsControllerTest {
         doThrow(e)
                 .when(context).startActivity(any(Intent.class));
         controller.launchUri(uri, false, (ex) -> {
-            assertThat(ex, is(e));
+            assertThat(ex, isA(AuthenticationException.class));
+            assertThat(ex.getCause(), is(eq(e)));
+            assertThat(ex.getCode(), is("a0.browser_not_available"));
+            assertThat(ex.getDescription(), is("Error launching browser for authentication"));
             assertThat(Looper.myLooper(), is(Looper.getMainLooper()));
         });
     }
