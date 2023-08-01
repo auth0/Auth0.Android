@@ -1,5 +1,11 @@
 # Change Log
 
+## [2.10.1](https://github.com/auth0/Auth0.Android/tree/2.10.1) (2023-08-01)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.10.0...2.10.1)
+
+**Fixed**
+- Handle SecurityException thrown while launching the browser [\#677](https://github.com/auth0/Auth0.Android/pull/677) ([poovamraj](https://github.com/poovamraj))
+
 ## [2.10.0](https://github.com/auth0/Auth0.Android/tree/2.10.0) (2023-07-18)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.9.3...2.10.0)
 
