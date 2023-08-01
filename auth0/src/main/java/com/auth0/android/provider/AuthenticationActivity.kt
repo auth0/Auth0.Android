@@ -10,6 +10,7 @@ import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.RunnableTask
 import com.auth0.android.provider.WebAuthProvider.failure
 import com.auth0.android.provider.WebAuthProvider.resume
+import com.auth0.android.request.internal.CommonThreadSwitcher.Companion.getInstance
 import com.google.androidbrowserhelper.trusted.TwaLauncher
 
 public open class AuthenticationActivity : Activity() {
@@ -73,7 +74,7 @@ public open class AuthenticationActivity : Activity() {
         val launchAsTwa: Boolean = extras.getBoolean(EXTRA_LAUNCH_AS_TWA, false)
         customTabsController = createCustomTabsController(this, customTabsOptions)
         customTabsController!!.bindService()
-        customTabsController!!.launchUri(authorizeUri!!, launchAsTwa, object : RunnableTask<AuthenticationException> {
+        customTabsController!!.launchUri(authorizeUri!!, launchAsTwa, getInstance(), object : RunnableTask<AuthenticationException> {
             override fun apply(error: AuthenticationException) {
                 deliverAuthenticationFailure(error)
             }
