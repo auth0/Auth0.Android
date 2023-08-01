@@ -130,7 +130,7 @@ public class CustomTabsControllerTest {
     @Test
     public void shouldBindAndLaunchUri() throws Exception {
         bindService(controller, true);
-        controller.launchUri(uri, false, (ex) -> {});
+        controller.launchUri(uri, false, null);
         connectBoundService();
 
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
@@ -149,7 +149,7 @@ public class CustomTabsControllerTest {
     @Test
     public void shouldBindAndLaunchUriAsTwa() throws Exception {
         bindService(controller, true);
-        controller.launchUri(uri, true, (ex) -> {});
+        controller.launchUri(uri, true, null);
         connectBoundService();
         ArgumentCaptor<TrustedWebActivityIntentBuilder> trustedWebActivityIntentBuilderArgumentCaptor
                 = ArgumentCaptor.forClass(TrustedWebActivityIntentBuilder.class);
@@ -179,7 +179,7 @@ public class CustomTabsControllerTest {
         when(browserPicker.getBestBrowserPackage(context.getPackageManager())).thenReturn(null);
         CustomTabsOptions ctOptions = CustomTabsOptions.newBuilder().withBrowserPicker(browserPicker).build();
         CustomTabsController controller = new CustomTabsController(context, ctOptions, twaLauncher);
-        controller.launchUri(uri, false, (ex) -> {});
+        controller.launchUri(uri, false, null);
 
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
         Intent intent = launchIntentCaptor.getValue();
@@ -202,7 +202,7 @@ public class CustomTabsControllerTest {
         CustomTabsController controller = new CustomTabsController(context, ctOptions, twaLauncher);
 
         bindService(controller, true);
-        controller.launchUri(uri, false, (ex) -> {});
+        controller.launchUri(uri, false, null);
         connectBoundService();
 
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
@@ -231,7 +231,7 @@ public class CustomTabsControllerTest {
         CustomTabsController controller = new CustomTabsController(context, ctOptions, twaLauncher);
 
         bindService(controller, true);
-        controller.launchUri(uri, true, (ex) -> {});
+        controller.launchUri(uri, true, null);
         connectBoundService();
 
 
@@ -260,7 +260,7 @@ public class CustomTabsControllerTest {
     @Test
     public void shouldFailToBindButLaunchUri() {
         bindService(controller, false);
-        controller.launchUri(uri, false, (ex) -> {});
+        controller.launchUri(uri, false, null);
 
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
         Intent intent = launchIntentCaptor.getValue();
@@ -283,7 +283,7 @@ public class CustomTabsControllerTest {
         doThrow(ActivityNotFoundException.class)
                 .doNothing()
                 .when(context).startActivity(any(Intent.class));
-        controller.launchUri(uri, false, (ex) -> {});
+        controller.launchUri(uri, false, null);
 
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
         List<Intent> intents = launchIntentCaptor.getAllValues();
