@@ -37,6 +37,10 @@ internal class LogoutManager(
         return true
     }
 
+    override fun failure(exception: AuthenticationException) {
+        callback.onFailure(exception)
+    }
+
     private fun buildLogoutUri(): Uri {
         val logoutUri = Uri.parse(account.logoutUrl)
         val builder = logoutUri.buildUpon()

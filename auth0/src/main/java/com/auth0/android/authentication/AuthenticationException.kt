@@ -27,7 +27,13 @@ public class AuthenticationException : Auth0Exception {
         this.description = description
     }
 
-    public constructor(message: String, cause: Auth0Exception? = null) : super(message, cause)
+    public constructor(message: String, cause: Exception? = null) : super(message, cause)
+
+    public constructor(code: String, description: String, cause: Exception) : this(DEFAULT_MESSAGE, cause) {
+        this.code = code
+        this.description = description
+    }
+
     public constructor(payload: String?, statusCode: Int) : this(DEFAULT_MESSAGE) {
         code = if (payload != null) NON_JSON_ERROR else EMPTY_BODY_ERROR
         description = payload ?: EMPTY_RESPONSE_BODY_DESCRIPTION

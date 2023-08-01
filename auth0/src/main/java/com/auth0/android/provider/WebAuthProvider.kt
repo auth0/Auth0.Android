@@ -81,6 +81,10 @@ public object WebAuthProvider {
         return success
     }
 
+    internal fun failure(exception: AuthenticationException) {
+        managerInstance!!.failure(exception)
+    }
+
     @JvmStatic
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun resetManagerInstance() {

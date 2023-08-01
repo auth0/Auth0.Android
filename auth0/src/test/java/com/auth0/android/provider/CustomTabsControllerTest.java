@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Looper;
 
 import androidx.browser.customtabs.CustomTabsCallback;
 import androidx.browser.customtabs.CustomTabsClient;
@@ -37,6 +38,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.Is.isA;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
@@ -49,6 +51,7 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.auth0.android.authentication.AuthenticationException;
 import com.google.androidbrowserhelper.trusted.TwaLauncher;
 import com.google.androidbrowserhelper.trusted.splashscreens.SplashScreenStrategy;
 
@@ -127,7 +130,7 @@ public class CustomTabsControllerTest {
     @Test
     public void shouldBindAndLaunchUri() throws Exception {
         bindService(controller, true);
-        controller.launchUri(uri, false);
+        controller.launchUri(uri, false, null);
         connectBoundService();
 
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
@@ -146,7 +149,7 @@ public class CustomTabsControllerTest {
     @Test
     public void shouldBindAndLaunchUriAsTwa() throws Exception {
         bindService(controller, true);
-        controller.launchUri(uri, true);
+        controller.launchUri(uri, true, null);
         connectBoundService();
         ArgumentCaptor<TrustedWebActivityIntentBuilder> trustedWebActivityIntentBuilderArgumentCaptor
                 = ArgumentCaptor.forClass(TrustedWebActivityIntentBuilder.class);
@@ -176,7 +179,7 @@ public class CustomTabsControllerTest {
         when(browserPicker.getBestBrowserPackage(context.getPackageManager())).thenReturn(null);
         CustomTabsOptions ctOptions = CustomTabsOptions.newBuilder().withBrowserPicker(browserPicker).build();
         CustomTabsController controller = new CustomTabsController(context, ctOptions, twaLauncher);
-        controller.launchUri(uri, false);
+        controller.launchUri(uri, false, null);
 
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
         Intent intent = launchIntentCaptor.getValue();
@@ -199,7 +202,7 @@ public class CustomTabsControllerTest {
         CustomTabsController controller = new CustomTabsController(context, ctOptions, twaLauncher);
 
         bindService(controller, true);
-        controller.launchUri(uri, false);
+        controller.launchUri(uri, false, null);
         connectBoundService();
 
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
@@ -228,7 +231,7 @@ public class CustomTabsControllerTest {
         CustomTabsController controller = new CustomTabsController(context, ctOptions, twaLauncher);
 
         bindService(controller, true);
-        controller.launchUri(uri, true);
+        controller.launchUri(uri, true, null);
         connectBoundService();
 
 
@@ -257,7 +260,7 @@ public class CustomTabsControllerTest {
     @Test
     public void shouldFailToBindButLaunchUri() {
         bindService(controller, false);
-        controller.launchUri(uri, false);
+        controller.launchUri(uri, false, null);
 
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
         Intent intent = launchIntentCaptor.getValue();
@@ -271,7 +274,7 @@ public class CustomTabsControllerTest {
     public void shouldNotLaunchUriIfContextNoLongerValid() {
         bindService(controller, true);
         controller.clearContext();
-        controller.launchUri(uri, false);
+        controller.launchUri(uri, false, (ex) -> {});
         verify(context, never()).startActivity(any(Intent.class));
     }
 
@@ -280,7 +283,7 @@ public class CustomTabsControllerTest {
         doThrow(ActivityNotFoundException.class)
                 .doNothing()
                 .when(context).startActivity(any(Intent.class));
-        controller.launchUri(uri, false);
+        controller.launchUri(uri, false, null);
 
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
         List<Intent> intents = launchIntentCaptor.getAllValues();
@@ -296,6 +299,20 @@ public class CustomTabsControllerTest {
         assertThat(customTabIntent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR), is(false));
         assertThat(customTabIntent.getIntExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE, CustomTabsIntent.NO_TITLE), is(CustomTabsIntent.NO_TITLE));
         assertThat(customTabIntent.getIntExtra(CustomTabsIntent.EXTRA_SHARE_STATE, CustomTabsIntent.SHARE_STATE_OFF), is(CustomTabsIntent.SHARE_STATE_OFF));
+    }
+
+    @Test
+    public void shouldThrowExceptionIfFailedToLaunchBecauseOfException() {
+        Exception e = new SecurityException();
+        doThrow(e)
+                .when(context).startActivity(any(Intent.class));
+        controller.launchUri(uri, false, (ex) -> {
+            assertThat(ex, isA(AuthenticationException.class));
+            assertThat(ex.getCause(), is(eq(e)));
+            assertThat(ex.getCode(), is("a0.browser_not_available"));
+            assertThat(ex.getDescription(), is("Error launching browser for authentication"));
+            assertThat(Looper.myLooper(), is(Looper.getMainLooper()));
+        });
     }
 
     //Helper Methods

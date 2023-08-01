@@ -133,6 +133,10 @@ internal class OAuthManager(
         return true
     }
 
+    public override fun failure(exception: AuthenticationException) {
+        callback.onFailure(exception)
+    }
+
     private fun assertValidIdToken(
         idToken: String?,
         validationCallback: Callback<Void?, Auth0Exception>

@@ -1,5 +1,10 @@
 package com.auth0.android.provider;
 
+import androidx.annotation.NonNull;
+
+import com.auth0.android.Auth0Exception;
+import com.auth0.android.authentication.AuthenticationException;
+
 /**
  * Internal class, used to generify the handling of different Web Auth flows.
  * See {@link WebAuthProvider}
@@ -14,4 +19,6 @@ abstract class ResumableManager {
      * @see AuthorizeResult
      */
     abstract boolean resume(AuthorizeResult result);
+
+    abstract void failure(@NonNull AuthenticationException exception);
 }
