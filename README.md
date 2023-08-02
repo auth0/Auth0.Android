@@ -308,7 +308,7 @@ keytool -printcert -jarfile sample-debug.apk
 ```
 - The fingerprint has to be updated in the [Auth0 Dashboard](https://manage.auth0.com/dashboard/eu/poovamraj/applications) under
 Applications > *Specific Application* > Settings > Advanced Settings > Device Settings > Key Hashes
-- App's package name has to be entered in the field above
+- The app's package name has to be entered in the field above
 
 Once the above prerequisites are met, you can call your login method as below to open your web authentication in Trusted Web Activity.
 
