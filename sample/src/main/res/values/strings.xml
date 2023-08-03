@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">Auth0 SDK Sample</string>
-    <string name="com_auth0_domain">lbalmaceda.auth0.com</string>
-    <string name="com_auth0_client_id">PX2vJhpALUNT66NHdCdD30XWqlIR4oEZ</string>
+    <string name="com_auth0_domain">poovamraj.eu.auth0.com</string>
+    <string name="com_auth0_client_id">swarLtLAd0aW55ajPUPzYPXjtB3UtZki</string>
     <string name="com_auth0_scheme">demo</string>
 </resources>

@@ -73,7 +73,7 @@ internal class IdTokenVerifier {
                 if (TextUtils.isEmpty(orgNameClaim)) {
                     throw OrgNameClaimMissingException()
                 }
-                if (!organizationInput.equals(orgNameClaim, true)) {
+                if (organizationInput.lowercase() != orgNameClaim) {
                     throw OrgNameClaimMismatchException(organizationInput, orgNameClaim)
                 }
             }

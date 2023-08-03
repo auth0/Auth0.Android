@@ -133,6 +133,10 @@ internal class OAuthManager(
         return true
     }
 
+    public override fun failure(exception: AuthenticationException) {
+        callback.onFailure(exception)
+    }
+
     private fun assertValidIdToken(
         idToken: String?,
         validationCallback: Callback<Void?, Auth0Exception>
@@ -192,6 +196,7 @@ internal class OAuthManager(
             TAG,
             "Error, access denied. Check that the required Permissions are granted and that the Application has this Connection configured in Auth0 Dashboard."
         )
+        val unknownErrorDescription = "An unexpected error occurred."
         when {
             ERROR_VALUE_ACCESS_DENIED.equals(errorValue, ignoreCase = true) -> {
                 throw AuthenticationException(
@@ -200,16 +205,16 @@ internal class OAuthManager(
                 )
             }
             ERROR_VALUE_UNAUTHORIZED.equals(errorValue, ignoreCase = true) -> {
-                throw AuthenticationException(ERROR_VALUE_UNAUTHORIZED, errorDescription!!)
+                throw AuthenticationException(ERROR_VALUE_UNAUTHORIZED, errorDescription ?: unknownErrorDescription)
             }
             ERROR_VALUE_LOGIN_REQUIRED == errorValue -> {
                 //Whitelist to allow SSO errors go through
-                throw AuthenticationException(errorValue, errorDescription!!)
+                throw AuthenticationException(errorValue, errorDescription ?: unknownErrorDescription)
             }
             else -> {
                 throw AuthenticationException(
                     errorValue,
-                    errorDescription ?: "An unexpected error occurred."
+                    errorDescription ?: unknownErrorDescription
                 )
             }
         }

@@ -51,7 +51,7 @@ To install Auth0.Android with [Gradle](https://gradle.org/), simply add the foll
 
 ```gradle
 dependencies {
-    implementation 'com.auth0.android:auth0:2.9.3'
+    implementation 'com.auth0.android:auth0:2.10.1'
 }
 ```
 
@@ -287,6 +287,36 @@ The callback will get invoked when the user returns to your application. There a
 * When the user manually closed the browser (e.g. pressing the back key). You can check this scenario with `error.isAuthenticationCanceled`.
 
 If the `returnTo` URL is not found in the **Allowed Logout URLs** of your Auth0 Application, the server will not make the redirection and the browser will remain open.
+
+### Trusted Web Activity (Experimental Release)
+
+> **⚠️ Warning:** Trusted Web Activity support in Auth0.Android is still experimental and can change in the future. 
+>
+> Please test it thoroughly in all the targeted browsers and OS variants and let us know your feedback.
+
+Trusted Web Activity is a feature provided by some browsers to provide a native look and feel.
+
+<p align="center">
+    <img width="500" alt="Trusted Web Activity" src="https://github.com/auth0/Auth0.Android/assets/15910425/0be50959-e7e9-4a41-a99c-4c4c377e1faa">
+</p>
+
+To use this feature, there are some additional steps you must take:
+
+- We need the SHA256 fingerprints of the app’s signing certificate. To get this, you can run the following command on your APK:
+```shell
+keytool -printcert -jarfile sample-debug.apk
+```
+- The fingerprint has to be updated in the [Auth0 Dashboard](https://manage.auth0.com/dashboard/eu/poovamraj/applications) under
+Applications > *Specific Application* > Settings > Advanced Settings > Device Settings > Key Hashes
+- The app's package name has to be entered in the field above
+
+Once the above prerequisites are met, you can call your login method as shown below to open your web authentication in Trusted Web Activity.
+
+```kotlin
+WebAuthProvider.login(account)
+    .withTrustedWebActivity()
+    .await(this)
+```
 
 ## Credentials Manager
 

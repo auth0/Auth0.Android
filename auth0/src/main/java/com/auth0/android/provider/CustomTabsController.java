@@ -13,12 +13,17 @@ import androidx.browser.customtabs.CustomTabsClient;
 import androidx.browser.customtabs.CustomTabsServiceConnection;
 import androidx.browser.customtabs.CustomTabsSession;
 
+import com.auth0.android.authentication.AuthenticationException;
+import com.auth0.android.callback.RunnableTask;
+import com.auth0.android.request.internal.CommonThreadSwitcher;
+import com.auth0.android.request.internal.ThreadSwitcher;
 import com.google.androidbrowserhelper.trusted.TwaLauncher;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+
 
 @SuppressWarnings("WeakerAccess")
 class CustomTabsController extends CustomTabsServiceConnection {
@@ -107,7 +112,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
      *
      * @param uri the uri to open in a Custom Tab or Browser.
      */
-    public void launchUri(@NonNull final Uri uri, final boolean launchAsTwa) {
+    public void launchUri(@NonNull final Uri uri, final boolean launchAsTwa, ThreadSwitcher threadSwitcher, final RunnableTask<AuthenticationException> failureCallback) {
         final Context context = this.context.get();
         if (context == null) {
             Log.v(TAG, "Custom Tab Context was no longer valid.");
@@ -130,6 +135,10 @@ class CustomTabsController extends CustomTabsServiceConnection {
                 }
             } catch (ActivityNotFoundException ex) {
                 Log.e(TAG, "Could not find any Browser application installed in this device to handle the intent.");
+            } catch (SecurityException ex) {
+                AuthenticationException e = new AuthenticationException(
+                        "a0.browser_not_available", "Error launching browser for authentication", ex);
+                threadSwitcher.mainThread(() -> failureCallback.apply(e));
             }
         }).start();
     }
