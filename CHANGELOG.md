@@ -1,10 +1,5 @@
 # Change Log
 
-## [Unreleased]
-
-**Security**
-- Updated OkHttp to 4.11.0
-
 ## [2.10.1](https://github.com/auth0/Auth0.Android/tree/2.10.1) (2023-08-01)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.10.0...2.10.1)
 
