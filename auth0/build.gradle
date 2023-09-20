@@ -106,7 +106,13 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.3.0'
     implementation 'androidx.browser:browser:1.4.0'
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
-    implementation "com.squareup.okhttp3:okhttp:$okhttpVersion"
+
+    // TODO remove direct dependency when OkHttp 4.12.0 is released
+    implementation ("com.squareup.okhttp3:okhttp:${okhttpVersion}") {
+        exclude group: 'com.squareup.okhttp3', module: 'okio'
+    }
+    implementation "com.squareup.okio:okio:3.5.0"
+    
     implementation "com.squareup.okhttp3:logging-interceptor:$okhttpVersion"
     implementation 'com.google.code.gson:gson:2.8.9'
     implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.4.0'
