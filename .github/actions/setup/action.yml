@@ -9,7 +9,7 @@ inputs:
   gradle:
     description: The Gradle version to use
     required: false
-    default: 4.2
+    default: 6.7.1
   kotlin:
     description: The Kotlin version to use
     required: false
