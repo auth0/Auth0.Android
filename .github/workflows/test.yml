@@ -29,6 +29,9 @@ jobs:
 
       - uses: gradle/wrapper-validation-action@56b90f209b02bf6d1deae490e9ef18b21a389cd4 # pin@1.1.0
 
-      - run: ./gradlew clean test jacocoTestReport lint --continue --console=plain --max-workers=1 --no-daemon
+      - uses: gradle/gradle-build-action@ef76a971e2fa3f867b617efd72f2fbd72cf6f8bc # pin@2.8.0
+        with:
+          gradle-version: 6.9
+          arguments: clean test jacocoTestReport lint --continue --console=plain --max-workers=1 --no-daemon
 
       - uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d # pin@3.1.4
