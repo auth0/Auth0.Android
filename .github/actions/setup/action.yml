@@ -28,4 +28,4 @@ runs:
         sdk install kotlin ${{ inputs.kotlin }} && sdk default kotlin ${{ inputs.kotlin }}
       shell: bash
 
-  - uses: gradle/wrapper-validation-action@56b90f209b02bf6d1deae490e9ef18b21a389cd4 # pin@1.1.0
+    - uses: gradle/wrapper-validation-action@56b90f209b02bf6d1deae490e9ef18b21a389cd4 # pin@1.1.0
