@@ -30,3 +30,4 @@ runs:
       uses: fwilhe2/setup-kotlin@main
       with:
         version: 1.6
+        install-native: true
