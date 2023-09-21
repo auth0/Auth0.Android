@@ -10,6 +10,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Looper;
 
+import androidx.annotation.NonNull;
 import androidx.browser.customtabs.CustomTabsCallback;
 import androidx.browser.customtabs.CustomTabsClient;
 import androidx.browser.customtabs.CustomTabsIntent;
@@ -19,6 +20,7 @@ import androidx.browser.trusted.TrustedWebActivityDisplayMode;
 import androidx.browser.trusted.TrustedWebActivityIntentBuilder;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -40,9 +42,11 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.Is.isA;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -53,7 +57,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.auth0.android.authentication.AuthenticationException;
+import com.auth0.android.request.internal.CommonThreadSwitcher;
 import com.auth0.android.request.internal.ThreadSwitcher;
+import com.auth0.android.util.CommonThreadSwitcherRule;
 import com.google.androidbrowserhelper.trusted.TwaLauncher;
 import com.google.androidbrowserhelper.trusted.splashscreens.SplashScreenStrategy;
 
@@ -87,7 +93,17 @@ public class CustomTabsControllerTest {
         MockitoAnnotations.openMocks(this);
         Activity activity = Robolectric.setupActivity(Activity.class);
         context = spy(activity);
-        mockThreadSwitcher = spy(ThreadSwitcher.class);
+        mockThreadSwitcher = spy(new ThreadSwitcher() {
+            @Override
+            public void mainThread(@NonNull Runnable runnable) {
+                runnable.run();
+            }
+
+            @Override
+            public void backgroundThread(@NonNull Runnable runnable) {
+                runnable.run();
+            }
+        });
 
         //By default, a "compatible" browser is available
         BrowserPicker browserPicker = mock(BrowserPicker.class);
@@ -135,10 +151,11 @@ public class CustomTabsControllerTest {
     @Test
     public void shouldBindAndLaunchUri() throws Exception {
         bindService(controller, true);
-        controller.launchUri(uri, false, mockThreadSwitcher, null);
         connectBoundService();
+        controller.launchUri(uri, false, mockThreadSwitcher, null);
 
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
+        verify(mockThreadSwitcher).backgroundThread(any());
         Intent intent = launchIntentCaptor.getValue();
         assertThat(intent.getAction(), is(Intent.ACTION_VIEW));
         assertThat(intent.getPackage(), is(DEFAULT_BROWSER_PACKAGE));
@@ -171,6 +188,7 @@ public class CustomTabsControllerTest {
                 runnableArgumentCaptor.capture(),
                 fallbackStrategyArgumentCaptor.capture());
 
+        verify(mockThreadSwitcher).backgroundThread(any());
         assertThat(trustedWebActivityIntentBuilderArgumentCaptor.getValue(), is(notNullValue()));
         assertThat(customTabsCallbackArgumentCaptor.getValue(), is(nullValue()));
         assertThat(splashScreenStrategyArgumentCaptor.getValue(), is(nullValue()));
@@ -187,6 +205,7 @@ public class CustomTabsControllerTest {
         controller.launchUri(uri, false, mockThreadSwitcher, null);
 
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
+        verify(mockThreadSwitcher).backgroundThread(any());
         Intent intent = launchIntentCaptor.getValue();
         assertThat(intent.getAction(), is(Intent.ACTION_VIEW));
         //A null package name would make the OS decide the best app to resolve the intent
@@ -207,10 +226,11 @@ public class CustomTabsControllerTest {
         CustomTabsController controller = new CustomTabsController(context, ctOptions, twaLauncher);
 
         bindService(controller, true);
-        controller.launchUri(uri, false, mockThreadSwitcher, null);
         connectBoundService();
+        controller.launchUri(uri, false, mockThreadSwitcher, null);
 
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
+        verify(mockThreadSwitcher).backgroundThread(any());
         Intent intent = launchIntentCaptor.getValue();
         assertThat(intent.getAction(), is(Intent.ACTION_VIEW));
         assertThat(intent.getPackage(), is(DEFAULT_BROWSER_PACKAGE));
@@ -255,6 +275,7 @@ public class CustomTabsControllerTest {
                 runnableArgumentCaptor.capture(),
                 fallbackStrategyArgumentCaptor.capture());
 
+        verify(mockThreadSwitcher).backgroundThread(any());
         assertThat(trustedWebActivityIntentBuilderArgumentCaptor.getValue(), is(notNullValue()));
         assertThat(customTabsCallbackArgumentCaptor.getValue(), is(nullValue()));
         assertThat(splashScreenStrategyArgumentCaptor.getValue(), is(nullValue()));
@@ -269,6 +290,7 @@ public class CustomTabsControllerTest {
 
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
         Intent intent = launchIntentCaptor.getValue();
+        verify(mockThreadSwitcher).backgroundThread(any());
         assertThat(intent.getAction(), is(Intent.ACTION_VIEW));
         assertThat(intent.getData(), is(uri));
         assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_SESSION), is(true));
@@ -280,6 +302,7 @@ public class CustomTabsControllerTest {
         bindService(controller, true);
         controller.clearContext();
         controller.launchUri(uri, false, mockThreadSwitcher, null);
+        verify(mockThreadSwitcher, never()).backgroundThread(any());
         verify(context, never()).startActivity(any(Intent.class));
     }
 
@@ -291,6 +314,7 @@ public class CustomTabsControllerTest {
         controller.launchUri(uri, false, mockThreadSwitcher, null);
 
         verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
+        verify(mockThreadSwitcher).backgroundThread(any());
         List<Intent> intents = launchIntentCaptor.getAllValues();
 
         Intent customTabIntent = intents.get(0);
@@ -313,11 +337,11 @@ public class CustomTabsControllerTest {
                 .when(context).startActivity(any(Intent.class));
         controller.launchUri(uri, false, mockThreadSwitcher, (ex) -> {
             assertThat(ex, isA(AuthenticationException.class));
-            assertThat(ex.getCause(), is(eq(e)));
+            assertThat(ex.getCause(), equalTo(e));
             assertThat(ex.getCode(), is("a0.browser_not_available"));
             assertThat(ex.getDescription(), is("Error launching browser for authentication"));
             verify(mockThreadSwitcher).mainThread(any());
-            verify(mockThreadSwitcher, Mockito.never()).backgroundThread(any());
+            verify(mockThreadSwitcher).backgroundThread(any());
         });
     }
 
