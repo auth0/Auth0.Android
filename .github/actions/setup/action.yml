@@ -6,7 +6,7 @@ inputs:
     description: The Java version to use
     required: false
     default: | # https://github.com/actions/setup-java#install-multiple-jdks
-      11
+      1.8
   distribution:
     description: The distribution to use
     required: false
