@@ -1,7 +1,0 @@
-{
-  "include": [
-    { "android": "30" },
-    { "android": "31" },
-    { "android": "32" }
-  ]
-}
