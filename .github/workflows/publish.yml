@@ -27,4 +27,18 @@ jobs:
 
       - uses: gradle/gradle-build-action@ef76a971e2fa3f867b617efd72f2fbd72cf6f8bc # pin@2.8.0
         with:
-          arguments: build
+          arguments: clean assemble -PisSnapshot=false
+
+      - uses: gradle/gradle-build-action@ef76a971e2fa3f867b617efd72f2fbd72cf6f8bc # pin@2.8.0
+        with:
+          arguments: exportVersion -PisSnapshot=false
+
+      - uses: gradle/gradle-build-action@ef76a971e2fa3f867b617efd72f2fbd72cf6f8bc # pin@2.8.0
+        with:
+          arguments: |
+            publishAndroidLibraryPublicationToMavenRepository
+            -PossrhUsername="${{ secrets.OSSR_USERNAME }}"
+            -PossrhPassword="${{ secrets.OSSR_PASSWORD }}"
+            -PsigningKey="${{ secrets.SIGNING_KEY }}"
+            -PsigningPassword="${{ secrets.SIGNING_PASSWORD }}"
+            -PisSnapshot=false"
