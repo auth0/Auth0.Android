@@ -119,7 +119,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
             return;
         }
 
-        threadSwitcher.backgroundThread(() -> {
+        new Thread(() -> {
             try {
                 if (launchAsTwa) {
                     this.launchedAsTwa = true;
@@ -140,7 +140,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
                         "a0.browser_not_available", "Error launching browser for authentication", ex);
                 threadSwitcher.mainThread(() -> failureCallback.apply(e));
             }
-        });
+        }).start();
     }
 
     private void launchAsDefault(Context context, Uri uri) {
