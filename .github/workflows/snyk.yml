@@ -42,6 +42,8 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
 
-      - uses: snyk/actions/gradle-jdk11@4a528b5c534bb771b6e3772656a8e0e9dc902f8b # pin@0.4.0
+      - run: npm install snyk -g
+
+      - run: snyk test
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
