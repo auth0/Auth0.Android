@@ -1,5 +1,16 @@
 # Change Log
 
+## [2.10.2](https://github.com/auth0/Auth0.Android/tree/2.10.2) (2023-10-04)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.10.1...2.10.2)
+
+**Fixed**
+- Destroy TWA Launcher at unbind [\#690](https://github.com/auth0/Auth0.Android/pull/690) ([poovamraj](https://github.com/poovamraj))
+- Use ThreadPool to launch browser for authentication [\#689](https://github.com/auth0/Auth0.Android/pull/689) ([poovamraj](https://github.com/poovamraj))
+
+**Security**
+- Update Okio to resolve CVE-2023-3635 [\#687](https://github.com/auth0/Auth0.Android/pull/687) ([jimmyjames](https://github.com/jimmyjames))
+- build(dependencies): Update OkHttp to 4.11.0 [SDK-4501] [\#684](https://github.com/auth0/Auth0.Android/pull/684) ([evansims](https://github.com/evansims))
+
 ## [2.10.1](https://github.com/auth0/Auth0.Android/tree/2.10.1) (2023-08-01)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.10.0...2.10.1)
 
