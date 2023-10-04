@@ -97,9 +97,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
             context.unbindService(this);
             didTryToBind = false;
         }
-        if(launchedAsTwa) {
-            twaLauncher.destroy();
-        }
+        twaLauncher.destroy();
     }
 
     /**
