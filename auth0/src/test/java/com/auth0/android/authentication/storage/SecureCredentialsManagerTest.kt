@@ -461,6 +461,41 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
+    public fun shouldFailOnGetCredentialsWhenNullPointerExceptionIsThrown() {
+        verifyNoMoreInteractions(client)
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        val storedJson = insertTestCredentials(
+            hasIdToken = true,
+            hasAccessToken = true,
+            hasRefreshToken = true,
+            willExpireAt = expiresAt,
+            scope = "scope"
+        )
+
+        Mockito.`when`(crypto.decrypt(storedJson.toByteArray()))
+            .thenReturn("".toByteArray())
+
+        manager.getCredentials(callback)
+        verify(callback).onFailure(
+            exceptionCaptor.capture()
+        )
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(
+            exception, IsInstanceOf.instanceOf(
+                CredentialsManagerException::class.java
+            )
+        )
+        MatcherAssert.assertThat(
+            exception.message,
+            Is.`is`("Credentials could not be retrieved.")
+        )
+        verify(storage, never()).remove("com.auth0.credentials")
+        verify(storage, never()).remove("com.auth0.credentials_expires_at")
+        verify(storage, never()).remove("com.auth0.credentials_can_refresh")
+    }
+
+    @Test
     public fun shouldFailOnSavingRefreshedCredentialsInGetCredentialsWhenIncompatibleDeviceExceptionIsThrown() {
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS) // non expired credentials
         insertTestCredentials(false, true, true, expiresAt, "scope") // "scope" is set
