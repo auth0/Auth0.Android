@@ -551,7 +551,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             try {
                 bridgeCredentials = gson.fromJson(json, OptionalCredentials::class.java)
             } catch (ex: NullPointerException) {
-                callback.onFailure(CredentialsManagerException("Credentials could not be retrieved."))
+                callback.onFailure(CredentialsManagerException("Credentials could not be retrieved.", ex))
                 decryptCallback = null
                 return@execute
             }
