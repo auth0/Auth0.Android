@@ -275,7 +275,7 @@ public object WebAuthProvider {
         /**
          * Set the max age value for the authentication.
          *
-         * @param maxAge to use in the requests
+         * @param maxAge to use in the requests in seconds
          * @return the current builder instance
          */
         public fun withMaxAge(maxAge: Int): Builder {
