@@ -32,7 +32,7 @@ class JsonRequiredTypeAdapterFactory implements TypeAdapterFactory {
 
                 Field[] fields = pojo.getClass().getDeclaredFields();
                 for (Field f : fields) {
-                    if (f.getAnnotation(JsonRequired.class) != null) {
+                    if (f!= null && f.getAnnotation(JsonRequired.class) != null) {
                         try {
                             f.setAccessible(true);
                             if (f.get(pojo) == null) {

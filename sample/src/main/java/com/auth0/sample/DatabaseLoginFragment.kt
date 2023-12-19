@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
  */
 class DatabaseLoginFragment : Fragment() {
 
-    private val scope = "openid profile email read:current_user update:current_user_metadata"
+    private val scope = "openid profile email offline_access read:current_user update:current_user_metadata"
 
     private val account: Auth0 by lazy {
         // -- REPLACE this credentials with your own Auth0 app credentials!
@@ -247,7 +247,13 @@ class DatabaseLoginFragment : Fragment() {
     }
 
     private fun getCreds() {
-        credentialsManager.getCredentials(object : Callback<Credentials, CredentialsManagerException> {
+        credentialsManager.getCredentials(
+            "openid email profile offline_access",
+            0,
+            mapOf(),
+            mapOf("test" to "test"),
+            true,
+            object : Callback<Credentials, CredentialsManagerException> {
             override fun onSuccess(result: Credentials) {
                 Snackbar.make(
                     requireView(),
@@ -264,7 +270,12 @@ class DatabaseLoginFragment : Fragment() {
 
     private suspend fun getCredsAsync() {
         try {
-            val credentials = credentialsManager.awaitCredentials()
+            val credentials = credentialsManager.awaitCredentials(
+                "openid email profile offline_access",
+                0,
+                mapOf(),
+                mapOf("test" to "test"),
+                true)
             Snackbar.make(
                 requireView(),
                 "Got credentials - ${credentials.accessToken}",
