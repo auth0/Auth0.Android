@@ -16,8 +16,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.Lifecycle
 import com.auth0.android.Auth0Exception
 import com.auth0.android.authentication.AuthenticationAPIClient
-import com.auth0.android.authentication.AuthenticationException
-import com.auth0.android.callback.AuthenticationCallback
 import com.auth0.android.callback.Callback
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.result.Credentials
@@ -146,7 +144,14 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             return false
         }
         if (resultCode == Activity.RESULT_OK) {
-            continueGetCredentials(scope, minTtl, emptyMap(), emptyMap(), forceRefresh, decryptCallback!!)
+            continueGetCredentials(
+                scope,
+                minTtl,
+                emptyMap(),
+                emptyMap(),
+                forceRefresh,
+                decryptCallback!!
+            )
         } else {
             decryptCallback!!.onFailure(CredentialsManagerException("The user didn't pass the authentication challenge."))
             decryptCallback = null
@@ -547,6 +552,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 decryptCallback = null
                 return@execute
             }
+
             val bridgeCredentials: OptionalCredentials
             try {
                 bridgeCredentials = gson.fromJson(json, OptionalCredentials::class.java)
@@ -555,6 +561,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 decryptCallback = null
                 return@execute
             }
+
             /* OPTIONAL CREDENTIALS
              * This bridge is required to prevent users from being logged out when
              * migrating from Credentials with optional Access Token and ID token
@@ -648,8 +655,9 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 callback.onSuccess(freshCredentials)
             } catch (error: CredentialsManagerException) {
                 val exception = CredentialsManagerException(
-                    "An error occurred while saving the refreshed Credentials.", error)
-                if(error.cause is IncompatibleDeviceException || error.cause is CryptoException) {
+                    "An error occurred while saving the refreshed Credentials.", error
+                )
+                if (error.cause is IncompatibleDeviceException || error.cause is CryptoException) {
                     exception.refreshedCredentials = freshCredentials
                 }
                 callback.onFailure(exception)
@@ -662,6 +670,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         private val TAG = SecureCredentialsManager::class.java.simpleName
         private const val KEY_CREDENTIALS = "com.auth0.credentials"
         private const val KEY_EXPIRES_AT = "com.auth0.credentials_access_token_expires_at"
+
         // This is no longer used as we get the credentials expiry from the access token only,
         // but we still store it so users can rollback to versions where it is required.
         private const val LEGACY_KEY_CACHE_EXPIRES_AT = "com.auth0.credentials_expires_at"
