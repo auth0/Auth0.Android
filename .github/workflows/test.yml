@@ -29,4 +29,4 @@ jobs:
 
       - run: ./gradlew clean test jacocoTestReport lint --continue --console=plain --max-workers=1 --no-daemon
 
-      - uses: codecov/codecov-action@e0b68c6749509c5f83f984dd99a76a1c1a231044 # pin@4.0.1
+      - uses: codecov/codecov-action@c16abc29c95fcf9174b58eb7e1abf4c866893bc8 # pin@4.1.1
