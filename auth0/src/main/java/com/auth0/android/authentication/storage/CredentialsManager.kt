@@ -284,8 +284,9 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
             }
             val request = authenticationClient.renewAuth(refreshToken)
             request.addParameters(parameters)
-            if (scope != null) {
-                request.addParameter("scope", scope)
+            val scopeForRenew = scope ?: storedScope
+            if (scopeForRenew != null) {
+                request.addParameter("scope", scopeForRenew)
             }
 
             for (header in headers) {
