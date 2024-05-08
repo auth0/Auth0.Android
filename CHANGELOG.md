@@ -1,5 +1,19 @@
 # Change Log
 
+## [2.11.0](https://github.com/auth0/Auth0.Android/tree/2.11.0) (2024-05-08)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.10.2...2.11.0)
+
+**Added**
+- Implement headers support in getCredentials and awaitCredentials [\#699](https://github.com/auth0/Auth0.Android/pull/699) ([poovamraj](https://github.com/poovamraj))
+
+**Fixed**
+- Guard against NullPointerException when getting Credentials from Json [\#701](https://github.com/auth0/Auth0.Android/pull/701) ([bennycao](https://github.com/bennycao))
+
+**Security**
+- Bump codecov/codecov-action from 3.1.4 to 4.0.1 [\#714](https://github.com/auth0/Auth0.Android/pull/714) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump github/codeql-action from 2 to 3 [\#705](https://github.com/auth0/Auth0.Android/pull/705) ([dependabot[bot]](https://github.com/apps/dependabot))
+- chore(dependencies): Update OkHttp to 4.12.0 [\#696](https://github.com/auth0/Auth0.Android/pull/696) ([evansims](https://github.com/evansims))
+
 ## [2.10.2](https://github.com/auth0/Auth0.Android/tree/2.10.2) (2023-10-04)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.10.1...2.10.2)
 
