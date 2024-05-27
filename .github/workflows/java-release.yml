@@ -67,15 +67,13 @@ jobs:
         run: exit 1
 
       # Publish the release to Maven
-      - uses: ./.github/actions/maven-publish
-        with:
-          java-version: ${{ inputs.java-version }}
-          is-android: ${{ inputs.is-android }}
-          version: ${{ steps.get_version.outputs.version }}
-          ossr-username: ${{ secrets.ossr-username }}
-          ossr-password: ${{ secrets.ossr-password }}
-          signing-key: ${{ secrets.signing-key }}
-          signing-password: ${{ secrets.signing-password }}
+      - name: Publish package to Maven
+        run: ./gradlew publish
+        env:
+          MAVEN_USERNAME: ${{ secrets.OSSR_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSR_TOKEN }}
+          SIGNING_KEY:    ${{ secrets.SIGNING_KEY}}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD}}
 
       # Create a release for the tag
       - uses: ./.github/actions/release-create
