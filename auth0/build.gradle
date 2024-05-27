@@ -27,6 +27,10 @@ plugins {
     id 'kotlin-android'
 }
 
+apply from: rootProject.file('gradle/versioning.gradle')
+
+version = getVersionFromFile()
+
 logger.lifecycle("Using version ${version} for ${name}")
 
 android {
