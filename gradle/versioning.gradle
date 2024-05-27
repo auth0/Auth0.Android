@@ -1,0 +1,11 @@
+def isSnapshot() {
+    return hasProperty('isSnapshot') ? isSnapshot.toBoolean() : true
+}
+
+def getVersionName() {
+    return isSnapshot() ? VERSION_NAME+"-SNAPSHOT" : VERSION_NAME
+}
+
+ext {
+    getVersionName = this.&getVersionName
+}
