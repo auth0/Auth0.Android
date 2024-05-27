@@ -24,37 +24,10 @@
 
 plugins {
     id 'kotlin-android'
-    id "com.auth0.gradle.oss-library.android" version "0.18.0"
     id "org.jetbrains.dokka" version "1.4.20"
 }
 
 logger.lifecycle("Using version ${version} for ${name}")
-
-def signingKey = findProperty('signingKey')
-def signingKeyPwd = findProperty('signingPassword')
-
-oss {
-    name 'Auth0.Android'
-    repository 'Auth0.Android'
-    organization 'auth0'
-    description 'Android toolkit for Auth0 API'
-    skipAssertSigningConfiguration true
-
-    developers {
-        auth0 {
-            displayName = 'Auth0'
-            email = 'oss@auth0.com'
-        }
-        lbalmaceda {
-            displayName = 'Luciano Balmaceda'
-            email = 'luciano.balmaceda@auth0.com'
-        }
-    }
-}
-
-signing {
-    useInMemoryPgpKeys(signingKey, signingKeyPwd)
-}
 
 android {
     compileSdkVersion 31
