@@ -107,4 +107,5 @@ dependencies {
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion"
 }
 
+apply from: rootProject.file('gradle/jacoco.gradle')
 apply from: rootProject.file('gradle/maven-publish.gradle')
