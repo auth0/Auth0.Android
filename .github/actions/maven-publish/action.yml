@@ -3,8 +3,6 @@ name: Publish release to Java
 inputs:
   java-version:
     required: true
-
-secrets:
   ossr-username:
     required: true
   ossr-token:
@@ -35,8 +33,8 @@ runs:
     - name: Publish Android/Java Packages to Maven
       run: ./gradlew publish -PisSnapshot=false
       env:
-        MAVEN_USERNAME: ${{ secrets.ossr-username }}
-        MAVEN_PASSWORD: ${{ secrets.ossr-token }}
-        SIGNING_KEY: ${{ secrets.signing-key}}
-        SIGNING_PASSWORD: ${{ secrets.signing-password}}
+        MAVEN_USERNAME: ${{ inputs.ossr-username }}
+        MAVEN_PASSWORD: ${{ inputs.ossr-token }}
+        SIGNING_KEY: ${{ inputs.signing-key}}
+        SIGNING_PASSWORD: ${{ inputs.signing-password}}
 

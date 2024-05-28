@@ -65,9 +65,9 @@ jobs:
         run: exit 1
 
       # Publish the release to Maven
-      - name: Publish package to Maven
       - uses: ./.github/actions/maven-publish
-        secrets:
+        with:
+          java-version: ${{ inputs.java-version }}
           ossr-username: ${{ secrets.ossr-username }}
           ossr-token: ${{ secrets.ossr-token }}
           signing-key:    ${{ secrets.signing-key}}
