@@ -6,13 +6,11 @@ on:
       java-version:
         required: true
         type: string
-      is-android:
-        required: true
-        type: string
+
     secrets:
       ossr-username:
         required: true
-      ossr-password:
+      ossr-token:
         required: true
       signing-key:
         required: true
@@ -68,12 +66,12 @@ jobs:
 
       # Publish the release to Maven
       - name: Publish package to Maven
-        run: ./gradlew publish -PisSnapshot=false
-        env:
-          MAVEN_USERNAME: ${{ secrets.OSSR_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.OSSR_TOKEN }}
-          SIGNING_KEY:    ${{ secrets.SIGNING_KEY}}
-          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD}}
+      - uses: ./.github/actions/maven-publish
+        secrets:
+          ossr-username: ${{ secrets.ossr-username }}
+          ossr-token: ${{ secrets.ossr-token }}
+          signing-key:    ${{ secrets.signing-key}}
+          signing-password: ${{ secrets.signing-password}}
 
       # Create a release for the tag
       - uses: ./.github/actions/release-create
