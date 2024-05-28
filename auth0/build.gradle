@@ -23,38 +23,15 @@
  */
 
 plugins {
+    id 'com.android.library'
     id 'kotlin-android'
-    id "com.auth0.gradle.oss-library.android" version "0.18.0"
-    id "org.jetbrains.dokka" version "1.4.20"
 }
+
+apply from: rootProject.file('gradle/versioning.gradle')
+
+version = getVersionFromFile()
 
 logger.lifecycle("Using version ${version} for ${name}")
-
-def signingKey = findProperty('signingKey')
-def signingKeyPwd = findProperty('signingPassword')
-
-oss {
-    name 'Auth0.Android'
-    repository 'Auth0.Android'
-    organization 'auth0'
-    description 'Android toolkit for Auth0 API'
-    skipAssertSigningConfiguration true
-
-    developers {
-        auth0 {
-            displayName = 'Auth0'
-            email = 'oss@auth0.com'
-        }
-        lbalmaceda {
-            displayName = 'Luciano Balmaceda'
-            email = 'luciano.balmaceda@auth0.com'
-        }
-    }
-}
-
-signing {
-    useInMemoryPgpKeys(signingKey, signingKeyPwd)
-}
 
 android {
     compileSdkVersion 31
@@ -101,12 +78,6 @@ ext {
     coroutinesVersion = '1.6.2'
 }
 
-// Configure javadoc jar to use dokka output
-// TODO update oss-plugin to use dokka instead of doing it here
-javadocJar {
-    dependsOn "dokkaJavadoc"
-    from "$buildDir/dokka/javadoc"
-}
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
@@ -135,3 +106,6 @@ dependencies {
     testImplementation 'androidx.test.espresso:espresso-intents:3.5.1'
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion"
 }
+
+apply from: rootProject.file('gradle/jacoco.gradle')
+apply from: rootProject.file('gradle/maven-publish.gradle')

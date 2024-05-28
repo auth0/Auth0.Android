@@ -1,20 +1,19 @@
 name: Publish release to Java
 
 inputs:
+  java-version:
+    required: true
+
+secrets:
   ossr-username:
     required: true
-  ossr-password:
+  ossr-token:
     required: true
   signing-key:
     required: true
   signing-password:
     required: true
-  java-version:
-    required: true
-  is-android:
-    required: true
-  version:
-    required: true
+
 
 runs:
   using: composite
@@ -33,12 +32,11 @@ runs:
 
     - uses: gradle/wrapper-validation-action@56b90f209b02bf6d1deae490e9ef18b21a389cd4 # pin@1.1.0
 
-    - name: Publish Java
-      shell: bash
-      if: inputs.is-android == 'false'
-      run: ./gradlew clean assemble sign publishMavenJavaPublicationToMavenRepository -PisSnapshot=false -Pversion="${{ inputs.version }}" -PossrhUsername="${{ inputs.ossr-username }}" -PossrhPassword="${{ inputs.ossr-password }}" -PsigningKey="${{ inputs.signing-key }}" -PsigningPassword="${{ inputs.signing-password }}"
+    - name: Publish Android/Java Packages to Maven
+      run: ./gradlew publish -PisSnapshot=false
+      env:
+        MAVEN_USERNAME: ${{ secrets.ossr-username }}
+        MAVEN_PASSWORD: ${{ secrets.ossr-token }}
+        SIGNING_KEY: ${{ secrets.signing-key}}
+        SIGNING_PASSWORD: ${{ secrets.signing-password}}
 
-    - name: Publish Android
-      shell: bash
-      if: inputs.is-android == 'true'
-      run: ./gradlew clean assemble publishAndroidLibraryPublicationToMavenRepository -PisSnapshot=false -Pversion="${{ inputs.version }}" -PossrhUsername="${{ inputs.ossr-username }}" -PossrhPassword="${{ inputs.ossr-password }}" -PsigningKey="${{ inputs.signing-key }}" -PsigningPassword="${{ inputs.signing-password }}"

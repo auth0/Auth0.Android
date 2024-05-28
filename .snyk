@@ -1,0 +1,15 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.25.0
+# ignores vulnerabilities until expiry date; change duration by modifying expiry date
+ignore:
+  SNYK-JAVA-COMFASTERXMLWOODSTOX-3091135:
+    - '*':
+        reason: Latest version of dokka has this vulnerability
+        expires: 2024-06-27T07:00:56.333Z
+        created: 2024-05-28T07:00:56.334Z
+  SNYK-JAVA-ORGJETBRAINSKOTLIN-2393744:
+    - '*':
+        reason: Latest version of dokka has this vulnerability
+        expires: 2024-06-27T07:01:24.820Z
+        created: 2024-05-28T07:01:24.825Z
+patch: {}
