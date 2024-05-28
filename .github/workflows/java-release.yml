@@ -68,7 +68,7 @@ jobs:
 
       # Publish the release to Maven
       - name: Publish package to Maven
-        run: ./gradlew publish
+        run: ./gradlew publish -PisSnapshot=false
         env:
           MAVEN_USERNAME: ${{ secrets.OSSR_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSR_TOKEN }}
