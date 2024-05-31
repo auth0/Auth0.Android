@@ -1,23 +1,21 @@
 package com.auth0.android.authentication.storage
 
 import android.app.Activity
-import android.app.KeyguardManager
 import android.content.Context
-import android.content.Intent
-import android.os.Build
+import android.hardware.biometrics.BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE
+import android.hardware.biometrics.BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED
+import android.hardware.biometrics.BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE
+import android.hardware.biometrics.BiometricManager.BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED
 import android.text.TextUtils
 import android.util.Base64
 import android.util.Log
-import androidx.activity.ComponentActivity
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.biometric.BiometricPrompt
 import androidx.annotation.IntRange
 import androidx.annotation.VisibleForTesting
-import androidx.lifecycle.Lifecycle
+import androidx.biometric.BiometricManager
+import androidx.fragment.app.FragmentActivity
 import com.auth0.android.Auth0Exception
 import com.auth0.android.authentication.AuthenticationAPIClient
-import com.auth0.android.authentication.AuthenticationException
-import com.auth0.android.callback.AuthenticationCallback
 import com.auth0.android.callback.Callback
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.result.Credentials
@@ -29,6 +27,7 @@ import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import com.auth0.android.authentication.biometrics.BiometricAuthenticators
 
 /**
  * A safer alternative to the [CredentialsManager] class. A combination of RSA and AES keys is used to keep the values secure.
@@ -45,16 +44,41 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
 
     //Changeable by the user
     private var authenticateBeforeDecrypt: Boolean
-    private var authenticationRequestCode = -1
-    private var activity: Activity? = null
-    private var activityResultContract: ActivityResultLauncher<Intent>? = null
+    private var biometricPromptInfo: BiometricPrompt.PromptInfo? = null
+    private var biometricPrompt: BiometricPrompt? = null
 
     //State for retrying operations
     private var decryptCallback: Callback<Credentials, CredentialsManagerException>? = null
-    private var authIntent: Intent? = null
     private var scope: String? = null
     private var minTtl = 0
     private var forceRefresh = false
+
+
+    private val authenticationCallback: BiometricPrompt.AuthenticationCallback =
+        object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                super.onAuthenticationSucceeded(result)
+                decryptCallback?.let {
+                    continueGetCredentials(
+                        scope, minTtl, emptyMap(), emptyMap(), forceRefresh,
+                        decryptCallback!!
+                    )
+                }
+            }
+
+            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                super.onAuthenticationError(errorCode, errString)
+                decryptCallback!!.onFailure(CredentialsManagerException("Biometrics Authentication Failed with error code ${errorCode} due to ${errString}"))
+                decryptCallback = null
+
+            }
+
+            override fun onAuthenticationFailed() {
+                super.onAuthenticationFailed()
+                decryptCallback!!.onFailure(CredentialsManagerException("The user didn't pass the authentication challenge."))
+                decryptCallback = null
+            }
+        }
 
     /**
      * Creates a new SecureCredentialsManager to handle Credentials
@@ -97,62 +121,68 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         title: String?,
         description: String?
     ): Boolean {
-        require(!(requestCode < 1 || requestCode > 255)) { "Request code must be a value between 1 and 255." }
-        val kManager = activity.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
-        authIntent = kManager.createConfirmDeviceCredentialIntent(title, description)
-        authenticateBeforeDecrypt =
-            ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && kManager.isDeviceSecure || kManager.isKeyguardSecure)
-                    && authIntent != null)
-        if (authenticateBeforeDecrypt) {
-            authenticationRequestCode = requestCode
-
-            /*
-             *  https://developer.android.com/training/basics/intents/result#register
-             *  Docs say it's safe to call "registerForActivityResult" BEFORE the activity is created. In practice,
-             *  when that's not the case, a RuntimeException is thrown. The lifecycle state check below is meant to
-             *  prevent that exception while still falling back to the old "startActivityForResult" flow. That's in
-             *  case devs are invoking this method in places other than the Activity's "OnCreate" method.
-             */
-            if (activity is ComponentActivity && !activity.lifecycle.currentState.isAtLeast(
-                    Lifecycle.State.STARTED
-                )
-            ) {
-                activityResultContract =
-                    activity.registerForActivityResult(
-                        ActivityResultContracts.StartActivityForResult(),
-                        activity.activityResultRegistry
-                    ) {
-                        checkAuthenticationResult(authenticationRequestCode, it.resultCode)
-                    }
-            } else {
-                this.activity = activity
-            }
+        if (activity is FragmentActivity) {
+            return requireAuthentication(activity = activity, title = "Biometric Authentication")
+        } else {
+            Log.e(TAG, "requireAuthentication() needs an activity of type FragmentActivity to support Biometrics Authentication")
+             return false
         }
-        return authenticateBeforeDecrypt
     }
 
-    /**
-     * Checks the result after showing the LockScreen to the user.
-     * Must be called from the [Activity.onActivityResult] method with the received parameters.
-     * Called internally when your activity is a subclass of ComponentActivity (using Activity Results API).
-     * It's safe to call this method even if [SecureCredentialsManager.requireAuthentication] was unsuccessful.
-     *
-     * @param requestCode the request code received in the onActivityResult call.
-     * @param resultCode  the result code received in the onActivityResult call.
-     * @return true if the result was handled, false otherwise.
-     */
-    public fun checkAuthenticationResult(requestCode: Int, resultCode: Int): Boolean {
-        if (requestCode != authenticationRequestCode || decryptCallback == null) {
+
+    // i feel its better we return back an enum so that they can act on top of it, rather than skimming through logs
+    // for eg: if they tried for strong, but user has not enrolled then they can direct them to enroll or something like that
+
+    public fun requireAuthentication(
+        activity: FragmentActivity,
+        title: String,
+        subtitle: String? = null,
+        description: String? = null,
+        authenticator: BiometricAuthenticators = BiometricAuthenticators.STRONG,
+        enableDeviceCredentialFallback: Boolean = false,
+        negativeButtonText: String = "Cancel"
+    ): Boolean {
+        val biometricManager = BiometricManager.from(activity)
+        val authenticators = if (enableDeviceCredentialFallback) {
+            authenticator.value or BiometricAuthenticators.DEVICE_CREDENTIAL.value
+        } else {
+            authenticator.value
+        }
+
+        val authenticatorStatus = biometricManager.canAuthenticate(authenticators)
+        authenticateBeforeDecrypt = authenticatorStatus == BiometricManager.BIOMETRIC_SUCCESS
+        if (!authenticateBeforeDecrypt) {
+            logAuthenticatorErrorStatus(authenticatorStatus)
             return false
         }
-        if (resultCode == Activity.RESULT_OK) {
-            continueGetCredentials(scope, minTtl, emptyMap(), emptyMap(), forceRefresh, decryptCallback!!)
-        } else {
-            decryptCallback!!.onFailure(CredentialsManagerException("The user didn't pass the authentication challenge."))
-            decryptCallback = null
+
+        val bioMetricPromptBuilder = BiometricPrompt.PromptInfo.Builder()
+            .setTitle(title)
+            .setSubtitle(subtitle)
+            .setDescription(description)
+            .setAllowedAuthenticators(authenticators)
+        if (!enableDeviceCredentialFallback) {
+            bioMetricPromptBuilder.setNegativeButtonText(negativeButtonText)
         }
+        biometricPromptInfo = bioMetricPromptBuilder.build()
+        biometricPrompt = BiometricPrompt(activity, serialExecutor, authenticationCallback)
         return true
     }
+
+    private fun logAuthenticatorErrorStatus(authenticatorStatus: Int) {
+        val errorMessages = mapOf(
+            BIOMETRIC_ERROR_HW_UNAVAILABLE to "The hardware is unavailable. Try again later.",
+            BIOMETRIC_ERROR_NONE_ENROLLED to "The user does not have any biometrics enrolled.",
+            BIOMETRIC_ERROR_NO_HARDWARE to "There is no biometric hardware.",
+            BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED to "A security vulnerability has been discovered and the sensor is unavailable until a security update has addressed this issue."
+        )
+
+        val errorMessage = errorMessages[authenticatorStatus]
+        if (errorMessage != null) {
+            Log.e(TAG, errorMessage)
+        }
+    }
+
 
     /**
      * Saves the given credentials in the Storage.
@@ -192,6 +222,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
              * to use on the next call. We clear any existing credentials so #hasValidCredentials returns
              * a true value. Retrying this operation will succeed.
              */
+            // suspect this is not something we do in Auth0.swift
             clearCredentials()
             throw CredentialsManagerException(
                 "A change on the Lock Screen security settings have deemed the encryption keys invalid and have been recreated. Please try saving the credentials again.",
@@ -446,17 +477,18 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             callback.onFailure(CredentialsManagerException("No Credentials were previously set."))
             return
         }
+
         if (authenticateBeforeDecrypt) {
             Log.d(
                 TAG,
                 "Authentication is required to read the Credentials. Showing the LockScreen."
             )
+            // why did we left headers and parameters when we are authenticating before decrypting ?
             decryptCallback = callback
             this.scope = scope
             this.minTtl = minTtl
             this.forceRefresh = forceRefresh
-            activityResultContract?.launch(authIntent)
-                ?: activity?.startActivityForResult(authIntent, authenticationRequestCode)
+            biometricPromptInfo?.let { biometricPrompt?.authenticate(it) }
             return
         }
         continueGetCredentials(scope, minTtl, parameters, headers, forceRefresh, callback)
@@ -535,6 +567,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 decryptCallback = null
                 return@execute
             } catch (e: CryptoException) {
+                // suspect this is not something we do in Auth0.swift
                 //If keys were invalidated, existing credentials will not be recoverable.
                 clearCredentials()
                 callback.onFailure(
@@ -576,6 +609,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 return@execute
             }
             if (credentials.refreshToken == null) {
+                // ideally we will have to change the log to say, token expired or token needs to be refreshed but no refresh token exists to do so.
                 callback.onFailure(CredentialsManagerException("No Credentials were previously set."))
                 decryptCallback = null
                 return@execute
@@ -641,8 +675,9 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 callback.onSuccess(freshCredentials)
             } catch (error: CredentialsManagerException) {
                 val exception = CredentialsManagerException(
-                    "An error occurred while saving the refreshed Credentials.", error)
-                if(error.cause is IncompatibleDeviceException || error.cause is CryptoException) {
+                    "An error occurred while saving the refreshed Credentials.", error
+                )
+                if (error.cause is IncompatibleDeviceException || error.cause is CryptoException) {
                     exception.refreshedCredentials = freshCredentials
                 }
                 callback.onFailure(exception)
@@ -655,6 +690,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         private val TAG = SecureCredentialsManager::class.java.simpleName
         private const val KEY_CREDENTIALS = "com.auth0.credentials"
         private const val KEY_EXPIRES_AT = "com.auth0.credentials_access_token_expires_at"
+
         // This is no longer used as we get the credentials expiry from the access token only,
         // but we still store it so users can rollback to versions where it is required.
         private const val LEGACY_KEY_CACHE_EXPIRES_AT = "com.auth0.credentials_expires_at"
