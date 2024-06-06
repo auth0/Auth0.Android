@@ -8,7 +8,9 @@ import androidx.fragment.app.Fragment
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
+import com.auth0.android.authentication.storage.AuthenticationLevel
 import com.auth0.android.authentication.storage.CredentialsManagerException
+import com.auth0.android.authentication.storage.LocalAuthenticationOptions
 import com.auth0.android.authentication.storage.SecureCredentialsManager
 import com.auth0.android.authentication.storage.SharedPreferencesStorage
 import com.auth0.android.callback.Callback
@@ -247,7 +249,8 @@ class DatabaseLoginFragment : Fragment() {
     }
 
     private fun getCreds() {
-        credentialsManager.getCredentials(object : Callback<Credentials, CredentialsManagerException> {
+        val localAuthenticationOptions = LocalAuthenticationOptions.Builder().title("Biometric").description("description").authenticator(AuthenticationLevel.STRONG).negativeButtonText("Cancel").build()
+        credentialsManager.getCredentialsWithAuthentication(requireActivity(), localAuthenticationOptions, null, 300, emptyMap(), emptyMap(), false, object : Callback<Credentials, CredentialsManagerException> {
             override fun onSuccess(result: Credentials) {
                 Snackbar.make(
                     requireView(),
@@ -259,7 +262,7 @@ class DatabaseLoginFragment : Fragment() {
             override fun onFailure(error: CredentialsManagerException) {
                 Snackbar.make(requireView(), "${error.message}", Snackbar.LENGTH_LONG).show()
             }
-        })
+        } )
     }
 
     private suspend fun getCredsAsync() {
