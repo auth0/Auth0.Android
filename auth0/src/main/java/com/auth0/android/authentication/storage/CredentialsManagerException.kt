@@ -114,6 +114,12 @@ public class CredentialsManagerException :
         }
     }
 
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is CredentialsManagerException) return false
+        return code == other.code
+    }
+
     /**
      * Returns true when this Android device doesn't support the cryptographic algorithms used
      * to handle encryption and decryption, false otherwise.
