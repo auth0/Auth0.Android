@@ -1,6 +1,5 @@
 package com.auth0.android.authentication.storage
 
-import android.util.Log
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.fragment.app.FragmentActivity
@@ -25,8 +24,11 @@ internal class LocalAuthenticationManager(
         // canAuthenticate API doesn't work as expected on all the API levels, need to work on this.
         val isAuthenticationPossible = biometricManager.canAuthenticate(authenticationLevels)
         if (isAuthenticationPossible != BiometricManager.BIOMETRIC_SUCCESS) {
-            logAuthenticatorErrorStatus(isAuthenticationPossible)
-            resultCallback.onFailure(CredentialsManagerException("Supplied Authenticators are not possible"))
+            resultCallback.onFailure(
+                generateExceptionFromAuthenticationPossibilityError(
+                    isAuthenticationPossible
+                )
+            )
             return
         }
 
@@ -51,18 +53,18 @@ internal class LocalAuthenticationManager(
         biometricPrompt.authenticate(biometricPromptInfo)
     }
 
-    private fun logAuthenticatorErrorStatus(authenticatorStatus: Int) {
-        val errorMessages = mapOf(
-            BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE to "The hardware is unavailable. Try again later.",
-            BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED to "The user does not have any biometrics enrolled.",
-            BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE to "There is no biometric hardware.",
-            BiometricManager.BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED to "A security vulnerability has been discovered and the sensor is unavailable until a security update has addressed this issue."
-        )
 
-        val errorMessage = errorMessages[authenticatorStatus]
-        if (errorMessage != null) {
-            Log.e(TAG, errorMessage)
-        }
+    private fun generateExceptionFromAuthenticationPossibilityError(errorCode: Int): CredentialsManagerException {
+        val exceptionCode = mapOf(
+            BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE to CredentialsManagerException.BIOMETRIC_ERROR_HW_UNAVAILABLE,
+            BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED to CredentialsManagerException.BIOMETRIC_ERROR_NONE_ENROLLED,
+            BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE to CredentialsManagerException.BIOMETRIC_ERROR_NO_HARDWARE,
+            BiometricManager.BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED to CredentialsManagerException.BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED,
+            BiometricManager.BIOMETRIC_ERROR_UNSUPPORTED to CredentialsManagerException.BIOMETRIC_ERROR_UNSUPPORTED,
+            BiometricManager.BIOMETRIC_STATUS_UNKNOWN to CredentialsManagerException.BIOMETRIC_STATUS_UNKNOWN
+        )
+        return exceptionCode[errorCode]
+            ?: CredentialsManagerException.BIOMETRIC_AUTHENTICATION_CHECK_FAILED
     }
 
     private val biometricPromptAuthenticationCallback =
@@ -75,12 +77,17 @@ internal class LocalAuthenticationManager(
 
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)
-                    callback.onFailure(CredentialsManagerException("Biometrics Authentication Failed with error code $errorCode due to $errString"))
+                    callback.onFailure(
+                        CredentialsManagerException(
+                            CredentialsManagerException.Code.BIOMETRICS_FAILED,
+                            "Biometrics Authentication Failed with error code $errorCode due to $errString"
+                        )
+                    )
                 }
 
                 override fun onAuthenticationFailed() {
                     super.onAuthenticationFailed()
-                    callback.onFailure(CredentialsManagerException("The user didn't pass the authentication challenge."))
+                    callback.onFailure(CredentialsManagerException.BIOMETRICS_FAILED)
                 }
             }
         }

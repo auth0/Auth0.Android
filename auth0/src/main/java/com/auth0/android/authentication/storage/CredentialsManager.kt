@@ -42,7 +42,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      */
     override fun saveCredentials(credentials: Credentials) {
         if (TextUtils.isEmpty(credentials.accessToken) && TextUtils.isEmpty(credentials.idToken)) {
-            throw CredentialsManagerException("Credentials must have a valid date of expiration and a valid access_token or id_token value.")
+            throw CredentialsManagerException.INVALID_CREDENTIALS
         }
         storage.store(KEY_ACCESS_TOKEN, credentials.accessToken)
         storage.store(KEY_REFRESH_TOKEN, credentials.refreshToken)
@@ -260,7 +260,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
             val hasEmptyCredentials =
                 TextUtils.isEmpty(accessToken) && TextUtils.isEmpty(idToken) || expiresAt == null
             if (hasEmptyCredentials) {
-                callback.onFailure(CredentialsManagerException("No Credentials were previously set."))
+                callback.onFailure(CredentialsManagerException.NO_CREDENTIALS)
                 return@execute
             }
             val willAccessTokenExpire = willExpire(expiresAt!!, minTtl.toLong())
@@ -279,7 +279,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                 return@execute
             }
             if (refreshToken == null) {
-                callback.onFailure(CredentialsManagerException("Credentials need to be renewed but no Refresh Token is available to renew them."))
+                callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
                 return@execute
             }
             val request = authenticationClient.renewAuth(refreshToken)
@@ -299,6 +299,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                 if (willAccessTokenExpire) {
                     val tokenLifetime = (expiresAt - currentTimeInMillis - minTtl * 1000) / -1000
                     val wrongTtlException = CredentialsManagerException(
+                        CredentialsManagerException.Code.LARGE_MIN_TTL,
                         String.format(
                             Locale.getDefault(),
                             "The lifetime of the renewed Access Token (%d) is less than the minTTL requested (%d). Increase the 'Token Expiration' setting of your Auth0 API in the dashboard, or request a lower minTTL.",
@@ -326,7 +327,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
             } catch (error: AuthenticationException) {
                 callback.onFailure(
                     CredentialsManagerException(
-                        "An error occurred while trying to use the Refresh Token to renew the Credentials.",
+                        CredentialsManagerException.Code.RENEW_FAILED,
                         error
                     )
                 )
@@ -394,6 +395,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         private const val KEY_TOKEN_TYPE = "com.auth0.token_type"
         private const val KEY_EXPIRES_AT = "com.auth0.expires_at"
         private const val KEY_SCOPE = "com.auth0.scope"
+
         // This is no longer used as we get the credentials expiry from the access token only,
         // but we still store it so users can rollback to versions where it is required.
         private const val LEGACY_KEY_CACHE_EXPIRES_AT = "com.auth0.cache_expires_at"
