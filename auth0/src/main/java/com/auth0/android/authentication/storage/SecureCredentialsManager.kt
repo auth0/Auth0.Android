@@ -66,7 +66,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     @Synchronized
     override fun saveCredentials(credentials: Credentials) {
         if (TextUtils.isEmpty(credentials.accessToken) && TextUtils.isEmpty(credentials.idToken)) {
-            throw CredentialsManagerException("Credentials must have a valid date of expiration and a valid access_token or id_token value.")
+            throw CredentialsManagerException.INVALID_CREDENTIALS
         }
         val json = gson.toJson(credentials)
         val canRefresh = !TextUtils.isEmpty(credentials.refreshToken)
@@ -82,10 +82,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             storage.store(KEY_CAN_REFRESH, canRefresh)
         } catch (e: IncompatibleDeviceException) {
             throw CredentialsManagerException(
-                String.format(
-                    "This device is not compatible with the %s class.",
-                    SecureCredentialsManager::class.java.simpleName
-                ), e
+                CredentialsManagerException.Code.INCOMPATIBLE_DEVICE,
+                e
             )
         } catch (e: CryptoException) {
             /*
@@ -95,10 +93,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
              */
             // suspect this is not something we do in Auth0.swift
             clearCredentials()
-            throw CredentialsManagerException(
-                "A change on the Lock Screen security settings have deemed the encryption keys invalid and have been recreated. Please try saving the credentials again.",
-                e
-            )
+            throw CredentialsManagerException(CredentialsManagerException.Code.CRYPTO_EXCEPTION, e)
         }
     }
 
@@ -347,7 +342,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     ) {
 
         if (!isBiometricManagerPackageAvailable()) {
-            callback.onFailure(CredentialsManagerException("BiometricManager package is not available on classpath, please add it to perform authentication before retrieving credentials"))
+            callback.onFailure(CredentialsManagerException.BIOMETRICS_PACKAGE_NOT_FOUND)
             return
         }
 
@@ -421,13 +416,13 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     ) {
 
         if (!hasValidCredentials(minTtl.toLong())) {
-            callback.onFailure(CredentialsManagerException("No Credentials were previously set."))
+            callback.onFailure(CredentialsManagerException.NO_CREDENTIALS)
             return
         }
         serialExecutor.execute {
             val encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS)
             if (encryptedEncoded.isNullOrBlank()) {
-                callback.onFailure(CredentialsManagerException("No Credentials were previously set."))
+                callback.onFailure(CredentialsManagerException.NO_CREDENTIALS)
                 return@execute
             }
             val encrypted = Base64.decode(encryptedEncoded, Base64.DEFAULT)
@@ -437,10 +432,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             } catch (e: IncompatibleDeviceException) {
                 callback.onFailure(
                     CredentialsManagerException(
-                        String.format(
-                            "This device is not compatible with the %s class.",
-                            SecureCredentialsManager::class.java.simpleName
-                        ), e
+                        CredentialsManagerException.Code.INCOMPATIBLE_DEVICE,
+                        e
                     )
                 )
                 return@execute
@@ -450,8 +443,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 clearCredentials()
                 callback.onFailure(
                     CredentialsManagerException(
-                        "A change on the Lock Screen security settings have deemed the encryption keys invalid and have been recreated. " +
-                                "Any previously stored content is now lost. Please try saving the credentials again.",
+                        CredentialsManagerException.Code.CRYPTO_EXCEPTION,
                         e
                     )
                 )
@@ -474,7 +466,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             val hasEmptyCredentials =
                 TextUtils.isEmpty(credentials.accessToken) && TextUtils.isEmpty(credentials.idToken)
             if (hasEmptyCredentials) {
-                callback.onFailure(CredentialsManagerException("No Credentials were previously set."))
+                callback.onFailure(CredentialsManagerException.NO_CREDENTIALS)
                 return@execute
             }
             val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
@@ -485,7 +477,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             }
             if (credentials.refreshToken == null) {
                 // ideally we will have to change the log to say, token expired or token needs to be refreshed but no refresh token exists to do so.
-                callback.onFailure(CredentialsManagerException("No Credentials were previously set."))
+                callback.onFailure(CredentialsManagerException.NO_CREDENTIALS)
                 return@execute
             }
             Log.d(TAG, "Credentials have expired. Renewing them now...")
@@ -508,16 +500,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 val expiresAt = fresh.expiresAt.time
                 val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
                 if (willAccessTokenExpire) {
-                    val tokenLifetime = (expiresAt - currentTimeInMillis - minTtl * 1000) / -1000
-                    val wrongTtlException = CredentialsManagerException(
-                        String.format(
-                            Locale.getDefault(),
-                            "The lifetime of the renewed Access Token (%d) is less than the minTTL requested (%d). Increase the 'Token Expiration' setting of your Auth0 API in the dashboard, or request a lower minTTL.",
-                            tokenLifetime,
-                            minTtl
-                        )
-                    )
-                    callback.onFailure(wrongTtlException)
+                    callback.onFailure(CredentialsManagerException.LARGE_MIN_TTL)
                     return@execute
                 }
 
@@ -535,7 +518,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             } catch (error: Auth0Exception) {
                 callback.onFailure(
                     CredentialsManagerException(
-                        "An error occurred while trying to use the Refresh Token to renew the Credentials.",
+                        CredentialsManagerException.Code.RENEW_FAILED,
                         error
                     )
                 )
@@ -547,7 +530,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 callback.onSuccess(freshCredentials)
             } catch (error: CredentialsManagerException) {
                 val exception = CredentialsManagerException(
-                    "An error occurred while saving the refreshed Credentials.", error
+                    CredentialsManagerException.Code.STORE_FAILED, error
                 )
                 if (error.cause is IncompatibleDeviceException || error.cause is CryptoException) {
                     exception.refreshedCredentials = freshCredentials
