@@ -91,7 +91,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
              * to use on the next call. We clear any existing credentials so #hasValidCredentials returns
              * a true value. Retrying this operation will succeed.
              */
-            // suspect this is not something we do in Auth0.swift
             clearCredentials()
             throw CredentialsManagerException(CredentialsManagerException.Code.CRYPTO_EXCEPTION, e)
         }
@@ -438,7 +437,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 )
                 return@execute
             } catch (e: CryptoException) {
-                // suspect this is not something we do in Auth0.swift
                 //If keys were invalidated, existing credentials will not be recoverable.
                 clearCredentials()
                 callback.onFailure(
@@ -476,8 +474,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 return@execute
             }
             if (credentials.refreshToken == null) {
-                // ideally we will have to change the log to say, token expired or token needs to be refreshed but no refresh token exists to do so.
-                callback.onFailure(CredentialsManagerException.NO_CREDENTIALS)
+                callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
                 return@execute
             }
             Log.d(TAG, "Credentials have expired. Renewing them now...")
@@ -500,7 +497,17 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 val expiresAt = fresh.expiresAt.time
                 val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
                 if (willAccessTokenExpire) {
-                    callback.onFailure(CredentialsManagerException.LARGE_MIN_TTL)
+                    val tokenLifetime = (expiresAt - currentTimeInMillis - minTtl * 1000) / -1000
+                    val wrongTtlException = CredentialsManagerException(
+                        CredentialsManagerException.Code.LARGE_MIN_TTL,
+                        String.format(
+                            Locale.getDefault(),
+                            "The lifetime of the renewed Access Token (%d) is less than the minTTL requested (%d). Increase the 'Token Expiration' setting of your Auth0 API in the dashboard, or request a lower minTTL.",
+                            tokenLifetime,
+                            minTtl
+                        )
+                    )
+                    callback.onFailure(wrongTtlException)
                     return@execute
                 }
 
@@ -542,11 +549,10 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
 
     private fun isBiometricManagerPackageAvailable(): Boolean {
         return try {
-            // Attempt to load a class from the androidx.biometric package
             Class.forName("androidx.biometric.BiometricManager")
-            true // If successful, package is available
+            true
         } catch (e: ClassNotFoundException) {
-            false // If ClassNotFoundException is thrown, package is not available
+            false
         }
     }
 
