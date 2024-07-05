@@ -11,9 +11,8 @@ internal class LocalAuthenticationManager(
     private val activity: FragmentActivity,
     private val authenticationOptions: LocalAuthenticationOptions,
     private val executor: Executor,
+    private val biometricManager: BiometricManager = BiometricManager.from(activity),
 ) {
-    private val biometricManager = BiometricManager.from(activity)
-
     fun authenticate(resultCallback: Callback<Boolean, CredentialsManagerException>) {
         val authenticationLevels = if (authenticationOptions.enableDeviceCredentialFallback) {
             authenticationOptions.authenticationLevel.value or AuthenticationLevel.DEVICE_CREDENTIAL.value
