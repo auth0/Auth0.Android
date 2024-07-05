@@ -340,11 +340,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
 
-        if (!isBiometricManagerPackageAvailable()) {
-            callback.onFailure(CredentialsManagerException.BIOMETRICS_PACKAGE_NOT_FOUND)
-            return
-        }
-
         val localAuthenticationManager = LocalAuthenticationManager(
             activity,
             authenticationOptions,
@@ -544,15 +539,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 }
                 callback.onFailure(exception)
             }
-        }
-    }
-
-    private fun isBiometricManagerPackageAvailable(): Boolean {
-        return try {
-            Class.forName("androidx.biometric.BiometricManager")
-            true
-        } catch (e: ClassNotFoundException) {
-            false
         }
     }
 

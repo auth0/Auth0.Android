@@ -92,7 +92,7 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.9'
     implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.4.0'
 
-    compileOnly "androidx.biometric:biometric:$biometricLibraryVersion"
+    implementation "androidx.biometric:biometric:$biometricLibraryVersion"
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.hamcrest:java-hamcrest:2.0.0.0'
