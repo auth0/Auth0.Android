@@ -6,6 +6,7 @@ import android.os.Looper
 import androidx.annotation.VisibleForTesting
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
+import androidx.biometric.BiometricPrompt.AuthenticationCallback
 import androidx.fragment.app.FragmentActivity
 import com.auth0.android.callback.Callback
 import java.util.concurrent.Executor
@@ -14,8 +15,11 @@ import java.util.concurrent.Executor
 internal class LocalAuthenticationManager(
     private val activity: FragmentActivity,
     private val authenticationOptions: LocalAuthenticationOptions,
-    private val executor: Executor,
     private val biometricManager: BiometricManager = BiometricManager.from(activity),
+    @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal val resultCallback: Callback<Boolean, CredentialsManagerException>,
+) : AuthenticationCallback() {
+
     private val uiThreadExecutor = UiThreadExecutor()
 
     fun authenticate() {
@@ -66,12 +70,26 @@ internal class LocalAuthenticationManager(
         val biometricPromptInfo = bioMetricPromptInfoBuilder.build()
         val biometricPrompt = BiometricPrompt(
             activity,
-            executor,
-            biometricPromptAuthenticationCallback(resultCallback)
+            uiThreadExecutor,
+            this
         )
         biometricPrompt.authenticate(biometricPromptInfo)
     }
 
+    override fun onAuthenticationFailed() {
+        super.onAuthenticationFailed()
+        resultCallback.onFailure(CredentialsManagerException.BIOMETRICS_INVALID_USER)
+    }
+
+    override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+        super.onAuthenticationSucceeded(result)
+        resultCallback.onSuccess(true)
+    }
+
+    override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+        super.onAuthenticationError(errorCode, errString)
+        resultCallback.onFailure(generateExceptionFromAuthenticationError(errorCode))
+    }
 
     private fun generateExceptionFromAuthenticationPossibilityError(errorCode: Int): CredentialsManagerException {
         val exceptionCode = mapOf(
@@ -80,38 +98,37 @@ internal class LocalAuthenticationManager(
             BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE to CredentialsManagerException.BIOMETRIC_ERROR_NO_HARDWARE,
             BiometricManager.BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED to CredentialsManagerException.BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED,
             BiometricManager.BIOMETRIC_ERROR_UNSUPPORTED to CredentialsManagerException.BIOMETRIC_ERROR_UNSUPPORTED,
-            BiometricManager.BIOMETRIC_STATUS_UNKNOWN to CredentialsManagerException.BIOMETRIC_STATUS_UNKNOWN
+            BiometricManager.BIOMETRIC_STATUS_UNKNOWN to CredentialsManagerException.BIOMETRIC_ERROR_STATUS_UNKNOWN
         )
         return exceptionCode[errorCode]
             ?: CredentialsManagerException.BIOMETRIC_AUTHENTICATION_CHECK_FAILED
     }
 
-    private val biometricPromptAuthenticationCallback =
-        { callback: Callback<Boolean, CredentialsManagerException> ->
-            object : BiometricPrompt.AuthenticationCallback() {
-                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                    super.onAuthenticationSucceeded(result)
-                    callback.onSuccess(true)
-                }
+    private fun generateExceptionFromAuthenticationError(errorCode: Int): CredentialsManagerException {
+        val exceptionCode = mapOf(
+            BiometricPrompt.ERROR_HW_UNAVAILABLE to CredentialsManagerException.BIOMETRIC_ERROR_HW_UNAVAILABLE,
+            BiometricPrompt.ERROR_UNABLE_TO_PROCESS to CredentialsManagerException.BIOMETRIC_ERROR_UNABLE_TO_PROCESS,
+            BiometricPrompt.ERROR_TIMEOUT to CredentialsManagerException.BIOMETRIC_ERROR_TIMEOUT,
+            BiometricPrompt.ERROR_NO_SPACE to CredentialsManagerException.BIOMETRIC_ERROR_NO_SPACE,
+            BiometricPrompt.ERROR_CANCELED to CredentialsManagerException.BIOMETRIC_ERROR_CANCELED,
+            BiometricPrompt.ERROR_LOCKOUT to CredentialsManagerException.BIOMETRIC_ERROR_LOCKOUT,
+            BiometricPrompt.ERROR_VENDOR to CredentialsManagerException.BIOMETRIC_ERROR_VENDOR,
+            BiometricPrompt.ERROR_LOCKOUT_PERMANENT to CredentialsManagerException.BIOMETRIC_ERROR_LOCKOUT_PERMANENT,
+            BiometricPrompt.ERROR_USER_CANCELED to CredentialsManagerException.BIOMETRIC_ERROR_USER_CANCELED,
+            BiometricPrompt.ERROR_NO_BIOMETRICS to CredentialsManagerException.BIOMETRIC_ERROR_NO_BIOMETRICS,
+            BiometricPrompt.ERROR_HW_NOT_PRESENT to CredentialsManagerException.BIOMETRIC_ERROR_HW_NOT_PRESENT,
+            BiometricPrompt.ERROR_NEGATIVE_BUTTON to CredentialsManagerException.BIOMETRIC_ERROR_NEGATIVE_BUTTON,
+            BiometricPrompt.ERROR_NO_DEVICE_CREDENTIAL to CredentialsManagerException.BIOMETRIC_ERROR_NO_DEVICE_CREDENTIAL,
+        )
+        return exceptionCode[errorCode]
+            ?: CredentialsManagerException.BIOMETRIC_AUTHENTICATION_FAILED
+    }
 
-                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                    super.onAuthenticationError(errorCode, errString)
-                    callback.onFailure(
-                        CredentialsManagerException(
-                            CredentialsManagerException.Code.BIOMETRICS_FAILED,
-                            "Biometrics Authentication Failed with error code $errorCode due to $errString"
-                        )
-                    )
-                }
+    class UiThreadExecutor : Executor {
+        private val handler = Handler(Looper.getMainLooper())
 
-                override fun onAuthenticationFailed() {
-                    super.onAuthenticationFailed()
-                    callback.onFailure(CredentialsManagerException.BIOMETRICS_FAILED)
-                }
-            }
+        override fun execute(command: Runnable) {
+            handler.post(command)
         }
-
-    internal companion object {
-        private val TAG = LocalAuthenticationManager::class.java.simpleName
     }
 }
