@@ -1,5 +1,9 @@
 package com.auth0.android.authentication.storage
 
+import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import androidx.annotation.VisibleForTesting
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.fragment.app.FragmentActivity
@@ -12,8 +16,24 @@ internal class LocalAuthenticationManager(
     private val authenticationOptions: LocalAuthenticationOptions,
     private val executor: Executor,
     private val biometricManager: BiometricManager = BiometricManager.from(activity),
-) {
-    fun authenticate(resultCallback: Callback<Boolean, CredentialsManagerException>) {
+    private val uiThreadExecutor = UiThreadExecutor()
+
+    fun authenticate() {
+        // On Android API 29 and below, specifying DEVICE_CREDENTIAL alone as the authentication level is not supported.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R && authenticationOptions.authenticationLevel.value == AuthenticationLevel.DEVICE_CREDENTIAL.value) {
+            resultCallback.onFailure(CredentialsManagerException.BIOMETRIC_ERROR_DEVICE_CREDENTIAL_NOT_AVAILABLE)
+            return
+        }
+
+        // On Android API 28 and 29, specifying BIOMETRIC_STRONG as the authentication level along with enabling device credential fallback is not supported.
+        if (Build.VERSION.SDK_INT in Build.VERSION_CODES.P..Build.VERSION_CODES.Q &&
+            authenticationOptions.authenticationLevel.value == AuthenticationLevel.STRONG.value &&
+            authenticationOptions.enableDeviceCredentialFallback
+        ) {
+            resultCallback.onFailure(CredentialsManagerException.BIOMETRIC_ERROR_STRONG_AND_DEVICE_CREDENTIAL_NOT_AVAILABLE)
+            return
+        }
+
         val authenticationLevels = if (authenticationOptions.enableDeviceCredentialFallback) {
             authenticationOptions.authenticationLevel.value or AuthenticationLevel.DEVICE_CREDENTIAL.value
         } else {
@@ -36,7 +56,7 @@ internal class LocalAuthenticationManager(
                 setTitle(title)
                 setSubtitle(subtitle)
                 setDescription(description)
-                if (!enableDeviceCredentialFallback) {
+                if (!enableDeviceCredentialFallback && authenticationLevel != AuthenticationLevel.DEVICE_CREDENTIAL) {
                     setNegativeButtonText(negativeButtonText)
                 }
             }
