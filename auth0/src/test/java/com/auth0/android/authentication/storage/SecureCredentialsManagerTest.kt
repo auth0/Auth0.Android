@@ -107,7 +107,7 @@ public class SecureCredentialsManagerTest {
                     .get()
             )
         val secureCredentialsManager =
-            SecureCredentialsManager(client, storage, crypto, jwtDecoder, serialExecutor, factory)
+            SecureCredentialsManager(client, storage, crypto, jwtDecoder, factory, serialExecutor)
         manager = Mockito.spy(secureCredentialsManager)
         Mockito.doReturn(CredentialsMock.CURRENT_TIME_MS).`when`(manager).currentTimeInMillis
         gson = GsonProvider.gson
@@ -1688,7 +1688,7 @@ public class SecureCredentialsManagerTest {
      */
     @Test
     public fun shouldUseCustomClock() {
-        val manager = SecureCredentialsManager(client, storage, crypto, jwtDecoder, serialExecutor, factory) { }
+        val manager = SecureCredentialsManager(client, storage, crypto, jwtDecoder, factory) { }
         val expirationTime = CredentialsMock.CURRENT_TIME_MS //Same as current time --> expired
         Mockito.`when`(storage.retrieveLong("com.auth0.credentials_access_token_expires_at"))
             .thenReturn(expirationTime)
@@ -1709,7 +1709,7 @@ public class SecureCredentialsManagerTest {
 
     @Test(expected = java.lang.IllegalArgumentException::class)
     public fun shouldUseCustomExecutorForGetCredentials() {
-        val manager = SecureCredentialsManager(apiClient = client, storage = storage, crypto = crypto, jwtDecoder = jwtDecoder) {
+        val manager = SecureCredentialsManager(client, storage, crypto, jwtDecoder, factory) {
             throw java.lang.IllegalArgumentException("Proper Executor Set")
         }
         val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
@@ -1717,7 +1717,7 @@ public class SecureCredentialsManagerTest {
             .thenReturn(expirationTime)
         Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
             .thenReturn("{\"access_token\":\"accessToken\"}")
-        manager.getCredentials(object : Callback<Credentials, CredentialsManagerException> {
+        manager.getCredentials(null, 0, emptyMap(), emptyMap(), false, object : Callback<Credentials, CredentialsManagerException> {
             override fun onSuccess(result: Credentials) {}
             override fun onFailure(error: CredentialsManagerException) {}
         })
