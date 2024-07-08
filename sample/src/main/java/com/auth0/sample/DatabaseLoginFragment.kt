@@ -67,7 +67,7 @@ class DatabaseLoginFragment : Fragment() {
 
     private val localAuthenticationOptions =
         LocalAuthenticationOptions.Builder().title("Biometric").description("description")
-            .authenticator(AuthenticationLevel.STRONG).negativeButtonText("Cancel").enableDeviceCredentialFallback(true1`)
+            .authenticator(AuthenticationLevel.STRONG).negativeButtonText("Cancel").enableDeviceCredentialFallback(true)
             .build()
 
     override fun onCreateView(
