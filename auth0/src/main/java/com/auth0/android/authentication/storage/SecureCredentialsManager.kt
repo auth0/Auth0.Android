@@ -30,6 +30,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     storage: Storage,
     private val crypto: CryptoUtil,
     jwtDecoder: JWTDecoder,
+    private val serialExecutor: Executor,
+    private val localAuthenticationManagerFactory: LocalAuthenticationManagerFactory
 ) : SecuredCredentialsManager(apiClient, storage, jwtDecoder) {
     private val gson: Gson = GsonProvider.gson
 
@@ -50,7 +52,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         storage,
         CryptoUtil(context, storage, KEY_ALIAS),
         JWTDecoder(),
-        Executors.newSingleThreadExecutor()
+        Executors.newSingleThreadExecutor(),
+        DefaultLocalAuthenticationManagerFactory()
     )
 
 
