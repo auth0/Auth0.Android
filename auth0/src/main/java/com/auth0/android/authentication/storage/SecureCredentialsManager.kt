@@ -2,6 +2,8 @@ package com.auth0.android.authentication.storage
 
 import android.app.Activity
 import android.content.Context
+import android.opengl.Visibility
+import android.provider.Settings.Secure
 import android.text.TextUtils
 import android.util.Base64
 import android.util.Log
@@ -104,14 +106,19 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * at all with the cryptographic implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
      * This is a Coroutine that is exposed only for Kotlin.
      *
-     * If a LockScreen is setup and [SecureCredentialsManager.requireAuthentication] was called, the user will be asked to authenticate before accessing
-     * the credentials. Your activity must override the [Activity.onActivityResult] method and call
-     * [SecureCredentialsManager.checkAuthenticationResult] with the received values.
+     * If the user's lock screen authentication configuration matches the authentication level specified in the [authenticationOptions],
+     * the user will be prompted to authenticate before accessing the credentials.
+     *
+     * @param fragmentActivity the activity that will be used to host the [androidx.biometric.BiometricPrompt]
+     * @param authenticationOptions, an instance of [LocalAuthenticationOptions] used to configure authentication performed using [androidx.biometric.BiometricPrompt]
      */
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
-    public suspend fun awaitCredentials(): Credentials {
-        return awaitCredentials(null, 0)
+    public suspend fun awaitCredentials(
+        fragmentActivity: FragmentActivity,
+        authenticationOptions: LocalAuthenticationOptions
+    ): Credentials {
+        return awaitCredentials(fragmentActivity, authenticationOptions, null, 0)
     }
 
     /**
@@ -120,17 +127,23 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * at all with the cryptographic implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
      * This is a Coroutine that is exposed only for Kotlin.
      *
-     * If a LockScreen is setup and [SecureCredentialsManager.requireAuthentication] was called, the user will be asked to authenticate before accessing
-     * the credentials. Your activity must override the [Activity.onActivityResult] method and call
-     * [SecureCredentialsManager.checkAuthenticationResult] with the received values.
+     * If the user's lock screen authentication configuration matches the authentication level specified in the [authenticationOptions],
+     * the user will be prompted to authenticate before accessing the credentials.
      *
+     * @param fragmentActivity the activity that will be used to host the [androidx.biometric.BiometricPrompt]
+     * @param authenticationOptions, an instance of [LocalAuthenticationOptions] used to configure authentication performed using [androidx.biometric.BiometricPrompt]
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
      */
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
-    public suspend fun awaitCredentials(scope: String?, minTtl: Int): Credentials {
-        return awaitCredentials(scope, minTtl, emptyMap())
+    public suspend fun awaitCredentials(
+        fragmentActivity: FragmentActivity,
+        authenticationOptions: LocalAuthenticationOptions,
+        scope: String?,
+        minTtl: Int
+    ): Credentials {
+        return awaitCredentials(fragmentActivity, authenticationOptions, scope, minTtl, emptyMap())
     }
 
     /**
@@ -139,10 +152,11 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * at all with the cryptographic implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
      * This is a Coroutine that is exposed only for Kotlin.
      *
-     * If a LockScreen is setup and [SecureCredentialsManager.requireAuthentication] was called, the user will be asked to authenticate before accessing
-     * the credentials. Your activity must override the [Activity.onActivityResult] method and call
-     * [SecureCredentialsManager.checkAuthenticationResult] with the received values.
+     * If the user's lock screen authentication configuration matches the authentication level specified in the [authenticationOptions],
+     * the user will be prompted to authenticate before accessing the credentials.
      *
+     * @param fragmentActivity the activity that will be used to host the [androidx.biometric.BiometricPrompt]
+     * @param authenticationOptions, an instance of [LocalAuthenticationOptions] used to configure authentication performed using [androidx.biometric.BiometricPrompt]
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
      * @param parameters additional parameters to send in the request to refresh expired credentials
@@ -150,11 +164,20 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
     public suspend fun awaitCredentials(
+        fragmentActivity: FragmentActivity,
+        authenticationOptions: LocalAuthenticationOptions,
         scope: String?,
         minTtl: Int,
         parameters: Map<String, String>
     ): Credentials {
-        return awaitCredentials(scope, minTtl, parameters, false)
+        return awaitCredentials(
+            fragmentActivity,
+            authenticationOptions,
+            scope,
+            minTtl,
+            parameters,
+            false
+        )
     }
 
     /**
@@ -163,10 +186,11 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * at all with the cryptographic implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
      * This is a Coroutine that is exposed only for Kotlin.
      *
-     * If a LockScreen is setup and [SecureCredentialsManager.requireAuthentication] was called, the user will be asked to authenticate before accessing
-     * the credentials. Your activity must override the [Activity.onActivityResult] method and call
-     * [SecureCredentialsManager.checkAuthenticationResult] with the received values.
+     * If the user's lock screen authentication configuration matches the authentication level specified in the [authenticationOptions],
+     * the user will be prompted to authenticate before accessing the credentials.
      *
+     * @param fragmentActivity the activity that will be used to host the [androidx.biometric.BiometricPrompt]
+     * @param authenticationOptions, an instance of [LocalAuthenticationOptions] used to configure authentication performed using [androidx.biometric.BiometricPrompt]
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
      * @param parameters additional parameters to send in the request to refresh expired credentials.
@@ -175,12 +199,22 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
     public suspend fun awaitCredentials(
+        fragmentActivity: FragmentActivity,
+        authenticationOptions: LocalAuthenticationOptions,
         scope: String?,
         minTtl: Int,
         parameters: Map<String, String>,
         forceRefresh: Boolean,
     ): Credentials {
-        return awaitCredentials(scope, minTtl, parameters, mapOf(), forceRefresh)
+        return awaitCredentials(
+            fragmentActivity,
+            authenticationOptions,
+            scope,
+            minTtl,
+            parameters,
+            mapOf(),
+            forceRefresh
+        )
     }
 
     /**
@@ -189,10 +223,11 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * at all with the cryptographic implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
      * This is a Coroutine that is exposed only for Kotlin.
      *
-     * If a LockScreen is setup and [SecureCredentialsManager.requireAuthentication] was called, the user will be asked to authenticate before accessing
-     * the credentials. Your activity must override the [Activity.onActivityResult] method and call
-     * [SecureCredentialsManager.checkAuthenticationResult] with the received values.
+     * If the user's lock screen authentication configuration matches the authentication level specified in the [authenticationOptions],
+     * the user will be prompted to authenticate before accessing the credentials.
      *
+     * @param fragmentActivity the activity that will be used to host the [androidx.biometric.BiometricPrompt]
+     * @param authenticationOptions, an instance of [LocalAuthenticationOptions] used to configure authentication performed using [androidx.biometric.BiometricPrompt]
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
      * @param parameters additional parameters to send in the request to refresh expired credentials.
@@ -202,6 +237,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
     public suspend fun awaitCredentials(
+        fragmentActivity: FragmentActivity,
+        authenticationOptions: LocalAuthenticationOptions,
         scope: String?,
         minTtl: Int,
         parameters: Map<String, String>,
@@ -210,6 +247,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     ): Credentials {
         return suspendCancellableCoroutine { continuation ->
             getCredentials(
+                fragmentActivity,
+                authenticationOptions,
                 scope,
                 minTtl,
                 parameters,
@@ -232,15 +271,19 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * If something unexpected happens, the [Callback.onFailure] method will be called with the error. Some devices are not compatible
      * at all with the cryptographic implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
      *
+     * If the user's lock screen authentication configuration matches the authentication level specified in the [authenticationOptions],
+     * the user will be prompted to authenticate before accessing the credentials.
      *
-     * If a LockScreen is setup and [SecureCredentialsManager.requireAuthentication] was called, the user will be asked to authenticate before accessing
-     * the credentials. Your activity must override the [Activity.onActivityResult] method and call
-     * [checkAuthenticationResult] with the received values.
-     *
+     * @param fragmentActivity the activity that will be used to host the [androidx.biometric.BiometricPrompt]
+     * @param authenticationOptions an instance of [LocalAuthenticationOptions] used to configure authentication performed using [androidx.biometric.BiometricPrompt]
      * @param callback the callback to receive the result in.
      */
-    override fun getCredentials(callback: Callback<Credentials, CredentialsManagerException>) {
-        getCredentials(null, 0, callback)
+    override fun getCredentials(
+        fragmentActivity: FragmentActivity,
+        authenticationOptions: LocalAuthenticationOptions,
+        callback: Callback<Credentials, CredentialsManagerException>
+    ) {
+        getCredentials(fragmentActivity, authenticationOptions, null, 0, callback)
     }
 
     /**
@@ -248,21 +291,23 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * If something unexpected happens, the [Callback.onFailure] method will be called with the error. Some devices are not compatible
      * at all with the cryptographic implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
      *
+     * If the user's lock screen authentication configuration matches the authentication level specified in the [authenticationOptions],
+     * the user will be prompted to authenticate before accessing the credentials.
      *
-     * If a LockScreen is setup and [SecureCredentialsManager.requireAuthentication] was called, the user will be asked to authenticate before accessing
-     * the credentials. Your activity must override the [Activity.onActivityResult] method and call
-     * [SecureCredentialsManager.checkAuthenticationResult] with the received values.
-     *
+     * @param fragmentActivity the activity that will be used to host the [androidx.biometric.BiometricPrompt]
+     * @param authenticationOptions an instance of [LocalAuthenticationOptions] used to configure authentication performed using [androidx.biometric.BiometricPrompt]
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
      * @param callback the callback to receive the result in.
      */
     override fun getCredentials(
+        fragmentActivity: FragmentActivity,
+        authenticationOptions: LocalAuthenticationOptions,
         scope: String?,
         minTtl: Int,
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
-        getCredentials(scope, minTtl, emptyMap(), callback)
+        getCredentials(fragmentActivity, authenticationOptions, scope, minTtl, emptyMap(), callback)
     }
 
     /**
@@ -270,23 +315,33 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * If something unexpected happens, the [Callback.onFailure] method will be called with the error. Some devices are not compatible
      * at all with the cryptographic implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
      *
+     * If the user's lock screen authentication configuration matches the authentication level specified in the [authenticationOptions],
+     * the user will be prompted to authenticate before accessing the credentials.
      *
-     * If a LockScreen is setup and [SecureCredentialsManager.requireAuthentication] was called, the user will be asked to authenticate before accessing
-     * the credentials. Your activity must override the [Activity.onActivityResult] method and call
-     * [SecureCredentialsManager.checkAuthenticationResult] with the received values.
-     *
+     * @param fragmentActivity the activity that will be used to host the [androidx.biometric.BiometricPrompt]
+     * @param authenticationOptions, an instance of [LocalAuthenticationOptions] used to configure authentication performed using [androidx.biometric.BiometricPrompt]
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
      * @param parameters additional parameters to send in the request to refresh expired credentials
      * @param callback the callback to receive the result in.
      */
     public fun getCredentials(
+        fragmentActivity: FragmentActivity,
+        authenticationOptions: LocalAuthenticationOptions,
         scope: String?,
         minTtl: Int,
         parameters: Map<String, String>,
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
-        getCredentials(scope, minTtl, parameters, false, callback)
+        getCredentials(
+            fragmentActivity,
+            authenticationOptions,
+            scope,
+            minTtl,
+            parameters,
+            false,
+            callback
+        )
     }
 
     /**
@@ -295,10 +350,49 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * at all with the cryptographic implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
      *
      *
-     * If a LockScreen is setup and [SecureCredentialsManager.requireAuthentication] was called, the user will be asked to authenticate before accessing
-     * the credentials. Your activity must override the [Activity.onActivityResult] method and call
-     * [SecureCredentialsManager.checkAuthenticationResult] with the received values.
+     * If the user's lock screen authentication configuration matches the authentication level specified in the [authenticationOptions],
+     * the user will be prompted to authenticate before accessing the credentials.
      *
+     * @param fragmentActivity the activity that will be used to host the [androidx.biometric.BiometricPrompt]
+     * @param authenticationOptions, an instance of [LocalAuthenticationOptions] used to configure authentication performed using [androidx.biometric.BiometricPrompt]
+     * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
+     * @param minTtl   the minimum time in seconds that the access token should last before expiration.
+     * @param parameters additional parameters to send in the request to refresh expired credentials
+     * @param forceRefresh this will avoid returning the existing credentials and retrieves a new one even if valid credentials exist.
+     * @param callback the callback to receive the result in.
+     */
+    public fun getCredentials(
+        fragmentActivity: FragmentActivity,
+        authenticationOptions: LocalAuthenticationOptions,
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        forceRefresh: Boolean,
+        callback: Callback<Credentials, CredentialsManagerException>
+    ) {
+        getCredentials(
+            fragmentActivity,
+            authenticationOptions,
+            scope,
+            minTtl,
+            parameters,
+            mapOf(),
+            forceRefresh,
+            callback
+        )
+    }
+
+    /**
+     * Tries to obtain the credentials from the Storage. The callback's [Callback.onSuccess] method will be called with the result.
+     * If something unexpected happens, the [Callback.onFailure] method will be called with the error. Some devices are not compatible
+     * at all with the cryptographic implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
+     *
+     *
+     * If the user's lock screen authentication configuration matches the authentication level specified in the [authenticationOptions],
+     * the user will be prompted to authenticate before accessing the credentials.
+     *
+     * @param fragmentActivity the activity that will be used to host the [androidx.biometric.BiometricPrompt]
+     * @param authenticationOptions, an instance of [LocalAuthenticationOptions] used to configure authentication performed using [androidx.biometric.BiometricPrompt]
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
      * @param parameters additional parameters to send in the request to refresh expired credentials.
@@ -306,13 +400,29 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * @param callback the callback to receive the result in.
      */
     public fun getCredentials(
-        scope: String?,
-        minTtl: Int,
-        parameters: Map<String, String>,
-        forceRefresh: Boolean,
+        fragmentActivity: FragmentActivity,
+        authenticationOptions: LocalAuthenticationOptions,
+        scope: String? = null,
+        minTtl: Int = 0,
+        parameters: Map<String, String> = emptyMap(),
+        headers: Map<String, String> = emptyMap(),
+        forceRefresh: Boolean = false,
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
-        getCredentials(scope, minTtl, parameters, mapOf(), forceRefresh, callback)
+
+        val localAuthenticationManager = localAuthenticationManagerFactory.create(
+            activity = fragmentActivity,
+            authenticationOptions = authenticationOptions,
+            resultCallback = localAuthenticationResultCallback(
+                scope,
+                minTtl,
+                parameters,
+                headers,
+                forceRefresh,
+                callback
+            )
+        )
+        localAuthenticationManager.authenticate()
     }
 
     private val localAuthenticationResultCallback =
@@ -330,35 +440,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 }
             }
         }
-
-    public fun getCredentialsWithAuthentication(
-        activity: FragmentActivity,
-        authenticationOptions: LocalAuthenticationOptions,
-        scope: String?,
-        minTtl: Int,
-        parameters: Map<String, String>,
-        headers: Map<String, String>,
-        forceRefresh: Boolean,
-        callback: Callback<Credentials, CredentialsManagerException>
-    ) {
-
-        val localAuthenticationManager = LocalAuthenticationManager(
-            activity,
-            authenticationOptions,
-            serialExecutor
-        )
-
-        localAuthenticationManager.authenticate(
-            localAuthenticationResultCallback(
-                scope,
-                minTtl,
-                parameters,
-                headers,
-                forceRefresh,
-                callback
-            )
-        )
-    }
 
     /**
      * Delete the stored credentials
@@ -402,7 +483,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 (canRefresh == null || !canRefresh))
     }
 
-    private fun getCredentials(
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal fun getCredentials(
         scope: String?,
         minTtl: Int,
         parameters: Map<String, String>,
