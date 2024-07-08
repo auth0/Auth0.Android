@@ -174,7 +174,7 @@ public class CredentialsManagerTest {
     @Test
     public fun shouldThrowOnSetIfCredentialsDoesNotHaveIdTokenOrAccessToken() {
         exception.expect(CredentialsManagerException::class.java)
-        exception.expectMessage("Credentials must have a valid date of expiration and a valid access_token or id_token value.")
+        exception.expectMessage("Credentials must have a valid access_token or id_token value.")
         val credentials: Credentials =
             CredentialsMock("", "", "type", "refreshToken", Date(), null)
         manager.saveCredentials(credentials)
