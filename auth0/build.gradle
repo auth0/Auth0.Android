@@ -105,9 +105,11 @@ dependencies {
     testImplementation "com.squareup.okhttp3:mockwebserver:$okhttpVersion"
     testImplementation "com.squareup.okhttp3:okhttp-tls:$okhttpVersion"
     testImplementation 'com.jayway.awaitility:awaitility:1.7.0'
-    testImplementation 'org.robolectric:robolectric:4.6.1'
+    testImplementation 'org.robolectric:robolectric:4.8.1'
     testImplementation 'androidx.test.espresso:espresso-intents:3.5.1'
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion"
+
+    testImplementation "androidx.biometric:biometric:$biometricLibraryVersion"
 }
 
 apply from: rootProject.file('gradle/jacoco.gradle')
