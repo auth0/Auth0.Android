@@ -1,9 +1,6 @@
 package com.auth0.android.authentication.storage
 
-import android.app.Activity
 import android.content.Context
-import android.opengl.Visibility
-import android.provider.Settings.Secure
 import android.text.TextUtils
 import android.util.Base64
 import android.util.Log
@@ -114,7 +111,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      */
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
-    public suspend fun awaitCredentials(
+    override suspend fun awaitCredentials(
         fragmentActivity: FragmentActivity,
         authenticationOptions: LocalAuthenticationOptions
     ): Credentials {
@@ -137,7 +134,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      */
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
-    public suspend fun awaitCredentials(
+    override suspend fun awaitCredentials(
         fragmentActivity: FragmentActivity,
         authenticationOptions: LocalAuthenticationOptions,
         scope: String?,
@@ -163,7 +160,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      */
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
-    public suspend fun awaitCredentials(
+    override suspend fun awaitCredentials(
         fragmentActivity: FragmentActivity,
         authenticationOptions: LocalAuthenticationOptions,
         scope: String?,
@@ -198,7 +195,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      */
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
-    public suspend fun awaitCredentials(
+    override suspend fun awaitCredentials(
         fragmentActivity: FragmentActivity,
         authenticationOptions: LocalAuthenticationOptions,
         scope: String?,
@@ -236,7 +233,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      */
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
-    public suspend fun awaitCredentials(
+    override suspend fun awaitCredentials(
         fragmentActivity: FragmentActivity,
         authenticationOptions: LocalAuthenticationOptions,
         scope: String?,
@@ -325,7 +322,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * @param parameters additional parameters to send in the request to refresh expired credentials
      * @param callback the callback to receive the result in.
      */
-    public fun getCredentials(
+    override fun getCredentials(
         fragmentActivity: FragmentActivity,
         authenticationOptions: LocalAuthenticationOptions,
         scope: String?,
@@ -361,7 +358,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * @param forceRefresh this will avoid returning the existing credentials and retrieves a new one even if valid credentials exist.
      * @param callback the callback to receive the result in.
      */
-    public fun getCredentials(
+    override fun getCredentials(
         fragmentActivity: FragmentActivity,
         authenticationOptions: LocalAuthenticationOptions,
         scope: String?,
@@ -399,14 +396,14 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * @param forceRefresh this will avoid returning the existing credentials and retrieves a new one even if valid credentials exist.
      * @param callback the callback to receive the result in.
      */
-    public fun getCredentials(
+    override fun getCredentials(
         fragmentActivity: FragmentActivity,
         authenticationOptions: LocalAuthenticationOptions,
-        scope: String? = null,
-        minTtl: Int = 0,
-        parameters: Map<String, String> = emptyMap(),
-        headers: Map<String, String> = emptyMap(),
-        forceRefresh: Boolean = false,
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        headers: Map<String, String>,
+        forceRefresh: Boolean,
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
 

@@ -129,7 +129,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldSaveRefreshableCredentialsInStorage() {
         val sharedExpirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
-        val credentials: Credentials = CredentialsMock(
+        val credentials: Credentials = CredentialsMock.create(
             "idToken",
             "accessToken",
             "type",
@@ -164,7 +164,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldSaveRefreshableCredentialsUsingAccessTokenExpForCacheExpirationInStorage() {
         val accessTokenExpirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
-        val credentials: Credentials = CredentialsMock(
+        val credentials: Credentials = CredentialsMock.create(
             "",
             "accessToken",
             "type",
@@ -203,7 +203,7 @@ public class SecureCredentialsManagerTest {
     public fun shouldSaveRefreshableCredentialsIgnoringIdTokenExpForCacheExpirationInStorage() {
         val accessTokenExpirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
         val idTokenExpirationTime = CredentialsMock.CURRENT_TIME_MS + 2000 * 1000
-        val credentials: Credentials = CredentialsMock(
+        val credentials: Credentials = CredentialsMock.create(
             "idToken",
             "accessToken",
             "type",
@@ -242,7 +242,14 @@ public class SecureCredentialsManagerTest {
     public fun shouldSaveNonRefreshableCredentialsInStorage() {
         val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
         val credentials: Credentials =
-            CredentialsMock("idToken", "accessToken", "type", null, Date(expirationTime), "scope")
+            CredentialsMock.create(
+                "idToken",
+                "accessToken",
+                "type",
+                null,
+                Date(expirationTime),
+                "scope"
+            )
         val json = gson.toJson(credentials)
         prepareJwtDecoderMock(Date(expirationTime))
         Mockito.`when`(crypto.encrypt(json.toByteArray())).thenReturn(json.toByteArray())
@@ -270,7 +277,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldClearStoredCredentialsAndThrowOnSaveOnCryptoException() {
         val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
-        val credentials: Credentials = CredentialsMock(
+        val credentials: Credentials = CredentialsMock.create(
             "idToken",
             "accessToken",
             "type",
@@ -302,7 +309,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldThrowOnSaveOnIncompatibleDeviceException() {
         val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
-        val credentials: Credentials = CredentialsMock(
+        val credentials: Credentials = CredentialsMock.create(
             "idToken",
             "accessToken",
             "type",
@@ -332,14 +339,14 @@ public class SecureCredentialsManagerTest {
         exception.expect(CredentialsManagerException::class.java)
         exception.expectMessage("Credentials must have a valid access_token or id_token value.")
         val credentials: Credentials =
-            CredentialsMock("", "", "type", "refreshToken", Date(), "scope")
+            CredentialsMock.create("", "", "type", "refreshToken", Date(), "scope")
         manager.saveCredentials(credentials)
     }
 
     @Test
     public fun shouldNotThrowOnSaveIfCredentialsHaveAccessTokenAndExpiresIn() {
         val credentials: Credentials =
-            CredentialsMock("", "accessToken", "type", "refreshToken", Date(), "scope")
+            CredentialsMock.create("", "accessToken", "type", "refreshToken", Date(), "scope")
         Mockito.`when`(crypto.encrypt(any()))
             .thenReturn(byteArrayOf(12, 34, 56, 78))
         manager.saveCredentials(credentials)
@@ -348,7 +355,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldNotThrowOnSaveIfCredentialsHaveIdTokenAndExpiresIn() {
         val credentials: Credentials =
-            CredentialsMock("idToken", "", "type", "refreshToken", Date(), "scope")
+            CredentialsMock.create("idToken", "", "type", "refreshToken", Date(), "scope")
         prepareJwtDecoderMock(Date())
         Mockito.`when`(crypto.encrypt(any()))
             .thenReturn(byteArrayOf(12, 34, 56, 78))
@@ -446,7 +453,14 @@ public class SecureCredentialsManagerTest {
         val expectedJson = gson.toJson(expectedCredentials)
         Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
             .thenThrow(CryptoException("CryptoException is thrown"))
-        manager.getCredentials("different scope", 0, emptyMap(), emptyMap(), false, callback) // minTTL of 0 seconds (default)
+        manager.getCredentials(
+            "different scope",
+            0,
+            emptyMap(),
+            emptyMap(),
+            false,
+            callback
+        ) // minTTL of 0 seconds (default)
         verify(request)
             .addParameter(eq("scope"), eq("different scope"))
         verify(callback).onFailure(
@@ -494,7 +508,14 @@ public class SecureCredentialsManagerTest {
         val expectedJson = gson.toJson(expectedCredentials)
         Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
             .thenThrow(IncompatibleDeviceException(Exception()))
-        manager.getCredentials("different scope", 0, emptyMap(), emptyMap(), false, callback) // minTTL of 0 seconds (default)
+        manager.getCredentials(
+            "different scope",
+            0,
+            emptyMap(),
+            emptyMap(),
+            false,
+            callback
+        ) // minTTL of 0 seconds (default)
         verify(request)
             .addParameter(eq("scope"), eq("different scope"))
         verify(callback).onFailure(
@@ -540,7 +561,14 @@ public class SecureCredentialsManagerTest {
             Credentials("", "", "newType", "refreshToken", newDate, "different scope")
         Mockito.`when`(request.execute()).thenReturn(expectedCredentials)
 
-        manager.getCredentials("different scope", 0, emptyMap(), emptyMap(), false, callback) // minTTL of 0 seconds (default)
+        manager.getCredentials(
+            "different scope",
+            0,
+            emptyMap(),
+            emptyMap(),
+            false,
+            callback
+        ) // minTTL of 0 seconds (default)
         verify(request)
             .addParameter(eq("scope"), eq("different scope"))
         verify(callback).onFailure(
@@ -622,7 +650,8 @@ public class SecureCredentialsManagerTest {
         verifyNoMoreInteractions(client)
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + ONE_HOUR_SECONDS * 1000)
         insertTestCredentials(true, true, true, expiresAt, "scope")
-        val retrievedCredentials = manager.awaitCredentials(fragmentActivity, getAuthenticationOptions())
+        val retrievedCredentials =
+            manager.awaitCredentials(fragmentActivity, getAuthenticationOptions())
         MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`("accessToken"))
         MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`("idToken"))
@@ -683,7 +712,8 @@ public class SecureCredentialsManagerTest {
             emptyMap(),
             emptyMap(),
             false,
-            callback)
+            callback
+        )
         verify(callback).onSuccess(
             credentialsCaptor.capture()
         )
@@ -716,7 +746,14 @@ public class SecureCredentialsManagerTest {
         val expectedJson = gson.toJson(expectedCredentials)
         Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
             .thenReturn(expectedJson.toByteArray())
-        manager.getCredentials(null, 60, emptyMap(), emptyMap(), false, callback) // minTTL of 1 minute
+        manager.getCredentials(
+            null,
+            60,
+            emptyMap(),
+            emptyMap(),
+            false,
+            callback
+        ) // minTTL of 1 minute
         verify(request, never())
             .addParameter(eq("scope"), anyString())
         verify(callback).onSuccess(
@@ -778,7 +815,14 @@ public class SecureCredentialsManagerTest {
         val expectedJson = gson.toJson(expectedCredentials)
         Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
             .thenReturn(expectedJson.toByteArray())
-        manager.getCredentials(null, 60, emptyMap(), emptyMap(), false, callback) // minTTL of 1 minute
+        manager.getCredentials(
+            null,
+            60,
+            emptyMap(),
+            emptyMap(),
+            false,
+            callback
+        ) // minTTL of 1 minute
         verify(request, never())
             .addParameter(eq("scope"), anyString())
         verify(callback).onFailure(
@@ -823,7 +867,14 @@ public class SecureCredentialsManagerTest {
         val expectedJson = gson.toJson(expectedCredentials)
         Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
             .thenReturn(expectedJson.toByteArray())
-        manager.getCredentials("different scope", 0, emptyMap(), emptyMap(), false, callback) // minTTL of 0 seconds (default)
+        manager.getCredentials(
+            "different scope",
+            0,
+            emptyMap(),
+            emptyMap(),
+            false,
+            callback
+        ) // minTTL of 0 seconds (default)
         verify(request)
             .addParameter(eq("scope"), eq("different scope"))
         verify(callback).onSuccess(
@@ -884,7 +935,14 @@ public class SecureCredentialsManagerTest {
         val expectedJson = gson.toJson(expectedCredentials)
         Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
             .thenReturn(expectedJson.toByteArray())
-        manager.getCredentials("different scope", 0, emptyMap(), emptyMap(), false, callback) // minTTL of 0 seconds (default)
+        manager.getCredentials(
+            "different scope",
+            0,
+            emptyMap(),
+            emptyMap(),
+            false,
+            callback
+        ) // minTTL of 0 seconds (default)
         verify(request)
             .addParameter(eq("scope"), eq("different scope"))
         verify(callback).onSuccess(
@@ -947,7 +1005,14 @@ public class SecureCredentialsManagerTest {
 
         Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
             .thenReturn(expectedJson.toByteArray())
-        manager.getCredentials("different scope", 0, emptyMap(), emptyMap(), false, callback) // minTTL of 0 seconds (default)
+        manager.getCredentials(
+            "different scope",
+            0,
+            emptyMap(),
+            emptyMap(),
+            false,
+            callback
+        ) // minTTL of 0 seconds (default)
         verify(request)
             .addParameter(eq("scope"), eq("different scope"))
         verify(callback).onSuccess(
@@ -1034,7 +1099,8 @@ public class SecureCredentialsManagerTest {
             emptyMap(),
             emptyMap(),
             false,
-            callback)
+            callback
+        )
 //        requestCallbackCaptor.firstValue.onSuccess(renewedCredentials)TODO poovam
         verify(callback).onSuccess(
             credentialsCaptor.capture()
@@ -1100,7 +1166,8 @@ public class SecureCredentialsManagerTest {
             emptyMap(),
             emptyMap(),
             false,
-            callback)
+            callback
+        )
         verify(request, never())
             .addParameter(eq("scope"), anyString())
         verify(callback).onSuccess(
@@ -1160,7 +1227,8 @@ public class SecureCredentialsManagerTest {
             emptyMap(),
             emptyMap(),
             false,
-            callback)
+            callback
+        )
         verify(callback).onFailure(
             exceptionCaptor.capture()
         )
@@ -1717,10 +1785,16 @@ public class SecureCredentialsManagerTest {
             .thenReturn(expirationTime)
         Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
             .thenReturn("{\"access_token\":\"accessToken\"}")
-        manager.getCredentials(null, 0, emptyMap(), emptyMap(), false, object : Callback<Credentials, CredentialsManagerException> {
-            override fun onSuccess(result: Credentials) {}
-            override fun onFailure(error: CredentialsManagerException) {}
-        })
+        manager.getCredentials(
+            null,
+            0,
+            emptyMap(),
+            emptyMap(),
+            false,
+            object : Callback<Credentials, CredentialsManagerException> {
+                override fun onSuccess(result: Credentials) {}
+                override fun onFailure(error: CredentialsManagerException) {}
+            })
     }
 
     @Test

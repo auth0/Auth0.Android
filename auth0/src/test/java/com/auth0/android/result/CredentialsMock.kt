@@ -2,17 +2,7 @@ package com.auth0.android.result
 
 import java.util.*
 
-public class CredentialsMock(
-    idToken: String,
-    accessToken: String,
-    type: String,
-    refreshToken: String?,
-    expiresAt: Date,
-    scope: String?
-) : Credentials(idToken, accessToken, type, refreshToken, expiresAt, scope) {
-
-    override val currentTimeInMillis: Long
-        get() = CURRENT_TIME_MS
+public class CredentialsMock {
 
     public companion object {
         @JvmField
@@ -25,6 +15,17 @@ public class CredentialsMock(
             val cal = Calendar.getInstance()
             cal.timeZone = TimeZone.getTimeZone("UTC")
             return cal.timeInMillis
+        }
+
+        public fun create(
+            idToken: String,
+            accessToken: String,
+            type: String,
+            refreshToken: String?,
+            expiresAt: Date,
+            scope: String?
+        ): Credentials {
+            return Credentials(idToken, accessToken, type, refreshToken, expiresAt, scope)
         }
     }
 }

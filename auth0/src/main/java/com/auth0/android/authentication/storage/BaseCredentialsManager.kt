@@ -7,9 +7,6 @@ import com.auth0.android.callback.Callback
 import com.auth0.android.result.Credentials
 import com.auth0.android.util.Clock
 import java.util.*
-import java.util.concurrent.Executor
-import java.util.concurrent.Executors
-import kotlin.math.min
 
 /**
  * Base class meant to abstract common logic across Credentials Manager implementations.
@@ -100,6 +97,65 @@ public abstract class DefaultCredentialsManager internal constructor(
         minTtl: Int,
         callback: Callback<Credentials, CredentialsManagerException>
     )
+
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    public abstract suspend fun awaitCredentials(): Credentials
+
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    public abstract suspend fun awaitCredentials(scope: String?, minTtl: Int): Credentials
+
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    public abstract suspend fun awaitCredentials(
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>
+    ): Credentials
+
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    public abstract suspend fun awaitCredentials(
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        forceRefresh: Boolean
+    ): Credentials
+
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    public abstract suspend fun awaitCredentials(
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        headers: Map<String, String>,
+        forceRefresh: Boolean
+    ): Credentials
+
+    public abstract fun getCredentials(
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        callback: Callback<Credentials, CredentialsManagerException>
+    )
+
+    public abstract fun getCredentials(
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        forceRefresh: Boolean,
+        callback: Callback<Credentials, CredentialsManagerException>
+    )
+
+    public abstract fun getCredentials(
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        headers: Map<String, String>,
+        forceRefresh: Boolean,
+        callback: Callback<Credentials, CredentialsManagerException>
+    )
 }
 
 public abstract class SecuredCredentialsManager internal constructor(
@@ -109,6 +165,96 @@ public abstract class SecuredCredentialsManager internal constructor(
 ) : BaseCredentialsManager(
     authenticationClient, storage, jwtDecoder
 ) {
-    public abstract fun getCredentials(fragmentActivity: FragmentActivity, authenticationOptions: LocalAuthenticationOptions, callback: Callback<Credentials, CredentialsManagerException>)
-    public abstract fun getCredentials(fragmentActivity: FragmentActivity, authenticationOptions: LocalAuthenticationOptions, scope: String?, minTtl: Int, callback: Callback<Credentials, CredentialsManagerException>)
+    public abstract fun getCredentials(
+        fragmentActivity: FragmentActivity,
+        authenticationOptions: LocalAuthenticationOptions,
+        callback: Callback<Credentials, CredentialsManagerException>
+    )
+
+    public abstract fun getCredentials(
+        fragmentActivity: FragmentActivity,
+        authenticationOptions: LocalAuthenticationOptions,
+        scope: String?,
+        minTtl: Int,
+        callback: Callback<Credentials, CredentialsManagerException>
+    )
+
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    public abstract suspend fun awaitCredentials(
+        fragmentActivity: FragmentActivity,
+        authenticationOptions: LocalAuthenticationOptions
+    ): Credentials
+
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    public abstract suspend fun awaitCredentials(
+        fragmentActivity: FragmentActivity,
+        authenticationOptions: LocalAuthenticationOptions,
+        scope: String?,
+        minTtl: Int
+    ): Credentials
+
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    public abstract suspend fun awaitCredentials(
+        fragmentActivity: FragmentActivity,
+        authenticationOptions: LocalAuthenticationOptions,
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>
+    ): Credentials
+
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    public abstract suspend fun awaitCredentials(
+        fragmentActivity: FragmentActivity,
+        authenticationOptions: LocalAuthenticationOptions,
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        forceRefresh: Boolean
+    ): Credentials
+
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    public abstract suspend fun awaitCredentials(
+        fragmentActivity: FragmentActivity,
+        authenticationOptions: LocalAuthenticationOptions,
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        headers: Map<String, String>,
+        forceRefresh: Boolean
+    ): Credentials
+
+    public abstract fun getCredentials(
+        fragmentActivity: FragmentActivity,
+        authenticationOptions: LocalAuthenticationOptions,
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        callback: Callback<Credentials, CredentialsManagerException>
+    )
+
+    public abstract fun getCredentials(
+        fragmentActivity: FragmentActivity,
+        authenticationOptions: LocalAuthenticationOptions,
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        forceRefresh: Boolean,
+        callback: Callback<Credentials, CredentialsManagerException>
+    )
+
+    public abstract fun getCredentials(
+        fragmentActivity: FragmentActivity,
+        authenticationOptions: LocalAuthenticationOptions,
+        scope: String? = null,
+        minTtl: Int = 0,
+        parameters: Map<String, String> = emptyMap(),
+        headers: Map<String, String> = emptyMap(),
+        forceRefresh: Boolean = false,
+        callback: Callback<Credentials, CredentialsManagerException>
+    )
 }
