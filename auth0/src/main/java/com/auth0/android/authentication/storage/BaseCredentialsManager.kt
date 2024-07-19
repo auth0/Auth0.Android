@@ -33,6 +33,12 @@ public abstract class BaseCredentialsManager internal constructor(
 
     @Throws(CredentialsManagerException::class)
     public abstract fun saveCredentials(credentials: Credentials)
+    public abstract fun getCredentials(callback: Callback<Credentials, CredentialsManagerException>)
+    public abstract fun getCredentials(
+        scope: String?,
+        minTtl: Int,
+        callback: Callback<Credentials, CredentialsManagerException>
+    )
 
     public abstract fun clearCredentials()
     public abstract fun hasValidCredentials(): Boolean
@@ -85,30 +91,4 @@ public abstract class BaseCredentialsManager internal constructor(
     protected fun hasExpired(expiresAt: Long): Boolean {
         return expiresAt <= currentTimeInMillis
     }
-}
-
-public abstract class DefaultCredentialsManager internal constructor(
-    authenticationClient: AuthenticationAPIClient,
-    storage: Storage,
-    jwtDecoder: JWTDecoder
-) : BaseCredentialsManager(
-    authenticationClient, storage, jwtDecoder
-) {
-    public abstract fun getCredentials(callback: Callback<Credentials, CredentialsManagerException>)
-    public abstract fun getCredentials(
-        scope: String?,
-        minTtl: Int,
-        callback: Callback<Credentials, CredentialsManagerException>
-    )
-}
-
-public abstract class SecuredCredentialsManager internal constructor(
-    authenticationClient: AuthenticationAPIClient,
-    storage: Storage,
-    jwtDecoder: JWTDecoder
-) : BaseCredentialsManager(
-    authenticationClient, storage, jwtDecoder
-) {
-    public abstract fun getCredentials(fragmentActivity: FragmentActivity, authenticationOptions: LocalAuthenticationOptions, callback: Callback<Credentials, CredentialsManagerException>)
-    public abstract fun getCredentials(fragmentActivity: FragmentActivity, authenticationOptions: LocalAuthenticationOptions, scope: String?, minTtl: Int, callback: Callback<Credentials, CredentialsManagerException>)
 }
