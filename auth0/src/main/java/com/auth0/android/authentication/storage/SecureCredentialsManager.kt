@@ -1,9 +1,6 @@
 package com.auth0.android.authentication.storage
 
-import android.app.Activity
 import android.content.Context
-import android.opengl.Visibility
-import android.provider.Settings.Secure
 import android.text.TextUtils
 import android.util.Base64
 import android.util.Log
@@ -17,6 +14,7 @@ import com.auth0.android.result.Credentials
 import com.auth0.android.result.OptionalCredentials
 import com.google.gson.Gson
 import kotlinx.coroutines.suspendCancellableCoroutine
+import java.lang.ref.WeakReference
 import java.util.*
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
@@ -32,9 +30,11 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     storage: Storage,
     private val crypto: CryptoUtil,
     jwtDecoder: JWTDecoder,
+    private val fragmentActivity: WeakReference<FragmentActivity>,
+    private val localAuthenticationOptions: LocalAuthenticationOptions,
     private val localAuthenticationManagerFactory: LocalAuthenticationManagerFactory,
     private val serialExecutor: Executor,
-) : SecuredCredentialsManager(apiClient, storage, jwtDecoder) {
+) : BaseCredentialsManager(apiClient, storage, jwtDecoder) {
     private val gson: Gson = GsonProvider.gson
 
 
@@ -48,12 +48,16 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     public constructor(
         context: Context,
         apiClient: AuthenticationAPIClient,
-        storage: Storage
+        storage: Storage,
+        fragmentActivity: FragmentActivity,
+        localAuthenticationOptions: LocalAuthenticationOptions
     ) : this(
         apiClient,
         storage,
         CryptoUtil(context, storage, KEY_ALIAS),
         JWTDecoder(),
+        WeakReference(fragmentActivity),
+        localAuthenticationOptions,
         DefaultLocalAuthenticationManagerFactory(),
         Executors.newSingleThreadExecutor(),
     )
@@ -109,16 +113,11 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * If the user's lock screen authentication configuration matches the authentication level specified in the [authenticationOptions],
      * the user will be prompted to authenticate before accessing the credentials.
      *
-     * @param fragmentActivity the activity that will be used to host the [androidx.biometric.BiometricPrompt]
-     * @param authenticationOptions, an instance of [LocalAuthenticationOptions] used to configure authentication performed using [androidx.biometric.BiometricPrompt]
      */
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
-    public suspend fun awaitCredentials(
-        fragmentActivity: FragmentActivity,
-        authenticationOptions: LocalAuthenticationOptions
-    ): Credentials {
-        return awaitCredentials(fragmentActivity, authenticationOptions, null, 0)
+    public suspend fun awaitCredentials(): Credentials {
+        return awaitCredentials(null, 0)
     }
 
     /**
@@ -130,20 +129,16 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * If the user's lock screen authentication configuration matches the authentication level specified in the [authenticationOptions],
      * the user will be prompted to authenticate before accessing the credentials.
      *
-     * @param fragmentActivity the activity that will be used to host the [androidx.biometric.BiometricPrompt]
-     * @param authenticationOptions, an instance of [LocalAuthenticationOptions] used to configure authentication performed using [androidx.biometric.BiometricPrompt]
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
      */
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
     public suspend fun awaitCredentials(
-        fragmentActivity: FragmentActivity,
-        authenticationOptions: LocalAuthenticationOptions,
         scope: String?,
         minTtl: Int
     ): Credentials {
-        return awaitCredentials(fragmentActivity, authenticationOptions, scope, minTtl, emptyMap())
+        return awaitCredentials(scope, minTtl, emptyMap())
     }
 
     /**
@@ -155,8 +150,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * If the user's lock screen authentication configuration matches the authentication level specified in the [authenticationOptions],
      * the user will be prompted to authenticate before accessing the credentials.
      *
-     * @param fragmentActivity the activity that will be used to host the [androidx.biometric.BiometricPrompt]
-     * @param authenticationOptions, an instance of [LocalAuthenticationOptions] used to configure authentication performed using [androidx.biometric.BiometricPrompt]
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
      * @param parameters additional parameters to send in the request to refresh expired credentials
@@ -164,15 +157,11 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
     public suspend fun awaitCredentials(
-        fragmentActivity: FragmentActivity,
-        authenticationOptions: LocalAuthenticationOptions,
         scope: String?,
         minTtl: Int,
         parameters: Map<String, String>
     ): Credentials {
         return awaitCredentials(
-            fragmentActivity,
-            authenticationOptions,
             scope,
             minTtl,
             parameters,
@@ -189,8 +178,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * If the user's lock screen authentication configuration matches the authentication level specified in the [authenticationOptions],
      * the user will be prompted to authenticate before accessing the credentials.
      *
-     * @param fragmentActivity the activity that will be used to host the [androidx.biometric.BiometricPrompt]
-     * @param authenticationOptions, an instance of [LocalAuthenticationOptions] used to configure authentication performed using [androidx.biometric.BiometricPrompt]
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
      * @param parameters additional parameters to send in the request to refresh expired credentials.
@@ -199,16 +186,12 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
     public suspend fun awaitCredentials(
-        fragmentActivity: FragmentActivity,
-        authenticationOptions: LocalAuthenticationOptions,
         scope: String?,
         minTtl: Int,
         parameters: Map<String, String>,
         forceRefresh: Boolean,
     ): Credentials {
         return awaitCredentials(
-            fragmentActivity,
-            authenticationOptions,
             scope,
             minTtl,
             parameters,
@@ -226,8 +209,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * If the user's lock screen authentication configuration matches the authentication level specified in the [authenticationOptions],
      * the user will be prompted to authenticate before accessing the credentials.
      *
-     * @param fragmentActivity the activity that will be used to host the [androidx.biometric.BiometricPrompt]
-     * @param authenticationOptions, an instance of [LocalAuthenticationOptions] used to configure authentication performed using [androidx.biometric.BiometricPrompt]
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
      * @param parameters additional parameters to send in the request to refresh expired credentials.
@@ -237,8 +218,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
     public suspend fun awaitCredentials(
-        fragmentActivity: FragmentActivity,
-        authenticationOptions: LocalAuthenticationOptions,
         scope: String?,
         minTtl: Int,
         parameters: Map<String, String>,
@@ -247,8 +226,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     ): Credentials {
         return suspendCancellableCoroutine { continuation ->
             getCredentials(
-                fragmentActivity,
-                authenticationOptions,
                 scope,
                 minTtl,
                 parameters,
@@ -274,16 +251,12 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * If the user's lock screen authentication configuration matches the authentication level specified in the [authenticationOptions],
      * the user will be prompted to authenticate before accessing the credentials.
      *
-     * @param fragmentActivity the activity that will be used to host the [androidx.biometric.BiometricPrompt]
-     * @param authenticationOptions an instance of [LocalAuthenticationOptions] used to configure authentication performed using [androidx.biometric.BiometricPrompt]
      * @param callback the callback to receive the result in.
      */
     override fun getCredentials(
-        fragmentActivity: FragmentActivity,
-        authenticationOptions: LocalAuthenticationOptions,
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
-        getCredentials(fragmentActivity, authenticationOptions, null, 0, callback)
+        getCredentials(null, 0, callback)
     }
 
     /**
@@ -294,20 +267,16 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * If the user's lock screen authentication configuration matches the authentication level specified in the [authenticationOptions],
      * the user will be prompted to authenticate before accessing the credentials.
      *
-     * @param fragmentActivity the activity that will be used to host the [androidx.biometric.BiometricPrompt]
-     * @param authenticationOptions an instance of [LocalAuthenticationOptions] used to configure authentication performed using [androidx.biometric.BiometricPrompt]
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
      * @param callback the callback to receive the result in.
      */
     override fun getCredentials(
-        fragmentActivity: FragmentActivity,
-        authenticationOptions: LocalAuthenticationOptions,
         scope: String?,
         minTtl: Int,
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
-        getCredentials(fragmentActivity, authenticationOptions, scope, minTtl, emptyMap(), callback)
+        getCredentials(scope, minTtl, emptyMap(), callback)
     }
 
     /**
@@ -318,24 +287,18 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * If the user's lock screen authentication configuration matches the authentication level specified in the [authenticationOptions],
      * the user will be prompted to authenticate before accessing the credentials.
      *
-     * @param fragmentActivity the activity that will be used to host the [androidx.biometric.BiometricPrompt]
-     * @param authenticationOptions, an instance of [LocalAuthenticationOptions] used to configure authentication performed using [androidx.biometric.BiometricPrompt]
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
      * @param parameters additional parameters to send in the request to refresh expired credentials
      * @param callback the callback to receive the result in.
      */
     public fun getCredentials(
-        fragmentActivity: FragmentActivity,
-        authenticationOptions: LocalAuthenticationOptions,
         scope: String?,
         minTtl: Int,
         parameters: Map<String, String>,
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
         getCredentials(
-            fragmentActivity,
-            authenticationOptions,
             scope,
             minTtl,
             parameters,
@@ -353,8 +316,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * If the user's lock screen authentication configuration matches the authentication level specified in the [authenticationOptions],
      * the user will be prompted to authenticate before accessing the credentials.
      *
-     * @param fragmentActivity the activity that will be used to host the [androidx.biometric.BiometricPrompt]
-     * @param authenticationOptions, an instance of [LocalAuthenticationOptions] used to configure authentication performed using [androidx.biometric.BiometricPrompt]
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
      * @param parameters additional parameters to send in the request to refresh expired credentials
@@ -362,8 +323,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * @param callback the callback to receive the result in.
      */
     public fun getCredentials(
-        fragmentActivity: FragmentActivity,
-        authenticationOptions: LocalAuthenticationOptions,
         scope: String?,
         minTtl: Int,
         parameters: Map<String, String>,
@@ -371,8 +330,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
         getCredentials(
-            fragmentActivity,
-            authenticationOptions,
             scope,
             minTtl,
             parameters,
@@ -391,8 +348,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * If the user's lock screen authentication configuration matches the authentication level specified in the [authenticationOptions],
      * the user will be prompted to authenticate before accessing the credentials.
      *
-     * @param fragmentActivity the activity that will be used to host the [androidx.biometric.BiometricPrompt]
-     * @param authenticationOptions, an instance of [LocalAuthenticationOptions] used to configure authentication performed using [androidx.biometric.BiometricPrompt]
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
      * @param minTtl   the minimum time in seconds that the access token should last before expiration.
      * @param parameters additional parameters to send in the request to refresh expired credentials.
@@ -400,8 +355,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * @param callback the callback to receive the result in.
      */
     public fun getCredentials(
-        fragmentActivity: FragmentActivity,
-        authenticationOptions: LocalAuthenticationOptions,
         scope: String? = null,
         minTtl: Int = 0,
         parameters: Map<String, String> = emptyMap(),
@@ -410,26 +363,30 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
 
-        val localAuthenticationManager = localAuthenticationManagerFactory.create(
-            activity = fragmentActivity,
-            authenticationOptions = authenticationOptions,
-            resultCallback = localAuthenticationResultCallback(
-                scope,
-                minTtl,
-                parameters,
-                headers,
-                forceRefresh,
-                callback
+        fragmentActivity.get()?.let { fragmentActivity ->
+            val localAuthenticationManager = localAuthenticationManagerFactory.create(
+                activity = fragmentActivity,
+                authenticationOptions = localAuthenticationOptions,
+                resultCallback = localAuthenticationResultCallback(
+                    scope,
+                    minTtl,
+                    parameters,
+                    headers,
+                    forceRefresh,
+                    callback
+                )
             )
-        )
-        localAuthenticationManager.authenticate()
+            localAuthenticationManager.authenticate()
+        } ?: run {
+            callback.onFailure(CredentialsManagerException.BIOMETRIC_ERROR_NO_ACTIVITY)
+        }
     }
 
     private val localAuthenticationResultCallback =
         { scope: String?, minTtl: Int, parameters: Map<String, String>, headers: Map<String, String>, forceRefresh: Boolean, callback: Callback<Credentials, CredentialsManagerException> ->
             object : Callback<Boolean, CredentialsManagerException> {
                 override fun onSuccess(result: Boolean) {
-                    getCredentials(
+                    getCredentialsFromStorage(
                         scope, minTtl, parameters, headers, forceRefresh,
                         callback
                     )
@@ -484,7 +441,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal fun getCredentials(
+    internal fun getCredentialsFromStorage(
         scope: String?,
         minTtl: Int,
         parameters: Map<String, String>,
@@ -624,6 +581,11 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 callback.onFailure(exception)
             }
         }
+    }
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal fun clearFragmentActivity() {
+        fragmentActivity.clear()
     }
 
     internal companion object {

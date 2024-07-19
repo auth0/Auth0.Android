@@ -55,7 +55,8 @@ class DatabaseLoginFragment : Fragment() {
 
     private val secureCredentialsManager: SecureCredentialsManager by lazy {
         val storage = SharedPreferencesStorage(requireContext())
-        val manager = SecureCredentialsManager(requireContext(), authenticationApiClient, storage)
+        val manager = SecureCredentialsManager(requireContext(), authenticationApiClient, storage, requireActivity(),
+            localAuthenticationOptions)
         manager
     }
 
@@ -289,8 +290,6 @@ class DatabaseLoginFragment : Fragment() {
 
     private fun getCredsSecure() {
         secureCredentialsManager.getCredentials(
-            requireActivity(),
-            localAuthenticationOptions,
             object :
                 Callback<Credentials, CredentialsManagerException> {
                 override fun onSuccess(result: Credentials) {

@@ -21,7 +21,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
     storage: Storage,
     jwtDecoder: JWTDecoder,
     private val serialExecutor: Executor
-) : DefaultCredentialsManager(authenticationClient, storage, jwtDecoder) {
+) : BaseCredentialsManager(authenticationClient, storage, jwtDecoder) {
     /**
      * Creates a new instance of the manager that will store the credentials in the given Storage.
      *
