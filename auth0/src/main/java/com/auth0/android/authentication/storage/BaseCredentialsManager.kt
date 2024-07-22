@@ -1,16 +1,11 @@
 package com.auth0.android.authentication.storage
 
 import androidx.annotation.VisibleForTesting
-import androidx.fragment.app.FragmentActivity
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.callback.Callback
 import com.auth0.android.result.Credentials
 import com.auth0.android.util.Clock
 import java.util.*
-import java.util.concurrent.Executor
-import java.util.concurrent.Executors
-import kotlin.math.min
-
 /**
  * Base class meant to abstract common logic across Credentials Manager implementations.
  * The scope of this class is package-private, as it's not meant to be exposed

@@ -44,6 +44,7 @@ import java.util.concurrent.Executor
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import java.lang.Exception
+import java.lang.IllegalArgumentException
 import java.lang.ref.WeakReference
 
 @RunWith(RobolectricTestRunner::class)
@@ -116,10 +117,10 @@ public class SecureCredentialsManagerTest {
                 storage,
                 crypto,
                 jwtDecoder,
+                serialExecutor,
                 weakFragmentActivity,
                 getAuthenticationOptions(),
-                factory,
-                serialExecutor
+                factory
             )
         manager = Mockito.spy(secureCredentialsManager)
         Mockito.doReturn(CredentialsMock.CURRENT_TIME_MS).`when`(manager).currentTimeInMillis
@@ -390,7 +391,7 @@ public class SecureCredentialsManagerTest {
         )
         Mockito.`when`(crypto.decrypt(storedJson.toByteArray()))
             .thenThrow(CryptoException("err", null))
-        manager.getCredentialsFromStorage(null, 0, emptyMap(), emptyMap(), false, callback)
+        manager.continueGetCredentials(null, 0, emptyMap(), emptyMap(), false, callback)
         verify(callback).onFailure(
             exceptionCaptor.capture()
         )
@@ -425,7 +426,7 @@ public class SecureCredentialsManagerTest {
         )
         Mockito.`when`(crypto.decrypt(storedJson.toByteArray()))
             .thenThrow(IncompatibleDeviceException(null))
-        manager.getCredentialsFromStorage(null, 0, emptyMap(), emptyMap(), false, callback)
+        manager.continueGetCredentials(null, 0, emptyMap(), emptyMap(), false, callback)
         verify(callback).onFailure(
             exceptionCaptor.capture()
         )
@@ -465,7 +466,7 @@ public class SecureCredentialsManagerTest {
         val expectedJson = gson.toJson(expectedCredentials)
         Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
             .thenThrow(CryptoException("CryptoException is thrown"))
-        manager.getCredentialsFromStorage(
+        manager.continueGetCredentials(
             "different scope",
             0,
             emptyMap(),
@@ -520,7 +521,7 @@ public class SecureCredentialsManagerTest {
         val expectedJson = gson.toJson(expectedCredentials)
         Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
             .thenThrow(IncompatibleDeviceException(Exception()))
-        manager.getCredentialsFromStorage(
+        manager.continueGetCredentials(
             "different scope",
             0,
             emptyMap(),
@@ -573,7 +574,7 @@ public class SecureCredentialsManagerTest {
             Credentials("", "", "newType", "refreshToken", newDate, "different scope")
         Mockito.`when`(request.execute()).thenReturn(expectedCredentials)
 
-        manager.getCredentialsFromStorage(
+        manager.continueGetCredentials(
             "different scope",
             0,
             emptyMap(),
@@ -607,7 +608,7 @@ public class SecureCredentialsManagerTest {
         verifyNoMoreInteractions(client)
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         insertTestCredentials(false, false, true, expiresAt, "scope")
-        manager.getCredentialsFromStorage(null, 0, emptyMap(), emptyMap(), false, callback)
+        manager.continueGetCredentials(null, 0, emptyMap(), emptyMap(), false, callback)
         verify(callback).onFailure(
             exceptionCaptor.capture()
         )
@@ -621,7 +622,7 @@ public class SecureCredentialsManagerTest {
         verifyNoMoreInteractions(client)
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS) //Same as current time --> expired
         insertTestCredentials(true, true, false, expiresAt, "scope")
-        manager.getCredentialsFromStorage(null, 0, emptyMap(), emptyMap(), false, callback)
+        manager.continueGetCredentials(null, 0, emptyMap(), emptyMap(), false, callback)
         verify(callback).onFailure(
             exceptionCaptor.capture()
         )
@@ -638,7 +639,7 @@ public class SecureCredentialsManagerTest {
         verifyNoMoreInteractions(client)
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + ONE_HOUR_SECONDS * 1000)
         insertTestCredentials(true, true, true, expiresAt, "scope")
-        manager.getCredentialsFromStorage(null, 0, emptyMap(), emptyMap(), false, callback)
+        manager.continueGetCredentials(null, 0, emptyMap(), emptyMap(), false, callback)
         verify(callback).onSuccess(
             credentialsCaptor.capture()
         )
@@ -697,7 +698,7 @@ public class SecureCredentialsManagerTest {
         verifyNoMoreInteractions(client)
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + ONE_HOUR_SECONDS * 1000)
         insertTestCredentials(true, false, true, expiresAt, "scope")
-        manager.getCredentialsFromStorage(null, 0, emptyMap(), emptyMap(), false, callback)
+        manager.continueGetCredentials(null, 0, emptyMap(), emptyMap(), false, callback)
         verify(callback).onSuccess(
             credentialsCaptor.capture()
         )
@@ -717,7 +718,7 @@ public class SecureCredentialsManagerTest {
         verifyNoMoreInteractions(client)
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + ONE_HOUR_SECONDS * 1000)
         insertTestCredentials(false, true, true, expiresAt, "scope")
-        manager.getCredentialsFromStorage(
+        manager.continueGetCredentials(
             null,
             0,
             emptyMap(),
@@ -757,7 +758,7 @@ public class SecureCredentialsManagerTest {
         val expectedJson = gson.toJson(expectedCredentials)
         Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
             .thenReturn(expectedJson.toByteArray())
-        manager.getCredentialsFromStorage(
+        manager.continueGetCredentials(
             null,
             60,
             emptyMap(),
@@ -826,7 +827,7 @@ public class SecureCredentialsManagerTest {
         val expectedJson = gson.toJson(expectedCredentials)
         Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
             .thenReturn(expectedJson.toByteArray())
-        manager.getCredentialsFromStorage(
+        manager.continueGetCredentials(
             null,
             60,
             emptyMap(),
@@ -878,7 +879,7 @@ public class SecureCredentialsManagerTest {
         val expectedJson = gson.toJson(expectedCredentials)
         Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
             .thenReturn(expectedJson.toByteArray())
-        manager.getCredentialsFromStorage(
+        manager.continueGetCredentials(
             "different scope",
             0,
             emptyMap(),
@@ -946,7 +947,7 @@ public class SecureCredentialsManagerTest {
         val expectedJson = gson.toJson(expectedCredentials)
         Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
             .thenReturn(expectedJson.toByteArray())
-        manager.getCredentialsFromStorage(
+        manager.continueGetCredentials(
             "different scope",
             0,
             emptyMap(),
@@ -1016,7 +1017,7 @@ public class SecureCredentialsManagerTest {
 
         Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
             .thenReturn(expectedJson.toByteArray())
-        manager.getCredentialsFromStorage(
+        manager.continueGetCredentials(
             "different scope",
             0,
             emptyMap(),
@@ -1099,12 +1100,12 @@ public class SecureCredentialsManagerTest {
         Mockito.`when`(request.execute()).thenReturn(expectedCredentials)
 
         // Trigger success
-        val renewedCredentials =
-            Credentials("newId", "newAccess", "newType", null, newDate, "newScope")
+//        val renewedCredentials =
+//            Credentials("newId", "newAccess", "newType", null, newDate, "newScope")
         val expectedJson = gson.toJson(expectedCredentials)
         Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
             .thenReturn(expectedJson.toByteArray())
-        manager.getCredentialsFromStorage(
+        manager.continueGetCredentials(
             null,
             0,
             emptyMap(),
@@ -1171,7 +1172,7 @@ public class SecureCredentialsManagerTest {
         val expectedJson = gson.toJson(renewedCredentials)
         Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
             .thenReturn(expectedJson.toByteArray())
-        manager.getCredentialsFromStorage(
+        manager.continueGetCredentials(
             null,
             0,
             emptyMap(),
@@ -1232,7 +1233,7 @@ public class SecureCredentialsManagerTest {
         //Trigger failure
         val authenticationException = mock<AuthenticationException>()
         Mockito.`when`(request.execute()).thenThrow(authenticationException)
-        manager.getCredentialsFromStorage(
+        manager.continueGetCredentials(
             null,
             0,
             emptyMap(),
@@ -1440,6 +1441,10 @@ public class SecureCredentialsManagerTest {
 
     @Test
     public fun shouldNotGetCredentialsWhenBiometricHardwareUnavailable() {
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        insertTestCredentials(true, true, false, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
+            .thenReturn(expiresAt.time)
         Mockito.`when`(localAuthenticationManager.authenticate()).then {
             localAuthenticationManager.resultCallback.onFailure(
                 CredentialsManagerException.BIOMETRIC_ERROR_HW_UNAVAILABLE
@@ -1460,6 +1465,10 @@ public class SecureCredentialsManagerTest {
 
     @Test
     public fun shouldNotGetCredentialsWhenBiometricsUnableToProcess() {
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        insertTestCredentials(true, true, false, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
+            .thenReturn(expiresAt.time)
         Mockito.`when`(localAuthenticationManager.authenticate()).then {
             localAuthenticationManager.resultCallback.onFailure(
                 CredentialsManagerException.BIOMETRIC_ERROR_UNABLE_TO_PROCESS
@@ -1480,6 +1489,10 @@ public class SecureCredentialsManagerTest {
 
     @Test
     public fun shouldNotGetCredentialsWhenBiometricsTimeout() {
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        insertTestCredentials(true, true, false, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
+            .thenReturn(expiresAt.time)
         Mockito.`when`(localAuthenticationManager.authenticate()).then {
             localAuthenticationManager.resultCallback.onFailure(
                 CredentialsManagerException.BIOMETRIC_ERROR_TIMEOUT
@@ -1500,6 +1513,10 @@ public class SecureCredentialsManagerTest {
 
     @Test
     public fun shouldNotGetCredentialsWhenBiometricsFailedDueToNoSpaceOnDevice() {
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        insertTestCredentials(true, true, false, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
+            .thenReturn(expiresAt.time)
         Mockito.`when`(localAuthenticationManager.authenticate()).then {
             localAuthenticationManager.resultCallback.onFailure(
                 CredentialsManagerException.BIOMETRIC_ERROR_NO_SPACE
@@ -1520,6 +1537,10 @@ public class SecureCredentialsManagerTest {
 
     @Test
     public fun shouldNotGetCredentialsWhenBiometricsFailedDueToCancellation() {
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        insertTestCredentials(true, true, false, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
+            .thenReturn(expiresAt.time)
         Mockito.`when`(localAuthenticationManager.authenticate()).then {
             localAuthenticationManager.resultCallback.onFailure(
                 CredentialsManagerException.BIOMETRIC_ERROR_CANCELED
@@ -1540,6 +1561,10 @@ public class SecureCredentialsManagerTest {
 
     @Test
     public fun shouldNotGetCredentialsWhenBiometricsFailedDueToLockOut() {
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        insertTestCredentials(true, true, false, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
+            .thenReturn(expiresAt.time)
         Mockito.`when`(localAuthenticationManager.authenticate()).then {
             localAuthenticationManager.resultCallback.onFailure(
                 CredentialsManagerException.BIOMETRIC_ERROR_LOCKOUT
@@ -1560,6 +1585,10 @@ public class SecureCredentialsManagerTest {
 
     @Test
     public fun shouldNotGetCredentialsWhenBiometricsFailedDueToVendorError() {
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        insertTestCredentials(true, true, false, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
+            .thenReturn(expiresAt.time)
         Mockito.`when`(localAuthenticationManager.authenticate()).then {
             localAuthenticationManager.resultCallback.onFailure(
                 CredentialsManagerException.BIOMETRIC_ERROR_VENDOR
@@ -1580,6 +1609,10 @@ public class SecureCredentialsManagerTest {
 
     @Test
     public fun shouldNotGetCredentialsWhenBiometricsFailedDueToPermanentLockout() {
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        insertTestCredentials(true, true, false, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
+            .thenReturn(expiresAt.time)
         Mockito.`when`(localAuthenticationManager.authenticate()).then {
             localAuthenticationManager.resultCallback.onFailure(
                 CredentialsManagerException.BIOMETRIC_ERROR_LOCKOUT_PERMANENT
@@ -1600,6 +1633,10 @@ public class SecureCredentialsManagerTest {
 
     @Test
     public fun shouldNotGetCredentialsWhenBiometricsFailedDueToCancellationByUser() {
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        insertTestCredentials(true, true, false, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
+            .thenReturn(expiresAt.time)
         Mockito.`when`(localAuthenticationManager.authenticate()).then {
             localAuthenticationManager.resultCallback.onFailure(
                 CredentialsManagerException.BIOMETRIC_ERROR_USER_CANCELED
@@ -1620,6 +1657,10 @@ public class SecureCredentialsManagerTest {
 
     @Test
     public fun shouldNotGetCredentialsWhenBiometricsFailedDueToNoBiometrics() {
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        insertTestCredentials(true, true, false, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
+            .thenReturn(expiresAt.time)
         Mockito.`when`(localAuthenticationManager.authenticate()).then {
             localAuthenticationManager.resultCallback.onFailure(
                 CredentialsManagerException.BIOMETRIC_ERROR_NO_BIOMETRICS
@@ -1640,6 +1681,10 @@ public class SecureCredentialsManagerTest {
 
     @Test
     public fun shouldNotGetCredentialsWhenBiometricsFailedDueToHardwareNotPresent() {
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        insertTestCredentials(true, true, false, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
+            .thenReturn(expiresAt.time)
         Mockito.`when`(localAuthenticationManager.authenticate()).then {
             localAuthenticationManager.resultCallback.onFailure(
                 CredentialsManagerException.BIOMETRIC_ERROR_HW_NOT_PRESENT
@@ -1660,6 +1705,10 @@ public class SecureCredentialsManagerTest {
 
     @Test
     public fun shouldNotGetCredentialsWhenBiometricsFailedBecauseUserPressedTheNegativeButton() {
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        insertTestCredentials(true, true, false, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
+            .thenReturn(expiresAt.time)
         Mockito.`when`(localAuthenticationManager.authenticate()).then {
             localAuthenticationManager.resultCallback.onFailure(
                 CredentialsManagerException.BIOMETRIC_ERROR_NEGATIVE_BUTTON
@@ -1680,6 +1729,10 @@ public class SecureCredentialsManagerTest {
 
     @Test
     public fun shouldNotGetCredentialsWhenBiometricsFailedBecauseNoDeviceCredentials() {
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        insertTestCredentials(true, true, false, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
+            .thenReturn(expiresAt.time)
         Mockito.`when`(localAuthenticationManager.authenticate()).then {
             localAuthenticationManager.resultCallback.onFailure(
                 CredentialsManagerException.BIOMETRIC_ERROR_NO_DEVICE_CREDENTIAL
@@ -1700,6 +1753,10 @@ public class SecureCredentialsManagerTest {
 
     @Test
     public fun shouldNotGetCredentialsWhenFragmentActivityIsGarbageCollected() {
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        insertTestCredentials(true, true, false, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
+            .thenReturn(expiresAt.time)
         manager.clearFragmentActivity()
         manager.getCredentials(callback)
         // Should fail because no fragment activity
@@ -1719,7 +1776,16 @@ public class SecureCredentialsManagerTest {
      */
     @Test
     public fun shouldUseCustomClock() {
-        val manager = SecureCredentialsManager(client, storage, crypto, jwtDecoder, weakFragmentActivity, getAuthenticationOptions(), factory) { }
+        val manager = SecureCredentialsManager(
+            client,
+            storage,
+            crypto,
+            jwtDecoder,
+            { },
+            weakFragmentActivity,
+            getAuthenticationOptions(),
+            factory
+        )
         val expirationTime = CredentialsMock.CURRENT_TIME_MS //Same as current time --> expired
         Mockito.`when`(storage.retrieveLong("com.auth0.credentials_access_token_expires_at"))
             .thenReturn(expirationTime)
@@ -1740,15 +1806,19 @@ public class SecureCredentialsManagerTest {
 
     @Test(expected = java.lang.IllegalArgumentException::class)
     public fun shouldUseCustomExecutorForGetCredentials() {
-        val manager = SecureCredentialsManager(client, storage, crypto, jwtDecoder, weakFragmentActivity, getAuthenticationOptions(), factory) {
-            throw java.lang.IllegalArgumentException("Proper Executor Set")
+        val serialExecutor: (Runnable) -> Unit = {
+            throw IllegalArgumentException("Proper Executor Set")
         }
+        val manager = SecureCredentialsManager(
+            client, storage, crypto, jwtDecoder,
+            serialExecutor, weakFragmentActivity, getAuthenticationOptions(), factory
+        )
         val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
         Mockito.`when`(storage.retrieveLong("com.auth0.credentials_expires_at"))
             .thenReturn(expirationTime)
         Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
             .thenReturn("{\"access_token\":\"accessToken\"}")
-        manager.getCredentialsFromStorage(
+        manager.continueGetCredentials(
             null,
             0,
             emptyMap(),
@@ -1788,7 +1858,7 @@ public class SecureCredentialsManagerTest {
         val expectedJson = gson.toJson(expectedCredentials)
         Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
             .thenReturn(expectedJson.toByteArray())
-        manager.getCredentialsFromStorage(
+        manager.continueGetCredentials(
             "some changed scope to trigger refresh",
             0,
             parameters,
@@ -1829,7 +1899,7 @@ public class SecureCredentialsManagerTest {
         val expectedJson = gson.toJson(expectedCredentials)
         Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
             .thenReturn(expectedJson.toByteArray())
-        manager.getCredentialsFromStorage(
+        manager.continueGetCredentials(
             scope = "scope",
             minTtl = 0,
             parameters = parameters,
@@ -1864,7 +1934,7 @@ public class SecureCredentialsManagerTest {
         verifyNoMoreInteractions(client)
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + ONE_HOUR_SECONDS * 1000)
         insertTestCredentials(true, true, true, expiresAt, "scope")
-        manager.getCredentialsFromStorage(
+        manager.continueGetCredentials(
             "scope",
             0,
             emptyMap(),
