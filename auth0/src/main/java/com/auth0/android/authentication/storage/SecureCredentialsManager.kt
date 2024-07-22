@@ -30,10 +30,10 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     storage: Storage,
     private val crypto: CryptoUtil,
     jwtDecoder: JWTDecoder,
-    private val fragmentActivity: WeakReference<FragmentActivity>,
-    private val localAuthenticationOptions: LocalAuthenticationOptions,
-    private val localAuthenticationManagerFactory: LocalAuthenticationManagerFactory,
     private val serialExecutor: Executor,
+    private val fragmentActivity: WeakReference<FragmentActivity>? = null,
+    private val localAuthenticationOptions: LocalAuthenticationOptions? = null,
+    private val localAuthenticationManagerFactory: LocalAuthenticationManagerFactory? = null,
 ) : BaseCredentialsManager(apiClient, storage, jwtDecoder) {
     private val gson: Gson = GsonProvider.gson
 
@@ -49,6 +49,28 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         context: Context,
         apiClient: AuthenticationAPIClient,
         storage: Storage,
+    ) : this(
+        apiClient,
+        storage,
+        CryptoUtil(context, storage, KEY_ALIAS),
+        JWTDecoder(),
+        Executors.newSingleThreadExecutor(),
+    )
+
+
+    /**
+     * Creates a new SecureCredentialsManager to handle Credentials with Authentication
+     *
+     * @param context   a valid context
+     * @param apiClient the Auth0 Authentication API Client to handle token refreshment when needed.
+     * @param storage   the storage implementation to use
+     * @param fragmentActivity the FragmentActivity to use for the biometric authentication
+     * @param localAuthenticationOptions the options of type [LocalAuthenticationOptions] to use for the biometric authentication
+     */
+    public constructor(
+        context: Context,
+        apiClient: AuthenticationAPIClient,
+        storage: Storage,
         fragmentActivity: FragmentActivity,
         localAuthenticationOptions: LocalAuthenticationOptions
     ) : this(
@@ -56,12 +78,11 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         storage,
         CryptoUtil(context, storage, KEY_ALIAS),
         JWTDecoder(),
+        Executors.newSingleThreadExecutor(),
         WeakReference(fragmentActivity),
         localAuthenticationOptions,
-        DefaultLocalAuthenticationManagerFactory(),
-        Executors.newSingleThreadExecutor(),
+        DefaultLocalAuthenticationManagerFactory()
     )
-
 
     /**
      * Saves the given credentials in the Storage.
@@ -355,38 +376,47 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * @param callback the callback to receive the result in.
      */
     public fun getCredentials(
-        scope: String? = null,
-        minTtl: Int = 0,
-        parameters: Map<String, String> = emptyMap(),
-        headers: Map<String, String> = emptyMap(),
-        forceRefresh: Boolean = false,
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        headers: Map<String, String>,
+        forceRefresh: Boolean,
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
-
-        fragmentActivity.get()?.let { fragmentActivity ->
-            val localAuthenticationManager = localAuthenticationManagerFactory.create(
-                activity = fragmentActivity,
-                authenticationOptions = localAuthenticationOptions,
-                resultCallback = localAuthenticationResultCallback(
-                    scope,
-                    minTtl,
-                    parameters,
-                    headers,
-                    forceRefresh,
-                    callback
-                )
-            )
-            localAuthenticationManager.authenticate()
-        } ?: run {
-            callback.onFailure(CredentialsManagerException.BIOMETRIC_ERROR_NO_ACTIVITY)
+        if (!hasValidCredentials(minTtl.toLong())) {
+            callback.onFailure(CredentialsManagerException.NO_CREDENTIALS)
+            return
         }
+
+        if (fragmentActivity != null && localAuthenticationOptions != null) {
+            fragmentActivity.get()?.let { fragmentActivity ->
+                val localAuthenticationManager = localAuthenticationManagerFactory!!.create(
+                    activity = fragmentActivity,
+                    authenticationOptions = localAuthenticationOptions,
+                    resultCallback = localAuthenticationResultCallback(
+                        scope,
+                        minTtl,
+                        parameters,
+                        headers,
+                        forceRefresh,
+                        callback
+                    )
+                )
+                localAuthenticationManager.authenticate()
+            } ?: run {
+                callback.onFailure(CredentialsManagerException.BIOMETRIC_ERROR_NO_ACTIVITY)
+            }
+            return
+        }
+
+        continueGetCredentials(scope, minTtl, parameters, headers, forceRefresh, callback)
     }
 
     private val localAuthenticationResultCallback =
         { scope: String?, minTtl: Int, parameters: Map<String, String>, headers: Map<String, String>, forceRefresh: Boolean, callback: Callback<Credentials, CredentialsManagerException> ->
             object : Callback<Boolean, CredentialsManagerException> {
                 override fun onSuccess(result: Boolean) {
-                    getCredentialsFromStorage(
+                    continueGetCredentials(
                         scope, minTtl, parameters, headers, forceRefresh,
                         callback
                     )
@@ -441,7 +471,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal fun getCredentialsFromStorage(
+    internal fun continueGetCredentials(
         scope: String?,
         minTtl: Int,
         parameters: Map<String, String>,
@@ -449,11 +479,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         forceRefresh: Boolean,
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
-
-        if (!hasValidCredentials(minTtl.toLong())) {
-            callback.onFailure(CredentialsManagerException.NO_CREDENTIALS)
-            return
-        }
         serialExecutor.execute {
             val encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS)
             if (encryptedEncoded.isNullOrBlank()) {
@@ -585,7 +610,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun clearFragmentActivity() {
-        fragmentActivity.clear()
+        fragmentActivity!!.clear()
     }
 
     internal companion object {
