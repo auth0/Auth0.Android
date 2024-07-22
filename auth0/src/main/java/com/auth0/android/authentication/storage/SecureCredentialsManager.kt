@@ -59,7 +59,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
 
 
     /**
-     * Creates a new SecureCredentialsManager to handle Credentials with Authentication
+     * Creates a new SecureCredentialsManager to handle Credentials with biometrics Authentication
      *
      * @param context   a valid context
      * @param apiClient the Auth0 Authentication API Client to handle token refreshment when needed.
@@ -388,9 +388,9 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             return
         }
 
-        if (fragmentActivity != null && localAuthenticationOptions != null) {
+        if (fragmentActivity != null && localAuthenticationOptions != null && localAuthenticationManagerFactory != null) {
             fragmentActivity.get()?.let { fragmentActivity ->
-                val localAuthenticationManager = localAuthenticationManagerFactory!!.create(
+                val localAuthenticationManager = localAuthenticationManagerFactory.create(
                     activity = fragmentActivity,
                     authenticationOptions = localAuthenticationOptions,
                     resultCallback = localAuthenticationResultCallback(
