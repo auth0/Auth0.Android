@@ -2022,12 +2022,12 @@ public class SecureCredentialsManagerTest {
 
         val builder = LocalAuthenticationOptions.Builder()
         builder.apply {
-            title(title)
-            subtitle(subtitle)
-            description(description)
-            negativeButtonText(negativeButtonText)
-            authenticator(authenticator)
-            enableDeviceCredentialFallback(enableDeviceCredentialFallback)
+            setTitle(title)
+            setSubTitle(subtitle)
+            setDescription(description)
+            setNegativeButtonText(negativeButtonText)
+            setAuthenticationLevel(authenticator)
+            setDeviceCredentialFallback(enableDeviceCredentialFallback)
         }
         return builder.build()
     }
