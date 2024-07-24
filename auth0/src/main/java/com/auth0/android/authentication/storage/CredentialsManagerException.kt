@@ -19,6 +19,7 @@ public class CredentialsManagerException :
         LARGE_MIN_TTL,
         INCOMPATIBLE_DEVICE,
         CRYPTO_EXCEPTION,
+        BIOMETRIC_NO_ACTIVITY,
         BIOMETRIC_ERROR_STATUS_UNKNOWN,
         BIOMETRIC_ERROR_UNSUPPORTED,
         BIOMETRIC_ERROR_HW_UNAVAILABLE,
@@ -103,6 +104,8 @@ public class CredentialsManagerException :
 
 
         // Exceptions thrown when trying to authenticate with biometrics
+        public val BIOMETRIC_ERROR_NO_ACTIVITY: CredentialsManagerException =
+            CredentialsManagerException(Code.BIOMETRIC_NO_ACTIVITY)
         public val BIOMETRIC_ERROR_NO_DEVICE_CREDENTIAL: CredentialsManagerException =
             CredentialsManagerException(Code.BIOMETRIC_ERROR_NO_DEVICE_CREDENTIAL)
         public val BIOMETRIC_ERROR_NEGATIVE_BUTTON: CredentialsManagerException =
@@ -149,6 +152,7 @@ public class CredentialsManagerException :
 
                 Code.CRYPTO_EXCEPTION -> "A change on the Lock Screen security settings have deemed the encryption keys invalid and have been recreated. Any previously stored content is now lost. Please try saving the credentials again."
 
+                Code.BIOMETRIC_NO_ACTIVITY -> "Cannot authenticate as the activity passed is null."
                 Code.BIOMETRIC_ERROR_STATUS_UNKNOWN -> "Unable to determine whether the user can authenticate."
                 Code.BIOMETRIC_ERROR_UNSUPPORTED -> "Cannot authenticate because the specified options are incompatible with the current Android version."
                 Code.BIOMETRIC_ERROR_HW_UNAVAILABLE -> "Cannot authenticate because the hardware is unavailable. Try again later."

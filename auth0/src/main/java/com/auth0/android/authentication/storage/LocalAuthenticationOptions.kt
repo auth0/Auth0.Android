@@ -15,30 +15,30 @@ public class LocalAuthenticationOptions private constructor(
         private var title: String? = null,
         private var subtitle: String? = null,
         private var description: String? = null,
-        private var authenticator: AuthenticationLevel = AuthenticationLevel.STRONG,
+        private var authenticationLevel: AuthenticationLevel = AuthenticationLevel.STRONG,
         private var enableDeviceCredentialFallback: Boolean = false,
         private var negativeButtonText: String = "Cancel"
     ) {
 
-        public fun title(title: String): Builder = apply { this.title = title }
-        public fun subtitle(subtitle: String?): Builder = apply { this.subtitle = subtitle }
-        public fun description(description: String?): Builder =
+        public fun setTitle(title: String): Builder = apply { this.title = title }
+        public fun setSubTitle(subtitle: String?): Builder = apply { this.subtitle = subtitle }
+        public fun setDescription(description: String?): Builder =
             apply { this.description = description }
 
-        public fun authenticator(authenticator: AuthenticationLevel): Builder =
-            apply { this.authenticator = authenticator }
+        public fun setAuthenticationLevel(authenticationLevel: AuthenticationLevel): Builder =
+            apply { this.authenticationLevel = authenticationLevel }
 
-        public fun enableDeviceCredentialFallback(enableDeviceCredentialFallback: Boolean): Builder =
+        public fun setDeviceCredentialFallback(enableDeviceCredentialFallback: Boolean): Builder =
             apply { this.enableDeviceCredentialFallback = enableDeviceCredentialFallback }
 
-        public fun negativeButtonText(negativeButtonText: String): Builder =
+        public fun setNegativeButtonText(negativeButtonText: String): Builder =
             apply { this.negativeButtonText = negativeButtonText }
 
         public fun build(): LocalAuthenticationOptions = LocalAuthenticationOptions(
             title ?: throw IllegalArgumentException("Title must be provided"),
             subtitle,
             description,
-            authenticator,
+            authenticationLevel,
             enableDeviceCredentialFallback,
             negativeButtonText
         )
