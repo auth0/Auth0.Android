@@ -3,6 +3,7 @@ package com.auth0.android.management
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
+import com.auth0.android.NetworkErrorException
 import com.auth0.android.authentication.ParameterBuilder
 import com.auth0.android.request.ErrorAdapter
 import com.auth0.android.request.JsonAdapter
@@ -20,6 +21,9 @@ import com.google.gson.Gson
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import java.io.IOException
 import java.io.Reader
+import java.net.SocketException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 /**
  * API client for Auth0 Management API.
@@ -219,6 +223,12 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
                 }
 
                 override fun fromException(cause: Throwable): ManagementException {
+                    if (cause is UnknownHostException || cause is SocketTimeoutException || cause is SocketException) {
+                        return ManagementException(
+                            "Failed to execute the network request",
+                            NetworkErrorException(cause)
+                        )
+                    }
                     return ManagementException(
                         "Something went wrong",
                         Auth0Exception("Something went wrong", cause)

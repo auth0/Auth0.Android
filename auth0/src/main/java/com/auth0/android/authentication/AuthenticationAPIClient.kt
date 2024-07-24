@@ -3,6 +3,7 @@ package com.auth0.android.authentication
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
+import com.auth0.android.NetworkErrorException
 import com.auth0.android.request.*
 import com.auth0.android.request.internal.*
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMap
@@ -15,6 +16,9 @@ import com.google.gson.Gson
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import java.io.IOException
 import java.io.Reader
+import java.net.SocketException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.security.PublicKey
 
 /**
@@ -741,7 +745,11 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         val credentialsAdapter: JsonAdapter<Credentials> = GsonAdapter(
             Credentials::class.java, gson
         )
-        val request = BaseAuthenticationRequest(factory.post(url.toString(), credentialsAdapter), clientId, baseURL)
+        val request = BaseAuthenticationRequest(
+            factory.post(url.toString(), credentialsAdapter),
+            clientId,
+            baseURL
+        )
         request.addParameters(requestParameters)
         return request
     }
@@ -811,6 +819,12 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
                 }
 
                 override fun fromException(cause: Throwable): AuthenticationException {
+                    if (cause is UnknownHostException || cause is SocketTimeoutException || cause is SocketException) {
+                        return AuthenticationException(
+                            "Failed to execute the network request",
+                            NetworkErrorException(cause)
+                        )
+                    }
                     return AuthenticationException(
                         "Something went wrong",
                         Auth0Exception("Something went wrong", cause)
