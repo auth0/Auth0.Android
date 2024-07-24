@@ -15,15 +15,13 @@ import com.auth0.android.request.internal.GsonAdapter.Companion.forListOf
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMap
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.request.internal.RequestFactory
+import com.auth0.android.request.internal.ResponseUtils.isNetworkError
 import com.auth0.android.result.UserIdentity
 import com.auth0.android.result.UserProfile
 import com.google.gson.Gson
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import java.io.IOException
 import java.io.Reader
-import java.net.SocketException
-import java.net.SocketTimeoutException
-import java.net.UnknownHostException
 
 /**
  * API client for Auth0 Management API.
@@ -223,7 +221,7 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
                 }
 
                 override fun fromException(cause: Throwable): ManagementException {
-                    if (cause is UnknownHostException || cause is SocketTimeoutException || cause is SocketException) {
+                    if (isNetworkError(cause)) {
                         return ManagementException(
                             "Failed to execute the network request",
                             NetworkErrorException(cause)

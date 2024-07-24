@@ -8,6 +8,7 @@ import com.auth0.android.request.*
 import com.auth0.android.request.internal.*
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMap
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMapOf
+import com.auth0.android.request.internal.ResponseUtils.isNetworkError
 import com.auth0.android.result.Challenge
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
@@ -16,9 +17,6 @@ import com.google.gson.Gson
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import java.io.IOException
 import java.io.Reader
-import java.net.SocketException
-import java.net.SocketTimeoutException
-import java.net.UnknownHostException
 import java.security.PublicKey
 
 /**
@@ -819,7 +817,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
                 }
 
                 override fun fromException(cause: Throwable): AuthenticationException {
-                    if (cause is UnknownHostException || cause is SocketTimeoutException || cause is SocketException) {
+                    if (isNetworkError(cause)) {
                         return AuthenticationException(
                             "Failed to execute the network request",
                             NetworkErrorException(cause)
