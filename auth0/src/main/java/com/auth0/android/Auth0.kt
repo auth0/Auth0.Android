@@ -7,13 +7,15 @@ import com.auth0.android.util.Auth0UserAgent
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.util.*
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 /**
  * Represents your Auth0 account information (clientId &amp; domain),
  * and it's used to obtain clients for Auth0's APIs.
  *
  * ```
- * val auth0 = Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+ * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
  *```
  *
  * This SDK only supports OIDC-Conformant clients, and will use Auth0's current authentication pipeline.
@@ -23,7 +25,7 @@ import java.util.*
  * @param domain              of your Auth0 account
  * @param configurationDomain where Auth0's configuration will be fetched, change it if using an on-premise Auth0 server. By default is Auth0 public cloud.
  */
-public open class Auth0 @JvmOverloads constructor(
+public open class Auth0 private constructor(
     /**
      * @return your Auth0 application client identifier
      */
@@ -41,6 +43,12 @@ public open class Auth0 @JvmOverloads constructor(
      * The networking client instance used to make HTTP requests.
      */
     public var networkingClient: NetworkingClient = DefaultClient()
+
+
+    /**
+     * The single thread executor used to run tasks in the background throughout this Auth0 instance.
+     */
+    public val executor: ExecutorService = Executors.newSingleThreadExecutor()
 
     /**
      * Creates a new Auth0 instance with the 'com_auth0_client_id' and 'com_auth0_domain' values
@@ -102,7 +110,58 @@ public open class Auth0 @JvmOverloads constructor(
         return safeUrl.toHttpUrlOrNull()
     }
 
-    private companion object {
+    public companion object {
+
+        private val instances: MutableMap<Pair<String, String>, Auth0> = mutableMapOf()
+
+        @JvmStatic
+        public fun getInstance(
+            clientId: String,
+            domain: String
+        ): Auth0 {
+            return getInstance(clientId, domain, null)
+        }
+
+        @JvmStatic
+        public fun getInstance(
+            clientId: String,
+            domain: String,
+            configurationDomain: String?
+        ): Auth0 {
+            return instances.getOrPut(Pair(clientId, domain)) {
+                Auth0(clientId, domain, configurationDomain)
+            }
+        }
+
+        @JvmStatic
+        public fun getInstance(context: Context): Auth0 {
+            val clientId = getResourceFromContext(context, "com_auth0_client_id")
+            val domain = getResourceFromContext(context, "com_auth0_domain")
+            return getInstance(clientId, domain)
+        }
+
+        @JvmStatic
+        public fun clearInstance(clientId: String, domain: String) {
+            clearInstance(clientId, domain, null)
+        }
+
+        @JvmStatic
+        public fun clearInstance(clientId: String, domain: String, configurationDomain: String?) {
+            instances.remove(Pair(clientId, domain))
+        }
+
+        @JvmStatic
+        public fun clearInstance(context: Context) {
+            val clientId = getResourceFromContext(context, "com_auth0_client_id")
+            val domain = getResourceFromContext(context, "com_auth0_domain")
+            clearInstance(clientId, domain)
+        }
+
+        @JvmStatic
+        public fun clearAllInstances() {
+            instances.clear()
+        }
+
         private fun getResourceFromContext(context: Context, resName: String): String {
             val stringRes = context.resources.getIdentifier(resName, "string", context.packageName)
             require(stringRes != 0) {

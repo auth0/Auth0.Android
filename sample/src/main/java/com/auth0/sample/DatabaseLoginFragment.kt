@@ -36,7 +36,7 @@ class DatabaseLoginFragment : Fragment() {
 
     private val account: Auth0 by lazy {
         // -- REPLACE this credentials with your own Auth0 app credentials!
-        val account = Auth0(
+        val account = Auth0.getInstance(
             getString(R.string.com_auth0_client_id),
             getString(R.string.com_auth0_domain)
         )
