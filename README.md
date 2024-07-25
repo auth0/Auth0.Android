@@ -68,14 +68,14 @@ Open your app's `AndroidManifest.xml` file and add the following permission.
 First, create an instance of `Auth0` with your Application information
 
 ```kotlin
-val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+val account = Auth0.getInstance("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
 ```
 
 <details>
   <summary>Using Java</summary>
 
 ```java
-Auth0 account = new Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}");
+Auth0 account = Auth0.getInstance("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}");
 ```
 </details>
 
@@ -94,7 +94,7 @@ Alternatively, you can save your Application information in the `strings.xml` fi
 You can then create a new Auth0 instance by passing an Android Context:
 
 ```kotlin
-val account = Auth0(context)
+val account = Auth0.getInstance(context)
 ```
 </details>
 

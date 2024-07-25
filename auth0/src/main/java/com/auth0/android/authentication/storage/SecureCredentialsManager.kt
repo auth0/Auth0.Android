@@ -16,8 +16,9 @@ import com.google.gson.Gson
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.lang.ref.WeakReference
 import java.util.*
-import java.util.concurrent.Executor
-import java.util.concurrent.Executors
+import java.util.concurrent.Callable
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.ExecutorService
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -30,7 +31,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     storage: Storage,
     private val crypto: CryptoUtil,
     jwtDecoder: JWTDecoder,
-    private val serialExecutor: Executor,
+    private val serialExecutor: ExecutorService,
     private val fragmentActivity: WeakReference<FragmentActivity>? = null,
     private val localAuthenticationOptions: LocalAuthenticationOptions? = null,
     private val localAuthenticationManagerFactory: LocalAuthenticationManagerFactory? = null,
@@ -54,7 +55,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         storage,
         CryptoUtil(context, storage, KEY_ALIAS),
         JWTDecoder(),
-        Executors.newSingleThreadExecutor(),
+        apiClient.executor
     )
 
 
@@ -78,7 +79,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         storage,
         CryptoUtil(context, storage, KEY_ALIAS),
         JWTDecoder(),
-        Executors.newSingleThreadExecutor(),
+        apiClient.executor,
         WeakReference(fragmentActivity),
         localAuthenticationOptions,
         DefaultLocalAuthenticationManagerFactory()
@@ -92,8 +93,20 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
      */
     @Throws(CredentialsManagerException::class)
-    @Synchronized
     override fun saveCredentials(credentials: Credentials) {
+        val future = serialExecutor.submit {
+            saveCredentialsDirect(credentials)
+        }
+        try {
+            future.get()
+        } catch (e: ExecutionException) {
+            throw e.cause as CredentialsManagerException
+        } catch (e: InterruptedException) {
+            throw e.cause as CredentialsManagerException
+        }
+    }
+
+    private fun saveCredentialsDirect(credentials: Credentials) {
         if (TextUtils.isEmpty(credentials.accessToken) && TextUtils.isEmpty(credentials.idToken)) {
             throw CredentialsManagerException.INVALID_CREDENTIALS
         }
@@ -121,7 +134,10 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
              * a true value. Retrying this operation will succeed.
              */
             clearCredentials()
-            throw CredentialsManagerException(CredentialsManagerException.Code.CRYPTO_EXCEPTION, e)
+            throw CredentialsManagerException(
+                CredentialsManagerException.Code.CRYPTO_EXCEPTION,
+                e
+            )
         }
     }
 
@@ -455,19 +471,21 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * @return whether this manager contains a valid non-expired pair of credentials or not.
      */
     override fun hasValidCredentials(minTtl: Long): Boolean {
-        val encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS)
-        var expiresAt = storage.retrieveLong(KEY_EXPIRES_AT)
-        if (expiresAt == null) {
-            // Avoids logging out users when this value was not saved (migration scenario)
-            expiresAt = 0L
-        }
-        val canRefresh = storage.retrieveBoolean(KEY_CAN_REFRESH)
-        val emptyCredentials = TextUtils.isEmpty(encryptedEncoded)
-        return !(emptyCredentials || willExpire(
-            expiresAt,
-            minTtl
-        ) &&
-                (canRefresh == null || !canRefresh))
+        return serialExecutor.submit(Callable {
+            val encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS)
+            var expiresAt = storage.retrieveLong(KEY_EXPIRES_AT)
+            if (expiresAt == null) {
+                // Avoids logging out users when this value was not saved (migration scenario)
+                expiresAt = 0L
+            }
+            val canRefresh = storage.retrieveBoolean(KEY_CAN_REFRESH)
+            val emptyCredentials = TextUtils.isEmpty(encryptedEncoded)
+            !(emptyCredentials || willExpire(
+                expiresAt,
+                minTtl
+            ) &&
+                    (canRefresh == null || !canRefresh))
+        }).get()
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
@@ -594,7 +612,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             }
 
             try {
-                saveCredentials(freshCredentials)
+                saveCredentialsDirect(freshCredentials)
                 callback.onSuccess(freshCredentials)
             } catch (error: CredentialsManagerException) {
                 val exception = CredentialsManagerException(

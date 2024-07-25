@@ -15,10 +15,16 @@ import com.auth0.android.request.internal.Jwt
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.CredentialsMock
 import com.auth0.android.util.Clock
+import com.auth0.android.util.CustomExecutorService
 import com.google.gson.Gson
-import com.nhaarman.mockitokotlin2.*
+import com.nhaarman.mockitokotlin2.KArgumentCaptor
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.eq
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -27,30 +33,36 @@ import org.hamcrest.Matchers
 import org.hamcrest.core.Is
 import org.hamcrest.core.IsInstanceOf
 import org.junit.Assert
+import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.*
+import org.mockito.ArgumentMatchers.anyBoolean
+import org.mockito.ArgumentMatchers.anyInt
+import org.mockito.ArgumentMatchers.anyLong
+import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.MockitoAnnotations
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
-import java.lang.reflect.Modifier
-import java.util.*
-import java.util.concurrent.Executor
-import org.junit.Assert.assertThrows
-import org.junit.Assert.assertTrue
-import java.lang.Exception
-import java.lang.IllegalArgumentException
 import java.lang.ref.WeakReference
+import java.util.Date
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+
 
 @RunWith(RobolectricTestRunner::class)
 public class SecureCredentialsManagerTest {
     @Mock
     private lateinit var client: AuthenticationAPIClient
+
+    @Mock
+    private lateinit var context: Context
 
     @Mock
     private lateinit var storage: Storage
@@ -77,7 +89,7 @@ public class SecureCredentialsManagerTest {
 
     private lateinit var fragmentActivity: FragmentActivity
 
-    private val serialExecutor = Executor { runnable -> runnable.run() }
+    private val serialExecutor = CustomExecutorService()
 
     private val credentialsCaptor: KArgumentCaptor<Credentials> = argumentCaptor()
 
@@ -131,7 +143,7 @@ public class SecureCredentialsManagerTest {
     public fun shouldCreateAManagerInstance() {
         val context: Context =
             Robolectric.buildActivity(Activity::class.java).create().start().resume().get()
-        val apiClient = AuthenticationAPIClient(Auth0("clientId", "domain"))
+        val apiClient = AuthenticationAPIClient(Auth0.getInstance("clientId", "domain"))
         val storage: Storage = SharedPreferencesStorage(context)
         val manager = SecureCredentialsManager(
             context,
@@ -1262,6 +1274,181 @@ public class SecureCredentialsManagerTest {
         )
     }
 
+    /**
+     * Testing that getCredentials execution from multiple threads via multiple instances of SecureCredentialsManager should trigger only one network request.
+     */
+    @Test
+    public fun shouldSynchronizeGetCredentialsAccessAcrossThreadsAndInstances() {
+        val auth0 = Auth0.getInstance("clientId", "domain")
+        val expiredCredentials = Credentials(
+            "",
+            "accessToken",
+            "type",
+            "refreshToken",
+            Date(CredentialsMock.CURRENT_TIME_MS),
+            "scope"
+        )
+        val renewedCredentials =
+            Credentials(
+                "newId",
+                "newAccess",
+                "newType",
+                "rotatedRefreshToken",
+                Date(CredentialsMock.ONE_HOUR_AHEAD_MS),
+                "newScope"
+            )
+        Mockito.`when`(
+            client.renewAuth("refreshToken")
+        ).thenReturn(request)
+        Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
+        val executor: ExecutorService = Executors.newFixedThreadPool(5)
+        val latch = CountDownLatch(5)
+        val context: Context =
+            Robolectric.buildActivity(Activity::class.java).create().start().resume().get()
+        val storage = SharedPreferencesStorage(
+            context = context,
+            sharedPreferencesName = "com.auth0.android.storage.SecureCredentialsManagerTest"
+        )
+        val cryptoMock = Mockito.mock(CryptoUtil::class.java)
+        Mockito.`when`(cryptoMock.encrypt(any())).thenAnswer {
+            val input = it.arguments[0] as ByteArray
+            input
+        }
+        Mockito.`when`(cryptoMock.decrypt(any())).thenAnswer {
+            val input = it.arguments[0] as ByteArray
+            input
+        }
+        val secureCredsManager =
+            SecureCredentialsManager(client, storage, cryptoMock, jwtDecoder, auth0.executor)
+        secureCredsManager.saveCredentials(expiredCredentials)
+        repeat(5) {
+            executor.submit {
+                val secureCredsManager =
+                    SecureCredentialsManager(
+                        client,
+                        storage,
+                        cryptoMock,
+                        jwtDecoder,
+                        auth0.executor
+                    )
+                secureCredsManager.getCredentials(object :
+                    Callback<Credentials, CredentialsManagerException> {
+                    override fun onFailure(exception: CredentialsManagerException) {
+                        throw exception
+                    }
+
+                    override fun onSuccess(credentials: Credentials) {
+                        // Verify all instances retrieved the same credentials
+                        MatcherAssert.assertThat(
+                            renewedCredentials.accessToken,
+                            Is.`is`(credentials.accessToken)
+                        )
+                        MatcherAssert.assertThat(
+                            renewedCredentials.idToken,
+                            Is.`is`(credentials.idToken)
+                        )
+                        MatcherAssert.assertThat(
+                            renewedCredentials.refreshToken,
+                            Is.`is`(credentials.refreshToken)
+                        )
+                        MatcherAssert.assertThat(renewedCredentials.type, Is.`is`(credentials.type))
+                        MatcherAssert.assertThat(
+                            renewedCredentials.expiresAt,
+                            Is.`is`(credentials.expiresAt)
+                        )
+                        MatcherAssert.assertThat(
+                            renewedCredentials.scope,
+                            Is.`is`(credentials.scope)
+                        )
+                        latch.countDown()
+                    }
+                })
+            }
+        }
+        latch.await() // Wait for all threads to finish
+        Mockito.verify(client, Mockito.times(1))
+            .renewAuth(any()) // verify that api client's renewAuth is called only once
+        Mockito.verify(request, Mockito.times(1)).execute() // Verify single network request
+    }
+
+    @Test
+    public fun shouldSynchronizeSaveCredentialsFromMultipleThreadsAndInstances() {
+        val auth0 = Auth0.getInstance("clientId", "domain")
+        val executor: ExecutorService = Executors.newFixedThreadPool(5)
+        val context: Context =
+            Robolectric.buildActivity(Activity::class.java).create().start().resume().get()
+        val storage = SharedPreferencesStorage(
+            context = context,
+            sharedPreferencesName = "com.auth0.android.storage.SecureCredentialsManagerTest"
+        )
+        val cryptoMock = Mockito.mock(CryptoUtil::class.java)
+        Mockito.`when`(cryptoMock.encrypt(any())).thenAnswer {
+            val input = it.arguments[0] as ByteArray
+            input
+        }
+        Mockito.`when`(cryptoMock.decrypt(any())).thenAnswer {
+            val input = it.arguments[0] as ByteArray
+            input
+        }
+        val latch = CountDownLatch(5)
+        var lastSavedCredentials: Credentials?
+        repeat(5) {
+            executor.submit {
+                val credentials = Credentials(
+                    idToken = "idToken$it",
+                    accessToken = "accessToken$it",
+                    type = "type$it",
+                    refreshToken = "refreshToken$it",
+                    expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS),
+                    scope = "scope$it"
+                )
+                val secureCredentialsManager =
+                    SecureCredentialsManager(
+                        client,
+                        storage,
+                        cryptoMock,
+                        jwtDecoder,
+                        auth0.executor
+                    )
+                secureCredentialsManager.saveCredentials(credentials)
+                lastSavedCredentials = credentials
+                secureCredentialsManager.getCredentials(object :
+                    Callback<Credentials, CredentialsManagerException> {
+                    override fun onFailure(error: CredentialsManagerException) {
+                        println(error)
+                        latch.countDown()
+                    }
+
+                    override fun onSuccess(result: Credentials) {
+                        MatcherAssert.assertThat(
+                            result.accessToken,
+                            Is.`is`(lastSavedCredentials!!.accessToken)
+                        )
+                        MatcherAssert.assertThat(
+                            result.idToken,
+                            Is.`is`(lastSavedCredentials!!.idToken)
+                        )
+                        MatcherAssert.assertThat(
+                            result.refreshToken,
+                            Is.`is`(lastSavedCredentials!!.refreshToken)
+                        )
+                        MatcherAssert.assertThat(result.type, Is.`is`(lastSavedCredentials!!.type))
+                        MatcherAssert.assertThat(
+                            result.expiresAt,
+                            Is.`is`(lastSavedCredentials!!.expiresAt)
+                        )
+                        MatcherAssert.assertThat(
+                            result.scope,
+                            Is.`is`(lastSavedCredentials!!.scope)
+                        )
+                        latch.countDown()
+                    }
+                })
+            }
+        }
+        latch.await()
+    }
+
     /*
      * CLEAR Credentials tests
      */
@@ -1781,7 +1968,7 @@ public class SecureCredentialsManagerTest {
             storage,
             crypto,
             jwtDecoder,
-            { },
+            serialExecutor,
             weakFragmentActivity,
             getAuthenticationOptions(),
             factory
@@ -1806,8 +1993,54 @@ public class SecureCredentialsManagerTest {
 
     @Test(expected = java.lang.IllegalArgumentException::class)
     public fun shouldUseCustomExecutorForGetCredentials() {
-        val serialExecutor: (Runnable) -> Unit = {
-            throw IllegalArgumentException("Proper Executor Set")
+        val serialExecutor = object : ExecutorService {
+            override fun execute(command: Runnable?) {
+                throw IllegalArgumentException("Proper Executor Set")
+            }
+
+            override fun shutdown() {}
+            override fun shutdownNow(): List<Runnable> = emptyList()
+            override fun isShutdown(): Boolean = false
+            override fun isTerminated(): Boolean = false
+            override fun awaitTermination(timeout: Long, unit: TimeUnit): Boolean = false
+            override fun <T : Any?> submit(task: java.util.concurrent.Callable<T>): java.util.concurrent.Future<T> {
+                throw IllegalArgumentException("Proper Executor Set")
+            }
+
+            override fun <T : Any?> submit(
+                task: Runnable?,
+                result: T
+            ): java.util.concurrent.Future<T> {
+                throw IllegalArgumentException("Proper Executor Set")
+            }
+
+            override fun submit(task: Runnable?): java.util.concurrent.Future<*> {
+                throw IllegalArgumentException("Proper Executor Set")
+            }
+
+            override fun <T : Any?> invokeAll(tasks: Collection<java.util.concurrent.Callable<T>>?): List<java.util.concurrent.Future<T>> {
+                throw IllegalArgumentException("Proper Executor Set")
+            }
+
+            override fun <T : Any?> invokeAll(
+                tasks: Collection<java.util.concurrent.Callable<T>>?,
+                timeout: Long,
+                unit: TimeUnit
+            ): List<java.util.concurrent.Future<T>> {
+                throw IllegalArgumentException("Proper Executor Set")
+            }
+
+            override fun <T : Any?> invokeAny(tasks: Collection<java.util.concurrent.Callable<T>>?): T {
+                throw IllegalArgumentException("Proper Executor Set")
+            }
+
+            override fun <T : Any?> invokeAny(
+                tasks: Collection<java.util.concurrent.Callable<T>>?,
+                timeout: Long,
+                unit: TimeUnit
+            ): T {
+                throw IllegalArgumentException("Proper Executor Set")
+            }
         }
         val manager = SecureCredentialsManager(
             client, storage, crypto, jwtDecoder,
@@ -1954,16 +2187,6 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(retrievedCredentials.expiresAt, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(retrievedCredentials.expiresAt.time, Is.`is`(expiresAt.time))
         MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("scope"))
-    }
-
-    @Test
-    public fun shouldBeMarkedSynchronous() {
-        val method =
-            SecureCredentialsManager::class.java.getMethod(
-                "saveCredentials",
-                Credentials::class.java
-            )
-        assertTrue(Modifier.isSynchronized(method.modifiers))
     }
 
     /*

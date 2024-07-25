@@ -16,11 +16,12 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 import java.io.IOException
 import java.io.Reader
 import java.security.PublicKey
+import java.util.concurrent.ExecutorService
 
 /**
  * API client for Auth0 Authentication API.
  * ```
- * val auth0 = Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+ * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
  * val client = AuthenticationAPIClient(auth0)
  * ```
  *
@@ -38,7 +39,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      *
      * ```
-     * val auth0 = Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
      * val client = AuthenticationAPIClient(auth0)
      * ```
      * @param auth0 account information
@@ -53,6 +54,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         get() = auth0.clientId
     public val baseURL: String
         get() = auth0.getDomainUrl()
+    public val executor: ExecutorService
+        get() = auth0.executor
 
     /**
      * Log in a user with email/username and password for a connection/realm.

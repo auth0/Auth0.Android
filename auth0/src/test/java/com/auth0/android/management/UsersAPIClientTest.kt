@@ -51,7 +51,7 @@ public class UsersAPIClientTest {
     public fun setUp() {
         mockAPI = UsersAPIMockServer()
         val domain = mockAPI.domain
-        val auth0 = Auth0(CLIENT_ID, domain, domain)
+        val auth0 = Auth0.getInstance(CLIENT_ID, domain, domain)
         auth0.networkingClient = testClient
         client = UsersAPIClient(auth0, TOKEN_PRIMARY)
         gson = GsonBuilder().serializeNulls().create()
@@ -60,11 +60,12 @@ public class UsersAPIClientTest {
     @After
     public fun tearDown() {
         mockAPI.shutdown()
+        Auth0.clearAllInstances()
     }
 
     @Test
     public fun shouldUseCustomNetworkingClient() {
-        val account = Auth0("client-id", "https://tenant.auth0.com/")
+        val account = Auth0.getInstance("client-id", "https://tenant.auth0.com/")
         val jsonResponse = """{"id": "undercover"}"""
         val inputStream: InputStream = ByteArrayInputStream(jsonResponse.toByteArray())
         val response = ServerResponse(200, inputStream, emptyMap())
@@ -90,7 +91,7 @@ public class UsersAPIClientTest {
     public fun shouldSetAuth0UserAgentIfPresent() {
         val auth0UserAgent: Auth0UserAgent = mock()
         val factory: RequestFactory<ManagementException> = mock()
-        val account = Auth0(CLIENT_ID, DOMAIN)
+        val account = Auth0.getInstance(CLIENT_ID, DOMAIN)
 
         whenever(auth0UserAgent.value).thenReturn("the-user-agent-data")
         account.auth0UserAgent = auth0UserAgent
@@ -101,7 +102,7 @@ public class UsersAPIClientTest {
 
     @Test
     public fun shouldCreateClientWithAccountInfo() {
-        val client = UsersAPIClient(Auth0(CLIENT_ID, DOMAIN), TOKEN_PRIMARY)
+        val client = UsersAPIClient(Auth0.getInstance(CLIENT_ID, DOMAIN), TOKEN_PRIMARY)
         assertThat(client, Matchers.`is`(notNullValue()))
         assertThat(client.clientId, Matchers.equalTo(CLIENT_ID))
         assertThat(client.baseURL, Matchers.equalTo("https://$DOMAIN/"))
@@ -127,7 +128,7 @@ public class UsersAPIClientTest {
         whenever(context.getString(eq(222))).thenReturn(CLIENT_ID)
         whenever(context.getString(eq(333))).thenReturn(DOMAIN)
 
-        val client = UsersAPIClient(Auth0(context), TOKEN_PRIMARY)
+        val client = UsersAPIClient(Auth0.getInstance(context), TOKEN_PRIMARY)
         assertThat(client, Matchers.`is`(notNullValue()))
         assertThat(client.clientId, Matchers.`is`(CLIENT_ID))
         assertThat(client.baseURL, Matchers.equalTo("https://$DOMAIN/"))
