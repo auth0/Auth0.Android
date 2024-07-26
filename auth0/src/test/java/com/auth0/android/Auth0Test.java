@@ -214,4 +214,20 @@ public class Auth0Test {
         Assert.assertTrue(Modifier.isPublic(method.getModifiers()));
         Assert.assertFalse(Modifier.isFinal(method.getModifiers()));
     }
+
+    @Test
+    public void sameConfigShouldReturnSameInstance() {
+        Auth0 auth0 = Auth0.getInstance(CLIENT_ID, DOMAIN);
+        Auth0 auth0_2 = Auth0.getInstance(CLIENT_ID, DOMAIN);
+        Assert.assertSame(auth0, auth0_2);
+    }
+
+    @Test
+    public void clearInstanceShouldRemoveInstance() {
+        Auth0 auth0 = Auth0.getInstance(CLIENT_ID, DOMAIN);
+        Auth0.clearInstance(CLIENT_ID, DOMAIN);
+        Assert.assertFalse(Auth0.hasInstance(CLIENT_ID, DOMAIN));
+        Auth0 auth0_2 = Auth0.getInstance(CLIENT_ID, DOMAIN);
+        Assert.assertNotSame(auth0, auth0_2);
+    }
 }
