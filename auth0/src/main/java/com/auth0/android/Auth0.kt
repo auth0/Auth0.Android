@@ -162,6 +162,11 @@ public open class Auth0 private constructor(
             instances.clear()
         }
 
+        @JvmStatic
+        public fun hasInstance(clientId: String, domain: String): Boolean {
+            return instances.containsKey(Pair(clientId, domain))
+        }
+
         private fun getResourceFromContext(context: Context, resName: String): String {
             val stringRes = context.resources.getIdentifier(resName, "string", context.packageName)
             require(stringRes != 0) {

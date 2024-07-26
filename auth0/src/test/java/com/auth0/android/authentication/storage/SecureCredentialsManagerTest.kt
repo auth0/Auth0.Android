@@ -8,6 +8,10 @@ import androidx.fragment.app.FragmentActivity
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
+import com.auth0.android.authentication.storage.SecureCredentialsManager.Companion.KEY_CAN_REFRESH
+import com.auth0.android.authentication.storage.SecureCredentialsManager.Companion.KEY_CREDENTIALS
+import com.auth0.android.authentication.storage.SecureCredentialsManager.Companion.KEY_EXPIRES_AT
+import com.auth0.android.authentication.storage.SecureCredentialsManager.Companion.LEGACY_KEY_CACHE_EXPIRES_AT
 import com.auth0.android.callback.Callback
 import com.auth0.android.request.Request
 import com.auth0.android.request.internal.GsonProvider
@@ -1410,6 +1414,10 @@ public class SecureCredentialsManagerTest {
                         jwtDecoder,
                         auth0.executor
                     )
+                // lets add some delay if the $it is even, to create a complex scenario
+                if (it % 2 == 0) {
+                    Thread.sleep(1000)
+                }
                 secureCredentialsManager.saveCredentials(credentials)
                 lastSavedCredentials = credentials
                 secureCredentialsManager.getCredentials(object :
@@ -1444,6 +1452,64 @@ public class SecureCredentialsManagerTest {
                         latch.countDown()
                     }
                 })
+            }
+        }
+        latch.await()
+    }
+
+    @Test
+    public fun shouldSynchronizeHasValidCredentialsFromMultipleThreadsAndInstances() {
+        val auth0 = Auth0.getInstance("clientId", "domain")
+        val executor: ExecutorService = Executors.newFixedThreadPool(5)
+        val context: Context =
+            Robolectric.buildActivity(Activity::class.java).create().start().resume().get()
+        val storage = SharedPreferencesStorage(
+            context = context,
+            sharedPreferencesName = "com.auth0.android.storage.SecureCredentialsManagerTest"
+        )
+        storage.remove(KEY_CREDENTIALS)
+        storage.remove(KEY_EXPIRES_AT)
+        storage.remove(LEGACY_KEY_CACHE_EXPIRES_AT)
+        storage.remove(KEY_CAN_REFRESH)
+        val cryptoMock = Mockito.mock(CryptoUtil::class.java)
+        Mockito.`when`(cryptoMock.encrypt(any())).thenAnswer {
+            val input = it.arguments[0] as ByteArray
+            input
+        }
+        Mockito.`when`(cryptoMock.decrypt(any())).thenAnswer {
+            val input = it.arguments[0] as ByteArray
+            input
+        }
+        val latch = CountDownLatch(5)
+        var lastSavedCredentials: Credentials?
+        repeat(5) {
+            executor.submit {
+                val credentials = Credentials(
+                    idToken = "idToken$it",
+                    accessToken = "accessToken$it",
+                    type = "type$it",
+                    refreshToken = "",
+                    expiresAt = Date(
+                        if (it % 2 == 0) CredentialsMock.CURRENT_TIME_MS else CredentialsMock.ONE_HOUR_AHEAD_MS
+                    ),
+                    scope = "scope$it"
+                )
+                val secureCredentialsManager =
+                    SecureCredentialsManager(
+                        client,
+                        storage,
+                        cryptoMock,
+                        jwtDecoder,
+                        auth0.executor
+                    )
+                secureCredentialsManager.saveCredentials(credentials)
+                lastSavedCredentials = credentials
+                val hasValidCredentials = secureCredentialsManager.hasValidCredentials()
+                MatcherAssert.assertThat(
+                    hasValidCredentials,
+                    Is.`is`(lastSavedCredentials!!.expiresAt.time > CredentialsMock.CURRENT_TIME_MS)
+                )
+                latch.countDown()
             }
         }
         latch.await()
