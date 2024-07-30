@@ -16,7 +16,6 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 import java.io.IOException
 import java.io.Reader
 import java.security.PublicKey
-import java.util.concurrent.ExecutorService
 
 /**
  * API client for Auth0 Authentication API.
@@ -54,8 +53,6 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         get() = auth0.clientId
     public val baseURL: String
         get() = auth0.getDomainUrl()
-    public val executor: ExecutorService
-        get() = auth0.executor
 
     /**
      * Log in a user with email/username and password for a connection/realm.
@@ -744,7 +741,11 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         val credentialsAdapter: JsonAdapter<Credentials> = GsonAdapter(
             Credentials::class.java, gson
         )
-        val request = BaseAuthenticationRequest(factory.post(url.toString(), credentialsAdapter), clientId, baseURL)
+        val request = BaseAuthenticationRequest(
+            factory.post(url.toString(), credentialsAdapter),
+            clientId,
+            baseURL
+        )
         request.addParameters(requestParameters)
         return request
     }
