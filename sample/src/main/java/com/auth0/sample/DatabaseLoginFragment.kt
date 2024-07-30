@@ -36,7 +36,7 @@ class DatabaseLoginFragment : Fragment() {
 
     private val account: Auth0 by lazy {
         // -- REPLACE this credentials with your own Auth0 app credentials!
-        val account = Auth0(
+        val account = Auth0.getInstance(
             getString(R.string.com_auth0_client_id),
             getString(R.string.com_auth0_domain)
         )
@@ -55,8 +55,10 @@ class DatabaseLoginFragment : Fragment() {
 
     private val secureCredentialsManager: SecureCredentialsManager by lazy {
         val storage = SharedPreferencesStorage(requireContext())
-        val manager = SecureCredentialsManager(requireContext(), authenticationApiClient, storage, requireActivity(),
-            localAuthenticationOptions)
+        val manager = SecureCredentialsManager(
+            requireContext(), account, storage, requireActivity(),
+            localAuthenticationOptions
+        )
         manager
     }
 
@@ -68,7 +70,8 @@ class DatabaseLoginFragment : Fragment() {
 
     private val localAuthenticationOptions =
         LocalAuthenticationOptions.Builder().setTitle("Biometric").setDescription("description")
-            .setAuthenticationLevel(AuthenticationLevel.STRONG).setNegativeButtonText("Cancel").setDeviceCredentialFallback(true)
+            .setAuthenticationLevel(AuthenticationLevel.STRONG).setNegativeButtonText("Cancel")
+            .setDeviceCredentialFallback(true)
             .build()
 
     override fun onCreateView(

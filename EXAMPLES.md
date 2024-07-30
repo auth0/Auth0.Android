@@ -698,7 +698,7 @@ val users = UsersAPIClient(account, "api access token")
   <summary>Using Java</summary>
 
 ```java
-Auth0 account = new Auth0("client id", "domain");
+Auth0 account = Auth0.getInstance("client id", "domain");
 UsersAPIClient users = new UsersAPIClient(account, "api token");
 ```
 </details>
@@ -918,7 +918,7 @@ If you are a user of Auth0 Private Cloud with ["Custom Domains"](https://auth0.c
 
 The validation is done automatically for Web Authentication
 ```kotlin
-val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_CUSTOM_DOMAIN}")
+val account = Auth0.getInstance("{YOUR_CLIENT_ID}", "{YOUR_CUSTOM_DOMAIN}")
 
 WebAuthProvider.login(account)
     .withIdTokenVerificationIssuer("https://{YOUR_AUTH0_DOMAIN}/")
@@ -928,7 +928,7 @@ WebAuthProvider.login(account)
 For Authentication Client, the method `validateClaims()` has to be called to enable it.
 
 ```kotlin
-val auth0 = Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
 val client = AuthenticationAPIClient(auth0)
 client
      .login("{username or email}", "{password}", "{database connection name}")
@@ -944,7 +944,7 @@ client
   <summary>Using coroutines</summary>
 
 ```kotlin
-val auth0 = Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
 val client = AuthenticationAPIClient(auth0)
 
 try {
@@ -964,7 +964,7 @@ try {
   <summary>Using Java</summary>
 
 ```java
-Auth0 auth0 = new Auth0("client id", "domain");
+Auth0 auth0 = Auth0.getInstance("client id", "domain");
 AuthenticationAPIClient client = new AuthenticationAPIClient(account);
 client
    .login("{username or email}", "{password}", "{database connection name}")
@@ -1039,7 +1039,7 @@ val netClient = DefaultClient(
     readTimeout = 30
 )
 
-val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+val account = Auth0.getInstance("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
 account.networkingClient = netClient
 ```
 
@@ -1051,7 +1051,7 @@ DefaultClient netClient = new DefaultClient(
    connectTimeout = 30,
    readTimeout = 30
 );
-Auth0 account = new Auth0("client id", "domain");
+Auth0 account = Auth0.getInstance("client id", "domain");
 account.networkingClient = netClient;
 ```
 </details>
@@ -1063,7 +1063,7 @@ val netClient = DefaultClient(
     enableLogging = true
 )
 
-val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+val account = Auth0.getInstance("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
 account.networkingClient = netClient
 ```
 
@@ -1074,7 +1074,7 @@ account.networkingClient = netClient
 DefaultClient netClient = new DefaultClient(
     enableLogging = true
 );
-Auth0 account = new Auth0("client id", "domain");
+Auth0 account = Auth0.getInstance("client id", "domain");
 account.networkingClient = netClient;
 ```
 </details>
@@ -1086,7 +1086,7 @@ val netClient = DefaultClient(
     defaultHeaders = mapOf("{HEADER-NAME}" to "{HEADER-VALUE}")
 )
 
-val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+val account = Auth0.getInstance("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
 account.networkingClient = netClient
 ```
 
@@ -1100,7 +1100,7 @@ defaultHeaders.put("{HEADER-NAME}", "{HEADER-VALUE}");
 DefaultClient netClient = new DefaultClient(
     defaultHeaders = defaultHeaders
 );
-Auth0 account = new Auth0("client id", "domain");
+Auth0 account = Auth0.getInstance("client id", "domain");
 account.networkingClient = netClient;
 ```
 </details>
@@ -1120,7 +1120,7 @@ class CustomNetClient : NetworkingClient {
     }
 }
 
-val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+val account = Auth0.getInstance("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
 account.networkingClient = CustomNetClient()
 ```
 
@@ -1139,7 +1139,7 @@ class CustomNetClient extends NetworkingClient {
    }  
 };
 
-Auth0 account = new Auth0("client id", "domain");
+Auth0 account = Auth0.getInstance("client id", "domain");
 account.networkingClient = new CustomNetClient();
 ```
 </details>

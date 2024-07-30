@@ -6,6 +6,7 @@ import android.util.Base64
 import android.util.Log
 import androidx.annotation.VisibleForTesting
 import androidx.fragment.app.FragmentActivity
+import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.callback.Callback
@@ -17,7 +18,6 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import java.lang.ref.WeakReference
 import java.util.*
 import java.util.concurrent.Executor
-import java.util.concurrent.Executors
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -42,19 +42,19 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * Creates a new SecureCredentialsManager to handle Credentials
      *
      * @param context   a valid context
-     * @param apiClient the Auth0 Authentication API Client to handle token refreshment when needed.
+     * @param auth0     the Auth0 account information to use
      * @param storage   the storage implementation to use
      */
     public constructor(
         context: Context,
-        apiClient: AuthenticationAPIClient,
+        auth0: Auth0,
         storage: Storage,
     ) : this(
-        apiClient,
+        AuthenticationAPIClient(auth0),
         storage,
         CryptoUtil(context, storage, KEY_ALIAS),
         JWTDecoder(),
-        Executors.newSingleThreadExecutor(),
+        auth0.executor
     )
 
 
@@ -62,23 +62,23 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * Creates a new SecureCredentialsManager to handle Credentials with biometrics Authentication
      *
      * @param context   a valid context
-     * @param apiClient the Auth0 Authentication API Client to handle token refreshment when needed.
+     * @param auth0     the Auth0 account information to use
      * @param storage   the storage implementation to use
      * @param fragmentActivity the FragmentActivity to use for the biometric authentication
      * @param localAuthenticationOptions the options of type [LocalAuthenticationOptions] to use for the biometric authentication
      */
     public constructor(
         context: Context,
-        apiClient: AuthenticationAPIClient,
+        auth0: Auth0,
         storage: Storage,
         fragmentActivity: FragmentActivity,
         localAuthenticationOptions: LocalAuthenticationOptions
     ) : this(
-        apiClient,
+        AuthenticationAPIClient(auth0),
         storage,
         CryptoUtil(context, storage, KEY_ALIAS),
         JWTDecoder(),
-        Executors.newSingleThreadExecutor(),
+        auth0.executor,
         WeakReference(fragmentActivity),
         localAuthenticationOptions,
         DefaultLocalAuthenticationManagerFactory()
@@ -92,7 +92,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
      */
     @Throws(CredentialsManagerException::class)
-    @Synchronized
     override fun saveCredentials(credentials: Credentials) {
         if (TextUtils.isEmpty(credentials.accessToken) && TextUtils.isEmpty(credentials.idToken)) {
             throw CredentialsManagerException.INVALID_CREDENTIALS
@@ -121,7 +120,10 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
              * a true value. Retrying this operation will succeed.
              */
             clearCredentials()
-            throw CredentialsManagerException(CredentialsManagerException.Code.CRYPTO_EXCEPTION, e)
+            throw CredentialsManagerException(
+                CredentialsManagerException.Code.CRYPTO_EXCEPTION,
+                e
+            )
         }
     }
 
@@ -615,13 +617,22 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
 
     internal companion object {
         private val TAG = SecureCredentialsManager::class.java.simpleName
-        private const val KEY_CREDENTIALS = "com.auth0.credentials"
-        private const val KEY_EXPIRES_AT = "com.auth0.credentials_access_token_expires_at"
+
+        @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+        internal const val KEY_CREDENTIALS = "com.auth0.credentials"
+
+        @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+        internal const val KEY_EXPIRES_AT = "com.auth0.credentials_access_token_expires_at"
 
         // This is no longer used as we get the credentials expiry from the access token only,
         // but we still store it so users can rollback to versions where it is required.
-        private const val LEGACY_KEY_CACHE_EXPIRES_AT = "com.auth0.credentials_expires_at"
-        private const val KEY_CAN_REFRESH = "com.auth0.credentials_can_refresh"
-        private const val KEY_ALIAS = "com.auth0.key"
+        @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+        internal const val LEGACY_KEY_CACHE_EXPIRES_AT = "com.auth0.credentials_expires_at"
+
+        @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+        internal const val KEY_CAN_REFRESH = "com.auth0.credentials_can_refresh"
+
+        @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+        internal const val KEY_ALIAS = "com.auth0.key"
     }
 }

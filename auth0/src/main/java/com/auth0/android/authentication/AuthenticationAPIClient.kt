@@ -22,7 +22,7 @@ import java.security.PublicKey
 /**
  * API client for Auth0 Authentication API.
  * ```
- * val auth0 = Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+ * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
  * val client = AuthenticationAPIClient(auth0)
  * ```
  *
@@ -40,7 +40,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      *
      * ```
-     * val auth0 = Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
      * val client = AuthenticationAPIClient(auth0)
      * ```
      * @param auth0 account information

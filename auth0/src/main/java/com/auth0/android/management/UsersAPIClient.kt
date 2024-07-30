@@ -26,7 +26,7 @@ import java.io.Reader
 /**
  * API client for Auth0 Management API.
  * ```
- * val auth0 = Auth0("your_client_id", "your_domain")
+ * val auth0 = Auth0.getInstance("your_client_id", "your_domain")
  * val client = UsersAPIClient(auth0)
  * ```
  *
