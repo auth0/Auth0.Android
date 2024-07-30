@@ -60,7 +60,6 @@ public class UsersAPIClientTest {
     @After
     public fun tearDown() {
         mockAPI.shutdown()
-        Auth0.clearAllInstances()
     }
 
     @Test

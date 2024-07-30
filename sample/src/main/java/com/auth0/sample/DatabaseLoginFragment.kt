@@ -55,8 +55,10 @@ class DatabaseLoginFragment : Fragment() {
 
     private val secureCredentialsManager: SecureCredentialsManager by lazy {
         val storage = SharedPreferencesStorage(requireContext())
-        val manager = SecureCredentialsManager(requireContext(), authenticationApiClient, storage, requireActivity(),
-            localAuthenticationOptions)
+        val manager = SecureCredentialsManager(
+            requireContext(), account, storage, requireActivity(),
+            localAuthenticationOptions
+        )
         manager
     }
 
@@ -68,7 +70,8 @@ class DatabaseLoginFragment : Fragment() {
 
     private val localAuthenticationOptions =
         LocalAuthenticationOptions.Builder().setTitle("Biometric").setDescription("description")
-            .setAuthenticationLevel(AuthenticationLevel.STRONG).setNegativeButtonText("Cancel").setDeviceCredentialFallback(true)
+            .setAuthenticationLevel(AuthenticationLevel.STRONG).setNegativeButtonText("Cancel")
+            .setDeviceCredentialFallback(true)
             .build()
 
     override fun onCreateView(

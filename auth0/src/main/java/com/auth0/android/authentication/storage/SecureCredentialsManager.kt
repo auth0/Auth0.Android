@@ -6,6 +6,7 @@ import android.util.Base64
 import android.util.Log
 import androidx.annotation.VisibleForTesting
 import androidx.fragment.app.FragmentActivity
+import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.callback.Callback
@@ -16,9 +17,7 @@ import com.google.gson.Gson
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.lang.ref.WeakReference
 import java.util.*
-import java.util.concurrent.Callable
-import java.util.concurrent.ExecutionException
-import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executor
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -31,7 +30,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     storage: Storage,
     private val crypto: CryptoUtil,
     jwtDecoder: JWTDecoder,
-    private val serialExecutor: ExecutorService,
+    private val serialExecutor: Executor,
     private val fragmentActivity: WeakReference<FragmentActivity>? = null,
     private val localAuthenticationOptions: LocalAuthenticationOptions? = null,
     private val localAuthenticationManagerFactory: LocalAuthenticationManagerFactory? = null,
@@ -43,19 +42,19 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * Creates a new SecureCredentialsManager to handle Credentials
      *
      * @param context   a valid context
-     * @param apiClient the Auth0 Authentication API Client to handle token refreshment when needed.
+     * @param auth0     the Auth0 account information to use
      * @param storage   the storage implementation to use
      */
     public constructor(
         context: Context,
-        apiClient: AuthenticationAPIClient,
+        auth0: Auth0,
         storage: Storage,
     ) : this(
-        apiClient,
+        AuthenticationAPIClient(auth0),
         storage,
         CryptoUtil(context, storage, KEY_ALIAS),
         JWTDecoder(),
-        apiClient.executor
+        auth0.executor
     )
 
 
@@ -63,23 +62,23 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * Creates a new SecureCredentialsManager to handle Credentials with biometrics Authentication
      *
      * @param context   a valid context
-     * @param apiClient the Auth0 Authentication API Client to handle token refreshment when needed.
+     * @param auth0     the Auth0 account information to use
      * @param storage   the storage implementation to use
      * @param fragmentActivity the FragmentActivity to use for the biometric authentication
      * @param localAuthenticationOptions the options of type [LocalAuthenticationOptions] to use for the biometric authentication
      */
     public constructor(
         context: Context,
-        apiClient: AuthenticationAPIClient,
+        auth0: Auth0,
         storage: Storage,
         fragmentActivity: FragmentActivity,
         localAuthenticationOptions: LocalAuthenticationOptions
     ) : this(
-        apiClient,
+        AuthenticationAPIClient(auth0),
         storage,
         CryptoUtil(context, storage, KEY_ALIAS),
         JWTDecoder(),
-        apiClient.executor,
+        auth0.executor,
         WeakReference(fragmentActivity),
         localAuthenticationOptions,
         DefaultLocalAuthenticationManagerFactory()
@@ -94,19 +93,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      */
     @Throws(CredentialsManagerException::class)
     override fun saveCredentials(credentials: Credentials) {
-        val future = serialExecutor.submit {
-            saveCredentialsDirect(credentials)
-        }
-        try {
-            future.get()
-        } catch (e: ExecutionException) {
-            throw e.cause as CredentialsManagerException
-        } catch (e: InterruptedException) {
-            throw e.cause as CredentialsManagerException
-        }
-    }
-
-    private fun saveCredentialsDirect(credentials: Credentials) {
         if (TextUtils.isEmpty(credentials.accessToken) && TextUtils.isEmpty(credentials.idToken)) {
             throw CredentialsManagerException.INVALID_CREDENTIALS
         }
@@ -471,21 +457,19 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * @return whether this manager contains a valid non-expired pair of credentials or not.
      */
     override fun hasValidCredentials(minTtl: Long): Boolean {
-        return serialExecutor.submit(Callable {
-            val encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS)
-            var expiresAt = storage.retrieveLong(KEY_EXPIRES_AT)
-            if (expiresAt == null) {
-                // Avoids logging out users when this value was not saved (migration scenario)
-                expiresAt = 0L
-            }
-            val canRefresh = storage.retrieveBoolean(KEY_CAN_REFRESH)
-            val emptyCredentials = TextUtils.isEmpty(encryptedEncoded)
-            !(emptyCredentials || willExpire(
-                expiresAt,
-                minTtl
-            ) &&
-                    (canRefresh == null || !canRefresh))
-        }).get()
+        val encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS)
+        var expiresAt = storage.retrieveLong(KEY_EXPIRES_AT)
+        if (expiresAt == null) {
+            // Avoids logging out users when this value was not saved (migration scenario)
+            expiresAt = 0L
+        }
+        val canRefresh = storage.retrieveBoolean(KEY_CAN_REFRESH)
+        val emptyCredentials = TextUtils.isEmpty(encryptedEncoded)
+        return !(emptyCredentials || willExpire(
+            expiresAt,
+            minTtl
+        ) &&
+                (canRefresh == null || !canRefresh))
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
@@ -612,7 +596,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             }
 
             try {
-                saveCredentialsDirect(freshCredentials)
+                saveCredentials(freshCredentials)
                 callback.onSuccess(freshCredentials)
             } catch (error: CredentialsManagerException) {
                 val exception = CredentialsManagerException(
@@ -633,8 +617,10 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
 
     internal companion object {
         private val TAG = SecureCredentialsManager::class.java.simpleName
+
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         internal const val KEY_CREDENTIALS = "com.auth0.credentials"
+
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         internal const val KEY_EXPIRES_AT = "com.auth0.credentials_access_token_expires_at"
 
@@ -642,8 +628,10 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         // but we still store it so users can rollback to versions where it is required.
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         internal const val LEGACY_KEY_CACHE_EXPIRES_AT = "com.auth0.credentials_expires_at"
+
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         internal const val KEY_CAN_REFRESH = "com.auth0.credentials_can_refresh"
+
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         internal const val KEY_ALIAS = "com.auth0.key"
     }

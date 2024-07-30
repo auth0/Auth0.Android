@@ -35,7 +35,6 @@ import org.hamcrest.core.Is.`is`
 import org.hamcrest.core.IsEqual.equalTo
 import org.hamcrest.core.IsNot.not
 import org.hamcrest.core.IsNull.notNullValue
-import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -77,7 +76,8 @@ public class WebAuthProviderTest {
     public fun setUp() {
         MockitoAnnotations.openMocks(this)
         activity = Mockito.spy(Robolectric.buildActivity(Activity::class.java).get())
-        account = Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, JwtTestUtils.EXPECTED_BASE_DOMAIN)
+        account =
+            Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, JwtTestUtils.EXPECTED_BASE_DOMAIN)
         account.networkingClient = SSLTestUtils.testClient
 
         //Next line is needed to avoid CustomTabService from being bound to Test environment
@@ -92,11 +92,6 @@ public class WebAuthProviderTest {
             null,
             null
         )
-    }
-
-    @After
-    public fun tearDown() {
-        Auth0.clearAllInstances()
     }
 
     //** ** ** ** ** **  **//
@@ -1092,7 +1087,8 @@ public class WebAuthProviderTest {
         val authCallback = mock<Callback<Credentials, AuthenticationException>>()
 
         // 1. start the webauth flow. the browser would open
-        val proxyAccount = Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, JwtTestUtils.EXPECTED_BASE_DOMAIN)
+        val proxyAccount =
+            Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, JwtTestUtils.EXPECTED_BASE_DOMAIN)
         proxyAccount.networkingClient = networkingClient
         login(proxyAccount)
             .start(activity, authCallback)
@@ -2602,8 +2598,10 @@ public class WebAuthProviderTest {
     @Test
     @ExperimentalCoroutinesApi
     public fun shouldResumeLogoutSuccessfullyWithCoroutines(): Unit = runTest {
-        val job = launch { logout(account)
-            .await(activity, Dispatchers.Unconfined) }
+        val job = launch {
+            logout(account)
+                .await(activity, Dispatchers.Unconfined)
+        }
         advanceUntilIdle()
         verify(activity).startActivity(intentCaptor.capture())
         val uri =

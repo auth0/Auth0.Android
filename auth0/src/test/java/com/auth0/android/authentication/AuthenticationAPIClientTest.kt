@@ -59,7 +59,6 @@ public class AuthenticationAPIClientTest {
     @After
     public fun tearDown() {
         mockAPI.shutdown()
-        Auth0.clearAllInstances()
     }
 
     @Test
@@ -2398,27 +2397,6 @@ public class AuthenticationAPIClientTest {
             callback.error.getDescription(),
             Matchers.`is`(Matchers.equalTo("Unauthorized"))
         )
-    }
-
-    @Test
-    public fun diffClientInstancesFromSameAuth0InstanceShouldUseSameExecutor() {
-        val auth0 = Auth0.getInstance("clientId", "domain")
-        val client1 = AuthenticationAPIClient(auth0)
-        val client2 = AuthenticationAPIClient(auth0)
-        assertThat(client1.executor, Matchers.`is`(client2.executor))
-        assertThat(client1.executor, Matchers.`is`(auth0.executor))
-        assertThat(client2.executor, Matchers.`is`(auth0.executor))
-    }
-
-    @Test
-    public fun diffClientInstancesFromDiffAuth0InstancesShouldUseDiffExecutor() {
-        val auth01 = Auth0.getInstance("clientId1", "domain1")
-        val auth02 = Auth0.getInstance("clientId2", "domain2")
-        val client1 = AuthenticationAPIClient(auth01)
-        val client2 = AuthenticationAPIClient(auth02)
-        assertThat(client1.executor, Matchers.`is`(auth01.executor))
-        assertThat(client2.executor, Matchers.`is`(auth02.executor))
-        assertThat(client1.executor, Matchers.not(Matchers.`is`(client2.executor)))
     }
 
     private fun <T> bodyFromRequest(request: RecordedRequest): Map<String, T> {

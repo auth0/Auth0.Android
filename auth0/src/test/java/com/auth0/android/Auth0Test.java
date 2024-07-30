@@ -5,7 +5,6 @@ import android.content.res.Resources;
 
 import com.auth0.android.util.Auth0UserAgent;
 
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,11 +49,6 @@ public class Auth0Test {
         when(context.getPackageName()).thenReturn(PACKAGE_NAME);
         when(context.getString(eq(222))).thenReturn(CLIENT_ID);
         when(context.getString(eq(333))).thenReturn(DOMAIN);
-    }
-
-    @After
-    public void tearDown() {
-        Auth0.clearAllInstances();
     }
 
     @Test
@@ -223,11 +217,9 @@ public class Auth0Test {
     }
 
     @Test
-    public void clearInstanceShouldRemoveInstance() {
+    public void differentConfigShouldReturnDifferentInstances() {
         Auth0 auth0 = Auth0.getInstance(CLIENT_ID, DOMAIN);
-        Auth0.clearInstance(CLIENT_ID, DOMAIN);
-        Assert.assertFalse(Auth0.hasInstance(CLIENT_ID, DOMAIN));
-        Auth0 auth0_2 = Auth0.getInstance(CLIENT_ID, DOMAIN);
+        Auth0 auth0_2 = Auth0.getInstance(CLIENT_ID + "2", DOMAIN + "2");
         Assert.assertNotSame(auth0, auth0_2);
     }
 }
