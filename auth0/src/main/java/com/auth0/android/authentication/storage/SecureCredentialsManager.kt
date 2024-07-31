@@ -139,7 +139,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      */
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
-    public suspend fun awaitCredentials(): Credentials {
+    override suspend fun awaitCredentials(): Credentials {
         return awaitCredentials(null, 0)
     }
 
@@ -157,7 +157,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      */
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
-    public suspend fun awaitCredentials(
+    override suspend fun awaitCredentials(
         scope: String?,
         minTtl: Int
     ): Credentials {
@@ -179,7 +179,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      */
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
-    public suspend fun awaitCredentials(
+    override suspend fun awaitCredentials(
         scope: String?,
         minTtl: Int,
         parameters: Map<String, String>
@@ -208,7 +208,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      */
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
-    public suspend fun awaitCredentials(
+    override suspend fun awaitCredentials(
         scope: String?,
         minTtl: Int,
         parameters: Map<String, String>,
@@ -240,7 +240,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      */
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
-    public suspend fun awaitCredentials(
+    override suspend fun awaitCredentials(
         scope: String?,
         minTtl: Int,
         parameters: Map<String, String>,
@@ -315,7 +315,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * @param parameters additional parameters to send in the request to refresh expired credentials
      * @param callback the callback to receive the result in.
      */
-    public fun getCredentials(
+    override fun getCredentials(
         scope: String?,
         minTtl: Int,
         parameters: Map<String, String>,
@@ -345,7 +345,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * @param forceRefresh this will avoid returning the existing credentials and retrieves a new one even if valid credentials exist.
      * @param callback the callback to receive the result in.
      */
-    public fun getCredentials(
+    override fun getCredentials(
         scope: String?,
         minTtl: Int,
         parameters: Map<String, String>,
@@ -377,7 +377,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * @param forceRefresh this will avoid returning the existing credentials and retrieves a new one even if valid credentials exist.
      * @param callback the callback to receive the result in.
      */
-    public fun getCredentials(
+    override fun getCredentials(
         scope: String?,
         minTtl: Int,
         parameters: Map<String, String>,

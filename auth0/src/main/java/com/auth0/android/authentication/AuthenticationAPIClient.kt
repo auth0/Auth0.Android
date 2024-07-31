@@ -3,10 +3,12 @@ package com.auth0.android.authentication
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
+import com.auth0.android.NetworkErrorException
 import com.auth0.android.request.*
 import com.auth0.android.request.internal.*
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMap
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMapOf
+import com.auth0.android.request.internal.ResponseUtils.isNetworkError
 import com.auth0.android.result.Challenge
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
@@ -815,6 +817,12 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
                 }
 
                 override fun fromException(cause: Throwable): AuthenticationException {
+                    if (isNetworkError(cause)) {
+                        return AuthenticationException(
+                            "Failed to execute the network request",
+                            NetworkErrorException(cause)
+                        )
+                    }
                     return AuthenticationException(
                         "Something went wrong",
                         Auth0Exception("Something went wrong", cause)

@@ -6,6 +6,7 @@ import com.auth0.android.callback.Callback
 import com.auth0.android.result.Credentials
 import com.auth0.android.util.Clock
 import java.util.*
+
 /**
  * Base class meant to abstract common logic across Credentials Manager implementations.
  * The scope of this class is package-private, as it's not meant to be exposed
@@ -34,6 +35,65 @@ public abstract class BaseCredentialsManager internal constructor(
         minTtl: Int,
         callback: Callback<Credentials, CredentialsManagerException>
     )
+
+    public abstract fun getCredentials(
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        callback: Callback<Credentials, CredentialsManagerException>
+    )
+
+    public abstract fun getCredentials(
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        forceRefresh: Boolean,
+        callback: Callback<Credentials, CredentialsManagerException>
+    )
+
+    public abstract fun getCredentials(
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        headers: Map<String, String>,
+        forceRefresh: Boolean,
+        callback: Callback<Credentials, CredentialsManagerException>
+    )
+
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    public abstract suspend fun awaitCredentials(): Credentials
+
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    public abstract suspend fun awaitCredentials(scope: String?, minTtl: Int): Credentials
+
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    public abstract suspend fun awaitCredentials(
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>
+    ): Credentials
+
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    public abstract suspend fun awaitCredentials(
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        forceRefresh: Boolean
+    ): Credentials
+
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    public abstract suspend fun awaitCredentials(
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        headers: Map<String, String>,
+        forceRefresh: Boolean
+    ): Credentials
 
     public abstract fun clearCredentials()
     public abstract fun hasValidCredentials(): Boolean

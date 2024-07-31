@@ -163,7 +163,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldSaveRefreshableCredentialsInStorage() {
         val sharedExpirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
-        val credentials: Credentials = CredentialsMock(
+        val credentials: Credentials = CredentialsMock.create(
             "idToken",
             "accessToken",
             "type",
@@ -198,7 +198,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldSaveRefreshableCredentialsUsingAccessTokenExpForCacheExpirationInStorage() {
         val accessTokenExpirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
-        val credentials: Credentials = CredentialsMock(
+        val credentials: Credentials = CredentialsMock.create(
             "",
             "accessToken",
             "type",
@@ -237,7 +237,7 @@ public class SecureCredentialsManagerTest {
     public fun shouldSaveRefreshableCredentialsIgnoringIdTokenExpForCacheExpirationInStorage() {
         val accessTokenExpirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
         val idTokenExpirationTime = CredentialsMock.CURRENT_TIME_MS + 2000 * 1000
-        val credentials: Credentials = CredentialsMock(
+        val credentials: Credentials = CredentialsMock.create(
             "idToken",
             "accessToken",
             "type",
@@ -276,7 +276,14 @@ public class SecureCredentialsManagerTest {
     public fun shouldSaveNonRefreshableCredentialsInStorage() {
         val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
         val credentials: Credentials =
-            CredentialsMock("idToken", "accessToken", "type", null, Date(expirationTime), "scope")
+            CredentialsMock.create(
+                "idToken",
+                "accessToken",
+                "type",
+                null,
+                Date(expirationTime),
+                "scope"
+            )
         val json = gson.toJson(credentials)
         prepareJwtDecoderMock(Date(expirationTime))
         Mockito.`when`(crypto.encrypt(json.toByteArray())).thenReturn(json.toByteArray())
@@ -304,7 +311,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldClearStoredCredentialsAndThrowOnSaveOnCryptoException() {
         val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
-        val credentials: Credentials = CredentialsMock(
+        val credentials: Credentials = CredentialsMock.create(
             "idToken",
             "accessToken",
             "type",
@@ -336,7 +343,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldThrowOnSaveOnIncompatibleDeviceException() {
         val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
-        val credentials: Credentials = CredentialsMock(
+        val credentials: Credentials = CredentialsMock.create(
             "idToken",
             "accessToken",
             "type",
@@ -366,14 +373,14 @@ public class SecureCredentialsManagerTest {
         exception.expect(CredentialsManagerException::class.java)
         exception.expectMessage("Credentials must have a valid access_token or id_token value.")
         val credentials: Credentials =
-            CredentialsMock("", "", "type", "refreshToken", Date(), "scope")
+            CredentialsMock.create("", "", "type", "refreshToken", Date(), "scope")
         manager.saveCredentials(credentials)
     }
 
     @Test
     public fun shouldNotThrowOnSaveIfCredentialsHaveAccessTokenAndExpiresIn() {
         val credentials: Credentials =
-            CredentialsMock("", "accessToken", "type", "refreshToken", Date(), "scope")
+            CredentialsMock.create("", "accessToken", "type", "refreshToken", Date(), "scope")
         Mockito.`when`(crypto.encrypt(any()))
             .thenReturn(byteArrayOf(12, 34, 56, 78))
         manager.saveCredentials(credentials)
@@ -382,7 +389,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldNotThrowOnSaveIfCredentialsHaveIdTokenAndExpiresIn() {
         val credentials: Credentials =
-            CredentialsMock("idToken", "", "type", "refreshToken", Date(), "scope")
+            CredentialsMock.create("idToken", "", "type", "refreshToken", Date(), "scope")
         prepareJwtDecoderMock(Date())
         Mockito.`when`(crypto.encrypt(any()))
             .thenReturn(byteArrayOf(12, 34, 56, 78))

@@ -205,7 +205,7 @@ public class AuthenticationExceptionTest {
     @Test
     public fun shouldHaveNetworkErrorForSocketTimeout() {
         val ex = AuthenticationException(
-            "Request has definitely failed", Auth0Exception("",
+            "Request has definitely failed", NetworkErrorException(
                 SocketTimeoutException()
             )
         )
