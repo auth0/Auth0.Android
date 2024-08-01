@@ -187,6 +187,10 @@ public class CredentialsManagerException :
         return code == other.code
     }
 
+    override fun hashCode(): Int {
+        return code.hashCode()
+    }
+
     /**
      * Returns true when this Android device doesn't support the cryptographic algorithms used
      * to handle encryption and decryption, false otherwise.
