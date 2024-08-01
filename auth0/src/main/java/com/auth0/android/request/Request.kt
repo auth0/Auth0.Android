@@ -21,10 +21,6 @@ public interface Request<T, U : Auth0Exception> {
      * Performs an async HTTP request against Auth0 API inside a Coroutine
      * This is a Coroutine that is exposed only for Kotlin.
      *
-     * Note: This method was added after the interface was released.
-     * It is defined as a default method for compatibility reasons.
-     * From version 3.0 on, the method will be abstract and all implementations of this interface
-     * will have to provide their own implementation.
      *
      * The default implementation throws an [UnsupportedOperationException].
      *
@@ -32,9 +28,7 @@ public interface Request<T, U : Auth0Exception> {
      */
     @JvmSynthetic
     @Throws(Auth0Exception::class)
-    public suspend fun await(): T {
-        throw UnsupportedOperationException("await")
-    }
+    public suspend fun await(): T
 
     /**
      * Executes the HTTP request against Auth0 API (blocking the current thread)

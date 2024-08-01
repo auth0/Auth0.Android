@@ -120,7 +120,7 @@ public class CredentialsGsonTest : GsonBaseTest() {
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + 123456 * 1000)
         val expectedExpiresAt = formatDate(expiresAt)
         val expiresInCredentials: Credentials =
-            CredentialsMock("id", "access", "ty", "refresh", expiresAt, null)
+            CredentialsMock.create("id", "access", "ty", "refresh", expiresAt, null)
         val expiresInJson = gson.toJson(expiresInCredentials)
         MatcherAssert.assertThat(expiresInJson, CoreMatchers.containsString("\"id_token\":\"id\""))
         MatcherAssert.assertThat(
@@ -149,7 +149,7 @@ public class CredentialsGsonTest : GsonBaseTest() {
             CoreMatchers.not(CoreMatchers.containsString("\"scope\""))
         )
         val expiresAtCredentials: Credentials =
-            CredentialsMock("id", "access", "ty", "refresh", expiresAt, "openid")
+            CredentialsMock.create("id", "access", "ty", "refresh", expiresAt, "openid")
         val expiresAtJson = gson.toJson(expiresAtCredentials)
         MatcherAssert.assertThat(expiresAtJson, CoreMatchers.containsString("\"id_token\":\"id\""))
         MatcherAssert.assertThat(

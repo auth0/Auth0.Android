@@ -8,7 +8,10 @@ import androidx.fragment.app.Fragment
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
+import com.auth0.android.authentication.storage.AuthenticationLevel
+import com.auth0.android.authentication.storage.CredentialsManager
 import com.auth0.android.authentication.storage.CredentialsManagerException
+import com.auth0.android.authentication.storage.LocalAuthenticationOptions
 import com.auth0.android.authentication.storage.SecureCredentialsManager
 import com.auth0.android.authentication.storage.SharedPreferencesStorage
 import com.auth0.android.callback.Callback
@@ -33,7 +36,7 @@ class DatabaseLoginFragment : Fragment() {
 
     private val account: Auth0 by lazy {
         // -- REPLACE this credentials with your own Auth0 app credentials!
-        val account = Auth0(
+        val account = Auth0.getInstance(
             getString(R.string.com_auth0_client_id),
             getString(R.string.com_auth0_domain)
         )
@@ -50,11 +53,26 @@ class DatabaseLoginFragment : Fragment() {
         AuthenticationAPIClient(account)
     }
 
-    private val credentialsManager: SecureCredentialsManager by lazy {
+    private val secureCredentialsManager: SecureCredentialsManager by lazy {
         val storage = SharedPreferencesStorage(requireContext())
-        val manager = SecureCredentialsManager(requireContext(), authenticationApiClient, storage)
+        val manager = SecureCredentialsManager(
+            requireContext(), account, storage, requireActivity(),
+            localAuthenticationOptions
+        )
         manager
     }
+
+    private val credentialsManager: CredentialsManager by lazy {
+        val storage = SharedPreferencesStorage(requireContext())
+        val manager = CredentialsManager(authenticationApiClient, storage)
+        manager
+    }
+
+    private val localAuthenticationOptions =
+        LocalAuthenticationOptions.Builder().setTitle("Biometric").setDescription("description")
+            .setAuthenticationLevel(AuthenticationLevel.STRONG).setNegativeButtonText("Cancel")
+            .setDeviceCredentialFallback(true)
+            .build()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -95,6 +113,9 @@ class DatabaseLoginFragment : Fragment() {
         binding.btGetCredentials.setOnClickListener {
             getCreds()
         }
+        binding.getCredentialsSecure.setOnClickListener {
+            getCredsSecure()
+        }
         binding.btGetCredentialsAsync.setOnClickListener {
             launchAsync {
                 getCredsAsync()
@@ -121,11 +142,12 @@ class DatabaseLoginFragment : Fragment() {
 
     private suspend fun dbLoginAsync(email: String, password: String) {
         try {
-            val result = authenticationApiClient.login(email, password, "Username-Password-Authentication")
-                .validateClaims()
-                .addParameter("scope", scope)
-                .addParameter("audience", audience)
-                .await()
+            val result =
+                authenticationApiClient.login(email, password, "Username-Password-Authentication")
+                    .validateClaims()
+                    .addParameter("scope", scope)
+                    .addParameter("audience", audience)
+                    .await()
             credentialsManager.saveCredentials(result)
             Snackbar.make(
                 requireView(),
@@ -169,6 +191,7 @@ class DatabaseLoginFragment : Fragment() {
             .start(requireContext(), object : Callback<Credentials, AuthenticationException> {
                 override fun onSuccess(result: Credentials) {
                     credentialsManager.saveCredentials(result)
+                    secureCredentialsManager.saveCredentials(result)
                     Snackbar.make(
                         requireView(),
                         "Hello ${result.user.name}",
@@ -197,7 +220,7 @@ class DatabaseLoginFragment : Fragment() {
                 "Hello ${credentials.user.name}",
                 Snackbar.LENGTH_LONG
             ).show()
-        } catch(error: AuthenticationException) {
+        } catch (error: AuthenticationException) {
             val message =
                 if (error.isCanceled) "Browser was closed" else error.getDescription()
             Snackbar.make(requireView(), message, Snackbar.LENGTH_LONG).show()
@@ -235,7 +258,7 @@ class DatabaseLoginFragment : Fragment() {
                 "Logged out",
                 Snackbar.LENGTH_LONG
             ).show()
-        } catch(error: AuthenticationException) {
+        } catch (error: AuthenticationException) {
             val message =
                 if (error.isCanceled) "Browser was closed" else error.getDescription()
             Snackbar.make(requireView(), message, Snackbar.LENGTH_LONG).show()
@@ -247,24 +270,67 @@ class DatabaseLoginFragment : Fragment() {
     }
 
     private fun getCreds() {
-        credentialsManager.getCredentials(object : Callback<Credentials, CredentialsManagerException> {
-            override fun onSuccess(result: Credentials) {
-                Snackbar.make(
-                    requireView(),
-                    "Got credentials - ${result.accessToken}",
-                    Snackbar.LENGTH_LONG
-                ).show()
-            }
+        credentialsManager.getCredentials(
+            null,
+            300,
+            emptyMap(),
+            emptyMap(),
+            false,
+            object : Callback<Credentials, CredentialsManagerException> {
+                override fun onSuccess(result: Credentials) {
+                    Snackbar.make(
+                        requireView(),
+                        "Got credentials - ${result.accessToken}",
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
 
-            override fun onFailure(error: CredentialsManagerException) {
-                Snackbar.make(requireView(), "${error.message}", Snackbar.LENGTH_LONG).show()
+                override fun onFailure(error: CredentialsManagerException) {
+                    Snackbar.make(requireView(), "${error.message}", Snackbar.LENGTH_LONG).show()
+                }
+            })
+    }
+
+    private fun getCredsSecure() {
+        secureCredentialsManager.getCredentials(
+            object :
+                Callback<Credentials, CredentialsManagerException> {
+                override fun onSuccess(result: Credentials) {
+                    Snackbar.make(
+                        requireView(),
+                        "Got credentials - ${result.accessToken}",
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
+
+                override fun onFailure(error: CredentialsManagerException) {
+                    Snackbar.make(requireView(), "${error.message}", Snackbar.LENGTH_LONG).show()
+                    when (error) {
+                        CredentialsManagerException.NO_CREDENTIALS -> {
+                            // handle no credentials scenario
+                            println("NO_CREDENTIALS: $error")
+                        }
+
+                        CredentialsManagerException.NO_REFRESH_TOKEN -> {
+                            // handle no refresh token scenario
+                            println("NO_REFRESH_TOKEN: $error")
+                        }
+
+                        CredentialsManagerException.STORE_FAILED -> {
+                            // handle store failed scenario
+                            println("STORE_FAILED: $error")
+                        }
+                        // ... similarly for other error codes
+                    }
+                }
             }
-        })
+        )
     }
 
     private suspend fun getCredsAsync() {
         try {
-            val credentials = credentialsManager.awaitCredentials()
+            val credentials =
+                credentialsManager.awaitCredentials()
             Snackbar.make(
                 requireView(),
                 "Got credentials - ${credentials.accessToken}",
@@ -276,14 +342,20 @@ class DatabaseLoginFragment : Fragment() {
     }
 
     private fun getProfile() {
-        credentialsManager.getCredentials(object : Callback<Credentials, CredentialsManagerException> {
+        credentialsManager.getCredentials(object :
+            Callback<Credentials, CredentialsManagerException> {
             override fun onSuccess(result: Credentials) {
                 val users = UsersAPIClient(account, result.accessToken)
                 users.getProfile(result.user.getId()!!)
-                    .start(object: Callback<UserProfile, ManagementException> {
+                    .start(object : Callback<UserProfile, ManagementException> {
                         override fun onFailure(error: ManagementException) {
-                            Snackbar.make(requireView(), error.getDescription(), Snackbar.LENGTH_LONG).show()
+                            Snackbar.make(
+                                requireView(),
+                                error.getDescription(),
+                                Snackbar.LENGTH_LONG
+                            ).show()
                         }
+
                         override fun onSuccess(result: UserProfile) {
                             Snackbar.make(
                                 requireView(),
@@ -291,8 +363,9 @@ class DatabaseLoginFragment : Fragment() {
                                 Snackbar.LENGTH_LONG
                             ).show()
                         }
-                })
+                    })
             }
+
             override fun onFailure(error: CredentialsManagerException) {
                 Snackbar.make(requireView(), "${error.message}", Snackbar.LENGTH_LONG).show()
             }
@@ -321,14 +394,20 @@ class DatabaseLoginFragment : Fragment() {
             "random" to (0..100).random(),
         )
 
-        credentialsManager.getCredentials(object : Callback<Credentials, CredentialsManagerException> {
+        credentialsManager.getCredentials(object :
+            Callback<Credentials, CredentialsManagerException> {
             override fun onSuccess(result: Credentials) {
                 val users = UsersAPIClient(account, result.accessToken)
                 users.updateMetadata(result.user.getId()!!, metadata)
-                    .start(object: Callback<UserProfile, ManagementException> {
+                    .start(object : Callback<UserProfile, ManagementException> {
                         override fun onFailure(error: ManagementException) {
-                            Snackbar.make(requireView(), error.getDescription(), Snackbar.LENGTH_LONG).show()
+                            Snackbar.make(
+                                requireView(),
+                                error.getDescription(),
+                                Snackbar.LENGTH_LONG
+                            ).show()
                         }
+
                         override fun onSuccess(result: UserProfile) {
                             Snackbar.make(
                                 requireView(),
@@ -336,8 +415,9 @@ class DatabaseLoginFragment : Fragment() {
                                 Snackbar.LENGTH_LONG
                             ).show()
                         }
-                })
+                    })
             }
+
             override fun onFailure(error: CredentialsManagerException) {
                 Snackbar.make(requireView(), "${error.message}", Snackbar.LENGTH_LONG).show()
             }

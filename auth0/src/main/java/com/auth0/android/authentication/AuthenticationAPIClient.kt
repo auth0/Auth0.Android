@@ -3,10 +3,12 @@ package com.auth0.android.authentication
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
+import com.auth0.android.NetworkErrorException
 import com.auth0.android.request.*
 import com.auth0.android.request.internal.*
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMap
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMapOf
+import com.auth0.android.request.internal.ResponseUtils.isNetworkError
 import com.auth0.android.result.Challenge
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
@@ -20,7 +22,7 @@ import java.security.PublicKey
 /**
  * API client for Auth0 Authentication API.
  * ```
- * val auth0 = Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+ * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
  * val client = AuthenticationAPIClient(auth0)
  * ```
  *
@@ -38,7 +40,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      *
      * ```
-     * val auth0 = Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
      * val client = AuthenticationAPIClient(auth0)
      * ```
      * @param auth0 account information
@@ -741,7 +743,11 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         val credentialsAdapter: JsonAdapter<Credentials> = GsonAdapter(
             Credentials::class.java, gson
         )
-        val request = BaseAuthenticationRequest(factory.post(url.toString(), credentialsAdapter), clientId, baseURL)
+        val request = BaseAuthenticationRequest(
+            factory.post(url.toString(), credentialsAdapter),
+            clientId,
+            baseURL
+        )
         request.addParameters(requestParameters)
         return request
     }
@@ -811,6 +817,12 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
                 }
 
                 override fun fromException(cause: Throwable): AuthenticationException {
+                    if (isNetworkError(cause)) {
+                        return AuthenticationException(
+                            "Failed to execute the network request",
+                            NetworkErrorException(cause)
+                        )
+                    }
                     return AuthenticationException(
                         "Something went wrong",
                         Auth0Exception("Something went wrong", cause)

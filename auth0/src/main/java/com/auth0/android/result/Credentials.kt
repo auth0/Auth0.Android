@@ -1,6 +1,5 @@
 package com.auth0.android.result
 
-import androidx.annotation.VisibleForTesting
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.request.internal.Jwt
 import com.google.gson.annotations.SerializedName
@@ -18,7 +17,7 @@ import java.util.*
  *  * *scope*: The token's granted scope.
  *
  */
-public open class Credentials(
+public data class Credentials(
     /**
      * Getter for the Identity Token with user information.
      *
@@ -61,11 +60,6 @@ public open class Credentials(
     @field:SerializedName("scope") public val scope: String?
 ) {
 
-    //TODO this could be removed and the class be a data class instead
-    @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal open val currentTimeInMillis: Long
-        get() = System.currentTimeMillis()
-
     /**
      * Getter for the new multi-factor authentication recovery code. Only available if these credentials are the result of logging in using an MFA recovery code.
      *
@@ -79,10 +73,11 @@ public open class Credentials(
         return "Credentials(idToken='xxxxx', accessToken='xxxxx', type='$type', refreshToken='xxxxx', expiresAt='$expiresAt', scope='$scope')"
     }
 
-    public val user: UserProfile get() {
-        val (_, payload) = Jwt.splitToken(idToken)
-        val gson = GsonProvider.gson
-        return gson.fromJson(Jwt.decodeBase64(payload), UserProfile::class.java)
-    }
+    public val user: UserProfile
+        get() {
+            val (_, payload) = Jwt.splitToken(idToken)
+            val gson = GsonProvider.gson
+            return gson.fromJson(Jwt.decodeBase64(payload), UserProfile::class.java)
+        }
 
 }

@@ -24,6 +24,7 @@ public class DefaultClient @VisibleForTesting(otherwise = VisibleForTesting.PRIV
     readTimeout: Int,
     private val defaultHeaders: Map<String, String>,
     enableLogging: Boolean,
+    private val gson: Gson,
     sslSocketFactory: SSLSocketFactory?,
     trustManager: X509TrustManager?
 ) : NetworkingClient {
@@ -40,11 +41,8 @@ public class DefaultClient @VisibleForTesting(otherwise = VisibleForTesting.PRIV
         connectTimeout: Int = DEFAULT_TIMEOUT_SECONDS,
         readTimeout: Int = DEFAULT_TIMEOUT_SECONDS,
         defaultHeaders: Map<String, String> = mapOf(),
-        enableLogging: Boolean = false
-    ) : this(connectTimeout,  readTimeout,  defaultHeaders, enableLogging, null, null)
-
-    //TODO: receive this via internal constructor parameters
-    private val gson: Gson = GsonProvider.gson
+        enableLogging: Boolean = false,
+    ) : this(connectTimeout, readTimeout, defaultHeaders, enableLogging, GsonProvider.gson, null, null)
 
     @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal val okHttpClient: OkHttpClient
@@ -71,6 +69,7 @@ public class DefaultClient @VisibleForTesting(otherwise = VisibleForTesting.PRIV
                     .map { urlBuilder.addQueryParameter(it.key, it.value as String) }
                 requestBuilder.method(options.method.toString(), null)
             }
+
             else -> {
                 // add parameters as body
                 val body = gson.toJson(options.parameters).toRequestBody(APPLICATION_JSON_UTF8)
@@ -90,7 +89,6 @@ public class DefaultClient @VisibleForTesting(otherwise = VisibleForTesting.PRIV
         val builder = OkHttpClient.Builder()
 
         // logging
-        //TODO: OFF by default!
         if (enableLogging) {
             val logger: Interceptor = HttpLoggingInterceptor()
                 .setLevel(HttpLoggingInterceptor.Level.BODY)
