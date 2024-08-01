@@ -1,5 +1,11 @@
 # Change Log
 
+## [3.0.0-beta.0](https://github.com/auth0/Auth0.Android/tree/3.0.0-beta.0) (2024-08-01)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.11.0...3.0.0-beta.0)
+
+**⚠️ BREAKING CHANGES**
+- feat: implemented biometrics authentication for SecureCredentialsManager using androidx.biometrics package [\#745](https://github.com/auth0/Auth0.Android/pull/745) ([desusai7](https://github.com/desusai7))
+
 ## [2.11.0](https://github.com/auth0/Auth0.Android/tree/2.11.0) (2024-05-08)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.10.2...2.11.0)
 
