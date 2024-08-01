@@ -795,9 +795,12 @@ public class SecureCredentialsManagerTest {
         val expectedJson = gson.toJson(expectedCredentials)
         Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
             .thenReturn(expectedJson.toByteArray())
-        manager.getCredentials(
+        manager.continueGetCredentials(
             null,
             60,
+            emptyMap(),
+            emptyMap(),
+            false,
             callback
         ) // minTTL of 1 minute
         verify(request, never())
