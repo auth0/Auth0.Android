@@ -15,7 +15,7 @@ internal class CredentialsDeserializerMock : CredentialsDeserializer() {
         recoveryCode: String?
     ): Credentials {
         val credentials =
-            CredentialsMock(idToken, accessToken, type, refreshToken, expiresAt, scope)
+            CredentialsMock.create(idToken, accessToken, type, refreshToken, expiresAt, scope)
         credentials.recoveryCode = recoveryCode
         return credentials
     }

@@ -73,7 +73,7 @@ public class CredentialsManagerTest {
             val refreshToken = invocation.getArgument(3, String::class.java)
             val expiresAt = invocation.getArgument(4, Date::class.java)
             val scope = invocation.getArgument(5, String::class.java)
-            CredentialsMock(idToken, accessToken, type, refreshToken, expiresAt, scope)
+            CredentialsMock.create(idToken, accessToken, type, refreshToken, expiresAt, scope)
         }.`when`(manager).recreateCredentials(
             ArgumentMatchers.anyString(),
             ArgumentMatchers.anyString(),
@@ -87,7 +87,7 @@ public class CredentialsManagerTest {
     @Test
     public fun shouldSaveRefreshableCredentialsInStorage() {
         val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
-        val credentials: Credentials = CredentialsMock(
+        val credentials: Credentials = CredentialsMock.create(
             "idToken",
             "accessToken",
             "type",
@@ -110,7 +110,7 @@ public class CredentialsManagerTest {
     @Test
     public fun shouldSaveRefreshableCredentialsUsingAccessTokenExpForCacheExpirationInStorage() {
         val accessTokenExpirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
-        val credentials: Credentials = CredentialsMock(
+        val credentials: Credentials = CredentialsMock.create(
             "",
             "accessToken",
             "type",
@@ -134,7 +134,7 @@ public class CredentialsManagerTest {
     public fun shouldSaveRefreshableCredentialsIgnoringIdTokenExpForCacheExpirationInStorage() {
         val accessTokenExpirationTime = CredentialsMock.CURRENT_TIME_MS + 5000 * 1000
         val idTokenExpirationTime = CredentialsMock.CURRENT_TIME_MS + 2000 * 1000
-        val credentials: Credentials = CredentialsMock(
+        val credentials: Credentials = CredentialsMock.create(
             "idToken",
             "accessToken",
             "type",
@@ -158,7 +158,14 @@ public class CredentialsManagerTest {
     public fun shouldSaveNonRefreshableCredentialsInStorage() {
         val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
         val credentials: Credentials =
-            CredentialsMock("idToken", "accessToken", "type", null, Date(expirationTime), "scope")
+            CredentialsMock.create(
+                "idToken",
+                "accessToken",
+                "type",
+                null,
+                Date(expirationTime),
+                "scope"
+            )
         prepareJwtDecoderMock(Date(expirationTime))
         manager.saveCredentials(credentials)
         verify(storage).store("com.auth0.id_token", "idToken")
@@ -174,23 +181,23 @@ public class CredentialsManagerTest {
     @Test
     public fun shouldThrowOnSetIfCredentialsDoesNotHaveIdTokenOrAccessToken() {
         exception.expect(CredentialsManagerException::class.java)
-        exception.expectMessage("Credentials must have a valid date of expiration and a valid access_token or id_token value.")
+        exception.expectMessage("Credentials must have a valid access_token or id_token value.")
         val credentials: Credentials =
-            CredentialsMock("", "", "type", "refreshToken", Date(), null)
+            CredentialsMock.create("", "", "type", "refreshToken", Date(), null)
         manager.saveCredentials(credentials)
     }
 
     @Test
     public fun shouldNotThrowOnSetIfCredentialsHasAccessTokenAndExpiresAt() {
         val credentials: Credentials =
-            CredentialsMock("", "accessToken", "type", "refreshToken", Date(), null)
+            CredentialsMock.create("", "accessToken", "type", "refreshToken", Date(), null)
         manager.saveCredentials(credentials)
     }
 
     @Test
     public fun shouldNotThrowOnSetIfCredentialsHasIdTokenAndExpiresAt() {
         val credentials: Credentials =
-            CredentialsMock("idToken", "", "type", "refreshToken", Date(), null)
+            CredentialsMock.create("idToken", "", "type", "refreshToken", Date(), null)
         prepareJwtDecoderMock(Date())
         manager.saveCredentials(credentials)
     }
@@ -946,8 +953,8 @@ public class CredentialsManagerTest {
             throw IllegalArgumentException("Proper Executor Set")
         }
         manager.getCredentials(object : Callback<Credentials, CredentialsManagerException> {
-            override fun onSuccess(result: Credentials) { }
-            override fun onFailure(error: CredentialsManagerException) { }
+            override fun onSuccess(result: Credentials) {}
+            override fun onFailure(error: CredentialsManagerException) {}
         })
     }
 
@@ -1024,12 +1031,21 @@ public class CredentialsManagerTest {
         verify(callback).onSuccess(credentialsCaptor.capture())
         val retrievedCredentials = credentialsCaptor.firstValue
         MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`(expectedCredentials.accessToken))
+        MatcherAssert.assertThat(
+            retrievedCredentials.accessToken,
+            Is.`is`(expectedCredentials.accessToken)
+        )
         MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`(expectedCredentials.idToken))
-        MatcherAssert.assertThat(retrievedCredentials.refreshToken, Is.`is`(expectedCredentials.refreshToken))
+        MatcherAssert.assertThat(
+            retrievedCredentials.refreshToken,
+            Is.`is`(expectedCredentials.refreshToken)
+        )
         MatcherAssert.assertThat(retrievedCredentials.type, Is.`is`(expectedCredentials.type))
         MatcherAssert.assertThat(retrievedCredentials.expiresAt, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(retrievedCredentials.expiresAt.time, Is.`is`(expectedCredentials.expiresAt.time))
+        MatcherAssert.assertThat(
+            retrievedCredentials.expiresAt.time,
+            Is.`is`(expectedCredentials.expiresAt.time)
+        )
         MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`(expectedCredentials.scope))
     }
 
@@ -1045,7 +1061,8 @@ public class CredentialsManagerTest {
         Mockito.`when`(storage.retrieveLong("com.auth0.cache_expires_at"))
             .thenReturn(expirationTime)
         Mockito.`when`(storage.retrieveString("com.auth0.scope")).thenReturn("scope")
-        manager.getCredentials("scope",
+        manager.getCredentials(
+            "scope",
             0,
             emptyMap(),
             false,

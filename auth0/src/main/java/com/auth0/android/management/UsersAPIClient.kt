@@ -3,6 +3,7 @@ package com.auth0.android.management
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
+import com.auth0.android.NetworkErrorException
 import com.auth0.android.authentication.ParameterBuilder
 import com.auth0.android.request.ErrorAdapter
 import com.auth0.android.request.JsonAdapter
@@ -14,6 +15,7 @@ import com.auth0.android.request.internal.GsonAdapter.Companion.forListOf
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMap
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.request.internal.RequestFactory
+import com.auth0.android.request.internal.ResponseUtils.isNetworkError
 import com.auth0.android.result.UserIdentity
 import com.auth0.android.result.UserProfile
 import com.google.gson.Gson
@@ -24,7 +26,7 @@ import java.io.Reader
 /**
  * API client for Auth0 Management API.
  * ```
- * val auth0 = Auth0("your_client_id", "your_domain")
+ * val auth0 = Auth0.getInstance("your_client_id", "your_domain")
  * val client = UsersAPIClient(auth0)
  * ```
  *
@@ -219,6 +221,12 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
                 }
 
                 override fun fromException(cause: Throwable): ManagementException {
+                    if (isNetworkError(cause)) {
+                        return ManagementException(
+                            "Failed to execute the network request",
+                            NetworkErrorException(cause)
+                        )
+                    }
                     return ManagementException(
                         "Something went wrong",
                         Auth0Exception("Something went wrong", cause)

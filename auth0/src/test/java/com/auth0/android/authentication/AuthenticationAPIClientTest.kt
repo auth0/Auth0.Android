@@ -63,7 +63,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public fun shouldUseCustomNetworkingClient() {
-        val account = Auth0("client-id", "https://tenant.auth0.com/")
+        val account = Auth0.getInstance("client-id", "https://tenant.auth0.com/")
         val jsonResponse = FileReader("src/test/resources/credentials_openid.json").readText()
         val inputStream: InputStream = ByteArrayInputStream(jsonResponse.toByteArray())
         val response = ServerResponse(200, inputStream, emptyMap())
@@ -94,7 +94,7 @@ public class AuthenticationAPIClientTest {
         val auth0UserAgent: Auth0UserAgent = mock()
         whenever(auth0UserAgent.value).thenReturn("the-user-agent-data")
         val factory: RequestFactory<AuthenticationException> = mock()
-        val account = Auth0(CLIENT_ID, DOMAIN)
+        val account = Auth0.getInstance(CLIENT_ID, DOMAIN)
         account.auth0UserAgent = auth0UserAgent
         AuthenticationAPIClient(account, factory, gson)
         verify(factory).setAuth0ClientInfo("the-user-agent-data")
@@ -102,7 +102,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public fun shouldCreateClientWithAccountInfo() {
-        val client = AuthenticationAPIClient(Auth0(CLIENT_ID, DOMAIN))
+        val client = AuthenticationAPIClient(Auth0.getInstance(CLIENT_ID, DOMAIN))
         assertThat(client, Matchers.`is`(Matchers.notNullValue()))
         assertThat(client.clientId, Matchers.equalTo(CLIENT_ID))
         assertThat(client.baseURL.toHttpUrlOrNull()!!, Matchers.notNullValue())
@@ -134,7 +134,7 @@ public class AuthenticationAPIClientTest {
         ).thenReturn(333)
         whenever(context.getString(eq(222))).thenReturn(CLIENT_ID)
         whenever(context.getString(eq(333))).thenReturn(DOMAIN)
-        val client = AuthenticationAPIClient(Auth0(context))
+        val client = AuthenticationAPIClient(Auth0.getInstance(context))
         assertThat(client, Matchers.`is`(Matchers.notNullValue()))
         assertThat(client.clientId, Matchers.`is`(CLIENT_ID))
         assertThat(client.baseURL, Matchers.equalTo("https://" + DOMAIN + "/"))
@@ -2411,7 +2411,7 @@ public class AuthenticationAPIClientTest {
         }
     private val auth0: Auth0
         get() {
-            val auth0 = Auth0(CLIENT_ID, mockAPI.domain, mockAPI.domain)
+            val auth0 = Auth0.getInstance(CLIENT_ID, mockAPI.domain, mockAPI.domain)
             auth0.networkingClient = testClient
             return auth0
         }

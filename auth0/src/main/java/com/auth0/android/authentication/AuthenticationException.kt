@@ -4,10 +4,7 @@ import android.text.TextUtils
 import android.util.Log
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
-import java.net.SocketTimeoutException
-import java.net.UnknownHostException
 import com.auth0.android.provider.TokenValidationException
-import java.net.SocketException
 
 public class AuthenticationException : Auth0Exception {
     private var code: String? = null
@@ -107,15 +104,8 @@ public class AuthenticationException : Auth0Exception {
     }
 
     // When the request failed due to network issues
-    // Currently [NetworkErrorException] is not properly thrown from [createErrorAdapter] in
-    // [AuthenticationAPIClient] and [UserAPIClient]. This will be fixed in the next major to avoid
-    // breaking change in the current major. We are not using IOException to check for the error
-    // since it is too broad.
     public val isNetworkError: Boolean
         get() = cause is NetworkErrorException
-                || cause?.cause is UnknownHostException
-                || cause?.cause is SocketTimeoutException
-                || cause?.cause is SocketException
 
     // When there is no Browser app installed to handle the web authentication
     public val isBrowserAppNotAvailable: Boolean

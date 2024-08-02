@@ -1,6 +1,7 @@
 package com.auth0.android.util
 
 import com.auth0.android.request.DefaultClient
+import com.auth0.android.request.internal.GsonProvider
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.tls.HandshakeCertificates
 import okhttp3.tls.HeldCertificate
@@ -35,6 +36,7 @@ internal object SSLTestUtils {
             readTimeout = 10,
             connectTimeout = 10,
             enableLogging = false,
+            gson = GsonProvider.gson,
             sslSocketFactory = clientCertificates.sslSocketFactory(),
             trustManager = clientCertificates.trustManager
         )

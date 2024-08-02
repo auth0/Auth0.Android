@@ -306,6 +306,7 @@ public class DefaultClientTest {
             readTimeout = 10,
             connectTimeout = 10,
             enableLogging = false,
+            gson = gson,
             sslSocketFactory = SSLTestUtils.clientCertificates.sslSocketFactory(),
             trustManager = SSLTestUtils.clientCertificates.trustManager
         )

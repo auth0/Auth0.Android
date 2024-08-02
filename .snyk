@@ -5,11 +5,16 @@ ignore:
   SNYK-JAVA-COMFASTERXMLWOODSTOX-3091135:
     - '*':
         reason: Latest version of dokka has this vulnerability
-        expires: 2024-06-27T07:00:56.333Z
-        created: 2024-05-28T07:00:56.334Z
+        expires: 2024-08-31T12:08:37.765Z
+        created: 2024-08-01T12:08:37.770Z
   SNYK-JAVA-ORGJETBRAINSKOTLIN-2393744:
     - '*':
         reason: Latest version of dokka has this vulnerability
-        expires: 2024-06-27T07:01:24.820Z
-        created: 2024-05-28T07:01:24.825Z
+        expires: 2024-08-31T12:08:55.924Z
+        created: 2024-08-01T12:08:55.927Z
+  SNYK-JAVA-COMFASTERXMLJACKSONCORE-7569538:
+    - '*':
+        reason: Latest version of dokka has this vulnerability
+        expires: 2024-08-31T12:08:02.966Z
+        created: 2024-08-01T12:08:02.973Z
 patch: {}

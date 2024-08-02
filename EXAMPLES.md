@@ -501,18 +501,16 @@ This version adds encryption to the data storage. Additionally, in those devices
 The usage is similar to the previous version, with the slight difference that the manager now requires a valid android `Context` as shown below:
 
 ```kotlin
-val authentication = AuthenticationAPIClient(account)
 val storage = SharedPreferencesStorage(this)
-val manager = SecureCredentialsManager(this, authentication, storage)
+val manager = SecureCredentialsManager(this, account, storage)
 ```
 
 <details>
   <summary>Using Java</summary>
 
 ```java
-AuthenticationAPIClient authentication = new AuthenticationAPIClient(account);
 Storage storage = new SharedPreferencesStorage(this);
-SecureCredentialsManager manager = new SecureCredentialsManager(this, authentication, storage);
+SecureCredentialsManager manager = new SecureCredentialsManager(this, account, storage);
 ```
 </details>
 
@@ -520,55 +518,64 @@ SecureCredentialsManager manager = new SecureCredentialsManager(this, authentica
 
 You can require the user authentication to obtain credentials. This will make the manager prompt the user with the device's configured Lock Screen, which they must pass correctly in order to obtain the credentials. **This feature is only available on devices where the user has setup a secured Lock Screen** (PIN, Pattern, Password or Fingerprint).
 
-To enable authentication you must call the `requireAuthentication` method passing a valid _Activity_ context, a request code that represents the authentication call, and the title and description to display in the Lock Screen. As seen in the snippet below, you can leave these last two parameters with `null` to use the system's default title and description. It's only safe to call this method before the Activity is started.
+To enable authentication you must supply an instance of `FragmentActivity` on which the authentication prompt to be shown, and an instance of `LocalAuthenticationOptions` to configure the authentication prompt with details like title and authentication level when creating an instance of `SecureCredentialsManager` as shown in the snippet below.
 
 ```kotlin
-//You might want to define a constant with the Request Code
-companion object {
-    const val AUTH_REQ_CODE = 111
-}
-
-manager.requireAuthentication(this, AUTH_REQ_CODE, null, null)
+val localAuthenticationOptions =
+    LocalAuthenticationOptions.Builder().setTitle("Authenticate").setDescription("Accessing Credentials")
+        .setAuthenticationLevel(AuthenticationLevel.STRONG).setNegativeButtonText("Cancel")
+        .setDeviceCredentialFallback(true)
+        .build()
+val storage = SharedPreferencesStorage(this)
+val manager = SecureCredentialsManager(
+    this, account, storage, fragmentActivity,
+    localAuthenticationOptions
+)
 ```
 
 <details>
   <summary>Using Java</summary>
 
 ```java
-//You might want to define a constant with the Request Code
-private static final int AUTH_REQ_CODE = 11;
-
-manager.requireAuthentication(this, AUTH_REQ_CODE, null, null);
+LocalAuthenticationOptions localAuthenticationOptions =
+        new LocalAuthenticationOptions.Builder().setTitle("Authenticate").setDescription("Accessing Credentials")
+                .setAuthenticationLevel(AuthenticationLevel.STRONG).setNegativeButtonText("Cancel")
+                .setDeviceCredentialFallback(true)
+                .build();
+Storage storage = new SharedPreferencesStorage(context);
+SecureCredentialsManager secureCredentialsManager = new SecureCredentialsManager(
+        context, auth0, storage, fragmentActivity,
+        localAuthenticationOptions);
 ```
 </details>
 
-When the above conditions are met and the manager requires the user authentication, it will use the activity context to launch the Lock Screen activity and wait for its result. If your activity is a subclass of `ComponentActivity`, this will be handled automatically for you internally. Otherwise, your activity must override the `onActivityResult` method and pass the request code and result code to the manager's `checkAuthenticationResult` method to verify if this request was successful or not.
+**Points to be Noted**:
 
-```kotlin
- override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-    if (manager.checkAuthenticationResult(requestCode, resultCode)) {
-        return
-    }
-    super.onActivityResult(requestCode, resultCode, data)
-}
-```
+On Android API 29 and below, specifying **DEVICE_CREDENTIAL** alone as the authentication level is not supported.
+On Android API 28 and 29, specifying **STRONG** as the authentication level along with enabling device credential fallback is not supported.
 
-<details>
-  <summary>Using Java</summary>
 
-```java
-@Override
-protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-    if (manager.checkAuthenticationResult(requestCode, resultCode)) {
-        return;
-    }
-    super.onActivityResult(requestCode, resultCode, data);
-}
-```
-</details>
+#### Creating LocalAuthenticationOptions object for requiring Authentication while using SecureCredentialsManager
 
-If the manager consumed the event, it will return true and later invoke the callback's `onSuccess` with the decrypted credentials.
+`LocalAuthenticationOptions` class exposes a Builder class to create an instance of it. Details about the methods are explained below:
 
+- **setTitle(title: String): Builder** - Sets the title to be displayed in the Authentication Prompt.
+- **setSubTitle(subtitle: String?): Builder** - Sets the subtitle of the Authentication Prompt.
+- **setDescription(description: String?): Builder** - Sets the description for the Authentication Prompt.
+- **setAuthenticationLevel(authenticationLevel: AuthenticationLevel): Builder** - Sets the authentication level, more on this can be found [here](#authenticationlevel-enum-values)
+- **setDeviceCredentialFallback(enableDeviceCredentialFallback: Boolean): Builder** - Enables/disables device credential fallback.
+- **setNegativeButtonText(negativeButtonText: String): Builder** - Sets the negative button text, used only when the device credential fallback is disabled (or) the authentication level is not set to `AuthenticationLevel.DEVICE_CREDENTIAL`.
+- **build(): LocalAuthenticationOptions** - Constructs the LocalAuthenticationOptions instance.
+
+
+#### AuthenticationLevel Enum Values
+
+AuthenticationLevel is an enum that defines the different levels of authentication strength required for local authentication mechanisms.
+
+**Enum Values**:
+- **STRONG**: Any biometric (e.g., fingerprint, iris, or face) on the device that meets or exceeds the requirements for Class 3 (formerly Strong).
+- **WEAK**: Any biometric (e.g., fingerprint, iris, or face) on the device that meets or exceeds the requirements for Class 2 (formerly Weak), as defined by the Android CDD.
+- **DEVICE_CREDENTIAL**: The non-biometric credential used to secure the device (i.e., PIN, pattern, or password).
 
 ### Handling Credentials Manager exceptions
 
@@ -578,6 +585,27 @@ In the event that something happened while trying to save or retrieve the creden
 - Tokens have expired but no `refresh_token` is available to perform a refresh credentials request.
 - Device's Lock Screen security settings have changed (e.g. the PIN code was changed). Even when `hasCredentials` returns true, the encryption keys will be deemed invalid and until `saveCredentials` is called again it won't be possible to decrypt any previously existing content, since they keys used back then are not the same as the new ones.
 - Device is not compatible with some of the algorithms required by the `SecureCredentialsManager` class. This is considered a catastrophic event and might happen when the OEM has modified the Android ROM removing some of the officially included algorithms. Nevertheless, it can be checked in the exception instance itself by calling `isDeviceIncompatible`. By doing so you can decide the fallback for storing the credentials, such as using the regular `CredentialsManager`.
+
+You can access the `code` property of the `CredentialsManagerException` to understand why the operation with `CredentialsManager` has failed and the `message` property of the `CredentialsManagerException` would give you a description of the exception. 
+
+Starting from version `3.0.0` you can even pass the exception to a `when` expression and handle the exception accordingly in your app's logic as shown in the below code snippet: 
+
+```kotlin
+when(credentialsManagerException) {
+    CredentialsManagerException.NO_CREDENTIALS - > {
+        // handle no credentials scenario
+    }
+
+    CredentialsManagerException.NO_REFRESH_TOKEN - > {
+        // handle no refresh token scenario
+    }
+
+    CredentialsManagerException.STORE_FAILED - > {
+        // handle store failed scenario
+    }
+    // ... similarly for other error codes
+}
+```
 
 ## Bot Protection
 If you are using the [Bot Protection](https://auth0.com/docs/anomaly-detection/bot-protection) feature and performing database login/signup via the Authentication API, you need to handle the `AuthenticationException#isVerificationRequired()` error. It indicates that the request was flagged as suspicious and an additional verification step is necessary to log the user in. That verification step is web-based, so you need to use Universal Login to complete it.
@@ -698,7 +726,7 @@ val users = UsersAPIClient(account, "api access token")
   <summary>Using Java</summary>
 
 ```java
-Auth0 account = new Auth0("client id", "domain");
+Auth0 account = Auth0.getInstance("client id", "domain");
 UsersAPIClient users = new UsersAPIClient(account, "api token");
 ```
 </details>
@@ -918,7 +946,7 @@ If you are a user of Auth0 Private Cloud with ["Custom Domains"](https://auth0.c
 
 The validation is done automatically for Web Authentication
 ```kotlin
-val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_CUSTOM_DOMAIN}")
+val account = Auth0.getInstance("{YOUR_CLIENT_ID}", "{YOUR_CUSTOM_DOMAIN}")
 
 WebAuthProvider.login(account)
     .withIdTokenVerificationIssuer("https://{YOUR_AUTH0_DOMAIN}/")
@@ -928,7 +956,7 @@ WebAuthProvider.login(account)
 For Authentication Client, the method `validateClaims()` has to be called to enable it.
 
 ```kotlin
-val auth0 = Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
 val client = AuthenticationAPIClient(auth0)
 client
      .login("{username or email}", "{password}", "{database connection name}")
@@ -944,7 +972,7 @@ client
   <summary>Using coroutines</summary>
 
 ```kotlin
-val auth0 = Auth0("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
 val client = AuthenticationAPIClient(auth0)
 
 try {
@@ -964,7 +992,7 @@ try {
   <summary>Using Java</summary>
 
 ```java
-Auth0 auth0 = new Auth0("client id", "domain");
+Auth0 auth0 = Auth0.getInstance("client id", "domain");
 AuthenticationAPIClient client = new AuthenticationAPIClient(account);
 client
    .login("{username or email}", "{password}", "{database connection name}")
@@ -1039,7 +1067,7 @@ val netClient = DefaultClient(
     readTimeout = 30
 )
 
-val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+val account = Auth0.getInstance("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
 account.networkingClient = netClient
 ```
 
@@ -1051,7 +1079,7 @@ DefaultClient netClient = new DefaultClient(
    connectTimeout = 30,
    readTimeout = 30
 );
-Auth0 account = new Auth0("client id", "domain");
+Auth0 account = Auth0.getInstance("client id", "domain");
 account.networkingClient = netClient;
 ```
 </details>
@@ -1063,7 +1091,7 @@ val netClient = DefaultClient(
     enableLogging = true
 )
 
-val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+val account = Auth0.getInstance("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
 account.networkingClient = netClient
 ```
 
@@ -1074,7 +1102,7 @@ account.networkingClient = netClient
 DefaultClient netClient = new DefaultClient(
     enableLogging = true
 );
-Auth0 account = new Auth0("client id", "domain");
+Auth0 account = Auth0.getInstance("client id", "domain");
 account.networkingClient = netClient;
 ```
 </details>
@@ -1086,7 +1114,7 @@ val netClient = DefaultClient(
     defaultHeaders = mapOf("{HEADER-NAME}" to "{HEADER-VALUE}")
 )
 
-val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+val account = Auth0.getInstance("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
 account.networkingClient = netClient
 ```
 
@@ -1100,7 +1128,7 @@ defaultHeaders.put("{HEADER-NAME}", "{HEADER-VALUE}");
 DefaultClient netClient = new DefaultClient(
     defaultHeaders = defaultHeaders
 );
-Auth0 account = new Auth0("client id", "domain");
+Auth0 account = Auth0.getInstance("client id", "domain");
 account.networkingClient = netClient;
 ```
 </details>
@@ -1120,7 +1148,7 @@ class CustomNetClient : NetworkingClient {
     }
 }
 
-val account = Auth0("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
+val account = Auth0.getInstance("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
 account.networkingClient = CustomNetClient()
 ```
 
@@ -1139,7 +1167,7 @@ class CustomNetClient extends NetworkingClient {
    }  
 };
 
-Auth0 account = new Auth0("client id", "domain");
+Auth0 account = Auth0.getInstance("client id", "domain");
 account.networkingClient = new CustomNetClient();
 ```
 </details>
