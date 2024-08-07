@@ -134,8 +134,7 @@ public class AuthenticationExceptionTest {
             CoreMatchers.`is`(
                 CoreMatchers.equalTo(
                     String.format(
-                        "Received error with code %s",
-                        Auth0Exception.UNKNOWN_ERROR
+                        "Failed with unknown error"
                     )
                 )
             )
@@ -150,7 +149,7 @@ public class AuthenticationExceptionTest {
         )
         MatcherAssert.assertThat(
             ex.getDescription(),
-            CoreMatchers.`is`(CoreMatchers.equalTo("Failed with unknown error"))
+            CoreMatchers.`is`(CoreMatchers.equalTo("Received error with code a_valid_code"))
         )
     }
 
