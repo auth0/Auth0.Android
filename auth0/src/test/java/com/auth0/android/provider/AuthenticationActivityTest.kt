@@ -9,6 +9,9 @@ import androidx.test.espresso.intent.matcher.IntentMatchers
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.RunnableTask
 import com.auth0.android.provider.AuthenticationActivity
+import com.auth0.android.provider.AuthenticationActivity.Companion.EXTRA_AUTHORIZE_URI
+import com.auth0.android.provider.AuthenticationActivity.Companion.EXTRA_CT_OPTIONS
+import com.auth0.android.provider.AuthenticationActivity.Companion.EXTRA_LAUNCH_AS_TWA
 import com.auth0.android.provider.CustomTabsOptions
 import com.nhaarman.mockitokotlin2.any
 import org.hamcrest.CoreMatchers
@@ -92,7 +95,12 @@ public class AuthenticationActivityTest {
         createActivity(intentCaptor.value)
         activityController.create().start().resume()
         Mockito.verify(customTabsController).bindService()
-        Mockito.verify(customTabsController).launchUri(uriCaptor.capture(), launchAsTwaCaptor.capture(), any(), failureCallbackCaptor.capture())
+        Mockito.verify(customTabsController).launchUri(
+            uriCaptor.capture(),
+            launchAsTwaCaptor.capture(),
+            any(),
+            failureCallbackCaptor.capture()
+        )
         MatcherAssert.assertThat(uriCaptor.value, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(uriCaptor.value, Is.`is`(uri))
         MatcherAssert.assertThat(activity.deliveredIntent, Is.`is`(Matchers.nullValue()))
@@ -123,7 +131,12 @@ public class AuthenticationActivityTest {
         createActivity(intentCaptor.value)
         activityController.create().start().resume()
         Mockito.verify(customTabsController).bindService()
-        Mockito.verify(customTabsController).launchUri(uriCaptor.capture(), launchAsTwaCaptor.capture(), any(), failureCallbackCaptor.capture())
+        Mockito.verify(customTabsController).launchUri(
+            uriCaptor.capture(),
+            launchAsTwaCaptor.capture(),
+            any(),
+            failureCallbackCaptor.capture()
+        )
         MatcherAssert.assertThat(uriCaptor.value, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(uriCaptor.value, Is.`is`(uri))
         MatcherAssert.assertThat(activity.deliveredIntent, Is.`is`(Matchers.nullValue()))
@@ -154,7 +167,12 @@ public class AuthenticationActivityTest {
         createActivity(intentCaptor.value)
         activityController.create().start().resume()
         Mockito.verify(customTabsController).bindService()
-        Mockito.verify(customTabsController).launchUri(uriCaptor.capture(), launchAsTwaCaptor.capture(), any(), failureCallbackCaptor.capture())
+        Mockito.verify(customTabsController).launchUri(
+            uriCaptor.capture(),
+            launchAsTwaCaptor.capture(),
+            any(),
+            failureCallbackCaptor.capture()
+        )
         MatcherAssert.assertThat(uriCaptor.value, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(uriCaptor.value, Is.`is`(uri))
         MatcherAssert.assertThat(launchAsTwaCaptor.value, Is.`is`(Matchers.notNullValue()))
@@ -184,7 +202,12 @@ public class AuthenticationActivityTest {
         createActivity(intentCaptor.value)
         activityController.create().start().resume()
         Mockito.verify(customTabsController).bindService()
-        Mockito.verify(customTabsController).launchUri(uriCaptor.capture(), launchAsTwaCaptor.capture(), any(), failureCallbackCaptor.capture())
+        Mockito.verify(customTabsController).launchUri(
+            uriCaptor.capture(),
+            launchAsTwaCaptor.capture(),
+            any(),
+            failureCallbackCaptor.capture()
+        )
         MatcherAssert.assertThat(uriCaptor.value, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(uriCaptor.value, Is.`is`(uri))
         MatcherAssert.assertThat(launchAsTwaCaptor.value, Is.`is`(Matchers.notNullValue()))
@@ -241,6 +264,47 @@ public class AuthenticationActivityTest {
             ctOptions
         )
         MatcherAssert.assertThat(controller, Is.`is`(Matchers.notNullValue()))
+    }
+
+
+    @Test
+    public fun shouldThrowExceptionIfAuthorizeUriIsNullInIntent() {
+        AuthenticationActivity.authenticateUsingBrowser(
+            callerActivity,
+            uri,
+            false,
+            customTabsOptions
+        )
+        Mockito.verify(callerActivity).startActivity(intentCaptor.capture())
+        createActivity(intentCaptor.value)
+        activity.intent = Intent().apply {
+            putExtra(EXTRA_LAUNCH_AS_TWA, false)
+            putExtra(EXTRA_CT_OPTIONS, customTabsOptions)
+        }
+        activityController.create().start().resume()
+        MatcherAssert.assertThat(activity.deliveredException, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(activity.isFinishing, Is.`is`(true))
+        activityController.destroy()
+    }
+
+    @Test
+    public fun shouldThrowExceptionIfCustomTabsIsNullInIntent() {
+        AuthenticationActivity.authenticateUsingBrowser(
+            callerActivity,
+            uri,
+            false,
+            customTabsOptions
+        )
+        Mockito.verify(callerActivity).startActivity(intentCaptor.capture())
+        createActivity(intentCaptor.value)
+        activity.intent = Intent().apply {
+            putExtra(EXTRA_LAUNCH_AS_TWA, false)
+            putExtra(EXTRA_AUTHORIZE_URI, uri)
+        }
+        activityController.create().start().resume()
+        MatcherAssert.assertThat(activity.deliveredException, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(activity.isFinishing, Is.`is`(true))
+        activityController.destroy()
     }
 
     private fun recreateAndCallNewIntent(data: Intent) {
