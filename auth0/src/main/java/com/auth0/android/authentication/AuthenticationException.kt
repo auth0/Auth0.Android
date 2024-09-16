@@ -89,7 +89,7 @@ public class AuthenticationException : Auth0Exception {
         if (!TextUtils.isEmpty(description)) {
             return description!!
         }
-        return if (UNKNOWN_ERROR == getCode()) {
+        return if (UNKNOWN_ERROR != getCode()) {
             String.format("Received error with code %s", getCode())
         } else "Failed with unknown error"
     }
