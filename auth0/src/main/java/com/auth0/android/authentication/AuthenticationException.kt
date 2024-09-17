@@ -26,7 +26,10 @@ public class AuthenticationException : Auth0Exception {
 
     public constructor(message: String, cause: Exception? = null) : super(message, cause)
 
-    public constructor(code: String, description: String, cause: Exception) : this(DEFAULT_MESSAGE, cause) {
+    public constructor(code: String, description: String, cause: Exception) : this(
+        DEFAULT_MESSAGE,
+        cause
+    ) {
         this.code = code
         this.description = description
     }
@@ -126,7 +129,10 @@ public class AuthenticationException : Auth0Exception {
         get() = "a0.invalid_configuration" == code
 
     // When a user closes the browser app and in turn, cancels the authentication
-    @Deprecated("This property can refer to both log in and log out actions.", replaceWith = ReplaceWith("isCanceled"))
+    @Deprecated(
+        "This property can refer to both log in and log out actions.",
+        replaceWith = ReplaceWith("isCanceled")
+    )
     public val isAuthenticationCanceled: Boolean
         get() = isCanceled
 
@@ -183,7 +189,7 @@ public class AuthenticationException : Auth0Exception {
     /// When authenticating with web-based authentication using prompt=none and the auth0 session had expired
     public val isLoginRequired: Boolean
         get() = "login_required" == code
-    
+
     /// User is deleted
     public val isRefreshTokenDeleted: Boolean
         get() = "invalid_grant" == code
@@ -205,6 +211,12 @@ public class AuthenticationException : Auth0Exception {
 
     internal companion object {
         internal const val ERROR_VALUE_AUTHENTICATION_CANCELED = "a0.authentication_canceled"
+        internal const val ERROR_KEY_URI_NULL = "a0.auth.authorize_uri"
+        internal const val ERROR_VALUE_AUTHORIZE_URI_INVALID =
+            "Authorization URI is received as null from the intent"
+        internal const val ERROR_KEY_CT_OPTIONS_NULL = "a0.auth.ct_options"
+        internal const val ERROR_VALUE_CT_OPTIONS_INVALID =
+            "Custom tab options are received as null from the intent"
         private const val ERROR_KEY = "error"
         private const val CODE_KEY = "code"
         private const val DESCRIPTION_KEY = "description"

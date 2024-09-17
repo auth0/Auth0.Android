@@ -82,6 +82,10 @@ public object WebAuthProvider {
     }
 
     internal fun failure(exception: AuthenticationException) {
+        if (managerInstance == null) {
+            Log.w(TAG, "There is no previous instance of this provider.")
+            return
+        }
         managerInstance!!.failure(exception)
     }
 

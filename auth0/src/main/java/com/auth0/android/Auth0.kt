@@ -72,7 +72,7 @@ public open class Auth0 private constructor(
      * @return Url to call to perform the web flow of OAuth
      */
     public open val authorizeUrl: String
-        get() = domainUrl!!.newBuilder()
+        get() = domainUrl.newBuilder()
             .addEncodedPathSegment("authorize")
             .build()
             .toString()
@@ -83,7 +83,7 @@ public open class Auth0 private constructor(
      * @return Url to call to perform the web logout
      */
     public open val logoutUrl: String
-        get() = domainUrl!!.newBuilder()
+        get() = domainUrl.newBuilder()
             .addEncodedPathSegment("v2")
             .addEncodedPathSegment("logout")
             .build()
@@ -134,7 +134,7 @@ public open class Auth0 private constructor(
         ): Auth0 {
             val domainUrl = ensureValidUrl(domain)
             requireNotNull(domainUrl) { String.format("Invalid domain url: '%s'", domain) }
-            if (instance == null || instance!!.clientId != clientId || instance!!.domainUrl.host != domainUrl.host || instance!!.configurationDomain != configurationDomain) {
+            if (instance == null || instance?.clientId != clientId || instance?.domainUrl?.host != domainUrl.host || instance?.configurationDomain != configurationDomain) {
                 instance = Auth0(clientId, domainUrl, configurationDomain)
             }
             return instance!!

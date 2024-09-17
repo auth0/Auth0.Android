@@ -7,6 +7,10 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationException
+import com.auth0.android.authentication.AuthenticationException.Companion.ERROR_KEY_CT_OPTIONS_NULL
+import com.auth0.android.authentication.AuthenticationException.Companion.ERROR_KEY_URI_NULL
+import com.auth0.android.authentication.AuthenticationException.Companion.ERROR_VALUE_AUTHORIZE_URI_INVALID
+import com.auth0.android.authentication.AuthenticationException.Companion.ERROR_VALUE_CT_OPTIONS_INVALID
 import com.auth0.android.callback.RunnableTask
 import com.auth0.android.provider.WebAuthProvider.failure
 import com.auth0.android.provider.WebAuthProvider.resume
@@ -68,23 +72,44 @@ public open class AuthenticationActivity : Activity() {
     }
 
     private fun launchAuthenticationIntent() {
-        val extras = intent.extras
-        val authorizeUri = extras!!.getParcelable<Uri>(EXTRA_AUTHORIZE_URI)
-        val customTabsOptions: CustomTabsOptions = extras.getParcelable(EXTRA_CT_OPTIONS)!!
+        val extras: Bundle? = intent.extras
+
+        val authorizeUri = extras?.getParcelable<Uri>(EXTRA_AUTHORIZE_URI)
+        authorizeUri ?: run {
+            deliverAuthenticationFailure(
+                AuthenticationException(
+                    ERROR_KEY_URI_NULL, ERROR_VALUE_AUTHORIZE_URI_INVALID
+                )
+            )
+            return
+        }
+
+        val customTabsOptions: CustomTabsOptions? = extras.getParcelable(EXTRA_CT_OPTIONS)
+        customTabsOptions ?: run {
+            deliverAuthenticationFailure(
+                AuthenticationException(
+                    ERROR_KEY_CT_OPTIONS_NULL, ERROR_VALUE_CT_OPTIONS_INVALID
+                )
+            )
+            return
+        }
+
         val launchAsTwa: Boolean = extras.getBoolean(EXTRA_LAUNCH_AS_TWA, false)
         customTabsController = createCustomTabsController(this, customTabsOptions)
         customTabsController!!.bindService()
-        customTabsController!!.launchUri(authorizeUri!!, launchAsTwa, getInstance(), object : RunnableTask<AuthenticationException> {
-            override fun apply(error: AuthenticationException) {
-                deliverAuthenticationFailure(error)
-            }
-        })
+        customTabsController!!.launchUri(authorizeUri,
+            launchAsTwa,
+            getInstance(),
+            object : RunnableTask<AuthenticationException> {
+                override fun apply(error: AuthenticationException) {
+                    deliverAuthenticationFailure(error)
+                }
+            })
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal open fun createCustomTabsController(
-        context: Context,
-        options: CustomTabsOptions
+        context: Context, options: CustomTabsOptions
     ): CustomTabsController {
         return CustomTabsController(context, options, TwaLauncher(context))
     }
@@ -107,10 +132,7 @@ public open class AuthenticationActivity : Activity() {
 
         @JvmStatic
         internal fun authenticateUsingBrowser(
-            context: Context,
-            authorizeUri: Uri,
-            launchAsTwa: Boolean,
-            options: CustomTabsOptions
+            context: Context, authorizeUri: Uri, launchAsTwa: Boolean, options: CustomTabsOptions
         ) {
             val intent = Intent(context, AuthenticationActivity::class.java)
             intent.putExtra(EXTRA_AUTHORIZE_URI, authorizeUri)
