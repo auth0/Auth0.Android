@@ -12,6 +12,8 @@ import com.auth0.android.request.internal.ResponseUtils.isNetworkError
 import com.auth0.android.result.Challenge
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
+import com.auth0.android.result.PasskeyChallengeResponse
+import com.auth0.android.result.PasskeyRegistrationResponse
 import com.auth0.android.result.UserProfile
 import com.google.gson.Gson
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -87,8 +89,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             .set(USERNAME_KEY, usernameOrEmail)
             .set(PASSWORD_KEY, password)
             .setGrantType(ParameterBuilder.GRANT_TYPE_PASSWORD_REALM)
-            .setRealm(realmOrConnection)
-            .asDictionary()
+            .setRealm(realmOrConnection).asDictionary()
         return loginWithToken(parameters)
     }
 
@@ -149,6 +150,96 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             .set(ONE_TIME_PASSWORD_KEY, otp)
             .asDictionary()
         return loginWithToken(parameters)
+    }
+
+
+    /**
+     * Log in a user using passkeys.
+     * This should be called after the client has received the Passkey challenge and Auth-session from the server .
+     * Requires the client to have the **Passkey** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
+     *
+     * @param authSession the auth session received from the server as part of the public challenge request.
+     * @param authResponse the public key credential response to be sent to the server
+     * @param parameters additional parameters to be sent as part of the request
+     * @return a request to configure and start that will yield [Credentials]
+     */
+    internal fun signinWithPasskey(
+        authSession: String,
+        authResponse: PublicKeyCredentialResponse,
+        parameters: Map<String, String>
+    ): AuthenticationRequest {
+        val params = ParameterBuilder.newBuilder().apply {
+            setGrantType(ParameterBuilder.GRANT_TYPE_PASSKEY)
+            set(AUTH_SESSION_KEY, authSession)
+            addAll(parameters)
+        }.asDictionary()
+
+        return loginWithToken(params)
+            .addParameter(AUTH_RESPONSE_KEY, Gson().toJsonTree(authResponse)) as AuthenticationRequest
+    }
+
+
+    /**
+     *  Register a user and returns a challenge.
+     *  Requires the client to have the **Passkey** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
+     *
+     *  @param userMetadata user information of the client
+     *  @param parameters additional parameter to be sent as part of the request
+     *  @return  a request to configure and start that will yield [PasskeyRegistrationResponse]
+     */
+    internal fun signupWithPasskey(
+        userMetadata: UserMetadataRequest,
+        parameters: Map<String, String>,
+    ): Request<PasskeyRegistrationResponse, AuthenticationException> {
+        val user = Gson().toJsonTree(userMetadata)
+        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
+            .addPathSegment(PASSKEY_PATH)
+            .addPathSegment(REGISTER_PATH)
+            .build()
+
+        val params = ParameterBuilder.newBuilder().apply {
+            setClientId(clientId)
+            parameters[ParameterBuilder.REALM_KEY]?.let {
+                setRealm(it)
+            }
+        }.asDictionary()
+
+        val passkeyRegistrationAdapter: JsonAdapter<PasskeyRegistrationResponse> = GsonAdapter(
+            PasskeyRegistrationResponse::class.java, gson
+        )
+        val post = factory.post(url.toString(), passkeyRegistrationAdapter)
+            .addParameters(params) as BaseRequest<PasskeyRegistrationResponse, AuthenticationException>
+        post.addParameter(USER_PROFILE_KEY, user)
+        return post
+    }
+
+
+    /**
+     * Request for a challenge to initiate a passkey login flow
+     * Requires the client to have the **Passkey** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
+     *
+     * @param realm An optional connection name
+     * @return a request to configure and start that will yield [PasskeyChallengeResponse]
+     */
+    internal fun passkeyChallenge(
+        realm: String?
+    ): Request<PasskeyChallengeResponse, AuthenticationException> {
+        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
+            .addPathSegment(PASSKEY_PATH)
+            .addPathSegment(CHALLENGE_PATH)
+            .build()
+
+        val parameters = ParameterBuilder.newBuilder().apply {
+            setClientId(clientId)
+            realm?.let { setRealm(it) }
+        }.asDictionary()
+
+        val passkeyChallengeAdapter: JsonAdapter<PasskeyChallengeResponse> = GsonAdapter(
+            PasskeyChallengeResponse::class.java, gson
+        )
+
+        return factory.post(url.toString(), passkeyChallengeAdapter)
+            .addParameters(parameters)
     }
 
     /**
@@ -695,8 +786,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         val parameters = ParameterBuilder.newBuilder()
             .setClientId(clientId)
             .setGrantType(ParameterBuilder.GRANT_TYPE_AUTHORIZATION_CODE)
-            .set(OAUTH_CODE_KEY, authorizationCode)
-            .set(REDIRECT_URI_KEY, redirectUri)
+            .set(OAUTH_CODE_KEY, authorizationCode).set(REDIRECT_URI_KEY, redirectUri)
             .set("code_verifier", codeVerifier)
             .asDictionary()
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
@@ -736,26 +826,26 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             .addPathSegment(OAUTH_PATH)
             .addPathSegment(TOKEN_PATH)
             .build()
-        val requestParameters = ParameterBuilder.newBuilder()
-            .setClientId(clientId)
-            .addAll(parameters)
-            .asDictionary()
+        val requestParameters =
+            ParameterBuilder.newBuilder()
+                .setClientId(clientId)
+                .addAll(parameters)
+                .asDictionary()
         val credentialsAdapter: JsonAdapter<Credentials> = GsonAdapter(
             Credentials::class.java, gson
         )
         val request = BaseAuthenticationRequest(
-            factory.post(url.toString(), credentialsAdapter),
-            clientId,
-            baseURL
+            factory.post(url.toString(), credentialsAdapter), clientId, baseURL
         )
         request.addParameters(requestParameters)
         return request
     }
 
     private fun profileRequest(): Request<UserProfile, AuthenticationException> {
-        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
-            .addPathSegment(USER_INFO_PATH)
-            .build()
+        val url =
+            auth0.getDomainUrl().toHttpUrl().newBuilder()
+                .addPathSegment(USER_INFO_PATH)
+                .build()
         val userProfileAdapter: JsonAdapter<UserProfile> = GsonAdapter(
             UserProfile::class.java, gson
         )
@@ -782,6 +872,9 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val SUBJECT_TOKEN_KEY = "subject_token"
         private const val SUBJECT_TOKEN_TYPE_KEY = "subject_token_type"
         private const val USER_METADATA_KEY = "user_metadata"
+        private const val AUTH_SESSION_KEY = "auth_session"
+        private const val AUTH_RESPONSE_KEY = "authn_response"
+        private const val USER_PROFILE_KEY = "user_profile"
         private const val SIGN_UP_PATH = "signup"
         private const val DB_CONNECTIONS_PATH = "dbconnections"
         private const val CHANGE_PASSWORD_PATH = "change_password"
@@ -793,6 +886,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val REVOKE_PATH = "revoke"
         private const val MFA_PATH = "mfa"
         private const val CHALLENGE_PATH = "challenge"
+        private const val PASSKEY_PATH = "passkey"
+        private const val REGISTER_PATH = "register"
         private const val HEADER_AUTHORIZATION = "Authorization"
         private const val WELL_KNOWN_PATH = ".well-known"
         private const val JWKS_FILE_PATH = "jwks.json"
@@ -800,17 +895,14 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             val mapAdapter = forMap(GsonProvider.gson)
             return object : ErrorAdapter<AuthenticationException> {
                 override fun fromRawResponse(
-                    statusCode: Int,
-                    bodyText: String,
-                    headers: Map<String, List<String>>
+                    statusCode: Int, bodyText: String, headers: Map<String, List<String>>
                 ): AuthenticationException {
                     return AuthenticationException(bodyText, statusCode)
                 }
 
                 @Throws(IOException::class)
                 override fun fromJsonResponse(
-                    statusCode: Int,
-                    reader: Reader
+                    statusCode: Int, reader: Reader
                 ): AuthenticationException {
                     val values = mapAdapter.fromJson(reader)
                     return AuthenticationException(values, statusCode)
@@ -819,13 +911,11 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
                 override fun fromException(cause: Throwable): AuthenticationException {
                     if (isNetworkError(cause)) {
                         return AuthenticationException(
-                            "Failed to execute the network request",
-                            NetworkErrorException(cause)
+                            "Failed to execute the network request", NetworkErrorException(cause)
                         )
                     }
                     return AuthenticationException(
-                        "Something went wrong",
-                        Auth0Exception("Something went wrong", cause)
+                        "Something went wrong", Auth0Exception("Something went wrong", cause)
                     )
                 }
             }
