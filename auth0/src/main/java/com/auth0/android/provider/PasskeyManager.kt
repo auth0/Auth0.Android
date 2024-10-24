@@ -22,14 +22,8 @@ import androidx.credentials.exceptions.CreateCredentialProviderConfigurationExce
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.GetCredentialInterruptedException
-import androidx.credentials.exceptions.GetCredentialProviderConfigurationException
-import androidx.credentials.exceptions.GetCredentialUnknownException
 import androidx.credentials.exceptions.GetCredentialUnsupportedException
 import androidx.credentials.exceptions.NoCredentialException
-import androidx.credentials.exceptions.publickeycredential.CreatePublicKeyCredentialDomException
-import androidx.credentials.exceptions.publickeycredential.GetPublicKeyCredentialDomException
-import androidx.credentials.exceptions.publickeycredential.GetPublicKeyCredentialException
-import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.authentication.ParameterBuilder
@@ -44,9 +38,12 @@ import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 
 
-internal class PasskeyManager(auth0: Auth0) {
+internal class PasskeyManager(
+    private val authenticationAPIClient: AuthenticationAPIClient,
+    private val credentialManager: CredentialManager
+) {
+
     private val TAG = PasskeyManager::class.simpleName
-    private val authenticationAPIClient: AuthenticationAPIClient = AuthenticationAPIClient(auth0)
 
     @RequiresApi(api = Build.VERSION_CODES.P)
     @SuppressLint("PublicKeyCredential")
@@ -57,7 +54,6 @@ internal class PasskeyManager(auth0: Auth0) {
         callback: Callback<Credentials, AuthenticationException>,
         executor: Executor = Executors.newSingleThreadExecutor()
     ) {
-        val credentialManager = CredentialManager.create(context)
 
         authenticationAPIClient.signupWithPasskey(userMetadata, parameters)
             .start(object : Callback<PasskeyRegistrationResponse, AuthenticationException> {
@@ -91,7 +87,9 @@ internal class PasskeyManager(auth0: Auth0) {
                                 )
                                 authenticationAPIClient.signinWithPasskey(
                                     pasKeyRegistrationResponse.authSession, authRequest, parameters
-                                ).start(callback)
+                                )
+                                    .validateClaims()
+                                    .start(callback)
                             }
                         })
 
@@ -112,7 +110,6 @@ internal class PasskeyManager(auth0: Auth0) {
         callback: Callback<Credentials, AuthenticationException>,
         executor: Executor = Executors.newSingleThreadExecutor()
     ) {
-        val credentialManager = CredentialManager.create(context)
         authenticationAPIClient.passkeyChallenge(parameters[ParameterBuilder.REALM_KEY])
             .start(object : Callback<PasskeyChallengeResponse, AuthenticationException> {
                 override fun onSuccess(result: PasskeyChallengeResponse) {

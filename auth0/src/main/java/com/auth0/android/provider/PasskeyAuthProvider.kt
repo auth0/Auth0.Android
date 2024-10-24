@@ -3,7 +3,9 @@ package com.auth0.android.provider
 import android.content.Context
 import android.os.Build
 import android.util.Log
+import androidx.credentials.CredentialManager
 import com.auth0.android.Auth0
+import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.authentication.ParameterBuilder
 import com.auth0.android.callback.Callback
@@ -96,7 +98,11 @@ public object PasskeyAuthProvider {
                 callback.onFailure(ex)
                 return
             }
-            val passkeyManager = PasskeyManager(auth0)
+            val passkeyManager =
+                PasskeyManager(
+                    AuthenticationAPIClient(auth0),
+                    CredentialManager.create(context)
+                )
             passkeyManager.signin(context, parameters, callback, executor)
         }
     }
@@ -204,7 +210,11 @@ public object PasskeyAuthProvider {
                 callback.onFailure(ex)
                 return
             }
-            val passkeyManager = PasskeyManager(auth0)
+            val passkeyManager =
+                PasskeyManager(
+                    AuthenticationAPIClient(auth0),
+                    CredentialManager.create(context)
+                )
             val userMetadata = UserMetadataRequest(email, phoneNumber, username, name)
             passkeyManager.signup(
                 context, userMetadata, parameters, callback, executor

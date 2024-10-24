@@ -89,7 +89,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             .set(USERNAME_KEY, usernameOrEmail)
             .set(PASSWORD_KEY, password)
             .setGrantType(ParameterBuilder.GRANT_TYPE_PASSWORD_REALM)
-            .setRealm(realmOrConnection).asDictionary()
+            .setRealm(realmOrConnection)
+            .asDictionary()
         return loginWithToken(parameters)
     }
 
@@ -175,7 +176,10 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         }.asDictionary()
 
         return loginWithToken(params)
-            .addParameter(AUTH_RESPONSE_KEY, Gson().toJsonTree(authResponse)) as AuthenticationRequest
+            .addParameter(
+                AUTH_RESPONSE_KEY,
+                Gson().toJsonTree(authResponse)
+            ) as AuthenticationRequest
     }
 
 
