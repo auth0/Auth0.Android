@@ -55,4 +55,10 @@ public class RequestMock<T, U extends Auth0Exception> implements Request<T, U> {
     public T execute() throws Auth0Exception {
         return null;
     }
+
+    @NonNull
+    @Override
+    public Request<T, U> addParameter(@NonNull String name, @NonNull Object value) {
+        return this;
+    }
 }

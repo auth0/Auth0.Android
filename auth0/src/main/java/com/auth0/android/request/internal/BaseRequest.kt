@@ -55,7 +55,7 @@ internal open class BaseRequest<T, U : Auth0Exception>(
         return addParameter(name, anyValue)
     }
 
-    internal fun addParameter(name: String, value: Any): Request<T, U> {
+    override fun addParameter(name: String, value: Any): Request<T, U> {
         options.parameters[name] = value
         return this
     }
