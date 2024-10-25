@@ -127,7 +127,7 @@ internal class PasskeyManager(
                             CredentialManagerCallback<GetCredentialResponse, GetCredentialException> {
                             override fun onError(e: GetCredentialException) {
                                 Log.w(TAG, "Error while fetching public key credential")
-                                handleGetCredentialFailure(e)
+                                callback.onFailure(handleGetCredentialFailure(e))
                             }
 
                             override fun onResult(result: GetCredentialResponse) {
