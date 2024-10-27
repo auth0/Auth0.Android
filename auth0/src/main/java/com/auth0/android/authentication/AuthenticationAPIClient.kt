@@ -157,7 +157,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     /**
      * Log in a user using passkeys.
      * This should be called after the client has received the Passkey challenge and Auth-session from the server .
-     * Requires the client to have the **Passkey** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
+     * Requires the client to have the **Passkey** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types)
+     * to learn how to enable it.
      *
      * @param authSession the auth session received from the server as part of the public challenge request.
      * @param authResponse the public key credential response to be sent to the server
@@ -185,7 +186,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
 
     /**
      *  Register a user and returns a challenge.
-     *  Requires the client to have the **Passkey** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
+     *  Requires the client to have the **Passkey** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types)
+     *  to learn how to enable it.
      *
      *  @param userMetadata user information of the client
      *  @param parameters additional parameter to be sent as part of the request
@@ -220,7 +222,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
 
     /**
      * Request for a challenge to initiate a passkey login flow
-     * Requires the client to have the **Passkey** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
+     * Requires the client to have the **Passkey** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types)
+     * to learn how to enable it.
      *
      * @param realm An optional connection name
      * @return a request to configure and start that will yield [PasskeyChallengeResponse]
