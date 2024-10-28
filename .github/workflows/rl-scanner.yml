@@ -1,34 +1,43 @@
-
 name: RL-Security-Scanner
 run-name: rl-security-scanner
 
 
 on:
-  merge_group:
-  workflow_dispatch:
-  push:
-    branches: ["main"]
-  pull_request:
-    types:
-      - opened
-      - synchronize
+  workflow_call:
+    inputs:
+      java-version:
+        required: true
+        type: string
+      is-android:
+        required: true
+        type: string
+    secrets:
+      ossr-username:
+        required: true
+      ossr-password:
+        required: true
+      signing-key:
+        required: true
+      signing-password:
+        required: true
+      github-token:
+        required: true
+
 
 jobs:
-  checkout-build-scan-only:
-    if: github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'pull_request')
-    # && startsWith(github.event.pull_request.head.ref, 'release/'))
+  rl-scanner:
+    name: Run Reversing Labs Scanner
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged && startsWith(github.event.pull_request.head.ref, 'release/'))
     runs-on: ubuntu-latest
+    outputs:
+      scan-status: ${{ steps.rl-scan-conclusion.outcome }}
 
-
-    permissions:
-      pull-requests: write
-      id-token: write
 
     steps:
+      - name: Checkout code
       - uses: actions/checkout@v4
-      - name: Set up
-        uses: ./.github/actions/setup
+        with:
+          fetch-depth: 0
 
       - name: Build with gradle
         shell: bash
@@ -46,40 +55,23 @@ jobs:
       - name: Output build artifact
         id: output_build_artifact
         run: |
-            echo "scanfile=$(pwd)/auth0/build/outputs/aar/auth0-release-${{ steps.get_version.outputs.version }}.aar" >> $GITHUB_OUTPUT  
+          echo "scanfile=$(pwd)/auth0/build/outputs/aar/auth0-release-${{ steps.get_version.outputs.version }}.aar" >> $GITHUB_OUTPUT  
 
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+
+      - name: Run Reversing Labs  Scanner
+        id: rl-scan-conclusion
+        uses: ./.github/actions/rl-scanner
         with:
-          python-version: "3.10"
-
-      - name: Install Python dependencies
-        run: |
-          pip install --upgrade pip
-          pip install boto3 requests
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          role-to-assume: ${{ secrets.PRODSEC_TOOLS_ARN }}
-          aws-region: us-east-1
-          mask-aws-account-id: true
-
-      - name: Run Reversing Labs Wrapper Scanner
+          artifact-path: "$(pwd)/${{ inputs.artifact-name }}"
+          version: "${{ steps.get_version.outputs.version }}"
         env:
           RLSECURE_LICENSE: ${{ secrets.RLSECURE_LICENSE }}
           RLSECURE_SITE_KEY: ${{ secrets.RLSECURE_SITE_KEY }}
           SIGNAL_HANDLER_TOKEN: ${{ secrets.SIGNAL_HANDLER_TOKEN }}
-          WRAPPER_INDEX_URL: "https://${{ secrets.PRODSEC_TOOLS_USER }}:${{ secrets.PRODSEC_TOOLS_TOKEN }}@a0us.jfrog.io/artifactory/api/pypi/python-local/simple"
-          PYTHONUNBUFFERED: 1
-        run: |
-          pip install rl-wrapper --index-url "$WRAPPER_INDEX_URL" && \
-          rl-wrapper \
-            --artifact "${{ steps.output_build_artifact.outputs.scanfile }}" \
-            --version "${{ steps.get_version.outputs.version }}" \
-            --name "${{ github.event.repository.name }}" \
-            --repository "${{ github.repository }}" \
-            --commit "${{ github.sha }}" \
-            --build-env "github_actions" \
-            --suppress_output
-        continue-on-error: true
+          PRODSEC_TOOLS_USER: ${{ secrets.PRODSEC_TOOLS_USER }}
+          PRODSEC_TOOLS_TOKEN: ${{ secrets.PRODSEC_TOOLS_TOKEN }}
+          PRODSEC_TOOLS_ARN: ${{ secrets.PRODSEC_TOOLS_ARN }}
+
+      - name: Output scan result
+        run: echo "scan-status=${{ steps.rl-scan-conclusion.outcome }}" >> $GITHUB_ENV
