@@ -34,18 +34,18 @@ version = getVersionFromFile()
 logger.lifecycle("Using version ${version} for ${name}")
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion 34
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 31
+        targetSdkVersion 34
         versionCode 1
         versionName project.version
 
         buildConfigField "String", "LIBRARY_NAME", "\"$project.rootProject.name\""
         buildConfigField "String", "VERSION_NAME", "\"${project.version}\""
 
-        consumerProguardFiles '../proguard/proguard-gson.pro', '../proguard/proguard-okio.pro'
+        consumerProguardFiles '../proguard/proguard-gson.pro', '../proguard/proguard-okio.pro', '../proguard/proguard-jetpack.pro'
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     lintOptions {
@@ -77,13 +77,14 @@ ext {
     powermockVersion = '2.0.9'
     coroutinesVersion = '1.6.2'
     biometricLibraryVersion = '1.1.0'
+    credentialManagerVersion = "1.3.0"
 }
 
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     implementation 'androidx.core:core-ktx:1.6.0'
-    implementation 'androidx.appcompat:appcompat:1.3.0'
+    implementation 'androidx.appcompat:appcompat:1.6.0'
     implementation 'androidx.browser:browser:1.4.0'
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
     implementation "com.squareup.okhttp3:okhttp:$okhttpVersion"
@@ -110,6 +111,9 @@ dependencies {
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion"
 
     testImplementation "androidx.biometric:biometric:$biometricLibraryVersion"
+
+    implementation "androidx.credentials:credentials-play-services-auth:$credentialManagerVersion"
+    implementation "androidx.credentials:credentials:$credentialManagerVersion"
 }
 
 apply from: rootProject.file('gradle/jacoco.gradle')
