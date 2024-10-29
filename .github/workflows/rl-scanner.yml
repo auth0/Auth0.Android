@@ -9,15 +9,17 @@ on:
         required: true
         type: string
     secrets:
-      ossr-username:
+      RLSECURE_LICENSE:
         required: true
-      ossr-password:
+      RLSECURE_SITE_KEY:
         required: true
-      signing-key:
+      SIGNAL_HANDLER_TOKEN:
         required: true
-      signing-password:
+      PRODSEC_TOOLS_USER:
         required: true
-      github-token:
+      PRODSEC_TOOLS_TOKEN:
+        required: true
+      PRODSEC_TOOLS_ARN:
         required: true
 
 
