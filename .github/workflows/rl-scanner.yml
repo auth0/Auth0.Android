@@ -64,7 +64,7 @@ jobs:
         id: rl-scan-conclusion
         uses: ./.github/actions/rl-scanner
         with:
-          artifact-path: "$(pwd)/auth0/build/outputs/aar/${{artifact-name}}"
+          artifact-path: "$(pwd)/auth0/build/outputs/aar/${{ artifact-name }}"
           version: "${{ steps.get_version.outputs.version }}"
         env:
           RLSECURE_LICENSE: ${{ secrets.RLSECURE_LICENSE }}
