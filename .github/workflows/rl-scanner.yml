@@ -8,6 +8,9 @@ on:
       java-version:
         required: true
         type: string
+      artifact-name:
+        required: true
+        type: string
     secrets:
       RLSECURE_LICENSE:
         required: true
@@ -57,12 +60,11 @@ jobs:
           echo "scanfile=$(pwd)/auth0/build/outputs/aar/auth0-release-${{ steps.get_version.outputs.version }}.aar" >> $GITHUB_OUTPUT  
 
 
-
       - name: Run Reversing Labs  Scanner
         id: rl-scan-conclusion
         uses: ./.github/actions/rl-scanner
         with:
-          artifact-path: "$(pwd)/${{ inputs.artifact-name }}"
+          artifact-path: "$(pwd)/auth0/build/outputs/aar/${{artifact-name}}"
           version: "${{ steps.get_version.outputs.version }}"
         env:
           RLSECURE_LICENSE: ${{ secrets.RLSECURE_LICENSE }}
