@@ -6,7 +6,6 @@ import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.Callback;
 import com.auth0.android.request.AuthenticationRequest;
-import com.auth0.android.request.Request;
 import com.auth0.android.result.Credentials;
 
 import java.util.Map;
@@ -46,12 +45,6 @@ public class AuthenticationRequestMock implements AuthenticationRequest {
     @NonNull
     @Override
     public AuthenticationRequest addParameter(@NonNull String name, @NonNull String value) {
-        return this;
-    }
-
-    @NonNull
-    @Override
-    public Request<Credentials, AuthenticationException> addParameter(@NonNull String name, @NonNull Object value) {
         return this;
     }
 
