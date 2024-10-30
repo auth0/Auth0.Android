@@ -40,6 +40,7 @@ public object PasskeyAuthProvider {
      * @param auth0 [Auth0] instance to be used for authentication
      * @return a new builder instance to customize
      */
+    @JvmStatic
     public fun signIn(auth0: Auth0): SignInBuilder {
         return SignInBuilder(auth0)
     }

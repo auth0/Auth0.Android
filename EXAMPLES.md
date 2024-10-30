@@ -673,6 +673,7 @@ authProvider.signin(account)
 </details>
 
 **Points to be Noted**:
+
 Passkeys are supported only on devices that run Android 9 (API level 28) or higher.
 To use passkeys ,user needs to add support for Digital Asset Links.
 
