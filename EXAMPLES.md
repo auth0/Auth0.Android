@@ -22,6 +22,7 @@
       - [Usage](#usage)
       - [Requiring Authentication](#requiring-authentication)
     - [Handling Credentials Manager exceptions](#handling-credentials-manager-exceptions)
+  - [Passkeys](#passkeys)
   - [Bot Protection](#bot-protection)
   - [Management API](#management-api)
     - [Link users](#link-users)
@@ -131,7 +132,7 @@ WebAuthProvider.logout(account)
     .start(this, logoutCallback)
 ```
 
-## Trusted Web Activity (Experimental)
+## Trusted Web Activity
 > **Warning**
 > Trusted Web Activity support in Auth0.Android is still experimental and can change in the future. 
 >
@@ -606,6 +607,75 @@ when(credentialsManagerException) {
     // ... similarly for other error codes
 }
 ```
+
+## Passkeys
+User should have a custom domain configured and passkey grant-type enabled in the Auth0 dashboard to use passkeys.
+
+To sign up a user with passkey
+
+```kotlin
+PasskeyAuthProvider.signUp(account)
+    .setEmail("user email")
+    .setUserName("user name")
+    .setPhoneNumber("phone number")
+    .setRealm("optional connection name")
+    .start(object: Callback<Credentials, AuthenticationException> {
+        override fun onFailure(exception: AuthenticationException) { }
+            
+        override fun onSuccess(credentials: Credentials) { }
+            })
+```
+<details>
+  <summary>Using Java</summary>
+
+```java
+PasskeyAuthProvider authProvider = new PasskeyAuthProvider();
+authProvider.signUp(account)
+    .setEmail("user email")
+    .setUserName("user name")
+    .setPhoneNumber("phone number")
+    .setRealm("optional connection name")
+    .start(new Callback<Credentials, AuthenticationException>() {
+            @Override
+            public void onFailure(@NonNull AuthenticationException exception) { }
+    
+            @Override
+            public void onSuccess(@Nullable Credentials credentials) { }
+    });
+```
+</details>
+
+To sign in a user with passkey
+```kotlin
+PasskeyAuthProvider.signin(account)
+    .setRealm("Optional connection name")
+    .start(object: Callback<Credentials, AuthenticationException> {
+        override fun onFailure(exception: AuthenticationException) { }
+
+        override fun onSuccess(credentials: Credentials) { }
+    })
+```
+<details>
+  <summary>Using Java</summary>
+
+```java
+PasskeyAuthProvider authProvider = new PasskeyAuthProvider();
+authProvider.signin(account)
+    .setRealm("optional connection name")
+    .start(new Callback<Credentials, AuthenticationException>() {
+        @Override
+        public void onFailure(@NonNull AuthenticationException exception) { }
+    
+        @Override
+        public void onSuccess(@Nullable Credentials credentials) { }
+    });
+```
+</details>
+
+**Points to be Noted**:
+Passkeys are supported only on devices that run Android 9 (API level 28) or higher.
+To use passkeys ,user needs to add support for Digital Asset Links.
+
 
 ## Bot Protection
 If you are using the [Bot Protection](https://auth0.com/docs/anomaly-detection/bot-protection) feature and performing database login/signup via the Authentication API, you need to handle the `AuthenticationException#isVerificationRequired()` error. It indicates that the request was flagged as suspicious and an additional verification step is necessary to log the user in. That verification step is web-based, so you need to use Universal Login to complete it.
