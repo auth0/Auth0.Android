@@ -1,5 +1,18 @@
 # Change Log
 
+## [3.0.0](https://github.com/auth0/Auth0.Android/tree/3.0.0) (2024-10-30)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.11.0...3.0.0)
+
+Check the [Migration Guide](https://github.com/auth0/Auth0.Android/blob/main/V3_MIGRATION_GUIDE.md) to understand the changes required to migrate your application to v3
+Check the [3.0.0.beta.0][https://github.com/auth0/Auth0.Android/releases/tag/3.0.0-beta.0] to understand other major changes
+
+**⚠️ BREAKING CHANGES**
+- BREAKING CHANGE: updated description of AuthenticationException in case of empty description [\#756](https://github.com/auth0/Auth0.Android/pull/756) ([desusai7](https://github.com/desusai7))
+- feat: implemented biometrics authentication for SecureCredentialsManager using androidx.biometrics package [\#745](https://github.com/auth0/Auth0.Android/pull/745) ([desusai7](https://github.com/desusai7))
+
+**Added**
+- Handled NPE in the AuthenticationActivity  [\#759](https://github.com/auth0/Auth0.Android/pull/759) ([pmathew92](https://github.com/pmathew92))
+
 ## [3.0.0-beta.0](https://github.com/auth0/Auth0.Android/tree/3.0.0-beta.0) (2024-08-01)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.11.0...3.0.0-beta.0)
 
