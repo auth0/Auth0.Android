@@ -8,7 +8,7 @@
   - [Specify Parameter](#specify-parameter)
   - [Customize the Custom Tabs UI](#customize-the-custom-tabs-ui)
   - [Changing the Return To URL scheme](#changing-the-return-to-url-scheme)
-  - [Trusted Web Activity](#trusted-web-activity-experimental)
+  - [Trusted Web Activity](#trusted-web-activity)
   - [Authentication API](#authentication-api)
     - [Login with database connection](#login-with-database-connection)
     - [Login using MFA with One Time Password code](#login-using-mfa-with-one-time-password-code)
@@ -133,10 +133,6 @@ WebAuthProvider.logout(account)
 ```
 
 ## Trusted Web Activity
-> **Warning**
-> Trusted Web Activity support in Auth0.Android is still experimental and can change in the future. 
->
-> Please test it thoroughly in all the targeted browsers and OS variants and let us know your feedback.
 
 Trusted Web Activity is a feature provided by some browsers to provide a native look and feel to the custom tabs.
 
