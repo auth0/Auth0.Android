@@ -20,7 +20,6 @@
             android:autofillHints="emailAddress"
             android:ems="10"
             android:hint="Email"
-            android:isCredential="true"
             android:inputType="textEmailAddress"
             android:text="asd@asd.asd"
             android:textSize="14sp"
@@ -38,7 +37,6 @@
             android:autofillHints="password"
             android:ems="10"
             android:hint="Password"
-            android:isCredential="true"
             android:inputType="textPassword"
             android:text="asdasd"
             android:textSize="14sp"
@@ -69,44 +67,7 @@
             android:textSize="16sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/btSignInPasskey" />
-
-        <TextView
-            android:id="@+id/textViewPasskey"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Authenticate with Passkey"
-            android:textSize="16sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/btLoginAsync" />
-
-        <Button
-            android:id="@+id/btSignupPasskey"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="4dp"
-            android:text="SignUp with Passkey"
-            android:textSize="12sp"
-            app:layout_constraintEnd_toStartOf="@+id/btSignInPasskey"
-            app:layout_constraintHorizontal_bias="1.0"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textViewPasskey" />
-
-        <Button
-            android:id="@+id/btSignInPasskey"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="4dp"
-            android:text="Signin with Passkey"
-            android:textSize="12sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="1.0"
-            app:layout_constraintStart_toEndOf="@+id/btSignupPasskey"
-            app:layout_constraintTop_toBottomOf="@+id/textViewPasskey" />
 
         <TextView
             android:id="@+id/textView4"

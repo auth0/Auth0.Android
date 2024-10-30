@@ -56,18 +56,6 @@ public interface Request<T, U : Auth0Exception> {
      */
     public fun addParameter(name: String, value: String): Request<T, U>
 
-
-    /**
-     * Add parameter of [Any] type to the request with a given name
-     *
-     * @param name  of the parameter
-     * @param value of the parameter
-     * @return itself
-     */
-    public fun addParameter(name: String,value:Any):Request<T,U> {
-        return this
-    }
-
     /**
      * Adds an additional header for the request
      *

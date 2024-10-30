@@ -47,55 +47,6 @@ internal class AuthenticationAPIMockServer : APIMockServer() {
         return this
     }
 
-    fun willReturnSuccessfulPasskeyRegistration(): AuthenticationAPIMockServer {
-        val json = """{
-            "authn_params_public_key":{
-                "challenge": "$CHALLENGE",
-                "timeout": 6046456,
-                "rp": {
-                    "id": "auth0.passkey.com",
-                    "name": "Passkey Test"
-                },
-                "pubKeyCredParams": [
-                    {
-                        "type": "public-key",
-                        "alg": -7
-                    },
-                    {
-                        "type": "public-key",
-                        "alg": -257
-                    }
-                ],
-                "authenticatorSelection": {
-                    "authenticatorAttachment": "platform",
-                    "residentKey": "required"
-                },
-                "user": {
-                       "id": "53b995f8bce68d9fc900099c",
-                       "name": "p",
-                       "displayName": "d"
-                   }
-                },
-                 "auth_session": "$SESSION_ID"
-            }"""
-        server.enqueue(responseWithJSON(json, 200))
-        return this
-    }
-
-    fun willReturnSuccessfulPasskeyChallenge():AuthenticationAPIMockServer{
-        val json = """{
-            "authn_params_public_key":{
-                "challenge": "$CHALLENGE",
-                "timeout": 604645,
-                "rpId": "domain",
-                "userVerification":"preferred"
-                },
-                 "auth_session": "$SESSION_ID"
-            }"""
-        server.enqueue(responseWithJSON(json, 200))
-        return this
-    }
-
     fun willReturnSuccessfulLoginWithRecoveryCode(): AuthenticationAPIMockServer {
         val json = """{
           "refresh_token": "$REFRESH_TOKEN",
@@ -204,8 +155,6 @@ internal class AuthenticationAPIMockServer : APIMockServer() {
         const val REFRESH_TOKEN = "REFRESH_TOKEN"
         const val ID_TOKEN = "ID_TOKEN"
         const val ACCESS_TOKEN = "ACCESS_TOKEN"
-        const val SESSION_ID = "SESSION_ID"
         private const val BEARER = "BEARER"
-        private const val CHALLENGE = "CHALLENGE"
     }
 }

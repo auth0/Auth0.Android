@@ -9,31 +9,18 @@ import com.auth0.android.request.HttpMethod
 import com.auth0.android.request.NetworkingClient
 import com.auth0.android.request.RequestOptions
 import com.auth0.android.request.ServerResponse
-import com.auth0.android.request.UserMetadataRequest
 import com.auth0.android.request.internal.RequestFactory
 import com.auth0.android.request.internal.ThreadSwitcherShadow
-import com.auth0.android.result.Authentication
-import com.auth0.android.result.Challenge
-import com.auth0.android.result.Credentials
-import com.auth0.android.result.DatabaseUser
-import com.auth0.android.result.PasskeyRegistrationResponse
-import com.auth0.android.result.UserProfile
+import com.auth0.android.result.*
 import com.auth0.android.util.Auth0UserAgent
 import com.auth0.android.util.AuthenticationAPIMockServer
-import com.auth0.android.util.AuthenticationAPIMockServer.Companion.SESSION_ID
 import com.auth0.android.util.AuthenticationCallbackMatcher
 import com.auth0.android.util.MockAuthenticationCallback
 import com.auth0.android.util.SSLTestUtils.testClient
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.google.gson.JsonElement
 import com.google.gson.reflect.TypeToken
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.argumentCaptor
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
+import com.nhaarman.mockitokotlin2.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
@@ -52,7 +39,7 @@ import java.io.ByteArrayInputStream
 import java.io.FileReader
 import java.io.InputStream
 import java.security.PublicKey
-import java.util.Locale
+import java.util.*
 
 @RunWith(RobolectricTestRunner::class)
 @Config(shadows = [ThreadSwitcherShadow::class])
@@ -186,84 +173,6 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
         assertThat(body, Matchers.not(Matchers.hasKey("password")))
         assertThat(body, Matchers.not(Matchers.hasKey("connection")))
-    }
-
-    @Test
-    public fun shouldSigninWithPasskey() {
-        mockAPI.willReturnSuccessfulLogin()
-        val callback = MockAuthenticationCallback<Credentials>()
-        val auth0 = auth0
-        val client = AuthenticationAPIClient(auth0)
-        client.signinWithPasskey("auth-session", mock(), emptyMap())
-            .start(callback)
-        ShadowLooper.idleMainLooper()
-        assertThat(
-            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
-                Credentials::class.java
-            )
-        )
-        val request = mockAPI.takeRequest()
-        assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
-                defaultLocale
-            )
-        )
-        val body = bodyFromRequest<String>(request)
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
-        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
-        assertThat(
-            body,
-            Matchers.hasEntry("grant_type", "urn:okta:params:oauth:grant-type:webauthn")
-        )
-        assertThat(body, Matchers.hasKey("authn_response"))
-        assertThat(body, Matchers.hasEntry("auth_session", "auth-session"))
-    }
-
-    @Test
-    public fun shouldSignupWithPasskey() {
-        mockAPI.willReturnSuccessfulPasskeyRegistration()
-        val auth0 = auth0
-        val client = AuthenticationAPIClient(auth0)
-        val registrationResponse = client.signupWithPasskey(
-            mock(),
-            mapOf("realm" to MY_CONNECTION)
-        )
-            .execute()
-        val request = mockAPI.takeRequest()
-        assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
-                defaultLocale
-            )
-        )
-        val body = bodyFromRequest<String>(request)
-        assertThat(request.path, Matchers.equalTo("/passkey/register"))
-        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
-        assertThat(body, Matchers.hasEntry("realm", MY_CONNECTION))
-        assertThat(body, Matchers.hasKey("user_profile"))
-        assertThat(registrationResponse, Matchers.`is`(Matchers.notNullValue()))
-        assertThat(registrationResponse.authSession, Matchers.comparesEqualTo(SESSION_ID))
-    }
-
-    @Test
-    public fun shouldGetPasskeyChallenge() {
-        mockAPI.willReturnSuccessfulPasskeyChallenge()
-        val auth0 = auth0
-        val client = AuthenticationAPIClient(auth0)
-        val challengeResponse = client.passkeyChallenge(MY_CONNECTION)
-            .execute()
-        val request = mockAPI.takeRequest()
-        assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
-                defaultLocale
-            )
-        )
-        val body = bodyFromRequest<String>(request)
-        assertThat(request.path, Matchers.equalTo("/passkey/challenge"))
-        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
-        assertThat(body, Matchers.hasEntry("realm", MY_CONNECTION))
-        assertThat(challengeResponse, Matchers.`is`(Matchers.notNullValue()))
-        assertThat(challengeResponse.authSession, Matchers.comparesEqualTo(SESSION_ID))
-
     }
 
     @Test

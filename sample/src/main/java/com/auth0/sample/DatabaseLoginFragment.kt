@@ -17,7 +17,6 @@ import com.auth0.android.authentication.storage.SharedPreferencesStorage
 import com.auth0.android.callback.Callback
 import com.auth0.android.management.ManagementException
 import com.auth0.android.management.UsersAPIClient
-import com.auth0.android.provider.PasskeyAuthProvider
 import com.auth0.android.provider.WebAuthProvider
 import com.auth0.android.request.DefaultClient
 import com.auth0.android.result.Credentials
@@ -92,60 +91,6 @@ class DatabaseLoginFragment : Fragment() {
                 dbLoginAsync(email, password)
             }
         }
-
-        binding.btSignupPasskey.setOnClickListener {
-            PasskeyAuthProvider.signUp(account)
-                .setEmail("username@email.com")
-                .setRealm("Username-Password-Authentication")
-                .start(
-                    requireActivity(),
-                    object : Callback<Credentials, AuthenticationException> {
-                        override fun onSuccess(result: Credentials) {
-                            credentialsManager.saveCredentials(result)
-                            Snackbar.make(
-                                requireView(),
-                                "Hello ${result.user.name}",
-                                Snackbar.LENGTH_LONG
-                            ).show()
-                        }
-
-                        override fun onFailure(error: AuthenticationException) {
-                            Snackbar.make(
-                                requireView(),
-                                error.getDescription(),
-                                Snackbar.LENGTH_LONG
-                            )
-                                .show()
-                        }
-                    })
-        }
-        binding.btSignInPasskey.setOnClickListener {
-            PasskeyAuthProvider
-                .signIn(account)
-                .setRealm("Username-Password-Authentication")
-                .start(requireActivity(), object : Callback<Credentials, AuthenticationException> {
-                    override fun onSuccess(result: Credentials) {
-                        credentialsManager.saveCredentials(result)
-                        Snackbar.make(
-                            requireView(),
-                            "Hello ${result.user.name}",
-                            Snackbar.LENGTH_LONG
-                        ).show()
-                    }
-
-                    override fun onFailure(error: AuthenticationException) {
-                        Snackbar.make(
-                            requireView(),
-                            error.getDescription(),
-                            Snackbar.LENGTH_LONG
-                        )
-                            .show()
-                    }
-
-                })
-
-        }
-
         binding.btWebAuth.setOnClickListener {
             webAuth()
         }

@@ -1243,4 +1243,3 @@ The rules should be applied automatically if your application is using `minifyEn
 By default you should at least use the following files:
 * `proguard-okio.pro`
 * `proguard-gson.pro`
-* `proguard-jetpack.pro`
