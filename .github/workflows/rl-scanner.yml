@@ -1,0 +1,78 @@
+name: RL-Security-Scanner
+run-name: rl-security-scanner
+
+
+on:
+  workflow_call:
+    inputs:
+      java-version:
+        required: true
+        type: string
+      artifact-name:
+        required: true
+        type: string
+    secrets:
+      RLSECURE_LICENSE:
+        required: true
+      RLSECURE_SITE_KEY:
+        required: true
+      SIGNAL_HANDLER_TOKEN:
+        required: true
+      PRODSEC_TOOLS_USER:
+        required: true
+      PRODSEC_TOOLS_TOKEN:
+        required: true
+      PRODSEC_TOOLS_ARN:
+        required: true
+
+
+jobs:
+  rl-scanner:
+    name: Run Reversing Labs Scanner
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged && startsWith(github.event.pull_request.head.ref, 'release/'))
+    runs-on: ubuntu-latest
+    outputs:
+      scan-status: ${{ steps.rl-scan-conclusion.outcome }}
+
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build with gradle
+        shell: bash
+        run: ./gradlew :auth0:assembleRelease
+
+      - name: Get Artifact Version
+        id: get_version
+        run: |
+          version=$(cat .version)
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: List build contents
+        run: ls -la auth0/build/outputs/aar
+
+      - name: Output build artifact
+        id: output_build_artifact
+        run: |
+          echo "scanfile=$(pwd)/auth0/build/outputs/aar/auth0-release-${{ steps.get_version.outputs.version }}.aar" >> $GITHUB_OUTPUT  
+
+
+      - name: Run Reversing Labs  Scanner
+        id: rl-scan-conclusion
+        uses: ./.github/actions/rl-scanner
+        with:
+          artifact-path: "$(pwd)/auth0/build/outputs/aar/${{ inputs.artifact-name }}"
+          version: "${{ steps.get_version.outputs.version }}"
+        env:
+          RLSECURE_LICENSE: ${{ secrets.RLSECURE_LICENSE }}
+          RLSECURE_SITE_KEY: ${{ secrets.RLSECURE_SITE_KEY }}
+          SIGNAL_HANDLER_TOKEN: ${{ secrets.SIGNAL_HANDLER_TOKEN }}
+          PRODSEC_TOOLS_USER: ${{ secrets.PRODSEC_TOOLS_USER }}
+          PRODSEC_TOOLS_TOKEN: ${{ secrets.PRODSEC_TOOLS_TOKEN }}
+          PRODSEC_TOOLS_ARN: ${{ secrets.PRODSEC_TOOLS_ARN }}
+
+      - name: Output scan result
+        run: echo "scan-status=${{ steps.rl-scan-conclusion.outcome }}" >> $GITHUB_ENV
