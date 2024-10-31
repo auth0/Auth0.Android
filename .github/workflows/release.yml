@@ -15,22 +15,22 @@ permissions:
 ### TODO: Also remove `java-release` workflow from this repo's .github/workflows folder once the repo is public.
 
 jobs:
-  rl-scanner:
-    uses: ./.github/workflows/rl-scanner.yml
-    with:
-      java-version: 8.0.402-zulu
-      artifact-name: 'auth0-release.aar'
-    secrets:
-      RLSECURE_LICENSE: ${{ secrets.RLSECURE_LICENSE }}
-      RLSECURE_SITE_KEY: ${{ secrets.RLSECURE_SITE_KEY }}
-      SIGNAL_HANDLER_TOKEN: ${{ secrets.SIGNAL_HANDLER_TOKEN }}
-      PRODSEC_TOOLS_USER: ${{ secrets.PRODSEC_TOOLS_USER }}
-      PRODSEC_TOOLS_TOKEN: ${{ secrets.PRODSEC_TOOLS_TOKEN }}
-      PRODSEC_TOOLS_ARN: ${{ secrets.PRODSEC_TOOLS_ARN }}
+#  rl-scanner:
+#    uses: ./.github/workflows/rl-scanner.yml
+#    with:
+#      java-version: 8.0.402-zulu
+#      artifact-name: 'auth0-release.aar'
+#    secrets:
+#      RLSECURE_LICENSE: ${{ secrets.RLSECURE_LICENSE }}
+#      RLSECURE_SITE_KEY: ${{ secrets.RLSECURE_SITE_KEY }}
+#      SIGNAL_HANDLER_TOKEN: ${{ secrets.SIGNAL_HANDLER_TOKEN }}
+#      PRODSEC_TOOLS_USER: ${{ secrets.PRODSEC_TOOLS_USER }}
+#      PRODSEC_TOOLS_TOKEN: ${{ secrets.PRODSEC_TOOLS_TOKEN }}
+#      PRODSEC_TOOLS_ARN: ${{ secrets.PRODSEC_TOOLS_ARN }}
 
   release:
     uses: ./.github/workflows/java-release.yml
-    needs: rl-scanner
+#    needs: rl-scanner
     with:
       java-version: 8.0.402-zulu
     secrets:
