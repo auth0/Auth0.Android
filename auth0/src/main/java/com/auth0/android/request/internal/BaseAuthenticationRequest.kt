@@ -17,7 +17,8 @@ import java.util.*
 
 internal open class BaseAuthenticationRequest(
     private val request: Request<Credentials, AuthenticationException>,
-    private val clientId: String, baseURL: String) : AuthenticationRequest {
+    private val clientId: String, baseURL: String
+) : AuthenticationRequest {
 
     private companion object {
         private val TAG = BaseAuthenticationRequest::class.java.simpleName
@@ -28,8 +29,10 @@ internal open class BaseAuthenticationRequest(
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal var validateClaims = false
+
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal var idTokenVerificationLeeway: Int? = null
+
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal var idTokenVerificationIssuer: String = baseURL
 
@@ -121,6 +124,11 @@ internal open class BaseAuthenticationRequest(
         return this
     }
 
+    override fun addParameter(name: String, value: Any): AuthenticationRequest {
+        request.addParameter(name, value)
+        return this
+    }
+
     override fun addHeader(name: String, value: String): AuthenticationRequest {
         request.addHeader(name, value)
         return this
@@ -130,7 +138,7 @@ internal open class BaseAuthenticationRequest(
         warnClaimValidation()
         request.start(object : Callback<Credentials, AuthenticationException> {
             override fun onSuccess(result: Credentials) {
-                if(validateClaims) {
+                if (validateClaims) {
                     try {
                         verifyClaims(result.idToken)
                     } catch (e: AuthenticationException) {
@@ -151,7 +159,7 @@ internal open class BaseAuthenticationRequest(
     override fun execute(): Credentials {
         warnClaimValidation()
         val credentials = request.execute()
-        if(validateClaims) {
+        if (validateClaims) {
             verifyClaims(credentials.idToken)
         }
         return credentials
@@ -162,7 +170,7 @@ internal open class BaseAuthenticationRequest(
     override suspend fun await(): Credentials {
         warnClaimValidation()
         val credentials = request.await()
-        if(validateClaims) {
+        if (validateClaims) {
             verifyClaims(credentials.idToken)
         }
         return credentials
@@ -199,8 +207,11 @@ internal open class BaseAuthenticationRequest(
     }
 
     private fun warnClaimValidation() {
-        if(!validateClaims) {
-            Log.e(TAG, "The request is made without validating claims. Enable claim validation by calling AuthenticationRequest#validateClaims()")
+        if (!validateClaims) {
+            Log.e(
+                TAG,
+                "The request is made without validating claims. Enable claim validation by calling AuthenticationRequest#validateClaims()"
+            )
         }
     }
 }
