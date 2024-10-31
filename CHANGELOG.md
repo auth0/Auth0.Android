@@ -1,5 +1,11 @@
 # Change Log
 
+## [3.1.0](https://github.com/auth0/Auth0.Android/tree/3.1.0) (2024-10-31)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.0.0...3.1.0)
+
+**Added**
+- Support for Passkey Authentication [\#770](https://github.com/auth0/Auth0.Android/pull/770) ([pmathew92](https://github.com/pmathew92))
+
 ## [3.0.0](https://github.com/auth0/Auth0.Android/tree/3.0.0) (2024-10-30)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/2.11.0...3.0.0)
 
