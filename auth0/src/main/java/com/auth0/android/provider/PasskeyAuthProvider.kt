@@ -9,7 +9,7 @@ import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.authentication.ParameterBuilder
 import com.auth0.android.callback.Callback
-import com.auth0.android.request.UserMetadataRequest
+import com.auth0.android.request.UserData
 import com.auth0.android.result.Credentials
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
@@ -99,12 +99,12 @@ public object PasskeyAuthProvider {
                 callback.onFailure(ex)
                 return
             }
-            val passkeyManager =
-                PasskeyManager(
-                    AuthenticationAPIClient(auth0),
-                    CredentialManager.create(context)
-                )
-            passkeyManager.signin(context, parameters, callback, executor)
+            val passkeyManager = PasskeyManager(
+                AuthenticationAPIClient(auth0), CredentialManager.create(context)
+            )
+            passkeyManager.signin(
+                context, parameters[ParameterBuilder.REALM_KEY]!!, parameters, callback, executor
+            )
         }
     }
 
@@ -211,14 +211,17 @@ public object PasskeyAuthProvider {
                 callback.onFailure(ex)
                 return
             }
-            val passkeyManager =
-                PasskeyManager(
-                    AuthenticationAPIClient(auth0),
-                    CredentialManager.create(context)
-                )
-            val userMetadata = UserMetadataRequest(email, phoneNumber, username, name)
+            val passkeyManager = PasskeyManager(
+                AuthenticationAPIClient(auth0), CredentialManager.create(context)
+            )
+            val userData = UserData(email, phoneNumber, username, name)
             passkeyManager.signup(
-                context, userMetadata, parameters, callback, executor
+                context,
+                userData,
+                parameters[ParameterBuilder.REALM_KEY]!!,
+                parameters,
+                callback,
+                executor
             )
         }
     }

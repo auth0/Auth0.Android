@@ -1,9 +1,21 @@
 package com.auth0.sample
 
 import android.os.Bundle
+import android.os.CancellationSignal
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.credentials.CreateCredentialResponse
+import androidx.credentials.CreatePublicKeyCredentialRequest
+import androidx.credentials.CreatePublicKeyCredentialResponse
+import androidx.credentials.CredentialManager
+import androidx.credentials.CredentialManagerCallback
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.GetCredentialResponse
+import androidx.credentials.GetPublicKeyCredentialOption
+import androidx.credentials.PublicKeyCredential
+import androidx.credentials.exceptions.CreateCredentialException
+import androidx.credentials.exceptions.GetCredentialException
 import androidx.fragment.app.Fragment
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationAPIClient
@@ -17,16 +29,21 @@ import com.auth0.android.authentication.storage.SharedPreferencesStorage
 import com.auth0.android.callback.Callback
 import com.auth0.android.management.ManagementException
 import com.auth0.android.management.UsersAPIClient
-import com.auth0.android.provider.PasskeyAuthProvider
 import com.auth0.android.provider.WebAuthProvider
 import com.auth0.android.request.DefaultClient
+import com.auth0.android.request.PublicKeyCredentials
+import com.auth0.android.request.UserData
 import com.auth0.android.result.Credentials
+import com.auth0.android.result.PasskeyChallenge
+import com.auth0.android.result.PasskeyRegistrationChallenge
 import com.auth0.android.result.UserProfile
 import com.auth0.sample.databinding.FragmentDatabaseLoginBinding
 import com.google.android.material.snackbar.Snackbar
+import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import java.util.concurrent.Executors
 
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
@@ -50,6 +67,10 @@ class DatabaseLoginFragment : Fragment() {
         "https://${getString(R.string.com_auth0_domain)}/api/v2/"
     }
 
+    private val credentialManager: CredentialManager by lazy {
+        CredentialManager.create(requireContext())
+    }
+
     private val authenticationApiClient: AuthenticationAPIClient by lazy {
         AuthenticationAPIClient(account)
     }
@@ -57,7 +78,10 @@ class DatabaseLoginFragment : Fragment() {
     private val secureCredentialsManager: SecureCredentialsManager by lazy {
         val storage = SharedPreferencesStorage(requireContext())
         val manager = SecureCredentialsManager(
-            requireContext(), account, storage, requireActivity(),
+            requireContext(),
+            account,
+            storage,
+            requireActivity(),
             localAuthenticationOptions
         )
         manager
@@ -70,14 +94,16 @@ class DatabaseLoginFragment : Fragment() {
     }
 
     private val localAuthenticationOptions =
-        LocalAuthenticationOptions.Builder().setTitle("Biometric").setDescription("description")
-            .setAuthenticationLevel(AuthenticationLevel.STRONG).setNegativeButtonText("Cancel")
+        LocalAuthenticationOptions.Builder()
+            .setTitle("Biometric")
+            .setDescription("description")
+            .setAuthenticationLevel(AuthenticationLevel.STRONG)
+            .setNegativeButtonText("Cancel")
             .setDeviceCredentialFallback(true)
             .build()
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         val binding = FragmentDatabaseLoginBinding.inflate(inflater, container, false)
         binding.btLogin.setOnClickListener {
@@ -94,56 +120,149 @@ class DatabaseLoginFragment : Fragment() {
         }
 
         binding.btSignupPasskey.setOnClickListener {
-            PasskeyAuthProvider.signUp(account)
-                .setEmail("username@email.com")
-                .setRealm("Username-Password-Authentication")
-                .start(
-                    requireActivity(),
-                    object : Callback<Credentials, AuthenticationException> {
-                        override fun onSuccess(result: Credentials) {
-                            credentialsManager.saveCredentials(result)
-                            Snackbar.make(
-                                requireView(),
-                                "Hello ${result.user.name}",
-                                Snackbar.LENGTH_LONG
-                            ).show()
-                        }
 
-                        override fun onFailure(error: AuthenticationException) {
-                            Snackbar.make(
-                                requireView(),
-                                error.getDescription(),
-                                Snackbar.LENGTH_LONG
-                            )
-                                .show()
-                        }
-                    })
+            authenticationApiClient.signupWithPasskey(
+                UserData(
+                    email = "userval@email.com"
+                ), "Username-Password-Authentication"
+            ).start(object : Callback<PasskeyRegistrationChallenge, AuthenticationException> {
+                override fun onSuccess(result: PasskeyRegistrationChallenge) {
+                    val passKeyRegistrationChallenge = result
+                    val request = CreatePublicKeyCredentialRequest(
+                        Gson().toJson(
+                            passKeyRegistrationChallenge.authParamsPublicKey
+                        )
+                    )
+                    var response: CreatePublicKeyCredentialResponse?
+
+                    credentialManager.createCredentialAsync(requireContext(),
+                        request,
+                        CancellationSignal(),
+                        Executors.newSingleThreadExecutor(),
+                        object :
+                            CredentialManagerCallback<CreateCredentialResponse, CreateCredentialException> {
+
+                            override fun onError(e: CreateCredentialException) {
+                            }
+
+                            override fun onResult(result: CreateCredentialResponse) {
+
+                                response = result as CreatePublicKeyCredentialResponse
+                                val authRequest = Gson().fromJson(
+                                    response?.registrationResponseJson,
+                                    PublicKeyCredentials::class.java
+                                )
+
+                                authenticationApiClient.signinWithPasskey(
+                                    passKeyRegistrationChallenge.authSession,
+                                    authRequest,
+                                    "Username-Password-Authentication"
+                                )
+                                    .validateClaims()
+                                    .start(object : Callback<Credentials, AuthenticationException> {
+                                        override fun onSuccess(result: Credentials) {
+                                            credentialsManager.saveCredentials(result)
+                                            Snackbar.make(
+                                                requireView(),
+                                                "Hello ${result.user.name}",
+                                                Snackbar.LENGTH_LONG
+                                            ).show()
+                                        }
+
+                                        override fun onFailure(error: AuthenticationException) {
+                                            Snackbar.make(
+                                                requireView(),
+                                                error.getDescription(),
+                                                Snackbar.LENGTH_LONG
+                                            ).show()
+                                        }
+                                    })
+                            }
+                        })
+                }
+
+                override fun onFailure(error: AuthenticationException) {
+                    Snackbar.make(
+                        requireView(),
+                        error.getDescription(),
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
+            })
+
         }
         binding.btSignInPasskey.setOnClickListener {
-            PasskeyAuthProvider
-                .signIn(account)
-                .setRealm("Username-Password-Authentication")
-                .start(requireActivity(), object : Callback<Credentials, AuthenticationException> {
-                    override fun onSuccess(result: Credentials) {
-                        credentialsManager.saveCredentials(result)
-                        Snackbar.make(
-                            requireView(),
-                            "Hello ${result.user.name}",
-                            Snackbar.LENGTH_LONG
-                        ).show()
+
+            authenticationApiClient.passkeyChallenge("Username-Password-Authentication")
+                .start(object : Callback<PasskeyChallenge, AuthenticationException> {
+                    override fun onSuccess(result: PasskeyChallenge) {
+                        val passkeyChallengeResponse = result
+                        val request =
+                            GetPublicKeyCredentialOption(Gson().toJson(passkeyChallengeResponse.authParamsPublicKey))
+                        val getCredRequest = GetCredentialRequest(
+                            listOf(request)
+                        )
+
+                        credentialManager.getCredentialAsync(requireContext(),
+                            getCredRequest,
+                            CancellationSignal(),
+                            Executors.newSingleThreadExecutor(),
+                            object :
+                                CredentialManagerCallback<GetCredentialResponse, GetCredentialException> {
+                                override fun onError(e: GetCredentialException) {
+                                }
+
+                                override fun onResult(result: GetCredentialResponse) {
+                                    when (val credential = result.credential) {
+                                        is PublicKeyCredential -> {
+                                            val authRequest = Gson().fromJson(
+                                                credential.authenticationResponseJson,
+                                                PublicKeyCredentials::class.java
+                                            )
+                                            authenticationApiClient.signinWithPasskey(
+                                                passkeyChallengeResponse.authSession,
+                                                authRequest,
+                                                "Username-Password-Authentication"
+                                            )
+                                                .validateClaims()
+                                                .start(object : Callback<Credentials, AuthenticationException> {
+                                                override fun onSuccess(result: Credentials) {
+                                                    credentialsManager.saveCredentials(result)
+                                                    Snackbar.make(
+                                                        requireView(),
+                                                        "Hello ${result.user.name}",
+                                                        Snackbar.LENGTH_LONG
+                                                    ).show()
+                                                }
+
+                                                override fun onFailure(error: AuthenticationException) {
+                                                    Snackbar.make(
+                                                        requireView(),
+                                                        error.getDescription(),
+                                                        Snackbar.LENGTH_LONG
+                                                    ).show()
+                                                }
+                                            })
+                                        }
+
+                                        else -> {
+                                            Snackbar.make(
+                                                requireView(),
+                                                "Received unrecognized credential type ${credential.type}.This shouldn't happen",
+                                                Snackbar.LENGTH_LONG
+                                            ).show()
+                                        }
+                                    }
+                                }
+                            })
                     }
 
                     override fun onFailure(error: AuthenticationException) {
                         Snackbar.make(
-                            requireView(),
-                            error.getDescription(),
-                            Snackbar.LENGTH_LONG
-                        )
-                            .show()
+                            requireView(), error.getDescription(), Snackbar.LENGTH_LONG
+                        ).show()
                     }
-
                 })
-
         }
 
         binding.btWebAuth.setOnClickListener {
@@ -208,10 +327,10 @@ class DatabaseLoginFragment : Fragment() {
                 requireView(),
                 "Hello ${result.user.name}",
                 Snackbar.LENGTH_LONG
-            ).show()
-        } catch (error: AuthenticationException) {
-            Snackbar.make(requireView(), error.getDescription(), Snackbar.LENGTH_LONG)
+            )
                 .show()
+        } catch (error: AuthenticationException) {
+            Snackbar.make(requireView(), error.getDescription(), Snackbar.LENGTH_LONG).show()
         }
     }
 
@@ -256,28 +375,33 @@ class DatabaseLoginFragment : Fragment() {
 
                 override fun onFailure(error: AuthenticationException) {
                     val message =
-                        if (error.isCanceled) "Browser was closed" else error.getDescription()
-                    Snackbar.make(requireView(), message, Snackbar.LENGTH_LONG).show()
+                        if (error.isCanceled)
+                            "Browser was closed"
+                        else
+                            error.getDescription()
+                    Snackbar.make(requireView(), message, Snackbar.LENGTH_LONG)
+                        .show()
                 }
             })
     }
 
     private suspend fun webAuthAsync() {
         try {
-            val credentials = WebAuthProvider.login(account)
-                .withScheme(getString(R.string.com_auth0_scheme))
-                .withAudience(audience)
-                .withScope(scope)
-                .await(requireContext())
+            val credentials =
+                WebAuthProvider.login(account)
+                    .withScheme(getString(R.string.com_auth0_scheme))
+                    .withAudience(audience)
+                    .withScope(scope)
+                    .await(requireContext())
             credentialsManager.saveCredentials(credentials)
             Snackbar.make(
-                requireView(),
-                "Hello ${credentials.user.name}",
-                Snackbar.LENGTH_LONG
+                requireView(), "Hello ${credentials.user.name}", Snackbar.LENGTH_LONG
             ).show()
         } catch (error: AuthenticationException) {
-            val message =
-                if (error.isCanceled) "Browser was closed" else error.getDescription()
+            val message = if (error.isCanceled)
+                "Browser was closed"
+            else
+                error.getDescription()
             Snackbar.make(requireView(), message, Snackbar.LENGTH_LONG).show()
         }
     }
@@ -288,9 +412,7 @@ class DatabaseLoginFragment : Fragment() {
             .start(requireContext(), object : Callback<Void?, AuthenticationException> {
                 override fun onSuccess(result: Void?) {
                     Snackbar.make(
-                        requireView(),
-                        "Logged out",
-                        Snackbar.LENGTH_LONG
+                        requireView(), "Logged out", Snackbar.LENGTH_LONG
                     ).show()
                 }
 
@@ -309,13 +431,10 @@ class DatabaseLoginFragment : Fragment() {
                 .withScheme(getString(R.string.com_auth0_scheme))
                 .await(requireContext())
             Snackbar.make(
-                requireView(),
-                "Logged out",
-                Snackbar.LENGTH_LONG
+                requireView(), "Logged out", Snackbar.LENGTH_LONG
             ).show()
         } catch (error: AuthenticationException) {
-            val message =
-                if (error.isCanceled) "Browser was closed" else error.getDescription()
+            val message = if (error.isCanceled) "Browser was closed" else error.getDescription()
             Snackbar.make(requireView(), message, Snackbar.LENGTH_LONG).show()
         }
     }
@@ -325,8 +444,7 @@ class DatabaseLoginFragment : Fragment() {
     }
 
     private fun getCreds() {
-        credentialsManager.getCredentials(
-            null,
+        credentialsManager.getCredentials(null,
             300,
             emptyMap(),
             emptyMap(),
@@ -347,49 +465,42 @@ class DatabaseLoginFragment : Fragment() {
     }
 
     private fun getCredsSecure() {
-        secureCredentialsManager.getCredentials(
-            object :
-                Callback<Credentials, CredentialsManagerException> {
-                override fun onSuccess(result: Credentials) {
-                    Snackbar.make(
-                        requireView(),
-                        "Got credentials - ${result.accessToken}",
-                        Snackbar.LENGTH_LONG
-                    ).show()
-                }
+        secureCredentialsManager.getCredentials(object :
+            Callback<Credentials, CredentialsManagerException> {
+            override fun onSuccess(result: Credentials) {
+                Snackbar.make(
+                    requireView(), "Got credentials - ${result.accessToken}", Snackbar.LENGTH_LONG
+                ).show()
+            }
 
-                override fun onFailure(error: CredentialsManagerException) {
-                    Snackbar.make(requireView(), "${error.message}", Snackbar.LENGTH_LONG).show()
-                    when (error) {
-                        CredentialsManagerException.NO_CREDENTIALS -> {
-                            // handle no credentials scenario
-                            println("NO_CREDENTIALS: $error")
-                        }
-
-                        CredentialsManagerException.NO_REFRESH_TOKEN -> {
-                            // handle no refresh token scenario
-                            println("NO_REFRESH_TOKEN: $error")
-                        }
-
-                        CredentialsManagerException.STORE_FAILED -> {
-                            // handle store failed scenario
-                            println("STORE_FAILED: $error")
-                        }
-                        // ... similarly for other error codes
+            override fun onFailure(error: CredentialsManagerException) {
+                Snackbar.make(requireView(), "${error.message}", Snackbar.LENGTH_LONG).show()
+                when (error) {
+                    CredentialsManagerException.NO_CREDENTIALS -> {
+                        // handle no credentials scenario
+                        println("NO_CREDENTIALS: $error")
                     }
+
+                    CredentialsManagerException.NO_REFRESH_TOKEN -> {
+                        // handle no refresh token scenario
+                        println("NO_REFRESH_TOKEN: $error")
+                    }
+
+                    CredentialsManagerException.STORE_FAILED -> {
+                        // handle store failed scenario
+                        println("STORE_FAILED: $error")
+                    }
+                    // ... similarly for other error codes
                 }
             }
-        )
+        })
     }
 
     private suspend fun getCredsAsync() {
         try {
-            val credentials =
-                credentialsManager.awaitCredentials()
+            val credentials = credentialsManager.awaitCredentials()
             Snackbar.make(
-                requireView(),
-                "Got credentials - ${credentials.accessToken}",
-                Snackbar.LENGTH_LONG
+                requireView(), "Got credentials - ${credentials.accessToken}", Snackbar.LENGTH_LONG
             ).show()
         } catch (error: CredentialsManagerException) {
             Snackbar.make(requireView(), "${error.message}", Snackbar.LENGTH_LONG).show()
@@ -405,9 +516,7 @@ class DatabaseLoginFragment : Fragment() {
                     .start(object : Callback<UserProfile, ManagementException> {
                         override fun onFailure(error: ManagementException) {
                             Snackbar.make(
-                                requireView(),
-                                error.getDescription(),
-                                Snackbar.LENGTH_LONG
+                                requireView(), error.getDescription(), Snackbar.LENGTH_LONG
                             ).show()
                         }
 
@@ -433,9 +542,7 @@ class DatabaseLoginFragment : Fragment() {
             val users = UsersAPIClient(account, credentials.accessToken)
             val user = users.getProfile(credentials.user.getId()!!).await()
             Snackbar.make(
-                requireView(),
-                "Got profile for ${user.name}",
-                Snackbar.LENGTH_LONG
+                requireView(), "Got profile for ${user.name}", Snackbar.LENGTH_LONG
             ).show()
         } catch (error: CredentialsManagerException) {
             Snackbar.make(requireView(), "${error.message}", Snackbar.LENGTH_LONG).show()
@@ -457,9 +564,7 @@ class DatabaseLoginFragment : Fragment() {
                     .start(object : Callback<UserProfile, ManagementException> {
                         override fun onFailure(error: ManagementException) {
                             Snackbar.make(
-                                requireView(),
-                                error.getDescription(),
-                                Snackbar.LENGTH_LONG
+                                requireView(), error.getDescription(), Snackbar.LENGTH_LONG
                             ).show()
                         }
 

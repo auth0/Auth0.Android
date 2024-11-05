@@ -17,13 +17,13 @@ import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.authentication.request.AuthenticationRequestMock
 import com.auth0.android.authentication.request.RequestMock
 import com.auth0.android.callback.Callback
-import com.auth0.android.request.UserMetadataRequest
+import com.auth0.android.request.UserData
 import com.auth0.android.result.AuthParamsPublicKey
 import com.auth0.android.result.AuthenticatorSelection
 import com.auth0.android.result.AuthnParamsPublicKey
 import com.auth0.android.result.Credentials
-import com.auth0.android.result.PasskeyChallengeResponse
-import com.auth0.android.result.PasskeyRegistrationResponse
+import com.auth0.android.result.PasskeyChallenge
+import com.auth0.android.result.PasskeyRegistrationChallenge
 import com.auth0.android.result.PasskeyUser
 import com.auth0.android.result.PubKeyCredParam
 import com.auth0.android.result.RelyingParty
@@ -71,7 +71,7 @@ public class PasskeyManagerTest {
     private val exceptionCaptor: KArgumentCaptor<AuthenticationException> = argumentCaptor()
 
 
-    private val passkeyRegistrationResponse = PasskeyRegistrationResponse(
+    private val passkeyRegistrationChallengeResponse = PasskeyRegistrationChallenge(
         authSession = "dummyAuthSession",
         authParamsPublicKey = AuthnParamsPublicKey(
             authenticatorSelection = AuthenticatorSelection(
@@ -110,7 +110,7 @@ public class PasskeyManagerTest {
         }
     """
 
-    private val passkeyChallengeResponse = PasskeyChallengeResponse(
+    private val passkeyChallenge = PasskeyChallenge(
         authSession = "authSession",
         authParamsPublicKey = AuthParamsPublicKey(
             challenge = "challenge",
@@ -129,11 +129,11 @@ public class PasskeyManagerTest {
 
     @Test
     public fun shouldSignUpWithPasskeySuccess() {
-        val userMetadata: UserMetadataRequest = mock()
-        val parameters = mapOf("realm" to "testRealm")
+        val userMetadata: UserData = mock()
+        val parameters = mapOf("scope" to "profile")
 
-        `when`(authenticationAPIClient.signupWithPasskey(userMetadata, parameters)).thenReturn(
-            RequestMock(passkeyRegistrationResponse, null)
+        `when`(authenticationAPIClient.signupWithPasskey(userMetadata, "testRealm")).thenReturn(
+            RequestMock(passkeyRegistrationChallengeResponse, null)
         )
         `when`(authenticationAPIClient.signinWithPasskey(any(), any(), any())).thenReturn(
             AuthenticationRequestMock(
@@ -167,9 +167,16 @@ public class PasskeyManagerTest {
             )
         }
 
-        passkeyManager.signup(context, userMetadata, parameters, callback, serialExecutor)
+        passkeyManager.signup(
+            context,
+            userMetadata,
+            "testRealm",
+            parameters,
+            callback,
+            serialExecutor
+        )
 
-        verify(authenticationAPIClient).signupWithPasskey(userMetadata, parameters)
+        verify(authenticationAPIClient).signupWithPasskey(userMetadata, "testRealm")
         verify(credentialManager).createCredentialAsync(eq(context), any(), any(), any(), any())
         verify(authenticationAPIClient).signinWithPasskey(any(), any(), any())
         verify(callback).onSuccess(credentialsCaptor.capture())
@@ -180,17 +187,24 @@ public class PasskeyManagerTest {
 
     @Test
     public fun shouldSignUpWithPasskeyApiFailure() {
-        val userMetadata: UserMetadataRequest = mock()
-        val parameters = mapOf("realm" to "testRealm")
+        val userMetadata: UserData = mock()
+        val parameters = mapOf("scope" to "profile")
         val error = AuthenticationException("Signup failed")
         `when`(
             authenticationAPIClient.signupWithPasskey(
                 userMetadata,
-                parameters
+                "testRealm"
             )
         ).thenReturn(RequestMock(null, error))
-        passkeyManager.signup(context, userMetadata, parameters, callback, serialExecutor)
-        verify(authenticationAPIClient).signupWithPasskey(userMetadata, parameters)
+        passkeyManager.signup(
+            context,
+            userMetadata,
+            "testRealm",
+            parameters,
+            callback,
+            serialExecutor
+        )
+        verify(authenticationAPIClient).signupWithPasskey(userMetadata, "testRealm")
         verify(authenticationAPIClient, never()).signinWithPasskey(any(), any(), any())
         verify(credentialManager, never()).createCredentialAsync(
             any(),
@@ -204,14 +218,14 @@ public class PasskeyManagerTest {
 
     @Test
     public fun shouldSignUpWithPasskeyCreateCredentialFailure() {
-        val userMetadata: UserMetadataRequest = mock()
-        val parameters = mapOf("realm" to "testRealm")
+        val userMetadata: UserData = mock()
+        val parameters = mapOf("scope" to "scope")
         `when`(
             authenticationAPIClient.signupWithPasskey(
                 userMetadata,
-                parameters
+                "testRealm"
             )
-        ).thenReturn(RequestMock(passkeyRegistrationResponse, null))
+        ).thenReturn(RequestMock(passkeyRegistrationChallengeResponse, null))
 
         whenever(
             credentialManager.createCredentialAsync(
@@ -227,8 +241,15 @@ public class PasskeyManagerTest {
             )
         }
 
-        passkeyManager.signup(context, userMetadata, parameters, callback, serialExecutor)
-        verify(authenticationAPIClient).signupWithPasskey(userMetadata, parameters)
+        passkeyManager.signup(
+            context,
+            userMetadata,
+            "testRealm",
+            parameters,
+            callback,
+            serialExecutor
+        )
+        verify(authenticationAPIClient).signupWithPasskey(userMetadata, "testRealm")
         verify(credentialManager).createCredentialAsync(eq(context), any(), any(), any(), any())
         verify(authenticationAPIClient, never()).signinWithPasskey(any(), any(), any())
         verify(callback).onFailure(exceptionCaptor.capture())
@@ -245,11 +266,11 @@ public class PasskeyManagerTest {
 
     @Test
     public fun shouldSignInWithPasskeySuccess() {
-        val parameters = mapOf("realm" to "testRealm")
+        val parameters = mapOf("scope" to "scope")
         val credentialResponse: GetCredentialResponse = mock()
 
-        `when`(authenticationAPIClient.passkeyChallenge(parameters["realm"])).thenReturn(
-            RequestMock(passkeyChallengeResponse, null)
+        `when`(authenticationAPIClient.passkeyChallenge("testRealm")).thenReturn(
+            RequestMock(passkeyChallenge, null)
         )
 
         `when`(credentialResponse.credential).thenReturn(
@@ -278,9 +299,9 @@ public class PasskeyManagerTest {
         }.`when`(credentialManager)
             .getCredentialAsync(any(), any<GetCredentialRequest>(), any(), any(), any())
 
-        passkeyManager.signin(context, parameters, callback, serialExecutor)
+        passkeyManager.signin(context, "testRealm", parameters, callback, serialExecutor)
 
-        verify(authenticationAPIClient).passkeyChallenge(parameters["realm"])
+        verify(authenticationAPIClient).passkeyChallenge("testRealm")
         verify(credentialManager).getCredentialAsync(
             any(),
             any<GetCredentialRequest>(),
@@ -297,14 +318,14 @@ public class PasskeyManagerTest {
 
     @Test
     public fun shouldSignInWithPasskeyApiFailure() {
-        val parameters = mapOf("realm" to "testRealm")
+        val parameters = mapOf("scope" to "profile")
         val error = AuthenticationException("Signin failed")
 
-        `when`(authenticationAPIClient.passkeyChallenge(parameters["realm"])).thenReturn(
+        `when`(authenticationAPIClient.passkeyChallenge("testRealm")).thenReturn(
             RequestMock(null, error)
         )
 
-        passkeyManager.signin(context, parameters, callback, serialExecutor)
+        passkeyManager.signin(context, "testRealm", parameters, callback, serialExecutor)
 
         verify(authenticationAPIClient).passkeyChallenge(any())
         verify(credentialManager, never()).getCredentialAsync(
@@ -321,8 +342,8 @@ public class PasskeyManagerTest {
     @Test
     public fun shouldSignInWithPasskeyGetCredentialFailure() {
         val parameters = mapOf("realm" to "testRealm")
-        `when`(authenticationAPIClient.passkeyChallenge(parameters["realm"])).thenReturn(
-            RequestMock(passkeyChallengeResponse, null)
+        `when`(authenticationAPIClient.passkeyChallenge("testRealm")).thenReturn(
+            RequestMock(passkeyChallenge, null)
         )
 
         whenever(
@@ -339,8 +360,8 @@ public class PasskeyManagerTest {
             )
         }
 
-        passkeyManager.signin(context, parameters, callback, serialExecutor)
-        verify(authenticationAPIClient).passkeyChallenge(parameters["realm"])
+        passkeyManager.signin(context, "testRealm", parameters, callback, serialExecutor)
+        verify(authenticationAPIClient).passkeyChallenge("testRealm")
         verify(credentialManager).getCredentialAsync(
             any(),
             any<GetCredentialRequest>(),
