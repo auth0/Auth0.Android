@@ -610,61 +610,155 @@ User should have a custom domain configured and passkey grant-type enabled in th
 To sign up a user with passkey
 
 ```kotlin
-PasskeyAuthProvider.signUp(account)
-    .setEmail("user email")
-    .setUserName("user name")
-    .setPhoneNumber("phone number")
-    .setRealm("optional connection name")
-    .start(object: Callback<Credentials, AuthenticationException> {
-        override fun onFailure(exception: AuthenticationException) { }
-            
-        override fun onSuccess(credentials: Credentials) { }
-            })
+// Using Coroutines 
+try {
+    val challenge = authenticationApiClient.signupWithPasskey(
+        "{user-data}",
+        "{realm}"
+    ).await()
+    
+    //Use CredentialManager to create public key credentials
+    val request = CreatePublicKeyCredentialRequest(
+        Gson().toJson(challenge.authParamsPublicKey)
+    )
+
+    val result = credentialManager.createCredential(requireContext(), request)
+
+    val authRequest = Gson().fromJson(
+        (result as CreatePublicKeyCredentialResponse).registrationResponseJson,
+        PublicKeyCredentials::class.java
+    )
+
+    val userCredential = authenticationApiClient.signinWithPasskey(
+        challenge.authSession, authRequest, "Username-Password-Authentication"
+    )
+        .validateClaims()
+        .await()
+} catch (e: CreateCredentialException) {
+} catch (exception: AuthenticationException) {
+}
 ```
 <details>
   <summary>Using Java</summary>
 
 ```java
-PasskeyAuthProvider authProvider = new PasskeyAuthProvider();
-authProvider.signUp(account)
-    .setEmail("user email")
-    .setUserName("user name")
-    .setPhoneNumber("phone number")
-    .setRealm("optional connection name")
-    .start(new Callback<Credentials, AuthenticationException>() {
-            @Override
-            public void onFailure(@NonNull AuthenticationException exception) { }
-    
-            @Override
-            public void onSuccess(@Nullable Credentials credentials) { }
-    });
+ authenticationAPIClient.signupWithPasskey("{user-data}", "{realm}")
+        .start(new Callback<PasskeyRegistrationChallenge, AuthenticationException>() {
+    @Override
+    public void onSuccess(PasskeyRegistrationChallenge result) {
+        CreateCredentialRequest request =
+                new CreatePublicKeyCredentialRequest(new Gson().toJson(result.getAuthParamsPublicKey()));
+        credentialManager.createCredentialAsync(getContext(),
+                request,
+                cancellationSignal,
+                <executor>,
+                new CredentialManagerCallback<CreateCredentialResponse, CreateCredentialException>() {
+                    @Override
+                    public void onResult(CreateCredentialResponse createCredentialResponse) {
+                        PublicKeyCredentials credentials = new Gson().fromJson(
+                                ((CreatePublicKeyCredentialResponse) createCredentialResponse).getRegistrationResponseJson(),
+                                PublicKeyCredentials.class);
+
+                        authenticationAPIClient.signinWithPasskey(result.getAuthSession(),
+                                        credentials, "{realm}")
+                                .start(new Callback<Credentials, AuthenticationException>() {
+                                    @Override
+                                    public void onSuccess(Credentials result) {}
+
+                                    @Override
+                                    public void onFailure(@NonNull AuthenticationException error) {}
+                                });
+                    }
+                    @Override
+                    public void onError(@NonNull CreateCredentialException e) {}
+                });
+    }
+
+    @Override
+    public void onFailure(@NonNull AuthenticationException error) {}
+});
 ```
 </details>
 
 To sign in a user with passkey
 ```kotlin
-PasskeyAuthProvider.signin(account)
-    .setRealm("Optional connection name")
-    .start(object: Callback<Credentials, AuthenticationException> {
-        override fun onFailure(exception: AuthenticationException) { }
+//Using coroutines
+try {
 
-        override fun onSuccess(credentials: Credentials) { }
-    })
+    val challenge =
+        authenticationApiClient.passkeyChallenge("{realm}")
+            .await()
+
+    //Use CredentialManager to create public key credentials
+    val request = GetPublicKeyCredentialOption(Gson().toJson(challenge.authParamsPublicKey))
+    val getCredRequest = GetCredentialRequest(
+        listOf(request)
+    )
+    val result = credentialManager.getCredential(requireContext(), getCredRequest)
+    when (val credential = result.credential) {
+        is PublicKeyCredential -> {
+            val authRequest = Gson().fromJson(
+                credential.authenticationResponseJson,
+                PublicKeyCredentials::class.java
+            )
+            val userCredential = authenticationApiClient.signinWithPasskey(
+                challenge.authSession,
+                authRequest,
+                "{realm}"
+            )
+                .validateClaims()
+                .await()
+        }
+
+        else -> {}
+    }
+} catch (e: GetCredentialException) {
+} catch (exception: AuthenticationException) {
+}
 ```
 <details>
   <summary>Using Java</summary>
 
 ```java
-PasskeyAuthProvider authProvider = new PasskeyAuthProvider();
-authProvider.signin(account)
-    .setRealm("optional connection name")
-    .start(new Callback<Credentials, AuthenticationException>() {
-        @Override
-        public void onFailure(@NonNull AuthenticationException exception) { }
-    
-        @Override
-        public void onSuccess(@Nullable Credentials credentials) { }
-    });
+authenticationAPIClient.passkeyChallenge("realm")
+                .start(new Callback<PasskeyChallenge, AuthenticationException>() {
+    @Override
+    public void onSuccess(PasskeyChallenge result) {
+        GetPublicKeyCredentialOption option = new GetPublicKeyCredentialOption(new Gson().toJson(result.getAuthParamsPublicKey()));
+        GetCredentialRequest request = new GetCredentialRequest(List.of(option));
+        credentialManager.getCredentialAsync(getContext(),
+                request,
+                cancellationSignal,
+                <executor>,
+                new CredentialManagerCallback<GetCredentialResponse, GetCredentialException>() {
+                    @Override
+                    public void onResult(GetCredentialResponse getCredentialResponse) {
+                        Credential credential = getCredentialResponse.getCredential();
+                        if (credential instanceof PublicKeyCredential) {
+                            String responseJson = ((PublicKeyCredential) credential).getAuthenticationResponseJson();
+                            PublicKeyCredentials publicKeyCredentials = new Gson().fromJson(
+                                    responseJson,
+                                    PublicKeyCredentials.class
+                            );
+                            authenticationAPIClient.signinWithPasskey(result.getAuthSession(), publicKeyCredentials,"{realm}")
+                                    .start(new Callback<Credentials, AuthenticationException>() {
+                                        @Override
+                                        public void onSuccess(Credentials result) {}
+
+                                        @Override
+                                        public void onFailure(@NonNull AuthenticationException error) {}
+                                    });
+                        }
+                    }
+
+                    @Override
+                    public void onError(@NonNull GetCredentialException e) {}
+                });
+    }
+
+    @Override
+    public void onFailure(@NonNull AuthenticationException error) {}
+});
 ```
 </details>
 

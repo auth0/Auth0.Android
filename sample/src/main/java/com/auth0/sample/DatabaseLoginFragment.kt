@@ -120,149 +120,23 @@ class DatabaseLoginFragment : Fragment() {
         }
 
         binding.btSignupPasskey.setOnClickListener {
-
-            authenticationApiClient.signupWithPasskey(
-                UserData(
-                    email = "userval@email.com"
-                ), "Username-Password-Authentication"
-            ).start(object : Callback<PasskeyRegistrationChallenge, AuthenticationException> {
-                override fun onSuccess(result: PasskeyRegistrationChallenge) {
-                    val passKeyRegistrationChallenge = result
-                    val request = CreatePublicKeyCredentialRequest(
-                        Gson().toJson(
-                            passKeyRegistrationChallenge.authParamsPublicKey
-                        )
-                    )
-                    var response: CreatePublicKeyCredentialResponse?
-
-                    credentialManager.createCredentialAsync(requireContext(),
-                        request,
-                        CancellationSignal(),
-                        Executors.newSingleThreadExecutor(),
-                        object :
-                            CredentialManagerCallback<CreateCredentialResponse, CreateCredentialException> {
-
-                            override fun onError(e: CreateCredentialException) {
-                            }
-
-                            override fun onResult(result: CreateCredentialResponse) {
-
-                                response = result as CreatePublicKeyCredentialResponse
-                                val authRequest = Gson().fromJson(
-                                    response?.registrationResponseJson,
-                                    PublicKeyCredentials::class.java
-                                )
-
-                                authenticationApiClient.signinWithPasskey(
-                                    passKeyRegistrationChallenge.authSession,
-                                    authRequest,
-                                    "Username-Password-Authentication"
-                                )
-                                    .validateClaims()
-                                    .start(object : Callback<Credentials, AuthenticationException> {
-                                        override fun onSuccess(result: Credentials) {
-                                            credentialsManager.saveCredentials(result)
-                                            Snackbar.make(
-                                                requireView(),
-                                                "Hello ${result.user.name}",
-                                                Snackbar.LENGTH_LONG
-                                            ).show()
-                                        }
-
-                                        override fun onFailure(error: AuthenticationException) {
-                                            Snackbar.make(
-                                                requireView(),
-                                                error.getDescription(),
-                                                Snackbar.LENGTH_LONG
-                                            ).show()
-                                        }
-                                    })
-                            }
-                        })
-                }
-
-                override fun onFailure(error: AuthenticationException) {
-                    Snackbar.make(
-                        requireView(),
-                        error.getDescription(),
-                        Snackbar.LENGTH_LONG
-                    ).show()
-                }
-            })
-
+            passkeySignup()
         }
+
         binding.btSignInPasskey.setOnClickListener {
+            passkeySignin()
+        }
 
-            authenticationApiClient.passkeyChallenge("Username-Password-Authentication")
-                .start(object : Callback<PasskeyChallenge, AuthenticationException> {
-                    override fun onSuccess(result: PasskeyChallenge) {
-                        val passkeyChallengeResponse = result
-                        val request =
-                            GetPublicKeyCredentialOption(Gson().toJson(passkeyChallengeResponse.authParamsPublicKey))
-                        val getCredRequest = GetCredentialRequest(
-                            listOf(request)
-                        )
+        binding.btSignupPasskeyAsync.setOnClickListener {
+            launchAsync {
+                passkeySignupAsync()
+            }
+        }
 
-                        credentialManager.getCredentialAsync(requireContext(),
-                            getCredRequest,
-                            CancellationSignal(),
-                            Executors.newSingleThreadExecutor(),
-                            object :
-                                CredentialManagerCallback<GetCredentialResponse, GetCredentialException> {
-                                override fun onError(e: GetCredentialException) {
-                                }
-
-                                override fun onResult(result: GetCredentialResponse) {
-                                    when (val credential = result.credential) {
-                                        is PublicKeyCredential -> {
-                                            val authRequest = Gson().fromJson(
-                                                credential.authenticationResponseJson,
-                                                PublicKeyCredentials::class.java
-                                            )
-                                            authenticationApiClient.signinWithPasskey(
-                                                passkeyChallengeResponse.authSession,
-                                                authRequest,
-                                                "Username-Password-Authentication"
-                                            )
-                                                .validateClaims()
-                                                .start(object : Callback<Credentials, AuthenticationException> {
-                                                override fun onSuccess(result: Credentials) {
-                                                    credentialsManager.saveCredentials(result)
-                                                    Snackbar.make(
-                                                        requireView(),
-                                                        "Hello ${result.user.name}",
-                                                        Snackbar.LENGTH_LONG
-                                                    ).show()
-                                                }
-
-                                                override fun onFailure(error: AuthenticationException) {
-                                                    Snackbar.make(
-                                                        requireView(),
-                                                        error.getDescription(),
-                                                        Snackbar.LENGTH_LONG
-                                                    ).show()
-                                                }
-                                            })
-                                        }
-
-                                        else -> {
-                                            Snackbar.make(
-                                                requireView(),
-                                                "Received unrecognized credential type ${credential.type}.This shouldn't happen",
-                                                Snackbar.LENGTH_LONG
-                                            ).show()
-                                        }
-                                    }
-                                }
-                            })
-                    }
-
-                    override fun onFailure(error: AuthenticationException) {
-                        Snackbar.make(
-                            requireView(), error.getDescription(), Snackbar.LENGTH_LONG
-                        ).show()
-                    }
-                })
+        binding.btSigninPasskeyAsync.setOnClickListener {
+            launchAsync {
+                passkeySigninAsync()
+            }
         }
 
         binding.btWebAuth.setOnClickListener {
@@ -609,6 +483,248 @@ class DatabaseLoginFragment : Fragment() {
         //Use a better scope like lifecycleScope or viewModelScope
         GlobalScope.launch(Dispatchers.Main) {
             runnable.invoke()
+        }
+    }
+
+    private fun passkeySignup() {
+        authenticationApiClient.signupWithPasskey(
+            UserData(
+                email = "jndoe@email.com"
+            ), "Username-Password-Authentication"
+        ).start(object : Callback<PasskeyRegistrationChallenge, AuthenticationException> {
+            override fun onSuccess(result: PasskeyRegistrationChallenge) {
+                val passKeyRegistrationChallenge = result
+                val request = CreatePublicKeyCredentialRequest(
+                    Gson().toJson(
+                        passKeyRegistrationChallenge.authParamsPublicKey
+                    )
+                )
+                var response: CreatePublicKeyCredentialResponse?
+
+                credentialManager.createCredentialAsync(requireContext(),
+                    request,
+                    CancellationSignal(),
+                    Executors.newSingleThreadExecutor(),
+                    object :
+                        CredentialManagerCallback<CreateCredentialResponse, CreateCredentialException> {
+
+                        override fun onError(e: CreateCredentialException) {
+                        }
+
+                        override fun onResult(result: CreateCredentialResponse) {
+
+                            response = result as CreatePublicKeyCredentialResponse
+                            val authRequest = Gson().fromJson(
+                                response?.registrationResponseJson,
+                                PublicKeyCredentials::class.java
+                            )
+
+                            authenticationApiClient.signinWithPasskey(
+                                passKeyRegistrationChallenge.authSession,
+                                authRequest,
+                                "Username-Password-Authentication"
+                            )
+                                .validateClaims()
+                                .start(object : Callback<Credentials, AuthenticationException> {
+                                    override fun onSuccess(result: Credentials) {
+                                        credentialsManager.saveCredentials(result)
+                                        Snackbar.make(
+                                            requireView(),
+                                            "Hello ${result.user.name}",
+                                            Snackbar.LENGTH_LONG
+                                        ).show()
+                                    }
+
+                                    override fun onFailure(error: AuthenticationException) {
+                                        Snackbar.make(
+                                            requireView(),
+                                            error.getDescription(),
+                                            Snackbar.LENGTH_LONG
+                                        ).show()
+                                    }
+                                })
+                        }
+                    })
+            }
+
+            override fun onFailure(error: AuthenticationException) {
+                Snackbar.make(
+                    requireView(),
+                    error.getDescription(),
+                    Snackbar.LENGTH_LONG
+                ).show()
+            }
+        })
+    }
+
+    private fun passkeySignin() {
+        authenticationApiClient.passkeyChallenge("Username-Password-Authentication")
+            .start(object : Callback<PasskeyChallenge, AuthenticationException> {
+                override fun onSuccess(result: PasskeyChallenge) {
+                    val passkeyChallengeResponse = result
+                    val request =
+                        GetPublicKeyCredentialOption(Gson().toJson(passkeyChallengeResponse.authParamsPublicKey))
+                    val getCredRequest = GetCredentialRequest(
+                        listOf(request)
+                    )
+
+                    credentialManager.getCredentialAsync(requireContext(),
+                        getCredRequest,
+                        CancellationSignal(),
+                        Executors.newSingleThreadExecutor(),
+                        object :
+                            CredentialManagerCallback<GetCredentialResponse, GetCredentialException> {
+                            override fun onError(e: GetCredentialException) {
+                            }
+
+                            override fun onResult(result: GetCredentialResponse) {
+                                when (val credential = result.credential) {
+                                    is PublicKeyCredential -> {
+                                        val authRequest = Gson().fromJson(
+                                            credential.authenticationResponseJson,
+                                            PublicKeyCredentials::class.java
+                                        )
+                                        authenticationApiClient.signinWithPasskey(
+                                            passkeyChallengeResponse.authSession,
+                                            authRequest,
+                                            "Username-Password-Authentication"
+                                        )
+                                            .validateClaims()
+                                            .start(object :
+                                                Callback<Credentials, AuthenticationException> {
+                                                override fun onSuccess(result: Credentials) {
+                                                    credentialsManager.saveCredentials(result)
+                                                    Snackbar.make(
+                                                        requireView(),
+                                                        "Hello ${result.user.name}",
+                                                        Snackbar.LENGTH_LONG
+                                                    ).show()
+                                                }
+
+                                                override fun onFailure(error: AuthenticationException) {
+                                                    Snackbar.make(
+                                                        requireView(),
+                                                        error.getDescription(),
+                                                        Snackbar.LENGTH_LONG
+                                                    ).show()
+                                                }
+                                            })
+                                    }
+
+                                    else -> {
+                                        Snackbar.make(
+                                            requireView(),
+                                            "Received unrecognized credential type ${credential.type}.This shouldn't happen",
+                                            Snackbar.LENGTH_LONG
+                                        ).show()
+                                    }
+                                }
+                            }
+                        })
+                }
+
+                override fun onFailure(error: AuthenticationException) {
+                    Snackbar.make(
+                        requireView(), error.getDescription(), Snackbar.LENGTH_LONG
+                    ).show()
+                }
+            })
+    }
+
+    private suspend fun passkeySignupAsync() {
+
+        try {
+            val challenge = authenticationApiClient.signupWithPasskey(
+                UserData(email = "jdoe@email.com"),
+                "Username-Password-Authentication"
+            ).await()
+
+            val request = CreatePublicKeyCredentialRequest(
+                Gson().toJson(challenge.authParamsPublicKey)
+            )
+
+            val result = credentialManager.createCredential(requireContext(), request)
+
+            val authRequest = Gson().fromJson(
+                (result as CreatePublicKeyCredentialResponse).registrationResponseJson,
+                PublicKeyCredentials::class.java
+            )
+
+            val userCredential = authenticationApiClient.signinWithPasskey(
+                challenge.authSession, authRequest, "Username-Password-Authentication"
+            )
+                .validateClaims()
+                .await()
+
+            credentialsManager.saveCredentials(userCredential)
+            Snackbar.make(
+                requireView(),
+                "Hello ${userCredential.user.name}",
+                Snackbar.LENGTH_LONG
+            ).show()
+
+        } catch (e: CreateCredentialException) {
+            Snackbar.make(
+                requireView(),
+                e.errorMessage!!,
+                Snackbar.LENGTH_LONG
+            ).show()
+        } catch (exception: AuthenticationException) {
+            Snackbar.make(
+                requireView(),
+                exception.getDescription(),
+                Snackbar.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    private suspend fun passkeySigninAsync() {
+        try {
+
+            val challenge =
+                authenticationApiClient.passkeyChallenge("Username-Password-Authentication")
+                    .await()
+
+            val request = GetPublicKeyCredentialOption(Gson().toJson(challenge.authParamsPublicKey))
+            val getCredRequest = GetCredentialRequest(
+                listOf(request)
+            )
+            val result = credentialManager.getCredential(requireContext(), getCredRequest)
+            when (val credential = result.credential) {
+                is PublicKeyCredential -> {
+                    val authRequest = Gson().fromJson(
+                        credential.authenticationResponseJson,
+                        PublicKeyCredentials::class.java
+                    )
+                    val userCredential = authenticationApiClient.signinWithPasskey(
+                        challenge.authSession,
+                        authRequest,
+                        "Username-Password-Authentication"
+                    )
+                        .validateClaims()
+                        .await()
+                    credentialsManager.saveCredentials(userCredential)
+                    Snackbar.make(
+                        requireView(),
+                        "Hello ${userCredential.user.name}",
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
+
+                else -> {}
+            }
+        } catch (e: GetCredentialException) {
+            Snackbar.make(
+                requireView(),
+                e.errorMessage!!,
+                Snackbar.LENGTH_LONG
+            ).show()
+        } catch (exception: AuthenticationException) {
+            Snackbar.make(
+                requireView(),
+                exception.getDescription(),
+                Snackbar.LENGTH_LONG
+            ).show()
         }
     }
 }

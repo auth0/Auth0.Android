@@ -103,7 +103,7 @@ public object PasskeyAuthProvider {
                 AuthenticationAPIClient(auth0), CredentialManager.create(context)
             )
             passkeyManager.signin(
-                context, parameters[ParameterBuilder.REALM_KEY]!!, parameters, callback, executor
+                context, parameters[ParameterBuilder.REALM_KEY], parameters, callback, executor
             )
         }
     }
@@ -218,7 +218,7 @@ public object PasskeyAuthProvider {
             passkeyManager.signup(
                 context,
                 userData,
-                parameters[ParameterBuilder.REALM_KEY]!!,
+                parameters[ParameterBuilder.REALM_KEY],
                 parameters,
                 callback,
                 executor

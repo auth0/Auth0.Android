@@ -26,7 +26,6 @@ import androidx.credentials.exceptions.GetCredentialUnsupportedException
 import androidx.credentials.exceptions.NoCredentialException
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
-import com.auth0.android.authentication.ParameterBuilder
 import com.auth0.android.callback.Callback
 import com.auth0.android.request.PublicKeyCredentials
 import com.auth0.android.request.UserData
@@ -50,12 +49,16 @@ internal class PasskeyManager(
     fun signup(
         context: Context,
         userData: UserData,
-        realm: String,
+        realm: String?,
         parameters: Map<String, String>,
         callback: Callback<Credentials, AuthenticationException>,
         executor: Executor = Executors.newSingleThreadExecutor()
     ) {
 
+        if (realm == null) {
+            callback.onFailure(AuthenticationException("Realm is required for passkey authentication"))
+            return
+        }
         authenticationAPIClient.signupWithPasskey(userData, realm)
             .addParameters(parameters)
             .start(object : Callback<PasskeyRegistrationChallenge, AuthenticationException> {
@@ -112,11 +115,15 @@ internal class PasskeyManager(
     @RequiresApi(api = Build.VERSION_CODES.P)
     fun signin(
         context: Context,
-        realm: String,
+        realm: String?,
         parameters: Map<String, String>,
         callback: Callback<Credentials, AuthenticationException>,
         executor: Executor = Executors.newSingleThreadExecutor()
     ) {
+        if (realm == null) {
+            callback.onFailure(AuthenticationException("Realm is required for passkey authentication"))
+            return
+        }
         authenticationAPIClient.passkeyChallenge(realm)
             .start(object : Callback<PasskeyChallenge, AuthenticationException> {
                 override fun onSuccess(result: PasskeyChallenge) {
