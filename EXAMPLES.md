@@ -630,7 +630,7 @@ try {
     )
 
     val userCredential = authenticationApiClient.signinWithPasskey(
-        challenge.authSession, authRequest, "Username-Password-Authentication"
+        challenge.authSession, authRequest, "{realm}"
     )
         .validateClaims()
         .await()
