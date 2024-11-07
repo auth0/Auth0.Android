@@ -26,13 +26,12 @@ import androidx.credentials.exceptions.GetCredentialUnsupportedException
 import androidx.credentials.exceptions.NoCredentialException
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
-import com.auth0.android.authentication.ParameterBuilder
 import com.auth0.android.callback.Callback
-import com.auth0.android.request.PublicKeyCredentialResponse
-import com.auth0.android.request.UserMetadataRequest
+import com.auth0.android.request.PublicKeyCredentials
+import com.auth0.android.request.UserData
 import com.auth0.android.result.Credentials
-import com.auth0.android.result.PasskeyChallengeResponse
-import com.auth0.android.result.PasskeyRegistrationResponse
+import com.auth0.android.result.PasskeyChallenge
+import com.auth0.android.result.PasskeyRegistrationChallenge
 import com.google.gson.Gson
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
@@ -49,15 +48,21 @@ internal class PasskeyManager(
     @SuppressLint("PublicKeyCredential")
     fun signup(
         context: Context,
-        userMetadata: UserMetadataRequest,
+        userData: UserData,
+        realm: String?,
         parameters: Map<String, String>,
         callback: Callback<Credentials, AuthenticationException>,
         executor: Executor = Executors.newSingleThreadExecutor()
     ) {
 
-        authenticationAPIClient.signupWithPasskey(userMetadata, parameters)
-            .start(object : Callback<PasskeyRegistrationResponse, AuthenticationException> {
-                override fun onSuccess(result: PasskeyRegistrationResponse) {
+        if (realm == null) {
+            callback.onFailure(AuthenticationException("Realm is required for passkey authentication"))
+            return
+        }
+        authenticationAPIClient.signupWithPasskey(userData, realm)
+            .addParameters(parameters)
+            .start(object : Callback<PasskeyRegistrationChallenge, AuthenticationException> {
+                override fun onSuccess(result: PasskeyRegistrationChallenge) {
                     val pasKeyRegistrationResponse = result
                     val request = CreatePublicKeyCredentialRequest(
                         Gson().toJson(
@@ -83,12 +88,16 @@ internal class PasskeyManager(
                                 response = result as CreatePublicKeyCredentialResponse
                                 val authRequest = Gson().fromJson(
                                     response?.registrationResponseJson,
-                                    PublicKeyCredentialResponse::class.java
+                                    PublicKeyCredentials::class.java
                                 )
+
                                 authenticationAPIClient.signinWithPasskey(
-                                    pasKeyRegistrationResponse.authSession, authRequest, parameters
+                                    pasKeyRegistrationResponse.authSession,
+                                    authRequest,
+                                    realm
                                 )
                                     .validateClaims()
+                                    .addParameters(parameters)
                                     .start(callback)
                             }
                         })
@@ -106,13 +115,18 @@ internal class PasskeyManager(
     @RequiresApi(api = Build.VERSION_CODES.P)
     fun signin(
         context: Context,
+        realm: String?,
         parameters: Map<String, String>,
         callback: Callback<Credentials, AuthenticationException>,
         executor: Executor = Executors.newSingleThreadExecutor()
     ) {
-        authenticationAPIClient.passkeyChallenge(parameters[ParameterBuilder.REALM_KEY])
-            .start(object : Callback<PasskeyChallengeResponse, AuthenticationException> {
-                override fun onSuccess(result: PasskeyChallengeResponse) {
+        if (realm == null) {
+            callback.onFailure(AuthenticationException("Realm is required for passkey authentication"))
+            return
+        }
+        authenticationAPIClient.passkeyChallenge(realm)
+            .start(object : Callback<PasskeyChallenge, AuthenticationException> {
+                override fun onSuccess(result: PasskeyChallenge) {
                     val passkeyChallengeResponse = result
                     val request =
                         GetPublicKeyCredentialOption(Gson().toJson(passkeyChallengeResponse.authParamsPublicKey))
@@ -135,14 +149,15 @@ internal class PasskeyManager(
                                     is PublicKeyCredential -> {
                                         val authRequest = Gson().fromJson(
                                             credential.authenticationResponseJson,
-                                            PublicKeyCredentialResponse::class.java
+                                            PublicKeyCredentials::class.java
                                         )
                                         authenticationAPIClient.signinWithPasskey(
                                             passkeyChallengeResponse.authSession,
                                             authRequest,
-                                            parameters
+                                            realm
                                         )
                                             .validateClaims()
+                                            .addParameters(parameters)
                                             .start(callback)
                                     }
 
