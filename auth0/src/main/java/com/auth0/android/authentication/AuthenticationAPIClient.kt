@@ -12,8 +12,8 @@ import com.auth0.android.request.internal.ResponseUtils.isNetworkError
 import com.auth0.android.result.Challenge
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
-import com.auth0.android.result.PasskeyChallengeResponse
-import com.auth0.android.result.PasskeyRegistrationResponse
+import com.auth0.android.result.PasskeyChallenge
+import com.auth0.android.result.PasskeyRegistrationChallenge
 import com.auth0.android.result.UserProfile
 import com.google.gson.Gson
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -155,25 +155,39 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
 
 
     /**
-     * Log in a user using passkeys.
-     * This should be called after the client has received the Passkey challenge and Auth-session from the server .
+     * Sign-in a user using passkeys.
+     * This should be called after the client has received the passkey challenge and auth-session from the server
+     * The default scope used is 'openid profile email'.
+     *
      * Requires the client to have the **Passkey** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types)
      * to learn how to enable it.
      *
-     * @param authSession the auth session received from the server as part of the public challenge request.
-     * @param authResponse the public key credential response to be sent to the server
-     * @param parameters additional parameters to be sent as part of the request
+     * Example usage:
+     *
+     * ```
+     * client.signinWithPasskey("{authSession}", "{authResponse}","{realm}")
+     *       .validateClaims() //mandatory
+     *       .addParameter("scope","scope")
+     *       .start(object: Callback<Credentials, AuthenticationException> {
+     *           override fun onFailure(error: AuthenticationException) { }
+     *           override fun onSuccess(result: Credentials) { }
+     * })
+     * ```
+     *
+     * @param authSession the auth session received from the server as part of the public key challenge request.
+     * @param authResponse the public key credential authentication response
+     * @param realm the default connection to use
      * @return a request to configure and start that will yield [Credentials]
      */
-    internal fun signinWithPasskey(
+    public fun signinWithPasskey(
         authSession: String,
-        authResponse: PublicKeyCredentialResponse,
-        parameters: Map<String, String>
+        authResponse: PublicKeyCredentials,
+        realm: String
     ): AuthenticationRequest {
         val params = ParameterBuilder.newBuilder().apply {
             setGrantType(ParameterBuilder.GRANT_TYPE_PASSKEY)
             set(AUTH_SESSION_KEY, authSession)
-            addAll(parameters)
+            setRealm(realm)
         }.asDictionary()
 
         return loginWithToken(params)
@@ -185,19 +199,32 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
 
 
     /**
-     *  Register a user and returns a challenge.
+     *  Sign-up a user and returns a challenge for private and public key generation.
+     *  The default scope used is 'openid profile email'.
      *  Requires the client to have the **Passkey** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types)
      *  to learn how to enable it.
      *
-     *  @param userMetadata user information of the client
-     *  @param parameters additional parameter to be sent as part of the request
-     *  @return  a request to configure and start that will yield [PasskeyRegistrationResponse]
+     * Example usage:
+     *
+     *
+     * ```
+     * client.signupWithPasskey("{userData}","{realm}")
+     *      .addParameter("scope","scope")
+     *      .start(object: Callback<PasskeyRegistration, AuthenticationException> {
+     *          override fun onSuccess(result: PasskeyRegistration) { }
+     *          override fun onFailure(error: AuthenticationException) { }
+     * })
+     * ```
+     *
+     *  @param userData user information of the client
+     *  @param realm default connection to use
+     *  @return  a request to configure and start that will yield [PasskeyRegistrationChallenge]
      */
-    internal fun signupWithPasskey(
-        userMetadata: UserMetadataRequest,
-        parameters: Map<String, String>,
-    ): Request<PasskeyRegistrationResponse, AuthenticationException> {
-        val user = Gson().toJsonTree(userMetadata)
+    public fun signupWithPasskey(
+        userData: UserData,
+        realm: String
+    ): Request<PasskeyRegistrationChallenge, AuthenticationException> {
+        val user = Gson().toJsonTree(userData)
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(PASSKEY_PATH)
             .addPathSegment(REGISTER_PATH)
@@ -205,32 +232,41 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
 
         val params = ParameterBuilder.newBuilder().apply {
             setClientId(clientId)
-            parameters[ParameterBuilder.REALM_KEY]?.let {
-                setRealm(it)
-            }
+            setRealm(realm)
         }.asDictionary()
 
-        val passkeyRegistrationAdapter: JsonAdapter<PasskeyRegistrationResponse> = GsonAdapter(
-            PasskeyRegistrationResponse::class.java, gson
-        )
-        val post = factory.post(url.toString(), passkeyRegistrationAdapter)
-            .addParameters(params) as BaseRequest<PasskeyRegistrationResponse, AuthenticationException>
+        val passkeyRegistrationChallengeAdapter: JsonAdapter<PasskeyRegistrationChallenge> =
+            GsonAdapter(
+                PasskeyRegistrationChallenge::class.java, gson
+            )
+        val post = factory.post(url.toString(), passkeyRegistrationChallengeAdapter)
+            .addParameters(params) as BaseRequest<PasskeyRegistrationChallenge, AuthenticationException>
         post.addParameter(USER_PROFILE_KEY, user)
         return post
     }
 
 
     /**
-     * Request for a challenge to initiate a passkey login flow
+     * Request for a challenge to initiate passkey login flow
      * Requires the client to have the **Passkey** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types)
      * to learn how to enable it.
      *
-     * @param realm An optional connection name
-     * @return a request to configure and start that will yield [PasskeyChallengeResponse]
+     * Example usage:
+     *
+     * ```
+     * client.passkeyChallenge("{realm}")
+     *    .start(object: Callback<PasskeyChallenge, AuthenticationException> {
+     *        override fun onSuccess(result: PasskeyChallenge) { }
+     *        override fun onFailure(error: AuthenticationException) { }
+     * })
+     * ```
+     *
+     * @param realm A default connection name
+     * @return a request to configure and start that will yield [PasskeyChallenge]
      */
-    internal fun passkeyChallenge(
-        realm: String?
-    ): Request<PasskeyChallengeResponse, AuthenticationException> {
+    public fun passkeyChallenge(
+        realm: String
+    ): Request<PasskeyChallenge, AuthenticationException> {
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(PASSKEY_PATH)
             .addPathSegment(CHALLENGE_PATH)
@@ -238,11 +274,11 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
 
         val parameters = ParameterBuilder.newBuilder().apply {
             setClientId(clientId)
-            realm?.let { setRealm(it) }
+            setRealm(realm)
         }.asDictionary()
 
-        val passkeyChallengeAdapter: JsonAdapter<PasskeyChallengeResponse> = GsonAdapter(
-            PasskeyChallengeResponse::class.java, gson
+        val passkeyChallengeAdapter: JsonAdapter<PasskeyChallenge> = GsonAdapter(
+            PasskeyChallenge::class.java, gson
         )
 
         return factory.post(url.toString(), passkeyChallengeAdapter)

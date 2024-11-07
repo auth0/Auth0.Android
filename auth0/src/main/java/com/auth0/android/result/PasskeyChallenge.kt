@@ -3,14 +3,17 @@ package com.auth0.android.result
 
 import com.google.gson.annotations.SerializedName
 
-internal data class PasskeyChallengeResponse(
+/**
+ * Represents a challenge when user tries to login via passkeys.
+ */
+public data class PasskeyChallenge(
     @SerializedName("auth_session")
     val authSession: String,
     @SerializedName("authn_params_public_key")
     val authParamsPublicKey: AuthParamsPublicKey
 )
 
-internal data class AuthParamsPublicKey(
+public data class AuthParamsPublicKey(
     @SerializedName("challenge")
     val challenge: String,
     @SerializedName("rpId")
