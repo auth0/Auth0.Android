@@ -1,5 +1,11 @@
 # Change Log
 
+## [3.2.0](https://github.com/auth0/Auth0.Android/tree/3.2.0) (2024-11-07)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.1.0...3.2.0)
+
+**Added**
+- Supporting passkey via AuthenticationAPIClient [\#773](https://github.com/auth0/Auth0.Android/pull/773) ([pmathew92](https://github.com/pmathew92))
+
 ## [3.1.0](https://github.com/auth0/Auth0.Android/tree/3.1.0) (2024-10-31)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.0.0...3.1.0)
 
