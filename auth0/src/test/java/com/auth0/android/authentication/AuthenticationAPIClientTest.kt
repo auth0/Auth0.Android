@@ -9,14 +9,12 @@ import com.auth0.android.request.HttpMethod
 import com.auth0.android.request.NetworkingClient
 import com.auth0.android.request.RequestOptions
 import com.auth0.android.request.ServerResponse
-import com.auth0.android.request.UserMetadataRequest
 import com.auth0.android.request.internal.RequestFactory
 import com.auth0.android.request.internal.ThreadSwitcherShadow
 import com.auth0.android.result.Authentication
 import com.auth0.android.result.Challenge
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
-import com.auth0.android.result.PasskeyRegistrationResponse
 import com.auth0.android.result.UserProfile
 import com.auth0.android.util.Auth0UserAgent
 import com.auth0.android.util.AuthenticationAPIMockServer
@@ -26,7 +24,6 @@ import com.auth0.android.util.MockAuthenticationCallback
 import com.auth0.android.util.SSLTestUtils.testClient
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.google.gson.JsonElement
 import com.google.gson.reflect.TypeToken
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argumentCaptor
@@ -194,7 +191,7 @@ public class AuthenticationAPIClientTest {
         val callback = MockAuthenticationCallback<Credentials>()
         val auth0 = auth0
         val client = AuthenticationAPIClient(auth0)
-        client.signinWithPasskey("auth-session", mock(), emptyMap())
+        client.signinWithPasskey("auth-session", mock(), MY_CONNECTION)
             .start(callback)
         ShadowLooper.idleMainLooper()
         assertThat(
@@ -226,7 +223,7 @@ public class AuthenticationAPIClientTest {
         val client = AuthenticationAPIClient(auth0)
         val registrationResponse = client.signupWithPasskey(
             mock(),
-            mapOf("realm" to MY_CONNECTION)
+            MY_CONNECTION
         )
             .execute()
         val request = mockAPI.takeRequest()

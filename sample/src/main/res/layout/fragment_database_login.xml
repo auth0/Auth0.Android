@@ -20,8 +20,8 @@
             android:autofillHints="emailAddress"
             android:ems="10"
             android:hint="Email"
-            android:isCredential="true"
             android:inputType="textEmailAddress"
+            android:isCredential="true"
             android:text="asd@asd.asd"
             android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -38,8 +38,8 @@
             android:autofillHints="password"
             android:ems="10"
             android:hint="Password"
-            android:isCredential="true"
             android:inputType="textPassword"
+            android:isCredential="true"
             android:text="asdasd"
             android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -69,7 +69,7 @@
             android:textSize="16sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/btSignInPasskey" />
+            app:layout_constraintTop_toBottomOf="@+id/btSigninPasskeyAsync" />
 
         <TextView
             android:id="@+id/textViewPasskey"
@@ -88,7 +88,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:layout_marginEnd="4dp"
-            android:text="SignUp with Passkey"
+            android:text="SignUp Passkey"
             android:textSize="12sp"
             app:layout_constraintEnd_toStartOf="@+id/btSignInPasskey"
             app:layout_constraintHorizontal_bias="1.0"
@@ -96,17 +96,43 @@
             app:layout_constraintTop_toBottomOf="@+id/textViewPasskey" />
 
         <Button
+            android:id="@+id/btSignupPasskeyAsync"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="4dp"
+            android:text="SignUp Passkey Async"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toStartOf="@+id/btSigninPasskeyAsync"
+            app:layout_constraintHorizontal_bias="1.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/btSignupPasskey" />
+
+        <Button
             android:id="@+id/btSignInPasskey"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:layout_marginEnd="4dp"
-            android:text="Signin with Passkey"
+            android:text="Signin Passkey"
             android:textSize="12sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="1.0"
             app:layout_constraintStart_toEndOf="@+id/btSignupPasskey"
             app:layout_constraintTop_toBottomOf="@+id/textViewPasskey" />
+
+        <Button
+            android:id="@+id/btSigninPasskeyAsync"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="4dp"
+            android:text="Signin Passkey Async"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="1.0"
+            app:layout_constraintStart_toEndOf="@+id/btSignupPasskeyAsync"
+            app:layout_constraintTop_toBottomOf="@+id/btSignInPasskey" />
 
         <TextView
             android:id="@+id/textView4"

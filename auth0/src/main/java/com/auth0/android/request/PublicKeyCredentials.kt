@@ -3,7 +3,7 @@ package com.auth0.android.request
 
 import com.google.gson.annotations.SerializedName
 
-internal data class PublicKeyCredentialResponse(
+public data class PublicKeyCredentials(
     @SerializedName("authenticatorAttachment")
     val authenticatorAttachment: String,
     @SerializedName("clientExtensionResults")
