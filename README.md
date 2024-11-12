@@ -1,9 +1,9 @@
-> **Note**
+> **MP1.0**
 > As part of our ongoing commitment to best security practices, we have rotated the signing keys used to sign previous releases of this SDK. As a result, new patch builds have been released using the new signing key. Please upgrade at your earliest convenience.
 >
 > While this change won't affect most developers, if you have implemented a dependency signature validation step in your build process, you may notice a warning that past releases can't be verified. This is expected, and a result of the key rotation process. Updating to the latest version will resolve this for you.
 
-![Auth0.Android](https://cdn.auth0.com/website/sdks/banners/auth0-android-banner.png)
+![Auth0.Android]90020241112213250446403000000000000001223372060384138274(https://cdn.auth0.com/website/sdks/banners/auth0-android-banner.png)
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.auth0.android/auth0.svg?style=flat-square)](https://search.maven.org/artifact/com.auth0.android/auth0)
 [![Coverage Status](https://img.shields.io/codecov/c/github/auth0/Auth0.Android/master.svg?style=flat-square)](https://codecov.io/github/auth0/Auth0.Android)
