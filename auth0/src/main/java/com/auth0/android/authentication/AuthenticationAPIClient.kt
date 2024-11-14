@@ -176,18 +176,18 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      *
      * @param authSession the auth session received from the server as part of the public key challenge request.
      * @param authResponse the public key credential authentication response
-     * @param realm the default connection to use
+     * @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
      * @return a request to configure and start that will yield [Credentials]
      */
     public fun signinWithPasskey(
         authSession: String,
         authResponse: PublicKeyCredentials,
-        realm: String
+        realm: String? = null
     ): AuthenticationRequest {
         val params = ParameterBuilder.newBuilder().apply {
             setGrantType(ParameterBuilder.GRANT_TYPE_PASSKEY)
             set(AUTH_SESSION_KEY, authSession)
-            setRealm(realm)
+            realm?.let { setRealm(it) }
         }.asDictionary()
 
         return loginWithToken(params)
@@ -217,12 +217,12 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * ```
      *
      *  @param userData user information of the client
-     *  @param realm default connection to use
+     *  @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
      *  @return  a request to configure and start that will yield [PasskeyRegistrationChallenge]
      */
     public fun signupWithPasskey(
         userData: UserData,
-        realm: String
+        realm: String? = null
     ): Request<PasskeyRegistrationChallenge, AuthenticationException> {
         val user = Gson().toJsonTree(userData)
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
@@ -232,7 +232,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
 
         val params = ParameterBuilder.newBuilder().apply {
             setClientId(clientId)
-            setRealm(realm)
+            realm?.let { setRealm(it) }
         }.asDictionary()
 
         val passkeyRegistrationChallengeAdapter: JsonAdapter<PasskeyRegistrationChallenge> =
@@ -261,11 +261,11 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * })
      * ```
      *
-     * @param realm A default connection name
+     * @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
      * @return a request to configure and start that will yield [PasskeyChallenge]
      */
     public fun passkeyChallenge(
-        realm: String
+        realm: String? = null
     ): Request<PasskeyChallenge, AuthenticationException> {
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(PASSKEY_PATH)
@@ -274,7 +274,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
 
         val parameters = ParameterBuilder.newBuilder().apply {
             setClientId(clientId)
-            setRealm(realm)
+            realm?.let { setRealm(it) }
         }.asDictionary()
 
         val passkeyChallengeAdapter: JsonAdapter<PasskeyChallenge> = GsonAdapter(
