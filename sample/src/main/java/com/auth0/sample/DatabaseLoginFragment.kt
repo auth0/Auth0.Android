@@ -120,7 +120,7 @@ class DatabaseLoginFragment : Fragment() {
         }
 
         binding.btSignupPasskey.setOnClickListener {
-            passkeySignup()
+            passkeySignup(binding.textEmail.text.toString())
         }
 
         binding.btSignInPasskey.setOnClickListener {
@@ -129,7 +129,7 @@ class DatabaseLoginFragment : Fragment() {
 
         binding.btSignupPasskeyAsync.setOnClickListener {
             launchAsync {
-                passkeySignupAsync()
+                passkeySignupAsync(binding.textEmail.text.toString())
             }
         }
 
@@ -486,11 +486,11 @@ class DatabaseLoginFragment : Fragment() {
         }
     }
 
-    private fun passkeySignup() {
+    private fun passkeySignup(email: String) {
         authenticationApiClient.signupWithPasskey(
             UserData(
-                email = "jndoe@email.com"
-            ), "Username-Password-Authentication"
+                email = email
+            )
         ).start(object : Callback<PasskeyRegistrationChallenge, AuthenticationException> {
             override fun onSuccess(result: PasskeyRegistrationChallenge) {
                 val passKeyRegistrationChallenge = result
@@ -558,7 +558,7 @@ class DatabaseLoginFragment : Fragment() {
     }
 
     private fun passkeySignin() {
-        authenticationApiClient.passkeyChallenge("Username-Password-Authentication")
+        authenticationApiClient.passkeyChallenge()
             .start(object : Callback<PasskeyChallenge, AuthenticationException> {
                 override fun onSuccess(result: PasskeyChallenge) {
                     val passkeyChallengeResponse = result
@@ -631,12 +631,11 @@ class DatabaseLoginFragment : Fragment() {
             })
     }
 
-    private suspend fun passkeySignupAsync() {
+    private suspend fun passkeySignupAsync(email: String) {
 
         try {
             val challenge = authenticationApiClient.signupWithPasskey(
-                UserData(email = "jdoe@email.com"),
-                "Username-Password-Authentication"
+                UserData(email = email)
             ).await()
 
             val request = CreatePublicKeyCredentialRequest(
@@ -682,7 +681,7 @@ class DatabaseLoginFragment : Fragment() {
         try {
 
             val challenge =
-                authenticationApiClient.passkeyChallenge("Username-Password-Authentication")
+                authenticationApiClient.passkeyChallenge()
                     .await()
 
             val request = GetPublicKeyCredentialOption(Gson().toJson(challenge.authParamsPublicKey))

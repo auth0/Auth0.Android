@@ -54,11 +54,6 @@ internal class PasskeyManager(
         callback: Callback<Credentials, AuthenticationException>,
         executor: Executor = Executors.newSingleThreadExecutor()
     ) {
-
-        if (realm == null) {
-            callback.onFailure(AuthenticationException("Realm is required for passkey authentication"))
-            return
-        }
         authenticationAPIClient.signupWithPasskey(userData, realm)
             .addParameters(parameters)
             .start(object : Callback<PasskeyRegistrationChallenge, AuthenticationException> {
@@ -120,10 +115,6 @@ internal class PasskeyManager(
         callback: Callback<Credentials, AuthenticationException>,
         executor: Executor = Executors.newSingleThreadExecutor()
     ) {
-        if (realm == null) {
-            callback.onFailure(AuthenticationException("Realm is required for passkey authentication"))
-            return
-        }
         authenticationAPIClient.passkeyChallenge(realm)
             .start(object : Callback<PasskeyChallenge, AuthenticationException> {
                 override fun onSuccess(result: PasskeyChallenge) {

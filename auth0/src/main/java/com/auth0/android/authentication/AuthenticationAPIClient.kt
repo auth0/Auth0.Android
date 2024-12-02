@@ -156,7 +156,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
 
     /**
      * Sign-in a user using passkeys.
-     * This should be called after the client has received the passkey challenge and auth-session from the server
+     * This should be called after the client has received the passkey challenge from the server and generated the public key response.
      * The default scope used is 'openid profile email'.
      *
      * Requires the client to have the **Passkey** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types)
@@ -175,19 +175,19 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * ```
      *
      * @param authSession the auth session received from the server as part of the public key challenge request.
-     * @param authResponse the public key credential authentication response
-     * @param realm the default connection to use
+     * @param authResponse the [PublicKeyCredentials] authentication response
+     * @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
      * @return a request to configure and start that will yield [Credentials]
      */
     public fun signinWithPasskey(
         authSession: String,
         authResponse: PublicKeyCredentials,
-        realm: String
+        realm: String? = null
     ): AuthenticationRequest {
         val params = ParameterBuilder.newBuilder().apply {
             setGrantType(ParameterBuilder.GRANT_TYPE_PASSKEY)
             set(AUTH_SESSION_KEY, authSession)
-            setRealm(realm)
+            realm?.let { setRealm(it) }
         }.asDictionary()
 
         return loginWithToken(params)
@@ -195,6 +195,44 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
                 AUTH_RESPONSE_KEY,
                 Gson().toJsonTree(authResponse)
             ) as AuthenticationRequest
+    }
+
+
+    /**
+     * Sign-in a user using passkeys.
+     * This should be called after the client has received the passkey challenge from the server and generated the public key response.
+     * The default scope used is 'openid profile email'.
+     *
+     * Requires the client to have the **Passkey** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types)
+     * to learn how to enable it.
+     *
+     * Example usage:
+     *
+     * ```
+     * client.signinWithPasskey("{authSession}", "{authResponse}","{realm}")
+     *       .validateClaims() //mandatory
+     *       .addParameter("scope","scope")
+     *       .start(object: Callback<Credentials, AuthenticationException> {
+     *           override fun onFailure(error: AuthenticationException) { }
+     *           override fun onSuccess(result: Credentials) { }
+     * })
+     * ```
+     *
+     * @param authSession the auth session received from the server as part of the public key challenge request.
+     * @param authResponse the public key credential authentication response in JSON string format that follows the standard webauthn json format
+     * @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
+     * @return a request to configure and start that will yield [Credentials]
+     */
+    public fun signinWithPasskey(
+        authSession: String,
+        authResponse: String,
+        realm: String? = null
+    ): AuthenticationRequest {
+        val publicKeyCredentials = gson.fromJson(
+            authResponse,
+            PublicKeyCredentials::class.java
+        )
+        return signinWithPasskey(authSession, publicKeyCredentials, realm)
     }
 
 
@@ -217,14 +255,14 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * ```
      *
      *  @param userData user information of the client
-     *  @param realm default connection to use
+     *  @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
      *  @return  a request to configure and start that will yield [PasskeyRegistrationChallenge]
      */
     public fun signupWithPasskey(
         userData: UserData,
-        realm: String
+        realm: String? = null
     ): Request<PasskeyRegistrationChallenge, AuthenticationException> {
-        val user = Gson().toJsonTree(userData)
+        val user = gson.toJsonTree(userData)
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(PASSKEY_PATH)
             .addPathSegment(REGISTER_PATH)
@@ -232,7 +270,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
 
         val params = ParameterBuilder.newBuilder().apply {
             setClientId(clientId)
-            setRealm(realm)
+            realm?.let { setRealm(it) }
         }.asDictionary()
 
         val passkeyRegistrationChallengeAdapter: JsonAdapter<PasskeyRegistrationChallenge> =
@@ -261,11 +299,11 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * })
      * ```
      *
-     * @param realm A default connection name
+     * @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
      * @return a request to configure and start that will yield [PasskeyChallenge]
      */
     public fun passkeyChallenge(
-        realm: String
+        realm: String? = null
     ): Request<PasskeyChallenge, AuthenticationException> {
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(PASSKEY_PATH)
@@ -274,7 +312,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
 
         val parameters = ParameterBuilder.newBuilder().apply {
             setClientId(clientId)
-            setRealm(realm)
+            realm?.let { setRealm(it) }
         }.asDictionary()
 
         val passkeyChallengeAdapter: JsonAdapter<PasskeyChallenge> = GsonAdapter(
