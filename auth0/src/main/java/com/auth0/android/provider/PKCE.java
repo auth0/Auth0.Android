@@ -47,6 +47,18 @@ class PKCE {
         this.headers = headers;
     }
 
+    PKCE(@NonNull AuthenticationAPIClient apiClient,
+                @NonNull String codeVerifier,
+                @NonNull String redirectUri,
+                @NonNull String codeChallenge,
+                @NonNull Map<String, String> headers) {
+        this.apiClient = apiClient;
+        this.codeVerifier = codeVerifier;
+        this.redirectUri = redirectUri;
+        this.codeChallenge = codeChallenge;
+        this.headers = headers;
+    }
+
     /**
      * Returns the Code Challenge generated using a Code Verifier.
      *
@@ -54,6 +66,14 @@ class PKCE {
      */
     public String getCodeChallenge() {
         return codeChallenge;
+    }
+
+    public String getCodeVerifier() {
+        return codeVerifier;
+    }
+
+    public String getRedirectUri() {
+        return redirectUri;
     }
 
     /**
