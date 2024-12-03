@@ -325,9 +325,15 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                 saveCredentials(credentials)
                 callback.onSuccess(credentials)
             } catch (error: AuthenticationException) {
+                val exception = when {
+                    error.isRefreshTokenDeleted ||
+                            error.isInvalidRefreshToken -> CredentialsManagerException.Code.RENEW_FAILED
+                    error.isNetworkError -> CredentialsManagerException.Code.NO_NETWORK
+                    else -> CredentialsManagerException.Code.SERVER_ERROR
+                }
                 callback.onFailure(
                     CredentialsManagerException(
-                        CredentialsManagerException.Code.RENEW_FAILED,
+                        exception,
                         error
                     )
                 )

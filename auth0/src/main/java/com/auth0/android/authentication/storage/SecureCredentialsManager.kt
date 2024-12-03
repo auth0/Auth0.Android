@@ -7,8 +7,8 @@ import android.util.Log
 import androidx.annotation.VisibleForTesting
 import androidx.fragment.app.FragmentActivity
 import com.auth0.android.Auth0
-import com.auth0.android.Auth0Exception
 import com.auth0.android.authentication.AuthenticationAPIClient
+import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.result.Credentials
@@ -585,10 +585,16 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     fresh.expiresAt,
                     fresh.scope
                 )
-            } catch (error: Auth0Exception) {
+            } catch (error: AuthenticationException) {
+                val exception = when {
+                    error.isRefreshTokenDeleted ||
+                            error.isInvalidRefreshToken -> CredentialsManagerException.Code.RENEW_FAILED
+                    error.isNetworkError -> CredentialsManagerException.Code.NO_NETWORK
+                    else -> CredentialsManagerException.Code.SERVER_ERROR
+                }
                 callback.onFailure(
                     CredentialsManagerException(
-                        CredentialsManagerException.Code.RENEW_FAILED,
+                        exception,
                         error
                     )
                 )
