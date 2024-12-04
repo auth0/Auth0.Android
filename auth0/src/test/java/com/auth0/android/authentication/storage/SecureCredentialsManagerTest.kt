@@ -1375,7 +1375,7 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public fun shouldGetAndFailToRenewExpiredCredentialsWhenServerErrorOccurs() {
+    public fun shouldGetAndFailToRenewExpiredCredentialsWhenApiErrorOccurs() {
         Mockito.`when`(localAuthenticationManager.authenticate()).then {
             localAuthenticationManager.resultCallback.onSuccess(true)
         }
@@ -1406,7 +1406,7 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(exception.cause, Is.`is`(authenticationException))
         MatcherAssert.assertThat(
             exception.message,
-            Is.`is`("An error occurred when trying to authenticate with the server.")
+            Is.`is`("An error occurred while processing the request.")
         )
     }
 

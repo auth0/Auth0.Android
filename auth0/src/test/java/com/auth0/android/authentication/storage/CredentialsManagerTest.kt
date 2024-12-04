@@ -916,7 +916,7 @@ public class CredentialsManagerTest {
     }
 
     @Test
-    public fun shouldGetAndFailToRenewExpiredCredentialsWhenServerErrorOccurs() {
+    public fun shouldGetAndFailToRenewExpiredCredentialsWhenApiErrorOccurs() {
         Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
         Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
@@ -950,7 +950,7 @@ public class CredentialsManagerTest {
         MatcherAssert.assertThat(exception.cause, Is.`is`(authenticationException))
         MatcherAssert.assertThat(
             exception.message,
-            Is.`is`("An error occurred when trying to authenticate with the server.")
+            Is.`is`("An error occurred while processing the request.")
         )
     }
 

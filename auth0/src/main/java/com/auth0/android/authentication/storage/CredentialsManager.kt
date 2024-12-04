@@ -329,7 +329,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                     error.isRefreshTokenDeleted ||
                             error.isInvalidRefreshToken -> CredentialsManagerException.Code.RENEW_FAILED
                     error.isNetworkError -> CredentialsManagerException.Code.NO_NETWORK
-                    else -> CredentialsManagerException.Code.SERVER_ERROR
+                    else -> CredentialsManagerException.Code.API_ERROR
                 }
                 callback.onFailure(
                     CredentialsManagerException(

@@ -44,7 +44,7 @@ public class CredentialsManagerException :
         BIOMETRICS_INVALID_USER,
         BIOMETRIC_AUTHENTICATION_FAILED,
         NO_NETWORK,
-        SERVER_ERROR
+        API_ERROR
     }
 
     private var code: Code?
@@ -140,8 +140,8 @@ public class CredentialsManagerException :
         //Exceptions thrown when making api calls for access token renewal
         public val NO_NETWORK: CredentialsManagerException =
             CredentialsManagerException(Code.NO_NETWORK)
-        public val SERVER_ERROR: CredentialsManagerException =
-            CredentialsManagerException(Code.SERVER_ERROR)
+        public val API_ERROR: CredentialsManagerException =
+            CredentialsManagerException(Code.API_ERROR)
 
 
         private fun getMessage(code: Code): String {
@@ -186,7 +186,7 @@ public class CredentialsManagerException :
                 Code.BIOMETRICS_INVALID_USER -> "The user didn't pass the authentication challenge."
                 Code.BIOMETRIC_AUTHENTICATION_FAILED -> "Biometric authentication failed."
                 Code.NO_NETWORK -> "Failed to execute the network request."
-                Code.SERVER_ERROR -> "An error occurred when trying to authenticate with the server."
+                Code.API_ERROR -> "An error occurred while processing the request."
             }
         }
     }
