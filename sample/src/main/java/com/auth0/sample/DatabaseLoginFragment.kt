@@ -102,6 +102,22 @@ class DatabaseLoginFragment : Fragment() {
             .setDeviceCredentialFallback(true)
             .build()
 
+    private val callback = object: Callback<Credentials, AuthenticationException> {
+        override fun onSuccess(result: Credentials) {
+            credentialsManager.saveCredentials(result)
+            Snackbar.make(
+                requireView(),
+                "Hello ${result.user.name}",
+                Snackbar.LENGTH_LONG
+            ).show()
+        }
+
+        override fun onFailure(error: AuthenticationException) {
+            Snackbar.make(requireView(), error.getDescription(), Snackbar.LENGTH_LONG)
+                .show()
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
@@ -186,6 +202,16 @@ class DatabaseLoginFragment : Fragment() {
             }
         }
         return binding.root
+    }
+
+    override fun onStart() {
+        super.onStart()
+        WebAuthProvider.addCallback(callback)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        WebAuthProvider.removeCallback(callback)
     }
 
     private suspend fun dbLoginAsync(email: String, password: String) {
