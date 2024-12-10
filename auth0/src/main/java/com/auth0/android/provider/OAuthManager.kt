@@ -2,6 +2,7 @@ package com.auth0.android.provider
 
 import android.content.Context
 import android.net.Uri
+import android.os.Bundle
 import android.text.TextUtils
 import android.util.Base64
 import android.util.Log
@@ -186,6 +187,19 @@ internal class OAuthManager(
         SignatureVerifier.forAsymmetricAlgorithm(tokenKeyId, apiClient, signatureVerifierCallback)
     }
 
+    internal fun toState(): OAuthManagerState {
+        return OAuthManagerState(
+            parameters = parameters.toMap(),
+            headers = headers.toMap(),
+            requestCode = requestCode,
+            ctOptions = ctOptions,
+            pkce = pkce,
+            auth0 = account,
+            idTokenVerificationIssuer = idTokenVerificationIssuer,
+            idTokenVerificationLeeway = idTokenVerificationLeeway,
+        )
+    }
+
     //Helper Methods
     @Throws(AuthenticationException::class)
     private fun assertNoError(errorValue: String?, errorDescription: String?) {
@@ -332,5 +346,24 @@ internal class OAuthManager(
         this.parameters[KEY_RESPONSE_TYPE] = RESPONSE_TYPE_CODE
         apiClient = AuthenticationAPIClient(account)
         this.ctOptions = ctOptions
+    }
+}
+
+internal fun OAuthManager.Companion.fromState(
+    state: OAuthManagerState,
+    callback: Callback<Credentials, AuthenticationException>
+): OAuthManager {
+    return OAuthManager(
+        account = state.auth0,
+        ctOptions = state.ctOptions,
+        parameters = state.parameters,
+        callback = callback
+    ).apply {
+        setHeaders(
+            state.headers
+        )
+        setPKCE(state.pkce)
+        setIdTokenVerificationIssuer(state.idTokenVerificationIssuer)
+        setIdTokenVerificationLeeway(state.idTokenVerificationLeeway)
     }
 }
