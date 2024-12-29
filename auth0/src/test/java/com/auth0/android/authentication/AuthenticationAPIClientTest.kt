@@ -7,6 +7,7 @@ import com.auth0.android.authentication.ParameterBuilder.Companion.newBuilder
 import com.auth0.android.provider.JwtTestUtils
 import com.auth0.android.request.HttpMethod
 import com.auth0.android.request.NetworkingClient
+import com.auth0.android.request.PublicKeyCredentials
 import com.auth0.android.request.RequestOptions
 import com.auth0.android.request.ServerResponse
 import com.auth0.android.request.internal.RequestFactory
@@ -191,7 +192,7 @@ public class AuthenticationAPIClientTest {
         val callback = MockAuthenticationCallback<Credentials>()
         val auth0 = auth0
         val client = AuthenticationAPIClient(auth0)
-        client.signinWithPasskey("auth-session", mock(), MY_CONNECTION)
+        client.signinWithPasskey("auth-session", mock<PublicKeyCredentials>(), MY_CONNECTION)
             .start(callback)
         ShadowLooper.idleMainLooper()
         assertThat(

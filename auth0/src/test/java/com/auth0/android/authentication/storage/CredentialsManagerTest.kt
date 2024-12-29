@@ -1,5 +1,6 @@
 package com.auth0.android.authentication.storage
 
+import com.auth0.android.NetworkErrorException
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
@@ -788,7 +789,7 @@ public class CredentialsManagerTest {
     }
 
     @Test
-    public fun shouldGetAndFailToRenewExpiredCredentials() {
+    public fun shouldGetAndFailToRenewExpiredCredentialsWhenRefreshTokenExpired() {
         Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
         Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
@@ -802,8 +803,9 @@ public class CredentialsManagerTest {
             client.renewAuth("refreshToken")
         ).thenReturn(request)
         //Trigger failure
-        val authenticationException = Mockito.mock(
-            AuthenticationException::class.java
+        val authenticationException = AuthenticationException(
+            "invalid_grant",
+            "Unknown or invalid refresh token."
         )
         Mockito.`when`(request.execute()).thenThrow(authenticationException)
         manager.getCredentials(callback)
@@ -825,6 +827,130 @@ public class CredentialsManagerTest {
         MatcherAssert.assertThat(
             exception.message,
             Is.`is`("An error occurred while trying to use the Refresh Token to renew the Credentials.")
+        )
+    }
+
+    @Test
+    public fun shouldGetAndFailToRenewExpiredCredentialsWhenUserIsDeleted() {
+        Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("type")
+        val expirationTime = CredentialsMock.CURRENT_TIME_MS //Same as current time --> expired
+        Mockito.`when`(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveLong("com.auth0.cache_expires_at"))
+            .thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveString("com.auth0.scope")).thenReturn("scope")
+        Mockito.`when`(
+            client.renewAuth("refreshToken")
+        ).thenReturn(request)
+        //Trigger failure
+        val authenticationException = AuthenticationException(
+            mapOf(
+                "error" to "invalid_grant",
+                "error_description" to "The refresh_token was generated for a user who doesn't exist anymore."
+            ), 403
+        )
+        Mockito.`when`(request.execute()).thenThrow(authenticationException)
+        manager.getCredentials(callback)
+        verify(storage, never())
+            .store(ArgumentMatchers.anyString(), ArgumentMatchers.anyInt())
+        verify(storage, never())
+            .store(ArgumentMatchers.anyString(), ArgumentMatchers.anyLong())
+        verify(storage, never())
+            .store(ArgumentMatchers.anyString(), ArgumentMatchers.anyString())
+        verify(storage, never())
+            .store(ArgumentMatchers.anyString(), ArgumentMatchers.anyBoolean())
+        verify(storage, never()).remove(ArgumentMatchers.anyString())
+        verify(callback).onFailure(
+            exceptionCaptor.capture()
+        )
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exception.cause, Is.`is`(authenticationException))
+        MatcherAssert.assertThat(
+            exception.message,
+            Is.`is`("An error occurred while trying to use the Refresh Token to renew the Credentials.")
+        )
+    }
+
+    @Test
+    public fun shouldGetAndFailToRenewExpiredCredentialsWhenNetworkIsNotAvailable() {
+        Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("type")
+        val expirationTime = CredentialsMock.CURRENT_TIME_MS //Same as current time --> expired
+        Mockito.`when`(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveLong("com.auth0.cache_expires_at"))
+            .thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveString("com.auth0.scope")).thenReturn("scope")
+        Mockito.`when`(
+            client.renewAuth("refreshToken")
+        ).thenReturn(request)
+        //Trigger failure
+        val authenticationException = AuthenticationException(
+            "Failed to execute the network request", NetworkErrorException(mock())
+        )
+        Mockito.`when`(request.execute()).thenThrow(authenticationException)
+        manager.getCredentials(callback)
+        verify(storage, never())
+            .store(ArgumentMatchers.anyString(), ArgumentMatchers.anyInt())
+        verify(storage, never())
+            .store(ArgumentMatchers.anyString(), ArgumentMatchers.anyLong())
+        verify(storage, never())
+            .store(ArgumentMatchers.anyString(), ArgumentMatchers.anyString())
+        verify(storage, never())
+            .store(ArgumentMatchers.anyString(), ArgumentMatchers.anyBoolean())
+        verify(storage, never()).remove(ArgumentMatchers.anyString())
+        verify(callback).onFailure(
+            exceptionCaptor.capture()
+        )
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exception.cause, Is.`is`(authenticationException))
+        MatcherAssert.assertThat(
+            exception.message,
+            Is.`is`("Failed to execute the network request.")
+        )
+    }
+
+    @Test
+    public fun shouldGetAndFailToRenewExpiredCredentialsWhenApiErrorOccurs() {
+        Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("type")
+        val expirationTime = CredentialsMock.CURRENT_TIME_MS //Same as current time --> expired
+        Mockito.`when`(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveLong("com.auth0.cache_expires_at"))
+            .thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveString("com.auth0.scope")).thenReturn("scope")
+        Mockito.`when`(
+            client.renewAuth("refreshToken")
+        ).thenReturn(request)
+        //Trigger failure
+        val authenticationException = AuthenticationException("Something went wrong", mock<Exception>())
+        Mockito.`when`(request.execute()).thenThrow(authenticationException)
+        manager.getCredentials(callback)
+        verify(storage, never())
+            .store(ArgumentMatchers.anyString(), ArgumentMatchers.anyInt())
+        verify(storage, never())
+            .store(ArgumentMatchers.anyString(), ArgumentMatchers.anyLong())
+        verify(storage, never())
+            .store(ArgumentMatchers.anyString(), ArgumentMatchers.anyString())
+        verify(storage, never())
+            .store(ArgumentMatchers.anyString(), ArgumentMatchers.anyBoolean())
+        verify(storage, never()).remove(ArgumentMatchers.anyString())
+        verify(callback).onFailure(
+            exceptionCaptor.capture()
+        )
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exception.cause, Is.`is`(authenticationException))
+        MatcherAssert.assertThat(
+            exception.message,
+            Is.`is`("An error occurred while processing the request.")
         )
     }
 
