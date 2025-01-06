@@ -702,7 +702,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     }
 
     /**
-     * The Custom Token Exchange feature allows clients to exchange their existing tokens for Auth0 tokens by calling the /oauth/token endpoint with specific parameters
+     * The Custom Token Exchange feature allows clients to exchange their existing tokens for Auth0 tokens by calling the `/oauth/token` endpoint with specific parameters.
      * The default scope used is 'openid profile email'.
      *
      * Example usage:
