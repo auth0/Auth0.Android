@@ -2277,7 +2277,6 @@ public class AuthenticationAPIClientTest {
         mockAPI.willReturnSuccessfulLogin()
         val callback = MockAuthenticationCallback<Credentials>()
         client.customTokenExchange( "subject-token-type","subject-token")
-            .setScope("openid profile email")
             .start(callback)
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
@@ -2308,7 +2307,6 @@ public class AuthenticationAPIClientTest {
         mockAPI.willReturnSuccessfulLogin()
         val credentials = client
             .customTokenExchange("subject-token-type", "subject-token")
-            .setScope("openid profile email")
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
@@ -2335,7 +2333,6 @@ public class AuthenticationAPIClientTest {
         mockAPI.willReturnSuccessfulLogin()
         val credentials = client
             .customTokenExchange("subject-token-type", "subject-token")
-            .setScope("openid profile email")
             .await()
         val request = mockAPI.takeRequest()
         assertThat(

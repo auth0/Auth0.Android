@@ -457,13 +457,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @return a request to configure and start that will yield [Credentials]
      */
     public fun loginWithNativeSocialToken(token: String, tokenType: String): AuthenticationRequest {
-        val parameters = ParameterBuilder.newAuthenticationBuilder()
-            .setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
-            .setClientId(clientId)
-            .set(SUBJECT_TOKEN_KEY, token)
-            .set(SUBJECT_TOKEN_TYPE_KEY, tokenType)
-            .asDictionary()
-        return loginWithToken(parameters)
+        return customTokenExchange(tokenType, token)
     }
 
     /**
@@ -732,7 +726,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         subjectTokenType: String,
         subjectToken: String,
     ): AuthenticationRequest {
-        val parameters = ParameterBuilder.newBuilder()
+        val parameters = ParameterBuilder.newAuthenticationBuilder()
             .setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
             .set(SUBJECT_TOKEN_TYPE_KEY, subjectTokenType)
             .set(SUBJECT_TOKEN_KEY, subjectToken)
