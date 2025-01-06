@@ -167,7 +167,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * ```
      * client.signinWithPasskey("{authSession}", "{authResponse}","{realm}")
      *       .validateClaims() //mandatory
-     *       .addParameter("scope","scope")
+     *       .setScope("{scope}")
      *       .start(object: Callback<Credentials, AuthenticationException> {
      *           override fun onFailure(error: AuthenticationException) { }
      *           override fun onSuccess(result: Credentials) { }
@@ -211,7 +211,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * ```
      * client.signinWithPasskey("{authSession}", "{authResponse}","{realm}")
      *       .validateClaims() //mandatory
-     *       .addParameter("scope","scope")
+     *       .setScope("{scope}")
      *       .start(object: Callback<Credentials, AuthenticationException> {
      *           override fun onFailure(error: AuthenticationException) { }
      *           override fun onSuccess(result: Credentials) { }
@@ -705,6 +705,39 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             .build()
         return factory.post(url.toString())
             .addParameters(parameters)
+    }
+
+    /**
+     * The Custom Token Exchange feature allows clients to exchange their existing tokens for Auth0 tokens by calling the /oauth/token endpoint with specific parameters
+     * The default scope used is 'openid profile email'.
+     *
+     * Example usage:
+     *
+     * ```
+     * client.callTokenExchange("{subject token type}", "{subject token}")
+     *       .validateClaims() //mandatory
+     *       .setScope("{scope}")
+     *       .setAudience("{audience}")
+     *       .start(object: Callback<Credentials, AuthenticationException> {
+     *       override fun onSuccess(result: Credentials) { }
+     *       override fun onFailure(error: AuthenticationException) { }
+     *  })
+     *  ```
+     *
+     * @param subjectTokenType the subject token type that is associated with the existing Identity Provider. e.g. 'http://acme.com/legacy-token'
+     * @param subjectToken   the subject token, typically obtained through the Identity Provider's SDK
+     * @return a request to configure and start that will yield [Credentials]
+     */
+    public fun callTokenExchange(
+        subjectTokenType: String,
+        subjectToken: String,
+    ): AuthenticationRequest {
+        val parameters = ParameterBuilder.newBuilder()
+            .setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
+            .set(SUBJECT_TOKEN_TYPE_KEY, subjectTokenType)
+            .set(SUBJECT_TOKEN_KEY, subjectToken)
+            .asDictionary()
+        return loginWithToken(parameters)
     }
 
     /**
