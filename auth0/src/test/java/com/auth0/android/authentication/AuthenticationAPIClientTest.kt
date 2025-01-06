@@ -2273,6 +2273,90 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
+    public fun shouldCustomTokenExchange() {
+        mockAPI.willReturnSuccessfulLogin()
+        val callback = MockAuthenticationCallback<Credentials>()
+        client.customTokenExchange( "subject-token-type","subject-token")
+            .setScope("openid profile email")
+            .start(callback)
+        ShadowLooper.idleMainLooper()
+        val request = mockAPI.takeRequest()
+        assertThat(
+            request.getHeader("Accept-Language"), Matchers.`is`(
+                defaultLocale
+            )
+        )
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
+        assertThat(
+            body,
+            Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
+        )
+        assertThat(body, Matchers.hasEntry("subject_token", "subject-token"))
+        assertThat(body, Matchers.hasEntry("subject_token_type", "subject-token-type"))
+        assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
+        assertThat(
+            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
+                Credentials::class.java
+            )
+        )
+    }
+
+    @Test
+    public fun shouldCustomTokenExchangeSync() {
+        mockAPI.willReturnSuccessfulLogin()
+        val credentials = client
+            .customTokenExchange("subject-token-type", "subject-token")
+            .setScope("openid profile email")
+            .execute()
+        val request = mockAPI.takeRequest()
+        assertThat(
+            request.getHeader("Accept-Language"), Matchers.`is`(
+                defaultLocale
+            )
+        )
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
+        assertThat(
+            body,
+            Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
+        )
+        assertThat(body, Matchers.hasEntry("subject_token", "subject-token"))
+        assertThat(body, Matchers.hasEntry("subject_token_type", "subject-token-type"))
+        assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
+        assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
+    }
+
+    @Test
+    @ExperimentalCoroutinesApi
+    public fun shouldAwaitCustomTokenExchnage(): Unit = runTest {
+        mockAPI.willReturnSuccessfulLogin()
+        val credentials = client
+            .customTokenExchange("subject-token-type", "subject-token")
+            .setScope("openid profile email")
+            .await()
+        val request = mockAPI.takeRequest()
+        assertThat(
+            request.getHeader("Accept-Language"), Matchers.`is`(
+                defaultLocale
+            )
+        )
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
+        assertThat(
+            body,
+            Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
+        )
+        assertThat(body, Matchers.hasEntry("subject_token", "subject-token"))
+        assertThat(body, Matchers.hasEntry("subject_token_type", "subject-token-type"))
+        assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
+        assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
+    }
+
+    @Test
     public fun shouldRenewAuthWithOAuthToken() {
         val auth0 = auth0
         val client = AuthenticationAPIClient(auth0)

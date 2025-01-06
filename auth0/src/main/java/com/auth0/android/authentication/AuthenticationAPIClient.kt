@@ -714,7 +714,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      *
      * ```
-     * client.callTokenExchange("{subject token type}", "{subject token}")
+     * client.customTokenExchange("{subject token type}", "{subject token}")
      *       .validateClaims() //mandatory
      *       .setScope("{scope}")
      *       .setAudience("{audience}")
@@ -728,7 +728,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param subjectToken   the subject token, typically obtained through the Identity Provider's SDK
      * @return a request to configure and start that will yield [Credentials]
      */
-    public fun callTokenExchange(
+    public fun customTokenExchange(
         subjectTokenType: String,
         subjectToken: String,
     ): AuthenticationRequest {
