@@ -457,7 +457,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @return a request to configure and start that will yield [Credentials]
      */
     public fun loginWithNativeSocialToken(token: String, tokenType: String): AuthenticationRequest {
-        return customTokenExchange(tokenType, token)
+        return tokenExchange(tokenType, token)
     }
 
     /**
@@ -726,12 +726,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         subjectTokenType: String,
         subjectToken: String,
     ): AuthenticationRequest {
-        val parameters = ParameterBuilder.newAuthenticationBuilder()
-            .setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
-            .set(SUBJECT_TOKEN_TYPE_KEY, subjectTokenType)
-            .set(SUBJECT_TOKEN_KEY, subjectToken)
-            .asDictionary()
-        return loginWithToken(parameters)
+        return tokenExchange(subjectTokenType, subjectToken)
     }
 
     /**
@@ -947,6 +942,21 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         )
         request.addParameters(requestParameters)
         return request
+    }
+
+    /**
+     * Helper function to make a request to the /oauth/token endpoint with the token exchange grant type.
+     */
+    private fun tokenExchange(
+        subjectTokenType: String,
+        subjectToken: String
+    ): AuthenticationRequest {
+        val parameters = ParameterBuilder.newAuthenticationBuilder()
+            .setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
+            .set(SUBJECT_TOKEN_TYPE_KEY, subjectTokenType)
+            .set(SUBJECT_TOKEN_KEY, subjectToken)
+            .asDictionary()
+        return loginWithToken(parameters)
     }
 
     private fun profileRequest(): Request<UserProfile, AuthenticationException> {
