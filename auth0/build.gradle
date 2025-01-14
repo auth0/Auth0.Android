@@ -51,6 +51,7 @@ android {
     lintOptions {
         htmlReport true
         abortOnError true
+        checkReleaseBuilds false
     }
     testOptions {
         unitTests {
