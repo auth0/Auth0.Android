@@ -19,11 +19,15 @@ runs:
   using: composite
 
   steps:
+    - name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '11'
+
     - run: |
         curl -s "https://get.sdkman.io" | bash
         source "/home/runner/.sdkman/bin/sdkman-init.sh"
-        sdk list java
-        sdk install java ${{ inputs.java }} && sdk default java ${{ inputs.java }}
         sdk install gradle ${{ inputs.gradle }} && sdk default gradle ${{ inputs.gradle }}
         sdk install kotlin ${{ inputs.kotlin }} && sdk default kotlin ${{ inputs.kotlin }}
       shell: bash
