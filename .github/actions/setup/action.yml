@@ -2,10 +2,10 @@ name: Configure CI
 description: Performs the initial configuration of the CI environment
 
 inputs:
-  java:
-    description: The Java version to use
-    required: false
-    default: 8.0.432-tem
+#  java:
+#    description: The Java version to use
+#    required: false
+#    default: 8.0.432-tem
   gradle:
     description: The Gradle version to use
     required: false
@@ -18,14 +18,29 @@ inputs:
 runs:
   using: composite
 
+#  steps:
+#    - uses: actions/checkout@v4
+#    - uses: actions/setup-java@v4
+#      with:
+#        distribution: 'temurin' # See 'Supported distributions' for available options
+#        java-version: '11'
+#    - run: java HelloWorldApp.java
+
   steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin' # See 'Supported distributions' for available options
+        java-version: '11'
+    - run: java HelloWorldApp.java
+
     - run: |
         curl -s "https://get.sdkman.io" | bash
         source "/home/runner/.sdkman/bin/sdkman-init.sh"
-        sdk list java
-        sdk list kotlin
-        sdk list gradle
-        sdk install java ${{ inputs.java }} && sdk default java ${{ inputs.java }}
+#        sdk list java
+#        sdk list kotlin
+#        sdk list gradle
+#        sdk install java ${{ inputs.java }} && sdk default java ${{ inputs.java }}
         sdk install gradle ${{ inputs.gradle }} && sdk default gradle ${{ inputs.gradle }}
         sdk install kotlin ${{ inputs.kotlin }} && sdk default kotlin ${{ inputs.kotlin }}
       shell: bash
