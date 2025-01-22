@@ -1,7 +1,7 @@
 apply plugin: 'jacoco'
 
 jacoco {
-    toolVersion = "0.8.5"
+    toolVersion = "0.8.8"
 }
 
 android {
@@ -12,7 +12,11 @@ android {
                 jacoco.excludes = ['jdk.internal.*',
                                    'javax.crypto.*',
                                    'javax.security.*',
-                                   'javax.net.ssl.*']
+                                   'javax.net.ssl.*',
+                                   '**/sun/security/**',
+                                   '**/net/bytebuddy/**',
+                                   '**/org/jacoco/agent/**',
+                                   '**/com/sun/tools/**']
             }
         }
     }
@@ -44,7 +48,12 @@ afterEvaluate {
                                '**/Manifest*.*',
                                '**/javax/crypto/**',
                                '**/java/security/**',
-                               '**/javax/net/ssl/**']
+                               '**/javax/net/ssl/**',
+                               '**/sun/security/**',
+                               '**/net/bytebuddy/**',
+                               '**/org/jacoco/agent/**',
+                               '**/com/sun/tools/**'
+                    ]
             )
 
             sourceDirectories.from = ['src/main/java'].plus(android.sourceSets[name].java.srcDirs)
