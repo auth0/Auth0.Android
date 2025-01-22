@@ -1,7 +1,7 @@
 apply plugin: 'jacoco'
 
 jacoco {
-    toolVersion = "0.8.8"
+    toolVersion = "0.8.5"
 }
 
 android {
@@ -9,7 +9,10 @@ android {
         unitTests.all {
             jacoco {
                 includeNoLocationClasses = true
-                jacoco.excludes = ['jdk.internal.*']
+                jacoco.excludes = ['jdk.internal.*',
+                                   'javax.crypto.*',
+                                   'javax.security.*',
+                                   'javax.net.ssl.*']
             }
         }
     }
@@ -38,7 +41,10 @@ afterEvaluate {
                                '**/*$ViewInjector*.*',
                                '**/*$ViewBinder*.*',
                                '**/BuildConfig.*',
-                               '**/Manifest*.*']
+                               '**/Manifest*.*',
+                               '**/javax/crypto/**',
+                               '**/java/security/**',
+                               '**/javax/net/ssl/**']
             )
 
             sourceDirectories.from = ['src/main/java'].plus(android.sourceSets[name].java.srcDirs)
