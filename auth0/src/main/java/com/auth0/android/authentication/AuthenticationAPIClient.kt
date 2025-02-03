@@ -167,7 +167,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * ```
      * client.signinWithPasskey("{authSession}", "{authResponse}","{realm}")
      *       .validateClaims() //mandatory
-     *       .addParameter("scope","scope")
+     *       .setScope("{scope}")
      *       .start(object: Callback<Credentials, AuthenticationException> {
      *           override fun onFailure(error: AuthenticationException) { }
      *           override fun onSuccess(result: Credentials) { }
@@ -211,7 +211,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * ```
      * client.signinWithPasskey("{authSession}", "{authResponse}","{realm}")
      *       .validateClaims() //mandatory
-     *       .addParameter("scope","scope")
+     *       .setScope("{scope}")
      *       .start(object: Callback<Credentials, AuthenticationException> {
      *           override fun onFailure(error: AuthenticationException) { }
      *           override fun onSuccess(result: Credentials) { }
@@ -457,13 +457,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @return a request to configure and start that will yield [Credentials]
      */
     public fun loginWithNativeSocialToken(token: String, tokenType: String): AuthenticationRequest {
-        val parameters = ParameterBuilder.newAuthenticationBuilder()
-            .setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
-            .setClientId(clientId)
-            .set(SUBJECT_TOKEN_KEY, token)
-            .set(SUBJECT_TOKEN_TYPE_KEY, tokenType)
-            .asDictionary()
-        return loginWithToken(parameters)
+        return tokenExchange(tokenType, token)
     }
 
     /**
@@ -708,6 +702,34 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     }
 
     /**
+     * The Custom Token Exchange feature allows clients to exchange their existing tokens for Auth0 tokens by calling the `/oauth/token` endpoint with specific parameters.
+     * The default scope used is 'openid profile email'.
+     *
+     * Example usage:
+     *
+     * ```
+     * client.customTokenExchange("{subject token type}", "{subject token}")
+     *       .validateClaims() //mandatory
+     *       .setScope("{scope}")
+     *       .setAudience("{audience}")
+     *       .start(object: Callback<Credentials, AuthenticationException> {
+     *       override fun onSuccess(result: Credentials) { }
+     *       override fun onFailure(error: AuthenticationException) { }
+     *  })
+     *  ```
+     *
+     * @param subjectTokenType the subject token type that is associated with the existing Identity Provider. e.g. 'http://acme.com/legacy-token'
+     * @param subjectToken   the subject token, typically obtained through the Identity Provider's SDK
+     * @return a request to configure and start that will yield [Credentials]
+     */
+    public fun customTokenExchange(
+        subjectTokenType: String,
+        subjectToken: String,
+    ): AuthenticationRequest {
+        return tokenExchange(subjectTokenType, subjectToken)
+    }
+
+    /**
      * Requests new Credentials using a valid Refresh Token. The received token will have the same audience and scope as first requested.
      *
      * This method will use the /oauth/token endpoint with the 'refresh_token' grant, and the response will include an id_token and an access_token if 'openid' scope was requested when the refresh_token was obtained.
@@ -920,6 +942,21 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         )
         request.addParameters(requestParameters)
         return request
+    }
+
+    /**
+     * Helper function to make a request to the /oauth/token endpoint with the token exchange grant type.
+     */
+    private fun tokenExchange(
+        subjectTokenType: String,
+        subjectToken: String
+    ): AuthenticationRequest {
+        val parameters = ParameterBuilder.newAuthenticationBuilder()
+            .setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
+            .set(SUBJECT_TOKEN_TYPE_KEY, subjectTokenType)
+            .set(SUBJECT_TOKEN_KEY, subjectToken)
+            .asDictionary()
+        return loginWithToken(parameters)
     }
 
     private fun profileRequest(): Request<UserProfile, AuthenticationException> {
