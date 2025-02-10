@@ -19,8 +19,7 @@ runs:
   using: composite
 
   steps:
-    - uses: .github/actions/setup-java
-
+    - uses: actions/setup-java
 
     - run: |
         curl -s "https://get.sdkman.io" | bash
