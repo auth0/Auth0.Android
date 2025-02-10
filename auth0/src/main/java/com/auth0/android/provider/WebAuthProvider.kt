@@ -15,7 +15,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import java.util.Locale
-import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CopyOnWriteArraySet
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
@@ -122,11 +121,15 @@ public object WebAuthProvider {
                     state,
                     object : Callback<Credentials, AuthenticationException> {
                         override fun onSuccess(result: Credentials) {
-                            callbacks.forEach { it.onSuccess(result) }
+                            for (callback in callbacks) {
+                                callback.onSuccess(result)
+                            }
                         }
 
                         override fun onFailure(error: AuthenticationException) {
-                            callbacks.forEach { it.onFailure(error) }
+                            for (callback in callbacks) {
+                                callback.onFailure(error)
+                            }
                         }
                     }
                 )
