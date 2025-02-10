@@ -43,6 +43,8 @@ public class CredentialsManagerException :
         BIOMETRIC_ERROR_UNABLE_TO_PROCESS,
         BIOMETRICS_INVALID_USER,
         BIOMETRIC_AUTHENTICATION_FAILED,
+        NO_NETWORK,
+        API_ERROR
     }
 
     private var code: Code?
@@ -135,6 +137,12 @@ public class CredentialsManagerException :
         public val BIOMETRICS_INVALID_USER: CredentialsManagerException =
             CredentialsManagerException(Code.BIOMETRICS_INVALID_USER)
 
+        //Exceptions thrown when making api calls for access token renewal
+        public val NO_NETWORK: CredentialsManagerException =
+            CredentialsManagerException(Code.NO_NETWORK)
+        public val API_ERROR: CredentialsManagerException =
+            CredentialsManagerException(Code.API_ERROR)
+
 
         private fun getMessage(code: Code): String {
             return when (code) {
@@ -177,6 +185,8 @@ public class CredentialsManagerException :
                 Code.BIOMETRIC_ERROR_UNABLE_TO_PROCESS -> "Failed to authenticate because the sensor was unable to process the current image."
                 Code.BIOMETRICS_INVALID_USER -> "The user didn't pass the authentication challenge."
                 Code.BIOMETRIC_AUTHENTICATION_FAILED -> "Biometric authentication failed."
+                Code.NO_NETWORK -> "Failed to execute the network request."
+                Code.API_ERROR -> "An error occurred while processing the request."
             }
         }
     }

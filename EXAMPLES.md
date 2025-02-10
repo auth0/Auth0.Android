@@ -17,6 +17,7 @@
       - [Step 2: Input the code](#step-2-input-the-code)
     - [Sign Up with a database connection](#sign-up-with-a-database-connection)
     - [Get user information](#get-user-information)
+    - [Custom Token Exchange](#custom-token-exchange)
   - [Credentials Manager](#credentials-manager)
     - [Secure Credentials Manager](#secure-credentials-manager)
       - [Usage](#usage)
@@ -485,6 +486,57 @@ authentication
        }
    });
 ```
+</details>
+
+### Custom Token Exchange
+
+```kotlin
+authentication
+    .customTokenExchange("subject_token_type", "subject_token")
+    .start(object : Callback<Credentials, AuthenticationException> {
+        override fun onSuccess(result: Credentials) {
+            // Handle success
+        }
+
+        override fun onFailure(exception: AuthenticationException) {
+            // Handle error
+        }
+
+    })
+```
+<details> 
+    <summary>Using coroutines</summary> 
+
+``` kotlin 
+try {
+    val credentials = authentication
+        .tokenExchange("subject_token_type", "subject_token")
+        .await()
+} catch (e: AuthenticationException) {
+    e.printStacktrace()
+}
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+authentication
+    .customTokenExchange("subject_token_type", "subject_token")
+    .start(new Callback<Credentials, AuthenticationException>() {
+        @Override
+        public void onSuccess(@Nullable Credentials payload) {
+            // Handle success
+        }
+        @Override
+        public void onFailure(@NonNull AuthenticationException error) {
+            // Handle error
+        }
+    });
+```
+
+
 </details>
 
 

@@ -20,13 +20,11 @@ runs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup Java
-      shell: bash
-      run: |
-        curl -s "https://get.sdkman.io" | bash
-        source "/home/runner/.sdkman/bin/sdkman-init.sh"
-        sdk list java
-        sdk install java ${{ inputs.java-version }} && sdk default java ${{ inputs.java-version }}
+    - name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '11'
 
     - uses: gradle/wrapper-validation-action@56b90f209b02bf6d1deae490e9ef18b21a389cd4 # pin@1.1.0
 
