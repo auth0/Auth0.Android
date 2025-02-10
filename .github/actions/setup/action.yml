@@ -19,7 +19,7 @@ runs:
   using: composite
 
   steps:
-    - uses: ./.github/actions/setup-java
+    - uses: .github/actions/setup-java
 
 
     - run: |
