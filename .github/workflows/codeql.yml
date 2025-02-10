@@ -35,11 +35,7 @@ jobs:
       - if: github.actor == 'dependabot[bot]' || github.event_name == 'merge_group'
         run: exit 0 # Skip unnecessary test runs for dependabot and merge queues. Artifically flag as successful, as this is a required check for branch protection.
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '11'
+      - uses: ./.github/actions/setup-java
 
       - name: Checkout
         uses: actions/checkout@v4

@@ -19,11 +19,8 @@ runs:
   using: composite
 
   steps:
-    - name: Set up Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '11'
+    - uses: ./.github/actions/setup-java
+
 
     - run: |
         curl -s "https://get.sdkman.io" | bash
