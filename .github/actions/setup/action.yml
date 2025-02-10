@@ -19,7 +19,7 @@ runs:
   using: composite
 
   steps:
-    - uses: actions/setup-java
+    - uses: auth0/Auth0.Android/.github/actions/setup-java@v1
 
     - run: |
         curl -s "https://get.sdkman.io" | bash
