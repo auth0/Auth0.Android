@@ -3,6 +3,7 @@ package com.auth0.android.provider
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Bundle
 import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
@@ -14,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import java.util.Locale
+import java.util.concurrent.CopyOnWriteArraySet
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -26,11 +28,24 @@ import kotlin.coroutines.resumeWithException
  */
 public object WebAuthProvider {
     private val TAG: String? = WebAuthProvider::class.simpleName
+    private const val KEY_BUNDLE_OAUTH_MANAGER_STATE = "oauth_manager_state"
+
+    private val callbacks = CopyOnWriteArraySet<Callback<Credentials, AuthenticationException>>()
 
     @JvmStatic
     @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal var managerInstance: ResumableManager? = null
         private set
+
+    @JvmStatic
+    public fun addCallback(callback: Callback<Credentials, AuthenticationException>) {
+        callbacks += callback
+    }
+
+    @JvmStatic
+    public fun removeCallback(callback: Callback<Credentials, AuthenticationException>) {
+        callbacks -= callback
+    }
 
     // Public methods
     /**
@@ -87,6 +102,39 @@ public object WebAuthProvider {
             return
         }
         managerInstance!!.failure(exception)
+    }
+
+    internal fun onSaveInstanceState(bundle: Bundle) {
+        val manager = managerInstance
+        if (manager is OAuthManager) {
+            val managerState = manager.toState()
+            bundle.putString(KEY_BUNDLE_OAUTH_MANAGER_STATE, managerState.serializeToJson())
+        }
+    }
+
+    internal fun onRestoreInstanceState(bundle: Bundle) {
+        if (managerInstance == null) {
+            val stateJson = bundle.getString(KEY_BUNDLE_OAUTH_MANAGER_STATE).orEmpty()
+            if (stateJson.isNotBlank()) {
+                val state = OAuthManagerState.deserializeState(stateJson)
+                managerInstance = OAuthManager.fromState(
+                    state,
+                    object : Callback<Credentials, AuthenticationException> {
+                        override fun onSuccess(result: Credentials) {
+                            for (callback in callbacks) {
+                                callback.onSuccess(result)
+                            }
+                        }
+
+                        override fun onFailure(error: AuthenticationException) {
+                            for (callback in callbacks) {
+                                callback.onFailure(error)
+                            }
+                        }
+                    }
+                )
+            }
+        }
     }
 
     @JvmStatic
