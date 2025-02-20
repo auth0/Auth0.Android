@@ -13,6 +13,7 @@ import com.auth0.android.callback.Callback
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.OptionalCredentials
+import com.auth0.android.result.SSOCredentials
 import com.google.gson.Gson
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.lang.ref.WeakReference
@@ -124,6 +125,60 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 CredentialsManagerException.Code.CRYPTO_EXCEPTION,
                 e
             )
+        }
+    }
+
+    override fun saveSsoCredentials(ssoCredentials: SSOCredentials) {
+        if (ssoCredentials.refreshToken.isNullOrEmpty()) return // No refresh token to save
+        serialExecutor.execute {
+            val existingCredentials = getExistingCredentials()
+            existingCredentials ?: return@execute
+            // Checking if the existing one needs to be replaced with the new one
+            if (existingCredentials.refreshToken == ssoCredentials.refreshToken)
+                return@execute
+            val newCredentials =
+                existingCredentials.copy(refreshToken = ssoCredentials.refreshToken)
+            saveCredentials(newCredentials)
+        }
+    }
+
+    override fun getSsoCredentials(callback: Callback<SSOCredentials, CredentialsManagerException>) {
+        serialExecutor.execute {
+            val existingCredentials = getExistingCredentials()
+            existingCredentials ?: run {
+                callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
+                return@execute
+            }
+            if (existingCredentials.refreshToken.isNullOrEmpty()) {
+                callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
+                return@execute
+            }
+            try {
+                val sessionCredentials =
+                    authenticationClient.fetchSessionToken(existingCredentials.refreshToken)
+                        .execute()
+                saveSsoCredentials(sessionCredentials)
+                callback.onSuccess(sessionCredentials)
+            } catch (error: AuthenticationException) {
+                val exception = when {
+                    error.isRefreshTokenDeleted ||
+                            error.isInvalidRefreshToken -> CredentialsManagerException.Code.RENEW_FAILED
+
+                    error.isNetworkError -> CredentialsManagerException.Code.NO_NETWORK
+                    else -> CredentialsManagerException.Code.API_ERROR
+                }
+                callback.onFailure(
+                    CredentialsManagerException(
+                        exception,
+                        error
+                    )
+                )
+            } catch (error: CredentialsManagerException) {
+                val exception = CredentialsManagerException(
+                    CredentialsManagerException.Code.STORE_FAILED, error
+                )
+                callback.onFailure(exception)
+            }
         }
     }
 
@@ -589,6 +644,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 val exception = when {
                     error.isRefreshTokenDeleted ||
                             error.isInvalidRefreshToken -> CredentialsManagerException.Code.RENEW_FAILED
+
                     error.isNetworkError -> CredentialsManagerException.Code.NO_NETWORK
                     else -> CredentialsManagerException.Code.API_ERROR
                 }
@@ -614,6 +670,36 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 callback.onFailure(exception)
             }
         }
+    }
+
+    /**
+     * Helper method to fetch existing credentials from the storage.
+     * This method is not thread safe
+     */
+    private fun getExistingCredentials(): Credentials? {
+        val encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS)
+        if (encryptedEncoded.isNullOrBlank()) {
+            return null
+        }
+        val encrypted = Base64.decode(encryptedEncoded, Base64.DEFAULT)
+        val json: String
+        try {
+            json = String(crypto.decrypt(encrypted))
+        } catch (e: IncompatibleDeviceException) {
+            return null
+        } catch (e: CryptoException) {
+            return null
+        }
+        val bridgeCredentials = gson.fromJson(json, OptionalCredentials::class.java)
+        val existingCredentials = Credentials(
+            bridgeCredentials.idToken.orEmpty(),
+            bridgeCredentials.accessToken.orEmpty(),
+            bridgeCredentials.type.orEmpty(),
+            bridgeCredentials.refreshToken,
+            bridgeCredentials.expiresAt ?: Date(),
+            bridgeCredentials.scope
+        )
+        return existingCredentials
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)

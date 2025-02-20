@@ -14,6 +14,7 @@ import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
 import com.auth0.android.result.PasskeyChallenge
 import com.auth0.android.result.PasskeyRegistrationChallenge
+import com.auth0.android.result.SSOCredentials
 import com.auth0.android.result.UserProfile
 import com.google.gson.Gson
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -922,6 +923,44 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     }
 
     /**
+     * Creates a new request to fetch a session token in exchange for a refresh token.
+     *
+     * @param refreshToken A valid refresh token obtained as part of Auth0 authentication
+     * @return a request to fetch a session token
+     */
+    public fun fetchSessionToken(refreshToken: String): Request<SSOCredentials, AuthenticationException> {
+        val params = ParameterBuilder.newBuilder()
+            .setClientId(clientId)
+            .setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
+            .set(SUBJECT_TOKEN_KEY, refreshToken)
+            .set(SUBJECT_TOKEN_TYPE_KEY, ParameterBuilder.TOKEN_TYPE_REFRESH_TOKEN)
+            .set(REQUESTED_TOKEN_TYPE_KEY, ParameterBuilder.TOKEN_TYPE_SESSION_TOKEN)
+            .asDictionary()
+        return loginWithTokenGeneric<SSOCredentials>(params)
+    }
+
+    /**
+     * Helper function to make a request to the /oauth/token endpoint with a custom response type.
+     */
+    private inline fun <reified T> loginWithTokenGeneric(parameters: Map<String, String>): Request<T,AuthenticationException> {
+        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
+            .addPathSegment(OAUTH_PATH)
+            .addPathSegment(TOKEN_PATH)
+            .build()
+        val requestParameters =
+            ParameterBuilder.newBuilder()
+                .setClientId(clientId)
+                .addAll(parameters)
+                .asDictionary()
+        val adapter: JsonAdapter<T> = GsonAdapter(
+            T::class.java, gson
+        )
+        val request = factory.post(url.toString(), adapter)
+        request.addParameters(requestParameters)
+        return request
+    }
+
+    /**
      * Helper function to make a request to the /oauth/token endpoint.
      */
     private fun loginWithToken(parameters: Map<String, String>): AuthenticationRequest {
@@ -989,6 +1028,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val RECOVERY_CODE_KEY = "recovery_code"
         private const val SUBJECT_TOKEN_KEY = "subject_token"
         private const val SUBJECT_TOKEN_TYPE_KEY = "subject_token_type"
+        private const val REQUESTED_TOKEN_TYPE_KEY = "requested_token_type"
         private const val USER_METADATA_KEY = "user_metadata"
         private const val AUTH_SESSION_KEY = "auth_session"
         private const val AUTH_RESPONSE_KEY = "authn_response"
