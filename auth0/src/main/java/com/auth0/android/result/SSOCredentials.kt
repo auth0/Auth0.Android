@@ -3,9 +3,9 @@ package com.auth0.android.result
 import com.google.gson.annotations.SerializedName
 
 /**
- * Holds the session token credentials required for SSO .
+ * Holds the session token credentials required for web SSO .
  *
- *  * *sessionToken*: Session Token for SSO
+ *  * *sessionToken*: Session Token for web SSO
  *  * *refreshToken*: Refresh Token that can be used to request new tokens without signing in again
  *  * *tokenType*: Contains information about how the token should be used.
  *  * *expiresIn*: The token expiration duration.
@@ -14,7 +14,7 @@ import com.google.gson.annotations.SerializedName
  */
 public data class SSOCredentials(
     /**
-     * The Session Token used for SSO .
+     * The Session Token used for web SSO .
      *
      * @return the Session Token.
      */

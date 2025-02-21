@@ -65,6 +65,10 @@ public abstract class BaseCredentialsManager internal constructor(
 
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
+    public abstract suspend fun awaitSsoCredentials(): SSOCredentials
+
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
     public abstract suspend fun awaitCredentials(): Credentials
 
     @JvmSynthetic
