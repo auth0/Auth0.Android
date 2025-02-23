@@ -223,9 +223,9 @@ public class CredentialsManagerTest {
 
     @Test
     public fun shouldNotSaveIfTheSsoCredentialsHasNoRefreshToken() {
-        val ssoCredentials = SSOCredentials(
+        val ssoCredentials = SsoCredentialsMock.create(
             "accessToken",
-            "issuedTokenType", "tokenType", 60, null
+            "issuedTokenType", "tokenType",  null,60
         )
         manager.saveSsoCredentials(ssoCredentials)
         verifyZeroInteractions(storage)
@@ -234,9 +234,9 @@ public class CredentialsManagerTest {
     @Test
     public fun shouldNotSaveIfTheNewSsoCredentialRefreshTokenIsSameAsTheExistingOne() {
         verifyNoMoreInteractions(storage)
-        val ssoCredentials = SSOCredentials(
+        val ssoCredentials = SsoCredentialsMock.create(
             "accessToken",
-            "issuedTokenType", "tokenType", 60, "refresh_token"
+            "issuedTokenType", "tokenType", "refresh_token",60
         )
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token"))
             .thenReturn("refresh_token")
@@ -247,9 +247,9 @@ public class CredentialsManagerTest {
     @Test
     public fun shouldSaveTheRefreshTokenIfTheNewSsoRefreshTokenIsNotSameAsTheOldOne() {
         verifyNoMoreInteractions(storage)
-        val ssoCredentials = SSOCredentials(
+        val ssoCredentials = SsoCredentialsMock.create(
             "accessToken",
-            "issuedTokenType", "tokenType", 60, "refresh_token"
+            "issuedTokenType", "tokenType",  "refresh_token",60
         )
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token"))
             .thenReturn("refresh-token")
@@ -299,7 +299,7 @@ public class CredentialsManagerTest {
     }
 
     @Test
-    public fun shouldGetAndFailToGetNewSSOCredentialsWhenRefreshTokenExpired() {
+    public fun shouldFailOnGetNewSSOCredentialsWhenRefreshTokenExpired() {
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
         Mockito.`when`(
             client.fetchSessionToken("refreshToken")
@@ -359,7 +359,6 @@ public class CredentialsManagerTest {
         MatcherAssert.assertThat(credentials.expiresIn, Is.`is`(60))
         verify(storage).store("com.auth0.refresh_token", credentials.refreshToken)
     }
-
 
     @Test
     public fun shouldFailOnGetCredentialsWhenNoAccessTokenOrIdTokenWasSaved() {
