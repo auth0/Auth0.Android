@@ -6,6 +6,7 @@ import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
 import com.auth0.android.result.Credentials
+import com.auth0.android.result.SSOCredentials
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.*
 import java.util.concurrent.Executor
@@ -51,6 +52,85 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         storage.store(KEY_EXPIRES_AT, credentials.expiresAt.time)
         storage.store(KEY_SCOPE, credentials.scope)
         storage.store(LEGACY_KEY_CACHE_EXPIRES_AT, credentials.expiresAt.time)
+    }
+
+
+    /**
+     * Stores the given [SSOCredentials] refresh token in the storage.
+     * This method must be called if the SSOCredentials are obtained by directly invoking [AuthenticationAPIClient.fetchSessionToken] api and
+     * [rotating refresh token](https://auth0.com/docs/secure/tokens/refresh-tokens/refresh-token-rotation) are enabled for
+     * the client. Method will silently return ,if the passed credentials has no refresh token.
+     *
+     * @param ssoCredentials the credentials to save in the storage.
+     */
+    override fun saveSsoCredentials(ssoCredentials: SSOCredentials) {
+        if (ssoCredentials.refreshToken.isNullOrEmpty())
+            return // No refresh token to save
+        serialExecutor.execute {
+            val existingRefreshToken = storage.retrieveString(KEY_REFRESH_TOKEN)
+            // Checking if the existing one needs to be replaced with the new one
+            if (ssoCredentials.refreshToken == existingRefreshToken)
+                return@execute
+            storage.store(KEY_REFRESH_TOKEN, ssoCredentials.refreshToken)
+        }
+    }
+
+    /**
+     * Fetches a new [SSOCredentials] . It will fail with [CredentialsManagerException]
+     * if the existing refresh_token is null or no longer valid. This method will handle saving the refresh_token,
+     * if  a new one is issued
+     */
+    override fun getSsoCredentials(callback: Callback<SSOCredentials, CredentialsManagerException>) {
+        serialExecutor.execute {
+            val refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN)
+            if (refreshToken.isNullOrEmpty()) {
+                callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
+                return@execute
+            }
+
+            try {
+                val sessionCredentials =
+                    authenticationClient.fetchSessionToken(refreshToken)
+                        .execute()
+                saveSsoCredentials(sessionCredentials)
+                callback.onSuccess(sessionCredentials)
+            } catch (error: AuthenticationException) {
+                val exception = when {
+                    error.isRefreshTokenDeleted ||
+                            error.isInvalidRefreshToken -> CredentialsManagerException.Code.RENEW_FAILED
+
+                    error.isNetworkError -> CredentialsManagerException.Code.NO_NETWORK
+                    else -> CredentialsManagerException.Code.API_ERROR
+                }
+                callback.onFailure(
+                    CredentialsManagerException(
+                        exception,
+                        error
+                    )
+                )
+            }
+        }
+    }
+
+    /**
+     * Fetches a new [SSOCredentials] . It will fail with [CredentialsManagerException]
+     * if the existing refresh_token is null or no longer valid. This method will handle saving the refresh_token,
+     * if  a new one is issued
+     */
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    override suspend fun awaitSsoCredentials(): SSOCredentials {
+        return suspendCancellableCoroutine { continuation ->
+            getSsoCredentials(object : Callback<SSOCredentials, CredentialsManagerException> {
+                override fun onSuccess(result: SSOCredentials) {
+                    continuation.resume(result)
+                }
+
+                override fun onFailure(error: CredentialsManagerException) {
+                    continuation.resumeWithException(error)
+                }
+            })
+        }
     }
 
     /**
@@ -144,8 +224,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         forceRefresh: Boolean
     ): Credentials {
         return suspendCancellableCoroutine { continuation ->
-            getCredentials(
-                scope,
+            getCredentials(scope,
                 minTtl,
                 parameters,
                 headers,
@@ -299,8 +378,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                 if (willAccessTokenExpire) {
                     val tokenLifetime = (expiresAt - currentTimeInMillis - minTtl * 1000) / -1000
                     val wrongTtlException = CredentialsManagerException(
-                        CredentialsManagerException.Code.LARGE_MIN_TTL,
-                        String.format(
+                        CredentialsManagerException.Code.LARGE_MIN_TTL, String.format(
                             Locale.getDefault(),
                             "The lifetime of the renewed Access Token (%d) is less than the minTTL requested (%d). Increase the 'Token Expiration' setting of your Auth0 API in the dashboard, or request a lower minTTL.",
                             tokenLifetime,
@@ -326,15 +404,14 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                 callback.onSuccess(credentials)
             } catch (error: AuthenticationException) {
                 val exception = when {
-                    error.isRefreshTokenDeleted ||
-                            error.isInvalidRefreshToken -> CredentialsManagerException.Code.RENEW_FAILED
+                    error.isRefreshTokenDeleted || error.isInvalidRefreshToken -> CredentialsManagerException.Code.RENEW_FAILED
+
                     error.isNetworkError -> CredentialsManagerException.Code.NO_NETWORK
                     else -> CredentialsManagerException.Code.API_ERROR
                 }
                 callback.onFailure(
                     CredentialsManagerException(
-                        exception,
-                        error
+                        exception, error
                     )
                 )
             }
@@ -364,8 +441,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         val emptyCredentials =
             TextUtils.isEmpty(accessToken) && TextUtils.isEmpty(idToken) || expiresAt == null
         return !(emptyCredentials || willExpire(
-            expiresAt!!,
-            minTtl
+            expiresAt!!, minTtl
         ) && refreshToken == null)
     }
 
