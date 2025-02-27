@@ -4,6 +4,7 @@ import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
+import com.auth0.android.annotation.ExperimentalAuth0Api
 import com.auth0.android.request.*
 import com.auth0.android.request.internal.*
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMap
@@ -923,12 +924,15 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     }
 
     /**
-     * Creates a new request to fetch a session token in exchange for a refresh token.
+     * Creates a new request to fetch a web sso token in exchange for a refresh token.
+     * This is still an experimental feature, test it thoroughly in the targeted devices and OS variants and let us know your feedback.
      *
      * @param refreshToken A valid refresh token obtained as part of Auth0 authentication
-     * @return a request to fetch a session token
+     * @return a request to fetch a web sso token
+     *
      */
-    public fun fetchSessionToken(refreshToken: String): Request<SSOCredentials, AuthenticationException> {
+    @ExperimentalAuth0Api
+    public fun fetchWebSsoToken(refreshToken: String): Request<SSOCredentials, AuthenticationException> {
         val params = ParameterBuilder.newBuilder()
             .setClientId(clientId)
             .setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
