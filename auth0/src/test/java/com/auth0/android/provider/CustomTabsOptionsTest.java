@@ -78,7 +78,7 @@ public class CustomTabsOptionsTest {
         CustomTabsOptions options = CustomTabsOptions.newBuilder().build();
         assertThat(options, is(notNullValue()));
 
-        Intent intent = options.toIntent(context, null, null);
+        Intent intent = options.toIntent(context, null);
 
         assertThat(intent, is(notNullValue()));
         assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR), is(false));
@@ -93,7 +93,7 @@ public class CustomTabsOptionsTest {
         CustomTabsOptions parceledOptions = CustomTabsOptions.CREATOR.createFromParcel(parcel);
         assertThat(parceledOptions, is(notNullValue()));
 
-        Intent parceledIntent = parceledOptions.toIntent(context, null, null);
+        Intent parceledIntent = parceledOptions.toIntent(context, null);
         assertThat(parceledIntent, is(notNullValue()));
         assertThat(parceledIntent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR), is(false));
         assertThat(parceledIntent.hasExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE), is(true));
@@ -109,7 +109,7 @@ public class CustomTabsOptionsTest {
                 .build();
         assertThat(options, is(notNullValue()));
 
-        Intent intent = options.toIntent(context, null, null);
+        Intent intent = options.toIntent(context, null);
 
         assertThat(intent, is(notNullValue()));
         assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE), is(true));
@@ -122,7 +122,7 @@ public class CustomTabsOptionsTest {
         CustomTabsOptions parceledOptions = CustomTabsOptions.CREATOR.createFromParcel(parcel);
         assertThat(parceledOptions, is(notNullValue()));
 
-        Intent parceledIntent = parceledOptions.toIntent(context, null, null);
+        Intent parceledIntent = parceledOptions.toIntent(context, null);
         assertThat(parceledIntent, is(notNullValue()));
         assertThat(parceledIntent.hasExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE), is(true));
         assertThat(parceledIntent.getIntExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE, CustomTabsIntent.NO_TITLE), is(CustomTabsIntent.SHOW_PAGE_TITLE));
@@ -135,7 +135,7 @@ public class CustomTabsOptionsTest {
                 .build();
         assertThat(options, is(notNullValue()));
 
-        Intent intent = options.toIntent(context, null, null);
+        Intent intent = options.toIntent(context, null);
 
         assertThat(intent, is(notNullValue()));
         assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR), is(true));
@@ -149,7 +149,7 @@ public class CustomTabsOptionsTest {
         CustomTabsOptions parceledOptions = CustomTabsOptions.CREATOR.createFromParcel(parcel);
         assertThat(parceledOptions, is(notNullValue()));
 
-        Intent parceledIntent = parceledOptions.toIntent(context, null, null);
+        Intent parceledIntent = parceledOptions.toIntent(context, null);
         assertThat(parceledIntent, is(notNullValue()));
         assertThat(parceledIntent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR), is(true));
         assertThat(parceledIntent.getIntExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR, 0), is(resolvedColor));
@@ -181,23 +181,22 @@ public class CustomTabsOptionsTest {
 
     @Test
     public void shouldSetDisabledCustomTabPackages() {
+        Activity activity = spy(Robolectric.setupActivity(Activity.class));
+        BrowserPickerTest.setupBrowserContext(activity, Collections.singletonList("com.auth0.browser"), null, null);
+        BrowserPicker browserPicker = BrowserPicker.newBuilder().build();
+
         CustomTabsOptions options = CustomTabsOptions.newBuilder()
+                .withBrowserPicker(browserPicker)
                 .withDisabledCustomTabsPackages(List.of("com.auth0.browser"))
                 .withToolbarColor(android.R.color.black)
                 .build();
         assertThat(options, is(notNullValue()));
 
-        Intent intentNoExtras = options.toIntent(context, null, "com.auth0.browser");
+        Intent intentNoExtras = options.toIntent(activity, null);
 
         assertThat(intentNoExtras, is(notNullValue()));
         assertThat(intentNoExtras.getExtras(), is(nullValue()));
         assertEquals(intentNoExtras.getAction(), "android.intent.action.VIEW");
-
-        Intent intentWithToolbarExtra = options.toIntent(context, null, "com.another.browser");
-        assertThat(intentWithToolbarExtra, is(notNullValue()));
-        assertThat(intentWithToolbarExtra.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR), is(true));
-        int resolvedColor = ContextCompat.getColor(context, android.R.color.black);
-        assertThat(intentWithToolbarExtra.getIntExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR, 0), is(resolvedColor));
 
         Parcel parcel = Parcel.obtain();
         options.writeToParcel(parcel, 0);
@@ -205,9 +204,24 @@ public class CustomTabsOptionsTest {
         CustomTabsOptions parceledOptions = CustomTabsOptions.CREATOR.createFromParcel(parcel);
         assertThat(parceledOptions, is(notNullValue()));
 
-        Intent parceledIntent = parceledOptions.toIntent(context, null, "com.auth0.browser");
+        Intent parceledIntent = parceledOptions.toIntent(activity, null);
         assertThat(parceledIntent, is(notNullValue()));
         assertThat(parceledIntent.getExtras(), is(nullValue()));
         assertEquals(parceledIntent.getAction(), "android.intent.action.VIEW");
+
+        BrowserPickerTest.setupBrowserContext(activity, Collections.singletonList("com.another.browser"), null, null);
+        BrowserPicker browserPicker2 = BrowserPicker.newBuilder().build();
+
+        CustomTabsOptions options2 = CustomTabsOptions.newBuilder()
+                .withBrowserPicker(browserPicker2)
+                .withDisabledCustomTabsPackages(List.of("com.auth0.browser"))
+                .withToolbarColor(android.R.color.black)
+                .build();
+
+        Intent intentWithToolbarExtra = options2.toIntent(activity, null);
+        assertThat(intentWithToolbarExtra, is(notNullValue()));
+        assertThat(intentWithToolbarExtra.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR), is(true));
+        int resolvedColor = ContextCompat.getColor(activity, android.R.color.black);
+        assertThat(intentWithToolbarExtra.getIntExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR, 0), is(resolvedColor));
     }
 }

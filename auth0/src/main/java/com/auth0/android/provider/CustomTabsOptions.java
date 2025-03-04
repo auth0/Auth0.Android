@@ -66,7 +66,8 @@ public class CustomTabsOptions implements Parcelable {
 
 
     @SuppressLint("ResourceType")
-    Intent toIntent(@NonNull Context context, @Nullable CustomTabsSession session, @Nullable String preferredPackage) {
+    Intent toIntent(@NonNull Context context, @Nullable CustomTabsSession session) {
+        String preferredPackage = this.getPreferredPackage(context.getPackageManager());
 
         if (preferredPackage != null && this.isDisabledCustomTabBrowser(preferredPackage)) {
             return new Intent(Intent.ACTION_VIEW);
