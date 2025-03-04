@@ -7,17 +7,19 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
+
 import androidx.annotation.ColorRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.browser.customtabs.CustomTabColorSchemeParams;
 import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.browser.customtabs.CustomTabsSession;
-import androidx.browser.trusted.TrustedWebActivityIntent;
 import androidx.browser.trusted.TrustedWebActivityIntentBuilder;
 import androidx.core.content.ContextCompat;
 
 import com.auth0.android.authentication.AuthenticationException;
+
+import java.util.List;
 
 /**
  * Holder for Custom Tabs customization options. Use {@link CustomTabsOptions#newBuilder()} to begin.
@@ -29,10 +31,14 @@ public class CustomTabsOptions implements Parcelable {
     private final int toolbarColor;
     private final BrowserPicker browserPicker;
 
-    private CustomTabsOptions(boolean showTitle, @ColorRes int toolbarColor, @NonNull BrowserPicker browserPicker) {
+    @Nullable
+    private final List<String> disabledCustomTabsPackages;
+
+    private CustomTabsOptions(boolean showTitle, @ColorRes int toolbarColor, @NonNull BrowserPicker browserPicker, @Nullable List<String> disabledCustomTabsPackages) {
         this.showTitle = showTitle;
         this.toolbarColor = toolbarColor;
         this.browserPicker = browserPicker;
+        this.disabledCustomTabsPackages = disabledCustomTabsPackages;
     }
 
     @Nullable
@@ -42,6 +48,10 @@ public class CustomTabsOptions implements Parcelable {
 
     boolean hasCompatibleBrowser(@NonNull PackageManager pm) {
         return getPreferredPackage(pm) != null;
+    }
+
+    boolean isDisabledCustomTabBrowser(@NonNull String preferredPackage) {
+        return disabledCustomTabsPackages != null && disabledCustomTabsPackages.contains(preferredPackage);
     }
 
     /**
@@ -56,7 +66,12 @@ public class CustomTabsOptions implements Parcelable {
 
 
     @SuppressLint("ResourceType")
-    Intent toIntent(@NonNull Context context, @Nullable CustomTabsSession session) {
+    Intent toIntent(@NonNull Context context, @Nullable CustomTabsSession session, @Nullable String preferredPackage) {
+
+        if (preferredPackage != null && this.isDisabledCustomTabBrowser(preferredPackage)) {
+            return new Intent(Intent.ACTION_VIEW);
+        }
+
         final CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder(session)
                 .setShowTitle(showTitle)
                 .setShareState(CustomTabsIntent.SHARE_STATE_OFF);
@@ -85,6 +100,7 @@ public class CustomTabsOptions implements Parcelable {
         showTitle = in.readByte() != 0;
         toolbarColor = in.readInt();
         browserPicker = in.readParcelable(BrowserPicker.class.getClassLoader());
+        disabledCustomTabsPackages = in.createStringArrayList();
     }
 
     @Override
@@ -92,6 +108,7 @@ public class CustomTabsOptions implements Parcelable {
         dest.writeByte((byte) (showTitle ? 1 : 0));
         dest.writeInt(toolbarColor);
         dest.writeParcelable(browserPicker, flags);
+        dest.writeStringList(disabledCustomTabsPackages);
     }
 
     @Override
@@ -120,10 +137,14 @@ public class CustomTabsOptions implements Parcelable {
         @NonNull
         private BrowserPicker browserPicker;
 
+        @Nullable
+        private List<String> disabledCustomTabsPackages;
+
         Builder() {
             this.showTitle = false;
             this.toolbarColor = 0;
             this.browserPicker = BrowserPicker.newBuilder().build();
+            this.disabledCustomTabsPackages = null;
         }
 
         /**
@@ -171,6 +192,12 @@ public class CustomTabsOptions implements Parcelable {
             return this;
         }
 
+        @NonNull
+        public Builder withDisabledCustomTabsPackages(List<String> disabledCustomTabsPackages) {
+            this.disabledCustomTabsPackages = disabledCustomTabsPackages;
+            return this;
+        }
+
         /**
          * Create a new CustomTabsOptions instance with the customization settings.
          *
@@ -178,7 +205,7 @@ public class CustomTabsOptions implements Parcelable {
          */
         @NonNull
         public CustomTabsOptions build() {
-            return new CustomTabsOptions(showTitle, toolbarColor, browserPicker);
+            return new CustomTabsOptions(showTitle, toolbarColor, browserPicker, disabledCustomTabsPackages);
         }
     }
 

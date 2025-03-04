@@ -149,7 +149,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
         } catch (InterruptedException ignored) {
         }
         Log.d(TAG, "Launching URI. Custom Tabs available: " + available);
-        final Intent intent = customTabsOptions.toIntent(context, session.get());
+        final Intent intent = customTabsOptions.toIntent(context, session.get(), this.preferredPackage);
         intent.setData(uri);
         context.startActivity(intent);
     }
