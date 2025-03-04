@@ -37,6 +37,7 @@ public class DefaultClient @VisibleForTesting(otherwise = VisibleForTesting.PRIV
      * @param defaultHeaders any headers that should be sent on all requests. If a specific request specifies a header with the same key as any header in the default headers, the header specified on the request will take precedence. Default is an empty map.
      * @param enableLogging whether HTTP request and response info should be logged. This should only be set to `true` for debugging purposes in non-production environments, as sensitive information is included in the logs. Defaults to `false`.
      */
+    @JvmOverloads
     public constructor(
         connectTimeout: Int = DEFAULT_TIMEOUT_SECONDS,
         readTimeout: Int = DEFAULT_TIMEOUT_SECONDS,
