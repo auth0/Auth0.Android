@@ -223,7 +223,7 @@ public object WebAuthProvider {
          * An error is raised if there are no browser applications installed in the device or if
          * the user closed the browser before completing the logout.
          *
-         * @param context  to run the log out
+         * @param context  An activity context to run the log out. Passing any other context can cause a crash while starting the [AuthenticationActivity]
          * @param callback to invoke when log out is successful
          * @see AuthenticationException.isBrowserAppNotAvailable
          * @see AuthenticationException.isAuthenticationCanceled
@@ -524,7 +524,7 @@ public object WebAuthProvider {
          * device does not support the necessary algorithms to support Proof of Key Exchange (PKCE)
          * (this is not expected), or if the user closed the browser before completing the authentication.
          *
-         * @param context context to run the authentication
+         * @param context  An Activity context to run the authentication. Passing any other context can cause a crash while starting the [AuthenticationActivity]
          * @param callback to receive the parsed results
          * @see AuthenticationException.isBrowserAppNotAvailable
          * @see AuthenticationException.isPKCENotAvailable
@@ -574,6 +574,13 @@ public object WebAuthProvider {
             manager.startAuthentication(context, redirectUri!!, 110)
         }
 
+        /**
+         * Request user Authentication. An error is thrown if there are no browser applications installed in the device, or if
+         * device does not support the necessary algorithms to support Proof of Key Exchange (PKCE)
+         * (this is not expected), or if the user closed the browser before completing the authentication.
+         *
+         * @param context An Activity context to run the authentication. Passing any other context can cause a crash while starting the [AuthenticationActivity]
+         */
         @JvmSynthetic
         @Throws(AuthenticationException::class)
         public suspend fun await(context: Context): Credentials {
