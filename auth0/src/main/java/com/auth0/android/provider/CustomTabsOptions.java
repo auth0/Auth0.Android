@@ -50,6 +50,12 @@ public class CustomTabsOptions implements Parcelable {
         return getPreferredPackage(pm) != null;
     }
 
+    /**
+     * Returns whether the browser preferred package has custom tab disabled or not.
+     *
+     * @param preferredPackage the preferred browser package name.
+     * @return whether the browser preferred package has custom tab disabled or not.
+     */
     boolean isDisabledCustomTabBrowser(@NonNull String preferredPackage) {
         return disabledCustomTabsPackages != null && disabledCustomTabsPackages.contains(preferredPackage);
     }
@@ -193,6 +199,13 @@ public class CustomTabsOptions implements Parcelable {
             return this;
         }
 
+        /**
+         * Define a list of browser packages that disables the launching of authentication on custom tabs.
+         * The authentication url will launch on the preferred package external browser.
+         *
+         * @param disabledCustomTabsPackages list of browser packages.
+         * @return the current builder instance
+         */
         @NonNull
         public Builder withDisabledCustomTabsPackages(List<String> disabledCustomTabsPackages) {
             this.disabledCustomTabsPackages = disabledCustomTabsPackages;
