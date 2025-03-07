@@ -18,6 +18,7 @@
     - [Sign Up with a database connection](#sign-up-with-a-database-connection)
     - [Get user information](#get-user-information)
     - [Custom Token Exchange](#custom-token-exchange)
+    - [Native to Web SSO login](#native-to-web-sso-login)
   - [Credentials Manager](#credentials-manager)
     - [Secure Credentials Manager](#secure-credentials-manager)
       - [Usage](#usage)
@@ -537,6 +538,64 @@ authentication
 ```
 
 
+</details>
+
+
+## Native to Web SSO login (Experimental)
+> **Warning**
+> 
+> Native to Web SSO login support in Auth0.Android is still experimental and can change in the future.
+
+This feature allows you to authenticate a user in a web session using the refresh token obtained from the native session without requiring the user to log in again.
+
+Call the api to fetch a webSsoToken in exchange for a refresh token. Use the obtained token to authenticate the user by calling the `/authorize` end point.
+
+```kotlin
+    authentication
+    .fetchWebSsoToken("refresh_token")
+    .start(object : Callback<SSOCredentials, AuthenticationException> {
+        override fun onSuccess(result: SSOCredentials) {
+            // Use the web_sso token to authenticate the user in a web session in your app
+        }
+
+        override fun onFailure(exception: AuthenticationException) {
+            // Handle error
+        }
+
+    })
+```
+
+<details> 
+    <summary>Using coroutines</summary> 
+
+``` kotlin 
+try {
+    val ssoCredentials = authentication
+        .fetchWebSsoToken("refresh_token")
+        .await()
+} catch (e: AuthenticationException) {
+    e.printStacktrace()
+}
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+authentication
+    .fetchWebSsoToken("refresh_token")
+    .start(new Callback<SSOCredentials, AuthenticationException>() {
+        @Override
+        public void onSuccess(@Nullable SSOCredentials payload) {
+            // Handle success
+        }
+        @Override
+        public void onFailure(@NonNull AuthenticationException error) {
+            // Handle error
+        }
+    });
+```
 </details>
 
 

@@ -277,11 +277,11 @@ public class CredentialsManagerTest {
     public fun shouldSaveTheNewRefreshTokenWhenGettingTheSSOCredentials() {
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token"))
             .thenReturn("refresh_token_old")
-        Mockito.`when`(client.fetchSessionToken("refresh_token_old"))
+        Mockito.`when`(client.fetchWebSsoToken("refresh_token_old"))
             .thenReturn(ssoCredentialsRequest)
         Mockito.`when`(ssoCredentialsRequest.execute()).thenReturn(
             SsoCredentialsMock.create(
-                "session-token", "issued-token-type", "token-type", "refresh-token", 60
+                "web-sso-token", "issued-token-type", "token-type", "refresh-token", 60
             )
         )
         manager.getSsoCredentials(ssoCallback)
@@ -289,8 +289,8 @@ public class CredentialsManagerTest {
             ssoCredentialsCaptor.capture()
         )
         val credentials = ssoCredentialsCaptor.firstValue
-        MatcherAssert.assertThat(credentials.sessionToken, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(credentials.sessionToken, Is.`is`("session-token"))
+        MatcherAssert.assertThat(credentials.webSsoToken, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(credentials.webSsoToken, Is.`is`("web-sso-token"))
         MatcherAssert.assertThat(credentials.tokenType, Is.`is`("token-type"))
         MatcherAssert.assertThat(credentials.issuedTokenType, Is.`is`("issued-token-type"))
         MatcherAssert.assertThat(credentials.refreshToken, Is.`is`("refresh-token"))
@@ -302,7 +302,7 @@ public class CredentialsManagerTest {
     public fun shouldFailOnGetNewSSOCredentialsWhenRefreshTokenExpired() {
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
         Mockito.`when`(
-            client.fetchSessionToken("refreshToken")
+            client.fetchWebSsoToken("refreshToken")
         ).thenReturn(ssoCredentialsRequest)
         //Trigger failure
         val authenticationException = AuthenticationException(
@@ -343,16 +343,16 @@ public class CredentialsManagerTest {
     public fun shouldSaveNewRefreshingTokenOnAwaitSsoCredentials(): Unit = runTest {
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token"))
             .thenReturn("refresh_token_old")
-        Mockito.`when`(client.fetchSessionToken("refresh_token_old"))
+        Mockito.`when`(client.fetchWebSsoToken("refresh_token_old"))
             .thenReturn(ssoCredentialsRequest)
         Mockito.`when`(ssoCredentialsRequest.execute()).thenReturn(
             SsoCredentialsMock.create(
-                "session-token", "issued-token-type", "token-type", "refresh-token", 60
+                "web-sso-token", "issued-token-type", "token-type", "refresh-token", 60
             )
         )
         val credentials = manager.awaitSsoCredentials()
-        MatcherAssert.assertThat(credentials.sessionToken, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(credentials.sessionToken, Is.`is`("session-token"))
+        MatcherAssert.assertThat(credentials.webSsoToken, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(credentials.webSsoToken, Is.`is`("web-sso-token"))
         MatcherAssert.assertThat(credentials.tokenType, Is.`is`("token-type"))
         MatcherAssert.assertThat(credentials.issuedTokenType, Is.`is`("issued-token-type"))
         MatcherAssert.assertThat(credentials.refreshToken, Is.`is`("refresh-token"))

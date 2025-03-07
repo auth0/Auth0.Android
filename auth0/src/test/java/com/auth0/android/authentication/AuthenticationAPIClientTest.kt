@@ -2355,10 +2355,10 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public fun shouldFetchSessionToken(){
+    public fun shouldFetchWebSsoToken(){
         mockAPI.willReturnSuccessfulLogin()
         val callback = MockAuthenticationCallback<SSOCredentials>()
-        client.fetchSessionToken( "refresh-token")
+        client.fetchWebSsoToken( "refresh-token")
             .start(callback)
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
@@ -2385,9 +2385,9 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public fun shouldFetchSessionTokenSync(){
+    public fun shouldFetchWebSsoTokenSync(){
         mockAPI.willReturnSuccessfulLogin()
-       val ssoCredentials= client.fetchSessionToken( "refresh-token")
+       val ssoCredentials= client.fetchWebSsoToken( "refresh-token")
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
@@ -2410,10 +2410,10 @@ public class AuthenticationAPIClientTest {
 
     @Test
     @ExperimentalCoroutinesApi
-    public fun shouldAwaitFetchSessionToken(): Unit = runTest {
+    public fun shouldAwaitFetchWebSsoToken(): Unit = runTest {
         mockAPI.willReturnSuccessfulLogin()
         val ssoCredentials = client
-            .fetchSessionToken("refresh-token")
+            .fetchWebSsoToken("refresh-token")
             .await()
         val request = mockAPI.takeRequest()
         assertThat(

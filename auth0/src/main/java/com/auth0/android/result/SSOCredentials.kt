@@ -3,9 +3,9 @@ package com.auth0.android.result
 import com.google.gson.annotations.SerializedName
 
 /**
- * Holds the session token credentials required for web SSO .
+ * Holds the token credentials required for web SSO .
  *
- *  * *sessionToken*: Session Token for web SSO
+ *  * *webSsoToken*:  Token for web SSO
  *  * *refreshToken*: Refresh Token that can be used to request new tokens without signing in again
  *  * *tokenType*: Contains information about how the token should be used.
  *  * *expiresIn*: The token expiration duration.
@@ -14,14 +14,14 @@ import com.google.gson.annotations.SerializedName
  */
 public data class SSOCredentials(
     /**
-     * The Session Token used for web SSO .
+     * The token used for web SSO .
      *
-     * @return the Session Token.
+     * @return the web sso Token.
      */
-    @field:SerializedName("access_token") public val sessionToken: String,
+    @field:SerializedName("access_token") public val webSsoToken: String,
 
     /**
-     * Type of the token issued.In this case, an Auth0 session token
+     * Type of the token issued.In this case, an Auth0 web sso token
      *
      * @return the issued token type.
      */
@@ -37,10 +37,10 @@ public data class SSOCredentials(
     @field:SerializedName("token_type") public val tokenType: String,
 
     /**
-     * Expiration duration of the session token in seconds. Session tokens are short-lived and expire after a few minutes.
-     * Once expired, the Session Token can no longer be used for SSO.
+     * Expiration duration of the web sso token in seconds. Web SSO tokens are short-lived and expire after a few minutes.
+     * Once expired, the web sso token can no longer be used for SSO.
      *
-     * @return the expiration duration of this Session Token
+     * @return the expiration duration of this web sso token
      */
     @field:SerializedName("expires_in") public val expiresIn: Int,
 
