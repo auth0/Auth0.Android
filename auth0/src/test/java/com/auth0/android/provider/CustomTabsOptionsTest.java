@@ -14,12 +14,16 @@ import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -173,5 +177,51 @@ public class CustomTabsOptionsTest {
 
         String preferredPackageNow = parceledOptions.getPreferredPackage(activity.getPackageManager());
         assertThat(preferredPackageNow, is("com.auth0.browser"));
+    }
+
+    @Test
+    public void shouldSetDisabledCustomTabPackages() {
+        Activity activity = spy(Robolectric.setupActivity(Activity.class));
+        BrowserPickerTest.setupBrowserContext(activity, Collections.singletonList("com.auth0.browser"), null, null);
+        BrowserPicker browserPicker = BrowserPicker.newBuilder().build();
+
+        CustomTabsOptions options = CustomTabsOptions.newBuilder()
+                .withBrowserPicker(browserPicker)
+                .withDisabledCustomTabsPackages(List.of("com.auth0.browser"))
+                .withToolbarColor(android.R.color.black)
+                .build();
+        assertThat(options, is(notNullValue()));
+
+        Intent intentNoExtras = options.toIntent(activity, null);
+
+        assertThat(intentNoExtras, is(notNullValue()));
+        assertThat(intentNoExtras.getExtras(), is(nullValue()));
+        assertEquals(intentNoExtras.getAction(), "android.intent.action.VIEW");
+
+        Parcel parcel = Parcel.obtain();
+        options.writeToParcel(parcel, 0);
+        parcel.setDataPosition(0);
+        CustomTabsOptions parceledOptions = CustomTabsOptions.CREATOR.createFromParcel(parcel);
+        assertThat(parceledOptions, is(notNullValue()));
+
+        Intent parceledIntent = parceledOptions.toIntent(activity, null);
+        assertThat(parceledIntent, is(notNullValue()));
+        assertThat(parceledIntent.getExtras(), is(nullValue()));
+        assertEquals(parceledIntent.getAction(), "android.intent.action.VIEW");
+
+        BrowserPickerTest.setupBrowserContext(activity, Collections.singletonList("com.another.browser"), null, null);
+        BrowserPicker browserPicker2 = BrowserPicker.newBuilder().build();
+
+        CustomTabsOptions options2 = CustomTabsOptions.newBuilder()
+                .withBrowserPicker(browserPicker2)
+                .withDisabledCustomTabsPackages(List.of("com.auth0.browser"))
+                .withToolbarColor(android.R.color.black)
+                .build();
+
+        Intent intentWithToolbarExtra = options2.toIntent(activity, null);
+        assertThat(intentWithToolbarExtra, is(notNullValue()));
+        assertThat(intentWithToolbarExtra.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR), is(true));
+        int resolvedColor = ContextCompat.getColor(activity, android.R.color.black);
+        assertThat(intentWithToolbarExtra.getIntExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR, 0), is(resolvedColor));
     }
 }
