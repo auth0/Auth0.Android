@@ -1859,32 +1859,32 @@ public class SecureCredentialsManagerTest {
                     )
                 secureCredsManager.getCredentials(object :
                     Callback<Credentials, CredentialsManagerException> {
-                    override fun onFailure(exception: CredentialsManagerException) {
-                        throw exception
+                    override fun onFailure(error: CredentialsManagerException) {
+                        throw error
                     }
 
-                    override fun onSuccess(credentials: Credentials) {
+                    override fun onSuccess(result: Credentials) {
                         // Verify all instances retrieved the same credentials
                         MatcherAssert.assertThat(
                             renewedCredentials.accessToken,
-                            Is.`is`(credentials.accessToken)
+                            Is.`is`(result.accessToken)
                         )
                         MatcherAssert.assertThat(
                             renewedCredentials.idToken,
-                            Is.`is`(credentials.idToken)
+                            Is.`is`(result.idToken)
                         )
                         MatcherAssert.assertThat(
                             renewedCredentials.refreshToken,
-                            Is.`is`(credentials.refreshToken)
+                            Is.`is`(result.refreshToken)
                         )
-                        MatcherAssert.assertThat(renewedCredentials.type, Is.`is`(credentials.type))
+                        MatcherAssert.assertThat(renewedCredentials.type, Is.`is`(result.type))
                         MatcherAssert.assertThat(
                             renewedCredentials.expiresAt,
-                            Is.`is`(credentials.expiresAt)
+                            Is.`is`(result.expiresAt)
                         )
                         MatcherAssert.assertThat(
                             renewedCredentials.scope,
-                            Is.`is`(credentials.scope)
+                            Is.`is`(result.scope)
                         )
                         latch.countDown()
                     }

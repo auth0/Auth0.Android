@@ -130,47 +130,32 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     }
 
     /**
-     * Stores the given [SSOCredentials] refresh token in the storage.
-     * This method must be called if the SSOCredentials are obtained by directly invoking [AuthenticationAPIClient.fetchWebSsoToken] api and
-     * [rotating refresh token](https://auth0.com/docs/secure/tokens/refresh-tokens/refresh-token-rotation) are enabled for
-     * the client. Method will silently return ,if the passed credentials has no refresh token.
-     * This is still an experimental feature, test it thoroughly in the targeted devices and OS variants and let us know your feedback.
-     *
-     * @param ssoCredentials the credentials to save in the storage.
+     * Fetches a new [SSOCredentials] . It will fail with [CredentialsManagerException]
+     * if the existing refresh_token is null or no longer valid. This method will handle saving the refresh_token,
+     * if  a new one is issued.
+     * This is still an experimental feature, test it thoroughly and let us know your feedback.
      */
     @ExperimentalAuth0Api
-    override fun saveSsoCredentials(ssoCredentials: SSOCredentials) {
-        if (ssoCredentials.refreshToken.isNullOrEmpty()) return // No refresh token to save
-        serialExecutor.execute {
-            lateinit var existingCredentials: Credentials
-            try {
-                existingCredentials = getExistingCredentials()
-            } catch (exception: CredentialsManagerException) {
-                Log.e(TAG,"Error while fetching existing credentials", exception)
-                return@execute
-            }
-            // Checking if the existing one needs to be replaced with the new one
-            if (existingCredentials.refreshToken == ssoCredentials.refreshToken)
-                return@execute
-            val newCredentials =
-                existingCredentials.copy(refreshToken = ssoCredentials.refreshToken)
-            saveCredentials(newCredentials)
-        }
+    override fun getSsoCredentials(callback: Callback<SSOCredentials, CredentialsManagerException>) {
+        getSsoCredentials(emptyMap(), callback)
     }
 
     /**
      * Fetches a new [SSOCredentials] . It will fail with [CredentialsManagerException]
      * if the existing refresh_token is null or no longer valid. This method will handle saving the refresh_token,
      * if  a new one is issued.
-     * This is still an experimental feature, test it thoroughly in the targeted devices and OS variants and let us know your feedback.
+     * This is still an experimental feature, test it thoroughly and let us know your feedback.
      */
     @ExperimentalAuth0Api
-    override fun getSsoCredentials(callback: Callback<SSOCredentials, CredentialsManagerException>) {
+    override fun getSsoCredentials(
+        headers: Map<String, String>,
+        callback: Callback<SSOCredentials, CredentialsManagerException>
+    ) {
         serialExecutor.execute {
-            lateinit var existingCredentials:Credentials
-            try{
+            lateinit var existingCredentials: Credentials
+            try {
                 existingCredentials = getExistingCredentials()
-            }catch (exception:CredentialsManagerException){
+            } catch (exception: CredentialsManagerException) {
                 callback.onFailure(exception)
                 return@execute
             }
@@ -178,10 +163,14 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
                 return@execute
             }
+
+            val request = authenticationClient.fetchWebSsoToken(existingCredentials.refreshToken!!)
             try {
+                for (header in headers) {
+                    request.addHeader(header.key, header.value)
+                }
                 val sessionCredentials =
-                    authenticationClient.fetchWebSsoToken(existingCredentials.refreshToken!!)
-                        .execute()
+                    request.execute()
                 saveSsoCredentials(sessionCredentials)
                 callback.onSuccess(sessionCredentials)
             } catch (error: AuthenticationException) {
@@ -211,22 +200,36 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * Fetches a new [SSOCredentials] . It will fail with [CredentialsManagerException]
      * if the existing refresh_token is null or no longer valid. This method will handle saving the refresh_token,
      * if  a new one is issued.
-     * This is still an experimental feature, test it thoroughly in the targeted devices and OS variants and let us know your feedback.
+     * This is still an experimental feature, test it thoroughly and let us know your feedback.
      */
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
     @ExperimentalAuth0Api
     override suspend fun awaitSsoCredentials(): SSOCredentials {
-        return suspendCancellableCoroutine { continuation ->
-            getSsoCredentials(object : Callback<SSOCredentials, CredentialsManagerException> {
-                override fun onSuccess(result: SSOCredentials) {
-                    continuation.resume(result)
-                }
+        return awaitSsoCredentials(emptyMap())
+    }
 
-                override fun onFailure(error: CredentialsManagerException) {
-                    continuation.resumeWithException(error)
-                }
-            })
+    /**
+     * Fetches a new [SSOCredentials] . It will fail with [CredentialsManagerException]
+     * if the existing refresh_token is null or no longer valid. This method will handle saving the refresh_token,
+     * if  a new one is issued.
+     * This is still an experimental feature, test it thoroughly and let us know your feedback.
+     */
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    @ExperimentalAuth0Api
+    override suspend fun awaitSsoCredentials(headers: Map<String, String>): SSOCredentials {
+        return suspendCancellableCoroutine { continuation ->
+            getSsoCredentials(headers,
+                object : Callback<SSOCredentials, CredentialsManagerException> {
+                    override fun onSuccess(result: SSOCredentials) {
+                        continuation.resume(result)
+                    }
+
+                    override fun onFailure(error: CredentialsManagerException) {
+                        continuation.resumeWithException(error)
+                    }
+                })
         }
     }
 
@@ -761,6 +764,30 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun clearFragmentActivity() {
         fragmentActivity!!.clear()
+    }
+
+    /**
+     * Helper method to stores the given [SSOCredentials] refresh token in the storage.
+     * Method will silently return ,if the passed credentials has no refresh token.
+     *
+     * @param ssoCredentials the credentials to save in the storage.
+     */
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal fun saveSsoCredentials(ssoCredentials: SSOCredentials) {
+        if (ssoCredentials.refreshToken.isNullOrEmpty()) return // No refresh token to save
+        lateinit var existingCredentials: Credentials
+        try {
+            existingCredentials = getExistingCredentials()
+        } catch (exception: CredentialsManagerException) {
+            Log.e(TAG, "Error while fetching existing credentials", exception)
+            return
+        }
+        // Checking if the existing one needs to be replaced with the new one
+        if (existingCredentials.refreshToken == ssoCredentials.refreshToken)
+            return
+        val newCredentials =
+            existingCredentials.copy(refreshToken = ssoCredentials.refreshToken)
+        saveCredentials(newCredentials)
     }
 
     internal companion object {
