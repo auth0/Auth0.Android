@@ -32,7 +32,7 @@ public abstract class BaseCredentialsManager internal constructor(
     public abstract fun saveCredentials(credentials: Credentials)
     public abstract fun getCredentials(callback: Callback<Credentials, CredentialsManagerException>)
     public abstract fun getSsoCredentials(
-        headers: Map<String, String> = emptyMap(),
+        headers: Map<String, String>,
         callback: Callback<SSOCredentials, CredentialsManagerException>
     )
 
