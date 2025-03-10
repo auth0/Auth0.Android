@@ -1347,12 +1347,9 @@ account.networkingClient = netClient
   <summary>Using Java</summary>
 
 ```java
-DefaultClient netClient = new DefaultClient(
-   connectTimeout = 30,
-   readTimeout = 30
-);
+DefaultClient netClient = new DefaultClient(30, 30);
 Auth0 account = Auth0.getInstance("client id", "domain");
-account.networkingClient = netClient;
+account.setNetworkingClient(netClient);
 ```
 </details>
 
@@ -1371,11 +1368,13 @@ account.networkingClient = netClient
   <summary>Using Java</summary>
 
 ```java
+import java.util.HashMap;
+
 DefaultClient netClient = new DefaultClient(
-    enableLogging = true
+        10, 10, new HashMap<>() ,true
 );
 Auth0 account = Auth0.getInstance("client id", "domain");
-account.networkingClient = netClient;
+account.setNetworkingClient(netClient);
 ```
 </details>
 
@@ -1398,10 +1397,10 @@ Map<String, String> defaultHeaders = new HashMap<>();
 defaultHeaders.put("{HEADER-NAME}", "{HEADER-VALUE}");
 
 DefaultClient netClient = new DefaultClient(
-    defaultHeaders = defaultHeaders
+        10,10 , defaultHeaders
 );
 Auth0 account = Auth0.getInstance("client id", "domain");
-account.networkingClient = netClient;
+account.setNetworkingClient(netClient);
 ```
 </details>
 
@@ -1435,7 +1434,7 @@ class CustomNetClient extends NetworkingClient {
       ServerResponse response = // ...
 
       // Return a ServerResponse from the received response data
-      return ServerResponse(responseCode, responseBody, responseHeaders)
+      return new ServerResponse(responseCode, responseBody, responseHeaders);
    }  
 };
 
