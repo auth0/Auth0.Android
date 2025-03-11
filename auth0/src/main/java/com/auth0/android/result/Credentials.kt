@@ -3,8 +3,7 @@ package com.auth0.android.result
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.request.internal.Jwt
 import com.google.gson.annotations.SerializedName
-
-import java.util.*
+import java.util.Date
 
 /**
  * Holds the user's credentials returned by Auth0.

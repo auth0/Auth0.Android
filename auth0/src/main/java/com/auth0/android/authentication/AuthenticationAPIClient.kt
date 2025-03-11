@@ -749,13 +749,27 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * ```
      *
      * @param refreshToken used to fetch the new Credentials.
+     * @param audience Identifier of the API that your application is requesting access to. Defaults to null.
+     * @param scope Space-separated list of scope values to request. Defaults to null.
      * @return a request to start
      */
-    public fun renewAuth(refreshToken: String): Request<Credentials, AuthenticationException> {
+    public fun renewAuth(
+        refreshToken: String,
+        audience: String? = null,
+        scope: String? = null
+    ): Request<Credentials, AuthenticationException> {
         val parameters = ParameterBuilder.newBuilder()
             .setClientId(clientId)
             .setRefreshToken(refreshToken)
             .setGrantType(ParameterBuilder.GRANT_TYPE_REFRESH_TOKEN)
+            .apply {
+                audience?.let {
+                    setAudience(it)
+                }
+                scope?.let {
+                    setScope(it)
+                }
+            }
             .asDictionary()
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(OAUTH_PATH)
@@ -942,7 +956,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     /**
      * Helper function to make a request to the /oauth/token endpoint with a custom response type.
      */
-    private inline fun <reified T> loginWithTokenGeneric(parameters: Map<String, String>): Request<T,AuthenticationException> {
+    private inline fun <reified T> loginWithTokenGeneric(parameters: Map<String, String>): Request<T, AuthenticationException> {
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(OAUTH_PATH)
             .addPathSegment(TOKEN_PATH)

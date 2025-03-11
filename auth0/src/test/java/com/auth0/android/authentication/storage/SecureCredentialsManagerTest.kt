@@ -1822,7 +1822,7 @@ public class SecureCredentialsManagerTest {
                 "newScope"
             )
         Mockito.`when`(
-            client.renewAuth("refreshToken")
+            client.renewAuth(refreshToken = "refreshToken")
         ).thenReturn(request)
         Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
         val serialExecutor = Executors.newSingleThreadExecutor()
@@ -1893,7 +1893,9 @@ public class SecureCredentialsManagerTest {
         }
         latch.await() // Wait for all threads to finish
         Mockito.verify(client, Mockito.times(1))
-            .renewAuth(any()) // verify that api client's renewAuth is called only once
+            .renewAuth(
+               refreshToken = "refreshToken"
+            ) // verify that api client's renewAuth is called only once
         Mockito.verify(request, Mockito.times(1)).execute() // Verify single network request
     }
 

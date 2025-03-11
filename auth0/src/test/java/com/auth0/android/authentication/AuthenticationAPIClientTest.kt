@@ -2277,7 +2277,7 @@ public class AuthenticationAPIClientTest {
     public fun shouldCustomTokenExchange() {
         mockAPI.willReturnSuccessfulLogin()
         val callback = MockAuthenticationCallback<Credentials>()
-        client.customTokenExchange( "subject-token-type","subject-token")
+        client.customTokenExchange("subject-token-type", "subject-token")
             .start(callback)
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
@@ -2355,10 +2355,10 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public fun shouldFetchSessionToken(){
+    public fun shouldFetchSessionToken() {
         mockAPI.willReturnSuccessfulLogin()
         val callback = MockAuthenticationCallback<SSOCredentials>()
-        client.fetchSessionToken( "refresh-token")
+        client.fetchSessionToken("refresh-token")
             .start(callback)
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
@@ -2375,8 +2375,14 @@ public class AuthenticationAPIClientTest {
             Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
         )
         assertThat(body, Matchers.hasEntry("subject_token", "refresh-token"))
-        assertThat(body, Matchers.hasEntry("subject_token_type", ParameterBuilder.TOKEN_TYPE_REFRESH_TOKEN))
-        assertThat(body, Matchers.hasEntry("requested_token_type", ParameterBuilder.TOKEN_TYPE_SESSION_TOKEN))
+        assertThat(
+            body,
+            Matchers.hasEntry("subject_token_type", ParameterBuilder.TOKEN_TYPE_REFRESH_TOKEN)
+        )
+        assertThat(
+            body,
+            Matchers.hasEntry("requested_token_type", ParameterBuilder.TOKEN_TYPE_SESSION_TOKEN)
+        )
         assertThat(
             callback, AuthenticationCallbackMatcher.hasPayloadOfType(
                 SSOCredentials::class.java
@@ -2385,9 +2391,9 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public fun shouldFetchSessionTokenSync(){
+    public fun shouldFetchSessionTokenSync() {
         mockAPI.willReturnSuccessfulLogin()
-       val ssoCredentials= client.fetchSessionToken( "refresh-token")
+        val ssoCredentials = client.fetchSessionToken("refresh-token")
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
@@ -2403,8 +2409,14 @@ public class AuthenticationAPIClientTest {
             Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
         )
         assertThat(body, Matchers.hasEntry("subject_token", "refresh-token"))
-        assertThat(body, Matchers.hasEntry("subject_token_type", ParameterBuilder.TOKEN_TYPE_REFRESH_TOKEN))
-        assertThat(body, Matchers.hasEntry("requested_token_type", ParameterBuilder.TOKEN_TYPE_SESSION_TOKEN))
+        assertThat(
+            body,
+            Matchers.hasEntry("subject_token_type", ParameterBuilder.TOKEN_TYPE_REFRESH_TOKEN)
+        )
+        assertThat(
+            body,
+            Matchers.hasEntry("requested_token_type", ParameterBuilder.TOKEN_TYPE_SESSION_TOKEN)
+        )
         assertThat(ssoCredentials, Matchers.`is`(Matchers.notNullValue()))
     }
 
@@ -2429,8 +2441,14 @@ public class AuthenticationAPIClientTest {
             Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
         )
         assertThat(body, Matchers.hasEntry("subject_token", "refresh-token"))
-        assertThat(body, Matchers.hasEntry("subject_token_type", ParameterBuilder.TOKEN_TYPE_REFRESH_TOKEN))
-        assertThat(body, Matchers.hasEntry("requested_token_type", ParameterBuilder.TOKEN_TYPE_SESSION_TOKEN))
+        assertThat(
+            body,
+            Matchers.hasEntry("subject_token_type", ParameterBuilder.TOKEN_TYPE_REFRESH_TOKEN)
+        )
+        assertThat(
+            body,
+            Matchers.hasEntry("requested_token_type", ParameterBuilder.TOKEN_TYPE_SESSION_TOKEN)
+        )
         assertThat(ssoCredentials, Matchers.`is`(Matchers.notNullValue()))
     }
 
@@ -2527,6 +2545,99 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
         assertThat(body, Matchers.hasEntry("grant_type", "refresh_token"))
         assertThat(body, Matchers.hasEntry("scope", "read:users openid"))
+        assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
+    }
+
+    @Test
+    public fun shouldRenewAuthWithOAuthTokenAndAudience() {
+        val auth0 = auth0
+        val client = AuthenticationAPIClient(auth0)
+        mockAPI.willReturnSuccessfulLogin()
+        val credentials = client.renewAuth("refreshToken", "_audience")
+            .execute()
+        val request = mockAPI.takeRequest()
+        assertThat(
+            request.getHeader("Accept-Language"), Matchers.`is`(
+                defaultLocale
+            )
+        )
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
+        assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
+        assertThat(body, Matchers.hasEntry("grant_type", "refresh_token"))
+        assertThat(body, Matchers.hasEntry("audience", "_audience"))
+        assertThat(body, Matchers.not(Matchers.hasKey("scope")))
+        assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
+    }
+
+    @Test
+    public fun shouldRenewAuthWithOAuthTokenAndScope() {
+        val auth0 = auth0
+        val client = AuthenticationAPIClient(auth0)
+        mockAPI.willReturnSuccessfulLogin()
+        val credentials = client.renewAuth(refreshToken = "refreshToken", scope = "read:data")
+            .execute()
+        val request = mockAPI.takeRequest()
+        assertThat(
+            request.getHeader("Accept-Language"), Matchers.`is`(
+                defaultLocale
+            )
+        )
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
+        assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
+        assertThat(body, Matchers.hasEntry("grant_type", "refresh_token"))
+        assertThat(body, Matchers.hasEntry("scope", "read:data openid"))
+        assertThat(body, Matchers.not(Matchers.hasKey("audience")))
+        assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
+    }
+
+    @Test
+    public fun shouldRenewAuthWithOAuthAudienceAndScopeEnforcingOpendId() {
+        val auth0 = auth0
+        val client = AuthenticationAPIClient(auth0)
+        mockAPI.willReturnSuccessfulLogin()
+        val credentials = client.renewAuth("refreshToken", "_audience", "read:data write:data")
+            .execute()
+        val request = mockAPI.takeRequest()
+        assertThat(
+            request.getHeader("Accept-Language"), Matchers.`is`(
+                defaultLocale
+            )
+        )
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
+        assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
+        assertThat(body, Matchers.hasEntry("grant_type", "refresh_token"))
+        assertThat(body, Matchers.hasEntry("audience", "_audience"))
+        assertThat(body, Matchers.hasEntry("scope", "read:data write:data openid"))
+        assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
+    }
+
+    @Test
+    public fun shouldRenewAuthWithOAuthAudienceAndScopeNotEnforcingOpendId() {
+        val auth0 = auth0
+        val client = AuthenticationAPIClient(auth0)
+        mockAPI.willReturnSuccessfulLogin()
+        val credentials =
+            client.renewAuth("refreshToken", "_audience", "openid read:data write:data")
+                .execute()
+        val request = mockAPI.takeRequest()
+        assertThat(
+            request.getHeader("Accept-Language"), Matchers.`is`(
+                defaultLocale
+            )
+        )
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
+        assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
+        assertThat(body, Matchers.hasEntry("grant_type", "refresh_token"))
+        assertThat(body, Matchers.hasEntry("audience", "_audience"))
+        assertThat(body, Matchers.hasEntry("scope", "openid read:data write:data"))
         assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
     }
 
