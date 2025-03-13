@@ -32,7 +32,7 @@ public abstract class BaseCredentialsManager internal constructor(
     public abstract fun saveCredentials(credentials: Credentials)
     public abstract fun getCredentials(callback: Callback<Credentials, CredentialsManagerException>)
     public abstract fun getSsoCredentials(
-        headers: Map<String, String>,
+        parameters: Map<String, String>,
         callback: Callback<SSOCredentials, CredentialsManagerException>
     )
 
@@ -72,7 +72,7 @@ public abstract class BaseCredentialsManager internal constructor(
 
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
-    public abstract suspend fun awaitSsoCredentials(headers: Map<String, String>)
+    public abstract suspend fun awaitSsoCredentials(parameters: Map<String, String>)
             : SSOCredentials
 
     @JvmSynthetic

@@ -938,7 +938,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             .setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
             .set(SUBJECT_TOKEN_KEY, refreshToken)
             .set(SUBJECT_TOKEN_TYPE_KEY, ParameterBuilder.TOKEN_TYPE_REFRESH_TOKEN)
-            .set(REQUESTED_TOKEN_TYPE_KEY, ParameterBuilder.TOKEN_TYPE_SESSION_TOKEN)
+            .set(REQUESTED_TOKEN_TYPE_KEY, ParameterBuilder.TOKEN_TYPE_SESSION_TRANSFER_TOKEN)
             .asDictionary()
         return loginWithTokenGeneric<SSOCredentials>(params)
     }

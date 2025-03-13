@@ -51,4 +51,9 @@ public data class SSOCredentials(
      * @return the Refresh Token.
      */
     @field:SerializedName("refresh_token") public val refreshToken: String? = null
-)
+) {
+
+    override fun toString(): String {
+        return "SSOCredentials(webSsoToken = ****, issuedTokenType = $issuedTokenType, tokenType = $tokenType, expiresIn = $expiresIn, refreshToken = ****)"
+    }
+}

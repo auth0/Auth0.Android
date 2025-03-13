@@ -74,7 +74,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      */
     @ExperimentalAuth0Api
     override fun getSsoCredentials(
-        headers: Map<String, String>,
+        parameters: Map<String, String>,
         callback: Callback<SSOCredentials, CredentialsManagerException>
     ) {
         serialExecutor.execute {
@@ -86,8 +86,8 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
 
             val request = authenticationClient.fetchWebSsoToken(refreshToken)
             try {
-                for (header in headers) {
-                    request.addHeader(header.key, header.value)
+                if (parameters.isNotEmpty()) {
+                    request.addParameters(parameters)
                 }
                 val sessionCredentials = request.execute()
                 saveSsoCredentials(sessionCredentials)
@@ -132,9 +132,9 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
     @ExperimentalAuth0Api
-    override suspend fun awaitSsoCredentials(headers: Map<String, String>): SSOCredentials {
+    override suspend fun awaitSsoCredentials(parameters: Map<String, String>): SSOCredentials {
         return suspendCancellableCoroutine { continuation ->
-            getSsoCredentials(headers,
+            getSsoCredentials(parameters,
                 object : Callback<SSOCredentials, CredentialsManagerException> {
                     override fun onSuccess(result: SSOCredentials) {
                         continuation.resume(result)

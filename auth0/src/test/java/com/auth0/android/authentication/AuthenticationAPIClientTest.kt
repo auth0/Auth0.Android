@@ -2376,7 +2376,7 @@ public class AuthenticationAPIClientTest {
         )
         assertThat(body, Matchers.hasEntry("subject_token", "refresh-token"))
         assertThat(body, Matchers.hasEntry("subject_token_type", ParameterBuilder.TOKEN_TYPE_REFRESH_TOKEN))
-        assertThat(body, Matchers.hasEntry("requested_token_type", ParameterBuilder.TOKEN_TYPE_SESSION_TOKEN))
+        assertThat(body, Matchers.hasEntry("requested_token_type", ParameterBuilder.TOKEN_TYPE_SESSION_TRANSFER_TOKEN))
         assertThat(
             callback, AuthenticationCallbackMatcher.hasPayloadOfType(
                 SSOCredentials::class.java
@@ -2404,7 +2404,7 @@ public class AuthenticationAPIClientTest {
         )
         assertThat(body, Matchers.hasEntry("subject_token", "refresh-token"))
         assertThat(body, Matchers.hasEntry("subject_token_type", ParameterBuilder.TOKEN_TYPE_REFRESH_TOKEN))
-        assertThat(body, Matchers.hasEntry("requested_token_type", ParameterBuilder.TOKEN_TYPE_SESSION_TOKEN))
+        assertThat(body, Matchers.hasEntry("requested_token_type", ParameterBuilder.TOKEN_TYPE_SESSION_TRANSFER_TOKEN))
         assertThat(ssoCredentials, Matchers.`is`(Matchers.notNullValue()))
     }
 
@@ -2430,7 +2430,7 @@ public class AuthenticationAPIClientTest {
         )
         assertThat(body, Matchers.hasEntry("subject_token", "refresh-token"))
         assertThat(body, Matchers.hasEntry("subject_token_type", ParameterBuilder.TOKEN_TYPE_REFRESH_TOKEN))
-        assertThat(body, Matchers.hasEntry("requested_token_type", ParameterBuilder.TOKEN_TYPE_SESSION_TOKEN))
+        assertThat(body, Matchers.hasEntry("requested_token_type", ParameterBuilder.TOKEN_TYPE_SESSION_TRANSFER_TOKEN))
         assertThat(ssoCredentials, Matchers.`is`(Matchers.notNullValue()))
     }
 
