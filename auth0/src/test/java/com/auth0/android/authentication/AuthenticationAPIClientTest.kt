@@ -2355,10 +2355,10 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public fun shouldFetchSessionToken(){
+    public fun shouldFetchWebSsoToken(){
         mockAPI.willReturnSuccessfulLogin()
         val callback = MockAuthenticationCallback<SSOCredentials>()
-        client.fetchSessionToken( "refresh-token")
+        client.fetchWebSsoToken( "refresh-token")
             .start(callback)
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
@@ -2376,7 +2376,7 @@ public class AuthenticationAPIClientTest {
         )
         assertThat(body, Matchers.hasEntry("subject_token", "refresh-token"))
         assertThat(body, Matchers.hasEntry("subject_token_type", ParameterBuilder.TOKEN_TYPE_REFRESH_TOKEN))
-        assertThat(body, Matchers.hasEntry("requested_token_type", ParameterBuilder.TOKEN_TYPE_SESSION_TOKEN))
+        assertThat(body, Matchers.hasEntry("requested_token_type", ParameterBuilder.TOKEN_TYPE_SESSION_TRANSFER_TOKEN))
         assertThat(
             callback, AuthenticationCallbackMatcher.hasPayloadOfType(
                 SSOCredentials::class.java
@@ -2385,9 +2385,9 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public fun shouldFetchSessionTokenSync(){
+    public fun shouldFetchWebSsoTokenSync(){
         mockAPI.willReturnSuccessfulLogin()
-       val ssoCredentials= client.fetchSessionToken( "refresh-token")
+       val ssoCredentials= client.fetchWebSsoToken( "refresh-token")
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
@@ -2404,16 +2404,16 @@ public class AuthenticationAPIClientTest {
         )
         assertThat(body, Matchers.hasEntry("subject_token", "refresh-token"))
         assertThat(body, Matchers.hasEntry("subject_token_type", ParameterBuilder.TOKEN_TYPE_REFRESH_TOKEN))
-        assertThat(body, Matchers.hasEntry("requested_token_type", ParameterBuilder.TOKEN_TYPE_SESSION_TOKEN))
+        assertThat(body, Matchers.hasEntry("requested_token_type", ParameterBuilder.TOKEN_TYPE_SESSION_TRANSFER_TOKEN))
         assertThat(ssoCredentials, Matchers.`is`(Matchers.notNullValue()))
     }
 
     @Test
     @ExperimentalCoroutinesApi
-    public fun shouldAwaitFetchSessionToken(): Unit = runTest {
+    public fun shouldAwaitFetchWebSsoToken(): Unit = runTest {
         mockAPI.willReturnSuccessfulLogin()
         val ssoCredentials = client
-            .fetchSessionToken("refresh-token")
+            .fetchWebSsoToken("refresh-token")
             .await()
         val request = mockAPI.takeRequest()
         assertThat(
@@ -2430,7 +2430,7 @@ public class AuthenticationAPIClientTest {
         )
         assertThat(body, Matchers.hasEntry("subject_token", "refresh-token"))
         assertThat(body, Matchers.hasEntry("subject_token_type", ParameterBuilder.TOKEN_TYPE_REFRESH_TOKEN))
-        assertThat(body, Matchers.hasEntry("requested_token_type", ParameterBuilder.TOKEN_TYPE_SESSION_TOKEN))
+        assertThat(body, Matchers.hasEntry("requested_token_type", ParameterBuilder.TOKEN_TYPE_SESSION_TRANSFER_TOKEN))
         assertThat(ssoCredentials, Matchers.`is`(Matchers.notNullValue()))
     }
 
