@@ -928,7 +928,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param refreshToken A valid refresh token obtained as part of Auth0 authentication
      * @return a request to fetch a session token
      */
-    public fun fetchSessionToken(refreshToken: String): Request<SSOCredentials, AuthenticationException> {
+    internal fun fetchSessionToken(refreshToken: String): Request<SSOCredentials, AuthenticationException> {
         val params = ParameterBuilder.newBuilder()
             .setClientId(clientId)
             .setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
