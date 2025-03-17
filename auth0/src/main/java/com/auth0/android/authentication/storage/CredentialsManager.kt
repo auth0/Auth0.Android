@@ -5,8 +5,12 @@ import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
+import com.auth0.android.request.internal.GsonProvider
+import com.auth0.android.result.APICredentials
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.SSOCredentials
+import com.auth0.android.result.toAPICredentials
+import com.google.gson.Gson
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.*
 import java.util.concurrent.Executor
@@ -23,6 +27,9 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
     jwtDecoder: JWTDecoder,
     private val serialExecutor: Executor
 ) : BaseCredentialsManager(authenticationClient, storage, jwtDecoder) {
+
+    private val gson: Gson = GsonProvider.gson
+
     /**
      * Creates a new instance of the manager that will store the credentials in the given Storage.
      *
@@ -54,6 +61,16 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         storage.store(LEGACY_KEY_CACHE_EXPIRES_AT, credentials.expiresAt.time)
     }
 
+    /**
+     * Stores the given [APICredentials] in the storage for the given audience.
+     * @param apiCredentials the API Credentials to be stored
+     * @param audience the audience for which the credentials are stored
+     */
+    override fun saveApiCredentials(apiCredentials: APICredentials, audience: String) {
+        gson.toJson(apiCredentials).let {
+            storage.store(audience, it)
+        }
+    }
 
     /**
      * Stores the given [SSOCredentials] refresh token in the storage.
@@ -242,6 +259,45 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
     }
 
     /**
+     * Retrieves API credentials from storage and automatically renews them using the refresh token if the access
+     * token is expired. Otherwise, the retrieved API credentials will be returned via the success case as they are still valid.
+     *
+     * If there are no stored API credentials, the refresh token will be exchanged for a new set of API credentials.
+     * New or renewed API credentials will be automatically stored in storage.
+     * This is a Coroutine that is exposed only for Kotlin.
+     *
+     * @param audience Identifier of the API that your application is requesting access to.
+     * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
+     * @param minTtl   the minimum time in seconds that the access token should last before expiration.
+     * @param parameters additional parameters to send in the request to refresh expired credentials.
+     * @param headers additional headers to send in the request to refresh expired credentials.
+     */
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    override suspend fun awaitApiCredentials(
+        audience: String,
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        headers: Map<String, String>
+    ): APICredentials {
+        return suspendCancellableCoroutine { continuation ->
+            getApiCredentials(
+                audience, scope, minTtl, parameters, headers,
+                object : Callback<APICredentials, CredentialsManagerException> {
+                    override fun onSuccess(result: APICredentials) {
+                        continuation.resume(result)
+                    }
+
+                    override fun onFailure(error: CredentialsManagerException) {
+                        continuation.resumeWithException(error)
+                    }
+                }
+            )
+        }
+    }
+
+    /**
      * Retrieves the credentials from the storage and refresh them if they have already expired.
      * It will fail with [CredentialsManagerException] if the saved access_token or id_token is null,
      * or if the tokens have already expired and the refresh_token is null.
@@ -418,6 +474,103 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         }
     }
 
+
+    /**
+     *  Retrieves API credentials from storage and automatically renews them using the refresh token if the access
+     *  token is expired. Otherwise, the retrieved API credentials will be returned via the success case as they are still valid.
+     *
+     * If there are no stored API credentials, the refresh token will be exchanged for a new set of API credentials.
+     * New or renewed API credentials will be automatically stored in storage.
+     *
+     * @param audience Identifier of the API that your application is requesting access to.
+     * @param scope the scope to request for the access token. If null is passed, the previous scope will be kept.
+     * @param minTtl the minimum time in seconds that the access token should last before expiration.
+     * @param parameters additional parameters to send in the request to refresh expired credentials.
+     * @param headers headers to use when exchanging a refresh token for API credentials.
+     * @param callback the callback that will receive a valid [Credentials] or the [CredentialsManagerException].
+     */
+    override fun getApiCredentials(
+        audience: String,
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        headers: Map<String, String>,
+        callback: Callback<APICredentials, CredentialsManagerException>
+    ) {
+        serialExecutor.execute {
+            //Check if existing api credentials are present and valid
+            val apiCredentialsJson = storage.retrieveString(audience)
+            apiCredentialsJson?.let {
+                val apiCredentials = gson.fromJson(it, APICredentials::class.java)
+                val willTokenExpire = willExpire(apiCredentials.expiresAt.time, minTtl.toLong())
+                val scopeChanged = hasScopeChanged(apiCredentials.scope, scope)
+                val hasExpired = hasExpired(apiCredentials.expiresAt.time)
+                if (!hasExpired && !willTokenExpire && !scopeChanged) {
+                    callback.onSuccess(apiCredentials)
+                    return@execute
+                }
+            }
+            //Check if refresh token exists or not
+            val refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN)
+            if (refreshToken == null) {
+                callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
+                return@execute
+            }
+
+            val request = authenticationClient.renewAuth(refreshToken, audience, scope)
+            request.addParameters(parameters)
+
+            for (header in headers) {
+                request.addHeader(header.key, header.value)
+            }
+
+            try {
+                val newCredentials = request.execute()
+                val expiresAt = newCredentials.expiresAt.time
+                val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
+                if (willAccessTokenExpire) {
+                    val tokenLifetime = (expiresAt - currentTimeInMillis - minTtl * 1000) / -1000
+                    val wrongTtlException = CredentialsManagerException(
+                        CredentialsManagerException.Code.LARGE_MIN_TTL, String.format(
+                            Locale.getDefault(),
+                            "The lifetime of the renewed Access Token (%d) is less than the minTTL requested (%d). Increase the 'Token Expiration' setting of your Auth0 API in the dashboard, or request a lower minTTL.",
+                            tokenLifetime,
+                            minTtl
+                        )
+                    )
+                    callback.onFailure(wrongTtlException)
+                    return@execute
+                }
+
+                // non-empty refresh token for refresh token rotation scenarios
+                val updatedRefreshToken =
+                    if (TextUtils.isEmpty(newCredentials.refreshToken)) refreshToken else newCredentials.refreshToken
+                val newApiCredentials = newCredentials.toAPICredentials()
+                saveCredentials(
+                    recreateCredentials(
+                        newCredentials.idToken, newCredentials.accessToken, newCredentials.type,
+                        updatedRefreshToken, newCredentials.expiresAt, newCredentials.scope
+                    )
+                )
+                saveCredentials(newApiCredentials, audience)
+                callback.onSuccess(newApiCredentials)
+            } catch (error: AuthenticationException) {
+                val exception = when {
+                    error.isRefreshTokenDeleted || error.isInvalidRefreshToken -> CredentialsManagerException.Code.RENEW_FAILED
+
+                    error.isNetworkError -> CredentialsManagerException.Code.NO_NETWORK
+                    else -> CredentialsManagerException.Code.API_ERROR
+                }
+                callback.onFailure(
+                    CredentialsManagerException(
+                        exception, error
+                    )
+                )
+            }
+        }
+
+    }
+
     /**
      * Checks if a non-expired pair of credentials can be obtained from this manager.
      *
@@ -456,6 +609,13 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         storage.remove(KEY_EXPIRES_AT)
         storage.remove(KEY_SCOPE)
         storage.remove(LEGACY_KEY_CACHE_EXPIRES_AT)
+    }
+
+    /**
+     * Removes the credentials for the given audience from the storage if present.
+     */
+    override fun clearApiCredentials(audience: String) {
+        storage.remove(audience)
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)

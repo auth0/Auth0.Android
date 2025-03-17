@@ -731,7 +731,9 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     }
 
     /**
-     * Requests new Credentials using a valid Refresh Token. The received token will have the same audience and scope as first requested.
+     * Requests new Credentials using a valid Refresh Token. You can request credentials for a specific API by passing its audience value. The default scopes configured for
+     * the API will be granted if you don't request any specific scopes.
+     *
      *
      * This method will use the /oauth/token endpoint with the 'refresh_token' grant, and the response will include an id_token and an access_token if 'openid' scope was requested when the refresh_token was obtained.
      * Additionally, if the application has Refresh Token Rotation configured, a new one-time use refresh token will also be included in the response.
@@ -740,8 +742,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      *
      * Example usage:
      * ```
-     * client.renewAuth("{refresh_token}")
-     *     .addParameter("scope", "openid profile email")
+     * client.renewAuth("{refresh_token}","{audience}","{scope})
      *     .start(object: Callback<Credentials, AuthenticationException> {
      *         override fun onSuccess(result: Credentials) { }
      *         override fun onFailure(error: AuthenticationException) { }
