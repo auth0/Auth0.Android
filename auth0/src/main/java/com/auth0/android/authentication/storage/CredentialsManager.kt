@@ -546,13 +546,9 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                 val updatedRefreshToken =
                     if (TextUtils.isEmpty(newCredentials.refreshToken)) refreshToken else newCredentials.refreshToken
                 val newApiCredentials = newCredentials.toAPICredentials()
-                saveCredentials(
-                    recreateCredentials(
-                        newCredentials.idToken, newCredentials.accessToken, newCredentials.type,
-                        updatedRefreshToken, newCredentials.expiresAt, newCredentials.scope
-                    )
-                )
-                saveCredentials(newApiCredentials, audience)
+                storage.store(KEY_REFRESH_TOKEN, updatedRefreshToken)
+                storage.store(KEY_ID_TOKEN, newCredentials.idToken)
+                saveApiCredentials(newApiCredentials, audience)
                 callback.onSuccess(newApiCredentials)
             } catch (error: AuthenticationException) {
                 val exception = when {
