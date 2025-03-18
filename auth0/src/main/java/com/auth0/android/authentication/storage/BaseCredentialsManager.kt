@@ -4,6 +4,7 @@ import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.callback.Callback
 import com.auth0.android.result.Credentials
+import com.auth0.android.result.SSOCredentials
 import com.auth0.android.util.Clock
 import java.util.*
 
@@ -29,7 +30,9 @@ public abstract class BaseCredentialsManager internal constructor(
 
     @Throws(CredentialsManagerException::class)
     public abstract fun saveCredentials(credentials: Credentials)
+    internal abstract fun saveSsoCredentials(ssoCredentials: SSOCredentials)
     public abstract fun getCredentials(callback: Callback<Credentials, CredentialsManagerException>)
+    internal abstract fun getSsoCredentials(callback: Callback<SSOCredentials, CredentialsManagerException>)
     public abstract fun getCredentials(
         scope: String?,
         minTtl: Int,
@@ -59,6 +62,10 @@ public abstract class BaseCredentialsManager internal constructor(
         forceRefresh: Boolean,
         callback: Callback<Credentials, CredentialsManagerException>
     )
+
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    internal abstract suspend fun awaitSsoCredentials(): SSOCredentials
 
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)

@@ -14,6 +14,7 @@ import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
 import com.auth0.android.result.PasskeyChallenge
 import com.auth0.android.result.PasskeyRegistrationChallenge
+import com.auth0.android.result.SSOCredentials
 import com.auth0.android.result.UserProfile
 import com.google.gson.Gson
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -167,7 +168,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * ```
      * client.signinWithPasskey("{authSession}", "{authResponse}","{realm}")
      *       .validateClaims() //mandatory
-     *       .addParameter("scope","scope")
+     *       .setScope("{scope}")
      *       .start(object: Callback<Credentials, AuthenticationException> {
      *           override fun onFailure(error: AuthenticationException) { }
      *           override fun onSuccess(result: Credentials) { }
@@ -211,7 +212,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * ```
      * client.signinWithPasskey("{authSession}", "{authResponse}","{realm}")
      *       .validateClaims() //mandatory
-     *       .addParameter("scope","scope")
+     *       .setScope("{scope}")
      *       .start(object: Callback<Credentials, AuthenticationException> {
      *           override fun onFailure(error: AuthenticationException) { }
      *           override fun onSuccess(result: Credentials) { }
@@ -457,13 +458,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @return a request to configure and start that will yield [Credentials]
      */
     public fun loginWithNativeSocialToken(token: String, tokenType: String): AuthenticationRequest {
-        val parameters = ParameterBuilder.newAuthenticationBuilder()
-            .setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
-            .setClientId(clientId)
-            .set(SUBJECT_TOKEN_KEY, token)
-            .set(SUBJECT_TOKEN_TYPE_KEY, tokenType)
-            .asDictionary()
-        return loginWithToken(parameters)
+        return tokenExchange(tokenType, token)
     }
 
     /**
@@ -708,6 +703,34 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     }
 
     /**
+     * The Custom Token Exchange feature allows clients to exchange their existing tokens for Auth0 tokens by calling the `/oauth/token` endpoint with specific parameters.
+     * The default scope used is 'openid profile email'.
+     *
+     * Example usage:
+     *
+     * ```
+     * client.customTokenExchange("{subject token type}", "{subject token}")
+     *       .validateClaims() //mandatory
+     *       .setScope("{scope}")
+     *       .setAudience("{audience}")
+     *       .start(object: Callback<Credentials, AuthenticationException> {
+     *       override fun onSuccess(result: Credentials) { }
+     *       override fun onFailure(error: AuthenticationException) { }
+     *  })
+     *  ```
+     *
+     * @param subjectTokenType the subject token type that is associated with the existing Identity Provider. e.g. 'http://acme.com/legacy-token'
+     * @param subjectToken   the subject token, typically obtained through the Identity Provider's SDK
+     * @return a request to configure and start that will yield [Credentials]
+     */
+    public fun customTokenExchange(
+        subjectTokenType: String,
+        subjectToken: String,
+    ): AuthenticationRequest {
+        return tokenExchange(subjectTokenType, subjectToken)
+    }
+
+    /**
      * Requests new Credentials using a valid Refresh Token. The received token will have the same audience and scope as first requested.
      *
      * This method will use the /oauth/token endpoint with the 'refresh_token' grant, and the response will include an id_token and an access_token if 'openid' scope was requested when the refresh_token was obtained.
@@ -900,6 +923,44 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     }
 
     /**
+     * Creates a new request to fetch a session token in exchange for a refresh token.
+     *
+     * @param refreshToken A valid refresh token obtained as part of Auth0 authentication
+     * @return a request to fetch a session token
+     */
+    internal fun fetchSessionToken(refreshToken: String): Request<SSOCredentials, AuthenticationException> {
+        val params = ParameterBuilder.newBuilder()
+            .setClientId(clientId)
+            .setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
+            .set(SUBJECT_TOKEN_KEY, refreshToken)
+            .set(SUBJECT_TOKEN_TYPE_KEY, ParameterBuilder.TOKEN_TYPE_REFRESH_TOKEN)
+            .set(REQUESTED_TOKEN_TYPE_KEY, ParameterBuilder.TOKEN_TYPE_SESSION_TOKEN)
+            .asDictionary()
+        return loginWithTokenGeneric<SSOCredentials>(params)
+    }
+
+    /**
+     * Helper function to make a request to the /oauth/token endpoint with a custom response type.
+     */
+    private inline fun <reified T> loginWithTokenGeneric(parameters: Map<String, String>): Request<T,AuthenticationException> {
+        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
+            .addPathSegment(OAUTH_PATH)
+            .addPathSegment(TOKEN_PATH)
+            .build()
+        val requestParameters =
+            ParameterBuilder.newBuilder()
+                .setClientId(clientId)
+                .addAll(parameters)
+                .asDictionary()
+        val adapter: JsonAdapter<T> = GsonAdapter(
+            T::class.java, gson
+        )
+        val request = factory.post(url.toString(), adapter)
+        request.addParameters(requestParameters)
+        return request
+    }
+
+    /**
      * Helper function to make a request to the /oauth/token endpoint.
      */
     private fun loginWithToken(parameters: Map<String, String>): AuthenticationRequest {
@@ -920,6 +981,21 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         )
         request.addParameters(requestParameters)
         return request
+    }
+
+    /**
+     * Helper function to make a request to the /oauth/token endpoint with the token exchange grant type.
+     */
+    private fun tokenExchange(
+        subjectTokenType: String,
+        subjectToken: String
+    ): AuthenticationRequest {
+        val parameters = ParameterBuilder.newAuthenticationBuilder()
+            .setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
+            .set(SUBJECT_TOKEN_TYPE_KEY, subjectTokenType)
+            .set(SUBJECT_TOKEN_KEY, subjectToken)
+            .asDictionary()
+        return loginWithToken(parameters)
     }
 
     private fun profileRequest(): Request<UserProfile, AuthenticationException> {
@@ -952,6 +1028,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val RECOVERY_CODE_KEY = "recovery_code"
         private const val SUBJECT_TOKEN_KEY = "subject_token"
         private const val SUBJECT_TOKEN_TYPE_KEY = "subject_token_type"
+        private const val REQUESTED_TOKEN_TYPE_KEY = "requested_token_type"
         private const val USER_METADATA_KEY = "user_metadata"
         private const val AUTH_SESSION_KEY = "auth_session"
         private const val AUTH_RESPONSE_KEY = "authn_response"
