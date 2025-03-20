@@ -68,7 +68,7 @@ public class CredentialsManagerTest {
     private lateinit var ssoCallback: Callback<SSOCredentials, CredentialsManagerException>
 
     @Mock
-    private lateinit var apiCallback: Callback<APICredentials, CredentialsManagerException>
+    private lateinit var apiCredentialsCallback: Callback<APICredentials, CredentialsManagerException>
 
     @Mock
     private lateinit var jwtDecoder: JWTDecoder
@@ -398,8 +398,8 @@ public class CredentialsManagerTest {
             Date(accessTokenExpiry), "scope"
         )
         Mockito.`when`(storage.retrieveString("audience")).thenReturn(gson.toJson(apiCredentials))
-        manager.getApiCredentials("audience", "scope", callback = apiCallback)
-        verify(apiCallback).onSuccess(apiCredentialsCaptor.capture())
+        manager.getApiCredentials("audience", "scope", callback = apiCredentialsCallback)
+        verify(apiCredentialsCallback).onSuccess(apiCredentialsCaptor.capture())
         val retrievedCredentials = apiCredentialsCaptor.firstValue
         MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
         Assert.assertEquals(retrievedCredentials.accessToken, apiCredentials.accessToken)
@@ -409,8 +409,8 @@ public class CredentialsManagerTest {
     public fun shouldThrowExceptionIfThereISNoRefreshTokenToGetNewApiToken() {
         verifyNoMoreInteractions(client)
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn(null)
-        manager.getApiCredentials(audience = "audience", callback = apiCallback)
-        verify(apiCallback).onFailure(exceptionCaptor.capture())
+        manager.getApiCredentials(audience = "audience", callback = apiCredentialsCallback)
+        verify(apiCredentialsCallback).onFailure(exceptionCaptor.capture())
         val exception = exceptionCaptor.firstValue
         MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(
@@ -437,8 +437,8 @@ public class CredentialsManagerTest {
         val renewedCredentials =
             Credentials("newId", "newAccess", "newType", newRefresh, newDate, "newScope")
         Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
-        manager.getApiCredentials("audience", "newScope", callback = apiCallback)
-        verify(apiCallback).onSuccess(
+        manager.getApiCredentials("audience", "newScope", callback = apiCredentialsCallback)
+        verify(apiCredentialsCallback).onSuccess(
             apiCredentialsCaptor.capture()
         )
 
@@ -479,8 +479,8 @@ public class CredentialsManagerTest {
         val renewedCredentials =
             Credentials("newId", "newAccess", "newType", newRefresh, newDate, "newScope")
         Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
-        manager.getApiCredentials("audience", "newScope", callback = apiCallback)
-        verify(apiCallback).onSuccess(
+        manager.getApiCredentials("audience", "newScope", callback = apiCredentialsCallback)
+        verify(apiCredentialsCallback).onSuccess(
             apiCredentialsCaptor.capture()
         )
 
@@ -521,8 +521,8 @@ public class CredentialsManagerTest {
         val renewedCredentials =
             Credentials("newId", "newAccess", "newType", newRefresh, newDate, "newScope")
         Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
-        manager.getApiCredentials("audience", "newScope", minTtl = 10, callback = apiCallback)
-        verify(apiCallback).onSuccess(
+        manager.getApiCredentials("audience", "newScope", minTtl = 10, callback = apiCredentialsCallback)
+        verify(apiCredentialsCallback).onSuccess(
             apiCredentialsCaptor.capture()
         )
 
@@ -563,8 +563,8 @@ public class CredentialsManagerTest {
         val renewedCredentials =
             Credentials("newId", "newAccess", "newType", newRefresh, newDate, "newScope")
         Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
-        manager.getApiCredentials("audience", "newScope", callback = apiCallback)
-        verify(apiCallback).onSuccess(
+        manager.getApiCredentials("audience", "newScope", callback = apiCredentialsCallback)
+        verify(apiCredentialsCallback).onSuccess(
             apiCredentialsCaptor.capture()
         )
 
@@ -599,8 +599,8 @@ public class CredentialsManagerTest {
         val renewedCredentials =
             Credentials("newId", "newAccess", "newType", "newRefreshToken", newDate, "newScope")
         Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
-        manager.getApiCredentials("audience", "newScope", callback = apiCallback)
-        verify(apiCallback).onSuccess(
+        manager.getApiCredentials("audience", "newScope", callback = apiCredentialsCallback)
+        verify(apiCredentialsCallback).onSuccess(
             apiCredentialsCaptor.capture()
         )
 
@@ -636,8 +636,8 @@ public class CredentialsManagerTest {
         val renewedCredentials =
             Credentials("newId", "newAccess", "newType", newRefresh, newDate, "newScope")
         Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
-        manager.getApiCredentials("audience", "newScope", minTtl = 1, callback = apiCallback)
-        verify(apiCallback).onFailure(
+        manager.getApiCredentials("audience", "newScope", minTtl = 1, callback = apiCredentialsCallback)
+        verify(apiCredentialsCallback).onFailure(
             exceptionCaptor.capture()
         )
         val exception = exceptionCaptor.firstValue
