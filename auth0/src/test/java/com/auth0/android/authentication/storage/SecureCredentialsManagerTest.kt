@@ -2414,7 +2414,7 @@ public class SecureCredentialsManagerTest {
         Mockito.`when`(
             client.renewAuth("refreshToken", "audience")
         ).thenReturn(request)
-        val newDate = Date(CredentialsMock.CURRENT_TIME_MS + 1 * 1000)
+        val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
