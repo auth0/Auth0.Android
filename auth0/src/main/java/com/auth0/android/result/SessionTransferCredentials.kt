@@ -12,13 +12,20 @@ import com.google.gson.annotations.SerializedName
  *  * *issuedTokenType*: Type of the token issued.
  *
  */
-public data class SSOCredentials(
+public data class SessionTransferCredentials(
     /**
      * The token used for web SSO .
      *
      * @return the web sso Token.
      */
-    @field:SerializedName("access_token") public val webSsoToken: String,
+    @field:SerializedName("access_token") public val sessionTransferToken: String,
+
+    /**
+     * Getter for the Identity Token with user information.
+     *
+     * @return the Identity Token.
+     */
+    @field:SerializedName("id_token") public val idToken: String,
 
     /**
      * Type of the token issued.In this case, an Auth0 web sso token
@@ -44,7 +51,6 @@ public data class SSOCredentials(
      */
     @field:SerializedName("expires_in") public val expiresIn: Int,
 
-
     /**
      *  Refresh Token that can be used to request new tokens without signing in again.
      *
@@ -54,6 +60,6 @@ public data class SSOCredentials(
 ) {
 
     override fun toString(): String {
-        return "SSOCredentials(webSsoToken = ****, issuedTokenType = $issuedTokenType, tokenType = $tokenType, expiresIn = $expiresIn, refreshToken = ****)"
+        return "SSOCredentials(sessionTransferToken = ****, issuedTokenType = $issuedTokenType, tokenType = $tokenType, expiresIn = $expiresIn, refreshToken = ****)"
     }
 }

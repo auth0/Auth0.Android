@@ -541,20 +541,17 @@ authentication
 </details>
 
 
-## Native to Web SSO login (Experimental)
-> **Warning**
-> 
-> Native to Web SSO login support in Auth0.Android is still experimental and can change in the future.
+## Native to Web SSO login
 
 This feature allows you to authenticate a user in a web session using the refresh token obtained from the native session without requiring the user to log in again.
 
-Call the api to fetch a webSsoToken in exchange for a refresh token. Use the obtained token to authenticate the user by calling the `/authorize` end point.
+Call the api to fetch a webSessionTransferToken in exchange for a refresh token. Use the obtained token to authenticate the user by calling the `/authorize` end point.
 
 ```kotlin
     authentication
-    .fetchWebSsoToken("refresh_token")
-    .start(object : Callback<SSOCredentials, AuthenticationException> {
-        override fun onSuccess(result: SSOCredentials) {
+    .fetchSessionTransferToken("refresh_token")
+    .start(object : Callback<SessionTransferCredentials, AuthenticationException> {
+        override fun onSuccess(result: SessionTransferCredentials) {
             // Use the web_sso token to authenticate the user in a web session in your app
         }
 
@@ -570,8 +567,8 @@ Call the api to fetch a webSsoToken in exchange for a refresh token. Use the obt
 
 ``` kotlin 
 try {
-    val ssoCredentials = authentication
-        .fetchWebSsoToken("refresh_token")
+    val sessionTransferCredentials = authentication
+        .fetchSessionTransferToken("refresh_token")
         .await()
 } catch (e: AuthenticationException) {
     e.printStacktrace()
@@ -584,10 +581,10 @@ try {
 
 ```java
 authentication
-    .fetchWebSsoToken("refresh_token")
-    .start(new Callback<SSOCredentials, AuthenticationException>() {
+    .fetchSessionTransferToken("refresh_token")
+    .start(new Callback<SessionTransferCredentials, AuthenticationException>() {
         @Override
-        public void onSuccess(@Nullable SSOCredentials payload) {
+        public void onSuccess(@Nullable SessionTransferCredentials result) {
             // Handle success
         }
         @Override

@@ -4,7 +4,6 @@ import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
-import com.auth0.android.annotation.ExperimentalAuth0Api
 import com.auth0.android.request.*
 import com.auth0.android.request.internal.*
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMap
@@ -15,7 +14,7 @@ import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
 import com.auth0.android.result.PasskeyChallenge
 import com.auth0.android.result.PasskeyRegistrationChallenge
-import com.auth0.android.result.SSOCredentials
+import com.auth0.android.result.SessionTransferCredentials
 import com.auth0.android.result.UserProfile
 import com.google.gson.Gson
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -925,28 +924,24 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
 
     /**
      * Creates a new request to fetch a web sso token in exchange for a refresh token.
-     * This is still an experimental feature, test it thoroughly in the targeted devices and OS variants and let us know your feedback.
      *
      * @param refreshToken A valid refresh token obtained as part of Auth0 authentication
      * @return a request to fetch a web sso token
      *
      */
-    @ExperimentalAuth0Api
-    public fun fetchWebSsoToken(refreshToken: String): Request<SSOCredentials, AuthenticationException> {
+    public fun fetchSessionTransferToken(refreshToken: String): Request<SessionTransferCredentials, AuthenticationException> {
         val params = ParameterBuilder.newBuilder()
-            .setClientId(clientId)
-            .setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
-            .set(SUBJECT_TOKEN_KEY, refreshToken)
-            .set(SUBJECT_TOKEN_TYPE_KEY, ParameterBuilder.TOKEN_TYPE_REFRESH_TOKEN)
-            .set(REQUESTED_TOKEN_TYPE_KEY, ParameterBuilder.TOKEN_TYPE_SESSION_TRANSFER_TOKEN)
+            .setGrantType(ParameterBuilder.REFRESH_TOKEN_KEY)
+            .setAudience("urn:${auth0.domain}:session_transfer")
+            .set(ParameterBuilder.REFRESH_TOKEN_KEY, refreshToken)
             .asDictionary()
-        return loginWithTokenGeneric<SSOCredentials>(params)
+        return loginWithTokenGeneric<SessionTransferCredentials>(params)
     }
 
     /**
      * Helper function to make a request to the /oauth/token endpoint with a custom response type.
      */
-    private inline fun <reified T> loginWithTokenGeneric(parameters: Map<String, String>): Request<T,AuthenticationException> {
+    private inline fun <reified T> loginWithTokenGeneric(parameters: Map<String, String>): Request<T, AuthenticationException> {
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(OAUTH_PATH)
             .addPathSegment(TOKEN_PATH)

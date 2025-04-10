@@ -4,7 +4,7 @@ import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.callback.Callback
 import com.auth0.android.result.Credentials
-import com.auth0.android.result.SSOCredentials
+import com.auth0.android.result.SessionTransferCredentials
 import com.auth0.android.util.Clock
 import java.util.*
 
@@ -31,13 +31,13 @@ public abstract class BaseCredentialsManager internal constructor(
     @Throws(CredentialsManagerException::class)
     public abstract fun saveCredentials(credentials: Credentials)
     public abstract fun getCredentials(callback: Callback<Credentials, CredentialsManagerException>)
-    public abstract fun getSsoCredentials(
+    public abstract fun getSessionTransferCredentials(
         parameters: Map<String, String>,
-        callback: Callback<SSOCredentials, CredentialsManagerException>
+        callback: Callback<SessionTransferCredentials, CredentialsManagerException>
     )
 
-    public abstract fun getSsoCredentials(
-        callback: Callback<SSOCredentials, CredentialsManagerException>
+    public abstract fun getSessionTransferCredentials(
+        callback: Callback<SessionTransferCredentials, CredentialsManagerException>
     )
 
     public abstract fun getCredentials(
@@ -72,13 +72,13 @@ public abstract class BaseCredentialsManager internal constructor(
 
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
-    public abstract suspend fun awaitSsoCredentials(parameters: Map<String, String>)
-            : SSOCredentials
+    public abstract suspend fun awaitSessionTransferCredentials(parameters: Map<String, String>)
+            : SessionTransferCredentials
 
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
-    public abstract suspend fun awaitSsoCredentials()
-            : SSOCredentials
+    public abstract suspend fun awaitSessionTransferCredentials()
+            : SessionTransferCredentials
 
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
