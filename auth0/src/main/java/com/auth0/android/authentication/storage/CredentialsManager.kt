@@ -6,7 +6,7 @@ import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
 import com.auth0.android.result.Credentials
-import com.auth0.android.result.SSOCredentials
+import com.auth0.android.result.SessionTransferCredentials
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.*
 import java.util.concurrent.Executor
@@ -54,33 +54,24 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         storage.store(LEGACY_KEY_CACHE_EXPIRES_AT, credentials.expiresAt.time)
     }
 
-
     /**
-     * Stores the given [SSOCredentials] refresh token in the storage.
-     * This method must be called if the SSOCredentials are obtained by directly invoking [AuthenticationAPIClient.fetchSessionToken] api and
-     * [rotating refresh token](https://auth0.com/docs/secure/tokens/refresh-tokens/refresh-token-rotation) are enabled for
-     * the client. Method will silently return ,if the passed credentials has no refresh token.
-     *
-     * @param ssoCredentials the credentials to save in the storage.
+     * Fetches a new [SessionTransferCredentials] . It will fail with [CredentialsManagerException]
+     * if the existing refresh_token is null or no longer valid. This method will handle saving the refresh_token,
+     * if  a new one is issued.
      */
-    override fun saveSsoCredentials(ssoCredentials: SSOCredentials) {
-        if (ssoCredentials.refreshToken.isNullOrEmpty())
-            return // No refresh token to save
-        serialExecutor.execute {
-            val existingRefreshToken = storage.retrieveString(KEY_REFRESH_TOKEN)
-            // Checking if the existing one needs to be replaced with the new one
-            if (ssoCredentials.refreshToken == existingRefreshToken)
-                return@execute
-            storage.store(KEY_REFRESH_TOKEN, ssoCredentials.refreshToken)
-        }
+    override fun getSessionTransferCredentials(callback: Callback<SessionTransferCredentials, CredentialsManagerException>) {
+        getSessionTransferCredentials(emptyMap(), callback)
     }
 
     /**
-     * Fetches a new [SSOCredentials] . It will fail with [CredentialsManagerException]
+     * Fetches a new [SessionTransferCredentials] . It will fail with [CredentialsManagerException]
      * if the existing refresh_token is null or no longer valid. This method will handle saving the refresh_token,
-     * if  a new one is issued
+     * if  a new one is issued.
      */
-    override fun getSsoCredentials(callback: Callback<SSOCredentials, CredentialsManagerException>) {
+    override fun getSessionTransferCredentials(
+        parameters: Map<String, String>,
+        callback: Callback<SessionTransferCredentials, CredentialsManagerException>
+    ) {
         serialExecutor.execute {
             val refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN)
             if (refreshToken.isNullOrEmpty()) {
@@ -88,12 +79,14 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                 return@execute
             }
 
+            val request = authenticationClient.fetchSessionTransferToken(refreshToken)
             try {
-                val sessionCredentials =
-                    authenticationClient.fetchSessionToken(refreshToken)
-                        .execute()
-                saveSsoCredentials(sessionCredentials)
-                callback.onSuccess(sessionCredentials)
+                if (parameters.isNotEmpty()) {
+                    request.addParameters(parameters)
+                }
+                val sessionTransferCredentials = request.execute()
+                saveSessionTransferCredentials(sessionTransferCredentials)
+                callback.onSuccess(sessionTransferCredentials)
             } catch (error: AuthenticationException) {
                 val exception = when {
                     error.isRefreshTokenDeleted ||
@@ -113,23 +106,36 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
     }
 
     /**
-     * Fetches a new [SSOCredentials] . It will fail with [CredentialsManagerException]
+     * Fetches a new [SessionTransferCredentials] . It will fail with [CredentialsManagerException]
      * if the existing refresh_token is null or no longer valid. This method will handle saving the refresh_token,
-     * if  a new one is issued
+     * if  a new one is issued.
      */
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
-    override suspend fun awaitSsoCredentials(): SSOCredentials {
-        return suspendCancellableCoroutine { continuation ->
-            getSsoCredentials(object : Callback<SSOCredentials, CredentialsManagerException> {
-                override fun onSuccess(result: SSOCredentials) {
-                    continuation.resume(result)
-                }
+    override suspend fun awaitSessionTransferCredentials(): SessionTransferCredentials {
+        return awaitSessionTransferCredentials(emptyMap())
+    }
 
-                override fun onFailure(error: CredentialsManagerException) {
-                    continuation.resumeWithException(error)
-                }
-            })
+    /**
+     * Fetches a new [SessionTransferCredentials] . It will fail with [CredentialsManagerException]
+     * if the existing refresh_token is null or no longer valid. This method will handle saving the refresh_token,
+     * if  a new one is issued.
+     */
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    override suspend fun awaitSessionTransferCredentials(parameters: Map<String, String>): SessionTransferCredentials {
+        return suspendCancellableCoroutine { continuation ->
+            getSessionTransferCredentials(
+                parameters,
+                object : Callback<SessionTransferCredentials, CredentialsManagerException> {
+                    override fun onSuccess(result: SessionTransferCredentials) {
+                        continuation.resume(result)
+                    }
+
+                    override fun onFailure(error: CredentialsManagerException) {
+                        continuation.resumeWithException(error)
+                    }
+                })
         }
     }
 
@@ -224,7 +230,8 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         forceRefresh: Boolean
     ): Credentials {
         return suspendCancellableCoroutine { continuation ->
-            getCredentials(scope,
+            getCredentials(
+                scope,
                 minTtl,
                 parameters,
                 headers,
@@ -456,6 +463,24 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         storage.remove(KEY_EXPIRES_AT)
         storage.remove(KEY_SCOPE)
         storage.remove(LEGACY_KEY_CACHE_EXPIRES_AT)
+    }
+
+    /**
+     * Helper method to store the given [SessionTransferCredentials] refresh token in the storage.
+     * Method will silently return ,if the passed credentials has no refresh token.
+     *
+     * @param sessionTransferCredentials the credentials to save in the storage.
+     */
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal fun saveSessionTransferCredentials(sessionTransferCredentials: SessionTransferCredentials) {
+        storage.store(KEY_ID_TOKEN, sessionTransferCredentials.idToken)
+        val existingRefreshToken = storage.retrieveString(KEY_REFRESH_TOKEN)
+        // Checking if the existing one needs to be replaced with the new one
+        if (sessionTransferCredentials.refreshToken.isNullOrEmpty())
+            return // No refresh token to save
+        if (sessionTransferCredentials.refreshToken == existingRefreshToken)
+            return // Same refresh token, no need to save
+        storage.store(KEY_REFRESH_TOKEN, sessionTransferCredentials.refreshToken)
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
