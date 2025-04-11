@@ -290,11 +290,7 @@ The callback will get invoked when the user returns to your application. There a
 
 If the `returnTo` URL is not found in the **Allowed Logout URLs** of your Auth0 Application, the server will not make the redirection and the browser will remain open.
 
-### Trusted Web Activity (Experimental Release)
-
-> **⚠️ Warning:** Trusted Web Activity support in Auth0.Android is still experimental and can change in the future. 
->
-> Please test it thoroughly in all the targeted browsers and OS variants and let us know your feedback.
+### Trusted Web Activity
 
 Trusted Web Activity is a feature provided by some browsers to provide a native look and feel.
 
