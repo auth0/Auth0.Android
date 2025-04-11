@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
-import com.auth0.android.annotation.ExperimentalAuth0Api
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
 import com.auth0.android.result.Credentials
@@ -210,9 +209,7 @@ public object WebAuthProvider {
          * Launches the Logout experience with a native feel (without address bar). For this to work,
          * you have to setup the app as trusted following the steps mentioned [here](https://github.com/auth0/Auth0.Android/blob/main/EXAMPLES.md#trusted-web-activity-experimental).
          *
-         * This is still an experimental feature, test it thoroughly in the targeted devices and OS variants and let us know your feedback
          */
-        @ExperimentalAuth0Api
         public fun withTrustedWebActivity(): LogoutBuilder {
             launchAsTwa = true
             return this
@@ -504,9 +501,7 @@ public object WebAuthProvider {
          * Launches the Login experience with a native feel (without address bar). For this to work,
          * you have to setup the app as trusted following the steps mentioned [here](https://github.com/auth0/Auth0.Android/blob/main/EXAMPLES.md#trusted-web-activity-experimental).
          *
-         * This is still an experimental feature, test it thoroughly in the targeted devices and OS variants and let us know your feedback
          */
-        @ExperimentalAuth0Api
         public fun withTrustedWebActivity(): Builder {
             launchAsTwa = true
             return this
