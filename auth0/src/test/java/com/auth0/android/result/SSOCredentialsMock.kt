@@ -1,6 +1,6 @@
 package com.auth0.android.result
 
-public class SessionTransferCredentialsMock {
+public class SSOCredentialsMock {
 
     public companion object {
 
@@ -11,8 +11,8 @@ public class SessionTransferCredentialsMock {
             type: String,
             refreshToken: String?,
             expiresIn: Int
-        ): SessionTransferCredentials {
-            return SessionTransferCredentials(
+        ): SSOCredentials {
+            return SSOCredentials(
                 accessToken,idToken, issuedTokenType, type, expiresIn, refreshToken
             )
         }

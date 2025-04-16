@@ -16,7 +16,7 @@ import com.auth0.android.result.Authentication
 import com.auth0.android.result.Challenge
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
-import com.auth0.android.result.SessionTransferCredentials
+import com.auth0.android.result.SSOCredentials
 import com.auth0.android.result.UserProfile
 import com.auth0.android.util.Auth0UserAgent
 import com.auth0.android.util.AuthenticationAPIMockServer
@@ -2355,10 +2355,10 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public fun shouldFetchSessionTransferToken() {
+    public fun shouldSsoExchange() {
         mockAPI.willReturnSuccessfulLogin()
-        val callback = MockAuthenticationCallback<SessionTransferCredentials>()
-        client.fetchSessionTransferToken("refresh-token")
+        val callback = MockAuthenticationCallback<SSOCredentials>()
+        client.ssoExchange("refresh-token")
             .start(callback)
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
@@ -2381,15 +2381,15 @@ public class AuthenticationAPIClientTest {
         )
         assertThat(
             callback, AuthenticationCallbackMatcher.hasPayloadOfType(
-                SessionTransferCredentials::class.java
+                SSOCredentials::class.java
             )
         )
     }
 
     @Test
-    public fun shouldFetchSessionTransferTokenSync() {
+    public fun shouldSsoExchangeSync() {
         mockAPI.willReturnSuccessfulLogin()
-        val sessionTransferCredentials = client.fetchSessionTransferToken("refresh-token")
+        val sessionTransferCredentials = client.ssoExchange("refresh-token")
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
@@ -2411,10 +2411,10 @@ public class AuthenticationAPIClientTest {
 
     @Test
     @ExperimentalCoroutinesApi
-    public fun shouldAwaitFetchSessionTransferToken(): Unit = runTest {
+    public fun shouldAwaitSsoExchange(): Unit = runTest {
         mockAPI.willReturnSuccessfulLogin()
         val ssoCredentials = client
-            .fetchSessionTransferToken("refresh-token")
+            .ssoExchange("refresh-token")
             .await()
         val request = mockAPI.takeRequest()
         assertThat(

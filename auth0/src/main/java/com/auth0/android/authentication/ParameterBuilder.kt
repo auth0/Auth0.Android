@@ -160,9 +160,6 @@ public class ParameterBuilder private constructor(parameters: Map<String, String
         public const val GRANT_TYPE_TOKEN_EXCHANGE: String =
             "urn:ietf:params:oauth:grant-type:token-exchange"
         public const val GRANT_TYPE_PASSKEY :String = "urn:okta:params:oauth:grant-type:webauthn"
-        public const val TOKEN_TYPE_REFRESH_TOKEN :String = "urn:ietf:params:oauth:token-type:refresh_token"
-        public const val TOKEN_TYPE_SESSION_TRANSFER_TOKEN :String = "urn:auth0:params:oauth:token-type:session_transfer_token"
-        public const val SCOPE_OPENID: String = "openid"
         public const val SCOPE_OFFLINE_ACCESS: String = "openid offline_access"
         public const val SCOPE_KEY: String = "scope"
         public const val REFRESH_TOKEN_KEY: String = "refresh_token"

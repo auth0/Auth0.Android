@@ -8,8 +8,8 @@ import com.auth0.android.request.Request
 import com.auth0.android.request.internal.Jwt
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.CredentialsMock
-import com.auth0.android.result.SessionTransferCredentials
-import com.auth0.android.result.SessionTransferCredentialsMock
+import com.auth0.android.result.SSOCredentials
+import com.auth0.android.result.SSOCredentialsMock
 import com.auth0.android.util.Clock
 import com.nhaarman.mockitokotlin2.KArgumentCaptor
 import com.nhaarman.mockitokotlin2.any
@@ -57,10 +57,10 @@ public class CredentialsManagerTest {
     private lateinit var request: Request<Credentials, AuthenticationException>
 
     @Mock
-    private lateinit var sessionTransferCredentialsRequest: Request<SessionTransferCredentials, AuthenticationException>
+    private lateinit var SSOCredentialsRequest: Request<SSOCredentials, AuthenticationException>
 
     @Mock
-    private lateinit var ssoCallback: Callback<SessionTransferCredentials, CredentialsManagerException>
+    private lateinit var ssoCallback: Callback<SSOCredentials, CredentialsManagerException>
 
     @Mock
     private lateinit var jwtDecoder: JWTDecoder
@@ -71,7 +71,7 @@ public class CredentialsManagerTest {
 
     private val exceptionCaptor: KArgumentCaptor<CredentialsManagerException> = argumentCaptor()
 
-    private val sessionTransferCredentialsCaptor: KArgumentCaptor<SessionTransferCredentials> = argumentCaptor()
+    private val SSOCredentialsCaptor: KArgumentCaptor<SSOCredentials> = argumentCaptor()
 
     @get:Rule
     public var exception: ExpectedException = ExpectedException.none()
@@ -222,46 +222,46 @@ public class CredentialsManagerTest {
     }
 
     @Test
-    public fun shouldNotSaveIfTheSessionTransferCredentialsHasNoRefreshToken() {
+    public fun shouldNotSaveIfTheSSOCredentialsHasNoRefreshToken() {
         verifyZeroInteractions(storage)
-        val ssoCredentials = SessionTransferCredentialsMock.create(
+        val ssoCredentials = SSOCredentialsMock.create(
             "accessToken", "identityToken",
             "issuedTokenType", "tokenType", null, 60
         )
-        manager.saveSessionTransferCredentials(ssoCredentials)
+        manager.saveSsoCredentials(ssoCredentials)
     }
 
     @Test
-    public fun shouldNotSaveIfTheNewSessionTransferCredentialRefreshTokenIsSameAsTheExistingOne() {
+    public fun shouldNotSaveIfTheNewSSOCredentialRefreshTokenIsSameAsTheExistingOne() {
         verifyNoMoreInteractions(storage)
-        val ssoCredentials = SessionTransferCredentialsMock.create(
+        val ssoCredentials = SSOCredentialsMock.create(
             "accessToken", "identityToken",
             "issuedTokenType", "tokenType", "refresh_token", 60
         )
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token"))
             .thenReturn("refresh_token")
-        manager.saveSessionTransferCredentials(ssoCredentials)
+        manager.saveSsoCredentials(ssoCredentials)
         verify(storage, times(0)).store("com.auth0.refresh_token", "refresh_token")
     }
 
     @Test
-    public fun shouldSaveTheRefreshTokenIfTheNewSessionTransferRefreshTokenIsNotSameAsTheOldOne() {
+    public fun shouldSaveTheRefreshTokenIfTheNewSSOCredentialsRefreshTokenIsNotSameAsTheOldOne() {
         verifyNoMoreInteractions(storage)
-        val ssoCredentials = SessionTransferCredentialsMock.create(
+        val ssoCredentials = SSOCredentialsMock.create(
             "accessToken", "identityToken",
             "issuedTokenType", "tokenType", "refresh_token", 60
         )
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token"))
             .thenReturn("refresh-token")
-        manager.saveSessionTransferCredentials(ssoCredentials)
+        manager.saveSsoCredentials(ssoCredentials)
         verify(storage).store("com.auth0.refresh_token", "refresh_token")
     }
 
     @Test
-    public fun shouldThrowExceptionIfNoExistingRefreshTokenExistWhenGettingSessionTransferCredentials() {
+    public fun shouldThrowExceptionIfNoExistingRefreshTokenExistWhenGettingSSOCredentials() {
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token"))
             .thenReturn(null)
-        manager.getSessionTransferCredentials(ssoCallback)
+        manager.getSsoCredentials(ssoCallback)
         verify(ssoCallback).onFailure(
             exceptionCaptor.capture()
         )
@@ -274,13 +274,13 @@ public class CredentialsManagerTest {
     }
 
     @Test
-    public fun shouldSaveTheNewRefreshTokenWhenGettingTheSessionTransferCredentials() {
+    public fun shouldSaveTheNewRefreshTokenWhenGettingTheSSOCredentials() {
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token"))
             .thenReturn("refresh_token_old")
-        Mockito.`when`(client.fetchSessionTransferToken("refresh_token_old"))
-            .thenReturn(sessionTransferCredentialsRequest)
-        Mockito.`when`(sessionTransferCredentialsRequest.execute()).thenReturn(
-            SessionTransferCredentialsMock.create(
+        Mockito.`when`(client.ssoExchange("refresh_token_old"))
+            .thenReturn(SSOCredentialsRequest)
+        Mockito.`when`(SSOCredentialsRequest.execute()).thenReturn(
+            SSOCredentialsMock.create(
                 "web-sso-token",
                 "identity-token",
                 "issued-token-type",
@@ -289,11 +289,11 @@ public class CredentialsManagerTest {
                 60
             )
         )
-        manager.getSessionTransferCredentials(ssoCallback)
+        manager.getSsoCredentials(ssoCallback)
         verify(ssoCallback).onSuccess(
-            sessionTransferCredentialsCaptor.capture()
+            SSOCredentialsCaptor.capture()
         )
-        val credentials = sessionTransferCredentialsCaptor.firstValue
+        val credentials = SSOCredentialsCaptor.firstValue
         MatcherAssert.assertThat(credentials.sessionTransferToken, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(credentials.sessionTransferToken, Is.`is`("web-sso-token"))
         MatcherAssert.assertThat(credentials.tokenType, Is.`is`("token-type"))
@@ -304,18 +304,18 @@ public class CredentialsManagerTest {
     }
 
     @Test
-    public fun shouldFailOnGetNewSessionTransferCredentialsWhenRefreshTokenExpired() {
+    public fun shouldFailOnGetNewSSOCredentialsWhenRefreshTokenExpired() {
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
         Mockito.`when`(
-            client.fetchSessionTransferToken("refreshToken")
-        ).thenReturn(sessionTransferCredentialsRequest)
+            client.ssoExchange("refreshToken")
+        ).thenReturn(SSOCredentialsRequest)
         //Trigger failure
         val authenticationException = AuthenticationException(
             "invalid_grant",
             "Unknown or invalid refresh token."
         )
-        Mockito.`when`(sessionTransferCredentialsRequest.execute()).thenThrow(authenticationException)
-        manager.getSessionTransferCredentials(ssoCallback)
+        Mockito.`when`(SSOCredentialsRequest.execute()).thenThrow(authenticationException)
+        manager.getSsoCredentials(ssoCallback)
         verify(ssoCallback).onFailure(
             exceptionCaptor.capture()
         )
@@ -324,17 +324,17 @@ public class CredentialsManagerTest {
         MatcherAssert.assertThat(exception.cause, Is.`is`(authenticationException))
         MatcherAssert.assertThat(
             exception.message,
-            Is.`is`("An error occurred while trying to use the Refresh Token to renew the Credentials.")
+            Is.`is`("The exchange of the refresh token for SSO credentials failed.")
         )
     }
 
     @Test
     @ExperimentalCoroutinesApi
-    public fun shouldFailOnAwaitSessionTransferCredentialsWhenNoRefreshTokenWasSaved(): Unit = runTest {
+    public fun shouldFailOnAwaitSSOCredentialsWhenNoRefreshTokenWasSaved(): Unit = runTest {
         verifyNoMoreInteractions(client)
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn(null)
         val exception = assertThrows(CredentialsManagerException::class.java) {
-            runBlocking { manager.awaitSessionTransferCredentials() }
+            runBlocking { manager.awaitSsoCredentials() }
         }
         MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(
@@ -345,13 +345,13 @@ public class CredentialsManagerTest {
 
     @Test
     @ExperimentalCoroutinesApi
-    public fun shouldSaveNewRefreshingTokenOnAwaitSessionTransferCredentials(): Unit = runTest {
+    public fun shouldSaveNewRefreshingTokenOnAwaitSSOCredentials(): Unit = runTest {
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token"))
             .thenReturn("refresh_token_old")
-        Mockito.`when`(client.fetchSessionTransferToken("refresh_token_old"))
-            .thenReturn(sessionTransferCredentialsRequest)
-        Mockito.`when`(sessionTransferCredentialsRequest.execute()).thenReturn(
-            SessionTransferCredentialsMock.create(
+        Mockito.`when`(client.ssoExchange("refresh_token_old"))
+            .thenReturn(SSOCredentialsRequest)
+        Mockito.`when`(SSOCredentialsRequest.execute()).thenReturn(
+            SSOCredentialsMock.create(
                 "web-sso-token",
                 "identity-token",
                 "issued-token-type",
@@ -360,7 +360,7 @@ public class CredentialsManagerTest {
                 60
             )
         )
-        val credentials = manager.awaitSessionTransferCredentials()
+        val credentials = manager.awaitSsoCredentials()
         MatcherAssert.assertThat(credentials.sessionTransferToken, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(credentials.sessionTransferToken, Is.`is`("web-sso-token"))
         MatcherAssert.assertThat(credentials.tokenType, Is.`is`("token-type"))

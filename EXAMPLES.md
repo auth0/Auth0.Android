@@ -545,14 +545,14 @@ authentication
 
 This feature allows you to authenticate a user in a web session using the refresh token obtained from the native session without requiring the user to log in again.
 
-Call the api to fetch a webSessionTransferToken in exchange for a refresh token. Use the obtained token to authenticate the user by calling the `/authorize` end point.
+Call the API to fetch a webSessionTransferToken in exchange for a refresh token. Use the obtained token to authenticate the user by calling the `/authorize` end point by passing as a query parameter or a cookie value.
 
 ```kotlin
     authentication
-    .fetchSessionTransferToken("refresh_token")
-    .start(object : Callback<SessionTransferCredentials, AuthenticationException> {
-        override fun onSuccess(result: SessionTransferCredentials) {
-            // Use the web_sso token to authenticate the user in a web session in your app
+    .ssoExchange("refresh_token")
+    .start(object : Callback<SSOCredentials, AuthenticationException> {
+        override fun onSuccess(result: SSOCredentials) {
+            // Use the sessionTransferToken token to authenticate the user in a web session in your app
         }
 
         override fun onFailure(exception: AuthenticationException) {
@@ -567,8 +567,8 @@ Call the api to fetch a webSessionTransferToken in exchange for a refresh token.
 
 ``` kotlin 
 try {
-    val sessionTransferCredentials = authentication
-        .fetchSessionTransferToken("refresh_token")
+    val ssoCredentials = authentication
+        .ssoExchange("refresh_token")
         .await()
 } catch (e: AuthenticationException) {
     e.printStacktrace()
@@ -581,10 +581,10 @@ try {
 
 ```java
 authentication
-    .fetchSessionTransferToken("refresh_token")
-    .start(new Callback<SessionTransferCredentials, AuthenticationException>() {
+    .ssoExchange("refresh_token")
+    .start(new Callback<SSOCredentials, AuthenticationException>() {
         @Override
-        public void onSuccess(@Nullable SessionTransferCredentials result) {
+        public void onSuccess(@Nullable SSOCredentials result) {
             // Handle success
         }
         @Override

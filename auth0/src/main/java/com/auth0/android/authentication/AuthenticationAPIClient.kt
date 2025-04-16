@@ -14,7 +14,7 @@ import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
 import com.auth0.android.result.PasskeyChallenge
 import com.auth0.android.result.PasskeyRegistrationChallenge
-import com.auth0.android.result.SessionTransferCredentials
+import com.auth0.android.result.SSOCredentials
 import com.auth0.android.result.UserProfile
 import com.google.gson.Gson
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -923,19 +923,25 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     }
 
     /**
-     * Creates a new request to fetch a web sso token in exchange for a refresh token.
+     * Creates a new request to exchange a refresh token for a session transfer token that can be used to perform web single sign-on.
+     *
+     * When opening your website on any browser or web view, add the session transfer token to the URL as a query
+     * parameter. Then your website can redirect the user to Auth0's `/authorize` endpoint, passing along the query
+     * parameter with the session transfer token. For example,
+     * `https://example.com/login?session_transfer_token=THE_TOKEN`.
+     *
      *
      * @param refreshToken A valid refresh token obtained as part of Auth0 authentication
-     * @return a request to fetch a web sso token
+     * @return a request to fetch a session transfer token
      *
      */
-    public fun fetchSessionTransferToken(refreshToken: String): Request<SessionTransferCredentials, AuthenticationException> {
+    public fun ssoExchange(refreshToken: String): Request<SSOCredentials, AuthenticationException> {
         val params = ParameterBuilder.newBuilder()
             .setGrantType(ParameterBuilder.REFRESH_TOKEN_KEY)
             .setAudience("urn:${auth0.domain}:session_transfer")
             .set(ParameterBuilder.REFRESH_TOKEN_KEY, refreshToken)
             .asDictionary()
-        return loginWithTokenGeneric<SessionTransferCredentials>(params)
+        return loginWithTokenGeneric<SSOCredentials>(params)
     }
 
     /**
