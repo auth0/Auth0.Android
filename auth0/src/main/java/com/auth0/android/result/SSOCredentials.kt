@@ -3,11 +3,11 @@ package com.auth0.android.result
 import com.google.gson.annotations.SerializedName
 
 /**
- * Holds the token credentials required for web SSO .
+ * Holds the token credentials required for web SSO.
  */
 public data class SSOCredentials(
     /**
-     * The token used for web SSO .
+     * The token used for web SSO.
      *
      * @return the session transfer token.
      */
@@ -30,7 +30,7 @@ public data class SSOCredentials(
     @field:SerializedName("id_token") public val idToken: String,
 
     /**
-     * Type of the token issued.In this case, an Auth0 session transfer token
+     * Type of the token issued. In this case, an Auth0 session transfer token.
      *
      * @return the issued token type.
      */
@@ -47,7 +47,7 @@ public data class SSOCredentials(
 
     /**
      * Expiration duration of the session transfer token in seconds. Session transfer tokens are short-lived and expire after a few minutes.
-     * Once expired, the session transfer tokens can no longer be used for  web SSO.
+     * Once expired, the session transfer tokens can no longer be used for web SSO.
      *
      * @return the expiration duration of this session transfer token
      */
