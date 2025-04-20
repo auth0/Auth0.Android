@@ -73,31 +73,35 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
     }
 
     /**
-     * Stores the given [SSOCredentials] refresh token in the storage.
-     * This method must be called if the SSOCredentials are obtained by directly invoking [AuthenticationAPIClient.fetchSessionToken] api and
-     * [rotating refresh token](https://auth0.com/docs/secure/tokens/refresh-tokens/refresh-token-rotation) are enabled for
-     * the client. Method will silently return ,if the passed credentials has no refresh token.
+     * Creates a new request to exchange a refresh token for a session transfer token that can be used to perform web single sign-on.
      *
-     * @param ssoCredentials the credentials to save in the storage.
+     * When opening your website on any browser or web view, add the session transfer token to the URL as a query
+     * parameter. Then your website can redirect the user to Auth0's `/authorize` endpoint, passing along the query
+     * parameter with the session transfer token. For example,
+     *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
+     *
+     * It will fail with [CredentialsManagerException] if the existing refresh_token is null or no longer valid.
+     * This method will handle saving the refresh_token, if a new one is issued.
      */
-    override fun saveSsoCredentials(ssoCredentials: SSOCredentials) {
-        if (ssoCredentials.refreshToken.isNullOrEmpty())
-            return // No refresh token to save
-        serialExecutor.execute {
-            val existingRefreshToken = storage.retrieveString(KEY_REFRESH_TOKEN)
-            // Checking if the existing one needs to be replaced with the new one
-            if (ssoCredentials.refreshToken == existingRefreshToken)
-                return@execute
-            storage.store(KEY_REFRESH_TOKEN, ssoCredentials.refreshToken)
-        }
+    override fun getSsoCredentials(callback: Callback<SSOCredentials, CredentialsManagerException>) {
+        getSsoCredentials(emptyMap(), callback)
     }
 
     /**
-     * Fetches a new [SSOCredentials] . It will fail with [CredentialsManagerException]
-     * if the existing refresh_token is null or no longer valid. This method will handle saving the refresh_token,
-     * if  a new one is issued
+     * Creates a new request to exchange a refresh token for a session transfer token that can be used to perform web single sign-on.
+     *
+     * When opening your website on any browser or web view, add the session transfer token to the URL as a query
+     * parameter. Then your website can redirect the user to Auth0's `/authorize` endpoint, passing along the query
+     * parameter with the session transfer token. For example,
+     *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
+     *
+     * It will fail with [CredentialsManagerException] if the existing refresh_token is null or no longer valid.
+     * This method will handle saving the refresh_token, if a new one is issued.
      */
-    override fun getSsoCredentials(callback: Callback<SSOCredentials, CredentialsManagerException>) {
+    override fun getSsoCredentials(
+        parameters: Map<String, String>,
+        callback: Callback<SSOCredentials, CredentialsManagerException>
+    ) {
         serialExecutor.execute {
             val refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN)
             if (refreshToken.isNullOrEmpty()) {
@@ -105,19 +109,18 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                 return@execute
             }
 
+            val request = authenticationClient.ssoExchange(refreshToken)
             try {
-                val sessionCredentials =
-                    authenticationClient.fetchSessionToken(refreshToken)
-                        .execute()
-                saveSsoCredentials(sessionCredentials)
-                callback.onSuccess(sessionCredentials)
+                if (parameters.isNotEmpty()) {
+                    request.addParameters(parameters)
+                }
+                val sessionTransferCredentials = request.execute()
+                saveSsoCredentials(sessionTransferCredentials)
+                callback.onSuccess(sessionTransferCredentials)
             } catch (error: AuthenticationException) {
                 val exception = when {
-                    error.isRefreshTokenDeleted ||
-                            error.isInvalidRefreshToken -> CredentialsManagerException.Code.RENEW_FAILED
-
                     error.isNetworkError -> CredentialsManagerException.Code.NO_NETWORK
-                    else -> CredentialsManagerException.Code.API_ERROR
+                    else -> CredentialsManagerException.Code.SSO_EXCHANGE_FAILED
                 }
                 callback.onFailure(
                     CredentialsManagerException(
@@ -130,23 +133,48 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
     }
 
     /**
-     * Fetches a new [SSOCredentials] . It will fail with [CredentialsManagerException]
-     * if the existing refresh_token is null or no longer valid. This method will handle saving the refresh_token,
-     * if  a new one is issued
+     * Creates a new request to exchange a refresh token for a session transfer token that can be used to perform web single sign-on.
+     *
+     * When opening your website on any browser or web view, add the session transfer token to the URL as a query
+     * parameter. Then your website can redirect the user to Auth0's `/authorize` endpoint, passing along the query
+     * parameter with the session transfer token. For example,
+     *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
+     *
+     * It will fail with [CredentialsManagerException] if the existing refresh_token is null or no longer valid.
+     * This method will handle saving the refresh_token, if a new one is issued.
      */
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
     override suspend fun awaitSsoCredentials(): SSOCredentials {
-        return suspendCancellableCoroutine { continuation ->
-            getSsoCredentials(object : Callback<SSOCredentials, CredentialsManagerException> {
-                override fun onSuccess(result: SSOCredentials) {
-                    continuation.resume(result)
-                }
+        return awaitSsoCredentials(emptyMap())
+    }
 
-                override fun onFailure(error: CredentialsManagerException) {
-                    continuation.resumeWithException(error)
-                }
-            })
+    /**
+     * Creates a new request to exchange a refresh token for a session transfer token that can be used to perform web single sign-on.
+     *
+     * When opening your website on any browser or web view, add the session transfer token to the URL as a query
+     * parameter. Then your website can redirect the user to Auth0's `/authorize` endpoint, passing along the query
+     * parameter with the session transfer token. For example,
+     *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
+     *
+     * It will fail with [CredentialsManagerException] if the existing refresh_token is null or no longer valid.
+     * This method will handle saving the refresh_token, if a new one is issued.
+     */
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    override suspend fun awaitSsoCredentials(parameters: Map<String, String>): SSOCredentials {
+        return suspendCancellableCoroutine { continuation ->
+            getSsoCredentials(
+                parameters,
+                object : Callback<SSOCredentials, CredentialsManagerException> {
+                    override fun onSuccess(result: SSOCredentials) {
+                        continuation.resume(result)
+                    }
+
+                    override fun onFailure(error: CredentialsManagerException) {
+                        continuation.resumeWithException(error)
+                    }
+                })
         }
     }
 
@@ -241,7 +269,8 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         forceRefresh: Boolean
     ): Credentials {
         return suspendCancellableCoroutine { continuation ->
-            getCredentials(scope,
+            getCredentials(
+                scope,
                 minTtl,
                 parameters,
                 headers,
@@ -612,6 +641,24 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      */
     override fun clearApiCredentials(audience: String) {
         storage.remove(audience)
+    }
+
+    /**
+     * Helper method to store the given [SSOCredentials] refresh token in the storage.
+     * Method will silently return if the passed credentials have no refresh token.
+     *
+     * @param ssoCredentials the credentials to save in the storage.
+     */
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal fun saveSsoCredentials(ssoCredentials: SSOCredentials) {
+        storage.store(KEY_ID_TOKEN, ssoCredentials.idToken)
+        val existingRefreshToken = storage.retrieveString(KEY_REFRESH_TOKEN)
+        // Checking if the existing one needs to be replaced with the new one
+        if (ssoCredentials.refreshToken.isNullOrEmpty())
+            return // No refresh token to save
+        if (ssoCredentials.refreshToken == existingRefreshToken)
+            return // Same refresh token, no need to save
+        storage.store(KEY_REFRESH_TOKEN, ssoCredentials.refreshToken)
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)

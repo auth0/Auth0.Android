@@ -2355,10 +2355,10 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public fun shouldFetchSessionToken() {
+    public fun shouldSsoExchange() {
         mockAPI.willReturnSuccessfulLogin()
         val callback = MockAuthenticationCallback<SSOCredentials>()
-        client.fetchSessionToken("refresh-token")
+        client.ssoExchange("refresh-token")
             .start(callback)
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
@@ -2372,16 +2372,12 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(
             body,
-            Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
+            Matchers.hasEntry("grant_type", ParameterBuilder.REFRESH_TOKEN_KEY)
         )
-        assertThat(body, Matchers.hasEntry("subject_token", "refresh-token"))
+        assertThat(body, Matchers.hasEntry("audience", "urn:${auth0.domain}:session_transfer"))
         assertThat(
             body,
-            Matchers.hasEntry("subject_token_type", ParameterBuilder.TOKEN_TYPE_REFRESH_TOKEN)
-        )
-        assertThat(
-            body,
-            Matchers.hasEntry("requested_token_type", ParameterBuilder.TOKEN_TYPE_SESSION_TOKEN)
+            Matchers.hasEntry("refresh_token", "refresh-token")
         )
         assertThat(
             callback, AuthenticationCallbackMatcher.hasPayloadOfType(
@@ -2391,9 +2387,9 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public fun shouldFetchSessionTokenSync() {
+    public fun shouldSsoExchangeSync() {
         mockAPI.willReturnSuccessfulLogin()
-        val ssoCredentials = client.fetchSessionToken("refresh-token")
+        val sessionTransferCredentials = client.ssoExchange("refresh-token")
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
@@ -2406,26 +2402,19 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(
             body,
-            Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
+            Matchers.hasEntry("grant_type", ParameterBuilder.REFRESH_TOKEN_KEY)
         )
-        assertThat(body, Matchers.hasEntry("subject_token", "refresh-token"))
-        assertThat(
-            body,
-            Matchers.hasEntry("subject_token_type", ParameterBuilder.TOKEN_TYPE_REFRESH_TOKEN)
-        )
-        assertThat(
-            body,
-            Matchers.hasEntry("requested_token_type", ParameterBuilder.TOKEN_TYPE_SESSION_TOKEN)
-        )
-        assertThat(ssoCredentials, Matchers.`is`(Matchers.notNullValue()))
+        assertThat(body, Matchers.hasEntry("audience", "urn:${auth0.domain}:session_transfer"))
+        assertThat(body, Matchers.hasEntry("refresh_token", "refresh-token"))
+        assertThat(sessionTransferCredentials, Matchers.`is`(Matchers.notNullValue()))
     }
 
     @Test
     @ExperimentalCoroutinesApi
-    public fun shouldAwaitFetchSessionToken(): Unit = runTest {
+    public fun shouldAwaitSsoExchange(): Unit = runTest {
         mockAPI.willReturnSuccessfulLogin()
         val ssoCredentials = client
-            .fetchSessionToken("refresh-token")
+            .ssoExchange("refresh-token")
             .await()
         val request = mockAPI.takeRequest()
         assertThat(
@@ -2438,16 +2427,12 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(
             body,
-            Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
+            Matchers.hasEntry("grant_type", ParameterBuilder.REFRESH_TOKEN_KEY)
         )
-        assertThat(body, Matchers.hasEntry("subject_token", "refresh-token"))
+        assertThat(body, Matchers.hasEntry("refresh_token", "refresh-token"))
         assertThat(
             body,
-            Matchers.hasEntry("subject_token_type", ParameterBuilder.TOKEN_TYPE_REFRESH_TOKEN)
-        )
-        assertThat(
-            body,
-            Matchers.hasEntry("requested_token_type", ParameterBuilder.TOKEN_TYPE_SESSION_TOKEN)
+            Matchers.hasEntry("audience", "urn:${auth0.domain}:session_transfer")
         )
         assertThat(ssoCredentials, Matchers.`is`(Matchers.notNullValue()))
     }

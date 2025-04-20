@@ -938,18 +938,23 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     }
 
     /**
-     * Creates a new request to fetch a session token in exchange for a refresh token.
+     * Creates a new request to exchange a refresh token for a session transfer token that can be used to perform web single sign-on.
+     *
+     * When opening your website on any browser or web view, add the session transfer token to the URL as a query
+     * parameter. Then your website can redirect the user to Auth0's `/authorize` endpoint, passing along the query
+     * parameter with the session transfer token. For example,
+     * `https://example.com/login?session_transfer_token=THE_TOKEN`.
+     *
      *
      * @param refreshToken A valid refresh token obtained as part of Auth0 authentication
-     * @return a request to fetch a session token
+     * @return a request to fetch a session transfer token
+     *
      */
-    internal fun fetchSessionToken(refreshToken: String): Request<SSOCredentials, AuthenticationException> {
+    public fun ssoExchange(refreshToken: String): Request<SSOCredentials, AuthenticationException> {
         val params = ParameterBuilder.newBuilder()
-            .setClientId(clientId)
-            .setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
-            .set(SUBJECT_TOKEN_KEY, refreshToken)
-            .set(SUBJECT_TOKEN_TYPE_KEY, ParameterBuilder.TOKEN_TYPE_REFRESH_TOKEN)
-            .set(REQUESTED_TOKEN_TYPE_KEY, ParameterBuilder.TOKEN_TYPE_SESSION_TOKEN)
+            .setGrantType(ParameterBuilder.REFRESH_TOKEN_KEY)
+            .setAudience("urn:${auth0.domain}:session_transfer")
+            .set(ParameterBuilder.REFRESH_TOKEN_KEY, refreshToken)
             .asDictionary()
         return loginWithTokenGeneric<SSOCredentials>(params)
     }
