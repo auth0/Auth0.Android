@@ -111,61 +111,55 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             storage.store(KEY_CAN_REFRESH, canRefresh)
         } catch (e: IncompatibleDeviceException) {
             throw CredentialsManagerException(
-                CredentialsManagerException.Code.INCOMPATIBLE_DEVICE,
-                e
+                CredentialsManagerException.Code.INCOMPATIBLE_DEVICE, e
             )
-        } catch (e: CryptoException) {
-            /*
+        } catch (e: CryptoException) {/*
              * If the keys were invalidated in the call above a good new pair is going to be available
              * to use on the next call. We clear any existing credentials so #hasValidCredentials returns
              * a true value. Retrying this operation will succeed.
              */
             clearCredentials()
             throw CredentialsManagerException(
-                CredentialsManagerException.Code.CRYPTO_EXCEPTION,
-                e
+                CredentialsManagerException.Code.CRYPTO_EXCEPTION, e
             )
         }
     }
 
     /**
-     * Stores the given [SSOCredentials] refresh token in the storage.
-     * This method must be called if the SSOCredentials are obtained by directly invoking [AuthenticationAPIClient.fetchSessionToken] api and
-     * [rotating refresh token](https://auth0.com/docs/secure/tokens/refresh-tokens/refresh-token-rotation) are enabled for
-     * the client. Method will silently return ,if the passed credentials has no refresh token.
+     * Creates a new request to exchange a refresh token for a session transfer token that can be used to perform web single sign-on.
      *
-     * @param ssoCredentials the credentials to save in the storage.
+     * When opening your website on any browser or web view, add the session transfer token to the URL as a query
+     * parameter. Then your website can redirect the user to Auth0's `/authorize` endpoint, passing along the query
+     * parameter with the session transfer token. For example,
+     *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
+     *
+     * It will fail with [CredentialsManagerException] if the existing refresh_token is null or no longer valid.
+     * This method will handle saving the refresh_token, if a new one is issued.
      */
-    override fun saveSsoCredentials(ssoCredentials: SSOCredentials) {
-        if (ssoCredentials.refreshToken.isNullOrEmpty()) return // No refresh token to save
+    override fun getSsoCredentials(callback: Callback<SSOCredentials, CredentialsManagerException>) {
+        getSsoCredentials(emptyMap(), callback)
+    }
+
+    /**
+     * Creates a new request to exchange a refresh token for a session transfer token that can be used to perform web single sign-on.
+     *
+     * When opening your website on any browser or web view, add the session transfer token to the URL as a query
+     * parameter. Then your website can redirect the user to Auth0's `/authorize` endpoint, passing along the query
+     * parameter with the session transfer token. For example,
+     *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
+     *
+     * It will fail with [CredentialsManagerException] if the existing refresh_token is null or no longer valid.
+     * This method will handle saving the refresh_token, if a new one is issued.
+     */
+    override fun getSsoCredentials(
+        parameters: Map<String, String>,
+        callback: Callback<SSOCredentials, CredentialsManagerException>
+    ) {
         serialExecutor.execute {
             lateinit var existingCredentials: Credentials
             try {
                 existingCredentials = getExistingCredentials()
             } catch (exception: CredentialsManagerException) {
-                Log.e(TAG,"Error while fetching existing credentials", exception)
-                return@execute
-            }
-            // Checking if the existing one needs to be replaced with the new one
-            if (existingCredentials.refreshToken == ssoCredentials.refreshToken)
-                return@execute
-            val newCredentials =
-                existingCredentials.copy(refreshToken = ssoCredentials.refreshToken)
-            saveCredentials(newCredentials)
-        }
-    }
-
-    /**
-     * Fetches a new [SSOCredentials] . It will fail with [CredentialsManagerException]
-     * if the existing refresh_token is null or no longer valid. This method will handle saving the refresh_token,
-     * if  a new one is issued
-     */
-    override fun getSsoCredentials(callback: Callback<SSOCredentials, CredentialsManagerException>) {
-        serialExecutor.execute {
-            lateinit var existingCredentials:Credentials
-            try{
-                existingCredentials = getExistingCredentials()
-            }catch (exception:CredentialsManagerException){
                 callback.onFailure(exception)
                 return@execute
             }
@@ -173,24 +167,24 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
                 return@execute
             }
+
+            val request =
+                authenticationClient.ssoExchange(existingCredentials.refreshToken!!)
             try {
-                val sessionCredentials =
-                    authenticationClient.fetchSessionToken(existingCredentials.refreshToken!!)
-                        .execute()
+                if (parameters.isNotEmpty()) {
+                    request.addParameters(parameters)
+                }
+                val sessionCredentials = request.execute()
                 saveSsoCredentials(sessionCredentials)
                 callback.onSuccess(sessionCredentials)
             } catch (error: AuthenticationException) {
                 val exception = when {
-                    error.isRefreshTokenDeleted ||
-                            error.isInvalidRefreshToken -> CredentialsManagerException.Code.RENEW_FAILED
-
                     error.isNetworkError -> CredentialsManagerException.Code.NO_NETWORK
-                    else -> CredentialsManagerException.Code.API_ERROR
+                    else -> CredentialsManagerException.Code.SSO_EXCHANGE_FAILED
                 }
                 callback.onFailure(
                     CredentialsManagerException(
-                        exception,
-                        error
+                        exception, error
                     )
                 )
             } catch (error: CredentialsManagerException) {
@@ -203,23 +197,48 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     }
 
     /**
-     * Fetches a new [SSOCredentials] . It will fail with [CredentialsManagerException]
-     * if the existing refresh_token is null or no longer valid. This method will handle saving the refresh_token,
-     * if  a new one is issued
+     * Creates a new request to exchange a refresh token for a session transfer token that can be used to perform web single sign-on.
+     *
+     * When opening your website on any browser or web view, add the session transfer token to the URL as a query
+     * parameter. Then your website can redirect the user to Auth0's `/authorize` endpoint, passing along the query
+     * parameter with the session transfer token. For example,
+     *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
+     *
+     * It will fail with [CredentialsManagerException] if the existing refresh_token is null or no longer valid.
+     * This method will handle saving the refresh_token, if a new one is issued.
      */
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
     override suspend fun awaitSsoCredentials(): SSOCredentials {
-        return suspendCancellableCoroutine { continuation ->
-            getSsoCredentials(object : Callback<SSOCredentials, CredentialsManagerException> {
-                override fun onSuccess(result: SSOCredentials) {
-                    continuation.resume(result)
-                }
+        return awaitSsoCredentials(emptyMap())
+    }
 
-                override fun onFailure(error: CredentialsManagerException) {
-                    continuation.resumeWithException(error)
-                }
-            })
+    /**
+     * Creates a new request to exchange a refresh token for a session transfer token that can be used to perform web single sign-on.
+     *
+     * When opening your website on any browser or web view, add the session transfer token to the URL as a query
+     * parameter. Then your website can redirect the user to Auth0's `/authorize` endpoint, passing along the query
+     * parameter with the session transfer token. For example,
+     *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
+     *
+     * It will fail with [CredentialsManagerException] if the existing refresh_token is null or no longer valid.
+     * This method will handle saving the refresh_token, if a new one is issued.
+     */
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    override suspend fun awaitSsoCredentials(parameters: Map<String, String>): SSOCredentials {
+        return suspendCancellableCoroutine { continuation ->
+            getSsoCredentials(
+                parameters,
+                object : Callback<SSOCredentials, CredentialsManagerException> {
+                    override fun onSuccess(result: SSOCredentials) {
+                        continuation.resume(result)
+                    }
+
+                    override fun onFailure(error: CredentialsManagerException) {
+                        continuation.resumeWithException(error)
+                    }
+                })
         }
     }
 
@@ -254,8 +273,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
     override suspend fun awaitCredentials(
-        scope: String?,
-        minTtl: Int
+        scope: String?, minTtl: Int
     ): Credentials {
         return awaitCredentials(scope, minTtl, emptyMap())
     }
@@ -276,15 +294,10 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
     override suspend fun awaitCredentials(
-        scope: String?,
-        minTtl: Int,
-        parameters: Map<String, String>
+        scope: String?, minTtl: Int, parameters: Map<String, String>
     ): Credentials {
         return awaitCredentials(
-            scope,
-            minTtl,
-            parameters,
-            false
+            scope, minTtl, parameters, false
         )
     }
 
@@ -311,11 +324,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         forceRefresh: Boolean,
     ): Credentials {
         return awaitCredentials(
-            scope,
-            minTtl,
-            parameters,
-            mapOf(),
-            forceRefresh
+            scope, minTtl, parameters, mapOf(), forceRefresh
         )
     }
 
@@ -391,9 +400,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * @param callback the callback to receive the result in.
      */
     override fun getCredentials(
-        scope: String?,
-        minTtl: Int,
-        callback: Callback<Credentials, CredentialsManagerException>
+        scope: String?, minTtl: Int, callback: Callback<Credentials, CredentialsManagerException>
     ) {
         getCredentials(scope, minTtl, emptyMap(), callback)
     }
@@ -418,11 +425,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
         getCredentials(
-            scope,
-            minTtl,
-            parameters,
-            false,
-            callback
+            scope, minTtl, parameters, false, callback
         )
     }
 
@@ -449,12 +452,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
         getCredentials(
-            scope,
-            minTtl,
-            parameters,
-            mapOf(),
-            forceRefresh,
-            callback
+            scope, minTtl, parameters, mapOf(), forceRefresh, callback
         )
     }
 
@@ -492,12 +490,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     activity = fragmentActivity,
                     authenticationOptions = localAuthenticationOptions,
                     resultCallback = localAuthenticationResultCallback(
-                        scope,
-                        minTtl,
-                        parameters,
-                        headers,
-                        forceRefresh,
-                        callback
+                        scope, minTtl, parameters, headers, forceRefresh, callback
                     )
                 )
                 localAuthenticationManager.authenticate()
@@ -515,8 +508,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             object : Callback<Boolean, CredentialsManagerException> {
                 override fun onSuccess(result: Boolean) {
                     continueGetCredentials(
-                        scope, minTtl, parameters, headers, forceRefresh,
-                        callback
+                        scope, minTtl, parameters, headers, forceRefresh, callback
                     )
                 }
 
@@ -562,10 +554,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         val canRefresh = storage.retrieveBoolean(KEY_CAN_REFRESH)
         val emptyCredentials = TextUtils.isEmpty(encryptedEncoded)
         return !(emptyCredentials || willExpire(
-            expiresAt,
-            minTtl
-        ) &&
-                (canRefresh == null || !canRefresh))
+            expiresAt, minTtl
+        ) && (canRefresh == null || !canRefresh))
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
@@ -590,8 +580,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             } catch (e: IncompatibleDeviceException) {
                 callback.onFailure(
                     CredentialsManagerException(
-                        CredentialsManagerException.Code.INCOMPATIBLE_DEVICE,
-                        e
+                        CredentialsManagerException.Code.INCOMPATIBLE_DEVICE, e
                     )
                 )
                 return@execute
@@ -600,14 +589,12 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 clearCredentials()
                 callback.onFailure(
                     CredentialsManagerException(
-                        CredentialsManagerException.Code.CRYPTO_EXCEPTION,
-                        e
+                        CredentialsManagerException.Code.CRYPTO_EXCEPTION, e
                     )
                 )
                 return@execute
             }
-            val bridgeCredentials = gson.fromJson(json, OptionalCredentials::class.java)
-            /* OPTIONAL CREDENTIALS
+            val bridgeCredentials = gson.fromJson(json, OptionalCredentials::class.java)/* OPTIONAL CREDENTIALS
              * This bridge is required to prevent users from being logged out when
              * migrating from Credentials with optional Access Token and ID token
              */
@@ -658,8 +645,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 if (willAccessTokenExpire) {
                     val tokenLifetime = (expiresAt - currentTimeInMillis - minTtl * 1000) / -1000
                     val wrongTtlException = CredentialsManagerException(
-                        CredentialsManagerException.Code.LARGE_MIN_TTL,
-                        String.format(
+                        CredentialsManagerException.Code.LARGE_MIN_TTL, String.format(
                             Locale.getDefault(),
                             "The lifetime of the renewed Access Token (%d) is less than the minTTL requested (%d). Increase the 'Token Expiration' setting of your Auth0 API in the dashboard, or request a lower minTTL.",
                             tokenLifetime,
@@ -683,16 +669,14 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 )
             } catch (error: AuthenticationException) {
                 val exception = when {
-                    error.isRefreshTokenDeleted ||
-                            error.isInvalidRefreshToken -> CredentialsManagerException.Code.RENEW_FAILED
+                    error.isRefreshTokenDeleted || error.isInvalidRefreshToken -> CredentialsManagerException.Code.RENEW_FAILED
 
                     error.isNetworkError -> CredentialsManagerException.Code.NO_NETWORK
                     else -> CredentialsManagerException.Code.API_ERROR
                 }
                 callback.onFailure(
                     CredentialsManagerException(
-                        exception,
-                        error
+                        exception, error
                     )
                 )
                 return@execute
@@ -725,18 +709,15 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             throw CredentialsManagerException.NO_CREDENTIALS
         }
         val encrypted = Base64.decode(encryptedEncoded, Base64.DEFAULT)
-        val json: String
-        try {
-            json = String(crypto.decrypt(encrypted))
+        val json: String = try {
+            String(crypto.decrypt(encrypted))
         } catch (e: IncompatibleDeviceException) {
             throw CredentialsManagerException(
-                CredentialsManagerException.Code.INCOMPATIBLE_DEVICE,
-                e
+                CredentialsManagerException.Code.INCOMPATIBLE_DEVICE, e
             )
         } catch (e: CryptoException) {
             throw CredentialsManagerException(
-                CredentialsManagerException.Code.CRYPTO_EXCEPTION,
-                e
+                CredentialsManagerException.Code.CRYPTO_EXCEPTION, e
             )
         }
         val bridgeCredentials = gson.fromJson(json, OptionalCredentials::class.java)
@@ -754,6 +735,27 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun clearFragmentActivity() {
         fragmentActivity!!.clear()
+    }
+
+    /**
+     * Helper method to stores the given [ssoCredentials] refresh token in the storage.
+     * Method will silently return if the passed credentials have no refresh token.
+     *
+     * @param ssoCredentials the credentials to save in the storage.
+     */
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal fun saveSsoCredentials(ssoCredentials: SSOCredentials) {
+        val existingCredentials: Credentials = try {
+            getExistingCredentials()
+        } catch (exception: CredentialsManagerException) {
+            Log.e(TAG, "Error while fetching existing credentials", exception)
+            return
+        }
+        val newCredentials = existingCredentials.copy(
+            refreshToken = ssoCredentials.refreshToken
+                ?: existingCredentials.refreshToken, idToken = ssoCredentials.idToken
+        )
+        saveCredentials(newCredentials)
     }
 
     internal companion object {

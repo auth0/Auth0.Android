@@ -44,7 +44,8 @@ public class CredentialsManagerException :
         BIOMETRICS_INVALID_USER,
         BIOMETRIC_AUTHENTICATION_FAILED,
         NO_NETWORK,
-        API_ERROR
+        API_ERROR,
+        SSO_EXCHANGE_FAILED,
     }
 
     private var code: Code?
@@ -142,6 +143,8 @@ public class CredentialsManagerException :
             CredentialsManagerException(Code.NO_NETWORK)
         public val API_ERROR: CredentialsManagerException =
             CredentialsManagerException(Code.API_ERROR)
+        public val SSO_EXCHANGE_FAILED: CredentialsManagerException =
+            CredentialsManagerException(Code.SSO_EXCHANGE_FAILED)
 
 
         private fun getMessage(code: Code): String {
@@ -187,6 +190,7 @@ public class CredentialsManagerException :
                 Code.BIOMETRIC_AUTHENTICATION_FAILED -> "Biometric authentication failed."
                 Code.NO_NETWORK -> "Failed to execute the network request."
                 Code.API_ERROR -> "An error occurred while processing the request."
+                Code.SSO_EXCHANGE_FAILED ->"The exchange of the refresh token for SSO credentials failed."
             }
         }
     }
