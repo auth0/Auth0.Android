@@ -1778,6 +1778,43 @@ public class SecureCredentialsManagerTest {
         )
     }
 
+    @Test
+    public fun shouldGetAndFailToRenewExpiredCredentialsWhenAnyUnexpectedErrorOccurs() {
+        Mockito.`when`(localAuthenticationManager.authenticate()).then {
+            localAuthenticationManager.resultCallback.onSuccess(true)
+        }
+        val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS)
+        insertTestCredentials(false, true, true, expiresAt, "scope")
+        Mockito.`when`(
+            client.renewAuth("refreshToken")
+        ).thenReturn(request)
+        //Trigger failure
+        val runtimeError =
+            RuntimeException("Something went wrong")
+        Mockito.`when`(request.execute()).thenThrow(runtimeError)
+        manager.getCredentials(callback)
+        verify(callback).onFailure(
+            exceptionCaptor.capture()
+        )
+        verify(storage, never())
+            .store(anyString(), anyLong())
+        verify(storage, never())
+            .store(anyString(), anyInt())
+        verify(storage, never())
+            .store(anyString(), anyString())
+        verify(storage, never())
+            .store(anyString(), anyBoolean())
+        verify(storage, never()).remove(anyString())
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exception, Is.`is`(CredentialsManagerException.UNKNOWN_ERROR))
+        MatcherAssert.assertThat(exception.cause, Is.`is`(runtimeError))
+        MatcherAssert.assertThat(
+            exception.message,
+            Is.`is`("An unknown error has occurred while refreshing the token. Please check the error cause for more details.")
+        )
+    }
+
     /**
      * Testing that getCredentials execution from multiple threads via multiple instances of SecureCredentialsManager should trigger only one network request.
      */

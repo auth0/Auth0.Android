@@ -1123,6 +1123,46 @@ public class CredentialsManagerTest {
     }
 
     @Test
+    public fun shouldGetAndFailToRenewExpiredCredentialsWhenAnyUnexpectedErrorOccurs() {
+        Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("type")
+        val expirationTime = CredentialsMock.CURRENT_TIME_MS //Same as current time --> expired
+        Mockito.`when`(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveLong("com.auth0.cache_expires_at"))
+            .thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveString("com.auth0.scope")).thenReturn("scope")
+        Mockito.`when`(
+            client.renewAuth("refreshToken")
+        ).thenReturn(request)
+        //Trigger failure
+        val runtimeException = NullPointerException("Something went wrong")
+        Mockito.`when`(request.execute()).thenThrow(runtimeException)
+        manager.getCredentials(callback)
+        verify(storage, never())
+            .store(ArgumentMatchers.anyString(), ArgumentMatchers.anyInt())
+        verify(storage, never())
+            .store(ArgumentMatchers.anyString(), ArgumentMatchers.anyLong())
+        verify(storage, never())
+            .store(ArgumentMatchers.anyString(), ArgumentMatchers.anyString())
+        verify(storage, never())
+            .store(ArgumentMatchers.anyString(), ArgumentMatchers.anyBoolean())
+        verify(storage, never()).remove(ArgumentMatchers.anyString())
+        verify(callback).onFailure(
+            exceptionCaptor.capture()
+        )
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exception, Is.`is`(CredentialsManagerException.UNKNOWN_ERROR))
+        MatcherAssert.assertThat(exception.cause, Is.`is`(runtimeException))
+        MatcherAssert.assertThat(
+            exception.message,
+            Is.`is`("An unknown error has occurred while refreshing the token. Please check the error cause for more details.")
+        )
+    }
+
+    @Test
     public fun shouldClearCredentials() {
         manager.clearCredentials()
         verify(storage).remove("com.auth0.id_token")

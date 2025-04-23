@@ -680,6 +680,21 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     )
                 )
                 return@execute
+            } catch (exception: RuntimeException) {
+                /**
+                 *  Catching any unexpected runtime errors in the token renewal flow
+                 */
+                Log.e(
+                    TAG,
+                    "Caught unexpected exceptions for token renewal ${exception.stackTraceToString()}"
+                )
+                callback.onFailure(
+                    CredentialsManagerException(
+                        CredentialsManagerException.Code.UNKNOWN_ERROR,
+                        exception
+                    )
+                )
+                return@execute
             }
 
             try {
