@@ -72,10 +72,23 @@ public open class Auth0 private constructor(
      * @return Url to call to perform the web flow of OAuth
      */
     public open val authorizeUrl: String
-        get() = domainUrl.newBuilder()
+        get() = buildAuthorizeUrl()
+
+    /**
+     * Builds the authorize URL for the current domain.
+     *
+     * This function constructs the URL used for the OAuth 2.0 authorization flow.  Subclasses
+     * can override this function to modify the URL generation logic, for example, to use a
+     * different endpoint or add custom query parameters.
+     *
+     * @return The URL to call to perform the web flow of OAuth.
+     */
+    public open fun buildAuthorizeUrl(): String { // Function instead of property
+        return domainUrl.newBuilder()
             .addEncodedPathSegment("authorize")
             .build()
             .toString()
+    }
 
     /**
      * Obtain the logout URL for the current domain
@@ -83,11 +96,24 @@ public open class Auth0 private constructor(
      * @return Url to call to perform the web logout
      */
     public open val logoutUrl: String
-        get() = domainUrl.newBuilder()
+        get() = buildLogoutUrl()
+
+    /**
+     * Builds the logout URL for the current domain.
+     *
+     * This function constructs the URL used for the logout process. Subclasses can override
+     * this function to modify the URL generation logic, for example, to use a different
+     * endpoint or add custom query parameters.
+     *
+     * @return The URL to call to perform the web logout.
+     */
+    public open fun buildLogoutUrl(): String {  // Function instead of property
+        return domainUrl.newBuilder()
             .addEncodedPathSegment("v2")
             .addEncodedPathSegment("logout")
             .build()
             .toString()
+    }
 
 
     public companion object {
