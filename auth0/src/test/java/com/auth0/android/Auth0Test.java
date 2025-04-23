@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Method;
@@ -157,6 +158,17 @@ public class Auth0Test {
     }
 
     @Test
+    public void shouldAllowOverridingBuildAuthorizeUrl() {
+        final String customAuthorizeUrl = "https://custom.example.com/auth";
+
+
+        Auth0 auth0 = Auth0.getInstance(CLIENT_ID, DOMAIN);
+        Auth0 spyAuth0 = spy(auth0);
+        when(spyAuth0.buildAuthorizeUrl()).thenReturn(customAuthorizeUrl);
+        assertThat(spyAuth0.getAuthorizeUrl(), equalTo(customAuthorizeUrl));
+    }
+
+    @Test
     public void shouldReturnLogoutUrl() {
         Auth0 auth0 = Auth0.getInstance(CLIENT_ID, DOMAIN);
 
@@ -164,6 +176,17 @@ public class Auth0Test {
         assertThat(url, hasScheme("https"));
         assertThat(url, hasHost(DOMAIN));
         assertThat(url, hasPath("v2", "logout"));
+    }
+
+    @Test
+    public void shouldAllowOverridingBuildLogoutUrl() {
+        final String customLogoutUrl = "https://custom.example.com/logout";
+
+
+        Auth0 auth0 = Auth0.getInstance(CLIENT_ID, DOMAIN);
+        Auth0 spyAuth0 = spy(auth0);
+        when(spyAuth0.buildLogoutUrl()).thenReturn(customLogoutUrl);
+        assertThat(spyAuth0.getLogoutUrl(), equalTo(customLogoutUrl));
     }
 
     @Test
