@@ -18,7 +18,7 @@
     - [Sign Up with a database connection](#sign-up-with-a-database-connection)
     - [Get user information](#get-user-information)
     - [Custom Token Exchange](#custom-token-exchange)
-    - [Native to Web SSO login](#native-to-web-sso-login)
+    - [Native to Web SSO login [EA]](#native-to-web-sso-login-ea)
   - [Credentials Manager](#credentials-manager)
     - [Secure Credentials Manager](#secure-credentials-manager)
       - [Usage](#usage)
@@ -541,7 +541,11 @@ authentication
 </details>
 
 
-## Native to Web SSO login
+## Native to Web SSO login [EA]
+
+> [!NOTE]  
+> This feature is currently available in [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access). Please reach out to Auth0 support to get it 
+> enabled for your tenant.
 
 This feature allows you to authenticate a user in a web session using the refresh token obtained from the native session without requiring the user to log in again.
 
