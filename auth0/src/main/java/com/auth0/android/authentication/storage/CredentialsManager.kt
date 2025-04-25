@@ -63,7 +63,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * parameter with the session transfer token. For example,
      *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
      *
-     * ##Availability
+     * ## Availability
      *
      * This feature is currently available in
      * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
@@ -84,7 +84,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * parameter with the session transfer token. For example,
      *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
      *
-     * ##Availability
+     * ## Availability
      *
      * This feature is currently available in
      * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
@@ -146,7 +146,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * parameter with the session transfer token. For example,
      *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
      *
-     * ##Availability
+     * ## Availability
      *
      * This feature is currently available in
      * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
@@ -169,7 +169,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * parameter with the session transfer token. For example,
      *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
      *
-     * ##Availability
+     * ## Availability
      *
      * This feature is currently available in
      * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
