@@ -46,6 +46,7 @@ public class CredentialsManagerException :
         NO_NETWORK,
         API_ERROR,
         SSO_EXCHANGE_FAILED,
+        UNKNOWN_ERROR
     }
 
     private var code: Code?
@@ -146,6 +147,8 @@ public class CredentialsManagerException :
         public val SSO_EXCHANGE_FAILED: CredentialsManagerException =
             CredentialsManagerException(Code.SSO_EXCHANGE_FAILED)
 
+        public val UNKNOWN_ERROR: CredentialsManagerException = CredentialsManagerException(Code.UNKNOWN_ERROR)
+
 
         private fun getMessage(code: Code): String {
             return when (code) {
@@ -191,6 +194,7 @@ public class CredentialsManagerException :
                 Code.NO_NETWORK -> "Failed to execute the network request."
                 Code.API_ERROR -> "An error occurred while processing the request."
                 Code.SSO_EXCHANGE_FAILED ->"The exchange of the refresh token for SSO credentials failed."
+                Code.UNKNOWN_ERROR -> "An unknown error has occurred while fetching the token. Please check the error cause for more details."
             }
         }
     }

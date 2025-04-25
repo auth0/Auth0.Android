@@ -384,6 +384,37 @@ public class SecureCredentialsManagerTest {
         )
     }
 
+    @Test
+    public fun shouldFailWhenUnexpectedErrorOccursOnGetSSOCredentials() {
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        Mockito.`when`(client.ssoExchange("refreshToken"))
+            .thenReturn(SSOCredentialsRequest)
+        insertTestCredentials(
+            hasIdToken = true,
+            hasAccessToken = true,
+            hasRefreshToken = true,
+            willExpireAt = expiresAt,
+            scope = "scope"
+        )
+        //Trigger failure
+        val runtimeException = RuntimeException(
+            "runtime exception"
+        )
+        Mockito.`when`(SSOCredentialsRequest.execute()).thenThrow(runtimeException)
+        manager.getSsoCredentials(ssoCallback)
+        verify(ssoCallback).onFailure(
+            exceptionCaptor.capture()
+        )
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exception.cause, Is.`is`(runtimeException))
+        MatcherAssert.assertThat(exception, Is.`is`(CredentialsManagerException.UNKNOWN_ERROR))
+        MatcherAssert.assertThat(
+            exception.message,
+            Is.`is`("An unknown error has occurred while fetching the token. Please check the error cause for more details.")
+        )
+    }
+
     /*
      * AWAIT SSO credentials test
      */
@@ -1807,6 +1838,43 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(
             exception.message,
             Is.`is`("An error occurred while processing the request.")
+        )
+    }
+
+    @Test
+    public fun shouldGetAndFailToRenewExpiredCredentialsWhenAnyUnexpectedErrorOccurs() {
+        Mockito.`when`(localAuthenticationManager.authenticate()).then {
+            localAuthenticationManager.resultCallback.onSuccess(true)
+        }
+        val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS)
+        insertTestCredentials(false, true, true, expiresAt, "scope")
+        Mockito.`when`(
+            client.renewAuth("refreshToken")
+        ).thenReturn(request)
+        //Trigger failure
+        val runtimeError =
+            RuntimeException("Something went wrong")
+        Mockito.`when`(request.execute()).thenThrow(runtimeError)
+        manager.getCredentials(callback)
+        verify(callback).onFailure(
+            exceptionCaptor.capture()
+        )
+        verify(storage, never())
+            .store(anyString(), anyLong())
+        verify(storage, never())
+            .store(anyString(), anyInt())
+        verify(storage, never())
+            .store(anyString(), anyString())
+        verify(storage, never())
+            .store(anyString(), anyBoolean())
+        verify(storage, never()).remove(anyString())
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exception, Is.`is`(CredentialsManagerException.UNKNOWN_ERROR))
+        MatcherAssert.assertThat(exception.cause, Is.`is`(runtimeError))
+        MatcherAssert.assertThat(
+            exception.message,
+            Is.`is`("An unknown error has occurred while fetching the token. Please check the error cause for more details.")
         )
     }
 

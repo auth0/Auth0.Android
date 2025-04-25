@@ -1,6 +1,7 @@
 package com.auth0.android.authentication.storage
 
 import android.text.TextUtils
+import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
@@ -80,6 +81,12 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * parameter with the session transfer token. For example,
      *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
      *
+     * ## Availability
+     *
+     * This feature is currently available in
+     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
+     * Please reach out to Auth0 support to get it enabled for your tenant.
+     *
      * It will fail with [CredentialsManagerException] if the existing refresh_token is null or no longer valid.
      * This method will handle saving the refresh_token, if a new one is issued.
      */
@@ -94,6 +101,12 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * parameter. Then your website can redirect the user to Auth0's `/authorize` endpoint, passing along the query
      * parameter with the session transfer token. For example,
      *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
+     *
+     * ## Availability
+     *
+     * This feature is currently available in
+     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
+     * Please reach out to Auth0 support to get it enabled for your tenant.
      *
      * It will fail with [CredentialsManagerException] if the existing refresh_token is null or no longer valid.
      * This method will handle saving the refresh_token, if a new one is issued.
@@ -128,6 +141,17 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                         error
                     )
                 )
+            } catch (exception: RuntimeException) {
+                Log.e(
+                    TAG,
+                    "Caught unexpected exceptions while fetching sso token ${exception.stackTraceToString()}"
+                )
+                callback.onFailure(
+                    CredentialsManagerException(
+                        CredentialsManagerException.Code.UNKNOWN_ERROR,
+                        exception
+                    )
+                )
             }
         }
     }
@@ -139,6 +163,12 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * parameter. Then your website can redirect the user to Auth0's `/authorize` endpoint, passing along the query
      * parameter with the session transfer token. For example,
      *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
+     *
+     * ## Availability
+     *
+     * This feature is currently available in
+     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
+     * Please reach out to Auth0 support to get it enabled for your tenant.
      *
      * It will fail with [CredentialsManagerException] if the existing refresh_token is null or no longer valid.
      * This method will handle saving the refresh_token, if a new one is issued.
@@ -156,6 +186,12 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * parameter. Then your website can redirect the user to Auth0's `/authorize` endpoint, passing along the query
      * parameter with the session transfer token. For example,
      *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
+     *
+     * ## Availability
+     *
+     * This feature is currently available in
+     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
+     * Please reach out to Auth0 support to get it enabled for your tenant.
      *
      * It will fail with [CredentialsManagerException] if the existing refresh_token is null or no longer valid.
      * This method will handle saving the refresh_token, if a new one is issued.
@@ -499,6 +535,20 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                         exception, error
                     )
                 )
+            } catch (exception: RuntimeException) {
+                /**
+                 *  Catching any unexpected runtime errors in the token renewal flow
+                 */
+                Log.e(
+                    TAG,
+                    "Caught unexpected exceptions for token renewal ${exception.stackTraceToString()}"
+                )
+                callback.onFailure(
+                    CredentialsManagerException(
+                        CredentialsManagerException.Code.UNKNOWN_ERROR,
+                        exception
+                    )
+                )
             }
         }
     }
@@ -684,5 +734,6 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         // This is no longer used as we get the credentials expiry from the access token only,
         // but we still store it so users can rollback to versions where it is required.
         private const val LEGACY_KEY_CACHE_EXPIRES_AT = "com.auth0.cache_expires_at"
+        private val TAG = CredentialsManager::class.java.simpleName
     }
 }

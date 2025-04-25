@@ -945,6 +945,12 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * parameter with the session transfer token. For example,
      * `https://example.com/login?session_transfer_token=THE_TOKEN`.
      *
+     * ##Availability
+     *
+     * This feature is currently available in
+     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
+     * Please reach out to Auth0 support to get it enabled for your tenant.
+     *
      *
      * @param refreshToken A valid refresh token obtained as part of Auth0 authentication
      * @return a request to fetch a session transfer token
