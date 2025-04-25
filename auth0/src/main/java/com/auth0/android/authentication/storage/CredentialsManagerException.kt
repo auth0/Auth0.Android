@@ -194,7 +194,7 @@ public class CredentialsManagerException :
                 Code.NO_NETWORK -> "Failed to execute the network request."
                 Code.API_ERROR -> "An error occurred while processing the request."
                 Code.SSO_EXCHANGE_FAILED ->"The exchange of the refresh token for SSO credentials failed."
-                Code.UNKNOWN_ERROR -> "An unknown error has occurred while refreshing the token. Please check the error cause for more details."
+                Code.UNKNOWN_ERROR -> "An unknown error has occurred while fetching the token. Please check the error cause for more details."
             }
         }
     }

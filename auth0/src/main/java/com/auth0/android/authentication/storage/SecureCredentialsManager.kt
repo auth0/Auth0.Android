@@ -192,6 +192,17 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     CredentialsManagerException.Code.STORE_FAILED, error
                 )
                 callback.onFailure(exception)
+            } catch (exception: RuntimeException) {
+                Log.e(
+                    TAG,
+                    "Caught unexpected exceptions while fetching sso token ${exception.stackTraceToString()}"
+                )
+                callback.onFailure(
+                    CredentialsManagerException(
+                        CredentialsManagerException.Code.UNKNOWN_ERROR,
+                        exception
+                    )
+                )
             }
         }
     }

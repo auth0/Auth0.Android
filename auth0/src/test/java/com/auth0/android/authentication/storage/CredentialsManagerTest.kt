@@ -329,6 +329,31 @@ public class CredentialsManagerTest {
     }
 
     @Test
+    public fun shouldFailOnGetNewSSOCredentialsWhenUnexpectedErrorOccurs() {
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
+        Mockito.`when`(
+            client.ssoExchange("refreshToken")
+        ).thenReturn(SSOCredentialsRequest)
+        //Trigger failure
+        val runtimeException = RuntimeException(
+            "unexpected_error"
+        )
+        Mockito.`when`(SSOCredentialsRequest.execute()).thenThrow(runtimeException)
+        manager.getSsoCredentials(ssoCallback)
+        verify(ssoCallback).onFailure(
+            exceptionCaptor.capture()
+        )
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exception, Is.`is`(CredentialsManagerException.UNKNOWN_ERROR))
+        MatcherAssert.assertThat(exception.cause, Is.`is`(runtimeException))
+        MatcherAssert.assertThat(
+            exception.message,
+            Is.`is`("An unknown error has occurred while fetching the token. Please check the error cause for more details.")
+        )
+    }
+
+    @Test
     @ExperimentalCoroutinesApi
     public fun shouldFailOnAwaitSSOCredentialsWhenNoRefreshTokenWasSaved(): Unit = runTest {
         verifyNoMoreInteractions(client)
@@ -1158,7 +1183,7 @@ public class CredentialsManagerTest {
         MatcherAssert.assertThat(exception.cause, Is.`is`(runtimeException))
         MatcherAssert.assertThat(
             exception.message,
-            Is.`is`("An unknown error has occurred while refreshing the token. Please check the error cause for more details.")
+            Is.`is`("An unknown error has occurred while fetching the token. Please check the error cause for more details.")
         )
     }
 

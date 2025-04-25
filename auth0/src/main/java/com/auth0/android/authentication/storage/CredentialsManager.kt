@@ -111,6 +111,17 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                         error
                     )
                 )
+            } catch (exception: RuntimeException) {
+                Log.e(
+                    TAG,
+                    "Caught unexpected exceptions while fetching sso token ${exception.stackTraceToString()}"
+                )
+                callback.onFailure(
+                    CredentialsManagerException(
+                        CredentialsManagerException.Code.UNKNOWN_ERROR,
+                        exception
+                    )
+                )
             }
         }
     }
