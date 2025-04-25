@@ -1,6 +1,7 @@
 package com.auth0.android.authentication.storage
 
 import android.text.TextUtils
+import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
@@ -108,6 +109,17 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                     CredentialsManagerException(
                         exception,
                         error
+                    )
+                )
+            } catch (exception: RuntimeException) {
+                Log.e(
+                    TAG,
+                    "Caught unexpected exceptions while fetching sso token ${exception.stackTraceToString()}"
+                )
+                callback.onFailure(
+                    CredentialsManagerException(
+                        CredentialsManagerException.Code.UNKNOWN_ERROR,
+                        exception
                     )
                 )
             }
@@ -442,6 +454,20 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                         exception, error
                     )
                 )
+            } catch (exception: RuntimeException) {
+                /**
+                 *  Catching any unexpected runtime errors in the token renewal flow
+                 */
+                Log.e(
+                    TAG,
+                    "Caught unexpected exceptions for token renewal ${exception.stackTraceToString()}"
+                )
+                callback.onFailure(
+                    CredentialsManagerException(
+                        CredentialsManagerException.Code.UNKNOWN_ERROR,
+                        exception
+                    )
+                )
             }
         }
     }
@@ -527,5 +553,6 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         // This is no longer used as we get the credentials expiry from the access token only,
         // but we still store it so users can rollback to versions where it is required.
         private const val LEGACY_KEY_CACHE_EXPIRES_AT = "com.auth0.cache_expires_at"
+        private val TAG = CredentialsManager::class.java.simpleName
     }
 }
