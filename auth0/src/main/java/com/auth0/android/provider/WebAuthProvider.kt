@@ -148,6 +148,7 @@ public object WebAuthProvider {
         private var ctOptions: CustomTabsOptions = CustomTabsOptions.newBuilder().build()
         private var federated: Boolean = false
         private var launchAsTwa: Boolean = false
+        private var customLogoutUrl: String? = null
 
         /**
          * When using a Custom Tabs compatible Browser, apply these customization options.
@@ -216,6 +217,18 @@ public object WebAuthProvider {
         }
 
         /**
+         * Specifies a custom Logout URL to use for this logout request, overriding the default
+         * generated from the Auth0 domain (account.logoutUrl).
+         *
+         * @param logoutUrl the custom logout URL.
+         * @return the current builder instance
+         */
+        public fun withLogoutUrl(logoutUrl: String): LogoutBuilder {
+            this.customLogoutUrl = logoutUrl
+            return this
+        }
+
+        /**
          * Request the user session to be cleared. When successful, the callback will get invoked.
          * An error is raised if there are no browser applications installed in the device or if
          * the user closed the browser before completing the logout.
@@ -248,7 +261,8 @@ public object WebAuthProvider {
                 returnToUrl!!,
                 ctOptions,
                 federated,
-                launchAsTwa
+                launchAsTwa,
+                customLogoutUrl
             )
             managerInstance = logoutManager
             logoutManager.startLogout(context)
@@ -294,6 +308,7 @@ public object WebAuthProvider {
         private var ctOptions: CustomTabsOptions = CustomTabsOptions.newBuilder().build()
         private var leeway: Int? = null
         private var launchAsTwa: Boolean = false
+        private var customAuthorizeUrl: String? = null
 
         /**
          * Use a custom state in the requests
@@ -507,6 +522,18 @@ public object WebAuthProvider {
             return this
         }
 
+        /**
+         * Specifies a custom Authorize URL to use for this login request, overriding the default
+         * generated from the Auth0 domain (account.authorizeUrl).
+         *
+         * @param authorizeUrl the custom authorize URL.
+         * @return the current builder instance
+         */
+        public fun withAuthorizeUrl(authorizeUrl: String): Builder {
+            this.customAuthorizeUrl = authorizeUrl
+            return this
+        }
+
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         internal fun withPKCE(pkce: PKCE): Builder {
             this.pkce = pkce
@@ -553,7 +580,8 @@ public object WebAuthProvider {
                 values[OAuthManager.KEY_ORGANIZATION] = organizationId
                 values[OAuthManager.KEY_INVITATION] = invitationId
             }
-            val manager = OAuthManager(account, callback, values, ctOptions, launchAsTwa)
+            val manager = OAuthManager(account, callback, values, ctOptions, launchAsTwa,
+                customAuthorizeUrl)
             manager.setHeaders(headers)
             manager.setPKCE(pkce)
             manager.setIdTokenVerificationLeeway(leeway)

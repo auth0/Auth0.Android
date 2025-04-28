@@ -72,6 +72,9 @@ public class WebAuthProviderTest {
     private val callbackCaptor: KArgumentCaptor<Callback<Credentials, AuthenticationException>> =
         argumentCaptor()
 
+    private val customAuthorizeUrl = "https://custom.domain.com/custom_auth"
+    private val customLogoutUrl = "https://custom.domain.com/custom_logout"
+
     @Before
     public fun setUp() {
         MockitoAnnotations.openMocks(this)
@@ -104,6 +107,24 @@ public class WebAuthProviderTest {
         login(account)
             .start(activity, callback)
         Assert.assertNotNull(WebAuthProvider.managerInstance)
+    }
+
+    @Test
+    public fun shouldSetCustomAuthorizeUrlOnLogin() {
+        login(account)
+            .withAuthorizeUrl(customAuthorizeUrl)
+            .start(activity, callback)
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri =
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(uri, `is`(notNullValue()))
+        assertThat(uri?.scheme, `is`("https"))
+        assertThat(uri?.host, `is`("custom.domain.com"))
+        assertThat(uri?.path, `is`("/custom_auth"))
+        assertThat(uri, UriMatchers.hasParamWithName("client_id"))
+        assertThat(uri, UriMatchers.hasParamWithName("redirect_uri"))
+        assertThat(uri, UriMatchers.hasParamWithName("response_type"))
+        assertThat(uri, UriMatchers.hasParamWithName("state"))
     }
 
     //scheme
@@ -2326,6 +2347,22 @@ public class WebAuthProviderTest {
         Assert.assertNotNull(WebAuthProvider.managerInstance)
     }
 
+    @Test
+    public fun shouldSetCustomLogoutUrlOnLogout() {
+        logout(account)
+            .withLogoutUrl(customLogoutUrl)
+            .start(activity, voidCallback)
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri =
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(uri, `is`(notNullValue()))
+        assertThat(uri?.scheme, `is`("https"))
+        assertThat(uri?.host, `is`("custom.domain.com"))
+        assertThat(uri?.path, `is`("/custom_logout"))
+        assertThat(uri, UriMatchers.hasParamWithName("client_id"))
+        assertThat(uri, UriMatchers.hasParamWithName("returnTo"))
+    }
+
     //scheme
     @Test
     public fun shouldHaveDefaultSchemeOnLogout() {
@@ -2610,6 +2647,22 @@ public class WebAuthProviderTest {
         val intent = createAuthIntent("")
         Assert.assertTrue(resume(intent))
         job.join()
+    }
+
+    @Test
+    public fun shouldBuildDefaultLogoutURIWithCorrectSchemeHostAndPathOnLogout() {
+        logout(account)
+            .start(activity, voidCallback)
+        val baseUriString = Uri.parse(account.logoutUrl)
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri =
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(uri, `is`(notNullValue()))
+        assertThat(uri, UriMatchers.hasScheme(baseUriString.scheme))
+        assertThat(uri, UriMatchers.hasHost(baseUriString.host))
+        assertThat(uri, UriMatchers.hasPath(baseUriString.path))
+        assertThat(uri, UriMatchers.hasParamWithName("client_id"))
+        assertThat(uri, UriMatchers.hasParamWithName("returnTo"))
     }
 
     //**  ** ** ** ** **  **//

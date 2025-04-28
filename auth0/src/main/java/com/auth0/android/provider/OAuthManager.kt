@@ -25,6 +25,7 @@ internal class OAuthManager(
     parameters: Map<String, String>,
     ctOptions: CustomTabsOptions,
     private val launchAsTwa: Boolean = false,
+    private val customAuthorizeUrl: String? = null
 ) : ResumableManager() {
     private val parameters: MutableMap<String, String>
     private val headers: MutableMap<String, String>
@@ -197,6 +198,7 @@ internal class OAuthManager(
             auth0 = account,
             idTokenVerificationIssuer = idTokenVerificationIssuer,
             idTokenVerificationLeeway = idTokenVerificationLeeway,
+            customAuthorizeUrl = this.customAuthorizeUrl
         )
     }
 
@@ -235,7 +237,8 @@ internal class OAuthManager(
     }
 
     private fun buildAuthorizeUri(): Uri {
-        val authorizeUri = Uri.parse(account.authorizeUrl)
+        val urlToUse = customAuthorizeUrl ?: account.authorizeUrl
+        val authorizeUri = Uri.parse(urlToUse)
         val builder = authorizeUri.buildUpon()
         for ((key, value) in parameters) {
             builder.appendQueryParameter(key, value)
@@ -357,7 +360,8 @@ internal fun OAuthManager.Companion.fromState(
         account = state.auth0,
         ctOptions = state.ctOptions,
         parameters = state.parameters,
-        callback = callback
+        callback = callback,
+        customAuthorizeUrl = state.customAuthorizeUrl
     ).apply {
         setHeaders(
             state.headers
