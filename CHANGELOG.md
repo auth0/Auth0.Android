@@ -1,5 +1,15 @@
 # Change Log
 
+## [3.6.0](https://github.com/auth0/Auth0.Android/tree/3.6.0) (2025-04-28)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.5.0...3.6.0)
+
+**Added**
+- Added new error type to CredentialsManagerException class [\#821](https://github.com/auth0/Auth0.Android/pull/821) ([pmathew92](https://github.com/pmathew92))
+- Added  Native to Web support [\#803](https://github.com/auth0/Auth0.Android/pull/803) ([pmathew92](https://github.com/pmathew92))
+
+**Changed**
+- Removed experimental tag from TWA [\#818](https://github.com/auth0/Auth0.Android/pull/818) ([pmathew92](https://github.com/pmathew92))
+
 ## [3.5.0](https://github.com/auth0/Auth0.Android/tree/3.5.0) (2025-03-17)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.4.0...3.5.0)
 
