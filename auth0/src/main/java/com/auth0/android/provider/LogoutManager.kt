@@ -15,6 +15,7 @@ internal class LogoutManager(
     ctOptions: CustomTabsOptions,
     federated: Boolean = false,
     private val launchAsTwa: Boolean = false,
+    private val customLogoutUrl: String? = null
 ) : ResumableManager() {
     private val parameters: MutableMap<String, String>
     private val ctOptions: CustomTabsOptions
@@ -42,7 +43,8 @@ internal class LogoutManager(
     }
 
     private fun buildLogoutUri(): Uri {
-        val logoutUri = Uri.parse(account.logoutUrl)
+        val urlToUse = customLogoutUrl ?: account.logoutUrl
+        val logoutUri = Uri.parse(urlToUse)
         val builder = logoutUri.buildUpon()
         for ((key, value) in parameters) {
             builder.appendQueryParameter(key, value)
