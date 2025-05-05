@@ -581,7 +581,7 @@ public class CredentialsManagerTest {
         val accessTokenExpiry = CredentialsMock.ONE_HOUR_AHEAD_MS
         val apiCredentials = ApiCredentialsMock.create(
             "token", "type",
-            Date(accessTokenExpiry), null
+            Date(accessTokenExpiry), "scope"
         )
         Mockito.`when`(storage.retrieveString("audience")).thenReturn(gson.toJson(apiCredentials))
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")

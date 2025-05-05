@@ -10,7 +10,7 @@ public class ApiCredentialsMock {
             accessToken: String,
             type: String,
             expiresAt: Date,
-            scope: String?,
+            scope: String,
         ): APICredentials {
             return APICredentials(
                 accessToken, type, expiresAt, scope

@@ -2306,7 +2306,7 @@ public class SecureCredentialsManagerTest {
             Date(CredentialsMock.CURRENT_TIME_MS + 10 * 1000),
             "scope"
         )
-        insertTestApiCredentials("audience", true, Date(accessTokenExpiry), null)
+        insertTestApiCredentials("audience", true, Date(accessTokenExpiry), "scope")
         Mockito.`when`(
             client.renewAuth("refreshToken", "audience", "newScope")
         ).thenReturn(request)
@@ -2351,7 +2351,7 @@ public class SecureCredentialsManagerTest {
             Date(CredentialsMock.CURRENT_TIME_MS + 10 * 1000),
             "scope"
         )
-        insertTestApiCredentials("audience", true, Date(accessTokenExpiry), null)
+        insertTestApiCredentials("audience", true, Date(accessTokenExpiry), "scope")
         Mockito.`when`(
             client.renewAuth("refreshToken", "audience", "newScope")
         ).thenReturn(request)
@@ -2439,7 +2439,7 @@ public class SecureCredentialsManagerTest {
         }
         val accessTokenExpiry = CredentialsMock.ONE_HOUR_AHEAD_MS
         insertTestApiCredentials(
-            "audience1", true, Date(accessTokenExpiry), null
+            "audience1", true, Date(accessTokenExpiry), "scope"
         )
         val retrievedCredentials = manager.awaitApiCredentials("audience1")
         MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
@@ -3153,7 +3153,7 @@ public class SecureCredentialsManagerTest {
         audience: String,
         hasAccessToken: Boolean,
         willExpireAt: Date,
-        scope: String?
+        scope: String
     ): String {
         val storedCredentials = ApiCredentialsMock.create(
             if (hasAccessToken) "accessToken" else "",

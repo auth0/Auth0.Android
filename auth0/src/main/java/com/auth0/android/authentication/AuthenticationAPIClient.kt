@@ -731,8 +731,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     }
 
     /**
-     * Requests new Credentials using a valid Refresh Token. You can request credentials for a specific API by passing its audience value. The default scopes configured for
-     * the API will be granted if you don't request any specific scopes.
+     * Requests new Credentials using a valid Refresh Token. You can request credentials for a specific API by passing its audience value. The default scopes
+     * configured for the API will be granted if you don't request any specific scopes.
      *
      *
      * This method will use the /oauth/token endpoint with the 'refresh_token' grant, and the response will include an id_token and an access_token if 'openid' scope was requested when the refresh_token was obtained.

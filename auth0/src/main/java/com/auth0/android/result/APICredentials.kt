@@ -41,7 +41,7 @@ public data class APICredentials(
      * @return the granted scope.
      */
     @field:SerializedName("scope")
-    val scope: String?
+    val scope: String
 ) {
     override fun toString(): String {
         return "APICredentials( accessToken='xxxxx', type='$type', expiresAt='$expiresAt', scope='$scope')"
@@ -53,5 +53,6 @@ public data class APICredentials(
  * Converts a Credentials instance to an APICredentials instance.
  */
 internal fun Credentials.toAPICredentials(): APICredentials {
-    return APICredentials(accessToken, type, expiresAt, scope)
+    val newScope = scope ?: "openid"
+    return APICredentials(accessToken, type, expiresAt, newScope)
 }
