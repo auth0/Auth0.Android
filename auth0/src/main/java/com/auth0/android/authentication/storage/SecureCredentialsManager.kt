@@ -133,6 +133,12 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * parameter with the session transfer token. For example,
      *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
      *
+     * ## Availability
+     *
+     * This feature is currently available in
+     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
+     * Please reach out to Auth0 support to get it enabled for your tenant.
+     *
      * It will fail with [CredentialsManagerException] if the existing refresh_token is null or no longer valid.
      * This method will handle saving the refresh_token, if a new one is issued.
      */
@@ -147,6 +153,12 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * parameter. Then your website can redirect the user to Auth0's `/authorize` endpoint, passing along the query
      * parameter with the session transfer token. For example,
      *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
+     *
+     * ## Availability
+     *
+     * This feature is currently available in
+     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
+     * Please reach out to Auth0 support to get it enabled for your tenant.
      *
      * It will fail with [CredentialsManagerException] if the existing refresh_token is null or no longer valid.
      * This method will handle saving the refresh_token, if a new one is issued.
@@ -192,6 +204,17 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     CredentialsManagerException.Code.STORE_FAILED, error
                 )
                 callback.onFailure(exception)
+            } catch (exception: RuntimeException) {
+                Log.e(
+                    TAG,
+                    "Caught unexpected exceptions while fetching sso token ${exception.stackTraceToString()}"
+                )
+                callback.onFailure(
+                    CredentialsManagerException(
+                        CredentialsManagerException.Code.UNKNOWN_ERROR,
+                        exception
+                    )
+                )
             }
         }
     }
@@ -203,6 +226,12 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * parameter. Then your website can redirect the user to Auth0's `/authorize` endpoint, passing along the query
      * parameter with the session transfer token. For example,
      *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
+     *
+     * ## Availability
+     *
+     * This feature is currently available in
+     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
+     * Please reach out to Auth0 support to get it enabled for your tenant.
      *
      * It will fail with [CredentialsManagerException] if the existing refresh_token is null or no longer valid.
      * This method will handle saving the refresh_token, if a new one is issued.
@@ -220,6 +249,12 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * parameter. Then your website can redirect the user to Auth0's `/authorize` endpoint, passing along the query
      * parameter with the session transfer token. For example,
      *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
+     *
+     * ## Availability
+     *
+     * This feature is currently available in
+     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
+     * Please reach out to Auth0 support to get it enabled for your tenant.
      *
      * It will fail with [CredentialsManagerException] if the existing refresh_token is null or no longer valid.
      * This method will handle saving the refresh_token, if a new one is issued.
@@ -677,6 +712,21 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 callback.onFailure(
                     CredentialsManagerException(
                         exception, error
+                    )
+                )
+                return@execute
+            } catch (exception: RuntimeException) {
+                /**
+                 *  Catching any unexpected runtime errors in the token renewal flow
+                 */
+                Log.e(
+                    TAG,
+                    "Caught unexpected exceptions for token renewal ${exception.stackTraceToString()}"
+                )
+                callback.onFailure(
+                    CredentialsManagerException(
+                        CredentialsManagerException.Code.UNKNOWN_ERROR,
+                        exception
                     )
                 )
                 return@execute
