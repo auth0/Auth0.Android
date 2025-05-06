@@ -17,7 +17,8 @@ internal data class OAuthManagerState(
     val ctOptions: CustomTabsOptions,
     val pkce: PKCE?,
     val idTokenVerificationLeeway: Int?,
-    val idTokenVerificationIssuer: String?
+    val idTokenVerificationIssuer: String?,
+    val customAuthorizeUrl: String? = null
 ) {
 
     private class OAuthManagerJson(
@@ -32,7 +33,8 @@ internal data class OAuthManagerState(
         val codeChallenge: String,
         val codeVerifier: String,
         val idTokenVerificationLeeway: Int?,
-        val idTokenVerificationIssuer: String?
+        val idTokenVerificationIssuer: String?,
+        val customAuthorizeUrl: String? = null
     )
 
     fun serializeToJson(
@@ -56,6 +58,7 @@ internal data class OAuthManagerState(
                 codeChallenge = pkce?.codeChallenge.orEmpty(),
                 idTokenVerificationIssuer = idTokenVerificationIssuer,
                 idTokenVerificationLeeway = idTokenVerificationLeeway,
+                customAuthorizeUrl = this.customAuthorizeUrl
             )
             return gson.toJson(json)
         } finally {
@@ -103,6 +106,7 @@ internal data class OAuthManagerState(
                     ),
                     idTokenVerificationIssuer = oauthManagerJson.idTokenVerificationIssuer,
                     idTokenVerificationLeeway = oauthManagerJson.idTokenVerificationLeeway,
+                    customAuthorizeUrl = oauthManagerJson.customAuthorizeUrl
                 )
             } finally {
                 parcel.recycle()
