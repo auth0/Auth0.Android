@@ -1,4 +1,4 @@
-name: Create Java and GitHub Release
+gname: Create Java and GitHub Release
 
 on:
   workflow_call:
