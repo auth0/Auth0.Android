@@ -2534,6 +2534,75 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
+    public fun shouldRenewAuthWithOAuthTokenAndAudience() {
+        val auth0 = auth0
+        val client = AuthenticationAPIClient(auth0)
+        mockAPI.willReturnSuccessfulLogin()
+        val credentials = client.renewAuth("refreshToken", "_audience")
+            .execute()
+        val request = mockAPI.takeRequest()
+        assertThat(
+            request.getHeader("Accept-Language"), Matchers.`is`(
+                defaultLocale
+            )
+        )
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
+        assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
+        assertThat(body, Matchers.hasEntry("grant_type", "refresh_token"))
+        assertThat(body, Matchers.hasEntry("audience", "_audience"))
+        assertThat(body, Matchers.not(Matchers.hasKey("scope")))
+        assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
+    }
+
+    @Test
+    public fun shouldRenewAuthWithOAuthTokenAndScope() {
+        val auth0 = auth0
+        val client = AuthenticationAPIClient(auth0)
+        mockAPI.willReturnSuccessfulLogin()
+        val credentials = client.renewAuth(refreshToken = "refreshToken", scope = "openid read:data")
+            .execute()
+        val request = mockAPI.takeRequest()
+        assertThat(
+            request.getHeader("Accept-Language"), Matchers.`is`(
+                defaultLocale
+            )
+        )
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
+        assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
+        assertThat(body, Matchers.hasEntry("grant_type", "refresh_token"))
+        assertThat(body, Matchers.hasEntry("scope", "openid read:data"))
+        assertThat(body, Matchers.not(Matchers.hasKey("audience")))
+        assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
+    }
+
+    @Test
+    public fun shouldRenewAuthWithOAuthAudienceAndScopeEnforcingOpendId() {
+        val auth0 = auth0
+        val client = AuthenticationAPIClient(auth0)
+        mockAPI.willReturnSuccessfulLogin()
+        val credentials = client.renewAuth("refreshToken", "_audience", "read:data write:data")
+            .execute()
+        val request = mockAPI.takeRequest()
+        assertThat(
+            request.getHeader("Accept-Language"), Matchers.`is`(
+                defaultLocale
+            )
+        )
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
+        assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
+        assertThat(body, Matchers.hasEntry("grant_type", "refresh_token"))
+        assertThat(body, Matchers.hasEntry("audience", "_audience"))
+        assertThat(body, Matchers.hasEntry("scope", "read:data write:data openid"))
+        assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
+    }
+
+    @Test
     public fun shouldFetchProfileSyncAfterLoginRequest() {
         mockAPI.willReturnSuccessfulLogin()
             .willReturnUserInfo()
