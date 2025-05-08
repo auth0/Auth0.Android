@@ -325,11 +325,10 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
 
     /**
      * Retrieves API credentials from storage and automatically renews them using the refresh token if the access
-     * token is expired. Otherwise, the retrieved API credentials will be returned via the success case as they are still valid.
+     * token is expired. Otherwise, the retrieved API credentials will be returned as they are still valid.
      *
      * If there are no stored API credentials, the refresh token will be exchanged for a new set of API credentials.
-     * New or renewed API credentials will be automatically stored in storage.
-     * This is a Coroutine that is exposed only for Kotlin.
+     * New or renewed API credentials will be automatically persisted in storage.
      *
      * @param audience Identifier of the API that your application is requesting access to.
      * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
@@ -556,10 +555,10 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
 
     /**
      *  Retrieves API credentials from storage and automatically renews them using the refresh token if the access
-     *  token is expired. Otherwise, the retrieved API credentials will be returned via the success case as they are still valid.
+     *  token is expired. Otherwise, the retrieved API credentials will be returned via the success callback as they are still valid.
      *
      * If there are no stored API credentials, the refresh token will be exchanged for a new set of API credentials.
-     * New or renewed API credentials will be automatically stored in storage.
+     * New or renewed API credentials will be automatically persisted in storage.
      *
      * @param audience Identifier of the API that your application is requesting access to.
      * @param scope the scope to request for the access token. If null is passed, the previous scope will be kept.
@@ -691,6 +690,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      */
     override fun clearApiCredentials(audience: String) {
         storage.remove(audience)
+        Log.d(TAG, "API Credentials for $audience were just removed from the storage")
     }
 
     /**

@@ -2561,7 +2561,7 @@ public class AuthenticationAPIClientTest {
         val auth0 = auth0
         val client = AuthenticationAPIClient(auth0)
         mockAPI.willReturnSuccessfulLogin()
-        val credentials = client.renewAuth(refreshToken = "refreshToken", scope = "read:data")
+        val credentials = client.renewAuth(refreshToken = "refreshToken", scope = "openid read:data")
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
@@ -2574,7 +2574,7 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
         assertThat(body, Matchers.hasEntry("grant_type", "refresh_token"))
-        assertThat(body, Matchers.hasEntry("scope", "read:data openid"))
+        assertThat(body, Matchers.hasEntry("scope", "openid read:data"))
         assertThat(body, Matchers.not(Matchers.hasKey("audience")))
         assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
     }
@@ -2599,30 +2599,6 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.hasEntry("grant_type", "refresh_token"))
         assertThat(body, Matchers.hasEntry("audience", "_audience"))
         assertThat(body, Matchers.hasEntry("scope", "read:data write:data openid"))
-        assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
-    }
-
-    @Test
-    public fun shouldRenewAuthWithOAuthAudienceAndScopeNotEnforcingOpendId() {
-        val auth0 = auth0
-        val client = AuthenticationAPIClient(auth0)
-        mockAPI.willReturnSuccessfulLogin()
-        val credentials =
-            client.renewAuth("refreshToken", "_audience", "openid read:data write:data")
-                .execute()
-        val request = mockAPI.takeRequest()
-        assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
-                defaultLocale
-            )
-        )
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
-        val body = bodyFromRequest<String>(request)
-        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
-        assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
-        assertThat(body, Matchers.hasEntry("grant_type", "refresh_token"))
-        assertThat(body, Matchers.hasEntry("audience", "_audience"))
-        assertThat(body, Matchers.hasEntry("scope", "openid read:data write:data"))
         assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
     }
 

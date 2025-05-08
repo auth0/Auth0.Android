@@ -36,7 +36,7 @@ public data class APICredentials(
     @field:SerializedName("expires_at")
     val expiresAt: Date,
     /**
-     * Getter for the access token's granted scope. Only available if the requested scope differs from the granted one.
+     * Getter for the access token's granted scope.
      *
      * @return the granted scope.
      */
@@ -53,6 +53,6 @@ public data class APICredentials(
  * Converts a Credentials instance to an APICredentials instance.
  */
 internal fun Credentials.toAPICredentials(): APICredentials {
-    val newScope = scope ?: "openid"
+    val newScope = scope ?: ""
     return APICredentials(accessToken, type, expiresAt, newScope)
 }

@@ -502,7 +502,7 @@ public class CredentialsManagerTest {
         Mockito.`when`(storage.retrieveString("audience")).thenReturn(gson.toJson(apiCredentials))
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
         Mockito.`when`(
-            client.renewAuth("refreshToken", "audience", "newScope")
+            client.renewAuth("refreshToken", "audience", "scope")
         ).thenReturn(request)
         val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS + ONE_HOUR_SECONDS * 1000)
         val jwtMock = mock<Jwt>()
@@ -512,9 +512,9 @@ public class CredentialsManagerTest {
         // Trigger success
         val newRefresh: String? = null
         val renewedCredentials =
-            Credentials("newId", "newAccess", "newType", newRefresh, newDate, "newScope")
+            Credentials("newId", "newAccess", "newType", newRefresh, newDate, "scope")
         Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
-        manager.getApiCredentials("audience", "newScope", callback = apiCredentialsCallback)
+        manager.getApiCredentials("audience", "scope", callback = apiCredentialsCallback)
         verify(apiCredentialsCallback).onSuccess(
             apiCredentialsCaptor.capture()
         )
@@ -530,7 +530,7 @@ public class CredentialsManagerTest {
         MatcherAssert.assertThat(newAPiCredentials.accessToken, Is.`is`("newAccess"))
         MatcherAssert.assertThat(newAPiCredentials.type, Is.`is`("newType"))
         MatcherAssert.assertThat(newAPiCredentials.expiresAt, Is.`is`(newDate))
-        MatcherAssert.assertThat(newAPiCredentials.scope, Is.`is`("newScope"))
+        MatcherAssert.assertThat(newAPiCredentials.scope, Is.`is`("scope"))
     }
 
     @Test
@@ -544,7 +544,7 @@ public class CredentialsManagerTest {
         Mockito.`when`(storage.retrieveString("audience")).thenReturn(gson.toJson(apiCredentials))
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
         Mockito.`when`(
-            client.renewAuth("refreshToken", "audience", "newScope")
+            client.renewAuth("refreshToken", "audience", "scope")
         ).thenReturn(request)
         val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS + ONE_HOUR_SECONDS * 1000)
         val jwtMock = mock<Jwt>()
@@ -554,9 +554,9 @@ public class CredentialsManagerTest {
         // Trigger success
         val newRefresh: String? = null
         val renewedCredentials =
-            Credentials("newId", "newAccess", "newType", newRefresh, newDate, "newScope")
+            Credentials("newId", "newAccess", "newType", newRefresh, newDate, "scope")
         Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
-        manager.getApiCredentials("audience", "newScope", minTtl = 10, callback = apiCredentialsCallback)
+        manager.getApiCredentials("audience", "scope", minTtl = 10, callback = apiCredentialsCallback)
         verify(apiCredentialsCallback).onSuccess(
             apiCredentialsCaptor.capture()
         )
@@ -572,7 +572,7 @@ public class CredentialsManagerTest {
         MatcherAssert.assertThat(newAPiCredentials.accessToken, Is.`is`("newAccess"))
         MatcherAssert.assertThat(newAPiCredentials.type, Is.`is`("newType"))
         MatcherAssert.assertThat(newAPiCredentials.expiresAt, Is.`is`(newDate))
-        MatcherAssert.assertThat(newAPiCredentials.scope, Is.`is`("newScope"))
+        MatcherAssert.assertThat(newAPiCredentials.scope, Is.`is`("scope"))
     }
 
     @Test
@@ -641,7 +641,7 @@ public class CredentialsManagerTest {
 
         // Verify the credentials are property stored
         verify(storage).store("com.auth0.id_token", renewedCredentials.idToken)
-        // RefreshToken should not be replaced
+        // RefreshToken should be replaced
         verify(storage).store("com.auth0.refresh_token", "newRefreshToken")
         verify(storage).store("audience", gson.toJson(renewedCredentials.toAPICredentials()))
         // Verify the returned credentials are the latest

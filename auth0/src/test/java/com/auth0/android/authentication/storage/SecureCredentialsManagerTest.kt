@@ -24,6 +24,7 @@ import com.google.gson.Gson
 import com.nhaarman.mockitokotlin2.KArgumentCaptor
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argumentCaptor
+import com.nhaarman.mockitokotlin2.doNothing
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
@@ -2176,7 +2177,8 @@ public class SecureCredentialsManagerTest {
         val renewedCredentials =
             Credentials("newId", "newAccess", "newType", newRefresh, newDate, "newScope")
         Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
-        val expectedJson = gson.toJson(renewedCredentials)
+        val updatedCredentials = renewedCredentials.copy(refreshToken = "refreshToken")
+        val expectedJson = gson.toJson(updatedCredentials)
         Mockito.`when`(crypto.encrypt(any()))
             .thenReturn(expectedJson.toByteArray())
         manager.getApiCredentials("audience", "newScope", callback = apiCredentialsCallback)
@@ -2184,10 +2186,11 @@ public class SecureCredentialsManagerTest {
             apiCredentialsCaptor.capture()
         )
 
-
         // Verify the credentials are property stored
         verify(storage).store(eq("com.auth0.credentials"), stringCaptor.capture())
         MatcherAssert.assertThat(stringCaptor.firstValue, Is.`is`(Matchers.notNullValue()))
+        val credentials = gson.fromJson(expectedJson,Credentials::class.java)
+        Assert.assertEquals("refreshToken",credentials.refreshToken)
         // Verify the returned credentials are the latest
         val newAPiCredentials = apiCredentialsCaptor.firstValue
         MatcherAssert.assertThat(newAPiCredentials, Is.`is`(Matchers.notNullValue()))
@@ -2233,7 +2236,6 @@ public class SecureCredentialsManagerTest {
             apiCredentialsCaptor.capture()
         )
 
-        // Verify the returned credentials are the latest
         val newAPiCredentials = apiCredentialsCaptor.firstValue
         MatcherAssert.assertThat(newAPiCredentials, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(newAPiCredentials.accessToken, Is.`is`("newAccess"))
@@ -2283,7 +2285,6 @@ public class SecureCredentialsManagerTest {
             apiCredentialsCaptor.capture()
         )
 
-        // Verify the returned credentials are the latest
         val newAPiCredentials = apiCredentialsCaptor.firstValue
         MatcherAssert.assertThat(newAPiCredentials, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(newAPiCredentials.accessToken, Is.`is`("newAccess"))
@@ -2328,7 +2329,6 @@ public class SecureCredentialsManagerTest {
             apiCredentialsCaptor.capture()
         )
 
-        // Verify the returned credentials are the latest
         val newAPiCredentials = apiCredentialsCaptor.firstValue
         MatcherAssert.assertThat(newAPiCredentials, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(newAPiCredentials.accessToken, Is.`is`("newAccess"))
@@ -2425,7 +2425,6 @@ public class SecureCredentialsManagerTest {
             exceptionCaptor.capture()
         )
 
-        // Verify the returned credentials are the latest
         val exception = exceptionCaptor.firstValue
         MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
     }
