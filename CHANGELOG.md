@@ -1,5 +1,12 @@
 # Change Log
 
+## [3.7.0](https://github.com/auth0/Auth0.Android/tree/3.7.0) (2025-05-09)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.6.0...3.7.0)
+
+**Added**
+- Add support for Multi-Resource Refresh Token (MRRT) [\#811](https://github.com/auth0/Auth0.Android/pull/811) ([pmathew92](https://github.com/pmathew92))
+- Allow updating the logout and authorize url [\#822](https://github.com/auth0/Auth0.Android/pull/822) ([utkrishtsahu](https://github.com/utkrishtsahu))
+
 ## [3.6.0](https://github.com/auth0/Auth0.Android/tree/3.6.0) (2025-04-28)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.5.0...3.6.0)
 
