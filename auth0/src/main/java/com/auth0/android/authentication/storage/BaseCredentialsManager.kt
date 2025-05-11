@@ -3,6 +3,7 @@ package com.auth0.android.authentication.storage
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.callback.Callback
+import com.auth0.android.result.APICredentials
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.SSOCredentials
 import com.auth0.android.util.Clock
@@ -30,6 +31,7 @@ public abstract class BaseCredentialsManager internal constructor(
 
     @Throws(CredentialsManagerException::class)
     public abstract fun saveCredentials(credentials: Credentials)
+    public abstract fun saveApiCredentials(apiCredentials: APICredentials, audience: String)
     public abstract fun getCredentials(callback: Callback<Credentials, CredentialsManagerException>)
     public abstract fun getSsoCredentials(
         parameters: Map<String, String>,
@@ -68,6 +70,15 @@ public abstract class BaseCredentialsManager internal constructor(
         headers: Map<String, String>,
         forceRefresh: Boolean,
         callback: Callback<Credentials, CredentialsManagerException>
+    )
+
+    public abstract fun getApiCredentials(
+        audience: String,
+        scope: String? = null,
+        minTtl: Int = 0,
+        parameters: Map<String, String> = emptyMap(),
+        headers: Map<String, String> = emptyMap(),
+        callback: Callback<APICredentials, CredentialsManagerException>
     )
 
     @JvmSynthetic
@@ -115,7 +126,18 @@ public abstract class BaseCredentialsManager internal constructor(
         forceRefresh: Boolean
     ): Credentials
 
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    public abstract suspend fun awaitApiCredentials(
+        audience: String,
+        scope: String? = null,
+        minTtl: Int = 0,
+        parameters: Map<String, String> = emptyMap(),
+        headers: Map<String, String> = emptyMap()
+    ): APICredentials
+
     public abstract fun clearCredentials()
+    public abstract fun clearApiCredentials(audience: String)
     public abstract fun hasValidCredentials(): Boolean
     public abstract fun hasValidCredentials(minTtl: Long): Boolean
 

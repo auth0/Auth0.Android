@@ -11,9 +11,11 @@ import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
 import com.auth0.android.request.internal.GsonProvider
+import com.auth0.android.result.APICredentials
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.OptionalCredentials
 import com.auth0.android.result.SSOCredentials
+import com.auth0.android.result.toAPICredentials
 import com.google.gson.Gson
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.lang.ref.WeakReference
@@ -37,7 +39,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     private val localAuthenticationManagerFactory: LocalAuthenticationManagerFactory? = null,
 ) : BaseCredentialsManager(apiClient, storage, jwtDecoder) {
     private val gson: Gson = GsonProvider.gson
-
 
     /**
      * Creates a new SecureCredentialsManager to handle Credentials
@@ -126,6 +127,36 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     }
 
     /**
+     * Stores the given [APICredentials] in the storage for the given audience.
+     * @param apiCredentials the API Credentials to be stored
+     * @param audience the audience for which the credentials are stored
+     */
+    override fun saveApiCredentials(apiCredentials: APICredentials, audience: String) {
+        val json = gson.toJson(apiCredentials)
+        try {
+            val encrypted = crypto.encrypt(json.toByteArray())
+            val encryptedEncoded = Base64.encodeToString(encrypted, Base64.DEFAULT)
+            storage.store(audience, encryptedEncoded)
+        } catch (e: IncompatibleDeviceException) {
+            throw CredentialsManagerException(
+                CredentialsManagerException.Code.INCOMPATIBLE_DEVICE,
+                e
+            )
+        } catch (e: CryptoException) {
+            /*
+             * If the keys were invalidated in the call above a good new pair is going to be available
+             * to use on the next call. We clear any existing credentials so #hasValidCredentials returns
+             * a true value. Retrying this operation will succeed.
+             */
+            clearApiCredentials(audience)
+            throw CredentialsManagerException(
+                CredentialsManagerException.Code.CRYPTO_EXCEPTION,
+                e
+            )
+        }
+    }
+
+    /**
      * Creates a new request to exchange a refresh token for a session transfer token that can be used to perform web single sign-on.
      *
      * When opening your website on any browser or web view, add the session transfer token to the URL as a query
@@ -168,10 +199,10 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         callback: Callback<SSOCredentials, CredentialsManagerException>
     ) {
         serialExecutor.execute {
-            lateinit var existingCredentials: Credentials
-            try {
-                existingCredentials = getExistingCredentials()
+            val existingCredentials: Credentials = try {
+                getExistingCredentials()
             } catch (exception: CredentialsManagerException) {
+                Log.e(TAG, "Error while fetching existing credentials", exception)
                 callback.onFailure(exception)
                 return@execute
             }
@@ -181,7 +212,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             }
 
             val request =
-                authenticationClient.ssoExchange(existingCredentials.refreshToken!!)
+                authenticationClient.ssoExchange(existingCredentials.refreshToken)
             try {
                 if (parameters.isNotEmpty()) {
                     request.addParameters(parameters)
@@ -407,6 +438,47 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     }
 
     /**
+     * Retrieves API credentials from storage and automatically renews them using the refresh token if the access
+     * token is expired. Otherwise, the retrieved API credentials will be returned as they are still valid.
+     *
+     * If there are no stored API credentials, the refresh token will be exchanged for a new set of API credentials.
+     * New or renewed API credentials will be automatically persisted in storage.
+     *
+     * @param audience Identifier of the API that your application is requesting access to.
+     * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
+     * @param minTtl   the minimum time in seconds that the access token should last before expiration.
+     * @param parameters additional parameters to send in the request to refresh expired credentials.
+     * @param headers additional headers to send in the request to refresh expired credentials.
+     */
+    @JvmSynthetic
+    @Throws(CredentialsManagerException::class)
+    override suspend fun awaitApiCredentials(
+        audience: String,
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        headers: Map<String, String>
+    ): APICredentials {
+        return suspendCancellableCoroutine { continuation ->
+            getApiCredentials(
+                audience,
+                scope,
+                minTtl,
+                parameters,
+                headers,
+                object : Callback<APICredentials, CredentialsManagerException> {
+                    override fun onSuccess(result: APICredentials) {
+                        continuation.resume(result)
+                    }
+
+                    override fun onFailure(error: CredentialsManagerException) {
+                        continuation.resumeWithException(error)
+                    }
+                })
+        }
+    }
+
+    /**
      * Tries to obtain the credentials from the Storage. The callback's [Callback.onSuccess] method will be called with the result.
      * If something unexpected happens, the [Callback.onFailure] method will be called with the error. Some devices are not compatible
      * at all with the cryptographic implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
@@ -520,15 +592,14 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         }
 
         if (fragmentActivity != null && localAuthenticationOptions != null && localAuthenticationManagerFactory != null) {
+
             fragmentActivity.get()?.let { fragmentActivity ->
-                val localAuthenticationManager = localAuthenticationManagerFactory.create(
-                    activity = fragmentActivity,
-                    authenticationOptions = localAuthenticationOptions,
-                    resultCallback = localAuthenticationResultCallback(
+                startBiometricAuthentication(
+                    fragmentActivity,
+                    biometricAuthenticationCredentialsCallback(
                         scope, minTtl, parameters, headers, forceRefresh, callback
                     )
                 )
-                localAuthenticationManager.authenticate()
             } ?: run {
                 callback.onFailure(CredentialsManagerException.BIOMETRIC_ERROR_NO_ACTIVITY)
             }
@@ -554,6 +625,47 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         }
 
     /**
+     * Retrieves API credentials from storage and automatically renews them using the refresh token if the access
+     * token is expired. Otherwise, the retrieved API credentials will be returned via the success callback as they are still valid.
+     *
+     * If there are no stored API credentials, the refresh token will be exchanged for a new set of API credentials.
+     * New or renewed API credentials will be automatically persisted in storage.
+     *
+     * @param audience Identifier of the API that your application is requesting access to.
+     * @param scope    the scope to request for the access token. If null is passed, the previous scope will be kept.
+     * @param minTtl   the minimum time in seconds that the access token should last before expiration.
+     * @param parameters additional parameters to send in the request to refresh expired credentials.
+     * @param headers additional headers to send in the request to refresh expired credentials.
+     */
+    override fun getApiCredentials(
+        audience: String,
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        headers: Map<String, String>,
+        callback: Callback<APICredentials, CredentialsManagerException>
+    ) {
+
+        if (fragmentActivity != null && localAuthenticationOptions != null && localAuthenticationManagerFactory != null) {
+
+            fragmentActivity.get()?.let { fragmentActivity ->
+                startBiometricAuthentication(
+                    fragmentActivity,
+                    biometricAuthenticationApiCredentialsCallback(
+                        audience, scope, minTtl, parameters, headers, callback
+                    )
+                )
+            } ?: run {
+                callback.onFailure(CredentialsManagerException.BIOMETRIC_ERROR_NO_ACTIVITY)
+            }
+            return
+        }
+
+        continueGetApiCredentials(audience, scope, minTtl, parameters, headers, callback)
+    }
+
+
+    /**
      * Delete the stored credentials
      */
     override fun clearCredentials() {
@@ -562,6 +674,14 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         storage.remove(LEGACY_KEY_CACHE_EXPIRES_AT)
         storage.remove(KEY_CAN_REFRESH)
         Log.d(TAG, "Credentials were just removed from the storage")
+    }
+
+    /**
+     * Removes the credentials for the given audience from the storage if present.
+     */
+    override fun clearApiCredentials(audience: String) {
+        storage.remove(audience)
+        Log.d(TAG, "API Credentials for $audience were just removed from the storage")
     }
 
     /**
@@ -747,6 +867,127 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         }
     }
 
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal fun continueGetApiCredentials(
+        audience: String,
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        headers: Map<String, String>,
+        callback: Callback<APICredentials, CredentialsManagerException>
+    ) {
+        serialExecutor.execute {
+            val encryptedEncodedJson = storage.retrieveString(audience)
+            //Check if existing api credentials are present and valid
+            encryptedEncodedJson?.let { encryptedEncoded ->
+                val encrypted = Base64.decode(encryptedEncoded, Base64.DEFAULT)
+                val json: String = try {
+                    String(crypto.decrypt(encrypted))
+                } catch (e: IncompatibleDeviceException) {
+                    callback.onFailure(
+                        CredentialsManagerException(
+                            CredentialsManagerException.Code.INCOMPATIBLE_DEVICE,
+                            e
+                        )
+                    )
+                    return@execute
+                } catch (e: CryptoException) {
+                    //If keys were invalidated, existing credentials will not be recoverable.
+                    clearApiCredentials(audience)
+                    callback.onFailure(
+                        CredentialsManagerException(
+                            CredentialsManagerException.Code.CRYPTO_EXCEPTION,
+                            e
+                        )
+                    )
+                    return@execute
+                }
+
+                val apiCredentials = gson.fromJson(json, APICredentials::class.java)
+
+                val expiresAt = apiCredentials.expiresAt.time
+                val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
+                val scopeChanged = hasScopeChanged(apiCredentials.scope, scope)
+                val hasExpired = hasExpired(apiCredentials.expiresAt.time)
+                if (!hasExpired && !willAccessTokenExpire && !scopeChanged) {
+                    callback.onSuccess(apiCredentials)
+                    return@execute
+                }
+            }
+
+            //Check if refresh token exists or not
+            val existingCredentials: Credentials = try {
+                getExistingCredentials()
+            } catch (exception: CredentialsManagerException) {
+                callback.onFailure(exception)
+                return@execute
+            }
+            val refreshToken = existingCredentials.refreshToken
+            if (refreshToken == null) {
+                callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
+                return@execute
+            }
+
+            val request = authenticationClient.renewAuth(refreshToken, audience, scope)
+            request.addParameters(parameters)
+            for (header in headers) {
+                request.addHeader(header.key, header.value)
+            }
+
+            try {
+                val newCredentials = request.execute()
+                val expiresAt = newCredentials.expiresAt.time
+                val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
+                if (willAccessTokenExpire) {
+                    val tokenLifetime = (expiresAt - currentTimeInMillis - minTtl * 1000) / -1000
+                    val wrongTtlException = CredentialsManagerException(
+                        CredentialsManagerException.Code.LARGE_MIN_TTL, String.format(
+                            Locale.getDefault(),
+                            "The lifetime of the renewed Access Token (%d) is less than the minTTL requested (%d). Increase the 'Token Expiration' setting of your Auth0 API in the dashboard, or request a lower minTTL.",
+                            tokenLifetime,
+                            minTtl
+                        )
+                    )
+                    callback.onFailure(wrongTtlException)
+                    return@execute
+                }
+
+                // non-empty refresh token for refresh token rotation scenarios
+                val updatedRefreshToken =
+                    if (TextUtils.isEmpty(newCredentials.refreshToken)) refreshToken else newCredentials.refreshToken
+                val newApiCredentials = newCredentials.toAPICredentials()
+                saveCredentials(
+                    existingCredentials.copy(
+                        refreshToken = updatedRefreshToken,
+                        idToken = newCredentials.idToken
+                    )
+                )
+                saveApiCredentials(newApiCredentials, audience)
+                callback.onSuccess(newApiCredentials)
+
+            } catch (error: AuthenticationException) {
+                val exception = when {
+                    error.isRefreshTokenDeleted || error.isInvalidRefreshToken -> CredentialsManagerException.Code.RENEW_FAILED
+
+                    error.isNetworkError -> CredentialsManagerException.Code.NO_NETWORK
+                    else -> CredentialsManagerException.Code.API_ERROR
+                }
+                callback.onFailure(
+                    CredentialsManagerException(
+                        exception, error
+                    )
+                )
+            }
+
+        }
+    }
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal fun clearFragmentActivity() {
+        fragmentActivity!!.clear()
+    }
+
     /**
      * Helper method to fetch existing credentials from the storage.
      * This method is not thread safe
@@ -782,10 +1023,60 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         return existingCredentials
     }
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal fun clearFragmentActivity() {
-        fragmentActivity!!.clear()
+    /**
+     * Helper method to start the biometric authentication for accessing the credentials
+     */
+    private fun startBiometricAuthentication(
+        fragmentActivity: FragmentActivity,
+        biometricResultCallback: Callback<Boolean, CredentialsManagerException>
+    ) {
+        val localAuthenticationManager = localAuthenticationManagerFactory?.create(
+            activity = fragmentActivity,
+            authenticationOptions = localAuthenticationOptions!!,
+            resultCallback = biometricResultCallback,
+        )
+        localAuthenticationManager?.authenticate()
     }
+
+    /**
+     * Biometric authentication callback for authentication credentials
+     */
+    private val biometricAuthenticationCredentialsCallback =
+        { scope: String?, minTtl: Int, parameters: Map<String, String>, headers: Map<String, String>,
+          forceRefresh: Boolean, callback: Callback<Credentials, CredentialsManagerException> ->
+            object : Callback<Boolean, CredentialsManagerException> {
+                override fun onSuccess(result: Boolean) {
+                    continueGetCredentials(
+                        scope, minTtl, parameters, headers, forceRefresh,
+                        callback
+                    )
+                }
+
+                override fun onFailure(error: CredentialsManagerException) {
+                    callback.onFailure(error)
+                }
+            }
+        }
+
+    /**
+     * Biometric authentication callback for API credentials
+     */
+    private val biometricAuthenticationApiCredentialsCallback =
+        { audience: String, scope: String?, minTtl: Int, parameters: Map<String, String>, headers: Map<String, String>,
+          callback: Callback<APICredentials, CredentialsManagerException> ->
+            object : Callback<Boolean, CredentialsManagerException> {
+                override fun onSuccess(result: Boolean) {
+                    continueGetApiCredentials(
+                        audience, scope, minTtl, parameters, headers,
+                        callback
+                    )
+                }
+
+                override fun onFailure(error: CredentialsManagerException) {
+                    callback.onFailure(error)
+                }
+            }
+        }
 
     /**
      * Helper method to stores the given [ssoCredentials] refresh token in the storage.
