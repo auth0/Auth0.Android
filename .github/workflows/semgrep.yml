@@ -31,7 +31,7 @@ jobs:
 
     steps:
       - if: github.actor == 'dependabot[bot]' || github.event_name == 'merge_group'
-        run: exit 0 # Skip unnecessary test runs for dependabot and merge queues. Artifically flag as successful, as this is a required check for branch protection.
+        run: necessary test runs for 'dependabot[bot]'
 
       - uses: actions/checkout@v4
         with:
