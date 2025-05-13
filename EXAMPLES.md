@@ -102,7 +102,8 @@ WebAuthProvider.login(account)
 In scenarios where you need to use a specific authorize endpoint different from the one derived from your Auth0 domain (e.g., for custom domains, specific tenant configurations), you can provide a full custom URL to the `/authorize` endpoint.
 
 ```kotlin
-WebAuthProvider.login(account)
+WebAuthProvider
+.login(account)
 .withAuthorizeUrl("https://YOUR_CUSTOM_TENANT_OR_AUTH_DOMAIN/authorize")
 .start(this, callback)
 ```
@@ -111,7 +112,8 @@ WebAuthProvider.login(account)
   <summary>Using Java</summary>
 
 ```java
-WebAuthProvider.login(account)
+WebAuthProvider
+.login(account)
 .withAuthorizeUrl("https://YOUR_CUSTOM_TENANT_OR_AUTH_DOMAIN/authorize")
 .start(this, callback);
 ```
@@ -163,7 +165,8 @@ WebAuthProvider.logout(account)
 Similar to the authorize URL, you can specify a custom logout endpoint if your setup requires it (e.g., using custom domains or for specific logout behaviors configured in your Auth0 tenant).
 
 ```kotlin
-WebAuthProvider.logout(account)
+WebAuthProvider
+.logout(account)
 .withLogoutUrl("https://YOUR_CUSTOM_TENANT_OR_AUTH_DOMAIN/v2/logout")
 .start(this, logoutCallback)
 ```
@@ -171,9 +174,10 @@ WebAuthProvider.logout(account)
   <summary>Using Java</summary>
 
 ```java
-WebAuthProvider.logout(account)
-    .withLogoutUrl("https://YOUR_CUSTOM_TENANT_OR_AUTH_DOMAIN/v2/logout")
-    .start(this, logoutCallback);
+WebAuthProvider
+.logout(account)
+.withLogoutUrl("https://YOUR_CUSTOM_TENANT_OR_AUTH_DOMAIN/v2/logout")
+.start(this, logoutCallback);
 ```
 </details>
 
