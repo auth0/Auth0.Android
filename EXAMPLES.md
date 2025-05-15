@@ -6,8 +6,10 @@
   - [Specify scope](#specify-scope)
   - [Specify Connection scope](#specify-connection-scope)
   - [Specify Parameter](#specify-parameter)
+  - [Specify a Custom Authorize URL](#specify-a-custom-authorize-url)
   - [Customize the Custom Tabs UI](#customize-the-custom-tabs-ui)
   - [Changing the Return To URL scheme](#changing-the-return-to-url-scheme)
+  - [Specify a Custom Logout URL](#specify-a-custom-logout-url)
   - [Trusted Web Activity](#trusted-web-activity)
   - [Authentication API](#authentication-api)
     - [Login with database connection](#login-with-database-connection)
@@ -95,6 +97,30 @@ WebAuthProvider.login(account)
     .start(this, callback)
 ```
 
+## Specify a Custom Authorize URL
+
+In scenarios where you need to use a specific authorize endpoint different from the one derived from your Auth0 domain (e.g., for custom domains, specific tenant configurations), you can provide a full custom URL to the `/authorize` endpoint.
+
+```kotlin
+WebAuthProvider
+.login(account)
+.withAuthorizeUrl("https://YOUR_CUSTOM_TENANT_OR_AUTH_DOMAIN/authorize")
+.start(this, callback)
+```
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+WebAuthProvider
+.login(account)
+.withAuthorizeUrl("https://YOUR_CUSTOM_TENANT_OR_AUTH_DOMAIN/authorize")
+.start(this, callback);
+```
+</details>
+
+The URL provided to `.withAuthorizeUrl()` must be a complete and valid HTTPS URL for an OAuth 2.0 authorize endpoint. The SDK will append standard OAuth parameters to this custom base URL.
+
 ## Customize the Custom Tabs UI
 
 If the device where the app is running has a Custom Tabs compatible Browser, a Custom Tab will be preferred for the logout flow. You can customize the Page Title visibility, the Toolbar color, and the supported Browser applications by using the `CustomTabsOptions` class.
@@ -133,6 +159,29 @@ WebAuthProvider.logout(account)
     .withScheme("myapp")
     .start(this, logoutCallback)
 ```
+
+## Specify a Custom Logout URL
+
+Similar to the authorize URL, you can specify a custom logout endpoint if your setup requires it (e.g., using custom domains or for specific logout behaviors configured in your Auth0 tenant).
+
+```kotlin
+WebAuthProvider
+.logout(account)
+.withLogoutUrl("https://YOUR_CUSTOM_TENANT_OR_AUTH_DOMAIN/v2/logout")
+.start(this, logoutCallback)
+```
+<details>
+  <summary>Using Java</summary>
+
+```java
+WebAuthProvider
+.logout(account)
+.withLogoutUrl("https://YOUR_CUSTOM_TENANT_OR_AUTH_DOMAIN/v2/logout")
+.start(this, logoutCallback);
+```
+</details>
+
+The URL provided to `.withLogoutUrl()` must be a complete and valid HTTPS URL for logout endpoint. The SDK will append standard logout parameters to this custom base URL.
 
 ## Trusted Web Activity
 
