@@ -33,7 +33,7 @@ internal class RequestFactory<U : Auth0Exception> internal constructor(
 
     fun post(url: String): Request<Void?, U> =
         this.post(url, object : JsonAdapter<Void?> {
-            override fun fromJson(reader: Reader): Void? {
+            override fun fromJson(reader: Reader, headers: Map<String, List<String>>): Void? {
                 return null
             }
         })

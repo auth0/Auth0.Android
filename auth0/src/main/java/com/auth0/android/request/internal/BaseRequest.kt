@@ -129,7 +129,7 @@ internal open class BaseRequest<T, U : Auth0Exception>(
             if (response.isSuccess()) {
                 //2. Successful scenario. Response of type T
                 return try {
-                    resultAdapter.fromJson(reader)
+                    resultAdapter.fromJson(reader,response.headers)
                 } catch (exception: Exception) {
                     //multi catch IOException and JsonParseException (including JsonIOException)
                     //3. Network exceptions, timeouts, etc reading response body
