@@ -2,7 +2,6 @@ package com.auth0.android.util
 
 internal class MyAccountAPIMockServer : APIMockServer() {
 
-
     fun willReturnPasskeyChallengeWithoutHeader(): MyAccountAPIMockServer {
         val json = """
             {
@@ -97,12 +96,57 @@ internal class MyAccountAPIMockServer : APIMockServer() {
         return this
     }
 
-   private companion object {
-        const val REFRESH_TOKEN = "REFRESH_TOKEN"
-        const val ID_TOKEN = "ID_TOKEN"
-        const val ACCESS_TOKEN = "ACCESS_TOKEN"
-        const val SESSION_ID = "SESSION_ID"
-        private const val BEARER = "BEARER"
+    fun willReturnErrorForBadRequest(): MyAccountAPIMockServer {
+        val responseBody = """
+        {
+            "type": "validation_error",
+            "status": 400,
+            "title": "Bad Request",
+            "detail": "The provided data contains validation errors",
+            "validation_errors": [
+                {
+                    "detail": "Invalid attestation object format",
+                    "field": "authn_response.response.attestationObject",
+                    "pointer": "/authn_response/response/attestationObject",
+                    "source": "request"
+                }
+            ]
+        }
+        """
+        server.enqueue(responseWithJSON(responseBody, 400))
+        return this
+    }
+
+    fun willReturnUnauthorizedError(): MyAccountAPIMockServer {
+        val responseBody = """
+            {
+            "type": "unauthorized_error",
+            "status": 401,
+            "title": "Unauthorized",
+            "detail": "The access token is invalid or has expired",
+            "validation_errors": null
+        }
+        """.trimIndent()
+        server.enqueue(responseWithJSON(responseBody, 401))
+        return this
+    }
+
+    fun willReturnForbiddenError(): MyAccountAPIMockServer {
+        val responseBody = """
+            {
+             "type": "access_denied",
+            "status": 403,
+            "title": "Forbidden",
+            "detail": "You do not have permission to perform this operation",
+            "validation_errors": null
+        }
+        """.trimIndent()
+        server.enqueue(responseWithJSON(responseBody, 403))
+        return this
+    }
+
+    private companion object {
+        private const val SESSION_ID = "SESSION_ID"
         private const val CHALLENGE = "CHALLENGE"
     }
 }

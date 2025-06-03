@@ -164,7 +164,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
                         }
                     }
                     val locationHeader = headers[LOCATION_KEY]?.get(0)?.split("/")?.lastOrNull()
-                    locationHeader ?: throw MyAccountException("Authentication ID not found")
+                    locationHeader ?: throw MyAccountException("Authentication method ID not found")
                     val authenticationId =
                         URLDecoder.decode(
                             locationHeader,

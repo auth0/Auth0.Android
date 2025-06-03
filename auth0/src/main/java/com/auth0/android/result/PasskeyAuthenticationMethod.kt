@@ -22,7 +22,7 @@ public data class PasskeyAuthenticationMethod(
     @SerializedName("public_key")
     val publicKey: String,
     @SerializedName("transports")
-    val transports: List<String>,
+    val transports: List<String>?,
     @SerializedName("type")
     val type: String,
     @SerializedName("user_agent")
