@@ -25,8 +25,6 @@ public data class PasskeyAuthenticationMethod(
     val transports: List<String>,
     @SerializedName("type")
     val type: String,
-    @SerializedName("usage")
-    val usage: String,
     @SerializedName("user_agent")
     val userAgent: String,
     @SerializedName("user_handle")

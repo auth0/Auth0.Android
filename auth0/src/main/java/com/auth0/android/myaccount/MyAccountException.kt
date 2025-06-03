@@ -23,13 +23,11 @@ public class MyAccountException @JvmOverloads constructor(
 
 
     public val type: String?
-        get() = values?.get("type") as? String
-    public var status: Int = 0
-        private set
+        get() = values?.get(TYPE_KEY) as? String
     public val title: String?
-        get() = values?.get("title") as? String
+        get() = values?.get(TITLE_KEY) as? String
     public val detail: String?
-        get() = values?.get("detail") as? String
+        get() = values?.get(DETAIL_KEY) as? String
     public val validationErrors: List<ValidationError>?
         get() = (values?.get("validation_errors") as? List<Map<String, String>>)?.map {
             ValidationError(
@@ -46,13 +44,17 @@ public class MyAccountException @JvmOverloads constructor(
         this.statusCode = statusCode
     }
 
-    public constructor(values: Map<String, Any>) : this(DEFAULT_MESSAGE) {
+    public constructor(
+        values: Map<String, Any>,
+        statusCode: Int
+    ) : this(values[TITLE_KEY]?.toString() ?: DEFAULT_MESSAGE) {
         this.values = values
+        this.statusCode = statusCode
         val codeValue =
-            (if (values.containsKey(ERROR_KEY)) values[ERROR_KEY] else values[CODE_KEY]) as String?
+            (if (values.containsKey(TITLE_KEY)) values[TITLE_KEY] else values[CODE_KEY]) as String?
         code = codeValue ?: UNKNOWN_ERROR
         description =
-            (if (values.containsKey(DESCRIPTION_KEY)) values[DESCRIPTION_KEY] else values[ERROR_DESCRIPTION_KEY]) as String?
+            (if (values.containsKey(DETAIL_KEY)) values[DETAIL_KEY] else values[DESCRIPTION_KEY]) as String?
     }
 
     /**
@@ -104,10 +106,11 @@ public class MyAccountException @JvmOverloads constructor(
     )
 
     private companion object {
-        private const val ERROR_KEY = "error"
+        private const val TYPE_KEY = "type"
         private const val CODE_KEY = "code"
         private const val DESCRIPTION_KEY = "description"
-        private const val ERROR_DESCRIPTION_KEY = "error_description"
+        private const val TITLE_KEY = "title"
+        private const val DETAIL_KEY = "detail"
         private const val DEFAULT_MESSAGE =
             "An error occurred when trying to authenticate with the server."
     }

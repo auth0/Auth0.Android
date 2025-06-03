@@ -11,11 +11,11 @@ public interface JsonAdapter<T> {
     /**
      * Converts the JSON input given in the Reader to the <T> instance.
      * @param reader the reader that contains the JSON encoded string.
-     * @param headers the headers that were received with the response.
+     * @param metadata optional metadata that can be passed along .
      * @throws IOException could be thrown to signal that the input was invalid.
      * @return the parsed <T> result
      */
     @Throws(IOException::class)
-    public fun fromJson(reader: Reader, headers: Map<String, List<String>>): T
+    public fun fromJson(reader: Reader, metadata: Map<String, Any> = emptyMap() ): T
 
 }

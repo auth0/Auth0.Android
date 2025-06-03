@@ -55,7 +55,7 @@ internal class GsonAdapter<T> private constructor(private val adapter: TypeAdapt
         gson: Gson = supplyDefaultGson()
     ) : this(gson.getAdapter(tTypeToken))
 
-    override fun fromJson(reader: Reader,headers: Map<String,List<String>>): T {
+    override fun fromJson(reader: Reader,metadata: Map<String,Any>): T {
         return adapter.fromJson(reader)
     }
 }

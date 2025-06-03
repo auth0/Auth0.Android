@@ -216,7 +216,7 @@ public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRI
                     statusCode: Int,
                     reader: Reader
                 ): ManagementException {
-                    val values = mapAdapter.fromJson(reader, emptyMap())
+                    val values = mapAdapter.fromJson(reader)
                     return ManagementException(values)
                 }
 

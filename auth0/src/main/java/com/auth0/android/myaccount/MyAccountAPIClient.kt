@@ -46,12 +46,6 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
     private val gson: Gson
 ) {
 
-    public val clientId: String
-        get() = auth0.clientId
-
-    public val baseURL: String
-        get() = auth0.getDomainUrl()
-
     /**
      * Creates a new MyAccountAPI client instance.
      *
@@ -133,7 +127,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * ```
      *
      * Then, call ``enroll()`` with the created passkey credential and the challenge to complete
-     * the enrollment
+     * the enrollment.
      *
      * @param userIdentity Unique identifier of the current user's identity. Needed if the user logged in with a [linked account](https://auth0.com/docs/manage-users/user-accounts/user-account-linking)
      * @param connection Name of the database connection where the user is stored
@@ -161,8 +155,14 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
         val passkeyEnrollmentAdapter: JsonAdapter<PasskeyEnrollmentChallenge> =
             object : JsonAdapter<PasskeyEnrollmentChallenge> {
                 override fun fromJson(
-                    reader: Reader, headers: Map<String, List<String>>
+                    reader: Reader, metadata: Map<String, Any>
                 ): PasskeyEnrollmentChallenge {
+                    val headers = metadata.mapValues { (_, value) ->
+                        when (value) {
+                            is List<*> -> value.filterIsInstance<String>()
+                            else -> emptyList()
+                        }
+                    }
                     val authenticationId =
                         URLDecoder.decode(
                             headers[LOCATION_KEY]?.get(0)?.split("/")?.lastOrNull(),
@@ -279,7 +279,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
         private const val USER_IDENTITY_ID_KEY = "identity_user_id"
         private const val CONNECTION_KEY = "connection"
         private const val AUTHORIZATION_KEY = "Authorization"
-        private const val LOCATION_KEY = "Location"
+        private const val LOCATION_KEY = "location"
         private const val AUTH_SESSION_KEY = "auth_session"
         private const val AUTHN_RESPONSE_KEY = "authn_response"
         private fun createErrorAdapter(): ErrorAdapter<MyAccountException> {
@@ -295,8 +295,8 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
                 override fun fromJsonResponse(
                     statusCode: Int, reader: Reader
                 ): MyAccountException {
-                    val values = mapAdapter.fromJson(reader, emptyMap())
-                    return MyAccountException(values)
+                    val values = mapAdapter.fromJson(reader)
+                    return MyAccountException(values, statusCode)
                 }
 
                 override fun fromException(cause: Throwable): MyAccountException {
@@ -306,7 +306,8 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
                         )
                     }
                     return MyAccountException(
-                        "Something went wrong", Auth0Exception("Something went wrong", cause)
+                        cause.message ?: "Something went wrong",
+                        Auth0Exception(cause.message ?: "Something went wrong", cause)
                     )
                 }
             }

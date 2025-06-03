@@ -1088,7 +1088,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
                 override fun fromJsonResponse(
                     statusCode: Int, reader: Reader
                 ): AuthenticationException {
-                    val values = mapAdapter.fromJson(reader, emptyMap())
+                    val values = mapAdapter.fromJson(reader)
                     return AuthenticationException(values, statusCode)
                 }
 
