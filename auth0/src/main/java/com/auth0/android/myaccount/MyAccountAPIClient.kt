@@ -163,13 +163,13 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
                             else -> emptyList()
                         }
                     }
+                    val locationHeader = headers[LOCATION_KEY]?.get(0)?.split("/")?.lastOrNull()
+                    locationHeader ?: throw MyAccountException("Authentication ID not found")
                     val authenticationId =
                         URLDecoder.decode(
-                            headers[LOCATION_KEY]?.get(0)?.split("/")?.lastOrNull(),
+                            locationHeader,
                             "UTF-8"
                         )
-
-                    authenticationId ?: throw MyAccountException("Authentication ID not found")
 
                     val passkeyRegistrationChallenge = gson.fromJson<PasskeyRegistrationChallenge>(
                         reader, PasskeyRegistrationChallenge::class.java
