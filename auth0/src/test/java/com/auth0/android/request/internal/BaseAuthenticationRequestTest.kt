@@ -182,7 +182,7 @@ public class BaseAuthenticationRequestTest {
         val inputStream: InputStream = mock()
         val credentials: Credentials = mock()
         whenever(inputStream.read()).thenReturn(123)
-        whenever(resultAdapter.fromJson(any())).thenReturn(credentials)
+        whenever(resultAdapter.fromJson(any(), any())).thenReturn(credentials)
         val response = ServerResponse(200, inputStream, emptyMap())
         whenever(client.load(eq(BASE_URL), any())).thenReturn(response)
     }

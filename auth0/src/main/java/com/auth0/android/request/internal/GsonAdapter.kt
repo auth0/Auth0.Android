@@ -4,6 +4,7 @@ import com.auth0.android.request.JsonAdapter
 import com.google.gson.Gson
 import com.google.gson.TypeAdapter
 import com.google.gson.reflect.TypeToken
+import okhttp3.Headers
 import java.io.Reader
 
 /**
@@ -54,7 +55,7 @@ internal class GsonAdapter<T> private constructor(private val adapter: TypeAdapt
         gson: Gson = supplyDefaultGson()
     ) : this(gson.getAdapter(tTypeToken))
 
-    override fun fromJson(reader: Reader): T {
+    override fun fromJson(reader: Reader,metadata: Map<String,Any>): T {
         return adapter.fromJson(reader)
     }
 }

@@ -27,6 +27,18 @@ internal abstract class APIMockServer {
             .setBody(json)
     }
 
+    fun responseWithJSON(json: String, statusCode: Int, header: Map<String, String>): MockResponse {
+        val response = MockResponse()
+            .setResponseCode(statusCode)
+            .addHeader("Content-Type", "application/json")
+            .setBody(json)
+
+        header.forEach { (key, value) ->
+            response.addHeader(key, value)
+        }
+        return response
+    }
+
     init {
         server.start()
     }
