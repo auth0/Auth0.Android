@@ -1,5 +1,11 @@
 # Change Log
 
+## [3.8.0](https://github.com/auth0/Auth0.Android/tree/3.8.0) (2025-06-04)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.7.0...3.8.0)
+
+**Added**
+- Added support to enroll passkeys with My Account API  [\#837](https://github.com/auth0/Auth0.Android/pull/837) ([pmathew92](https://github.com/pmathew92))
+
 ## [3.7.0](https://github.com/auth0/Auth0.Android/tree/3.7.0) (2025-05-09)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.6.0...3.7.0)
 
