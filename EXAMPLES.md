@@ -27,6 +27,7 @@
     - [Secure Credentials Manager](#secure-credentials-manager)
       - [Usage](#usage)
       - [Requiring Authentication](#requiring-authentication)
+    - [Other Credentials](#other-credentials)
     - [Handling Credentials Manager exceptions](#handling-credentials-manager-exceptions)
   - [Passkeys](#passkeys)
   - [Bot Protection](#bot-protection)
@@ -658,7 +659,7 @@ authentication
 
 Use the Auth0 My Account API to manage the current user's account.
 
-To call the My Account API, you need an access token issued specifically for this API, including any required scopes for the operations you want to perform.
+To call the My Account API, you need an access token issued specifically for this API, including any required scopes for the operations you want to perform. See [API credentials [EA]](#api-credentials-ea) to learn how to obtain one.
 
 ### Enroll a new passkey
 
@@ -845,6 +846,56 @@ AuthenticationLevel is an enum that defines the different levels of authenticati
 - **STRONG**: Any biometric (e.g., fingerprint, iris, or face) on the device that meets or exceeds the requirements for Class 3 (formerly Strong).
 - **WEAK**: Any biometric (e.g., fingerprint, iris, or face) on the device that meets or exceeds the requirements for Class 2 (formerly Weak), as defined by the Android CDD.
 - **DEVICE_CREDENTIAL**: The non-biometric credential used to secure the device (i.e., PIN, pattern, or password).
+
+
+### Other Credentials
+
+#### API credentials [EA]
+
+> [!NOTE]
+> This feature is currently available in [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access). Please reach out to Auth0 support to get it enabled for your tenant.
+
+When the user logs in, you can request an access token for a specific API by passing its API identifier as the [audience](#specify-audience) value. The access token in the resulting credentials can then be used to make authenticated requests to that API.
+
+However, if you need an access token for a different API, you can exchange the [refresh token](https://auth0.com/docs/secure/tokens/refresh-tokens) for credentials containing an access token specific to this other API.
+
+> [!IMPORTANT]
+> Currently, only the Auth0 My Account API is supported. Support for other APIs will be added in the future.
+
+```kotlin
+
+credentialsManager.getApiCredentials(
+    audience = "https://example.com/me", scope = " create:me:authentication_methods",
+    callback = object : Callback<APICredentials, CredentialsManagerException> {
+        override fun onSuccess(result: APICredentials) {
+            print("Obtained API credentials: $result")
+        }
+
+        override fun onFailure(error: CredentialsManagerException) {
+            print("Failed with: $error")
+        }
+    })
+
+```
+
+<details>
+  <summary>Using Coroutines</summary>
+
+```kotlin
+
+  try {
+          val result =   credentialsManager.awaitApiCredentials(
+                audience = "https://example.com/me",
+                scope = "create:me:authentication_methods"
+            )
+            print("Obtained API credentials: $result")
+        } catch (error: CredentialsManagerException) {
+            print("Failed with: $error")
+        }
+
+```
+
+</details>
 
 ### Handling Credentials Manager exceptions
 
