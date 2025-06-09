@@ -685,7 +685,7 @@ You can specify an optional user identity identifier and/or a database connectio
 val client = MyAccountAPIClient(account, accessToken)
  
 client.passkeyEnrollmentChallenge()
-    .start(object :Callback<PasskeyEnrollmentChallenge,MyAccountException>{
+    .start(object: Callback<PasskeyEnrollmentChallenge, MyAccountException> {
         override fun onSuccess(result: PasskeyEnrollmentChallenge) {
             print("Challenge: ${result.challenge}")
         }
@@ -699,13 +699,13 @@ client.passkeyEnrollmentChallenge()
     
 ```kotlin
 
-     val client = MyAccountAPIClient(account, "accessToken")
+    val client = MyAccountAPIClient(account, "accessToken")
      
-    try{
-        val challenge =  client.passkeyEnrollmentChallenge()
+    try {
+        val challenge = client.passkeyEnrollmentChallenge()
             .await()
         println("Challenge: $challenge")
-    } catch (exception:MyAccountException){
+    } catch (exception: MyAccountException) {
         print("Error: ${exception.message}")
     }
 ```
@@ -735,7 +735,7 @@ Use the created passkey credential and the enrollment challenge to enroll the pa
 ```Kotlin
 
 client.enroll(passkeyCredential,challenge)
-    .start(object :Callback<PasskeyAuthenticationMethod,MyAccountException>{
+    .start(object: Callback<PasskeyAuthenticationMethod, MyAccountException> {
         override fun onSuccess(result: PasskeyAuthenticationMethod) {
             println("Passkey enrolled successfully: ${result.id}")
         }
@@ -750,11 +750,11 @@ client.enroll(passkeyCredential,challenge)
     
 ```kotlin
 
-try{
-   val result =  client.enroll(passkeyCredential,challenge)
+try {
+   val result = client.enroll(passkeyCredential, challenge)
        .await()
     println("Passkey enrolled successfully: ${result.id}")
-}catch(error:MyAccountException){
+} catch(error: MyAccountException) {
     println("Error enrolling passkey: ${error.message}")
 }
 ```
