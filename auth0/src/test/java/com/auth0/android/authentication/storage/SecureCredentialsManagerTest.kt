@@ -174,6 +174,10 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(manager, Is.`is`(Matchers.notNullValue()))
     }
 
+    @Test
+    public fun shouldNotFailToRetrieveCredentials() {
+
+    }
 
     /*
      * SAVE SSO credentials test

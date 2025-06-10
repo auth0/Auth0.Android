@@ -722,6 +722,11 @@ public class CredentialsManagerTest {
     }
 
     @Test
+    public fun shouldFailOnUserProfileWhenCredentialsIsNotSaved() {
+
+    }
+
+    @Test
     public fun shouldFailOnGetCredentialsWhenNoAccessTokenOrIdTokenWasSaved() {
         verifyNoMoreInteractions(client)
         Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn(null)
