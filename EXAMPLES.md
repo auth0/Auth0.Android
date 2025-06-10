@@ -21,10 +21,13 @@
     - [Get user information](#get-user-information)
     - [Custom Token Exchange](#custom-token-exchange)
     - [Native to Web SSO login [EA]](#native-to-web-sso-login-ea)
+  - [My Account API](#my-account-api)
+    - [Enroll a new passkey](#enroll-a-new-passkey)
   - [Credentials Manager](#credentials-manager)
     - [Secure Credentials Manager](#secure-credentials-manager)
       - [Usage](#usage)
       - [Requiring Authentication](#requiring-authentication)
+    - [Other Credentials](#other-credentials)
     - [Handling Credentials Manager exceptions](#handling-credentials-manager-exceptions)
   - [Passkeys](#passkeys)
   - [Bot Protection](#bot-protection)
@@ -649,6 +652,115 @@ authentication
 </details>
 
 
+## My Account API
+
+> [!NOTE]
+> The My Account API is currently available in [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access). Please reach out to Auth0 support to get it enabled for your tenant.
+
+Use the Auth0 My Account API to manage the current user's account.
+
+To call the My Account API, you need an access token issued specifically for this API, including any required scopes for the operations you want to perform. See [API credentials [EA]](#api-credentials-ea) to learn how to obtain one.
+
+### Enroll a new passkey
+
+**Scopes required:** `create:me:authentication_methods`
+
+Enrolling a new passkey is a three-step process. First, you request an enrollment challenge from Auth0. Then you need to pass that challenge to Google's [Credential Manager](https://developer.android.com/identity/sign-in/credential-manager)
+APIs to create a new passkey credential. Finally, you use the created passkey credential and the original challenge to enroll the passkey with Auth0.
+
+#### Prerequisites
+
+- A custom domain configured for your Auth0 tenant.
+- The **Passkeys** grant to be enabled for your Auth0 application.
+- The Android **Device Settings** configured for your Auth0 application.
+- Passkeys are supported only on devices that run Android 9 (API level 28) or higher.
+
+Check [our documentation](https://auth0.com/docs/native-passkeys-for-mobile-applications#before-you-begin) for more information.
+
+#### 1. Request an enrollment challenge
+
+You can specify an optional user identity identifier and/or a database connection name to help Auth0 find the user. The user identity identifier will be needed if the user logged in with a [linked account](https://auth0.com/docs/manage-users/user-accounts/user-account-linking).
+
+```kotlin
+
+val client = MyAccountAPIClient(account, accessToken)
+ 
+client.passkeyEnrollmentChallenge()
+    .start(object: Callback<PasskeyEnrollmentChallenge, MyAccountException> {
+        override fun onSuccess(result: PasskeyEnrollmentChallenge) {
+            print("Challenge: ${result.challenge}")
+        }
+        override fun onFailure(error: MyAccountException) {
+            print("Error: ${error.message}")
+        }
+    })
+```
+<details>
+    <summary>Using coroutines</summary>
+    
+```kotlin
+
+    val client = MyAccountAPIClient(account, "accessToken")
+     
+    try {
+        val challenge = client.passkeyEnrollmentChallenge()
+            .await()
+        println("Challenge: $challenge")
+    } catch (exception: MyAccountException) {
+        print("Error: ${exception.message}")
+    }
+```
+</details>
+
+#### 2. Create a new passkey credential
+
+Use the enrollment challenge with the Google's [CredentialManager](https://developer.android.com/identity/sign-in/credential-manager) APIs to create a new passkey credential.
+
+```kotlin
+// Using coroutines
+val request = CreatePublicKeyCredentialRequest(
+    Gson().toJson(enrollmentChallenge.authParamsPublicKey)
+)
+
+val result = credentialManager.createCredential(requireContext(), request)
+
+val passkeyCredentials = Gson().fromJson(
+    (result as CreatePublicKeyCredentialResponse).registrationResponseJson,
+    PublicKeyCredentials::class.java
+)
+```
+#### 3. Enroll the passkey
+
+Use the created passkey credential and the enrollment challenge to enroll the passkey with Auth0.
+
+```Kotlin
+
+client.enroll(passkeyCredential,challenge)
+    .start(object: Callback<PasskeyAuthenticationMethod, MyAccountException> {
+        override fun onSuccess(result: PasskeyAuthenticationMethod) {
+            println("Passkey enrolled successfully: ${result.id}")
+        }
+        
+        override fun onFailure(error: MyAccountException) {
+            println("Error enrolling passkey: ${error.message}")
+        }
+    })
+```
+<details>
+    <summary>Using coroutines</summary>
+    
+```kotlin
+
+try {
+   val result = client.enroll(passkeyCredential, challenge)
+       .await()
+    println("Passkey enrolled successfully: ${result.id}")
+} catch(error: MyAccountException) {
+    println("Error enrolling passkey: ${error.message}")
+}
+```
+</details>
+
 ## Credentials Manager
 
 ### Secure Credentials Manager
@@ -734,6 +846,56 @@ AuthenticationLevel is an enum that defines the different levels of authenticati
 - **STRONG**: Any biometric (e.g., fingerprint, iris, or face) on the device that meets or exceeds the requirements for Class 3 (formerly Strong).
 - **WEAK**: Any biometric (e.g., fingerprint, iris, or face) on the device that meets or exceeds the requirements for Class 2 (formerly Weak), as defined by the Android CDD.
 - **DEVICE_CREDENTIAL**: The non-biometric credential used to secure the device (i.e., PIN, pattern, or password).
+
+
+### Other Credentials
+
+#### API credentials [EA]
+
+> [!NOTE]
+> This feature is currently available in [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access). Please reach out to Auth0 support to get it enabled for your tenant.
+
+When the user logs in, you can request an access token for a specific API by passing its API identifier as the [audience](#specify-audience) value. The access token in the resulting credentials can then be used to make authenticated requests to that API.
+
+However, if you need an access token for a different API, you can exchange the [refresh token](https://auth0.com/docs/secure/tokens/refresh-tokens) for credentials containing an access token specific to this other API.
+
+> [!IMPORTANT]
+> Currently, only the Auth0 My Account API is supported. Support for other APIs will be added in the future.
+
+```kotlin
+
+credentialsManager.getApiCredentials(
+    audience = "https://example.com/me", scope = " create:me:authentication_methods",
+    callback = object : Callback<APICredentials, CredentialsManagerException> {
+        override fun onSuccess(result: APICredentials) {
+            print("Obtained API credentials: $result")
+        }
+
+        override fun onFailure(error: CredentialsManagerException) {
+            print("Failed with: $error")
+        }
+    })
+
+```
+
+<details>
+  <summary>Using Coroutines</summary>
+
+```kotlin
+
+  try {
+          val result =   credentialsManager.awaitApiCredentials(
+                audience = "https://example.com/me",
+                scope = "create:me:authentication_methods"
+            )
+            print("Obtained API credentials: $result")
+        } catch (error: CredentialsManagerException) {
+            print("Failed with: $error")
+        }
+
+```
+
+</details>
 
 ### Handling Credentials Manager exceptions
 
