@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">Auth0 SDK Sample</string>
-    <string name="com_auth0_domain">YOUR_DOMAIN</string>
-    <string name="com_auth0_client_id">YOUR_CLIENT_ID</string>
+    <string name="com_auth0_domain">int-dx-enterprise-test.us.auth0.com</string>
+    <string name="com_auth0_client_id">GGUVoHL5nseaacSzqB810HWYGHZI34m8</string>
     <string name="com_auth0_scheme">demo</string>
 </resources>
