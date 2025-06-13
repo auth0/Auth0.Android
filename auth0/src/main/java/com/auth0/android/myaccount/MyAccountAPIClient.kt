@@ -134,6 +134,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * @return A request to obtain a passkey enrollment challenge
      *
      * */
+    @JvmOverloads
     public fun passkeyEnrollmentChallenge(
         userIdentity: String? = null, connection: String? = null
     ): Request<PasskeyEnrollmentChallenge, MyAccountException> {

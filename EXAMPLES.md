@@ -712,6 +712,29 @@ client.passkeyEnrollmentChallenge()
 ```
 </details>
 
+<details>
+    <summary>Using Java</summary>
+
+```java
+
+MyAccountAPIClient client = new MyAccountAPIClient(account, "accessToken");
+
+client.passkeyEnrollmentChallenge()
+        .start(new Callback<PasskeyEnrollmentChallenge, MyAccountException>() {
+            @Override
+            public void onSuccess(PasskeyEnrollmentChallenge result) {
+                System.out.println(result);
+            }
+        
+            @Override
+            public void onFailure(@NonNull MyAccountException error) {
+        System.out.println(error);
+            }
+});
+
+```
+</details>
+
 #### 2. Create a new passkey credential
 
 Use the enrollment challenge with the Google's [CredentialManager](https://developer.android.com/identity/sign-in/credential-manager) APIs to create a new passkey credential.
@@ -729,6 +752,32 @@ val passkeyCredentials = Gson().fromJson(
     PublicKeyCredentials::class.java
 )
 ```
+<details>
+    <summary>Using Java</summary>
+
+```java
+
+ CreateCredentialRequest request =
+                new CreatePublicKeyCredentialRequest(new Gson().toJson(enrollmentChallenge.authParamsPublicKey()));
+        credentialManager.createCredentialAsync(getContext(),
+                request,
+                cancellationSignal,
+                <executor>,
+                new CredentialManagerCallback<CreateCredentialResponse, CreateCredentialException>() {
+                    @Override
+                    public void onResult(CreateCredentialResponse createCredentialResponse) {
+                        PublicKeyCredentials credentials = new Gson().fromJson(
+                                ((CreatePublicKeyCredentialResponse) createCredentialResponse).getRegistrationResponseJson(),
+                                PublicKeyCredentials.class);
+                    }
+                    @Override
+                    public void onError(@NonNull CreateCredentialException e) {}
+                });
+
+```
+</details>
+
+
 #### 3. Enroll the passkey
 
 Use the created passkey credential and the enrollment challenge to enroll the passkey with Auth0.
@@ -758,6 +807,27 @@ try {
 } catch(error: MyAccountException) {
     println("Error enrolling passkey: ${error.message}")
 }
+```
+</details>
+
+<details>
+    <summary>Using Java</summary>
+
+```java
+
+client.enroll(passkeyCredential, challenge)
+        .start(new Callback<PasskeyAuthenticationMethod, MyAccountException>() {
+            @Override
+            public void onSuccess(@NonNull PasskeyAuthenticationMethod result) {
+                System.out.println("Passkey enrolled successfully: " + result.getId());
+            }
+
+            @Override
+            public void onFailure(@NonNull MyAccountException error) {
+                System.out.println("Error enrolling passkey: " + error.getMessage());
+            }
+        });
+
 ```
 </details>
 
@@ -895,6 +965,31 @@ credentialsManager.getApiCredentials(
 
 ```
 
+</details>
+
+<details>
+    <summary>Using Java</summary>
+
+```java
+
+credentialsManager.getApiCredentials("audience",
+                "scope",
+                0,
+                new HashMap<>(),
+                new HashMap<>(),
+                new Callback<APICredentials, CredentialsManagerException>() {
+                    @Override
+                    public void onSuccess(APICredentials result) {
+                        System.out.println(result);
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull CredentialsManagerException error) {
+                        System.out.println(error);
+                    }
+                });
+
+```
 </details>
 
 ### Handling Credentials Manager exceptions
