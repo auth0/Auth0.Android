@@ -728,7 +728,7 @@ client.passkeyEnrollmentChallenge()
         
             @Override
             public void onFailure(@NonNull MyAccountException error) {
-        System.out.println(error);
+                System.out.println(error);
             }
 });
 
