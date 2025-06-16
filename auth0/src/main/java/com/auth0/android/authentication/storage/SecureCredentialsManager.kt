@@ -257,45 +257,14 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         }
     }
 
-    private fun retrieveCredentials() : Credentials? {
-        val encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS)
-        if (encryptedEncoded.isNullOrBlank()) {
-            return null
-        }
-        val encrypted = Base64.decode(encryptedEncoded, Base64.DEFAULT)
-        val json: String
-        try {
-            json = String(crypto.decrypt(encrypted))
-        } catch (e: IncompatibleDeviceException) {
-            return null
-        } catch (e: CryptoException) {
-            return null
-        }
-        val bridgeCredentials = gson.fromJson(json, OptionalCredentials::class.java)/* OPTIONAL CREDENTIALS
-             * This bridge is required to prevent users from being logged out when
-             * migrating from Credentials with optional Access Token and ID token
-             */
-        val credentials = Credentials(
-            bridgeCredentials.idToken.orEmpty(),
-            bridgeCredentials.accessToken.orEmpty(),
-            bridgeCredentials.type.orEmpty(),
-            bridgeCredentials.refreshToken,
-            bridgeCredentials.expiresAt ?: Date(),
-            bridgeCredentials.scope
-        )
-        return credentials
-    }
-
     public override val userProfile: UserProfile?
         get() {
-            val credentials: Credentials? = retrieveCredentials()
+            val credentials: Credentials? = getExistingCredentials()
             // Handle null credentials gracefully
             if (credentials == null) {
                 return null
             }
-            val (_, payload) = Jwt.splitToken(credentials.idToken)
-            val gson = GsonProvider.gson
-            return gson.fromJson(Jwt.decodeBase64(payload), UserProfile::class.java)
+           return credentials.user
         }
 
     /**
