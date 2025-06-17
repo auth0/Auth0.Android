@@ -44,10 +44,10 @@ afterEvaluate {
             sourceDirectories.from = ['src/main/java'].plus(android.sourceSets[name].java.srcDirs)
             executionData.from = "${buildDir}/jacoco/${testTaskName}.exec"
 
-//            reports {
-//                xml.enabled = true
-//                html.enabled = true
-//            }
+            reports {
+                xml.enabled = true
+                html.enabled = true
+            }
         }
         jacocoTestReportTask.dependsOn reportTask
     }

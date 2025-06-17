@@ -832,11 +832,6 @@ public class SecureCredentialsManagerTest {
         manager.saveCredentials(credentials)
     }
 
-//    @Test
-//    public fun  retrieveCredentials() {
-//
-//    }
-
     /*
      * GET Credentials tests
      */
