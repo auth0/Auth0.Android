@@ -264,6 +264,57 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
         return request
     }
 
+
+    /**
+     * Deletes an  existing authentication method.
+     *
+     * ## Availability
+     *
+     * This feature is currently available in
+     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
+     * Please reach out to Auth0 support to get it enabled for your tenant.
+     *
+     * ## Scopes Required
+     * `delete:me:authentication-methods:passkey`
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
+     *
+     * apiClient.delete(authenticationMethodId, )
+     *     .start(object : Callback<Void, MyAccountException> {
+     *         override fun onSuccess(result: Void) {
+     *             Log.d("MyApp", "Authentication method deleted")
+     *         }
+     *
+     *         override fun onFailure(error: MyAccountException) {
+     *             Log.e("MyApp", "Failed with: ${error.message}")
+     *         }
+     *     })
+     * ```
+     *
+     * @param authenticationMethodId  Id of the authentication method to be deleted
+     *
+     */
+    public fun delete(
+        authenticationMethodId: String
+    ): Request<Void, MyAccountException> {
+        val url =
+            getDomainUrlBuilder()
+                .addPathSegment(AUTHENTICATION_METHODS)
+                .addPathSegment(authenticationMethodId)
+                .build()
+
+        val request = factory.delete(url.toString(), GsonAdapter(Void::class.java))
+            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+
+        return request
+    }
+
+
     private fun getDomainUrlBuilder(): HttpUrl.Builder {
         return auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(ME_PATH)
