@@ -1,6 +1,7 @@
 package com.auth0.android.myaccount
 
 import androidx.annotation.VisibleForTesting
+import androidx.browser.customtabs.CustomTabsService.Result
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
@@ -14,6 +15,7 @@ import com.auth0.android.request.internal.GsonAdapter.Companion.forMap
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.request.internal.RequestFactory
 import com.auth0.android.request.internal.ResponseUtils.isNetworkError
+import com.auth0.android.result.AuthenticationMethod
 import com.auth0.android.result.PasskeyAuthenticationMethod
 import com.auth0.android.result.PasskeyEnrollmentChallenge
 import com.auth0.android.result.PasskeyRegistrationChallenge
@@ -244,7 +246,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
             "type" to "public-key",
             "response" to mapOf(
                 "clientDataJSON" to credentials.response.clientDataJSON,
-                "attestationObject" to credentials.response.attestationObject
+                "attestationObject" to credentials.response.attestationObject,
             )
         )
 
@@ -266,7 +268,56 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
 
 
     /**
-     * Deletes an  existing authentication method.
+     * Retrieves a single authentication method belonging to the user.
+     *
+     * ## Availability
+     *
+     * This feature is currently available in
+     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
+     * Please reach out to Auth0 support to get it enabled for your tenant.
+     *
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
+     *
+     * apiClient.getAuthenticationMethod(authenticationMethodId, )
+     *     .start(object : Callback<AuthenticationMethod, MyAccountException> {
+     *         override fun onSuccess(result: AuthenticationMethod) {
+     *             Log.d("MyApp", "Authentication method $result")
+     *         }
+     *
+     *         override fun onFailure(error: MyAccountException) {
+     *             Log.e("MyApp", "Failed with: ${error.message}")
+     *         }
+     *     })
+     * ```
+     *
+     * @param authenticationMethodId  Id of the authentication method to be retrieved
+     *
+     */
+    public fun getAuthenticationMethod(authenticationMethodId: String): Result<AuthenticationMethod, MyAccountException> {
+        val url =
+            getDomainUrlBuilder()
+                .addPathSegment(AUTHENTICATION_METHODS)
+                .addPathSegment(authenticationMethodId)
+                .build()
+
+        val request = factory.get(
+            url.toString(),
+            GsonAdapter(AuthenticationMethod::class.java)
+        )
+            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+
+        return request
+    }
+
+
+    /**
+     * Deletes an existing authentication method belonging to the user.
      *
      * ## Availability
      *
@@ -284,7 +335,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * val apiClient = MyAccountAPIClient(auth0, accessToken)
      *
      *
-     * apiClient.delete(authenticationMethodId, )
+     * apiClient.deleteAuthenticationMethod(authenticationMethodId, )
      *     .start(object : Callback<Void, MyAccountException> {
      *         override fun onSuccess(result: Void) {
      *             Log.d("MyApp", "Authentication method deleted")
@@ -299,7 +350,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * @param authenticationMethodId  Id of the authentication method to be deleted
      *
      */
-    public fun delete(
+    public fun deleteAuthenticationMethod(
         authenticationMethodId: String
     ): Request<Void, MyAccountException> {
         val url =
