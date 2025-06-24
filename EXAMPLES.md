@@ -1032,7 +1032,8 @@ To sign up a user with passkey
 try {
     val challenge = authenticationApiClient.signupWithPasskey(
         "{user-data}",
-        "{realm}"
+        "{realm}",
+        "{organization-id}"
     ).await()
     
     //Use CredentialManager to create public key credentials
@@ -1048,7 +1049,7 @@ try {
     )
 
     val userCredential = authenticationApiClient.signinWithPasskey(
-        challenge.authSession, authRequest, "{realm}"
+        challenge.authSession, authRequest, "{realm}" , "{organization-id}"
     )
         .validateClaims()
         .await()
@@ -1060,7 +1061,7 @@ try {
   <summary>Using Java</summary>
 
 ```java
- authenticationAPIClient.signupWithPasskey("{user-data}", "{realm}")
+ authenticationAPIClient.signupWithPasskey("{user-data}", "{realm}","{organization-id}")
         .start(new Callback<PasskeyRegistrationChallenge, AuthenticationException>() {
     @Override
     public void onSuccess(PasskeyRegistrationChallenge result) {
@@ -1078,7 +1079,7 @@ try {
                                 PublicKeyCredentials.class);
 
                         authenticationAPIClient.signinWithPasskey(result.getAuthSession(),
-                                        credentials, "{realm}")
+                                        credentials, "{realm}","{organization-id}")
                                 .start(new Callback<Credentials, AuthenticationException>() {
                                     @Override
                                     public void onSuccess(Credentials result) {}
@@ -1104,7 +1105,7 @@ To sign in a user with passkey
 try {
 
     val challenge =
-        authenticationApiClient.passkeyChallenge("{realm}")
+        authenticationApiClient.passkeyChallenge("{realm}","{organization-id}")
             .await()
 
     //Use CredentialManager to create public key credentials
@@ -1122,7 +1123,8 @@ try {
             val userCredential = authenticationApiClient.signinWithPasskey(
                 challenge.authSession,
                 authRequest,
-                "{realm}"
+                "{realm}",
+                "{organization-id}"
             )
                 .validateClaims()
                 .await()
@@ -1138,7 +1140,7 @@ try {
   <summary>Using Java</summary>
 
 ```java
-authenticationAPIClient.passkeyChallenge("realm")
+authenticationAPIClient.passkeyChallenge("realm","{organization-id}")
                 .start(new Callback<PasskeyChallenge, AuthenticationException>() {
     @Override
     public void onSuccess(PasskeyChallenge result) {
@@ -1158,7 +1160,7 @@ authenticationAPIClient.passkeyChallenge("realm")
                                     responseJson,
                                     PublicKeyCredentials.class
                             );
-                            authenticationAPIClient.signinWithPasskey(result.getAuthSession(), publicKeyCredentials,"{realm}")
+                            authenticationAPIClient.signinWithPasskey(result.getAuthSession(), publicKeyCredentials,"{realm}","{organization-id}")
                                     .start(new Callback<Credentials, AuthenticationException>() {
                                         @Override
                                         public void onSuccess(Credentials result) {}
