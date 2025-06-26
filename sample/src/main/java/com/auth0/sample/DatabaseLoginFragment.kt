@@ -260,7 +260,7 @@ class DatabaseLoginFragment : Fragment() {
     private fun webAuth() {
         WebAuthProvider.login(account)
             .withScheme(getString(R.string.com_auth0_scheme))
-            .withAudience(audience)
+            .withAudience("https://firstresourceserver/")
             .withScope(scope)
             .start(requireContext(), object : Callback<Credentials, AuthenticationException> {
                 override fun onSuccess(result: Credentials) {

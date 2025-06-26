@@ -2,17 +2,17 @@ package com.auth0.android.provider
 
 import android.content.Context
 import android.net.Uri
-import android.os.Bundle
 import android.text.TextUtils
 import android.util.Base64
 import android.util.Log
-import androidx.annotation.ChecksSdkIntAtLeast
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
+import com.auth0.android.dpop.DPoPProvider
+import com.auth0.android.dpop.KeyStoreManager
 import com.auth0.android.request.internal.Jwt
 import com.auth0.android.request.internal.OidcUtils
 import com.auth0.android.result.Credentials
@@ -33,6 +33,15 @@ internal class OAuthManager(
     private val apiClient: AuthenticationAPIClient
     private var requestCode = 0
     private var pkce: PKCE? = null
+
+    private val dPoPProvider = DPoPProvider()
+    private val keyStoreManager = KeyStoreManager()
+
+    init {
+        if (keyStoreManager.getEs256KeyPair() == null) {
+            keyStoreManager.generateKeyPair()
+        }
+    }
 
     private var _currentTimeInMillis: Long? = null
 
@@ -64,6 +73,7 @@ internal class OAuthManager(
         addPKCEParameters(parameters, redirectUri, headers)
         addClientParameters(parameters, redirectUri)
         addValidationParameters(parameters)
+        addDopParameter(parameters)
         val uri = buildAuthorizeUri()
         this.requestCode = requestCode
         AuthenticationActivity.authenticateUsingBrowser(context, uri, launchAsTwa, ctOptions)
@@ -71,6 +81,9 @@ internal class OAuthManager(
 
     fun setHeaders(headers: Map<String, String>) {
         this.headers.putAll(headers)
+        dPoPProvider.generateDpopProofJwt("POST", "https://${account.domain}/oauth/token")?.let {
+            this.headers["DPoP"] = it
+        }
     }
 
     public override fun resume(result: AuthorizeResult): Boolean {
@@ -220,13 +233,22 @@ internal class OAuthManager(
                     errorDescription ?: "Permissions were not granted. Try again."
                 )
             }
+
             ERROR_VALUE_UNAUTHORIZED.equals(errorValue, ignoreCase = true) -> {
-                throw AuthenticationException(ERROR_VALUE_UNAUTHORIZED, errorDescription ?: unknownErrorDescription)
+                throw AuthenticationException(
+                    ERROR_VALUE_UNAUTHORIZED,
+                    errorDescription ?: unknownErrorDescription
+                )
             }
+
             ERROR_VALUE_LOGIN_REQUIRED == errorValue -> {
                 //Whitelist to allow SSO errors go through
-                throw AuthenticationException(errorValue, errorDescription ?: unknownErrorDescription)
+                throw AuthenticationException(
+                    errorValue,
+                    errorDescription ?: unknownErrorDescription
+                )
             }
+
             else -> {
                 throw AuthenticationException(
                     errorValue,
@@ -265,6 +287,12 @@ internal class OAuthManager(
         val nonce = getRandomString(parameters[KEY_NONCE])
         parameters[KEY_STATE] = state
         parameters[KEY_NONCE] = nonce
+    }
+
+    private fun addDopParameter(parameters: MutableMap<String, String>) {
+        dPoPProvider.getDpopJktValue()?.let {
+            parameters["dpop_jkt"] = it
+        }
     }
 
     private fun addClientParameters(parameters: MutableMap<String, String>, redirectUri: String) {
