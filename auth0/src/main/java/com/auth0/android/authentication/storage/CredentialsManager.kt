@@ -1,21 +1,28 @@
 package com.auth0.android.authentication.storage
 
 import android.text.TextUtils
+import android.util.Base64
 import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
+import com.auth0.android.authentication.storage.SecureCredentialsManager.Companion.KEY_CREDENTIALS
 import com.auth0.android.callback.Callback
 import com.auth0.android.request.internal.GsonProvider
+import com.auth0.android.request.internal.Jwt
 import com.auth0.android.result.APICredentials
 import com.auth0.android.result.Credentials
+import com.auth0.android.result.OptionalCredentials
 import com.auth0.android.result.SSOCredentials
+import com.auth0.android.result.UserProfile
 import com.auth0.android.result.toAPICredentials
 import com.google.gson.Gson
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.*
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
+import kotlin.collections.component1
+import kotlin.collections.component2
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -43,6 +50,18 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         JWTDecoder(),
         Executors.newSingleThreadExecutor()
     )
+
+    public override val userProfile: UserProfile?
+        get() {
+            val idToken = storage.retrieveString(KEY_ID_TOKEN)
+
+            if (idToken.isNullOrBlank()) {
+                return null
+            }
+            val (_, payload) = Jwt.splitToken(idToken)
+            val gson = GsonProvider.gson
+            return gson.fromJson(Jwt.decodeBase64(payload), UserProfile::class.java)
+        }
 
     /**
      * Stores the given credentials in the storage. Must have an access_token or id_token and a expires_in value.

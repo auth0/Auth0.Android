@@ -3,11 +3,16 @@ package com.auth0.android.authentication.storage
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.callback.Callback
+import com.auth0.android.request.internal.GsonProvider
+import com.auth0.android.request.internal.Jwt
 import com.auth0.android.result.APICredentials
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.SSOCredentials
+import com.auth0.android.result.UserProfile
 import com.auth0.android.util.Clock
 import java.util.*
+import kotlin.collections.component1
+import kotlin.collections.component2
 
 /**
  * Base class meant to abstract common logic across Credentials Manager implementations.
@@ -37,6 +42,7 @@ public abstract class BaseCredentialsManager internal constructor(
         parameters: Map<String, String>,
         callback: Callback<SSOCredentials, CredentialsManagerException>
     )
+
 
     public abstract fun getSsoCredentials(
         callback: Callback<SSOCredentials, CredentialsManagerException>
@@ -135,6 +141,8 @@ public abstract class BaseCredentialsManager internal constructor(
         parameters: Map<String, String> = emptyMap(),
         headers: Map<String, String> = emptyMap()
     ): APICredentials
+
+    public abstract val userProfile: UserProfile?
 
     public abstract fun clearCredentials()
     public abstract fun clearApiCredentials(audience: String)
