@@ -35,13 +35,6 @@ internal class OAuthManager(
     private var pkce: PKCE? = null
 
     private val dPoPProvider = DPoPProvider()
-    private val keyStoreManager = KeyStoreManager()
-
-    init {
-        if (keyStoreManager.getEs256KeyPair() == null) {
-            keyStoreManager.generateKeyPair()
-        }
-    }
 
     private var _currentTimeInMillis: Long? = null
 
@@ -81,9 +74,6 @@ internal class OAuthManager(
 
     fun setHeaders(headers: Map<String, String>) {
         this.headers.putAll(headers)
-        dPoPProvider.generateDpopProofJwt("POST", "https://${account.domain}/oauth/token")?.let {
-            this.headers["DPoP"] = it
-        }
     }
 
     public override fun resume(result: AuthorizeResult): Boolean {

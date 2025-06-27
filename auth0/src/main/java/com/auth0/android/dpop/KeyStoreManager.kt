@@ -42,6 +42,17 @@ public class KeyStoreManager {
         return null
     }
 
+    public fun hasKeyPair():Boolean {
+        try {
+            val keyStore = KeyStore.getInstance(ANDROID_KEY_STORE)
+            keyStore.load(null)
+            return keyStore.containsAlias(KEY_ALIAS)
+        }catch (exception:Exception){
+           println("Error checking for ECDSA P-256 Key Pair: ${exception.message}")
+        }
+        return false
+    }
+
 
     public fun getEs256KeyPair(): Pair<PrivateKey, PublicKey>? {
         try {
@@ -63,6 +74,22 @@ public class KeyStoreManager {
             e.printStackTrace()
         }
         return null
+    }
+
+    public fun deleteKeyPair() {
+        try {
+            val keyStore = KeyStore.getInstance(ANDROID_KEY_STORE)
+            keyStore.load(null) // Load the Keystore
+            if (keyStore.containsAlias(ANDROID_KEY_STORE)) {
+                keyStore.deleteEntry(ANDROID_KEY_STORE)
+                println("Key Pair  deleted successfully.")
+            } else {
+                println("No Key Pair found with alias")
+            }
+        } catch (e: Exception) {
+            println("Error deleting Key Pair: ${e.message}")
+            e.printStackTrace()
+        }
     }
 
 }

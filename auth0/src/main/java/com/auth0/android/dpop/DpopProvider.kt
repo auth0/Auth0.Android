@@ -24,6 +24,7 @@ public class DPoPProvider {
     public fun generateDpopProofJwt(
         httpMethod: String,
         httpUrl: String,
+        nonce: String? = null,
         accessToken: String? = null
     ): String? {
         val keyPair = keyStoreManager.getEs256KeyPair()
@@ -45,7 +46,6 @@ public class DPoPProvider {
             val header = encodeBase64Url(headerJson.toString().toByteArray(Charsets.UTF_8))
 
             // 2. Construct the Payload
-            Log.d("TAG", "htu url: ${httpUrl}")
             val payloadJson = JSONObject().apply {
                 put("jti", UUID.randomUUID().toString()) // Unique JWT ID
                 put("htm", httpMethod.uppercase())
@@ -53,13 +53,14 @@ public class DPoPProvider {
                 put("iat", System.currentTimeMillis() / 1000) // Issued At
 
 
-//                accessToken?.let {
-//                    // Calculate 'ath' (Access Token Hash) claim
-//                    // SHA-256 hash of the ASCII encoding of the access token, then base64url encoded
-//                    val sha256Digest = MessageDigest.getInstance("SHA-256")
-//                    val athBytes = sha256Digest.digest(it.toByteArray(Charsets.US_ASCII))
-//                    put("ath", encodeBase64Url(athBytes))
-//                }
+                accessToken?.let {
+                    val sha256Digest = MessageDigest.getInstance("SHA-256")
+                    val athBytes = sha256Digest.digest(it.toByteArray(Charsets.US_ASCII))
+                    put("ath", encodeBase64Url(athBytes))
+                }
+                nonce?.let {
+                    put("nonce", it)
+                }
             }
             val payload = encodeBase64Url(payloadJson.toString().toByteArray(Charsets.UTF_8))
 
@@ -202,6 +203,9 @@ public class DPoPProvider {
      * @return The Base64url encoded JWK Thumbprint, or null if an error occurs.
      */
     public fun getDpopJktValue(): String? {
+        if(!keyStoreManager.hasKeyPair()){
+            keyStoreManager.generateKeyPair()
+        }
         val keyPair = keyStoreManager.getEs256KeyPair()
         if (keyPair == null) {
             println("Key pair not found to generate DPoP jkt.")
@@ -224,12 +228,6 @@ public class DPoPProvider {
                 put("x", encodeBase64Url(getJwkCoordinateBytes(publicKey.w.affineX)))
                 put("y", encodeBase64Url(getJwkCoordinateBytes(publicKey.w.affineY)))
             }
-            // Ensure lexicographical order for thumbprint calculation
-            val canonicalJwkString = jwkJson.toString()
-                .replace(
-                    "\"",
-                    "\\\""
-                ) // Escape quotes if needed for parsing, though JSONObject handles this
 
             // The order for EC keys (P-256 specifically): crv, kty, x, y
             // Create a sorted JSON string manually for precise canonicalization.
@@ -269,6 +267,11 @@ public class DPoPProvider {
             return paddedBytes
         }
         return bytes
+    }
+
+
+    public fun hasKeyPair():Boolean {
+        return keyStoreManager.hasKeyPair()
     }
 
 }

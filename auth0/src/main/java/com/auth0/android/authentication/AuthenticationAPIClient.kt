@@ -4,6 +4,7 @@ import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
+import com.auth0.android.dpop.DPoPProvider
 import com.auth0.android.request.*
 import com.auth0.android.request.internal.*
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMap
@@ -53,6 +54,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         RequestFactory<AuthenticationException>(auth0.networkingClient, createErrorAdapter()),
         GsonProvider.gson
     )
+
+    private val dPoPProvider = DPoPProvider()
 
     public val clientId: String
         get() = auth0.clientId
@@ -776,11 +779,17 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             .addPathSegment(OAUTH_PATH)
             .addPathSegment(TOKEN_PATH)
             .build()
+
         val credentialsAdapter = GsonAdapter(
             Credentials::class.java, gson
         )
-        return factory.post(url.toString(), credentialsAdapter)
+        val request = factory.post(url.toString(), credentialsAdapter)
             .addParameters(parameters)
+
+        if (dPoPProvider.hasKeyPair()) {
+            request.addHeader("DPoP", dPoPProvider.generateDpopProofJwt("POST", url.toString())!!)
+        }
+        return request
     }
 
     /**
@@ -917,6 +926,9 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         )
         val request = factory.post(url.toString(), credentialsAdapter)
         request.addParameters(parameters)
+        if (dPoPProvider.hasKeyPair()) {
+            request.addHeader("DPoP", dPoPProvider.generateDpopProofJwt("POST", url.toString())!!)
+        }
         return request
     }
 
@@ -982,7 +994,10 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             T::class.java, gson
         )
         val request = factory.post(url.toString(), adapter)
-        request.addParameters(requestParameters)
+            .addParameters(requestParameters)
+        if (dPoPProvider.hasKeyPair()) {
+            request.addHeader("DPoP", dPoPProvider.generateDpopProofJwt("POST", url.toString())!!)
+        }
         return request
     }
 
@@ -1004,8 +1019,10 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         )
         val request = BaseAuthenticationRequest(
             factory.post(url.toString(), credentialsAdapter), clientId, baseURL
-        )
-        request.addParameters(requestParameters)
+        ).addParameters(requestParameters)
+        if (dPoPProvider.hasKeyPair()) {
+            request.addHeader("DPoP", dPoPProvider.generateDpopProofJwt("POST", url.toString())!!)
+        }
         return request
     }
 
