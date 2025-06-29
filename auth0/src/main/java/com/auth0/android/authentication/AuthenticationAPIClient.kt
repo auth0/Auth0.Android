@@ -166,7 +166,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      *
      * ```
-     * client.signinWithPasskey("{authSession}", "{authResponse}","{realm}")
+     * client.signinWithPasskey("{authSession}", "{authResponse}","{realm}","${organization}")
      *       .validateClaims() //mandatory
      *       .setScope("{scope}")
      *       .start(object: Callback<Credentials, AuthenticationException> {
@@ -178,17 +178,20 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param authSession the auth session received from the server as part of the public key challenge request.
      * @param authResponse the [PublicKeyCredentials] authentication response
      * @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
+     * @param organization id of the organization to be associated with the user while signing in
      * @return a request to configure and start that will yield [Credentials]
      */
     public fun signinWithPasskey(
         authSession: String,
         authResponse: PublicKeyCredentials,
-        realm: String? = null
+        realm: String? = null,
+        organization: String? = null,
     ): AuthenticationRequest {
         val params = ParameterBuilder.newBuilder().apply {
             setGrantType(ParameterBuilder.GRANT_TYPE_PASSKEY)
             set(AUTH_SESSION_KEY, authSession)
             realm?.let { setRealm(it) }
+            organization?.let { set(ORGANIZATION_KEY, organization) }
         }.asDictionary()
 
         return loginWithToken(params)
@@ -210,7 +213,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      *
      * ```
-     * client.signinWithPasskey("{authSession}", "{authResponse}","{realm}")
+     * client.signinWithPasskey("{authSession}", "{authResponse}","{realm}","{organization}")
      *       .validateClaims() //mandatory
      *       .setScope("{scope}")
      *       .start(object: Callback<Credentials, AuthenticationException> {
@@ -222,18 +225,20 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param authSession the auth session received from the server as part of the public key challenge request.
      * @param authResponse the public key credential authentication response in JSON string format that follows the standard webauthn json format
      * @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
+     * @param organization id of the organization to be associated with the user while signing in
      * @return a request to configure and start that will yield [Credentials]
      */
     public fun signinWithPasskey(
         authSession: String,
         authResponse: String,
-        realm: String? = null
+        realm: String? = null,
+        organization: String? = null,
     ): AuthenticationRequest {
         val publicKeyCredentials = gson.fromJson(
             authResponse,
             PublicKeyCredentials::class.java
         )
-        return signinWithPasskey(authSession, publicKeyCredentials, realm)
+        return signinWithPasskey(authSession, publicKeyCredentials, realm, organization)
     }
 
 
@@ -247,7 +252,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      *
      *
      * ```
-     * client.signupWithPasskey("{userData}","{realm}")
+     * client.signupWithPasskey("{userData}","{realm}","{organization}")
      *      .addParameter("scope","scope")
      *      .start(object: Callback<PasskeyRegistration, AuthenticationException> {
      *          override fun onSuccess(result: PasskeyRegistration) { }
@@ -257,11 +262,13 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      *
      *  @param userData user information of the client
      *  @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
+     *  @param organization id of the organization to be associated with the user while signing up
      *  @return  a request to configure and start that will yield [PasskeyRegistrationChallenge]
      */
     public fun signupWithPasskey(
         userData: UserData,
-        realm: String? = null
+        realm: String? = null,
+        organization: String? = null
     ): Request<PasskeyRegistrationChallenge, AuthenticationException> {
         val user = gson.toJsonTree(userData)
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
@@ -272,6 +279,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         val params = ParameterBuilder.newBuilder().apply {
             setClientId(clientId)
             realm?.let { setRealm(it) }
+            organization?.let { set(ORGANIZATION_KEY, it) }
         }.asDictionary()
 
         val passkeyRegistrationChallengeAdapter: JsonAdapter<PasskeyRegistrationChallenge> =
@@ -293,7 +301,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      *
      * ```
-     * client.passkeyChallenge("{realm}")
+     * client.passkeyChallenge("{realm}", "{organization}")
      *    .start(object: Callback<PasskeyChallenge, AuthenticationException> {
      *        override fun onSuccess(result: PasskeyChallenge) { }
      *        override fun onFailure(error: AuthenticationException) { }
@@ -301,10 +309,12 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * ```
      *
      * @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
+     * @param organization id of the organization to be associated with the user while signing in
      * @return a request to configure and start that will yield [PasskeyChallenge]
      */
     public fun passkeyChallenge(
-        realm: String? = null
+        realm: String? = null,
+        organization: String? = null
     ): Request<PasskeyChallenge, AuthenticationException> {
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(PASSKEY_PATH)
@@ -314,6 +324,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         val parameters = ParameterBuilder.newBuilder().apply {
             setClientId(clientId)
             realm?.let { setRealm(it) }
+            organization?.let { set(ORGANIZATION_KEY, organization) }
         }.asDictionary()
 
         val passkeyChallengeAdapter: JsonAdapter<PasskeyChallenge> = GsonAdapter(
@@ -1054,7 +1065,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val RECOVERY_CODE_KEY = "recovery_code"
         private const val SUBJECT_TOKEN_KEY = "subject_token"
         private const val SUBJECT_TOKEN_TYPE_KEY = "subject_token_type"
-        private const val REQUESTED_TOKEN_TYPE_KEY = "requested_token_type"
+        private const val ORGANIZATION_KEY = "organization"
         private const val USER_METADATA_KEY = "user_metadata"
         private const val AUTH_SESSION_KEY = "auth_session"
         private const val AUTH_RESPONSE_KEY = "authn_response"

@@ -193,7 +193,8 @@ public class AuthenticationAPIClientTest {
         val callback = MockAuthenticationCallback<Credentials>()
         val auth0 = auth0
         val client = AuthenticationAPIClient(auth0)
-        client.signinWithPasskey("auth-session", mock<PublicKeyCredentials>(), MY_CONNECTION)
+        client.signinWithPasskey("auth-session", mock<PublicKeyCredentials>(), MY_CONNECTION,
+            "testOrganisation")
             .start(callback)
         ShadowLooper.idleMainLooper()
         assertThat(
@@ -216,6 +217,7 @@ public class AuthenticationAPIClientTest {
         )
         assertThat(body, Matchers.hasKey("authn_response"))
         assertThat(body, Matchers.hasEntry("auth_session", "auth-session"))
+        assertThat(body, Matchers.hasEntry("organization", "testOrganisation"))
     }
 
     @Test
@@ -225,7 +227,8 @@ public class AuthenticationAPIClientTest {
         val client = AuthenticationAPIClient(auth0)
         val registrationResponse = client.signupWithPasskey(
             mock(),
-            MY_CONNECTION
+            MY_CONNECTION,
+            "testOrganization"
         )
             .execute()
         val request = mockAPI.takeRequest()
@@ -238,6 +241,7 @@ public class AuthenticationAPIClientTest {
         assertThat(request.path, Matchers.equalTo("/passkey/register"))
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("realm", MY_CONNECTION))
+        assertThat(body, Matchers.hasEntry("organization", "testOrganization"))
         assertThat(body, Matchers.hasKey("user_profile"))
         assertThat(registrationResponse, Matchers.`is`(Matchers.notNullValue()))
         assertThat(registrationResponse.authSession, Matchers.comparesEqualTo(SESSION_ID))
@@ -248,7 +252,7 @@ public class AuthenticationAPIClientTest {
         mockAPI.willReturnSuccessfulPasskeyChallenge()
         val auth0 = auth0
         val client = AuthenticationAPIClient(auth0)
-        val challengeResponse = client.passkeyChallenge(MY_CONNECTION)
+        val challengeResponse = client.passkeyChallenge(MY_CONNECTION, "testOrganization")
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
@@ -260,6 +264,7 @@ public class AuthenticationAPIClientTest {
         assertThat(request.path, Matchers.equalTo("/passkey/challenge"))
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("realm", MY_CONNECTION))
+        assertThat(body, Matchers.hasEntry("organization", "testOrganization"))
         assertThat(challengeResponse, Matchers.`is`(Matchers.notNullValue()))
         assertThat(challengeResponse.authSession, Matchers.comparesEqualTo(SESSION_ID))
 
@@ -2749,7 +2754,6 @@ public class AuthenticationAPIClientTest {
         private const val FIRST_NAME = "John"
         private const val LAST_NAME = "Doe"
         private const val COMPANY = "Auth0"
-        private const val OPENID = "openid"
         private const val DEFAULT_LOCALE_IF_MISSING = "en_US"
     }
 }
