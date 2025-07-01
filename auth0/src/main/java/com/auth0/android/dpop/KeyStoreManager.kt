@@ -2,8 +2,10 @@ package com.auth0.android.dpop
 
 import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyInfo
 import android.security.keystore.KeyProperties
 import androidx.annotation.RequiresApi
+import java.security.KeyFactory
 import java.security.KeyPair
 import java.security.KeyPairGenerator
 import java.security.KeyStore
@@ -31,8 +33,25 @@ public class KeyStoreManager {
                 .setDigests(KeyProperties.DIGEST_SHA256)
                 .setKeySize(256)
 
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                // If supported, prefer StrongBox for hardware-backed security
+                builder.setIsStrongBoxBacked(true)
+            }
+
             keyPairGenerator.initialize(builder.build())
             val keyPair = keyPairGenerator.generateKeyPair()
+
+            try {
+                val keyFactory = KeyFactory.getInstance(keyPair.private.algorithm, ANDROID_KEY_STORE)
+                val keyInfo = keyFactory.getKeySpec(keyPair.private, KeyInfo::class.java) as KeyInfo
+
+               println("Key is stored in ${keyInfo.securityLevel}")
+            } catch (e: Exception) {
+                println("Could not determine key backing: ${e.message}")
+            }
+
+
+
             println("ECDSA P-256 Key Pair generated and stored in Android Keystore under alias: dpop_signature_key")
             return keyPair
         } catch (exception: Exception) {
