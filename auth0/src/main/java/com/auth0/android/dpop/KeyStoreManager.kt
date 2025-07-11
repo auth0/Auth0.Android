@@ -1,5 +1,7 @@
 package com.auth0.android.dpop
 
+import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyInfo
@@ -19,7 +21,7 @@ public class KeyStoreManager {
     private val KEY_ALIAS = "dpop_signature_key"
 
     @RequiresApi(Build.VERSION_CODES.M)
-    public fun generateKeyPair(): KeyPair? {
+    public fun generateKeyPair(context: Context): KeyPair? {
 
         try {
 
@@ -33,7 +35,10 @@ public class KeyStoreManager {
                 .setDigests(KeyProperties.DIGEST_SHA256)
                 .setKeySize(256)
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && context.packageManager.hasSystemFeature(
+                    PackageManager.FEATURE_STRONGBOX_KEYSTORE
+                )
+            ) {
                 // If supported, prefer StrongBox for hardware-backed security
                 builder.setIsStrongBoxBacked(true)
             }
@@ -42,10 +47,11 @@ public class KeyStoreManager {
             val keyPair = keyPairGenerator.generateKeyPair()
 
             try {
-                val keyFactory = KeyFactory.getInstance(keyPair.private.algorithm, ANDROID_KEY_STORE)
+                val keyFactory =
+                    KeyFactory.getInstance(keyPair.private.algorithm, ANDROID_KEY_STORE)
                 val keyInfo = keyFactory.getKeySpec(keyPair.private, KeyInfo::class.java) as KeyInfo
 
-               println("Key is stored in ${keyInfo.securityLevel}")
+                println("Key is stored in ${keyInfo.securityLevel}")
             } catch (e: Exception) {
                 println("Could not determine key backing: ${e.message}")
             }
@@ -61,13 +67,13 @@ public class KeyStoreManager {
         return null
     }
 
-    public fun hasKeyPair():Boolean {
+    public fun hasKeyPair(): Boolean {
         try {
             val keyStore = KeyStore.getInstance(ANDROID_KEY_STORE)
             keyStore.load(null)
             return keyStore.containsAlias(KEY_ALIAS)
-        }catch (exception:Exception){
-           println("Error checking for ECDSA P-256 Key Pair: ${exception.message}")
+        } catch (exception: Exception) {
+            println("Error checking for ECDSA P-256 Key Pair: ${exception.message}")
         }
         return false
     }

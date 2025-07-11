@@ -12,7 +12,6 @@ import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
 import com.auth0.android.dpop.DPoPProvider
-import com.auth0.android.dpop.KeyStoreManager
 import com.auth0.android.request.internal.Jwt
 import com.auth0.android.request.internal.OidcUtils
 import com.auth0.android.result.Credentials
@@ -66,7 +65,7 @@ internal class OAuthManager(
         addPKCEParameters(parameters, redirectUri, headers)
         addClientParameters(parameters, redirectUri)
         addValidationParameters(parameters)
-        addDopParameter(parameters)
+        addDopParameter(parameters, context)
         val uri = buildAuthorizeUri()
         this.requestCode = requestCode
         AuthenticationActivity.authenticateUsingBrowser(context, uri, launchAsTwa, ctOptions)
@@ -279,8 +278,8 @@ internal class OAuthManager(
         parameters[KEY_NONCE] = nonce
     }
 
-    private fun addDopParameter(parameters: MutableMap<String, String>) {
-        dPoPProvider.getDpopJktValue()?.let {
+    private fun addDopParameter(parameters: MutableMap<String, String>, context: Context) {
+        dPoPProvider.getDpopJktValue(context)?.let {
             parameters["dpop_jkt"] = it
         }
     }

@@ -1,5 +1,6 @@
 package com.auth0.android.dpop;
 
+import android.content.Context
 import android.os.Build
 import android.util.Base64
 import android.util.Log
@@ -202,9 +203,9 @@ public class DPoPProvider {
      *
      * @return The Base64url encoded JWK Thumbprint, or null if an error occurs.
      */
-    public fun getDpopJktValue(): String? {
+    public fun getDpopJktValue(context: Context): String? {
         if(!keyStoreManager.hasKeyPair()){
-            keyStoreManager.generateKeyPair()
+            keyStoreManager.generateKeyPair(context)
         }
         val keyPair = keyStoreManager.getEs256KeyPair()
         if (keyPair == null) {

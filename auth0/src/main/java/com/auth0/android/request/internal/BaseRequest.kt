@@ -1,8 +1,10 @@
 package com.auth0.android.request.internal
 
+import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0Exception
 import com.auth0.android.callback.Callback
+import com.auth0.android.dpop.DPoPProvider
 import com.auth0.android.request.*
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -29,6 +31,8 @@ internal open class BaseRequest<T, U : Auth0Exception>(
 ) : Request<T, U> {
 
     private val options: RequestOptions = RequestOptions(method)
+    private val dPoPProvider = DPoPProvider()
+    private var retryCount = 0
 
     override fun addHeader(name: String, value: String): Request<T, U> {
         options.headers[name] = value
@@ -129,7 +133,7 @@ internal open class BaseRequest<T, U : Auth0Exception>(
             if (response.isSuccess()) {
                 //2. Successful scenario. Response of type T
                 return try {
-                    resultAdapter.fromJson(reader,response.headers)
+                    resultAdapter.fromJson(reader, response.headers)
                 } catch (exception: Exception) {
                     //multi catch IOException and JsonParseException (including JsonIOException)
                     //3. Network exceptions, timeouts, etc reading response body
@@ -139,6 +143,17 @@ internal open class BaseRequest<T, U : Auth0Exception>(
             }
 
             //4. Error scenario. Response of type U
+            //Adding the retry logic here for now. This needs to be revisited as this is not thread safe
+            if (retryCount < 1)
+                response.headers["dpop-nonce"]?.let {
+                    dPoPProvider.generateDpopProofJwt(
+                        httpUrl = url,
+                        httpMethod = options.method.toString(),
+                        nonce = it[0]
+                    )?.let { it1 -> addHeader("DPoP", it1) }
+                    execute()
+                    retryCount++
+                }
             val error: U = try {
                 if (response.isJson()) {
                     errorAdapter.fromJsonResponse(response.statusCode, reader)
