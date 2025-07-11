@@ -32,7 +32,6 @@ internal open class BaseRequest<T, U : Auth0Exception>(
 
     private val options: RequestOptions = RequestOptions(method)
     private val dPoPProvider = DPoPProvider()
-    private var retryCount = 0
 
     override fun addHeader(name: String, value: String): Request<T, U> {
         options.headers[name] = value
@@ -106,8 +105,7 @@ internal open class BaseRequest<T, U : Auth0Exception>(
      */
     @VisibleForTesting
     internal suspend fun switchRequestContext(
-        dispatcher: CoroutineDispatcher,
-        runnable: () -> T
+        dispatcher: CoroutineDispatcher, runnable: () -> T
     ): T {
         return withContext(dispatcher) {
             return@withContext runnable.invoke()
@@ -120,6 +118,12 @@ internal open class BaseRequest<T, U : Auth0Exception>(
      */
     @kotlin.jvm.Throws(Auth0Exception::class)
     override fun execute(): T {
+        return executeWithRetry()
+    }
+
+
+    @kotlin.jvm.Throws(Auth0Exception::class)
+    private fun executeWithRetry(retryCount: Int = 0): T {
         val response: ServerResponse
         try {
             response = client.load(url, options)
@@ -144,24 +148,21 @@ internal open class BaseRequest<T, U : Auth0Exception>(
 
             //4. Error scenario. Response of type U
             //Adding the retry logic here for now. This needs to be revisited as this is not thread safe
-            if (retryCount < 1)
+            val dpopNonce = response.headers["dpop-nonce"]?.firstOrNull()
+            if (dpopNonce != null && retryCount < 1) {
                 response.headers["dpop-nonce"]?.let {
                     dPoPProvider.generateDpopProofJwt(
-                        httpUrl = url,
-                        httpMethod = options.method.toString(),
-                        nonce = it[0]
+                        httpUrl = url, httpMethod = options.method.toString(), nonce = it[0]
                     )?.let { it1 -> addHeader("DPoP", it1) }
-                    execute()
-                    retryCount++
+                    return executeWithRetry(retryCount + 1)
                 }
+            }
             val error: U = try {
                 if (response.isJson()) {
                     errorAdapter.fromJsonResponse(response.statusCode, reader)
                 } else {
                     errorAdapter.fromRawResponse(
-                        response.statusCode,
-                        reader.readText(),
-                        response.headers
+                        response.statusCode, reader.readText(), response.headers
                     )
                 }
             } catch (exception: Exception) {
