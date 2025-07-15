@@ -29,21 +29,30 @@ public object WebAuthProvider {
     private val TAG: String? = WebAuthProvider::class.simpleName
     private const val KEY_BUNDLE_OAUTH_MANAGER_STATE = "oauth_manager_state"
 
-    private val callbacks = CopyOnWriteArraySet<Callback<Credentials, AuthenticationException>>()
+    private val loginCallbacks = CopyOnWriteArraySet<Callback<Credentials, AuthenticationException>>()
+    private val logoutCallbacks = CopyOnWriteArraySet<Callback<Void?, AuthenticationException>>()
 
     @JvmStatic
     @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal var managerInstance: ResumableManager? = null
         private set
 
+    /**
+     * Registers a callback to receive the result of the login flow.
+     * This is designed to be called from your Activity/Fragment's `onCreate` or `onViewCreated` method.
+     */
     @JvmStatic
     public fun addCallback(callback: Callback<Credentials, AuthenticationException>) {
-        callbacks += callback
+        loginCallbacks.add(callback)
     }
 
+    /**
+     * Unregisters a callback.
+     * This is designed to be called from your Activity/Fragment's `onDestroy` or `onDestroyView` method.
+     */
     @JvmStatic
     public fun removeCallback(callback: Callback<Credentials, AuthenticationException>) {
-        callbacks -= callback
+        loginCallbacks.remove(callback)
     }
 
     // Public methods
@@ -101,6 +110,7 @@ public object WebAuthProvider {
             return
         }
         managerInstance!!.failure(exception)
+        resetManagerInstance()
     }
 
     internal fun onSaveInstanceState(bundle: Bundle) {
@@ -112,27 +122,10 @@ public object WebAuthProvider {
     }
 
     internal fun onRestoreInstanceState(bundle: Bundle) {
-        if (managerInstance == null) {
-            val stateJson = bundle.getString(KEY_BUNDLE_OAUTH_MANAGER_STATE).orEmpty()
-            if (stateJson.isNotBlank()) {
-                val state = OAuthManagerState.deserializeState(stateJson)
-                managerInstance = OAuthManager.fromState(
-                    state,
-                    object : Callback<Credentials, AuthenticationException> {
-                        override fun onSuccess(result: Credentials) {
-                            for (callback in callbacks) {
-                                callback.onSuccess(result)
-                            }
-                        }
-
-                        override fun onFailure(error: AuthenticationException) {
-                            for (callback in callbacks) {
-                                callback.onFailure(error)
-                            }
-                        }
-                    }
-                )
-            }
+        val stateJson = bundle.getString(KEY_BUNDLE_OAUTH_MANAGER_STATE).orEmpty()
+        if (stateJson.isNotBlank()) {
+            val state = OAuthManagerState.deserializeState(stateJson)
+            managerInstance = OAuthManager.fromState(state, dispatchingLoginCallback())
         }
     }
 
@@ -140,6 +133,36 @@ public object WebAuthProvider {
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun resetManagerInstance() {
         managerInstance = null
+    }
+
+    private fun dispatchingLoginCallback(): Callback<Credentials, AuthenticationException> {
+        return object : Callback<Credentials, AuthenticationException> {
+            override fun onSuccess(result: Credentials) {
+                for (callback in loginCallbacks) {
+                    callback.onSuccess(result)
+                }
+            }
+            override fun onFailure(error: AuthenticationException) {
+                for (callback in loginCallbacks) {
+                    callback.onFailure(error)
+                }
+            }
+        }
+    }
+
+    private fun dispatchingLogoutCallback(): Callback<Void?, AuthenticationException> {
+        return object : Callback<Void?, AuthenticationException> {
+            override fun onSuccess(result: Void?) {
+                for (callback in logoutCallbacks) {
+                    callback.onSuccess(result)
+                }
+            }
+            override fun onFailure(error: AuthenticationException) {
+                for (callback in logoutCallbacks) {
+                    callback.onFailure(error)
+                }
+            }
+        }
     }
 
     public class LogoutBuilder internal constructor(private val account: Auth0) {
@@ -169,12 +192,9 @@ public object WebAuthProvider {
          */
         public fun withScheme(scheme: String): LogoutBuilder {
             val lowerCase = scheme.toLowerCase(Locale.ROOT)
-            if (scheme != lowerCase) {
-                Log.w(
-                    TAG,
-                    "Please provide the scheme in lowercase and make sure it's the same configured in the intent filter. Android expects the scheme to be lowercase."
-                )
-            }
+            if (scheme != lowerCase) { Log.w(TAG, "Please provide the scheme in lowercase and " +
+                    "make sure it's the same configured in the intent filter." +
+                    " Android expects the scheme to be lowercase.") }
             this.scheme = scheme
             return this
         }
@@ -240,30 +260,21 @@ public object WebAuthProvider {
          */
         public fun start(context: Context, callback: Callback<Void?, AuthenticationException>) {
             resetManagerInstance()
+            logoutCallbacks.clear()
+            logoutCallbacks.add(callback)
+            val dispatcher = dispatchingLogoutCallback()
             if (!ctOptions.hasCompatibleBrowser(context.packageManager)) {
-                val ex = AuthenticationException(
-                    "a0.browser_not_available",
-                    "No compatible Browser application is installed."
-                )
-                callback.onFailure(ex)
+                val ex = AuthenticationException("a0.browser_not_available",
+                    "No compatible Browser application is installed.")
+                dispatcher.onFailure(ex)
                 return
             }
             if (returnToUrl == null) {
-                returnToUrl = CallbackHelper.getCallbackUri(
-                    scheme,
-                    context.applicationContext.packageName,
-                    account.getDomainUrl()
-                )
+                returnToUrl = CallbackHelper.getCallbackUri(scheme,
+                    context.applicationContext.packageName, account.getDomainUrl())
             }
-            val logoutManager = LogoutManager(
-                account,
-                callback,
-                returnToUrl!!,
-                ctOptions,
-                federated,
-                launchAsTwa,
-                customLogoutUrl
-            )
+            val logoutManager = LogoutManager(account, dispatcher, returnToUrl!!,
+                ctOptions, federated, launchAsTwa, customLogoutUrl)
             managerInstance = logoutManager
             logoutManager.startLogout(context)
         }
@@ -273,21 +284,14 @@ public object WebAuthProvider {
         public suspend fun await(context: Context) {
             return await(context, Dispatchers.Main.immediate)
         }
-
         /**
          * Used internally so that [CoroutineContext] can be injected for testing purpose
          */
-        internal suspend fun await(
-            context: Context,
-            coroutineContext: CoroutineContext
-        ) {
+        internal suspend fun await(context: Context, coroutineContext: CoroutineContext) {
             return withContext(coroutineContext) {
                 suspendCancellableCoroutine { continuation ->
                     start(context, object : Callback<Void?, AuthenticationException> {
-                        override fun onSuccess(result: Void?) {
-                            continuation.resume(Unit)
-                        }
-
+                        override fun onSuccess(result: Void?) { continuation.resume(Unit) }
                         override fun onFailure(error: AuthenticationException) {
                             continuation.resumeWithException(error)
                         }
@@ -317,12 +321,9 @@ public object WebAuthProvider {
          * @return the current builder instance
          */
         public fun withState(state: String): Builder {
-            if (state.isNotEmpty()) {
-                values[OAuthManager.KEY_STATE] = state
-            }
+            if (state.isNotEmpty()) { values[OAuthManager.KEY_STATE] = state }
             return this
         }
-
         /**
          * Specify a custom nonce value to avoid replay attacks. It will be sent in the auth request that will be returned back as a claim in the id_token
          *
@@ -330,12 +331,9 @@ public object WebAuthProvider {
          * @return the current builder instance
          */
         public fun withNonce(nonce: String): Builder {
-            if (nonce.isNotEmpty()) {
-                values[OAuthManager.KEY_NONCE] = nonce
-            }
+            if (nonce.isNotEmpty()) { values[OAuthManager.KEY_NONCE] = nonce }
             return this
         }
-
         /**
          * Set the max age value for the authentication.
          *
@@ -346,7 +344,6 @@ public object WebAuthProvider {
             values[OAuthManager.KEY_MAX_AGE] = maxAge.toString()
             return this
         }
-
         /**
          * Set the leeway or clock skew to be used for ID Token verification.
          * Defaults to 60 seconds.
@@ -358,7 +355,6 @@ public object WebAuthProvider {
             this.leeway = leeway
             return this
         }
-
         /**
          * Set the expected issuer to be used for ID Token verification.
          * Defaults to the value returned by [Auth0.getDomainUrl].
@@ -370,7 +366,6 @@ public object WebAuthProvider {
             this.issuer = issuer
             return this
         }
-
         /**
          * Use a custom audience in the requests
          *
@@ -381,7 +376,6 @@ public object WebAuthProvider {
             values[KEY_AUDIENCE] = audience
             return this
         }
-
         /**
          * Specify a custom Scheme to use on the Redirect URI. Default scheme is 'https'.
          *
@@ -390,16 +384,12 @@ public object WebAuthProvider {
          */
         public fun withScheme(scheme: String): Builder {
             val lowerCase = scheme.toLowerCase(Locale.ROOT)
-            if (scheme != lowerCase) {
-                Log.w(
-                    TAG,
-                    "Please provide the scheme in lowercase and make sure it's the same configured in the intent filter. Android expects the scheme to be lowercase."
-                )
-            }
+            if (scheme != lowerCase) { Log.w(TAG, "Please provide the scheme in lowercase and make" +
+                    " sure it's the same configured in the intent filter." +
+                    " Android expects the scheme to be lowercase.") }
             this.scheme = scheme
             return this
         }
-
         /**
          * Specify a custom Redirect URI to use to invoke the app on redirection.
          * Normally, you wouldn't need to call this method manually as the default value is autogenerated for you.
@@ -412,7 +402,6 @@ public object WebAuthProvider {
             this.redirectUri = redirectUri
             return this
         }
-
         /**
          * Specify an invitation URL to join an organization.
          * When called in combination with WebAuthProvider#withOrganization, the invitation URL
@@ -426,7 +415,6 @@ public object WebAuthProvider {
             this.invitationUrl = invitationUrl
             return this
         }
-
         /**
          * Specify the ID of an organization to join.
          *
@@ -438,7 +426,6 @@ public object WebAuthProvider {
             values[OAuthManager.KEY_ORGANIZATION] = organization
             return this
         }
-
         /**
          * Give a scope for this request. The default scope used is "openid profile email".
          * Regardless of the scopes passed, the "openid" scope is always enforced.
@@ -450,7 +437,6 @@ public object WebAuthProvider {
             values[OAuthManager.KEY_SCOPE] = scope
             return this
         }
-
         /**
          * Add custom headers for PKCE token request.
          *
@@ -462,7 +448,6 @@ public object WebAuthProvider {
             this.headers.putAll(headers)
             return this
         }
-
         /**
          * Give a connection scope for this request.
          *
@@ -470,11 +455,9 @@ public object WebAuthProvider {
          * @return the current builder instance
          */
         public fun withConnectionScope(vararg connectionScope: String): Builder {
-            values[KEY_CONNECTION_SCOPE] =
-                connectionScope.joinToString(separator = ",") { it.trim() }
+            values[KEY_CONNECTION_SCOPE] = connectionScope.joinToString(separator = ",") { it.trim() }
             return this
         }
-
         /**
          * Use extra parameters on the request.
          *
@@ -482,14 +465,11 @@ public object WebAuthProvider {
          * @return the current builder instance
          */
         public fun withParameters(parameters: Map<String, Any?>): Builder {
-            for ((key, value) in parameters) {
-                if (value != null) {
-                    values[key] = value.toString()
-                }
-            }
+            for ((key, value) in parameters) { if (value != null) {
+                values[key] = value.toString()
+            } }
             return this
         }
-
         /**
          * Use the given connection. By default no connection is specified, so the login page will be displayed.
          *
@@ -500,7 +480,6 @@ public object WebAuthProvider {
             values[OAuthManager.KEY_CONNECTION] = connectionName
             return this
         }
-
         /**
          * When using a Custom Tabs compatible Browser, apply these customization options.
          *
@@ -511,7 +490,6 @@ public object WebAuthProvider {
             ctOptions = options
             return this
         }
-
         /**
          * Launches the Login experience with a native feel (without address bar). For this to work,
          * you have to setup the app as trusted following the steps mentioned [here](https://github.com/auth0/Auth0.Android/blob/main/EXAMPLES.md#trusted-web-activity-experimental).
@@ -521,7 +499,6 @@ public object WebAuthProvider {
             launchAsTwa = true
             return this
         }
-
         /**
          * Specifies a custom Authorize URL to use for this login request, overriding the default
          * generated from the Auth0 domain (account.authorizeUrl).
@@ -533,13 +510,11 @@ public object WebAuthProvider {
             this.customAuthorizeUrl = authorizeUrl
             return this
         }
-
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         internal fun withPKCE(pkce: PKCE): Builder {
             this.pkce = pkce
             return this
         }
-
         /**
          * Request user Authentication. The result will be received in the callback.
          * An error is raised if there are no browser applications installed in the device, or if
@@ -552,17 +527,16 @@ public object WebAuthProvider {
          * @see AuthenticationException.isPKCENotAvailable
          * @see AuthenticationException.isAuthenticationCanceled
          */
-        public fun start(
-            context: Context,
-            callback: Callback<Credentials, AuthenticationException>
-        ) {
+        public fun start(context: Context, callback: Callback<Credentials, AuthenticationException>) {
             resetManagerInstance()
+            if (!loginCallbacks.contains(callback)) {
+                loginCallbacks.add(callback)
+            }
+            val dispatcher = dispatchingLoginCallback()
             if (!ctOptions.hasCompatibleBrowser(context.packageManager)) {
-                val ex = AuthenticationException(
-                    "a0.browser_not_available",
-                    "No compatible Browser application is installed."
-                )
-                callback.onFailure(ex)
+                val ex = AuthenticationException("a0.browser_not_available",
+                    "No compatible Browser application is installed.")
+                dispatcher.onFailure(ex)
                 return
             }
             invitationUrl?.let {
@@ -570,29 +544,24 @@ public object WebAuthProvider {
                 val organizationId = url.getQueryParameter(OAuthManager.KEY_ORGANIZATION)
                 val invitationId = url.getQueryParameter(OAuthManager.KEY_INVITATION)
                 if (organizationId.isNullOrBlank() || invitationId.isNullOrBlank()) {
-                    val ex = AuthenticationException(
-                        "a0.invalid_invitation_url",
-                        "The invitation URL provided doesn't contain the 'organization' or 'invitation' values."
-                    )
-                    callback.onFailure(ex)
+                    val ex = AuthenticationException("a0.invalid_invitation_url",
+                        "The invitation URL provided doesn't contain the 'organization' or" +
+                                " 'invitation' values.")
+                    dispatcher.onFailure(ex)
                     return
                 }
                 values[OAuthManager.KEY_ORGANIZATION] = organizationId
                 values[OAuthManager.KEY_INVITATION] = invitationId
             }
-            val manager = OAuthManager(account, callback, values, ctOptions, launchAsTwa,
-                customAuthorizeUrl)
+            val manager = OAuthManager(account, dispatcher, values, ctOptions, launchAsTwa, customAuthorizeUrl)
             manager.setHeaders(headers)
             manager.setPKCE(pkce)
             manager.setIdTokenVerificationLeeway(leeway)
             manager.setIdTokenVerificationIssuer(issuer)
             managerInstance = manager
             if (redirectUri == null) {
-                redirectUri = CallbackHelper.getCallbackUri(
-                    scheme,
-                    context.applicationContext.packageName,
-                    account.getDomainUrl()
-                )
+                redirectUri = CallbackHelper.getCallbackUri(scheme,
+                    context.applicationContext.packageName, account.getDomainUrl())
             }
             manager.startAuthentication(context, redirectUri!!, 110)
         }
@@ -609,21 +578,14 @@ public object WebAuthProvider {
         public suspend fun await(context: Context): Credentials {
             return await(context, Dispatchers.Main.immediate)
         }
-
         /**
          * Used internally so that [CoroutineContext] can be injected for testing purpose
          */
-        internal suspend fun await(
-            context: Context,
-            coroutineContext: CoroutineContext
-        ): Credentials {
+        internal suspend fun await(context: Context, coroutineContext: CoroutineContext): Credentials {
             return withContext(coroutineContext) {
                 suspendCancellableCoroutine { continuation ->
                     start(context, object : Callback<Credentials, AuthenticationException> {
-                        override fun onSuccess(result: Credentials) {
-                            continuation.resume(result)
-                        }
-
+                        override fun onSuccess(result: Credentials) { continuation.resume(result) }
                         override fun onFailure(error: AuthenticationException) {
                             continuation.resumeWithException(error)
                         }
@@ -631,7 +593,6 @@ public object WebAuthProvider {
                 }
             }
         }
-
         private companion object {
             private const val KEY_AUDIENCE = "audience"
             private const val KEY_CONNECTION_SCOPE = "connection_scope"

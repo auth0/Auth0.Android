@@ -105,6 +105,7 @@ class DatabaseLoginFragment : Fragment() {
     private val callback = object: Callback<Credentials, AuthenticationException> {
         override fun onSuccess(result: Credentials) {
             credentialsManager.saveCredentials(result)
+            secureCredentialsManager.saveCredentials(result)
             Snackbar.make(
                 requireView(),
                 "Hello ${result.user.name}",
@@ -113,7 +114,12 @@ class DatabaseLoginFragment : Fragment() {
         }
 
         override fun onFailure(error: AuthenticationException) {
-            Snackbar.make(requireView(), error.getDescription(), Snackbar.LENGTH_LONG)
+            val message =
+                if (error.isCanceled)
+                    "Browser was closed"
+                else
+                    error.getDescription()
+            Snackbar.make(requireView(), message, Snackbar.LENGTH_LONG)
                 .show()
         }
     }
@@ -262,27 +268,7 @@ class DatabaseLoginFragment : Fragment() {
             .withScheme(getString(R.string.com_auth0_scheme))
             .withAudience(audience)
             .withScope(scope)
-            .start(requireContext(), object : Callback<Credentials, AuthenticationException> {
-                override fun onSuccess(result: Credentials) {
-                    credentialsManager.saveCredentials(result)
-                    secureCredentialsManager.saveCredentials(result)
-                    Snackbar.make(
-                        requireView(),
-                        "Hello ${result.user.name}",
-                        Snackbar.LENGTH_LONG
-                    ).show()
-                }
-
-                override fun onFailure(error: AuthenticationException) {
-                    val message =
-                        if (error.isCanceled)
-                            "Browser was closed"
-                        else
-                            error.getDescription()
-                    Snackbar.make(requireView(), message, Snackbar.LENGTH_LONG)
-                        .show()
-                }
-            })
+            .start(requireContext(), callback)
     }
 
     private suspend fun webAuthAsync() {
