@@ -140,7 +140,8 @@ public class PasskeyManagerTest {
             authenticationAPIClient.signinWithPasskey(
                 any(),
                 any<PublicKeyCredentials>(),
-                any()
+                any(),
+                eq(null)
             )
         ).thenReturn(
             AuthenticationRequestMock(
@@ -185,7 +186,10 @@ public class PasskeyManagerTest {
 
         verify(authenticationAPIClient).signupWithPasskey(userMetadata, "testRealm")
         verify(credentialManager).createCredentialAsync(eq(context), any(), any(), any(), any())
-        verify(authenticationAPIClient).signinWithPasskey(any(), any<PublicKeyCredentials>(), any())
+        verify(authenticationAPIClient).signinWithPasskey(
+            any(), any<PublicKeyCredentials>(), any(),
+            eq(null)
+        )
         verify(callback).onSuccess(credentialsCaptor.capture())
         Assert.assertEquals("codeAccess", credentialsCaptor.firstValue.accessToken)
         Assert.assertEquals("codeScope", credentialsCaptor.firstValue.scope)
@@ -215,7 +219,8 @@ public class PasskeyManagerTest {
         verify(authenticationAPIClient, never()).signinWithPasskey(
             any(),
             any<PublicKeyCredentials>(),
-            any()
+            any(),
+            eq(null)
         )
         verify(credentialManager, never()).createCredentialAsync(
             any(),
@@ -265,7 +270,7 @@ public class PasskeyManagerTest {
         verify(authenticationAPIClient, never()).signinWithPasskey(
             any(),
             any<PublicKeyCredentials>(),
-            any()
+            any(), eq(null)
         )
         verify(callback).onFailure(exceptionCaptor.capture())
         Assert.assertEquals(
@@ -292,7 +297,14 @@ public class PasskeyManagerTest {
             PublicKeyCredential(registrationResponseJSON)
         )
 
-        `when`(authenticationAPIClient.signinWithPasskey(any(), any<PublicKeyCredentials>(), any())).thenReturn(
+        `when`(
+            authenticationAPIClient.signinWithPasskey(
+                any(),
+                any<PublicKeyCredentials>(),
+                any(),
+                eq(null)
+            )
+        ).thenReturn(
             AuthenticationRequestMock(
                 Credentials(
                     "expectedIdToken",
@@ -324,7 +336,10 @@ public class PasskeyManagerTest {
             any(),
             any()
         )
-        verify(authenticationAPIClient).signinWithPasskey(any(), any<PublicKeyCredentials>(), any())
+        verify(authenticationAPIClient).signinWithPasskey(
+            any(), any<PublicKeyCredentials>(), any(),
+            eq(null)
+        )
         verify(callback).onSuccess(credentialsCaptor.capture())
         Assert.assertEquals("codeAccess", credentialsCaptor.firstValue.accessToken)
         Assert.assertEquals("codeScope", credentialsCaptor.firstValue.scope)
@@ -342,7 +357,7 @@ public class PasskeyManagerTest {
 
         passkeyManager.signin(context, "testRealm", parameters, callback, serialExecutor)
 
-        verify(authenticationAPIClient).passkeyChallenge(any())
+        verify(authenticationAPIClient).passkeyChallenge(any(), eq(null))
         verify(credentialManager, never()).getCredentialAsync(
             any(),
             any<GetCredentialRequest>(),
@@ -350,7 +365,12 @@ public class PasskeyManagerTest {
             any(),
             any()
         )
-        verify(authenticationAPIClient, never()).signinWithPasskey(any(), any<PublicKeyCredentials>(), any())
+        verify(authenticationAPIClient, never()).signinWithPasskey(
+            any(),
+            any<PublicKeyCredentials>(),
+            any(),
+            eq(null)
+        )
         verify(callback).onFailure(error)
     }
 
@@ -384,7 +404,12 @@ public class PasskeyManagerTest {
             any(),
             any()
         )
-        verify(authenticationAPIClient, never()).signinWithPasskey(any(), any<PublicKeyCredentials>(), any())
+        verify(authenticationAPIClient, never()).signinWithPasskey(
+            any(),
+            any<PublicKeyCredentials>(),
+            any(),
+            eq(null)
+        )
         verify(callback).onFailure(exceptionCaptor.capture())
         Assert.assertEquals(
             AuthenticationException::class.java,
