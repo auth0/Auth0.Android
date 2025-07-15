@@ -14,6 +14,8 @@ import com.auth0.android.request.internal.GsonAdapter.Companion.forMap
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.request.internal.RequestFactory
 import com.auth0.android.request.internal.ResponseUtils.isNetworkError
+import com.auth0.android.result.AuthenticationMethod
+import com.auth0.android.result.AuthenticationMethods
 import com.auth0.android.result.PasskeyAuthenticationMethod
 import com.auth0.android.result.PasskeyEnrollmentChallenge
 import com.auth0.android.result.PasskeyRegistrationChallenge
@@ -244,7 +246,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
             "type" to "public-key",
             "response" to mapOf(
                 "clientDataJSON" to credentials.response.clientDataJSON,
-                "attestationObject" to credentials.response.attestationObject
+                "attestationObject" to credentials.response.attestationObject,
             )
         )
 
@@ -263,6 +265,212 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
             .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
         return request
     }
+
+
+    /**
+     * Retrieves a detailed list of authentication methods belonging to the user.
+     *
+     * ## Availability
+     *
+     * This feature is currently available in
+     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
+     * Please reach out to Auth0 support to get it enabled for your tenant.
+     *
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
+     *
+     * apiClient.getAuthenticationMethods()
+     *     .start(object : Callback<AuthenticationMethods, MyAccountException> {
+     *         override fun onSuccess(result: AuthenticationMethods) {
+     *             Log.d("MyApp", "Authentication method $result")
+     *         }
+     *
+     *         override fun onFailure(error: MyAccountException) {
+     *             Log.e("MyApp", "Failed with: ${error.message}")
+     *         }
+     *     })
+     * ```
+     *
+     */
+    public fun getAuthenticationMethods(): Request<AuthenticationMethods, MyAccountException> {
+        val url =
+            getDomainUrlBuilder()
+                .addPathSegment(AUTHENTICATION_METHODS)
+                .build()
+
+        val request = factory.get(
+            url.toString(),
+            GsonAdapter(AuthenticationMethods::class.java)
+        )
+            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+
+        return request
+    }
+
+
+    /**
+     * Retrieves a single authentication method belonging to the user.
+     *
+     * ## Availability
+     *
+     * This feature is currently available in
+     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
+     * Please reach out to Auth0 support to get it enabled for your tenant.
+     *
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
+     *
+     * apiClient.getAuthenticationMethodById(authenticationMethodId, )
+     *     .start(object : Callback<AuthenticationMethod, MyAccountException> {
+     *         override fun onSuccess(result: AuthenticationMethod) {
+     *             Log.d("MyApp", "Authentication method $result")
+     *         }
+     *
+     *         override fun onFailure(error: MyAccountException) {
+     *             Log.e("MyApp", "Failed with: ${error.message}")
+     *         }
+     *     })
+     * ```
+     *
+     * @param authenticationMethodId  Id of the authentication method to be retrieved
+     *
+     */
+    public fun getAuthenticationMethodById(authenticationMethodId: String): Request<AuthenticationMethod, MyAccountException> {
+        val url =
+            getDomainUrlBuilder()
+                .addPathSegment(AUTHENTICATION_METHODS)
+                .addPathSegment(authenticationMethodId)
+                .build()
+
+        val request = factory.get(
+            url.toString(),
+            GsonAdapter(AuthenticationMethod::class.java)
+        )
+            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+
+        return request
+    }
+
+    /**
+     * Updates a single authentication method belonging to the user.
+     *
+     * ## Availability
+     *
+     * This feature is currently available in
+     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
+     * Please reach out to Auth0 support to get it enabled for your tenant.
+     *
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
+     *
+     * apiClient.updateAuthenticationMethodById(authenticationMethodId,preferredAuthenticationMethod, authenticationMethodName)
+     *     .start(object : Callback<AuthenticationMethod, MyAccountException> {
+     *         override fun onSuccess(result: AuthenticationMethod) {
+     *             Log.d("MyApp", "Authentication method $result")
+     *         }
+     *
+     *         override fun onFailure(error: MyAccountException) {
+     *             Log.e("MyApp", "Failed with: ${error.message}")
+     *         }
+     *     })
+     * ```
+     *
+     * @param authenticationMethodId  Id of the authentication method to be retrieved
+     * @param authenticationMethodName  The friendly name of the authentication method
+     * @param preferredAuthenticationMethod The preferred authentication method for the user. (for phone authenticators)
+     *
+     */
+    public fun updateAuthenticationMethodById(
+        authenticationMethodId: String,
+        preferredAuthenticationMethod: String,
+        authenticationMethodName: String
+    ): Request<AuthenticationMethod, MyAccountException> {
+        val url =
+            getDomainUrlBuilder()
+                .addPathSegment(AUTHENTICATION_METHODS)
+                .addPathSegment(authenticationMethodId)
+                .build()
+
+        val params = ParameterBuilder.newBuilder().apply {
+            set(PREFERRED_AUTHENTICATION_METHOD, preferredAuthenticationMethod)
+            set(AUTHENTICATION_METHOD_NAME, authenticationMethodName)
+        }.asDictionary()
+
+        val request = factory.patch(
+            url.toString(),
+            GsonAdapter(AuthenticationMethod::class.java)
+        )
+            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+            .addParameters(params)
+
+        return request
+    }
+
+
+    /**
+     * Deletes an existing authentication method belonging to the user.
+     *
+     * ## Availability
+     *
+     * This feature is currently available in
+     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
+     * Please reach out to Auth0 support to get it enabled for your tenant.
+     *
+     * ## Scopes Required
+     * `delete:me:authentication-methods:passkey`
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
+     *
+     * apiClient.deleteAuthenticationMethod(authenticationMethodId, )
+     *     .start(object : Callback<Void, MyAccountException> {
+     *         override fun onSuccess(result: Void) {
+     *             Log.d("MyApp", "Authentication method deleted")
+     *         }
+     *
+     *         override fun onFailure(error: MyAccountException) {
+     *             Log.e("MyApp", "Failed with: ${error.message}")
+     *         }
+     *     })
+     * ```
+     *
+     * @param authenticationMethodId  Id of the authentication method to be deleted
+     *
+     */
+    public fun deleteAuthenticationMethod(
+        authenticationMethodId: String
+    ): Request<Void, MyAccountException> {
+        val url =
+            getDomainUrlBuilder()
+                .addPathSegment(AUTHENTICATION_METHODS)
+                .addPathSegment(authenticationMethodId)
+                .build()
+
+        val request = factory.delete(url.toString(), GsonAdapter(Void::class.java))
+            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+
+        return request
+    }
+
 
     private fun getDomainUrlBuilder(): HttpUrl.Builder {
         return auth0.getDomainUrl().toHttpUrl().newBuilder()
@@ -283,6 +491,8 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
         private const val LOCATION_KEY = "location"
         private const val AUTH_SESSION_KEY = "auth_session"
         private const val AUTHN_RESPONSE_KEY = "authn_response"
+        private const val PREFERRED_AUTHENTICATION_METHOD = "preferred_authentication_method"
+        private const val AUTHENTICATION_METHOD_NAME = "name"
         private fun createErrorAdapter(): ErrorAdapter<MyAccountException> {
             val mapAdapter = forMap(GsonProvider.gson)
             return object : ErrorAdapter<MyAccountException> {
