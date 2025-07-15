@@ -28,9 +28,18 @@ public data class AuthenticationMethod(
     @SerializedName("type")
     val type: String,
     @SerializedName("usage")
-    val usage: String,
+    val usage: List<String>,
     @SerializedName("user_agent")
     val userAgent: String?,
     @SerializedName("user_handle")
     val userHandle: String?
+)
+
+
+/**
+ * List of Authentication Methods
+ */
+public data class AuthenticationMethods(
+    @SerializedName("authentication_methods")
+    val authenticationMethods: List<AuthenticationMethod>
 )
