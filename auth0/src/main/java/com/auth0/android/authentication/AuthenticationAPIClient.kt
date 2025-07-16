@@ -4,6 +4,7 @@ import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
+import com.auth0.android.dpop.DPoPProvider
 import com.auth0.android.request.*
 import com.auth0.android.request.internal.*
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMap
@@ -561,9 +562,22 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param accessToken used to fetch it's information
      * @return a request to start
      */
-    public fun userInfo(accessToken: String): Request<UserProfile, AuthenticationException> {
-        return profileRequest()
-            .addHeader(HEADER_AUTHORIZATION, "Bearer $accessToken")
+    public fun userInfo(
+        accessToken: String, tokenType: String
+    ): Request<UserProfile, AuthenticationException> {
+        return profileRequest().apply {
+            val headerData = DPoPProvider.getHeaderData(
+                getHttpMethod().toString(),
+                getUrl(),
+                accessToken,
+                tokenType,
+                DPoPProvider.auth0Nonce
+            )
+            addHeader(HEADER_AUTHORIZATION, headerData.authorizationHeader)
+            headerData.dpopProof?.let {
+                addHeader(DPoPProvider.DPOP_HEADER, it)
+            }
+        }
     }
 
     /**
@@ -928,6 +942,9 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         )
         val request = factory.post(url.toString(), credentialsAdapter)
         request.addParameters(parameters)
+        DPoPProvider.generateProof(request.getUrl(), request.getHttpMethod().toString())?.let {
+            request.addHeader(DPoPProvider.DPOP_HEADER, it)
+        }
         return request
     }
 
@@ -994,6 +1011,9 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         )
         val request = factory.post(url.toString(), adapter)
         request.addParameters(requestParameters)
+        DPoPProvider.generateProof(request.getUrl(), request.getHttpMethod().toString())?.let {
+            request.addHeader(DPoPProvider.DPOP_HEADER, it)
+        }
         return request
     }
 
@@ -1017,6 +1037,9 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             factory.post(url.toString(), credentialsAdapter), clientId, baseURL
         )
         request.addParameters(requestParameters)
+        DPoPProvider.generateProof(request.getUrl(), request.getHttpMethod().toString())?.let {
+            request.addHeader(DPoPProvider.DPOP_HEADER, it)
+        }
         return request
     }
 

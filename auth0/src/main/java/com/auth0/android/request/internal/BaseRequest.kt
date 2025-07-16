@@ -3,7 +3,13 @@ package com.auth0.android.request.internal
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0Exception
 import com.auth0.android.callback.Callback
-import com.auth0.android.request.*
+import com.auth0.android.request.ErrorAdapter
+import com.auth0.android.request.HttpMethod
+import com.auth0.android.request.JsonAdapter
+import com.auth0.android.request.NetworkingClient
+import com.auth0.android.request.Request
+import com.auth0.android.request.RequestOptions
+import com.auth0.android.request.ServerResponse
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -20,7 +26,7 @@ import java.nio.charset.StandardCharsets
  * @param errorAdapter the adapter that will convert a failed response into the expected type.
  */
 internal open class BaseRequest<T, U : Auth0Exception>(
-    method: HttpMethod,
+    private val method: HttpMethod,
     private val url: String,
     private val client: NetworkingClient,
     private val resultAdapter: JsonAdapter<T>,
@@ -59,6 +65,10 @@ internal open class BaseRequest<T, U : Auth0Exception>(
         options.parameters[name] = value
         return this
     }
+
+    override fun getUrl(): String = url
+
+    override fun getHttpMethod(): HttpMethod = method
 
     /**
      * Runs asynchronously and executes the network request, without blocking the current thread.
@@ -129,7 +139,7 @@ internal open class BaseRequest<T, U : Auth0Exception>(
             if (response.isSuccess()) {
                 //2. Successful scenario. Response of type T
                 return try {
-                    resultAdapter.fromJson(reader,response.headers)
+                    resultAdapter.fromJson(reader, response.headers)
                 } catch (exception: Exception) {
                     //multi catch IOException and JsonParseException (including JsonIOException)
                     //3. Network exceptions, timeouts, etc reading response body

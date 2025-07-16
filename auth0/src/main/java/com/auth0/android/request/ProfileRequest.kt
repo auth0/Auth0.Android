@@ -3,6 +3,7 @@ package com.auth0.android.request
 import com.auth0.android.Auth0Exception
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
+import com.auth0.android.dpop.DPoPProvider
 import com.auth0.android.result.Authentication
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.UserProfile
@@ -79,8 +80,16 @@ public class ProfileRequest
     override fun start(callback: Callback<Authentication, AuthenticationException>) {
         authenticationRequest.start(object : Callback<Credentials, AuthenticationException> {
             override fun onSuccess(credentials: Credentials) {
-                userInfoRequest
-                    .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.accessToken)
+                val headerData = DPoPProvider.getHeaderData(
+                    getHttpMethod().toString(), getUrl(),
+                    credentials.accessToken, credentials.type, DPoPProvider.auth0Nonce
+                )
+                userInfoRequest.apply {
+                    addHeader(HEADER_AUTHORIZATION, headerData.authorizationHeader)
+                    headerData.dpopProof?.let {
+                        addHeader(DPoPProvider.DPOP_HEADER, it)
+                    }
+                }
                     .start(object : Callback<UserProfile, AuthenticationException> {
                         override fun onSuccess(profile: UserProfile) {
                             callback.onSuccess(Authentication(profile, credentials))
@@ -107,9 +116,17 @@ public class ProfileRequest
     @Throws(Auth0Exception::class)
     override fun execute(): Authentication {
         val credentials = authenticationRequest.execute()
-        val profile = userInfoRequest
-            .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.accessToken)
-            .execute()
+        val headerData = DPoPProvider.getHeaderData(
+            getHttpMethod().toString(), getUrl(),
+            credentials.accessToken, credentials.type, DPoPProvider.auth0Nonce
+        )
+        val profile = userInfoRequest.run {
+            addHeader(HEADER_AUTHORIZATION, headerData.authorizationHeader)
+            headerData.dpopProof?.let {
+                addHeader(DPoPProvider.DPOP_HEADER, it)
+            }
+            execute()
+        }
         return Authentication(profile, credentials)
     }
 
@@ -124,10 +141,26 @@ public class ProfileRequest
     @Throws(Auth0Exception::class)
     override suspend fun await(): Authentication {
         val credentials = authenticationRequest.await()
-        val profile = userInfoRequest
-            .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.accessToken)
-            .await()
+        val headerData = DPoPProvider.getHeaderData(
+            getHttpMethod().toString(), getUrl(),
+            credentials.accessToken, credentials.type, DPoPProvider.auth0Nonce
+        )
+        val profile = userInfoRequest.run {
+            addHeader(HEADER_AUTHORIZATION, headerData.authorizationHeader)
+            headerData.dpopProof?.let {
+                addHeader(DPoPProvider.DPOP_HEADER, it)
+            }
+            await()
+        }
         return Authentication(profile, credentials)
+    }
+
+    override fun getUrl(): String {
+        return userInfoRequest.getUrl()
+    }
+
+    override fun getHttpMethod(): HttpMethod {
+        return userInfoRequest.getHttpMethod()
     }
 
     private companion object {
