@@ -1,32 +1,26 @@
 package com.auth0.android.result
 
-
 import com.google.gson.annotations.SerializedName
 
-/**
- * A passkey authentication method.
- */
 public data class PasskeyAuthenticationMethod(
-    @SerializedName("created_at")
-    val createdAt: String,
+    public override val id: String,
+    public override val type: String,
+    public override val createdAt: String,
+    public override val usage: List<String>,
     @SerializedName("credential_backed_up")
-    val credentialBackedUp: Boolean,
+    public val credentialBackedUp: Boolean,
     @SerializedName("credential_device_type")
-    val credentialDeviceType: String,
-    @SerializedName("id")
-    val id: String,
+    public val credentialDeviceType: String,
     @SerializedName("identity_user_id")
-    val identityUserId: String,
+    public val identityUserId: String,
     @SerializedName("key_id")
-    val keyId: String,
+    public val keyId: String,
     @SerializedName("public_key")
-    val publicKey: String,
+    public val publicKey: String,
     @SerializedName("transports")
-    val transports: List<String>?,
-    @SerializedName("type")
-    val type: String,
+    public val transports: List<String>?,
     @SerializedName("user_agent")
-    val userAgent: String,
+    public val userAgent: String?,
     @SerializedName("user_handle")
-    val userHandle: String
-)
+    public val userHandle: String
+) : AuthenticationMethod(id, type, createdAt, usage)
