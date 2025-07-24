@@ -3,12 +3,16 @@ package com.auth0.android.provider
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
+import com.auth0.android.dpop.DPoPProvider
+import com.auth0.android.dpop.SenderConstraining
 import com.auth0.android.result.Credentials
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -25,7 +29,7 @@ import kotlin.coroutines.resumeWithException
  *
  * It uses an external browser by sending the [android.content.Intent.ACTION_VIEW] intent.
  */
-public object WebAuthProvider {
+public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
     private val TAG: String? = WebAuthProvider::class.simpleName
     private const val KEY_BUNDLE_OAUTH_MANAGER_STATE = "oauth_manager_state"
 
@@ -44,6 +48,12 @@ public object WebAuthProvider {
     @JvmStatic
     public fun removeCallback(callback: Callback<Credentials, AuthenticationException>) {
         callbacks -= callback
+    }
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    override fun enableDPoP(context: Context): WebAuthProvider {
+        DPoPProvider.generateKeyPair(context)
+        return this
     }
 
     // Public methods
@@ -580,8 +590,10 @@ public object WebAuthProvider {
                 values[OAuthManager.KEY_ORGANIZATION] = organizationId
                 values[OAuthManager.KEY_INVITATION] = invitationId
             }
-            val manager = OAuthManager(account, callback, values, ctOptions, launchAsTwa,
-                customAuthorizeUrl)
+            val manager = OAuthManager(
+                account, callback, values, ctOptions, launchAsTwa,
+                customAuthorizeUrl
+            )
             manager.setHeaders(headers)
             manager.setPKCE(pkce)
             manager.setIdTokenVerificationLeeway(leeway)
