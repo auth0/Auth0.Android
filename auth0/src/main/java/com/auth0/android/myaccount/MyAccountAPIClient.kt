@@ -598,27 +598,28 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * val apiClient = MyAccountAPIClient(auth0, accessToken)
      *
      * val authMethodId = "from_enrollment_challenge"
+     * val authSession = "from_enrollment_challenge"
      * val otp = "123456"
      *
-     * apiClient.verifyOtp(authMethodId, otp)
+     * apiClient.verifyOtp(authMethodId, otp, authSession)
      * .start(object : Callback<AuthenticationMethod, MyAccountException> {
-     * override fun onSuccess(result: AuthenticationMethod) {
-     * Log.d("MyApp", "Successfully verified method: ${result.id}")
-     * }
+     * override fun onSuccess(result: AuthenticationMethod) { //... }
      * override fun onFailure(error: MyAccountException) { //... }
      * })
      * ```
      * @param authenticationMethodId The ID of the method being verified (from the enrollment challenge).
      * @param otpCode The OTP code sent to the user's phone or email, or from their authenticator app.
+     * @param authSession The auth session from the enrollment challenge.
      * @return a request that will yield the newly verified authentication method.
      */
-    public fun verifyOtp(authenticationMethodId: String, otpCode: String): Request<AuthenticationMethod, MyAccountException> {
+    public fun verifyOtp(authenticationMethodId: String, otpCode: String, authSession: String): Request<AuthenticationMethod, MyAccountException> {
         val url = getDomainUrlBuilder()
             .addPathSegment(AUTHENTICATION_METHODS)
             .addPathSegment(authenticationMethodId)
             .addPathSegment(VERIFY)
             .build()
-        val params = mapOf("otp_code" to otpCode)
+        //FIX: Added the required 'auth_session' parameter
+        val params = mapOf("otp_code" to otpCode, AUTH_SESSION_KEY to authSession)
         return factory.post(url.toString(), GsonAdapter(AuthenticationMethod::class.java, gson))
             .addParameters(params)
             .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
@@ -718,6 +719,44 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
             GsonAdapter(EnrollmentChallenge::class.java, gson)
         ).addParameters(params).addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
     }
+
+    /**
+     * Confirms the enrollment for factors that do not require an OTP, like Push Notification or Recovery Code.
+     *
+     * ## Scopes Required
+     * `create:me:authentication_methods`
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
+     * val authMethodId = "from_enrollment_challenge"
+     * val authSession = "from_enrollment_challenge"
+     *
+     * apiClient.verify(authMethodId, authSession)
+     * .start(object : Callback<AuthenticationMethod, MyAccountException> {
+     * override fun onSuccess(result: AuthenticationMethod) { //... }
+     * override fun onFailure(error: MyAccountException) { //... }
+     * })
+     * ```
+     * @param authenticationMethodId The ID of the method being verified (from the enrollment challenge).
+     * @param authSession The auth session from the enrollment challenge.
+     * @return a request that will yield the newly verified authentication method.
+     */
+    public fun verify(authenticationMethodId: String, authSession: String): Request<AuthenticationMethod, MyAccountException> {
+        val url = getDomainUrlBuilder()
+            .addPathSegment(AUTHENTICATION_METHODS)
+            .addPathSegment(authenticationMethodId)
+            .addPathSegment(VERIFY)
+            .build()
+        val params = mapOf(AUTH_SESSION_KEY to authSession)
+        return factory.post(url.toString(), GsonAdapter(AuthenticationMethod::class.java, gson))
+            .addParameters(params)
+            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+    }
+
 
     private fun getDomainUrlBuilder(): HttpUrl.Builder {
         return auth0.getDomainUrl().toHttpUrl().newBuilder()
