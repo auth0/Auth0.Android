@@ -1,5 +1,6 @@
 package com.auth0.android.request
 
+import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import okhttp3.Response
@@ -20,6 +21,11 @@ public data class ErrorBody(
  */
 public fun Response.getErrorBody(): ErrorBody {
     return InputStreamReader(body?.byteStream(), Charsets.UTF_8).use { reader ->
-        Gson().fromJson(reader, ErrorBody::class.java)
+        try {
+            Gson().fromJson(reader, ErrorBody::class.java)
+        } catch (error: Exception) {
+            Log.e("ErrorBody", "Error parsing the error body ${error.stackTraceToString()}")
+            return ErrorBody("", "")
+        }
     }
 }

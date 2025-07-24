@@ -1,10 +1,13 @@
 package com.auth0.android.dpop
 
 import android.content.Context
+import android.os.Build
 import android.util.Base64
 import android.util.Log
 import androidx.annotation.RequiresApi
+import com.auth0.android.request.Request
 import com.auth0.android.request.getErrorBody
+import com.auth0.android.request.internal.BaseRequest
 import okhttp3.Response
 import org.json.JSONObject
 import java.math.BigInteger
@@ -15,6 +18,12 @@ import java.security.SignatureException
 import java.security.interfaces.ECPublicKey
 import java.util.UUID
 
+public interface SenderConstraining<T> {
+
+    public fun enableDPoP(context: Context): T
+
+}
+
 public data class HeaderData(val authorizationHeader: String, val dpopProof: String?)
 
 public object DPoPProvider {
@@ -24,14 +33,14 @@ public object DPoPProvider {
     private const val NONCE_HEADER = "dpop-nonce"
     public const val DPOP_HEADER: String = "DPoP"
 
-    private val keyStore = DefaultPoPKeyStore()
+    private val keyStore = DPoPKeyStore()
 
     public const val MAX_RETRY_COUNT: Int = 1
 
     public var auth0Nonce: String? = null
         private set
 
-    @RequiresApi(android.os.Build.VERSION_CODES.M)
+    @Throws(DPoPException::class)
     public fun generateProof(
         httpUrl: String,
         httpMethod: String,
@@ -81,15 +90,16 @@ public object DPoPProvider {
         return "$headerEncoded.$payloadEncoded.${signature}"
     }
 
-    @RequiresApi(android.os.Build.VERSION_CODES.M)
+    @Throws(DPoPException::class)
     public fun clearKeyPair() {
         keyStore.deleteKeyPair()
     }
 
-    @RequiresApi(android.os.Build.VERSION_CODES.M)
-    public fun getPublicKeyJWK(context: Context): String? {
+    @Throws(DPoPException::class)
+    public fun getPublicKeyJWK(): String? {
         if (!keyStore.hasKeyPair()) {
-            keyStore.generateKeyPair(context)
+            Log.d(TAG, "getPublicKeyJWK: Key pair is not present to generate JWK")
+            return null
         }
 
         val publicKey = keyStore.getKeyPair()?.second
@@ -102,6 +112,15 @@ public object DPoPProvider {
         return createSHA256Hash(jwkJson.toString())
     }
 
+    @Throws(DPoPException::class)
+    public fun generateKeyPair(context: Context) {
+        if (keyStore.hasKeyPair()) {
+            return
+        }
+        keyStore.generateKeyPair(context)
+    }
+
+    @Throws(DPoPException::class)
     public fun getHeaderData(
         httpMethod: String,
         httpUrl: String,
@@ -116,15 +135,8 @@ public object DPoPProvider {
     }
 
     public fun isNonceRequiredError(response: Response): Boolean {
-        return try {
-            (response.code == 400 || response.code == 401) && response.getErrorBody().errorCode == NONCE_REQUIRED_ERROR
-        } catch (e: Exception) {
-            Log.d(
-                TAG,
-                "isNonceRequiredError: Exception parsing the response for error ${e.stackTraceToString()}"
-            )
-            false
-        }
+        return (response.code == 400 && response.getErrorBody().errorCode == NONCE_REQUIRED_ERROR) ||
+                (response.code == 401 && isResourceServerNonceError(response))
     }
 
     public fun storeNonce(response: Response) {
@@ -228,5 +240,18 @@ public object DPoPProvider {
             bytesConsumed += numBytes
         }
         return Pair(len, bytesConsumed)
+    }
+
+    private fun isResourceServerNonceError(response: Response): Boolean {
+        val header = response.headers["WWW-Authenticate"]
+        header ?: return false
+        val headerMap = header.split(", ")
+            .map { it.split("=", limit = 2) }
+            .associate {
+                val key = it[0].trim()
+                val value = it.getOrNull(1)?.trim()?.removeSurrounding("\"")
+                key to (value ?: "")
+            }
+        return headerMap["DPoP error"] == NONCE_REQUIRED_ERROR
     }
 }

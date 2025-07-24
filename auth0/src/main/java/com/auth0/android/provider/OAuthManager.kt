@@ -2,17 +2,18 @@ package com.auth0.android.provider
 
 import android.content.Context
 import android.net.Uri
-import android.os.Bundle
+import android.os.Build
 import android.text.TextUtils
 import android.util.Base64
 import android.util.Log
-import androidx.annotation.ChecksSdkIntAtLeast
+import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
+import com.auth0.android.dpop.DPoPProvider
 import com.auth0.android.request.internal.Jwt
 import com.auth0.android.request.internal.OidcUtils
 import com.auth0.android.result.Credentials
@@ -59,10 +60,12 @@ internal class OAuthManager(
         idTokenVerificationIssuer = if (TextUtils.isEmpty(issuer)) apiClient.baseURL else issuer
     }
 
+    @RequiresApi(Build.VERSION_CODES.M)
     fun startAuthentication(context: Context, redirectUri: String, requestCode: Int) {
         OidcUtils.includeDefaultScope(parameters)
         addPKCEParameters(parameters, redirectUri, headers)
         addClientParameters(parameters, redirectUri)
+        addDPoPJWKParameters(parameters)
         addValidationParameters(parameters)
         val uri = buildAuthorizeUri()
         this.requestCode = requestCode
@@ -220,13 +223,22 @@ internal class OAuthManager(
                     errorDescription ?: "Permissions were not granted. Try again."
                 )
             }
+
             ERROR_VALUE_UNAUTHORIZED.equals(errorValue, ignoreCase = true) -> {
-                throw AuthenticationException(ERROR_VALUE_UNAUTHORIZED, errorDescription ?: unknownErrorDescription)
+                throw AuthenticationException(
+                    ERROR_VALUE_UNAUTHORIZED,
+                    errorDescription ?: unknownErrorDescription
+                )
             }
+
             ERROR_VALUE_LOGIN_REQUIRED == errorValue -> {
                 //Whitelist to allow SSO errors go through
-                throw AuthenticationException(errorValue, errorDescription ?: unknownErrorDescription)
+                throw AuthenticationException(
+                    errorValue,
+                    errorDescription ?: unknownErrorDescription
+                )
             }
+
             else -> {
                 throw AuthenticationException(
                     errorValue,
@@ -276,6 +288,14 @@ internal class OAuthManager(
     private fun createPKCE(redirectUri: String, headers: Map<String, String>) {
         if (pkce == null) {
             pkce = PKCE(apiClient, redirectUri, headers)
+        }
+    }
+
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    private fun addDPoPJWKParameters(parameters: MutableMap<String, String>) {
+        DPoPProvider.getPublicKeyJWK()?.let {
+            parameters["dpop_jkt"] = it
         }
     }
 

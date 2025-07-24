@@ -7,8 +7,6 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Log
 import androidx.annotation.RequiresApi
-import com.auth0.android.authentication.storage.IncompatibleDeviceException
-import com.auth0.android.request.AuthenticationRequest
 import java.security.InvalidAlgorithmParameterException
 import java.security.KeyPairGenerator
 import java.security.KeyStore
@@ -23,13 +21,7 @@ import java.util.Calendar
 import javax.security.auth.x500.X500Principal
 import javax.security.cert.CertificateException
 
-
-public interface PoPKeyStore {
-
-}
-
-@RequiresApi(Build.VERSION_CODES.M)
-public class DefaultPoPKeyStore : PoPKeyStore {
+public class DPoPKeyStore {
 
     private val keyStore: KeyStore by lazy {
         KeyStore.getInstance(ANDROID_KEYSTORE).apply {
@@ -67,32 +59,6 @@ public class DefaultPoPKeyStore : PoPKeyStore {
             keyPairGenerator.generateKeyPair()
             Log.d(TAG, "Key pair generated successfully.")
         } catch (e: Exception) {
-
-            //TODO : Handle the exceptions beeter with bettr type
-
-            /*
-             * This exceptions are safe to be ignored:
-             *
-             * - CertificateException:
-             *      Thrown when certificate has expired (25 years..) or couldn't be loaded
-             * - KeyStoreException:
-             * - NoSuchProviderException:
-             *      Thrown when "AndroidKeyStore" is not available. Was introduced on API 18.
-             * - NoSuchAlgorithmException:
-             *      Thrown when "RSA" algorithm is not available. Was introduced on API 18.
-             * - InvalidAlgorithmParameterException:
-             *      Thrown if Key Size is other than 512, 768, 1024, 2048, 3072, 4096
-             *      or if Padding is other than RSA/ECB/PKCS1Padding, introduced on API 18
-             *      or if Block Mode is other than ECB
-             * - ProviderException:
-             *      Thrown on some modified devices when KeyPairGenerator#generateKeyPair is called.
-             *      See: https://www.bountysource.com/issues/45527093-keystore-issues
-             *
-             * However if any of this exceptions happens to be thrown (OEMs often change their Android distribution source code),
-             * all the checks performed in this class wouldn't matter and the device would not be compatible at all with it.
-             *
-             * Read more in https://developer.android.com/training/articles/keystore#SupportedAlgorithms
-             */
             when (e) {
                 is CertificateException,
                 is InvalidAlgorithmParameterException,
@@ -101,10 +67,10 @@ public class DefaultPoPKeyStore : PoPKeyStore {
                 is KeyStoreException,
                 is ProviderException -> {
                     Log.e(TAG, "The device can't generate a new EC Key pair.", e)
-                    throw IncompatibleDeviceException(e)
+                    throw DPoPException(DPoPException.Code.KEY_GENERATION_ERROR, e)
                 }
 
-                else -> throw e
+                else -> throw DPoPException(DPoPException.Code.UNKNOWN, e)
             }
         }
     }
@@ -113,36 +79,29 @@ public class DefaultPoPKeyStore : PoPKeyStore {
         try {
             val privateKey = keyStore.getKey(KEY_ALIAS, null) as PrivateKey
             val publicKey = keyStore.getCertificate(KEY_ALIAS)?.publicKey
-            if (privateKey != null && publicKey != null) {
+            if (publicKey != null) {
                 return Pair(privateKey, publicKey)
             }
         } catch (e: KeyStoreException) {
-            Log.e(TAG, "getKeyPair: Error getting key pair ${e.stackTraceToString()}")
+            throw DPoPException(DPoPException.Code.KEY_STORE_ERROR, e)
         }
         Log.e(TAG, "Returning null key pair ")
         return null
-    }
-
-
-    public fun addHeaders(request: AuthenticationRequest, tokenType: String) {
-
-
     }
 
     public fun hasKeyPair(): Boolean {
         try {
             return keyStore.containsAlias(KEY_ALIAS)
         } catch (e: KeyStoreException) {
-            e.printStackTrace()
+            throw DPoPException(DPoPException.Code.KEY_STORE_ERROR, e)
         }
-        return false
     }
 
     public fun deleteKeyPair() {
         try {
             keyStore.deleteEntry(KEY_ALIAS)
         } catch (e: KeyStoreException) {
-            e.printStackTrace()
+            throw DPoPException(DPoPException.Code.KEY_STORE_ERROR, e)
         }
     }
 
