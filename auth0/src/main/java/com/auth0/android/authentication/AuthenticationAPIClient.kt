@@ -821,8 +821,16 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         val credentialsAdapter = GsonAdapter(
             Credentials::class.java, gson
         )
-        return factory.post(url.toString(), credentialsAdapter)
+        val request = factory.post(url.toString(), credentialsAdapter)
             .addParameters(parameters)
+        try {
+            DPoPProvider.generateProof(request.getUrl(), request.getHttpMethod().toString())?.let {
+                request.addHeader(DPoPProvider.DPOP_HEADER, it)
+            }
+        } catch (exception: DPoPException) {
+            Log.e(TAG, "Error generating DPoP proof: ${exception.stackTraceToString()}")
+        }
+        return request
     }
 
     /**
