@@ -1,13 +1,9 @@
 package com.auth0.android.dpop
 
-import android.content.Context
-import android.os.Build
+ import android.content.Context
 import android.util.Base64
 import android.util.Log
-import androidx.annotation.RequiresApi
-import com.auth0.android.request.Request
 import com.auth0.android.request.getErrorBody
-import com.auth0.android.request.internal.BaseRequest
 import okhttp3.Response
 import org.json.JSONObject
 import java.math.BigInteger
