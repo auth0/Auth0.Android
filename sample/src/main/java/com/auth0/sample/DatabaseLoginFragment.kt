@@ -2,6 +2,8 @@ package com.auth0.sample
 
 import android.os.Bundle
 import android.os.CancellationSignal
+import android.util.Base64
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -27,6 +29,7 @@ import com.auth0.android.authentication.storage.LocalAuthenticationOptions
 import com.auth0.android.authentication.storage.SecureCredentialsManager
 import com.auth0.android.authentication.storage.SharedPreferencesStorage
 import com.auth0.android.callback.Callback
+import com.auth0.android.dpop.DPoPProvider
 import com.auth0.android.management.ManagementException
 import com.auth0.android.management.UsersAPIClient
 import com.auth0.android.provider.WebAuthProvider
@@ -43,6 +46,7 @@ import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import java.security.MessageDigest
 import java.util.concurrent.Executors
 
 /**
@@ -64,7 +68,8 @@ class DatabaseLoginFragment : Fragment() {
     }
 
     private val audience: String by lazy {
-        "https://${getString(R.string.com_auth0_domain)}/api/v2/"
+        "https://firstresourceserver/"
+//        "https://${getString(R.string.com_auth0_domain)}/api/v2/"
     }
 
     private val credentialManager: CredentialManager by lazy {
@@ -102,7 +107,7 @@ class DatabaseLoginFragment : Fragment() {
             .setDeviceCredentialFallback(true)
             .build()
 
-    private val callback = object: Callback<Credentials, AuthenticationException> {
+    private val callback = object : Callback<Credentials, AuthenticationException> {
         override fun onSuccess(result: Credentials) {
             credentialsManager.saveCredentials(result)
             Snackbar.make(
@@ -258,14 +263,15 @@ class DatabaseLoginFragment : Fragment() {
     }
 
     private fun webAuth() {
-        WebAuthProvider.login(account)
+        WebAuthProvider
+            .enableDPoP(requireContext())
+            .login(account)
             .withScheme(getString(R.string.com_auth0_scheme))
             .withAudience("https://firstresourceserver/")
             .withScope(scope)
             .start(requireContext(), object : Callback<Credentials, AuthenticationException> {
                 override fun onSuccess(result: Credentials) {
                     credentialsManager.saveCredentials(result)
-                    secureCredentialsManager.saveCredentials(result)
                     Snackbar.make(
                         requireView(),
                         "Hello ${result.user.name}",
@@ -288,7 +294,9 @@ class DatabaseLoginFragment : Fragment() {
     private suspend fun webAuthAsync() {
         try {
             val credentials =
-                WebAuthProvider.login(account)
+                WebAuthProvider
+                    .enableDPoP(requireContext())
+                    .login(account)
                     .withScheme(getString(R.string.com_auth0_scheme))
                     .withAudience(audience)
                     .withScope(scope)
@@ -311,6 +319,7 @@ class DatabaseLoginFragment : Fragment() {
             .withScheme(getString(R.string.com_auth0_scheme))
             .start(requireContext(), object : Callback<Void?, AuthenticationException> {
                 override fun onSuccess(result: Void?) {
+                    DPoPProvider.clearKeyPair()
                     Snackbar.make(
                         requireView(), "Logged out", Snackbar.LENGTH_LONG
                     ).show()
@@ -344,7 +353,8 @@ class DatabaseLoginFragment : Fragment() {
     }
 
     private fun getCreds() {
-        credentialsManager.getCredentials(null,
+        credentialsManager.getCredentials(
+            null,
             300,
             emptyMap(),
             emptyMap(),
@@ -411,10 +421,11 @@ class DatabaseLoginFragment : Fragment() {
         credentialsManager.getCredentials(object :
             Callback<Credentials, CredentialsManagerException> {
             override fun onSuccess(result: Credentials) {
-                val users = UsersAPIClient(account, result.accessToken)
-                users.getProfile(result.user.getId()!!)
-                    .start(object : Callback<UserProfile, ManagementException> {
-                        override fun onFailure(error: ManagementException) {
+                val users = AuthenticationAPIClient(account)
+                users.userInfo(result.accessToken, result.type)
+                    .start(object : Callback<UserProfile, AuthenticationException> {
+                        override fun onFailure(error: AuthenticationException) {
+
                             Snackbar.make(
                                 requireView(), error.getDescription(), Snackbar.LENGTH_LONG
                             ).show()
@@ -527,7 +538,8 @@ class DatabaseLoginFragment : Fragment() {
                 )
                 var response: CreatePublicKeyCredentialResponse?
 
-                credentialManager.createCredentialAsync(requireContext(),
+                credentialManager.createCredentialAsync(
+                    requireContext(),
                     request,
                     CancellationSignal(),
                     Executors.newSingleThreadExecutor(),
@@ -594,7 +606,8 @@ class DatabaseLoginFragment : Fragment() {
                         listOf(request)
                     )
 
-                    credentialManager.getCredentialAsync(requireContext(),
+                    credentialManager.getCredentialAsync(
+                        requireContext(),
                         getCredRequest,
                         CancellationSignal(),
                         Executors.newSingleThreadExecutor(),

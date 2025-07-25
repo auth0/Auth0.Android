@@ -2,6 +2,7 @@ package com.auth0.android.request
 
 import com.auth0.android.Auth0Exception
 import com.auth0.android.callback.Callback
+import okhttp3.HttpUrl
 
 /**
  * Defines a request that can be started
@@ -64,7 +65,7 @@ public interface Request<T, U : Auth0Exception> {
      * @param value of the parameter
      * @return itself
      */
-    public fun addParameter(name: String,value:Any):Request<T,U> {
+    public fun addParameter(name: String, value: Any): Request<T, U> {
         return this
     }
 
@@ -76,4 +77,17 @@ public interface Request<T, U : Auth0Exception> {
      * @return itself
      */
     public fun addHeader(name: String, value: String): Request<T, U>
+
+
+    /**
+     * Returns the URL of this request.
+     * @return the URL
+     */
+    public fun getUrl(): String
+
+    /**
+     * Returns the [HttpMethod] of this request
+     * @return the [HttpMethod] 
+     */
+    public fun getHttpMethod(): HttpMethod
 }

@@ -6,6 +6,13 @@ import com.auth0.android.Auth0Exception
 import com.auth0.android.callback.Callback
 import com.auth0.android.dpop.DPoPProvider
 import com.auth0.android.request.*
+import com.auth0.android.request.ErrorAdapter
+import com.auth0.android.request.HttpMethod
+import com.auth0.android.request.JsonAdapter
+import com.auth0.android.request.NetworkingClient
+import com.auth0.android.request.Request
+import com.auth0.android.request.RequestOptions
+import com.auth0.android.request.ServerResponse
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -22,7 +29,7 @@ import java.nio.charset.StandardCharsets
  * @param errorAdapter the adapter that will convert a failed response into the expected type.
  */
 internal open class BaseRequest<T, U : Auth0Exception>(
-    method: HttpMethod,
+    private val method: HttpMethod,
     private val url: String,
     private val client: NetworkingClient,
     private val resultAdapter: JsonAdapter<T>,
@@ -31,7 +38,6 @@ internal open class BaseRequest<T, U : Auth0Exception>(
 ) : Request<T, U> {
 
     private val options: RequestOptions = RequestOptions(method)
-    private val dPoPProvider = DPoPProvider()
 
     override fun addHeader(name: String, value: String): Request<T, U> {
         options.headers[name] = value
@@ -62,6 +68,10 @@ internal open class BaseRequest<T, U : Auth0Exception>(
         options.parameters[name] = value
         return this
     }
+
+    override fun getUrl(): String = url
+
+    override fun getHttpMethod(): HttpMethod = method
 
     /**
      * Runs asynchronously and executes the network request, without blocking the current thread.
@@ -147,16 +157,6 @@ internal open class BaseRequest<T, U : Auth0Exception>(
             }
 
             //4. Error scenario. Response of type U
-            //Adding the retry logic here for now. This needs to be revisited as this is not thread safe
-            val dpopNonce = response.headers["dpop-nonce"]?.firstOrNull()
-            if (dpopNonce != null && retryCount < 1) {
-                response.headers["dpop-nonce"]?.let {
-                    dPoPProvider.generateDpopProofJwt(
-                        httpUrl = url, httpMethod = options.method.toString(), nonce = it[0]
-                    )?.let { it1 -> addHeader("DPoP", it1) }
-                    return executeWithRetry(retryCount + 1)
-                }
-            }
             val error: U = try {
                 if (response.isJson()) {
                     errorAdapter.fromJsonResponse(response.statusCode, reader)

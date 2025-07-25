@@ -1,10 +1,16 @@
 package com.auth0.android.authentication
 
+import android.content.Context
+import android.os.Build
+import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
+import com.auth0.android.dpop.DPoPException
 import com.auth0.android.dpop.DPoPProvider
+import com.auth0.android.dpop.SenderConstraining
 import com.auth0.android.request.*
 import com.auth0.android.request.internal.*
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMap
@@ -36,7 +42,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     private val auth0: Auth0,
     private val factory: RequestFactory<AuthenticationException>,
     private val gson: Gson
-) {
+) : SenderConstraining<AuthenticationAPIClient> {
 
     /**
      * Creates a new API client instance providing Auth0 account info.
@@ -55,12 +61,17 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         GsonProvider.gson
     )
 
-    private val dPoPProvider = DPoPProvider()
-
     public val clientId: String
         get() = auth0.clientId
     public val baseURL: String
         get() = auth0.getDomainUrl()
+
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    override fun enableDPoP(context: Context): AuthenticationAPIClient {
+        DPoPProvider.generateKeyPair(context)
+        return this
+    }
 
     /**
      * Log in a user with email/username and password for a connection/realm.
@@ -169,7 +180,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      *
      * ```
-     * client.signinWithPasskey("{authSession}", "{authResponse}","{realm}")
+     * client.signinWithPasskey("{authSession}", "{authResponse}","{realm}","${organization}")
      *       .validateClaims() //mandatory
      *       .setScope("{scope}")
      *       .start(object: Callback<Credentials, AuthenticationException> {
@@ -181,17 +192,20 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param authSession the auth session received from the server as part of the public key challenge request.
      * @param authResponse the [PublicKeyCredentials] authentication response
      * @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
+     * @param organization id of the organization to be associated with the user while signing in
      * @return a request to configure and start that will yield [Credentials]
      */
     public fun signinWithPasskey(
         authSession: String,
         authResponse: PublicKeyCredentials,
-        realm: String? = null
+        realm: String? = null,
+        organization: String? = null,
     ): AuthenticationRequest {
         val params = ParameterBuilder.newBuilder().apply {
             setGrantType(ParameterBuilder.GRANT_TYPE_PASSKEY)
             set(AUTH_SESSION_KEY, authSession)
             realm?.let { setRealm(it) }
+            organization?.let { set(ORGANIZATION_KEY, organization) }
         }.asDictionary()
 
         return loginWithToken(params)
@@ -213,7 +227,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      *
      * ```
-     * client.signinWithPasskey("{authSession}", "{authResponse}","{realm}")
+     * client.signinWithPasskey("{authSession}", "{authResponse}","{realm}","{organization}")
      *       .validateClaims() //mandatory
      *       .setScope("{scope}")
      *       .start(object: Callback<Credentials, AuthenticationException> {
@@ -225,18 +239,20 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param authSession the auth session received from the server as part of the public key challenge request.
      * @param authResponse the public key credential authentication response in JSON string format that follows the standard webauthn json format
      * @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
+     * @param organization id of the organization to be associated with the user while signing in
      * @return a request to configure and start that will yield [Credentials]
      */
     public fun signinWithPasskey(
         authSession: String,
         authResponse: String,
-        realm: String? = null
+        realm: String? = null,
+        organization: String? = null,
     ): AuthenticationRequest {
         val publicKeyCredentials = gson.fromJson(
             authResponse,
             PublicKeyCredentials::class.java
         )
-        return signinWithPasskey(authSession, publicKeyCredentials, realm)
+        return signinWithPasskey(authSession, publicKeyCredentials, realm, organization)
     }
 
 
@@ -250,7 +266,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      *
      *
      * ```
-     * client.signupWithPasskey("{userData}","{realm}")
+     * client.signupWithPasskey("{userData}","{realm}","{organization}")
      *      .addParameter("scope","scope")
      *      .start(object: Callback<PasskeyRegistration, AuthenticationException> {
      *          override fun onSuccess(result: PasskeyRegistration) { }
@@ -260,11 +276,13 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      *
      *  @param userData user information of the client
      *  @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
+     *  @param organization id of the organization to be associated with the user while signing up
      *  @return  a request to configure and start that will yield [PasskeyRegistrationChallenge]
      */
     public fun signupWithPasskey(
         userData: UserData,
-        realm: String? = null
+        realm: String? = null,
+        organization: String? = null
     ): Request<PasskeyRegistrationChallenge, AuthenticationException> {
         val user = gson.toJsonTree(userData)
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
@@ -275,6 +293,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         val params = ParameterBuilder.newBuilder().apply {
             setClientId(clientId)
             realm?.let { setRealm(it) }
+            organization?.let { set(ORGANIZATION_KEY, it) }
         }.asDictionary()
 
         val passkeyRegistrationChallengeAdapter: JsonAdapter<PasskeyRegistrationChallenge> =
@@ -296,7 +315,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      *
      * ```
-     * client.passkeyChallenge("{realm}")
+     * client.passkeyChallenge("{realm}", "{organization}")
      *    .start(object: Callback<PasskeyChallenge, AuthenticationException> {
      *        override fun onSuccess(result: PasskeyChallenge) { }
      *        override fun onFailure(error: AuthenticationException) { }
@@ -304,10 +323,12 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * ```
      *
      * @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
+     * @param organization id of the organization to be associated with the user while signing in
      * @return a request to configure and start that will yield [PasskeyChallenge]
      */
     public fun passkeyChallenge(
-        realm: String? = null
+        realm: String? = null,
+        organization: String? = null
     ): Request<PasskeyChallenge, AuthenticationException> {
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(PASSKEY_PATH)
@@ -317,6 +338,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         val parameters = ParameterBuilder.newBuilder().apply {
             setClientId(clientId)
             realm?.let { setRealm(it) }
+            organization?.let { set(ORGANIZATION_KEY, organization) }
         }.asDictionary()
 
         val passkeyChallengeAdapter: JsonAdapter<PasskeyChallenge> = GsonAdapter(
@@ -553,9 +575,26 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param accessToken used to fetch it's information
      * @return a request to start
      */
-    public fun userInfo(accessToken: String): Request<UserProfile, AuthenticationException> {
-        return profileRequest()
-            .addHeader(HEADER_AUTHORIZATION, "Bearer $accessToken")
+    public fun userInfo(
+        accessToken: String, tokenType: String
+    ): Request<UserProfile, AuthenticationException> {
+        return profileRequest().apply {
+            try {
+                val headerData = DPoPProvider.getHeaderData(
+                    getHttpMethod().toString(),
+                    getUrl(),
+                    accessToken,
+                    tokenType,
+                    DPoPProvider.auth0Nonce
+                )
+                addHeader(HEADER_AUTHORIZATION, headerData.authorizationHeader)
+                headerData.dpopProof?.let {
+                    addHeader(DPoPProvider.DPOP_HEADER, it)
+                }
+            } catch (exception: DPoPException) {
+                Log.e(TAG, "Error generating DPoP proof: ${exception.stackTraceToString()}")
+            }
+        }
     }
 
     /**
@@ -785,10 +824,6 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         )
         val request = factory.post(url.toString(), credentialsAdapter)
             .addParameters(parameters)
-
-        if (dPoPProvider.hasKeyPair()) {
-            request.addHeader("DPoP", dPoPProvider.generateDpopProofJwt("POST", url.toString())!!)
-        }
         return request
     }
 
@@ -926,8 +961,12 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         )
         val request = factory.post(url.toString(), credentialsAdapter)
         request.addParameters(parameters)
-        if (dPoPProvider.hasKeyPair()) {
-            request.addHeader("DPoP", dPoPProvider.generateDpopProofJwt("POST", url.toString())!!)
+        try {
+            DPoPProvider.generateProof(request.getUrl(), request.getHttpMethod().toString())?.let {
+                request.addHeader(DPoPProvider.DPOP_HEADER, it)
+            }
+        } catch (exception: DPoPException) {
+            Log.e(TAG, "Error generating DPoP proof: ${exception.stackTraceToString()}")
         }
         return request
     }
@@ -994,9 +1033,13 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             T::class.java, gson
         )
         val request = factory.post(url.toString(), adapter)
-            .addParameters(requestParameters)
-        if (dPoPProvider.hasKeyPair()) {
-            request.addHeader("DPoP", dPoPProvider.generateDpopProofJwt("POST", url.toString())!!)
+        request.addParameters(requestParameters)
+        try {
+            DPoPProvider.generateProof(request.getUrl(), request.getHttpMethod().toString())?.let {
+                request.addHeader(DPoPProvider.DPOP_HEADER, it)
+            }
+        } catch (exception: DPoPException) {
+            Log.e(TAG, "Error generating DPoP proof: ${exception.stackTraceToString()}")
         }
         return request
     }
@@ -1019,9 +1062,14 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         )
         val request = BaseAuthenticationRequest(
             factory.post(url.toString(), credentialsAdapter), clientId, baseURL
-        ).addParameters(requestParameters)
-        if (dPoPProvider.hasKeyPair()) {
-            request.addHeader("DPoP", dPoPProvider.generateDpopProofJwt("POST", url.toString())!!)
+        )
+        request.addParameters(requestParameters)
+        try {
+            DPoPProvider.generateProof(request.getUrl(), request.getHttpMethod().toString())?.let {
+                request.addHeader(DPoPProvider.DPOP_HEADER, it)
+            }
+        } catch (exception: DPoPException) {
+            Log.e(TAG, "Error generating DPoP proof: ${exception.stackTraceToString()}")
         }
         return request
     }
@@ -1071,7 +1119,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val RECOVERY_CODE_KEY = "recovery_code"
         private const val SUBJECT_TOKEN_KEY = "subject_token"
         private const val SUBJECT_TOKEN_TYPE_KEY = "subject_token_type"
-        private const val REQUESTED_TOKEN_TYPE_KEY = "requested_token_type"
+        private const val ORGANIZATION_KEY = "organization"
         private const val USER_METADATA_KEY = "user_metadata"
         private const val AUTH_SESSION_KEY = "auth_session"
         private const val AUTH_RESPONSE_KEY = "authn_response"
@@ -1092,6 +1140,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val HEADER_AUTHORIZATION = "Authorization"
         private const val WELL_KNOWN_PATH = ".well-known"
         private const val JWKS_FILE_PATH = "jwks.json"
+        private const val TAG = "AuthenticationAPIClient"
         private fun createErrorAdapter(): ErrorAdapter<AuthenticationException> {
             val mapAdapter = forMap(GsonProvider.gson)
             return object : ErrorAdapter<AuthenticationException> {

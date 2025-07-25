@@ -2,9 +2,11 @@ package com.auth0.android.provider
 
 import android.content.Context
 import android.net.Uri
+import android.os.Build
 import android.text.TextUtils
 import android.util.Base64
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
@@ -33,8 +35,6 @@ internal class OAuthManager(
     private var requestCode = 0
     private var pkce: PKCE? = null
 
-    private val dPoPProvider = DPoPProvider()
-
     private var _currentTimeInMillis: Long? = null
 
     @set:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
@@ -60,12 +60,13 @@ internal class OAuthManager(
         idTokenVerificationIssuer = if (TextUtils.isEmpty(issuer)) apiClient.baseURL else issuer
     }
 
+    @RequiresApi(Build.VERSION_CODES.M)
     fun startAuthentication(context: Context, redirectUri: String, requestCode: Int) {
         OidcUtils.includeDefaultScope(parameters)
         addPKCEParameters(parameters, redirectUri, headers)
         addClientParameters(parameters, redirectUri)
+        addDPoPJWKParameters(parameters)
         addValidationParameters(parameters)
-        addDopParameter(parameters, context)
         val uri = buildAuthorizeUri()
         this.requestCode = requestCode
         AuthenticationActivity.authenticateUsingBrowser(context, uri, launchAsTwa, ctOptions)
@@ -278,12 +279,6 @@ internal class OAuthManager(
         parameters[KEY_NONCE] = nonce
     }
 
-    private fun addDopParameter(parameters: MutableMap<String, String>, context: Context) {
-        dPoPProvider.getDpopJktValue(context)?.let {
-            parameters["dpop_jkt"] = it
-        }
-    }
-
     private fun addClientParameters(parameters: MutableMap<String, String>, redirectUri: String) {
         parameters[KEY_AUTH0_CLIENT_INFO] = account.auth0UserAgent.value
         parameters[KEY_CLIENT_ID] = account.clientId
@@ -293,6 +288,13 @@ internal class OAuthManager(
     private fun createPKCE(redirectUri: String, headers: Map<String, String>) {
         if (pkce == null) {
             pkce = PKCE(apiClient, redirectUri, headers)
+        }
+    }
+
+
+    private fun addDPoPJWKParameters(parameters: MutableMap<String, String>) {
+        DPoPProvider.getPublicKeyJWK()?.let {
+            parameters["dpop_jkt"] = it
         }
     }
 

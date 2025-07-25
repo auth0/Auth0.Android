@@ -173,8 +173,7 @@ public class SecureCredentialsManagerTest {
         )
         MatcherAssert.assertThat(manager, Is.`is`(Matchers.notNullValue()))
     }
-
-
+    
     /*
      * SAVE SSO credentials test
      */
