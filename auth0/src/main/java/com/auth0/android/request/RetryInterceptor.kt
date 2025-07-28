@@ -4,6 +4,9 @@ import com.auth0.android.dpop.DPoPProvider
 import okhttp3.Interceptor
 import okhttp3.Response
 
+/**
+ * Interceptor that retries requests.
+ */
 internal class RetryInterceptor : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()

@@ -14,14 +14,19 @@ import java.security.SignatureException
 import java.security.interfaces.ECPublicKey
 import java.util.UUID
 
-public interface SenderConstraining<T> {
 
-    public fun enableDPoP(context: Context): T
-
-}
-
+/**
+ * Data class returning the value that needs to be added to the request for the `Authorization` and `DPoP` headers.
+ * @param  authorizationHeader value for the `Authorization` header key
+ * @param dpopProof value for the `DPoP header key . This will be generated only for DPoP requests
+ */
 public data class HeaderData(val authorizationHeader: String, val dpopProof: String?)
 
+
+/**
+ * Util class for securing requests with DPoP (Demonstrating Proof of Possession) as described in
+ * [RFC 9449](https://datatracker.ietf.org/doc/html/rfc9449).
+ */
 public object DPoPProvider {
 
     private const val TAG = "DPoPManager"
@@ -36,6 +41,27 @@ public object DPoPProvider {
     public var auth0Nonce: String? = null
         private set
 
+    /**
+     * This method constructs a DPoP proof JWT that includes the HTTP method, URL, and an optional access token and nonce.
+     *
+     * ```kotlin
+     *
+     *  try {
+     *       DPoPProvider.generateProof("{url}", "POST")?.let {
+     *            // Add to the URL request header
+     *        }
+     *     } catch (exception: DPoPException) {
+     *          Log.e(TAG, "Error generating DPoP proof: ${exception.stackTraceToString()}")
+     *    }
+     *
+     * ```
+     *
+     * @param httpUrl The URL of the HTTP request for which the DPoP proof is being generated.
+     * @param httpMethod The HTTP method (e.g., "GET", "POST") of the request.
+     * @param accessToken An optional access token to be included in the proof. If provided, it will be hashed and included in the payload.
+     * @param nonce An optional nonce value to be included in the proof. This can be used to prevent replay attacks.
+     * @throws DPoPException if there is an error generating the DPoP proof or accessing the key pair.
+     */
     @Throws(DPoPException::class)
     public fun generateProof(
         httpUrl: String,
@@ -86,11 +112,44 @@ public object DPoPProvider {
         return "$headerEncoded.$payloadEncoded.${signature}"
     }
 
+    /**
+     * Method to clear the DPoP key pair from the keystore. It must be called when the user logs out from a session
+     * to prevent reuse of the key pair in subsequent sessions.
+     *
+     * ```kotlin
+     *
+     *  try {
+     *      DPoPProvider.clearKeyPair()
+     *     } catch (exception: DPoPException) {
+     *          Log.e(TAG,"Error clearing  the key pair from the keystore: ${exception.stackTraceToString()}")
+     *     }
+     *
+     * ```
+     * **Note** : It is the developers responsibility to invoke this method to clear the keystore when logging out  a session.
+     * @throws DPoPException if there is an error deleting the key pair.
+     */
     @Throws(DPoPException::class)
     public fun clearKeyPair() {
         keyStore.deleteKeyPair()
     }
 
+    /**
+     * Method to get the public key in JWK format. This is used to generate the `jwk` field in the DPoP proof header.
+     *
+     * ```kotlin
+     *
+     *  try {
+     *      val publicKeyJWK = DPoPProvider.getPublicKeyJWK()
+     *      Log.d(TAG, "Public Key JWK: $publicKeyJWK")
+     *     } catch (exception: DPoPException) {
+     *          Log.e(TAG,"Error getting public key JWK: ${exception.stackTraceToString()}")
+     *     }
+     *
+     * ```
+     *
+     * @return The public key in JWK format or null if the key pair is not present.
+     * @throws DPoPException if there is an error accessing the key pair.
+     */
     @Throws(DPoPException::class)
     public fun getPublicKeyJWK(): String? {
         if (!keyStore.hasKeyPair()) {
@@ -108,6 +167,22 @@ public object DPoPProvider {
         return createSHA256Hash(jwkJson.toString())
     }
 
+    /**
+     * Generates a new key pair for DPoP if it does not already exist. This should be called before making any requests that require DPoP proof.
+     *
+     * ```kotlin
+     *
+     *  try {
+     *      DPoPProvider.generateKeyPair(context)
+     *     } catch (exception: DPoPException) {
+     *          Log.e(TAG,"Error generating key pair: ${exception.stackTraceToString()}")
+     *     }
+     *
+     * ```
+     *
+     * @param context The application context used to access the keystore.
+     * @throws DPoPException if there is an error generating the key pair or accessing the keystore.
+     */
     @Throws(DPoPException::class)
     public fun generateKeyPair(context: Context) {
         if (keyStore.hasKeyPair()) {
@@ -116,6 +191,37 @@ public object DPoPProvider {
         keyStore.generateKeyPair(context)
     }
 
+    /**
+     * Generates the header data for a request that requires DPoP proof of possession. The `Authorization` header value is created
+     * using the access token and token type. The `DPoP` header value contains the generated DPoP proof
+     *
+     * ```kotlin
+     *
+     *  try {
+     *        val headerData = DPoPProvider.getHeaderData(
+     *            "{POST}",
+     *            "{request_url}",
+     *            "{access_token}",
+     *            "{DPoP}",
+     *            "{nonce_value}"
+     *            )
+     *            addHeader("Authorization", headerData.authorizationHeader) //Adding to request header
+     *            headerData.dpopProof?.let {
+     *                 addHeader("DPoP", it)
+     *            }
+     *      } catch (exception: DPoPException) {
+     *            Log.e(TAG, "Error generating DPoP proof: ${exception.stackTraceToString()}")
+     *      }
+     *
+     * ```
+     *
+     * @param httpMethod Method type of the request
+     * @param httpUrl Url of the request
+     * @param accessToken Access token to be included in the `Authorization` header
+     * @param tokenType Either `DPoP` or `Bearer`
+     * @param nonce Optional nonce value to be used in the proof
+     * @throws DPoPException if there is an error generating the DPoP proof or accessing the key pair
+     */
     @Throws(DPoPException::class)
     public fun getHeaderData(
         httpMethod: String,
@@ -130,11 +236,41 @@ public object DPoPProvider {
         return HeaderData(token, proof)
     }
 
+    /**
+     * Checks if the given [Response] indicates that a nonce is required for DPoP requests.
+     * This is typically used to determine if the request needs to be retried with a nonce.
+     *
+     * ```kotlin
+     *
+     *  if (DPoPProvider.isNonceRequiredError(response)) {
+     *      // Handle nonce required error
+     *  }
+     *
+     * ```
+     *
+     * @param response The HTTP response to check for nonce requirement.
+     * @return True if the response indicates that a nonce is required, false otherwise.
+     */
     public fun isNonceRequiredError(response: Response): Boolean {
         return (response.code == 400 && response.getErrorBody().errorCode == NONCE_REQUIRED_ERROR) ||
                 (response.code == 401 && isResourceServerNonceError(response))
     }
 
+    /**
+     * Stores the nonce value from the Okhttp3 [Response] headers.
+     *
+     * ```kotlin
+     *
+     *  try {
+     *      DPoPProvider.storeNonce(response)
+     *  } catch (exception: Exception) {
+     *      Log.e(TAG, "Error storing nonce: ${exception.stackTraceToString()}")
+     *  }
+     *
+     * ```
+     *
+     * @param response The HTTP response containing the nonce header.
+     */
     public fun storeNonce(response: Response) {
         auth0Nonce = response.headers[NONCE_HEADER]
     }

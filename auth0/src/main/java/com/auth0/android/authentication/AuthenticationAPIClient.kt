@@ -67,8 +67,11 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         get() = auth0.getDomainUrl()
 
 
+    /**
+     * Enable DPoP for this client.
+     */
     @RequiresApi(Build.VERSION_CODES.M)
-    override fun enableDPoP(context: Context): AuthenticationAPIClient {
+    public override fun enableDPoP(context: Context): AuthenticationAPIClient {
         DPoPProvider.generateKeyPair(context)
         return this
     }

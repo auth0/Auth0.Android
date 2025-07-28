@@ -21,7 +21,10 @@ import java.util.Calendar
 import javax.security.auth.x500.X500Principal
 import javax.security.cert.CertificateException
 
-public class DPoPKeyStore {
+/**
+ * Class to handle all DPoP related keystore operations
+ */
+internal class DPoPKeyStore {
 
     private val keyStore: KeyStore by lazy {
         KeyStore.getInstance(ANDROID_KEYSTORE).apply {
@@ -29,7 +32,7 @@ public class DPoPKeyStore {
         }
     }
 
-    public fun generateKeyPair(context: Context) {
+    fun generateKeyPair(context: Context) {
         try {
             val keyPairGenerator = KeyPairGenerator.getInstance(
                 KeyProperties.KEY_ALGORITHM_EC,
@@ -75,7 +78,7 @@ public class DPoPKeyStore {
         }
     }
 
-    public fun getKeyPair(): Pair<PrivateKey, PublicKey>? {
+    fun getKeyPair(): Pair<PrivateKey, PublicKey>? {
         try {
             val privateKey = keyStore.getKey(KEY_ALIAS, null) as PrivateKey
             val publicKey = keyStore.getCertificate(KEY_ALIAS)?.publicKey
@@ -89,7 +92,7 @@ public class DPoPKeyStore {
         return null
     }
 
-    public fun hasKeyPair(): Boolean {
+    fun hasKeyPair(): Boolean {
         try {
             return keyStore.containsAlias(KEY_ALIAS)
         } catch (e: KeyStoreException) {
@@ -97,7 +100,7 @@ public class DPoPKeyStore {
         }
     }
 
-    public fun deleteKeyPair() {
+    fun deleteKeyPair() {
         try {
             keyStore.deleteEntry(KEY_ALIAS)
         } catch (e: KeyStoreException) {
