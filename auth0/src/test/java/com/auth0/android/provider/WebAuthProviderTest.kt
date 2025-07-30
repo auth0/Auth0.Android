@@ -1,6 +1,7 @@
 package com.auth0.android.provider
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Parcelable
@@ -11,6 +12,7 @@ import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
 import com.auth0.android.dpop.DPoPKeyStore
 import com.auth0.android.dpop.DPoPProvider
+import com.auth0.android.dpop.FakeECPublicKey
 import com.auth0.android.provider.WebAuthProvider.login
 import com.auth0.android.provider.WebAuthProvider.logout
 import com.auth0.android.provider.WebAuthProvider.resume
@@ -314,6 +316,52 @@ public class WebAuthProviderTest {
         assertThat(
             uri,
             UriMatchers.hasParamWithValue("audience", "https://google.com/apis")
+        )
+    }
+
+    //jwk
+
+    @Test
+    public fun enablingDPoPWillGenerateNEwKEyPairIfOneDoesNotExist() {
+        `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
+        val context: Context = mock()
+        WebAuthProvider.enableDPoP(context)
+        login(account)
+            .start(activity, callback)
+        verify(mockKeyStore).generateKeyPair(context)
+    }
+
+    @Test
+    public fun shouldNotHaveDpopJwkOnLoginIfDPoPIsDisabled() {
+        login(account)
+            .start(activity, callback)
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri =
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(uri, `is`(notNullValue()))
+        assertThat(
+            uri,
+            not(
+                UriMatchers.hasParamWithName("dpop_jkt")
+            )
+        )
+    }
+
+    @Test
+    public fun shouldNotHaveDpopJwkOnLoginIfDPoPIsEnabled() {
+        `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
+        `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
+
+        WebAuthProvider.enableDPoP(mock())
+        login(account)
+            .start(activity, callback)
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri =
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(uri, `is`(notNullValue()))
+        assertThat(
+            uri,
+            UriMatchers.hasParamWithValue("dpop_jkt", "KQ-r0YQMCm0yVnGippcsZK4zO7oGIjOkNRbvILjjBAo")
         )
     }
 

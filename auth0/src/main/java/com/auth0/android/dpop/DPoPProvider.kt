@@ -67,6 +67,7 @@ public object DPoPProvider {
      * @throws DPoPException if there is an error generating the DPoP proof or accessing the key pair.
      */
     @Throws(DPoPException::class)
+    @JvmStatic
     public fun generateProof(
         httpUrl: String,
         httpMethod: String,
@@ -133,6 +134,7 @@ public object DPoPProvider {
      * @throws DPoPException if there is an error deleting the key pair.
      */
     @Throws(DPoPException::class)
+    @JvmStatic
     public fun clearKeyPair() {
         keyStore.deleteKeyPair()
     }
@@ -155,6 +157,7 @@ public object DPoPProvider {
      * @throws DPoPException if there is an error accessing the key pair.
      */
     @Throws(DPoPException::class)
+    @JvmStatic
     public fun getPublicKeyJWK(): String? {
         if (!keyStore.hasKeyPair()) {
             Log.e(TAG, "getPublicKeyJWK: Key pair is not present to generate JWK")
@@ -188,6 +191,7 @@ public object DPoPProvider {
      * @throws DPoPException if there is an error generating the key pair or accessing the keystore.
      */
     @Throws(DPoPException::class)
+    @JvmStatic
     public fun generateKeyPair(context: Context) {
         if (keyStore.hasKeyPair()) {
             return
@@ -227,6 +231,7 @@ public object DPoPProvider {
      * @throws DPoPException if there is an error generating the DPoP proof or accessing the key pair
      */
     @Throws(DPoPException::class)
+    @JvmStatic
     public fun getHeaderData(
         httpMethod: String,
         httpUrl: String,
@@ -255,6 +260,7 @@ public object DPoPProvider {
      * @param response The HTTP response to check for nonce requirement.
      * @return True if the response indicates that a nonce is required, false otherwise.
      */
+    @JvmStatic
     public fun isNonceRequiredError(response: Response): Boolean {
         return (response.code == 400 && response.getErrorBody().errorCode == NONCE_REQUIRED_ERROR) ||
                 (response.code == 401 && isResourceServerNonceError(response))
@@ -275,6 +281,7 @@ public object DPoPProvider {
      *
      * @param response The HTTP response containing the nonce header.
      */
+    @JvmStatic
     public fun storeNonce(response: Response) {
         auth0Nonce = response.headers[NONCE_HEADER]
     }

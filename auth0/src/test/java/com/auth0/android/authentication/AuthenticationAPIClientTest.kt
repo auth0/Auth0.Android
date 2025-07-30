@@ -4,6 +4,10 @@ import android.content.Context
 import android.content.res.Resources
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.ParameterBuilder.Companion.newBuilder
+import com.auth0.android.dpop.DPoPKeyStore
+import com.auth0.android.dpop.DPoPProvider
+import com.auth0.android.dpop.FakeECPrivateKey
+import com.auth0.android.dpop.FakeECPublicKey
 import com.auth0.android.provider.JwtTestUtils
 import com.auth0.android.request.HttpMethod
 import com.auth0.android.request.NetworkingClient
@@ -44,6 +48,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowLooper
@@ -59,13 +64,16 @@ public class AuthenticationAPIClientTest {
     private lateinit var client: AuthenticationAPIClient
     private lateinit var gson: Gson
     private lateinit var mockAPI: AuthenticationAPIMockServer
+    private lateinit var mockKeyStore: DPoPKeyStore
 
     @Before
     public fun setUp() {
         mockAPI = AuthenticationAPIMockServer()
+        mockKeyStore = mock()
         val auth0 = auth0
         client = AuthenticationAPIClient(auth0)
         gson = GsonBuilder().serializeNulls().create()
+        DPoPProvider.keyStore = mockKeyStore
     }
 
     @After
@@ -193,8 +201,10 @@ public class AuthenticationAPIClientTest {
         val callback = MockAuthenticationCallback<Credentials>()
         val auth0 = auth0
         val client = AuthenticationAPIClient(auth0)
-        client.signinWithPasskey("auth-session", mock<PublicKeyCredentials>(), MY_CONNECTION,
-            "testOrganisation")
+        client.signinWithPasskey(
+            "auth-session", mock<PublicKeyCredentials>(), MY_CONNECTION,
+            "testOrganisation"
+        )
             .start(callback)
         ShadowLooper.idleMainLooper()
         assertThat(
@@ -592,7 +602,7 @@ public class AuthenticationAPIClientTest {
     public fun shouldFetchUserInfo() {
         mockAPI.willReturnUserInfo()
         val callback = MockAuthenticationCallback<UserProfile>()
-        client.userInfo("ACCESS_TOKEN","Bearer")
+        client.userInfo("ACCESS_TOKEN", "Bearer")
             .start(callback)
         ShadowLooper.idleMainLooper()
         assertThat(
@@ -617,7 +627,7 @@ public class AuthenticationAPIClientTest {
     public fun shouldFetchUserInfoSync() {
         mockAPI.willReturnUserInfo()
         val profile = client
-            .userInfo("ACCESS_TOKEN","Bearer")
+            .userInfo("ACCESS_TOKEN", "Bearer")
             .execute()
         assertThat(profile, Matchers.`is`(Matchers.notNullValue()))
         val request = mockAPI.takeRequest()
@@ -638,7 +648,7 @@ public class AuthenticationAPIClientTest {
     public fun shouldAwaitFetchUserInfo(): Unit = runTest {
         mockAPI.willReturnUserInfo()
         val profile = client
-            .userInfo("ACCESS_TOKEN","Bearer")
+            .userInfo("ACCESS_TOKEN", "Bearer")
             .await()
         assertThat(profile, Matchers.`is`(Matchers.notNullValue()))
         val request = mockAPI.takeRequest()
@@ -2471,6 +2481,40 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
+    public fun shouldRenewAuthWithDpopHeaderIfDpopEnabled() {
+        `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
+        `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
+        val auth0 = auth0
+        val client = AuthenticationAPIClient(auth0)
+        mockAPI.willReturnSuccessfulLogin()
+        val callback = MockAuthenticationCallback<Credentials>()
+        client.renewAuth("refreshToken")
+            .start(callback)
+        ShadowLooper.idleMainLooper()
+        val request = mockAPI.takeRequest()
+        assertThat(
+            request.getHeader("Accept-Language"), Matchers.`is`(
+                defaultLocale
+            )
+        )
+        assertThat(
+            request.getHeader("DPoP"),
+            Matchers.notNullValue()
+        )
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.not(Matchers.hasKey("scope")))
+        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
+        assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
+        assertThat(body, Matchers.hasEntry("grant_type", "refresh_token"))
+        assertThat(
+            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
+                Credentials::class.java
+            )
+        )
+    }
+
+    @Test
     public fun shouldRenewAuthWithOAuthTokenSync() {
         val auth0 = auth0
         val client = AuthenticationAPIClient(auth0)
@@ -2566,8 +2610,9 @@ public class AuthenticationAPIClientTest {
         val auth0 = auth0
         val client = AuthenticationAPIClient(auth0)
         mockAPI.willReturnSuccessfulLogin()
-        val credentials = client.renewAuth(refreshToken = "refreshToken", scope = "openid read:data")
-            .execute()
+        val credentials =
+            client.renewAuth(refreshToken = "refreshToken", scope = "openid read:data")
+                .execute()
         val request = mockAPI.takeRequest()
         assertThat(
             request.getHeader("Accept-Language"), Matchers.`is`(

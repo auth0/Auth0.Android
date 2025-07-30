@@ -82,6 +82,16 @@ public class DefaultClientTest {
 
     @Test
     public fun shouldHaveLoggingDisabledByDefault() {
+        val netClient = DefaultClient(enableLogging = false)
+        assertThat(DefaultClient().okHttpClient.interceptors, hasSize(1))
+        val interceptor: Interceptor = netClient.okHttpClient.interceptors[0]
+        assert(
+            interceptor is RetryInterceptor,
+        )
+    }
+
+    @Test
+    public fun shouldHaveRetryInterceptorEnabled() {
         assertThat(DefaultClient().okHttpClient.interceptors, hasSize(1))
     }
 

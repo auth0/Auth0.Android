@@ -37,7 +37,7 @@ public class DPoPProviderTest {
     private val testHttpMethod = "POST"
     private val testAccessToken = "test-access-token"
     private val testNonce = "test-nonce"
-    private val fakePrivateKey = FakeEcPrivateKey()
+    private val fakePrivateKey = FakeECPrivateKey()
     private val fakePublicKey = FakeECPublicKey()
     private val testEncodedAccessToken = "WXSA1LYsphIZPxnnP-TMOtF_C_nPwWp8v0tQZBMcSAU"
     private val testPublicJwkHash = "KQ-r0YQMCm0yVnGippcsZK4zO7oGIjOkNRbvILjjBAo"

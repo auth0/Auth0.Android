@@ -11,7 +11,7 @@ import java.security.spec.ECPoint
 /**
  * Fake Private key used for testing DPoP
  */
-public class FakeEcPrivateKey : ECPrivateKey {
+public class FakeECPrivateKey : ECPrivateKey {
 
     private companion object {
         private val S =
