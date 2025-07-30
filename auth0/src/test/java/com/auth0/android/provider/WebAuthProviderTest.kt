@@ -9,6 +9,8 @@ import androidx.test.espresso.intent.matcher.UriMatchers
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
+import com.auth0.android.dpop.DPoPKeyStore
+import com.auth0.android.dpop.DPoPProvider
 import com.auth0.android.provider.WebAuthProvider.login
 import com.auth0.android.provider.WebAuthProvider.logout
 import com.auth0.android.provider.WebAuthProvider.resume
@@ -65,6 +67,7 @@ public class WebAuthProviderTest {
     private lateinit var voidCallback: Callback<Void?, AuthenticationException>
     private lateinit var activity: Activity
     private lateinit var account: Auth0
+    private lateinit var mockKeyStore: DPoPKeyStore
 
     private val authExceptionCaptor: KArgumentCaptor<AuthenticationException> = argumentCaptor()
     private val intentCaptor: KArgumentCaptor<Intent> = argumentCaptor()
@@ -83,6 +86,10 @@ public class WebAuthProviderTest {
             Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, JwtTestUtils.EXPECTED_BASE_DOMAIN)
         account.networkingClient = SSLTestUtils.testClient
 
+        mockKeyStore = mock()
+
+        DPoPProvider.keyStore = mockKeyStore
+
         //Next line is needed to avoid CustomTabService from being bound to Test environment
         Mockito.doReturn(false).`when`(activity).bindService(
             any(),
@@ -95,7 +102,10 @@ public class WebAuthProviderTest {
             null,
             null
         )
+
+        `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
     }
+
 
     //** ** ** ** ** **  **//
     //** ** ** ** ** **  **//
@@ -107,6 +117,7 @@ public class WebAuthProviderTest {
         login(account)
             .start(activity, callback)
         Assert.assertNotNull(WebAuthProvider.managerInstance)
+
     }
 
     @Test

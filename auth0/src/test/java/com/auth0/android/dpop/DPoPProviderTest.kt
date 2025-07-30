@@ -339,7 +339,7 @@ public class DPoPProviderTest {
 
     @Test
     public fun `isNonceRequiredError should return true for 400 response with nonce required error`() {
-        whenever(mockResponse.body).thenReturn("{\"error\":\"use_dpop_nonce\"}".toResponseBody())
+        whenever(mockResponse.peekBody(Long.MAX_VALUE)).thenReturn("{\"error\":\"use_dpop_nonce\"}".toResponseBody())
         whenever(mockResponse.code).thenReturn(400)
 
         val result = DPoPProvider.isNonceRequiredError(mockResponse)
@@ -358,7 +358,7 @@ public class DPoPProviderTest {
 
     @Test
     public fun `isNonceRequiredError should return false for 400 response with different error`() {
-        whenever(mockResponse.body).thenReturn("{\"error\":\"different_error\"}".toResponseBody())
+        whenever(mockResponse.peekBody(Long.MAX_VALUE)).thenReturn("{\"error\":\"different_error\"}".toResponseBody())
         whenever(mockResponse.code).thenReturn(400)
 
         val result = DPoPProvider.isNonceRequiredError(mockResponse)
