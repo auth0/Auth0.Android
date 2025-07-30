@@ -71,7 +71,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Enable DPoP for this client.
      */
     @RequiresApi(Build.VERSION_CODES.M)
-    public override fun enableDPoP(context: Context): AuthenticationAPIClient {
+    public override fun useDPoP(context: Context): AuthenticationAPIClient {
         DPoPProvider.generateKeyPair(context)
         return this
     }

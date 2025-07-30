@@ -10,6 +10,6 @@ public interface SenderConstraining<T> {
     /**
      * Enables DPoP for authentication requests.
      */
-    public fun enableDPoP(context: Context): T
+    public fun useDPoP(context: Context): T
 
 }

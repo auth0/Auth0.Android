@@ -51,7 +51,7 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
-    public override fun enableDPoP(context: Context): WebAuthProvider {
+    public override fun useDPoP(context: Context): WebAuthProvider {
         DPoPProvider.generateKeyPair(context)
         return this
     }

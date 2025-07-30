@@ -325,7 +325,7 @@ public class WebAuthProviderTest {
     public fun enablingDPoPWillGenerateNEwKEyPairIfOneDoesNotExist() {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
         val context: Context = mock()
-        WebAuthProvider.enableDPoP(context)
+        WebAuthProvider.useDPoP(context)
         login(account)
             .start(activity, callback)
         verify(mockKeyStore).generateKeyPair(context)
@@ -352,7 +352,7 @@ public class WebAuthProviderTest {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
         `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
 
-        WebAuthProvider.enableDPoP(mock())
+        WebAuthProvider.useDPoP(mock())
         login(account)
             .start(activity, callback)
         verify(activity).startActivity(intentCaptor.capture())
