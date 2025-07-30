@@ -592,7 +592,7 @@ public class AuthenticationAPIClientTest {
     public fun shouldFetchUserInfo() {
         mockAPI.willReturnUserInfo()
         val callback = MockAuthenticationCallback<UserProfile>()
-        client.userInfo("ACCESS_TOKEN")
+        client.userInfo("ACCESS_TOKEN","Bearer")
             .start(callback)
         ShadowLooper.idleMainLooper()
         assertThat(
@@ -617,7 +617,7 @@ public class AuthenticationAPIClientTest {
     public fun shouldFetchUserInfoSync() {
         mockAPI.willReturnUserInfo()
         val profile = client
-            .userInfo("ACCESS_TOKEN")
+            .userInfo("ACCESS_TOKEN","Bearer")
             .execute()
         assertThat(profile, Matchers.`is`(Matchers.notNullValue()))
         val request = mockAPI.takeRequest()
@@ -638,7 +638,7 @@ public class AuthenticationAPIClientTest {
     public fun shouldAwaitFetchUserInfo(): Unit = runTest {
         mockAPI.willReturnUserInfo()
         val profile = client
-            .userInfo("ACCESS_TOKEN")
+            .userInfo("ACCESS_TOKEN","Bearer")
             .await()
         assertThat(profile, Matchers.`is`(Matchers.notNullValue()))
         val request = mockAPI.takeRequest()

@@ -3,6 +3,7 @@ package com.auth0.android.dpop
 import android.content.Context
 import android.util.Base64
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import com.auth0.android.request.getErrorBody
 import okhttp3.Response
 import org.json.JSONObject
@@ -34,12 +35,15 @@ public object DPoPProvider {
     private const val NONCE_HEADER = "dpop-nonce"
     public const val DPOP_HEADER: String = "DPoP"
 
-    private val keyStore = DPoPKeyStore()
 
     public const val MAX_RETRY_COUNT: Int = 1
 
     public var auth0Nonce: String? = null
         private set
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    @Volatile
+    internal var keyStore = DPoPKeyStore()
 
     /**
      * This method constructs a DPoP proof JWT that includes the HTTP method, URL, and an optional access token and nonce.
@@ -153,7 +157,7 @@ public object DPoPProvider {
     @Throws(DPoPException::class)
     public fun getPublicKeyJWK(): String? {
         if (!keyStore.hasKeyPair()) {
-            Log.d(TAG, "getPublicKeyJWK: Key pair is not present to generate JWK")
+            Log.e(TAG, "getPublicKeyJWK: Key pair is not present to generate JWK")
             return null
         }
 
@@ -324,8 +328,8 @@ public object DPoPProvider {
             return encodeBase64Url(convertDerToRawSignature(signatureBytes))
         } catch (e: Exception) {
             Log.e(TAG, "Error signing data: ${e.stackTraceToString()}")
+            throw DPoPException(DPoPException.Code.SIGNING_FAILURE, e)
         }
-        return null
     }
 
     private fun convertDerToRawSignature(derSignature: ByteArray): ByteArray {
