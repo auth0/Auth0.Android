@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.callback.Callback;
+import com.auth0.android.request.HttpMethod;
 import com.auth0.android.request.Request;
 
 import java.util.Map;
@@ -38,6 +39,18 @@ public class RequestMock<T, U extends Auth0Exception> implements Request<T, U> {
     @Override
     public Request<T, U> addHeader(@NonNull String name, @NonNull String value) {
         return this;
+    }
+
+    @NonNull
+    @Override
+    public String getUrl() {
+        return "";
+    }
+
+    @NonNull
+    @Override
+    public HttpMethod getHttpMethod() {
+        return HttpMethod.GET.INSTANCE;
     }
 
     @Override

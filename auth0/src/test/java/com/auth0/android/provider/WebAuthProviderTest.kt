@@ -1,6 +1,7 @@
 package com.auth0.android.provider
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Parcelable
@@ -9,6 +10,9 @@ import androidx.test.espresso.intent.matcher.UriMatchers
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
+import com.auth0.android.dpop.DPoPKeyStore
+import com.auth0.android.dpop.DPoPProvider
+import com.auth0.android.dpop.FakeECPublicKey
 import com.auth0.android.provider.WebAuthProvider.login
 import com.auth0.android.provider.WebAuthProvider.logout
 import com.auth0.android.provider.WebAuthProvider.resume
@@ -65,6 +69,7 @@ public class WebAuthProviderTest {
     private lateinit var voidCallback: Callback<Void?, AuthenticationException>
     private lateinit var activity: Activity
     private lateinit var account: Auth0
+    private lateinit var mockKeyStore: DPoPKeyStore
 
     private val authExceptionCaptor: KArgumentCaptor<AuthenticationException> = argumentCaptor()
     private val intentCaptor: KArgumentCaptor<Intent> = argumentCaptor()
@@ -83,6 +88,10 @@ public class WebAuthProviderTest {
             Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, JwtTestUtils.EXPECTED_BASE_DOMAIN)
         account.networkingClient = SSLTestUtils.testClient
 
+        mockKeyStore = mock()
+
+        DPoPProvider.keyStore = mockKeyStore
+
         //Next line is needed to avoid CustomTabService from being bound to Test environment
         Mockito.doReturn(false).`when`(activity).bindService(
             any(),
@@ -95,7 +104,10 @@ public class WebAuthProviderTest {
             null,
             null
         )
+
+        `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
     }
+
 
     //** ** ** ** ** **  **//
     //** ** ** ** ** **  **//
@@ -107,6 +119,7 @@ public class WebAuthProviderTest {
         login(account)
             .start(activity, callback)
         Assert.assertNotNull(WebAuthProvider.managerInstance)
+
     }
 
     @Test
@@ -303,6 +316,52 @@ public class WebAuthProviderTest {
         assertThat(
             uri,
             UriMatchers.hasParamWithValue("audience", "https://google.com/apis")
+        )
+    }
+
+    //jwk
+
+    @Test
+    public fun enablingDPoPWillGenerateNEwKEyPairIfOneDoesNotExist() {
+        `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
+        val context: Context = mock()
+        WebAuthProvider.useDPoP(context)
+        login(account)
+            .start(activity, callback)
+        verify(mockKeyStore).generateKeyPair(context)
+    }
+
+    @Test
+    public fun shouldNotHaveDpopJwkOnLoginIfDPoPIsDisabled() {
+        login(account)
+            .start(activity, callback)
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri =
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(uri, `is`(notNullValue()))
+        assertThat(
+            uri,
+            not(
+                UriMatchers.hasParamWithName("dpop_jkt")
+            )
+        )
+    }
+
+    @Test
+    public fun shouldNotHaveDpopJwkOnLoginIfDPoPIsEnabled() {
+        `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
+        `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
+
+        WebAuthProvider.useDPoP(mock())
+        login(account)
+            .start(activity, callback)
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri =
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(uri, `is`(notNullValue()))
+        assertThat(
+            uri,
+            UriMatchers.hasParamWithValue("dpop_jkt", "KQ-r0YQMCm0yVnGippcsZK4zO7oGIjOkNRbvILjjBAo")
         )
     }
 

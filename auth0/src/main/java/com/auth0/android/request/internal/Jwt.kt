@@ -10,8 +10,8 @@ import java.util.*
  */
 internal class Jwt(rawToken: String) {
 
-    private val decodedHeader: Map<String, Any>
-    private val decodedPayload: Map<String, Any>
+    val decodedHeader: Map<String, Any>
+    val decodedPayload: Map<String, Any>
     val parts: Array<String>
 
     // header

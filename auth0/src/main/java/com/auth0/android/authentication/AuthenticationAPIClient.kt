@@ -1,9 +1,16 @@
 package com.auth0.android.authentication
 
+import android.content.Context
+import android.os.Build
+import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
+import com.auth0.android.dpop.DPoPException
+import com.auth0.android.dpop.DPoPProvider
+import com.auth0.android.dpop.SenderConstraining
 import com.auth0.android.request.*
 import com.auth0.android.request.internal.*
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMap
@@ -35,7 +42,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     private val auth0: Auth0,
     private val factory: RequestFactory<AuthenticationException>,
     private val gson: Gson
-) {
+) : SenderConstraining<AuthenticationAPIClient> {
 
     /**
      * Creates a new API client instance providing Auth0 account info.
@@ -58,6 +65,16 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         get() = auth0.clientId
     public val baseURL: String
         get() = auth0.getDomainUrl()
+
+
+    /**
+     * Enable DPoP for this client.
+     */
+    @RequiresApi(Build.VERSION_CODES.M)
+    public override fun useDPoP(context: Context): AuthenticationAPIClient {
+        DPoPProvider.generateKeyPair(context)
+        return this
+    }
 
     /**
      * Log in a user with email/username and password for a connection/realm.
@@ -561,9 +578,26 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param accessToken used to fetch it's information
      * @return a request to start
      */
-    public fun userInfo(accessToken: String): Request<UserProfile, AuthenticationException> {
-        return profileRequest()
-            .addHeader(HEADER_AUTHORIZATION, "Bearer $accessToken")
+    public fun userInfo(
+        accessToken: String, tokenType: String
+    ): Request<UserProfile, AuthenticationException> {
+        return profileRequest().apply {
+            try {
+                val headerData = DPoPProvider.getHeaderData(
+                    getHttpMethod().toString(),
+                    getUrl(),
+                    accessToken,
+                    tokenType,
+                    DPoPProvider.auth0Nonce
+                )
+                addHeader(HEADER_AUTHORIZATION, headerData.authorizationHeader)
+                headerData.dpopProof?.let {
+                    addHeader(DPoPProvider.DPOP_HEADER, it)
+                }
+            } catch (exception: DPoPException) {
+                Log.e(TAG, "Error generating DPoP proof: ${exception.stackTraceToString()}")
+            }
+        }
     }
 
     /**
@@ -790,8 +824,10 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         val credentialsAdapter = GsonAdapter(
             Credentials::class.java, gson
         )
-        return factory.post(url.toString(), credentialsAdapter)
+        val request = factory.post(url.toString(), credentialsAdapter)
             .addParameters(parameters)
+            .addDPoPHeader()
+        return request
     }
 
     /**
@@ -927,7 +963,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             Credentials::class.java, gson
         )
         val request = factory.post(url.toString(), credentialsAdapter)
-        request.addParameters(parameters)
+            .addParameters(parameters)
+            .addDPoPHeader()
         return request
     }
 
@@ -993,7 +1030,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             T::class.java, gson
         )
         val request = factory.post(url.toString(), adapter)
-        request.addParameters(requestParameters)
+            .addParameters(requestParameters)
+            .addDPoPHeader()
         return request
     }
 
@@ -1017,6 +1055,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             factory.post(url.toString(), credentialsAdapter), clientId, baseURL
         )
         request.addParameters(requestParameters)
+            .addDPoPHeader()
         return request
     }
 
@@ -1044,6 +1083,20 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             UserProfile::class.java, gson
         )
         return factory.get(url.toString(), userProfileAdapter)
+    }
+
+    /**
+     * Helper method to add DPoP proof to all the [Request]
+     */
+    private fun <T> Request<T, AuthenticationException>.addDPoPHeader(): Request<T, AuthenticationException> {
+        try {
+            DPoPProvider.generateProof(getUrl(), getHttpMethod().toString())?.let {
+                addHeader(DPoPProvider.DPOP_HEADER, it)
+            }
+        } catch (exception: DPoPException) {
+            Log.e(TAG, "Error generating DPoP proof: ${exception.stackTraceToString()}")
+        }
+        return this
     }
 
     private companion object {
@@ -1086,6 +1139,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val HEADER_AUTHORIZATION = "Authorization"
         private const val WELL_KNOWN_PATH = ".well-known"
         private const val JWKS_FILE_PATH = "jwks.json"
+        private const val TAG = "AuthenticationAPIClient"
         private fun createErrorAdapter(): ErrorAdapter<AuthenticationException> {
             val mapAdapter = forMap(GsonProvider.gson)
             return object : ErrorAdapter<AuthenticationException> {

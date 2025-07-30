@@ -43,7 +43,15 @@ public class DefaultClient @VisibleForTesting(otherwise = VisibleForTesting.PRIV
         readTimeout: Int = DEFAULT_TIMEOUT_SECONDS,
         defaultHeaders: Map<String, String> = mapOf(),
         enableLogging: Boolean = false,
-    ) : this(connectTimeout, readTimeout, defaultHeaders, enableLogging, GsonProvider.gson, null, null)
+    ) : this(
+        connectTimeout,
+        readTimeout,
+        defaultHeaders,
+        enableLogging,
+        GsonProvider.gson,
+        null,
+        null
+    )
 
     @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal val okHttpClient: OkHttpClient
@@ -88,6 +96,7 @@ public class DefaultClient @VisibleForTesting(otherwise = VisibleForTesting.PRIV
     init {
         // client setup
         val builder = OkHttpClient.Builder()
+        builder.addInterceptor(RetryInterceptor())
 
         // logging
         if (enableLogging) {
