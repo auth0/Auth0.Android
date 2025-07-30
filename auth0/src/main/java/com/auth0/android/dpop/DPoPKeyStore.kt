@@ -6,7 +6,6 @@ import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Log
-import androidx.annotation.RequiresApi
 import java.security.InvalidAlgorithmParameterException
 import java.security.KeyPairGenerator
 import java.security.KeyStore
@@ -24,15 +23,15 @@ import javax.security.cert.CertificateException
 /**
  * Class to handle all DPoP related keystore operations
  */
-internal class DPoPKeyStore {
-
-    private val keyStore: KeyStore by lazy {
-        KeyStore.getInstance(ANDROID_KEYSTORE).apply {
-            load(null)
-        }
-    }
+internal class DPoPKeyStore(
+    private val keyStore: KeyStore =
+        KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
+) {
 
     fun generateKeyPair(context: Context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            throw DPoPException.UNSUPPORTED_ERROR
+        }
         try {
             val keyPairGenerator = KeyPairGenerator.getInstance(
                 KeyProperties.KEY_ALGORITHM_EC,
@@ -73,7 +72,7 @@ internal class DPoPKeyStore {
                     throw DPoPException(DPoPException.Code.KEY_GENERATION_ERROR, e)
                 }
 
-                else -> throw DPoPException(DPoPException.Code.UNKNOWN, e)
+                else -> throw DPoPException(DPoPException.Code.UNKNOWN_ERROR, e)
             }
         }
     }
@@ -88,7 +87,7 @@ internal class DPoPKeyStore {
         } catch (e: KeyStoreException) {
             throw DPoPException(DPoPException.Code.KEY_STORE_ERROR, e)
         }
-        Log.e(TAG, "Returning null key pair ")
+        Log.d(TAG, "Returning null key pair ")
         return null
     }
 

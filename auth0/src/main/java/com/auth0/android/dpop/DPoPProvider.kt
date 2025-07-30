@@ -328,7 +328,7 @@ public object DPoPProvider {
             return encodeBase64Url(convertDerToRawSignature(signatureBytes))
         } catch (e: Exception) {
             Log.e(TAG, "Error signing data: ${e.stackTraceToString()}")
-            throw DPoPException(DPoPException.Code.SIGNING_FAILURE, e)
+            throw DPoPException(DPoPException.Code.SIGNING_ERROR, e)
         }
     }
 
