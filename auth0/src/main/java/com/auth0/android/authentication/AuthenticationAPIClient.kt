@@ -826,13 +826,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         )
         val request = factory.post(url.toString(), credentialsAdapter)
             .addParameters(parameters)
-        try {
-            DPoPProvider.generateProof(request.getUrl(), request.getHttpMethod().toString())?.let {
-                request.addHeader(DPoPProvider.DPOP_HEADER, it)
-            }
-        } catch (exception: DPoPException) {
-            Log.e(TAG, "Error generating DPoP proof: ${exception.stackTraceToString()}")
-        }
+            .addDPoPHeader()
         return request
     }
 
@@ -969,14 +963,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             Credentials::class.java, gson
         )
         val request = factory.post(url.toString(), credentialsAdapter)
-        request.addParameters(parameters)
-        try {
-            DPoPProvider.generateProof(request.getUrl(), request.getHttpMethod().toString())?.let {
-                request.addHeader(DPoPProvider.DPOP_HEADER, it)
-            }
-        } catch (exception: DPoPException) {
-            Log.e(TAG, "Error generating DPoP proof: ${exception.stackTraceToString()}")
-        }
+            .addParameters(parameters)
+            .addDPoPHeader()
         return request
     }
 
@@ -1042,14 +1030,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             T::class.java, gson
         )
         val request = factory.post(url.toString(), adapter)
-        request.addParameters(requestParameters)
-        try {
-            DPoPProvider.generateProof(request.getUrl(), request.getHttpMethod().toString())?.let {
-                request.addHeader(DPoPProvider.DPOP_HEADER, it)
-            }
-        } catch (exception: DPoPException) {
-            Log.e(TAG, "Error generating DPoP proof: ${exception.stackTraceToString()}")
-        }
+            .addParameters(requestParameters)
+            .addDPoPHeader()
         return request
     }
 
@@ -1073,13 +1055,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             factory.post(url.toString(), credentialsAdapter), clientId, baseURL
         )
         request.addParameters(requestParameters)
-        try {
-            DPoPProvider.generateProof(request.getUrl(), request.getHttpMethod().toString())?.let {
-                request.addHeader(DPoPProvider.DPOP_HEADER, it)
-            }
-        } catch (exception: DPoPException) {
-            Log.e(TAG, "Error generating DPoP proof: ${exception.stackTraceToString()}")
-        }
+            .addDPoPHeader()
         return request
     }
 
@@ -1107,6 +1083,20 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             UserProfile::class.java, gson
         )
         return factory.get(url.toString(), userProfileAdapter)
+    }
+
+    /**
+     * Helper method to add DPoP proof to all the [Request]
+     */
+    private fun <T> Request<T, AuthenticationException>.addDPoPHeader(): Request<T, AuthenticationException> {
+        try {
+            DPoPProvider.generateProof(getUrl(), getHttpMethod().toString())?.let {
+                addHeader(DPoPProvider.DPOP_HEADER, it)
+            }
+        } catch (exception: DPoPException) {
+            Log.e(TAG, "Error generating DPoP proof: ${exception.stackTraceToString()}")
+        }
+        return this
     }
 
     private companion object {
