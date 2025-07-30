@@ -60,7 +60,6 @@ internal class OAuthManager(
         idTokenVerificationIssuer = if (TextUtils.isEmpty(issuer)) apiClient.baseURL else issuer
     }
 
-    @RequiresApi(Build.VERSION_CODES.M)
     fun startAuthentication(context: Context, redirectUri: String, requestCode: Int) {
         OidcUtils.includeDefaultScope(parameters)
         addPKCEParameters(parameters, redirectUri, headers)

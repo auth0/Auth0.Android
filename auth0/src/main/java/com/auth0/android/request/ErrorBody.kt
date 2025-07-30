@@ -20,12 +20,12 @@ public data class ErrorBody(
  * Extension method to parse [ErrorBody] from [Response]
  */
 public fun Response.getErrorBody(): ErrorBody {
-    return InputStreamReader(body?.byteStream(), Charsets.UTF_8).use { reader ->
-        try {
-            Gson().fromJson(reader, ErrorBody::class.java)
-        } catch (error: Exception) {
-            Log.e("ErrorBody", "Error parsing the error body ${error.stackTraceToString()}")
-            return ErrorBody("", "")
-        }
+    return try {
+        val peekedBody = peekBody(Long.MAX_VALUE)
+        val bodyString = peekedBody.string()
+        Gson().fromJson(bodyString, ErrorBody::class.java)
+    } catch (error: Exception) {
+        Log.e("ErrorBody", "Error parsing the error body ${error.stackTraceToString()}")
+        ErrorBody("", "")
     }
 }

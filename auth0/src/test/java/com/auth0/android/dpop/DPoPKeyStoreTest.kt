@@ -35,6 +35,13 @@ import java.security.PublicKey
 import java.security.cert.Certificate
 import javax.security.auth.x500.X500Principal
 
+/**
+ * Using a subclass of [DPoPKeyStore] to help with mocking the lazy initialized keyStore property
+ */
+internal class MockableDPoPKeyStore(private val mockKeyStore: KeyStore) : DPoPKeyStore() {
+    override val keyStore: KeyStore by lazy { mockKeyStore }
+}
+
 @RunWith(PowerMockRunner::class)
 @PrepareForTest(
     DPoPKeyStore::class,
@@ -73,7 +80,6 @@ public class DPoPKeyStoreTest {
         PowerMockito.whenNew(KeyGenParameterSpec.Builder::class.java).withAnyArguments()
             .thenReturn(mockSpecBuilder)
 
-        // Configure mocks
         PowerMockito.`when`(KeyStore.getInstance("AndroidKeyStore")).thenReturn(mockKeyStore)
         doNothing().whenever(mockKeyStore).load(anyOrNull())
         PowerMockito.`when`(
@@ -94,7 +100,7 @@ public class DPoPKeyStoreTest {
             true
         )
 
-        dpopKeyStore = DPoPKeyStore(mockKeyStore)
+        dpopKeyStore = MockableDPoPKeyStore(mockKeyStore)
     }
 
     @Test

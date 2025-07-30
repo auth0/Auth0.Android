@@ -23,10 +23,11 @@ import javax.security.cert.CertificateException
 /**
  * Class to handle all DPoP related keystore operations
  */
-internal class DPoPKeyStore(
-    private val keyStore: KeyStore =
+internal open class DPoPKeyStore {
+
+    protected open val keyStore: KeyStore by lazy {
         KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
-) {
+    }
 
     fun generateKeyPair(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
