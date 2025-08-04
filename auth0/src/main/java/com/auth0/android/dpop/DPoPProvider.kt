@@ -118,7 +118,7 @@ public object DPoPProvider {
     }
 
     /**
-     * Method to clear the DPoP key pair from the keystore. It must be called when the user logs out from a session
+     * Method to clear the DPoP key pair from the keystore. It must be called when the user logs out
      * to prevent reuse of the key pair in subsequent sessions.
      *
      * ```kotlin
@@ -130,7 +130,7 @@ public object DPoPProvider {
      *     }
      *
      * ```
-     * **Note** : It is the developers responsibility to invoke this method to clear the keystore when logging out  a session.
+     * **Note** : It is the developer's responsibility to invoke this method to clear the keystore when logging out .
      * @throws DPoPException if there is an error deleting the key pair.
      */
     @Throws(DPoPException::class)
@@ -175,7 +175,7 @@ public object DPoPProvider {
     }
 
     /**
-     * Generates a new key pair for DPoP if it does not already exist. This should be called before making any requests that require DPoP proof.
+     * Generates a new key pair for DPoP if it does not already exist. This should be called before making any requests that require a DPoP proof.
      *
      * ```kotlin
      *
@@ -201,7 +201,7 @@ public object DPoPProvider {
 
     /**
      * Generates the header data for a request that requires DPoP proof of possession. The `Authorization` header value is created
-     * using the access token and token type. The `DPoP` header value contains the generated DPoP proof
+     * using the access token and token type. The `DPoP` header value contains the generated DPoP proof.
      *
      * ```kotlin
      *

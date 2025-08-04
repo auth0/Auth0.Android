@@ -322,7 +322,7 @@ public class WebAuthProviderTest {
     //jwk
 
     @Test
-    public fun enablingDPoPWillGenerateNEwKEyPairIfOneDoesNotExist() {
+    public fun enablingDPoPWillGenerateNewKeyPairIfOneDoesNotExist() {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
         val context: Context = mock()
         WebAuthProvider.useDPoP(context)
@@ -348,7 +348,7 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public fun shouldNotHaveDpopJwkOnLoginIfDPoPIsEnabled() {
+    public fun shouldHaveDpopJwkOnLoginIfDPoPIsEnabled() {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
         `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
 

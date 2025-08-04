@@ -215,7 +215,7 @@ WebAuthProvider.login(account)
 > [!NOTE]  
 > This feature is currently available in [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access). Please reach out to Auth0 support to get it enabled for your tenant.
 
-[DPoP](https://www.rfc-editor.org/rfc/rfc9449.html) (Demonstrating Proof of Posession) is an application-level mechanism for sender-constraining OAuth 2.0 access and refresh tokens by proving that the app is in possession of a certain private key. You can enable it by calling the `useDPoP(context:Context)` method.
+[DPoP](https://www.rfc-editor.org/rfc/rfc9449.html) (Demonstrating Proof of Possession) is an application-level mechanism for sender-constraining OAuth 2.0 access and refresh tokens by proving that the app is in possession of a certain private key. You can enable it by calling the `useDPoP(context:Context)` method.
 
 ```kotlin
 WebAuthProvider
@@ -252,7 +252,7 @@ httpRequest.apply{
     }
 }
 ```
-If your API is issuing DPoP nonce's to prevent replay attacks, you can pass the nonce value to the `getHeaderData()` method to include it in the DPoP proof. Use the `DPoPProvider.isNonceRequiredError(response: Response)` method to check if a particular API response failed because a nonce is required.
+If your API is issuing DPoP nonces to prevent replay attacks, you can pass the nonce value to the `getHeaderData()` method to include it in the DPoP proof. Use the `DPoPProvider.isNonceRequiredError(response: Response)` method to check if a particular API response failed because a nonce is required.
 
 ```kotlin
 if (DPoPProvider.isNonceRequiredError(response)) {
@@ -755,7 +755,7 @@ httpRequest.apply{
     }
 }
 ```
-If your API is issuing DPoP nonce's to prevent replay attacks, you can pass the nonce value to the `getHeaderData()` method to include it in the DPoP proof. Use the `DPoPProvider.isNonceRequiredError(response: Response)` method to check if a particular API response failed because a nonce is required.
+If your API is issuing DPoP nonces to prevent replay attacks, you can pass the nonce value to the `getHeaderData()` method to include it in the DPoP proof. Use the `DPoPProvider.isNonceRequiredError(response: Response)` method to check if a particular API response failed because a nonce is required.
 
 ```kotlin
 if (DPoPProvider.isNonceRequiredError(response)) {

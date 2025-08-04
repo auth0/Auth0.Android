@@ -16,22 +16,24 @@ internal class RetryInterceptor : Interceptor {
 
         //Handling DPoP Nonce retry
         if (DPoPProvider.isNonceRequiredError(response) && currentRetryCount < DPoPProvider.MAX_RETRY_COUNT) {
-            DPoPProvider.storeNonce(response)
-            val accessToken =
-                request.headers[AUTHORIZATION_HEADER]?.substringAfter(DPOP_LIMITER)?.trim()
-            val dpopProof = DPoPProvider.generateProof(
-                httpUrl = request.url.toString(),
-                httpMethod = request.method,
-                accessToken = accessToken,
-                nonce = DPoPProvider.auth0Nonce
-            )
-            if (dpopProof != null) {
-                response.close()
-                val newRequest = request.newBuilder()
-                    .header(DPoPProvider.DPOP_HEADER, dpopProof)
-                    .header(RETRY_COUNT_HEADER, (currentRetryCount + 1).toString())
-                    .build()
-                return chain.proceed(newRequest)
+            synchronized(this) {
+                DPoPProvider.storeNonce(response)
+                val accessToken =
+                    request.headers[AUTHORIZATION_HEADER]?.substringAfter(DPOP_LIMITER)?.trim()
+                val dpopProof = DPoPProvider.generateProof(
+                    httpUrl = request.url.toString(),
+                    httpMethod = request.method,
+                    accessToken = accessToken,
+                    nonce = DPoPProvider.auth0Nonce
+                )
+                if (dpopProof != null) {
+                    response.close()
+                    val newRequest = request.newBuilder()
+                        .header(DPoPProvider.DPOP_HEADER, dpopProof)
+                        .header(RETRY_COUNT_HEADER, (currentRetryCount + 1).toString())
+                        .build()
+                    return chain.proceed(newRequest)
+                }
             }
         }
         return response
