@@ -1,7 +1,8 @@
 package com.auth0.android.request
 
+import com.auth0.android.dpop.DPoP
 import com.auth0.android.dpop.DPoPKeyStore
-import com.auth0.android.dpop.DPoPProvider
+import com.auth0.android.dpop.DPoPUtil
 import com.auth0.android.dpop.FakeECPrivateKey
 import com.auth0.android.dpop.FakeECPublicKey
 import com.nhaarman.mockitokotlin2.any
@@ -38,7 +39,7 @@ public class RetryInterceptorTest {
         mockChain = mock()
         mockKeyStore = mock()
 
-        DPoPProvider.keyStore = mockKeyStore
+        DPoPUtil.keyStore = mockKeyStore
         retryInterceptor = RetryInterceptor()
     }
 
@@ -80,7 +81,7 @@ public class RetryInterceptorTest {
         val retriedRequest = newRequestCaptor.secondValue
         assertThat(retriedRequest.header("DPoP"), not(nullValue()))
         assertThat(retriedRequest.header("X-Internal-Retry-Count"), `is`("1"))
-        assertThat(DPoPProvider.auth0Nonce, `is`("new-nonce-from-header"))
+        assertThat(DPoP.auth0Nonce, `is`("new-nonce-from-header"))
     }
 
     @Test

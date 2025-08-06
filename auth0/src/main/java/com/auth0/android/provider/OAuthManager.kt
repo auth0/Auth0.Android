@@ -2,18 +2,17 @@ package com.auth0.android.provider
 
 import android.content.Context
 import android.net.Uri
-import android.os.Build
 import android.text.TextUtils
 import android.util.Base64
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
-import com.auth0.android.dpop.DPoPProvider
+import com.auth0.android.dpop.DPoP
+import com.auth0.android.dpop.DPoPException
 import com.auth0.android.request.internal.Jwt
 import com.auth0.android.request.internal.OidcUtils
 import com.auth0.android.result.Credentials
@@ -26,7 +25,8 @@ internal class OAuthManager(
     parameters: Map<String, String>,
     ctOptions: CustomTabsOptions,
     private val launchAsTwa: Boolean = false,
-    private val customAuthorizeUrl: String? = null
+    private val customAuthorizeUrl: String? = null,
+    private val dPoP: DPoP? = null
 ) : ResumableManager() {
     private val parameters: MutableMap<String, String>
     private val headers: MutableMap<String, String>
@@ -64,7 +64,17 @@ internal class OAuthManager(
         OidcUtils.includeDefaultScope(parameters)
         addPKCEParameters(parameters, redirectUri, headers)
         addClientParameters(parameters, redirectUri)
-        addDPoPJWKParameters(parameters)
+        try {
+            addDPoPJWKParameters(parameters, context)
+        } catch (ex: DPoPException) {
+            callback.onFailure(
+                AuthenticationException(
+                    ex.message ?: "Error generating the JWK",
+                    ex
+                )
+            )
+            return
+        }
         addValidationParameters(parameters)
         val uri = buildAuthorizeUri()
         this.requestCode = requestCode
@@ -290,8 +300,8 @@ internal class OAuthManager(
         }
     }
 
-    private fun addDPoPJWKParameters(parameters: MutableMap<String, String>) {
-        DPoPProvider.getPublicKeyJWK()?.let {
+    private fun addDPoPJWKParameters(parameters: MutableMap<String, String>, context: Context) {
+        dPoP?.getPublicKeyJWK(context)?.let {
             parameters["dpop_jkt"] = it
         }
     }
@@ -365,6 +375,10 @@ internal class OAuthManager(
         this.parameters = parameters.toMutableMap()
         this.parameters[KEY_RESPONSE_TYPE] = RESPONSE_TYPE_CODE
         apiClient = AuthenticationAPIClient(account)
+        // Enable DPoP on the AuthenticationClient if DPoP is set in the WebAuthProvider class
+        dPoP?.let {
+            apiClient.useDPoP()
+        }
         this.ctOptions = ctOptions
     }
 }
@@ -383,7 +397,7 @@ internal fun OAuthManager.Companion.fromState(
         setHeaders(
             state.headers
         )
-        setPKCE(state.pkce)
+         setPKCE(state.pkce)
         setIdTokenVerificationIssuer(state.idTokenVerificationIssuer)
         setIdTokenVerificationLeeway(state.idTokenVerificationLeeway)
     }

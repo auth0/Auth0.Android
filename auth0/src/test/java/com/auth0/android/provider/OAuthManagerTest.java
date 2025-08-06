@@ -1,18 +1,28 @@
 package com.auth0.android.provider;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
+import android.content.Context;
 import android.net.Uri;
+
 import com.auth0.android.Auth0;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.Callback;
+import com.auth0.android.dpop.DPoP;
+import com.auth0.android.dpop.DPoPException;
 import com.auth0.android.request.NetworkingClient;
-import com.auth0.android.util.Auth0UserAgent;
 import com.auth0.android.result.Credentials;
+import com.auth0.android.util.Auth0UserAgent;
 
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -40,6 +50,14 @@ public class OAuthManagerTest {
     private NetworkingClient mockNetworkingClient;
     @Mock
     private Auth0UserAgent mockUserAgent;
+    @Mock
+    private DPoP mockDPoP;
+
+    @Mock
+    private Context mockContext;
+
+    @Captor
+    private ArgumentCaptor<AuthenticationException> authExceptionArgumentCaptor;
 
     @Before
     public void setUp() {
@@ -82,14 +100,15 @@ public class OAuthManagerTest {
         final String defaultUrl = "https://default.auth0.com/authorize";
         final Map<String, String> parameters = Collections.singletonMap("param1", "value1");
         Mockito.when(mockAccount.getAuthorizeUrl()).thenReturn(defaultUrl);
-        OAuthManager manager = new OAuthManager(mockAccount, mockCallback, parameters, mockCtOptions, false, null);
+        OAuthManager manager = new OAuthManager(mockAccount, mockCallback, parameters, mockCtOptions, false, null, null);
         Uri resultUri = callBuildAuthorizeUri(manager);
         Assert.assertNotNull(resultUri);
         Assert.assertEquals("https", resultUri.getScheme());
         Assert.assertEquals("default.auth0.com", resultUri.getHost());
         Assert.assertEquals("/authorize", resultUri.getPath());
         Assert.assertEquals("value1", resultUri.getQueryParameter("param1"));
-        Mockito.verify(mockAccount).getAuthorizeUrl();
+        Assert.assertNull(resultUri.getQueryParameter("dpop_jkt"));
+        verify(mockAccount).getAuthorizeUrl();
     }
 
     @Test
@@ -98,14 +117,15 @@ public class OAuthManagerTest {
         final String customUrl = "https://custom.example.com/custom_auth";
         final Map<String, String> parameters = Collections.singletonMap("param1", "value1");
         Mockito.when(mockAccount.getAuthorizeUrl()).thenReturn(defaultUrl);
-        OAuthManager manager = new OAuthManager(mockAccount, mockCallback, parameters, mockCtOptions, false, customUrl);
+        OAuthManager manager = new OAuthManager(mockAccount, mockCallback, parameters, mockCtOptions, false, customUrl, null);
         Uri resultUri = callBuildAuthorizeUri(manager);
         Assert.assertNotNull(resultUri);
         Assert.assertEquals("https", resultUri.getScheme());
         Assert.assertEquals("custom.example.com", resultUri.getHost());
         Assert.assertEquals("/custom_auth", resultUri.getPath());
         Assert.assertEquals("value1", resultUri.getQueryParameter("param1"));
-        Mockito.verify(mockAccount, Mockito.never()).getAuthorizeUrl();
+        Assert.assertNull(resultUri.getQueryParameter("dpop_jkt"));
+        verify(mockAccount, never()).getAuthorizeUrl();
     }
 
     @Test
@@ -118,14 +138,14 @@ public class OAuthManagerTest {
 
         OAuthManager restoredManager = new OAuthManager(
                 mockState.getAuth0(), mockCallback, mockState.getParameters(),
-                mockState.getCtOptions(), false, mockState.getCustomAuthorizeUrl()
+                mockState.getCtOptions(), false, mockState.getCustomAuthorizeUrl(), null
         );
         Uri resultUri = callBuildAuthorizeUri(restoredManager);
         Assert.assertNotNull(resultUri);
         Assert.assertEquals("https", resultUri.getScheme());
         Assert.assertEquals("restored.com", resultUri.getHost());
         Assert.assertEquals("/custom_auth", resultUri.getPath());
-        Mockito.verify(mockAccount, Mockito.never()).getAuthorizeUrl();
+        verify(mockAccount, never()).getAuthorizeUrl();
     }
 
     @Test
@@ -136,14 +156,14 @@ public class OAuthManagerTest {
         Mockito.when(mockAccount.getAuthorizeUrl()).thenReturn(defaultUrl);
         OAuthManager restoredManager = new OAuthManager(
                 mockState.getAuth0(), mockCallback, mockState.getParameters(),
-                mockState.getCtOptions(), false, mockState.getCustomAuthorizeUrl()
+                mockState.getCtOptions(), false, mockState.getCustomAuthorizeUrl(), null
         );
         Uri resultUri = callBuildAuthorizeUri(restoredManager);
         Assert.assertNotNull(resultUri);
         Assert.assertEquals("https", resultUri.getScheme());
         Assert.assertEquals("default.auth0.com", resultUri.getHost());
         Assert.assertEquals("/authorize", resultUri.getPath());
-        Mockito.verify(mockAccount).getAuthorizeUrl();
+        verify(mockAccount).getAuthorizeUrl();
     }
 
     private Uri callBuildAuthorizeUri(OAuthManager instance) throws Exception {

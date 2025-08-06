@@ -3,15 +3,13 @@ package com.auth0.android.provider
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
-import com.auth0.android.dpop.DPoPProvider
+import com.auth0.android.dpop.DPoP
 import com.auth0.android.dpop.SenderConstraining
 import com.auth0.android.result.Credentials
 import kotlinx.coroutines.Dispatchers
@@ -32,6 +30,7 @@ import kotlin.coroutines.resumeWithException
 public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
     private val TAG: String? = WebAuthProvider::class.simpleName
     private const val KEY_BUNDLE_OAUTH_MANAGER_STATE = "oauth_manager_state"
+    private var dPoP : DPoP? = null
 
     private val callbacks = CopyOnWriteArraySet<Callback<Credentials, AuthenticationException>>()
 
@@ -50,13 +49,12 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
         callbacks -= callback
     }
 
-    @RequiresApi(Build.VERSION_CODES.M)
-    public override fun useDPoP(context: Context): WebAuthProvider {
-        DPoPProvider.generateKeyPair(context)
+    // Public methods
+    public override fun useDPoP(): WebAuthProvider {
+        dPoP = DPoP()
         return this
     }
 
-    // Public methods
     /**
      * Initialize the WebAuthProvider instance for logging out the user using an account. Additional settings can be configured
      * in the LogoutBuilder, like changing the scheme of the return to URL.
@@ -592,7 +590,7 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
             }
             val manager = OAuthManager(
                 account, callback, values, ctOptions, launchAsTwa,
-                customAuthorizeUrl
+                customAuthorizeUrl, dPoP
             )
             manager.setHeaders(headers)
             manager.setPKCE(pkce)

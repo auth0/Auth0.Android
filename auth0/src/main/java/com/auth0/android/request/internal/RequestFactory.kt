@@ -2,6 +2,7 @@ package com.auth0.android.request.internal
 
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0Exception
+import com.auth0.android.dpop.DPoP
 import com.auth0.android.request.*
 import com.auth0.android.util.Auth0UserAgent
 import java.io.Reader
@@ -28,30 +29,34 @@ internal class RequestFactory<U : Auth0Exception> internal constructor(
 
     fun <T> post(
         url: String,
-        resultAdapter: JsonAdapter<T>
-    ): Request<T, U> = setupRequest(HttpMethod.POST, url, resultAdapter, errorAdapter)
+        resultAdapter: JsonAdapter<T>,
+        dPoP: DPoP? = null,
+    ): Request<T, U> = setupRequest(HttpMethod.POST, url, resultAdapter, errorAdapter, dPoP)
 
-    fun post(url: String): Request<Void?, U> =
-        this.post(url, object : JsonAdapter<Void?> {
+    fun post(url: String, dPoP: DPoP? = null): Request<Void?, U> =
+        this.post(url,  object : JsonAdapter<Void?> {
             override fun fromJson(reader: Reader, metadata: Map<String, Any>): Void? {
                 return null
             }
-        })
+        },dPoP)
 
     fun <T> patch(
         url: String,
-        resultAdapter: JsonAdapter<T>
-    ): Request<T, U> = setupRequest(HttpMethod.PATCH, url, resultAdapter, errorAdapter)
+        resultAdapter: JsonAdapter<T>,
+        dPoP: DPoP? = null
+    ): Request<T, U> = setupRequest(HttpMethod.PATCH, url, resultAdapter, errorAdapter, dPoP)
 
     fun <T> delete(
         url: String,
-        resultAdapter: JsonAdapter<T>
-    ): Request<T, U> = setupRequest(HttpMethod.DELETE, url, resultAdapter, errorAdapter)
+        resultAdapter: JsonAdapter<T>,
+        dPoP: DPoP? = null
+    ): Request<T, U> = setupRequest(HttpMethod.DELETE, url, resultAdapter, errorAdapter, dPoP)
 
     fun <T> get(
         url: String,
-        resultAdapter: JsonAdapter<T>
-    ): Request<T, U> = setupRequest(HttpMethod.GET, url, resultAdapter, errorAdapter)
+        resultAdapter: JsonAdapter<T>,
+        dPoP: DPoP? = null
+    ): Request<T, U> = setupRequest(HttpMethod.GET, url, resultAdapter, errorAdapter, dPoP)
 
     fun setHeader(name: String, value: String) {
         baseHeaders[name] = value
@@ -68,15 +73,18 @@ internal class RequestFactory<U : Auth0Exception> internal constructor(
         client: NetworkingClient,
         resultAdapter: JsonAdapter<T>,
         errorAdapter: ErrorAdapter<U>,
-        threadSwitcher: ThreadSwitcher
-    ): Request<T, U> = BaseRequest(method, url, client, resultAdapter, errorAdapter, threadSwitcher)
+        threadSwitcher: ThreadSwitcher,
+        dPoP: DPoP? = null
+    ): Request<T, U> =
+        BaseRequest(method, url, client, resultAdapter, errorAdapter, threadSwitcher, dPoP)
 
 
     private fun <T> setupRequest(
         method: HttpMethod,
         url: String,
         resultAdapter: JsonAdapter<T>,
-        errorAdapter: ErrorAdapter<U>
+        errorAdapter: ErrorAdapter<U>,
+        dPoP: DPoP? = null
     ): Request<T, U> {
         val request =
             createRequest(
@@ -85,7 +93,8 @@ internal class RequestFactory<U : Auth0Exception> internal constructor(
                 client,
                 resultAdapter,
                 errorAdapter,
-                CommonThreadSwitcher.getInstance()
+                CommonThreadSwitcher.getInstance(),
+                dPoP
             )
         baseHeaders.map { request.addHeader(it.key, it.value) }
         return request

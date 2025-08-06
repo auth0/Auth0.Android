@@ -1,6 +1,7 @@
 package com.auth0.android.request
 
-import com.auth0.android.dpop.DPoPProvider
+import com.auth0.android.dpop.DPoP
+import com.auth0.android.dpop.DPoPUtil
 import okhttp3.Interceptor
 import okhttp3.Response
 
@@ -14,26 +15,26 @@ internal class RetryInterceptor : Interceptor {
         val currentRetryCount = retryCountHeader?.toIntOrNull() ?: 0
         val response = chain.proceed(request)
 
+        //Storing the DPoP nonce if present in the response
+        DPoP.storeNonce(response)
+
         //Handling DPoP Nonce retry
-        if (DPoPProvider.isNonceRequiredError(response) && currentRetryCount < DPoPProvider.MAX_RETRY_COUNT) {
-            synchronized(this) {
-                DPoPProvider.storeNonce(response)
-                val accessToken =
-                    request.headers[AUTHORIZATION_HEADER]?.substringAfter(DPOP_LIMITER)?.trim()
-                val dpopProof = DPoPProvider.generateProof(
-                    httpUrl = request.url.toString(),
-                    httpMethod = request.method,
-                    accessToken = accessToken,
-                    nonce = DPoPProvider.auth0Nonce
-                )
-                if (dpopProof != null) {
-                    response.close()
-                    val newRequest = request.newBuilder()
-                        .header(DPoPProvider.DPOP_HEADER, dpopProof)
-                        .header(RETRY_COUNT_HEADER, (currentRetryCount + 1).toString())
-                        .build()
-                    return chain.proceed(newRequest)
-                }
+        if (DPoP.isNonceRequiredError(response) && currentRetryCount < DPoPUtil.MAX_RETRY_COUNT) {
+            val accessToken =
+                request.headers[AUTHORIZATION_HEADER]?.substringAfter(DPOP_LIMITER)?.trim()
+            val dpopProof = DPoPUtil.generateProof(
+                httpUrl = request.url.toString(),
+                httpMethod = request.method,
+                accessToken = accessToken,
+                nonce = DPoP.auth0Nonce
+            )
+            if (dpopProof != null) {
+                response.close()
+                val newRequest = request.newBuilder()
+                    .header(DPoPUtil.DPOP_HEADER, dpopProof)
+                    .header(RETRY_COUNT_HEADER, (currentRetryCount + 1).toString())
+                    .build()
+                return chain.proceed(newRequest)
             }
         }
         return response

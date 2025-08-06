@@ -215,11 +215,11 @@ WebAuthProvider.login(account)
 > [!NOTE]  
 > This feature is currently available in [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access). Please reach out to Auth0 support to get it enabled for your tenant.
 
-[DPoP](https://www.rfc-editor.org/rfc/rfc9449.html) (Demonstrating Proof of Possession) is an application-level mechanism for sender-constraining OAuth 2.0 access and refresh tokens by proving that the app is in possession of a certain private key. You can enable it by calling the `useDPoP(context:Context)` method.
+[DPoP](https://www.rfc-editor.org/rfc/rfc9449.html) (Demonstrating Proof of Possession) is an application-level mechanism for sender-constraining OAuth 2.0 access and refresh tokens by proving that the app is in possession of a certain private key. You can enable it by calling the `useDPoP()` method.
 
 ```kotlin
 WebAuthProvider
-    .useDPoP(requireContext())
+    .useDPoP()
     .login(account)
     .start(requireContext(), object : Callback<Credentials, AuthenticationException> {
         override fun onSuccess(result: Credentials) {
@@ -241,7 +241,7 @@ When making requests to your own APIs, use the `DPoP.getHeaderData()` method to 
 ```kotlin
 val url ="https://example.com/api/endpoint"
 val httpMethod = "GET"
- val headerData = DPoPProvider.getHeaderData(
+ val headerData = DPoP.getHeaderData(
                     httpMethod, url,
                     accessToken, tokenType
                 )
@@ -252,10 +252,10 @@ httpRequest.apply{
     }
 }
 ```
-If your API is issuing DPoP nonces to prevent replay attacks, you can pass the nonce value to the `getHeaderData()` method to include it in the DPoP proof. Use the `DPoPProvider.isNonceRequiredError(response: Response)` method to check if a particular API response failed because a nonce is required.
+If your API is issuing DPoP nonces to prevent replay attacks, you can pass the nonce value to the `getHeaderData()` method to include it in the DPoP proof. Use the `DPoP.isNonceRequiredError(response: Response)` method to check if a particular API response failed because a nonce is required.
 
 ```kotlin
-if (DPoPProvider.isNonceRequiredError(response)) {
+if (DPoP.isNonceRequiredError(response)) {
     val nonce = response.headers["DPoP-Nonce"]
     val dpopProof = DPoPProvider.generateProof(
         url, httpMethod, accessToken, nonce
@@ -264,7 +264,7 @@ if (DPoPProvider.isNonceRequiredError(response)) {
 }
 ```
 
-On logout, you should call `DPoPProvider.clearKeyPair()` to delete the user's key pair from the Keychain.
+On logout, you should call `DPoP.clearKeyPair()` to delete the user's key pair from the Keychain.
 
 ```kotlin
 WebAuthProvider.logout(account)
@@ -728,10 +728,10 @@ authentication
 > [!NOTE]  
 > This feature is currently available in [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access). Please reach out to Auth0 support to get it enabled for your tenant.
 
-[DPoP](https://www.rfc-editor.org/rfc/rfc9449.html) (Demonstrating Proof of Posession) is an application-level mechanism for sender-constraining OAuth 2.0 access and refresh tokens by proving that the app is in possession of a certain private key. You can enable it by calling the `useDPoP(context: Context)` method. This ensures that DPoP proofs are generated for requests made through the AuthenticationAPI client.
+[DPoP](https://www.rfc-editor.org/rfc/rfc9449.html) (Demonstrating Proof of Posession) is an application-level mechanism for sender-constraining OAuth 2.0 access and refresh tokens by proving that the app is in possession of a certain private key. You can enable it by calling the `useDPoP()` method. This ensures that DPoP proofs are generated for requests made through the AuthenticationAPI client.
 
 ```kotlin
-val client = AuthenticationAPIClient(account).useDPoP(context)
+val client = AuthenticationAPIClient(account).useDPoP()
 ```
 
 [!IMPORTANT]
@@ -744,7 +744,7 @@ When making requests to your own APIs, use the `DPoP.getHeaderData()` method to 
 ```kotlin
 val url ="https://example.com/api/endpoint"
 val httpMethod = "GET"
- val headerData = DPoPProvider.getHeaderData(
+ val headerData = DPoP.getHeaderData(
                     httpMethod, url,
                     accessToken, tokenType
                 )
@@ -755,10 +755,10 @@ httpRequest.apply{
     }
 }
 ```
-If your API is issuing DPoP nonces to prevent replay attacks, you can pass the nonce value to the `getHeaderData()` method to include it in the DPoP proof. Use the `DPoPProvider.isNonceRequiredError(response: Response)` method to check if a particular API response failed because a nonce is required.
+If your API is issuing DPoP nonces to prevent replay attacks, you can pass the nonce value to the `getHeaderData()` method to include it in the DPoP proof. Use the `DPoP.isNonceRequiredError(response: Response)` method to check if a particular API response failed because a nonce is required.
 
 ```kotlin
-if (DPoPProvider.isNonceRequiredError(response)) {
+if (DPoP.isNonceRequiredError(response)) {
     val nonce = response.headers["DPoP-Nonce"]
     val dpopProof = DPoPProvider.generateProof(
         url, httpMethod, accessToken, nonce
@@ -767,11 +767,11 @@ if (DPoPProvider.isNonceRequiredError(response)) {
 }
 ```
 
-On logout, you should call `DPoPProvider.clearKeyPair()` to delete the user's key pair from the Keychain.
+On logout, you should call `DPoP.clearKeyPair()` to delete the user's key pair from the Keychain.
 
 ```kotlin
 
-DPoPProvider.clearKeyPair()
+DPoP.clearKeyPair()
 
 ```
 

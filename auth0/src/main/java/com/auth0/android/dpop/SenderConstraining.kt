@@ -1,15 +1,12 @@
 package com.auth0.android.dpop
 
-import android.content.Context
-
 /**
  * Interface for SenderConstraining
  */
-public interface SenderConstraining<T> {
+public interface SenderConstraining<T : SenderConstraining<T>> {
 
     /**
-     * Enables DPoP for authentication requests.
+     * Method to enable DPoP in the request.
      */
-    public fun useDPoP(context: Context): T
-
+    public fun useDPoP(): T
 }
