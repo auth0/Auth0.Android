@@ -71,21 +71,11 @@ public class DPoP {
     /**
      * Generates a new key pair for DPoP if it does not exist. This should be called before making any requests that require a DPoP proof.
      *
-     * ```kotlin
-     *
-     *  try {
-     *      DPoP.generateKeyPair(context)
-     *     } catch (exception: DPoPException) {
-     *          Log.e(TAG,"Error generating key pair: ${exception.stackTraceToString()}")
-     *     }
-     *
-     * ```
-     *
      * @param context The application context used to access the keystore.
      * @throws DPoPException if there is an error generating the key pair or accessing the keystore.
      */
     @Throws(DPoPException::class)
-    public fun generateKeyPair(context: Context) {
+    internal fun generateKeyPair(context: Context) {
         DPoPUtil.generateKeyPair(context)
     }
 
@@ -93,23 +83,11 @@ public class DPoP {
      * Method to get the public key in JWK format. This is used to generate the `jwk` field in the DPoP proof header.
      * This method will also create a key-pair in the key store if one currently doesn't exist.
      *
-     * ```kotlin
-     *
-     *  try {
-     *      val dPoP = DPoP()
-     *      val publicKeyJWK = dPoP.getPublicKeyJWK(context)
-     *      Log.d(TAG, "Public Key JWK: $publicKeyJWK")
-     *     } catch (exception: DPoPException) {
-     *          Log.e(TAG,"Error getting public key JWK: ${exception.stackTraceToString()}")
-     *     }
-     *
-     * ```
-     *
      * @return The public key in JWK format or null if the key pair is not present.
      * @throws DPoPException if there is an error accessing the key pair.
      */
     @Throws(DPoPException::class)
-    public fun getPublicKeyJWK(context: Context): String? {
+    internal fun getPublicKeyJWK(context: Context): String? {
         generateKeyPair(context)
         return DPoPUtil.getPublicKeyJWK()
     }
@@ -141,7 +119,7 @@ public class DPoP {
          * @param response The HTTP response containing the nonce header.
          */
         @JvmStatic
-        public fun storeNonce(response: Response) {
+        internal fun storeNonce(response: Response) {
             _auth0Nonce = response.headers[NONCE_HEADER]
         }
 
