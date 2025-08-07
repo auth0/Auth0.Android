@@ -22,10 +22,11 @@ public data class HeaderData(val authorizationHeader: String, val dpopProof: Str
  * Class for securing requests with DPoP (Demonstrating Proof of Possession) as described in
  * [RFC 9449](https://datatracker.ietf.org/doc/html/rfc9449).
  */
-public class DPoP {
+public class DPoP(private val context: Context) {
 
     /**
-     * Determines whether a DPoP proof should be generated for the given URL and parameters.
+     * Determines whether a DPoP proof should be generated for the given URL and parameters. The proof should
+     * only be generated for the `token` endpoint for a fresh login scenario or when a key-pair already exists.
      *
      * @param url The URL of the request
      * @param parameters The request parameters as a map
@@ -77,7 +78,7 @@ public class DPoP {
      * @throws DPoPException if there is an error generating the key pair or accessing the keystore.
      */
     @Throws(DPoPException::class)
-    internal fun generateKeyPair(context: Context) {
+    internal fun generateKeyPair() {
         DPoPUtil.generateKeyPair(context)
     }
 
@@ -89,8 +90,8 @@ public class DPoP {
      * @throws DPoPException if there is an error accessing the key pair.
      */
     @Throws(DPoPException::class)
-    internal fun getPublicKeyJWK(context: Context): String? {
-        generateKeyPair(context)
+    internal fun getPublicKeyJWK(): String? {
+        generateKeyPair()
         return DPoPUtil.getPublicKeyJWK()
     }
 

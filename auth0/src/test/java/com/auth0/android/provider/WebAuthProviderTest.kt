@@ -1,6 +1,7 @@
 package com.auth0.android.provider
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Parcelable
@@ -73,6 +74,7 @@ public class WebAuthProviderTest {
     private lateinit var activity: Activity
     private lateinit var account: Auth0
     private lateinit var mockKeyStore: DPoPKeyStore
+    private lateinit var mockContext: Context
 
     private val authExceptionCaptor: KArgumentCaptor<AuthenticationException> = argumentCaptor()
     private val intentCaptor: KArgumentCaptor<Intent> = argumentCaptor()
@@ -92,6 +94,7 @@ public class WebAuthProviderTest {
         account.networkingClient = SSLTestUtils.testClient
 
         mockKeyStore = mock()
+        mockContext = mock()
 
         DPoPUtil.keyStore = mockKeyStore
 
@@ -322,15 +325,14 @@ public class WebAuthProviderTest {
         )
     }
 
-    //jwk
 
     @Test
     public fun enablingDPoPWillGenerateNewKeyPairIfOneDoesNotExist() {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
-        WebAuthProvider.useDPoP()
+        WebAuthProvider.useDPoP(mockContext)
             .login(account)
             .start(activity, callback)
-        verify(mockKeyStore).generateKeyPair(any())
+        verify(mockKeyStore).generateKeyPair(any(), any())
     }
 
     @Test
@@ -354,7 +356,7 @@ public class WebAuthProviderTest {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
         `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
 
-        WebAuthProvider.useDPoP()
+        WebAuthProvider.useDPoP(mockContext)
             .login(account)
             .start(activity, callback)
 
@@ -2731,11 +2733,11 @@ public class WebAuthProviderTest {
     //DPoP
 
     public fun shouldReturnSameInstanceWhenCallingUseDPoPMultipleTimes() {
-        val provider1 = WebAuthProvider.useDPoP()
-        val provider2 = WebAuthProvider.useDPoP()
+        val provider1 = WebAuthProvider.useDPoP(mockContext)
+        val provider2 = WebAuthProvider.useDPoP(mockContext)
 
         assertThat(provider1, `is`(provider2))
-        assertThat(WebAuthProvider.useDPoP(), `is`(provider1))
+        assertThat(WebAuthProvider.useDPoP(mockContext), `is`(provider1))
     }
 
     @Test
@@ -2743,7 +2745,7 @@ public class WebAuthProviderTest {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
         `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
 
-        WebAuthProvider.useDPoP()
+        WebAuthProvider.useDPoP(mockContext)
             .login(account)
             .start(activity, callback)
 
@@ -2764,11 +2766,11 @@ public class WebAuthProviderTest {
     public fun shouldGenerateKeyPairWhenDPoPIsEnabledAndNoKeyPairExists() {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
 
-        WebAuthProvider.useDPoP()
+        WebAuthProvider.useDPoP(mockContext)
             .login(account)
             .start(activity, callback)
 
-        verify(mockKeyStore).generateKeyPair(any())
+        verify(mockKeyStore).generateKeyPair(any(), any())
     }
 
     @Test
@@ -2776,11 +2778,11 @@ public class WebAuthProviderTest {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
         `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
 
-        WebAuthProvider.useDPoP()
+        WebAuthProvider.useDPoP(mockContext)
             .login(account)
             .start(activity, callback)
 
-        verify(mockKeyStore, never()).generateKeyPair(any())
+        verify(mockKeyStore, never()).generateKeyPair(any(), any())
     }
 
     @Test
@@ -2790,7 +2792,7 @@ public class WebAuthProviderTest {
         login(account)
             .start(activity, callback)
 
-        verify(mockKeyStore, never()).generateKeyPair(any())
+        verify(mockKeyStore, never()).generateKeyPair(any(), any())
     }
 
     @Test
@@ -2798,7 +2800,7 @@ public class WebAuthProviderTest {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
         `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
 
-        WebAuthProvider.useDPoP()
+        WebAuthProvider.useDPoP(mockContext)
             .login(account)
             .start(activity, callback)
 
@@ -2818,7 +2820,7 @@ public class WebAuthProviderTest {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
         `when`(mockKeyStore.getKeyPair()).thenReturn(null)
 
-        WebAuthProvider.useDPoP()
+        WebAuthProvider.useDPoP(mockContext)
             .login(account)
             .start(activity, callback)
 
@@ -2834,7 +2836,7 @@ public class WebAuthProviderTest {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
         `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
 
-        val builder = WebAuthProvider.useDPoP()
+        val builder = WebAuthProvider.useDPoP(mockContext)
             .login(account)
             .withConnection("test-connection")
 
@@ -2850,7 +2852,7 @@ public class WebAuthProviderTest {
 
     @Test
     public fun shouldNotAffectLogoutWhenDPoPIsEnabled() {
-        WebAuthProvider.useDPoP()
+        WebAuthProvider.useDPoP(mockContext)
             .logout(account)
             .start(activity, voidCallback)
 
@@ -2866,9 +2868,9 @@ public class WebAuthProviderTest {
     public fun shouldHandleDPoPKeyGenerationFailureGracefully() {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
         doThrow(DPoPException.KEY_GENERATION_ERROR)
-            .`when`(mockKeyStore).generateKeyPair(any())
+            .`when`(mockKeyStore).generateKeyPair(any(), any())
 
-        WebAuthProvider.useDPoP()
+        WebAuthProvider.useDPoP(mockContext)
             .login(account)
             .start(activity, callback)
 
@@ -2897,7 +2899,7 @@ public class WebAuthProviderTest {
         val proxyAccount: Auth0 = Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
         proxyAccount.networkingClient = SSLTestUtils.testClient
 
-        WebAuthProvider.useDPoP()
+        WebAuthProvider.useDPoP(mockContext)
             .login(proxyAccount)
             .withPKCE(pkce)
             .start(activity, authCallback)

@@ -63,10 +63,10 @@ internal class OAuthManager(
 
     fun startAuthentication(context: Context, redirectUri: String, requestCode: Int) {
         OidcUtils.includeDefaultScope(parameters)
-        addPKCEParameters(parameters, redirectUri, headers)
+        addPKCEParameters(parameters, redirectUri, headers, context)
         addClientParameters(parameters, redirectUri)
         try {
-            addDPoPJWKParameters(parameters, context)
+            addDPoPJWKParameters(parameters)
         } catch (ex: DPoPException) {
             callback.onFailure(
                 AuthenticationException(
@@ -273,9 +273,10 @@ internal class OAuthManager(
     private fun addPKCEParameters(
         parameters: MutableMap<String, String>,
         redirectUri: String,
-        headers: Map<String, String>
+        headers: Map<String, String>,
+        context: Context
     ) {
-        createPKCE(redirectUri, headers)
+        createPKCE(redirectUri, headers,context)
         val codeChallenge = pkce!!.codeChallenge
         parameters[KEY_CODE_CHALLENGE] = codeChallenge
         parameters[KEY_CODE_CHALLENGE_METHOD] = METHOD_SHA_256
@@ -295,14 +296,18 @@ internal class OAuthManager(
         parameters[KEY_REDIRECT_URI] = redirectUri
     }
 
-    private fun createPKCE(redirectUri: String, headers: Map<String, String>) {
+    private fun createPKCE(redirectUri: String, headers: Map<String, String>,context: Context) {
         if (pkce == null) {
+            // Enable DPoP on the AuthenticationClient if DPoP is set in the WebAuthProvider class
+            dPoP?.let {
+                apiClient.useDPoP(context)
+            }
             pkce = PKCE(apiClient, redirectUri, headers)
         }
     }
 
-    private fun addDPoPJWKParameters(parameters: MutableMap<String, String>, context: Context) {
-        dPoP?.getPublicKeyJWK(context)?.let {
+    private fun addDPoPJWKParameters(parameters: MutableMap<String, String>) {
+        dPoP?.getPublicKeyJWK()?.let {
             parameters["dpop_jkt"] = it
         }
     }
@@ -376,10 +381,6 @@ internal class OAuthManager(
         this.parameters = parameters.toMutableMap()
         this.parameters[KEY_RESPONSE_TYPE] = RESPONSE_TYPE_CODE
         apiClient = AuthenticationAPIClient(account)
-        // Enable DPoP on the AuthenticationClient if DPoP is set in the WebAuthProvider class
-        dPoP?.let {
-            apiClient.useDPoP()
-        }
         this.ctOptions = ctOptions
     }
 }
@@ -398,7 +399,7 @@ internal fun OAuthManager.Companion.fromState(
         setHeaders(
             state.headers
         )
-         setPKCE(state.pkce)
+        setPKCE(state.pkce)
         setIdTokenVerificationIssuer(state.idTokenVerificationIssuer)
         setIdTokenVerificationLeeway(state.idTokenVerificationLeeway)
     }

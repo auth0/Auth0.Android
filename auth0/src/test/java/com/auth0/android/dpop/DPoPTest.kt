@@ -47,7 +47,7 @@ public class DPoPTest {
         mockResponse = mock()
         mockKeyStore = mock()
         mockResponseBody = mock()
-        dPoP = DPoP()
+        dPoP = DPoP(mockContext)
 
         DPoP._auth0Nonce = null
 
@@ -158,7 +158,7 @@ public class DPoPTest {
     public fun `generateKeyPair should delegate to DPoPUtil`() {
         whenever(mockKeyStore.hasKeyPair()).thenReturn(false)
 
-        dPoP.generateKeyPair(mockContext)
+        dPoP.generateKeyPair()
 
         verify(mockKeyStore).generateKeyPair(mockContext)
     }
@@ -173,7 +173,7 @@ public class DPoPTest {
         )
 
         try {
-            dPoP.generateKeyPair(mockContext)
+            dPoP.generateKeyPair()
             Assert.fail("Expected DPoPException to be thrown")
         } catch (e: DPoPException) {
             assertThat(e, `is`(exception))
@@ -186,7 +186,7 @@ public class DPoPTest {
         whenever(mockKeyStore.hasKeyPair()).thenReturn(false).thenReturn(true)
         whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(fakePrivateKey, fakePublicKey))
 
-        val result = dPoP.getPublicKeyJWK(mockContext)
+        val result = dPoP.getPublicKeyJWK()
 
         verify(mockKeyStore).generateKeyPair(mockContext)
         assertThat(result, `is`(testPublicJwkHash))
@@ -197,7 +197,7 @@ public class DPoPTest {
         whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
         whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(fakePrivateKey, fakePublicKey))
 
-        val result = dPoP.getPublicKeyJWK(mockContext)
+        val result = dPoP.getPublicKeyJWK()
 
         assertThat(result, `is`(testPublicJwkHash))
     }
@@ -206,7 +206,7 @@ public class DPoPTest {
     public fun `getPublicKeyJWK should return null when key pair generation fails`() {
         whenever(mockKeyStore.hasKeyPair()).thenReturn(false).thenReturn(false)
 
-        val result = dPoP.getPublicKeyJWK(mockContext)
+        val result = dPoP.getPublicKeyJWK()
 
         verify(mockKeyStore).generateKeyPair(mockContext)
         assertThat(result, `is`(nullValue()))
@@ -504,11 +504,11 @@ public class DPoPTest {
         whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(fakePrivateKey, fakePublicKey))
 
         // 1. Generate key pair
-        dPoP.generateKeyPair(mockContext)
+        dPoP.generateKeyPair()
         verify(mockKeyStore).generateKeyPair(mockContext)
 
         // 2. Get JWK thumbprint
-        val jwkThumbprint = dPoP.getPublicKeyJWK(mockContext)
+        val jwkThumbprint = dPoP.getPublicKeyJWK()
         assertThat(jwkThumbprint, `is`(testPublicJwkHash))
 
         // 3. Store nonce from response

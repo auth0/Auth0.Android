@@ -356,7 +356,7 @@ public class DPoPUtilTest {
         whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
         DPoPUtil.generateKeyPair(mockContext)
         verify(mockKeyStore).hasKeyPair()
-        verify(mockKeyStore, never()).generateKeyPair(any())
+        verify(mockKeyStore, never()).generateKeyPair(any(), any())
     }
 
     @Test

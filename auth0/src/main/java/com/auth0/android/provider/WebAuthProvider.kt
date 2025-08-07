@@ -50,8 +50,8 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
     }
 
     // Public methods
-    public override fun useDPoP(): WebAuthProvider {
-        dPoP = DPoP()
+    public override fun useDPoP(context: Context): WebAuthProvider {
+        dPoP = DPoP(context)
         return this
     }
 

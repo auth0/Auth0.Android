@@ -129,6 +129,7 @@ internal open class BaseRequest<T, U : Auth0Exception>(
         val response: ServerResponse
         try {
             if (dPoP?.shouldGenerateProof(url, options.parameters) == true) {
+                dPoP.generateKeyPair()
                 dPoP.generateProof(url, method, options.headers)?.let {
                     options.headers[DPoPUtil.DPOP_HEADER] = it
                 }

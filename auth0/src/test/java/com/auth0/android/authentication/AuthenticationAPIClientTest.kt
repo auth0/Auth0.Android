@@ -48,7 +48,6 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowLooper
@@ -65,11 +64,13 @@ public class AuthenticationAPIClientTest {
     private lateinit var gson: Gson
     private lateinit var mockAPI: AuthenticationAPIMockServer
     private lateinit var mockKeyStore: DPoPKeyStore
+    private lateinit var mockContext: Context
 
     @Before
     public fun setUp() {
         mockAPI = AuthenticationAPIMockServer()
         mockKeyStore = mock()
+        mockContext = mock()
         val auth0 = auth0
         client = AuthenticationAPIClient(auth0)
         gson = GsonBuilder().serializeNulls().create()
@@ -2768,7 +2769,7 @@ public class AuthenticationAPIClientTest {
         val callback = MockAuthenticationCallback<Credentials>()
 
         // Enable DPoP
-        client.useDPoP().login(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
+        client.useDPoP(mockContext).login(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
             .start(callback)
         ShadowLooper.idleMainLooper()
 
@@ -2789,7 +2790,7 @@ public class AuthenticationAPIClientTest {
         mockAPI.willReturnSuccessfulLogin()
         val callback = MockAuthenticationCallback<Credentials>()
 
-        client.useDPoP().login(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
+        client.useDPoP(mockContext).login(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
             .start(callback)
         ShadowLooper.idleMainLooper()
 
@@ -2811,7 +2812,7 @@ public class AuthenticationAPIClientTest {
         mockAPI.willReturnSuccessfulLogin()
         val callback = MockAuthenticationCallback<Credentials>()
 
-        client.useDPoP().token("auth-code", "code-verifier", "http://redirect.uri")
+        client.useDPoP(mockContext).token("auth-code", "code-verifier", "http://redirect.uri")
             .start(callback)
         ShadowLooper.idleMainLooper()
 
@@ -2852,7 +2853,7 @@ public class AuthenticationAPIClientTest {
         mockAPI.willReturnUserInfo()
         val callback = MockAuthenticationCallback<UserProfile>()
 
-        client.useDPoP().userInfo("ACCESS_TOKEN", "DPoP")
+        client.useDPoP(mockContext).userInfo("ACCESS_TOKEN", "DPoP")
             .start(callback)
         ShadowLooper.idleMainLooper()
 
@@ -2896,7 +2897,7 @@ public class AuthenticationAPIClientTest {
         val callback = MockAuthenticationCallback<DatabaseUser>()
 
         // DPoP is enabled but signup endpoint should not get DPoP header
-        client.useDPoP().createUser(SUPPORT_AUTH0_COM, PASSWORD, SUPPORT, MY_CONNECTION)
+        client.useDPoP(mockContext).createUser(SUPPORT_AUTH0_COM, PASSWORD, SUPPORT, MY_CONNECTION)
             .start(callback)
         ShadowLooper.idleMainLooper()
 
@@ -2919,7 +2920,7 @@ public class AuthenticationAPIClientTest {
         val callback = MockAuthenticationCallback<Void>()
 
         // DPoP is enabled but passwordless endpoint should not get DPoP header
-        client.useDPoP().passwordlessWithEmail(SUPPORT_AUTH0_COM, PasswordlessType.CODE)
+        client.useDPoP(mockContext).passwordlessWithEmail(SUPPORT_AUTH0_COM, PasswordlessType.CODE)
             .start(callback)
         ShadowLooper.idleMainLooper()
 
@@ -2938,7 +2939,7 @@ public class AuthenticationAPIClientTest {
         val callback = MockAuthenticationCallback<Map<String, PublicKey>>()
 
         // DPoP is enabled but JWKS endpoint should not get DPoP header
-        client.useDPoP().fetchJsonWebKeys()
+        client.useDPoP(mockContext).fetchJsonWebKeys()
             .start(callback)
         ShadowLooper.idleMainLooper()
 
@@ -2956,7 +2957,7 @@ public class AuthenticationAPIClientTest {
         mockAPI.willReturnSuccessfulLogin()
         val callback = MockAuthenticationCallback<Credentials>()
 
-        client.useDPoP().customTokenExchange("subject-token-type", "subject-token")
+        client.useDPoP(mockContext).customTokenExchange("subject-token-type", "subject-token")
             .start(callback)
         ShadowLooper.idleMainLooper()
 
@@ -2983,7 +2984,7 @@ public class AuthenticationAPIClientTest {
         mockAPI.willReturnSuccessfulLogin()
         val callback = MockAuthenticationCallback<SSOCredentials>()
 
-        client.useDPoP().ssoExchange("refresh-token")
+        client.useDPoP(mockContext).ssoExchange("refresh-token")
             .start(callback)
         ShadowLooper.idleMainLooper()
 
@@ -3005,7 +3006,7 @@ public class AuthenticationAPIClientTest {
         mockAPI.willReturnSuccessfulLogin()
         val callback = MockAuthenticationCallback<Credentials>()
 
-        client.useDPoP().login(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
+        client.useDPoP(mockContext).login(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
             .start(callback)
         ShadowLooper.idleMainLooper()
 

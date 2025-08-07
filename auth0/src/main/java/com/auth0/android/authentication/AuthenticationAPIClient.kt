@@ -1,5 +1,6 @@
 package com.auth0.android.authentication
 
+import android.content.Context
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
@@ -67,8 +68,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     /**
      * Enable DPoP for this client.
      */
-    public override fun useDPoP(): AuthenticationAPIClient {
-        dPoP = DPoP()
+    public override fun useDPoP(context: Context): AuthenticationAPIClient {
+        dPoP = DPoP(context)
         return this
     }
 
