@@ -1,6 +1,5 @@
 package com.auth0.android.provider;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -11,7 +10,6 @@ import com.auth0.android.Auth0;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.Callback;
 import com.auth0.android.dpop.DPoP;
-import com.auth0.android.dpop.DPoPException;
 import com.auth0.android.request.NetworkingClient;
 import com.auth0.android.result.Credentials;
 import com.auth0.android.util.Auth0UserAgent;

@@ -2880,6 +2880,7 @@ public class WebAuthProviderTest {
         assertThat(capturedException, `is`(instanceOf(AuthenticationException::class.java)))
 
         assertThat(capturedException.message, containsString("Error generating DPoP key pair."))
+        assertThat(capturedException.cause, Matchers.instanceOf(DPoPException::class.java))
 
         verify(activity, never()).startActivity(any())
     }

@@ -49,7 +49,7 @@ internal object DPoPUtil {
         val keyPair = keyStore.getKeyPair()
         keyPair ?: run {
             Log.e(TAG, "generateProof: Key pair is null")
-            return null
+            throw DPoPException(DPoPException.Code.KEY_PAIR_NOT_FOUND)
         }
         val (privateKey, publicKey) = keyPair
 

@@ -65,7 +65,17 @@ public class DPoPTest {
     }
 
     @Test
-    public fun `shouldGenerateProof should return false for token endpoint with refresh grant type`() {
+    public fun `shouldGenerateProof should return true if key pair exist for token endpoint with refresh grant type`() {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
+        val parameters = mapOf("grant_type" to "refresh_token")
+        val result = dPoP.shouldGenerateProof(testHttpUrl, parameters)
+
+        assertThat(result, `is`(true))
+    }
+
+    @Test
+    public fun `shouldGenerateProof should return false if key pair doesn't exist for token endpoint with refresh grant type`() {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(false)
         val parameters = mapOf("grant_type" to "refresh_token")
         val result = dPoP.shouldGenerateProof(testHttpUrl, parameters)
 
@@ -247,6 +257,25 @@ public class DPoPTest {
         )
         DPoP.storeNonce(secondResponse)
         assertThat(DPoP.auth0Nonce, `is`(secondNonce))
+    }
+
+    @Test
+    public fun `storeNonce should not be overwritten by null value`() {
+        val firstNonce = "first-nonce"
+
+        val firstResponse = mock<Response>()
+        whenever(firstResponse.headers).thenReturn(
+            Headers.Builder().add("DPoP-Nonce", firstNonce).build()
+        )
+        DPoP.storeNonce(firstResponse)
+        assertThat(DPoP.auth0Nonce, `is`(firstNonce))
+
+        val secondResponse = mock<Response>()
+        whenever(secondResponse.headers).thenReturn(
+            Headers.Builder().build()
+        )
+        DPoP.storeNonce(secondResponse)
+        assertThat(DPoP.auth0Nonce, `is`(firstNonce))
     }
 
     @Test

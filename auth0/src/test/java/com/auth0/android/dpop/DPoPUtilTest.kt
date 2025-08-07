@@ -67,13 +67,18 @@ public class DPoPUtilTest {
     }
 
     @Test
-    public fun `generateProof should return null when keyStore returns null key pair`() {
+    public fun `generateProof should throw exception when keyStore returns null key pair`() {
         whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
         whenever(mockKeyStore.getKeyPair()).thenReturn(null)
 
-        val result = DPoPUtil.generateProof(testHttpUrl, testHttpMethod)
+        val exception = assertThrows(DPoPException::class.java) {
+            DPoPUtil.generateProof(testHttpUrl, testHttpMethod)
+        }
 
-        assertThat(result, `is`(nullValue()))
+        Assert.assertEquals(
+            "Key pair is not found in the keystore. Please generate a key pair first.",
+            exception.message
+        )
         verify(mockKeyStore).hasKeyPair()
         verify(mockKeyStore).getKeyPair()
     }
