@@ -70,10 +70,6 @@ internal open class BaseRequest<T, U : Auth0Exception>(
         return this
     }
 
-    override fun getUrl(): String = url
-
-    override fun getHttpMethod(): HttpMethod = method
-
     /**
      * Runs asynchronously and executes the network request, without blocking the current thread.
      * The result is parsed into a <T> value and posted in the callback's onSuccess method or a <U>

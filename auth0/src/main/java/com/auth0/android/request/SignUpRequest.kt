@@ -120,15 +120,6 @@ public class SignUpRequest
         return this
     }
 
-    override fun getUrl(): String {
-        return signUpRequest.getUrl()
-    }
-
-
-    override fun getHttpMethod(): HttpMethod {
-        return signUpRequest.getHttpMethod()
-    }
-
     /**
      * Starts to execute create user request and then logs the user in.
      *

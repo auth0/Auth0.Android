@@ -41,18 +41,6 @@ public class RequestMock<T, U extends Auth0Exception> implements Request<T, U> {
         return this;
     }
 
-    @NonNull
-    @Override
-    public String getUrl() {
-        return "";
-    }
-
-    @NonNull
-    @Override
-    public HttpMethod getHttpMethod() {
-        return HttpMethod.GET.INSTANCE;
-    }
-
     @Override
     public void start(@NonNull Callback<T, U> callback) {
         started = true;

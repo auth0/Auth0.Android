@@ -8,10 +8,7 @@ import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.authentication.ParameterBuilder
 import com.auth0.android.callback.Callback
 import com.auth0.android.provider.*
-import com.auth0.android.provider.IdTokenVerificationOptions
-import com.auth0.android.provider.IdTokenVerifier
 import com.auth0.android.request.AuthenticationRequest
-import com.auth0.android.request.HttpMethod
 import com.auth0.android.request.Request
 import com.auth0.android.result.Credentials
 import java.util.*
@@ -133,14 +130,6 @@ internal open class BaseAuthenticationRequest(
     override fun addHeader(name: String, value: String): AuthenticationRequest {
         request.addHeader(name, value)
         return this
-    }
-
-    override fun getHttpMethod(): HttpMethod {
-        return request.getHttpMethod()
-    }
-
-    override fun getUrl(): String {
-        return request.getUrl()
     }
 
     override fun start(callback: Callback<Credentials, AuthenticationException>) {

@@ -6,7 +6,6 @@ import com.auth0.android.Auth0Exception;
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.Callback;
 import com.auth0.android.request.AuthenticationRequest;
-import com.auth0.android.request.HttpMethod;
 import com.auth0.android.request.Request;
 import com.auth0.android.result.Credentials;
 
@@ -112,17 +111,5 @@ public class AuthenticationRequestMock implements AuthenticationRequest {
     @Override
     public AuthenticationRequest withIdTokenVerificationIssuer(@NonNull String issuer) {
         return this;
-    }
-
-    @NonNull
-    @Override
-    public String getUrl() {
-        return "";
-    }
-
-    @NonNull
-    @Override
-    public HttpMethod getHttpMethod() {
-        return HttpMethod.GET.INSTANCE;
     }
 }

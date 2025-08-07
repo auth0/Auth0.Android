@@ -44,8 +44,6 @@ public class ProfileRequestTest {
     @Before
     public void setUp() {
         userInfoMockRequest = mock(Request.class);
-        when(userInfoMockRequest.getHttpMethod()).thenReturn(HttpMethod.GET.INSTANCE);
-        when(userInfoMockRequest.getUrl()).thenReturn("www.api.com/example");
         authenticationMockRequest = mock(AuthenticationRequest.class);
         profileRequest = new ProfileRequest(authenticationMockRequest, userInfoMockRequest);
     }

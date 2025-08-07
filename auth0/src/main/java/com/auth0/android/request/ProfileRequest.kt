@@ -131,14 +131,6 @@ public class ProfileRequest
         return Authentication(profile, credentials)
     }
 
-    override fun getUrl(): String {
-        return userInfoRequest.getUrl()
-    }
-
-    override fun getHttpMethod(): HttpMethod {
-        return userInfoRequest.getHttpMethod()
-    }
-
     private companion object {
         private const val HEADER_AUTHORIZATION = "Authorization"
     }
