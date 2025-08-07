@@ -22,6 +22,8 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.doNothing
+import org.mockito.Mockito.times
+import org.mockito.Mockito.`when`
 import org.powermock.api.mockito.PowerMockito
 import org.powermock.core.classloader.annotations.PrepareForTest
 import org.powermock.modules.junit4.PowerMockRunner
@@ -31,6 +33,7 @@ import java.security.KeyPairGenerator
 import java.security.KeyStore
 import java.security.KeyStoreException
 import java.security.PrivateKey
+import java.security.ProviderException
 import java.security.PublicKey
 import java.security.cert.Certificate
 import javax.security.auth.x500.X500Principal
@@ -230,5 +233,58 @@ public class DPoPKeyStoreTest {
         }
         assertEquals(exception.message, DPoPException.KEY_STORE_ERROR.message)
         assertThat(exception.cause, `is`(cause))
+    }
+
+    @Test
+    public fun `generateKeyPair should retry without StrongBox when ProviderException occurs with StrongBox enabled`() {
+        val providerException = ProviderException("StrongBox attestation failed")
+
+        `when`(mockKeyPairGenerator.generateKeyPair()).thenThrow(providerException)
+            .thenReturn(mock())
+
+        dpopKeyStore.generateKeyPair(mockContext)
+
+        verify(mockKeyPairGenerator, times(2)).initialize(mockSpecBuilder.build())
+        verify(mockKeyPairGenerator, times(2)).generateKeyPair()
+
+        verify(mockSpecBuilder).setIsStrongBoxBacked(true) // First attempt
+        verify(
+            mockSpecBuilder,
+            never()
+        ).setIsStrongBoxBacked(false)
+    }
+
+    @Test
+    public fun `generateKeyPair should throw KEY_GENERATION_ERROR when ProviderException occurs without StrongBox`() {
+        val providerException = ProviderException("Key generation failed")
+        `when`(mockKeyPairGenerator.initialize(mockSpecBuilder.build())).thenThrow(providerException)
+
+        val exception = assertThrows(DPoPException::class.java) {
+            dpopKeyStore.generateKeyPair(mockContext, useStrongBox = false)
+        }
+
+        assertEquals(DPoPException.KEY_GENERATION_ERROR.message, exception.message)
+        assertThat(exception.cause, `is`(providerException))
+
+        verify(mockKeyPairGenerator, times(1)).initialize(mockSpecBuilder.build())
+    }
+
+    @Test
+    public fun `generateKeyPair should throw KEY_GENERATION_ERROR when ProviderException occurs on retry`() {
+        val firstException = ProviderException("StrongBox failed")
+        val secondException = ProviderException("Retry also failed")
+
+        `when`(mockKeyPairGenerator.initialize(mockSpecBuilder.build()))
+            .thenThrow(firstException)
+            .thenThrow(secondException)
+
+        val exception = assertThrows(DPoPException::class.java) {
+            dpopKeyStore.generateKeyPair(mockContext, useStrongBox = true)
+        }
+
+        assertEquals(DPoPException.KEY_GENERATION_ERROR.message, exception.message)
+        assertThat(exception.cause, `is`(secondException))
+
+        verify(mockKeyPairGenerator, times(2)).initialize(mockSpecBuilder.build())
     }
 }

@@ -29,7 +29,7 @@ internal open class DPoPKeyStore {
         KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
     }
 
-    fun generateKeyPair(context: Context) {
+    fun generateKeyPair(context: Context, useStrongBox: Boolean = true) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
             throw DPoPException.UNSUPPORTED_ERROR
         }
@@ -53,7 +53,7 @@ internal open class DPoPKeyStore {
                 setCertificateSubject(principal)
                 setCertificateNotBefore(start.time)
                 setCertificateNotAfter(end.time)
-                if (isStrongBoxEnabled(context)) {
+                if (useStrongBox && isStrongBoxEnabled(context)) {
                     setIsStrongBoxBacked(true)
                 }
             }
@@ -67,10 +67,22 @@ internal open class DPoPKeyStore {
                 is InvalidAlgorithmParameterException,
                 is NoSuchProviderException,
                 is NoSuchAlgorithmException,
-                is KeyStoreException,
-                is ProviderException -> {
+                is KeyStoreException -> {
                     Log.e(TAG, "The device can't generate a new EC Key pair.", e)
                     throw DPoPException(DPoPException.Code.KEY_GENERATION_ERROR, e)
+                }
+
+                is ProviderException -> {
+                    Log.d(
+                        TAG,
+                        "Key generation failed. Will retry one time before throwing the exception ${e.stackTraceToString()}"
+                    )
+                    if (useStrongBox) {
+                        // Retry the key-pair generation with strong box disabled
+                        generateKeyPair(context, false)
+                    } else {
+                        throw DPoPException(DPoPException.Code.KEY_GENERATION_ERROR, e)
+                    }
                 }
 
                 else -> throw DPoPException(DPoPException.Code.UNKNOWN_ERROR, e)
