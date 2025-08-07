@@ -2888,7 +2888,7 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public fun shouldNotAddDpopHeaderToNonTokenEndpoints() {
+    public fun shouldNotAddDpopHeaderToSignupEndpoint() {
         whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
         whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
 
@@ -2998,14 +2998,14 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public fun shouldNotAddDpopHeaderWhenKeyPairGenerationFails() {
+    public fun shouldNotAddDpopHeaderWhenKeyPairRetrievalFails() {
         whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
         whenever(mockKeyStore.getKeyPair()).thenReturn(null)
 
         mockAPI.willReturnSuccessfulLogin()
         val callback = MockAuthenticationCallback<Credentials>()
 
-        client.useDPoP().login(SUPPORT_AUTH0_COM, "some-password", MY_CONNECTION)
+        client.useDPoP().login(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
             .start(callback)
         ShadowLooper.idleMainLooper()
 

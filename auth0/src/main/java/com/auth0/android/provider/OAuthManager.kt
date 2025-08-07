@@ -26,7 +26,8 @@ internal class OAuthManager(
     ctOptions: CustomTabsOptions,
     private val launchAsTwa: Boolean = false,
     private val customAuthorizeUrl: String? = null,
-    private val dPoP: DPoP? = null
+    @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal val dPoP: DPoP? = null
 ) : ResumableManager() {
     private val parameters: MutableMap<String, String>
     private val headers: MutableMap<String, String>

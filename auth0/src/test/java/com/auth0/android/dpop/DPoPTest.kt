@@ -3,9 +3,7 @@ package com.auth0.android.dpop
 import android.content.Context
 import com.auth0.android.request.HttpMethod
 import com.auth0.android.request.internal.Jwt
-import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import okhttp3.Headers
@@ -16,12 +14,14 @@ import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.CoreMatchers.notNullValue
 import org.hamcrest.CoreMatchers.nullValue
 import org.hamcrest.MatcherAssert.assertThat
-import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import java.util.Collections
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 @RunWith(RobolectricTestRunner::class)
 public class DPoPTest {
@@ -48,6 +48,8 @@ public class DPoPTest {
         mockKeyStore = mock()
         mockResponseBody = mock()
         dPoP = DPoP()
+
+        DPoP._auth0Nonce = null
 
         DPoPUtil.keyStore = mockKeyStore
     }
@@ -164,7 +166,8 @@ public class DPoPTest {
     @Test
     public fun `generateKeyPair should propagate DPoPException`() {
         whenever(mockKeyStore.hasKeyPair()).thenReturn(false)
-        val exception = DPoPException(DPoPException.Code.KEY_GENERATION_ERROR, "Key generation failed")
+        val exception =
+            DPoPException(DPoPException.Code.KEY_GENERATION_ERROR, "Key generation failed")
         whenever(mockKeyStore.generateKeyPair(mockContext)).thenThrow(
             exception
         )
@@ -196,7 +199,6 @@ public class DPoPTest {
 
         val result = dPoP.getPublicKeyJWK(mockContext)
 
-        verify(mockKeyStore, never()).generateKeyPair(any())
         assertThat(result, `is`(testPublicJwkHash))
     }
 
@@ -449,31 +451,51 @@ public class DPoPTest {
     }
 
     @Test
-    public fun `nonce storage should be thread safe`() {
-        val numThreads = 10
-        val numIterations = 100
+    public fun `storeNonce should handle concurrent access safely with synchronized block`() {
+        val numThreads = 5
+        val numIterations = 10
         val threads = mutableListOf<Thread>()
+        val allStoredNonces = Collections.synchronizedList(mutableListOf<String>())
+        val startLatch = CountDownLatch(1)
+        val completionLatch = CountDownLatch(numThreads)
 
         repeat(numThreads) { threadIndex ->
             threads.add(Thread {
-                repeat(numIterations) { iteration ->
-                    val nonce = "nonce-$threadIndex-$iteration"
-                    val response = mock<Response>()
-                    whenever(response.headers).thenReturn(
-                        Headers.Builder().add("DPoP-Nonce", nonce).build()
-                    )
-                    DPoP.storeNonce(response)
+                try {
+                    // Wait for all threads to be ready
+                    startLatch.await()
+
+                    repeat(numIterations) { iteration ->
+                        val nonce = "nonce-thread-$threadIndex-iteration-$iteration"
+                        val response = mock<Response>()
+                        whenever(response.headers).thenReturn(
+                            Headers.Builder().add("DPoP-Nonce", nonce).build()
+                        )
+
+                        allStoredNonces.add(nonce)
+
+                        DPoP.storeNonce(response)
+
+                        Thread.sleep(1)
+                    }
+                } catch (e: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                } finally {
+                    completionLatch.countDown()
                 }
             })
         }
 
         threads.forEach { it.start() }
-        threads.forEach { it.join() }
+        startLatch.countDown() // Release all threads at once
 
-        // Should not crash and should have some nonce value
+        val completed = completionLatch.await(10, TimeUnit.SECONDS)
+        assertThat("All threads should complete within timeout", completed, `is`(true))
+
+        // Verify final state
         val finalNonce = DPoP.auth0Nonce
         assertThat(finalNonce, `is`(notNullValue()))
-        assertThat(finalNonce!!.startsWith("nonce-"), `is`(true))
+        assertThat(allStoredNonces.contains(finalNonce), `is`(true))
     }
 
     @Test

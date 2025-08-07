@@ -1,12 +1,14 @@
 package com.auth0.android.dpop
 
 import android.content.Context
+import androidx.annotation.VisibleForTesting
 import com.auth0.android.dpop.DPoPUtil.NONCE_REQUIRED_ERROR
 import com.auth0.android.dpop.DPoPUtil.generateProof
 import com.auth0.android.dpop.DPoPUtil.isResourceServerNonceError
 import com.auth0.android.request.HttpMethod
 import com.auth0.android.request.getErrorBody
 import okhttp3.Response
+import java.lang.reflect.Modifier.PRIVATE
 
 
 /**
@@ -98,7 +100,8 @@ public class DPoP {
         private const val NONCE_HEADER = "DPoP-Nonce"
 
         @Volatile
-        private var _auth0Nonce: String? = null
+        @VisibleForTesting(otherwise  = PRIVATE)
+        internal var _auth0Nonce: String? = null
 
         public val auth0Nonce: String?
             get() = _auth0Nonce
@@ -120,7 +123,11 @@ public class DPoP {
          */
         @JvmStatic
         internal fun storeNonce(response: Response) {
-            _auth0Nonce = response.headers[NONCE_HEADER]
+            response.headers[NONCE_HEADER]?.let {
+                synchronized(this) {
+                    _auth0Nonce = it
+                }
+            }
         }
 
         /**

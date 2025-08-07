@@ -9,6 +9,7 @@ public class DPoPException : Auth0Exception {
         KEY_GENERATION_ERROR,
         KEY_STORE_ERROR,
         SIGNING_ERROR,
+        MALFORMED_URL,
         UNKNOWN_ERROR,
     }
 
@@ -42,6 +43,7 @@ public class DPoPException : Auth0Exception {
         public val KEY_STORE_ERROR: DPoPException = DPoPException(Code.KEY_STORE_ERROR)
         public val SIGNING_ERROR: DPoPException = DPoPException(Code.SIGNING_ERROR)
         public val UNKNOWN_ERROR: DPoPException = DPoPException(Code.UNKNOWN_ERROR)
+        public val MALFORMED_URL: DPoPException = DPoPException(Code.MALFORMED_URL)
 
         private const val DEFAULT_MESSAGE =
             "An unknown error has occurred. Please check the error cause for more details."
@@ -52,6 +54,7 @@ public class DPoPException : Auth0Exception {
                 Code.KEY_GENERATION_ERROR -> "Error generating DPoP key pair."
                 Code.KEY_STORE_ERROR -> "Error while accessing the key pair in the keystore."
                 Code.SIGNING_ERROR -> "Error while signing the DPoP proof."
+                Code.MALFORMED_URL -> "The url passed is an invalid URL or malformed."
                 Code.UNKNOWN_ERROR -> DEFAULT_MESSAGE
             }
         }

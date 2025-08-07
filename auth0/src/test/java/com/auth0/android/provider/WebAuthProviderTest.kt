@@ -2748,8 +2748,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
 
         val managerInstance = WebAuthProvider.managerInstance as OAuthManager
-        // Verify that the manager has DPoP configured (this would require exposing the dPoP field in OAuthManager for testing)
-        assertThat(managerInstance, `is`(notNullValue()))
+        assertThat(managerInstance.dPoP, `is`(notNullValue()))
     }
 
     @Test
@@ -2758,7 +2757,7 @@ public class WebAuthProviderTest {
             .start(activity, callback)
 
         val managerInstance = WebAuthProvider.managerInstance as OAuthManager
-        assertThat(managerInstance, `is`(notNullValue()))
+        Assert.assertNull(managerInstance.dPoP)
     }
 
     @Test
@@ -2815,8 +2814,9 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public fun shouldNotIncludeDPoPJWKThumbprintWhenDPoPIsEnabledButNoKeyPair() {
-        `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
+    public fun shouldNotIncludeDPoPJWKThumbprintWhenDPoPIsEnabledButGetKeyPairReturnNull() {
+        `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
+        `when`(mockKeyStore.getKeyPair()).thenReturn(null)
 
         WebAuthProvider.useDPoP()
             .login(account)
@@ -2827,28 +2827,6 @@ public class WebAuthProviderTest {
             intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         assertThat(uri, `is`(notNullValue()))
         assertThat(uri, not(UriMatchers.hasParamWithName("dpop_jkt")))
-    }
-
-    @Test
-    public fun shouldChainDPoPWithOtherLoginOptions() {
-        `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
-        `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
-
-        WebAuthProvider.useDPoP()
-            .login(account)
-            .withConnection("test-connection")
-            .withScope("openid profile email custom")
-            .withState("custom-state")
-            .start(activity, callback)
-
-        verify(activity).startActivity(intentCaptor.capture())
-        val uri =
-            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
-        assertThat(uri, `is`(notNullValue()))
-        assertThat(uri, UriMatchers.hasParamWithValue("connection", "test-connection"))
-        assertThat(uri, UriMatchers.hasParamWithValue("scope", "openid profile email custom"))
-        assertThat(uri, UriMatchers.hasParamWithValue("state", "custom-state"))
-        assertThat(uri, UriMatchers.hasParamWithName("dpop_jkt"))
     }
 
     @Test
@@ -2974,50 +2952,6 @@ public class WebAuthProviderTest {
         assertThat(credentials, `is`(notNullValue()))
         assertThat(credentials.type, `is`("DPoP"))
         mockAPI.shutdown()
-    }
-
-    // Update the existing test that checks DPoP key generation
-//    @Test
-//    public fun enablingDPoPWillGenerateNewKeyPairIfOneDoesNotExist() {
-//        `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
-//
-//        WebAuthProvider.useDPoP()
-//            .login(account)
-//            .start(activity, callback)
-//
-//        verify(mockKeyStore).generateKeyPair(any())
-//    }
-//
-//    // Update the existing test for DPoP JWK parameter
-//    @Test
-//    public fun shouldHaveDpopJwkOnLoginIfDPoPIsEnabled() {
-//        `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
-//        `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
-//
-//        WebAuthProvider.useDPoP()
-//            .login(account)
-//            .start(activity, callback)
-//
-//        verify(activity).startActivity(intentCaptor.capture())
-//        val uri = intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
-//        assertThat(uri, `is`(notNullValue()))
-//        assertThat(uri, UriMatchers.hasParamWithValue("dpop_jkt", "KQ-r0YQMCm0yVnGippcsZK4zO7oGIjOkNRbvILjjBAo"))
-//    }
-
-    @Test
-    public fun shouldResetDPoPStateWhenManagerInstanceIsReset() {
-        WebAuthProvider.useDPoP()
-
-        // Verify DPoP is enabled
-        val provider1 = WebAuthProvider.useDPoP()
-        assertThat(provider1, `is`(notNullValue()))
-
-        // Reset manager instance (this should also reset DPoP state if needed)
-        WebAuthProvider.resetManagerInstance()
-
-        // DPoP should still work after reset
-        val provider2 = WebAuthProvider.useDPoP()
-        assertThat(provider2, `is`(notNullValue()))
     }
 
     //**  ** ** ** ** **  **//

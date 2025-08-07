@@ -7,6 +7,7 @@ import androidx.annotation.VisibleForTesting
 import okhttp3.Response
 import org.json.JSONObject
 import java.math.BigInteger
+import java.net.URISyntaxException
 import java.security.MessageDigest
 import java.security.PrivateKey
 import java.security.Signature
@@ -157,7 +158,7 @@ internal object DPoPUtil {
     private fun createSHA256Hash(input: String): String {
         val digest = MessageDigest.getInstance("SHA-256")
         val hash = digest.digest(input.toByteArray(Charsets.UTF_8))
-        return Base64.encodeToString(hash, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
+        return encodeBase64Url(hash)
     }
 
     private fun padTo32Bytes(coordinate: BigInteger): ByteArray {
@@ -250,9 +251,9 @@ internal object DPoPUtil {
                 null  // Remove fragment
             )
             cleanedUri.toString()
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to parse URL, using original: $url", e)
-            url
+        } catch (e: URISyntaxException) {
+            Log.d(TAG, "Failed to parse URL", e)
+            throw  DPoPException.MALFORMED_URL
         }
     }
 
