@@ -6,8 +6,6 @@ import com.auth0.android.authentication.ParameterBuilder
 import com.auth0.android.callback.Callback
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 /**
  * Represent a request that creates a user in a Auth0 Database connection and then logs in.

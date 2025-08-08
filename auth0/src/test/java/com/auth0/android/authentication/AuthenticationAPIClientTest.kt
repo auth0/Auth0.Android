@@ -4,6 +4,11 @@ import android.content.Context
 import android.content.res.Resources
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.ParameterBuilder.Companion.newBuilder
+import com.auth0.android.dpop.DPoPException
+import com.auth0.android.dpop.DPoPKeyStore
+import com.auth0.android.dpop.DPoPUtil
+import com.auth0.android.dpop.FakeECPrivateKey
+import com.auth0.android.dpop.FakeECPublicKey
 import com.auth0.android.provider.JwtTestUtils
 import com.auth0.android.request.HttpMethod
 import com.auth0.android.request.NetworkingClient
@@ -41,9 +46,13 @@ import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers
 import org.hamcrest.collection.IsMapContaining
 import org.junit.After
+import org.junit.Assert
+import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.never
+import org.mockito.Mockito.times
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowLooper
@@ -59,13 +68,18 @@ public class AuthenticationAPIClientTest {
     private lateinit var client: AuthenticationAPIClient
     private lateinit var gson: Gson
     private lateinit var mockAPI: AuthenticationAPIMockServer
+    private lateinit var mockKeyStore: DPoPKeyStore
+    private lateinit var mockContext: Context
 
     @Before
     public fun setUp() {
         mockAPI = AuthenticationAPIMockServer()
+        mockKeyStore = mock()
+        mockContext = mock()
         val auth0 = auth0
         client = AuthenticationAPIClient(auth0)
         gson = GsonBuilder().serializeNulls().create()
+        DPoPUtil.keyStore = mockKeyStore
     }
 
     @After
@@ -193,8 +207,10 @@ public class AuthenticationAPIClientTest {
         val callback = MockAuthenticationCallback<Credentials>()
         val auth0 = auth0
         val client = AuthenticationAPIClient(auth0)
-        client.signinWithPasskey("auth-session", mock<PublicKeyCredentials>(), MY_CONNECTION,
-            "testOrganisation")
+        client.signinWithPasskey(
+            "auth-session", mock<PublicKeyCredentials>(), MY_CONNECTION,
+            "testOrganisation"
+        )
             .start(callback)
         ShadowLooper.idleMainLooper()
         assertThat(
@@ -592,7 +608,7 @@ public class AuthenticationAPIClientTest {
     public fun shouldFetchUserInfo() {
         mockAPI.willReturnUserInfo()
         val callback = MockAuthenticationCallback<UserProfile>()
-        client.userInfo("ACCESS_TOKEN")
+        client.userInfo("ACCESS_TOKEN", "Bearer")
             .start(callback)
         ShadowLooper.idleMainLooper()
         assertThat(
@@ -617,7 +633,7 @@ public class AuthenticationAPIClientTest {
     public fun shouldFetchUserInfoSync() {
         mockAPI.willReturnUserInfo()
         val profile = client
-            .userInfo("ACCESS_TOKEN")
+            .userInfo("ACCESS_TOKEN", "Bearer")
             .execute()
         assertThat(profile, Matchers.`is`(Matchers.notNullValue()))
         val request = mockAPI.takeRequest()
@@ -638,7 +654,7 @@ public class AuthenticationAPIClientTest {
     public fun shouldAwaitFetchUserInfo(): Unit = runTest {
         mockAPI.willReturnUserInfo()
         val profile = client
-            .userInfo("ACCESS_TOKEN")
+            .userInfo("ACCESS_TOKEN", "Bearer")
             .await()
         assertThat(profile, Matchers.`is`(Matchers.notNullValue()))
         val request = mockAPI.takeRequest()
@@ -2566,8 +2582,9 @@ public class AuthenticationAPIClientTest {
         val auth0 = auth0
         val client = AuthenticationAPIClient(auth0)
         mockAPI.willReturnSuccessfulLogin()
-        val credentials = client.renewAuth(refreshToken = "refreshToken", scope = "openid read:data")
-            .execute()
+        val credentials =
+            client.renewAuth(refreshToken = "refreshToken", scope = "openid read:data")
+                .execute()
         val request = mockAPI.takeRequest()
         assertThat(
             request.getHeader("Accept-Language"), Matchers.`is`(
@@ -2725,6 +2742,381 @@ public class AuthenticationAPIClientTest {
             callback.error.getDescription(),
             Matchers.`is`(Matchers.equalTo("Unauthorized"))
         )
+    }
+
+    //DPoP
+    @Test
+    public fun shouldNotAddDpopHeaderWhenDpopNotEnabledToTokenEndpoint() {
+        mockAPI.willReturnSuccessfulLogin()
+        val callback = MockAuthenticationCallback<Credentials>()
+        // DPoP is not enabled - dPoP property should be null
+        client.login(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
+            .start(callback)
+        ShadowLooper.idleMainLooper()
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("DPoP"), Matchers.nullValue())
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(
+            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
+                Credentials::class.java
+            )
+        )
+    }
+
+    @Test
+    public fun shouldNotAddDpopHeaderWhenDpopNotEnabledToNonTokenEndpoint() {
+        mockAPI.willReturnSuccessfulPasskeyChallenge()
+        val auth0 = auth0
+        val client = AuthenticationAPIClient(auth0)
+        val challengeResponse = client.passkeyChallenge(MY_CONNECTION, "testOrganization")
+            .execute()
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("DPoP"), Matchers.nullValue())
+        assertThat(request.path, Matchers.equalTo("/passkey/challenge"))
+        assertThat(challengeResponse, Matchers.`is`(Matchers.notNullValue()))
+    }
+
+    @Test
+    public fun shouldNotAddDpopHeaderWithDpopEnabledToNonTokenEndpoint() {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
+        mockAPI.willReturnSuccessfulPasskeyChallenge()
+        val auth0 = auth0
+        val client = AuthenticationAPIClient(auth0).useDPoP(mockContext)
+        val challengeResponse = client.passkeyChallenge(MY_CONNECTION, "testOrganization")
+            .execute()
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("DPoP"), Matchers.nullValue())
+        assertThat(request.path, Matchers.equalTo("/passkey/challenge"))
+        assertThat(challengeResponse, Matchers.`is`(Matchers.notNullValue()))
+    }
+
+    @Test
+    public fun shouldAddDpopHeaderWhenDpopEnabledAndKeyPairExistsToTokenEndpoint() {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
+
+        mockAPI.willReturnSuccessfulLogin()
+        val callback = MockAuthenticationCallback<Credentials>()
+
+        client.useDPoP(mockContext).login(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
+            .start(callback)
+        ShadowLooper.idleMainLooper()
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("DPoP"), Matchers.notNullValue())
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(
+            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
+                Credentials::class.java
+            )
+        )
+    }
+
+    @Test
+    public fun shouldNotAddDpopHeaderToTokenExchangeWhenDPoPEnabledAndNoKeyPairExist() {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(false)
+
+        mockAPI.willReturnSuccessfulLogin()
+        val callback = MockAuthenticationCallback<Credentials>()
+
+        client.useDPoP(mockContext).renewAuth("refresh_token")
+            .start(callback)
+        ShadowLooper.idleMainLooper()
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("DPoP"), Matchers.nullValue())
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(
+            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
+                Credentials::class.java
+            )
+        )
+    }
+
+    @Test
+    public fun shouldNotAddDpopHeaderToTokenExchangeWhenDPoPNotEnabled() {
+        mockAPI.willReturnSuccessfulLogin()
+        val callback = MockAuthenticationCallback<Credentials>()
+
+        client.token("auth-code", "code-verifier", "http://redirect.uri")
+            .start(callback)
+        ShadowLooper.idleMainLooper()
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("DPoP"), Matchers.nullValue())
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(
+            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
+                Credentials::class.java
+            )
+        )
+    }
+
+    @Test
+    public fun shouldCreateKeyPairWhenDPoPEnabledButNoKeyPairExistsTokenEndpoint() {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(false).thenReturn(true)
+        whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
+
+        mockAPI.willReturnSuccessfulLogin()
+        val callback = MockAuthenticationCallback<Credentials>()
+
+        // Enable DPoP but ensure no key pair exists initially
+        client.useDPoP(mockContext).token("auth-code", "code-verifier", "http://redirect.uri")
+            .start(callback)
+        ShadowLooper.idleMainLooper()
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("DPoP"), Matchers.notNullValue())
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_AUTHORIZATION_CODE))
+        assertThat(body, Matchers.hasEntry("code", "auth-code"))
+
+        // Verify that key pair generation was attempted
+        verify(mockKeyStore, times(2)).hasKeyPair()
+        verify(mockKeyStore).generateKeyPair(mockContext, true)
+        verify(mockKeyStore).getKeyPair()
+
+        assertThat(
+            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
+                Credentials::class.java
+            )
+        )
+    }
+
+    @Test
+    public fun shouldNotCreateKeyPairWhenDPoPEnabledButNoKeyPairExistsForRefreshTokenExchange() {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(false)
+
+        mockAPI.willReturnSuccessfulLogin()
+        val callback = MockAuthenticationCallback<Credentials>()
+
+        // Enable DPoP but ensure no key pair exists
+        client.useDPoP(mockContext).renewAuth("refresh-token", "test-audience")
+            .start(callback)
+        ShadowLooper.idleMainLooper()
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("DPoP"), Matchers.nullValue())
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("grant_type", "refresh_token"))
+        assertThat(body, Matchers.hasEntry("refresh_token", "refresh-token"))
+        assertThat(body, Matchers.hasEntry("audience", "test-audience"))
+
+        verify(mockKeyStore).hasKeyPair()
+        verify(mockKeyStore, never()).generateKeyPair(any(), any())
+
+        assertThat(
+            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
+                Credentials::class.java
+            )
+        )
+    }
+
+    @Test
+    public fun shouldCreateKeyPairWhenDPoPEnabledButNoKeyPairExistsForCustomTokenExchange() {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(false).thenReturn(true)
+        whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
+
+        mockAPI.willReturnSuccessfulLogin()
+        val callback = MockAuthenticationCallback<Credentials>()
+
+        // Enable DPoP but ensure no key pair exists initially
+        client.useDPoP(mockContext).customTokenExchange("subject-token-type", "subject-token")
+            .start(callback)
+        ShadowLooper.idleMainLooper()
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("DPoP"), Matchers.notNullValue())
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE))
+        assertThat(body, Matchers.hasEntry("subject_token_type", "subject-token-type"))
+
+        // Verify that key pair generation was attempted
+        verify(mockKeyStore, times(2)).hasKeyPair()
+        verify(mockKeyStore).generateKeyPair(mockContext, true)
+        verify(mockKeyStore).getKeyPair()
+
+        assertThat(
+            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
+                Credentials::class.java
+            )
+        )
+    }
+
+    @Test
+    public fun shouldAddDpopHeaderToUserInfoWhenEnabled() {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
+
+        mockAPI.willReturnUserInfo()
+        val callback = MockAuthenticationCallback<UserProfile>()
+
+        client.useDPoP(mockContext).userInfo("ACCESS_TOKEN", "DPoP")
+            .start(callback)
+        ShadowLooper.idleMainLooper()
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("DPoP"), Matchers.notNullValue())
+        assertThat(request.getHeader("Authorization"), Matchers.`is`("DPoP ACCESS_TOKEN"))
+        assertThat(request.path, Matchers.equalTo("/userinfo"))
+        assertThat(
+            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
+                UserProfile::class.java
+            )
+        )
+    }
+
+    @Test
+    public fun shouldNotAddDpopHeaderToUserInfoWhenNotEnabled() {
+        mockAPI.willReturnUserInfo()
+        val callback = MockAuthenticationCallback<UserProfile>()
+
+        client.userInfo("ACCESS_TOKEN", "Bearer")
+            .start(callback)
+        ShadowLooper.idleMainLooper()
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("DPoP"), Matchers.nullValue())
+        assertThat(request.getHeader("Authorization"), Matchers.`is`("Bearer ACCESS_TOKEN"))
+        assertThat(request.path, Matchers.equalTo("/userinfo"))
+        assertThat(
+            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
+                UserProfile::class.java
+            )
+        )
+    }
+
+    @Test
+    public fun shouldNotAddDpopHeaderToSignupEndpoint() {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
+
+        mockAPI.willReturnSuccessfulSignUp()
+        val callback = MockAuthenticationCallback<DatabaseUser>()
+
+        // DPoP is enabled but signup endpoint should not get DPoP header
+        client.useDPoP(mockContext).createUser(SUPPORT_AUTH0_COM, PASSWORD, SUPPORT, MY_CONNECTION)
+            .start(callback)
+        ShadowLooper.idleMainLooper()
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("DPoP"), Matchers.nullValue())
+        assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
+        assertThat(
+            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
+                DatabaseUser::class.java
+            )
+        )
+    }
+
+    @Test
+    public fun shouldNotAddDpopHeaderToPasswordlessEndpoints() {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
+
+        mockAPI.willReturnSuccessfulPasswordlessStart()
+        val callback = MockAuthenticationCallback<Void>()
+
+        // DPoP is enabled but passwordless endpoint should not get DPoP header
+        client.useDPoP(mockContext).passwordlessWithEmail(SUPPORT_AUTH0_COM, PasswordlessType.CODE)
+            .start(callback)
+        ShadowLooper.idleMainLooper()
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("DPoP"), Matchers.nullValue())
+        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(callback, AuthenticationCallbackMatcher.hasNoError())
+    }
+
+    @Test
+    public fun shouldNotAddDpopHeaderToJwksEndpoint() {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
+
+        mockAPI.willReturnEmptyJsonWebKeys()
+        val callback = MockAuthenticationCallback<Map<String, PublicKey>>()
+
+        // DPoP is enabled but JWKS endpoint should not get DPoP header
+        client.useDPoP(mockContext).fetchJsonWebKeys()
+            .start(callback)
+        ShadowLooper.idleMainLooper()
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("DPoP"), Matchers.nullValue())
+        assertThat(request.path, Matchers.equalTo("/.well-known/jwks.json"))
+        assertThat(callback, AuthenticationCallbackMatcher.hasPayload(emptyMap()))
+    }
+
+    @Test
+    public fun shouldAddDpopHeaderToCustomTokenExchangeWhenEnabled() {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
+
+        mockAPI.willReturnSuccessfulLogin()
+        val callback = MockAuthenticationCallback<Credentials>()
+
+        client.useDPoP(mockContext).customTokenExchange("subject-token-type", "subject-token")
+            .start(callback)
+        ShadowLooper.idleMainLooper()
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("DPoP"), Matchers.notNullValue())
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        val body = bodyFromRequest<String>(request)
+        assertThat(
+            body,
+            Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
+        )
+        assertThat(
+            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
+                Credentials::class.java
+            )
+        )
+    }
+
+    @Test
+    public fun shouldAddDpopHeaderToSsoExchangeWhenEnabled() {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
+
+        mockAPI.willReturnSuccessfulLogin()
+        val callback = MockAuthenticationCallback<SSOCredentials>()
+
+        client.useDPoP(mockContext).ssoExchange("refresh-token")
+            .start(callback)
+        ShadowLooper.idleMainLooper()
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("DPoP"), Matchers.notNullValue())
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(
+            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
+                SSOCredentials::class.java
+            )
+        )
+    }
+
+    @Test
+    public fun shouldThrowExceptionWhenKeyPairRetrievalFails() {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockKeyStore.getKeyPair()).thenReturn(null)
+
+        mockAPI.willReturnSuccessfulLogin()
+
+        val exception = assertThrows(AuthenticationException::class.java) {
+            client.useDPoP(mockContext).login(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
+                .execute()
+        }
+        Assert.assertEquals("Key pair is not found in the keystore. Please generate a key pair first.", exception.message)
+        assertThat(exception.cause, Matchers.notNullValue())
+        assertThat(exception.cause, Matchers.instanceOf(DPoPException::class.java   ))
     }
 
     private fun <T> bodyFromRequest(request: RecordedRequest): Map<String, T> {

@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.callback.Callback;
+import com.auth0.android.request.HttpMethod;
 import com.auth0.android.request.Request;
 
 import java.util.Map;
