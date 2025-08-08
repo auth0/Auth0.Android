@@ -30,7 +30,7 @@ runs:
 
     - name: Publish Android/Java Packages to Maven
       shell: bash
-      run: ./gradlew publish -PisSnapshot=false --stacktrace
+      run: ./gradlew publishToSonatype -PisSnapshot=false --stacktrace
       env:
         MAVEN_USERNAME: ${{ inputs.ossr-username }}
         MAVEN_PASSWORD: ${{ inputs.ossr-token }}
