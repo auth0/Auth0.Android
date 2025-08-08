@@ -1,6 +1,7 @@
 package com.auth0.android.provider
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Parcelable
@@ -9,6 +10,11 @@ import androidx.test.espresso.intent.matcher.UriMatchers
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
+import com.auth0.android.dpop.DPoPException
+import com.auth0.android.dpop.DPoPKeyStore
+import com.auth0.android.dpop.DPoPUtil
+import com.auth0.android.dpop.FakeECPrivateKey
+import com.auth0.android.dpop.FakeECPublicKey
 import com.auth0.android.provider.WebAuthProvider.login
 import com.auth0.android.provider.WebAuthProvider.logout
 import com.auth0.android.provider.WebAuthProvider.resume
@@ -28,6 +34,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.hamcrest.CoreMatchers
+import org.hamcrest.CoreMatchers.containsString
+import org.hamcrest.CoreMatchers.instanceOf
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers
 import org.hamcrest.collection.IsMapContaining
@@ -65,6 +73,8 @@ public class WebAuthProviderTest {
     private lateinit var voidCallback: Callback<Void?, AuthenticationException>
     private lateinit var activity: Activity
     private lateinit var account: Auth0
+    private lateinit var mockKeyStore: DPoPKeyStore
+    private lateinit var mockContext: Context
 
     private val authExceptionCaptor: KArgumentCaptor<AuthenticationException> = argumentCaptor()
     private val intentCaptor: KArgumentCaptor<Intent> = argumentCaptor()
@@ -83,6 +93,11 @@ public class WebAuthProviderTest {
             Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, JwtTestUtils.EXPECTED_BASE_DOMAIN)
         account.networkingClient = SSLTestUtils.testClient
 
+        mockKeyStore = mock()
+        mockContext = mock()
+
+        DPoPUtil.keyStore = mockKeyStore
+
         //Next line is needed to avoid CustomTabService from being bound to Test environment
         Mockito.doReturn(false).`when`(activity).bindService(
             any(),
@@ -95,7 +110,10 @@ public class WebAuthProviderTest {
             null,
             null
         )
+
+        `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
     }
+
 
     //** ** ** ** ** **  **//
     //** ** ** ** ** **  **//
@@ -107,6 +125,7 @@ public class WebAuthProviderTest {
         login(account)
             .start(activity, callback)
         Assert.assertNotNull(WebAuthProvider.managerInstance)
+
     }
 
     @Test
@@ -303,6 +322,51 @@ public class WebAuthProviderTest {
         assertThat(
             uri,
             UriMatchers.hasParamWithValue("audience", "https://google.com/apis")
+        )
+    }
+
+
+    @Test
+    public fun enablingDPoPWillGenerateNewKeyPairIfOneDoesNotExist() {
+        `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
+        WebAuthProvider.useDPoP(mockContext)
+            .login(account)
+            .start(activity, callback)
+        verify(mockKeyStore).generateKeyPair(any(), any())
+    }
+
+    @Test
+    public fun shouldNotHaveDpopJwkOnLoginIfDPoPIsDisabled() {
+        login(account)
+            .start(activity, callback)
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri =
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(uri, `is`(notNullValue()))
+        assertThat(
+            uri,
+            not(
+                UriMatchers.hasParamWithName("dpop_jkt")
+            )
+        )
+    }
+
+    @Test
+    public fun shouldHaveDpopJwkOnLoginIfDPoPIsEnabled() {
+        `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
+        `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
+
+        WebAuthProvider.useDPoP(mockContext)
+            .login(account)
+            .start(activity, callback)
+
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri =
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(uri, `is`(notNullValue()))
+        assertThat(
+            uri,
+            UriMatchers.hasParamWithValue("dpop_jkt", "KQ-r0YQMCm0yVnGippcsZK4zO7oGIjOkNRbvILjjBAo")
         )
     }
 
@@ -2663,6 +2727,234 @@ public class WebAuthProviderTest {
         assertThat(uri, UriMatchers.hasPath(baseUriString.path))
         assertThat(uri, UriMatchers.hasParamWithName("client_id"))
         assertThat(uri, UriMatchers.hasParamWithName("returnTo"))
+    }
+
+
+    //DPoP
+
+    public fun shouldReturnSameInstanceWhenCallingUseDPoPMultipleTimes() {
+        val provider1 = WebAuthProvider.useDPoP(mockContext)
+        val provider2 = WebAuthProvider.useDPoP(mockContext)
+
+        assertThat(provider1, `is`(provider2))
+        assertThat(WebAuthProvider.useDPoP(mockContext), `is`(provider1))
+    }
+
+    @Test
+    public fun shouldPassDPoPInstanceToOAuthManagerWhenDPoPIsEnabled() {
+        `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
+        `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
+
+        WebAuthProvider.useDPoP(mockContext)
+            .login(account)
+            .start(activity, callback)
+
+        val managerInstance = WebAuthProvider.managerInstance as OAuthManager
+        assertThat(managerInstance.dPoP, `is`(notNullValue()))
+    }
+
+    @Test
+    public fun shouldNotPassDPoPInstanceToOAuthManagerWhenDPoPIsNotEnabled() {
+        login(account)
+            .start(activity, callback)
+
+        val managerInstance = WebAuthProvider.managerInstance as OAuthManager
+        Assert.assertNull(managerInstance.dPoP)
+    }
+
+    @Test
+    public fun shouldGenerateKeyPairWhenDPoPIsEnabledAndNoKeyPairExists() {
+        `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
+
+        WebAuthProvider.useDPoP(mockContext)
+            .login(account)
+            .start(activity, callback)
+
+        verify(mockKeyStore).generateKeyPair(any(), any())
+    }
+
+    @Test
+    public fun shouldNotGenerateKeyPairWhenDPoPIsEnabledAndKeyPairExists() {
+        `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
+        `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
+
+        WebAuthProvider.useDPoP(mockContext)
+            .login(account)
+            .start(activity, callback)
+
+        verify(mockKeyStore, never()).generateKeyPair(any(), any())
+    }
+
+    @Test
+    public fun shouldNotGenerateKeyPairWhenDPoPIsNotEnabled() {
+        `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
+
+        login(account)
+            .start(activity, callback)
+
+        verify(mockKeyStore, never()).generateKeyPair(any(), any())
+    }
+
+    @Test
+    public fun shouldIncludeDPoPJWKThumbprintInAuthorizeURLWhenDPoPIsEnabledAndKeyPairExists() {
+        `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
+        `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
+
+        WebAuthProvider.useDPoP(mockContext)
+            .login(account)
+            .start(activity, callback)
+
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri =
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(uri, `is`(notNullValue()))
+        assertThat(uri, UriMatchers.hasParamWithName("dpop_jkt"))
+        assertThat(
+            uri,
+            UriMatchers.hasParamWithValue("dpop_jkt", "KQ-r0YQMCm0yVnGippcsZK4zO7oGIjOkNRbvILjjBAo")
+        )
+    }
+
+    @Test
+    public fun shouldNotIncludeDPoPJWKThumbprintWhenDPoPIsEnabledButGetKeyPairReturnNull() {
+        `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
+        `when`(mockKeyStore.getKeyPair()).thenReturn(null)
+
+        WebAuthProvider.useDPoP(mockContext)
+            .login(account)
+            .start(activity, callback)
+
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri =
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(uri, `is`(notNullValue()))
+        assertThat(uri, not(UriMatchers.hasParamWithName("dpop_jkt")))
+    }
+
+    @Test
+    public fun shouldWorkWithLoginBuilderPatternWhenDPoPIsEnabled() {
+        `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
+        `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
+
+        val builder = WebAuthProvider.useDPoP(mockContext)
+            .login(account)
+            .withConnection("test-connection")
+
+        builder.start(activity, callback)
+
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri =
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(uri, `is`(notNullValue()))
+        assertThat(uri, UriMatchers.hasParamWithValue("connection", "test-connection"))
+        assertThat(uri, UriMatchers.hasParamWithName("dpop_jkt"))
+    }
+
+    @Test
+    public fun shouldNotAffectLogoutWhenDPoPIsEnabled() {
+        WebAuthProvider.useDPoP(mockContext)
+            .logout(account)
+            .start(activity, voidCallback)
+
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri =
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(uri, `is`(notNullValue()))
+        // Logout should not have DPoP parameters
+        assertThat(uri, not(UriMatchers.hasParamWithName("dpop_jkt")))
+    }
+
+    @Test
+    public fun shouldHandleDPoPKeyGenerationFailureGracefully() {
+        `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
+        doThrow(DPoPException.KEY_GENERATION_ERROR)
+            .`when`(mockKeyStore).generateKeyPair(any(), any())
+
+        WebAuthProvider.useDPoP(mockContext)
+            .login(account)
+            .start(activity, callback)
+
+        // Verify that the authentication fails when DPoP key generation fails
+        verify(callback).onFailure(authExceptionCaptor.capture())
+        val capturedException = authExceptionCaptor.firstValue
+        assertThat(capturedException, `is`(instanceOf(AuthenticationException::class.java)))
+
+        assertThat(capturedException.message, containsString("Error generating DPoP key pair."))
+        assertThat(capturedException.cause, Matchers.instanceOf(DPoPException::class.java))
+
+        verify(activity, never()).startActivity(any())
+    }
+
+    @Test
+    @Throws(Exception::class)
+    public fun shouldResumeLoginSuccessfullyWithDPoPEnabled() {
+        `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
+        `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
+
+        val expiresAt = Date()
+        val pkce = Mockito.mock(PKCE::class.java)
+        `when`(pkce.codeChallenge).thenReturn("challenge")
+        val mockAPI = AuthenticationAPIMockServer()
+        mockAPI.willReturnValidJsonWebKeys()
+        val authCallback = mock<Callback<Credentials, AuthenticationException>>()
+        val proxyAccount: Auth0 = Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
+        proxyAccount.networkingClient = SSLTestUtils.testClient
+
+        WebAuthProvider.useDPoP(mockContext)
+            .login(proxyAccount)
+            .withPKCE(pkce)
+            .start(activity, authCallback)
+
+        val managerInstance = WebAuthProvider.managerInstance as OAuthManager
+        managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri =
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(uri, `is`(notNullValue()))
+        val sentState = uri?.getQueryParameter(KEY_STATE)
+        val sentNonce = uri?.getQueryParameter(KEY_NONCE)
+
+        val intent = createAuthIntent(
+            createHash(
+                null,
+                null,
+                null,
+                null,
+                null,
+                sentState,
+                null,
+                null,
+                "1234"
+            )
+        )
+
+        val jwtBody = JwtTestUtils.createJWTBody()
+        jwtBody["nonce"] = sentNonce
+        jwtBody["aud"] = proxyAccount.clientId
+        jwtBody["iss"] = proxyAccount.getDomainUrl()
+        val expectedIdToken = JwtTestUtils.createTestJWT("RS256", jwtBody)
+        val codeCredentials = Credentials(
+            expectedIdToken,
+            "codeAccess",
+            "DPoP", // Token type should be DPoP when DPoP is enabled
+            "codeRefresh",
+            expiresAt,
+            "codeScope"
+        )
+
+        Mockito.doAnswer {
+            callbackCaptor.firstValue.onSuccess(codeCredentials)
+            null
+        }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
+
+        Assert.assertTrue(resume(intent))
+        mockAPI.takeRequest()
+        ShadowLooper.idleMainLooper()
+        verify(authCallback).onSuccess(credentialsCaptor.capture())
+        val credentials = credentialsCaptor.firstValue
+        assertThat(credentials, `is`(notNullValue()))
+        assertThat(credentials.type, `is`("DPoP"))
+        mockAPI.shutdown()
     }
 
     //**  ** ** ** ** **  **//

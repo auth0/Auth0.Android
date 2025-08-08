@@ -9,6 +9,8 @@ import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
+import com.auth0.android.dpop.DPoP
+import com.auth0.android.dpop.SenderConstraining
 import com.auth0.android.result.Credentials
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -25,9 +27,10 @@ import kotlin.coroutines.resumeWithException
  *
  * It uses an external browser by sending the [android.content.Intent.ACTION_VIEW] intent.
  */
-public object WebAuthProvider {
+public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
     private val TAG: String? = WebAuthProvider::class.simpleName
     private const val KEY_BUNDLE_OAUTH_MANAGER_STATE = "oauth_manager_state"
+    private var dPoP : DPoP? = null
 
     private val callbacks = CopyOnWriteArraySet<Callback<Credentials, AuthenticationException>>()
 
@@ -47,6 +50,11 @@ public object WebAuthProvider {
     }
 
     // Public methods
+    public override fun useDPoP(context: Context): WebAuthProvider {
+        dPoP = DPoP(context)
+        return this
+    }
+
     /**
      * Initialize the WebAuthProvider instance for logging out the user using an account. Additional settings can be configured
      * in the LogoutBuilder, like changing the scheme of the return to URL.
@@ -580,8 +588,10 @@ public object WebAuthProvider {
                 values[OAuthManager.KEY_ORGANIZATION] = organizationId
                 values[OAuthManager.KEY_INVITATION] = invitationId
             }
-            val manager = OAuthManager(account, callback, values, ctOptions, launchAsTwa,
-                customAuthorizeUrl)
+            val manager = OAuthManager(
+                account, callback, values, ctOptions, launchAsTwa,
+                customAuthorizeUrl, dPoP
+            )
             manager.setHeaders(headers)
             manager.setPKCE(pkce)
             manager.setIdTokenVerificationLeeway(leeway)

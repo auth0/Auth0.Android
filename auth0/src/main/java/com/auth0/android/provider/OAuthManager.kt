@@ -2,17 +2,17 @@ package com.auth0.android.provider
 
 import android.content.Context
 import android.net.Uri
-import android.os.Bundle
 import android.text.TextUtils
 import android.util.Base64
 import android.util.Log
-import androidx.annotation.ChecksSdkIntAtLeast
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
+import com.auth0.android.dpop.DPoP
+import com.auth0.android.dpop.DPoPException
 import com.auth0.android.request.internal.Jwt
 import com.auth0.android.request.internal.OidcUtils
 import com.auth0.android.result.Credentials
@@ -25,7 +25,9 @@ internal class OAuthManager(
     parameters: Map<String, String>,
     ctOptions: CustomTabsOptions,
     private val launchAsTwa: Boolean = false,
-    private val customAuthorizeUrl: String? = null
+    private val customAuthorizeUrl: String? = null,
+    @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal val dPoP: DPoP? = null
 ) : ResumableManager() {
     private val parameters: MutableMap<String, String>
     private val headers: MutableMap<String, String>
@@ -61,8 +63,19 @@ internal class OAuthManager(
 
     fun startAuthentication(context: Context, redirectUri: String, requestCode: Int) {
         OidcUtils.includeDefaultScope(parameters)
-        addPKCEParameters(parameters, redirectUri, headers)
+        addPKCEParameters(parameters, redirectUri, headers, context)
         addClientParameters(parameters, redirectUri)
+        try {
+            addDPoPJWKParameters(parameters)
+        } catch (ex: DPoPException) {
+            callback.onFailure(
+                AuthenticationException(
+                    ex.message ?: "Error generating the JWK",
+                    ex
+                )
+            )
+            return
+        }
         addValidationParameters(parameters)
         val uri = buildAuthorizeUri()
         this.requestCode = requestCode
@@ -220,13 +233,22 @@ internal class OAuthManager(
                     errorDescription ?: "Permissions were not granted. Try again."
                 )
             }
+
             ERROR_VALUE_UNAUTHORIZED.equals(errorValue, ignoreCase = true) -> {
-                throw AuthenticationException(ERROR_VALUE_UNAUTHORIZED, errorDescription ?: unknownErrorDescription)
+                throw AuthenticationException(
+                    ERROR_VALUE_UNAUTHORIZED,
+                    errorDescription ?: unknownErrorDescription
+                )
             }
+
             ERROR_VALUE_LOGIN_REQUIRED == errorValue -> {
                 //Whitelist to allow SSO errors go through
-                throw AuthenticationException(errorValue, errorDescription ?: unknownErrorDescription)
+                throw AuthenticationException(
+                    errorValue,
+                    errorDescription ?: unknownErrorDescription
+                )
             }
+
             else -> {
                 throw AuthenticationException(
                     errorValue,
@@ -251,9 +273,10 @@ internal class OAuthManager(
     private fun addPKCEParameters(
         parameters: MutableMap<String, String>,
         redirectUri: String,
-        headers: Map<String, String>
+        headers: Map<String, String>,
+        context: Context
     ) {
-        createPKCE(redirectUri, headers)
+        createPKCE(redirectUri, headers,context)
         val codeChallenge = pkce!!.codeChallenge
         parameters[KEY_CODE_CHALLENGE] = codeChallenge
         parameters[KEY_CODE_CHALLENGE_METHOD] = METHOD_SHA_256
@@ -273,9 +296,19 @@ internal class OAuthManager(
         parameters[KEY_REDIRECT_URI] = redirectUri
     }
 
-    private fun createPKCE(redirectUri: String, headers: Map<String, String>) {
+    private fun createPKCE(redirectUri: String, headers: Map<String, String>,context: Context) {
         if (pkce == null) {
+            // Enable DPoP on the AuthenticationClient if DPoP is set in the WebAuthProvider class
+            dPoP?.let {
+                apiClient.useDPoP(context)
+            }
             pkce = PKCE(apiClient, redirectUri, headers)
+        }
+    }
+
+    private fun addDPoPJWKParameters(parameters: MutableMap<String, String>) {
+        dPoP?.getPublicKeyJWK()?.let {
+            parameters["dpop_jkt"] = it
         }
     }
 

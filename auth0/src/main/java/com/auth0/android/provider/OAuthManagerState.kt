@@ -6,6 +6,7 @@ import android.util.Base64
 import androidx.core.os.ParcelCompat
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationAPIClient
+import com.auth0.android.dpop.DPoP
 import com.auth0.android.request.internal.GsonProvider
 import com.google.gson.Gson
 
@@ -18,7 +19,8 @@ internal data class OAuthManagerState(
     val pkce: PKCE?,
     val idTokenVerificationLeeway: Int?,
     val idTokenVerificationIssuer: String?,
-    val customAuthorizeUrl: String? = null
+    val customAuthorizeUrl: String? = null,
+    val dPoP: DPoP? = null
 ) {
 
     private class OAuthManagerJson(
@@ -34,7 +36,8 @@ internal data class OAuthManagerState(
         val codeVerifier: String,
         val idTokenVerificationLeeway: Int?,
         val idTokenVerificationIssuer: String?,
-        val customAuthorizeUrl: String? = null
+        val customAuthorizeUrl: String? = null,
+        val dPoP: DPoP? = null
     )
 
     fun serializeToJson(
@@ -58,7 +61,8 @@ internal data class OAuthManagerState(
                 codeChallenge = pkce?.codeChallenge.orEmpty(),
                 idTokenVerificationIssuer = idTokenVerificationIssuer,
                 idTokenVerificationLeeway = idTokenVerificationLeeway,
-                customAuthorizeUrl = this.customAuthorizeUrl
+                customAuthorizeUrl = this.customAuthorizeUrl,
+                dPoP = this.dPoP
             )
             return gson.toJson(json)
         } finally {
@@ -75,7 +79,8 @@ internal data class OAuthManagerState(
             try {
                 val oauthManagerJson = gson.fromJson(json, OAuthManagerJson::class.java)
 
-                val decodedCtOptionsBytes = Base64.decode(oauthManagerJson.ctOptions, Base64.DEFAULT)
+                val decodedCtOptionsBytes =
+                    Base64.decode(oauthManagerJson.ctOptions, Base64.DEFAULT)
                 parcel.unmarshall(decodedCtOptionsBytes, 0, decodedCtOptionsBytes.size)
                 parcel.setDataPosition(0)
 
@@ -106,7 +111,8 @@ internal data class OAuthManagerState(
                     ),
                     idTokenVerificationIssuer = oauthManagerJson.idTokenVerificationIssuer,
                     idTokenVerificationLeeway = oauthManagerJson.idTokenVerificationLeeway,
-                    customAuthorizeUrl = oauthManagerJson.customAuthorizeUrl
+                    customAuthorizeUrl = oauthManagerJson.customAuthorizeUrl,
+                    dPoP = oauthManagerJson.dPoP
                 )
             } finally {
                 parcel.recycle()

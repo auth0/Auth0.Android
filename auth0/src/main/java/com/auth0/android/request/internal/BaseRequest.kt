@@ -3,7 +3,16 @@ package com.auth0.android.request.internal
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0Exception
 import com.auth0.android.callback.Callback
-import com.auth0.android.request.*
+import com.auth0.android.dpop.DPoP
+import com.auth0.android.dpop.DPoPException
+import com.auth0.android.dpop.DPoPUtil
+import com.auth0.android.request.ErrorAdapter
+import com.auth0.android.request.HttpMethod
+import com.auth0.android.request.JsonAdapter
+import com.auth0.android.request.NetworkingClient
+import com.auth0.android.request.Request
+import com.auth0.android.request.RequestOptions
+import com.auth0.android.request.ServerResponse
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -20,12 +29,13 @@ import java.nio.charset.StandardCharsets
  * @param errorAdapter the adapter that will convert a failed response into the expected type.
  */
 internal open class BaseRequest<T, U : Auth0Exception>(
-    method: HttpMethod,
+    private val method: HttpMethod,
     private val url: String,
     private val client: NetworkingClient,
     private val resultAdapter: JsonAdapter<T>,
     private val errorAdapter: ErrorAdapter<U>,
-    private val threadSwitcher: ThreadSwitcher = CommonThreadSwitcher.getInstance()
+    private val threadSwitcher: ThreadSwitcher = CommonThreadSwitcher.getInstance(),
+    private val dPoP: DPoP? = null
 ) : Request<T, U> {
 
     private val options: RequestOptions = RequestOptions(method)
@@ -118,7 +128,15 @@ internal open class BaseRequest<T, U : Auth0Exception>(
     override fun execute(): T {
         val response: ServerResponse
         try {
+            if (dPoP?.shouldGenerateProof(url, options.parameters) == true) {
+                dPoP.generateKeyPair()
+                dPoP.generateProof(url, method, options.headers)?.let {
+                    options.headers[DPoPUtil.DPOP_HEADER] = it
+                }
+            }
             response = client.load(url, options)
+        } catch (exception: DPoPException) {
+            throw errorAdapter.fromException(exception)
         } catch (exception: IOException) {
             //1. Network exceptions, timeouts, etc
             val error: U = errorAdapter.fromException(exception)
@@ -129,7 +147,7 @@ internal open class BaseRequest<T, U : Auth0Exception>(
             if (response.isSuccess()) {
                 //2. Successful scenario. Response of type T
                 return try {
-                    resultAdapter.fromJson(reader,response.headers)
+                    resultAdapter.fromJson(reader, response.headers)
                 } catch (exception: Exception) {
                     //multi catch IOException and JsonParseException (including JsonIOException)
                     //3. Network exceptions, timeouts, etc reading response body

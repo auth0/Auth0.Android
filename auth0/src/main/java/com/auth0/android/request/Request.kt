@@ -64,7 +64,7 @@ public interface Request<T, U : Auth0Exception> {
      * @param value of the parameter
      * @return itself
      */
-    public fun addParameter(name: String,value:Any):Request<T,U> {
+    public fun addParameter(name: String, value: Any): Request<T, U> {
         return this
     }
 
