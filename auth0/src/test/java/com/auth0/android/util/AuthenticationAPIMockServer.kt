@@ -205,7 +205,7 @@ internal class AuthenticationAPIMockServer : APIMockServer() {
         const val ID_TOKEN = "ID_TOKEN"
         const val ACCESS_TOKEN = "ACCESS_TOKEN"
         const val SESSION_ID = "SESSION_ID"
-        private const val BEARER = "BEARER"
+        private const val BEARER = "Bearer"
         private const val CHALLENGE = "CHALLENGE"
     }
 }

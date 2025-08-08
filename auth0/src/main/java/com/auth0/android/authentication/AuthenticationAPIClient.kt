@@ -1,9 +1,13 @@
 package com.auth0.android.authentication
 
+import android.content.Context
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
+import com.auth0.android.dpop.DPoP
+import com.auth0.android.dpop.DPoPException
+import com.auth0.android.dpop.SenderConstraining
 import com.auth0.android.request.*
 import com.auth0.android.request.internal.*
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMap
@@ -35,7 +39,9 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     private val auth0: Auth0,
     private val factory: RequestFactory<AuthenticationException>,
     private val gson: Gson
-) {
+) : SenderConstraining<AuthenticationAPIClient> {
+
+    private var dPoP: DPoP? = null
 
     /**
      * Creates a new API client instance providing Auth0 account info.
@@ -58,6 +64,14 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         get() = auth0.clientId
     public val baseURL: String
         get() = auth0.getDomainUrl()
+
+    /**
+     * Enable DPoP for this client.
+     */
+    public override fun useDPoP(context: Context): AuthenticationAPIClient {
+        dPoP = DPoP(context)
+        return this
+    }
 
     /**
      * Log in a user with email/username and password for a connection/realm.
@@ -561,9 +575,11 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param accessToken used to fetch it's information
      * @return a request to start
      */
-    public fun userInfo(accessToken: String): Request<UserProfile, AuthenticationException> {
+    public fun userInfo(
+        accessToken: String, tokenType: String = "Bearer"
+    ): Request<UserProfile, AuthenticationException> {
         return profileRequest()
-            .addHeader(HEADER_AUTHORIZATION, "Bearer $accessToken")
+            .addHeader(HEADER_AUTHORIZATION, "$tokenType $accessToken")
     }
 
     /**
@@ -790,8 +806,9 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         val credentialsAdapter = GsonAdapter(
             Credentials::class.java, gson
         )
-        return factory.post(url.toString(), credentialsAdapter)
+        val request = factory.post(url.toString(), credentialsAdapter, dPoP)
             .addParameters(parameters)
+        return request
     }
 
     /**
@@ -926,8 +943,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         val credentialsAdapter: JsonAdapter<Credentials> = GsonAdapter(
             Credentials::class.java, gson
         )
-        val request = factory.post(url.toString(), credentialsAdapter)
-        request.addParameters(parameters)
+        val request = factory.post(url.toString(), credentialsAdapter, dPoP)
+            .addParameters(parameters)
         return request
     }
 
@@ -992,8 +1009,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         val adapter: JsonAdapter<T> = GsonAdapter(
             T::class.java, gson
         )
-        val request = factory.post(url.toString(), adapter)
-        request.addParameters(requestParameters)
+        val request = factory.post(url.toString(), adapter, dPoP)
+            .addParameters(requestParameters)
         return request
     }
 
@@ -1014,7 +1031,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             Credentials::class.java, gson
         )
         val request = BaseAuthenticationRequest(
-            factory.post(url.toString(), credentialsAdapter), clientId, baseURL
+            factory.post(url.toString(), credentialsAdapter, dPoP), clientId, baseURL
         )
         request.addParameters(requestParameters)
         return request
@@ -1043,7 +1060,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         val userProfileAdapter: JsonAdapter<UserProfile> = GsonAdapter(
             UserProfile::class.java, gson
         )
-        return factory.get(url.toString(), userProfileAdapter)
+        return factory.get(url.toString(), userProfileAdapter, dPoP)
     }
 
     private companion object {
@@ -1086,6 +1103,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val HEADER_AUTHORIZATION = "Authorization"
         private const val WELL_KNOWN_PATH = ".well-known"
         private const val JWKS_FILE_PATH = "jwks.json"
+        private const val TAG = "AuthenticationAPIClient"
         private fun createErrorAdapter(): ErrorAdapter<AuthenticationException> {
             val mapAdapter = forMap(GsonProvider.gson)
             return object : ErrorAdapter<AuthenticationException> {
@@ -1107,6 +1125,11 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
                     if (isNetworkError(cause)) {
                         return AuthenticationException(
                             "Failed to execute the network request", NetworkErrorException(cause)
+                        )
+                    }
+                    if (cause is DPoPException) {
+                        return AuthenticationException(
+                            cause.message ?: "Error while attaching DPoP proof", cause
                         )
                     }
                     return AuthenticationException(
