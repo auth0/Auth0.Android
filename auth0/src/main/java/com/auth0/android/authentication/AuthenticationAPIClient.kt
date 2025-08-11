@@ -573,6 +573,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      *```
      *
      * @param accessToken used to fetch it's information
+     * @param tokenType type of the token from  [Credentials]. Defaults to Bearer.
      * @return a request to start
      */
     public fun userInfo(
