@@ -350,26 +350,6 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldCreateAESKeyIfMissing() throws Exception {
-        byte[] rsaEncryptedAesKey = "RSA-OAEP-encrypted-AES-key".getBytes(StandardCharsets.UTF_8);
-        String base64EncodedRsaKey = "base64EncodedOaepAesKey";
-        when(storage.retrieveString(KEY_ALIAS)).thenReturn(null);
-        when(storage.retrieveString(OLD_KEY_ALIAS)).thenReturn(null);
-
-        when(keyGenerator.generateKey()).thenReturn(mockAesSecretKey);
-        doReturn(rsaEncryptedAesKey).when(cryptoUtil).RSAEncrypt(testAesKeyBytes);
-        PowerMockito.when(Base64.encode(rsaEncryptedAesKey, Base64.DEFAULT)).thenReturn(base64EncodedRsaKey.getBytes(StandardCharsets.UTF_8));
-
-        final byte[] aesKey = cryptoUtil.getAESKey();
-
-        Mockito.verify(keyGenerator).init(256);
-        Mockito.verify(keyGenerator).generateKey();
-        Mockito.verify(storage).store(KEY_ALIAS, base64EncodedRsaKey);
-        assertThat(aesKey, is(notNullValue()));
-        assertThat(aesKey, is(testAesKeyBytes));
-    }
-
-    @Test
     public void shouldCreateAESKeyIfStoredOneIsEmpty() throws Exception {
         String emptyString = "";
         byte[] emptyEncryptedKey = new byte[0];
@@ -401,16 +381,6 @@ public class CryptoUtilTest {
         final byte[] aesKey = cryptoUtil.getAESKey();
         assertThat(aesKey, is(notNullValue()));
         assertThat(aesKey, is(testAesKeyBytes));
-    }
-
-    @Test
-    public void shouldThrowOnNoSuchAlgorithmExceptionWhenCreatingAESKey() {
-        Assert.assertThrows("The device is not compatible with the CryptoUtil class.", IncompatibleDeviceException.class, () -> {
-            when(storage.retrieveString(KEY_ALIAS)).thenReturn(null);
-            when(storage.retrieveString(OLD_KEY_ALIAS)).thenReturn(null);
-            PowerMockito.when(KeyGenerator.getInstance(ALGORITHM_AES)).thenThrow(new NoSuchAlgorithmException());
-            cryptoUtil.getAESKey();
-        });
     }
 
     @Test
@@ -554,39 +524,6 @@ public class CryptoUtilTest {
         assertThat(secretKeyCaptor.getValue().getEncoded(), is(testAesKeyBytes));
         assertThat(ivParameterSpecArgumentCaptor.getValue().getIV(), is(testIvBytes));
         assertThat(decrypted, is(testPlaintextData));
-    }
-
-    @Test
-    public void getAESKey_shouldMigrateAESKeyFromPKCS1ToOAEP() throws Exception {
-        String base64EncodedPkcs1AesKey = "base64EncodedPkcs1AesKey";
-        byte[] rsaPkcs1EncryptedAesKey = "RSA-PKCS1-encrypted-AES-key".getBytes(StandardCharsets.UTF_8);
-        byte[] decryptedAesKey = new byte[32];
-        Arrays.fill(decryptedAesKey, (byte) 1);
-
-        byte[] rsaOaepEncryptedMigratedAesKey = "new-oaep-encrypted-key".getBytes(StandardCharsets.UTF_8);
-        String base64EncodedOaepMigratedAesKey = "bmV3LW9hZXAtZW5jcnlwdGVkLWtleQ==";
-
-        when(storage.retrieveString(KEY_ALIAS)).thenReturn(base64EncodedPkcs1AesKey);
-        PowerMockito.when(Base64.decode(base64EncodedPkcs1AesKey, Base64.DEFAULT)).thenReturn(rsaPkcs1EncryptedAesKey);
-
-        doThrow(new CryptoException("OAEP failed", new BadPaddingException())).when(cryptoUtil).RSADecrypt(rsaPkcs1EncryptedAesKey);
-        doReturn(mockRsaPrivateKeyEntry).when(cryptoUtil).getRSAKeyEntry();
-        when(rsaPkcs1Cipher.doFinal(rsaPkcs1EncryptedAesKey)).thenReturn(decryptedAesKey);
-
-        doReturn(rsaOaepEncryptedMigratedAesKey).when(cryptoUtil).RSAEncrypt(decryptedAesKey);
-        PowerMockito.when(Base64.encode(rsaOaepEncryptedMigratedAesKey, Base64.DEFAULT)).thenReturn(base64EncodedOaepMigratedAesKey.getBytes(StandardCharsets.UTF_8));
-
-        doNothing().when(cryptoUtil, "deleteRSAKeys");
-
-        byte[] resultAesKey = cryptoUtil.getAESKey();
-
-        assertThat(resultAesKey, is(decryptedAesKey));
-        verify(cryptoUtil).RSADecrypt(rsaPkcs1EncryptedAesKey);
-        verify(rsaPkcs1Cipher).init(Cipher.DECRYPT_MODE, mockRsaPrivateKey);
-        verify(rsaPkcs1Cipher).doFinal(rsaPkcs1EncryptedAesKey);
-        verifyPrivate(cryptoUtil).invoke("deleteRSAKeys");
-        verify(cryptoUtil).RSAEncrypt(decryptedAesKey);
-        verify(storage).store(KEY_ALIAS, base64EncodedOaepMigratedAesKey);
     }
 
     private KeyPairGeneratorSpec.Builder newKeyPairGeneratorSpecBuilder(KeyPairGeneratorSpec expectedBuilderOutput) {

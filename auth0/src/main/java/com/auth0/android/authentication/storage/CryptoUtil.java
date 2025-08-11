@@ -366,98 +366,46 @@ class CryptoUtil {
     @VisibleForTesting
     byte[] getAESKey() throws IncompatibleDeviceException, CryptoException {
         String encodedEncryptedAES = storage.retrieveString(KEY_ALIAS);
-        if (TextUtils.isEmpty(encodedEncryptedAES)) {
-            encodedEncryptedAES = storage.retrieveString(OLD_KEY_ALIAS);
-        }
-        byte[] decryptedAESKey = null;
-        boolean migrationNeeded = false;
-        if (encodedEncryptedAES != null) {
-            //Return existing key
+        if (!TextUtils.isEmpty(encodedEncryptedAES)) {
             byte[] encryptedAESBytes = Base64.decode(encodedEncryptedAES, Base64.DEFAULT);
-            try {
-                decryptedAESKey = RSADecrypt(encryptedAESBytes);
-            }catch (IncompatibleDeviceException e){
-                Log.w(TAG, "Failed to decrypt AES key with OAEP due to " +
-                        "IncompatibleDeviceException. Cause: "
-                        + (e.getCause() != null ? e.getCause().getClass().getSimpleName() : "N/A")
-                        + ". Attempting PKCS1 fallback for migration.", e);
-                Throwable cause = e.getCause();
-                if (cause instanceof InvalidKeyException) {
-                    try {
-                        KeyStore.PrivateKeyEntry rsaKeyEntry = getRSAKeyEntry();
-                        Cipher rsaPkcs1Cipher = Cipher.getInstance(OLD_PKCS1_RSA_TRANSFORMATION);
-                        rsaPkcs1Cipher.init(Cipher.DECRYPT_MODE, rsaKeyEntry.getPrivateKey());
-                        decryptedAESKey = rsaPkcs1Cipher.doFinal(encryptedAESBytes);
-                        migrationNeeded = true;
-                    } catch (Exception pkcs1Exception) {
-                        Log.e(TAG, "Failed to decrypt AES key with PKCS1Padding fallback.",
-                                pkcs1Exception);
-                        decryptedAESKey = null;
-                    }
-                } else {
-                    throw e;
-                }
-            }catch (CryptoException e) {
-                Log.w(TAG, "Failed to decrypt AES key with OAEP. Cause: " +
-                        (e.getCause() != null ? e.getCause().getClass().getSimpleName() : "N/A") +
-                        ". Attempting PKCS1 fallback for migration.", e);
-                Throwable cause = e.getCause();
-                if (cause instanceof BadPaddingException || cause instanceof
-                        IllegalBlockSizeException || cause instanceof InvalidKeyException) {
-                    try {
-                        KeyStore.PrivateKeyEntry rsaKeyEntry = getRSAKeyEntry();
-                        Cipher rsaPkcs1Cipher = Cipher.getInstance(OLD_PKCS1_RSA_TRANSFORMATION);
-                        rsaPkcs1Cipher.init(Cipher.DECRYPT_MODE, rsaKeyEntry.getPrivateKey());
-                        decryptedAESKey = rsaPkcs1Cipher.doFinal(encryptedAESBytes);
-                        migrationNeeded = true;
-                    } catch (Exception pkcs1Exception) {
-                        Log.e(TAG, "Failed to decrypt AES key with PKCS1Padding fallback."
-                                , pkcs1Exception);
-                        decryptedAESKey = null;
-                    }
-                } else {
-                    throw e;
-                }
-            }
-            if (decryptedAESKey != null) {
-                final int aesExpectedLengthInBytes = AES_KEY_SIZE / 8;
-                if (decryptedAESKey.length != aesExpectedLengthInBytes) {
-                    Log.w(TAG, "Decrypted AES key has incorrect length (" +
-                            decryptedAESKey.length + " bytes, expected " + aesExpectedLengthInBytes
-                            + "). Discarding.");
-                    decryptedAESKey = null;
-                    migrationNeeded = false;
-                }
-            }
+            return RSADecrypt(encryptedAESBytes);
         }
-
-        if (migrationNeeded && decryptedAESKey != null) {
+        String encodedOldAES = storage.retrieveString(OLD_KEY_ALIAS);
+        if (!TextUtils.isEmpty(encodedOldAES)) {
             try {
-                deleteRSAKeys();
+                byte[] encryptedOldAESBytes = Base64.decode(encodedOldAES, Base64.DEFAULT);
+                KeyStore.PrivateKeyEntry rsaKeyEntry = getRSAKeyEntry();
+                Cipher rsaPkcs1Cipher = Cipher.getInstance(OLD_PKCS1_RSA_TRANSFORMATION);
+                rsaPkcs1Cipher.init(Cipher.DECRYPT_MODE, rsaKeyEntry.getPrivateKey());
+                byte[] decryptedAESKey = rsaPkcs1Cipher.doFinal(encryptedOldAESBytes);
 
                 byte[] encryptedAESWithOAEP = RSAEncrypt(decryptedAESKey);
                 String newEncodedEncryptedAES = new String(Base64.encode(encryptedAESWithOAEP, Base64.DEFAULT), StandardCharsets.UTF_8);
                 storage.store(KEY_ALIAS, newEncodedEncryptedAES);
-            } catch (Exception reEncryptEx) {
-                Log.e(TAG, "Failed to re-encrypt AES key with OAEP during migration. A new AES key will be generated.", reEncryptEx);
-                decryptedAESKey = null;
+                storage.remove(OLD_KEY_ALIAS);
+                return decryptedAESKey;
+            } catch (Exception e) {
+                Log.e(TAG, "Could not migrate the legacy AES key. A new key will be generated.", e);
+                deleteAESKeys();
             }
         }
-        if (decryptedAESKey == null) {
-            try {
-                KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM_AES);
-                keyGen.init(AES_KEY_SIZE);
-                decryptedAESKey = keyGen.generateKey().getEncoded();
 
-                byte[] encryptedNewAES = RSAEncrypt(decryptedAESKey);
-                String encodedEncryptedNewAESText = new String(Base64.encode(encryptedNewAES, Base64.DEFAULT), StandardCharsets.UTF_8);
-                storage.store(KEY_ALIAS, encodedEncryptedNewAESText);
-            } catch (NoSuchAlgorithmException e) {
-                Log.e(TAG, "Error while creating the new AES key.", e);
-                throw new IncompatibleDeviceException(e);
-            }
+        try {
+            KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM_AES);
+            keyGen.init(AES_KEY_SIZE);
+            byte[] decryptedAESKey = keyGen.generateKey().getEncoded();
+
+            byte[] encryptedNewAES = RSAEncrypt(decryptedAESKey);
+            String encodedEncryptedNewAESText = new String(Base64.encode(encryptedNewAES, Base64.DEFAULT), StandardCharsets.UTF_8);
+            storage.store(KEY_ALIAS, encodedEncryptedNewAESText);
+            return decryptedAESKey;
+        } catch (NoSuchAlgorithmException e) {
+            Log.e(TAG, "Error while creating the new AES key.", e);
+            throw new IncompatibleDeviceException(e);
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error while creating the new AES key.", e);
+            throw new CryptoException("Unexpected error while creating the new AES key.", e);
         }
-        return decryptedAESKey;
     }
 
 
