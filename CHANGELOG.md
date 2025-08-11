@@ -1,5 +1,13 @@
 # Change Log
 
+## [3.9.0](https://github.com/auth0/Auth0.Android/tree/3.9.0) (2025-08-11)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.8.0...3.9.0)
+
+**Added**
+- feat: Add support for DPoP [\#850](https://github.com/auth0/Auth0.Android/pull/850) ([pmathew92](https://github.com/pmathew92))
+- feat : support to pass organisation while signing-up and signing-in with passkeys [\#843](https://github.com/auth0/Auth0.Android/pull/843) ([pmathew92](https://github.com/pmathew92))
+- Exposes UserProfile to return contents of id token without refreshing credentials [\#840](https://github.com/auth0/Auth0.Android/pull/840) ([NandanPrabhu](https://github.com/NandanPrabhu))
+
 ## [3.8.0](https://github.com/auth0/Auth0.Android/tree/3.8.0) (2025-06-04)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.7.0...3.8.0)
 
