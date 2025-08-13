@@ -44,6 +44,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     private val fragmentActivity: WeakReference<FragmentActivity>? = null,
     private val localAuthenticationOptions: LocalAuthenticationOptions? = null,
     private val localAuthenticationManagerFactory: LocalAuthenticationManagerFactory? = null,
+    private val biometricPolicy: BiometricPolicy = BiometricPolicy.Always,
 ) : BaseCredentialsManager(apiClient, storage, jwtDecoder) {
     private val gson: Gson = GsonProvider.gson
 
@@ -91,6 +92,35 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         WeakReference(fragmentActivity),
         localAuthenticationOptions,
         DefaultLocalAuthenticationManagerFactory()
+    )
+
+    /**
+     * Creates a new SecureCredentialsManager to handle Credentials with biometrics Authentication
+     *
+     * @param context   a valid context
+     * @param auth0     the Auth0 account information to use
+     * @param storage   the storage implementation to use
+     * @param fragmentActivity the FragmentActivity to use for the biometric authentication
+     * @param localAuthenticationOptions the options of type [LocalAuthenticationOptions] to use for the biometric authentication
+     * @param biometricPolicy the policy to use for biometric prompts
+     */
+    public constructor(
+        context: Context,
+        auth0: Auth0,
+        storage: Storage,
+        fragmentActivity: FragmentActivity,
+        localAuthenticationOptions: LocalAuthenticationOptions,
+        biometricPolicy: BiometricPolicy
+    ) : this(
+        AuthenticationAPIClient(auth0),
+        storage,
+        CryptoUtil(context, storage, KEY_ALIAS),
+        JWTDecoder(),
+        auth0.executor,
+        WeakReference(fragmentActivity),
+        localAuthenticationOptions,
+        DefaultLocalAuthenticationManagerFactory(),
+        biometricPolicy
     )
 
     /**
@@ -609,6 +639,12 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         }
 
         if (fragmentActivity != null && localAuthenticationOptions != null && localAuthenticationManagerFactory != null) {
+            // Check if biometric session is valid based on policy
+            if (isBiometricSessionValid()) {
+                // Session is valid, bypass biometric prompt
+                continueGetCredentials(scope, minTtl, parameters, headers, forceRefresh, callback)
+                return
+            }
 
             fragmentActivity.get()?.let { fragmentActivity ->
                 startBiometricAuthentication(
@@ -690,6 +726,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         storage.remove(KEY_EXPIRES_AT)
         storage.remove(LEGACY_KEY_CACHE_EXPIRES_AT)
         storage.remove(KEY_CAN_REFRESH)
+        clearBiometricSession()
         Log.d(TAG, "Credentials were just removed from the storage")
     }
 
@@ -1063,6 +1100,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
           forceRefresh: Boolean, callback: Callback<Credentials, CredentialsManagerException> ->
             object : Callback<Boolean, CredentialsManagerException> {
                 override fun onSuccess(result: Boolean) {
+                    updateBiometricSession()
                     continueGetCredentials(
                         scope, minTtl, parameters, headers, forceRefresh,
                         callback
@@ -1083,6 +1121,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
           callback: Callback<APICredentials, CredentialsManagerException> ->
             object : Callback<Boolean, CredentialsManagerException> {
                 override fun onSuccess(result: Boolean) {
+                    updateBiometricSession()
                     continueGetApiCredentials(
                         audience, scope, minTtl, parameters, headers,
                         callback
@@ -1116,6 +1155,42 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         saveCredentials(newCredentials)
     }
 
+    /**
+     * Checks if the current biometric session is valid based on the configured policy.
+     */
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal fun isBiometricSessionValid(): Boolean {
+        synchronized(sessionLock) {
+            val lastAuth = lastBiometricAuthTime ?: return false
+            return when (biometricPolicy) {
+                is BiometricPolicy.Session -> {
+                    val timeoutMillis = biometricPolicy.timeoutInSeconds * 1000L
+                    System.currentTimeMillis() - lastAuth < timeoutMillis
+                }
+                is BiometricPolicy.AppLifecycle -> true // Valid until cleared
+                is BiometricPolicy.Always -> false
+            }
+        }
+    }
+
+    /**
+     * Updates the biometric session timestamp to the current time.
+     */
+    private fun updateBiometricSession() {
+        synchronized(sessionLock) {
+            lastBiometricAuthTime = System.currentTimeMillis()
+        }
+    }
+
+    /**
+     * Clears the in-memory biometric session timestamp. Can be called from any thread.
+     */
+    public fun clearBiometricSession() {
+        synchronized(sessionLock) {
+            lastBiometricAuthTime = null
+        }
+    }
+
     internal companion object {
         private val TAG = SecureCredentialsManager::class.java.simpleName
 
@@ -1135,5 +1210,11 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
 
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         internal const val KEY_ALIAS = "com.auth0.key"
+
+        // Biometric session management
+        @Volatile
+        private var lastBiometricAuthTime: Long? = null
+        
+        private val sessionLock = Any()
     }
 }

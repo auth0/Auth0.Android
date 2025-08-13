@@ -3,11 +3,16 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:fillViewport="true">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:layout_height="wrap_content"
+        android:paddingStart="8dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="32dp"
         tools:context=".DatabaseLoginFragment">
 
         <EditText
@@ -147,12 +152,13 @@
             app:layout_constraintTop_toBottomOf="@+id/btWebLogoutAsync" />
 
         <TextView
-            android:id="@+id/textView5"
+            android:id="@+id/textViewUserManagement"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="24dp"
             android:text="User Management API"
             android:textSize="16sp"
+            android:textColor="@android:color/holo_blue_dark"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/btDeleteCredentials" />
@@ -242,7 +248,7 @@
             android:text="Get User Profile (async)"
             android:textSize="12sp"
             app:layout_constraintEnd_toEndOf="@+id/btGetCredentialsAsync"
-            app:layout_constraintTop_toBottomOf="@+id/textView5" />
+            app:layout_constraintTop_toBottomOf="@+id/textViewUserManagement" />
 
         <Button
             android:id="@+id/btUpdateMetaAsync"
@@ -274,7 +280,7 @@
             android:text="Get User Profile"
             android:textSize="12sp"
             app:layout_constraintEnd_toStartOf="@+id/btGetProfileAsync"
-            app:layout_constraintTop_toBottomOf="@+id/textView5" />
+            app:layout_constraintTop_toBottomOf="@+id/textViewUserManagement" />
 
         <Button
             android:id="@+id/btWebLogoutAsync"
@@ -306,10 +312,87 @@
             android:layout_marginEnd="100dp"
             android:layout_marginBottom="6dp"
             android:text="Get Credentials (Secure)"
-            app:layout_constraintBottom_toTopOf="@+id/textView5"
+            app:layout_constraintBottom_toTopOf="@+id/textViewBiometricPolicy"
             app:layout_constraintEnd_toStartOf="@+id/btDeleteCredentials"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/btGetCredentials" />
+
+        <TextView
+            android:id="@+id/textViewBiometricPolicy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Biometric Policy Examples"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/holo_blue_dark"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/getCredentialsSecure" />
+
+        <Button
+            android:id="@+id/btGetCredsAlways"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:text="Get Creds\n(Always Policy)"
+            android:textSize="11sp"
+            app:layout_constraintEnd_toStartOf="@+id/btGetCredsSession"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textViewBiometricPolicy" />
+
+        <Button
+            android:id="@+id/btGetCredsSession"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="16dp"
+            android:text="Get Creds\n(Session Policy)"
+            android:textSize="11sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/btGetCredsAlways"
+            app:layout_constraintTop_toBottomOf="@+id/textViewBiometricPolicy" />
+
+        <Button
+            android:id="@+id/btGetCredsAppLifecycle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:text="Get Creds\n(AppLifecycle Policy)"
+            android:textSize="11sp"
+            app:layout_constraintEnd_toStartOf="@+id/btClearBiometricSession"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/btGetCredsAlways" />
+
+        <Button
+            android:id="@+id/btClearBiometricSession"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="16dp"
+            android:text="Clear Biometric\nSessions"
+            android:textSize="11sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/btGetCredsAppLifecycle"
+            app:layout_constraintTop_toBottomOf="@+id/btGetCredsSession" />
+
+        <TextView
+            android:id="@+id/textViewUserProfiles"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="User Profiles"
+            android:textSize="16sp"
+            android:textColor="@android:color/holo_blue_dark"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/btGetCredsAppLifecycle" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>
