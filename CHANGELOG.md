@@ -1,5 +1,11 @@
 # Change Log
 
+## [3.9.1](https://github.com/auth0/Auth0.Android/tree/3.9.1) (2025-08-12)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.9.0...3.9.1)
+
+**Fixed**
+- fix: Fixed the transitive dependency issue on generated aar file [\#858](https://github.com/auth0/Auth0.Android/pull/858) ([pmathew92](https://github.com/pmathew92))
+
 ## [3.9.0](https://github.com/auth0/Auth0.Android/tree/3.9.0) (2025-08-11)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.8.0...3.9.0)
 
