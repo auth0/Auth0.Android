@@ -299,7 +299,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
 
         val request = factory.get(
             url.toString(),
-            GsonAdapter(AuthenticationMethods::class.java, gson)
+            GsonAdapter(AuthenticationMethods::class.java)
         )
             .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
 
@@ -348,7 +348,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
 
         val request = factory.get(
             url.toString(),
-            GsonAdapter(AuthenticationMethod::class.java, gson)
+            GsonAdapter(AuthenticationMethod::class.java)
         )
             .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
 
@@ -391,8 +391,8 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      */
     public fun updateAuthenticationMethodById(
         authenticationMethodId: String,
-        preferredAuthenticationMethod: String,
-        authenticationMethodName: String
+        authenticationMethodName: String,
+        preferredAuthenticationMethod: String
     ): Request<AuthenticationMethod, MyAccountException> {
         val url =
             getDomainUrlBuilder()
@@ -401,13 +401,13 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
                 .build()
 
         val params = ParameterBuilder.newBuilder().apply {
-            set(PREFERRED_AUTHENTICATION_METHOD, preferredAuthenticationMethod)
             set(AUTHENTICATION_METHOD_NAME, authenticationMethodName)
+            set(PREFERRED_AUTHENTICATION_METHOD, preferredAuthenticationMethod)
         }.asDictionary()
 
         val request = factory.patch(
             url.toString(),
-            GsonAdapter(AuthenticationMethod::class.java, gson)
+            GsonAdapter(AuthenticationMethod::class.java)
         )
             .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
             .addParameters(params)
@@ -466,6 +466,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
         }
         val request = factory.delete(url.toString(), voidAdapter)
             .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+
         return request
     }
 
@@ -493,18 +494,13 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * ```
      * @return A request to get the list of available factors.
      */
-    public fun getFactors(): Request<List<Factor>, MyAccountException> {
+    public fun getFactors(): Request<Factors, MyAccountException> {
         val url = getDomainUrlBuilder()
             .addPathSegment(FACTORS)
             .build()
-        val factorListAdapter = object : JsonAdapter<List<Factor>> {
-            override fun fromJson(reader: Reader, metadata: Map<String, Any>): List<Factor> {
-                val listType = object : TypeToken<List<Factor>>() {}.type
-                return gson.fromJson(reader, listType)
-            }
-        }
+        val adapter = GsonAdapter(Factors::class.java, gson)
 
-        return factory.get(url.toString(), factorListAdapter)
+        return factory.get(url.toString(), adapter)
             .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
     }
 
@@ -678,7 +674,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * ```
      * @return a request that will yield an enrollment challenge.
      */
-    public fun enrollWebAuthnPlatform(): Request<EnrollmentChallenge, MyAccountException> {
+    private fun enrollWebAuthnPlatform(): Request<EnrollmentChallenge, MyAccountException> {
         val params = ParameterBuilder.newBuilder().set(TYPE_KEY, "webauthn-platform").asDictionary()
         return factory.post(
             getDomainUrlBuilder().addPathSegment(AUTHENTICATION_METHODS).build().toString(),
@@ -709,7 +705,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * ```
      * @return a request that will yield an enrollment challenge.
      */
-    public fun enrollWebAuthnRoaming(): Request<EnrollmentChallenge, MyAccountException> {
+    private fun enrollWebAuthnRoaming(): Request<EnrollmentChallenge, MyAccountException> {
         val params = ParameterBuilder.newBuilder().set(TYPE_KEY, "webauthn-roaming").asDictionary()
         return factory.post(
             getDomainUrlBuilder().addPathSegment(AUTHENTICATION_METHODS).build().toString(),
@@ -815,7 +811,6 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
             .addParameters(params)
             .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
     }
-
 
     private fun getDomainUrlBuilder(): HttpUrl.Builder {
         return auth0.getDomainUrl().toHttpUrl().newBuilder()
