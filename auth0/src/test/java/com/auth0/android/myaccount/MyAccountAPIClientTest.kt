@@ -43,10 +43,6 @@ public class MyAccountAPIClientTest {
         mockAPI.shutdown()
     }
 
-    //================================================================
-    // PASSKEY TESTS (UNCHANGED)
-    //================================================================
-
     @Test
     public fun `passkeyEnrollmentChallenge should build correct URL`() {
         val callback = MockMyAccountCallback<PasskeyEnrollmentChallenge>()
@@ -84,10 +80,6 @@ public class MyAccountAPIClientTest {
         assertThat(error.statusCode, Matchers.`is`(400))
         assertThat(error.message, Matchers.containsString("Bad Request"))
     }
-
-    //================================================================
-    // NEW AND CORRECTED TESTS
-    //================================================================
 
     @Test
     public fun `getFactors should build correct URL and Authorization header`() {
