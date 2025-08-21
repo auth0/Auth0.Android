@@ -521,6 +521,20 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
         }
 
         /**
+         * Enable ephemeral browsing session for the Custom Tab.
+         * When enabled, the Custom Tab session will not persist browsing data, cookies, or history.
+         * This enhances privacy and security by ensuring no session data is retained after authentication.
+         *
+         * @return the current builder instance
+         */
+        public fun enableEphemeralSession(): Builder {
+            ctOptions = CustomTabsOptions.newBuilder()
+                .withEphemeralBrowsingEnabled(true)
+                .build()
+            return this
+        }
+
+        /**
          * Launches the Login experience with a native feel (without address bar). For this to work,
          * you have to setup the app as trusted following the steps mentioned [here](https://github.com/auth0/Auth0.Android/blob/main/EXAMPLES.md#trusted-web-activity-experimental).
          *

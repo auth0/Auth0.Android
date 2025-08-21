@@ -83,6 +83,7 @@ public class CustomTabsOptionsTest {
         assertThat(intent, is(notNullValue()));
         assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR), is(false));
         assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE), is(true));
+        assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_EPHEMERAL_BROWSING_ENABLED), is(false));
         assertThat(intent.getIntExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR, 0), is(0));
         assertThat(intent.getIntExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE, CustomTabsIntent.NO_TITLE), is(CustomTabsIntent.NO_TITLE));
         assertThat(intent.getIntExtra(CustomTabsIntent.EXTRA_SHARE_STATE, CustomTabsIntent.SHARE_STATE_OFF), is(CustomTabsIntent.SHARE_STATE_OFF));
@@ -97,6 +98,7 @@ public class CustomTabsOptionsTest {
         assertThat(parceledIntent, is(notNullValue()));
         assertThat(parceledIntent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR), is(false));
         assertThat(parceledIntent.hasExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE), is(true));
+        assertThat(parceledIntent.hasExtra(CustomTabsIntent.EXTRA_EPHEMERAL_BROWSING_ENABLED), is(false));
         assertThat(parceledIntent.getIntExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR, 0), is(0));
         assertThat(parceledIntent.getIntExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE, CustomTabsIntent.NO_TITLE), is(CustomTabsIntent.NO_TITLE));
         assertThat(parceledIntent.getIntExtra(CustomTabsIntent.EXTRA_SHARE_STATE, CustomTabsIntent.SHARE_STATE_OFF), is(CustomTabsIntent.SHARE_STATE_OFF));
@@ -223,5 +225,74 @@ public class CustomTabsOptionsTest {
         assertThat(intentWithToolbarExtra.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR), is(true));
         int resolvedColor = ContextCompat.getColor(activity, android.R.color.black);
         assertThat(intentWithToolbarExtra.getIntExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR, 0), is(resolvedColor));
+    }
+
+    @Test
+    public void shouldSetEphemeralBrowsingEnabled() {
+        CustomTabsOptions options = CustomTabsOptions.newBuilder()
+                .withEphemeralBrowsingEnabled(true)
+                .build();
+        assertThat(options, is(notNullValue()));
+
+        Intent intent = options.toIntent(context, null);
+
+        assertThat(intent, is(notNullValue()));
+        assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_EPHEMERAL_BROWSING_ENABLED), is(true));
+        assertThat(intent.getBooleanExtra(CustomTabsIntent.EXTRA_EPHEMERAL_BROWSING_ENABLED, false), is(true));
+
+        Parcel parcel = Parcel.obtain();
+        options.writeToParcel(parcel, 0);
+        parcel.setDataPosition(0);
+        CustomTabsOptions parceledOptions = CustomTabsOptions.CREATOR.createFromParcel(parcel);
+        assertThat(parceledOptions, is(notNullValue()));
+
+        Intent parceledIntent = parceledOptions.toIntent(context, null);
+        assertThat(parceledIntent, is(notNullValue()));
+        assertThat(parceledIntent.hasExtra(CustomTabsIntent.EXTRA_EPHEMERAL_BROWSING_ENABLED), is(true));
+        assertThat(parceledIntent.getBooleanExtra(CustomTabsIntent.EXTRA_EPHEMERAL_BROWSING_ENABLED, false), is(true));
+    }
+
+    @Test
+    public void shouldNotSetEphemeralBrowsingByDefault() {
+        CustomTabsOptions options = CustomTabsOptions.newBuilder().build();
+        assertThat(options, is(notNullValue()));
+
+        Intent intent = options.toIntent(context, null);
+
+        assertThat(intent, is(notNullValue()));
+        assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_EPHEMERAL_BROWSING_ENABLED), is(false));
+
+        Parcel parcel = Parcel.obtain();
+        options.writeToParcel(parcel, 0);
+        parcel.setDataPosition(0);
+        CustomTabsOptions parceledOptions = CustomTabsOptions.CREATOR.createFromParcel(parcel);
+        assertThat(parceledOptions, is(notNullValue()));
+
+        Intent parceledIntent = parceledOptions.toIntent(context, null);
+        assertThat(parceledIntent, is(notNullValue()));
+        assertThat(parceledIntent.hasExtra(CustomTabsIntent.EXTRA_EPHEMERAL_BROWSING_ENABLED), is(false));
+    }
+
+    @Test
+    public void shouldSetEphemeralBrowsingExplicitlyDisabled() {
+        CustomTabsOptions options = CustomTabsOptions.newBuilder()
+                .withEphemeralBrowsingEnabled(false)
+                .build();
+        assertThat(options, is(notNullValue()));
+
+        Intent intent = options.toIntent(context, null);
+
+        assertThat(intent, is(notNullValue()));
+        assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_EPHEMERAL_BROWSING_ENABLED), is(false));
+
+        Parcel parcel = Parcel.obtain();
+        options.writeToParcel(parcel, 0);
+        parcel.setDataPosition(0);
+        CustomTabsOptions parceledOptions = CustomTabsOptions.CREATOR.createFromParcel(parcel);
+        assertThat(parceledOptions, is(notNullValue()));
+
+        Intent parceledIntent = parceledOptions.toIntent(context, null);
+        assertThat(parceledIntent, is(notNullValue()));
+        assertThat(parceledIntent.hasExtra(CustomTabsIntent.EXTRA_EPHEMERAL_BROWSING_ENABLED), is(false));
     }
 }

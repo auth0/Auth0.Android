@@ -30,14 +30,16 @@ public class CustomTabsOptions implements Parcelable {
     @ColorRes
     private final int toolbarColor;
     private final BrowserPicker browserPicker;
+    private final boolean ephemeralBrowsingEnabled;
 
     @Nullable
     private final List<String> disabledCustomTabsPackages;
 
-    private CustomTabsOptions(boolean showTitle, @ColorRes int toolbarColor, @NonNull BrowserPicker browserPicker, @Nullable List<String> disabledCustomTabsPackages) {
+    private CustomTabsOptions(boolean showTitle, @ColorRes int toolbarColor, @NonNull BrowserPicker browserPicker, boolean ephemeralBrowsingEnabled, @Nullable List<String> disabledCustomTabsPackages) {
         this.showTitle = showTitle;
         this.toolbarColor = toolbarColor;
         this.browserPicker = browserPicker;
+        this.ephemeralBrowsingEnabled = ephemeralBrowsingEnabled;
         this.disabledCustomTabsPackages = disabledCustomTabsPackages;
     }
 
@@ -88,6 +90,9 @@ public class CustomTabsOptions implements Parcelable {
                     .setToolbarColor(ContextCompat.getColor(context, toolbarColor));
             builder.setDefaultColorSchemeParams(colorBuilder.build());
         }
+        if (ephemeralBrowsingEnabled) {
+            builder.setEphemeralBrowsingEnabled(true);
+        }
         return builder.build().intent;
     }
 
@@ -107,6 +112,7 @@ public class CustomTabsOptions implements Parcelable {
         showTitle = in.readByte() != 0;
         toolbarColor = in.readInt();
         browserPicker = in.readParcelable(BrowserPicker.class.getClassLoader());
+        ephemeralBrowsingEnabled = in.readByte() != 0;
         disabledCustomTabsPackages = in.createStringArrayList();
     }
 
@@ -115,6 +121,7 @@ public class CustomTabsOptions implements Parcelable {
         dest.writeByte((byte) (showTitle ? 1 : 0));
         dest.writeInt(toolbarColor);
         dest.writeParcelable(browserPicker, flags);
+        dest.writeByte((byte) (ephemeralBrowsingEnabled ? 1 : 0));
         dest.writeStringList(disabledCustomTabsPackages);
     }
 
@@ -141,6 +148,7 @@ public class CustomTabsOptions implements Parcelable {
         @ColorRes
         private int toolbarColor;
         private boolean showTitle;
+        private boolean ephemeralBrowsingEnabled;
         @NonNull
         private BrowserPicker browserPicker;
 
@@ -150,6 +158,7 @@ public class CustomTabsOptions implements Parcelable {
         Builder() {
             this.showTitle = false;
             this.toolbarColor = 0;
+            this.ephemeralBrowsingEnabled = false;
             this.browserPicker = BrowserPicker.newBuilder().build();
             this.disabledCustomTabsPackages = null;
         }
@@ -176,6 +185,20 @@ public class CustomTabsOptions implements Parcelable {
         @NonNull
         public Builder showTitle(boolean showTitle) {
             this.showTitle = showTitle;
+            return this;
+        }
+
+        /**
+         * Whether to enable ephemeral browsing for the Custom Tab session.
+         * When enabled, the Custom Tab session will not persist browsing data, cookies, or history.
+         * By default, ephemeral browsing is disabled.
+         *
+         * @param ephemeralBrowsingEnabled whether to enable ephemeral browsing or not.
+         * @return this same builder instance.
+         */
+        @NonNull
+        public Builder withEphemeralBrowsingEnabled(boolean ephemeralBrowsingEnabled) {
+            this.ephemeralBrowsingEnabled = ephemeralBrowsingEnabled;
             return this;
         }
 
@@ -219,7 +242,7 @@ public class CustomTabsOptions implements Parcelable {
          */
         @NonNull
         public CustomTabsOptions build() {
-            return new CustomTabsOptions(showTitle, toolbarColor, browserPicker, disabledCustomTabsPackages);
+            return new CustomTabsOptions(showTitle, toolbarColor, browserPicker, ephemeralBrowsingEnabled, disabledCustomTabsPackages);
         }
     }
 

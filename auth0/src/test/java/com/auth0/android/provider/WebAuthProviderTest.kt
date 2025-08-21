@@ -1060,6 +1060,35 @@ public class WebAuthProviderTest {
     }
 
     @Test
+    public fun shouldStartLoginWithEphemeralSession() {
+        login(account)
+            .enableEphemeralSession()
+            .start(activity, callback)
+        verify(activity).startActivity(intentCaptor.capture())
+        val intent = intentCaptor.firstValue
+        assertThat(intent, `is`(notNullValue()))
+        assertThat(
+            intent, IntentMatchers.hasComponent(
+                AuthenticationActivity::class.java.name
+            )
+        )
+        val extras = intentCaptor.firstValue.extras
+        assertThat(
+            extras?.containsKey(AuthenticationActivity.EXTRA_CT_OPTIONS),
+            `is`(true)
+        )
+        val customTabsOptions = extras?.getParcelable(AuthenticationActivity.EXTRA_CT_OPTIONS) as? CustomTabsOptions
+        assertThat(customTabsOptions, `is`(notNullValue()))
+        
+        // Verify that ephemeral browsing is enabled by checking the intent that would be generated
+        val context = activity as Context
+        val testIntent = customTabsOptions?.toIntent(context, null)
+        assertThat(testIntent, `is`(notNullValue()))
+        assertThat(testIntent?.hasExtra(androidx.browser.customtabs.CustomTabsIntent.EXTRA_EPHEMERAL_BROWSING_ENABLED), `is`(true))
+        assertThat(testIntent?.getBooleanExtra(androidx.browser.customtabs.CustomTabsIntent.EXTRA_EPHEMERAL_BROWSING_ENABLED, false), `is`(true))
+    }
+
+    @Test
     public fun shouldStartLoginWithValidRequestCode() {
         val credentials = Mockito.mock(
             Credentials::class.java
