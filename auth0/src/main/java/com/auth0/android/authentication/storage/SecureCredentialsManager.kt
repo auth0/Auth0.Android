@@ -91,36 +91,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         auth0.executor,
         WeakReference(fragmentActivity),
         localAuthenticationOptions,
-        DefaultLocalAuthenticationManagerFactory()
-    )
-
-    /**
-     * Creates a new SecureCredentialsManager to handle Credentials with biometrics Authentication
-     *
-     * @param context   a valid context
-     * @param auth0     the Auth0 account information to use
-     * @param storage   the storage implementation to use
-     * @param fragmentActivity the FragmentActivity to use for the biometric authentication
-     * @param localAuthenticationOptions the options of type [LocalAuthenticationOptions] to use for the biometric authentication
-     * @param biometricPolicy the policy to use for biometric prompts
-     */
-    public constructor(
-        context: Context,
-        auth0: Auth0,
-        storage: Storage,
-        fragmentActivity: FragmentActivity,
-        localAuthenticationOptions: LocalAuthenticationOptions,
-        biometricPolicy: BiometricPolicy
-    ) : this(
-        AuthenticationAPIClient(auth0),
-        storage,
-        CryptoUtil(context, storage, KEY_ALIAS),
-        JWTDecoder(),
-        auth0.executor,
-        WeakReference(fragmentActivity),
-        localAuthenticationOptions,
         DefaultLocalAuthenticationManagerFactory(),
-        biometricPolicy
+        localAuthenticationOptions.policy
     )
 
     /**

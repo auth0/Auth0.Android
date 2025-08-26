@@ -4,19 +4,27 @@
 
 The Auth0 Android SDK now supports configurable biometric authentication policies through the `BiometricPolicy` class. This feature allows developers to control when biometric prompts are shown when retrieving credentials from `SecureCredentialsManager`.
 
+The policy is configured through the `LocalAuthenticationOptions.Builder.setPolicy()` method, providing a clean and integrated API design.
+
 ## 📋 Available Policies
 
 ### 1. Always (Default)
 Shows a biometric prompt for every call to `getCredentials()`.
 
 ```kotlin
+val localAuthOptions = LocalAuthenticationOptions.Builder()
+    .setTitle("Authenticate")
+    .setDescription("Use your biometric to access your account")
+    .setNegativeButtonText("Cancel")
+    .setPolicy(BiometricPolicy.Always)
+    .build()
+
 val manager = SecureCredentialsManager(
     context,
     auth0,
     storage,
     fragmentActivity,
-    localAuthenticationOptions,
-    BiometricPolicy.Always
+    localAuthOptions
 )
 ```
 
@@ -26,13 +34,20 @@ val manager = SecureCredentialsManager(
 Shows a biometric prompt only once within a specified timeout period.
 
 ```kotlin
+val localAuthOptions = LocalAuthenticationOptions.Builder()
+    .setTitle("Authenticate")
+    .setSubtitle("Use your biometric to access your account")
+    .setDescription("Place your finger on the sensor")
+    .setNegativeButtonText("Cancel")
+    .setPolicy(BiometricPolicy.Session(timeoutInSeconds = 300)) // 5 minutes
+    .build()
+
 val manager = SecureCredentialsManager(
     context,
     auth0,
     storage,
     fragmentActivity,
-    localAuthenticationOptions,
-    BiometricPolicy.Session(timeoutInSeconds = 300) // 5 minutes
+    localAuthOptions
 )
 ```
 
@@ -42,13 +57,20 @@ val manager = SecureCredentialsManager(
 Shows a biometric prompt only once while the app is in the foreground. The session remains valid until manually cleared.
 
 ```kotlin
+val localAuthOptions = LocalAuthenticationOptions.Builder()
+    .setTitle("Authenticate")
+    .setSubtitle("Use your biometric to access your account")  
+    .setDescription("Place your finger on the sensor")
+    .setNegativeButtonText("Cancel")
+    .setPolicy(BiometricPolicy.AppLifecycle)
+    .build()
+
 val manager = SecureCredentialsManager(
     context,
     auth0,
     storage,
     fragmentActivity,
-    localAuthenticationOptions,
-    BiometricPolicy.AppLifecycle
+    localAuthOptions
 )
 
 // Manually clear the session when needed
@@ -62,15 +84,39 @@ manager.clearBiometricSession()
 ### Core Components
 
 1. **`BiometricPolicy.kt`** - Sealed class defining the three policy types
-2. **`SecureCredentialsManager.kt`** - Enhanced with session management and policy evaluation
+2. **`LocalAuthenticationOptions.kt`** - Enhanced with `setPolicy()` method in the Builder to configure biometric policy
+3. **`SecureCredentialsManager.kt`** - Enhanced with session management and policy evaluation, reads policy from LocalAuthenticationOptions
 
 ### Key Features
 
+- **Policy Configuration**: Biometric policy is now configured through `LocalAuthenticationOptions.Builder.setPolicy()`
+- **Integrated Design**: Policy is part of the authentication options, not a separate constructor parameter
+- **Simplified Constructor**: SecureCredentialsManager constructor remains clean with only LocalAuthenticationOptions parameter
 - **Thread-safe**: All session management operations are synchronized
 - **Backward compatible**: Default behavior remains unchanged (`BiometricPolicy.Always`)
 - **Automatic session management**: Sessions are updated after successful authentication
 - **Manual session control**: `clearBiometricSession()` can be called anytime
 - **Integrated clearing**: `clearCredentials()` also clears biometric session
+
+### API Changes
+
+The biometric policy is now configured as part of the `LocalAuthenticationOptions` instead of being a separate constructor parameter:
+
+**New API (Recommended):**
+```kotlin
+val localAuthOptions = LocalAuthenticationOptions.Builder()
+    .setTitle("Authenticate")
+    .setPolicy(BiometricPolicy.Session(300))
+    .build()
+
+val manager = SecureCredentialsManager(context, auth0, storage, activity, localAuthOptions)
+```
+
+**Previous API (No longer available):**
+```kotlin
+// This constructor signature has been removed
+val manager = SecureCredentialsManager(context, auth0, storage, activity, localAuthOptions, biometricPolicy)
+```
 
 ### How It Works
 
@@ -115,6 +161,7 @@ class MainActivity : FragmentActivity() {
             .setSubtitle("Use your biometric to access your account")
             .setDescription("Place your finger on the sensor")
             .setNegativeButtonText("Cancel")
+            .setPolicy(BiometricPolicy.Session(timeoutInSeconds = 600)) // 10 minutes
             .build()
         
         // Use session-based policy with 10 minute timeout
@@ -123,8 +170,7 @@ class MainActivity : FragmentActivity() {
             auth0,
             storage,
             this,
-            localAuthOptions,
-            BiometricPolicy.Session(timeoutInSeconds = 600)
+            localAuthOptions
         )
     }
     
@@ -158,20 +204,26 @@ class AdvancedAuthActivity : FragmentActivity() {
     
     // High-security operations - always prompt
     private val highSecurityManager = SecureCredentialsManager(
-        context, auth0, storage, this, localAuthOptions,
-        BiometricPolicy.Always
+        context, auth0, storage, this, LocalAuthenticationOptions.Builder()
+            .setTitle("High Security")
+            .setPolicy(BiometricPolicy.Always)
+            .build()
     )
     
     // Regular operations - 5 minute session
     private val regularManager = SecureCredentialsManager(
-        context, auth0, storage, this, localAuthOptions,
-        BiometricPolicy.Session(300)
+        context, auth0, storage, this, LocalAuthenticationOptions.Builder()
+            .setTitle("Regular Access")
+            .setPolicy(BiometricPolicy.Session(300))
+            .build()
     )
     
     // App session operations - until manually cleared
     private val sessionManager = SecureCredentialsManager(
-        context, auth0, storage, this, localAuthOptions,
-        BiometricPolicy.AppLifecycle
+        context, auth0, storage, this, LocalAuthenticationOptions.Builder()
+            .setTitle("Session Access")
+            .setPolicy(BiometricPolicy.AppLifecycle)
+            .build()
     )
     
     fun performHighSecurityOperation() {

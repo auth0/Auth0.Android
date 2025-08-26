@@ -76,6 +76,16 @@ class DatabaseLoginFragment : Fragment() {
         AuthenticationAPIClient(account)
     }
 
+    private val localAuthenticationOptions =
+        LocalAuthenticationOptions.Builder()
+            .setTitle("Biometric")
+            .setDescription("description")
+            .setAuthenticationLevel(AuthenticationLevel.STRONG)
+            .setNegativeButtonText("Cancel")
+            .setDeviceCredentialFallback(true)
+            .setPolicy(BiometricPolicy.Always) // Default policy - shows prompt every time
+            .build()
+
     private val secureCredentialsManager: SecureCredentialsManager by lazy {
         val storage = SharedPreferencesStorage(requireContext())
         val manager = SecureCredentialsManager(
@@ -83,8 +93,7 @@ class DatabaseLoginFragment : Fragment() {
             account,
             storage,
             requireActivity(),
-            localAuthenticationOptions,
-            BiometricPolicy.Always // Default policy - shows prompt every time
+            localAuthenticationOptions
         )
         manager
     }
@@ -92,25 +101,39 @@ class DatabaseLoginFragment : Fragment() {
     // Alternative managers with different biometric policies for demonstration
     private val secureCredentialsManagerSession: SecureCredentialsManager by lazy {
         val storage = SharedPreferencesStorage(requireContext())
+        val localAuthOptionsSession = LocalAuthenticationOptions.Builder()
+            .setTitle("Biometric")
+            .setDescription("description")
+            .setAuthenticationLevel(AuthenticationLevel.STRONG)
+            .setNegativeButtonText("Cancel")
+            .setDeviceCredentialFallback(true)
+            .setPolicy(BiometricPolicy.Session(timeoutInSeconds = 300)) // 5 minute session
+            .build()
         SecureCredentialsManager(
             requireContext(),
             account,
             storage,
             requireActivity(),
-            localAuthenticationOptions,
-            BiometricPolicy.Session(timeoutInSeconds = 300) // 5 minute session
+            localAuthOptionsSession
         )
     }
 
     private val secureCredentialsManagerAppLifecycle: SecureCredentialsManager by lazy {
         val storage = SharedPreferencesStorage(requireContext())
+        val localAuthOptionsAppLifecycle = LocalAuthenticationOptions.Builder()
+            .setTitle("Biometric")
+            .setDescription("description")
+            .setAuthenticationLevel(AuthenticationLevel.STRONG)
+            .setNegativeButtonText("Cancel")
+            .setDeviceCredentialFallback(true)
+            .setPolicy(BiometricPolicy.AppLifecycle) // Valid until manually cleared
+            .build()
         SecureCredentialsManager(
             requireContext(),
             account,
             storage,
             requireActivity(),
-            localAuthenticationOptions,
-            BiometricPolicy.AppLifecycle // Valid until manually cleared
+            localAuthOptionsAppLifecycle
         )
     }
 
@@ -119,15 +142,6 @@ class DatabaseLoginFragment : Fragment() {
         val manager = CredentialsManager(authenticationApiClient, storage)
         manager
     }
-
-    private val localAuthenticationOptions =
-        LocalAuthenticationOptions.Builder()
-            .setTitle("Biometric")
-            .setDescription("description")
-            .setAuthenticationLevel(AuthenticationLevel.STRONG)
-            .setNegativeButtonText("Cancel")
-            .setDeviceCredentialFallback(true)
-            .build()
 
     private val callback = object: Callback<Credentials, AuthenticationException> {
         override fun onSuccess(result: Credentials) {

@@ -15,6 +15,19 @@
         android:paddingBottom="32dp"
         tools:context=".DatabaseLoginFragment">
 
+        <TextView
+            android:id="@+id/textViewUserProfiles"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="188dp"
+            android:text="User Profiles"
+            android:textColor="@android:color/holo_blue_dark"
+            android:textSize="16sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.439"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/btGetCredsAppLifecycle" />
+
         <EditText
             android:id="@+id/textEmail"
             android:layout_width="0dp"
@@ -155,10 +168,10 @@
             android:id="@+id/textViewUserManagement"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="184dp"
             android:text="User Management API"
-            android:textSize="16sp"
             android:textColor="@android:color/holo_blue_dark"
+            android:textSize="16sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/btDeleteCredentials" />
@@ -244,7 +257,8 @@
             android:id="@+id/btGetProfileAsync"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="4dp"
             android:text="Get User Profile (async)"
             android:textSize="12sp"
             app:layout_constraintEnd_toEndOf="@+id/btGetCredentialsAsync"
@@ -254,7 +268,7 @@
             android:id="@+id/btUpdateMetaAsync"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="20dp"
             android:text="Update Metadata (async)"
             android:textSize="12sp"
             app:layout_constraintEnd_toEndOf="@+id/btGetCredentialsAsync"
@@ -264,8 +278,8 @@
             android:id="@+id/btUpdateMeta"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="4dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginEnd="40dp"
             android:text="Update Metadata"
             android:textSize="12sp"
             app:layout_constraintEnd_toStartOf="@+id/btUpdateMetaAsync"
@@ -275,8 +289,8 @@
             android:id="@+id/btGetProfile"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="4dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="48dp"
             android:text="Get User Profile"
             android:textSize="12sp"
             app:layout_constraintEnd_toStartOf="@+id/btGetProfileAsync"
@@ -321,12 +335,13 @@
             android:id="@+id/textViewBiometricPolicy"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="20dp"
             android:text="Biometric Policy Examples"
+            android:textColor="@android:color/holo_blue_dark"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="@android:color/holo_blue_dark"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.49"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/getCredentialsSecure" />
 
@@ -382,17 +397,6 @@
             app:layout_constraintStart_toEndOf="@+id/btGetCredsAppLifecycle"
             app:layout_constraintTop_toBottomOf="@+id/btGetCredsSession" />
 
-        <TextView
-            android:id="@+id/textViewUserProfiles"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="User Profiles"
-            android:textSize="16sp"
-            android:textColor="@android:color/holo_blue_dark"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/btGetCredsAppLifecycle" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>
