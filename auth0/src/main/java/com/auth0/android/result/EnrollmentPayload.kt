@@ -18,25 +18,15 @@ public data class PasskeyEnrollmentPayload(
     public val identityUserId: String?
 ) : EnrollmentPayload("passkey")
 
-public data class WebAuthnPlatformEnrollmentPayload(
-    private val placeholder: String? = null
-) : EnrollmentPayload("webauthn-platform")
+public object WebAuthnPlatformEnrollmentPayload : EnrollmentPayload("webauthn-platform")
 
-public data class WebAuthnRoamingEnrollmentPayload(
-    private val placeholder: String? = null
-) : EnrollmentPayload("webauthn-roaming")
+public object WebAuthnRoamingEnrollmentPayload : EnrollmentPayload("webauthn-roaming")
 
-public data class TotpEnrollmentPayload(
-    private val placeholder: String? = null
-) : EnrollmentPayload("totp")
+public object TotpEnrollmentPayload : EnrollmentPayload("totp")
 
-public data class PushNotificationEnrollmentPayload(
-    private val placeholder: String? = null
-) : EnrollmentPayload("push-notification")
+public object PushNotificationEnrollmentPayload : EnrollmentPayload("push-notification")
 
-public data class RecoveryCodeEnrollmentPayload(
-    private val placeholder: String? = null
-) : EnrollmentPayload("recovery-code")
+public object RecoveryCodeEnrollmentPayload : EnrollmentPayload("recovery-code")
 
 public data class EmailEnrollmentPayload(
     @SerializedName("email")

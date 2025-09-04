@@ -311,7 +311,6 @@ public class MyAccountAPIClientTest {
         )
     }
 
-    //New Tests for MyAccountAPIClient
     @Test
     public fun `getFactors should build correct URL and Authorization header`() {
         val callback = MockMyAccountCallback<Factors>()
@@ -469,7 +468,6 @@ public class MyAccountAPIClientTest {
         assertThat(body.containsKey("otp_code"), Matchers.`is`(false))
     }
 
-    // Helper methods and constants
     private fun <T> bodyFromRequest(request: RecordedRequest): Map<String, T> {
         val mapType = object : TypeToken<Map<String?, T>?>() {}.type
         return gson.fromJson(request.body.readUtf8(), mapType)

@@ -155,15 +155,21 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
                 override fun fromJson(
                     reader: Reader, metadata: Map<String, Any>
                 ): PasskeyEnrollmentChallenge {
-                    val location = (metadata[LOCATION_KEY] as? List<*>)?.filterIsInstance<String>()?.firstOrNull()
-                    val authId = location?.split("/")?.lastOrNull()?.let { URLDecoder.decode(it, "UTF-8") }
-                        ?: throw MyAccountException("Authentication method ID not found in Location header.")
+                    val location = (metadata[LOCATION_KEY] as? List<*>)?.filterIsInstance<String>()
+                        ?.firstOrNull()
+                    val authId =
+                        location?.split("/")?.lastOrNull()?.let { URLDecoder.decode(it, "UTF-8") }
+                            ?: throw MyAccountException("Authentication method ID not found in Location header.")
                     val challenge = gson.fromJson(reader, PasskeyRegistrationChallenge::class.java)
-                    return PasskeyEnrollmentChallenge(authId, challenge.authSession, challenge.authParamsPublicKey)
+                    return PasskeyEnrollmentChallenge(
+                        authId,
+                        challenge.authSession,
+                        challenge.authParamsPublicKey
+                    )
                 }
             }
         return factory.post(url.toString(), passkeyEnrollmentAdapter)
-            .addParameters(params.mapValues { it.value.toString() }) // FIX: Safely convert map values to String
+            .addParameters(params)
             .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
     }
 
@@ -228,8 +234,11 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
             .set(AUTH_SESSION_KEY, challenge.authSession)
             .asDictionary()
 
-        return factory.post(url.toString(), GsonAdapter(PasskeyAuthenticationMethod::class.java, gson))
-            .addParameters(params.mapValues { it.value.toString() }) // FIX: Safely convert map values to String
+        return factory.post(
+            url.toString(),
+            GsonAdapter(PasskeyAuthenticationMethod::class.java, gson)
+        )
+            .addParameters(params)
             .addParameter(AUTHN_RESPONSE_KEY, authnResponse)
             .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
     }
@@ -360,7 +369,12 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
 
         val params = ParameterBuilder.newBuilder().apply {
             name?.let { set(AUTHENTICATION_METHOD_NAME, it) }
-            preferredAuthenticationMethod?.let { set(PREFERRED_AUTHENTICATION_METHOD, it.value) } // Now correctly uses .value
+            preferredAuthenticationMethod?.let {
+                set(
+                    PREFERRED_AUTHENTICATION_METHOD,
+                    it.value
+                )
+            } // Now correctly uses .value
         }.asDictionary()
 
         return factory.patch(url.toString(), GsonAdapter(AuthenticationMethod::class.java, gson))
@@ -388,7 +402,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * val apiClient = MyAccountAPIClient(auth0, accessToken)
      *
      *
-     * apiClient.deleteAuthenticationMethod(authenticationMethodId, )
+     * apiClient.deleteAuthenticationMethod(authenticationMethodId)
      *     .start(object : Callback<Void, MyAccountException> {
      *         override fun onSuccess(result: Void) {
      *             Log.d("MyApp", "Authentication method deleted")
@@ -428,14 +442,14 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * val apiClient = MyAccountAPIClient(auth0, accessToken)
      *
      * apiClient.getFactors()
-     * .start(object : Callback<List<Factor>, MyAccountException> {
-     * override fun onSuccess(result: List<Factor>) {
-     * Log.d("MyApp", "Available factors: $result")
-     * }
-     * override fun onFailure(error: MyAccountException) {
-     * Log.e("MyApp", "Error getting factors: $error")
-     * }
-     * })
+     *      .start(object : Callback<List<Factor>, MyAccountException> {
+     *          override fun onSuccess(result: List<Factor>) {
+     *              Log.d("MyApp", "Available factors: $result")
+     *          }
+     *          override fun onFailure(error: MyAccountException) {
+     *              Log.e("MyApp", "Error getting factors: $error")
+     *      }
+     *   })
      * ```
      * @return A request to get the list of available factors.
      */
@@ -458,27 +472,30 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * val apiClient = MyAccountAPIClient(auth0, accessToken)
      *
      * apiClient.enrollPhone("+11234567890", "sms")
-     *        .start(object : Callback<EnrollmentChallenge, MyAccountException> {
-     *             override fun onSuccess(result: EnrollmentChallenge) {
-     * // The enrollment has started. 'result.id' contains the ID for verification.
-     *      Log.d("MyApp", "Enrollment started. ID: ${result.id}")
-     *      }
-     *      override fun onFailure(error: MyAccountException) {
-     *      Log.e("MyApp", "Failed with: ${error.message}")
-     *   }
-     * })
+     *      .start(object : Callback<EnrollmentChallenge, MyAccountException> {
+     *          override fun onSuccess(result: EnrollmentChallenge) {
+     *          // The enrollment has started. 'result.id' contains the ID for verification.
+     *              Log.d("MyApp", "Enrollment started. ID: ${result.id}")
+     *           }
+     *          override fun onFailure(error: MyAccountException) {
+     *              Log.e("MyApp", "Failed with: ${error.message}")
+     *          }
+     *      })
      * ```
      * @param phoneNumber The phone number to enroll in E.164 format.
      * @param preferredMethod The preferred method for this factor ("sms" or "voice").
      * @return A request that will yield an enrollment challenge.
      */
-    public fun enrollPhone(phoneNumber: String, preferredMethod: PhoneAuthenticationMethodType): Request<EnrollmentChallenge, MyAccountException> {
+    public fun enrollPhone(
+        phoneNumber: String,
+        preferredMethod: PhoneAuthenticationMethodType
+    ): Request<EnrollmentChallenge, MyAccountException> {
         val params = ParameterBuilder.newBuilder()
             .set(TYPE_KEY, "phone")
             .set(PHONE_NUMBER_KEY, phoneNumber)
             .set(PREFERRED_AUTHENTICATION_METHOD, preferredMethod.value)
             .asDictionary()
-        return createEnrollmentRequest(params)
+        return buildEnrollmentRequest(params)
     }
 
     /**
@@ -494,15 +511,15 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * val apiClient = MyAccountAPIClient(auth0, accessToken)
      *
      * apiClient.enrollEmail("user@example.com")
-     *         .start(object : Callback<EnrollmentChallenge, MyAccountException> {
-     *               override fun onSuccess(result: EnrollmentChallenge) {
+     *      .start(object : Callback<EnrollmentChallenge, MyAccountException> {
+     *           override fun onSuccess(result: EnrollmentChallenge) {
      *       // The enrollment has started. 'result.id' contains the ID for verification.
-     *          Log.d("MyApp", "Enrollment started. ID: ${result.id}")
+     *               Log.d("MyApp", "Enrollment started. ID: ${result.id}")
      *          }
-     *       override fun onFailure(error: MyAccountException) {
-     *       Log.e("MyApp", "Failed with: ${error.message}")
-     *     }
-     * })
+     *           override fun onFailure(error: MyAccountException) {
+     *               Log.e("MyApp", "Failed with: ${error.message}")
+     *          }
+     *      })
      * ```
      * @param email the email address to enroll.
      * @return a request that will yield an enrollment challenge.
@@ -512,7 +529,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
             .set(TYPE_KEY, "email")
             .set(EMAIL_KEY, email)
             .asDictionary()
-        return createEnrollmentRequest(params)
+        return buildEnrollmentRequest(params)
     }
 
     /**
@@ -528,19 +545,19 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * val apiClient = MyAccountAPIClient(auth0, accessToken)
      *
      * apiClient.enrollTotp()
-     *         .start(object : Callback<EnrollmentChallenge, MyAccountException> {
-     *             override fun onSuccess(result: EnrollmentChallenge) {
+     *      .start(object : Callback<EnrollmentChallenge, MyAccountException> {
+     *            override fun onSuccess(result: EnrollmentChallenge) {
      *        // The result will be a TotpEnrollmentChallenge with a barcode_uri
-     *         Log.d("MyApp", "Enrollment started for TOTP.")
-     *         }
-     *     override fun onFailure(error: MyAccountException) { //... }
-     * })
+     *                  Log.d("MyApp", "Enrollment started for TOTP.")
+     *            }
+     *           override fun onFailure(error: MyAccountException) { //... }
+     *      })
      * ```
      * @return a request that will yield an enrollment challenge.
      */
     public fun enrollTotp(): Request<EnrollmentChallenge, MyAccountException> {
         val params = ParameterBuilder.newBuilder().set(TYPE_KEY, "totp").asDictionary()
-        return createEnrollmentRequest(params)
+        return buildEnrollmentRequest(params)
     }
 
     /**
@@ -556,19 +573,19 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * val apiClient = MyAccountAPIClient(auth0, accessToken)
      *
      * apiClient.enrollPushNotification()
-     *              .start(object : Callback<EnrollmentChallenge, MyAccountException> {
-     *                  override fun onSuccess(result: EnrollmentChallenge) {
+     *      .start(object : Callback<EnrollmentChallenge, MyAccountException> {
+     *          override fun onSuccess(result: EnrollmentChallenge) {
      *          // The result will be a TotpEnrollmentChallenge containing a barcode_uri
      *                 Log.d("MyApp", "Enrollment started for Push Notification.")
-     *                }
-     *      override fun onFailure(error: MyAccountException) { //... }
-     * })
+     *           }
+     *          override fun onFailure(error: MyAccountException) { //... }
+     *       })
      * ```
      * @return a request that will yield an enrollment challenge.
      */
     public fun enrollPushNotification(): Request<EnrollmentChallenge, MyAccountException> {
         val params = ParameterBuilder.newBuilder().set(TYPE_KEY, "push-notification").asDictionary()
-        return createEnrollmentRequest(params)
+        return buildEnrollmentRequest(params)
     }
 
     /**
@@ -584,19 +601,19 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * val apiClient = MyAccountAPIClient(auth0, accessToken)
      *
      * apiClient.enrollRecoveryCode()
-     *         .start(object : Callback<EnrollmentChallenge, MyAccountException> {
-     *           override fun onSuccess(result: EnrollmentChallenge) {
-     * // The result will be a RecoveryCodeEnrollmentChallenge containing the code
-     *          Log.d("MyApp", "Recovery Code enrollment started.")
-     *           }
-     * override fun onFailure(error: MyAccountException) { //... }
-     * })
+     *      .start(object : Callback<EnrollmentChallenge, MyAccountException> {
+     *          override fun onSuccess(result: EnrollmentChallenge) {
+     *      // The result will be a RecoveryCodeEnrollmentChallenge containing the code
+     *              Log.d("MyApp", "Recovery Code enrollment started.")
+     *          }
+     *          override fun onFailure(error: MyAccountException) { //... }
+     *      })
      * ```
      * @return a request that will yield an enrollment challenge containing the recovery code.
      */
     public fun enrollRecoveryCode(): Request<EnrollmentChallenge, MyAccountException> {
         val params = ParameterBuilder.newBuilder().set(TYPE_KEY, "recovery-code").asDictionary()
-        return createEnrollmentRequest(params)
+        return buildEnrollmentRequest(params)
     }
 
     /**
@@ -616,17 +633,21 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * val otp = "123456"
      *
      * apiClient.verifyOtp(authMethodId, otp, authSession)
-     *          .start(object : Callback<AuthenticationMethod, MyAccountException> {
+     *      .start(object : Callback<AuthenticationMethod, MyAccountException> {
      *              override fun onSuccess(result: AuthenticationMethod) { //... }
      *              override fun onFailure(error: MyAccountException) { //... }
-     *  })
+     *       })
      * ```
      * @param authenticationMethodId The ID of the method being verified (from the enrollment challenge).
      * @param otpCode The OTP code sent to the user's phone or email, or from their authenticator app.
      * @param authSession The auth session from the enrollment challenge.
      * @return a request that will yield the newly verified authentication method.
      */
-    public fun verifyOtp(authenticationMethodId: String, otpCode: String, authSession: String): Request<AuthenticationMethod, MyAccountException> {
+    public fun verifyOtp(
+        authenticationMethodId: String,
+        otpCode: String,
+        authSession: String
+    ): Request<AuthenticationMethod, MyAccountException> {
         val url = getDomainUrlBuilder()
             .addPathSegment(AUTHENTICATION_METHODS)
             .addPathSegment(authenticationMethodId)
@@ -654,16 +675,19 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * val authSession = "from_enrollment_challenge"
      *
      * apiClient.verify(authMethodId, authSession)
-     *            .start(object : Callback<AuthenticationMethod, MyAccountException> {
+     *      .start(object : Callback<AuthenticationMethod, MyAccountException> {
      *            override fun onSuccess(result: AuthenticationMethod) { //... }
-     *      override fun onFailure(error: MyAccountException) { //... }
-     * })
+     *            override fun onFailure(error: MyAccountException) { //... }
+     *       })
      * ```
      * @param authenticationMethodId The ID of the method being verified (from the enrollment challenge).
      * @param authSession The auth session from the enrollment challenge.
      * @return a request that will yield the newly verified authentication method.
      */
-    public fun verify(authenticationMethodId: String, authSession: String): Request<AuthenticationMethod, MyAccountException> {
+    public fun verify(
+        authenticationMethodId: String,
+        authSession: String
+    ): Request<AuthenticationMethod, MyAccountException> {
         val url = getDomainUrlBuilder()
             .addPathSegment(AUTHENTICATION_METHODS)
             .addPathSegment(authenticationMethodId)
@@ -689,19 +713,18 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * val apiClient = MyAccountAPIClient(auth0, accessToken)
      *
      * apiClient.enrollWebAuthnPlatform()
-     *           .start(object : Callback<EnrollmentChallenge, MyAccountException> {
-     *                override fun onSuccess(result: EnrollmentChallenge) {
-     *         // The result will be a PasskeyEnrollmentChallenge for WebAuthn
-     *           Log.d("MyApp", "Enrollment started for WebAuthn Platform.")
-     *            }
-     *               override fun onFailure(error: MyAccountException) { //... }
-     * })
+     *          .start(object : Callback<EnrollmentChallenge, MyAccountException> {
+     *              override fun onSuccess(result: EnrollmentChallenge) {
+     *                Log.d("MyApp", "Enrollment started for WebAuthn Platform.")
+     *              }
+     *              override fun onFailure(error: MyAccountException) { //... }
+     *          })
      * ```
      * @return a request that will yield an enrollment challenge.
      */
     private fun enrollWebAuthnPlatform(): Request<EnrollmentChallenge, MyAccountException> {
         val params = ParameterBuilder.newBuilder().set(TYPE_KEY, "webauthn-platform").asDictionary()
-        return createEnrollmentRequest(params)
+        return buildEnrollmentRequest(params)
     }
 
     /**
@@ -717,27 +740,29 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * val apiClient = MyAccountAPIClient(auth0, accessToken)
      *
      * apiClient.enrollWebAuthnRoaming()
-     *              .start(object : Callback<EnrollmentChallenge, MyAccountException> {
-     *              override fun onSuccess(result: EnrollmentChallenge) {
-     *             // The result will be a PasskeyEnrollmentChallenge for WebAuthn
-     *           Log.d("MyApp", "Enrollment started for WebAuthn Roaming.")
-     *            }
+     *      .start(object : Callback<EnrollmentChallenge, MyAccountException> {
+     *          override fun onSuccess(result: EnrollmentChallenge) {
+     *          // The result will be a PasskeyEnrollmentChallenge for WebAuthn
+     *              Log.d("MyApp", "Enrollment started for WebAuthn Roaming.")
+     *          }
      *          override fun onFailure(error: MyAccountException) { //... }
-     * })
+     *      })
      * ```
      * @return a request that will yield an enrollment challenge.
      */
     private fun enrollWebAuthnRoaming(): Request<EnrollmentChallenge, MyAccountException> {
         val params = ParameterBuilder.newBuilder().set(TYPE_KEY, "webauthn-roaming").asDictionary()
-        return createEnrollmentRequest(params)
+        return buildEnrollmentRequest(params)
     }
 
-
-    private fun createEnrollmentRequest(params: Map<String, Any>): Request<EnrollmentChallenge, MyAccountException> {
+    private fun buildEnrollmentRequest(params: Map<String, Any>): Request<EnrollmentChallenge, MyAccountException> {
         val url = getDomainUrlBuilder().addPathSegment(AUTHENTICATION_METHODS).build()
-        return factory.post(url.toString(), GsonAdapter(EnrollmentChallenge::class.java, gson))
-            .addParameters(params.mapValues { it.value.toString() }) // FIX: Safely convert map values to String
-            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+        val request =
+            factory.post(url.toString(), GsonAdapter(EnrollmentChallenge::class.java, gson))
+        for ((key, value) in params) {
+            request.addParameter(key, value)
+        }
+        return request.addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
     }
 
     private fun getDomainUrlBuilder(): HttpUrl.Builder {
