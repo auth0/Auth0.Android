@@ -8,12 +8,10 @@ import com.google.gson.annotations.SerializedName
 import java.lang.reflect.Type
 
 @JsonAdapter(EnrollmentChallenge.Deserializer::class)
-public sealed class EnrollmentChallenge(
-    @SerializedName("id")
-    public open val id: String?,
-    @SerializedName("auth_session")
-    public open val authSession: String
-) {
+public sealed class EnrollmentChallenge {
+    public abstract val id: String?
+    public abstract val authSession: String
+
     internal class Deserializer : JsonDeserializer<EnrollmentChallenge> {
         override fun deserialize(
             json: JsonElement,
@@ -33,22 +31,28 @@ public sealed class EnrollmentChallenge(
 }
 
 public data class MfaEnrollmentChallenge(
-    public override val id: String,
-    public override val authSession: String
-) : EnrollmentChallenge(id, authSession)
+    @SerializedName("id")
+    override val id: String,
+    @SerializedName("auth_session")
+    override val authSession: String
+) : EnrollmentChallenge()
 
 public data class TotpEnrollmentChallenge(
-    public override val id: String,
-    public override val authSession: String,
+    @SerializedName("id")
+    override val id: String,
+    @SerializedName("auth_session")
+    override val authSession: String,
     @SerializedName("barcode_uri")
     public val barcodeUri: String,
     @SerializedName("manual_input_code")
-    public val manualInputCode: String
-) : EnrollmentChallenge(id, authSession)
+    public val manualInputCode: String?
+) : EnrollmentChallenge()
 
 public data class RecoveryCodeEnrollmentChallenge(
-    public override val id: String,
-    public override val authSession: String,
+    @SerializedName("id")
+    override val id: String,
+    @SerializedName("auth_session")
+    override val authSession: String,
     @SerializedName("recovery_code")
     public val recoveryCode: String
-) : EnrollmentChallenge(id, authSession)
+) : EnrollmentChallenge()
