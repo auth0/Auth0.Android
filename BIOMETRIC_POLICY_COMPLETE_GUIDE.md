@@ -54,7 +54,7 @@ val manager = SecureCredentialsManager(
 **Use Case**: Balanced security and user experience for frequent access patterns.
 
 ### 3. App Lifecycle
-Shows a biometric prompt only once while the app is in the foreground. The session remains valid until manually cleared.
+Shows a biometric prompt only once while the app is in the foreground. The session remains valid until manually cleared or after the specified timeout (default 1 hour).
 
 ```kotlin
 val localAuthOptions = LocalAuthenticationOptions.Builder()
@@ -62,7 +62,7 @@ val localAuthOptions = LocalAuthenticationOptions.Builder()
     .setSubtitle("Use your biometric to access your account")  
     .setDescription("Place your finger on the sensor")
     .setNegativeButtonText("Cancel")
-    .setPolicy(BiometricPolicy.AppLifecycle)
+    .setPolicy(BiometricPolicy.AppLifecycle()) // Default 1 hour timeout
     .build()
 
 val manager = SecureCredentialsManager(
@@ -73,11 +73,17 @@ val manager = SecureCredentialsManager(
     localAuthOptions
 )
 
+// Or with custom timeout
+val localAuthOptionsCustom = LocalAuthenticationOptions.Builder()
+    .setTitle("Authenticate")
+    .setPolicy(BiometricPolicy.AppLifecycle(timeoutInSeconds = 7200)) // 2 hours
+    .build()
+
 // Manually clear the session when needed
 manager.clearBiometricSession()
 ```
 
-**Use Case**: Minimal interruption during active app usage sessions.
+**Use Case**: Minimal interruption during active app usage sessions with a reasonable security timeout.
 
 ## 🔧 Implementation Details
 
@@ -92,7 +98,7 @@ manager.clearBiometricSession()
 - **Policy Configuration**: Biometric policy is now configured through `LocalAuthenticationOptions.Builder.setPolicy()`
 - **Integrated Design**: Policy is part of the authentication options, not a separate constructor parameter
 - **Simplified Constructor**: SecureCredentialsManager constructor remains clean with only LocalAuthenticationOptions parameter
-- **Thread-safe**: All session management operations are synchronized
+- **Lock-free Thread Safety**: Uses AtomicLong for biometric session management, providing better performance than synchronized blocks
 - **Backward compatible**: Default behavior remains unchanged (`BiometricPolicy.Always`)
 - **Automatic session management**: Sessions are updated after successful authentication
 - **Manual session control**: `clearBiometricSession()` can be called anytime
@@ -112,6 +118,20 @@ val localAuthOptions = LocalAuthenticationOptions.Builder()
 val manager = SecureCredentialsManager(context, auth0, storage, activity, localAuthOptions)
 ```
 
+**AppLifecycle with default 1-hour timeout:**
+```kotlin
+val localAuthOptions = LocalAuthenticationOptions.Builder()
+    .setTitle("Authenticate")
+    .setPolicy(BiometricPolicy.AppLifecycle()) // 1 hour default
+    .build()
+
+// Or with custom timeout
+val localAuthOptionsCustom = LocalAuthenticationOptions.Builder()
+    .setTitle("Authenticate")
+    .setPolicy(BiometricPolicy.AppLifecycle(timeoutInSeconds = 7200)) // 2 hours
+    .build()
+```
+
 **Previous API (No longer available):**
 ```kotlin
 // This constructor signature has been removed
@@ -129,16 +149,19 @@ val manager = SecureCredentialsManager(context, auth0, storage, activity, localA
 
 ```kotlin
 internal fun isBiometricSessionValid(): Boolean {
-    synchronized(sessionLock) {
-        val lastAuth = lastBiometricAuthTime ?: return false // No session exists
-        return when (biometricPolicy) {
-            is BiometricPolicy.Session -> {
-                val timeoutMillis = biometricPolicy.timeoutInSeconds * 1000L
-                System.currentTimeMillis() - lastAuth < timeoutMillis
-            }
-            is BiometricPolicy.AppLifecycle -> true // Valid until manually cleared
-            is BiometricPolicy.Always -> false // Always require authentication
+    val lastAuth = lastBiometricAuthTime.get()
+    if (lastAuth == -1L) return false // No session exists
+    
+    return when (biometricPolicy) {
+        is BiometricPolicy.Session -> {
+            val timeoutMillis = biometricPolicy.timeoutInSeconds * 1000L
+            System.currentTimeMillis() - lastAuth < timeoutMillis
         }
+        is BiometricPolicy.AppLifecycle -> {
+            val timeoutMillis = biometricPolicy.timeoutInSeconds * 1000L
+            System.currentTimeMillis() - lastAuth < timeoutMillis
+        }
+        is BiometricPolicy.Always -> false // Always require authentication
     }
 }
 ```
@@ -218,11 +241,11 @@ class AdvancedAuthActivity : FragmentActivity() {
             .build()
     )
     
-    // App session operations - until manually cleared
+    // App session operations - 1 hour default timeout
     private val sessionManager = SecureCredentialsManager(
         context, auth0, storage, this, LocalAuthenticationOptions.Builder()
             .setTitle("Session Access")
-            .setPolicy(BiometricPolicy.AppLifecycle)
+            .setPolicy(BiometricPolicy.AppLifecycle()) // 1 hour default
             .build()
     )
     
@@ -235,7 +258,7 @@ class AdvancedAuthActivity : FragmentActivity() {
     }
     
     fun performSessionOperation() {
-        sessionManager.getCredentials(callback) // Cached until cleared
+        sessionManager.getCredentials(callback) // Cached for 1 hour (default) or until cleared
     }
 }
 ```
@@ -287,18 +310,21 @@ The sample app includes a "Biometric Policy Examples" section with:
 10. **✅ Expected**: Biometric prompt appears again (session expired)
 
 #### Test 3: BiometricPolicy.AppLifecycle
-**Expected Behavior**: Biometric prompt appears once, then cached until manually cleared.
+**Expected Behavior**: Biometric prompt appears once, then cached for 1 hour (default) until manually cleared or timeout expires.
 
 1. Tap **"Clear Biometric Sessions"** to reset any existing sessions
 2. Tap **"Get Creds (AppLifecycle Policy)"** button
 3. **✅ Expected**: Biometric prompt appears
 4. Authenticate with biometric
 5. **✅ Expected**: Credentials retrieved successfully
-6. Tap **"Get Creds (AppLifecycle Policy)"** button multiple times
+6. Tap **"Get Creds (AppLifecycle Policy)"** button multiple times within 1 hour
 7. **✅ Expected**: No biometric prompt appears for subsequent calls
-8. Tap **"Clear Biometric Sessions"** button
+8. **Option A - Manual Clear**: Tap **"Clear Biometric Sessions"** button
 9. Tap **"Get Creds (AppLifecycle Policy)"** button
 10. **✅ Expected**: Biometric prompt appears again (session manually cleared)
+11. **Option B - Timeout**: Wait for 1+ hours
+12. Tap **"Get Creds (AppLifecycle Policy)"** button
+13. **✅ Expected**: Biometric prompt appears again (session expired)
 
 #### Test 4: Mixed Policy Testing
 **Expected Behavior**: Different policies maintain separate session states.
@@ -317,11 +343,13 @@ The sample app includes:
 
 ## 📝 Important Notes
 
-- **Memory Storage**: The biometric session is stored in memory and will be cleared when the app process is killed
-- **Time-based Sessions**: For `BiometricPolicy.Session`, the timeout is checked against `System.currentTimeMillis()`
-- **Manual Control**: For `BiometricPolicy.AppLifecycle`, the session remains valid until explicitly cleared
+- **Memory Storage**: The biometric session is stored in memory using AtomicLong and will be cleared when the app process is killed
+- **Time-based Sessions**: For both `BiometricPolicy.Session` and `BiometricPolicy.AppLifecycle`, the timeout is checked against `System.currentTimeMillis()`
+- **AppLifecycle Default**: `BiometricPolicy.AppLifecycle` now defaults to 1 hour (3600 seconds) timeout for better security
+- **Manual Control**: Sessions can be explicitly cleared using `clearBiometricSession()` regardless of timeout
 - **Backward Compatibility**: All existing `SecureCredentialsManager` functionality remains unchanged
-- **Thread Safety**: All session operations are synchronized and thread-safe
+- **Lock-free Thread Safety**: Session operations use AtomicLong for better performance and thread safety
+- **Session State**: Uses -1L to represent "no session" state instead of nullable values
 
 ## 🔍 Troubleshooting
 
@@ -356,8 +384,9 @@ The sample app includes:
 | Always Policy | Every call | Biometric prompt appears |
 | Session Policy (within timeout) | Subsequent calls | No prompt, direct access |
 | Session Policy (after timeout) | Call after timeout | Biometric prompt appears |
-| App Lifecycle (before clear) | Subsequent calls | No prompt, direct access |
-| App Lifecycle (after clear) | Call after manual clear | Biometric prompt appears |
+| App Lifecycle (within 1 hour) | Subsequent calls | No prompt, direct access |
+| App Lifecycle (after manual clear) | Call after manual clear | Biometric prompt appears |
+| App Lifecycle (after 1 hour timeout) | Call after timeout | Biometric prompt appears |
 | Session Clearing | Any policy after clear | Biometric prompt appears |
 
 This implementation provides a robust, flexible, and user-friendly approach to biometric authentication in the Auth0 Android SDK while maintaining backward compatibility and ensuring thread safety.

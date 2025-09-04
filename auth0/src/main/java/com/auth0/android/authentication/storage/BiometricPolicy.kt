@@ -17,7 +17,8 @@ public sealed class BiometricPolicy {
 
     /**
      * A biometric prompt will be shown only once while the app is in the foreground.
-     * The session is invalidated by calling clearBiometricSession().
+     * The session is invalidated by calling clearBiometricSession() or after the default timeout.
+     * @param timeoutInSeconds The duration for which the session remains valid. Defaults to 3600 seconds (1 hour).
      */
-    public object AppLifecycle : BiometricPolicy()
+    public data class AppLifecycle(val timeoutInSeconds: Int = 3600) : BiometricPolicy() // Default 1 hour
 }

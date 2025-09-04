@@ -378,7 +378,7 @@
             android:layout_marginStart="16dp"
             android:layout_marginTop="8dp"
             android:layout_marginEnd="8dp"
-            android:text="Get Creds\n(AppLifecycle Policy)"
+            android:text="Get Creds\n(AppLifecycle 1h)"
             android:textSize="11sp"
             app:layout_constraintEnd_toStartOf="@+id/btClearBiometricSession"
             app:layout_constraintStart_toStartOf="parent"

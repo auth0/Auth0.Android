@@ -126,7 +126,7 @@ class DatabaseLoginFragment : Fragment() {
             .setAuthenticationLevel(AuthenticationLevel.STRONG)
             .setNegativeButtonText("Cancel")
             .setDeviceCredentialFallback(true)
-            .setPolicy(BiometricPolicy.AppLifecycle) // Valid until manually cleared
+            .setPolicy(BiometricPolicy.AppLifecycle()) // Default 1 hour timeout
             .build()
         SecureCredentialsManager(
             requireContext(),
@@ -251,7 +251,7 @@ class DatabaseLoginFragment : Fragment() {
             getCredsWithPolicy("Session (5min)", secureCredentialsManagerSession)
         }
         binding.btGetCredsAppLifecycle?.setOnClickListener {
-            getCredsWithPolicy("AppLifecycle", secureCredentialsManagerAppLifecycle)
+            getCredsWithPolicy("AppLifecycle (1h)", secureCredentialsManagerAppLifecycle)
         }
         binding.btClearBiometricSession?.setOnClickListener {
             clearBiometricSessions()

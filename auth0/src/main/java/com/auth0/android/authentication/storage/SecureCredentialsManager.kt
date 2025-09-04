@@ -26,6 +26,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import java.lang.ref.WeakReference
 import java.util.*
 import java.util.concurrent.Executor
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.coroutines.resume
@@ -1132,16 +1133,19 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      */
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun isBiometricSessionValid(): Boolean {
-        synchronized(sessionLock) {
-            val lastAuth = lastBiometricAuthTime ?: return false
-            return when (biometricPolicy) {
-                is BiometricPolicy.Session -> {
-                    val timeoutMillis = biometricPolicy.timeoutInSeconds * 1000L
-                    System.currentTimeMillis() - lastAuth < timeoutMillis
-                }
-                is BiometricPolicy.AppLifecycle -> true // Valid until cleared
-                is BiometricPolicy.Always -> false
+        val lastAuth = lastBiometricAuthTime.get()
+        if (lastAuth == NO_SESSION) return false // No session exists
+        
+        return when (biometricPolicy) {
+            is BiometricPolicy.Session -> {
+                val timeoutMillis = biometricPolicy.timeoutInSeconds * 1000L
+                System.currentTimeMillis() - lastAuth < timeoutMillis
             }
+            is BiometricPolicy.AppLifecycle -> {
+                val timeoutMillis = biometricPolicy.timeoutInSeconds * 1000L
+                System.currentTimeMillis() - lastAuth < timeoutMillis
+            }
+            is BiometricPolicy.Always -> false
         }
     }
 
@@ -1149,18 +1153,14 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * Updates the biometric session timestamp to the current time.
      */
     private fun updateBiometricSession() {
-        synchronized(sessionLock) {
-            lastBiometricAuthTime = System.currentTimeMillis()
-        }
+        lastBiometricAuthTime.set(System.currentTimeMillis())
     }
 
     /**
      * Clears the in-memory biometric session timestamp. Can be called from any thread.
      */
     public fun clearBiometricSession() {
-        synchronized(sessionLock) {
-            lastBiometricAuthTime = null
-        }
+        lastBiometricAuthTime.set(NO_SESSION)
     }
 
     internal companion object {
@@ -1184,9 +1184,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         internal const val KEY_ALIAS = "com.auth0.key"
 
         // Biometric session management
-        @Volatile
-        private var lastBiometricAuthTime: Long? = null
-        
-        private val sessionLock = Any()
+        // Using NO_SESSION to represent "no session" (uninitialized state)
+        private const val NO_SESSION = -1L
+        private val lastBiometricAuthTime = AtomicLong(NO_SESSION)
     }
 }
