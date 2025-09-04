@@ -14,8 +14,6 @@ task sourcesJar(type: Jar) {
     from android.sourceSets.main.java.source
 }
 
-final releaseRepositoryUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-final snapshotRepositoryUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
 
 publishing {
     publications {
@@ -56,6 +54,7 @@ publishing {
                     developerConnection = POM_SCM_DEV_CONNECTION
                 }
 
+                //Replace this with components.release after we updated the gradle version
                 withXml {
                     def dependenciesNode = asNode().appendNode('dependencies')
 
@@ -66,16 +65,6 @@ publishing {
                         dependencyNode.appendNode('version', it.version)
                     }
                 }
-            }
-        }
-    }
-    repositories {
-        maven {
-            name = "sonatype"
-            url = version.endsWith('SNAPSHOT') ? snapshotRepositoryUrl : releaseRepositoryUrl
-            credentials {
-                username = System.getenv("MAVEN_USERNAME")
-                password = System.getenv("MAVEN_PASSWORD")
             }
         }
     }

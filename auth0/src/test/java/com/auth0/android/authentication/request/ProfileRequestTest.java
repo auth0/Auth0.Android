@@ -1,22 +1,5 @@
 package com.auth0.android.authentication.request;
 
-import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.callback.Callback;
-import com.auth0.android.request.AuthenticationRequest;
-import com.auth0.android.request.ProfileRequest;
-import com.auth0.android.request.Request;
-import com.auth0.android.result.Authentication;
-import com.auth0.android.result.Credentials;
-import com.auth0.android.result.UserProfile;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.robolectric.RobolectricTestRunner;
-
-import java.util.Map;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -29,12 +12,34 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.auth0.android.authentication.AuthenticationException;
+import com.auth0.android.callback.Callback;
+import com.auth0.android.request.AuthenticationRequest;
+import com.auth0.android.request.HttpMethod;
+import com.auth0.android.request.ProfileRequest;
+import com.auth0.android.request.Request;
+import com.auth0.android.result.Authentication;
+import com.auth0.android.result.Credentials;
+import com.auth0.android.result.CredentialsMock;
+import com.auth0.android.result.UserProfile;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.robolectric.RobolectricTestRunner;
+
+import java.util.Date;
+import java.util.Map;
+
 @RunWith(RobolectricTestRunner.class)
 public class ProfileRequestTest {
 
     private AuthenticationRequest authenticationMockRequest;
     private Request userInfoMockRequest;
     private ProfileRequest profileRequest;
+
+    private Credentials dummyCredentials = CredentialsMock.Companion.create("idToken", "accessToken", "Bearer", null, new Date(), null);
 
     @Before
     public void setUp() {
@@ -87,7 +92,7 @@ public class ProfileRequestTest {
     @Test
     public void shouldReturnAuthenticationAfterStartingTheRequest() {
         final UserProfile userProfile = mock(UserProfile.class);
-        final Credentials credentials = mock(Credentials.class);
+        final Credentials credentials = dummyCredentials;
 
         final AuthenticationRequestMock authenticationRequestMock = new AuthenticationRequestMock(credentials, null);
         final RequestMock tokenInfoRequestMock = new RequestMock(userProfile, null);
@@ -130,7 +135,7 @@ public class ProfileRequestTest {
 
     @Test
     public void shouldReturnErrorAfterStartingTheRequestIfTokenInfoRequestFails() {
-        final Credentials credentials = mock(Credentials.class);
+        final Credentials credentials = dummyCredentials;
         final AuthenticationException error = mock(AuthenticationException.class);
 
         final AuthenticationRequestMock authenticationRequestMock = new AuthenticationRequestMock(credentials, null);
@@ -148,7 +153,7 @@ public class ProfileRequestTest {
 
     @Test
     public void shouldExecuteTheRequest() {
-        final Credentials credentials = mock(Credentials.class);
+        final Credentials credentials = dummyCredentials;
         when(authenticationMockRequest.execute()).thenAnswer(invocation -> credentials);
         final UserProfile userProfile = mock(UserProfile.class);
         when(userInfoMockRequest.addParameter(anyString(), anyString())).thenReturn(userInfoMockRequest);

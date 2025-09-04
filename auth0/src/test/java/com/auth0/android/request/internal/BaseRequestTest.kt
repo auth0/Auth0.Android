@@ -2,6 +2,9 @@ package com.auth0.android.request.internal
 
 import com.auth0.android.Auth0Exception
 import com.auth0.android.callback.Callback
+import com.auth0.android.dpop.DPoP
+import com.auth0.android.dpop.DPoPException
+import com.auth0.android.dpop.DPoPUtil.DPOP_HEADER
 import com.auth0.android.request.*
 import com.google.gson.Gson
 import com.google.gson.JsonIOException
@@ -38,6 +41,9 @@ public class BaseRequestTest {
 
     @Mock
     private lateinit var client: NetworkingClient
+
+    @Mock
+    private lateinit var mockDPoP: DPoP
 
     /**
      * Whether the response InputStream was closed; only relevant for tests using the `mock...`
@@ -83,7 +89,9 @@ public class BaseRequestTest {
             BASE_URL,
             client,
             resultAdapter,
-            errorAdapter
+            errorAdapter,
+            CommonThreadSwitcher.getInstance(),
+            null
         )
 
     @Test
@@ -458,6 +466,260 @@ public class BaseRequestTest {
         verify(callback, Mockito.never()).onSuccess(
             any()
         )
+    }
+
+    //DPoP
+
+    @Test
+    @Throws(Exception::class)
+    public fun shouldAddDPoPHeaderWhenDPoPProofIsGenerated() {
+        mockSuccessfulServerResponse()
+        val mockProof = "eyJ0eXAiOiJkcG9wK2p3dCIsImFsZyI6IkVTMjU2In0.eyJqdGkiOiJ0ZXN0LWp0aSIsImh0bSI6IlBPU1QiLCJodHUiOiJodHRwczovL2F1dGgwLmNvbSIsImlhdCI6MTY0MDk5NTIwMH0.signature"
+
+        Mockito.`when`(mockDPoP.shouldGenerateProof(eq(BASE_URL), any())).thenReturn(true)
+        Mockito.`when`(mockDPoP.generateProof(eq(BASE_URL), eq(HttpMethod.POST), any())).thenReturn(mockProof)
+
+        val baseRequest = BaseRequest(
+            HttpMethod.POST,
+            BASE_URL,
+            client,
+            resultAdapter,
+            errorAdapter,
+            CommonThreadSwitcher.getInstance(),
+            mockDPoP
+        )
+
+        baseRequest.execute()
+
+        verify(client).load(eq(BASE_URL), optionsCaptor.capture())
+        val headers = optionsCaptor.firstValue.headers
+        MatcherAssert.assertThat(headers, IsMapContaining.hasEntry(DPOP_HEADER, mockProof))
+    }
+
+    @Test
+    @Throws(Exception::class)
+    public fun shouldNotAddDPoPHeaderWhenDPoPProofIsNotGenerated() {
+        mockSuccessfulServerResponse()
+
+        Mockito.`when`(mockDPoP.shouldGenerateProof(eq(BASE_URL), any())).thenReturn(true)
+        Mockito.`when`(mockDPoP.generateProof(eq(BASE_URL), eq(HttpMethod.POST), any())).thenReturn(null)
+
+        val baseRequest = BaseRequest(
+            HttpMethod.POST,
+            BASE_URL,
+            client,
+            resultAdapter,
+            errorAdapter,
+            CommonThreadSwitcher.getInstance(),
+            mockDPoP
+        )
+
+        baseRequest.execute()
+
+        verify(client).load(eq(BASE_URL), optionsCaptor.capture())
+        val headers = optionsCaptor.firstValue.headers
+        MatcherAssert.assertThat(headers, Matchers.not(IsMapContaining.hasKey(DPOP_HEADER)))
+    }
+
+    @Test
+    @Throws(Exception::class)
+    public fun shouldNotAddDPoPHeaderWhenShouldGenerateProofReturnsFalse() {
+        mockSuccessfulServerResponse()
+
+        Mockito.`when`(mockDPoP.shouldGenerateProof(eq(BASE_URL), any())).thenReturn(false)
+
+        val baseRequest = BaseRequest(
+            HttpMethod.POST,
+            BASE_URL,
+            client,
+            resultAdapter,
+            errorAdapter,
+            CommonThreadSwitcher.getInstance(),
+            mockDPoP
+        )
+
+        baseRequest.execute()
+
+        verify(client).load(eq(BASE_URL), optionsCaptor.capture())
+        val headers = optionsCaptor.firstValue.headers
+        MatcherAssert.assertThat(headers, Matchers.not(IsMapContaining.hasKey(DPOP_HEADER)))
+        verify(mockDPoP, never()).generateProof(any<String>(), any(), any())
+    }
+
+    @Test
+    @Throws(Exception::class)
+    public fun shouldNotCallDPoPMethodsWhenDPoPIsNull() {
+        mockSuccessfulServerResponse()
+
+        val baseRequest = BaseRequest(
+            HttpMethod.POST,
+            BASE_URL,
+            client,
+            resultAdapter,
+            errorAdapter,
+            CommonThreadSwitcher.getInstance(),
+            null
+        )
+
+        baseRequest.execute()
+
+        verify(client).load(eq(BASE_URL), optionsCaptor.capture())
+        val headers = optionsCaptor.firstValue.headers
+        MatcherAssert.assertThat(headers, Matchers.not(IsMapContaining.hasKey(DPOP_HEADER)))
+    }
+
+    @Test
+    @Throws(Exception::class)
+    public fun shouldPassCorrectParametersToShouldGenerateProof() {
+        mockSuccessfulServerResponse()
+
+        Mockito.`when`(mockDPoP.shouldGenerateProof(eq(BASE_URL), any())).thenReturn(false)
+
+        val baseRequest = BaseRequest(
+            HttpMethod.POST,
+            BASE_URL,
+            client,
+            resultAdapter,
+            errorAdapter,
+            CommonThreadSwitcher.getInstance(),
+            mockDPoP
+        )
+
+        baseRequest.addParameter("grant_type", "authorization_code")
+        baseRequest.addParameter("code", "test-code")
+        baseRequest.execute()
+
+        val parametersCaptor: KArgumentCaptor<Map<String, Any>> = argumentCaptor()
+        verify(mockDPoP).shouldGenerateProof(eq(BASE_URL), parametersCaptor.capture())
+
+        val parameters = parametersCaptor.firstValue
+        MatcherAssert.assertThat(parameters, IsMapContaining.hasEntry("grant_type", "authorization_code"))
+        MatcherAssert.assertThat(parameters, IsMapContaining.hasEntry("code", "test-code"))
+    }
+
+    @Test
+    @Throws(Exception::class)
+    public fun shouldPassCorrectHeadersToGenerateProof() {
+        mockSuccessfulServerResponse()
+
+        Mockito.`when`(mockDPoP.shouldGenerateProof(eq(BASE_URL), any())).thenReturn(true)
+        Mockito.`when`(mockDPoP.generateProof(eq(BASE_URL), eq(HttpMethod.POST), any())).thenReturn("test-proof")
+
+        val baseRequest = BaseRequest(
+            HttpMethod.POST,
+            BASE_URL,
+            client,
+            resultAdapter,
+            errorAdapter,
+            CommonThreadSwitcher.getInstance(),
+            mockDPoP
+        )
+
+        baseRequest.addHeader("Authorization", "Bearer test-token")
+        baseRequest.addHeader("Content-Type", "application/json")
+        baseRequest.execute()
+
+        val headersCaptor: KArgumentCaptor<Map<String, String>> = argumentCaptor()
+        verify(mockDPoP).generateProof(eq(BASE_URL), eq(HttpMethod.POST), headersCaptor.capture())
+
+        val headers = headersCaptor.firstValue
+        MatcherAssert.assertThat(headers, IsMapContaining.hasEntry("Authorization", "Bearer test-token"))
+        MatcherAssert.assertThat(headers, IsMapContaining.hasEntry("Content-Type", "application/json"))
+    }
+
+    @Test
+    @Throws(Exception::class)
+    public fun shouldHandleDPoPExceptionDuringProofGeneration() {
+        val dpopException = DPoPException(DPoPException.Code.SIGNING_ERROR, "Signing failed")
+
+        Mockito.`when`(mockDPoP.shouldGenerateProof(eq(BASE_URL), any())).thenReturn(true)
+        Mockito.`when`(mockDPoP.generateProof(eq(BASE_URL), eq(HttpMethod.POST), any())).thenThrow(dpopException)
+
+        val baseRequest = BaseRequest(
+            HttpMethod.POST,
+            BASE_URL,
+            client,
+            resultAdapter,
+            errorAdapter,
+            CommonThreadSwitcher.getInstance(),
+            mockDPoP
+        )
+
+        var exception: Exception? = null
+        var result: SimplePojo? = null
+        try {
+            result = baseRequest.execute()
+        } catch (e: Auth0Exception) {
+            exception = e
+        }
+
+        MatcherAssert.assertThat(exception, Matchers.`is`(wrappingAuth0Exception))
+        MatcherAssert.assertThat(result, Matchers.`is`(Matchers.nullValue()))
+        verify(errorAdapter).fromException(dpopException)
+        verify(client, never()).load(any<String>(), any())
+    }
+
+    @Test
+    @Throws(Exception::class)
+    public fun shouldHandleDPoPExceptionDuringShouldGenerateProofCheck() {
+        val dpopException = DPoPException.KEY_STORE_ERROR
+
+        Mockito.`when`(mockDPoP.shouldGenerateProof(eq(BASE_URL), any())).thenThrow(dpopException)
+
+        val baseRequest = BaseRequest(
+            HttpMethod.POST,
+            BASE_URL,
+            client,
+            resultAdapter,
+            errorAdapter,
+            CommonThreadSwitcher.getInstance(),
+            mockDPoP
+        )
+
+        var exception: Exception? = null
+        var result: SimplePojo? = null
+        try {
+            result = baseRequest.execute()
+        } catch (e: Auth0Exception) {
+            exception = e
+        }
+
+        MatcherAssert.assertThat(exception, Matchers.`is`(wrappingAuth0Exception))
+        MatcherAssert.assertThat(result, Matchers.`is`(Matchers.nullValue()))
+        verify(errorAdapter).fromException(dpopException)
+        verify(client, never()).load(any<String>(), any())
+        verify(mockDPoP, never()).generateProof(any<String>(), any(), any())
+    }
+
+    @Test
+    @Throws(Exception::class)
+    public fun shouldAddDPoPHeaderToExistingHeaders() {
+        mockSuccessfulServerResponse()
+        val mockProof = "test-dpop-proof"
+
+        Mockito.`when`(mockDPoP.shouldGenerateProof(eq(BASE_URL), any())).thenReturn(true)
+        Mockito.`when`(mockDPoP.generateProof(eq(BASE_URL), eq(HttpMethod.POST), any())).thenReturn(mockProof)
+
+        val baseRequest = BaseRequest(
+            HttpMethod.POST,
+            BASE_URL,
+            client,
+            resultAdapter,
+            errorAdapter,
+            CommonThreadSwitcher.getInstance(),
+            mockDPoP
+        )
+
+        baseRequest.addHeader("Authorization", "Bearer test-token")
+        baseRequest.addHeader("Content-Type", "application/json")
+        baseRequest.execute()
+
+        verify(client).load(eq(BASE_URL), optionsCaptor.capture())
+        val headers = optionsCaptor.firstValue.headers
+        MatcherAssert.assertThat(headers, IsMapWithSize.aMapWithSize(3))
+        MatcherAssert.assertThat(headers, IsMapContaining.hasEntry("Authorization", "Bearer test-token"))
+        MatcherAssert.assertThat(headers, IsMapContaining.hasEntry("Content-Type", "application/json"))
+        MatcherAssert.assertThat(headers, IsMapContaining.hasEntry(DPOP_HEADER, mockProof))
     }
 
     @Test

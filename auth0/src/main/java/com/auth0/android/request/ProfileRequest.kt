@@ -6,8 +6,6 @@ import com.auth0.android.callback.Callback
 import com.auth0.android.result.Authentication
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.UserProfile
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 /**
  * Request to fetch a profile after a successful authentication with Auth0 Authentication API
@@ -80,7 +78,10 @@ public class ProfileRequest
         authenticationRequest.start(object : Callback<Credentials, AuthenticationException> {
             override fun onSuccess(credentials: Credentials) {
                 userInfoRequest
-                    .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.accessToken)
+                    .addHeader(
+                        HEADER_AUTHORIZATION,
+                        "${credentials.type} ${credentials.accessToken}"
+                    )
                     .start(object : Callback<UserProfile, AuthenticationException> {
                         override fun onSuccess(profile: UserProfile) {
                             callback.onSuccess(Authentication(profile, credentials))
@@ -108,7 +109,7 @@ public class ProfileRequest
     override fun execute(): Authentication {
         val credentials = authenticationRequest.execute()
         val profile = userInfoRequest
-            .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.accessToken)
+            .addHeader(HEADER_AUTHORIZATION, "${credentials.type} ${credentials.accessToken}")
             .execute()
         return Authentication(profile, credentials)
     }
@@ -125,7 +126,7 @@ public class ProfileRequest
     override suspend fun await(): Authentication {
         val credentials = authenticationRequest.await()
         val profile = userInfoRequest
-            .addHeader(HEADER_AUTHORIZATION, "Bearer " + credentials.accessToken)
+            .addHeader(HEADER_AUTHORIZATION, "${credentials.type} ${credentials.accessToken}")
             .await()
         return Authentication(profile, credentials)
     }
