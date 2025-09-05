@@ -970,6 +970,359 @@ client.enroll(passkeyCredential, challenge)
 ```
 </details>
 
+### Get Available Factors
+**Scopes required:** `read:me:factors`
+```kotlin
+myAccountClient.getFactors()
+    .start(object : Callback<Factors, MyAccountException> {
+        override fun onSuccess(result: Factors) {
+            // List of available factors in result.factors
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+```
+<details>
+    <summary>Using Java</summary>
+
+```java
+myAccountClient.getFactors()
+    .start(new Callback<Factors, MyAccountException>() {
+        @Override
+        public void onSuccess(Factors result) {
+            // List of available factors in result.getFactors()
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+```</details>
+
+### Get All Enrolled Authentication Methods
+**Scopes required:** `read:me:authentication_methods`
+```kotlin
+myAccountClient.getAuthenticationMethods()
+    .start(object : Callback<List<AuthenticationMethod>, MyAccountException> {
+        override fun onSuccess(result: AuthenticationMethods) {
+            // List of enrolled methods in result.authenticationMethods
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+```
+<details>
+    <summary>Using Java</summary>
+
+```java
+myAccountClient.getAuthenticationMethods()
+    .start(new Callback<List<AuthenticationMethod>, MyAccountException>() {
+        @Override
+        public void onSuccess(AuthenticationMethods result) {
+            // List of enrolled methods in result.getAuthenticationMethods()
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+```
+</details>
+
+### Get a Single Authentication Method by ID
+**Scopes required:** `read:me:authentication_methods`
+```kotlin
+myAccountClient.getAuthenticationMethodById("phone|dev_...")
+    .start(object : Callback<AuthenticationMethod, MyAccountException> {
+        override fun onSuccess(result: AuthenticationMethod) {
+            // The requested authentication method
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+```
+<details>
+    <summary>Using Java</summary>
+
+```java
+myAccountClient.getAuthenticationMethodById("phone|dev_...")
+    .start(new Callback<AuthenticationMethod, MyAccountException>() {
+        @Override
+        public void onSuccess(AuthenticationMethod result) {
+            // The requested authentication method
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+```
+</details>
+
+### Enroll a Phone Method
+**Scopes required:** `create:me:authentication_methods`
+```kotlin
+myAccountClient.enrollPhone("+11234567890", PhoneAuthenticationMethodType.SMS)
+    .start(object : Callback<EnrollmentChallenge, MyAccountException> {
+        override fun onSuccess(result: EnrollmentChallenge) {
+            // OTP sent. Use result.id and result.authSession to verify.
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+```
+<details>
+    <summary>Using Java</summary>
+
+```java
+myAccountClient.enrollPhone("+11234567890", PhoneAuthenticationMethodType.SMS)
+    .start(new Callback<EnrollmentChallenge, MyAccountException>() {
+        @Override
+        public void onSuccess(EnrollmentChallenge result) {
+            // OTP sent. Use result.getId() and result.getAuthSession() to verify.
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+```
+</details>
+
+### Enroll an Email Method
+**Scopes required:** `create:me:authentication_methods`
+```kotlin
+myAccountClient.enrollEmail("user@example.com")
+    .start(object : Callback<EnrollmentChallenge, MyAccountException> {
+        override fun onSuccess(result: EnrollmentChallenge) {
+            // OTP sent. Use result.id and result.authSession to verify.
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+```
+<details>
+    <summary>Using Java</summary>
+
+```java
+myAccountClient.enrollEmail("user@example.com")
+    .start(new Callback<EnrollmentChallenge, MyAccountException>() {
+        @Override
+        public void onSuccess(EnrollmentChallenge result) {
+            // OTP sent. Use result.getId() and result.getAuthSession() to verify.
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+```
+</details>
+
+### Enroll a TOTP (Authenticator App) Method
+**Scopes required:** `create:me:authentication_methods`
+```kotlin
+myAccountClient.enrollTotp()
+    .start(object : Callback<EnrollmentChallenge, MyAccountException> {
+        override fun onSuccess(result: EnrollmentChallenge) {
+            val totpChallenge = result as TotpEnrollmentChallenge
+            // Show QR code from totpChallenge.barcodeUri or manual code from totpChallenge.manualInputCode
+            // Then use result.id and result.authSession to verify.
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })```
+<details>
+    <summary>Using Java</summary>
+
+```java
+myAccountClient.enrollTotp()
+    .start(new Callback<EnrollmentChallenge, MyAccountException>() {
+        @Override
+        public void onSuccess(EnrollmentChallenge result) {
+            TotpEnrollmentChallenge totpChallenge = (TotpEnrollmentChallenge) result;
+            // Show QR code from totpChallenge.getBarcodeUri() or manual code from totpChallenge.getManualInputCode()
+            // Then use result.getId() and result.getAuthSession() to verify.
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+```
+</details>
+
+### Enroll a Push Notification Method
+**Scopes required:** `create:me:authentication_methods`
+```kotlin
+myAccountClient.enrollPushNotification()
+    .start(object : Callback<EnrollmentChallenge, MyAccountException> {
+        override fun onSuccess(result: EnrollmentChallenge) {
+            val pushChallenge = result as TotpEnrollmentChallenge // Uses the same response format as TOTP
+            // Show QR code from pushChallenge.barcodeUri to be scanned by Auth0 Guardian/Verify
+            // Then use result.id and result.authSession to verify.
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+```
+<details>
+    <summary>Using Java</summary>
+
+```java
+myAccountClient.enrollPushNotification()
+    .start(new Callback<EnrollmentChallenge, MyAccountException>() {
+        @Override
+        public void onSuccess(EnrollmentChallenge result) {
+            TotpEnrollmentChallenge pushChallenge = (TotpEnrollmentChallenge) result;
+            // Show QR code from pushChallenge.getBarcodeUri() to be scanned by Auth0 Guardian/Verify
+            // Then use result.getId() and result.getAuthSession() to verify.
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+```
+</details>
+
+### Enroll a Recovery Code
+**Scopes required:** `create:me:authentication_methods`
+```kotlin
+myAccountClient.enrollRecoveryCode()
+    .start(object : Callback<EnrollmentChallenge, MyAccountException> {
+        override fun onSuccess(result: EnrollmentChallenge) {
+            val recoveryChallenge = result as RecoveryCodeEnrollmentChallenge
+            // Display and require the user to save recoveryChallenge.recoveryCode
+            // This method is already verified.
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+
+```
+<details>
+    <summary>Using Java</summary>
+
+```java
+myAccountClient.enrollRecoveryCode()
+    .start(new Callback<EnrollmentChallenge, MyAccountException>() {
+        @Override
+        public void onSuccess(EnrollmentChallenge result) {
+            RecoveryCodeEnrollmentChallenge recoveryChallenge = (RecoveryCodeEnrollmentChallenge) result;
+            // Display and require the user to save recoveryChallenge.getRecoveryCode()
+            // This method is already verified.
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+```
+</details>
+
+### Verify an Enrollment
+**Scopes required:** `create:me:authentication_methods`
+```kotlin
+// For OTP-based factors (TOTP, Email, Phone)
+myAccountClient.verifyOtp("challenge_id_from_enroll", "123456", "auth_session_from_enroll")
+    .start(object : Callback<AuthenticationMethod, MyAccountException> {
+        override fun onSuccess(result: AuthenticationMethod) {
+            // Enrollment successful
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+
+// For Push Notification factor
+myAccountClient.verify("challenge_id_from_enroll", "auth_session_from_enroll")
+    .start(object : Callback<AuthenticationMethod, MyAccountException> {
+        override fun onSuccess(result: AuthenticationMethod) {
+            // Enrollment successful
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+```
+<details>
+    <summary>Using Java</summary>
+
+```java
+// For OTP-based factors (TOTP, Email, Phone)
+myAccountClient.verifyOtp("challenge_id_from_enroll", "123456", "auth_session_from_enroll")
+    .start(new Callback<AuthenticationMethod, MyAccountException>() {
+        @Override
+        public void onSuccess(AuthenticationMethod result) {
+            // Enrollment successful
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+
+// For Push Notification factor
+myAccountClient.verify("challenge_id_from_enroll", "auth_session_from_enroll")
+    .start(new Callback<AuthenticationMethod, MyAccountException>() {
+        @Override
+        public void onSuccess(AuthenticationMethod result) {
+            // Enrollment successful
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+```
+</details>
+
+### Update an Authentication Method
+**Scopes required:** `update:me:authentication_methods`
+```kotlin
+// Example: Update the name of a TOTP or Push method
+myAccountClient.updateAuthenticationMethodById("totp|dev_...", name = "My Authenticator App")
+    .start(object : Callback<AuthenticationMethod, MyAccountException> {
+        override fun onSuccess(result: AuthenticationMethod) {
+            // Update successful
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+
+// Example: Update the preferred method of a Phone method
+myAccountClient.updateAuthenticationMethodById("phone|dev_...", preferredAuthenticationMethod = PhoneAuthenticationMethodType.VOICE)
+    .start(object : Callback<AuthenticationMethod, MyAccountException> {
+        override fun onSuccess(result: AuthenticationMethod) {
+            // Update successful
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+```
+<details>
+    <summary>Using Java</summary>
+
+```java
+// Example: Update the name of a TOTP or Push method
+myAccountClient.updateAuthenticationMethodById("totp|dev_...", "My Authenticator App", null)
+    .start(new Callback<AuthenticationMethod, MyAccountException>() {
+        @Override
+        public void onSuccess(AuthenticationMethod result) {
+            // Update successful
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+
+// Example: Update the preferred method of a Phone method
+myAccountClient.updateAuthenticationMethodById("phone|dev_...", null, PhoneAuthenticationMethodType.VOICE)
+    .start(new Callback<AuthenticationMethod, MyAccountException>() {
+        @Override
+        public void onSuccess(AuthenticationMethod result) {
+            // Update successful
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+```
+</details>
+
+### Delete an Authentication Method
+**Scopes required:** `delete:me:authentication_methods`
+```kotlin
+myAccountClient.deleteAuthenticationMethod("phone|dev_...")
+    .start(object : Callback<Unit, MyAccountException> {
+        override fun onSuccess(result: Unit) {
+            // Deletion successful
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+```
+<details>
+    <summary>Using Java</summary>
+
+```java
+myAccountClient.deleteAuthenticationMethod("phone|dev_...")
+    .start(new Callback<Void, MyAccountException>() {
+        @Override
+        public void onSuccess(Void result) {
+            // Deletion successful
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+```
+</details>
+
+
 ## Credentials Manager
 
 ### Secure Credentials Manager

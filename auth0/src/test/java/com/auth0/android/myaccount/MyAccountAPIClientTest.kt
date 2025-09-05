@@ -6,6 +6,7 @@ import com.auth0.android.request.Response
 import com.auth0.android.result.AuthenticationMethod
 import com.auth0.android.result.AuthenticationMethods
 import com.auth0.android.result.EnrollmentChallenge
+import com.auth0.android.result.Factor
 import com.auth0.android.result.Factors
 import com.auth0.android.result.PasskeyAuthenticationMethod
 import com.auth0.android.result.PasskeyEnrollmentChallenge
@@ -313,7 +314,7 @@ public class MyAccountAPIClientTest {
 
     @Test
     public fun `getFactors should build correct URL and Authorization header`() {
-        val callback = MockMyAccountCallback<Factors>()
+        val callback = MockMyAccountCallback<List<Factor>>()
         client.getFactors().start(callback)
 
         val request = mockAPI.takeRequest()
@@ -324,7 +325,7 @@ public class MyAccountAPIClientTest {
 
     @Test
     public fun `getAuthenticationMethods should build correct URL and Authorization header`() {
-        val callback = MockMyAccountCallback<AuthenticationMethods>()
+        val callback = MockMyAccountCallback<List<AuthenticationMethod>>()
         client.getAuthenticationMethods().start(callback)
 
         val request = mockAPI.takeRequest()
@@ -505,5 +506,3 @@ public class MyAccountAPIClientTest {
         private const val AUTH_SESSION = "session456"
     }
 }
-
-

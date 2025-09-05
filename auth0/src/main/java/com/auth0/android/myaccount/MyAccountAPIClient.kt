@@ -17,6 +17,7 @@ import com.auth0.android.request.internal.ResponseUtils.isNetworkError
 import com.auth0.android.result.AuthenticationMethod
 import com.auth0.android.result.AuthenticationMethods
 import com.auth0.android.result.EnrollmentChallenge
+import com.auth0.android.result.Factor
 import com.auth0.android.result.Factors
 import com.auth0.android.result.PasskeyAuthenticationMethod
 import com.auth0.android.result.PasskeyEnrollmentChallenge
@@ -262,9 +263,9 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      *
      *
      * apiClient.getAuthenticationMethods()
-     *     .start(object : Callback<AuthenticationMethods, MyAccountException> {
-     *         override fun onSuccess(result: AuthenticationMethods) {
-     *             Log.d("MyApp", "Authentication method $result")
+     *     .start(object : Callback<List<AuthenticationMethod>, MyAccountException> {
+     *         override fun onSuccess(result: List<AuthenticationMethod>) {
+     *             Log.d("MyApp", "Authentication methods: $result")
      *         }
      *
      *         override fun onFailure(error: MyAccountException) {
@@ -274,9 +275,16 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * ```
      *
      */
-    public fun getAuthenticationMethods(): Request<AuthenticationMethods, MyAccountException> {
+    public fun getAuthenticationMethods(): Request<List<AuthenticationMethod>, MyAccountException> {
         val url = getDomainUrlBuilder().addPathSegment(AUTHENTICATION_METHODS).build()
-        return factory.get(url.toString(), GsonAdapter(AuthenticationMethods::class.java, gson))
+
+        val listAdapter = object : JsonAdapter<List<AuthenticationMethod>> {
+            override fun fromJson(reader: Reader, metadata: Map<String, Any>): List<AuthenticationMethod> {
+                val container = gson.fromJson(reader, AuthenticationMethods::class.java)
+                return container.authenticationMethods
+            }
+        }
+        return factory.get(url.toString(), listAdapter)
             .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
     }
 
@@ -374,11 +382,11 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
                     PREFERRED_AUTHENTICATION_METHOD,
                     it.value
                 )
-            } // Now correctly uses .value
+            }
         }.asDictionary()
 
         return factory.patch(url.toString(), GsonAdapter(AuthenticationMethod::class.java, gson))
-            .addParameters(params.mapValues { it.value.toString() })
+            .addParameters(params)
             .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
     }
 
@@ -453,9 +461,16 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * ```
      * @return A request to get the list of available factors.
      */
-    public fun getFactors(): Request<Factors, MyAccountException> {
+    public fun getFactors(): Request<List<Factor>, MyAccountException> {
         val url = getDomainUrlBuilder().addPathSegment(FACTORS).build()
-        return factory.get(url.toString(), GsonAdapter(Factors::class.java, gson))
+
+        val listAdapter = object : JsonAdapter<List<Factor>> {
+            override fun fromJson(reader: Reader, metadata: Map<String, Any>): List<Factor> {
+                val container = gson.fromJson(reader, Factors::class.java)
+                return container.factors
+            }
+        }
+        return factory.get(url.toString(), listAdapter)
             .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
     }
 
@@ -822,3 +837,4 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
         }
     }
 }
+
