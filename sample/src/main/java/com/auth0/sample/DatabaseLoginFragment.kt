@@ -21,7 +21,6 @@ import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.authentication.storage.AuthenticationLevel
-import com.auth0.android.authentication.storage.BiometricPolicy
 import com.auth0.android.authentication.storage.CredentialsManager
 import com.auth0.android.authentication.storage.CredentialsManagerException
 import com.auth0.android.authentication.storage.LocalAuthenticationOptions
@@ -76,16 +75,6 @@ class DatabaseLoginFragment : Fragment() {
         AuthenticationAPIClient(account)
     }
 
-    private val localAuthenticationOptions =
-        LocalAuthenticationOptions.Builder()
-            .setTitle("Biometric")
-            .setDescription("description")
-            .setAuthenticationLevel(AuthenticationLevel.STRONG)
-            .setNegativeButtonText("Cancel")
-            .setDeviceCredentialFallback(true)
-            .setPolicy(BiometricPolicy.Always) // Default policy - shows prompt every time
-            .build()
-
     private val secureCredentialsManager: SecureCredentialsManager by lazy {
         val storage = SharedPreferencesStorage(requireContext())
         val manager = SecureCredentialsManager(
@@ -98,50 +87,20 @@ class DatabaseLoginFragment : Fragment() {
         manager
     }
 
-    // Alternative managers with different biometric policies for demonstration
-    private val secureCredentialsManagerSession: SecureCredentialsManager by lazy {
-        val storage = SharedPreferencesStorage(requireContext())
-        val localAuthOptionsSession = LocalAuthenticationOptions.Builder()
-            .setTitle("Biometric")
-            .setDescription("description")
-            .setAuthenticationLevel(AuthenticationLevel.STRONG)
-            .setNegativeButtonText("Cancel")
-            .setDeviceCredentialFallback(true)
-            .setPolicy(BiometricPolicy.Session(timeoutInSeconds = 300)) // 5 minute session
-            .build()
-        SecureCredentialsManager(
-            requireContext(),
-            account,
-            storage,
-            requireActivity(),
-            localAuthOptionsSession
-        )
-    }
-
-    private val secureCredentialsManagerAppLifecycle: SecureCredentialsManager by lazy {
-        val storage = SharedPreferencesStorage(requireContext())
-        val localAuthOptionsAppLifecycle = LocalAuthenticationOptions.Builder()
-            .setTitle("Biometric")
-            .setDescription("description")
-            .setAuthenticationLevel(AuthenticationLevel.STRONG)
-            .setNegativeButtonText("Cancel")
-            .setDeviceCredentialFallback(true)
-            .setPolicy(BiometricPolicy.AppLifecycle()) // Default 1 hour timeout
-            .build()
-        SecureCredentialsManager(
-            requireContext(),
-            account,
-            storage,
-            requireActivity(),
-            localAuthOptionsAppLifecycle
-        )
-    }
-
     private val credentialsManager: CredentialsManager by lazy {
         val storage = SharedPreferencesStorage(requireContext())
         val manager = CredentialsManager(authenticationApiClient, storage)
         manager
     }
+
+    private val localAuthenticationOptions =
+        LocalAuthenticationOptions.Builder()
+            .setTitle("Biometric")
+            .setDescription("description")
+            .setAuthenticationLevel(AuthenticationLevel.STRONG)
+            .setNegativeButtonText("Cancel")
+            .setDeviceCredentialFallback(true)
+            .build()
 
     private val callback = object: Callback<Credentials, AuthenticationException> {
         override fun onSuccess(result: Credentials) {
@@ -241,20 +200,6 @@ class DatabaseLoginFragment : Fragment() {
             launchAsync {
                 updateMetaAsync()
             }
-        }
-        
-        // Biometric Policy Demo Buttons
-        binding.btGetCredsAlways?.setOnClickListener {
-            getCredsWithPolicy("Always", secureCredentialsManager)
-        }
-        binding.btGetCredsSession?.setOnClickListener {
-            getCredsWithPolicy("Session (5min)", secureCredentialsManagerSession)
-        }
-        binding.btGetCredsAppLifecycle?.setOnClickListener {
-            getCredsWithPolicy("AppLifecycle (1h)", secureCredentialsManagerAppLifecycle)
-        }
-        binding.btClearBiometricSession?.setOnClickListener {
-            clearBiometricSessions()
         }
         return binding.root
     }
@@ -806,51 +751,5 @@ class DatabaseLoginFragment : Fragment() {
                 Snackbar.LENGTH_LONG
             ).show()
         }
-    }
-
-    // =================
-    // Biometric Policy Demo Methods
-    // =================
-
-    /**
-     * Demonstrates getting credentials with different biometric policies
-     */
-    private fun getCredsWithPolicy(policyName: String, manager: SecureCredentialsManager) {
-        manager.getCredentials(object : Callback<Credentials, CredentialsManagerException> {
-            override fun onSuccess(result: Credentials) {
-                Snackbar.make(
-                    requireView(),
-                    "✅ $policyName Policy: Got credentials - ${result.accessToken.take(20)}...",
-                    Snackbar.LENGTH_LONG
-                ).show()
-            }
-
-            override fun onFailure(error: CredentialsManagerException) {
-                val message = when {
-                    error.message?.contains("No Credentials") == true -> 
-                        "❌ $policyName Policy: No credentials stored. Please login first."
-                    error.message?.contains("BIOMETRIC") == true -> 
-                        "❌ $policyName Policy: Biometric authentication failed - ${error.message}"
-                    else -> 
-                        "❌ $policyName Policy: ${error.message}"
-                }
-                Snackbar.make(requireView(), message, Snackbar.LENGTH_LONG).show()
-            }
-        })
-    }
-
-    /**
-     * Clears biometric sessions for all managers
-     */
-    private fun clearBiometricSessions() {
-        secureCredentialsManager.clearBiometricSession()
-        secureCredentialsManagerSession.clearBiometricSession()
-        secureCredentialsManagerAppLifecycle.clearBiometricSession()
-        
-        Snackbar.make(
-            requireView(),
-            "🔄 All biometric sessions cleared. Next credential access will show biometric prompt.",
-            Snackbar.LENGTH_LONG
-        ).show()
     }
 }
