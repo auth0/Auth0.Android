@@ -1109,9 +1109,9 @@ myAccountClient.enrollEmail("user@example.com")
 ```kotlin
 myAccountClient.enrollTotp()
     .start(object : Callback<TotpEnrollmentChallenge, MyAccountException> {
-        override fun onSuccess(result: EnrollmentChallenge) {
-            val totpChallenge = result as TotpEnrollmentChallenge
-            // Show QR code from totpChallenge.barcodeUri or manual code from totpChallenge.manualInputCode
+        override fun onSuccess(result: TotpEnrollmentChallenge) {
+            // The result is already a TotpEnrollmentChallenge, no cast is needed.
+            // Show QR code from result.barcodeUri or manual code from result.manualInputCode
             // Then use result.id and result.authSession to verify.
         }
         override fun onFailure(error: MyAccountException) { }
@@ -1123,9 +1123,9 @@ myAccountClient.enrollTotp()
 myAccountClient.enrollTotp()
     .start(new Callback<TotpEnrollmentChallenge, MyAccountException>() {
         @Override
-        public void onSuccess(EnrollmentChallenge result) {
-            TotpEnrollmentChallenge totpChallenge = (TotpEnrollmentChallenge) result;
-            // Show QR code from totpChallenge.getBarcodeUri() or manual code from totpChallenge.getManualInputCode()
+        public void onSuccess(TotpEnrollmentChallenge result) {
+            // The result is already a TotpEnrollmentChallenge, no cast is needed.
+            // Show QR code from result.getBarcodeUri() or manual code from result.getManualInputCode()
             // Then use result.getId() and result.getAuthSession() to verify.
         }
         @Override
@@ -1139,9 +1139,9 @@ myAccountClient.enrollTotp()
 ```kotlin
 myAccountClient.enrollPushNotification()
     .start(object : Callback<TotpEnrollmentChallenge, MyAccountException> {
-        override fun onSuccess(result: EnrollmentChallenge) {
-            val pushChallenge = result as TotpEnrollmentChallenge // Uses the same response format as TOTP
-            // Show QR code from pushChallenge.barcodeUri to be scanned by Auth0 Guardian/Verify
+        override fun onSuccess(result: TotpEnrollmentChallenge) {
+            // The result is already a TotpEnrollmentChallenge, no cast is needed.
+            // Show QR code from result.barcodeUri to be scanned by Auth0 Guardian/Verify
             // Then use result.id and result.authSession to verify.
         }
         override fun onFailure(error: MyAccountException) { }
@@ -1153,15 +1153,15 @@ myAccountClient.enrollPushNotification()
 ```java
 myAccountClient.enrollPushNotification()
     .start(new Callback<TotpEnrollmentChallenge, MyAccountException>() {
-        @Override
-        public void onSuccess(EnrollmentChallenge result) {
-            TotpEnrollmentChallenge pushChallenge = (TotpEnrollmentChallenge) result;
-            // Show QR code from pushChallenge.getBarcodeUri() to be scanned by Auth0 Guardian/Verify
-            // Then use result.getId() and result.getAuthSession() to verify.
-        }
-        @Override
-        public void onFailure(@NonNull MyAccountException error) { }
-    });
+    @Override
+    public void onSuccess(TotpEnrollmentChallenge result) {
+        // The result is already a TotpEnrollmentChallenge, no cast is needed.
+        // Show QR code from result.getBarcodeUri() to be scanned by Auth0 Guardian/Verify
+        // Then use result.getId() and result.getAuthSession() to verify.
+    }
+    @Override
+    public void onFailure(@NonNull MyAccountException error) { }
+});
 ```
 </details>
 
@@ -1170,9 +1170,9 @@ myAccountClient.enrollPushNotification()
 ```kotlin
 myAccountClient.enrollRecoveryCode()
     .start(object : Callback<RecoveryCodeEnrollmentChallenge, MyAccountException> {
-        override fun onSuccess(result: EnrollmentChallenge) {
-            val recoveryChallenge = result as RecoveryCodeEnrollmentChallenge
-            // Display and require the user to save recoveryChallenge.recoveryCode
+        override fun onSuccess(result: RecoveryCodeEnrollmentChallenge) {
+            // The result is already a RecoveryCodeEnrollmentChallenge, no cast is needed.
+            // Display and require the user to save result.recoveryCode
             // This method is already verified.
         }
         override fun onFailure(error: MyAccountException) { }
@@ -1184,16 +1184,16 @@ myAccountClient.enrollRecoveryCode()
 
 ```java
 myAccountClient.enrollRecoveryCode()
-    .start(new Callback<EnrollmentChallenge, MyAccountException>() {
-        @Override
-        public void onSuccess(RecoveryCodeEnrollmentChallenge result) {
-            RecoveryCodeEnrollmentChallenge recoveryChallenge = (RecoveryCodeEnrollmentChallenge) result;
-            // Display and require the user to save recoveryChallenge.getRecoveryCode()
-            // This method is already verified.
-        }
-        @Override
-        public void onFailure(@NonNull MyAccountException error) { }
-    });
+    .start(new Callback<RecoveryCodeEnrollmentChallenge, MyAccountException>() {
+    @Override
+    public void onSuccess(RecoveryCodeEnrollmentChallenge result) {
+        // The result is already a RecoveryCodeEnrollmentChallenge, no cast is needed.
+        // Display and require the user to save result.getRecoveryCode()
+        // This method is already verified.
+    }
+    @Override
+    public void onFailure(@NonNull MyAccountException error) { }
+});
 ```
 </details>
 

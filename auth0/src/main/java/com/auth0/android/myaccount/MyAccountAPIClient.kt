@@ -690,7 +690,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
     }
 
     /**
-     * Confirms the enrollment for factors that do not require an OTP, like Push Notification or Recovery Code.
+     * Confirms the enrollment for factors that do not require an OTP.
      *
      * ## Scopes Required
      * `create:me:authentication_methods`
