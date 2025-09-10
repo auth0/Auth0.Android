@@ -93,7 +93,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         WeakReference(fragmentActivity),
         localAuthenticationOptions,
         DefaultLocalAuthenticationManagerFactory(),
-        localAuthenticationOptions.policy
+        localAuthenticationOptions?.policy ?: BiometricPolicy.Always
     )
 
     /**
