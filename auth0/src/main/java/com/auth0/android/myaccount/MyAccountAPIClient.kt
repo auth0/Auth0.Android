@@ -22,6 +22,8 @@ import com.auth0.android.result.Factors
 import com.auth0.android.result.PasskeyAuthenticationMethod
 import com.auth0.android.result.PasskeyEnrollmentChallenge
 import com.auth0.android.result.PasskeyRegistrationChallenge
+import com.auth0.android.result.RecoveryCodeEnrollmentChallenge
+import com.auth0.android.result.TotpEnrollmentChallenge
 
 import com.google.gson.Gson
 import okhttp3.HttpUrl
@@ -365,9 +367,9 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      *
      */
     @JvmOverloads
-    public fun updateAuthenticationMethodById(
+    internal fun updateAuthenticationMethodById(
         authenticationMethodId: String,
-        name: String? = null,
+        authenticationMethodName: String? = null,
         preferredAuthenticationMethod: PhoneAuthenticationMethodType? = null
     ): Request<AuthenticationMethod, MyAccountException> {
         val url = getDomainUrlBuilder()
@@ -376,7 +378,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
             .build()
 
         val params = ParameterBuilder.newBuilder().apply {
-            name?.let { set(AUTHENTICATION_METHOD_NAME, it) }
+            authenticationMethodName?.let { set(AUTHENTICATION_METHOD_NAME, it) }
             preferredAuthenticationMethod?.let {
                 set(
                     PREFERRED_AUTHENTICATION_METHOD,
@@ -441,7 +443,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * Gets the list of factors available for the user to enroll.
      *
      * ## Scopes Required
-     * `read:me`
+     * `read:me:factors`
      *
      * ## Usage
      *
@@ -560,7 +562,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * val apiClient = MyAccountAPIClient(auth0, accessToken)
      *
      * apiClient.enrollTotp()
-     *      .start(object : Callback<EnrollmentChallenge, MyAccountException> {
+     *      .start(object : Callback<TotpEnrollmentChallenge, MyAccountException> {
      *            override fun onSuccess(result: EnrollmentChallenge) {
      *        // The result will be a TotpEnrollmentChallenge with a barcode_uri
      *                  Log.d("MyApp", "Enrollment started for TOTP.")
@@ -570,9 +572,13 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * ```
      * @return a request that will yield an enrollment challenge.
      */
-    public fun enrollTotp(): Request<EnrollmentChallenge, MyAccountException> {
+    public fun enrollTotp(): Request<TotpEnrollmentChallenge, MyAccountException> {
         val params = ParameterBuilder.newBuilder().set(TYPE_KEY, "totp").asDictionary()
-        return buildEnrollmentRequest(params)
+        val url = getDomainUrlBuilder().addPathSegment(AUTHENTICATION_METHODS).build()
+        val adapter = GsonAdapter(TotpEnrollmentChallenge::class.java, gson)
+        return factory.post(url.toString(), adapter)
+            .addParameters(params)
+            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
     }
 
     /**
@@ -588,7 +594,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * val apiClient = MyAccountAPIClient(auth0, accessToken)
      *
      * apiClient.enrollPushNotification()
-     *      .start(object : Callback<EnrollmentChallenge, MyAccountException> {
+     *      .start(object : Callback<TotpEnrollmentChallenge, MyAccountException> {
      *          override fun onSuccess(result: EnrollmentChallenge) {
      *          // The result will be a TotpEnrollmentChallenge containing a barcode_uri
      *                 Log.d("MyApp", "Enrollment started for Push Notification.")
@@ -598,9 +604,14 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * ```
      * @return a request that will yield an enrollment challenge.
      */
-    public fun enrollPushNotification(): Request<EnrollmentChallenge, MyAccountException> {
+    public fun enrollPushNotification(): Request<TotpEnrollmentChallenge, MyAccountException> {
         val params = ParameterBuilder.newBuilder().set(TYPE_KEY, "push-notification").asDictionary()
-        return buildEnrollmentRequest(params)
+        val url = getDomainUrlBuilder().addPathSegment(AUTHENTICATION_METHODS).build()
+        // The response structure for push notification challenge is the same as TOTP (contains barcode_uri)
+        val adapter = GsonAdapter(TotpEnrollmentChallenge::class.java, gson)
+        return factory.post(url.toString(), adapter)
+            .addParameters(params)
+            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
     }
 
     /**
@@ -616,7 +627,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * val apiClient = MyAccountAPIClient(auth0, accessToken)
      *
      * apiClient.enrollRecoveryCode()
-     *      .start(object : Callback<EnrollmentChallenge, MyAccountException> {
+     *      .start(object : Callback<RecoveryCodeEnrollmentChallenge, MyAccountException> {
      *          override fun onSuccess(result: EnrollmentChallenge) {
      *      // The result will be a RecoveryCodeEnrollmentChallenge containing the code
      *              Log.d("MyApp", "Recovery Code enrollment started.")
@@ -626,9 +637,13 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * ```
      * @return a request that will yield an enrollment challenge containing the recovery code.
      */
-    public fun enrollRecoveryCode(): Request<EnrollmentChallenge, MyAccountException> {
+    public fun enrollRecoveryCode(): Request<RecoveryCodeEnrollmentChallenge, MyAccountException> {
         val params = ParameterBuilder.newBuilder().set(TYPE_KEY, "recovery-code").asDictionary()
-        return buildEnrollmentRequest(params)
+        val url = getDomainUrlBuilder().addPathSegment(AUTHENTICATION_METHODS).build()
+        val adapter = GsonAdapter(RecoveryCodeEnrollmentChallenge::class.java, gson)
+        return factory.post(url.toString(), adapter)
+            .addParameters(params)
+            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
     }
 
     /**
@@ -770,14 +785,11 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
         return buildEnrollmentRequest(params)
     }
 
-    private fun buildEnrollmentRequest(params: Map<String, Any>): Request<EnrollmentChallenge, MyAccountException> {
+    private fun buildEnrollmentRequest(params: Map<String, String>): Request<EnrollmentChallenge, MyAccountException> {
         val url = getDomainUrlBuilder().addPathSegment(AUTHENTICATION_METHODS).build()
-        val request =
-            factory.post(url.toString(), GsonAdapter(EnrollmentChallenge::class.java, gson))
-        for ((key, value) in params) {
-            request.addParameter(key, value)
-        }
-        return request.addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+        return factory.post(url.toString(), GsonAdapter(EnrollmentChallenge::class.java, gson))
+            .addParameters(params)
+            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
     }
 
     private fun getDomainUrlBuilder(): HttpUrl.Builder {

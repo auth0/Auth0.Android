@@ -4,12 +4,12 @@ import com.auth0.android.Auth0
 import com.auth0.android.request.PublicKeyCredentials
 import com.auth0.android.request.Response
 import com.auth0.android.result.AuthenticationMethod
-import com.auth0.android.result.AuthenticationMethods
 import com.auth0.android.result.EnrollmentChallenge
 import com.auth0.android.result.Factor
-import com.auth0.android.result.Factors
 import com.auth0.android.result.PasskeyAuthenticationMethod
 import com.auth0.android.result.PasskeyEnrollmentChallenge
+import com.auth0.android.result.RecoveryCodeEnrollmentChallenge
+import com.auth0.android.result.TotpEnrollmentChallenge
 import com.auth0.android.util.AuthenticationAPIMockServer.Companion.SESSION_ID
 import com.auth0.android.util.MockMyAccountCallback
 import com.auth0.android.util.MyAccountAPIMockServer
@@ -376,7 +376,7 @@ public class MyAccountAPIClientTest {
         val callback = MockMyAccountCallback<AuthenticationMethod>()
         val methodId = "totp|12345"
         val name = "My Authenticator"
-        client.updateAuthenticationMethodById(methodId, name = name).start(callback)
+        client.updateAuthenticationMethodById(methodId, authenticationMethodName = name).start(callback)
 
         val request = mockAPI.takeRequest()
         val body = bodyFromRequest<String>(request)
@@ -416,7 +416,7 @@ public class MyAccountAPIClientTest {
 
     @Test
     public fun `enrollTotp should send correct payload`() {
-        val callback = MockMyAccountCallback<EnrollmentChallenge>()
+        val callback = MockMyAccountCallback<TotpEnrollmentChallenge>()
         client.enrollTotp().start(callback)
 
         val request = mockAPI.takeRequest()
@@ -426,9 +426,10 @@ public class MyAccountAPIClientTest {
         assertThat(body, Matchers.hasEntry("type", "totp" as Any))
     }
 
+
     @Test
     public fun `enrollRecoveryCode should send correct payload`() {
-        val callback = MockMyAccountCallback<EnrollmentChallenge>()
+        val callback = MockMyAccountCallback<RecoveryCodeEnrollmentChallenge>()
         client.enrollRecoveryCode().start(callback)
 
         val request = mockAPI.takeRequest()
@@ -455,18 +456,15 @@ public class MyAccountAPIClientTest {
     }
 
     @Test
-    public fun `verify for push notifications should send correct payload`() {
-        val callback = MockMyAccountCallback<AuthenticationMethod>()
-        val methodId = "push|123"
-        val session = "abc-def"
-        client.verify(methodId, session).start(callback)
+    public fun `enrollPushNotification should send correct payload`() {
+        val callback = MockMyAccountCallback<TotpEnrollmentChallenge>()
+        client.enrollPushNotification().start(callback)
 
         val request = mockAPI.takeRequest()
         val body = bodyFromRequest<String>(request)
-        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods/push%7C123/verify"))
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods"))
         assertThat(request.method, Matchers.equalTo("POST"))
-        assertThat(body, Matchers.hasEntry("auth_session", session as Any))
-        assertThat(body.containsKey("otp_code"), Matchers.`is`(false))
+        assertThat(body, Matchers.hasEntry("type", "push-notification" as Any))
     }
 
     private fun <T> bodyFromRequest(request: RecordedRequest): Map<String, T> {
