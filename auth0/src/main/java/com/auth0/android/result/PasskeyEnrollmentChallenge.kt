@@ -1,14 +1,11 @@
 package com.auth0.android.result
 
-import com.google.gson.annotations.SerializedName
-
 /**
- * Represents the challenge data required for enrolling a passkey.
+ * A passkey enrollment challenge, combining the authentication method ID from the response headers
+ * with the challenge details from the response body.
  */
 public data class PasskeyEnrollmentChallenge(
-    val authenticationMethodId: String,
-    @SerializedName("auth_session")
-    val authSession: String,
-    @SerializedName("authn_params_public_key")
-    val authParamsPublicKey: AuthnParamsPublicKey
+    public val authenticationMethodId: String,
+    public val authSession: String,
+    public val authParamsPublicKey: AuthnParamsPublicKey
 )
