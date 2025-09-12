@@ -25,6 +25,16 @@
     - [DPoP [EA]](#dpop-ea-1)
   - [My Account API](#my-account-api)
     - [Enroll a new passkey](#enroll-a-new-passkey)
+    - [Get Available Factors](#get-available-factors)
+    - [Get All Enrolled Authentication Methods](#get-all-enrolled-authentication-methods)
+    - [Get a Single Authentication Method by ID](#get-a-single-authentication-method-by-id)
+    - [Enroll a Phone Method](#enroll-a-phone-method)
+    - [Enroll an Email Method](#enroll-an-email-method)
+    - [Enroll a TOTP (Authenticator App) Method](#enroll-a-totp-authenticator-app-method)
+    - [Enroll a Push Notification Method](#enroll-a-push-notification-method)
+    - [Enroll a Recovery Code](#enroll-a-recovery-code)
+    - [Verify an Enrollment](#verify-an-enrollment)
+    - [Delete an Authentication Method](#delete-an-authentication-method)
   - [Credentials Manager](#credentials-manager)
     - [Secure Credentials Manager](#secure-credentials-manager)
       - [Usage](#usage)
@@ -958,6 +968,396 @@ client.enroll(passkeyCredential, challenge)
 
 ```
 </details>
+
+### Get Available Factors
+**Scopes required:** `read:me:factors`
+
+Retrieves the list of multi-factor authentication (MFA) factors that are enabled for the tenant and available for the user to enroll.
+
+**Prerequisites:**
+
+Enable the desired MFA factors you want to be listed. Go to Auth0 Dashboard > Security > Multi-factor Auth.
+
+```kotlin
+myAccountClient.getFactors()
+    .start(object : Callback<List<Factor>, MyAccountException> {
+        override fun onSuccess(result: Factors) {
+            // List of available factors in result.factors
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+```
+<details>
+    <summary>Using Java</summary>
+
+```java
+myAccountClient.getFactors()
+    .start(new Callback<List<Factor>, MyAccountException>() {
+        @Override
+        public void onSuccess(Factors result) {
+            // List of available factors in result.getFactors()
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+```
+</details>
+
+### Get All Enrolled Authentication Methods
+**Scopes required:** `read:me:authentication_methods`
+
+Retrieves a detailed list of all the authentication methods that the current user has already enrolled in.
+
+
+**Prerequisites:**
+
+The user must have one or more authentication methods already enrolled.
+
+```kotlin
+myAccountClient.getAuthenticationMethods()
+    .start(object : Callback<List<AuthenticationMethod>, MyAccountException> {
+        override fun onSuccess(result: AuthenticationMethods) {
+            // List of enrolled methods in result.authenticationMethods
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+```
+<details>
+    <summary>Using Java</summary>
+
+```java
+myAccountClient.getAuthenticationMethods()
+    .start(new Callback<List<AuthenticationMethod>, MyAccountException>() {
+        @Override
+        public void onSuccess(AuthenticationMethods result) {
+            // List of enrolled methods in result.getAuthenticationMethods()
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+```
+</details>
+
+### Get a Single Authentication Method by ID
+**Scopes required:** `read:me:authentication_methods`
+
+Retrieves a single authentication method by its unique ID.
+
+**Prerequisites:**
+
+The user must have the specific authentication method (identified by its ID) already enrolled.
+
+```kotlin
+myAccountClient.getAuthenticationMethodById("phone|dev_...")
+    .start(object : Callback<AuthenticationMethod, MyAccountException> {
+        override fun onSuccess(result: AuthenticationMethod) {
+            // The requested authentication method
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+```
+<details>
+    <summary>Using Java</summary>
+
+```java
+myAccountClient.getAuthenticationMethodById("phone|dev_...")
+    .start(new Callback<AuthenticationMethod, MyAccountException>() {
+        @Override
+        public void onSuccess(AuthenticationMethod result) {
+            // The requested authentication method
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+```
+</details>
+
+### Enroll a Phone Method
+**Scopes required:** `create:me:authentication_methods`
+
+Enrolling a new phone authentication method is a two-step process. First, you request an enrollment challenge which sends an OTP to the user. Then, you must verify the enrollment with the received OTP.
+
+**Prerequisites:**
+
+Enable the MFA grant type for your application. Go to Auth0 Dashboard > Applications > Your App > Advanced Settings > Grant Types and select MFA.
+
+Enable the Phone Message factor. Go to Auth0 Dashboard > Security > Multi-factor Auth > Phone Message.
+
+```kotlin
+myAccountClient.enrollPhone("+11234567890", PhoneAuthenticationMethodType.SMS)
+    .start(object : Callback<EnrollmentChallenge, MyAccountException> {
+        override fun onSuccess(result: EnrollmentChallenge) {
+            // OTP sent. Use result.id and result.authSession to verify.
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+```
+<details>
+    <summary>Using Java</summary>
+
+```java
+myAccountClient.enrollPhone("+11234567890", PhoneAuthenticationMethodType.SMS)
+    .start(new Callback<EnrollmentChallenge, MyAccountException>() {
+        @Override
+        public void onSuccess(EnrollmentChallenge result) {
+            // OTP sent. Use result.getId() and result.getAuthSession() to verify.
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+```
+
+</details>
+
+### Enroll an Email Method
+**Scopes required:** `create:me:authentication_methods`
+
+Enrolling a new email authentication method is a two-step process. First, you request an enrollment challenge which sends an OTP to the user. Then, you must verify the enrollment with the received OTP.
+
+**Prerequisites:**
+
+Enable the MFA grant type for your application. Go to Auth0 Dashboard > Applications > Your App > Advanced Settings > Grant Types and select MFA.
+
+Enable the Email factor. Go to Auth0 Dashboard > Security > Multi-factor Auth > Email.
+
+```kotlin
+myAccountClient.enrollEmail("user@example.com")
+    .start(object : Callback<EnrollmentChallenge, MyAccountException> {
+        override fun onSuccess(result: EnrollmentChallenge) {
+            // OTP sent. Use result.id and result.authSession to verify.
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+```
+<details>
+    <summary>Using Java</summary>
+
+```java
+myAccountClient.enrollEmail("user@example.com")
+    .start(new Callback<EnrollmentChallenge, MyAccountException>() {
+        @Override
+        public void onSuccess(EnrollmentChallenge result) {
+            // OTP sent. Use result.getId() and result.getAuthSession() to verify.
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+```
+</details>
+
+### Enroll a TOTP (Authenticator App) Method
+
+**Scopes required:** `create:me:authentication_methods`
+
+Enrolling a new TOTP (Authenticator App) authentication method is a two-step process. First, you request an enrollment challenge which provides a QR code or manual entry key. Then, you must verify the enrollment with an OTP from the authenticator app.
+
+**Prerequisites:**
+
+Enable the MFA grant type for your application. Go to Auth0 Dashboard > Applications > Your App > Advanced Settings > Grant Types and select MFA.
+
+Enable the One-time Password factor. Go to Auth0 Dashboard > Security > Multi-factor Auth > One-time Password.
+
+```kotlin
+myAccountClient.enrollTotp()
+    .start(object : Callback<TotpEnrollmentChallenge, MyAccountException> {
+        override fun onSuccess(result: TotpEnrollmentChallenge) {
+            // The result is already a TotpEnrollmentChallenge, no cast is needed.
+            // Show QR code from result.barcodeUri or manual code from result.manualInputCode
+            // Then use result.id and result.authSession to verify.
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+```
+
+<details>
+    <summary>Using Java</summary>
+
+```java
+myAccountClient.enrollTotp()
+    .start(new Callback<TotpEnrollmentChallenge, MyAccountException>() {
+        @Override
+        public void onSuccess(TotpEnrollmentChallenge result) {
+            // The result is already a TotpEnrollmentChallenge, no cast is needed.
+            // Show QR code from result.getBarcodeUri() or manual code from result.getManualInputCode()
+            // Then use result.getId() and result.getAuthSession() to verify.
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+```
+</details>
+
+### Enroll a Push Notification Method
+**Scopes required:** `create:me:authentication_methods`
+
+Enrolling a new Push Notification authentication method is a two-step process. First, you request an enrollment challenge which provides a QR code. Then, after the user scans the QR code and approves, you must confirm the enrollment.
+
+**Prerequisites:**
+
+Enable the MFA grant type for your application. Go to Auth0 Dashboard > Applications > Your App > Advanced Settings > Grant Types and select MFA.
+
+Enable the Push Notification factor. Go to Auth0 Dashboard > Security > Multi-factor Auth > Push Notification using Auth0 Guardian.
+
+```kotlin
+myAccountClient.enrollPushNotification()
+    .start(object : Callback<TotpEnrollmentChallenge, MyAccountException> {
+        override fun onSuccess(result: TotpEnrollmentChallenge) {
+            // The result is already a TotpEnrollmentChallenge, no cast is needed.
+            // Show QR code from result.barcodeUri to be scanned by Auth0 Guardian/Verify
+            // Then use result.id and result.authSession to verify.
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+```
+<details>
+    <summary>Using Java</summary>
+
+```java
+myAccountClient.enrollPushNotification()
+    .start(new Callback<TotpEnrollmentChallenge, MyAccountException>() {
+    @Override
+    public void onSuccess(TotpEnrollmentChallenge result) {
+        // The result is already a TotpEnrollmentChallenge, no cast is needed.
+        // Show QR code from result.getBarcodeUri() to be scanned by Auth0 Guardian/Verify
+        // Then use result.getId() and result.getAuthSession() to verify.
+    }
+    @Override
+    public void onFailure(@NonNull MyAccountException error) { }
+});
+```
+</details>
+
+### Enroll a Recovery Code
+**Scopes required:** `create:me:authentication_methods`
+
+Enrolls a new recovery code for the user. This is a single-step process that immediately returns the recovery code. The user must save this code securely as it will not be shown again.
+
+**Prerequisites:**
+
+Enable the MFA grant type for your application. Go to Auth0 Dashboard > Applications > Your App > Advanced Settings > Grant Types and select MFA.
+
+Enable the Recovery Code factor. Go to Auth0 Dashboard > Security > Multi-factor Auth > Recovery Code.
+
+```kotlin
+myAccountClient.enrollRecoveryCode()
+    .start(object : Callback<RecoveryCodeEnrollmentChallenge, MyAccountException> {
+        override fun onSuccess(result: RecoveryCodeEnrollmentChallenge) {
+            // The result is already a RecoveryCodeEnrollmentChallenge, no cast is needed.
+            // Display and require the user to save result.recoveryCode
+            // This method is already verified.
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+
+```
+<details>
+    <summary>Using Java</summary>
+
+```java
+myAccountClient.enrollRecoveryCode()
+    .start(new Callback<RecoveryCodeEnrollmentChallenge, MyAccountException>() {
+    @Override
+    public void onSuccess(RecoveryCodeEnrollmentChallenge result) {
+        // The result is already a RecoveryCodeEnrollmentChallenge, no cast is needed.
+        // Display and require the user to save result.getRecoveryCode()
+        // This method is already verified.
+    }
+    @Override
+    public void onFailure(@NonNull MyAccountException error) { }
+});
+```
+</details>
+
+### Verify an Enrollment
+**Scopes required:** `create:me:authentication_methods`
+
+Confirms the enrollment of an authentication method after the user has completed the initial challenge (e.g., entered an OTP, scanned a QR code).
+
+Prerequisites:
+
+An enrollment must have been successfully started to obtain the challenge_id and auth_session.
+
+```kotlin
+// For OTP-based factors (TOTP, Email, Phone)
+myAccountClient.verifyOtp("challenge_id_from_enroll", "123456", "auth_session_from_enroll")
+    .start(object : Callback<AuthenticationMethod, MyAccountException> {
+        override fun onSuccess(result: AuthenticationMethod) {
+            // Enrollment successful
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+
+// For Push Notification factor
+myAccountClient.verify("challenge_id_from_enroll", "auth_session_from_enroll")
+    .start(object : Callback<AuthenticationMethod, MyAccountException> {
+        override fun onSuccess(result: AuthenticationMethod) {
+            // Enrollment successful
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+```
+<details>
+    <summary>Using Java</summary>
+
+```java
+// For OTP-based factors (TOTP, Email, Phone)
+myAccountClient.verifyOtp("challenge_id_from_enroll", "123456", "auth_session_from_enroll")
+    .start(new Callback<AuthenticationMethod, MyAccountException>() {
+        @Override
+        public void onSuccess(AuthenticationMethod result) {
+            // Enrollment successful
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+
+// For Push Notification factor
+myAccountClient.verify("challenge_id_from_enroll", "auth_session_from_enroll")
+    .start(new Callback<AuthenticationMethod, MyAccountException>() {
+        @Override
+        public void onSuccess(AuthenticationMethod result) {
+            // Enrollment successful
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+```
+</details>
+
+### Delete an Authentication Method
+**Scopes required:** `delete:me:authentication_methods`
+
+Deletes an existing authentication method belonging to the current user.
+
+**Prerequisites:**
+
+The user must have the specific authentication method (identified by its ID) already enrolled.
+
+```kotlin
+myAccountClient.deleteAuthenticationMethod("phone|dev_...")
+    .start(object : Callback<Unit, MyAccountException> {
+        override fun onSuccess(result: Unit) {
+            // Deletion successful
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+```
+<details>
+    <summary>Using Java</summary>
+
+```java
+myAccountClient.deleteAuthenticationMethod("phone|dev_...")
+    .start(new Callback<Void, MyAccountException>() {
+        @Override
+        public void onSuccess(Void result) {
+            // Deletion successful
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+```
+</details>
+
 
 ## Credentials Manager
 
