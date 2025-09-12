@@ -34,7 +34,6 @@
     - [Enroll a Push Notification Method](#enroll-a-push-notification-method)
     - [Enroll a Recovery Code](#enroll-a-recovery-code)
     - [Verify an Enrollment](#verify-an-enrollment)
-    - [Update an Authentication Method](#update-an-authentication-method)
     - [Delete an Authentication Method](#delete-an-authentication-method)
   - [Credentials Manager](#credentials-manager)
     - [Secure Credentials Manager](#secure-credentials-manager)
@@ -972,6 +971,13 @@ client.enroll(passkeyCredential, challenge)
 
 ### Get Available Factors
 **Scopes required:** `read:me:factors`
+
+Retrieves the list of multi-factor authentication (MFA) factors that are enabled for the tenant and available for the user to enroll.
+
+**Prerequisites:**
+
+Enable the desired MFA factors you want to be listed. Go to Auth0 Dashboard > Security > Multi-factor Auth.
+
 ```kotlin
 myAccountClient.getFactors()
     .start(object : Callback<List<Factor>, MyAccountException> {
@@ -994,10 +1000,19 @@ myAccountClient.getFactors()
         @Override
         public void onFailure(@NonNull MyAccountException error) { }
     });
-```</details>
+```
+</details>
 
 ### Get All Enrolled Authentication Methods
 **Scopes required:** `read:me:authentication_methods`
+
+Retrieves a detailed list of all the authentication methods that the current user has already enrolled in.
+
+
+**Prerequisites:**
+
+The user must have one or more authentication methods already enrolled.
+
 ```kotlin
 myAccountClient.getAuthenticationMethods()
     .start(object : Callback<List<AuthenticationMethod>, MyAccountException> {
@@ -1025,6 +1040,13 @@ myAccountClient.getAuthenticationMethods()
 
 ### Get a Single Authentication Method by ID
 **Scopes required:** `read:me:authentication_methods`
+
+Retrieves a single authentication method by its unique ID.
+
+**Prerequisites:**
+
+The user must have the specific authentication method (identified by its ID) already enrolled.
+
 ```kotlin
 myAccountClient.getAuthenticationMethodById("phone|dev_...")
     .start(object : Callback<AuthenticationMethod, MyAccountException> {
@@ -1052,6 +1074,15 @@ myAccountClient.getAuthenticationMethodById("phone|dev_...")
 
 ### Enroll a Phone Method
 **Scopes required:** `create:me:authentication_methods`
+
+Enrolling a new phone authentication method is a two-step process. First, you request an enrollment challenge which sends an OTP to the user. Then, you must verify the enrollment with the received OTP.
+
+**Prerequisites:**
+
+Enable the MFA grant type for your application. Go to Auth0 Dashboard > Applications > Your App > Advanced Settings > Grant Types and select MFA.
+
+Enable the Phone Message factor. Go to Auth0 Dashboard > Security > Multi-factor Auth > Phone Message.
+
 ```kotlin
 myAccountClient.enrollPhone("+11234567890", PhoneAuthenticationMethodType.SMS)
     .start(object : Callback<EnrollmentChallenge, MyAccountException> {
@@ -1075,10 +1106,20 @@ myAccountClient.enrollPhone("+11234567890", PhoneAuthenticationMethodType.SMS)
         public void onFailure(@NonNull MyAccountException error) { }
     });
 ```
+
 </details>
 
 ### Enroll an Email Method
 **Scopes required:** `create:me:authentication_methods`
+
+Enrolling a new email authentication method is a two-step process. First, you request an enrollment challenge which sends an OTP to the user. Then, you must verify the enrollment with the received OTP.
+
+**Prerequisites:**
+
+Enable the MFA grant type for your application. Go to Auth0 Dashboard > Applications > Your App > Advanced Settings > Grant Types and select MFA.
+
+Enable the Email factor. Go to Auth0 Dashboard > Security > Multi-factor Auth > Email.
+
 ```kotlin
 myAccountClient.enrollEmail("user@example.com")
     .start(object : Callback<EnrollmentChallenge, MyAccountException> {
@@ -1105,7 +1146,17 @@ myAccountClient.enrollEmail("user@example.com")
 </details>
 
 ### Enroll a TOTP (Authenticator App) Method
+
 **Scopes required:** `create:me:authentication_methods`
+
+Enrolling a new TOTP (Authenticator App) authentication method is a two-step process. First, you request an enrollment challenge which provides a QR code or manual entry key. Then, you must verify the enrollment with an OTP from the authenticator app.
+
+**Prerequisites:**
+
+Enable the MFA grant type for your application. Go to Auth0 Dashboard > Applications > Your App > Advanced Settings > Grant Types and select MFA.
+
+Enable the One-time Password factor. Go to Auth0 Dashboard > Security > Multi-factor Auth > One-time Password.
+
 ```kotlin
 myAccountClient.enrollTotp()
     .start(object : Callback<TotpEnrollmentChallenge, MyAccountException> {
@@ -1115,7 +1166,9 @@ myAccountClient.enrollTotp()
             // Then use result.id and result.authSession to verify.
         }
         override fun onFailure(error: MyAccountException) { }
-    })```
+    })
+```
+
 <details>
     <summary>Using Java</summary>
 
@@ -1136,6 +1189,15 @@ myAccountClient.enrollTotp()
 
 ### Enroll a Push Notification Method
 **Scopes required:** `create:me:authentication_methods`
+
+Enrolling a new Push Notification authentication method is a two-step process. First, you request an enrollment challenge which provides a QR code. Then, after the user scans the QR code and approves, you must confirm the enrollment.
+
+**Prerequisites:**
+
+Enable the MFA grant type for your application. Go to Auth0 Dashboard > Applications > Your App > Advanced Settings > Grant Types and select MFA.
+
+Enable the Push Notification factor. Go to Auth0 Dashboard > Security > Multi-factor Auth > Push Notification using Auth0 Guardian.
+
 ```kotlin
 myAccountClient.enrollPushNotification()
     .start(object : Callback<TotpEnrollmentChallenge, MyAccountException> {
@@ -1167,6 +1229,15 @@ myAccountClient.enrollPushNotification()
 
 ### Enroll a Recovery Code
 **Scopes required:** `create:me:authentication_methods`
+
+Enrolls a new recovery code for the user. This is a single-step process that immediately returns the recovery code. The user must save this code securely as it will not be shown again.
+
+**Prerequisites:**
+
+Enable the MFA grant type for your application. Go to Auth0 Dashboard > Applications > Your App > Advanced Settings > Grant Types and select MFA.
+
+Enable the Recovery Code factor. Go to Auth0 Dashboard > Security > Multi-factor Auth > Recovery Code.
+
 ```kotlin
 myAccountClient.enrollRecoveryCode()
     .start(object : Callback<RecoveryCodeEnrollmentChallenge, MyAccountException> {
@@ -1199,6 +1270,13 @@ myAccountClient.enrollRecoveryCode()
 
 ### Verify an Enrollment
 **Scopes required:** `create:me:authentication_methods`
+
+Confirms the enrollment of an authentication method after the user has completed the initial challenge (e.g., entered an OTP, scanned a QR code).
+
+Prerequisites:
+
+An enrollment must have been successfully started to obtain the challenge_id and auth_session.
+
 ```kotlin
 // For OTP-based factors (TOTP, Email, Phone)
 myAccountClient.verifyOtp("challenge_id_from_enroll", "123456", "auth_session_from_enroll")
@@ -1248,6 +1326,13 @@ myAccountClient.verify("challenge_id_from_enroll", "auth_session_from_enroll")
 
 ### Delete an Authentication Method
 **Scopes required:** `delete:me:authentication_methods`
+
+Deletes an existing authentication method belonging to the current user.
+
+**Prerequisites:**
+
+The user must have the specific authentication method (identified by its ID) already enrolled.
+
 ```kotlin
 myAccountClient.deleteAuthenticationMethod("phone|dev_...")
     .start(object : Callback<Unit, MyAccountException> {
