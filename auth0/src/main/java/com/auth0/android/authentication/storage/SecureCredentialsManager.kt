@@ -26,6 +26,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import java.lang.ref.WeakReference
 import java.util.*
 import java.util.concurrent.Executor
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.coroutines.resume
@@ -44,6 +45,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     private val fragmentActivity: WeakReference<FragmentActivity>? = null,
     private val localAuthenticationOptions: LocalAuthenticationOptions? = null,
     private val localAuthenticationManagerFactory: LocalAuthenticationManagerFactory? = null,
+    private val biometricPolicy: BiometricPolicy = BiometricPolicy.Always,
 ) : BaseCredentialsManager(apiClient, storage, jwtDecoder) {
     private val gson: Gson = GsonProvider.gson
 
@@ -90,7 +92,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         auth0.executor,
         WeakReference(fragmentActivity),
         localAuthenticationOptions,
-        DefaultLocalAuthenticationManagerFactory()
+        DefaultLocalAuthenticationManagerFactory(),
+        localAuthenticationOptions?.policy ?: BiometricPolicy.Always
     )
 
     /**
@@ -609,6 +612,12 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         }
 
         if (fragmentActivity != null && localAuthenticationOptions != null && localAuthenticationManagerFactory != null) {
+            // Check if biometric session is valid based on policy
+            if (isBiometricSessionValid()) {
+                // Session is valid, bypass biometric prompt
+                continueGetCredentials(scope, minTtl, parameters, headers, forceRefresh, callback)
+                return
+            }
 
             fragmentActivity.get()?.let { fragmentActivity ->
                 startBiometricAuthentication(
@@ -690,6 +699,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         storage.remove(KEY_EXPIRES_AT)
         storage.remove(LEGACY_KEY_CACHE_EXPIRES_AT)
         storage.remove(KEY_CAN_REFRESH)
+        clearBiometricSession()
         Log.d(TAG, "Credentials were just removed from the storage")
     }
 
@@ -1063,6 +1073,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
           forceRefresh: Boolean, callback: Callback<Credentials, CredentialsManagerException> ->
             object : Callback<Boolean, CredentialsManagerException> {
                 override fun onSuccess(result: Boolean) {
+                    updateBiometricSession()
                     continueGetCredentials(
                         scope, minTtl, parameters, headers, forceRefresh,
                         callback
@@ -1083,6 +1094,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
           callback: Callback<APICredentials, CredentialsManagerException> ->
             object : Callback<Boolean, CredentialsManagerException> {
                 override fun onSuccess(result: Boolean) {
+                    updateBiometricSession()
                     continueGetApiCredentials(
                         audience, scope, minTtl, parameters, headers,
                         callback
@@ -1116,6 +1128,41 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         saveCredentials(newCredentials)
     }
 
+    /**
+     * Checks if the current biometric session is valid based on the configured policy.
+     */
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal fun isBiometricSessionValid(): Boolean {
+        val lastAuth = lastBiometricAuthTime.get()
+        if (lastAuth == NO_SESSION) return false // No session exists
+        
+        return when (biometricPolicy) {
+            is BiometricPolicy.Session -> {
+                val timeoutMillis = biometricPolicy.timeoutInSeconds * 1000L
+                System.currentTimeMillis() - lastAuth < timeoutMillis
+            }
+            is BiometricPolicy.AppLifecycle -> {
+                val timeoutMillis = biometricPolicy.timeoutInSeconds * 1000L
+                System.currentTimeMillis() - lastAuth < timeoutMillis
+            }
+            is BiometricPolicy.Always -> false
+        }
+    }
+
+    /**
+     * Updates the biometric session timestamp to the current time.
+     */
+    private fun updateBiometricSession() {
+        lastBiometricAuthTime.set(System.currentTimeMillis())
+    }
+
+    /**
+     * Clears the in-memory biometric session timestamp. Can be called from any thread.
+     */
+    public fun clearBiometricSession() {
+        lastBiometricAuthTime.set(NO_SESSION)
+    }
+
     internal companion object {
         private val TAG = SecureCredentialsManager::class.java.simpleName
 
@@ -1135,5 +1182,10 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
 
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         internal const val KEY_ALIAS = "com.auth0.key"
+
+        // Biometric session management
+        // Using NO_SESSION to represent "no session" (uninitialized state)
+        private const val NO_SESSION = -1L
+        private val lastBiometricAuthTime = AtomicLong(NO_SESSION)
     }
 }

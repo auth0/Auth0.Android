@@ -9,7 +9,8 @@ public class LocalAuthenticationOptions private constructor(
     public val description: String?,
     public val authenticationLevel: AuthenticationLevel,
     public val enableDeviceCredentialFallback: Boolean,
-    public val negativeButtonText: String
+    public val negativeButtonText: String,
+    public val policy: BiometricPolicy
 ) {
     public class Builder(
         private var title: String? = null,
@@ -17,7 +18,8 @@ public class LocalAuthenticationOptions private constructor(
         private var description: String? = null,
         private var authenticationLevel: AuthenticationLevel = AuthenticationLevel.STRONG,
         private var enableDeviceCredentialFallback: Boolean = false,
-        private var negativeButtonText: String = "Cancel"
+        private var negativeButtonText: String = "Cancel",
+        private var policy: BiometricPolicy = BiometricPolicy.Always
     ) {
 
         public fun setTitle(title: String): Builder = apply { this.title = title }
@@ -34,13 +36,17 @@ public class LocalAuthenticationOptions private constructor(
         public fun setNegativeButtonText(negativeButtonText: String): Builder =
             apply { this.negativeButtonText = negativeButtonText }
 
+        public fun setPolicy(policy: BiometricPolicy): Builder =
+            apply { this.policy = policy }
+
         public fun build(): LocalAuthenticationOptions = LocalAuthenticationOptions(
             title ?: throw IllegalArgumentException("Title must be provided"),
             subtitle,
             description,
             authenticationLevel,
             enableDeviceCredentialFallback,
-            negativeButtonText
+            negativeButtonText,
+            policy
         )
     }
 }
