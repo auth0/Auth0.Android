@@ -10,6 +10,7 @@
 [![CircleCI](https://img.shields.io/circleci/project/github/auth0/Auth0.Android.svg?style=flat-square)](https://circleci.com/gh/auth0/Auth0.Android/tree/master)
 [![License](https://img.shields.io/:license-mit-blue.svg?style=flat-square)](https://doge.mit-license.org/)
 [![javadoc](https://javadoc.io/badge2/com.auth0.android/auth0/javadoc.svg)](https://javadoc.io/doc/com.auth0.android/auth0)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/auth0/Auth0.Android)
 
 📚 [Documentation](#documentation) • 🚀 [Getting Started](#getting-started) • 💬 [Feedback](#feedback)
 
