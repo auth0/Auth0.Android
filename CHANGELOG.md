@@ -1,5 +1,11 @@
 # Change Log
 
+## [3.10.0](https://github.com/auth0/Auth0.Android/tree/3.10.0) (2025-09-12)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.9.1...3.10.0)
+
+**Added**
+- SDK-6103 Added support for My Account API. [\#847](https://github.com/auth0/Auth0.Android/pull/847) ([utkrishtsahu](https://github.com/utkrishtsahu))
+
 ## [3.9.1](https://github.com/auth0/Auth0.Android/tree/3.9.1) (2025-08-12)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.9.0...3.9.1)
 

@@ -3,8 +3,13 @@ package com.auth0.android.myaccount
 import com.auth0.android.Auth0
 import com.auth0.android.request.PublicKeyCredentials
 import com.auth0.android.request.Response
+import com.auth0.android.result.AuthenticationMethod
+import com.auth0.android.result.EnrollmentChallenge
+import com.auth0.android.result.Factor
 import com.auth0.android.result.PasskeyAuthenticationMethod
 import com.auth0.android.result.PasskeyEnrollmentChallenge
+import com.auth0.android.result.RecoveryCodeEnrollmentChallenge
+import com.auth0.android.result.TotpEnrollmentChallenge
 import com.auth0.android.util.AuthenticationAPIMockServer.Companion.SESSION_ID
 import com.auth0.android.util.MockMyAccountCallback
 import com.auth0.android.util.MyAccountAPIMockServer
@@ -23,8 +28,6 @@ import org.junit.runner.RunWith
 import org.mockito.MockitoAnnotations
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import java.util.Map
-
 
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
@@ -110,7 +113,7 @@ public class MyAccountAPIClientTest {
         }
         mockAPI.takeRequest()
         assertThat(error, Matchers.notNullValue())
-        assertThat(error?.message, Matchers.`is`("Authentication method ID not found"))
+        assertThat(error?.message, Matchers.`is`("Authentication method ID not found in Location header."))
     }
 
 
@@ -309,9 +312,163 @@ public class MyAccountAPIClientTest {
         )
     }
 
+    @Test
+    public fun `getFactors should build correct URL and Authorization header`() {
+        val callback = MockMyAccountCallback<List<Factor>>()
+        client.getFactors().start(callback)
 
-    private fun <T> bodyFromRequest(request: RecordedRequest): kotlin.collections.Map<String, T> {
-        val mapType = object : TypeToken<kotlin.collections.Map<String?, T>?>() {}.type
+        val request = mockAPI.takeRequest()
+        assertThat(request.path, Matchers.equalTo("/me/v1/factors"))
+        assertThat(request.getHeader("Authorization"), Matchers.equalTo("Bearer $ACCESS_TOKEN"))
+        assertThat(request.method, Matchers.equalTo("GET"))
+    }
+
+    @Test
+    public fun `getAuthenticationMethods should build correct URL and Authorization header`() {
+        val callback = MockMyAccountCallback<List<AuthenticationMethod>>()
+        client.getAuthenticationMethods().start(callback)
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods"))
+        assertThat(request.getHeader("Authorization"), Matchers.equalTo("Bearer $ACCESS_TOKEN"))
+        assertThat(request.method, Matchers.equalTo("GET"))
+    }
+
+    @Test
+    public fun `getAuthenticationMethodById should build correct URL and Authorization header`() {
+        val callback = MockMyAccountCallback<AuthenticationMethod>()
+        val methodId = "email|12345"
+        client.getAuthenticationMethodById(methodId).start(callback)
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods/email%7C12345"))
+        assertThat(request.getHeader("Authorization"), Matchers.equalTo("Bearer $ACCESS_TOKEN"))
+        assertThat(request.method, Matchers.equalTo("GET"))
+    }
+
+    @Test
+    public fun `deleteAuthenticationMethod should build correct URL and Authorization header`() {
+        val callback = MockMyAccountCallback<Void?>()
+        val methodId = "email|12345"
+        client.deleteAuthenticationMethod(methodId).start(callback)
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods/email%7C12345"))
+        assertThat(request.getHeader("Authorization"), Matchers.equalTo("Bearer $ACCESS_TOKEN"))
+        assertThat(request.method, Matchers.equalTo("DELETE"))
+    }
+
+    @Test
+    public fun `updateAuthenticationMethodById for phone should build correct URL and payload`() {
+        val callback = MockMyAccountCallback<AuthenticationMethod>()
+        val methodId = "phone|12345"
+        client.updateAuthenticationMethodById(methodId, preferredAuthenticationMethod = PhoneAuthenticationMethodType.SMS).start(callback)
+
+        val request = mockAPI.takeRequest()
+        val body = bodyFromRequest<String>(request)
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods/phone%7C12345"))
+        assertThat(request.method, Matchers.equalTo("PATCH"))
+        assertThat(body, Matchers.hasEntry("preferred_authentication_method", "sms" as Any))
+    }
+
+    @Test
+    public fun `updateAuthenticationMethodById for totp should build correct URL and payload`() {
+        val callback = MockMyAccountCallback<AuthenticationMethod>()
+        val methodId = "totp|12345"
+        val name = "My Authenticator"
+        client.updateAuthenticationMethodById(methodId, authenticationMethodName = name).start(callback)
+
+        val request = mockAPI.takeRequest()
+        val body = bodyFromRequest<String>(request)
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods/totp%7C12345"))
+        assertThat(request.method, Matchers.equalTo("PATCH"))
+        assertThat(body, Matchers.hasEntry("name", name as Any))
+    }
+
+    @Test
+    public fun `enrollEmail should send correct payload`() {
+        val callback = MockMyAccountCallback<EnrollmentChallenge>()
+        val email = "test@example.com"
+        client.enrollEmail(email).start(callback)
+
+        val request = mockAPI.takeRequest()
+        val body = bodyFromRequest<String>(request)
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods"))
+        assertThat(request.method, Matchers.equalTo("POST"))
+        assertThat(body, Matchers.hasEntry("type", "email" as Any))
+        assertThat(body, Matchers.hasEntry("email", email as Any))
+    }
+
+    @Test
+    public fun `enrollPhone should send correct payload`() {
+        val callback = MockMyAccountCallback<EnrollmentChallenge>()
+        val phoneNumber = "+11234567890"
+        client.enrollPhone(phoneNumber, PhoneAuthenticationMethodType.SMS).start(callback)
+
+        val request = mockAPI.takeRequest()
+        val body = bodyFromRequest<String>(request)
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods"))
+        assertThat(request.method, Matchers.equalTo("POST"))
+        assertThat(body, Matchers.hasEntry("type", "phone" as Any))
+        assertThat(body, Matchers.hasEntry("phone_number", phoneNumber as Any))
+        assertThat(body, Matchers.hasEntry("preferred_authentication_method", "sms" as Any))
+    }
+
+    @Test
+    public fun `enrollTotp should send correct payload`() {
+        val callback = MockMyAccountCallback<TotpEnrollmentChallenge>()
+        client.enrollTotp().start(callback)
+
+        val request = mockAPI.takeRequest()
+        val body = bodyFromRequest<String>(request)
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods"))
+        assertThat(request.method, Matchers.equalTo("POST"))
+        assertThat(body, Matchers.hasEntry("type", "totp" as Any))
+    }
+
+
+    @Test
+    public fun `enrollRecoveryCode should send correct payload`() {
+        val callback = MockMyAccountCallback<RecoveryCodeEnrollmentChallenge>()
+        client.enrollRecoveryCode().start(callback)
+
+        val request = mockAPI.takeRequest()
+        val body = bodyFromRequest<String>(request)
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods"))
+        assertThat(request.method, Matchers.equalTo("POST"))
+        assertThat(body, Matchers.hasEntry("type", "recovery-code" as Any))
+    }
+
+    @Test
+    public fun `verifyOtp should send correct payload`() {
+        val callback = MockMyAccountCallback<AuthenticationMethod>()
+        val methodId = "email|123"
+        val otp = "123456"
+        val session = "abc-def"
+        client.verifyOtp(methodId, otp, session).start(callback)
+
+        val request = mockAPI.takeRequest()
+        val body = bodyFromRequest<String>(request)
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods/email%7C123/verify"))
+        assertThat(request.method, Matchers.equalTo("POST"))
+        assertThat(body, Matchers.hasEntry("otp_code", otp as Any))
+        assertThat(body, Matchers.hasEntry("auth_session", session as Any))
+    }
+
+    @Test
+    public fun `enrollPushNotification should send correct payload`() {
+        val callback = MockMyAccountCallback<TotpEnrollmentChallenge>()
+        client.enrollPushNotification().start(callback)
+
+        val request = mockAPI.takeRequest()
+        val body = bodyFromRequest<String>(request)
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods"))
+        assertThat(request.method, Matchers.equalTo("POST"))
+        assertThat(body, Matchers.hasEntry("type", "push-notification" as Any))
+    }
+
+    private fun <T> bodyFromRequest(request: RecordedRequest): Map<String, T> {
+        val mapType = object : TypeToken<Map<String?, T>?>() {}.type
         return gson.fromJson(request.body.readUtf8(), mapType)
     }
 
@@ -347,5 +504,3 @@ public class MyAccountAPIClientTest {
         private const val AUTH_SESSION = "session456"
     }
 }
-
-
