@@ -14,9 +14,17 @@ import com.auth0.android.request.internal.GsonAdapter.Companion.forMap
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.request.internal.RequestFactory
 import com.auth0.android.request.internal.ResponseUtils.isNetworkError
+import com.auth0.android.result.AuthenticationMethod
+import com.auth0.android.result.AuthenticationMethods
+import com.auth0.android.result.EnrollmentChallenge
+import com.auth0.android.result.Factor
+import com.auth0.android.result.Factors
 import com.auth0.android.result.PasskeyAuthenticationMethod
 import com.auth0.android.result.PasskeyEnrollmentChallenge
 import com.auth0.android.result.PasskeyRegistrationChallenge
+import com.auth0.android.result.RecoveryCodeEnrollmentChallenge
+import com.auth0.android.result.TotpEnrollmentChallenge
+
 import com.google.gson.Gson
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -29,7 +37,7 @@ import java.net.URLDecoder
  * Auth0 My Account API client for managing the current user's account.
  *
  * You can use the refresh token to get an access token for the My Account API. Refer to [com.auth0.android.authentication.storage.CredentialsManager.getApiCredentials]
- *  , or alternatively [com.auth0.android.authentication.AuthenticationAPIClient.renewAuth] if you are not using CredentialsManager.
+ * , or alternatively [com.auth0.android.authentication.AuthenticationAPIClient.renewAuth] if you are not using CredentialsManager.
  *
  * ## Usage
  * ```kotlin
@@ -64,7 +72,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
         auth0,
         accessToken,
         RequestFactory<MyAccountException>(auth0.networkingClient, createErrorAdapter()),
-        Gson()
+        GsonProvider.gson
     )
 
 
@@ -138,19 +146,11 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
     public fun passkeyEnrollmentChallenge(
         userIdentity: String? = null, connection: String? = null
     ): Request<PasskeyEnrollmentChallenge, MyAccountException> {
-
-        val url = getDomainUrlBuilder()
-            .addPathSegment(AUTHENTICATION_METHODS)
-            .build()
-
+        val url = getDomainUrlBuilder().addPathSegment(AUTHENTICATION_METHODS).build()
         val params = ParameterBuilder.newBuilder().apply {
             set(TYPE_KEY, "passkey")
-            userIdentity?.let {
-                set(USER_IDENTITY_ID_KEY, userIdentity)
-            }
-            connection?.let {
-                set(CONNECTION_KEY, connection)
-            }
+            userIdentity?.let { set(USER_IDENTITY_ID_KEY, it) }
+            connection?.let { set(CONNECTION_KEY, it) }
         }.asDictionary()
 
         val passkeyEnrollmentAdapter: JsonAdapter<PasskeyEnrollmentChallenge> =
@@ -158,35 +158,22 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
                 override fun fromJson(
                     reader: Reader, metadata: Map<String, Any>
                 ): PasskeyEnrollmentChallenge {
-                    val headers = metadata.mapValues { (_, value) ->
-                        when (value) {
-                            is List<*> -> value.filterIsInstance<String>()
-                            else -> emptyList()
-                        }
-                    }
-                    val locationHeader = headers[LOCATION_KEY]?.get(0)?.split("/")?.lastOrNull()
-                    locationHeader ?: throw MyAccountException("Authentication method ID not found")
-                    val authenticationId =
-                        URLDecoder.decode(
-                            locationHeader,
-                            "UTF-8"
-                        )
-
-                    val passkeyRegistrationChallenge = gson.fromJson<PasskeyRegistrationChallenge>(
-                        reader, PasskeyRegistrationChallenge::class.java
-                    )
+                    val location = (metadata[LOCATION_KEY] as? List<*>)?.filterIsInstance<String>()
+                        ?.firstOrNull()
+                    val authId =
+                        location?.split("/")?.lastOrNull()?.let { URLDecoder.decode(it, "UTF-8") }
+                            ?: throw MyAccountException("Authentication method ID not found in Location header.")
+                    val challenge = gson.fromJson(reader, PasskeyRegistrationChallenge::class.java)
                     return PasskeyEnrollmentChallenge(
-                        authenticationId,
-                        passkeyRegistrationChallenge.authSession,
-                        passkeyRegistrationChallenge.authParamsPublicKey
+                        authId,
+                        challenge.authSession,
+                        challenge.authParamsPublicKey
                     )
                 }
             }
-        val post = factory.post(url.toString(), passkeyEnrollmentAdapter)
+        return factory.post(url.toString(), passkeyEnrollmentAdapter)
             .addParameters(params)
             .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
-
-        return post
     }
 
     /**
@@ -228,15 +215,13 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
     public fun enroll(
         credentials: PublicKeyCredentials, challenge: PasskeyEnrollmentChallenge
     ): Request<PasskeyAuthenticationMethod, MyAccountException> {
-        val authMethodId = challenge.authenticationMethodId
-        val url =
-            getDomainUrlBuilder()
-                .addPathSegment(AUTHENTICATION_METHODS)
-                .addPathSegment(authMethodId)
-                .addPathSegment(VERIFY)
-                .build()
+        val url = getDomainUrlBuilder()
+            .addPathSegment(AUTHENTICATION_METHODS)
+            .addPathSegment(challenge.authenticationMethodId)
+            .addPathSegment(VERIFY)
+            .build()
 
-        val authenticatorResponse = mapOf(
+        val authnResponse = mapOf(
             "authenticatorAttachment" to "platform",
             "clientExtensionResults" to credentials.clientExtensionResults,
             "id" to credentials.id,
@@ -244,24 +229,567 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
             "type" to "public-key",
             "response" to mapOf(
                 "clientDataJSON" to credentials.response.clientDataJSON,
-                "attestationObject" to credentials.response.attestationObject
+                "attestationObject" to credentials.response.attestationObject,
             )
         )
 
+        val params = ParameterBuilder.newBuilder()
+            .set(AUTH_SESSION_KEY, challenge.authSession)
+            .asDictionary()
+
+        return factory.post(
+            url.toString(),
+            GsonAdapter(PasskeyAuthenticationMethod::class.java, gson)
+        )
+            .addParameters(params)
+            .addParameter(AUTHN_RESPONSE_KEY, authnResponse)
+            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+    }
+
+
+    /**
+     * Retrieves a detailed list of authentication methods belonging to the user.
+     *
+     * ## Availability
+     *
+     * This feature is currently available in
+     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
+     * Please reach out to Auth0 support to get it enabled for your tenant.
+     *
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
+     *
+     * apiClient.getAuthenticationMethods()
+     *     .start(object : Callback<List<AuthenticationMethod>, MyAccountException> {
+     *         override fun onSuccess(result: List<AuthenticationMethod>) {
+     *             Log.d("MyApp", "Authentication methods: $result")
+     *         }
+     *
+     *         override fun onFailure(error: MyAccountException) {
+     *             Log.e("MyApp", "Failed with: ${error.message}")
+     *         }
+     *     })
+     * ```
+     *
+     */
+    public fun getAuthenticationMethods(): Request<List<AuthenticationMethod>, MyAccountException> {
+        val url = getDomainUrlBuilder().addPathSegment(AUTHENTICATION_METHODS).build()
+
+        val listAdapter = object : JsonAdapter<List<AuthenticationMethod>> {
+            override fun fromJson(reader: Reader, metadata: Map<String, Any>): List<AuthenticationMethod> {
+                val container = gson.fromJson(reader, AuthenticationMethods::class.java)
+                return container.authenticationMethods
+            }
+        }
+        return factory.get(url.toString(), listAdapter)
+            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+    }
+
+
+    /**
+     * Retrieves a single authentication method belonging to the user.
+     *
+     * ## Availability
+     *
+     * This feature is currently available in
+     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
+     * Please reach out to Auth0 support to get it enabled for your tenant.
+     *
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
+     *
+     * apiClient.getAuthenticationMethodById(authenticationMethodId, )
+     *     .start(object : Callback<AuthenticationMethod, MyAccountException> {
+     *         override fun onSuccess(result: AuthenticationMethod) {
+     *             Log.d("MyApp", "Authentication method $result")
+     *         }
+     *
+     *         override fun onFailure(error: MyAccountException) {
+     *             Log.e("MyApp", "Failed with: ${error.message}")
+     *         }
+     *     })
+     * ```
+     *
+     * @param authenticationMethodId  Id of the authentication method to be retrieved
+     *
+     */
+    public fun getAuthenticationMethodById(authenticationMethodId: String): Request<AuthenticationMethod, MyAccountException> {
+        val url = getDomainUrlBuilder()
+            .addPathSegment(AUTHENTICATION_METHODS)
+            .addPathSegment(authenticationMethodId)
+            .build()
+        return factory.get(url.toString(), GsonAdapter(AuthenticationMethod::class.java, gson))
+            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+    }
+
+    /**
+     * Updates a single authentication method belonging to the user.
+     *
+     * ## Availability
+     *
+     * This feature is currently available in
+     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
+     * Please reach out to Auth0 support to get it enabled for your tenant.
+     *
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
+     *
+     * apiClient.updateAuthenticationMethodById(authenticationMethodId,preferredAuthenticationMethod, authenticationMethodName)
+     *     .start(object : Callback<AuthenticationMethod, MyAccountException> {
+     *         override fun onSuccess(result: AuthenticationMethod) {
+     *             Log.d("MyApp", "Authentication method $result")
+     *         }
+     *
+     *         override fun onFailure(error: MyAccountException) {
+     *             Log.e("MyApp", "Failed with: ${error.message}")
+     *         }
+     *     })
+     * ```
+     *
+     * @param authenticationMethodId  Id of the authentication method to be retrieved
+     * @param authenticationMethodName  The friendly name of the authentication method
+     * @param preferredAuthenticationMethod The preferred authentication method for the user. (for phone authenticators)
+     *
+     */
+    @JvmOverloads
+    internal fun updateAuthenticationMethodById(
+        authenticationMethodId: String,
+        authenticationMethodName: String? = null,
+        preferredAuthenticationMethod: PhoneAuthenticationMethodType? = null
+    ): Request<AuthenticationMethod, MyAccountException> {
+        val url = getDomainUrlBuilder()
+            .addPathSegment(AUTHENTICATION_METHODS)
+            .addPathSegment(authenticationMethodId)
+            .build()
+
         val params = ParameterBuilder.newBuilder().apply {
-            set(AUTH_SESSION_KEY, challenge.authSession)
+            authenticationMethodName?.let { set(AUTHENTICATION_METHOD_NAME, it) }
+            preferredAuthenticationMethod?.let {
+                set(
+                    PREFERRED_AUTHENTICATION_METHOD,
+                    it.value
+                )
+            }
         }.asDictionary()
 
-        val passkeyAuthenticationAdapter = GsonAdapter(
-            PasskeyAuthenticationMethod::class.java
-        )
-
-        val request = factory.post(
-            url.toString(), passkeyAuthenticationAdapter
-        ).addParameters(params)
-            .addParameter(AUTHN_RESPONSE_KEY, authenticatorResponse)
+        return factory.patch(url.toString(), GsonAdapter(AuthenticationMethod::class.java, gson))
+            .addParameters(params)
             .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
-        return request
+    }
+
+
+    /**
+     * Deletes an existing authentication method belonging to the user.
+     *
+     * ## Availability
+     *
+     * This feature is currently available in
+     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
+     * Please reach out to Auth0 support to get it enabled for your tenant.
+     *
+     * ## Scopes Required
+     * `delete:me:authentication_methods`
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
+     *
+     * apiClient.deleteAuthenticationMethod(authenticationMethodId)
+     *     .start(object : Callback<Void, MyAccountException> {
+     *         override fun onSuccess(result: Void) {
+     *             Log.d("MyApp", "Authentication method deleted")
+     *         }
+     *
+     *         override fun onFailure(error: MyAccountException) {
+     *             Log.e("MyApp", "Failed with: ${error.message}")
+     *         }
+     *     })
+     * ```
+     *
+     * @param authenticationMethodId  Id of the authentication method to be deleted
+     *
+     */
+    public fun deleteAuthenticationMethod(authenticationMethodId: String): Request<Void?, MyAccountException> {
+        val url = getDomainUrlBuilder()
+            .addPathSegment(AUTHENTICATION_METHODS)
+            .addPathSegment(authenticationMethodId)
+            .build()
+        val voidAdapter = object : JsonAdapter<Void?> {
+            override fun fromJson(reader: Reader, metadata: Map<String, Any>): Void? = null
+        }
+        return factory.delete(url.toString(), voidAdapter)
+            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+    }
+
+    /**
+     * Gets the list of factors available for the user to enroll.
+     *
+     * ## Scopes Required
+     * `read:me:factors`
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
+     * apiClient.getFactors()
+     *      .start(object : Callback<List<Factor>, MyAccountException> {
+     *          override fun onSuccess(result: List<Factor>) {
+     *              Log.d("MyApp", "Available factors: $result")
+     *          }
+     *          override fun onFailure(error: MyAccountException) {
+     *              Log.e("MyApp", "Error getting factors: $error")
+     *      }
+     *   })
+     * ```
+     * @return A request to get the list of available factors.
+     */
+    public fun getFactors(): Request<List<Factor>, MyAccountException> {
+        val url = getDomainUrlBuilder().addPathSegment(FACTORS).build()
+
+        val listAdapter = object : JsonAdapter<List<Factor>> {
+            override fun fromJson(reader: Reader, metadata: Map<String, Any>): List<Factor> {
+                val container = gson.fromJson(reader, Factors::class.java)
+                return container.factors
+            }
+        }
+        return factory.get(url.toString(), listAdapter)
+            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+    }
+
+    /**
+     * Starts the enrollment of a phone authentication method.
+     *
+     * ## Scopes Required
+     * `create:me:authentication_methods`
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
+     * apiClient.enrollPhone("+11234567890", "sms")
+     *      .start(object : Callback<EnrollmentChallenge, MyAccountException> {
+     *          override fun onSuccess(result: EnrollmentChallenge) {
+     *          // The enrollment has started. 'result.id' contains the ID for verification.
+     *              Log.d("MyApp", "Enrollment started. ID: ${result.id}")
+     *           }
+     *          override fun onFailure(error: MyAccountException) {
+     *              Log.e("MyApp", "Failed with: ${error.message}")
+     *          }
+     *      })
+     * ```
+     * @param phoneNumber The phone number to enroll in E.164 format.
+     * @param preferredMethod The preferred method for this factor ("sms" or "voice").
+     * @return A request that will yield an enrollment challenge.
+     */
+    public fun enrollPhone(
+        phoneNumber: String,
+        preferredMethod: PhoneAuthenticationMethodType
+    ): Request<EnrollmentChallenge, MyAccountException> {
+        val params = ParameterBuilder.newBuilder()
+            .set(TYPE_KEY, "phone")
+            .set(PHONE_NUMBER_KEY, phoneNumber)
+            .set(PREFERRED_AUTHENTICATION_METHOD, preferredMethod.value)
+            .asDictionary()
+        return buildEnrollmentRequest(params)
+    }
+
+    /**
+     * Starts the enrollment of an email authentication method.
+     *
+     * ## Scopes Required
+     * `create:me:authentication_methods`
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
+     * apiClient.enrollEmail("user@example.com")
+     *      .start(object : Callback<EnrollmentChallenge, MyAccountException> {
+     *           override fun onSuccess(result: EnrollmentChallenge) {
+     *       // The enrollment has started. 'result.id' contains the ID for verification.
+     *               Log.d("MyApp", "Enrollment started. ID: ${result.id}")
+     *          }
+     *           override fun onFailure(error: MyAccountException) {
+     *               Log.e("MyApp", "Failed with: ${error.message}")
+     *          }
+     *      })
+     * ```
+     * @param email the email address to enroll.
+     * @return a request that will yield an enrollment challenge.
+     */
+    public fun enrollEmail(email: String): Request<EnrollmentChallenge, MyAccountException> {
+        val params = ParameterBuilder.newBuilder()
+            .set(TYPE_KEY, "email")
+            .set(EMAIL_KEY, email)
+            .asDictionary()
+        return buildEnrollmentRequest(params)
+    }
+
+    /**
+     * Starts the enrollment of a TOTP (authenticator app) method.
+     *
+     * ## Scopes Required
+     * `create:me:authentication_methods`
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
+     * apiClient.enrollTotp()
+     *      .start(object : Callback<TotpEnrollmentChallenge, MyAccountException> {
+     *            override fun onSuccess(result: EnrollmentChallenge) {
+     *        // The result will be a TotpEnrollmentChallenge with a barcode_uri
+     *                  Log.d("MyApp", "Enrollment started for TOTP.")
+     *            }
+     *           override fun onFailure(error: MyAccountException) { //... }
+     *      })
+     * ```
+     * @return a request that will yield an enrollment challenge.
+     */
+    public fun enrollTotp(): Request<TotpEnrollmentChallenge, MyAccountException> {
+        val params = ParameterBuilder.newBuilder().set(TYPE_KEY, "totp").asDictionary()
+        val url = getDomainUrlBuilder().addPathSegment(AUTHENTICATION_METHODS).build()
+        val adapter = GsonAdapter(TotpEnrollmentChallenge::class.java, gson)
+        return factory.post(url.toString(), adapter)
+            .addParameters(params)
+            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+    }
+
+    /**
+     * Starts the enrollment of a Push Notification authenticator.
+     *
+     * ## Scopes Required
+     * `create:me:authentication_methods`
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
+     * apiClient.enrollPushNotification()
+     *      .start(object : Callback<TotpEnrollmentChallenge, MyAccountException> {
+     *          override fun onSuccess(result: EnrollmentChallenge) {
+     *          // The result will be a TotpEnrollmentChallenge containing a barcode_uri
+     *                 Log.d("MyApp", "Enrollment started for Push Notification.")
+     *           }
+     *          override fun onFailure(error: MyAccountException) { //... }
+     *       })
+     * ```
+     * @return a request that will yield an enrollment challenge.
+     */
+    public fun enrollPushNotification(): Request<TotpEnrollmentChallenge, MyAccountException> {
+        val params = ParameterBuilder.newBuilder().set(TYPE_KEY, "push-notification").asDictionary()
+        val url = getDomainUrlBuilder().addPathSegment(AUTHENTICATION_METHODS).build()
+        // The response structure for push notification challenge is the same as TOTP (contains barcode_uri)
+        val adapter = GsonAdapter(TotpEnrollmentChallenge::class.java, gson)
+        return factory.post(url.toString(), adapter)
+            .addParameters(params)
+            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+    }
+
+    /**
+     * Starts the enrollment of a Recovery Code authenticator.
+     *
+     * ## Scopes Required
+     * `create:me:authentication_methods`
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
+     * apiClient.enrollRecoveryCode()
+     *      .start(object : Callback<RecoveryCodeEnrollmentChallenge, MyAccountException> {
+     *          override fun onSuccess(result: EnrollmentChallenge) {
+     *      // The result will be a RecoveryCodeEnrollmentChallenge containing the code
+     *              Log.d("MyApp", "Recovery Code enrollment started.")
+     *          }
+     *          override fun onFailure(error: MyAccountException) { //... }
+     *      })
+     * ```
+     * @return a request that will yield an enrollment challenge containing the recovery code.
+     */
+    public fun enrollRecoveryCode(): Request<RecoveryCodeEnrollmentChallenge, MyAccountException> {
+        val params = ParameterBuilder.newBuilder().set(TYPE_KEY, "recovery-code").asDictionary()
+        val url = getDomainUrlBuilder().addPathSegment(AUTHENTICATION_METHODS).build()
+        val adapter = GsonAdapter(RecoveryCodeEnrollmentChallenge::class.java, gson)
+        return factory.post(url.toString(), adapter)
+            .addParameters(params)
+            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+    }
+
+    /**
+     * Confirms the enrollment of a phone, email, or TOTP method by providing the one-time password (OTP).
+     *
+     * ## Scopes Required
+     * `create:me:authentication_methods`
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
+     * val authMethodId = "from_enrollment_challenge"
+     * val authSession = "from_enrollment_challenge"
+     * val otp = "123456"
+     *
+     * apiClient.verifyOtp(authMethodId, otp, authSession)
+     *      .start(object : Callback<AuthenticationMethod, MyAccountException> {
+     *              override fun onSuccess(result: AuthenticationMethod) { //... }
+     *              override fun onFailure(error: MyAccountException) { //... }
+     *       })
+     * ```
+     * @param authenticationMethodId The ID of the method being verified (from the enrollment challenge).
+     * @param otpCode The OTP code sent to the user's phone or email, or from their authenticator app.
+     * @param authSession The auth session from the enrollment challenge.
+     * @return a request that will yield the newly verified authentication method.
+     */
+    public fun verifyOtp(
+        authenticationMethodId: String,
+        otpCode: String,
+        authSession: String
+    ): Request<AuthenticationMethod, MyAccountException> {
+        val url = getDomainUrlBuilder()
+            .addPathSegment(AUTHENTICATION_METHODS)
+            .addPathSegment(authenticationMethodId)
+            .addPathSegment(VERIFY)
+            .build()
+        val params = mapOf("otp_code" to otpCode, AUTH_SESSION_KEY to authSession)
+        return factory.post(url.toString(), GsonAdapter(AuthenticationMethod::class.java, gson))
+            .addParameters(params)
+            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+    }
+
+    /**
+     * Confirms the enrollment for factors that do not require an OTP.
+     *
+     * ## Scopes Required
+     * `create:me:authentication_methods`
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
+     * val authMethodId = "from_enrollment_challenge"
+     * val authSession = "from_enrollment_challenge"
+     *
+     * apiClient.verify(authMethodId, authSession)
+     *      .start(object : Callback<AuthenticationMethod, MyAccountException> {
+     *            override fun onSuccess(result: AuthenticationMethod) { //... }
+     *            override fun onFailure(error: MyAccountException) { //... }
+     *       })
+     * ```
+     * @param authenticationMethodId The ID of the method being verified (from the enrollment challenge).
+     * @param authSession The auth session from the enrollment challenge.
+     * @return a request that will yield the newly verified authentication method.
+     */
+    public fun verify(
+        authenticationMethodId: String,
+        authSession: String
+    ): Request<AuthenticationMethod, MyAccountException> {
+        val url = getDomainUrlBuilder()
+            .addPathSegment(AUTHENTICATION_METHODS)
+            .addPathSegment(authenticationMethodId)
+            .addPathSegment(VERIFY)
+            .build()
+        val params = mapOf(AUTH_SESSION_KEY to authSession)
+        return factory.post(url.toString(), GsonAdapter(AuthenticationMethod::class.java, gson))
+            .addParameters(params)
+            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+    }
+
+    // WebAuthn methods are private.
+    /**
+     * Starts the enrollment of a WebAuthn Platform (e.g., biometrics) authenticator.
+     *
+     * ## Scopes Required
+     * `create:me:authentication_methods`
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
+     * apiClient.enrollWebAuthnPlatform()
+     *          .start(object : Callback<EnrollmentChallenge, MyAccountException> {
+     *              override fun onSuccess(result: EnrollmentChallenge) {
+     *                Log.d("MyApp", "Enrollment started for WebAuthn Platform.")
+     *              }
+     *              override fun onFailure(error: MyAccountException) { //... }
+     *          })
+     * ```
+     * @return a request that will yield an enrollment challenge.
+     */
+    private fun enrollWebAuthnPlatform(): Request<EnrollmentChallenge, MyAccountException> {
+        val params = ParameterBuilder.newBuilder().set(TYPE_KEY, "webauthn-platform").asDictionary()
+        return buildEnrollmentRequest(params)
+    }
+
+    /**
+     * Starts the enrollment of a WebAuthn Roaming (e.g., security key) authenticator.
+     *
+     * ## Scopes Required
+     * `create:me:authentication_methods`
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
+     * apiClient.enrollWebAuthnRoaming()
+     *      .start(object : Callback<EnrollmentChallenge, MyAccountException> {
+     *          override fun onSuccess(result: EnrollmentChallenge) {
+     *          // The result will be a PasskeyEnrollmentChallenge for WebAuthn
+     *              Log.d("MyApp", "Enrollment started for WebAuthn Roaming.")
+     *          }
+     *          override fun onFailure(error: MyAccountException) { //... }
+     *      })
+     * ```
+     * @return a request that will yield an enrollment challenge.
+     */
+    private fun enrollWebAuthnRoaming(): Request<EnrollmentChallenge, MyAccountException> {
+        val params = ParameterBuilder.newBuilder().set(TYPE_KEY, "webauthn-roaming").asDictionary()
+        return buildEnrollmentRequest(params)
+    }
+
+    private fun buildEnrollmentRequest(params: Map<String, String>): Request<EnrollmentChallenge, MyAccountException> {
+        val url = getDomainUrlBuilder().addPathSegment(AUTHENTICATION_METHODS).build()
+        return factory.post(url.toString(), GsonAdapter(EnrollmentChallenge::class.java, gson))
+            .addParameters(params)
+            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
     }
 
     private fun getDomainUrlBuilder(): HttpUrl.Builder {
@@ -283,6 +811,12 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
         private const val LOCATION_KEY = "location"
         private const val AUTH_SESSION_KEY = "auth_session"
         private const val AUTHN_RESPONSE_KEY = "authn_response"
+        private const val PREFERRED_AUTHENTICATION_METHOD = "preferred_authentication_method"
+        private const val AUTHENTICATION_METHOD_NAME = "name"
+        private const val FACTORS = "factors"
+        private const val PHONE_NUMBER_KEY = "phone_number"
+        private const val EMAIL_KEY = "email"
+
         private fun createErrorAdapter(): ErrorAdapter<MyAccountException> {
             val mapAdapter = forMap(GsonProvider.gson)
             return object : ErrorAdapter<MyAccountException> {
@@ -315,3 +849,4 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
         }
     }
 }
+
