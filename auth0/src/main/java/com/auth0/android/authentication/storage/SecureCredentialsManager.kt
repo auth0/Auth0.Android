@@ -49,6 +49,9 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
 ) : BaseCredentialsManager(apiClient, storage, jwtDecoder) {
     private val gson: Gson = GsonProvider.gson
 
+    // Biometric session management
+    private val lastBiometricAuthTime = AtomicLong(NO_SESSION)
+
     /**
      * Creates a new SecureCredentialsManager to handle Credentials
      *
@@ -1136,13 +1139,14 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         val lastAuth = lastBiometricAuthTime.get()
         if (lastAuth == NO_SESSION) return false // No session exists
         
-        return when (biometricPolicy) {
-            is BiometricPolicy.Session -> {
-                val timeoutMillis = biometricPolicy.timeoutInSeconds * 1000L
-                System.currentTimeMillis() - lastAuth < timeoutMillis
-            }
+        return when (val policy = biometricPolicy) {
+            is BiometricPolicy.Session,
             is BiometricPolicy.AppLifecycle -> {
-                val timeoutMillis = biometricPolicy.timeoutInSeconds * 1000L
+                val timeoutMillis = when (policy) {
+                    is BiometricPolicy.Session -> policy.timeoutInSeconds
+                    is BiometricPolicy.AppLifecycle -> policy.timeoutInSeconds
+                    else -> return false
+                } * 1000L
                 System.currentTimeMillis() - lastAuth < timeoutMillis
             }
             is BiometricPolicy.Always -> false
@@ -1183,9 +1187,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         internal const val KEY_ALIAS = "com.auth0.key"
 
-        // Biometric session management
         // Using NO_SESSION to represent "no session" (uninitialized state)
         private const val NO_SESSION = -1L
-        private val lastBiometricAuthTime = AtomicLong(NO_SESSION)
     }
 }

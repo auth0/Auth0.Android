@@ -1464,7 +1464,6 @@ BiometricPolicy controls when biometric authentication is required when accessin
 // Always require biometric authentication (default)
 val alwaysPolicy = LocalAuthenticationOptions.Builder()
     .setTitle("Authenticate")
-    .setDescription("Accessing Credentials")
     .setAuthenticationLevel(AuthenticationLevel.STRONG)
     .setPolicy(BiometricPolicy.Always)
     .build()
@@ -1472,25 +1471,15 @@ val alwaysPolicy = LocalAuthenticationOptions.Builder()
 // Require authentication only once per 5-minute session
 val sessionPolicy = LocalAuthenticationOptions.Builder()
     .setTitle("Authenticate")
-    .setDescription("Accessing Credentials") 
     .setAuthenticationLevel(AuthenticationLevel.STRONG)
     .setPolicy(BiometricPolicy.Session(300)) // 5 minutes
     .build()
 
-// Require authentication once per app lifecycle (1 hour timeout)
+// Require authentication once per app lifecycle (1 hour default)
 val appLifecyclePolicy = LocalAuthenticationOptions.Builder()
     .setTitle("Authenticate")
-    .setDescription("Accessing Credentials")
     .setAuthenticationLevel(AuthenticationLevel.STRONG)
-    .setPolicy(BiometricPolicy.AppLifecycle()) // Uses default 1 hour timeout
-    .build()
-
-// Custom app lifecycle timeout (2 hours)
-val customAppLifecyclePolicy = LocalAuthenticationOptions.Builder()
-    .setTitle("Authenticate")
-    .setDescription("Accessing Credentials")
-    .setAuthenticationLevel(AuthenticationLevel.STRONG)
-    .setPolicy(BiometricPolicy.AppLifecycle(7200)) // 2 hours
+    .setPolicy(BiometricPolicy.AppLifecycle()) // Default: 3600 seconds (1 hour)
     .build()
 ```
 
@@ -1501,7 +1490,6 @@ val customAppLifecyclePolicy = LocalAuthenticationOptions.Builder()
 // Always require biometric authentication (default)
 LocalAuthenticationOptions alwaysPolicy = new LocalAuthenticationOptions.Builder()
     .setTitle("Authenticate")
-    .setDescription("Accessing Credentials")
     .setAuthenticationLevel(AuthenticationLevel.STRONG)
     .setPolicy(BiometricPolicy.Always.INSTANCE)
     .build();
@@ -1509,20 +1497,30 @@ LocalAuthenticationOptions alwaysPolicy = new LocalAuthenticationOptions.Builder
 // Require authentication only once per 5-minute session  
 LocalAuthenticationOptions sessionPolicy = new LocalAuthenticationOptions.Builder()
     .setTitle("Authenticate")
-    .setDescription("Accessing Credentials")
     .setAuthenticationLevel(AuthenticationLevel.STRONG)
     .setPolicy(new BiometricPolicy.Session(300)) // 5 minutes
     .build();
 
-// Require authentication once per app lifecycle (1 hour timeout)
+// Require authentication once per app lifecycle (default 1 hour)
 LocalAuthenticationOptions appLifecyclePolicy = new LocalAuthenticationOptions.Builder()
     .setTitle("Authenticate")
-    .setDescription("Accessing Credentials")
     .setAuthenticationLevel(AuthenticationLevel.STRONG)
-    .setPolicy(new BiometricPolicy.AppLifecycle()) // Uses default 1 hour timeout
+    .setPolicy(new BiometricPolicy.AppLifecycle()) // Default: 3600 seconds
     .build();
 ```
 </details>
+
+**Managing Biometric Sessions**:
+
+You can manually clear the biometric session to force re-authentication on the next credential access:
+
+```kotlin
+// Clear the biometric session
+secureCredentialsManager.clearBiometricSession()
+
+// Check if the current session is valid
+val isValid = secureCredentialsManager.isBiometricSessionValid()
+```
 
 
 ### Other Credentials

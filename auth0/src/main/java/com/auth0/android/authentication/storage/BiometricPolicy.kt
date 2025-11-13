@@ -20,5 +20,5 @@ public sealed class BiometricPolicy {
      * The session is invalidated by calling clearBiometricSession() or after the default timeout.
      * @param timeoutInSeconds The duration for which the session remains valid. Defaults to 3600 seconds (1 hour).
      */
-    public data class AppLifecycle(val timeoutInSeconds: Int = 3600) : BiometricPolicy() // Default 1 hour
+    public data class AppLifecycle @JvmOverloads constructor(val timeoutInSeconds: Int = 3600) : BiometricPolicy() // Default 1 hour
 }

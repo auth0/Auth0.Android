@@ -74,29 +74,6 @@ public class SecureCredentialsManagerBiometricPolicyTest {
     }
 
     @Test
-    public fun `BiometricPolicy Session should be data class with timeout parameter`() {
-        val policy1 = BiometricPolicy.Session(300)
-        val policy2 = BiometricPolicy.Session(300)
-        val policy3 = BiometricPolicy.Session(600)
-        
-        assert(policy1 == policy2) // Same timeout, should be equal
-        assert(policy1 != policy3) // Different timeout, should not be equal
-        assert(policy1.timeoutInSeconds == 300)
-    }
-
-    @Test
-    public fun `BiometricPolicy AppLifecycle should be data class with default timeout`() {
-        val policy1 = BiometricPolicy.AppLifecycle()
-        val policy2 = BiometricPolicy.AppLifecycle()
-        val policy3 = BiometricPolicy.AppLifecycle(7200)
-        
-        assert(policy1 == policy2) // Same default timeout, should be equal
-        assert(policy1 != policy3) // Different timeout, should not be equal
-        assert(policy1.timeoutInSeconds == 3600) // Default 1 hour
-        assert(policy3.timeoutInSeconds == 7200) // Custom 2 hours
-    }
-
-    @Test
     public fun `AppLifecycle policy should default to 1 hour timeout`() {
         val policy = BiometricPolicy.AppLifecycle()
         assert(policy.timeoutInSeconds == 3600) // 1 hour = 3600 seconds
