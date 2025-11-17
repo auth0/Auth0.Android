@@ -1393,6 +1393,7 @@ val localAuthenticationOptions =
     LocalAuthenticationOptions.Builder().setTitle("Authenticate").setDescription("Accessing Credentials")
         .setAuthenticationLevel(AuthenticationLevel.STRONG).setNegativeButtonText("Cancel")
         .setDeviceCredentialFallback(true)
+        .setPolicy(BiometricPolicy.Session(300)) // Optional: Use session-based policy (5 minutes)
         .build()
 val storage = SharedPreferencesStorage(this)
 val manager = SecureCredentialsManager(
@@ -1409,6 +1410,7 @@ LocalAuthenticationOptions localAuthenticationOptions =
         new LocalAuthenticationOptions.Builder().setTitle("Authenticate").setDescription("Accessing Credentials")
                 .setAuthenticationLevel(AuthenticationLevel.STRONG).setNegativeButtonText("Cancel")
                 .setDeviceCredentialFallback(true)
+                .setPolicy(new BiometricPolicy.Session(300)) // Optional: Use session-based policy (5 minutes)
                 .build();
 Storage storage = new SharedPreferencesStorage(context);
 SecureCredentialsManager secureCredentialsManager = new SecureCredentialsManager(
@@ -1433,6 +1435,7 @@ On Android API 28 and 29, specifying **STRONG** as the authentication level alon
 - **setAuthenticationLevel(authenticationLevel: AuthenticationLevel): Builder** - Sets the authentication level, more on this can be found [here](#authenticationlevel-enum-values)
 - **setDeviceCredentialFallback(enableDeviceCredentialFallback: Boolean): Builder** - Enables/disables device credential fallback.
 - **setNegativeButtonText(negativeButtonText: String): Builder** - Sets the negative button text, used only when the device credential fallback is disabled (or) the authentication level is not set to `AuthenticationLevel.DEVICE_CREDENTIAL`.
+- **setPolicy(policy: BiometricPolicy): Builder** - Sets the biometric policy that controls when biometric authentication is required. See [BiometricPolicy Types](#biometricpolicy-types) for more details.
 - **build(): LocalAuthenticationOptions** - Constructs the LocalAuthenticationOptions instance.
 
 
@@ -1444,6 +1447,80 @@ AuthenticationLevel is an enum that defines the different levels of authenticati
 - **STRONG**: Any biometric (e.g., fingerprint, iris, or face) on the device that meets or exceeds the requirements for Class 3 (formerly Strong).
 - **WEAK**: Any biometric (e.g., fingerprint, iris, or face) on the device that meets or exceeds the requirements for Class 2 (formerly Weak), as defined by the Android CDD.
 - **DEVICE_CREDENTIAL**: The non-biometric credential used to secure the device (i.e., PIN, pattern, or password).
+
+
+#### BiometricPolicy Types
+
+BiometricPolicy controls when biometric authentication is required when accessing stored credentials. There are three types of policies available:
+
+**Policy Types**:
+- **BiometricPolicy.Always**: Requires biometric authentication every time credentials are accessed. This is the default policy and provides the highest security level.
+- **BiometricPolicy.Session(timeoutInSeconds)**: Requires biometric authentication only if the specified time (in seconds) has passed since the last successful authentication. Once authenticated, subsequent access within the timeout period will not require re-authentication.
+- **BiometricPolicy.AppLifecycle(timeoutInSeconds = 3600)**: Similar to Session policy, but the session persists for the lifetime of the app process. The default timeout is 1 hour (3600 seconds).
+
+**Examples**:
+
+```kotlin
+// Always require biometric authentication (default)
+val alwaysPolicy = LocalAuthenticationOptions.Builder()
+    .setTitle("Authenticate")
+    .setAuthenticationLevel(AuthenticationLevel.STRONG)
+    .setPolicy(BiometricPolicy.Always)
+    .build()
+
+// Require authentication only once per 5-minute session
+val sessionPolicy = LocalAuthenticationOptions.Builder()
+    .setTitle("Authenticate")
+    .setAuthenticationLevel(AuthenticationLevel.STRONG)
+    .setPolicy(BiometricPolicy.Session(300)) // 5 minutes
+    .build()
+
+// Require authentication once per app lifecycle (1 hour default)
+val appLifecyclePolicy = LocalAuthenticationOptions.Builder()
+    .setTitle("Authenticate")
+    .setAuthenticationLevel(AuthenticationLevel.STRONG)
+    .setPolicy(BiometricPolicy.AppLifecycle()) // Default: 3600 seconds (1 hour)
+    .build()
+```
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+// Always require biometric authentication (default)
+LocalAuthenticationOptions alwaysPolicy = new LocalAuthenticationOptions.Builder()
+    .setTitle("Authenticate")
+    .setAuthenticationLevel(AuthenticationLevel.STRONG)
+    .setPolicy(BiometricPolicy.Always.INSTANCE)
+    .build();
+
+// Require authentication only once per 5-minute session  
+LocalAuthenticationOptions sessionPolicy = new LocalAuthenticationOptions.Builder()
+    .setTitle("Authenticate")
+    .setAuthenticationLevel(AuthenticationLevel.STRONG)
+    .setPolicy(new BiometricPolicy.Session(300)) // 5 minutes
+    .build();
+
+// Require authentication once per app lifecycle (default 1 hour)
+LocalAuthenticationOptions appLifecyclePolicy = new LocalAuthenticationOptions.Builder()
+    .setTitle("Authenticate")
+    .setAuthenticationLevel(AuthenticationLevel.STRONG)
+    .setPolicy(new BiometricPolicy.AppLifecycle()) // Default: 3600 seconds
+    .build();
+```
+</details>
+
+**Managing Biometric Sessions**:
+
+You can manually clear the biometric session to force re-authentication on the next credential access:
+
+```kotlin
+// Clear the biometric session
+secureCredentialsManager.clearBiometricSession()
+
+// Check if the current session is valid
+val isValid = secureCredentialsManager.isBiometricSessionValid()
+```
 
 
 ### Other Credentials
