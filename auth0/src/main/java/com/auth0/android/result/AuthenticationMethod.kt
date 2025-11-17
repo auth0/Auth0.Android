@@ -75,7 +75,11 @@ public data class PasskeyAuthenticationMethod(
     @SerializedName("user_agent")
     public val userAgent: String?,
     @SerializedName("user_handle")
-    public val userHandle: String?
+    public val userHandle: String?,
+    @SerializedName("aaguid")
+    public val aaguid: String,
+    @SerializedName("relying_party_id")
+    public val relyingPartyId: String
 ) : AuthenticationMethod()
 
 public sealed class MfaAuthenticationMethod : AuthenticationMethod() {
