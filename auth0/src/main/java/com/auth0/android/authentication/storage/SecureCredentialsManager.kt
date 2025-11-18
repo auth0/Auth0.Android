@@ -11,7 +11,6 @@ import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
 import com.auth0.android.request.internal.GsonProvider
-import com.auth0.android.request.internal.Jwt
 import com.auth0.android.result.APICredentials
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.OptionalCredentials
@@ -19,16 +18,12 @@ import com.auth0.android.result.SSOCredentials
 import com.auth0.android.result.UserProfile
 import com.auth0.android.result.toAPICredentials
 import com.google.gson.Gson
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.lang.ref.WeakReference
-import java.util.*
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicLong
-import kotlin.collections.component1
-import kotlin.collections.component2
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -143,13 +138,19 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * Stores the given [APICredentials] in the storage for the given audience.
      * @param apiCredentials the API Credentials to be stored
      * @param audience the audience for which the credentials are stored
+     * @param scope the scope for which the credentials are stored
      */
-    override fun saveApiCredentials(apiCredentials: APICredentials, audience: String) {
+    override fun saveApiCredentials(
+        apiCredentials: APICredentials,
+        audience: String,
+        scope: String?
+    ) {
+        val key = getAPICredentialsKey(audience, scope)
         val json = gson.toJson(apiCredentials)
         try {
             val encrypted = crypto.encrypt(json.toByteArray())
             val encryptedEncoded = Base64.encodeToString(encrypted, Base64.DEFAULT)
-            storage.store(audience, encryptedEncoded)
+            storage.store(key, encryptedEncoded)
         } catch (e: IncompatibleDeviceException) {
             throw CredentialsManagerException(
                 CredentialsManagerException.Code.INCOMPATIBLE_DEVICE,
@@ -270,7 +271,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             if (credentials == null) {
                 return null
             }
-           return credentials.user
+            return credentials.user
         }
 
     /**
@@ -908,7 +909,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         callback: Callback<APICredentials, CredentialsManagerException>
     ) {
         serialExecutor.execute {
-            val encryptedEncodedJson = storage.retrieveString(audience)
+            val encryptedEncodedJson = storage.retrieveString(getAPICredentialsKey(audience, scope))
             //Check if existing api credentials are present and valid
             encryptedEncodedJson?.let { encryptedEncoded ->
                 val encrypted = Base64.decode(encryptedEncoded, Base64.DEFAULT)
@@ -938,7 +939,10 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
 
                 val expiresAt = apiCredentials.expiresAt.time
                 val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
-                val scopeChanged = hasScopeChanged(apiCredentials.scope, scope)
+                val scopeChanged = hasScopeChanged(
+                    apiCredentials.scope, scope,
+                    ignoreOpenid = scope?.contains("openid") == false
+                )
                 val hasExpired = hasExpired(apiCredentials.expiresAt.time)
                 if (!hasExpired && !willAccessTokenExpire && !scopeChanged) {
                     callback.onSuccess(apiCredentials)
@@ -993,7 +997,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                         idToken = newCredentials.idToken
                     )
                 )
-                saveApiCredentials(newApiCredentials, audience)
+                saveApiCredentials(newApiCredentials, audience, scope)
                 callback.onSuccess(newApiCredentials)
 
             } catch (error: AuthenticationException) {
@@ -1138,7 +1142,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     internal fun isBiometricSessionValid(): Boolean {
         val lastAuth = lastBiometricAuthTime.get()
         if (lastAuth == NO_SESSION) return false // No session exists
-        
+
         return when (val policy = biometricPolicy) {
             is BiometricPolicy.Session,
             is BiometricPolicy.AppLifecycle -> {
@@ -1149,6 +1153,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 } * 1000L
                 System.currentTimeMillis() - lastAuth < timeoutMillis
             }
+
             is BiometricPolicy.Always -> false
         }
     }

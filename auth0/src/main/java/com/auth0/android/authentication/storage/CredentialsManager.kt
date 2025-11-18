@@ -1,28 +1,24 @@
 package com.auth0.android.authentication.storage
 
 import android.text.TextUtils
-import android.util.Base64
 import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
-import com.auth0.android.authentication.storage.SecureCredentialsManager.Companion.KEY_CREDENTIALS
 import com.auth0.android.callback.Callback
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.request.internal.Jwt
 import com.auth0.android.result.APICredentials
 import com.auth0.android.result.Credentials
-import com.auth0.android.result.OptionalCredentials
 import com.auth0.android.result.SSOCredentials
 import com.auth0.android.result.UserProfile
 import com.auth0.android.result.toAPICredentials
 import com.google.gson.Gson
 import kotlinx.coroutines.suspendCancellableCoroutine
-import java.util.*
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
-import kotlin.collections.component1
-import kotlin.collections.component2
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -85,10 +81,16 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * Stores the given [APICredentials] in the storage for the given audience.
      * @param apiCredentials the API Credentials to be stored
      * @param audience the audience for which the credentials are stored
+     * @param scope the scope for which the credentials are stored
      */
-    override fun saveApiCredentials(apiCredentials: APICredentials, audience: String) {
+    override fun saveApiCredentials(
+        apiCredentials: APICredentials,
+        audience: String,
+        scope: String?
+    ) {
+        val key = getAPICredentialsKey(audience, scope)
         gson.toJson(apiCredentials).let {
-            storage.store(audience, it)
+            storage.store(key, it)
         }
     }
 
@@ -594,14 +596,23 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         headers: Map<String, String>,
         callback: Callback<APICredentials, CredentialsManagerException>
     ) {
+
         serialExecutor.execute {
             //Check if existing api credentials are present and valid
-            val apiCredentialsJson = storage.retrieveString(audience)
+            val key = getAPICredentialsKey(audience, scope)
+            val apiCredentialsJson = storage.retrieveString(key)
             apiCredentialsJson?.let {
                 val apiCredentials = gson.fromJson(it, APICredentials::class.java)
                 val willTokenExpire = willExpire(apiCredentials.expiresAt.time, minTtl.toLong())
-                val scopeChanged = hasScopeChanged(apiCredentials.scope, scope)
+
+                val scopeChanged = hasScopeChanged(
+                    apiCredentials.scope,
+                    scope,
+                    ignoreOpenid = scope?.contains("openid") == false
+                )
+
                 val hasExpired = hasExpired(apiCredentials.expiresAt.time)
+
                 if (!hasExpired && !willTokenExpire && !scopeChanged) {
                     callback.onSuccess(apiCredentials)
                     return@execute
@@ -645,7 +656,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                 val newApiCredentials = newCredentials.toAPICredentials()
                 storage.store(KEY_REFRESH_TOKEN, updatedRefreshToken)
                 storage.store(KEY_ID_TOKEN, newCredentials.idToken)
-                saveApiCredentials(newApiCredentials, audience)
+                saveApiCredentials(newApiCredentials, audience, scope)
                 callback.onSuccess(newApiCredentials)
             } catch (error: AuthenticationException) {
                 val exception = when {
