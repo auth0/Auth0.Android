@@ -738,10 +738,10 @@ authentication
 > [!NOTE]  
 > This feature is currently available in [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access). Please reach out to Auth0 support to get it enabled for your tenant.
 
-[DPoP](https://www.rfc-editor.org/rfc/rfc9449.html) (Demonstrating Proof of Posession) is an application-level mechanism for sender-constraining OAuth 2.0 access and refresh tokens by proving that the app is in possession of a certain private key. You can enable it by calling the `useDPoP()` method. This ensures that DPoP proofs are generated for requests made through the AuthenticationAPI client.
+[DPoP](https://www.rfc-editor.org/rfc/rfc9449.html) (Demonstrating Proof of Possession) is an application-level mechanism for sender-constraining OAuth 2.0 access and refresh tokens by proving that the app is in possession of a certain private key. You can enable it by calling the `useDPoP(context: Context)` method. This ensures that DPoP proofs are generated for requests made through the AuthenticationAPI client.
 
 ```kotlin
-val client = AuthenticationAPIClient(account).useDPoP()
+val client = AuthenticationAPIClient(account).useDPoP(context)
 ```
 
 [!IMPORTANT]
@@ -784,6 +784,17 @@ On logout, you should call `DPoP.clearKeyPair()` to delete the user's key pair f
 DPoP.clearKeyPair()
 
 ```
+
+To use DPoP with `SecureCredentialsManager` you need to pass an instance of the `AuthenticationAPIClient` with DPoP enabled to the `SecureCredentialsManager` constructor.
+
+```kotlin
+val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+val apiClient = AuthenticationAPIClient(auth0).useDPoP(this)
+val storage = SharedPreferencesStorage(this)
+val manager = SecureCredentialsManager(apiClient, this, auth0, storage)
+
+```
+
 
 > [!NOTE]  
 > DPoP is supported only on Android version 6.0 (API level 23) and above. Trying to use DPoP in any older versions will result in an exception.
@@ -1382,6 +1393,28 @@ SecureCredentialsManager manager = new SecureCredentialsManager(this, account, s
 ```
 </details>
 
+#### Using a Custom AuthenticationAPIClient
+
+If you need to configure the `AuthenticationAPIClient` with advanced features (such as DPoP), you can pass your own configured instance to `SecureCredentialsManager`:
+
+```kotlin
+val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+val apiClient = AuthenticationAPIClient(auth0).useDPoP(this)
+val storage = SharedPreferencesStorage(this)
+val manager = SecureCredentialsManager(apiClient, this, auth0, storage)
+```
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+Auth0 auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN");
+AuthenticationAPIClient apiClient = new AuthenticationAPIClient(auth0).useDPoP(this);
+Storage storage = new SharedPreferencesStorage(this);
+SecureCredentialsManager manager = new SecureCredentialsManager(apiClient, this, auth0, storage);
+```
+</details>
+
 #### Requiring Authentication
 
 You can require the user authentication to obtain credentials. This will make the manager prompt the user with the device's configured Lock Screen, which they must pass correctly in order to obtain the credentials. **This feature is only available on devices where the user has setup a secured Lock Screen** (PIN, Pattern, Password or Fingerprint).
@@ -1415,6 +1448,49 @@ LocalAuthenticationOptions localAuthenticationOptions =
 Storage storage = new SharedPreferencesStorage(context);
 SecureCredentialsManager secureCredentialsManager = new SecureCredentialsManager(
         context, auth0, storage, fragmentActivity,
+        localAuthenticationOptions);
+```
+</details>
+
+You can also combine biometric authentication with a custom `AuthenticationAPIClient`:
+
+```kotlin
+val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+val apiClient = AuthenticationAPIClient(auth0).useDPoP(this)
+val localAuthenticationOptions =
+    LocalAuthenticationOptions.Builder()
+        .setTitle("Authenticate")
+        .setDescription("Accessing Credentials")
+        .setAuthenticationLevel(AuthenticationLevel.STRONG)
+        .setNegativeButtonText("Cancel")
+        .setDeviceCredentialFallback(true)
+        .setPolicy(BiometricPolicy.Session(300))
+        .build()
+val storage = SharedPreferencesStorage(this)
+val manager = SecureCredentialsManager(
+    apiClient, this, auth0, storage, fragmentActivity,
+    localAuthenticationOptions
+)
+```
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+Auth0 auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN");
+AuthenticationAPIClient apiClient = new AuthenticationAPIClient(auth0).useDPoP(this);
+LocalAuthenticationOptions localAuthenticationOptions =
+        new LocalAuthenticationOptions.Builder()
+                .setTitle("Authenticate")
+                .setDescription("Accessing Credentials")
+                .setAuthenticationLevel(AuthenticationLevel.STRONG)
+                .setNegativeButtonText("Cancel")
+                .setDeviceCredentialFallback(true)
+                .setPolicy(new BiometricPolicy.Session(300))
+                .build();
+Storage storage = new SharedPreferencesStorage(this);
+SecureCredentialsManager secureCredentialsManager = new SecureCredentialsManager(
+        apiClient, this, auth0, storage, fragmentActivity,
         localAuthenticationOptions);
 ```
 </details>
