@@ -40,7 +40,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     private val fragmentActivity: WeakReference<FragmentActivity>? = null,
     private val localAuthenticationOptions: LocalAuthenticationOptions? = null,
     private val localAuthenticationManagerFactory: LocalAuthenticationManagerFactory? = null,
-    private val biometricPolicy: BiometricPolicy = BiometricPolicy.Always,
 ) : BaseCredentialsManager(apiClient, storage, jwtDecoder) {
     private val gson: Gson = GsonProvider.gson
 
@@ -162,8 +161,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         auth0.executor,
         WeakReference(fragmentActivity),
         localAuthenticationOptions,
-        DefaultLocalAuthenticationManagerFactory(),
-        localAuthenticationOptions?.policy ?: BiometricPolicy.Always
+        DefaultLocalAuthenticationManagerFactory()
     )
 
     /**
@@ -1205,8 +1203,9 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     internal fun isBiometricSessionValid(): Boolean {
         val lastAuth = lastBiometricAuthTime.get()
         if (lastAuth == NO_SESSION) return false // No session exists
-
-        return when (val policy = biometricPolicy) {
+        
+        val policy = localAuthenticationOptions?.policy ?: BiometricPolicy.Always
+        return when (policy) {
             is BiometricPolicy.Session,
             is BiometricPolicy.AppLifecycle -> {
                 val timeoutMillis = when (policy) {
