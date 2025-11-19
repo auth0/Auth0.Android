@@ -1214,6 +1214,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         if (lastAuth == NO_SESSION) return false // No session exists
         val policy = localAuthenticationOptions?.policy ?: BiometricPolicy.Always
         return when (policy) {
+
             is BiometricPolicy.Session,
             is BiometricPolicy.AppLifecycle -> {
                 val timeoutMillis = when (policy) {
