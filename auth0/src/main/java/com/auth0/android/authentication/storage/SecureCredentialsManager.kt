@@ -11,7 +11,6 @@ import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
 import com.auth0.android.request.internal.GsonProvider
-import com.auth0.android.request.internal.Jwt
 import com.auth0.android.result.APICredentials
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.OptionalCredentials
@@ -19,16 +18,12 @@ import com.auth0.android.result.SSOCredentials
 import com.auth0.android.result.UserProfile
 import com.auth0.android.result.toAPICredentials
 import com.google.gson.Gson
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.lang.ref.WeakReference
-import java.util.*
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicLong
-import kotlin.collections.component1
-import kotlin.collections.component2
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -64,6 +59,34 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         storage: Storage,
     ) : this(
         AuthenticationAPIClient(auth0),
+        context,
+        auth0,
+        storage
+    )
+
+    /**
+     * Creates a new SecureCredentialsManager to handle Credentials with a custom AuthenticationAPIClient instance.
+     * Use this constructor when you need to configure the API client with advanced features like DPoP.
+     *
+     * Example usage:
+     * ```
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = AuthenticationAPIClient(auth0).useDPoP(context)
+     * val manager = SecureCredentialsManager(apiClient, context, auth0, storage)
+     * ```
+     *
+     * @param apiClient a configured AuthenticationAPIClient instance
+     * @param context   a valid context
+     * @param auth0     the Auth0 account information to use
+     * @param storage   the storage implementation to use
+     */
+    public constructor(
+        apiClient: AuthenticationAPIClient,
+        context: Context,
+        auth0: Auth0,
+        storage: Storage
+    ) : this(
+        apiClient,
         storage,
         CryptoUtil(context, storage, KEY_ALIAS),
         JWTDecoder(),
@@ -88,6 +111,50 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         localAuthenticationOptions: LocalAuthenticationOptions
     ) : this(
         AuthenticationAPIClient(auth0),
+        context,
+        auth0,
+        storage,
+        fragmentActivity,
+        localAuthenticationOptions
+    )
+
+
+    /**
+     * Creates a new SecureCredentialsManager to handle Credentials with biometrics Authentication
+     * and a custom AuthenticationAPIClient instance.
+     * Use this constructor when you need to configure the API client with advanced features like DPoP
+     * along with biometric authentication.
+     *
+     * Example usage:
+     * ```
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = AuthenticationAPIClient(auth0).useDPoP(context)
+     * val manager = SecureCredentialsManager(
+     *     apiClient,
+     *     context,
+     *     auth0,
+     *     storage,
+     *     fragmentActivity,
+     *     localAuthenticationOptions
+     * )
+     * ```
+     *
+     * @param apiClient a configured AuthenticationAPIClient instance
+     * @param context   a valid context
+     * @param auth0     the Auth0 account information to use
+     * @param storage   the storage implementation to use
+     * @param fragmentActivity the FragmentActivity to use for the biometric authentication
+     * @param localAuthenticationOptions the options of type [LocalAuthenticationOptions] to use for the biometric authentication
+     */
+    public constructor(
+        apiClient: AuthenticationAPIClient,
+        context: Context,
+        auth0: Auth0,
+        storage: Storage,
+        fragmentActivity: FragmentActivity,
+        localAuthenticationOptions: LocalAuthenticationOptions
+    ) : this(
+        apiClient,
         storage,
         CryptoUtil(context, storage, KEY_ALIAS),
         JWTDecoder(),
@@ -268,7 +335,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             if (credentials == null) {
                 return null
             }
-           return credentials.user
+            return credentials.user
         }
 
     /**
@@ -1148,6 +1215,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 } * 1000L
                 System.currentTimeMillis() - lastAuth < timeoutMillis
             }
+
             is BiometricPolicy.Always -> false
         }
     }
