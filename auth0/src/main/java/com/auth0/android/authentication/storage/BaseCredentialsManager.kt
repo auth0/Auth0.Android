@@ -146,7 +146,7 @@ public abstract class BaseCredentialsManager internal constructor(
     public abstract val userProfile: UserProfile?
 
     public abstract fun clearCredentials()
-    public abstract fun clearApiCredentials(audience: String)
+    public abstract fun clearApiCredentials(audience: String, scope: String? = null)
     public abstract fun hasValidCredentials(): Boolean
     public abstract fun hasValidCredentials(minTtl: Long): Boolean
 

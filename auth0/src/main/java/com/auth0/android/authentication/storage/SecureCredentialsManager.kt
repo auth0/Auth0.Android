@@ -232,7 +232,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
              * to use on the next call. We clear any existing credentials so #hasValidCredentials returns
              * a true value. Retrying this operation will succeed.
              */
-            clearApiCredentials(audience)
+            clearApiCredentials(audience, scope)
             throw CredentialsManagerException(
                 CredentialsManagerException.Code.CRYPTO_EXCEPTION,
                 e
@@ -780,8 +780,9 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     /**
      * Removes the credentials for the given audience from the storage if present.
      */
-    override fun clearApiCredentials(audience: String) {
-        storage.remove(audience)
+    override fun clearApiCredentials(audience: String, scope: String?) {
+        val key = getAPICredentialsKey(audience, scope)
+        storage.remove(key)
         Log.d(TAG, "API Credentials for $audience were just removed from the storage")
     }
 
@@ -994,8 +995,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     )
                     return@execute
                 } catch (e: CryptoException) {
-                    //If keys were invalidated, existing credentials will not be recoverable.
-                    clearApiCredentials(audience)
+                    clearApiCredentials(audience, scope)
                     callback.onFailure(
                         CredentialsManagerException(
                             CredentialsManagerException.Code.CRYPTO_EXCEPTION,
