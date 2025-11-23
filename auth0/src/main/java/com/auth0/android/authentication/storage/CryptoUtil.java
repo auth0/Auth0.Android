@@ -66,6 +66,9 @@ class CryptoUtil {
 
     private static final byte FORMAT_MARKER = 0x01;
 
+    private static final int GCM_TAG_LENGTH = 16;
+    private static final int MIN_DATA_LENGTH = 1;
+
     private final String OLD_KEY_ALIAS;
     private final String OLD_KEY_IV_ALIAS;
     private final String KEY_ALIAS;
@@ -467,11 +470,22 @@ class CryptoUtil {
      */
     @VisibleForTesting
     boolean isNewFormat(byte[] encryptedInput) {
+
+        // Boundary check
+        if (encryptedInput == null || encryptedInput.length < 2) {
+            return false;
+        }
+
         if (encryptedInput[0] != FORMAT_MARKER) {
             return false;
         }
 
         // Check IV length is valid for AES-GCM (12 or 16 bytes)
+        // AES is a 128 block size cipher ,which is 16 bytes
+        // AES in GCM mode the recommended IV length is 12 bytes.
+        // This 12-byte IV is then combined with a 4-byte internal counter to form the full 16-byte
+        // input block for the underlying AES block cipher in counter mode (CTR), which GCM utilizes.
+        // Thus checking for a 12 or 16 byte length
         int ivLength = encryptedInput[1] & 0xFF;
         if (ivLength != 12 && ivLength != 16) {
             return false;
@@ -479,7 +493,7 @@ class CryptoUtil {
 
         // Verify minimum total length
         // Need: marker(1) + length(1) + IV(12-16) + GCM tag(16) + data(1+)
-        int minLength = 2 + ivLength + 16 + 1;
+        int minLength = 2 + ivLength + GCM_TAG_LENGTH + MIN_DATA_LENGTH;
         return encryptedInput.length >= minLength;
     }
 
