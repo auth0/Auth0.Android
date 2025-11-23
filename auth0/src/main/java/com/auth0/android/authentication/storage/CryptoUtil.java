@@ -469,8 +469,8 @@ class CryptoUtil {
      * @param encryptedInput the encrypted data to check
      * @return true if new format, false if legacy format
      */
-    @VisibleForTesting
-    private boolean isNewFormat(byte[] encryptedInput) {
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    boolean isNewFormat(byte[] encryptedInput) {
 
         // Boundary check
         if (encryptedInput == null || encryptedInput.length < 2) {

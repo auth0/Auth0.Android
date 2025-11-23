@@ -1245,6 +1245,34 @@ public class CryptoUtilTest {
         assertThat(cryptoUtil.isNewFormat(tooShort16), is(false));
     }
 
+    @Test
+    public void shouldRejectInvalidIVLengthsInNewFormat() {
+        byte[] ivLength0 = new byte[19];
+        ivLength0[0] = 0x01;
+        ivLength0[1] = 0;
+        assertThat(cryptoUtil.isNewFormat(ivLength0), is(false));
+
+        byte[] ivLength13 = new byte[32];
+        ivLength13[0] = 0x01;
+        ivLength13[1] = 13;
+        assertThat(cryptoUtil.isNewFormat(ivLength13), is(false));
+
+        byte[] ivLength14 = new byte[33];
+        ivLength14[0] = 0x01;
+        ivLength14[1] = 14;
+        assertThat(cryptoUtil.isNewFormat(ivLength14), is(false));
+
+        byte[] ivLength15 = new byte[34];
+        ivLength15[0] = 0x01;
+        ivLength15[1] = 15;
+        assertThat(cryptoUtil.isNewFormat(ivLength15), is(false));
+
+        byte[] ivLength255 = new byte[274];
+        ivLength255[0] = 0x01;
+        ivLength255[1] = (byte) 255;   
+        assertThat(cryptoUtil.isNewFormat(ivLength255), is(false));
+    }
+
     /*
      * MIGRATION SCENARIO tests - Testing backward compatibility and format coexistence
      */
