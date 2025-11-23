@@ -969,9 +969,9 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             //Check if existing api credentials are present and valid
 
             encryptedEncodedJson?.let { encryptedEncoded ->
-                val decoded = Base64.decode(encryptedEncoded, Base64.DEFAULT)
+                val encrypted = Base64.decode(encryptedEncoded, Base64.DEFAULT)
                 val json: String = try {
-                    String(crypto.decrypt(decoded))
+                    String(crypto.decrypt(encrypted))
                 } catch (e: IncompatibleDeviceException) {
                     callback.onFailure(
                         CredentialsManagerException(

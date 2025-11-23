@@ -68,6 +68,7 @@ class CryptoUtil {
 
     private static final int GCM_TAG_LENGTH = 16;
     private static final int MIN_DATA_LENGTH = 1;
+    private static final int FORMAT_HEADER_LENGTH = 2;
 
     private final String OLD_KEY_ALIAS;
     private final String OLD_KEY_IV_ALIAS;
@@ -469,7 +470,7 @@ class CryptoUtil {
      * @return true if new format, false if legacy format
      */
     @VisibleForTesting
-    boolean isNewFormat(byte[] encryptedInput) {
+    private boolean isNewFormat(byte[] encryptedInput) {
 
         // Boundary check
         if (encryptedInput == null || encryptedInput.length < 2) {
@@ -493,7 +494,7 @@ class CryptoUtil {
 
         // Verify minimum total length
         // Need: marker(1) + length(1) + IV(12-16) + GCM tag(16) + data(1+)
-        int minLength = 2 + ivLength + GCM_TAG_LENGTH + MIN_DATA_LENGTH;
+        int minLength = FORMAT_HEADER_LENGTH + ivLength + GCM_TAG_LENGTH + MIN_DATA_LENGTH;
         return encryptedInput.length >= minLength;
     }
 
