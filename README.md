@@ -52,7 +52,7 @@ To install Auth0.Android with [Gradle](https://gradle.org/), simply add the foll
 
 ```gradle
 dependencies {
-    implementation 'com.auth0.android:auth0:3.10.0'
+    implementation 'com.auth0.android:auth0:3.11.0'
 }
 ```
 
