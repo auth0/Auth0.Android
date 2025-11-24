@@ -4,7 +4,7 @@
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.10.0...3.11.0)
 
 **Added**
-- feat: Dpop secure credentials manager [\#879](https://github.com/auth0/Auth0.Android/pull/879) ([pmathew92](https://github.com/pmathew92))
+- feat: Added option to pass AuthenticationAPIClient to SecureCredentialsManager class  [\#879](https://github.com/auth0/Auth0.Android/pull/879) ([pmathew92](https://github.com/pmathew92))
 - feat: add configurable biometric authentication policies for SecureCredentialsManager [\#867](https://github.com/auth0/Auth0.Android/pull/867) ([subhankarmaiti](https://github.com/subhankarmaiti))
 
 **Fixed**
