@@ -971,26 +971,37 @@ public class CryptoUtilTest {
         byte[] aesKey = "aes-decrypted-key".getBytes();
         byte[] data = "data".getBytes();
         byte[] encryptedData = new byte[]{0, 1, 2, 3, 4, 5};
-        byte[] iv = new byte[]{99, 99, 11, 11};
-        byte[] encodedIv = "iv-data".getBytes();
+        byte[] iv = new byte[]{99, 99, 11, 11, 22, 22, 33, 33, 44, 44, 55, 55}; // 12-byte IV for AES-GCM
 
         doReturn(aesKey).when(cryptoUtil).getAESKey();
         doReturn(encryptedData).when(aesCipher).doFinal(data);
         PowerMockito.when(aesCipher.doFinal(data)).thenReturn(encryptedData);
         PowerMockito.when(aesCipher.getIV()).thenReturn(iv);
-        PowerMockito.mockStatic(Base64.class);
-        PowerMockito.when(Base64.encode(iv, Base64.DEFAULT)).thenReturn(encodedIv);
 
         final byte[] encrypted = cryptoUtil.encrypt(data);
-
 
         Mockito.verify(aesCipher).init(eq(Cipher.ENCRYPT_MODE), secretKeyCaptor.capture());
         assertThat(secretKeyCaptor.getValue(), is(notNullValue()));
         assertThat(secretKeyCaptor.getValue().getAlgorithm(), is(ALGORITHM_AES));
         assertThat(secretKeyCaptor.getValue().getEncoded(), is(aesKey));
 
-        Mockito.verify(storage).store(KEY_ALIAS + "_iv", "iv-data");
-        assertThat(encrypted, is(encryptedData));
+        // IV is NO LONGER stored in storage - it's bundled with the encrypted data
+        Mockito.verify(storage, never()).store(eq(KEY_ALIAS + "_iv"), anyString());
+        
+        assertThat(encrypted, is(notNullValue()));
+        assertThat(encrypted.length, is(1 + 1 + iv.length + encryptedData.length));
+        assertThat(encrypted[0], is((byte) 0x01));
+        assertThat(encrypted[1], is((byte) iv.length));
+        
+        // Verify IV is correctly embedded
+        byte[] extractedIV = new byte[iv.length];
+        System.arraycopy(encrypted, 2, extractedIV, 0, iv.length);
+        assertThat(extractedIV, is(iv));
+        
+        // Verify encrypted data is correctly embedded
+        byte[] extractedEncrypted = new byte[encryptedData.length];
+        System.arraycopy(encrypted, 2 + iv.length, extractedEncrypted, 0, encryptedData.length);
+        assertThat(extractedEncrypted, is(encryptedData));
     }
 
     @Test
@@ -1118,6 +1129,284 @@ public class CryptoUtilTest {
 
 
     /*
+     * NEW FORMAT tests
+     */
+    @Test
+    public void shouldDetectNewFormatWithValidMarkerAndIVLength12() {
+        // Create new format data: [0x01][12][IV(12 bytes)][encrypted+tag(17 bytes minimum)]
+        // Min length: 1 + 1 + 12 + 16 (tag) + 1 (data) = 31 bytes
+        byte[] newFormatData = new byte[31];
+        newFormatData[0] = 0x01; // FORMAT_MARKER
+        newFormatData[1] = 12;   // IV length
+        for (int i = 2; i < newFormatData.length; i++) {
+            newFormatData[i] = (byte) i;
+        }
+        
+        boolean result = cryptoUtil.isNewFormat(newFormatData);
+        
+        assertThat(result, is(true));
+    }
+
+    @Test
+    public void shouldDetectNewFormatWithValidMarkerAndIVLength16() {
+        // Create new format data: [0x01][16][IV(16 bytes)][encrypted+tag(17 bytes minimum)]
+        // Min length: 1 + 1 + 16 + 16 (tag) + 1 (data) = 35 bytes
+        byte[] newFormatData = new byte[35];
+        newFormatData[0] = 0x01; // FORMAT_MARKER
+        newFormatData[1] = 16;   // IV length
+        // Fill with dummy data
+        for (int i = 2; i < newFormatData.length; i++) {
+            newFormatData[i] = (byte) i;
+        }
+        
+        boolean result = cryptoUtil.isNewFormat(newFormatData);
+        
+        assertThat(result, is(true));
+    }
+
+    @Test
+    public void shouldNotDetectNewFormatWithInvalidMarker() {
+        // Create data with wrong marker
+        byte[] invalidData = new byte[30];
+        invalidData[0] = 0x02; // Wrong marker
+        invalidData[1] = 12;   // Valid IV length
+        
+        boolean result = cryptoUtil.isNewFormat(invalidData);
+        
+        assertThat(result, is(false));
+    }
+
+    @Test
+    public void shouldNotDetectNewFormatWithInvalidIVLength() {
+        // Create data with invalid IV length
+        byte[] invalidData = new byte[30];
+        invalidData[0] = 0x01; // Valid marker
+        invalidData[1] = 10;   // Invalid IV length (not 12 or 16)
+        
+        boolean result = cryptoUtil.isNewFormat(invalidData);
+        
+        assertThat(result, is(false));
+    }
+
+    @Test
+    public void shouldExtractIVFromNewFormatCorrectly() {
+        byte[] iv = new byte[]{10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120};
+        byte[] encryptedPayload = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17}; // At least 17 bytes (16 tag + 1 data)
+        
+        byte[] newFormatData = new byte[1 + 1 + iv.length + encryptedPayload.length];
+        newFormatData[0] = 0x01;
+        newFormatData[1] = (byte) iv.length;
+        System.arraycopy(iv, 0, newFormatData, 2, iv.length);
+        System.arraycopy(encryptedPayload, 0, newFormatData, 2 + iv.length, encryptedPayload.length);
+        
+        // Verify format detection
+        assertThat(cryptoUtil.isNewFormat(newFormatData), is(true));
+        
+        // Manually extract and verify IV
+        int ivLength = newFormatData[1] & 0xFF;
+        assertThat(ivLength, is(12));
+        
+        byte[] extractedIV = new byte[ivLength];
+        System.arraycopy(newFormatData, 2, extractedIV, 0, ivLength);
+        assertThat(extractedIV, is(iv));
+        
+        // Verify encrypted payload position
+        int dataOffset = 2 + ivLength;
+        int dataLength = newFormatData.length - dataOffset;
+        assertThat(dataLength, is(encryptedPayload.length));
+    }
+
+    @Test
+    public void shouldVerifyMinimumLengthRequirements() {
+        // Minimum valid new format with 12-byte IV:
+        // 1 (marker) + 1 (length) + 12 (IV) + 16 (GCM tag) + 1 (data) = 31 bytes
+        byte[] minValid12 = new byte[31];
+        minValid12[0] = 0x01;
+        minValid12[1] = 12;
+        assertThat(cryptoUtil.isNewFormat(minValid12), is(true));
+
+        // One byte less should fail
+        byte[] tooShort12 = new byte[30];
+        tooShort12[0] = 0x01;
+        tooShort12[1] = 12;
+        assertThat(cryptoUtil.isNewFormat(tooShort12), is(false));
+
+        // Minimum valid new format with 16-byte IV:
+        // 1 (marker) + 1 (length) + 16 (IV) + 16 (GCM tag) + 1 (data) = 35 bytes
+        byte[] minValid16 = new byte[35];
+        minValid16[0] = 0x01;
+        minValid16[1] = 16;
+        assertThat(cryptoUtil.isNewFormat(minValid16), is(true));
+
+        // One byte less should fail
+        byte[] tooShort16 = new byte[34];
+        tooShort16[0] = 0x01;
+        tooShort16[1] = 16;
+        assertThat(cryptoUtil.isNewFormat(tooShort16), is(false));
+    }
+
+    @Test
+    public void shouldRejectInvalidIVLengthsInNewFormat() {
+        byte[] ivLength0 = new byte[19];
+        ivLength0[0] = 0x01;
+        ivLength0[1] = 0;
+        assertThat(cryptoUtil.isNewFormat(ivLength0), is(false));
+
+        byte[] ivLength13 = new byte[32];
+        ivLength13[0] = 0x01;
+        ivLength13[1] = 13;
+        assertThat(cryptoUtil.isNewFormat(ivLength13), is(false));
+
+        byte[] ivLength14 = new byte[33];
+        ivLength14[0] = 0x01;
+        ivLength14[1] = 14;
+        assertThat(cryptoUtil.isNewFormat(ivLength14), is(false));
+
+        byte[] ivLength15 = new byte[34];
+        ivLength15[0] = 0x01;
+        ivLength15[1] = 15;
+        assertThat(cryptoUtil.isNewFormat(ivLength15), is(false));
+
+        byte[] ivLength255 = new byte[274];
+        ivLength255[0] = 0x01;
+        ivLength255[1] = (byte) 255;   
+        assertThat(cryptoUtil.isNewFormat(ivLength255), is(false));
+    }
+
+    /*
+     * MIGRATION SCENARIO tests - Testing backward compatibility and format coexistence
+     */
+    @Test
+    public void shouldDecryptLegacyFormatDataWithIVInStorage() throws Exception {
+        ArgumentCaptor<IvParameterSpec> ivCaptor = ArgumentCaptor.forClass(IvParameterSpec.class);
+        byte[] aesKey = "aes-decrypted-key".getBytes();
+        byte[] originalData = "sensitive-data".getBytes();
+        byte[] encryptedData = new byte[]{10, 20, 30, 40, 50, 60}; // Old format
+        byte[] iv = new byte[]{99, 99, 11, 11, 22, 22, 33, 33, 44, 44, 55, 55}; // 12-byte IV
+
+        // Setup: Old format has IV stored separately in storage
+        doReturn(aesKey).when(cryptoUtil).getAESKey();
+        PowerMockito.when(storage.retrieveString(KEY_ALIAS + "_iv")).thenReturn("encoded-iv-data");
+        PowerMockito.mockStatic(Base64.class);
+        PowerMockito.when(Base64.decode("encoded-iv-data", Base64.DEFAULT)).thenReturn(iv);
+        PowerMockito.mockStatic(Cipher.class);
+        PowerMockito.when(Cipher.getInstance(AES_TRANSFORMATION)).thenReturn(aesCipher);
+        PowerMockito.when(aesCipher.doFinal(encryptedData)).thenReturn(originalData);
+
+        // Execute: Decrypt old format data (should be detected as legacy format)
+        final byte[] decrypted = cryptoUtil.decrypt(encryptedData);
+
+        // Verify: Should detect as legacy format and use IV from storage
+        assertThat(cryptoUtil.isNewFormat(encryptedData), is(false));
+        Mockito.verify(storage).retrieveString(KEY_ALIAS + "_iv");
+        Mockito.verify(aesCipher).init(eq(Cipher.DECRYPT_MODE), any(SecretKey.class), ivCaptor.capture());
+        assertThat(ivCaptor.getValue().getIV(), is(iv));
+        assertThat(decrypted, is(originalData));
+    }
+
+    @Test
+    public void shouldMigrateFromLegacyFormatToNewFormat() throws Exception {
+        byte[] aesKey = "aes-decrypted-key".getBytes();
+        byte[] originalData = "sensitive-data".getBytes();
+        byte[] oldEncryptedData = new byte[]{10, 20, 30, 40, 50, 60};
+        byte[] oldIv = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+        // New encrypted data must be at least 17 bytes (16-byte GCM tag + 1+ bytes data)
+        byte[] newEncryptedData = new byte[20]; // 20 bytes to be safe
+        for (int i = 0; i < newEncryptedData.length; i++) {
+            newEncryptedData[i] = (byte) (50 + i);
+        }
+        byte[] newIv = new byte[]{11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22};
+
+        doReturn(aesKey).when(cryptoUtil).getAESKey();
+        PowerMockito.mockStatic(Cipher.class);
+        PowerMockito.when(Cipher.getInstance(AES_TRANSFORMATION)).thenReturn(aesCipher);
+        PowerMockito.mockStatic(Base64.class);
+
+        // Step 1: Decrypt old format (IV from storage)
+        PowerMockito.when(storage.retrieveString(KEY_ALIAS + "_iv")).thenReturn("old-encoded-iv");
+        PowerMockito.when(Base64.decode("old-encoded-iv", Base64.DEFAULT)).thenReturn(oldIv);
+        PowerMockito.when(aesCipher.doFinal(oldEncryptedData)).thenReturn(originalData);
+
+        byte[] decryptedOld = cryptoUtil.decrypt(oldEncryptedData);
+        assertThat(decryptedOld, is(originalData));
+        assertThat(cryptoUtil.isNewFormat(oldEncryptedData), is(false));
+
+        // Step 2: Re-encrypt in new format (IV bundled)
+        PowerMockito.when(aesCipher.doFinal(originalData)).thenReturn(newEncryptedData);
+        PowerMockito.when(aesCipher.getIV()).thenReturn(newIv);
+
+        byte[] reEncrypted = cryptoUtil.encrypt(originalData);
+
+        // Verify new format structure
+        assertThat(reEncrypted[0], is((byte) 0x01)); // FORMAT_MARKER
+        assertThat(reEncrypted[1], is((byte) newIv.length));
+        assertThat(cryptoUtil.isNewFormat(reEncrypted), is(true));
+
+        // Extract and verify IV is bundled
+        byte[] extractedIV = new byte[newIv.length];
+        System.arraycopy(reEncrypted, 2, extractedIV, 0, newIv.length);
+        assertThat(extractedIV, is(newIv));
+
+        // Step 3: Decrypt new format (IV bundled in data)
+        PowerMockito.when(aesCipher.doFinal(any(byte[].class), anyInt(), anyInt())).thenReturn(originalData);
+
+        byte[] decryptedNew = cryptoUtil.decrypt(reEncrypted);
+        assertThat(decryptedNew, is(originalData));
+
+        // Verify IV not stored in storage for new format
+        Mockito.verify(storage, never()).store(eq(KEY_ALIAS + "_iv"), anyString());
+    }
+
+    @Test
+    public void shouldDecryptBothLegacyAndNewFormatInSameSession() throws Exception {
+        byte[] aesKey = "aes-decrypted-key".getBytes();
+        byte[] dataA = "credential-A".getBytes();
+        byte[] dataB = "credential-B".getBytes();
+
+        // Old format encrypted data (no format marker, starts with random byte)
+        byte[] oldEncrypted = new byte[]{10, 20, 30, 40, 50, 60};
+        byte[] oldIv = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+
+        // New format encrypted data (with format marker and bundled IV)
+        byte[] newIv = new byte[]{99, 98, 97, 96, 95, 94, 93, 92, 91, 90, 89, 88};
+        byte[] newEncryptedPayload = new byte[17]; // 17 bytes (16 tag + 1 data min)
+        for (int i = 0; i < newEncryptedPayload.length; i++) {
+            newEncryptedPayload[i] = (byte) (70 + i * 10);
+        }
+        byte[] newEncrypted = new byte[1 + 1 + newIv.length + newEncryptedPayload.length];
+        newEncrypted[0] = 0x01; // FORMAT_MARKER
+        newEncrypted[1] = (byte) newIv.length;
+        System.arraycopy(newIv, 0, newEncrypted, 2, newIv.length);
+        System.arraycopy(newEncryptedPayload, 0, newEncrypted, 2 + newIv.length, newEncryptedPayload.length);
+
+        doReturn(aesKey).when(cryptoUtil).getAESKey();
+        PowerMockito.mockStatic(Cipher.class);
+        PowerMockito.when(Cipher.getInstance(AES_TRANSFORMATION)).thenReturn(aesCipher);
+        PowerMockito.mockStatic(Base64.class);
+
+        // Decrypt old format first
+        PowerMockito.when(storage.retrieveString(KEY_ALIAS + "_iv")).thenReturn("old-iv-encoded");
+        PowerMockito.when(Base64.decode("old-iv-encoded", Base64.DEFAULT)).thenReturn(oldIv);
+        PowerMockito.when(aesCipher.doFinal(oldEncrypted)).thenReturn(dataA);
+
+        byte[] decryptedOld = cryptoUtil.decrypt(oldEncrypted);
+        assertThat(decryptedOld, is(dataA));
+
+        // Decrypt new format next
+        PowerMockito.when(aesCipher.doFinal(any(byte[].class), anyInt(), anyInt())).thenReturn(dataB);
+
+        byte[] decryptedNew = cryptoUtil.decrypt(newEncrypted);
+        assertThat(decryptedNew, is(dataB));
+
+        // Verify format detection worked correctly for both
+        assertThat(cryptoUtil.isNewFormat(oldEncrypted), is(false));
+        assertThat(cryptoUtil.isNewFormat(newEncrypted), is(true));
+
+        // Verify storage was only accessed for old format
+        Mockito.verify(storage, Mockito.atLeastOnce()).retrieveString(KEY_ALIAS + "_iv");
+    }
+
+    /*
      * MAIN DECRYPT (AES) tests
      */
 
@@ -1126,28 +1415,33 @@ public class CryptoUtilTest {
         ArgumentCaptor<SecretKey> secretKeyCaptor = ArgumentCaptor.forClass(SecretKey.class);
         ArgumentCaptor<IvParameterSpec> ivParameterSpecCaptor = ArgumentCaptor.forClass(IvParameterSpec.class);
         byte[] aesKey = "aes-decrypted-key".getBytes();
-        byte[] data = "data".getBytes();
-        byte[] decryptedData = new byte[]{0, 1, 2, 3, 4, 5};
-        String encodedIv = "iv-data";
+        byte[] originalData = "data".getBytes();
+        byte[] encryptedPayload = new byte[]{10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 13, 14, 15, 16, 17}; // 17 bytes (16 tag + 1 data)
+        byte[] iv = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}; // 12-byte IV
+
+        // Build new format data: [0x01][IV_LENGTH][IV][ENCRYPTED_DATA]
+        byte[] newFormatData = new byte[1 + 1 + iv.length + encryptedPayload.length];
+        newFormatData[0] = 0x01; // FORMAT_MARKER
+        newFormatData[1] = (byte) iv.length; // IV length
+        System.arraycopy(iv, 0, newFormatData, 2, iv.length);
+        System.arraycopy(encryptedPayload, 0, newFormatData, 2 + iv.length, encryptedPayload.length);
 
         doReturn(aesKey).when(cryptoUtil).getAESKey();
-        doReturn(decryptedData).when(aesCipher).doFinal(data);
-        PowerMockito.when(aesCipher.doFinal(data)).thenReturn(decryptedData);
-        PowerMockito.when(storage.retrieveString(KEY_ALIAS + "_iv")).thenReturn(encodedIv);
-        PowerMockito.mockStatic(Base64.class);
-        PowerMockito.when(Base64.decode(encodedIv, Base64.DEFAULT)).thenReturn(encodedIv.getBytes());
+        PowerMockito.mockStatic(Cipher.class);
+        PowerMockito.when(Cipher.getInstance(AES_TRANSFORMATION)).thenReturn(aesCipher);
+        PowerMockito.when(aesCipher.doFinal(any(byte[].class), anyInt(), anyInt())).thenReturn(originalData);
 
-        final byte[] decrypted = cryptoUtil.decrypt(data);
+        final byte[] decrypted = cryptoUtil.decrypt(newFormatData);
 
-
+        assertThat(cryptoUtil.isNewFormat(newFormatData), is(true));
+        
         Mockito.verify(aesCipher).init(eq(Cipher.DECRYPT_MODE), secretKeyCaptor.capture(), ivParameterSpecCaptor.capture());
         assertThat(secretKeyCaptor.getValue(), is(notNullValue()));
         assertThat(secretKeyCaptor.getValue().getAlgorithm(), is(ALGORITHM_AES));
         assertThat(secretKeyCaptor.getValue().getEncoded(), is(aesKey));
         assertThat(ivParameterSpecCaptor.getValue(), is(notNullValue()));
-        assertThat(ivParameterSpecCaptor.getValue().getIV(), is(encodedIv.getBytes()));
-
-        assertThat(decrypted, is(decryptedData));
+        assertThat(ivParameterSpecCaptor.getValue().getIV(), is(iv));
+        assertThat(decrypted, is(originalData));
     }
 
     @Test
@@ -1215,7 +1509,7 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldThrowOnEmptyInitializationVectorWhenTryingToAESDecrypt() {
+    public void shouldThrowOnEmptyInitializationVectorWhenTryingToAESDecryptWithOldFormat() {
         Assert.assertThrows("The encryption keys changed recently. You need to re-encrypt something first.", CryptoException.class, () -> {
             doReturn(new byte[]{11, 22, 33}).when(cryptoUtil).getAESKey();
             PowerMockito.mockStatic(Cipher.class);
@@ -1223,7 +1517,7 @@ public class CryptoUtilTest {
             PowerMockito.when(storage.retrieveString(KEY_ALIAS + "_iv")).thenReturn("");
             PowerMockito.when(storage.retrieveString(BASE_ALIAS + "_iv")).thenReturn("");
 
-            cryptoUtil.decrypt(new byte[0]);
+            cryptoUtil.decrypt(new byte[]{12,1,3,14,15,16,17});
         });
     }
 
@@ -1246,7 +1540,7 @@ public class CryptoUtilTest {
 
             doThrow(new InvalidKeyException()).when(aesCipher).init(eq(Cipher.DECRYPT_MODE), secretKeyArgumentCaptor.capture(), ivParameterSpecArgumentCaptor.capture());
 
-            cryptoUtil.decrypt(new byte[0]);
+            cryptoUtil.decrypt(new byte[]{12,13,14,15,16});
         } catch (IncompatibleDeviceException e) {
             exception = e;
         }
@@ -1275,7 +1569,7 @@ public class CryptoUtilTest {
             PowerMockito.when(Base64.decode("a_valid_iv", Base64.DEFAULT)).thenReturn(ivBytes);
 
             doThrow(new InvalidAlgorithmParameterException()).when(aesCipher).init(eq(Cipher.DECRYPT_MODE), secretKeyArgumentCaptor.capture(), ivParameterSpecArgumentCaptor.capture());
-            cryptoUtil.decrypt(new byte[0]);
+            cryptoUtil.decrypt(new byte[]{12,13,14,15,16,17});
         } catch (IncompatibleDeviceException e) {
             exception = e;
         }
@@ -1302,7 +1596,7 @@ public class CryptoUtilTest {
 
             doThrow(new BadPaddingException()).when(aesCipher).doFinal(any(byte[].class));
 
-            cryptoUtil.decrypt(new byte[0]);
+            cryptoUtil.decrypt(new byte[]{12,13,14,15,16,17});
         });
 
         Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
@@ -1328,7 +1622,7 @@ public class CryptoUtilTest {
 
             doThrow(new IllegalBlockSizeException()).when(aesCipher).doFinal(any(byte[].class));
 
-            cryptoUtil.decrypt(new byte[0]);
+            cryptoUtil.decrypt(new byte[]{12,13,14,15,16,17});
         });
 
         Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);

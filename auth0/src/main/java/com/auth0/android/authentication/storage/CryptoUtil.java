@@ -64,6 +64,12 @@ class CryptoUtil {
     private static final int AES_KEY_SIZE = 256;
     private static final int RSA_KEY_SIZE = 2048;
 
+    private static final byte FORMAT_MARKER = 0x01;
+
+    private static final int GCM_TAG_LENGTH = 16;
+    private static final int MIN_DATA_LENGTH = 1;
+    private static final int FORMAT_HEADER_LENGTH = 2;
+
     private final String OLD_KEY_ALIAS;
     private final String OLD_KEY_IV_ALIAS;
     private final String KEY_ALIAS;
@@ -156,7 +162,9 @@ class CryptoUtil {
             generator.generateKeyPair();
 
             return getKeyEntryCompat(keyStore, KEY_ALIAS);
-        } catch (CertificateException | InvalidAlgorithmParameterException | NoSuchProviderException | NoSuchAlgorithmException | KeyStoreException | ProviderException e) {
+        } catch (CertificateException | InvalidAlgorithmParameterException |
+                 NoSuchProviderException | NoSuchAlgorithmException | KeyStoreException |
+                 ProviderException e) {
             /*
              * This exceptions are safe to be ignored:
              *
@@ -240,7 +248,8 @@ class CryptoUtil {
             keyStore.deleteEntry(KEY_ALIAS);
             keyStore.deleteEntry(OLD_KEY_ALIAS);
             Log.d(TAG, "Deleting the existing RSA key pair from the KeyStore.");
-        } catch (KeyStoreException | CertificateException | IOException | NoSuchAlgorithmException e) {
+        } catch (KeyStoreException | CertificateException | IOException |
+                 NoSuchAlgorithmException e) {
             Log.e(TAG, "Failed to remove the RSA KeyEntry from the Android KeyStore.", e);
         }
     }
@@ -403,7 +412,7 @@ class CryptoUtil {
 
 
     /**
-     * Encrypts the given input bytes using a symmetric key (AES).
+     * Decrypts the given input bytes using a symmetric key (AES).
      * The AES key is stored protected by an asymmetric key pair (RSA).
      *
      * @param encryptedInput the input bytes to decrypt. There's no limit in size.
@@ -415,18 +424,15 @@ class CryptoUtil {
         try {
             SecretKey key = new SecretKeySpec(getAESKey(), ALGORITHM_AES);
             Cipher cipher = Cipher.getInstance(AES_TRANSFORMATION);
-            String encodedIV = storage.retrieveString(KEY_IV_ALIAS);
-            if (TextUtils.isEmpty(encodedIV)) {
-                encodedIV = storage.retrieveString(OLD_KEY_IV_ALIAS);
-                if (TextUtils.isEmpty(encodedIV)) {
-                    //AES key was JUST generated. If anything existed before, should be encrypted again first.
-                    throw new CryptoException("The encryption keys changed recently. You need to re-encrypt something first.", null);
-                }
+
+            // Detect format and decrypt accordingly to maintain backward compatibility
+            if (isNewFormat(encryptedInput)) {
+                return decryptNewFormat(encryptedInput, cipher, key);
+            } else {
+                return decryptLegacyFormat(encryptedInput, cipher, key);
             }
-            byte[] iv = Base64.decode(encodedIV, Base64.DEFAULT);
-            cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(iv));
-            return cipher.doFinal(encryptedInput);
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | InvalidAlgorithmParameterException e) {
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException |
+                 InvalidAlgorithmParameterException e) {
             /*
              * This exceptions are safe to be ignored:
              *
@@ -457,11 +463,114 @@ class CryptoUtil {
     }
 
     /**
+     * Checks if the encrypted input uses the new format with bundled IV.
+     * New format structure: [FORMAT_MARKER][IV_LENGTH][IV][ENCRYPTED_DATA]
+     *
+     * @param encryptedInput the encrypted data to check
+     * @return true if new format, false if legacy format
+     */
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    boolean isNewFormat(byte[] encryptedInput) {
+
+        // Boundary check
+        if (encryptedInput == null || encryptedInput.length < 2) {
+            return false;
+        }
+
+        if (encryptedInput[0] != FORMAT_MARKER) {
+            return false;
+        }
+
+        // Check IV length is valid for AES-GCM (12 or 16 bytes)
+        // AES is a 128 block size cipher ,which is 16 bytes
+        // AES in GCM mode the recommended IV length is 12 bytes.
+        // This 12-byte IV is then combined with a 4-byte internal counter to form the full 16-byte
+        // input block for the underlying AES block cipher in counter mode (CTR), which GCM utilizes.
+        // Thus checking for a 12 or 16 byte length
+        int ivLength = encryptedInput[1] & 0xFF;
+        if (ivLength != 12 && ivLength != 16) {
+            return false;
+        }
+
+        // Verify minimum total length
+        // Need: marker(1) + length(1) + IV(12-16) + GCM tag(16) + data(1+)
+        int minLength = FORMAT_HEADER_LENGTH + ivLength + GCM_TAG_LENGTH + MIN_DATA_LENGTH;
+        return encryptedInput.length >= minLength;
+    }
+
+    /**
+     * Decrypts data in the new format (IV bundled with encrypted data).
+     *
+     * @param encryptedInput the encrypted input in new format
+     * @param cipher         the cipher instance
+     * @param key            the secret key
+     * @return the decrypted data
+     * @throws InvalidKeyException                if the key is invalid
+     * @throws InvalidAlgorithmParameterException if the IV is invalid
+     * @throws IllegalBlockSizeException          if the block size is invalid
+     * @throws BadPaddingException                if padding is incorrect
+     */
+    @VisibleForTesting
+    private byte[] decryptNewFormat(byte[] encryptedInput, Cipher cipher, SecretKey key)
+            throws InvalidKeyException, InvalidAlgorithmParameterException,
+            IllegalBlockSizeException, BadPaddingException {
+
+        // Read IV length (byte 1)
+        int ivLength = encryptedInput[1] & 0xFF;
+
+        // Extract IV (bytes 2 to 2+ivLength)
+        byte[] iv = new byte[ivLength];
+        System.arraycopy(encryptedInput, 2, iv, 0, ivLength);
+
+        int encryptedDataOffset = 2 + ivLength;
+        int encryptedDataLength = encryptedInput.length - encryptedDataOffset;
+
+        cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(iv));
+        return cipher.doFinal(encryptedInput, encryptedDataOffset, encryptedDataLength);
+    }
+
+    /**
+     * Decrypts data in the legacy format (IV stored separately in storage).
+     * This maintains backward compatibility with credentials encrypted before the fix.
+     *
+     * @param encryptedInput the encrypted input in legacy format
+     * @param cipher         the cipher instance
+     * @param key            the secret key
+     * @return the decrypted data
+     * @throws InvalidKeyException                if the key is invalid
+     * @throws InvalidAlgorithmParameterException if the IV is invalid
+     * @throws IllegalBlockSizeException          if the block size is invalid
+     * @throws BadPaddingException                if padding is incorrect
+     * @throws CryptoException                    if the IV cannot be found in storage
+     */
+    @VisibleForTesting
+    private byte[] decryptLegacyFormat(byte[] encryptedInput, Cipher cipher, SecretKey key)
+            throws InvalidKeyException, InvalidAlgorithmParameterException,
+            IllegalBlockSizeException, BadPaddingException, CryptoException {
+        // Retrieve IV from storage (legacy behavior)
+        String encodedIV = storage.retrieveString(KEY_IV_ALIAS);
+        if (TextUtils.isEmpty(encodedIV)) {
+            encodedIV = storage.retrieveString(OLD_KEY_IV_ALIAS);
+            if (TextUtils.isEmpty(encodedIV)) {
+                throw new CryptoException("The encryption keys changed recently. You need to re-encrypt something first.", null);
+            }
+        }
+
+        byte[] iv = Base64.decode(encodedIV, Base64.DEFAULT);
+        cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(iv));
+        return cipher.doFinal(encryptedInput);
+    }
+
+    /**
      * Encrypts the given input bytes using a symmetric key (AES).
      * The AES key is stored protected by an asymmetric key pair (RSA).
+     * <p>
+     * The encrypted output uses a new format that bundles the IV with the encrypted data
+     * to prevent IV collision issues when multiple credentials are stored.
+     * Format: [FORMAT_MARKER(1)][IV_LENGTH(1)][IV(12-16)][ENCRYPTED_DATA(variable)]
      *
      * @param decryptedInput the input bytes to encrypt. There's no limit in size.
-     * @return the encrypted output bytes
+     * @return the encrypted output bytes with bundled IV
      * @throws CryptoException             if the RSA Key pair was deemed invalid and got deleted. Operation can be retried.
      * @throws IncompatibleDeviceException in the event the device can't understand the cryptographic settings required
      */
@@ -471,10 +580,17 @@ class CryptoUtil {
             Cipher cipher = Cipher.getInstance(AES_TRANSFORMATION);
             cipher.init(Cipher.ENCRYPT_MODE, key);
             byte[] encrypted = cipher.doFinal(decryptedInput);
-            byte[] encodedIV = Base64.encode(cipher.getIV(), Base64.DEFAULT);
-            //Save IV for Decrypt stage
-            storage.store(KEY_IV_ALIAS, new String(encodedIV, StandardCharsets.UTF_8));
-            return encrypted;
+            byte[] iv = cipher.getIV();
+
+            // NEW FORMAT: Bundle IV with encrypted data to prevent collision issues
+            // Format: [FORMAT_MARKER][IV_LENGTH][IV][ENCRYPTED_DATA]
+            byte[] output = new byte[1 + 1 + iv.length + encrypted.length];
+            output[0] = FORMAT_MARKER;
+            output[1] = (byte) iv.length;
+            System.arraycopy(iv, 0, output, 2, iv.length);
+            System.arraycopy(encrypted, 0, output, 2 + iv.length, encrypted.length);
+
+            return output;
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException e) {
             /*
              * This exceptions are safe to be ignored:

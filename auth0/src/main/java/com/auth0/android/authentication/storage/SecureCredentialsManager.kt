@@ -164,6 +164,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         DefaultLocalAuthenticationManagerFactory()
     )
 
+
     /**
      * Saves the given credentials in the Storage.
      *
@@ -703,20 +704,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         continueGetCredentials(scope, minTtl, parameters, headers, forceRefresh, callback)
     }
 
-    private val localAuthenticationResultCallback =
-        { scope: String?, minTtl: Int, parameters: Map<String, String>, headers: Map<String, String>, forceRefresh: Boolean, callback: Callback<Credentials, CredentialsManagerException> ->
-            object : Callback<Boolean, CredentialsManagerException> {
-                override fun onSuccess(result: Boolean) {
-                    continueGetCredentials(
-                        scope, minTtl, parameters, headers, forceRefresh, callback
-                    )
-                }
-
-                override fun onFailure(error: CredentialsManagerException) {
-                    callback.onFailure(error)
-                }
-            }
-        }
 
     /**
      * Retrieves API credentials from storage and automatically renews them using the refresh token if the access
@@ -741,6 +728,11 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     ) {
 
         if (fragmentActivity != null && localAuthenticationOptions != null && localAuthenticationManagerFactory != null) {
+
+            if (isBiometricSessionValid()) {
+                continueGetApiCredentials(audience, scope, minTtl, parameters, headers, callback)
+                return
+            }
 
             fragmentActivity.get()?.let { fragmentActivity ->
                 startBiometricAuthentication(
@@ -975,6 +967,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         serialExecutor.execute {
             val encryptedEncodedJson = storage.retrieveString(audience)
             //Check if existing api credentials are present and valid
+
             encryptedEncodedJson?.let { encryptedEncoded ->
                 val encrypted = Base64.decode(encryptedEncoded, Base64.DEFAULT)
                 val json: String = try {
@@ -1102,6 +1095,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 CredentialsManagerException.Code.INCOMPATIBLE_DEVICE, e
             )
         } catch (e: CryptoException) {
+            clearCredentials()
             throw CredentialsManagerException(
                 CredentialsManagerException.Code.CRYPTO_EXCEPTION, e
             )
@@ -1203,7 +1197,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     internal fun isBiometricSessionValid(): Boolean {
         val lastAuth = lastBiometricAuthTime.get()
         if (lastAuth == NO_SESSION) return false // No session exists
-        
+
         val policy = localAuthenticationOptions?.policy ?: BiometricPolicy.Always
         return when (policy) {
             is BiometricPolicy.Session,
