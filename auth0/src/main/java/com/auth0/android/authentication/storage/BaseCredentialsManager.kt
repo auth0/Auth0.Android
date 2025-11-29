@@ -35,7 +35,7 @@ public abstract class BaseCredentialsManager internal constructor(
     public abstract fun saveApiCredentials(
         apiCredentials: APICredentials,
         audience: String,
-        scope: String?
+        scope: String? = null
     )
 
     public abstract fun getCredentials(callback: Callback<Credentials, CredentialsManagerException>)
@@ -170,7 +170,8 @@ public abstract class BaseCredentialsManager internal constructor(
         if (requiredScope == null) {
             return false
         }
-        val storedScopes = storedScope.orEmpty().split(" ").filter { it.isNotEmpty() }.toMutableSet()
+        val storedScopes =
+            storedScope.orEmpty().split(" ").filter { it.isNotEmpty() }.toMutableSet()
         if (ignoreOpenid) {
             storedScopes.remove("openid")
         }
@@ -212,6 +213,6 @@ public abstract class BaseCredentialsManager internal constructor(
      */
     protected fun getAPICredentialsKey(audience: String, scope: String?): String {
         // Use audience if scope is null else use a combination of audience and scope
-        return if (scope == null) audience else "$audience::$scope"
+        return if (scope == null) audience else "$audience::${scope.replace(" ","::")}"
     }
 }
