@@ -721,7 +721,6 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
     override fun clearApiCredentials(audience: String, scope: String?) {
         val key = getAPICredentialsKey(audience, scope)
         storage.remove(key)
-        Log.d(TAG, "API Credentials for $audience were just removed from the storage")
     }
 
     /**

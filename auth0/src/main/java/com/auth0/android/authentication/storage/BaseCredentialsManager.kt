@@ -170,15 +170,12 @@ public abstract class BaseCredentialsManager internal constructor(
         if (requiredScope == null) {
             return false
         }
-        val storedScopeList = storedScope.orEmpty().split(" ").toMutableList()
-
-        if (ignoreOpenid) storedScopeList.remove("openid")
-
-        val stored = storedScopeList.toTypedArray()
-        Arrays.sort(stored)
-        val required = requiredScope.split(" ").toTypedArray()
-        Arrays.sort(required)
-        return !stored.contentEquals(required)
+        val storedScopes = storedScope.orEmpty().split(" ").filter { it.isNotEmpty() }.toMutableSet()
+        if (ignoreOpenid) {
+            storedScopes.remove("openid")
+        }
+        val requiredScopes = requiredScope.split(" ").filter { it.isNotEmpty() }.toSet()
+        return storedScopes != requiredScopes
     }
 
     /**
