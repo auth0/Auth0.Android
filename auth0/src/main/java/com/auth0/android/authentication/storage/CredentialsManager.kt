@@ -717,6 +717,9 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
 
     /**
      * Removes the credentials for the given audience from the storage if present.
+     * @param audience Audience for which the [APICredentials] are stored
+     * @param scope Optional scope for which the [APICredentials] are stored. If the credentials were initially fetched/stored with scope,
+     * it is recommended to pass scope also while clearing them.
      */
     override fun clearApiCredentials(audience: String, scope: String?) {
         val key = getAPICredentialsKey(audience, scope)

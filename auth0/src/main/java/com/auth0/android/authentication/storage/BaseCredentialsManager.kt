@@ -1,5 +1,6 @@
 package com.auth0.android.authentication.storage
 
+import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.callback.Callback
@@ -213,6 +214,9 @@ public abstract class BaseCredentialsManager internal constructor(
      */
     protected fun getAPICredentialsKey(audience: String, scope: String?): String {
         // Use audience if scope is null else use a combination of audience and scope
-        return if (scope == null) audience else "$audience::${scope.replace(" ","::")}"
+        if (scope == null) return audience
+        val sortedScope = scope.split(" ").sorted().joinToString("::")
+        return "$audience::${sortedScope}"
+
     }
 }
