@@ -209,25 +209,26 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * Stores the given [APICredentials] in the storage for the given audience.
      * @param apiCredentials the API Credentials to be stored
      * @param audience the audience for which the credentials are stored
+     * @param scope the scope for which the credentials are stored
      */
-    override fun saveApiCredentials(apiCredentials: APICredentials, audience: String) {
+    override fun saveApiCredentials(
+        apiCredentials: APICredentials,
+        audience: String,
+        scope: String?
+    ) {
+        val key = getAPICredentialsKey(audience, scope)
         val json = gson.toJson(apiCredentials)
         try {
             val encrypted = crypto.encrypt(json.toByteArray())
             val encryptedEncoded = Base64.encodeToString(encrypted, Base64.DEFAULT)
-            storage.store(audience, encryptedEncoded)
+            storage.store(key, encryptedEncoded)
         } catch (e: IncompatibleDeviceException) {
             throw CredentialsManagerException(
                 CredentialsManagerException.Code.INCOMPATIBLE_DEVICE,
                 e
             )
         } catch (e: CryptoException) {
-            /*
-             * If the keys were invalidated in the call above a good new pair is going to be available
-             * to use on the next call. We clear any existing credentials so #hasValidCredentials returns
-             * a true value. Retrying this operation will succeed.
-             */
-            clearApiCredentials(audience)
+            clearApiCredentials(audience, scope)
             throw CredentialsManagerException(
                 CredentialsManagerException.Code.CRYPTO_EXCEPTION,
                 e
@@ -331,12 +332,10 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
 
     public override val userProfile: UserProfile?
         get() {
-            val credentials: Credentials? = getExistingCredentials()
-            // Handle null credentials gracefully
-            if (credentials == null) {
-                return null
-            }
-            return credentials.user
+            return runCatching {
+                val credentials: Credentials = getExistingCredentials()
+                return credentials.user
+            }.getOrNull()
         }
 
     /**
@@ -765,10 +764,13 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
 
     /**
      * Removes the credentials for the given audience from the storage if present.
+     * @param audience Audience for which the [APICredentials] are stored
+     * @param scope Optional scope for which the [APICredentials] are stored. If the credentials were initially fetched/stored with scope,
+     * it is recommended to pass scope also while clearing them.
      */
-    override fun clearApiCredentials(audience: String) {
-        storage.remove(audience)
-        Log.d(TAG, "API Credentials for $audience were just removed from the storage")
+    override fun clearApiCredentials(audience: String, scope: String?) {
+        val key = getAPICredentialsKey(audience, scope)
+        storage.remove(key)
     }
 
     /**
@@ -965,7 +967,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         callback: Callback<APICredentials, CredentialsManagerException>
     ) {
         serialExecutor.execute {
-            val encryptedEncodedJson = storage.retrieveString(audience)
+            val encryptedEncodedJson = storage.retrieveString(getAPICredentialsKey(audience, scope))
             //Check if existing api credentials are present and valid
 
             encryptedEncodedJson?.let { encryptedEncoded ->
@@ -981,8 +983,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     )
                     return@execute
                 } catch (e: CryptoException) {
-                    //If keys were invalidated, existing credentials will not be recoverable.
-                    clearApiCredentials(audience)
+                    clearApiCredentials(audience, scope)
                     callback.onFailure(
                         CredentialsManagerException(
                             CredentialsManagerException.Code.CRYPTO_EXCEPTION,
@@ -996,7 +997,10 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
 
                 val expiresAt = apiCredentials.expiresAt.time
                 val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
-                val scopeChanged = hasScopeChanged(apiCredentials.scope, scope)
+                val scopeChanged = hasScopeChanged(
+                    apiCredentials.scope, scope,
+                    ignoreOpenid = scope?.contains("openid") == false
+                )
                 val hasExpired = hasExpired(apiCredentials.expiresAt.time)
                 if (!hasExpired && !willAccessTokenExpire && !scopeChanged) {
                     callback.onSuccess(apiCredentials)
@@ -1051,7 +1055,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                         idToken = newCredentials.idToken
                     )
                 )
-                saveApiCredentials(newApiCredentials, audience)
+                saveApiCredentials(newApiCredentials, audience, scope)
                 callback.onSuccess(newApiCredentials)
 
             } catch (error: AuthenticationException) {
@@ -1200,6 +1204,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
 
         val policy = localAuthenticationOptions?.policy ?: BiometricPolicy.Always
         return when (policy) {
+
             is BiometricPolicy.Session,
             is BiometricPolicy.AppLifecycle -> {
                 val timeoutMillis = when (policy) {

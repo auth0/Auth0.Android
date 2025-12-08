@@ -8,7 +8,7 @@ public class ApiCredentialsMock {
 
         public fun create(
             accessToken: String,
-            type: String,
+            type: String = "Bearer",
             expiresAt: Date,
             scope: String,
         ): APICredentials {
