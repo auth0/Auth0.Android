@@ -10,7 +10,7 @@ import java.net.URI
  */
 public class CustomTokenExchangeValidator : RequestValidator {
 
-    private val reservedNameSpace = listOf(
+    private val reservedNamespaces = listOf(
         "http://auth0.com",
         "https://auth0.com",
         "http://okta.com",
@@ -23,8 +23,16 @@ public class CustomTokenExchangeValidator : RequestValidator {
     override fun validate(options: RequestOptions) {
         val subjectTokenType = options.parameters["subject_token_type"] as String
 
+        if(subjectTokenType.isEmpty()){
+            throw AuthenticationException(
+                "Invalid URI", IllegalArgumentException(
+                    "The passed URI must not be an empty String"
+                )
+            )
+        }
+
         // Check if it's a reserved namespace
-        if (reservedNameSpace.contains(subjectTokenType)) {
+        if (reservedNamespaces.contains(subjectTokenType)) {
             throw AuthenticationException(
                 "Invalid URI", IllegalArgumentException(
                     "The passed URI is a reserved namespace and cannot be used"
