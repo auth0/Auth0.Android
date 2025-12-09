@@ -76,4 +76,15 @@ public interface Request<T, U : Auth0Exception> {
      * @return itself
      */
     public fun addHeader(name: String, value: String): Request<T, U>
+
+    /**
+     * Adds a validator to be executed before the request is sent.
+     * Multiple validators can be added and will be executed in order.
+     *
+     * @param validator the validator to add
+     * @return itself
+     */
+    public fun addValidator(validator: RequestValidator): Request<T, U> {
+        return this
+    }
 }

@@ -7,11 +7,16 @@ import com.auth0.android.Auth0Exception
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.authentication.ParameterBuilder
 import com.auth0.android.callback.Callback
-import com.auth0.android.provider.*
+import com.auth0.android.provider.IdTokenMissingException
+import com.auth0.android.provider.IdTokenVerificationOptions
+import com.auth0.android.provider.IdTokenVerifier
+import com.auth0.android.provider.TokenValidationException
+import com.auth0.android.provider.UnexpectedIdTokenException
 import com.auth0.android.request.AuthenticationRequest
 import com.auth0.android.request.Request
+import com.auth0.android.request.RequestValidator
 import com.auth0.android.result.Credentials
-import java.util.*
+import java.util.Date
 
 internal open class BaseAuthenticationRequest(
     private val request: Request<Credentials, AuthenticationException>,
@@ -94,6 +99,11 @@ internal open class BaseAuthenticationRequest(
      */
     override fun setAudience(audience: String): AuthenticationRequest {
         addParameter(ParameterBuilder.AUDIENCE_KEY, audience)
+        return this
+    }
+
+    override fun addValidator(validator: RequestValidator): AuthenticationRequest {
+        request.addValidator(validator)
         return this
     }
 

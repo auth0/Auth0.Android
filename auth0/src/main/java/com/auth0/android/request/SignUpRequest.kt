@@ -91,6 +91,11 @@ public class SignUpRequest
         return this
     }
 
+    override fun addValidator(validator: RequestValidator): AuthenticationRequest {
+        authenticationRequest.addValidator(validator)
+        return this
+    }
+
     override fun withIdTokenVerificationLeeway(leeway: Int): SignUpRequest {
         authenticationRequest.withIdTokenVerificationLeeway(leeway)
         return this

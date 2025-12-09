@@ -8,11 +8,23 @@ import com.auth0.android.NetworkErrorException
 import com.auth0.android.dpop.DPoP
 import com.auth0.android.dpop.DPoPException
 import com.auth0.android.dpop.SenderConstraining
-import com.auth0.android.request.*
-import com.auth0.android.request.internal.*
+import com.auth0.android.request.AuthenticationRequest
+import com.auth0.android.request.ErrorAdapter
+import com.auth0.android.request.JsonAdapter
+import com.auth0.android.request.ProfileRequest
+import com.auth0.android.request.PublicKeyCredentials
+import com.auth0.android.request.Request
+import com.auth0.android.request.SignUpRequest
+import com.auth0.android.request.UserData
+import com.auth0.android.request.internal.BaseAuthenticationRequest
+import com.auth0.android.request.internal.BaseRequest
+import com.auth0.android.request.internal.GsonAdapter
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMap
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMapOf
+import com.auth0.android.request.internal.GsonProvider
+import com.auth0.android.request.internal.RequestFactory
 import com.auth0.android.request.internal.ResponseUtils.isNetworkError
+import com.auth0.android.request.internal.validator.CustomTokenExchangeValidator
 import com.auth0.android.result.Challenge
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
@@ -758,6 +770,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         organization: String? = null
     ): AuthenticationRequest {
         return tokenExchange(subjectTokenType, subjectToken, organization)
+            .addValidator(CustomTokenExchangeValidator())
     }
 
     /**
