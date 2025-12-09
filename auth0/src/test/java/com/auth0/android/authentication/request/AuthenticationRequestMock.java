@@ -7,7 +7,10 @@ import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.Callback;
 import com.auth0.android.request.AuthenticationRequest;
 import com.auth0.android.request.Request;
+import com.auth0.android.request.RequestValidator;
 import com.auth0.android.result.Credentials;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
@@ -110,6 +113,11 @@ public class AuthenticationRequestMock implements AuthenticationRequest {
     @NonNull
     @Override
     public AuthenticationRequest withIdTokenVerificationIssuer(@NonNull String issuer) {
+        return this;
+    }
+
+    @Override
+    public @NotNull AuthenticationRequest addValidator(@NotNull RequestValidator validator) {
         return this;
     }
 }
