@@ -749,13 +749,15 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      *
      * @param subjectTokenType the subject token type that is associated with the existing Identity Provider. e.g. 'http://acme.com/legacy-token'
      * @param subjectToken   the subject token, typically obtained through the Identity Provider's SDK
+     * @param organization  id of the organization the user belongs to
      * @return a request to configure and start that will yield [Credentials]
      */
     public fun customTokenExchange(
         subjectTokenType: String,
         subjectToken: String,
+        organization: String? = null
     ): AuthenticationRequest {
-        return tokenExchange(subjectTokenType, subjectToken)
+        return tokenExchange(subjectTokenType, subjectToken, organization)
     }
 
     /**
@@ -1043,13 +1045,17 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      */
     private fun tokenExchange(
         subjectTokenType: String,
-        subjectToken: String
+        subjectToken: String,
+        organization: String? = null
     ): AuthenticationRequest {
-        val parameters = ParameterBuilder.newAuthenticationBuilder()
-            .setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
-            .set(SUBJECT_TOKEN_TYPE_KEY, subjectTokenType)
-            .set(SUBJECT_TOKEN_KEY, subjectToken)
-            .asDictionary()
+        val parameters = ParameterBuilder.newAuthenticationBuilder().apply {
+            setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
+            set(SUBJECT_TOKEN_TYPE_KEY, subjectTokenType)
+            set(SUBJECT_TOKEN_KEY, subjectToken)
+            organization?.let {
+                set(ORGANIZATION_KEY, it)
+            }
+        }.asDictionary()
         return loginWithToken(parameters)
     }
 
