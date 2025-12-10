@@ -24,7 +24,6 @@ import com.auth0.android.request.internal.GsonAdapter.Companion.forMapOf
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.request.internal.RequestFactory
 import com.auth0.android.request.internal.ResponseUtils.isNetworkError
-import com.auth0.android.request.internal.validator.CustomTokenExchangeValidator
 import com.auth0.android.result.Challenge
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
@@ -770,7 +769,6 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         organization: String? = null
     ): AuthenticationRequest {
         return tokenExchange(subjectTokenType, subjectToken, organization)
-            .addValidator(CustomTokenExchangeValidator())
     }
 
     /**
