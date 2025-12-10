@@ -2298,7 +2298,7 @@ public class AuthenticationAPIClientTest {
     public fun shouldCustomTokenExchange() {
         mockAPI.willReturnSuccessfulLogin()
         val callback = MockAuthenticationCallback<Credentials>()
-        client.customTokenExchange("subject-token-type", "subject-token")
+        client.customTokenExchange("subject-token-type", "subject-token", "org_12345")
             .start(callback)
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
@@ -2316,6 +2316,7 @@ public class AuthenticationAPIClientTest {
         )
         assertThat(body, Matchers.hasEntry("subject_token", "subject-token"))
         assertThat(body, Matchers.hasEntry("subject_token_type", "subject-token-type"))
+        assertThat(body, Matchers.hasEntry("organization", "org_12345"))
         assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
         assertThat(
             callback, AuthenticationCallbackMatcher.hasPayloadOfType(
@@ -2328,7 +2329,7 @@ public class AuthenticationAPIClientTest {
     public fun shouldCustomTokenExchangeSync() {
         mockAPI.willReturnSuccessfulLogin()
         val credentials = client
-            .customTokenExchange("subject-token-type", "subject-token")
+            .customTokenExchange("subject-token-type", "subject-token", "org_abc")
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
@@ -2345,6 +2346,7 @@ public class AuthenticationAPIClientTest {
         )
         assertThat(body, Matchers.hasEntry("subject_token", "subject-token"))
         assertThat(body, Matchers.hasEntry("subject_token_type", "subject-token-type"))
+        assertThat(body, Matchers.hasEntry("organization", "org_abc"))
         assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
         assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
     }
@@ -2371,6 +2373,7 @@ public class AuthenticationAPIClientTest {
         )
         assertThat(body, Matchers.hasEntry("subject_token", "subject-token"))
         assertThat(body, Matchers.hasEntry("subject_token_type", "subject-token-type"))
+        assertThat(body, Matchers.not(Matchers.hasKey("organization")))
         assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
         assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
     }
@@ -2871,7 +2874,10 @@ public class AuthenticationAPIClientTest {
         assertThat(request.path, Matchers.equalTo("/oauth/token"))
 
         val body = bodyFromRequest<String>(request)
-        assertThat(body, Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_AUTHORIZATION_CODE))
+        assertThat(
+            body,
+            Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_AUTHORIZATION_CODE)
+        )
         assertThat(body, Matchers.hasEntry("code", "auth-code"))
 
         // Verify that key pair generation was attempted
@@ -2935,7 +2941,10 @@ public class AuthenticationAPIClientTest {
         assertThat(request.path, Matchers.equalTo("/oauth/token"))
 
         val body = bodyFromRequest<String>(request)
-        assertThat(body, Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE))
+        assertThat(
+            body,
+            Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
+        )
         assertThat(body, Matchers.hasEntry("subject_token_type", "subject-token-type"))
 
         // Verify that key pair generation was attempted
@@ -3114,9 +3123,12 @@ public class AuthenticationAPIClientTest {
             client.useDPoP(mockContext).login(SUPPORT_AUTH0_COM, PASSWORD, MY_CONNECTION)
                 .execute()
         }
-        Assert.assertEquals("Key pair is not found in the keystore. Please generate a key pair first.", exception.message)
+        Assert.assertEquals(
+            "Key pair is not found in the keystore. Please generate a key pair first.",
+            exception.message
+        )
         assertThat(exception.cause, Matchers.notNullValue())
-        assertThat(exception.cause, Matchers.instanceOf(DPoPException::class.java   ))
+        assertThat(exception.cause, Matchers.instanceOf(DPoPException::class.java))
     }
 
     private fun <T> bodyFromRequest(request: RecordedRequest): Map<String, T> {

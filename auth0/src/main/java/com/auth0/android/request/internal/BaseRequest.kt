@@ -12,6 +12,7 @@ import com.auth0.android.request.JsonAdapter
 import com.auth0.android.request.NetworkingClient
 import com.auth0.android.request.Request
 import com.auth0.android.request.RequestOptions
+import com.auth0.android.request.RequestValidator
 import com.auth0.android.request.ServerResponse
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -40,6 +41,8 @@ internal open class BaseRequest<T, U : Auth0Exception>(
 
     private val options: RequestOptions = RequestOptions(method)
 
+    private val validators = mutableListOf<RequestValidator>()
+
     override fun addHeader(name: String, value: String): Request<T, U> {
         options.headers[name] = value
         return this
@@ -67,6 +70,11 @@ internal open class BaseRequest<T, U : Auth0Exception>(
 
     override fun addParameter(name: String, value: Any): Request<T, U> {
         options.parameters[name] = value
+        return this
+    }
+
+    override fun addValidator(validator: RequestValidator): Request<T, U> {
+        validators.add(validator)
         return this
     }
 
@@ -126,6 +134,7 @@ internal open class BaseRequest<T, U : Auth0Exception>(
      */
     @kotlin.jvm.Throws(Auth0Exception::class)
     override fun execute(): T {
+        runClientValidation()
         val response: ServerResponse
         try {
             if (dPoP?.shouldGenerateProof(url, options.parameters) == true) {
@@ -173,6 +182,12 @@ internal open class BaseRequest<T, U : Auth0Exception>(
                 errorAdapter.fromException(exception)
             }
             throw error
+        }
+    }
+
+    private fun runClientValidation() {
+        validators.forEach { validator ->
+            validator.validate(options)
         }
     }
 

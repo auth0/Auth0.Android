@@ -8,10 +8,21 @@ import com.auth0.android.NetworkErrorException
 import com.auth0.android.dpop.DPoP
 import com.auth0.android.dpop.DPoPException
 import com.auth0.android.dpop.SenderConstraining
-import com.auth0.android.request.*
-import com.auth0.android.request.internal.*
+import com.auth0.android.request.AuthenticationRequest
+import com.auth0.android.request.ErrorAdapter
+import com.auth0.android.request.JsonAdapter
+import com.auth0.android.request.ProfileRequest
+import com.auth0.android.request.PublicKeyCredentials
+import com.auth0.android.request.Request
+import com.auth0.android.request.SignUpRequest
+import com.auth0.android.request.UserData
+import com.auth0.android.request.internal.BaseAuthenticationRequest
+import com.auth0.android.request.internal.BaseRequest
+import com.auth0.android.request.internal.GsonAdapter
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMap
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMapOf
+import com.auth0.android.request.internal.GsonProvider
+import com.auth0.android.request.internal.RequestFactory
 import com.auth0.android.request.internal.ResponseUtils.isNetworkError
 import com.auth0.android.result.Challenge
 import com.auth0.android.result.Credentials
@@ -749,13 +760,15 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      *
      * @param subjectTokenType the subject token type that is associated with the existing Identity Provider. e.g. 'http://acme.com/legacy-token'
      * @param subjectToken   the subject token, typically obtained through the Identity Provider's SDK
+     * @param organization  id of the organization the user belongs to
      * @return a request to configure and start that will yield [Credentials]
      */
     public fun customTokenExchange(
         subjectTokenType: String,
         subjectToken: String,
+        organization: String? = null
     ): AuthenticationRequest {
-        return tokenExchange(subjectTokenType, subjectToken)
+        return tokenExchange(subjectTokenType, subjectToken, organization)
     }
 
     /**
@@ -1043,13 +1056,17 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      */
     private fun tokenExchange(
         subjectTokenType: String,
-        subjectToken: String
+        subjectToken: String,
+        organization: String? = null
     ): AuthenticationRequest {
-        val parameters = ParameterBuilder.newAuthenticationBuilder()
-            .setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
-            .set(SUBJECT_TOKEN_TYPE_KEY, subjectTokenType)
-            .set(SUBJECT_TOKEN_KEY, subjectToken)
-            .asDictionary()
+        val parameters = ParameterBuilder.newAuthenticationBuilder().apply {
+            setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
+            set(SUBJECT_TOKEN_TYPE_KEY, subjectTokenType)
+            set(SUBJECT_TOKEN_KEY, subjectToken)
+            organization?.let {
+                set(ORGANIZATION_KEY, it)
+            }
+        }.asDictionary()
         return loginWithToken(parameters)
     }
 
