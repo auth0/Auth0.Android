@@ -1,5 +1,14 @@
 # Change Log
 
+## [3.12.0](https://github.com/auth0/Auth0.Android/tree/3.12.0) (2025-12-11)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.11.0...3.12.0)
+
+**Added**
+- feat: Add support for `organization` to custom token exchange [\#885](https://github.com/auth0/Auth0.Android/pull/885) ([pmathew92](https://github.com/pmathew92))
+
+**Changed**
+- refactor: Updating MRRT token store logic [\#884](https://github.com/auth0/Auth0.Android/pull/884) ([pmathew92](https://github.com/pmathew92))
+
 ## [3.11.0](https://github.com/auth0/Auth0.Android/tree/3.11.0) (2025-11-24)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.10.0...3.11.0)
 
