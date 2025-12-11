@@ -27,6 +27,7 @@ internal class PARCodeManager(
         private const val KEY_CLIENT_ID = "client_id"
         private const val KEY_REQUEST_URI = "request_uri"
         private const val KEY_CODE = "code"
+        private const val KEY_STATE = "state"
         private const val KEY_ERROR = "error"
         private const val KEY_ERROR_DESCRIPTION = "error_description"
         private const val ERROR_VALUE_ACCESS_DENIED = "access_denied"
@@ -81,8 +82,11 @@ internal class PARCodeManager(
             return true
         }
 
-        // Success - return authorization code
-        val authorizationCode = AuthorizationCode(code = code)
+        // Extract optional state
+        val state = values[KEY_STATE]
+
+        // Success - return authorization code with optional state
+        val authorizationCode = AuthorizationCode(code = code, state = state)
         callback.onSuccess(authorizationCode)
         return true
     }
