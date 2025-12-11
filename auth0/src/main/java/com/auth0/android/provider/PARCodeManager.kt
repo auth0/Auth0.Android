@@ -26,7 +26,6 @@ internal class PARCodeManager(
         private val TAG = PARCodeManager::class.java.simpleName
         private const val KEY_CLIENT_ID = "client_id"
         private const val KEY_REQUEST_URI = "request_uri"
-        private const val KEY_AUTH0_CLIENT_INFO = "auth0Client"
         private const val KEY_CODE = "code"
         private const val KEY_ERROR = "error"
         private const val KEY_ERROR_DESCRIPTION = "error_description"
@@ -99,7 +98,6 @@ internal class PARCodeManager(
         // Only add client_id and request_uri for PAR flow
         builder.appendQueryParameter(KEY_CLIENT_ID, account.clientId)
         builder.appendQueryParameter(KEY_REQUEST_URI, requestUri)
-        builder.appendQueryParameter(KEY_AUTH0_CLIENT_INFO, account.auth0UserAgent.value)
 
         val uri = builder.build()
         Log.d(TAG, "Using the following PAR Authorize URI: $uri")
