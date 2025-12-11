@@ -13,6 +13,7 @@
   - [Trusted Web Activity](#trusted-web-activity)
   - [DPoP [EA]](#dpop-ea)
   - [PAR (Pushed Authorization Request)](#par-pushed-authorization-request)
+    - [PAR with PKCE](#par-with-pkce)
   - [Authentication API](#authentication-api)
     - [Login with database connection](#login-with-database-connection)
     - [Login using MFA with One Time Password code](#login-using-mfa-with-one-time-password-code)
@@ -314,7 +315,7 @@ The PAR flow requires coordination between your backend (BFF) and the mobile app
 val requestUri = yourBffClient.initiatePAR(scope, audience)
 
 // Step 2 & 3: SDK opens browser and returns authorization code
-WebAuthProvider.authorizeWithPAR(account)
+WebAuthProvider.authorizeWithRequestUri(account)
     .start(context, requestUri, object : Callback<AuthorizationCode, AuthenticationException> {
         override fun onSuccess(result: AuthorizationCode) {
             // Step 4: Send code to BFF to exchange for tokens
@@ -340,7 +341,7 @@ try {
     val requestUri = yourBffClient.initiatePAR(scope, audience)
 
     // Step 2 & 3: SDK opens browser and returns authorization code
-    val authCode = WebAuthProvider.authorizeWithPAR(account)
+    val authCode = WebAuthProvider.authorizeWithRequestUri(account)
         .await(context, requestUri)
 
     // Step 4: Send code to BFF to exchange for tokens
@@ -357,6 +358,92 @@ try {
 
 > [!NOTE]
 > The SDK only handles opening the browser with the `request_uri` and returning the authorization code. Token exchange must be performed by your backend server which holds the `client_secret`.
+
+### PAR with PKCE
+
+When using PAR with PKCE (Proof Key for Code Exchange), your backend generates a `code_verifier` and `code_challenge` during the `/par` request, and includes the `code_verifier` when exchanging the authorization code for tokens.
+
+The PKCE flow adds an extra layer of security by ensuring that only the party that initiated the authorization request can exchange the code for tokens.
+
+```kotlin
+// Step 1: Your BFF calls /par with code_challenge and returns request_uri + code_verifier
+val parResponse = yourBffClient.initiatePARWithPKCE(scope, audience)
+// parResponse contains: requestUri and codeVerifier
+
+// Step 2 & 3: SDK opens browser and returns authorization code
+WebAuthProvider.authorizeWithRequestUri(account)
+    .start(context, parResponse.requestUri, object : Callback<AuthorizationCode, AuthenticationException> {
+        override fun onSuccess(result: AuthorizationCode) {
+            // Step 4: Send code AND code_verifier to BFF to exchange for tokens
+            yourBffClient.exchangeCodeWithPKCE(result.code, parResponse.codeVerifier)
+        }
+
+        override fun onFailure(error: AuthenticationException) {
+            if (error.isCanceled) {
+                // User closed the browser
+            } else {
+                // Handle error
+            }
+        }
+    })
+```
+
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    // Step 1: Your BFF calls /par with code_challenge and returns request_uri + code_verifier
+    val parResponse = yourBffClient.initiatePARWithPKCE(scope, audience)
+
+    // Step 2 & 3: SDK opens browser and returns authorization code
+    val authCode = WebAuthProvider.authorizeWithRequestUri(account)
+        .await(context, parResponse.requestUri)
+
+    // Step 4: Send code AND code_verifier to BFF to exchange for tokens
+    val credentials = yourBffClient.exchangeCodeWithPKCE(authCode.code, parResponse.codeVerifier)
+} catch (e: AuthenticationException) {
+    if (e.isCanceled) {
+        // User closed the browser
+    } else {
+        // Handle error
+    }
+}
+```
+</details>
+
+#### Backend PKCE Implementation
+
+Your backend should generate the `code_verifier` and `code_challenge` during the `/par` request:
+
+```kotlin
+// Backend: Generate PKCE values
+fun generateCodeVerifier(): String {
+    val randomBytes = ByteArray(32)
+    SecureRandom().nextBytes(randomBytes)
+    return Base64.encodeToString(randomBytes, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
+}
+
+fun generateCodeChallenge(codeVerifier: String): String {
+    val bytes = codeVerifier.toByteArray(Charsets.US_ASCII)
+    val digest = MessageDigest.getInstance("SHA-256")
+    val hash = digest.digest(bytes)
+    return Base64.encodeToString(hash, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
+}
+
+// Include in /par request
+val codeVerifier = generateCodeVerifier()
+val codeChallenge = generateCodeChallenge(codeVerifier)
+
+// POST to /oauth/par with:
+// - code_challenge: codeChallenge
+// - code_challenge_method: "S256"
+
+// Store codeVerifier and return it with request_uri to the app
+
+// Later, in /oauth/token request, include:
+// - code_verifier: codeVerifier
+```
 
 ## Authentication API
 

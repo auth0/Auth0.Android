@@ -81,7 +81,7 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
     }
 
     /**
-     * Initialize the WebAuthProvider instance for PAR (Pushed Authorization Request) flows.
+     * Initialize the WebAuthProvider instance for request_uri based authorization flows.
      * Use this when your BFF has already called the /oauth/par endpoint and you need to
      * complete the authorization by opening /authorize with the request_uri.
      *
@@ -89,7 +89,7 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
      * @return a new PARBuilder instance to customize.
      */
     @JvmStatic
-    public fun authorizeWithPAR(account: Auth0): PARBuilder {
+    public fun authorizeWithRequestUri(account: Auth0): PARBuilder {
         return PARBuilder(account)
     }
 
@@ -671,7 +671,7 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
      *
      * Example usage:
      * ```kotlin
-     * WebAuthProvider.authorizeWithPAR(account)
+     * WebAuthProvider.authorizeWithRequestUri(account)
      *     .start(context, requestURI, callback)
      * ```
      */

@@ -6,7 +6,7 @@ import android.net.Uri
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
-import com.auth0.android.provider.WebAuthProvider.authorizeWithPAR
+import com.auth0.android.provider.WebAuthProvider.authorizeWithRequestUri
 import com.auth0.android.provider.WebAuthProvider.resume
 import com.auth0.android.request.internal.ThreadSwitcherShadow
 import com.auth0.android.result.AuthorizationCode
@@ -69,7 +69,7 @@ public class PARCodeManagerTest {
 
     @Test
     public fun shouldStartPARFlowWithCorrectAuthorizeUri() {
-        authorizeWithPAR(account)
+        authorizeWithRequestUri(account)
             .start(activity, REQUEST_URI, callback)
 
         Assert.assertNotNull(WebAuthProvider.managerInstance)
@@ -87,7 +87,7 @@ public class PARCodeManagerTest {
 
     @Test
     public fun shouldResumeWithValidCode() {
-        authorizeWithPAR(account)
+        authorizeWithRequestUri(account)
             .start(activity, REQUEST_URI, callback)
 
         verify(activity).startActivity(intentCaptor.capture())
@@ -105,7 +105,7 @@ public class PARCodeManagerTest {
 
     @Test
     public fun shouldFailWithMissingCode() {
-        authorizeWithPAR(account)
+        authorizeWithRequestUri(account)
             .start(activity, REQUEST_URI, callback)
 
         verify(activity).startActivity(intentCaptor.capture())
@@ -123,7 +123,7 @@ public class PARCodeManagerTest {
 
     @Test
     public fun shouldFailWithErrorResponse() {
-        authorizeWithPAR(account)
+        authorizeWithRequestUri(account)
             .start(activity, REQUEST_URI, callback)
 
         verify(activity).startActivity(intentCaptor.capture())
@@ -141,7 +141,7 @@ public class PARCodeManagerTest {
 
     @Test
     public fun shouldHandleCanceledAuthentication() {
-        authorizeWithPAR(account)
+        authorizeWithRequestUri(account)
             .start(activity, REQUEST_URI, callback)
 
         verify(activity).startActivity(intentCaptor.capture())
@@ -167,7 +167,7 @@ public class PARCodeManagerTest {
             null
         )
 
-        authorizeWithPAR(account)
+        authorizeWithRequestUri(account)
             .start(activity, REQUEST_URI, callback)
 
         verify(callback).onFailure(authExceptionCaptor.capture())
