@@ -12,6 +12,7 @@
   - [Specify a Custom Logout URL](#specify-a-custom-logout-url)
   - [Trusted Web Activity](#trusted-web-activity)
   - [DPoP [EA]](#dpop-ea)
+  - [PAR (Pushed Authorization Request)](#par-pushed-authorization-request)
   - [Authentication API](#authentication-api)
     - [Login with database connection](#login-with-database-connection)
     - [Login using MFA with One Time Password code](#login-using-mfa-with-one-time-password-code)
@@ -289,6 +290,73 @@ WebAuthProvider.logout(account)
 ```
 > [!NOTE]  
 > DPoP is supported only on Android version 6.0 (API level 23) and above. Trying to use DPoP in any older versions will result in an exception.
+
+## PAR (Pushed Authorization Request)
+
+PAR (Pushed Authorization Request) enables a Backend-for-Frontend (BFF) pattern where your backend server handles the `/par` and `/token` endpoints while the SDK manages the browser-based authorization flow.
+
+This is useful when:
+- You need to use a confidential client with a `client_secret`
+- You want to keep sensitive parameters server-side
+- You're implementing a BFF architecture
+
+### Usage
+
+The PAR flow requires coordination between your backend (BFF) and the mobile app:
+
+1. **Backend calls `/par` endpoint** - Your backend initiates the PAR request with the `client_secret` and receives a `request_uri`
+2. **SDK opens `/authorize`** - The mobile app uses the `request_uri` to open the browser for user authentication
+3. **SDK returns authorization code** - After authentication, the SDK returns the authorization code to the app
+4. **Backend exchanges code for tokens** - Your backend exchanges the code for tokens using the `client_secret`
+
+```kotlin
+// Step 1: Your BFF calls /par and returns request_uri to the app
+val requestUri = yourBffClient.initiatePAR(scope, audience)
+
+// Step 2 & 3: SDK opens browser and returns authorization code
+WebAuthProvider.par(account)
+    .start(context, requestUri, object : Callback<AuthorizationCode, AuthenticationException> {
+        override fun onSuccess(result: AuthorizationCode) {
+            // Step 4: Send code to BFF to exchange for tokens
+            yourBffClient.exchangeCode(result.code)
+        }
+
+        override fun onFailure(error: AuthenticationException) {
+            if (error.isCanceled) {
+                // User closed the browser
+            } else {
+                // Handle error
+            }
+        }
+    })
+```
+
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    // Step 1: Your BFF calls /par and returns request_uri
+    val requestUri = yourBffClient.initiatePAR(scope, audience)
+
+    // Step 2 & 3: SDK opens browser and returns authorization code
+    val authCode = WebAuthProvider.par(account)
+        .await(context, requestUri)
+
+    // Step 4: Send code to BFF to exchange for tokens
+    val credentials = yourBffClient.exchangeCode(authCode.code)
+} catch (e: AuthenticationException) {
+    if (e.isCanceled) {
+        // User closed the browser
+    } else {
+        // Handle error
+    }
+}
+```
+</details>
+
+> [!NOTE]
+> The SDK only handles opening the browser with the `request_uri` and returning the authorization code. Token exchange must be performed by your backend server which holds the `client_secret`.
 
 ## Authentication API
 
