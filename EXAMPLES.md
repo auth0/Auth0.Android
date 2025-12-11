@@ -314,7 +314,7 @@ The PAR flow requires coordination between your backend (BFF) and the mobile app
 val requestUri = yourBffClient.initiatePAR(scope, audience)
 
 // Step 2 & 3: SDK opens browser and returns authorization code
-WebAuthProvider.par(account)
+WebAuthProvider.authorizeWithPAR(account)
     .start(context, requestUri, object : Callback<AuthorizationCode, AuthenticationException> {
         override fun onSuccess(result: AuthorizationCode) {
             // Step 4: Send code to BFF to exchange for tokens
@@ -340,7 +340,7 @@ try {
     val requestUri = yourBffClient.initiatePAR(scope, audience)
 
     // Step 2 & 3: SDK opens browser and returns authorization code
-    val authCode = WebAuthProvider.par(account)
+    val authCode = WebAuthProvider.authorizeWithPAR(account)
         .await(context, requestUri)
 
     // Step 4: Send code to BFF to exchange for tokens

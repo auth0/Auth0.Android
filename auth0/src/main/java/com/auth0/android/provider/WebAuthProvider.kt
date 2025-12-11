@@ -89,7 +89,7 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
      * @return a new PARBuilder instance to customize.
      */
     @JvmStatic
-    public fun par(account: Auth0): PARBuilder {
+    public fun authorizeWithPAR(account: Auth0): PARBuilder {
         return PARBuilder(account)
     }
 
@@ -671,7 +671,7 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
      *
      * Example usage:
      * ```kotlin
-     * WebAuthProvider.par(account)
+     * WebAuthProvider.authorizeWithPAR(account)
      *     .start(context, requestURI, callback)
      * ```
      */
