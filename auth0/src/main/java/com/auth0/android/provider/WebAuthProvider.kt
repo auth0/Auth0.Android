@@ -11,6 +11,7 @@ import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
 import com.auth0.android.dpop.DPoP
 import com.auth0.android.dpop.SenderConstraining
+import com.auth0.android.result.AuthorizationCode
 import com.auth0.android.result.Credentials
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -77,6 +78,19 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
     @JvmStatic
     public fun login(account: Auth0): Builder {
         return Builder(account)
+    }
+
+    /**
+     * Initialize the WebAuthProvider instance for PAR (Pushed Authorization Request) flows.
+     * Use this when your BFF has already called the /oauth/par endpoint and you need to
+     * complete the authorization by opening /authorize with the request_uri.
+     *
+     * @param account to use for authentication
+     * @return a new PARBuilder instance to customize.
+     */
+    @JvmStatic
+    public fun par(account: Auth0): PARBuilder {
+        return PARBuilder(account)
     }
 
     /**
@@ -645,6 +659,105 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
         private companion object {
             private const val KEY_AUDIENCE = "audience"
             private const val KEY_CONNECTION_SCOPE = "connection_scope"
+        }
+    }
+
+    /**
+     * Builder for PAR (Pushed Authorization Request) code-only authentication flows.
+     *
+     * Use this builder when your backend (BFF) has already called the PAR endpoint
+     * and you need to complete the authorization flow by opening the authorize URL
+     * with the request_uri.
+     *
+     * Example usage:
+     * ```kotlin
+     * WebAuthProvider.par(account)
+     *     .start(context, requestURI, callback)
+     * ```
+     */
+    public class PARBuilder internal constructor(private val account: Auth0) {
+        private val ctOptions: CustomTabsOptions = CustomTabsOptions.newBuilder().build()
+
+        /**
+         * Start the PAR authorization flow using a request_uri from a PAR response.
+         * Opens the browser with the authorize URL and returns the authorization code
+         * for the app to exchange via BFF.
+         *
+         * @param context An Activity context to run the authentication.
+         * @param requestURI The request_uri from PAR response
+         * @param callback Callback with authorization code result
+         */
+        public fun start(
+            context: Context,
+            requestURI: String,
+            callback: Callback<AuthorizationCode, AuthenticationException>
+        ) {
+            resetManagerInstance()
+
+            if (!ctOptions.hasCompatibleBrowser(context.packageManager)) {
+                val ex = AuthenticationException(
+                    "a0.browser_not_available",
+                    "No compatible Browser application is installed."
+                )
+                callback.onFailure(ex)
+                return
+            }
+
+            val manager = PARCodeManager(
+                account = account,
+                callback = callback,
+                requestUri = requestURI,
+                ctOptions = ctOptions
+            )
+
+            managerInstance = manager
+            manager.startAuthentication(context, 110)
+        }
+
+        /**
+         * Start the PAR authorization flow using a request_uri from a PAR response.
+         * Opens the browser with the authorize URL and returns the authorization code
+         * for the app to exchange via BFF.
+         *
+         * @param context An Activity context to run the authentication.
+         * @param requestURI The request_uri from PAR response
+         * @return AuthorizationCode containing the authorization code
+         * @throws AuthenticationException if authentication fails
+         */
+        @JvmSynthetic
+        @Throws(AuthenticationException::class)
+        public suspend fun await(
+            context: Context,
+            requestURI: String
+        ): AuthorizationCode {
+            return await(context, requestURI, Dispatchers.Main.immediate)
+        }
+
+        /**
+         * Used internally so that [CoroutineContext] can be injected for testing purpose
+         */
+        internal suspend fun await(
+            context: Context,
+            requestURI: String,
+            coroutineContext: CoroutineContext
+        ): AuthorizationCode {
+            return withContext(coroutineContext) {
+                suspendCancellableCoroutine { continuation ->
+                    start(
+                        context,
+                        requestURI,
+                        object : Callback<AuthorizationCode, AuthenticationException> {
+                            override fun onSuccess(result: AuthorizationCode) {
+                                continuation.resume(result)
+                            }
+
+                            override fun onFailure(error: AuthenticationException) {
+                                continuation.resumeWithException(error)
+                            }
+                        }
+                    )
+                }
+            }
         }
     }
 }
