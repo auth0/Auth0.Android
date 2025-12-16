@@ -627,7 +627,7 @@ authentication
 
 ```kotlin
 authentication
-    .customTokenExchange("subject_token_type", "subject_token")
+    .customTokenExchange("subject_token_type", "subject_token", "organization_id")
     .start(object : Callback<Credentials, AuthenticationException> {
         override fun onSuccess(result: Credentials) {
             // Handle success
@@ -645,7 +645,7 @@ authentication
 ``` kotlin 
 try {
     val credentials = authentication
-        .tokenExchange("subject_token_type", "subject_token")
+        .customTokenExchange("subject_token_type", "subject_token", "organization_id")
         .await()
 } catch (e: AuthenticationException) {
     e.printStacktrace()
@@ -658,7 +658,7 @@ try {
 
 ```java
 authentication
-    .customTokenExchange("subject_token_type", "subject_token")
+    .customTokenExchange("subject_token_type", "subject_token", "organization_id")
     .start(new Callback<Credentials, AuthenticationException>() {
         @Override
         public void onSuccess(@Nullable Credentials payload) {
