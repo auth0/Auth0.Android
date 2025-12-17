@@ -53,7 +53,8 @@ class CryptoUtil {
 
     // Transformations available since API 18
     // https://developer.android.com/training/articles/keystore.html#SupportedCiphers
-    private static final String RSA_TRANSFORMATION = "RSA/ECB/PKCS1Padding";
+    private static final String RSA_TRANSFORMATION = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
+    private static final String OLD_PKCS1_RSA_TRANSFORMATION = "RSA/ECB/PKCS1Padding";
     // https://developer.android.com/reference/javax/crypto/Cipher.html
     @SuppressWarnings("SpellCheckingInspection")
     private static final String AES_TRANSFORMATION = "AES/GCM/NOPADDING";
@@ -62,7 +63,7 @@ class CryptoUtil {
     private static final String ALGORITHM_RSA = "RSA";
     private static final String ALGORITHM_AES = "AES";
     private static final int AES_KEY_SIZE = 256;
-    private static final int RSA_KEY_SIZE = 2048;
+    private static final int RSA_KEY_SIZE = 4096;
 
     private static final byte FORMAT_MARKER = 0x01;
 
@@ -372,30 +373,100 @@ class CryptoUtil {
     @VisibleForTesting
     byte[] getAESKey() throws IncompatibleDeviceException, CryptoException {
         String encodedEncryptedAES = storage.retrieveString(KEY_ALIAS);
-        if (TextUtils.isEmpty(encodedEncryptedAES)) {
-            encodedEncryptedAES = storage.retrieveString(OLD_KEY_ALIAS);
-        }
-        if (encodedEncryptedAES != null) {
-            //Return existing key
-            byte[] encryptedAES = Base64.decode(encodedEncryptedAES, Base64.DEFAULT);
-            byte[] existingAES = RSADecrypt(encryptedAES);
-            final int aesExpectedLengthInBytes = AES_KEY_SIZE / 8;
-            //Prevent returning an 'Empty key' (invalid/corrupted) that was mistakenly saved
-            if (existingAES != null && existingAES.length == aesExpectedLengthInBytes) {
-                //Key exists and has the right size
-                return existingAES;
+        if (!TextUtils.isEmpty(encodedEncryptedAES)) {
+            byte[] encryptedAESBytes = Base64.decode(encodedEncryptedAES, Base64.DEFAULT);
+            try {
+                return RSADecrypt(encryptedAESBytes);
+            } catch (IncompatibleDeviceException e) {
+                String fullMessage = e.toString();
+                Throwable cause = e.getCause();
+                while (cause != null) {
+                    fullMessage += "\n" + cause.toString();
+                    cause = cause.getCause();
+                }
+                
+                if (fullMessage.contains("Incompatible padding mode") || 
+                    fullMessage.contains("INCOMPATIBLE_PADDING_MODE")) {
+                    try {
+                        KeyStore keyStore = KeyStore.getInstance(ANDROID_KEY_STORE);
+                        keyStore.load(null);
+
+                        // Get the RSA key from KeyStore (could be at KEY_ALIAS or OLD_KEY_ALIAS)
+                        KeyStore.PrivateKeyEntry rsaKey = null;
+                        String keyAliasUsed = null;
+                        
+                        if (keyStore.containsAlias(KEY_ALIAS)) {
+                            rsaKey = getKeyEntryCompat(keyStore, KEY_ALIAS);
+                            keyAliasUsed = KEY_ALIAS;
+                        } else if (keyStore.containsAlias(OLD_KEY_ALIAS)) {
+                            rsaKey = getKeyEntryCompat(keyStore, OLD_KEY_ALIAS);
+                            keyAliasUsed = OLD_KEY_ALIAS;
+                        }
+                        
+                        if (rsaKey != null && keyAliasUsed != null) {
+                            // Decrypt using OLD PKCS1 padding
+                            Cipher rsaPkcs1Cipher = Cipher.getInstance(OLD_PKCS1_RSA_TRANSFORMATION);
+                            rsaPkcs1Cipher.init(Cipher.DECRYPT_MODE, rsaKey.getPrivateKey());
+                            byte[] decryptedAESKey = rsaPkcs1Cipher.doFinal(encryptedAESBytes);
+                            deleteRSAKeys();
+                            
+                            // Re-encrypt AES key with NEW OAEP RSA key (4096-bit)
+                            byte[] encryptedAESWithOAEP = RSAEncrypt(decryptedAESKey);
+                            String newEncodedEncryptedAES = new String(
+                                Base64.encode(encryptedAESWithOAEP, Base64.DEFAULT), 
+                                StandardCharsets.UTF_8
+                            );
+                            storage.store(KEY_ALIAS, newEncodedEncryptedAES);
+
+                            return decryptedAESKey;
+                        }
+                    } catch (CryptoException | KeyStoreException | CertificateException | 
+                             IOException | NoSuchAlgorithmException | UnrecoverableEntryException |
+                             NoSuchPaddingException | InvalidKeyException | 
+                             IllegalBlockSizeException | BadPaddingException ex) {
+                        Log.e(TAG, "Could not migrate. A new key will be generated.", ex);
+                        deleteRSAKeys();
+                        deleteAESKeys();
+                    }
+                }
+                throw e;
+            } catch (CryptoException e) {
+                // RSA decryption failed - the encrypted AES key is corrupted or the RSA key is invalid
+                // Delete keys and regenerate them
+                Log.w(TAG, "RSA decryption failed with CryptoException. Keys may be corrupted. Will regenerate.", e);
+                deleteRSAKeys();
+                deleteAESKeys();
             }
         }
-        //Key doesn't exist. Generate new AES
+        String encodedOldAES = storage.retrieveString(OLD_KEY_ALIAS);
+        if (!TextUtils.isEmpty(encodedOldAES)) {
+            try {
+                byte[] encryptedOldAESBytes = Base64.decode(encodedOldAES, Base64.DEFAULT);
+                KeyStore.PrivateKeyEntry rsaKeyEntry = getRSAKeyEntry();
+                Cipher rsaPkcs1Cipher = Cipher.getInstance(OLD_PKCS1_RSA_TRANSFORMATION);
+                rsaPkcs1Cipher.init(Cipher.DECRYPT_MODE, rsaKeyEntry.getPrivateKey());
+                byte[] decryptedAESKey = rsaPkcs1Cipher.doFinal(encryptedOldAESBytes);
+
+                byte[] encryptedAESWithOAEP = RSAEncrypt(decryptedAESKey);
+                String newEncodedEncryptedAES = new String(Base64.encode(encryptedAESWithOAEP, Base64.DEFAULT), StandardCharsets.UTF_8);
+                storage.store(KEY_ALIAS, newEncodedEncryptedAES);
+                storage.remove(OLD_KEY_ALIAS);
+                return decryptedAESKey;
+            } catch (Exception e) {
+                Log.e(TAG, "Could not migrate the legacy AES key. A new key will be generated.", e);
+                deleteAESKeys();
+            }
+        }
+
         try {
             KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM_AES);
             keyGen.init(AES_KEY_SIZE);
-            byte[] aes = keyGen.generateKey().getEncoded();
-            //Save encrypted encoded version
-            byte[] encryptedAES = RSAEncrypt(aes);
-            String encodedEncryptedAESText = new String(Base64.encode(encryptedAES, Base64.DEFAULT), StandardCharsets.UTF_8);
-            storage.store(KEY_ALIAS, encodedEncryptedAESText);
-            return aes;
+            byte[] decryptedAESKey = keyGen.generateKey().getEncoded();
+
+            byte[] encryptedNewAES = RSAEncrypt(decryptedAESKey);
+            String encodedEncryptedNewAESText = new String(Base64.encode(encryptedNewAES, Base64.DEFAULT), StandardCharsets.UTF_8);
+            storage.store(KEY_ALIAS, encodedEncryptedNewAESText);
+            return decryptedAESKey;
         } catch (NoSuchAlgorithmException e) {
             /*
              * This exceptions are safe to be ignored:
@@ -407,6 +478,9 @@ class CryptoUtil {
              */
             Log.e(TAG, "Error while creating the AES key.", e);
             throw new IncompatibleDeviceException(e);
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error while creating the new AES key.", e);
+            throw new CryptoException("Unexpected error while creating the new AES key.", e);
         }
     }
 
