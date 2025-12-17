@@ -164,7 +164,7 @@ public class CryptoUtilTest {
 
         final KeyStore.PrivateKeyEntry entry = cryptoUtil.getRSAKeyEntry();
 
-        Mockito.verify(builder).setKeySize(2048);
+        Mockito.verify(builder).setKeySize(4096);
         Mockito.verify(builder).setSubject(principalCaptor.capture());
         Mockito.verify(builder).setAlias(KEY_ALIAS);
         Mockito.verify(builder).setSerialNumber(BigInteger.ONE);
@@ -215,7 +215,7 @@ public class CryptoUtilTest {
 
         final KeyStore.PrivateKeyEntry entry = cryptoUtil.getRSAKeyEntry();
 
-        Mockito.verify(builder).setKeySize(2048);
+        Mockito.verify(builder).setKeySize(4096);
         Mockito.verify(builder).setSubject(principalCaptor.capture());
         Mockito.verify(builder).setAlias(KEY_ALIAS);
         Mockito.verify(builder).setSerialNumber(BigInteger.ONE);
@@ -266,7 +266,7 @@ public class CryptoUtilTest {
 
         final KeyStore.PrivateKeyEntry entry = cryptoUtil.getRSAKeyEntry();
 
-        Mockito.verify(builder).setKeySize(2048);
+        Mockito.verify(builder).setKeySize(4096);
         Mockito.verify(builder).setSubject(principalCaptor.capture());
         Mockito.verify(builder).setAlias(KEY_ALIAS);
         Mockito.verify(builder).setSerialNumber(BigInteger.ONE);
@@ -313,7 +313,7 @@ public class CryptoUtilTest {
         final KeyStore.PrivateKeyEntry entry = cryptoUtil.getRSAKeyEntry();
 
 
-        Mockito.verify(builder).setKeySize(2048);
+        Mockito.verify(builder).setKeySize(4096);
         Mockito.verify(builder).setCertificateSubject(principalCaptor.capture());
         Mockito.verify(builder).setCertificateSerialNumber(BigInteger.ONE);
         Mockito.verify(builder).setCertificateNotBefore(startDateCaptor.capture());
@@ -359,7 +359,7 @@ public class CryptoUtilTest {
 
         final KeyStore.PrivateKeyEntry entry = cryptoUtil.getRSAKeyEntry();
 
-        Mockito.verify(builder).setKeySize(2048);
+        Mockito.verify(builder).setKeySize(4096);
         Mockito.verify(builder).setCertificateSubject(principalCaptor.capture());
         Mockito.verify(builder).setCertificateSerialNumber(BigInteger.ONE);
         Mockito.verify(builder).setCertificateNotBefore(startDateCaptor.capture());
@@ -414,7 +414,7 @@ public class CryptoUtilTest {
 
         final KeyStore.PrivateKeyEntry entry = cryptoUtil.getRSAKeyEntry();
 
-        Mockito.verify(builder).setKeySize(2048);
+        Mockito.verify(builder).setKeySize(4096);
         Mockito.verify(builder).setCertificateSubject(principalCaptor.capture());
         Mockito.verify(builder).setCertificateSerialNumber(BigInteger.ONE);
         Mockito.verify(builder).setCertificateNotBefore(startDateCaptor.capture());
