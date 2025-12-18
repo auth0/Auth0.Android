@@ -24,6 +24,8 @@ import com.auth0.android.request.internal.GsonAdapter.Companion.forMapOf
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.request.internal.RequestFactory
 import com.auth0.android.request.internal.ResponseUtils.isNetworkError
+import com.auth0.android.result.Authenticator
+import com.auth0.android.result.AuthenticatorsList
 import com.auth0.android.result.Challenge
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
@@ -471,6 +473,47 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             Challenge::class.java, gson
         )
         return factory.post(url.toString(), challengeAdapter)
+            .addParameters(parameters)
+    }
+
+    /**
+     * List the available MFA authenticators for the user.
+     * This method should be called after receiving an `mfa_required` error to determine which
+     * authenticators are available for completing the MFA challenge.
+     *
+     * Example usage:
+     *
+     * ```
+     * client.listAuthenticators("{mfa token}")
+     *     .start(object : Callback<AuthenticatorsList, AuthenticationException> {
+     *         override fun onSuccess(result: AuthenticatorsList) {
+     *             // Use result.smsAuthenticators to get SMS authenticators
+     *             val smsAuth = result.firstActiveSmsAuthenticator
+     *             if (smsAuth != null) {
+     *                 // Trigger SMS challenge with this authenticator
+     *             }
+     *         }
+     *         override fun onFailure(error: AuthenticationException) { }
+     *     })
+     * ```
+     *
+     * @param mfaToken the MFA token received in the `mfa_required` error response
+     * @return a request to configure and start that will yield [AuthenticatorsList]
+     */
+    public fun listAuthenticators(
+        mfaToken: String
+    ): Request<AuthenticatorsList, AuthenticationException> {
+        val parameters = ParameterBuilder.newBuilder()
+            .set(MFA_TOKEN_KEY, mfaToken)
+            .asDictionary()
+        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
+            .addPathSegment(MFA_PATH)
+            .addPathSegment(AUTHENTICATORS_PATH)
+            .build()
+        val authenticatorsListAdapter: JsonAdapter<AuthenticatorsList> = GsonAdapter(
+            AuthenticatorsList::class.java, gson
+        )
+        return factory.post(url.toString(), authenticatorsListAdapter)
             .addParameters(parameters)
     }
 
@@ -1116,6 +1159,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val REVOKE_PATH = "revoke"
         private const val MFA_PATH = "mfa"
         private const val CHALLENGE_PATH = "challenge"
+        private const val AUTHENTICATORS_PATH = "authenticators"
         private const val PASSKEY_PATH = "passkey"
         private const val REGISTER_PATH = "register"
         private const val HEADER_AUTHORIZATION = "Authorization"

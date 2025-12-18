@@ -3,10 +3,16 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/DatabaseLoginFragment">
+    app:startDestination="@id/SmsOtpMfaFragment">
 
     <fragment
         android:id="@+id/DatabaseLoginFragment"
         android:name="com.auth0.sample.DatabaseLoginFragment"
         tools:layout="@layout/fragment_database_login"/>
+    
+    <fragment
+        android:id="@+id/SmsOtpMfaFragment"
+        android:name="com.auth0.sample.SmsOtpMfaFragment"
+        android:label="SMS OTP MFA POC"
+        tools:layout="@layout/fragment_sms_otp_mfa"/>
 </navigation>

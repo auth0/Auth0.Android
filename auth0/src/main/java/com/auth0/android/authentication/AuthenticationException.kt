@@ -147,6 +147,15 @@ public class AuthenticationException : Auth0Exception {
     public val isMultifactorEnrollRequired: Boolean
         get() = "a0.mfa_registration_required" == code || "unsupported_challenge_type" == code
 
+    /**
+     * Get the MFA token from the error response when MFA is required.
+     * This token should be used in subsequent MFA operations like listing authenticators or completing the challenge.
+     *
+     * @return the MFA token if present, null otherwise
+     */
+    public val mfaToken: String?
+        get() = getValue("mfa_token") as? String
+
     /// When Bot Protection flags the request as suspicious
     public val isVerificationRequired: Boolean
         get() = "requires_verification" == code
