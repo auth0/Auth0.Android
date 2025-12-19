@@ -56,11 +56,17 @@ class CryptoUtil {
     private static final String RSA_TRANSFORMATION = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
     /**
      * !!! WARNING !!!
-     * "RSA/ECB/PKCS1Padding" is deprecated due to vulnerabilities (see Bleichenbacher attacks, etc),
-     * and should only be used here for *legacy key migration only*. All new data must use OAEP padding.
-     * REMOVE SUPPORT FOR THIS AS SOON AS ALL DATA IS MIGRATED.
+     * "RSA/ECB/PKCS1Padding" is cryptographically deprecated due to vulnerabilities
+     * (e.g. Bleichenbacher padding oracle attacks) and MUST NOT be used for encrypting
+     * new data or for any general-purpose RSA operations.
+     * 
+     * This transformation exists solely to DECRYPT pre-existing legacy data that was
+     * originally encrypted with PKCS#1 v1.5 padding, so that it can be re-encrypted
+     * using the secure OAEP-based {@link #RSA_TRANSFORMATION}. Once all legacy data has
+     * been migrated, support for this constant and any code paths that use it should be
+     * removed.
      */
-    private static final String OLD_PKCS1_RSA_TRANSFORMATION = "RSA/ECB/PKCS1Padding";
+    private static final String LEGACY_PKCS1_RSA_TRANSFORMATION = "RSA/ECB/PKCS1Padding";
     // https://developer.android.com/reference/javax/crypto/Cipher.html
     @SuppressWarnings("SpellCheckingInspection")
     private static final String AES_TRANSFORMATION = "AES/GCM/NOPADDING";
@@ -96,6 +102,31 @@ class CryptoUtil {
         this.KEY_IV_ALIAS = context.getPackageName() + "." + keyAlias + iv_suffix;
         this.context = context;
         this.storage = storage;
+    }
+
+    /**
+     * Decrypts data that was encrypted using legacy RSA/PKCS1 padding.
+     * <p>
+     * WARNING: This must only be used for decrypting legacy data during migration.
+     * New code must always use OAEP padding for RSA encryption/decryption.
+     * 
+     * @param encryptedData The data encrypted with PKCS1 padding
+     * @param privateKey The private key for decryption
+     * @return The decrypted data
+     * @throws NoSuchPaddingException If PKCS1 padding is not available
+     * @throws NoSuchAlgorithmException If RSA algorithm is not available
+     * @throws InvalidKeyException If the private key is invalid
+     * @throws BadPaddingException If the encrypted data has invalid padding
+     * @throws IllegalBlockSizeException If the encrypted data size is invalid
+     */
+    @NonNull
+    private static byte[] RSADecryptLegacyPKCS1(@NonNull byte[] encryptedData,
+                                                 @NonNull PrivateKey privateKey)
+            throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException,
+            BadPaddingException, IllegalBlockSizeException {
+        Cipher rsaPkcs1Cipher = Cipher.getInstance(LEGACY_PKCS1_RSA_TRANSFORMATION);
+        rsaPkcs1Cipher.init(Cipher.DECRYPT_MODE, privateKey);
+        return rsaPkcs1Cipher.doFinal(encryptedData);
     }
 
     /**
@@ -410,11 +441,12 @@ class CryptoUtil {
                         }
                         
                         if (rsaKey != null && keyAliasUsed != null) {
-                            // WARNING: Using PKCS1 padding here is intentional and ONLY for decrypting legacy data
-                            // Do NOT use PKCS1 padding for encryption in new code; always use OAEP padding instead.
-                            Cipher rsaPkcs1Cipher = Cipher.getInstance(OLD_PKCS1_RSA_TRANSFORMATION);
-                            rsaPkcs1Cipher.init(Cipher.DECRYPT_MODE, rsaKey.getPrivateKey());
-                            byte[] decryptedAESKey = rsaPkcs1Cipher.doFinal(encryptedAESBytes);
+                            // WARNING: Using PKCS1 padding here is intentional and ONLY for decrypting legacy data.
+                            // This cipher must NEVER be used for encryption or for any new data; always use OAEP instead.
+                            byte[] decryptedAESKey = RSADecryptLegacyPKCS1(
+                                encryptedAESBytes,
+                                rsaKey.getPrivateKey()
+                            );
                             deleteRSAKeys();
                             
                             // Re-encrypt AES key with NEW OAEP RSA key (4096-bit)
@@ -435,8 +467,9 @@ class CryptoUtil {
                         deleteRSAKeys();
                         deleteAESKeys();
                     }
+                } else {
+                    throw e;
                 }
-                throw e;
             } catch (CryptoException e) {
                 // RSA decryption failed - the encrypted AES key is corrupted or the RSA key is invalid
                 // Delete keys and regenerate them
@@ -450,11 +483,12 @@ class CryptoUtil {
             try {
                 byte[] encryptedOldAESBytes = Base64.decode(encodedOldAES, Base64.DEFAULT);
                 KeyStore.PrivateKeyEntry rsaKeyEntry = getRSAKeyEntry();
-                // WARNING: Using PKCS1 padding here is intentional and ONLY for decrypting legacy data
-                // Do NOT use PKCS1 padding for encryption in new code; always use OAEP padding instead.
-                Cipher rsaPkcs1Cipher = Cipher.getInstance(OLD_PKCS1_RSA_TRANSFORMATION);
-                rsaPkcs1Cipher.init(Cipher.DECRYPT_MODE, rsaKeyEntry.getPrivateKey());
-                byte[] decryptedAESKey = rsaPkcs1Cipher.doFinal(encryptedOldAESBytes);
+                // WARNING: Using PKCS1 padding here is intentional and ONLY for decrypting legacy data.
+                // This cipher must NEVER be used for encryption or for any new data; always use OAEP padding instead.
+                byte[] decryptedAESKey = RSADecryptLegacyPKCS1(
+                    encryptedOldAESBytes,
+                    rsaKeyEntry.getPrivateKey()
+                );
 
                 byte[] encryptedAESWithOAEP = RSAEncrypt(decryptedAESKey);
                 String newEncodedEncryptedAES = new String(Base64.encode(encryptedAESWithOAEP, Base64.DEFAULT), StandardCharsets.UTF_8);
