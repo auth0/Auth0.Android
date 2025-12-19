@@ -54,6 +54,12 @@ class CryptoUtil {
     // Transformations available since API 18
     // https://developer.android.com/training/articles/keystore.html#SupportedCiphers
     private static final String RSA_TRANSFORMATION = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
+    /**
+     * !!! WARNING !!!
+     * "RSA/ECB/PKCS1Padding" is deprecated due to vulnerabilities (see Bleichenbacher attacks, etc),
+     * and should only be used here for *legacy key migration only*. All new data must use OAEP padding.
+     * REMOVE SUPPORT FOR THIS AS SOON AS ALL DATA IS MIGRATED.
+     */
     private static final String OLD_PKCS1_RSA_TRANSFORMATION = "RSA/ECB/PKCS1Padding";
     // https://developer.android.com/reference/javax/crypto/Cipher.html
     @SuppressWarnings("SpellCheckingInspection")
@@ -404,7 +410,8 @@ class CryptoUtil {
                         }
                         
                         if (rsaKey != null && keyAliasUsed != null) {
-                            // Decrypt using OLD PKCS1 padding
+                            // WARNING: Using PKCS1 padding here is intentional and ONLY for decrypting legacy data
+                            // Do NOT use PKCS1 padding for encryption in new code; always use OAEP padding instead.
                             Cipher rsaPkcs1Cipher = Cipher.getInstance(OLD_PKCS1_RSA_TRANSFORMATION);
                             rsaPkcs1Cipher.init(Cipher.DECRYPT_MODE, rsaKey.getPrivateKey());
                             byte[] decryptedAESKey = rsaPkcs1Cipher.doFinal(encryptedAESBytes);
@@ -443,6 +450,8 @@ class CryptoUtil {
             try {
                 byte[] encryptedOldAESBytes = Base64.decode(encodedOldAES, Base64.DEFAULT);
                 KeyStore.PrivateKeyEntry rsaKeyEntry = getRSAKeyEntry();
+                // WARNING: Using PKCS1 padding here is intentional and ONLY for decrypting legacy data
+                // Do NOT use PKCS1 padding for encryption in new code; always use OAEP padding instead.
                 Cipher rsaPkcs1Cipher = Cipher.getInstance(OLD_PKCS1_RSA_TRANSFORMATION);
                 rsaPkcs1Cipher.init(Cipher.DECRYPT_MODE, rsaKeyEntry.getPrivateKey());
                 byte[] decryptedAESKey = rsaPkcs1Cipher.doFinal(encryptedOldAESBytes);
