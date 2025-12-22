@@ -53,7 +53,20 @@ class CryptoUtil {
 
     // Transformations available since API 18
     // https://developer.android.com/training/articles/keystore.html#SupportedCiphers
-    private static final String RSA_TRANSFORMATION = "RSA/ECB/PKCS1Padding";
+    private static final String RSA_TRANSFORMATION = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
+    /**
+     * !!! WARNING !!!
+     * "RSA/ECB/PKCS1Padding" is cryptographically deprecated due to vulnerabilities
+     * (e.g. Bleichenbacher padding oracle attacks) and MUST NOT be used for encrypting
+     * new data or for any general-purpose RSA operations.
+     * 
+     * This transformation exists solely to DECRYPT pre-existing legacy data that was
+     * originally encrypted with PKCS#1 v1.5 padding, so that it can be re-encrypted
+     * using the secure OAEP-based {@link #RSA_TRANSFORMATION}. Once all legacy data has
+     * been migrated, support for this constant and any code paths that use it should be
+     * removed.
+     */
+    private static final String LEGACY_PKCS1_RSA_TRANSFORMATION = "RSA/ECB/PKCS1Padding";
     // https://developer.android.com/reference/javax/crypto/Cipher.html
     @SuppressWarnings("SpellCheckingInspection")
     private static final String AES_TRANSFORMATION = "AES/GCM/NOPADDING";
@@ -62,7 +75,7 @@ class CryptoUtil {
     private static final String ALGORITHM_RSA = "RSA";
     private static final String ALGORITHM_AES = "AES";
     private static final int AES_KEY_SIZE = 256;
-    private static final int RSA_KEY_SIZE = 2048;
+    private static final int RSA_KEY_SIZE = 4096;
 
     private static final byte FORMAT_MARKER = 0x01;
 
@@ -89,6 +102,31 @@ class CryptoUtil {
         this.KEY_IV_ALIAS = context.getPackageName() + "." + keyAlias + iv_suffix;
         this.context = context;
         this.storage = storage;
+    }
+
+    /**
+     * Decrypts data that was encrypted using legacy RSA/PKCS1 padding.
+     * <p>
+     * WARNING: This must only be used for decrypting legacy data during migration.
+     * New code must always use OAEP padding for RSA encryption/decryption.
+     * 
+     * @param encryptedData The data encrypted with PKCS1 padding
+     * @param privateKey The private key for decryption
+     * @return The decrypted data
+     * @throws NoSuchPaddingException If PKCS1 padding is not available
+     * @throws NoSuchAlgorithmException If RSA algorithm is not available
+     * @throws InvalidKeyException If the private key is invalid
+     * @throws BadPaddingException If the encrypted data has invalid padding
+     * @throws IllegalBlockSizeException If the encrypted data size is invalid
+     */
+    @NonNull
+    private static byte[] RSADecryptLegacyPKCS1(@NonNull byte[] encryptedData,
+                                                 @NonNull PrivateKey privateKey)
+            throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException,
+            BadPaddingException, IllegalBlockSizeException {
+        Cipher rsaPkcs1Cipher = Cipher.getInstance(LEGACY_PKCS1_RSA_TRANSFORMATION);
+        rsaPkcs1Cipher.init(Cipher.DECRYPT_MODE, privateKey);
+        return rsaPkcs1Cipher.doFinal(encryptedData);
     }
 
     /**
@@ -372,30 +410,106 @@ class CryptoUtil {
     @VisibleForTesting
     byte[] getAESKey() throws IncompatibleDeviceException, CryptoException {
         String encodedEncryptedAES = storage.retrieveString(KEY_ALIAS);
-        if (TextUtils.isEmpty(encodedEncryptedAES)) {
-            encodedEncryptedAES = storage.retrieveString(OLD_KEY_ALIAS);
-        }
-        if (encodedEncryptedAES != null) {
-            //Return existing key
-            byte[] encryptedAES = Base64.decode(encodedEncryptedAES, Base64.DEFAULT);
-            byte[] existingAES = RSADecrypt(encryptedAES);
-            final int aesExpectedLengthInBytes = AES_KEY_SIZE / 8;
-            //Prevent returning an 'Empty key' (invalid/corrupted) that was mistakenly saved
-            if (existingAES != null && existingAES.length == aesExpectedLengthInBytes) {
-                //Key exists and has the right size
-                return existingAES;
+        if (!TextUtils.isEmpty(encodedEncryptedAES)) {
+            byte[] encryptedAESBytes = Base64.decode(encodedEncryptedAES, Base64.DEFAULT);
+            try {
+                return RSADecrypt(encryptedAESBytes);
+            } catch (IncompatibleDeviceException e) {
+                String fullMessage = e.toString();
+                Throwable cause = e.getCause();
+                while (cause != null) {
+                    fullMessage += "\n" + cause.toString();
+                    cause = cause.getCause();
+                }
+                
+                if (fullMessage.contains("Incompatible padding mode") || 
+                    fullMessage.contains("INCOMPATIBLE_PADDING_MODE")) {
+                    try {
+                        KeyStore keyStore = KeyStore.getInstance(ANDROID_KEY_STORE);
+                        keyStore.load(null);
+
+                        // Get the RSA key from KeyStore (could be at KEY_ALIAS or OLD_KEY_ALIAS)
+                        KeyStore.PrivateKeyEntry rsaKey = null;
+                        String keyAliasUsed = null;
+                        
+                        if (keyStore.containsAlias(KEY_ALIAS)) {
+                            rsaKey = getKeyEntryCompat(keyStore, KEY_ALIAS);
+                            keyAliasUsed = KEY_ALIAS;
+                        } else if (keyStore.containsAlias(OLD_KEY_ALIAS)) {
+                            rsaKey = getKeyEntryCompat(keyStore, OLD_KEY_ALIAS);
+                            keyAliasUsed = OLD_KEY_ALIAS;
+                        }
+                        
+                        if (rsaKey != null && keyAliasUsed != null) {
+                            // WARNING: Using PKCS1 padding here is intentional and ONLY for decrypting legacy data.
+                            // This cipher must NEVER be used for encryption or for any new data; always use OAEP instead.
+                            byte[] decryptedAESKey = RSADecryptLegacyPKCS1(
+                                encryptedAESBytes,
+                                rsaKey.getPrivateKey()
+                            );
+                            deleteRSAKeys();
+                            
+                            // Re-encrypt AES key with NEW OAEP RSA key (4096-bit)
+                            byte[] encryptedAESWithOAEP = RSAEncrypt(decryptedAESKey);
+                            String newEncodedEncryptedAES = new String(
+                                Base64.encode(encryptedAESWithOAEP, Base64.DEFAULT), 
+                                StandardCharsets.UTF_8
+                            );
+                            storage.store(KEY_ALIAS, newEncodedEncryptedAES);
+
+                            return decryptedAESKey;
+                        }
+                    } catch (CryptoException | KeyStoreException | CertificateException | 
+                             IOException | NoSuchAlgorithmException | UnrecoverableEntryException |
+                             NoSuchPaddingException | InvalidKeyException | 
+                             IllegalBlockSizeException | BadPaddingException ex) {
+                        Log.e(TAG, "Could not migrate. A new key will be generated.", ex);
+                        deleteRSAKeys();
+                        deleteAESKeys();
+                    }
+                } else {
+                    throw e;
+                }
+            } catch (CryptoException e) {
+                // RSA decryption failed - the encrypted AES key is corrupted or the RSA key is invalid
+                // Delete keys and regenerate them
+                Log.w(TAG, "RSA decryption failed with CryptoException. Keys may be corrupted. Will regenerate.", e);
+                deleteRSAKeys();
+                deleteAESKeys();
             }
         }
-        //Key doesn't exist. Generate new AES
+        String encodedOldAES = storage.retrieveString(OLD_KEY_ALIAS);
+        if (!TextUtils.isEmpty(encodedOldAES)) {
+            try {
+                byte[] encryptedOldAESBytes = Base64.decode(encodedOldAES, Base64.DEFAULT);
+                KeyStore.PrivateKeyEntry rsaKeyEntry = getRSAKeyEntry();
+                // WARNING: Using PKCS1 padding here is intentional and ONLY for decrypting legacy data.
+                // This cipher must NEVER be used for encryption or for any new data; always use OAEP padding instead.
+                byte[] decryptedAESKey = RSADecryptLegacyPKCS1(
+                    encryptedOldAESBytes,
+                    rsaKeyEntry.getPrivateKey()
+                );
+
+                byte[] encryptedAESWithOAEP = RSAEncrypt(decryptedAESKey);
+                String newEncodedEncryptedAES = new String(Base64.encode(encryptedAESWithOAEP, Base64.DEFAULT), StandardCharsets.UTF_8);
+                storage.store(KEY_ALIAS, newEncodedEncryptedAES);
+                storage.remove(OLD_KEY_ALIAS);
+                return decryptedAESKey;
+            } catch (Exception e) {
+                Log.e(TAG, "Could not migrate the legacy AES key. A new key will be generated.", e);
+                deleteAESKeys();
+            }
+        }
+
         try {
             KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM_AES);
             keyGen.init(AES_KEY_SIZE);
-            byte[] aes = keyGen.generateKey().getEncoded();
-            //Save encrypted encoded version
-            byte[] encryptedAES = RSAEncrypt(aes);
-            String encodedEncryptedAESText = new String(Base64.encode(encryptedAES, Base64.DEFAULT), StandardCharsets.UTF_8);
-            storage.store(KEY_ALIAS, encodedEncryptedAESText);
-            return aes;
+            byte[] decryptedAESKey = keyGen.generateKey().getEncoded();
+
+            byte[] encryptedNewAES = RSAEncrypt(decryptedAESKey);
+            String encodedEncryptedNewAESText = new String(Base64.encode(encryptedNewAES, Base64.DEFAULT), StandardCharsets.UTF_8);
+            storage.store(KEY_ALIAS, encodedEncryptedNewAESText);
+            return decryptedAESKey;
         } catch (NoSuchAlgorithmException e) {
             /*
              * This exceptions are safe to be ignored:
@@ -407,6 +521,9 @@ class CryptoUtil {
              */
             Log.e(TAG, "Error while creating the AES key.", e);
             throw new IncompatibleDeviceException(e);
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error while creating the new AES key.", e);
+            throw new CryptoException("Unexpected error while creating the new AES key.", e);
         }
     }
 
