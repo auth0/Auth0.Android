@@ -66,6 +66,11 @@ class CryptoUtil {
      * been migrated, support for this constant and any code paths that use it should be
      * removed.
      */
+    // CodeQL suppression: This legacy constant is required for backward compatibility
+    // to decrypt credentials encrypted with PKCS1 before the migration to OAEP.
+    // It is only used for decryption (reading old data), never encryption (writing new data).
+    // This constant will be removed once all users have migrated to OAEP.
+    @SuppressWarnings("java/rsa-without-oaep")
     private static final String LEGACY_PKCS1_RSA_TRANSFORMATION = "RSA/ECB/PKCS1Padding";
     // https://developer.android.com/reference/javax/crypto/Cipher.html
     @SuppressWarnings("SpellCheckingInspection")
@@ -120,6 +125,7 @@ class CryptoUtil {
      * @throws IllegalBlockSizeException If the encrypted data size is invalid
      */
     @NonNull
+    @SuppressWarnings("java/rsa-without-oaep")
     private static byte[] RSADecryptLegacyPKCS1(@NonNull byte[] encryptedData,
                                                  @NonNull PrivateKey privateKey)
             throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException,
