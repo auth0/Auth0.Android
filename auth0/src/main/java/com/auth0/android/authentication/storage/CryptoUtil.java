@@ -452,6 +452,16 @@ class CryptoUtil {
                                 rsaKey.getPrivateKey()
                             );
                             
+                            // Validate AES key length to prevent migrating corrupt keys
+                            // AES-256 requires exactly 32 bytes
+                            if (decryptedAESKey.length != AES_KEY_SIZE / 8) {
+                                throw new CryptoException(
+                                    "Decrypted AES key has invalid length: " + decryptedAESKey.length + 
+                                    " bytes (expected 32). Legacy key is corrupt and cannot be migrated.",
+                                    null
+                                );
+                            }
+                            
                             byte[] encryptedAESWithOAEP = RSAEncrypt(decryptedAESKey);
                             String newEncodedEncryptedAES = new String(
                                 Base64.encode(encryptedAESWithOAEP, Base64.DEFAULT), 
