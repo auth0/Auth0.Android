@@ -441,15 +441,11 @@ class CryptoUtil {
                         }
                         
                         if (rsaKey != null && keyAliasUsed != null) {
-                            // WARNING: Using PKCS1 padding here is intentional and ONLY for decrypting legacy data.
-                            // This cipher must NEVER be used for encryption or for any new data; always use OAEP instead.
                             byte[] decryptedAESKey = RSADecryptLegacyPKCS1(
                                 encryptedAESBytes,
                                 rsaKey.getPrivateKey()
                             );
-                            deleteRSAKeys();
                             
-                            // Re-encrypt AES key with NEW OAEP RSA key (4096-bit)
                             byte[] encryptedAESWithOAEP = RSAEncrypt(decryptedAESKey);
                             String newEncodedEncryptedAES = new String(
                                 Base64.encode(encryptedAESWithOAEP, Base64.DEFAULT), 
