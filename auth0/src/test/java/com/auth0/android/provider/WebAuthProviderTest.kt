@@ -95,6 +95,7 @@ public class WebAuthProviderTest {
 
         mockKeyStore = mock()
         mockContext = mock()
+        Mockito.`when`(mockContext.applicationContext).thenReturn(mockContext)
 
         DPoPUtil.keyStore = mockKeyStore
 

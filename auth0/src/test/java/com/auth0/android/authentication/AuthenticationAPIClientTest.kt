@@ -76,6 +76,7 @@ public class AuthenticationAPIClientTest {
         mockAPI = AuthenticationAPIMockServer()
         mockKeyStore = mock()
         mockContext = mock()
+        whenever(mockContext.applicationContext).thenReturn(mockContext)
         val auth0 = auth0
         client = AuthenticationAPIClient(auth0)
         gson = GsonBuilder().serializeNulls().create()
