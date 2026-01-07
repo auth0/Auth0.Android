@@ -1706,7 +1706,7 @@ public class CryptoUtilTest {
     public void shouldDetectAndMigratePKCS1KeyToOAEP() throws Exception {
         CryptoUtil cryptoUtil = newCryptoUtilSpy();
         
-        byte[] aesKeyBytes = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+        byte[] aesKeyBytes = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32};
         byte[] encryptedAESKeyPKCS1 = new byte[]{20, 21, 22, 23, 24};
         String encodedEncryptedAESPKCS1 = "pkcs1_encrypted_key";
 
@@ -1790,7 +1790,7 @@ public class CryptoUtilTest {
     public void shouldUseOAEPDirectlyForNewUsers() throws Exception {
         CryptoUtil cryptoUtil = newCryptoUtilSpy();
         
-        byte[] aesKeyBytes = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+        byte[] aesKeyBytes = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32};
         byte[] encryptedAESKeyOAEP = new byte[]{20, 21, 22, 23, 24};
         String encodedEncryptedAESOAEP = "oaep_encrypted_key";
 
@@ -1838,7 +1838,7 @@ public class CryptoUtilTest {
         when(keyStore.getEntry(eq(KEY_ALIAS), nullable(KeyStore.ProtectionParameter.class)))
             .thenReturn(mockKeyEntry);
         
-        byte[] aesKeyBytes = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+        byte[] aesKeyBytes = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32};
         when(rsaPkcs1Cipher.doFinal(encryptedAESBytes)).thenReturn(aesKeyBytes);
         
         byte[] encryptedAESKeyOAEP = new byte[]{20, 21, 22, 23};
@@ -1858,7 +1858,7 @@ public class CryptoUtilTest {
         
         CryptoUtil cryptoUtil = newCryptoUtilSpy();
         
-        byte[] aesKeyBytes = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+        byte[] aesKeyBytes = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32};
         byte[] encryptedAESKeyPKCS1 = new byte[]{20, 21, 22, 23, 24};
         String encodedEncryptedAESPKCS1 = "pkcs1_encrypted_key";
 
