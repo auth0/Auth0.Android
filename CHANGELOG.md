@@ -1,5 +1,14 @@
 # Change Log
 
+## [3.12.1](https://github.com/auth0/Auth0.Android/tree/3.12.1) (2026-01-07)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.12.0...3.12.1)
+
+**Deprecated**
+- refactor: Deprecated the PasskeyAuthProvider class [\#890](https://github.com/auth0/Auth0.Android/pull/890) ([pmathew92](https://github.com/pmathew92))
+
+**Fixed**
+- fix: Fixing the memory leak introduced in the DPoP flow [\#891](https://github.com/auth0/Auth0.Android/pull/891) ([pmathew92](https://github.com/pmathew92))
+
 ## [3.12.0](https://github.com/auth0/Auth0.Android/tree/3.12.0) (2025-12-11)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.11.0...3.12.0)
 
