@@ -51,7 +51,7 @@ public class DPoPTest {
         whenever(mockContext.applicationContext).thenReturn(mockContext)
         dPoP = DPoP(mockContext)
 
-        DPoP._auth0Nonce = null
+        DPoP._auth0Nonce.set(null)
 
         DPoPUtil.keyStore = mockKeyStore
     }

@@ -29,7 +29,6 @@ internal object DPoPUtil {
 
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    @Volatile
     internal var keyStore = DPoPKeyStore()
 
 

@@ -9,6 +9,7 @@ import com.auth0.android.request.HttpMethod
 import com.auth0.android.request.getErrorBody
 import okhttp3.Response
 import java.lang.reflect.Modifier.PRIVATE
+import java.util.concurrent.atomic.AtomicReference
 
 
 /**
@@ -102,12 +103,11 @@ public class DPoP(context: Context) {
         private const val AUTHORIZATION_HEADER = "Authorization"
         private const val NONCE_HEADER = "DPoP-Nonce"
 
-        @Volatile
         @VisibleForTesting(otherwise  = PRIVATE)
-        internal var _auth0Nonce: String? = null
+        internal val _auth0Nonce: AtomicReference<String?> = AtomicReference(null)
 
         public val auth0Nonce: String?
-            get() = _auth0Nonce
+            get() = _auth0Nonce.get()
 
         /**
          * Stores the nonce value from the Okhttp3 [Response] headers.
@@ -127,9 +127,7 @@ public class DPoP(context: Context) {
         @JvmStatic
         internal fun storeNonce(response: Response) {
             response.headers[NONCE_HEADER]?.let {
-                synchronized(this) {
-                    _auth0Nonce = it
-                }
+                _auth0Nonce.set(it)
             }
         }
 
@@ -220,7 +218,7 @@ public class DPoP(context: Context) {
         @JvmStatic
         public fun clearKeyPair() {
             DPoPUtil.clearKeyPair()
-            _auth0Nonce = null
+            _auth0Nonce.set(null)
         }
     }
 }
