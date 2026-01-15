@@ -5,6 +5,8 @@ import android.util.Log
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
 import com.auth0.android.provider.TokenValidationException
+import com.auth0.android.request.internal.GsonProvider
+import com.auth0.android.result.MfaRequirements
 
 public class AuthenticationException : Auth0Exception {
     private var code: String? = null
@@ -146,6 +148,26 @@ public class AuthenticationException : Auth0Exception {
     /// When MFA is required and the user is not enrolled
     public val isMultifactorEnrollRequired: Boolean
         get() = "a0.mfa_registration_required" == code || "unsupported_challenge_type" == code
+
+    /**
+     * The MFA token returned when multi-factor authentication is required.
+     * This token should be used to create an [MfaApiClient] to continue the MFA flow.
+     */
+    public val mfaToken: String?
+        get() = getValue("mfa_token") as? String
+
+    /**
+     * The MFA requirements returned when multi-factor authentication is required.
+     * Contains information about the required challenge types.
+     */
+    public val mfaRequirements: MfaRequirements?
+        get() = (getValue("mfa_requirements") as? Map<*, *>)?.let {
+            @Suppress("UNCHECKED_CAST")
+            GsonProvider.gson.fromJson(
+                GsonProvider.gson.toJson(it),
+                MfaRequirements::class.java
+            )
+        }
 
     /// When Bot Protection flags the request as suspicious
     public val isVerificationRequired: Boolean
