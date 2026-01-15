@@ -17,6 +17,12 @@ import java.util.concurrent.Executors
 /**
  * Passkey authentication provider
  */
+
+@Deprecated(
+    """PasskeyAuthProvider is deprecated and will be removed in the next major version of the SDK.
+        Use API's in [AuthenticationAPIClient] directly to support sign-in/signup with passkeys.""",
+    level = DeprecationLevel.WARNING
+)
 public object PasskeyAuthProvider {
 
     private val TAG = PasskeyManager::class.simpleName
