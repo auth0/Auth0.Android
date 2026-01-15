@@ -85,6 +85,31 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     }
 
     /**
+     * Creates a new [MfaApiClient] to handle a multi-factor authentication transaction.
+     *
+     * Example usage:
+     * ```
+     * try {
+     *     val credentials = authClient.login("user@example.com", "password").await()
+     * } catch (error: AuthenticationException) {
+     *     if (error.isMultifactorRequired) {
+     *         val mfaToken = error.mfaToken
+     *         if (mfaToken != null) {
+     *             val mfaClient = authClient.mfa(mfaToken)
+     *             // Use mfaClient to handle MFA flow
+     *         }
+     *     }
+     * }
+     * ```
+     *
+     * @param mfaToken The token received in the 'mfa_required' error from a login attempt.
+     * @return A new [MfaApiClient] instance configured for the transaction.
+     */
+    public fun mfa(mfaToken: String): MfaApiClient {
+        return MfaApiClient(this.auth0, mfaToken)
+    }
+
+    /**
      * Log in a user with email/username and password for a connection/realm.
      * It will use the password-realm grant type for the `/oauth/token` endpoint
      * The default scope used is 'openid profile email'.
@@ -1081,7 +1106,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         return factory.get(url.toString(), userProfileAdapter, dPoP)
     }
 
-    private companion object {
+    internal companion object {
         private const val SMS_CONNECTION = "sms"
         private const val EMAIL_CONNECTION = "email"
         private const val USERNAME_KEY = "username"
@@ -1122,7 +1147,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val WELL_KNOWN_PATH = ".well-known"
         private const val JWKS_FILE_PATH = "jwks.json"
         private const val TAG = "AuthenticationAPIClient"
-        private fun createErrorAdapter(): ErrorAdapter<AuthenticationException> {
+        internal fun createErrorAdapter(): ErrorAdapter<AuthenticationException> {
             val mapAdapter = forMap(GsonProvider.gson)
             return object : ErrorAdapter<AuthenticationException> {
                 override fun fromRawResponse(

@@ -2,6 +2,7 @@ package com.auth0.android.authentication.storage
 
 import com.auth0.android.Auth0Exception
 import com.auth0.android.result.Credentials
+import com.auth0.android.result.MfaRequirements
 
 /**
  * Represents an error raised by the [CredentialsManager].
@@ -46,10 +47,13 @@ public class CredentialsManagerException :
         NO_NETWORK,
         API_ERROR,
         SSO_EXCHANGE_FAILED,
+        MFA_REQUIRED,
         UNKNOWN_ERROR
     }
 
     private var code: Code?
+    private var mfaTokenValue: String? = null
+    private var mfaRequirementsValue: MfaRequirements? = null
 
 
     internal constructor(code: Code, cause: Throwable? = null) : this(
@@ -58,11 +62,19 @@ public class CredentialsManagerException :
         cause
     )
 
-    internal constructor(code: Code, message: String, cause: Throwable? = null) : super(
+    internal constructor(
+        code: Code,
+        message: String,
+        cause: Throwable? = null,
+        mfaToken: String? = null,
+        mfaRequirements: MfaRequirements? = null
+    ) : super(
         message,
         cause
     ) {
         this.code = code
+        this.mfaTokenValue = mfaToken
+        this.mfaRequirementsValue = mfaRequirements
     }
 
     public companion object {
@@ -147,6 +159,9 @@ public class CredentialsManagerException :
         public val SSO_EXCHANGE_FAILED: CredentialsManagerException =
             CredentialsManagerException(Code.SSO_EXCHANGE_FAILED)
 
+        public val MFA_REQUIRED: CredentialsManagerException =
+            CredentialsManagerException(Code.MFA_REQUIRED)
+
         public val UNKNOWN_ERROR: CredentialsManagerException = CredentialsManagerException(Code.UNKNOWN_ERROR)
 
 
@@ -194,10 +209,25 @@ public class CredentialsManagerException :
                 Code.NO_NETWORK -> "Failed to execute the network request."
                 Code.API_ERROR -> "An error occurred while processing the request."
                 Code.SSO_EXCHANGE_FAILED ->"The exchange of the refresh token for SSO credentials failed."
+                Code.MFA_REQUIRED -> "Multi-factor authentication is required to complete the credential renewal."
                 Code.UNKNOWN_ERROR -> "An unknown error has occurred while fetching the token. Please check the error cause for more details."
             }
         }
     }
+
+    /**
+     * The MFA token required to continue the multi-factor authentication flow.
+     * This is only available when the error code is [Code.MFA_REQUIRED].
+     */
+    public val mfaToken: String?
+        get() = mfaTokenValue
+
+    /**
+     * The MFA requirements when multi-factor authentication is required.
+     * This is only available when the error code is [Code.MFA_REQUIRED].
+     */
+    public val mfaRequirements: MfaRequirements?
+        get() = mfaRequirementsValue
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
