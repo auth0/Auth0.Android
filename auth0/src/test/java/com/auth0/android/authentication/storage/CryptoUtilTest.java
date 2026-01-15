@@ -16,7 +16,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.BDDMockito;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
@@ -65,7 +64,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
@@ -88,14 +86,14 @@ import static org.powermock.api.mockito.PowerMockito.verifyPrivate;
 @PrepareForTest({CryptoUtil.class, KeyGenerator.class, TextUtils.class, Build.VERSION.class, Base64.class, Cipher.class, Log.class, KeyStore.class})
 public class CryptoUtilTest {
 
-    private static final String RSA_TRANSFORMATION = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
+    private static final String RSA_TRANSFORMATION = "RSA/ECB/OAEPWithSHA-1AndMGF1Padding";
     private static final String OLD_RSA_PKCS1_TRANSFORMATION = "RSA/ECB/PKCS1Padding";
     private static final String AES_TRANSFORMATION = "AES/GCM/NOPADDING";
     private static final String CERTIFICATE_PRINCIPAL = "CN=Auth0.Android,O=Auth0";
     private static final String ANDROID_KEY_STORE = "AndroidKeyStore";
     private static final String ALGORITHM_AES = "AES";
     private static final String ALGORITHM_RSA = "RSA";
-    private static final int RSA_KEY_SIZE = 4096;
+    private static final int RSA_KEY_SIZE = 2048;
 
     private final Storage storage = PowerMockito.mock(Storage.class);
     private final Cipher rsaOaepCipher = PowerMockito.mock(Cipher.class);
@@ -167,7 +165,7 @@ public class CryptoUtilTest {
 
         final KeyStore.PrivateKeyEntry entry = cryptoUtil.getRSAKeyEntry();
 
-        Mockito.verify(builder).setKeySize(4096);
+        Mockito.verify(builder).setKeySize(2048);
         Mockito.verify(builder).setSubject(principalCaptor.capture());
         Mockito.verify(builder).setAlias(KEY_ALIAS);
         Mockito.verify(builder).setSerialNumber(BigInteger.ONE);
@@ -218,7 +216,7 @@ public class CryptoUtilTest {
 
         final KeyStore.PrivateKeyEntry entry = cryptoUtil.getRSAKeyEntry();
 
-        Mockito.verify(builder).setKeySize(4096);
+        Mockito.verify(builder).setKeySize(2048);
         Mockito.verify(builder).setSubject(principalCaptor.capture());
         Mockito.verify(builder).setAlias(KEY_ALIAS);
         Mockito.verify(builder).setSerialNumber(BigInteger.ONE);
@@ -269,7 +267,7 @@ public class CryptoUtilTest {
 
         final KeyStore.PrivateKeyEntry entry = cryptoUtil.getRSAKeyEntry();
 
-        Mockito.verify(builder).setKeySize(4096);
+        Mockito.verify(builder).setKeySize(2048);
         Mockito.verify(builder).setSubject(principalCaptor.capture());
         Mockito.verify(builder).setAlias(KEY_ALIAS);
         Mockito.verify(builder).setSerialNumber(BigInteger.ONE);
@@ -316,12 +314,13 @@ public class CryptoUtilTest {
         final KeyStore.PrivateKeyEntry entry = cryptoUtil.getRSAKeyEntry();
 
 
-        Mockito.verify(builder).setKeySize(4096);
+        Mockito.verify(builder).setKeySize(2048);
         Mockito.verify(builder).setCertificateSubject(principalCaptor.capture());
         Mockito.verify(builder).setCertificateSerialNumber(BigInteger.ONE);
         Mockito.verify(builder).setCertificateNotBefore(startDateCaptor.capture());
         Mockito.verify(builder).setCertificateNotAfter(endDateCaptor.capture());
-        Mockito.verify(builder).setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_RSA_PKCS1);
+        Mockito.verify(builder).setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_RSA_OAEP);
+        Mockito.verify(builder).setDigests(KeyProperties.DIGEST_SHA1, KeyProperties.DIGEST_SHA256);
         Mockito.verify(builder).setBlockModes(KeyProperties.BLOCK_MODE_ECB);
         Mockito.verify(keyPairGenerator).initialize(spec);
         Mockito.verify(keyPairGenerator).generateKeyPair();
@@ -362,12 +361,13 @@ public class CryptoUtilTest {
 
         final KeyStore.PrivateKeyEntry entry = cryptoUtil.getRSAKeyEntry();
 
-        Mockito.verify(builder).setKeySize(4096);
+        Mockito.verify(builder).setKeySize(2048);
         Mockito.verify(builder).setCertificateSubject(principalCaptor.capture());
         Mockito.verify(builder).setCertificateSerialNumber(BigInteger.ONE);
         Mockito.verify(builder).setCertificateNotBefore(startDateCaptor.capture());
         Mockito.verify(builder).setCertificateNotAfter(endDateCaptor.capture());
-        Mockito.verify(builder).setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_RSA_PKCS1);
+        Mockito.verify(builder).setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_RSA_OAEP);
+        Mockito.verify(builder).setDigests(KeyProperties.DIGEST_SHA1, KeyProperties.DIGEST_SHA256);
         Mockito.verify(builder).setBlockModes(KeyProperties.BLOCK_MODE_ECB);
         Mockito.verify(keyPairGenerator).initialize(spec);
         Mockito.verify(keyPairGenerator).generateKeyPair();
@@ -417,12 +417,13 @@ public class CryptoUtilTest {
 
         final KeyStore.PrivateKeyEntry entry = cryptoUtil.getRSAKeyEntry();
 
-        Mockito.verify(builder).setKeySize(4096);
+        Mockito.verify(builder).setKeySize(2048);
         Mockito.verify(builder).setCertificateSubject(principalCaptor.capture());
         Mockito.verify(builder).setCertificateSerialNumber(BigInteger.ONE);
         Mockito.verify(builder).setCertificateNotBefore(startDateCaptor.capture());
         Mockito.verify(builder).setCertificateNotAfter(endDateCaptor.capture());
-        Mockito.verify(builder).setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_RSA_PKCS1);
+        Mockito.verify(builder).setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_RSA_OAEP);
+        Mockito.verify(builder).setDigests(KeyProperties.DIGEST_SHA1, KeyProperties.DIGEST_SHA256);
         Mockito.verify(builder).setBlockModes(KeyProperties.BLOCK_MODE_ECB);
         Mockito.verify(keyPairGenerator).initialize(spec);
         Mockito.verify(keyPairGenerator).generateKeyPair();
@@ -768,7 +769,9 @@ public class CryptoUtilTest {
         byte[] sampleInput = new byte[]{0, 1, 2, 3, 4, 5};
         byte[] sampleOutput = new byte[]{99, 33, 11};
 
+        PublicKey publicKey = PowerMockito.mock(PublicKey.class);
         Certificate certificate = PowerMockito.mock(Certificate.class);
+        doReturn(publicKey).when(certificate).getPublicKey();
         KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
         doReturn(certificate).when(privateKeyEntry).getCertificate();
         doReturn(privateKeyEntry).when(cryptoUtil).getRSAKeyEntry();
@@ -776,7 +779,7 @@ public class CryptoUtilTest {
 
         final byte[] output = cryptoUtil.RSAEncrypt(sampleInput);
 
-        Mockito.verify(rsaOaepCipher).init(Cipher.ENCRYPT_MODE, certificate);
+        Mockito.verify(rsaOaepCipher).init(eq(Cipher.ENCRYPT_MODE), eq(publicKey), any(AlgorithmParameterSpec.class));
         assertThat(output, is(sampleOutput));
     }
 
@@ -784,13 +787,15 @@ public class CryptoUtilTest {
     public void shouldThrowOnInvalidKeyExceptionWhenTryingToRSAEncrypt() {
         Assert.assertThrows("The device is not compatible with the CryptoUtil class", IncompatibleDeviceException.class, () -> {
             byte[] sampleBytes = new byte[0];
+            PublicKey publicKey = PowerMockito.mock(PublicKey.class);
             Certificate certificate = PowerMockito.mock(Certificate.class);
+            doReturn(publicKey).when(certificate).getPublicKey();
             KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
             doReturn(certificate).when(privateKeyEntry).getCertificate();
             doReturn(privateKeyEntry).when(cryptoUtil).getRSAKeyEntry();
             PowerMockito.mockStatic(Cipher.class);
             PowerMockito.when(Cipher.getInstance(RSA_TRANSFORMATION)).thenReturn(rsaOaepCipher);
-            doThrow(new InvalidKeyException()).when(rsaOaepCipher).init(Cipher.ENCRYPT_MODE, certificate);
+            doThrow(new InvalidKeyException()).when(rsaOaepCipher).init(eq(Cipher.ENCRYPT_MODE), eq(publicKey), any(AlgorithmParameterSpec.class));
 
             cryptoUtil.RSAEncrypt(sampleBytes);
         });
@@ -887,7 +892,7 @@ public class CryptoUtilTest {
 
         final byte[] output = cryptoUtil.RSADecrypt(sampleInput);
 
-        Mockito.verify(rsaOaepCipher).init(Cipher.DECRYPT_MODE, privateKey);
+        Mockito.verify(rsaOaepCipher).init(eq(Cipher.DECRYPT_MODE), eq(privateKey), any(AlgorithmParameterSpec.class));
         assertThat(output, is(sampleOutput));
     }
 
@@ -901,7 +906,7 @@ public class CryptoUtilTest {
             doReturn(privateKeyEntry).when(cryptoUtil).getRSAKeyEntry();
             PowerMockito.mockStatic(Cipher.class);
             PowerMockito.when(Cipher.getInstance(RSA_TRANSFORMATION)).thenReturn(rsaOaepCipher);
-            doThrow(new InvalidKeyException()).when(rsaOaepCipher).init(Cipher.DECRYPT_MODE, privateKey);
+            doThrow(new InvalidKeyException()).when(rsaOaepCipher).init(eq(Cipher.DECRYPT_MODE), eq(privateKey), any(AlgorithmParameterSpec.class));
 
             cryptoUtil.RSADecrypt(sampleBytes);
         });
@@ -1674,6 +1679,8 @@ public class CryptoUtilTest {
         //noinspection WrongConstant
         PowerMockito.when(builder.setEncryptionPaddings(anyString())).thenReturn(builder);
         //noinspection WrongConstant
+        PowerMockito.when(builder.setDigests(anyString(), anyString())).thenReturn(builder);
+        //noinspection WrongConstant
         PowerMockito.when(builder.setBlockModes(anyString())).thenReturn(builder);
         PowerMockito.when(builder.build()).thenReturn(expectedBuilderOutput);
         return builder;
@@ -1729,24 +1736,18 @@ public class CryptoUtilTest {
 
         when(rsaPkcs1Cipher.doFinal(encryptedAESKeyPKCS1)).thenReturn(aesKeyBytes);
 
-        byte[] encryptedAESKeyOAEP = new byte[]{30, 31, 32, 33, 34};
-        doReturn(encryptedAESKeyOAEP).when(cryptoUtil).RSAEncrypt(aesKeyBytes);
-        String encodedEncryptedAESOAEP = "oaep_encrypted_key";
-        PowerMockito.when(Base64.encode(encryptedAESKeyOAEP, Base64.DEFAULT))
-            .thenReturn(encodedEncryptedAESOAEP.getBytes(StandardCharsets.UTF_8));
-
         byte[] result = cryptoUtil.getAESKey();
 
         assertThat(result, is(aesKeyBytes));
 
+        // Verify PKCS1 cipher was used to decrypt the legacy key
         Mockito.verify(rsaPkcs1Cipher).init(Cipher.DECRYPT_MODE, mockPrivateKey);
         Mockito.verify(rsaPkcs1Cipher).doFinal(encryptedAESKeyPKCS1);
 
-        verifyPrivate(cryptoUtil).invoke("RSAEncrypt", aesKeyBytes);
-
-        Mockito.verify(storage).store(KEY_ALIAS, encodedEncryptedAESOAEP);
-
-        // Note: We do NOT verify deleteEntry because RSA keys are preserved for backward compatibility
+        // Simplified migration: RSA and AES keys are deleted (not re-encrypted)
+        // Next operation will generate fresh OAEP keys
+        Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS);
     }
 
     @Test
@@ -1862,7 +1863,7 @@ public class CryptoUtilTest {
         byte[] encryptedAESKeyPKCS1 = new byte[]{20, 21, 22, 23, 24};
         String encodedEncryptedAESPKCS1 = "pkcs1_encrypted_key";
 
-        // First retrieval - migration happens
+        // First retrieval - migration happens, returns decrypted key
         when(storage.retrieveString(eq(KEY_ALIAS))).thenReturn(encodedEncryptedAESPKCS1);
         when(storage.retrieveString(eq(OLD_KEY_ALIAS))).thenReturn(null);
         PowerMockito.mockStatic(Base64.class);
@@ -1882,26 +1883,12 @@ public class CryptoUtilTest {
 
         when(rsaPkcs1Cipher.doFinal(encryptedAESKeyPKCS1)).thenReturn(aesKeyBytes);
 
-        byte[] encryptedAESKeyOAEP = new byte[]{30, 31, 32, 33, 34};
-        doReturn(encryptedAESKeyOAEP).when(cryptoUtil).RSAEncrypt(aesKeyBytes);
-        String encodedEncryptedAESOAEP = "oaep_encrypted_key";
-        PowerMockito.when(Base64.encode(encryptedAESKeyOAEP, Base64.DEFAULT))
-            .thenReturn(encodedEncryptedAESOAEP.getBytes(StandardCharsets.UTF_8));
-
         byte[] result1 = cryptoUtil.getAESKey();
         assertThat(result1, is(aesKeyBytes));
-        Mockito.verify(storage).store(KEY_ALIAS, encodedEncryptedAESOAEP);
-
-        when(storage.retrieveString(eq(KEY_ALIAS))).thenReturn(encodedEncryptedAESOAEP);
-        PowerMockito.when(Base64.decode(encodedEncryptedAESOAEP, Base64.DEFAULT)).thenReturn(encryptedAESKeyOAEP);
         
-
-        doReturn(aesKeyBytes).when(cryptoUtil).RSADecrypt(encryptedAESKeyOAEP);
-
-        byte[] result2 = cryptoUtil.getAESKey();
-        assertThat(result2, is(aesKeyBytes));
-        
-        Mockito.verify(keyStore, never()).deleteEntry(KEY_ALIAS);
+        // Simplified migration: keys are deleted, not re-stored
+        Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS);
     }
 
     @Test
