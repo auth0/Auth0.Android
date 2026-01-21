@@ -429,8 +429,8 @@ class CryptoUtil {
 
     /**
      * Attempts to migrate legacy PKCS1-encrypted AES key to OAEP format.
-     * This method tries to decrypt the AES key using legacy PKCS1 padding.
-     * If successful, it deletes the old keys so fresh OAEP keys can be generated.
+     * This method tries to decrypt the AES key using legacy PKCS1 padding,
+     * then re-encrypts it with OAEP and stores it for future use.
      *
      * @param encryptedAESBytes the encrypted AES key bytes
      * @return the decrypted AES key if migration succeeds, or null if migration fails
@@ -455,9 +455,14 @@ class CryptoUtil {
             }
 
             Log.d(TAG, "PKCS1 migration successful - deleting old keys");
+            
             deleteRSAKeys();
-            deleteAESKeys();
 
+            byte[] encryptedAESWithOAEP = RSAEncrypt(decryptedAESKey);
+            String encodedEncryptedAES = new String(Base64.encode(encryptedAESWithOAEP, Base64.DEFAULT), StandardCharsets.UTF_8);
+            storage.store(KEY_ALIAS, encodedEncryptedAES);
+            
+            Log.d(TAG, "AES key re-encrypted with OAEP and stored");
             return decryptedAESKey;
 
         } catch (BadPaddingException | IllegalBlockSizeException e) {
@@ -466,6 +471,8 @@ class CryptoUtil {
                  NoSuchAlgorithmException | UnrecoverableEntryException |
                  NoSuchPaddingException | InvalidKeyException e) {
             Log.e(TAG, "Migration failed due to key access error.", e);
+        } catch (CryptoException e) {
+            Log.e(TAG, "Failed to re-encrypt AES key with OAEP.", e);
         }
         return null;
     }
@@ -599,7 +606,7 @@ class CryptoUtil {
         try {
             byte[] encryptedOldAESBytes = Base64.decode(encodedOldAES, Base64.DEFAULT);
             KeyStore.PrivateKeyEntry rsaKeyEntry = getRSAKeyEntry();
-            
+
             byte[] decryptedAESKey = RSADecryptLegacyPKCS1(encryptedOldAESBytes, rsaKeyEntry.getPrivateKey());
             
             // Re-encrypt with OAEP and store at new location
@@ -607,7 +614,7 @@ class CryptoUtil {
             String newEncodedEncryptedAES = new String(Base64.encode(encryptedAESWithOAEP, Base64.DEFAULT), StandardCharsets.UTF_8);
             storage.store(KEY_ALIAS, newEncodedEncryptedAES);
             storage.remove(OLD_KEY_ALIAS);
-            
+
             Log.d(TAG, "Legacy AES key migrated successfully");
             return decryptedAESKey;
         } catch (Exception e) {

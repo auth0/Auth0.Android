@@ -1715,12 +1715,16 @@ public class CryptoUtilTest {
         
         byte[] aesKeyBytes = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32};
         byte[] encryptedAESKeyPKCS1 = new byte[]{20, 21, 22, 23, 24};
+        byte[] encryptedAESKeyOAEP = new byte[]{30, 31, 32, 33, 34};
         String encodedEncryptedAESPKCS1 = "pkcs1_encrypted_key";
+        String encodedEncryptedAESOAEP = "oaep_encrypted_key";
 
         when(storage.retrieveString(eq(KEY_ALIAS))).thenReturn(encodedEncryptedAESPKCS1);
         when(storage.retrieveString(eq(OLD_KEY_ALIAS))).thenReturn(null);
         PowerMockito.mockStatic(Base64.class);
         PowerMockito.when(Base64.decode(encodedEncryptedAESPKCS1, Base64.DEFAULT)).thenReturn(encryptedAESKeyPKCS1);
+        PowerMockito.when(Base64.encode(encryptedAESKeyOAEP, Base64.DEFAULT))
+            .thenReturn(encodedEncryptedAESOAEP.getBytes(StandardCharsets.UTF_8));
 
         IncompatibleDeviceException incompatibleException = new IncompatibleDeviceException(
             new KeyStoreException("Incompatible padding mode")
@@ -1730,24 +1734,27 @@ public class CryptoUtilTest {
         when(keyStore.containsAlias(KEY_ALIAS)).thenReturn(true);
         KeyStore.PrivateKeyEntry mockKeyEntry = mock(KeyStore.PrivateKeyEntry.class);
         PrivateKey mockPrivateKey = mock(PrivateKey.class);
+        Certificate mockCertificate = mock(Certificate.class);
+        PublicKey mockPublicKey = mock(PublicKey.class);
         when(mockKeyEntry.getPrivateKey()).thenReturn(mockPrivateKey);
+        when(mockKeyEntry.getCertificate()).thenReturn(mockCertificate);
+        when(mockCertificate.getPublicKey()).thenReturn(mockPublicKey);
         when(keyStore.getEntry(eq(KEY_ALIAS), nullable(KeyStore.ProtectionParameter.class)))
             .thenReturn(mockKeyEntry);
 
         when(rsaPkcs1Cipher.doFinal(encryptedAESKeyPKCS1)).thenReturn(aesKeyBytes);
+        
+        doReturn(encryptedAESKeyOAEP).when(cryptoUtil).RSAEncrypt(aesKeyBytes);
 
         byte[] result = cryptoUtil.getAESKey();
 
         assertThat(result, is(aesKeyBytes));
 
-        // Verify PKCS1 cipher was used to decrypt the legacy key
         Mockito.verify(rsaPkcs1Cipher).init(Cipher.DECRYPT_MODE, mockPrivateKey);
         Mockito.verify(rsaPkcs1Cipher).doFinal(encryptedAESKeyPKCS1);
 
-        // Simplified migration: RSA and AES keys are deleted (not re-encrypted)
-        // Next operation will generate fresh OAEP keys
         Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
-        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).store(KEY_ALIAS, encodedEncryptedAESOAEP);
     }
 
     @Test
@@ -1861,13 +1868,17 @@ public class CryptoUtilTest {
         
         byte[] aesKeyBytes = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32};
         byte[] encryptedAESKeyPKCS1 = new byte[]{20, 21, 22, 23, 24};
+        byte[] encryptedAESKeyOAEP = new byte[]{30, 31, 32, 33, 34};
         String encodedEncryptedAESPKCS1 = "pkcs1_encrypted_key";
+        String encodedEncryptedAESOAEP = "oaep_encrypted_key";
 
         // First retrieval - migration happens, returns decrypted key
         when(storage.retrieveString(eq(KEY_ALIAS))).thenReturn(encodedEncryptedAESPKCS1);
         when(storage.retrieveString(eq(OLD_KEY_ALIAS))).thenReturn(null);
         PowerMockito.mockStatic(Base64.class);
         PowerMockito.when(Base64.decode(encodedEncryptedAESPKCS1, Base64.DEFAULT)).thenReturn(encryptedAESKeyPKCS1);
+        PowerMockito.when(Base64.encode(encryptedAESKeyOAEP, Base64.DEFAULT))
+            .thenReturn(encodedEncryptedAESOAEP.getBytes(StandardCharsets.UTF_8));
 
         IncompatibleDeviceException incompatibleException = new IncompatibleDeviceException(
             new KeyStoreException("Incompatible padding mode")
@@ -1877,18 +1888,25 @@ public class CryptoUtilTest {
         when(keyStore.containsAlias(KEY_ALIAS)).thenReturn(true);
         KeyStore.PrivateKeyEntry mockKeyEntry = mock(KeyStore.PrivateKeyEntry.class);
         PrivateKey mockPrivateKey = mock(PrivateKey.class);
+        Certificate mockCertificate = mock(Certificate.class);
+        PublicKey mockPublicKey = mock(PublicKey.class);
         when(mockKeyEntry.getPrivateKey()).thenReturn(mockPrivateKey);
+        when(mockKeyEntry.getCertificate()).thenReturn(mockCertificate);
+        when(mockCertificate.getPublicKey()).thenReturn(mockPublicKey);
         when(keyStore.getEntry(eq(KEY_ALIAS), nullable(KeyStore.ProtectionParameter.class)))
             .thenReturn(mockKeyEntry);
 
         when(rsaPkcs1Cipher.doFinal(encryptedAESKeyPKCS1)).thenReturn(aesKeyBytes);
+        
+        // Mock RSAEncrypt for re-encrypting with OAEP after migration
+        doReturn(encryptedAESKeyOAEP).when(cryptoUtil).RSAEncrypt(aesKeyBytes);
 
         byte[] result1 = cryptoUtil.getAESKey();
         assertThat(result1, is(aesKeyBytes));
         
-        // Simplified migration: keys are deleted, not re-stored
+        // Migration should delete old keys and store re-encrypted AES key
         Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
-        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).store(KEY_ALIAS, encodedEncryptedAESOAEP);
     }
 
     @Test
