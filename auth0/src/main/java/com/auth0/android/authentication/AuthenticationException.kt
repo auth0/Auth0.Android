@@ -209,6 +209,13 @@ public class AuthenticationException : Auth0Exception {
     public val isTooManyAttempts: Boolean
         get() = "too_many_attempts" == code
 
+    /**
+     * Returns true if this error is retryable with exponential backoff.
+     * Retryable errors include network errors, rate limiting (429), and server errors (5xx).
+     */
+    public val isRetryable: Boolean
+        get() = isNetworkError || statusCode == 429 || statusCode in 500..599
+
     internal companion object {
         internal const val ERROR_VALUE_AUTHENTICATION_CANCELED = "a0.authentication_canceled"
         internal const val ERROR_KEY_URI_NULL = "a0.auth.authorize_uri"

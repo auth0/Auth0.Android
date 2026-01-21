@@ -40,6 +40,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     private val fragmentActivity: WeakReference<FragmentActivity>? = null,
     private val localAuthenticationOptions: LocalAuthenticationOptions? = null,
     private val localAuthenticationManagerFactory: LocalAuthenticationManagerFactory? = null,
+    private val maxRetries: Int = 0
 ) : BaseCredentialsManager(apiClient, storage, jwtDecoder) {
     private val gson: Gson = GsonProvider.gson
 
@@ -52,16 +53,19 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * @param context   a valid context
      * @param auth0     the Auth0 account information to use
      * @param storage   the storage implementation to use
+     * @param maxRetries the maximum number of retry attempts for credential renewal when encountering transient errors. Default is 0 (no retries).
      */
     public constructor(
         context: Context,
         auth0: Auth0,
         storage: Storage,
+        maxRetries: Int = 0
     ) : this(
         AuthenticationAPIClient(auth0),
         context,
         auth0,
-        storage
+        storage,
+        maxRetries
     )
 
     /**
@@ -79,18 +83,21 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * @param context   a valid context
      * @param auth0     the Auth0 account information to use
      * @param storage   the storage implementation to use
+     * @param maxRetries the maximum number of retry attempts for credential renewal when encountering transient errors. Default is 0 (no retries).
      */
     public constructor(
         apiClient: AuthenticationAPIClient,
         context: Context,
         auth0: Auth0,
-        storage: Storage
+        storage: Storage,
+        maxRetries: Int = 0
     ) : this(
         apiClient,
         storage,
         CryptoUtil(context, storage, KEY_ALIAS),
         JWTDecoder(),
-        auth0.executor
+        auth0.executor,
+        maxRetries = maxRetries
     )
 
 
@@ -102,20 +109,23 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * @param storage   the storage implementation to use
      * @param fragmentActivity the FragmentActivity to use for the biometric authentication
      * @param localAuthenticationOptions the options of type [LocalAuthenticationOptions] to use for the biometric authentication
+     * @param maxRetries the maximum number of retry attempts for credential renewal when encountering transient errors. Default is 0 (no retries).
      */
     public constructor(
         context: Context,
         auth0: Auth0,
         storage: Storage,
         fragmentActivity: FragmentActivity,
-        localAuthenticationOptions: LocalAuthenticationOptions
+        localAuthenticationOptions: LocalAuthenticationOptions,
+        maxRetries: Int = 0
     ) : this(
         AuthenticationAPIClient(auth0),
         context,
         auth0,
         storage,
         fragmentActivity,
-        localAuthenticationOptions
+        localAuthenticationOptions,
+        maxRetries
     )
 
 
@@ -145,6 +155,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * @param storage   the storage implementation to use
      * @param fragmentActivity the FragmentActivity to use for the biometric authentication
      * @param localAuthenticationOptions the options of type [LocalAuthenticationOptions] to use for the biometric authentication
+     * @param maxRetries the maximum number of retry attempts for credential renewal when encountering transient errors. Default is 0 (no retries).
      */
     public constructor(
         apiClient: AuthenticationAPIClient,
@@ -152,7 +163,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         auth0: Auth0,
         storage: Storage,
         fragmentActivity: FragmentActivity,
-        localAuthenticationOptions: LocalAuthenticationOptions
+        localAuthenticationOptions: LocalAuthenticationOptions,
+        maxRetries: Int = 0
     ) : this(
         apiClient,
         storage,
@@ -161,7 +173,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         auth0.executor,
         WeakReference(fragmentActivity),
         localAuthenticationOptions,
-        DefaultLocalAuthenticationManagerFactory()
+        DefaultLocalAuthenticationManagerFactory(),
+        maxRetries
     )
 
 
