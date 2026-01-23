@@ -513,20 +513,8 @@ class CryptoUtil {
      */
     @VisibleForTesting
     byte[] getAESKey() throws IncompatibleDeviceException, CryptoException {
-        return getAESKey(true);
-    }
-
-    /**
-     * Attempts to recover the existing AES Key or generates a new one if none is found.
-     *
-     * @param attemptMigration whether to attempt PKCS1→OAEP migration on decryption failure
-     * @return a valid AES Key bytes
-     * @throws IncompatibleDeviceException in the event the device can't understand the cryptographic settings required
-     * @throws CryptoException             if the stored RSA keys can't be recovered and should be deemed invalid
-     */
-    private byte[] getAESKey(boolean attemptMigration) throws IncompatibleDeviceException, CryptoException {
         // Step 1: Try to recover existing AES key encrypted with current format (OAEP)
-        byte[] aesKey = tryRecoverCurrentAESKey(attemptMigration);
+        byte[] aesKey = tryRecoverCurrentAESKey();
         if (aesKey != null) {
             return aesKey;
         }
@@ -543,15 +531,14 @@ class CryptoUtil {
 
     /**
      * Attempts to recover the AES key stored at KEY_ALIAS using OAEP decryption.
-     * If OAEP fails and migration is enabled, attempts PKCS1 decryption for legacy data.
+     * If OAEP fails, attempts PKCS1 decryption for legacy data migration.
      *
-     * @param attemptMigration whether to attempt PKCS1 migration on OAEP failure
      * @return the decrypted AES key, or null if no key exists or recovery failed
      * @throws IncompatibleDeviceException if the device doesn't support required crypto operations
      *         and migration also fails
      */
     @Nullable
-    private byte[] tryRecoverCurrentAESKey(boolean attemptMigration) throws IncompatibleDeviceException {
+    private byte[] tryRecoverCurrentAESKey() throws IncompatibleDeviceException {
         String encodedEncryptedAES = storage.retrieveString(KEY_ALIAS);
         if (TextUtils.isEmpty(encodedEncryptedAES)) {
             return null;
@@ -566,15 +553,13 @@ class CryptoUtil {
             // OAEP decryption failed - could be legacy PKCS1 data or device incompatibility
             // Store exception to re-throw if migration also fails
             oaepException = e;
-            Log.d(TAG, "OAEP decryption failed. attemptMigration=" + attemptMigration, e);
+            Log.d(TAG, "OAEP decryption failed, attempting PKCS1 migration", e);
         }
 
-        // OAEP failed - attempt PKCS1 migration if enabled
-        if (attemptMigration) {
-            byte[] migratedKey = attemptPKCS1Migration(encryptedAESBytes);
-            if (migratedKey != null) {
-                return migratedKey;
-            }
+        // OAEP failed - attempt PKCS1 migration
+        byte[] migratedKey = attemptPKCS1Migration(encryptedAESBytes);
+        if (migratedKey != null) {
+            return migratedKey;
         }
 
         // Migration failed or wasn't attempted
