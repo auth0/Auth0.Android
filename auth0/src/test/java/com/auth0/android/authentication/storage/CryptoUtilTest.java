@@ -119,7 +119,7 @@ public class CryptoUtilTest {
     public void setUp() throws Exception {
         PowerMockito.mockStatic(Log.class);
         PowerMockito.mockStatic(TextUtils.class);
-        PowerMockito.when(TextUtils.isEmpty(anyString())).then((Answer<Boolean>) invocation -> {
+        PowerMockito.when(TextUtils.isEmpty(nullable(String.class))).then((Answer<Boolean>) invocation -> {
             String input = invocation.getArgument(0, String.class);
             return input == null || input.isEmpty();
         });
@@ -1781,14 +1781,14 @@ public class CryptoUtilTest {
         when(keyGenerator.generateKey()).thenReturn(mockSecretKey);
         
         byte[] encryptedNewKey = new byte[]{30, 31, 32, 33};
-        doReturn(encryptedNewKey).when(cryptoUtil).RSAEncrypt(newAESKey);
+        doReturn(encryptedNewKey).when(cryptoUtil).RSAEncrypt(any(byte[].class));
         String encodedNewKey = "new_generated_key";
         PowerMockito.when(Base64.encode(encryptedNewKey, Base64.DEFAULT))
             .thenReturn(encodedNewKey.getBytes(StandardCharsets.UTF_8));
 
         byte[] result = cryptoUtil.getAESKey();
 
-        Mockito.verify(storage, times(2)).remove(KEY_ALIAS);
+        Mockito.verify(storage, times(1)).remove(KEY_ALIAS);
 
         assertThat(result, is(newAESKey));
         Mockito.verify(storage).store(KEY_ALIAS, encodedNewKey);
@@ -1930,14 +1930,15 @@ public class CryptoUtilTest {
         when(keyGenerator.generateKey()).thenReturn(mockSecretKey);
         
         byte[] encryptedNewKey = new byte[]{40, 41, 42};
-        doReturn(encryptedNewKey).when(cryptoUtil).RSAEncrypt(newAESKey);
+        doReturn(encryptedNewKey).when(cryptoUtil).RSAEncrypt(any(byte[].class));
         String encodedNewKey = "fresh_key";
         PowerMockito.when(Base64.encode(encryptedNewKey, Base64.DEFAULT))
             .thenReturn(encodedNewKey.getBytes(StandardCharsets.UTF_8));
         byte[] result = cryptoUtil.getAESKey();
         assertThat(result, is(newAESKey));
         Mockito.verify(storage).store(KEY_ALIAS, encodedNewKey);
-        Mockito.verify(storage, times(2)).remove(KEY_ALIAS);
-        Mockito.verify(storage, times(2)).remove(OLD_KEY_ALIAS);
+        // deleteAESKeys() is called once in tryMigrateLegacyAESKey when getRSAKeyEntry throws
+        Mockito.verify(storage, times(1)).remove(KEY_ALIAS);
+        Mockito.verify(storage, times(1)).remove(OLD_KEY_ALIAS);
     }
 }

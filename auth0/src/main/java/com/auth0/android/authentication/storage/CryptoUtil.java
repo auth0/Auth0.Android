@@ -617,7 +617,8 @@ class CryptoUtil {
 
             Log.d(TAG, "Legacy AES key migrated successfully");
             return decryptedAESKey;
-        } catch (Exception e) {
+        } catch (CryptoException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException |
+                 BadPaddingException | IllegalBlockSizeException | IllegalArgumentException e) {
             Log.e(TAG, "Could not migrate legacy AES key. Will generate new key.", e);
             deleteAESKeys();
             return null;
