@@ -1954,6 +1954,237 @@ public class CredentialsManagerTest {
         Mockito.`when`(jwtDecoder.decode("idToken")).thenReturn(jwtMock)
     }
 
+    // Retry Mechanism Tests
+    @Test
+    public fun shouldRetryCredentialRenewalOnNetworkError() {
+        // Create manager with maxRetries = 2
+        val managerWithRetry = CredentialsManager(client, storage, jwtDecoder, serialExecutor, 2)
+        val spyManager = Mockito.spy(managerWithRetry)
+        Mockito.doReturn(CredentialsMock.CURRENT_TIME_MS).`when`(spyManager).currentTimeInMillis
+        Mockito.doAnswer { invocation ->
+            val idToken = invocation.getArgument(0, String::class.java)
+            val accessToken = invocation.getArgument(1, String::class.java)
+            val type = invocation.getArgument(2, String::class.java)
+            val refreshToken = invocation.getArgument(3, String::class.java)
+            val expiresAt = invocation.getArgument(4, Date::class.java)
+            val scope = invocation.getArgument(5, String::class.java)
+            CredentialsMock.create(idToken, accessToken, type, refreshToken, expiresAt, scope)
+        }.`when`(spyManager).recreateCredentials(
+            ArgumentMatchers.anyString(),
+            ArgumentMatchers.anyString(),
+            ArgumentMatchers.anyString(),
+            ArgumentMatchers.anyString(),
+            any(),
+            ArgumentMatchers.anyString()
+        )
+
+        val expirationTime = CredentialsMock.CURRENT_TIME_MS // Already expired
+        Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("type")
+        Mockito.`when`(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveString("com.auth0.scope")).thenReturn("scope")
+        Mockito.`when`(client.renewAuth("refreshToken")).thenReturn(request)
+
+        // First two attempts fail with network error, third succeeds
+        val networkException = AuthenticationException("Network error", NetworkErrorException(mock()))
+        val successfulCredentials = CredentialsMock.create(
+            "newIdToken", "newAccessToken", "newType", "refreshToken",
+            Date(CredentialsMock.ONE_HOUR_AHEAD_MS), "scope"
+        )
+        Mockito.`when`(request.execute())
+            .thenThrow(networkException)
+            .thenThrow(networkException)
+            .thenReturn(successfulCredentials)
+
+        spyManager.getCredentials(callback)
+
+        // Verify success after retries
+        verify(callback, times(1)).onSuccess(credentialsCaptor.capture())
+        val capturedCredentials = credentialsCaptor.firstValue
+        MatcherAssert.assertThat(capturedCredentials, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(capturedCredentials.accessToken, Is.`is`("newAccessToken"))
+    }
+
+    @Test
+    public fun shouldRetryCredentialRenewalOnRateLimitError() {
+        // Create manager with maxRetries = 1
+        val managerWithRetry = CredentialsManager(client, storage, jwtDecoder, serialExecutor, 1)
+        val spyManager = Mockito.spy(managerWithRetry)
+        Mockito.doReturn(CredentialsMock.CURRENT_TIME_MS).`when`(spyManager).currentTimeInMillis
+        Mockito.doAnswer { invocation ->
+            val idToken = invocation.getArgument(0, String::class.java)
+            val accessToken = invocation.getArgument(1, String::class.java)
+            val type = invocation.getArgument(2, String::class.java)
+            val refreshToken = invocation.getArgument(3, String::class.java)
+            val expiresAt = invocation.getArgument(4, Date::class.java)
+            val scope = invocation.getArgument(5, String::class.java)
+            CredentialsMock.create(idToken, accessToken, type, refreshToken, expiresAt, scope)
+        }.`when`(spyManager).recreateCredentials(
+            ArgumentMatchers.anyString(),
+            ArgumentMatchers.anyString(),
+            ArgumentMatchers.anyString(),
+            ArgumentMatchers.anyString(),
+            any(),
+            ArgumentMatchers.anyString()
+        )
+
+        val expirationTime = CredentialsMock.CURRENT_TIME_MS // Already expired
+        Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("type")
+        Mockito.`when`(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveString("com.auth0.scope")).thenReturn("scope")
+        Mockito.`when`(client.renewAuth("refreshToken")).thenReturn(request)
+
+        // First attempt fails with 429, second succeeds
+        val rateLimitException = AuthenticationException(mapOf("error" to "rate_limit"), 429)
+        val successfulCredentials = CredentialsMock.create(
+            "newIdToken", "newAccessToken", "newType", "refreshToken",
+            Date(CredentialsMock.ONE_HOUR_AHEAD_MS), "scope"
+        )
+        Mockito.`when`(request.execute())
+            .thenThrow(rateLimitException)
+            .thenReturn(successfulCredentials)
+
+        spyManager.getCredentials(callback)
+
+        // Verify success after retry
+        verify(callback, times(1)).onSuccess(credentialsCaptor.capture())
+        val capturedCredentials = credentialsCaptor.firstValue
+        MatcherAssert.assertThat(capturedCredentials, Is.`is`(Matchers.notNullValue()))
+    }
+
+    @Test
+    public fun shouldRetryCredentialRenewalOnServerError() {
+        // Create manager with maxRetries = 1
+        val managerWithRetry = CredentialsManager(client, storage, jwtDecoder, serialExecutor, 1)
+        val spyManager = Mockito.spy(managerWithRetry)
+        Mockito.doReturn(CredentialsMock.CURRENT_TIME_MS).`when`(spyManager).currentTimeInMillis
+        Mockito.doAnswer { invocation ->
+            val idToken = invocation.getArgument(0, String::class.java)
+            val accessToken = invocation.getArgument(1, String::class.java)
+            val type = invocation.getArgument(2, String::class.java)
+            val refreshToken = invocation.getArgument(3, String::class.java)
+            val expiresAt = invocation.getArgument(4, Date::class.java)
+            val scope = invocation.getArgument(5, String::class.java)
+            CredentialsMock.create(idToken, accessToken, type, refreshToken, expiresAt, scope)
+        }.`when`(spyManager).recreateCredentials(
+            ArgumentMatchers.anyString(),
+            ArgumentMatchers.anyString(),
+            ArgumentMatchers.anyString(),
+            ArgumentMatchers.anyString(),
+            any(),
+            ArgumentMatchers.anyString()
+        )
+
+        val expirationTime = CredentialsMock.CURRENT_TIME_MS // Already expired
+        Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("type")
+        Mockito.`when`(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveString("com.auth0.scope")).thenReturn("scope")
+        Mockito.`when`(client.renewAuth("refreshToken")).thenReturn(request)
+
+        // First attempt fails with 500, second succeeds
+        val serverException = AuthenticationException(mapOf("error" to "server_error"), 500)
+        val successfulCredentials = CredentialsMock.create(
+            "newIdToken", "newAccessToken", "newType", "refreshToken",
+            Date(CredentialsMock.ONE_HOUR_AHEAD_MS), "scope"
+        )
+        Mockito.`when`(request.execute())
+            .thenThrow(serverException)
+            .thenReturn(successfulCredentials)
+
+        spyManager.getCredentials(callback)
+
+        // Verify success after retry
+        verify(callback, times(1)).onSuccess(credentialsCaptor.capture())
+    }
+
+    @Test
+    public fun shouldNotRetryCredentialRenewalOnNonRetryableError() {
+        // Create manager with maxRetries = 2
+        val managerWithRetry = CredentialsManager(client, storage, jwtDecoder, serialExecutor, 2)
+        val spyManager = Mockito.spy(managerWithRetry)
+        Mockito.doReturn(CredentialsMock.CURRENT_TIME_MS).`when`(spyManager).currentTimeInMillis
+
+        val expirationTime = CredentialsMock.CURRENT_TIME_MS // Already expired
+        Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("type")
+        Mockito.`when`(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveString("com.auth0.scope")).thenReturn("scope")
+        Mockito.`when`(client.renewAuth("refreshToken")).thenReturn(request)
+
+        // Fail with invalid refresh token (non-retryable)
+        val invalidTokenException = AuthenticationException("invalid_grant", "Unknown or invalid refresh token.")
+        Mockito.`when`(request.execute()).thenThrow(invalidTokenException)
+
+        spyManager.getCredentials(callback)
+
+        // Verify failure without retry
+        verify(callback, times(1)).onFailure(exceptionCaptor.capture())
+        verify(request, times(1)).execute() // Only one attempt
+    }
+
+    @Test
+    public fun shouldExhaustRetriesAndFailOnPersistentNetworkError() {
+        // Create manager with maxRetries = 2
+        val managerWithRetry = CredentialsManager(client, storage, jwtDecoder, serialExecutor, 2)
+        val spyManager = Mockito.spy(managerWithRetry)
+        Mockito.doReturn(CredentialsMock.CURRENT_TIME_MS).`when`(spyManager).currentTimeInMillis
+
+        val expirationTime = CredentialsMock.CURRENT_TIME_MS // Already expired
+        Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("type")
+        Mockito.`when`(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveString("com.auth0.scope")).thenReturn("scope")
+        Mockito.`when`(client.renewAuth("refreshToken")).thenReturn(request)
+
+        // All attempts fail with network error
+        val networkException = AuthenticationException("Network error", NetworkErrorException(mock()))
+        Mockito.`when`(request.execute()).thenThrow(networkException)
+
+        spyManager.getCredentials(callback)
+
+        // Verify failure after exhausting retries (1 initial + 2 retries = 3 total)
+        verify(callback, times(1)).onFailure(exceptionCaptor.capture())
+        verify(request, times(3)).execute()
+
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
+    }
+
+    @Test
+    public fun shouldNotRetryWhenMaxRetriesIsZero() {
+        // Default manager has maxRetries = 0
+        val expirationTime = CredentialsMock.CURRENT_TIME_MS // Already expired
+        Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("type")
+        Mockito.`when`(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveString("com.auth0.scope")).thenReturn("scope")
+        Mockito.`when`(client.renewAuth("refreshToken")).thenReturn(request)
+
+        // Fail with network error
+        val networkException = AuthenticationException("Network error", NetworkErrorException(mock()))
+        Mockito.`when`(request.execute()).thenThrow(networkException)
+
+        manager.getCredentials(callback)
+
+        // Verify failure without retry (only 1 attempt)
+        verify(callback, times(1)).onFailure(exceptionCaptor.capture())
+        verify(request, times(1)).execute()
+    }
+
     private companion object {
         private const val ONE_HOUR_SECONDS = (60 * 60).toLong()
     }

@@ -1415,6 +1415,67 @@ SecureCredentialsManager manager = new SecureCredentialsManager(apiClient, this,
 ```
 </details>
 
+#### Automatic Retry on Credential Retrieval
+
+Both `CredentialsManager` and `SecureCredentialsManager` support automatic retry with exponential backoff for credential retrieval operations (`getCredentials()` and its variants) that fail due to transient errors. This is particularly useful for handling temporary network issues on mobile devices during credential renewal.
+
+> **Note:** Automatic retry is only supported for credential retrieval operations (`getCredentials()`, `awaitCredentials()`). It does not apply to other operations such as SSO credentials, API credentials, or explicit renewal calls.
+
+**Retryable Errors:**
+- Network errors (timeouts, connection lost, DNS failures)
+- Rate limiting (HTTP 429)
+- Server errors (HTTP 5xx)
+
+**Configuring Retries:**
+
+The `maxRetries` parameter can be set when creating a `CredentialsManager` or `SecureCredentialsManager`. The default value is 0 (no retries). It is recommended to use a maximum of 2 retries.
+
+```kotlin
+val storage = SharedPreferencesStorage(this)
+val manager = CredentialsManager(
+    authenticationClient = apiClient,
+    storage = storage,
+    maxRetries = 2  // Enable up to 2 retry attempts
+)
+```
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+Storage storage = new SharedPreferencesStorage(this);
+CredentialsManager manager = new CredentialsManager(apiClient, storage, 2);
+```
+</details>
+
+For `SecureCredentialsManager`:
+
+```kotlin
+val storage = SharedPreferencesStorage(this)
+val manager = SecureCredentialsManager(
+    context = this,
+    account = account,
+    storage = storage,
+    maxRetries = 2  // Enable up to 2 retry attempts
+)
+```
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+Storage storage = new SharedPreferencesStorage(this);
+SecureCredentialsManager manager = new SecureCredentialsManager(this, account, storage, 2);
+```
+</details>
+
+**Important Considerations:**
+
+- **Scope:** Automatic retry only works for credential retrieval operations (`getCredentials()`, `awaitCredentials()` and their overloads). Other operations like getting SSO credentials or API credentials do not support automatic retry.
+- **Auth0 Tenant Configuration**: Ensure your Auth0 tenant is configured with a minimum **180-second refresh token rotation overlap period** to safely retry credential renewals without requiring user re-authentication.
+- **Exponential Backoff**: The retry mechanism uses exponential backoff with delays of 0.5s, 1s, 2s, etc., between attempts.
+- **Non-Retryable Errors**: Errors like invalid refresh tokens or authentication failures will not be retried automatically.
+
 #### Requiring Authentication
 
 You can require the user authentication to obtain credentials. This will make the manager prompt the user with the device's configured Lock Screen, which they must pass correctly in order to obtain the credentials. **This feature is only available on devices where the user has setup a secured Lock Screen** (PIN, Pattern, Password or Fingerprint).
