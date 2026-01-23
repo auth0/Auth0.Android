@@ -1,5 +1,12 @@
 # Change Log
 
+## [3.12.2](https://github.com/auth0/Auth0.Android/tree/3.12.2) (2026-01-23)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.12.1...3.12.2)
+
+**Added**
+- RSA encryption padding change from PKCS1Padding to OAEPWithSHA1And… [\#834](https://github.com/auth0/Auth0.Android/pull/834) ([utkrishtsahu](https://github.com/utkrishtsahu))
+- refactor: Replace synchronized block with AtomicReference for DPoP nonce management [\#895](https://github.com/auth0/Auth0.Android/pull/895) ([pmathew92](https://github.com/pmathew92))
+
 ## [3.12.1](https://github.com/auth0/Auth0.Android/tree/3.12.1) (2026-01-07)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.12.0...3.12.1)
 
