@@ -4,11 +4,12 @@ plugins {
 }
 
 android {
-    compileSdkVersion 35
+    namespace 'com.auth0.sample'
+    compileSdk 35
 
     defaultConfig {
-        minSdkVersion 24
-        targetSdkVersion 35
+        minSdk 24
+        targetSdk 35
         versionCode 1
         versionName "1.0"
 

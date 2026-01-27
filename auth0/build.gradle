@@ -34,7 +34,12 @@ version = getVersionFromFile()
 logger.lifecycle("Using version ${version} for ${name}")
 
 android {
+    namespace 'com.auth0.android.auth0'
     compileSdk 35
+
+    buildFeatures {
+        buildConfig = true
+    }
 
     defaultConfig {
         minSdkVersion 21
@@ -50,9 +55,9 @@ android {
         consumerProguardFiles '../proguard/proguard-gson.pro', '../proguard/proguard-okio.pro', '../proguard/proguard-jetpack.pro'
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
-    lintOptions {
-        htmlReport true
-        abortOnError true
+    lint {
+        htmlReport = true
+        abortOnError = true
     }
     testOptions {
         unitTests {
