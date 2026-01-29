@@ -544,6 +544,17 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                 saveCredentials(credentials)
                 callback.onSuccess(credentials)
             } catch (error: AuthenticationException) {
+                if (error.isMultifactorRequired) {
+                    callback.onFailure(
+                        CredentialsManagerException(
+                            CredentialsManagerException.Code.MFA_REQUIRED,
+                            error.message ?: "Multi-factor authentication is required to complete the credential renewal.",
+                            error,
+                            error.mfaRequiredErrorPayload
+                        )
+                    )
+                    return@execute
+                }
                 val exception = when {
                     error.isRefreshTokenDeleted || error.isInvalidRefreshToken -> CredentialsManagerException.Code.RENEW_FAILED
 
@@ -659,9 +670,19 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                 saveApiCredentials(newApiCredentials, audience, scope)
                 callback.onSuccess(newApiCredentials)
             } catch (error: AuthenticationException) {
+                if (error.isMultifactorRequired) {
+                    callback.onFailure(
+                        CredentialsManagerException(
+                            CredentialsManagerException.Code.MFA_REQUIRED,
+                            error.message ?: "Multi-factor authentication is required to complete the credential renewal.",
+                            error,
+                            error.mfaRequiredErrorPayload
+                        )
+                    )
+                    return@execute
+                }
                 val exception = when {
                     error.isRefreshTokenDeleted || error.isInvalidRefreshToken -> CredentialsManagerException.Code.RENEW_FAILED
-
                     error.isNetworkError -> CredentialsManagerException.Code.NO_NETWORK
                     else -> CredentialsManagerException.Code.API_ERROR
                 }
