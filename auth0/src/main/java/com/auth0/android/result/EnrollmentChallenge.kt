@@ -10,7 +10,8 @@ import java.lang.reflect.Type
 @JsonAdapter(EnrollmentChallenge.Deserializer::class)
 public sealed class EnrollmentChallenge {
     public abstract val id: String?
-    public abstract val authSession: String
+    public abstract val authSession: String?
+    public open val oobCode: String? = null 
 
     internal class Deserializer : JsonDeserializer<EnrollmentChallenge> {
         override fun deserialize(
@@ -23,6 +24,7 @@ public sealed class EnrollmentChallenge {
                 jsonObject.has("barcode_uri") -> TotpEnrollmentChallenge::class.java
                 jsonObject.has("recovery_code") -> RecoveryCodeEnrollmentChallenge::class.java
                 jsonObject.has("authn_params_public_key") -> PasskeyEnrollmentChallenge::class.java
+                jsonObject.has("oob_code") -> OobEnrollmentChallenge::class.java 
                 else -> MfaEnrollmentChallenge::class.java
             }
             return context.deserialize(jsonObject, targetClass)
@@ -32,9 +34,24 @@ public sealed class EnrollmentChallenge {
 
 public data class MfaEnrollmentChallenge(
     @SerializedName("id")
-    override val id: String,
+    override val id: String?,
     @SerializedName("auth_session")
-    override val authSession: String
+    override val authSession: String?
+) : EnrollmentChallenge()
+
+/**
+ * Enrollment challenge for OOB factors (SMS/Email) that includes the oob_code
+ * needed for verification.
+ */
+public data class OobEnrollmentChallenge(
+    @SerializedName("id")
+    override val id: String?,
+    @SerializedName("auth_session")
+    override val authSession: String?,
+    @SerializedName("oob_code")
+    override val oobCode: String?,
+    @SerializedName("binding_method")
+    public val bindingMethod: String? = null
 ) : EnrollmentChallenge()
 
 public data class TotpEnrollmentChallenge(

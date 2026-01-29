@@ -95,7 +95,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      *     if (error.isMultifactorRequired) {
      *         val mfaToken = error.mfaToken
      *         if (mfaToken != null) {
-     *             val mfaClient = authClient.mfa(mfaToken)
+     *             val mfaClient = authClient.mfaClient(mfaToken)
      *             // Use mfaClient to handle MFA flow
      *         }
      *     }
@@ -105,7 +105,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param mfaToken The token received in the 'mfa_required' error from a login attempt.
      * @return A new [MfaApiClient] instance configured for the transaction.
      */
-    public fun mfa(mfaToken: String): MfaApiClient {
+    public fun mfaClient(mfaToken: String): MfaApiClient {
         return MfaApiClient(this.auth0, mfaToken)
     }
 
@@ -1147,7 +1147,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val WELL_KNOWN_PATH = ".well-known"
         private const val JWKS_FILE_PATH = "jwks.json"
         private const val TAG = "AuthenticationAPIClient"
-        internal fun createErrorAdapter(): ErrorAdapter<AuthenticationException> {
+        private fun createErrorAdapter(): ErrorAdapter<AuthenticationException> {
             val mapAdapter = forMap(GsonProvider.gson)
             return object : ErrorAdapter<AuthenticationException> {
                 override fun fromRawResponse(

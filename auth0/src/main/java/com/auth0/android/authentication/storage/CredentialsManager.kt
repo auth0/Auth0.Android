@@ -550,8 +550,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                             CredentialsManagerException.Code.MFA_REQUIRED,
                             error.message ?: "Multi-factor authentication is required to complete the credential renewal.",
                             error,
-                            error.mfaToken,
-                            error.mfaRequirements
+                            error.mfaRequiredErrorPayload
                         )
                     )
                     return@execute
@@ -677,8 +676,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                             CredentialsManagerException.Code.MFA_REQUIRED,
                             error.message ?: "Multi-factor authentication is required to complete the credential renewal.",
                             error,
-                            error.mfaToken,
-                            error.mfaRequirements
+                            error.mfaRequiredErrorPayload
                         )
                     )
                     return@execute

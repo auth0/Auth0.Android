@@ -15,6 +15,12 @@
   - [Authentication API](#authentication-api)
     - [Login with database connection](#login-with-database-connection)
     - [Login using MFA with One Time Password code](#login-using-mfa-with-one-time-password-code)
+    - [MFA Flexible Factors Grant](#mfa-flexible-factors-grant)
+      - [Handling MFA Required Errors](#handling-mfa-required-errors)
+      - [Getting Available Authenticators](#getting-available-authenticators)
+      - [Enrolling New Authenticators](#enrolling-new-authenticators)
+      - [Challenging an Authenticator](#challenging-an-authenticator)
+      - [Verifying MFA](#verifying-mfa)
     - [Passwordless Login](#passwordless-login)
       - [Step 1: Request the code](#step-1-request-the-code)
       - [Step 2: Input the code](#step-2-input-the-code)
@@ -417,6 +423,326 @@ authentication
 </details>
 
 > The default scope used is `openid profile email`. Regardless of the scopes set to the request, the `openid` scope is always enforced.
+
+### MFA Flexible Factors Grant
+
+The MFA Flexible Factors Grant allows you to handle MFA challenges during the authentication flow when users sign in to MFA-enabled connections. This feature requires your Application to have the *MFA* grant type enabled. Check [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
+
+#### Handling MFA Required Errors
+
+When a user signs in to an MFA-enabled connection, the authentication request will fail with an `AuthenticationException` that contains the MFA requirements. You can extract the MFA token and requirements from the error to proceed with the MFA flow.
+
+```kotlin
+authentication
+    .login("user@example.com", "password", "Username-Password-Authentication")
+    .validateClaims()
+    .start(object: Callback<Credentials, AuthenticationException> {
+        override fun onFailure(exception: AuthenticationException) {
+            if (exception.isMultifactorRequired) {
+                // MFA is required - extract the MFA payload
+                val mfaPayload = exception.mfaRequiredErrorPayload
+                val mfaToken = mfaPayload?.mfaToken
+                val requirements = mfaPayload?.mfaRequirements
+                
+                // Check what actions are available
+                val canChallenge = requirements?.challenge // List of authenticators to challenge
+                val canEnroll = requirements?.enroll // List of factor types that can be enrolled
+                
+                // Proceed with MFA flow using mfaToken
+            }
+        }
+
+        override fun onSuccess(credentials: Credentials) {
+            // Login successful without MFA
+        }
+    })
+```
+
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    val credentials = authentication
+        .login("user@example.com", "password", "Username-Password-Authentication")
+        .validateClaims()
+        .await()
+    println(credentials)
+} catch (e: AuthenticationException) {
+    if (e.isMultifactorRequired) {
+        val mfaPayload = e.mfaRequiredErrorPayload
+        val mfaToken = mfaPayload?.mfaToken
+        // Proceed with MFA flow
+    }
+}
+```
+</details>
+
+#### Creating the MFA API Client
+
+Once you have the MFA token, create an MFA API client to perform MFA operations:
+
+```kotlin
+val mfaClient = authentication.mfaClient(mfaToken)
+```
+
+#### Getting Available Authenticators
+
+Retrieve the list of authenticators that the user has enrolled and are allowed for this authentication flow. The `factorsAllowed` parameter filters the authenticators based on the allowed factor types from the MFA requirements.
+
+```kotlin
+mfaClient
+    .getAuthenticators(factorsAllowed = requirements?.challenge ?: emptyList())
+    .start(object: Callback<List<MfaAuthenticator>, MfaListAuthenticatorsException> {
+        override fun onFailure(exception: MfaListAuthenticatorsException) {
+            // Handle error
+        }
+
+        override fun onSuccess(authenticators: List<MfaAuthenticator>) {
+            // Display authenticators for user to choose
+            authenticators.forEach { auth ->
+                println("Type: ${auth.authenticatorType}, ID: ${auth.id}")
+            }
+        }
+    })
+```
+
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    val authenticators = mfaClient
+        .getAuthenticators(factorsAllowed = requirements?.challenge ?: emptyList())
+        .await()
+    println(authenticators)
+} catch (e: MfaListAuthenticatorsException) {
+    e.printStackTrace()
+}
+```
+</details>
+
+#### Enrolling New Authenticators
+
+If the user doesn't have an authenticator enrolled, or needs to enroll a new one, you can use the enrollment methods. The available enrollment types depend on your tenant configuration.
+
+##### Enroll Phone (SMS/Voice)
+
+```kotlin
+mfaClient
+    .enrollPhone("+11234567890", PhoneEnrollmentType.SMS)
+    .start(object: Callback<MfaEnrollment, MfaEnrollmentException> {
+        override fun onFailure(exception: MfaEnrollmentException) { }
+
+        override fun onSuccess(enrollment: MfaEnrollment) {
+            // Phone enrolled - need to verify with OOB code
+            val oobCode = enrollment.oobCode
+            val bindingMethod = enrollment.bindingMethod
+        }
+    })
+```
+
+##### Enroll Email
+
+```kotlin
+mfaClient
+    .enrollEmail("user@example.com")
+    .start(object: Callback<MfaEnrollment, MfaEnrollmentException> {
+        override fun onFailure(exception: MfaEnrollmentException) { }
+
+        override fun onSuccess(enrollment: MfaEnrollment) {
+            // Email enrolled - need to verify with OOB code
+            val oobCode = enrollment.oobCode
+        }
+    })
+```
+
+##### Enroll OTP (Authenticator App)
+
+```kotlin
+mfaClient
+    .enrollOtp()
+    .start(object: Callback<MfaEnrollment, MfaEnrollmentException> {
+        override fun onFailure(exception: MfaEnrollmentException) { }
+
+        override fun onSuccess(enrollment: MfaEnrollment) {
+            // Display QR code or secret for user to scan/enter in authenticator app
+            val secret = enrollment.secret
+            val barcodeUri = enrollment.barcodeUri
+        }
+    })
+```
+
+##### Enroll Push Notification
+
+```kotlin
+mfaClient
+    .enrollPush()
+    .start(object: Callback<MfaEnrollment, MfaEnrollmentException> {
+        override fun onFailure(exception: MfaEnrollmentException) { }
+
+        override fun onSuccess(enrollment: MfaEnrollment) {
+            // Display QR code for user to scan with Guardian app
+            val barcodeUri = enrollment.barcodeUri
+        }
+    })
+```
+
+#### Challenging an Authenticator
+
+After selecting an authenticator, initiate a challenge. This will send an OTP code (for email/SMS) or push notification to the user.
+
+```kotlin
+mfaClient
+    .challenge(authenticatorId = "phone|dev_xxxx")
+    .start(object: Callback<MfaChallengeResponse, MfaChallengeException> {
+        override fun onFailure(exception: MfaChallengeException) { }
+
+        override fun onSuccess(challengeResponse: MfaChallengeResponse) {
+            // Challenge initiated
+            val challengeType = challengeResponse.challengeType
+            val oobCode = challengeResponse.oobCode
+            val bindingMethod = challengeResponse.bindingMethod
+        }
+    })
+```
+
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    val challengeResponse = mfaClient
+        .challenge(authenticatorId = "phone|dev_xxxx")
+        .await()
+    println(challengeResponse)
+} catch (e: MfaChallengeException) {
+    e.printStackTrace()
+}
+```
+</details>
+
+#### Verifying MFA
+
+Complete the MFA flow by verifying with the appropriate method based on the authenticator type.
+
+##### Verify with OTP (Authenticator App)
+
+```kotlin
+mfaClient
+    .verifyOtp(otp = "123456")
+    .validateClaims()
+    .start(object: Callback<Credentials, MfaVerifyException> {
+        override fun onFailure(exception: MfaVerifyException) { }
+
+        override fun onSuccess(credentials: Credentials) {
+            // MFA verification successful - user is now logged in
+        }
+    })
+```
+
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    val credentials = mfaClient
+        .verifyOtp(otp = "123456")
+        .validateClaims()
+        .await()
+    println(credentials)
+} catch (e: MfaVerifyException) {
+    e.printStackTrace()
+}
+```
+</details>
+
+##### Verify with OOB (Email/SMS/Push)
+
+For email, SMS, or push notification verification, use the OOB code from the challenge response along with the binding code (OTP) received by the user:
+
+```kotlin
+mfaClient
+    .verifyOob(oobCode = oobCode, bindingCode = "123456") // bindingCode is optional for push
+    .validateClaims()
+    .start(object: Callback<Credentials, MfaVerifyException> {
+        override fun onFailure(exception: MfaVerifyException) { }
+
+        override fun onSuccess(credentials: Credentials) {
+            // MFA verification successful
+        }
+    })
+```
+
+##### Verify with Recovery Code
+
+If the user has lost access to their MFA device, they can use a recovery code:
+
+```kotlin
+mfaClient
+    .verifyRecoveryCode(recoveryCode = "ABCD1234EFGH5678")
+    .validateClaims()
+    .start(object: Callback<Credentials, MfaVerifyException> {
+        override fun onFailure(exception: MfaVerifyException) { }
+
+        override fun onSuccess(credentials: Credentials) {
+            // MFA verification successful
+            // Note: A new recovery code may be returned in credentials
+        }
+    })
+```
+
+#### Complete MFA Flow Example
+
+Here's a complete example showing the typical MFA flow:
+
+```kotlin
+// Step 1: Attempt login
+authentication
+    .login(email, password, connection)
+    .validateClaims()
+    .start(object: Callback<Credentials, AuthenticationException> {
+        override fun onFailure(exception: AuthenticationException) {
+            if (exception.isMultifactorRequired) {
+                val mfaPayload = exception.mfaRequiredErrorPayload ?: return
+                val mfaToken = mfaPayload.mfaToken ?: return
+                val requirements = mfaPayload.mfaRequirements
+                
+                // Step 2: Create MFA client
+                val mfaClient = authentication.mfaClient(mfaToken)
+                
+                // Step 3: Get available authenticators
+                mfaClient
+                    .getAuthenticators(factorsAllowed = requirements?.challenge ?: emptyList())
+                    .start(object: Callback<List<MfaAuthenticator>, MfaListAuthenticatorsException> {
+                        override fun onSuccess(authenticators: List<MfaAuthenticator>) {
+                            if (authenticators.isNotEmpty()) {
+                                // Step 4: Challenge the first authenticator
+                                val authenticator = authenticators.first()
+                                mfaClient
+                                    .challenge(authenticatorId = authenticator.id)
+                                    .start(object: Callback<MfaChallengeResponse, MfaChallengeException> {
+                                        override fun onSuccess(challengeResponse: MfaChallengeResponse) {
+                                            // Step 5: Prompt user for OTP and verify
+                                            // ... show OTP input UI, then call verifyOtp/verifyOob
+                                        }
+                                        override fun onFailure(e: MfaChallengeException) { }
+                                    })
+                            } else {
+                                // No authenticators enrolled - need to enroll one
+                                // ... show enrollment UI
+                            }
+                        }
+                        override fun onFailure(e: MfaListAuthenticatorsException) { }
+                    })
+            }
+        }
+
+        override fun onSuccess(credentials: Credentials) {
+            // Login successful without MFA
+        }
+    })
+```
 
 ### Passwordless Login
 

@@ -1,6 +1,7 @@
 package com.auth0.android.authentication
 
 import com.auth0.android.Auth0Exception
+import com.auth0.android.Auth0Exception.Companion.UNKNOWN_ERROR
 
 /**
  * Base class for MFA-related exceptions.
@@ -62,7 +63,7 @@ public sealed class MfaException(
     ) : MfaException("MFA authenticator listing failed: $code") {
 
         internal constructor(values: Map<String, Any>, statusCode: Int) : this(
-            code = (values["error"] as? String) ?: FALLBACK_ERROR_CODE,
+            code = (values["error"] as? String) ?: UNKNOWN_ERROR,
             description = (values["error_description"] as? String) ?: "Failed to list authenticators",
             values = values,
             statusCode = statusCode
@@ -73,10 +74,9 @@ public sealed class MfaException(
         override fun getValue(key: String): Any? = values[key]
 
         public companion object {
-            internal const val FALLBACK_ERROR_CODE = "mfa_list_authenticators_error"
             internal const val INVALID_REQUEST = "invalid_request"
             
-            /**
+            /**feature discovery on the SDKevaluating/learning the usage patternsimplementationdeployment to production
              * Creates an exception for SDK validation errors.
              */
             internal fun invalidRequest(description: String): MfaListAuthenticatorsException {
@@ -92,7 +92,7 @@ public sealed class MfaException(
      * Exception thrown when MFA enrollment fails.
      *
      * All errors come from the Auth0 API. If no error code is provided,
-     * defaults to `mfa_enrollment_error`.
+     * defaults to `a0.sdk.internal_error.unknown`.
      *
      * Example usage:
      * ```
@@ -111,7 +111,7 @@ public sealed class MfaException(
     ) : MfaException("MFA enrollment failed: $code") {
 
         internal constructor(values: Map<String, Any>, statusCode: Int) : this(
-            code = (values["error"] as? String) ?: FALLBACK_ERROR_CODE,
+            code = (values["error"] as? String) ?: UNKNOWN_ERROR,
             description = (values["error_description"] as? String) ?: "Failed to enroll MFA authenticator",
             values = values,
             statusCode = statusCode
@@ -120,17 +120,13 @@ public sealed class MfaException(
         override fun getCode(): String = code
         override fun getDescription(): String = description
         override fun getValue(key: String): Any? = values[key]
-
-        public companion object {
-            internal const val FALLBACK_ERROR_CODE = "mfa_enrollment_error"
-        }
     }
 
     /**
      * Exception thrown when MFA challenge fails.
      *
      * All errors come from the Auth0 API. If no error code is provided,
-     * defaults to `mfa_challenge_error`.
+     * defaults to `a0.sdk.internal_error.unknown`.
      *
      * Example usage:
      * ```
@@ -149,7 +145,7 @@ public sealed class MfaException(
     ) : MfaException("MFA challenge failed: $code") {
 
         internal constructor(values: Map<String, Any>, statusCode: Int) : this(
-            code = (values["error"] as? String) ?: FALLBACK_ERROR_CODE,
+            code = (values["error"] as? String) ?: UNKNOWN_ERROR,
             description = (values["error_description"] as? String) ?: "Failed to initiate MFA challenge",
             values = values,
             statusCode = statusCode
@@ -158,17 +154,13 @@ public sealed class MfaException(
         override fun getCode(): String = code
         override fun getDescription(): String = description
         override fun getValue(key: String): Any? = values[key]
-
-        public companion object {
-            internal const val FALLBACK_ERROR_CODE = "mfa_challenge_error"
-        }
     }
 
     /**
      * Exception thrown when MFA verification fails.
      *
      * All errors come from the Auth0 API. If no error code is provided,
-     * defaults to `mfa_verify_error`.
+     * defaults to `a0.sdk.internal_error.unknown`.
      *
      * Example usage:
      * ```
@@ -187,7 +179,7 @@ public sealed class MfaException(
     ) : MfaException("MFA verification failed: $code") {
 
         internal constructor(values: Map<String, Any>, statusCode: Int) : this(
-            code = (values["error"] as? String) ?: FALLBACK_ERROR_CODE,
+            code = (values["error"] as? String) ?: UNKNOWN_ERROR,
             description = (values["error_description"] as? String) ?: "Failed to verify MFA code",
             values = values,
             statusCode = statusCode
@@ -196,66 +188,5 @@ public sealed class MfaException(
         override fun getCode(): String = code
         override fun getDescription(): String = description
         override fun getValue(key: String): Any? = values[key]
-
-        public companion object {
-            internal const val FALLBACK_ERROR_CODE = "mfa_verify_error"
-        }
-    }
-
-    /**
-     * Exception thrown when MFA is required during token operations.
-     *
-     * This error is thrown when multi-factor authentication is required to complete
-     * a login or token refresh operation. Use the [mfaToken] to create an [MfaApiClient]
-     * and continue the MFA flow.
-     *
-     * Example usage:
-     * ```
-     * try {
-     *     val credentials = authClient.login("user@example.com", "password").await()
-     * } catch (error: MfaRequiredException) {
-     *     val mfaToken = error.mfaToken
-     *     val requirements = error.mfaRequirements
-     *     
-     *     // Check if user needs to enroll
-     *     if (requirements?.enroll != null) {
-     *         println("Available enrollment types: ${requirements.enroll}")
-     *     }
-     *     
-     *     // Check if user can challenge existing factors
-     *     if (requirements?.challenge != null) {
-     *         println("Available challenge types: ${requirements.challenge}")
-     *     }
-     *     
-     *     // Create MFA client to continue
-     *     if (mfaToken != null) {
-     *         val mfaClient = authClient.mfa(mfaToken)
-     *         // Continue with MFA flow
-     *     }
-     * }
-     * ```
-     */
-    public class MfaRequiredException internal constructor(
-        private val values: Map<String, Any>,
-        override val statusCode: Int = 0
-    ) : MfaException("Multi-factor authentication required") {
-        
-        override fun getCode(): String = "mfa_required"
-        override fun getDescription(): String = 
-            (values["error_description"] as? String) ?: "Multi-factor authentication required"
-        override fun getValue(key: String): Any? = values[key]
-
-        /**
-         * The MFA token to use for subsequent MFA operations
-         */
-        public val mfaToken: String?
-            get() = getValue("mfa_token") as? String
-
-        /**
-         * The MFA requirements returned when multi-factor authentication is required.
-         * Contains information about available enrollment and challenge types.
-         */
-        public val mfaRequirements: Map<String, Any>?
-            get() = getValue("mfa_requirements") as? Map<String, Any>
     }
 }

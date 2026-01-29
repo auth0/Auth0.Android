@@ -6,6 +6,8 @@ import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
 import com.auth0.android.provider.TokenValidationException
 import com.auth0.android.request.internal.GsonProvider
+import com.auth0.android.result.MfaFactor
+import com.auth0.android.result.MfaRequiredErrorPayload
 import com.auth0.android.result.MfaRequirements
 
 public class AuthenticationException : Auth0Exception {
@@ -150,22 +152,48 @@ public class AuthenticationException : Auth0Exception {
         get() = "a0.mfa_registration_required" == code || "unsupported_challenge_type" == code
 
     /**
-     * The MFA token returned when multi-factor authentication is required.
-     * This token should be used to create an [MfaApiClient] to continue the MFA flow.
+     * Extracts the MFA required error payload when multifactor authentication is required.
+     *
+     * This property decodes the error values into a structured [MfaRequiredErrorPayload] object
+     * containing the MFA token and enrollment requirements.
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * if (error.isMultifactorRequired) {
+     *     val mfaPayload = error.mfaRequiredErrorPayload
+     *     val mfaToken = mfaPayload?.mfaToken
+     *     val enrollmentTypes = mfaPayload?.mfaRequirements?.enroll
+     * }
+     * ```
+     *
+     * @see isMultifactorRequired
+     * @see MfaRequiredErrorPayload
      */
-    public val mfaToken: String?
-        get() = getValue("mfa_token") as? String
-
-    /**
-     * The MFA requirements returned when multi-factor authentication is required.
-     * Contains information about the required challenge types.
-     */
-    public val mfaRequirements: MfaRequirements?
-        get() = (getValue("mfa_requirements") as? Map<*, *>)?.let {
+    public val mfaRequiredErrorPayload: MfaRequiredErrorPayload?
+        get() {
+            val mfaToken = getValue("mfa_token") as? String ?: return null
+            val errorCode = getCode()
+            val errorDesc = getDescription()
+            val requirements = getValue("mfa_requirements") as? Map<*, *>
+            
             @Suppress("UNCHECKED_CAST")
-            GsonProvider.gson.fromJson(
-                GsonProvider.gson.toJson(it),
-                MfaRequirements::class.java
+            val challengeList = (requirements?.get("challenge") as? List<Map<String, Any>>)?.map {
+                MfaFactor(it["type"] as? String ?: "")
+            }
+            
+            @Suppress("UNCHECKED_CAST")
+            val enrollList = (requirements?.get("enroll") as? List<Map<String, Any>>)?.map {
+                MfaFactor(it["type"] as? String ?: "")
+            }
+            
+            return MfaRequiredErrorPayload(
+                error = errorCode,
+                errorDescription = errorDesc,
+                mfaToken = mfaToken,
+                mfaRequirements = if (challengeList != null || enrollList != null) {
+                    MfaRequirements(enroll = enrollList, challenge = challengeList)
+                } else null
             )
         }
 
