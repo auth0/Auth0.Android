@@ -1,39 +1,5 @@
 package com.auth0.android.provider;
 
-import android.app.Activity;
-import android.content.ActivityNotFoundException;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
-import android.graphics.Color;
-import android.net.Uri;
-import android.os.Looper;
-
-import androidx.annotation.NonNull;
-import androidx.browser.customtabs.CustomTabsCallback;
-import androidx.browser.customtabs.CustomTabsClient;
-import androidx.browser.customtabs.CustomTabsIntent;
-import androidx.browser.customtabs.CustomTabsServiceConnection;
-import androidx.browser.customtabs.CustomTabsSession;
-import androidx.browser.trusted.TrustedWebActivityDisplayMode;
-import androidx.browser.trusted.TrustedWebActivityIntentBuilder;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.robolectric.Robolectric;
-import org.robolectric.RobolectricTestRunner;
-
-import java.util.List;
-
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasFlag;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -42,11 +8,9 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.Is.isA;
-import static org.mockito.ArgumentMatchers.same;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -55,13 +19,43 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
+
+import android.app.Activity;
+import android.content.ActivityNotFoundException;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
+import android.graphics.Color;
+import android.net.Uri;
+
+import androidx.annotation.NonNull;
+import androidx.browser.customtabs.CustomTabsCallback;
+import androidx.browser.customtabs.CustomTabsClient;
+import androidx.browser.customtabs.CustomTabsIntent;
+import androidx.browser.customtabs.CustomTabsServiceConnection;
+import androidx.browser.customtabs.CustomTabsSession;
+import androidx.browser.trusted.TrustedWebActivityIntentBuilder;
 
 import com.auth0.android.authentication.AuthenticationException;
-import com.auth0.android.request.internal.CommonThreadSwitcher;
 import com.auth0.android.request.internal.ThreadSwitcher;
-import com.auth0.android.util.CommonThreadSwitcherRule;
 import com.google.androidbrowserhelper.trusted.TwaLauncher;
 import com.google.androidbrowserhelper.trusted.splashscreens.SplashScreenStrategy;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+import org.robolectric.Robolectric;
+import org.robolectric.RobolectricTestRunner;
+
+import java.util.List;
 
 @RunWith(RobolectricTestRunner.class)
 public class CustomTabsControllerTest {
@@ -359,10 +353,16 @@ public class CustomTabsControllerTest {
     }
 
     private void connectBoundService() throws Exception {
-        CustomTabsSession session = mock(CustomTabsSession.class);
-        ComponentName componentName = new ComponentName(DEFAULT_BROWSER_PACKAGE, DEFAULT_BROWSER_PACKAGE + ".CustomTabsService");
-        //This depends on an implementation detail but is the only way to test it because of methods visibility
-        PowerMockito.when(session, "getComponentName").thenReturn(componentName);
+        final ComponentName componentName = new ComponentName(DEFAULT_BROWSER_PACKAGE, DEFAULT_BROWSER_PACKAGE + ".CustomTabsService");
+        
+        CustomTabsSession session = mock(CustomTabsSession.class, withSettings()
+                .lenient()
+                .defaultAnswer((Answer<Object>) invocation -> {
+                    if ("getComponentName".equals(invocation.getMethod().getName())) {
+                        return componentName;
+                    }
+                    return null;
+                }));
 
         when(customTabsClient.newSession(eq(null))).thenReturn(session);
         CustomTabsServiceConnection conn = serviceConnectionCaptor.getValue();

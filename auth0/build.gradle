@@ -81,8 +81,7 @@ android {
 
 ext {
     okhttpVersion = '4.12.0'
-    powermockVersion = '2.0.9'
-    coroutinesVersion = '1.6.2'
+    coroutinesVersion = '1.7.3'
     biometricLibraryVersion = '1.1.0'
     credentialManagerVersion = "1.3.0"
 }
@@ -104,16 +103,12 @@ dependencies {
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.hamcrest:java-hamcrest:2.0.0.0'
-    testImplementation "org.powermock:powermock-module-junit4:$powermockVersion"
-    testImplementation "org.powermock:powermock-module-junit4-rule:$powermockVersion"
-    testImplementation "org.powermock:powermock-api-mockito2:$powermockVersion"
-    testImplementation 'org.mockito:mockito-core:3.12.4'
-    // Mockito-Kotlin: See https://github.com/nhaarman/mockito-kotlin/wiki/Parameter-specified-as-non-null-is-null
-    testImplementation 'com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0'
+    testImplementation 'org.mockito:mockito-core:5.7.0'
+    testImplementation 'org.mockito.kotlin:mockito-kotlin:5.1.0'
     testImplementation "com.squareup.okhttp3:mockwebserver:$okhttpVersion"
     testImplementation "com.squareup.okhttp3:okhttp-tls:$okhttpVersion"
     testImplementation 'com.jayway.awaitility:awaitility:1.7.0'
-    testImplementation 'org.robolectric:robolectric:4.8.1'
+    testImplementation 'org.robolectric:robolectric:4.14.1'
     testImplementation 'androidx.test.espresso:espresso-intents:3.5.1'
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion"
 
