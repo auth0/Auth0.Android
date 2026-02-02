@@ -85,7 +85,6 @@ public class CryptoUtilTest {
     private static final String ANDROID_KEY_STORE = "AndroidKeyStore";
     private static final String ALGORITHM_AES = "AES";
     private static final String ALGORITHM_RSA = "RSA";
-    private static final int RSA_KEY_SIZE = 2048;
 
     private final Storage storage = Mockito.mock(Storage.class);
     private final Cipher rsaOaepCipher = Mockito.mock(Cipher.class);
