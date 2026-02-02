@@ -39,7 +39,7 @@ public sealed class MfaException(
      * Exception thrown when listing authenticators fails.
      *
      * SDK-thrown errors:
-     * - `invalid_request`: challengeType is required and must contain at least one challenge type
+     * - `invalid_request`: factorsAllowed is required and must contain at least one factor type
      *
      * Additional errors may be returned by the Auth0 API and forwarded by the SDK.
      *
@@ -59,8 +59,9 @@ public sealed class MfaException(
         private val code: String,
         private val description: String,
         private val values: Map<String, Any> = emptyMap(),
-        override val statusCode: Int = 0
-    ) : MfaException("MFA authenticator listing failed: $code") {
+        override val statusCode: Int = 0,
+        cause: Throwable? = null
+    ) : MfaException("MFA authenticator listing failed: $code", cause) {
 
         internal constructor(values: Map<String, Any>, statusCode: Int) : this(
             code = (values["error"] as? String) ?: UNKNOWN_ERROR,
@@ -76,7 +77,7 @@ public sealed class MfaException(
         public companion object {
             internal const val INVALID_REQUEST = "invalid_request"
             
-            /**feature discovery on the SDKevaluating/learning the usage patternsimplementationdeployment to production
+            /**
              * Creates an exception for SDK validation errors.
              */
             internal fun invalidRequest(description: String): MfaListAuthenticatorsException {
@@ -107,8 +108,9 @@ public sealed class MfaException(
         private val code: String,
         private val description: String,
         private val values: Map<String, Any> = emptyMap(),
-        override val statusCode: Int = 0
-    ) : MfaException("MFA enrollment failed: $code") {
+        override val statusCode: Int = 0,
+        cause: Throwable? = null
+    ) : MfaException("MFA enrollment failed: $code", cause) {
 
         internal constructor(values: Map<String, Any>, statusCode: Int) : this(
             code = (values["error"] as? String) ?: UNKNOWN_ERROR,
@@ -141,8 +143,9 @@ public sealed class MfaException(
         private val code: String,
         private val description: String,
         private val values: Map<String, Any> = emptyMap(),
-        override val statusCode: Int = 0
-    ) : MfaException("MFA challenge failed: $code") {
+        override val statusCode: Int = 0,
+        cause: Throwable? = null
+    ) : MfaException("MFA challenge failed: $code", cause) {
 
         internal constructor(values: Map<String, Any>, statusCode: Int) : this(
             code = (values["error"] as? String) ?: UNKNOWN_ERROR,
@@ -175,8 +178,9 @@ public sealed class MfaException(
         private val code: String,
         private val description: String,
         private val values: Map<String, Any> = emptyMap(),
-        override val statusCode: Int = 0
-    ) : MfaException("MFA verification failed: $code") {
+        override val statusCode: Int = 0,
+        cause: Throwable? = null
+    ) : MfaException("MFA verification failed: $code", cause) {
 
         internal constructor(values: Map<String, Any>, statusCode: Int) : this(
             code = (values["error"] as? String) ?: UNKNOWN_ERROR,

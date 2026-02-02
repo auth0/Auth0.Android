@@ -1,6 +1,8 @@
 package com.auth0.android.authentication
 
 import com.auth0.android.Auth0
+import com.auth0.android.authentication.MfaEnrollmentType
+import com.auth0.android.authentication.MfaVerificationType
 import com.auth0.android.authentication.MfaException.*
 import com.auth0.android.callback.Callback
 import com.auth0.android.request.internal.ThreadSwitcherShadow
@@ -176,7 +178,7 @@ public class MfaApiClientTest {
         }"""
         enqueueMockResponse(json)
 
-        val challenge = mfaClient.enrollPhone("+12025550135").await()
+        val challenge = mfaClient.enroll(MfaEnrollmentType.Phone("+12025550135")).await()
 
         assertThat(challenge, `is`(notNullValue()))
         assertThat(challenge.id, `is`("sms|dev_123"))
@@ -188,7 +190,7 @@ public class MfaApiClientTest {
         val json = """{"id": "sms|dev_123", "auth_session": "session_abc"}"""
         enqueueMockResponse(json)
 
-        mfaClient.enrollPhone("+12025550135").await()
+        mfaClient.enroll(MfaEnrollmentType.Phone("+12025550135")).await()
 
         val request = mockServer.takeRequest()
         assertThat(request.path, `is`("/mfa/associate"))
@@ -207,7 +209,7 @@ public class MfaApiClientTest {
 
         val exception = assertThrows(MfaEnrollmentException::class.java) {
             runTest {
-                mfaClient.enrollPhone("invalid").await()
+                mfaClient.enroll(MfaEnrollmentType.Phone("invalid")).await()
             }
         }
         assertThat(exception.getCode(), `is`("invalid_phone"))
@@ -223,7 +225,7 @@ public class MfaApiClientTest {
         }"""
         enqueueMockResponse(json)
 
-        val challenge = mfaClient.enrollEmail("user@example.com").await()
+        val challenge = mfaClient.enroll(MfaEnrollmentType.Email("user@example.com")).await()
 
         assertThat(challenge, `is`(notNullValue()))
         assertThat(challenge.id, `is`("email|dev_456"))
@@ -235,7 +237,7 @@ public class MfaApiClientTest {
         val json = """{"id": "email|dev_456", "auth_session": "session_def"}"""
         enqueueMockResponse(json)
 
-        mfaClient.enrollEmail("user@example.com").await()
+        mfaClient.enroll(MfaEnrollmentType.Email("user@example.com")).await()
 
         val request = mockServer.takeRequest()
         assertThat(request.path, `is`("/mfa/associate"))
@@ -254,7 +256,7 @@ public class MfaApiClientTest {
 
         val exception = assertThrows(MfaEnrollmentException::class.java) {
             runTest {
-                mfaClient.enrollEmail("invalid").await()
+                mfaClient.enroll(MfaEnrollmentType.Email("invalid")).await()
             }
         }
         assertThat(exception.getCode(), `is`("invalid_email"))
@@ -272,7 +274,7 @@ public class MfaApiClientTest {
         }"""
         enqueueMockResponse(json)
 
-        val challenge = mfaClient.enrollOtp().await()
+        val challenge = mfaClient.enroll(MfaEnrollmentType.Otp).await()
 
         assertThat(challenge, `is`(instanceOf(TotpEnrollmentChallenge::class.java)))
         val totpChallenge = challenge as TotpEnrollmentChallenge
@@ -292,7 +294,7 @@ public class MfaApiClientTest {
         }"""
         enqueueMockResponse(json)
 
-        mfaClient.enrollOtp().await()
+        mfaClient.enroll(MfaEnrollmentType.Otp).await()
 
         val request = mockServer.takeRequest()
         assertThat(request.path, `is`("/mfa/associate"))
@@ -309,7 +311,7 @@ public class MfaApiClientTest {
 
         val exception = assertThrows(MfaEnrollmentException::class.java) {
             runTest {
-                mfaClient.enrollOtp().await()
+                mfaClient.enroll(MfaEnrollmentType.Otp).await()
             }
         }
         assertThat(exception.getCode(), `is`("enrollment_failed"))
@@ -325,7 +327,7 @@ public class MfaApiClientTest {
         }"""
         enqueueMockResponse(json)
 
-        val challenge = mfaClient.enrollPush().await()
+        val challenge = mfaClient.enroll(MfaEnrollmentType.Push).await()
 
         assertThat(challenge, `is`(notNullValue()))
         assertThat(challenge.id, `is`("push|dev_abc"))
@@ -337,7 +339,7 @@ public class MfaApiClientTest {
         val json = """{"id": "push|dev_abc", "auth_session": "session_jkl"}"""
         enqueueMockResponse(json)
 
-        mfaClient.enrollPush().await()
+        mfaClient.enroll(MfaEnrollmentType.Push).await()
 
         val request = mockServer.takeRequest()
         assertThat(request.path, `is`("/mfa/associate"))
@@ -355,7 +357,7 @@ public class MfaApiClientTest {
 
         val exception = assertThrows(MfaEnrollmentException::class.java) {
             runTest {
-                mfaClient.enrollPush().await()
+                mfaClient.enroll(MfaEnrollmentType.Push).await()
             }
         }
         assertThat(exception.getCode(), `is`("enrollment_failed"))
@@ -424,7 +426,7 @@ public class MfaApiClientTest {
         }"""
         enqueueMockResponse(json)
 
-        val credentials = mfaClient.verifyOtp("123456").await()
+        val credentials = mfaClient.verify(MfaVerificationType.Otp("123456")).await()
 
         assertThat(credentials, `is`(notNullValue()))
         assertThat(credentials.accessToken, `is`(ACCESS_TOKEN))
@@ -437,7 +439,7 @@ public class MfaApiClientTest {
         val json = """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
         enqueueMockResponse(json)
 
-        mfaClient.verifyOtp("123456").await()
+        mfaClient.verify(MfaVerificationType.Otp("123456")).await()
 
         val request = mockServer.takeRequest()
         assertThat(request.path, `is`("/oauth/token"))
@@ -456,7 +458,7 @@ public class MfaApiClientTest {
 
         val exception = assertThrows(MfaVerifyException::class.java) {
             runTest {
-                mfaClient.verifyOtp("000000").await()
+                mfaClient.verify(MfaVerificationType.Otp("000000")).await()
             }
         }
         assertThat(exception.getCode(), `is`("invalid_grant"))
@@ -469,7 +471,7 @@ public class MfaApiClientTest {
 
         val exception = assertThrows(MfaVerifyException::class.java) {
             runTest {
-                mfaClient.verifyOtp("123456").await()
+                mfaClient.verify(MfaVerificationType.Otp("123456")).await()
             }
         }
         assertThat(exception.getCode(), `is`("expired_token"))
@@ -488,9 +490,8 @@ public class MfaApiClientTest {
         }"""
         enqueueMockResponse(json)
 
-        val credentials = mfaClient.verifyOob(
-            oobCode = "oob_code_123",
-            bindingCode = "654321"
+        val credentials = mfaClient.verify(
+            MfaVerificationType.Oob(oobCode = "oob_code_123", bindingCode = "654321")
         ).await()
 
         assertThat(credentials, `is`(notNullValue()))
@@ -502,7 +503,7 @@ public class MfaApiClientTest {
         val json = """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
         enqueueMockResponse(json)
 
-        val credentials = mfaClient.verifyOob(oobCode = "oob_code_123").await()
+        val credentials = mfaClient.verify(MfaVerificationType.Oob(oobCode = "oob_code_123")).await()
 
         assertThat(credentials, `is`(notNullValue()))
         assertThat(credentials.accessToken, `is`(ACCESS_TOKEN))
@@ -513,7 +514,7 @@ public class MfaApiClientTest {
         val json = """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
         enqueueMockResponse(json)
 
-        mfaClient.verifyOob(oobCode = "oob_code_123", bindingCode = "654321").await()
+        mfaClient.verify(MfaVerificationType.Oob(oobCode = "oob_code_123", bindingCode = "654321")).await()
 
         val request = mockServer.takeRequest()
         assertThat(request.path, `is`("/oauth/token"))
@@ -532,7 +533,7 @@ public class MfaApiClientTest {
         val json = """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
         enqueueMockResponse(json)
 
-        mfaClient.verifyOob(oobCode = "oob_code_123").await()
+        mfaClient.verify(MfaVerificationType.Oob(oobCode = "oob_code_123")).await()
 
         val request = mockServer.takeRequest()
         val body = bodyFromRequest<Any>(request)
@@ -545,7 +546,7 @@ public class MfaApiClientTest {
 
         val exception = assertThrows(MfaVerifyException::class.java) {
             runTest {
-                mfaClient.verifyOob(oobCode = "invalid").await()
+                mfaClient.verify(MfaVerificationType.Oob(oobCode = "invalid")).await()
             }
         }
         assertThat(exception.getCode(), `is`("invalid_grant"))
@@ -564,7 +565,7 @@ public class MfaApiClientTest {
         }"""
         enqueueMockResponse(json)
 
-        val credentials = mfaClient.verifyRecoveryCode("OLD_RECOVERY_CODE").await()
+        val credentials = mfaClient.verify(MfaVerificationType.RecoveryCode("OLD_RECOVERY_CODE")).await()
 
         assertThat(credentials, `is`(notNullValue()))
         assertThat(credentials.accessToken, `is`(ACCESS_TOKEN))
@@ -576,7 +577,7 @@ public class MfaApiClientTest {
         val json = """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
         enqueueMockResponse(json)
 
-        mfaClient.verifyRecoveryCode("RECOVERY_123").await()
+        mfaClient.verify(MfaVerificationType.RecoveryCode("RECOVERY_123")).await()
 
         val request = mockServer.takeRequest()
         assertThat(request.path, `is`("/oauth/token"))
@@ -595,7 +596,7 @@ public class MfaApiClientTest {
 
         val exception = assertThrows(MfaVerifyException::class.java) {
             runTest {
-                mfaClient.verifyRecoveryCode("INVALID_CODE").await()
+                mfaClient.verify(MfaVerificationType.RecoveryCode("INVALID_CODE")).await()
             }
         }
         assertThat(exception.getCode(), `is`("invalid_grant"))
@@ -608,7 +609,7 @@ public class MfaApiClientTest {
 
         val exception = assertThrows(MfaVerifyException::class.java) {
             runTest {
-                mfaClient.verifyRecoveryCode("RECOVERY_CODE").await()
+                mfaClient.verify(MfaVerificationType.RecoveryCode("RECOVERY_CODE")).await()
             }
         }
         assertThat(exception.getCode(), `is`("expired_token"))
@@ -656,7 +657,7 @@ public class MfaApiClientTest {
         var callbackResult: EnrollmentChallenge? = null
         var callbackError: MfaEnrollmentException? = null
 
-        mfaClient.enrollPhone("+12025550135")
+        mfaClient.enroll(MfaEnrollmentType.Phone("+12025550135"))
             .start(object : Callback<EnrollmentChallenge, MfaEnrollmentException> {
                 override fun onSuccess(result: EnrollmentChallenge) {
                     callbackResult = result
@@ -716,7 +717,7 @@ public class MfaApiClientTest {
         var callbackResult: Credentials? = null
         var callbackError: MfaVerifyException? = null
 
-        mfaClient.verifyOtp("123456")
+        mfaClient.verify(MfaVerificationType.Otp("123456"))
             .start(object : Callback<Credentials, MfaVerifyException> {
                 override fun onSuccess(result: Credentials) {
                     callbackResult = result

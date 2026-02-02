@@ -5,7 +5,6 @@ import android.util.Log
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
 import com.auth0.android.provider.TokenValidationException
-import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.result.MfaFactor
 import com.auth0.android.result.MfaRequiredErrorPayload
 import com.auth0.android.result.MfaRequirements

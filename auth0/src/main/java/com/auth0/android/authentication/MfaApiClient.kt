@@ -131,7 +131,7 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
             override fun validate(options: RequestOptions) {
                 if (factorsAllowed.isEmpty()) {
                     throw MfaListAuthenticatorsException.invalidRequest(
-                        "factorsAllowed is required and must contain at least one challenge type."
+                        "factorsAllowed is required and must contain at least one factor type."
                     )
                 }
             }
@@ -194,14 +194,17 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
         val effectiveType = getEffectiveType(authenticator)
         
         return factorsAllowed.any { factor ->
-            when (factor.lowercase(java.util.Locale.ROOT)) {
+            val normalizedFactor = factor.lowercase(java.util.Locale.ROOT)
+            when (normalizedFactor) {
                 "sms", "phone" -> effectiveType == "sms" || effectiveType == "phone"
                 "email" -> effectiveType == "email"
                 "otp", "totp" -> effectiveType == "otp" || effectiveType == "totp"
-                "oob" -> authenticator.authenticatorType == "oob"
+                "oob" -> authenticator.authenticatorType == "oob" || authenticator.type == "oob"
                 "recovery-code" -> effectiveType == "recovery-code"
                 "push-notification" -> effectiveType == "push-notification"
-                else -> effectiveType == factor || authenticator.authenticatorType == factor
+                else -> effectiveType == normalizedFactor || 
+                        authenticator.authenticatorType?.lowercase(java.util.Locale.ROOT) == normalizedFactor ||
+                        authenticator.type.lowercase(java.util.Locale.ROOT) == normalizedFactor
             }
         }
     }
@@ -219,7 +222,7 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
     private fun getEffectiveType(authenticator: Authenticator): String {
         return when (authenticator.authenticatorType) {
             "oob" -> authenticator.oobChannel ?: "oob"
-            else -> authenticator.authenticatorType ?: authenticator.type ?: ""
+            else -> authenticator.authenticatorType ?: authenticator.type
         }
     }
 
@@ -271,126 +274,46 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
     }
 
     /**
-     * Enrolls a phone number for SMS-based MFA.
+     * Enrolls a new MFA factor for the user.
      *
-     * This method initiates the enrollment of a phone number as an MFA factor. An SMS with a verification
-     * code will be sent to the specified phone number.
+     * This method initiates the enrollment of a new MFA factor based on the specified enrollment type.
+     * The response contains the information needed to complete the enrollment process.
      *
      * ## Usage
      *
      * ```kotlin
-     * mfaClient.enrollPhone("+12025550135")
+     * // Phone (SMS) enrollment
+     * mfaClient.enroll(MfaEnrollmentType.Phone("+12025550135"))
      *     .start(object : Callback<EnrollmentChallenge, MfaEnrollmentException> {
      *         override fun onSuccess(result: EnrollmentChallenge) {
      *             println("Enrollment initiated: ${result.oobCode}")
      *         }
      *         override fun onFailure(error: MfaEnrollmentException) { }
      *     })
+     *
+     * // Email enrollment
+     * mfaClient.enroll(MfaEnrollmentType.Email("user@example.com"))
+     *
+     * // TOTP (Authenticator app) enrollment
+     * mfaClient.enroll(MfaEnrollmentType.Otp)
+     *
+     * // Push notification enrollment
+     * mfaClient.enroll(MfaEnrollmentType.Push)
      * ```
      *
-     * @param phoneNumber The phone number to enroll, including country code (e.g., `+12025550135`).
+     * @param type The type of MFA enrollment to perform.
      * @return a request to configure and start that will yield [EnrollmentChallenge]
      *
-     * @see [Authentication API Endpoint](https://auth0.com/docs/api/authentication#enroll-and-challenge-a-sms-or-voice-authenticator)
+     * @see MfaEnrollmentType
+     * @see [Authentication API Endpoint](https://auth0.com/docs/api/authentication#enroll-authenticator)
      */
-    public fun enrollPhone(phoneNumber: String): Request<EnrollmentChallenge, MfaEnrollmentException> {
-        return enrollOob(oobChannel = "sms", phoneNumber = phoneNumber)
-    }
-
-
-    /**
-     * Enrolls an email address for email-based MFA.
-     *
-     * This method initiates the enrollment of an email address as an MFA factor. Verification codes
-     * will be sent to the specified email address during authentication.
-     *
-     * ## Usage
-     *
-     * ```kotlin
-     * mfaClient.enrollEmail("user@example.com")
-     *     .start(object : Callback<EnrollmentChallenge, MfaEnrollmentException> {
-     *         override fun onSuccess(result: EnrollmentChallenge) {
-     *             println("Email enrollment initiated: ${result.oobCode}")
-     *         }
-     *         override fun onFailure(error: MfaEnrollmentException) { }
-     *     })
-     * ```
-     *
-     * @param email The email address to enroll for MFA.
-     * @return a request to configure and start that will yield [EnrollmentChallenge]
-     *
-     * @see [Authentication API Endpoint](https://auth0.com/docs/api/authentication#enroll-and-challenge-a-email-authenticator)
-     */
-    public fun enrollEmail(email: String): Request<EnrollmentChallenge, MfaEnrollmentException> {
-        return enrollOob(oobChannel = "email", email = email)
-    }
-
-
-    /**
-     * Enrolls a time-based one-time password (TOTP) authenticator for MFA.
-     *
-     * This method initiates the enrollment of an authenticator app (like Google Authenticator or Authy)
-     * as an MFA factor. It returns a challenge containing a QR code and secret that can be scanned
-     * by the authenticator app.
-     *
-     * ## Usage
-     *
-     * ```kotlin
-     * mfaClient.enrollOtp()
-     *     .start(object : Callback<EnrollmentChallenge, MfaEnrollmentException> {
-     *         override fun onSuccess(result: EnrollmentChallenge) {
-     *             println("QR Code URI: ${result.barcodeUri}")
-     *             println("Secret: ${result.secret}")
-     *         }
-     *         override fun onFailure(error: MfaEnrollmentException) { }
-     *     })
-     * ```
-     *
-     * @return a request to configure and start that will yield [EnrollmentChallenge] containing QR code and secret.
-     *
-     * @see [Authentication API Endpoint](https://auth0.com/docs/api/authentication#enroll-and-challenge-a-otp-authenticator)
-     */
-    public fun enrollOtp(): Request<EnrollmentChallenge, MfaEnrollmentException> {
-        val url = baseURL.toHttpUrl().newBuilder()
-            .addPathSegment(MFA_PATH)
-            .addPathSegment(ASSOCIATE_PATH)
-            .build()
-
-        val enrollmentAdapter: JsonAdapter<EnrollmentChallenge> = GsonAdapter(
-            EnrollmentChallenge::class.java, gson
-        )
-
-        return enrollmentFactory.post(url.toString(), enrollmentAdapter)
-            .addHeader(HEADER_AUTHORIZATION, "Bearer $mfaToken")
-            .addParameter(AUTHENTICATOR_TYPES_KEY, listOf("otp"))
-    }
-
-
-    /**
-     * Enrolls push notification as an MFA factor.
-     *
-     * This method initiates the enrollment of Auth0 Guardian push notifications as an MFA factor.
-     * Users will receive authentication requests via push notifications on their enrolled device.
-     *
-     * ## Usage
-     *
-     * ```kotlin
-     * mfaClient.enrollPush()
-     *     .start(object : Callback<EnrollmentChallenge, MfaEnrollmentException> {
-     *         override fun onSuccess(result: EnrollmentChallenge) {
-     *             println("Push enrollment challenge: ${result.oobCode}")
-     *         }
-     *         override fun onFailure(error: MfaEnrollmentException) { }
-     *     })
-     * ```
-     *
-     * @return a request to configure and start that will yield [EnrollmentChallenge]
-     *
-     * @see [Authentication API Endpoint](https://auth0.com/docs/api/authentication#enroll-and-challenge-push-notifications)
-     * @see [Auth0 Guardian](https://auth0.com/docs/secure/multi-factor-authentication/auth0-guardian)
-     */
-    public fun enrollPush(): Request<EnrollmentChallenge, MfaEnrollmentException> {
-        return enrollOob(oobChannel = "auth0")
+    public fun enroll(type: MfaEnrollmentType): Request<EnrollmentChallenge, MfaEnrollmentException> {
+        return when (type) {
+            is MfaEnrollmentType.Phone -> enrollOob(oobChannel = "sms", phoneNumber = type.phoneNumber)
+            is MfaEnrollmentType.Email -> enrollOob(oobChannel = "email", email = type.email)
+            is MfaEnrollmentType.Otp -> enrollOtpInternal()
+            is MfaEnrollmentType.Push -> enrollOob(oobChannel = "auth0")
+        }
     }
 
 
@@ -441,119 +364,43 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
 
 
     /**
-     * Verifies an out-of-band (OOB) MFA challenge using a code received via SMS or email.
+     * Verifies an MFA challenge using the specified verification type.
      *
-     * This method completes the MFA authentication flow by verifying the OTP code sent to the user's
-     * phone or email. Upon successful verification, user credentials are returned.
+     * This method completes the MFA authentication flow by verifying the user's credentials
+     * based on the verification type. Upon successful verification, user credentials are returned.
      *
      * ## Usage
      *
      * ```kotlin
-     * mfaClient.verifyOob(oobCode = "oob_code", bindingCode = "123456")
+     * // Verify with OOB code (SMS/Email)
+     * mfaClient.verify(MfaVerificationType.Oob(oobCode = "Fe26.2*...", bindingCode = "123456"))
      *     .start(object : Callback<Credentials, MfaVerifyException> {
      *         override fun onSuccess(result: Credentials) {
      *             println("Obtained credentials: ${result.accessToken}")
      *         }
      *         override fun onFailure(error: MfaVerifyException) { }
      *     })
+     *
+     * // Verify with OTP code (Authenticator app)
+     * mfaClient.verify(MfaVerificationType.Otp(otp = "123456"))
+     *
+     * // Verify with recovery code
+     * mfaClient.verify(MfaVerificationType.RecoveryCode(code = "RECOVERY_CODE_123"))
      * ```
      *
-     * @param oobCode The out-of-band code from the challenge response.
-     * @param bindingCode Optional binding code for additional security verification.
+     * @param type The type of MFA verification to perform.
      * @return a request to configure and start that will yield [Credentials]
      *
-     * @see [Authentication API Endpoint](https://auth0.com/docs/api/authentication#verify-with-out-of-band-oob)
+     * @see MfaVerificationType
+     * @see [Authentication API Endpoint](https://auth0.com/docs/api/authentication#verify-with-mfa)
      */
-    public fun verifyOob(
-        oobCode: String,
-        bindingCode: String? = null
-    ): Request<Credentials, MfaVerifyException> {
-        val parametersBuilder = ParameterBuilder.newBuilder()
-            .setClientId(clientId)
-            .setGrantType(GRANT_TYPE_MFA_OOB)
-            .set(MFA_TOKEN_KEY, mfaToken)
-            .set(OUT_OF_BAND_CODE_KEY, oobCode)
-        
-        if (bindingCode != null) {
-            parametersBuilder.set(BINDING_CODE_KEY, bindingCode)
+    public fun verify(type: MfaVerificationType): Request<Credentials, MfaVerifyException> {
+        return when (type) {
+            is MfaVerificationType.Oob -> verifyOobInternal(type.oobCode, type.bindingCode)
+            is MfaVerificationType.Otp -> verifyOtpInternal(type.otp)
+            is MfaVerificationType.RecoveryCode -> verifyRecoveryCodeInternal(type.code)
         }
-
-        return tokenRequest(parametersBuilder.asDictionary())
     }
-
-
-
-    /**
-     * Verifies an MFA challenge using a one-time password (OTP) code.
-     *
-     * This method completes the MFA authentication flow by verifying the OTP code from the user's
-     * authenticator app. Upon successful verification, user credentials are returned.
-     *
-     * ## Usage
-     *
-     * ```kotlin
-     * mfaClient.verifyOtp("123456")
-     *     .start(object : Callback<Credentials, MfaVerifyException> {
-     *         override fun onSuccess(result: Credentials) {
-     *             println("Obtained credentials: ${result.accessToken}")
-     *         }
-     *         override fun onFailure(error: MfaVerifyException) { }
-     *     })
-     * ```
-     *
-     * @param otp The 6-digit one-time password code from the authenticator app.
-     * @return a request to configure and start that will yield [Credentials]
-     *
-     * @see [Authentication API Endpoint](https://auth0.com/docs/api/authentication#verify-with-one-time-password-otp)
-     */
-    public fun verifyOtp(otp: String): Request<Credentials, MfaVerifyException> {
-        val parameters = ParameterBuilder.newBuilder()
-            .setClientId(clientId)
-            .setGrantType(GRANT_TYPE_MFA_OTP)
-            .set(MFA_TOKEN_KEY, mfaToken)
-            .set(ONE_TIME_PASSWORD_KEY, otp)
-            .asDictionary()
-
-        return tokenRequest(parameters)
-    }
-
-
-
-    /**
-     * Verifies an MFA challenge using a recovery code.
-     *
-     * This method allows users to authenticate when they don't have access to their primary MFA factor.
-     * Recovery codes are typically provided during MFA enrollment and should be stored securely.
-     *
-     * ## Usage
-     *
-     * ```kotlin
-     * mfaClient.verifyRecoveryCode("RECOVERY_CODE_123")
-     *     .start(object : Callback<Credentials, MfaVerifyException> {
-     *         override fun onSuccess(result: Credentials) {
-     *             println("Obtained credentials: ${result.accessToken}")
-     *             // result.recoveryCode contains a NEW recovery code to replace the used one
-     *         }
-     *         override fun onFailure(error: MfaVerifyException) { }
-     *     })
-     * ```
-     *
-     * @param recoveryCode The recovery code provided during MFA enrollment.
-     * @return a request to configure and start that will yield [Credentials]
-     *
-     * @see [Authentication API Endpoint](https://auth0.com/docs/api/authentication#verify-with-recovery-code)
-     */
-    public fun verifyRecoveryCode(recoveryCode: String): Request<Credentials, MfaVerifyException> {
-        val parameters = ParameterBuilder.newBuilder()
-            .setClientId(clientId)
-            .setGrantType(GRANT_TYPE_MFA_RECOVERY_CODE)
-            .set(MFA_TOKEN_KEY, mfaToken)
-            .set(RECOVERY_CODE_KEY, recoveryCode)
-            .asDictionary()
-
-        return tokenRequest(parameters)
-    }
-
 
 
     /**
@@ -586,6 +433,72 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
         }
 
         return request
+    }
+
+    /**
+     * Internal helper for OTP enrollment.
+     */
+    private fun enrollOtpInternal(): Request<EnrollmentChallenge, MfaEnrollmentException> {
+        val url = baseURL.toHttpUrl().newBuilder()
+            .addPathSegment(MFA_PATH)
+            .addPathSegment(ASSOCIATE_PATH)
+            .build()
+
+        val enrollmentAdapter: JsonAdapter<EnrollmentChallenge> = GsonAdapter(
+            EnrollmentChallenge::class.java, gson
+        )
+
+        return enrollmentFactory.post(url.toString(), enrollmentAdapter)
+            .addHeader(HEADER_AUTHORIZATION, "Bearer $mfaToken")
+            .addParameter(AUTHENTICATOR_TYPES_KEY, listOf("otp"))
+    }
+
+    /**
+     * Internal helper for OOB verification.
+     */
+    private fun verifyOobInternal(
+        oobCode: String,
+        bindingCode: String? = null
+    ): Request<Credentials, MfaVerifyException> {
+        val parametersBuilder = ParameterBuilder.newBuilder()
+            .setClientId(clientId)
+            .setGrantType(GRANT_TYPE_MFA_OOB)
+            .set(MFA_TOKEN_KEY, mfaToken)
+            .set(OUT_OF_BAND_CODE_KEY, oobCode)
+        
+        if (bindingCode != null) {
+            parametersBuilder.set(BINDING_CODE_KEY, bindingCode)
+        }
+
+        return tokenRequest(parametersBuilder.asDictionary())
+    }
+
+    /**
+     * Internal helper for OTP verification.
+     */
+    private fun verifyOtpInternal(otp: String): Request<Credentials, MfaVerifyException> {
+        val parameters = ParameterBuilder.newBuilder()
+            .setClientId(clientId)
+            .setGrantType(GRANT_TYPE_MFA_OTP)
+            .set(MFA_TOKEN_KEY, mfaToken)
+            .set(ONE_TIME_PASSWORD_KEY, otp)
+            .asDictionary()
+
+        return tokenRequest(parameters)
+    }
+
+    /**
+     * Internal helper for recovery code verification.
+     */
+    private fun verifyRecoveryCodeInternal(recoveryCode: String): Request<Credentials, MfaVerifyException> {
+        val parameters = ParameterBuilder.newBuilder()
+            .setClientId(clientId)
+            .setGrantType(GRANT_TYPE_MFA_RECOVERY_CODE)
+            .set(MFA_TOKEN_KEY, mfaToken)
+            .set(RECOVERY_CODE_KEY, recoveryCode)
+            .asDictionary()
+
+        return tokenRequest(parameters)
     }
 
     /**
@@ -632,12 +545,14 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
                 return if (isNetworkError(cause)) {
                     MfaListAuthenticatorsException(
                         code = "network_error",
-                        description = "Failed to execute the network request"
+                        description = "Failed to execute the network request",
+                        cause = cause
                     )
                 } else {
                     MfaListAuthenticatorsException(
                         code = Auth0Exception.UNKNOWN_ERROR,
-                        description = cause.message ?: "Something went wrong"
+                        description = cause.message ?: "Something went wrong",
+                        cause = cause
                     )
                 }
             }
@@ -669,12 +584,14 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
                 return if (isNetworkError(cause)) {
                     MfaEnrollmentException(
                         code = "network_error",
-                        description = "Failed to execute the network request"
+                        description = "Failed to execute the network request",
+                        cause = cause
                     )
                 } else {
                     MfaEnrollmentException(
                         code = Auth0Exception.UNKNOWN_ERROR,
-                        description = cause.message ?: "Something went wrong"
+                        description = cause.message ?: "Something went wrong",
+                        cause = cause
                     )
                 }
             }
@@ -706,12 +623,14 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
                 return if (isNetworkError(cause)) {
                     MfaChallengeException(
                         code = "network_error",
-                        description = "Failed to execute the network request"
+                        description = "Failed to execute the network request",
+                        cause = cause
                     )
                 } else {
                     MfaChallengeException(
                         code = Auth0Exception.UNKNOWN_ERROR,
-                        description = cause.message ?: "Something went wrong"
+                        description = cause.message ?: "Something went wrong",
+                        cause = cause
                     )
                 }
             }
@@ -743,12 +662,14 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
                 return if (isNetworkError(cause)) {
                     MfaVerifyException(
                         code = "network_error",
-                        description = "Failed to execute the network request"
+                        description = "Failed to execute the network request",
+                        cause = cause
                     )
                 } else {
                     MfaVerifyException(
                         code = Auth0Exception.UNKNOWN_ERROR,
-                        description = cause.message ?: "Something went wrong"
+                        description = cause.message ?: "Something went wrong",
+                        cause = cause
                     )
                 }
             }

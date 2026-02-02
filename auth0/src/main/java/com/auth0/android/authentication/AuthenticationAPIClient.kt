@@ -93,7 +93,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      *     val credentials = authClient.login("user@example.com", "password").await()
      * } catch (error: AuthenticationException) {
      *     if (error.isMultifactorRequired) {
-     *         val mfaToken = error.mfaToken
+     *         val mfaToken = error.mfaRequiredErrorPayload?.mfaToken
      *         if (mfaToken != null) {
      *             val mfaClient = authClient.mfaClient(mfaToken)
      *             // Use mfaClient to handle MFA flow

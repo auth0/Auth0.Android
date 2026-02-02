@@ -16,11 +16,13 @@
     - [Login with database connection](#login-with-database-connection)
     - [Login using MFA with One Time Password code](#login-using-mfa-with-one-time-password-code)
     - [MFA Flexible Factors Grant](#mfa-flexible-factors-grant)
+      - [Understanding the mfa_required Error Payload](#understanding-the-mfa_required-error-payload)
       - [Handling MFA Required Errors](#handling-mfa-required-errors)
       - [Getting Available Authenticators](#getting-available-authenticators)
       - [Enrolling New Authenticators](#enrolling-new-authenticators)
       - [Challenging an Authenticator](#challenging-an-authenticator)
       - [Verifying MFA](#verifying-mfa)
+      - [MFA Client Errors](#mfa-client-errors)
     - [Passwordless Login](#passwordless-login)
       - [Step 1: Request the code](#step-1-request-the-code)
       - [Step 2: Input the code](#step-2-input-the-code)
@@ -426,7 +428,26 @@ authentication
 
 ### MFA Flexible Factors Grant
 
+> [!IMPORTANT]
+> Multi Factor Authentication support via SDKs is currently in Early Access. To request access to this feature, contact your Auth0 representative.
+
 The MFA Flexible Factors Grant allows you to handle MFA challenges during the authentication flow when users sign in to MFA-enabled connections. This feature requires your Application to have the *MFA* grant type enabled. Check [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
+
+#### Understanding the mfa_required Error Payload
+
+When MFA is required during authentication, the error response contains a structured payload with the following properties:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `mfaToken` | `String` | A token that must be used for all subsequent MFA operations. This token is short-lived. |
+| `mfaRequirements` | `MfaRequirements?` | Contains the available MFA actions. |
+| `mfaRequirements.enroll` | `List<MfaFactor>?` | Factor types available for enrollment. Present when the user **has not enrolled** any MFA factors yet. |
+| `mfaRequirements.challenge` | `List<MfaFactor>?` | Factor types available for challenge. Present when the user **has already enrolled** MFA factors. |
+
+**Enroll vs Challenge Flows:**
+- **Enroll flow**: When `mfaRequirements.enroll` is present (and `challenge` is null or empty), the user needs to enroll a new MFA factor before they can authenticate. Use `mfaClient.enroll()` to register a new authenticator.
+- **Challenge flow**: When `mfaRequirements.challenge` is present, the user has already enrolled MFA factors. Use `mfaClient.getAuthenticators()` to list their enrolled authenticators, then `mfaClient.challenge()` to initiate verification.
+- **Both present**: In some configurations, both `enroll` and `challenge` may be present, allowing the user to either verify with an existing factor or enroll a new one.
 
 #### Handling MFA Required Errors
 
@@ -444,9 +465,9 @@ authentication
                 val mfaToken = mfaPayload?.mfaToken
                 val requirements = mfaPayload?.mfaRequirements
                 
-                // Check what actions are available
-                val canChallenge = requirements?.challenge // List of authenticators to challenge
-                val canEnroll = requirements?.enroll // List of factor types that can be enrolled
+                // Check what actions are available (these are factor types, not authenticators)
+                val canChallenge = requirements?.challenge // List of factor types the user can challenge
+                val canEnroll = requirements?.enroll // List of factor types the user can enroll
                 
                 // Proceed with MFA flow using mfaToken
             }
@@ -491,14 +512,17 @@ val mfaClient = authentication.mfaClient(mfaToken)
 Retrieve the list of authenticators that the user has enrolled and are allowed for this authentication flow. The `factorsAllowed` parameter filters the authenticators based on the allowed factor types from the MFA requirements.
 
 ```kotlin
+// Convert List<MfaFactor> to List<String> for the factorsAllowed parameter
+val factorTypes = requirements?.challenge?.map { it.type } ?: emptyList()
+
 mfaClient
-    .getAuthenticators(factorsAllowed = requirements?.challenge ?: emptyList())
-    .start(object: Callback<List<MfaAuthenticator>, MfaListAuthenticatorsException> {
+    .getAuthenticators(factorsAllowed = factorTypes)
+    .start(object: Callback<List<Authenticator>, MfaListAuthenticatorsException> {
         override fun onFailure(exception: MfaListAuthenticatorsException) {
             // Handle error
         }
 
-        override fun onSuccess(authenticators: List<MfaAuthenticator>) {
+        override fun onSuccess(authenticators: List<Authenticator>) {
             // Display authenticators for user to choose
             authenticators.forEach { auth ->
                 println("Type: ${auth.authenticatorType}, ID: ${auth.id}")
@@ -512,8 +536,9 @@ mfaClient
 
 ```kotlin
 try {
+    val factorTypes = requirements?.challenge?.map { it.type } ?: emptyList()
     val authenticators = mfaClient
-        .getAuthenticators(factorsAllowed = requirements?.challenge ?: emptyList())
+        .getAuthenticators(factorsAllowed = factorTypes)
         .await()
     println(authenticators)
 } catch (e: MfaListAuthenticatorsException) {
@@ -526,18 +551,21 @@ try {
 
 If the user doesn't have an authenticator enrolled, or needs to enroll a new one, you can use the enrollment methods. The available enrollment types depend on your tenant configuration.
 
-##### Enroll Phone (SMS/Voice)
+##### Enroll Phone (SMS)
 
 ```kotlin
 mfaClient
-    .enrollPhone("+11234567890", PhoneEnrollmentType.SMS)
-    .start(object: Callback<MfaEnrollment, MfaEnrollmentException> {
+    .enroll(MfaEnrollmentType.Phone("+11234567890"))
+    .start(object: Callback<EnrollmentChallenge, MfaEnrollmentException> {
         override fun onFailure(exception: MfaEnrollmentException) { }
 
-        override fun onSuccess(enrollment: MfaEnrollment) {
+        override fun onSuccess(enrollment: EnrollmentChallenge) {
             // Phone enrolled - need to verify with OOB code
             val oobCode = enrollment.oobCode
-            val bindingMethod = enrollment.bindingMethod
+            // For OOB challenges, cast to OobEnrollmentChallenge to access bindingMethod
+            if (enrollment is OobEnrollmentChallenge) {
+                val bindingMethod = enrollment.bindingMethod
+            }
         }
     })
 ```
@@ -546,11 +574,11 @@ mfaClient
 
 ```kotlin
 mfaClient
-    .enrollEmail("user@example.com")
-    .start(object: Callback<MfaEnrollment, MfaEnrollmentException> {
+    .enroll(MfaEnrollmentType.Email("user@example.com"))
+    .start(object: Callback<EnrollmentChallenge, MfaEnrollmentException> {
         override fun onFailure(exception: MfaEnrollmentException) { }
 
-        override fun onSuccess(enrollment: MfaEnrollment) {
+        override fun onSuccess(enrollment: EnrollmentChallenge) {
             // Email enrolled - need to verify with OOB code
             val oobCode = enrollment.oobCode
         }
@@ -561,14 +589,16 @@ mfaClient
 
 ```kotlin
 mfaClient
-    .enrollOtp()
-    .start(object: Callback<MfaEnrollment, MfaEnrollmentException> {
+    .enroll(MfaEnrollmentType.Otp)
+    .start(object: Callback<EnrollmentChallenge, MfaEnrollmentException> {
         override fun onFailure(exception: MfaEnrollmentException) { }
 
-        override fun onSuccess(enrollment: MfaEnrollment) {
+        override fun onSuccess(enrollment: EnrollmentChallenge) {
             // Display QR code or secret for user to scan/enter in authenticator app
-            val secret = enrollment.secret
-            val barcodeUri = enrollment.barcodeUri
+            if (enrollment is TotpEnrollmentChallenge) {
+                val secret = enrollment.manualInputCode
+                val barcodeUri = enrollment.barcodeUri
+            }
         }
     })
 ```
@@ -577,13 +607,15 @@ mfaClient
 
 ```kotlin
 mfaClient
-    .enrollPush()
-    .start(object: Callback<MfaEnrollment, MfaEnrollmentException> {
+    .enroll(MfaEnrollmentType.Push)
+    .start(object: Callback<EnrollmentChallenge, MfaEnrollmentException> {
         override fun onFailure(exception: MfaEnrollmentException) { }
 
-        override fun onSuccess(enrollment: MfaEnrollment) {
+        override fun onSuccess(enrollment: EnrollmentChallenge) {
             // Display QR code for user to scan with Guardian app
-            val barcodeUri = enrollment.barcodeUri
+            if (enrollment is TotpEnrollmentChallenge) {
+                val barcodeUri = enrollment.barcodeUri
+            }
         }
     })
 ```
@@ -595,14 +627,14 @@ After selecting an authenticator, initiate a challenge. This will send an OTP co
 ```kotlin
 mfaClient
     .challenge(authenticatorId = "phone|dev_xxxx")
-    .start(object: Callback<MfaChallengeResponse, MfaChallengeException> {
+    .start(object: Callback<Challenge, MfaChallengeException> {
         override fun onFailure(exception: MfaChallengeException) { }
 
-        override fun onSuccess(challengeResponse: MfaChallengeResponse) {
+        override fun onSuccess(challenge: Challenge) {
             // Challenge initiated
-            val challengeType = challengeResponse.challengeType
-            val oobCode = challengeResponse.oobCode
-            val bindingMethod = challengeResponse.bindingMethod
+            val challengeType = challenge.challengeType
+            val oobCode = challenge.oobCode
+            val bindingMethod = challenge.bindingMethod
         }
     })
 ```
@@ -612,10 +644,10 @@ mfaClient
 
 ```kotlin
 try {
-    val challengeResponse = mfaClient
+    val challenge = mfaClient
         .challenge(authenticatorId = "phone|dev_xxxx")
         .await()
-    println(challengeResponse)
+    println(challenge)
 } catch (e: MfaChallengeException) {
     e.printStackTrace()
 }
@@ -630,8 +662,7 @@ Complete the MFA flow by verifying with the appropriate method based on the auth
 
 ```kotlin
 mfaClient
-    .verifyOtp(otp = "123456")
-    .validateClaims()
+    .verify(MfaVerificationType.Otp(otp = "123456"))
     .start(object: Callback<Credentials, MfaVerifyException> {
         override fun onFailure(exception: MfaVerifyException) { }
 
@@ -647,8 +678,7 @@ mfaClient
 ```kotlin
 try {
     val credentials = mfaClient
-        .verifyOtp(otp = "123456")
-        .validateClaims()
+        .verify(MfaVerificationType.Otp(otp = "123456"))
         .await()
     println(credentials)
 } catch (e: MfaVerifyException) {
@@ -663,8 +693,7 @@ For email, SMS, or push notification verification, use the OOB code from the cha
 
 ```kotlin
 mfaClient
-    .verifyOob(oobCode = oobCode, bindingCode = "123456") // bindingCode is optional for push
-    .validateClaims()
+    .verify(MfaVerificationType.Oob(oobCode = oobCode, bindingCode = "123456")) // bindingCode is optional for push
     .start(object: Callback<Credentials, MfaVerifyException> {
         override fun onFailure(exception: MfaVerifyException) { }
 
@@ -680,8 +709,7 @@ If the user has lost access to their MFA device, they can use a recovery code:
 
 ```kotlin
 mfaClient
-    .verifyRecoveryCode(recoveryCode = "ABCD1234EFGH5678")
-    .validateClaims()
+    .verify(MfaVerificationType.RecoveryCode(code = "ABCD1234EFGH5678"))
     .start(object: Callback<Credentials, MfaVerifyException> {
         override fun onFailure(exception: MfaVerifyException) { }
 
@@ -712,19 +740,21 @@ authentication
                 val mfaClient = authentication.mfaClient(mfaToken)
                 
                 // Step 3: Get available authenticators
+                // Convert List<MfaFactor> to List<String> for the factorsAllowed parameter
+                val factorTypes = requirements?.challenge?.map { it.type } ?: emptyList()
                 mfaClient
-                    .getAuthenticators(factorsAllowed = requirements?.challenge ?: emptyList())
-                    .start(object: Callback<List<MfaAuthenticator>, MfaListAuthenticatorsException> {
-                        override fun onSuccess(authenticators: List<MfaAuthenticator>) {
+                    .getAuthenticators(factorsAllowed = factorTypes)
+                    .start(object: Callback<List<Authenticator>, MfaListAuthenticatorsException> {
+                        override fun onSuccess(authenticators: List<Authenticator>) {
                             if (authenticators.isNotEmpty()) {
                                 // Step 4: Challenge the first authenticator
                                 val authenticator = authenticators.first()
                                 mfaClient
                                     .challenge(authenticatorId = authenticator.id)
-                                    .start(object: Callback<MfaChallengeResponse, MfaChallengeException> {
-                                        override fun onSuccess(challengeResponse: MfaChallengeResponse) {
+                                    .start(object: Callback<Challenge, MfaChallengeException> {
+                                        override fun onSuccess(challenge: Challenge) {
                                             // Step 5: Prompt user for OTP and verify
-                                            // ... show OTP input UI, then call verifyOtp/verifyOob
+                                            // ... show OTP input UI, then call verify()
                                         }
                                         override fun onFailure(e: MfaChallengeException) { }
                                     })
@@ -743,6 +773,164 @@ authentication
         }
     })
 ```
+
+#### MFA Client Errors
+
+The MFA client produces specific exception types for different operations:
+
+- **`MfaListAuthenticatorsException`**: Returned by `getAuthenticators()` when listing authenticators fails
+- **`MfaEnrollmentException`**: Returned by `enroll()` methods when enrollment fails
+- **`MfaChallengeException`**: Returned by `challenge()` when initiating a challenge fails
+- **`MfaVerifyException`**: Returned by `verify()` methods when verification fails
+
+All MFA exception types provide:
+- `code`: The error code from the API response
+- `description`: A human-readable error description
+- `statusCode`: The HTTP status code
+- `getValue(key)`: Access to additional error properties from the response
+- `cause`: The underlying `Throwable`, if any (useful for network errors)
+- `isNetworkError`: Whether the request failed due to network issues
+
+##### Example error handling
+
+```kotlin
+mfaClient
+    .verify(MfaVerificationType.Otp(otp = "123456"))
+    .start(object: Callback<Credentials, MfaVerifyException> {
+        override fun onFailure(exception: MfaVerifyException) {
+            println("Failed with code: ${exception.code}")
+            println("Description: ${exception.description}")
+            println("Status code: ${exception.statusCode}")
+        }
+
+        override fun onSuccess(credentials: Credentials) {
+            // MFA verification successful
+        }
+    })
+```
+
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    val credentials = mfaClient
+        .verify(MfaVerificationType.Otp(otp = "123456"))
+        .await()
+    println(credentials)
+} catch (e: MfaVerifyException) {
+    println("Failed with code: ${e.code}")
+    println("Description: ${e.description}")
+    println("Status code: ${e.statusCode}")
+}
+```
+</details>
+
+##### Common error codes
+
+Each MFA exception type includes specific error codes to help you handle different scenarios:
+
+**MfaListAuthenticatorsException** (from `getAuthenticators()`):
+- `invalid_request`: Request parameters are invalid (e.g., missing or empty factorsAllowed)
+- `invalid_token`: MFA token is invalid or expired
+- `access_denied`: User lacks permission to access this resource
+
+**MfaEnrollmentException** (from `enroll()` methods):
+- `invalid_request`: Enrollment parameters are invalid
+- `invalid_token`: MFA token is invalid or expired
+- `enrollment_conflict`: Authenticator is already enrolled
+- `unsupported_challenge_type`: Requested factor type is not enabled
+
+**MfaChallengeException** (from `challenge()`):
+- `invalid_request`: Challenge parameters are invalid
+- `invalid_token`: MFA token is invalid or expired
+- `authenticator_not_found`: Specified authenticator doesn't exist
+- `unsupported_challenge_type`: Authenticator type doesn't support challenges
+
+**MfaVerifyException** (from `verify()` methods):
+- `invalid_grant`: Verification code is incorrect or expired
+- `invalid_token`: MFA token is invalid or expired
+- `invalid_oob_code`: Out-of-band code is invalid
+- `invalid_binding_code`: Binding code (SMS/email code) is incorrect
+- `expired_token`: Verification code has expired
+
+##### Handling specific error cases
+
+You can check the `code` property to handle specific error scenarios:
+
+```kotlin
+mfaClient
+    .enroll(MfaEnrollmentType.Phone("+12025550135"))
+    .start(object: Callback<EnrollmentChallenge, MfaEnrollmentException> {
+        override fun onFailure(exception: MfaEnrollmentException) {
+            when (exception.code) {
+                "invalid_token" -> println("MFA token is invalid or expired")
+                "invalid_phone_number" -> println("Phone number format is invalid")
+                "unsupported_challenge_type" -> println("This MFA factor is not supported")
+                else -> println("Enrollment failed: ${exception.description}")
+            }
+        }
+
+        override fun onSuccess(enrollment: EnrollmentChallenge) {
+            // Enrollment successful
+        }
+    })
+```
+
+##### Network errors
+
+MFA exceptions include an `isNetworkError` property to help handle transient network failures:
+
+```kotlin
+mfaClient
+    .verify(MfaVerificationType.Otp(otp = "123456"))
+    .start(object: Callback<Credentials, MfaVerifyException> {
+        override fun onFailure(exception: MfaVerifyException) {
+            if (exception.isNetworkError) {
+                println("Network connectivity issue - check your connection")
+            } else {
+                println("Verification failed: ${exception.description}")
+            }
+        }
+
+        override fun onSuccess(credentials: Credentials) {
+            // MFA verification successful
+        }
+    })
+```
+
+The `isNetworkError` property returns `true` for network-related failures such as:
+- No internet connection
+- DNS lookup failures
+- Connection timeouts
+
+##### Authentication flow errors
+
+When handling MFA-required errors from the authentication flow (not the MFA client), you'll receive `AuthenticationException` values. Use these properties to identify MFA-related scenarios:
+
+- `isMultifactorRequired`: MFA is required to authenticate
+- `mfaRequiredErrorPayload`: Contains the MFA token and requirements when MFA is required
+
+```kotlin
+authentication
+    .login(email, password, connection)
+    .start(object: Callback<Credentials, AuthenticationException> {
+        override fun onFailure(exception: AuthenticationException) {
+            if (exception.isMultifactorRequired) {
+                val mfaPayload = exception.mfaRequiredErrorPayload
+                val mfaToken = mfaPayload?.mfaToken
+                // Proceed with MFA flow
+            }
+        }
+
+        override fun onSuccess(credentials: Credentials) {
+            // Login successful
+        }
+    })
+```
+
+> [!WARNING]
+> Do not parse or otherwise rely on the error messages to handle the errors. The error messages are not part of the API and can change. Use the error `code` property and exception types instead, which are part of the API.
 
 ### Passwordless Login
 
