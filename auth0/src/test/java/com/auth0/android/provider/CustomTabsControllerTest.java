@@ -50,7 +50,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.invocation.InvocationOnMock;
+import org.mockito.quality.Strictness;
 import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
@@ -354,9 +354,9 @@ public class CustomTabsControllerTest {
 
     private void connectBoundService() throws Exception {
         final ComponentName componentName = new ComponentName(DEFAULT_BROWSER_PACKAGE, DEFAULT_BROWSER_PACKAGE + ".CustomTabsService");
-        
+
         CustomTabsSession session = mock(CustomTabsSession.class, withSettings()
-                .lenient()
+                .strictness(Strictness.LENIENT)
                 .defaultAnswer((Answer<Object>) invocation -> {
                     if ("getComponentName".equals(invocation.getMethod().getName())) {
                         return componentName;
