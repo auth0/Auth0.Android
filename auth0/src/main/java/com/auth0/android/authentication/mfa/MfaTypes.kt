@@ -1,4 +1,4 @@
-package com.auth0.android.authentication
+package com.auth0.android.authentication.mfa
 
 /**
  * Represents the type of MFA enrollment to perform.

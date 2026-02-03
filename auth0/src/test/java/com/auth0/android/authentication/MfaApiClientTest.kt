@@ -1,9 +1,10 @@
 package com.auth0.android.authentication
 
 import com.auth0.android.Auth0
-import com.auth0.android.authentication.MfaEnrollmentType
-import com.auth0.android.authentication.MfaVerificationType
-import com.auth0.android.authentication.MfaException.*
+import com.auth0.android.authentication.mfa.MfaApiClient
+import com.auth0.android.authentication.mfa.MfaEnrollmentType
+import com.auth0.android.authentication.mfa.MfaVerificationType
+import com.auth0.android.authentication.mfa.MfaException.*
 import com.auth0.android.callback.Callback
 import com.auth0.android.request.internal.ThreadSwitcherShadow
 import com.auth0.android.result.Authenticator

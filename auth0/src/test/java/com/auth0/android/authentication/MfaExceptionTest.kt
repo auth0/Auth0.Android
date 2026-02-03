@@ -1,6 +1,7 @@
 package com.auth0.android.authentication
 
-import com.auth0.android.authentication.MfaException.*
+import com.auth0.android.authentication.mfa.MfaException
+import com.auth0.android.authentication.mfa.MfaException.*
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.*
 import org.junit.Test

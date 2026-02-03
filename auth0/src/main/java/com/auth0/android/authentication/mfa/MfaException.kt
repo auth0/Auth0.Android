@@ -1,4 +1,4 @@
-package com.auth0.android.authentication
+package com.auth0.android.authentication.mfa
 
 import com.auth0.android.Auth0Exception
 import com.auth0.android.Auth0Exception.Companion.UNKNOWN_ERROR

@@ -493,6 +493,54 @@ authentication
 ```
 
 <details>
+  <summary>Using Java</summary>
+
+```java
+authentication
+    .login("user@example.com", "password", "Username-Password-Authentication")
+    .validateClaims()
+    .start(new Callback<Credentials, AuthenticationException>() {
+        @Override
+        public void onFailure(@NonNull AuthenticationException exception) {
+            if (exception.isMultifactorRequired()) {
+                // MFA is required - extract the MFA payload
+                MfaRequiredErrorPayload mfaPayload = exception.getMfaRequiredErrorPayload();
+                if (mfaPayload != null) {
+                    String mfaToken = mfaPayload.getMfaToken();
+                    MfaRequirements requirements = mfaPayload.getMfaRequirements();
+                    
+                    // Check if enrollment is required (user has not enrolled MFA yet)
+                    if (requirements != null && requirements.getEnroll() != null) {
+                        List<MfaFactor> enrollTypes = requirements.getEnroll();
+                        Log.d(TAG, "User needs to enroll MFA");
+                        for (MfaFactor factor : enrollTypes) {
+                            Log.d(TAG, "Available enrollment type: " + factor.getType());
+                        }
+                    }
+                    
+                    // Check if challenge is available (user already enrolled)
+                    if (requirements != null && requirements.getChallenge() != null) {
+                        List<MfaFactor> challengeTypes = requirements.getChallenge();
+                        Log.d(TAG, "User has enrolled MFA factors");
+                        for (MfaFactor factor : challengeTypes) {
+                            Log.d(TAG, "Available challenge type: " + factor.getType());
+                        }
+                    }
+                    
+                    // Proceed with MFA flow using mfaToken
+                }
+            }
+        }
+
+        @Override
+        public void onSuccess(Credentials credentials) {
+            // Login successful without MFA
+        }
+    });
+```
+</details>
+
+<details>
   <summary>Using coroutines</summary>
 
 ```kotlin
@@ -536,6 +584,14 @@ Once you have the MFA token, create an MFA API client to perform MFA operations:
 val mfaClient = authentication.mfaClient(mfaToken)
 ```
 
+<details>
+  <summary>Using Java</summary>
+
+```java
+MfaApiClient mfaClient = authentication.mfaClient(mfaToken);
+```
+</details>
+
 #### Getting Available Authenticators
 
 Retrieve the list of authenticators that the user has enrolled and are allowed for this authentication flow. The `factorsAllowed` parameter filters the authenticators based on the allowed factor types from the MFA requirements.
@@ -576,6 +632,37 @@ try {
 ```
 </details>
 
+<details>
+  <summary>Using Java</summary>
+
+```java
+// Convert List<MfaFactor> to List<String> for the factorsAllowed parameter
+List<String> factorTypes = new ArrayList<>();
+if (requirements != null && requirements.getChallenge() != null) {
+    for (MfaFactor factor : requirements.getChallenge()) {
+        factorTypes.add(factor.getType());
+    }
+}
+
+mfaClient
+    .getAuthenticators(factorTypes)
+    .start(new Callback<List<Authenticator>, MfaListAuthenticatorsException>() {
+        @Override
+        public void onFailure(@NonNull MfaListAuthenticatorsException exception) {
+            // Handle error
+        }
+
+        @Override
+        public void onSuccess(List<Authenticator> authenticators) {
+            // Display authenticators for user to choose
+            for (Authenticator auth : authenticators) {
+                Log.d(TAG, "Type: " + auth.getAuthenticatorType() + ", ID: " + auth.getId());
+            }
+        }
+    });
+```
+</details>
+
 #### Enrolling New Authenticators
 
 If the user doesn't have an authenticator enrolled, or needs to enroll a new one, you can use the enrollment methods. The available enrollment types depend on your tenant configuration.
@@ -599,6 +686,29 @@ mfaClient
     })
 ```
 
+<details>
+  <summary>Using Java</summary>
+
+```java
+mfaClient
+    .enroll(MfaEnrollmentType.Phone.INSTANCE.invoke("+11234567890"))
+    .start(new Callback<EnrollmentChallenge, MfaEnrollmentException>() {
+        @Override
+        public void onFailure(@NonNull MfaEnrollmentException exception) { }
+
+        @Override
+        public void onSuccess(EnrollmentChallenge enrollment) {
+            // Phone enrolled - need to verify with OOB code
+            String oobCode = enrollment.getOobCode();
+            // For OOB challenges, cast to OobEnrollmentChallenge to access bindingMethod
+            if (enrollment instanceof OobEnrollmentChallenge) {
+                String bindingMethod = ((OobEnrollmentChallenge) enrollment).getBindingMethod();
+            }
+        }
+    });
+```
+</details>
+
 ##### Enroll Email
 
 ```kotlin
@@ -613,6 +723,25 @@ mfaClient
         }
     })
 ```
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+mfaClient
+    .enroll(MfaEnrollmentType.Email.INSTANCE.invoke("user@example.com"))
+    .start(new Callback<EnrollmentChallenge, MfaEnrollmentException>() {
+        @Override
+        public void onFailure(@NonNull MfaEnrollmentException exception) { }
+
+        @Override
+        public void onSuccess(EnrollmentChallenge enrollment) {
+            // Email enrolled - need to verify with OOB code
+            String oobCode = enrollment.getOobCode();
+        }
+    });
+```
+</details>
 
 ##### Enroll OTP (Authenticator App)
 
@@ -632,6 +761,29 @@ mfaClient
     })
 ```
 
+<details>
+  <summary>Using Java</summary>
+
+```java
+mfaClient
+    .enroll(MfaEnrollmentType.Otp.INSTANCE)
+    .start(new Callback<EnrollmentChallenge, MfaEnrollmentException>() {
+        @Override
+        public void onFailure(@NonNull MfaEnrollmentException exception) { }
+
+        @Override
+        public void onSuccess(EnrollmentChallenge enrollment) {
+            // Display QR code or secret for user to scan/enter in authenticator app
+            if (enrollment instanceof TotpEnrollmentChallenge) {
+                TotpEnrollmentChallenge totpEnrollment = (TotpEnrollmentChallenge) enrollment;
+                String secret = totpEnrollment.getManualInputCode();
+                String barcodeUri = totpEnrollment.getBarcodeUri();
+            }
+        }
+    });
+```
+</details>
+
 ##### Enroll Push Notification
 
 ```kotlin
@@ -648,6 +800,27 @@ mfaClient
         }
     })
 ```
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+mfaClient
+    .enroll(MfaEnrollmentType.Push.INSTANCE)
+    .start(new Callback<EnrollmentChallenge, MfaEnrollmentException>() {
+        @Override
+        public void onFailure(@NonNull MfaEnrollmentException exception) { }
+
+        @Override
+        public void onSuccess(EnrollmentChallenge enrollment) {
+            // Display QR code for user to scan with Guardian app
+            if (enrollment instanceof TotpEnrollmentChallenge) {
+                String barcodeUri = ((TotpEnrollmentChallenge) enrollment).getBarcodeUri();
+            }
+        }
+    });
+```
+</details>
 
 #### Challenging an Authenticator
 
@@ -669,24 +842,41 @@ mfaClient
 ```
 
 <details>
+  <summary>Using Java</summary>
+
+```java
+mfaClient
+    .challenge("phone|dev_xxxx")
+    .start(new Callback<Challenge, MfaChallengeException>() {
+        @Override
+        public void onFailure(@NonNull MfaChallengeException exception) { }
+
+        @Override
+        public void onSuccess(Challenge challenge) {
+            // Challenge initiated
+            String challengeType = challenge.getChallengeType();
+            String oobCode = challenge.getOobCode();
+            String bindingMethod = challenge.getBindingMethod();
+        }
+    });
+```
+</details>
+
+<details>
   <summary>Using coroutines</summary>
 
 ```kotlin
-
-```kotlin
-mfaClient
-    .challenge(authenticatorId = "phone|dev_xxxx")
-    .start(object: Callback<Challenge, MfaChallengeException> {
-        override fun onFailure(exception: MfaChallengeException) { }
-
-        override fun onSuccess(challenge: Challenge) {
-            // Challenge initiated
-            val challengeType = challenge.challengeType
-            val oobCode = challenge.oobCode
-            val bindingMethod = challenge.bindingMethod
-        }
-    })
+try {
+    val challenge = mfaClient
+        .challenge(authenticatorId = "phone|dev_xxxx")
+        .await()
+    println("Challenge type: ${challenge.challengeType}")
+} catch (e: MfaChallengeException) {
+    e.printStackTrace()
+}
 ```
+</details>
+
 ##### Verify with OTP (Authenticator App)
 
 ```kotlin
@@ -716,6 +906,24 @@ try {
 ```
 </details>
 
+<details>
+  <summary>Using Java</summary>
+
+```java
+mfaClient
+    .verify(MfaVerificationType.Otp.INSTANCE.invoke("123456"))
+    .start(new Callback<Credentials, MfaVerifyException>() {
+        @Override
+        public void onFailure(@NonNull MfaVerifyException exception) { }
+
+        @Override
+        public void onSuccess(Credentials credentials) {
+            // MFA verification successful - user is now logged in
+        }
+    });
+```
+</details>
+
 ##### Verify with OOB (Email/SMS/Push)
 
 For email, SMS, or push notification verification, use the OOB code from the challenge response along with the binding code (OTP) received by the user:
@@ -731,6 +939,24 @@ mfaClient
         }
     })
 ```
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+mfaClient
+    .verify(MfaVerificationType.Oob.INSTANCE.invoke(oobCode, "123456")) // bindingCode is optional for push
+    .start(new Callback<Credentials, MfaVerifyException>() {
+        @Override
+        public void onFailure(@NonNull MfaVerifyException exception) { }
+
+        @Override
+        public void onSuccess(Credentials credentials) {
+            // MFA verification successful
+        }
+    });
+```
+</details>
 
 ##### Verify with Recovery Code
 
@@ -748,6 +974,25 @@ mfaClient
         }
     })
 ```
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+mfaClient
+    .verify(MfaVerificationType.RecoveryCode.INSTANCE.invoke("ABCD1234EFGH5678"))
+    .start(new Callback<Credentials, MfaVerifyException>() {
+        @Override
+        public void onFailure(@NonNull MfaVerifyException exception) { }
+
+        @Override
+        public void onSuccess(Credentials credentials) {
+            // MFA verification successful
+            // Note: A new recovery code may be returned in credentials
+        }
+    });
+```
+</details>
 
 #### Complete MFA Flow Example
 
@@ -803,6 +1048,73 @@ authentication
     })
 ```
 
+<details>
+  <summary>Using Java</summary>
+
+```java
+// Step 1: Attempt login
+authentication
+    .login(email, password, connection)
+    .validateClaims()
+    .start(new Callback<Credentials, AuthenticationException>() {
+        @Override
+        public void onFailure(@NonNull AuthenticationException exception) {
+            if (exception.isMultifactorRequired()) {
+                MfaRequiredErrorPayload mfaPayload = exception.getMfaRequiredErrorPayload();
+                if (mfaPayload == null) return;
+                String mfaToken = mfaPayload.getMfaToken();
+                if (mfaToken == null) return;
+                MfaRequirements requirements = mfaPayload.getMfaRequirements();
+                
+                // Step 2: Create MFA client
+                MfaApiClient mfaClient = authentication.mfaClient(mfaToken);
+                
+                // Step 3: Get available authenticators
+                List<String> factorTypes = new ArrayList<>();
+                if (requirements != null && requirements.getChallenge() != null) {
+                    for (MfaFactor factor : requirements.getChallenge()) {
+                        factorTypes.add(factor.getType());
+                    }
+                }
+                
+                mfaClient
+                    .getAuthenticators(factorTypes)
+                    .start(new Callback<List<Authenticator>, MfaListAuthenticatorsException>() {
+                        @Override
+                        public void onSuccess(List<Authenticator> authenticators) {
+                            if (!authenticators.isEmpty()) {
+                                // Step 4: Challenge the first authenticator
+                                Authenticator authenticator = authenticators.get(0);
+                                mfaClient
+                                    .challenge(authenticator.getId())
+                                    .start(new Callback<Challenge, MfaChallengeException>() {
+                                        @Override
+                                        public void onSuccess(Challenge challenge) {
+                                            // Step 5: Prompt user for OTP and verify
+                                            // ... show OTP input UI, then call verify()
+                                        }
+                                        @Override
+                                        public void onFailure(@NonNull MfaChallengeException e) { }
+                                    });
+                            } else {
+                                // No authenticators enrolled - need to enroll one
+                                // ... show enrollment UI
+                            }
+                        }
+                        @Override
+                        public void onFailure(@NonNull MfaListAuthenticatorsException e) { }
+                    });
+            }
+        }
+
+        @Override
+        public void onSuccess(Credentials credentials) {
+            // Login successful without MFA
+        }
+    });
+```
+</details>
+
 #### MFA Client Errors
 
 The MFA client produces specific exception types for different operations:
@@ -852,6 +1164,28 @@ try {
     println("Description: ${e.description}")
     println("Status code: ${e.statusCode}")
 }
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+mfaClient
+    .verify(MfaVerificationType.Otp.INSTANCE.invoke("123456"))
+    .start(new Callback<Credentials, MfaVerifyException>() {
+        @Override
+        public void onFailure(@NonNull MfaVerifyException exception) {
+            Log.e(TAG, "Failed with code: " + exception.getCode());
+            Log.e(TAG, "Description: " + exception.getDescription());
+            Log.e(TAG, "Status code: " + exception.getStatusCode());
+        }
+
+        @Override
+        public void onSuccess(Credentials credentials) {
+            // MFA verification successful
+        }
+    });
 ```
 </details>
 

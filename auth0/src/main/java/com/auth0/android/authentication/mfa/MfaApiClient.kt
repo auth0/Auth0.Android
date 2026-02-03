@@ -1,9 +1,10 @@
-package com.auth0.android.authentication
+package com.auth0.android.authentication.mfa
 
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
-import com.auth0.android.authentication.MfaException.*
+import com.auth0.android.authentication.ParameterBuilder
+import com.auth0.android.authentication.mfa.MfaException.*
 import com.auth0.android.request.ErrorAdapter
 import com.auth0.android.request.JsonAdapter
 import com.auth0.android.request.Request
@@ -26,7 +27,7 @@ import java.io.Reader
  * API client for handling Multi-Factor Authentication (MFA) flows.
  *
  * This client provides methods to handle MFA challenges and enrollments following
- * the Auth0 MFA API. It is typically obtained from [AuthenticationAPIClient.mfaClient]
+ * the Auth0 MFA API. It is typically obtained from [com.auth0.android.authentication.AuthenticationAPIClient.mfaClient]
  * after receiving an `mfa_required` error during authentication.
  *
  * ## Usage
@@ -46,7 +47,7 @@ import java.io.Reader
  * }
  * ```
  *
- * @see AuthenticationAPIClient.mfaClient
+ * @see com.auth0.android.authentication.AuthenticationAPIClient.mfaClient
  * @see [MFA API Documentation](https://auth0.com/docs/api/authentication#multi-factor-authentication)
  */
 public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal constructor(
