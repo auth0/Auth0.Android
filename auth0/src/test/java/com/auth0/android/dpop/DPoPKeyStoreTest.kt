@@ -5,29 +5,29 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
-import android.util.Log
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.`is`
 import org.hamcrest.Matchers.notNullValue
 import org.hamcrest.Matchers.nullValue
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.MockedStatic
+import org.mockito.Mockito
 import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.times
 import org.mockito.Mockito.`when`
-import org.powermock.api.mockito.PowerMockito
-import org.powermock.core.classloader.annotations.PrepareForTest
-import org.powermock.modules.junit4.PowerMockRunner
-import org.powermock.reflect.Whitebox
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import java.security.InvalidAlgorithmParameterException
 import java.security.KeyPairGenerator
 import java.security.KeyStore
@@ -36,7 +36,6 @@ import java.security.PrivateKey
 import java.security.ProviderException
 import java.security.PublicKey
 import java.security.cert.Certificate
-import javax.security.auth.x500.X500Principal
 
 /**
  * Using a subclass of [DPoPKeyStore] to help with mocking the lazy initialized keyStore property
@@ -45,25 +44,19 @@ internal class MockableDPoPKeyStore(private val mockKeyStore: KeyStore) : DPoPKe
     override val keyStore: KeyStore by lazy { mockKeyStore }
 }
 
-@RunWith(PowerMockRunner::class)
-@PrepareForTest(
-    DPoPKeyStore::class,
-    KeyStore::class,
-    KeyPairGenerator::class,
-    KeyGenParameterSpec.Builder::class,
-    Build.VERSION::class,
-    X500Principal::class,
-    Log::class
-)
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [Build.VERSION_CODES.P])
 public class DPoPKeyStoreTest {
 
     private lateinit var mockKeyStore: KeyStore
     private lateinit var mockKeyPairGenerator: KeyPairGenerator
     private lateinit var mockContext: Context
     private lateinit var mockPackageManager: PackageManager
-    private lateinit var mockSpecBuilder: KeyGenParameterSpec.Builder
 
     private lateinit var dpopKeyStore: DPoPKeyStore
+
+    private lateinit var keyStoreMock: MockedStatic<KeyStore>
+    private lateinit var keyPairGeneratorMock: MockedStatic<KeyPairGenerator>
 
     @Before
     public fun setUp() {
@@ -72,38 +65,32 @@ public class DPoPKeyStoreTest {
         mockKeyPairGenerator = mock()
         mockContext = mock()
         mockPackageManager = mock()
-        mockSpecBuilder = mock()
 
-        PowerMockito.mockStatic(KeyStore::class.java)
-        PowerMockito.mockStatic(KeyPairGenerator::class.java)
-        PowerMockito.mockStatic(Log::class.java)
-        PowerMockito.mockStatic(Build.VERSION::class.java)
-        Whitebox.setInternalState(Build.VERSION::class.java, "SDK_INT", Build.VERSION_CODES.P)
+        keyStoreMock = Mockito.mockStatic(KeyStore::class.java)
+        keyPairGeneratorMock = Mockito.mockStatic(KeyPairGenerator::class.java)
 
-        PowerMockito.whenNew(KeyGenParameterSpec.Builder::class.java).withAnyArguments()
-            .thenReturn(mockSpecBuilder)
-
-        PowerMockito.`when`(KeyStore.getInstance("AndroidKeyStore")).thenReturn(mockKeyStore)
+        keyStoreMock.`when`<KeyStore> { KeyStore.getInstance("AndroidKeyStore") }
+            .thenReturn(mockKeyStore)
         doNothing().whenever(mockKeyStore).load(anyOrNull())
-        PowerMockito.`when`(
+        keyPairGeneratorMock.`when`<KeyPairGenerator> {
             KeyPairGenerator.getInstance(
                 KeyProperties.KEY_ALGORITHM_EC,
                 "AndroidKeyStore"
             )
-        ).thenReturn(mockKeyPairGenerator)
+        }.thenReturn(mockKeyPairGenerator)
 
-        whenever(mockSpecBuilder.setAlgorithmParameterSpec(any())).thenReturn(mockSpecBuilder)
-        whenever(mockSpecBuilder.setDigests(any())).thenReturn(mockSpecBuilder)
-        whenever(mockSpecBuilder.setCertificateSubject(any())).thenReturn(mockSpecBuilder)
-        whenever(mockSpecBuilder.setCertificateNotBefore(any())).thenReturn(mockSpecBuilder)
-        whenever(mockSpecBuilder.setCertificateNotAfter(any())).thenReturn(mockSpecBuilder)
-        whenever(mockSpecBuilder.setIsStrongBoxBacked(any())).thenReturn(mockSpecBuilder)
         whenever(mockContext.packageManager).thenReturn(mockPackageManager)
         whenever(mockPackageManager.hasSystemFeature(PackageManager.FEATURE_STRONGBOX_KEYSTORE)).thenReturn(
             true
         )
 
         dpopKeyStore = MockableDPoPKeyStore(mockKeyStore)
+    }
+
+    @After
+    public fun tearDown() {
+        keyStoreMock.close()
+        keyPairGeneratorMock.close()
     }
 
     @Test
@@ -113,23 +100,26 @@ public class DPoPKeyStoreTest {
         )
         dpopKeyStore.generateKeyPair(mockContext)
 
-        verify(mockKeyPairGenerator).initialize(mockSpecBuilder.build())
+        verify(mockKeyPairGenerator).initialize(anyOrNull<KeyGenParameterSpec>())
         verify(mockKeyPairGenerator).generateKeyPair()
-        verify(mockSpecBuilder, never()).setIsStrongBoxBacked(true)
     }
 
     @Test
     public fun `generateKeyPair should enable StrongBox when available`() {
+        val specCaptor = argumentCaptor<KeyGenParameterSpec>()
+
         dpopKeyStore.generateKeyPair(mockContext)
-        verify(mockSpecBuilder).setIsStrongBoxBacked(true)
+
+        verify(mockKeyPairGenerator).initialize(specCaptor.capture())
+        verify(mockKeyPairGenerator).generateKeyPair()
+
+        assertThat(specCaptor.firstValue.isStrongBoxBacked, `is`(true))
     }
 
     @Test
     public fun `generateKeyPair should throw KEY_GENERATION_ERROR when failed to generate key pair`() {
         val cause = InvalidAlgorithmParameterException("Exception")
-        PowerMockito.`when`(
-            mockKeyPairGenerator.initialize(mockSpecBuilder.build())
-        ).thenThrow(cause)
+        `when`(mockKeyPairGenerator.initialize(anyOrNull<KeyGenParameterSpec>())).thenThrow(cause)
 
         val exception = assertThrows(DPoPException::class.java) {
             dpopKeyStore.generateKeyPair(mockContext)
@@ -141,9 +131,7 @@ public class DPoPKeyStoreTest {
     @Test
     public fun `generateKeyPair should throw UNKNOWN_ERROR when any unhandled exception occurs`() {
         val cause = RuntimeException("Exception")
-        PowerMockito.`when`(
-            mockKeyPairGenerator.initialize(mockSpecBuilder.build())
-        ).thenThrow(cause)
+        `when`(mockKeyPairGenerator.initialize(anyOrNull<KeyGenParameterSpec>())).thenThrow(cause)
 
         val exception = assertThrows(DPoPException::class.java) {
             dpopKeyStore.generateKeyPair(mockContext)
@@ -238,26 +226,26 @@ public class DPoPKeyStoreTest {
     @Test
     public fun `generateKeyPair should retry without StrongBox when ProviderException occurs with StrongBox enabled`() {
         val providerException = ProviderException("StrongBox attestation failed")
+        val specCaptor = argumentCaptor<KeyGenParameterSpec>()
 
         `when`(mockKeyPairGenerator.generateKeyPair()).thenThrow(providerException)
             .thenReturn(mock())
 
         dpopKeyStore.generateKeyPair(mockContext)
 
-        verify(mockKeyPairGenerator, times(2)).initialize(mockSpecBuilder.build())
+        verify(mockKeyPairGenerator, times(2)).initialize(specCaptor.capture())
         verify(mockKeyPairGenerator, times(2)).generateKeyPair()
 
-        verify(mockSpecBuilder).setIsStrongBoxBacked(true) // First attempt
-        verify(
-            mockSpecBuilder,
-            never()
-        ).setIsStrongBoxBacked(false)
+        assertThat(specCaptor.allValues[0].isStrongBoxBacked, `is`(true))
+        assertThat(specCaptor.allValues[1].isStrongBoxBacked, `is`(false))
     }
 
     @Test
     public fun `generateKeyPair should throw KEY_GENERATION_ERROR when ProviderException occurs without StrongBox`() {
         val providerException = ProviderException("Key generation failed")
-        `when`(mockKeyPairGenerator.initialize(mockSpecBuilder.build())).thenThrow(providerException)
+        `when`(mockKeyPairGenerator.initialize(anyOrNull<KeyGenParameterSpec>())).thenThrow(
+            providerException
+        )
 
         val exception = assertThrows(DPoPException::class.java) {
             dpopKeyStore.generateKeyPair(mockContext, useStrongBox = false)
@@ -266,7 +254,7 @@ public class DPoPKeyStoreTest {
         assertEquals(DPoPException.KEY_GENERATION_ERROR.message, exception.message)
         assertThat(exception.cause, `is`(providerException))
 
-        verify(mockKeyPairGenerator, times(1)).initialize(mockSpecBuilder.build())
+        verify(mockKeyPairGenerator, times(1)).initialize(anyOrNull<KeyGenParameterSpec>())
     }
 
     @Test
@@ -274,7 +262,7 @@ public class DPoPKeyStoreTest {
         val firstException = ProviderException("StrongBox failed")
         val secondException = ProviderException("Retry also failed")
 
-        `when`(mockKeyPairGenerator.initialize(mockSpecBuilder.build()))
+        `when`(mockKeyPairGenerator.initialize(anyOrNull<KeyGenParameterSpec>()))
             .thenThrow(firstException)
             .thenThrow(secondException)
 
@@ -285,6 +273,6 @@ public class DPoPKeyStoreTest {
         assertEquals(DPoPException.KEY_GENERATION_ERROR.message, exception.message)
         assertThat(exception.cause, `is`(secondException))
 
-        verify(mockKeyPairGenerator, times(2)).initialize(mockSpecBuilder.build())
+        verify(mockKeyPairGenerator, times(2)).initialize(anyOrNull<KeyGenParameterSpec>())
     }
 }

@@ -3,7 +3,7 @@ package com.auth0.android.request.internal
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.request.*
 import com.auth0.android.result.Credentials
-import com.nhaarman.mockitokotlin2.*
+import org.mockito.kotlin.*
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
 import org.hamcrest.collection.IsMapContaining

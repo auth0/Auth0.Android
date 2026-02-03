@@ -8,7 +8,7 @@ import com.auth0.android.dpop.DPoPUtil.DPOP_HEADER
 import com.auth0.android.request.*
 import com.google.gson.Gson
 import com.google.gson.JsonIOException
-import com.nhaarman.mockitokotlin2.*
+import org.mockito.kotlin.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
@@ -199,7 +199,7 @@ public class BaseRequestTest {
         MatcherAssert.assertThat(exception, Matchers.`is`(wrappingAuth0Exception))
         MatcherAssert.assertThat(result, Matchers.`is`(Matchers.nullValue()))
         verify(errorAdapter).fromException(networkError)
-        verifyZeroInteractions(resultAdapter)
+        verifyNoMoreInteractions(resultAdapter)
         verifyNoMoreInteractions(errorAdapter)
     }
 
@@ -253,7 +253,7 @@ public class BaseRequestTest {
             eq(422), any()
         )
         MatcherAssert.assertThat(wasResponseStreamClosed, Matchers.`is`(true))
-        verifyZeroInteractions(resultAdapter)
+        verifyNoMoreInteractions(resultAdapter)
         verifyNoMoreInteractions(errorAdapter)
     }
 
@@ -287,7 +287,7 @@ public class BaseRequestTest {
             )
         )
         MatcherAssert.assertThat(wasResponseStreamClosed, Matchers.`is`(true))
-        verifyZeroInteractions(resultAdapter)
+        verifyNoMoreInteractions(resultAdapter)
         verifyNoMoreInteractions(errorAdapter)
     }
 
@@ -308,7 +308,7 @@ public class BaseRequestTest {
         verify(resultAdapter).fromJson(any(), any())
         MatcherAssert.assertThat(wasResponseStreamClosed, Matchers.`is`(true))
         verifyNoMoreInteractions(resultAdapter)
-        verifyZeroInteractions(errorAdapter)
+        verifyNoMoreInteractions(errorAdapter)
     }
 
     @Test
@@ -328,7 +328,7 @@ public class BaseRequestTest {
         verify(errorAdapter).fromJsonResponse(eq(422), any())
         verify(errorAdapter).fromException(networkError)
         MatcherAssert.assertThat(wasResponseStreamClosed, Matchers.`is`(true))
-        verifyZeroInteractions(resultAdapter)
+        verifyNoMoreInteractions(resultAdapter)
         verifyNoMoreInteractions(errorAdapter)
     }
 
@@ -348,7 +348,7 @@ public class BaseRequestTest {
         MatcherAssert.assertThat(exception, Matchers.`is`(wrappingAuth0Exception))
         verify(errorAdapter).fromException(networkError)
         MatcherAssert.assertThat(wasResponseStreamClosed, Matchers.`is`(true))
-        verifyZeroInteractions(resultAdapter)
+        verifyNoMoreInteractions(resultAdapter)
         verifyNoMoreInteractions(errorAdapter)
     }
 
