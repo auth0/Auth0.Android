@@ -26,21 +26,21 @@
 
 ### Requirements
 
-Android API version 31 or later and Java 8+.
+Android API version 31 or later and Java 17+.
 
 > :warning: Applications targeting Android SDK version 30 (`targetSdkVersion = 30`) and below should use version 2.9.0.
 
-Here’s what you need in `build.gradle` to target Java 8 byte code for Android and Kotlin plugins respectively.
+Here's what you need in `build.gradle` to target Java 17 byte code for Android and Kotlin plugins respectively.
 
 ```groovy
 android {
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '17'
     }
 }
 ```
