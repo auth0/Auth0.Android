@@ -6,7 +6,7 @@ import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.callback.Callback
 import com.auth0.android.result.Credentials
 import com.auth0.android.util.Clock
-import com.nhaarman.mockitokotlin2.*
+import org.mockito.kotlin.*
 import org.junit.After
 import org.junit.Before
 import org.junit.Test

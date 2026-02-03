@@ -13,7 +13,7 @@ import com.auth0.android.provider.AuthenticationActivity.Companion.EXTRA_AUTHORI
 import com.auth0.android.provider.AuthenticationActivity.Companion.EXTRA_CT_OPTIONS
 import com.auth0.android.provider.AuthenticationActivity.Companion.EXTRA_LAUNCH_AS_TWA
 import com.auth0.android.provider.CustomTabsOptions
-import com.nhaarman.mockitokotlin2.any
+import org.mockito.kotlin.any
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
 import org.hamcrest.Matchers
