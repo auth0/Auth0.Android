@@ -27,7 +27,7 @@ import com.auth0.android.request.internal.ThreadSwitcherShadow
 import com.auth0.android.result.Credentials
 import com.auth0.android.util.AuthenticationAPIMockServer
 import com.auth0.android.util.SSLTestUtils
-import com.nhaarman.mockitokotlin2.*
+import org.mockito.kotlin.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch

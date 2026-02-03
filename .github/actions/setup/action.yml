@@ -5,15 +5,15 @@ inputs:
   java:
     description: The Java version to use
     required: false
-    default: 8.0.382-tem
+    default: '17'
   gradle:
     description: The Gradle version to use
     required: false
-    default: 6.7.1
+    default: 8.10.2
   kotlin:
     description: The Kotlin version to use
     required: false
-    default: 1.6.21
+    default: 2.0.21
 
 runs:
   using: composite
@@ -23,7 +23,7 @@ runs:
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: '11'
+        java-version: '17'
 
     - run: |
         curl -s "https://get.sdkman.io" | bash

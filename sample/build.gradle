@@ -4,11 +4,12 @@ plugins {
 }
 
 android {
-    compileSdkVersion 35
+    namespace 'com.auth0.sample'
+    compileSdk 35
 
     defaultConfig {
-        minSdkVersion 24
-        targetSdkVersion 35
+        minSdk 24
+        targetSdk 35
         versionCode 1
         versionName "1.0"
 
@@ -35,11 +36,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '17'
     }
 }
 

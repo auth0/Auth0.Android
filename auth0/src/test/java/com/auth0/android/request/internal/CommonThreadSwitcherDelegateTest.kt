@@ -5,7 +5,7 @@ import com.auth0.android.callback.Callback
 import com.auth0.android.request.*
 import com.auth0.android.util.CommonThreadSwitcherRule
 import com.google.gson.Gson
-import com.nhaarman.mockitokotlin2.*
+import org.mockito.kotlin.*
 import org.hamcrest.MatcherAssert
 import org.hamcrest.Matchers
 import org.junit.Before

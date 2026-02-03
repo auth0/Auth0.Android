@@ -17,7 +17,7 @@ import com.auth0.android.util.SSLTestUtils.testClient
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
-import com.nhaarman.mockitokotlin2.mock
+import org.mockito.kotlin.mock
 import okhttp3.mockwebserver.RecordedRequest
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers

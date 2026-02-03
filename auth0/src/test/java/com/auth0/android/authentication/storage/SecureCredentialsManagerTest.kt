@@ -26,16 +26,6 @@ import com.auth0.android.result.SSOCredentialsMock
 import com.auth0.android.result.toAPICredentials
 import com.auth0.android.util.Clock
 import com.google.gson.Gson
-import com.nhaarman.mockitokotlin2.KArgumentCaptor
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.argumentCaptor
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
-import com.nhaarman.mockitokotlin2.whenever
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -58,6 +48,15 @@ import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.MockitoAnnotations
+import org.mockito.kotlin.KArgumentCaptor
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import java.lang.ref.WeakReference
@@ -1931,11 +1930,20 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(exception.message, Matchers.containsString("authenticate"))
         MatcherAssert.assertThat(exception.cause, Is.`is`(mfaRequiredException))
-        
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload, Is.`is`(Matchers.notNullValue()))
+
+        MatcherAssert.assertThat(
+            exception.mfaRequiredErrorPayload,
+            Is.`is`(Matchers.notNullValue())
+        )
         MatcherAssert.assertThat(exception.mfaToken, Is.`is`("test-mfa-token-12345"))
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.challenge, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.challenge?.size, Is.`is`(2))
+        MatcherAssert.assertThat(
+            exception.mfaRequiredErrorPayload?.mfaRequirements?.challenge,
+            Is.`is`(Matchers.notNullValue())
+        )
+        MatcherAssert.assertThat(
+            exception.mfaRequiredErrorPayload?.mfaRequirements?.challenge?.size,
+            Is.`is`(2)
+        )
     }
 
     @Test
@@ -1968,9 +1976,18 @@ public class SecureCredentialsManagerTest {
         val exception = exceptionCaptor.firstValue
         MatcherAssert.assertThat(exception.message, Matchers.containsString("authenticate"))
         MatcherAssert.assertThat(exception.mfaToken, Is.`is`("enroll-mfa-token"))
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.enroll, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.enroll?.size, Is.`is`(3))
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.challenge, Is.`is`(Matchers.nullValue()))
+        MatcherAssert.assertThat(
+            exception.mfaRequiredErrorPayload?.mfaRequirements?.enroll,
+            Is.`is`(Matchers.notNullValue())
+        )
+        MatcherAssert.assertThat(
+            exception.mfaRequiredErrorPayload?.mfaRequirements?.enroll?.size,
+            Is.`is`(3)
+        )
+        MatcherAssert.assertThat(
+            exception.mfaRequiredErrorPayload?.mfaRequirements?.challenge,
+            Is.`is`(Matchers.nullValue())
+        )
     }
 
     @Test
@@ -1995,7 +2012,10 @@ public class SecureCredentialsManagerTest {
 
         verify(callback).onFailure(exceptionCaptor.capture())
         val exception = exceptionCaptor.firstValue
-        MatcherAssert.assertThat(exception.message, Matchers.containsString("processing the request"))
+        MatcherAssert.assertThat(
+            exception.message,
+            Matchers.containsString("processing the request")
+        )
         MatcherAssert.assertThat(exception.mfaRequiredErrorPayload, Is.`is`(Matchers.nullValue()))
         MatcherAssert.assertThat(exception.mfaToken, Is.`is`(Matchers.nullValue()))
     }
@@ -2028,7 +2048,10 @@ public class SecureCredentialsManagerTest {
         }
         MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(exception.cause, Is.`is`(mfaRequiredException))
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(
+            exception.mfaRequiredErrorPayload,
+            Is.`is`(Matchers.notNullValue())
+        )
         MatcherAssert.assertThat(exception.mfaToken, Is.`is`("await-mfa-token-12345"))
     }
 
@@ -2053,14 +2076,20 @@ public class SecureCredentialsManagerTest {
 
         verify(callback).onFailure(exceptionCaptor.capture())
         val exception = exceptionCaptor.firstValue
-        
+
         MatcherAssert.assertThat(exception.cause, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(exception.cause, IsInstanceOf.instanceOf(AuthenticationException::class.java))
-        
+        MatcherAssert.assertThat(
+            exception.cause,
+            IsInstanceOf.instanceOf(AuthenticationException::class.java)
+        )
+
         val causeException = exception.cause as AuthenticationException
         MatcherAssert.assertThat(causeException.getCode(), Is.`is`("mfa_required"))
         MatcherAssert.assertThat(causeException.isMultifactorRequired, Is.`is`(true))
-        MatcherAssert.assertThat(causeException.getDescription(), Is.`is`("MFA is required for this action"))
+        MatcherAssert.assertThat(
+            causeException.getDescription(),
+            Is.`is`("MFA is required for this action")
+        )
     }
 
     /**
@@ -3723,7 +3752,10 @@ public class SecureCredentialsManagerTest {
 
         verify(callback).onFailure(exceptionCaptor.capture())
         val exception = exceptionCaptor.firstValue
-        MatcherAssert.assertThat(exception, Is.`is`(CredentialsManagerException.DPOP_NOT_CONFIGURED))
+        MatcherAssert.assertThat(
+            exception,
+            Is.`is`(CredentialsManagerException.DPOP_NOT_CONFIGURED)
+        )
     }
 
     @Test
@@ -3771,7 +3803,10 @@ public class SecureCredentialsManagerTest {
         manager.continueGetCredentials(null, 0, emptyMap(), emptyMap(), false, callback)
 
         // Verify thumbprint was backfilled during validation (and also stored again during saveCredentials after renewal)
-        verify(storage, Mockito.atLeastOnce()).store(eq("com.auth0.dpop_key_thumbprint"), anyString())
+        verify(storage, Mockito.atLeastOnce()).store(
+            eq("com.auth0.dpop_key_thumbprint"),
+            anyString()
+        )
         verify(callback).onSuccess(credentialsCaptor.capture())
     }
 
@@ -3824,7 +3859,14 @@ public class SecureCredentialsManagerTest {
         insertTestCredentials(true, true, true, expiresAt, "scope")
         whenever(mockDPoPKeyStore.hasKeyPair()).thenReturn(false)
 
-        manager.continueGetApiCredentials("audience", "read:data", 0, emptyMap(), emptyMap(), apiCredentialsCallback)
+        manager.continueGetApiCredentials(
+            "audience",
+            "read:data",
+            0,
+            emptyMap(),
+            emptyMap(),
+            apiCredentialsCallback
+        )
 
         verify(apiCredentialsCallback).onFailure(exceptionCaptor.capture())
         val exception = exceptionCaptor.firstValue
@@ -3850,7 +3892,14 @@ public class SecureCredentialsManagerTest {
         insertTestCredentials(true, true, true, expiresAt, "scope")
         whenever(mockDPoPKeyStore.hasKeyPair()).thenReturn(false)
 
-        manager.continueGetApiCredentials("audience", "read:data", 0, emptyMap(), emptyMap(), apiCredentialsCallback)
+        manager.continueGetApiCredentials(
+            "audience",
+            "read:data",
+            0,
+            emptyMap(),
+            emptyMap(),
+            apiCredentialsCallback
+        )
 
         verify(apiCredentialsCallback).onFailure(exceptionCaptor.capture())
         val exception = exceptionCaptor.firstValue
