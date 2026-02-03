@@ -643,21 +643,21 @@ mfaClient
   <summary>Using coroutines</summary>
 
 ```kotlin
-try {
-    val challenge = mfaClient
-        .challenge(authenticatorId = "phone|dev_xxxx")
-        .await()
-    println(challenge)
-} catch (e: MfaChallengeException) {
-    e.printStackTrace()
-}
+
+```kotlin
+mfaClient
+    .challenge(authenticatorId = "phone|dev_xxxx")
+    .start(object: Callback<Challenge, MfaChallengeException> {
+        override fun onFailure(exception: MfaChallengeException) { }
+
+        override fun onSuccess(challenge: Challenge) {
+            // Challenge initiated
+            val challengeType = challenge.challengeType
+            val oobCode = challenge.oobCode
+            val bindingMethod = challenge.bindingMethod
+        }
+    })
 ```
-</details>
-
-#### Verifying MFA
-
-Complete the MFA flow by verifying with the appropriate method based on the authenticator type.
-
 ##### Verify with OTP (Authenticator App)
 
 ```kotlin
