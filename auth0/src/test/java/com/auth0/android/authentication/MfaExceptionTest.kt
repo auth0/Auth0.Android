@@ -1,6 +1,10 @@
 package com.auth0.android.authentication
 
 import com.auth0.android.authentication.MfaException.*
+import com.auth0.android.authentication.storage.CredentialsManagerException
+import com.auth0.android.result.MfaFactor
+import com.auth0.android.result.MfaRequiredErrorPayload
+import com.auth0.android.result.MfaRequirements
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.*
 import org.junit.Test
@@ -297,6 +301,112 @@ public class MfaExceptionTest {
         assertThat(enrollException.message, containsString("custom_error_code"))
         assertThat(challengeException.message, containsString("custom_error_code"))
         assertThat(verifyException.message, containsString("custom_error_code"))
+    }
+
+    // ========== CredentialsManagerException MFA Tests ==========
+
+    @Test
+    public fun shouldCredentialsManagerExceptionHaveNullMfaPayloadByDefault(): Unit {
+        val exception = CredentialsManagerException.RENEW_FAILED
+
+        assertThat(exception.mfaRequiredErrorPayload, `is`(nullValue()))
+        assertThat(exception.mfaToken, `is`(nullValue()))
+    }
+
+    @Test
+    public fun shouldCredentialsManagerExceptionMfaRequiredHaveCorrectMessage(): Unit {
+        val exception = CredentialsManagerException.MFA_REQUIRED
+
+        assertThat(exception.message, containsString("Multi-factor authentication is required"))
+    }
+
+    @Test
+    public fun shouldCredentialsManagerExceptionMfaTokenReturnCorrectValue(): Unit {
+        // Create an MFA payload with a token
+        val mfaPayload = MfaRequiredErrorPayload(
+            error = "mfa_required",
+            errorDescription = "Multifactor authentication required",
+            mfaToken = "test_mfa_token_123",
+            mfaRequirements = null
+        )
+
+        // Use reflection to create exception with payload since constructor is internal
+        val exceptionClass = CredentialsManagerException::class.java
+        val constructor = exceptionClass.getDeclaredConstructor(
+            CredentialsManagerException.Code::class.java,
+            String::class.java,
+            Throwable::class.java,
+            MfaRequiredErrorPayload::class.java
+        )
+        constructor.isAccessible = true
+        
+        val codeClass = Class.forName("com.auth0.android.authentication.storage.CredentialsManagerException\$Code")
+        val mfaRequiredCode = codeClass.getDeclaredField("MFA_REQUIRED").get(null)
+        
+        val exception = constructor.newInstance(
+            mfaRequiredCode,
+            "MFA required",
+            null,
+            mfaPayload
+        ) as CredentialsManagerException
+
+        assertThat(exception.mfaRequiredErrorPayload, `is`(notNullValue()))
+        assertThat(exception.mfaToken, `is`("test_mfa_token_123"))
+        assertThat(exception.mfaRequiredErrorPayload?.mfaToken, `is`("test_mfa_token_123"))
+    }
+
+    @Test
+    public fun shouldCredentialsManagerExceptionMfaPayloadContainRequirements(): Unit {
+        // Create MFA requirements with challenge
+        val challengeFactors = listOf(MfaFactor(type = "otp"), MfaFactor(type = "sms"))
+        val requirements = MfaRequirements(challenge = challengeFactors, enroll = null)
+        val mfaPayload = MfaRequiredErrorPayload(
+            error = "mfa_required",
+            errorDescription = "Multifactor authentication required",
+            mfaToken = "token_with_requirements",
+            mfaRequirements = requirements
+        )
+
+        // Use reflection to create exception with payload
+        val exceptionClass = CredentialsManagerException::class.java
+        val constructor = exceptionClass.getDeclaredConstructor(
+            CredentialsManagerException.Code::class.java,
+            String::class.java,
+            Throwable::class.java,
+            MfaRequiredErrorPayload::class.java
+        )
+        constructor.isAccessible = true
+        
+        val codeClass = Class.forName("com.auth0.android.authentication.storage.CredentialsManagerException\$Code")
+        val mfaRequiredCode = codeClass.getDeclaredField("MFA_REQUIRED").get(null)
+        
+        val exception = constructor.newInstance(
+            mfaRequiredCode,
+            "MFA required",
+            null,
+            mfaPayload
+        ) as CredentialsManagerException
+
+        assertThat(exception.mfaRequiredErrorPayload, `is`(notNullValue()))
+        assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements, `is`(notNullValue()))
+        assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.challenge?.map { it.type }, `is`(listOf("otp", "sms")))
+    }
+
+    @Test
+    public fun shouldCredentialsManagerExceptionEqualityIgnoreMfaPayload(): Unit {
+        // Two MFA_REQUIRED exceptions should be equal regardless of payload
+        val exception1 = CredentialsManagerException.MFA_REQUIRED
+        val exception2 = CredentialsManagerException.MFA_REQUIRED
+
+        assertThat(exception1, `is`(exception2))
+        assertThat(exception1.hashCode(), `is`(exception2.hashCode()))
+    }
+
+    @Test
+    public fun shouldCredentialsManagerExceptionStaticInstancesBeDistinct(): Unit {
+        assertThat(CredentialsManagerException.MFA_REQUIRED, `is`(not(CredentialsManagerException.RENEW_FAILED)))
+        assertThat(CredentialsManagerException.MFA_REQUIRED, `is`(not(CredentialsManagerException.NO_CREDENTIALS)))
+        assertThat(CredentialsManagerException.MFA_REQUIRED, `is`(not(CredentialsManagerException.API_ERROR)))
     }
 
 }

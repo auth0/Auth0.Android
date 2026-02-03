@@ -34,9 +34,9 @@ public sealed class EnrollmentChallenge {
 
 public data class MfaEnrollmentChallenge(
     @SerializedName("id")
-    override val id: String?,
+    override val id: String,
     @SerializedName("auth_session")
-    override val authSession: String?
+    override val authSession: String
 ) : EnrollmentChallenge()
 
 /**
