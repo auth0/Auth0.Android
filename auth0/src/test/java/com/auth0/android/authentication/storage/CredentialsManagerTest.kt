@@ -1948,6 +1948,30 @@ public class CredentialsManagerTest {
         MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("scope"))
     }
 
+    // ========== CredentialsManagerException MFA Tests ==========
+
+    @Test
+    public fun shouldCredentialsManagerExceptionHaveNullMfaPayloadByDefault() {
+        val exception = CredentialsManagerException.RENEW_FAILED
+
+        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload, Is.`is`(Matchers.nullValue()))
+        MatcherAssert.assertThat(exception.mfaToken, Is.`is`(Matchers.nullValue()))
+    }
+
+    @Test
+    public fun shouldCredentialsManagerExceptionMfaRequiredHaveCorrectMessage() {
+        val exception = CredentialsManagerException.MFA_REQUIRED
+
+        MatcherAssert.assertThat(exception.message, Matchers.containsString("Multi-factor authentication is required"))
+    }
+
+    @Test
+    public fun shouldCredentialsManagerExceptionStaticInstancesBeDistinct() {
+        MatcherAssert.assertThat(CredentialsManagerException.MFA_REQUIRED, Is.`is`(Matchers.not(CredentialsManagerException.RENEW_FAILED)))
+        MatcherAssert.assertThat(CredentialsManagerException.MFA_REQUIRED, Is.`is`(Matchers.not(CredentialsManagerException.NO_CREDENTIALS)))
+        MatcherAssert.assertThat(CredentialsManagerException.MFA_REQUIRED, Is.`is`(Matchers.not(CredentialsManagerException.API_ERROR)))
+    }
+
     private fun prepareJwtDecoderMock(expiresAt: Date?) {
         val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(expiresAt)

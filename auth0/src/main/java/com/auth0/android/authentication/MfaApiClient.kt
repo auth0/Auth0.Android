@@ -84,10 +84,8 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
         GsonProvider.gson
     )
 
-    private val clientId: String
-        get() = auth0.clientId
-    private val baseURL: String
-        get() = auth0.getDomainUrl()
+    private val clientId: String = auth0.clientId
+    private val baseURL: String = auth0.getDomainUrl()
 
     /**
      * Retrieves the list of available authenticators for the user, filtered by the specified factor types.

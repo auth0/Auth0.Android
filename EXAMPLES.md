@@ -445,9 +445,10 @@ When MFA is required during authentication, the error response contains a struct
 | `mfaRequirements.challenge` | `List<MfaFactor>?` | Factor types available for challenge. Present when the user **has already enrolled** MFA factors. |
 
 **Enroll vs Challenge Flows:**
-- **Enroll flow**: When `mfaRequirements.enroll` is present (and `challenge` is null or empty), the user needs to enroll a new MFA factor before they can authenticate. Use `mfaClient.enroll()` to register a new authenticator.
-- **Challenge flow**: When `mfaRequirements.challenge` is present, the user has already enrolled MFA factors. Use `mfaClient.getAuthenticators()` to list their enrolled authenticators, then `mfaClient.challenge()` to initiate verification.
-- **Both present**: In some configurations, both `enroll` and `challenge` may be present, allowing the user to either verify with an existing factor or enroll a new one.
+- **Enroll flow**: When `mfaRequirements.enroll` is present and not empty, the user needs to enroll a new MFA factor before they can authenticate. Use `mfaClient.enroll()` to register a new authenticator.
+- **Challenge flow**: When `mfaRequirements.challenge` is present and not empty, the user has already enrolled MFA factors. Use `mfaClient.getAuthenticators()` to list their enrolled authenticators, then `mfaClient.challenge()` to initiate verification.
+
+> **Note**: Check both `enroll` and `challenge` independently. While typically only one will be present, your code should handle both scenarios defensively.
 
 #### Handling MFA Required Errors
 
@@ -465,9 +466,21 @@ authentication
                 val mfaToken = mfaPayload?.mfaToken
                 val requirements = mfaPayload?.mfaRequirements
                 
-                // Check what actions are available (these are factor types, not authenticators)
-                val canChallenge = requirements?.challenge // List of factor types the user can challenge
-                val canEnroll = requirements?.enroll // List of factor types the user can enroll
+                // Check if enrollment is required (user has not enrolled MFA yet)
+                requirements?.enroll?.let { enrollTypes ->
+                    println("User needs to enroll MFA")
+                    println("Available enrollment types: ${enrollTypes.map { it.type }}")
+                    // Example output: ["otp", "sms", "push-notification"]
+                    // Proceed with MFA enrollment using one of these types
+                }
+                
+                // Check if challenge is available (user already enrolled)
+                requirements?.challenge?.let { challengeTypes ->
+                    println("User has enrolled MFA factors")
+                    println("Available challenge types: ${challengeTypes.map { it.type }}")
+                    // Example output: ["otp", "sms"]
+                    // Get authenticators and challenge one of them
+                }
                 
                 // Proceed with MFA flow using mfaToken
             }
@@ -493,7 +506,23 @@ try {
     if (e.isMultifactorRequired) {
         val mfaPayload = e.mfaRequiredErrorPayload
         val mfaToken = mfaPayload?.mfaToken
-        // Proceed with MFA flow
+        val requirements = mfaPayload?.mfaRequirements
+        
+        // Check if enrollment is required
+        requirements?.enroll?.let { enrollTypes ->
+            println("User needs to enroll MFA")
+            println("Available enrollment types: ${enrollTypes.map { it.type }}")
+            // Example output: ["otp", "sms", "push-notification"]
+        }
+        
+        // Check if challenge is available
+        requirements?.challenge?.let { challengeTypes ->
+            println("User has enrolled MFA factors")
+            println("Available challenge types: ${challengeTypes.map { it.type }}")
+            // Example output: ["otp", "sms"]
+        }
+        
+        // Proceed with MFA flow using mfaToken
     }
 }
 ```
