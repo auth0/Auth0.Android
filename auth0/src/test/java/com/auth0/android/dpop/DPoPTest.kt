@@ -3,9 +3,9 @@ package com.auth0.android.dpop
 import android.content.Context
 import com.auth0.android.request.HttpMethod
 import com.auth0.android.request.internal.Jwt
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import okhttp3.Headers
 import okhttp3.Response
 import okhttp3.ResponseBody
