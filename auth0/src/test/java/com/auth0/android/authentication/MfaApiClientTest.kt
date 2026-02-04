@@ -5,7 +5,6 @@ import com.auth0.android.authentication.mfa.MfaApiClient
 import com.auth0.android.authentication.mfa.MfaEnrollmentType
 import com.auth0.android.authentication.mfa.MfaVerificationType
 import com.auth0.android.authentication.mfa.MfaException.*
-import com.auth0.android.callback.Callback
 import com.auth0.android.request.internal.ThreadSwitcherShadow
 import com.auth0.android.result.Authenticator
 import com.auth0.android.result.Challenge
@@ -13,6 +12,8 @@ import com.auth0.android.result.Credentials
 import com.auth0.android.result.EnrollmentChallenge
 import com.auth0.android.result.MfaEnrollmentChallenge
 import com.auth0.android.result.TotpEnrollmentChallenge
+import com.auth0.android.util.CallbackMatcher
+import com.auth0.android.util.MockCallback
 import com.auth0.android.util.SSLTestUtils
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -32,8 +33,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowLooper
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 @RunWith(RobolectricTestRunner::class)
 @Config(shadows = [ThreadSwitcherShadow::class])
@@ -624,29 +623,16 @@ public class MfaApiClientTest {
         val json = """[{"id": "sms|dev_123", "authenticator_type": "oob", "active": true}]"""
         enqueueMockResponse(json)
 
-        val latch = CountDownLatch(1)
-        var callbackResult: List<Authenticator>? = null
-        var callbackError: MfaListAuthenticatorsException? = null
+        val callback = MockCallback<List<Authenticator>, MfaListAuthenticatorsException>()
 
         mfaClient.getAuthenticators(listOf("oob"))
-            .start(object : Callback<List<Authenticator>, MfaListAuthenticatorsException> {
-                override fun onSuccess(result: List<Authenticator>) {
-                    callbackResult = result
-                    latch.countDown()
-                }
-
-                override fun onFailure(error: MfaListAuthenticatorsException) {
-                    callbackError = error
-                    latch.countDown()
-                }
-            })
+            .start(callback)
 
         ShadowLooper.idleMainLooper()
-        latch.await(5, TimeUnit.SECONDS)
 
-        assertThat(callbackResult, `is`(notNullValue()))
-        assertThat(callbackResult, hasSize(1))
-        assertThat(callbackError, `is`(nullValue()))
+        assertThat(callback.getPayload(), `is`(notNullValue()))
+        assertThat(callback.getPayload(), hasSize(1))
+        assertThat(callback.getError(), `is`(nullValue()))
     }
 
     @Test
@@ -654,29 +640,16 @@ public class MfaApiClientTest {
         val json = """{"id": "sms|dev_123", "auth_session": "session_abc"}"""
         enqueueMockResponse(json)
 
-        val latch = CountDownLatch(1)
-        var callbackResult: EnrollmentChallenge? = null
-        var callbackError: MfaEnrollmentException? = null
+        val callback = MockCallback<EnrollmentChallenge, MfaEnrollmentException>()
 
         mfaClient.enroll(MfaEnrollmentType.Phone("+12025550135"))
-            .start(object : Callback<EnrollmentChallenge, MfaEnrollmentException> {
-                override fun onSuccess(result: EnrollmentChallenge) {
-                    callbackResult = result
-                    latch.countDown()
-                }
-
-                override fun onFailure(error: MfaEnrollmentException) {
-                    callbackError = error
-                    latch.countDown()
-                }
-            })
+            .start(callback)
 
         ShadowLooper.idleMainLooper()
-        latch.await(5, TimeUnit.SECONDS)
 
-        assertThat(callbackResult, `is`(notNullValue()))
-        assertThat(callbackResult!!.id, `is`("sms|dev_123"))
-        assertThat(callbackError, `is`(nullValue()))
+        assertThat(callback.getPayload(), `is`(notNullValue()))
+        assertThat(callback.getPayload().id, `is`("sms|dev_123"))
+        assertThat(callback.getError(), `is`(nullValue()))
     }
 
     @Test
@@ -684,29 +657,16 @@ public class MfaApiClientTest {
         val json = """{"challenge_type": "oob", "oob_code": "oob_123"}"""
         enqueueMockResponse(json)
 
-        val latch = CountDownLatch(1)
-        var callbackResult: Challenge? = null
-        var callbackError: MfaChallengeException? = null
+        val callback = MockCallback<Challenge, MfaChallengeException>()
 
         mfaClient.challenge("sms|dev_123")
-            .start(object : Callback<Challenge, MfaChallengeException> {
-                override fun onSuccess(result: Challenge) {
-                    callbackResult = result
-                    latch.countDown()
-                }
-
-                override fun onFailure(error: MfaChallengeException) {
-                    callbackError = error
-                    latch.countDown()
-                }
-            })
+            .start(callback)
 
         ShadowLooper.idleMainLooper()
-        latch.await(5, TimeUnit.SECONDS)
 
-        assertThat(callbackResult, `is`(notNullValue()))
-        assertThat(callbackResult!!.challengeType, `is`("oob"))
-        assertThat(callbackError, `is`(nullValue()))
+        assertThat(callback.getPayload(), `is`(notNullValue()))
+        assertThat(callback.getPayload().challengeType, `is`("oob"))
+        assertThat(callback.getError(), `is`(nullValue()))
     }
 
     @Test
@@ -714,29 +674,16 @@ public class MfaApiClientTest {
         val json = """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
         enqueueMockResponse(json)
 
-        val latch = CountDownLatch(1)
-        var callbackResult: Credentials? = null
-        var callbackError: MfaVerifyException? = null
+        val callback = MockCallback<Credentials, MfaVerifyException>()
 
         mfaClient.verify(MfaVerificationType.Otp("123456"))
-            .start(object : Callback<Credentials, MfaVerifyException> {
-                override fun onSuccess(result: Credentials) {
-                    callbackResult = result
-                    latch.countDown()
-                }
-
-                override fun onFailure(error: MfaVerifyException) {
-                    callbackError = error
-                    latch.countDown()
-                }
-            })
+            .start(callback)
 
         ShadowLooper.idleMainLooper()
-        latch.await(5, TimeUnit.SECONDS)
 
-        assertThat(callbackResult, `is`(notNullValue()))
-        assertThat(callbackResult!!.accessToken, `is`(ACCESS_TOKEN))
-        assertThat(callbackError, `is`(nullValue()))
+        assertThat(callback.getPayload(), `is`(notNullValue()))
+        assertThat(callback.getPayload().accessToken, `is`(ACCESS_TOKEN))
+        assertThat(callback.getError(), `is`(nullValue()))
     }
 
 

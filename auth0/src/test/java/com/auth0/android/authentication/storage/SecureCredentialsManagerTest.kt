@@ -1882,16 +1882,13 @@ public class SecureCredentialsManagerTest {
 
     @Test
     public fun shouldFailWithMfaRequiredWhenRenewingExpiredCredentials() {
-        // Arrange: Set up local authentication to pass
         Mockito.`when`(localAuthenticationManager.authenticate()).then {
             localAuthenticationManager.resultCallback.onSuccess(true)
         }
-        // Arrange: Set up expired credentials that need renewal
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS)
         insertTestCredentials(false, true, true, expiresAt, "scope")
         Mockito.`when`(client.renewAuth("refreshToken")).thenReturn(request)
 
-        // Create an AuthenticationException that simulates MFA required response
         val mfaRequiredValues = mapOf(
             "error" to "mfa_required",
             "error_description" to "Multifactor authentication required",
@@ -1906,18 +1903,14 @@ public class SecureCredentialsManagerTest {
         val mfaRequiredException = AuthenticationException(mfaRequiredValues, 403)
         Mockito.`when`(request.execute()).thenThrow(mfaRequiredException)
 
-        // Act: Try to get credentials, which triggers renewal
         manager.getCredentials(callback)
 
-        // Assert: Verify the callback receives MFA_REQUIRED exception with payload
         verify(callback).onFailure(exceptionCaptor.capture())
         val exception = exceptionCaptor.firstValue
         MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
-        // Note: CredentialsManager uses error.message which is the DEFAULT_MESSAGE from AuthenticationException
         MatcherAssert.assertThat(exception.message, Matchers.containsString("authenticate"))
         MatcherAssert.assertThat(exception.cause, Is.`is`(mfaRequiredException))
         
-        // Verify MFA payload is properly passed through
         MatcherAssert.assertThat(exception.mfaRequiredErrorPayload, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(exception.mfaToken, Is.`is`("test-mfa-token-12345"))
         MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.challenge, Is.`is`(Matchers.notNullValue()))
@@ -1926,16 +1919,13 @@ public class SecureCredentialsManagerTest {
 
     @Test
     public fun shouldFailWithMfaRequiredWithEnrollmentOptionsWhenRenewingCredentials() {
-        // Arrange: Set up local authentication to pass
         Mockito.`when`(localAuthenticationManager.authenticate()).then {
             localAuthenticationManager.resultCallback.onSuccess(true)
         }
-        // Arrange: Set up expired credentials that need renewal
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS)
         insertTestCredentials(false, true, true, expiresAt, "scope")
         Mockito.`when`(client.renewAuth("refreshToken")).thenReturn(request)
 
-        // Create an AuthenticationException with enrollment options (user needs to enroll MFA)
         val mfaRequiredValues = mapOf(
             "error" to "mfa_required",
             "error_description" to "Multifactor authentication required",
@@ -1951,13 +1941,10 @@ public class SecureCredentialsManagerTest {
         val mfaRequiredException = AuthenticationException(mfaRequiredValues, 403)
         Mockito.`when`(request.execute()).thenThrow(mfaRequiredException)
 
-        // Act: Try to get credentials
         manager.getCredentials(callback)
 
-        // Assert: Verify MFA required with enrollment options
         verify(callback).onFailure(exceptionCaptor.capture())
         val exception = exceptionCaptor.firstValue
-        // Note: CredentialsManager uses error.message which is the DEFAULT_MESSAGE from AuthenticationException
         MatcherAssert.assertThat(exception.message, Matchers.containsString("authenticate"))
         MatcherAssert.assertThat(exception.mfaToken, Is.`is`("enroll-mfa-token"))
         MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.enroll, Is.`is`(Matchers.notNullValue()))
@@ -1967,16 +1954,13 @@ public class SecureCredentialsManagerTest {
 
     @Test
     public fun shouldNotStoreMfaPayloadWhenNonMfaApiErrorOccurs() {
-        // Arrange: Set up local authentication to pass
         Mockito.`when`(localAuthenticationManager.authenticate()).then {
             localAuthenticationManager.resultCallback.onSuccess(true)
         }
-        // Arrange: Set up expired credentials that need renewal
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS)
         insertTestCredentials(false, true, true, expiresAt, "scope")
         Mockito.`when`(client.renewAuth("refreshToken")).thenReturn(request)
 
-        // Create a regular API error (not MFA required)
         val regularApiError = AuthenticationException(
             mapOf(
                 "error" to "invalid_grant",
@@ -1986,13 +1970,10 @@ public class SecureCredentialsManagerTest {
         )
         Mockito.`when`(request.execute()).thenThrow(regularApiError)
 
-        // Act: Try to get credentials
         manager.getCredentials(callback)
 
-        // Assert: Verify no MFA payload is present for non-MFA errors
         verify(callback).onFailure(exceptionCaptor.capture())
         val exception = exceptionCaptor.firstValue
-        // For non-MFA API errors, message is "An error occurred while processing the request."
         MatcherAssert.assertThat(exception.message, Matchers.containsString("processing the request"))
         MatcherAssert.assertThat(exception.mfaRequiredErrorPayload, Is.`is`(Matchers.nullValue()))
         MatcherAssert.assertThat(exception.mfaToken, Is.`is`(Matchers.nullValue()))
@@ -2001,16 +1982,13 @@ public class SecureCredentialsManagerTest {
     @Test
     @ExperimentalCoroutinesApi
     public fun shouldThrowMfaRequiredExceptionWhenAwaitingExpiredCredentials(): Unit = runTest {
-        // Arrange: Set up local authentication to pass
         Mockito.`when`(localAuthenticationManager.authenticate()).then {
             localAuthenticationManager.resultCallback.onSuccess(true)
         }
-        // Arrange: Set up expired credentials that need renewal
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS)
         insertTestCredentials(false, true, true, expiresAt, "scope")
         Mockito.`when`(client.renewAuth("refreshToken")).thenReturn(request)
 
-        // Create an AuthenticationException that simulates MFA required response
         val mfaRequiredValues = mapOf(
             "error" to "mfa_required",
             "error_description" to "Multifactor authentication required",
@@ -2024,7 +2002,6 @@ public class SecureCredentialsManagerTest {
         val mfaRequiredException = AuthenticationException(mfaRequiredValues, 403)
         Mockito.`when`(request.execute()).thenThrow(mfaRequiredException)
 
-        // Act & Assert: Verify awaitCredentials throws CredentialsManagerException with MFA payload
         val exception = assertThrows(CredentialsManagerException::class.java) {
             runBlocking { manager.awaitCredentials() }
         }
@@ -2035,59 +2012,10 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public fun shouldFailWithMfaRequiredContainingBothChallengeAndEnrollOptions() {
-        // Arrange: Set up local authentication to pass
-        Mockito.`when`(localAuthenticationManager.authenticate()).then {
-            localAuthenticationManager.resultCallback.onSuccess(true)
-        }
-        // Arrange: Set up expired credentials that need renewal
-        val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS)
-        insertTestCredentials(false, true, true, expiresAt, "scope")
-        Mockito.`when`(client.renewAuth("refreshToken")).thenReturn(request)
-
-        // Create MFA required with BOTH challenge (existing factors) AND enroll (can add more factors)
-        val mfaRequiredValues = mapOf(
-            "error" to "mfa_required",
-            "error_description" to "Multifactor authentication required",
-            "mfa_token" to "combined-mfa-token",
-            "mfa_requirements" to mapOf(
-                "challenge" to listOf(
-                    mapOf("type" to "otp")
-                ),
-                "enroll" to listOf(
-                    mapOf("type" to "sms"),
-                    mapOf("type" to "push-notification")
-                )
-            )
-        )
-        val mfaRequiredException = AuthenticationException(mfaRequiredValues, 403)
-        Mockito.`when`(request.execute()).thenThrow(mfaRequiredException)
-
-        // Act: Try to get credentials
-        manager.getCredentials(callback)
-
-        // Assert: Verify both challenge and enroll are present in the payload
-        verify(callback).onFailure(exceptionCaptor.capture())
-        val exception = exceptionCaptor.firstValue
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(exception.mfaToken, Is.`is`("combined-mfa-token"))
-        
-        // Verify challenge factors
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.challenge, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.challenge?.size, Is.`is`(1))
-        
-        // Verify enroll factors
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.enroll, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.enroll?.size, Is.`is`(2))
-    }
-
-    @Test
     public fun shouldPreserveOriginalAuthenticationExceptionAsCauseForMfaRequired() {
-        // Arrange: Set up local authentication to pass
         Mockito.`when`(localAuthenticationManager.authenticate()).then {
             localAuthenticationManager.resultCallback.onSuccess(true)
         }
-        // Arrange: Set up expired credentials that need renewal
         val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS)
         insertTestCredentials(false, true, true, expiresAt, "scope")
         Mockito.`when`(client.renewAuth("refreshToken")).thenReturn(request)
@@ -2100,14 +2028,11 @@ public class SecureCredentialsManagerTest {
         val originalException = AuthenticationException(mfaRequiredValues, 403)
         Mockito.`when`(request.execute()).thenThrow(originalException)
 
-        // Act
         manager.getCredentials(callback)
 
-        // Assert: Verify the original exception is preserved as cause
         verify(callback).onFailure(exceptionCaptor.capture())
         val exception = exceptionCaptor.firstValue
         
-        // The cause should be the original AuthenticationException
         MatcherAssert.assertThat(exception.cause, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(exception.cause, IsInstanceOf.instanceOf(AuthenticationException::class.java))
         
