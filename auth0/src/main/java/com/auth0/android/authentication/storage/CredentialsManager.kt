@@ -29,7 +29,8 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
     authenticationClient: AuthenticationAPIClient,
     storage: Storage,
     jwtDecoder: JWTDecoder,
-    private val serialExecutor: Executor
+    private val serialExecutor: Executor,
+    private val maxRetries: Int
 ) : BaseCredentialsManager(authenticationClient, storage, jwtDecoder) {
 
     private val gson: Gson = GsonProvider.gson
@@ -39,12 +40,18 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      *
      * @param authenticationClient the Auth0 Authentication client to refresh credentials with.
      * @param storage              the storage to use for the credentials.
+     * @param maxRetries           the maximum number of retry attempts for credential renewal when encountering transient errors. Default is 0 (no retries).
      */
-    public constructor(authenticationClient: AuthenticationAPIClient, storage: Storage) : this(
+    public constructor(
+        authenticationClient: AuthenticationAPIClient,
+        storage: Storage,
+        maxRetries: Int = 0
+    ) : this(
         authenticationClient,
         storage,
         JWTDecoder(),
-        Executors.newSingleThreadExecutor()
+        Executors.newSingleThreadExecutor(),
+        maxRetries.coerceAtLeast(0)
     )
 
     public override val userProfile: UserProfile?
@@ -470,6 +477,21 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         forceRefresh: Boolean,
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
+        getCredentialsWithRetry(scope, minTtl, parameters, headers, forceRefresh, 0, callback)
+    }
+
+    /**
+     * Internal method that implements retry logic for credential retrieval.
+     */
+    private fun getCredentialsWithRetry(
+        scope: String?,
+        minTtl: Int,
+        parameters: Map<String, String>,
+        headers: Map<String, String>,
+        forceRefresh: Boolean,
+        retryCount: Int,
+        callback: Callback<Credentials, CredentialsManagerException>
+    ) {
         serialExecutor.execute {
             val accessToken = storage.retrieveString(KEY_ACCESS_TOKEN)
             val refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN)
@@ -544,6 +566,26 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                 saveCredentials(credentials)
                 callback.onSuccess(credentials)
             } catch (error: AuthenticationException) {
+                if (shouldRetryRenewal(error, retryCount)) {
+                    val delay = calculateRetryDelay(retryCount)
+                    Log.d(
+                        TAG,
+                        "Retrying credential renewal (attempt ${retryCount + 1}/$maxRetries) after ${delay}ms due to retryable error: ${error.getDescription()}"
+                    )
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                        getCredentialsWithRetry(
+                            scope,
+                            minTtl,
+                            parameters,
+                            headers,
+                            forceRefresh,
+                            retryCount + 1,
+                            callback
+                        )
+                    }, delay)
+                    return@execute
+                }
+
                 val exception = when {
                     error.isRefreshTokenDeleted || error.isInvalidRefreshToken -> CredentialsManagerException.Code.RENEW_FAILED
 
@@ -754,6 +796,29 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         scope: String?
     ): Credentials {
         return Credentials(idToken, accessToken, tokenType, refreshToken, expiresAt, scope)
+    }
+
+    /**
+     * Determines if a credential renewal operation should be retried based on the error and current retry count.
+     *
+     * @param error the error that occurred during the renewal attempt
+     * @param retryCount the current number of retry attempts
+     * @return true if the operation should be retried, false otherwise
+     */
+    private fun shouldRetryRenewal(error: AuthenticationException, retryCount: Int): Boolean {
+        return retryCount < maxRetries && error.isRetryable
+    }
+
+    /**
+     * Calculates the exponential backoff delay for a given retry attempt.
+     * Formula: 2^retryCount * 0.5 seconds
+     *
+     * @param retryCount the current retry attempt number (0-indexed)
+     * @return the delay in milliseconds
+     */
+    private fun calculateRetryDelay(retryCount: Int): Long {
+        val delaySeconds = Math.pow(2.0, retryCount.toDouble()) * 0.5
+        return (delaySeconds * 1000).toLong()
     }
 
     private companion object {
