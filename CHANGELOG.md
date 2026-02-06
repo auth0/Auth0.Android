@@ -1,5 +1,12 @@
 # Change Log
 
+## [3.13.0](https://github.com/auth0/Auth0.Android/tree/3.13.0) (2026-02-06)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.12.2...3.13.0)
+
+**Added**
+- Expanding Flexible Factors Grant Android Support [\#896](https://github.com/auth0/Auth0.Android/pull/896) ([utkrishtsahu](https://github.com/utkrishtsahu))
+- fix: Prevent DPoP replay protection error due to OkHttp retry [\#902](https://github.com/auth0/Auth0.Android/pull/902) ([pmathew92](https://github.com/pmathew92))
+
 ## [3.12.2](https://github.com/auth0/Auth0.Android/tree/3.12.2) (2026-01-23)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.12.1...3.12.2)
 
