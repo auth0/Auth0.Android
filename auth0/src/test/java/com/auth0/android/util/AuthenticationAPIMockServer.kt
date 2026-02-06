@@ -1,6 +1,8 @@
 package com.auth0.android.util
 
 import okhttp3.mockwebserver.MockResponse
+import java.nio.file.Files
+import java.nio.file.Paths
 
 internal class AuthenticationAPIMockServer : APIMockServer() {
 
@@ -126,14 +128,11 @@ internal class AuthenticationAPIMockServer : APIMockServer() {
 
     fun willReturnValidJsonWebKeys(): AuthenticationAPIMockServer {
         try {
-            // Use classloader to load resource file - works regardless of working directory
-            val inputStream = this::class.java.classLoader?.getResourceAsStream("rsa_jwks.json")
-                ?: throw IllegalStateException("Could not find rsa_jwks.json in test resources")
-            val json = inputStream.bufferedReader().use { it.readText() }
+            val encoded = Files.readAllBytes(Paths.get("src/test/resources/rsa_jwks.json"))
+            val json = String(encoded)
             server.enqueue(responseWithJSON(json, 200))
-        } catch (e: Exception) {
-            println("File parsing error: ${e.message}")
-            throw e
+        } catch (ignored: Exception) {
+            println("File parsing error")
         }
         return this
     }
