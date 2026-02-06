@@ -5,6 +5,9 @@ import android.util.Log
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
 import com.auth0.android.provider.TokenValidationException
+import com.auth0.android.result.MfaFactor
+import com.auth0.android.result.MfaRequiredErrorPayload
+import com.auth0.android.result.MfaRequirements
 
 public class AuthenticationException : Auth0Exception {
     private var code: String? = null
@@ -146,6 +149,52 @@ public class AuthenticationException : Auth0Exception {
     /// When MFA is required and the user is not enrolled
     public val isMultifactorEnrollRequired: Boolean
         get() = "a0.mfa_registration_required" == code || "unsupported_challenge_type" == code
+
+    /**
+     * Extracts the MFA required error payload when multifactor authentication is required.
+     *
+     * This property decodes the error values into a structured [MfaRequiredErrorPayload] object
+     * containing the MFA token and enrollment requirements.
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * if (error.isMultifactorRequired) {
+     *     val mfaPayload = error.mfaRequiredErrorPayload
+     *     val mfaToken = mfaPayload?.mfaToken
+     *     val enrollmentTypes = mfaPayload?.mfaRequirements?.enroll
+     * }
+     * ```
+     *
+     * @see isMultifactorRequired
+     * @see MfaRequiredErrorPayload
+     */
+    public val mfaRequiredErrorPayload: MfaRequiredErrorPayload?
+        get() {
+            val mfaToken = getValue("mfa_token") as? String ?: return null
+            val errorCode = getCode()
+            val errorDesc = getDescription()
+            val requirements = getValue("mfa_requirements") as? Map<*, *>
+            
+            @Suppress("UNCHECKED_CAST")
+            val challengeList = (requirements?.get("challenge") as? List<Map<String, Any>>)?.map {
+                MfaFactor(it["type"] as? String ?: "")
+            }
+            
+            @Suppress("UNCHECKED_CAST")
+            val enrollList = (requirements?.get("enroll") as? List<Map<String, Any>>)?.map {
+                MfaFactor(it["type"] as? String ?: "")
+            }
+            
+            return MfaRequiredErrorPayload(
+                error = errorCode,
+                errorDescription = errorDesc,
+                mfaToken = mfaToken,
+                mfaRequirements = if (challengeList != null || enrollList != null) {
+                    MfaRequirements(enroll = enrollList, challenge = challengeList)
+                } else null
+            )
+        }
 
     /// When Bot Protection flags the request as suspicious
     public val isVerificationRequired: Boolean

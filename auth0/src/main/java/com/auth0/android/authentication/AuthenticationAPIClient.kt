@@ -5,6 +5,7 @@ import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
+import com.auth0.android.authentication.mfa.MfaApiClient
 import com.auth0.android.dpop.DPoP
 import com.auth0.android.dpop.DPoPException
 import com.auth0.android.dpop.SenderConstraining
@@ -82,6 +83,31 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     public override fun useDPoP(context: Context): AuthenticationAPIClient {
         dPoP = DPoP(context)
         return this
+    }
+
+    /**
+     * Creates a new [MfaApiClient] to handle a multi-factor authentication transaction.
+     *
+     * Example usage:
+     * ```
+     * try {
+     *     val credentials = authClient.login("user@example.com", "password").await()
+     * } catch (error: AuthenticationException) {
+     *     if (error.isMultifactorRequired) {
+     *         val mfaToken = error.mfaRequiredErrorPayload?.mfaToken
+     *         if (mfaToken != null) {
+     *             val mfaClient = authClient.mfaClient(mfaToken)
+     *             // Use mfaClient to handle MFA flow
+     *         }
+     *     }
+     * }
+     * ```
+     *
+     * @param mfaToken The token received in the 'mfa_required' error from a login attempt.
+     * @return A new [MfaApiClient] instance configured for the transaction.
+     */
+    public fun mfaClient(mfaToken: String): MfaApiClient {
+        return MfaApiClient(this.auth0, mfaToken)
     }
 
     /**
@@ -1081,7 +1107,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         return factory.get(url.toString(), userProfileAdapter, dPoP)
     }
 
-    private companion object {
+    internal companion object {
         private const val SMS_CONNECTION = "sms"
         private const val EMAIL_CONNECTION = "email"
         private const val USERNAME_KEY = "username"
