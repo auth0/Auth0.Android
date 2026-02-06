@@ -103,7 +103,7 @@ public class DefaultClient @VisibleForTesting(otherwise = VisibleForTesting.PRIV
             .headers(headers)
             .build()
 
-        // Use non-retryable client for DPoP requests or token refresh requests
+        // Use non-retryable client for DPoP requests
         val client = if (shouldUseNonRetryableClient(headers)) {
             nonRetryableOkHttpClient
         } else {
