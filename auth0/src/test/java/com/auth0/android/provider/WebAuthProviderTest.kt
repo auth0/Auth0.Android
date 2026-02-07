@@ -28,7 +28,6 @@ import com.auth0.android.request.internal.ThreadSwitcherShadow
 import com.auth0.android.result.Credentials
 import com.auth0.android.util.AuthenticationAPIMockServer
 import com.auth0.android.util.SSLTestUtils
-import org.mockito.kotlin.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -54,6 +53,14 @@ import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations
+import org.mockito.kotlin.KArgumentCaptor
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
@@ -63,7 +70,8 @@ import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.util.*
+import java.util.Collections
+import java.util.Date
 
 @RunWith(RobolectricTestRunner::class)
 @Config(shadows = [ThreadSwitcherShadow::class])
@@ -1716,8 +1724,10 @@ public class WebAuthProviderTest {
         }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
         Assert.assertTrue(resume(intent))
         mockAPI.takeRequest()
-        ShadowLooper.idleMainLooper()
-        ShadowLooper.idleMainLooper()
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+//        shadows()
+//        ShadowLooper.idleMainLooper()
+//        ShadowLooper.idleMainLooper()
         verify(authCallback).onFailure(authExceptionCaptor.capture())
         val error = authExceptionCaptor.firstValue
         assertThat(error, `is`(notNullValue()))
