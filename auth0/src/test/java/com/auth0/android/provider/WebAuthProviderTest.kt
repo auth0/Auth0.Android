@@ -1580,7 +1580,6 @@ public class WebAuthProviderTest {
             )
         Mockito.doAnswer {
             callbackCaptor.firstValue.onSuccess(codeCredentials)
-            null
         }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
         Assert.assertTrue(resume(intent))
         mockAPI.takeRequest()
@@ -1711,7 +1710,6 @@ public class WebAuthProviderTest {
             )
         Mockito.doAnswer {
             callbackCaptor.firstValue.onSuccess(codeCredentials)
-            null
         }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
         Assert.assertTrue(resume(intent))
         mockAPI.takeRequest()
