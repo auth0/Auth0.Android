@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Looper
 import android.os.Parcelable
 import androidx.test.espresso.intent.matcher.IntentMatchers
 import androidx.test.espresso.intent.matcher.UriMatchers
@@ -55,6 +56,7 @@ import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowLooper
 import java.io.ByteArrayInputStream
@@ -1710,9 +1712,11 @@ public class WebAuthProviderTest {
             )
         Mockito.doAnswer {
             callbackCaptor.firstValue.onSuccess(codeCredentials)
+            null
         }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
         Assert.assertTrue(resume(intent))
         mockAPI.takeRequest()
+        ShadowLooper.idleMainLooper()
         ShadowLooper.idleMainLooper()
         verify(authCallback).onFailure(authExceptionCaptor.capture())
         val error = authExceptionCaptor.firstValue
@@ -1792,6 +1796,7 @@ public class WebAuthProviderTest {
         proxyAccount.networkingClient = SSLTestUtils.testClient
         val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         login(proxyAccount)
+            .withIdTokenVerificationIssuer("")
             .withIdTokenVerificationIssuer("")
             .withPKCE(pkce)
             .start(activity, authCallback)
