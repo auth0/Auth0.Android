@@ -10,28 +10,20 @@ runs:
       with:
         distribution: 'temurin'
         java-version: '17'
-        cache: 'gradle'
 
-#    - name: Make gradlew executable
-#      shell: bash
-#      run: chmod +x ./gradlew
+    - name: Make gradlew executable
+      shell: bash
+      run: chmod +x ./gradlew
 
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@473878a77f1b98e2b5ac4af93489d1656a80a5ed  # v4.2.0
-      with:
-        gradle-version: '8.10'
 
     - name: Set up Android
       uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3.2.2
-
-    - name: Install Android SDK components
-      run: |
-        sdkmanager "build-tools;35.0.0" "platforms;android-35" "platform-tools"
-      shell: bash
 
     - name: Download Android dependencies
       run: ./gradlew androidDependencies
       shell: bash
 
-#    - name: Validate Gradle wrapper
-#      uses: gradle/wrapper-validation-action@56b90f209b02bf6d1deae490e9ef18b21a389cd4 # pin@1.1.0
+    - name: Validate Gradle wrapper
+      uses: gradle/wrapper-validation-action@56b90f209b02bf6d1deae490e9ef18b21a389cd4 # pin@1.1.0
