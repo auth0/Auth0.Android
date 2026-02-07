@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Looper
 import android.os.Parcelable
 import androidx.test.espresso.intent.matcher.IntentMatchers
 import androidx.test.espresso.intent.matcher.UriMatchers
@@ -28,6 +27,7 @@ import com.auth0.android.request.internal.ThreadSwitcherShadow
 import com.auth0.android.result.Credentials
 import com.auth0.android.util.AuthenticationAPIMockServer
 import com.auth0.android.util.SSLTestUtils
+import org.mockito.kotlin.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -53,25 +53,15 @@ import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations
-import org.mockito.kotlin.KArgumentCaptor
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.doThrow
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import org.mockito.kotlin.verify
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowLooper
 import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.util.Collections
-import java.util.Date
+import java.util.*
 
 @RunWith(RobolectricTestRunner::class)
 @Config(shadows = [ThreadSwitcherShadow::class])
@@ -1551,11 +1541,22 @@ public class WebAuthProviderTest {
     public fun shouldFailToResumeLoginWhenRSAKeyIsMissingFromJWKSet() {
         val pkce = Mockito.mock(PKCE::class.java)
         `when`(pkce.codeChallenge).thenReturn("challenge")
-        val mockAPI = AuthenticationAPIMockServer()
-        mockAPI.willReturnEmptyJsonWebKeys()
+        val networkingClient: NetworkingClient = Mockito.spy(DefaultClient())
         val authCallback = mock<Callback<Credentials, AuthenticationException>>()
-        val proxyAccount: Auth0 = Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
-        proxyAccount.networkingClient = SSLTestUtils.testClient
+        val proxyAccount: Auth0 = Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, JwtTestUtils.EXPECTED_BASE_DOMAIN)
+        proxyAccount.networkingClient = networkingClient
+        
+        // Stub JWKS response with empty keys
+        val emptyJwksJson = """{
+          "keys": []
+        }"""
+        val jwksInputStream: InputStream = ByteArrayInputStream(emptyJwksJson.toByteArray())
+        val jwksResponse = ServerResponse(200, jwksInputStream, emptyMap())
+        Mockito.doReturn(jwksResponse).`when`(networkingClient).load(
+            eq(proxyAccount.getDomainUrl() + ".well-known/jwks.json"),
+            any()
+        )
+        
         login(proxyAccount)
             .withState("1234567890")
             .withNonce(JwtTestUtils.EXPECTED_NONCE)
@@ -1590,9 +1591,9 @@ public class WebAuthProviderTest {
             )
         Mockito.doAnswer {
             callbackCaptor.firstValue.onSuccess(codeCredentials)
+            null
         }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
         Assert.assertTrue(resume(intent))
-        mockAPI.takeRequest()
         ShadowLooper.idleMainLooper()
         verify(authCallback).onFailure(authExceptionCaptor.capture())
         val error = authExceptionCaptor.firstValue
@@ -1608,7 +1609,6 @@ public class WebAuthProviderTest {
             error.cause?.message,
             `is`("Could not find a public key for kid \"key123\"")
         )
-        mockAPI.shutdown()
     }
 
     @Test
@@ -1682,11 +1682,20 @@ public class WebAuthProviderTest {
     public fun shouldFailToResumeLoginWhenKeyIdIsMissingFromIdTokenHeader() {
         val pkce = Mockito.mock(PKCE::class.java)
         `when`(pkce.codeChallenge).thenReturn("challenge")
-        val mockAPI = AuthenticationAPIMockServer()
-        mockAPI.willReturnValidJsonWebKeys()
+        val networkingClient: NetworkingClient = Mockito.spy(DefaultClient())
         val authCallback = mock<Callback<Credentials, AuthenticationException>>()
-        val proxyAccount: Auth0 = Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
-        proxyAccount.networkingClient = SSLTestUtils.testClient
+        val proxyAccount: Auth0 = Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, JwtTestUtils.EXPECTED_BASE_DOMAIN)
+        proxyAccount.networkingClient = networkingClient
+        
+        // Stub JWKS response with valid keys
+        val encoded = Files.readAllBytes(Paths.get("src/test/resources/rsa_jwks.json"))
+        val jwksInputStream: InputStream = ByteArrayInputStream(encoded)
+        val jwksResponse = ServerResponse(200, jwksInputStream, emptyMap())
+        Mockito.doReturn(jwksResponse).`when`(networkingClient).load(
+            eq(proxyAccount.getDomainUrl() + ".well-known/jwks.json"),
+            any()
+        )
+        
         login(proxyAccount)
             .withState("1234567890")
             .withNonce("abcdefg")
@@ -1723,7 +1732,6 @@ public class WebAuthProviderTest {
             null
         }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
         Assert.assertTrue(resume(intent))
-        mockAPI.takeRequest()
         ShadowLooper.idleMainLooper()
         verify(authCallback).onFailure(authExceptionCaptor.capture())
         val error = authExceptionCaptor.firstValue
@@ -1739,7 +1747,6 @@ public class WebAuthProviderTest {
             error.cause?.message,
             `is`("Could not find a public key for kid \"null\"")
         )
-        mockAPI.shutdown()
     }
 
     @Test
@@ -1803,7 +1810,6 @@ public class WebAuthProviderTest {
         proxyAccount.networkingClient = SSLTestUtils.testClient
         val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         login(proxyAccount)
-            .withIdTokenVerificationIssuer("")
             .withIdTokenVerificationIssuer("")
             .withPKCE(pkce)
             .start(activity, authCallback)
