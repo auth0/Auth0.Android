@@ -1724,10 +1724,7 @@ public class WebAuthProviderTest {
         }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
         Assert.assertTrue(resume(intent))
         mockAPI.takeRequest()
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-//        shadows()
-//        ShadowLooper.idleMainLooper()
-//        ShadowLooper.idleMainLooper()
+        ShadowLooper.idleMainLooper()
         verify(authCallback).onFailure(authExceptionCaptor.capture())
         val error = authExceptionCaptor.firstValue
         assertThat(error, `is`(notNullValue()))

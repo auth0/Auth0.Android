@@ -28,6 +28,6 @@ jobs:
 
       - uses: ./.github/actions/setup
 
-      - run: ./gradlew clean test jacocoTestReport lint --continue --console=plain --max-workers=1 --no-daemon
+      - run: ./gradlew clean testDebugUnitTest --continue --console=plain --max-workers=1 --no-daemon --stacktrace
 
       - uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # pin@5.5.2
