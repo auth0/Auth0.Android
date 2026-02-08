@@ -8,7 +8,7 @@ v4 of the Auth0 Android SDK includes significant build toolchain updates to supp
 
 ### Java Version
 
-v4 requires **Java 17** or later (previously Java 11).
+v4 requires **Java 17** or later (previously Java 8+).
 
 Update your `build.gradle` to target Java 17:
 

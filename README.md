@@ -30,7 +30,7 @@ Android API version 31 or later and Java 17+.
 
 > :warning: Applications targeting Android SDK version 30 (`targetSdkVersion = 30`) and below should use version 2.9.0.
 
-Here’s what you need in `build.gradle` to target Java 17 byte code for Android and Kotlin plugins respectively.
+Here’s what you need in `build.gradle` to target Java 17 bytecode for Android and Kotlin plugins respectively.
 
 ```groovy
 android {
@@ -52,7 +52,7 @@ To install Auth0.Android with [Gradle](https://gradle.org/), simply add the foll
 
 ```gradle
 dependencies {
-    implementation 'com.auth0.android:auth0:4.0.0-beta.0'
+    implementation 'com.auth0.android:auth0:<latest-version>'
 }
 ```
 
