@@ -45,6 +45,7 @@ import org.hamcrest.core.IsNot.not
 import org.hamcrest.core.IsNull.notNullValue
 import org.junit.Assert
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers
@@ -1537,74 +1538,73 @@ public class WebAuthProviderTest {
     }
 
 
-//TODO: Fix this failing tests in CI once the robo-electric and other dependencies are fixed
-// https://auth0team.atlassian.net/browse/SDK-7752
-//
-//    @Test
-//    @Throws(Exception::class)
-//    public fun shouldFailToResumeLoginWhenRSAKeyIsMissingFromJWKSet() {
-//        val pkce = Mockito.mock(PKCE::class.java)
-//        `when`(pkce.codeChallenge).thenReturn("challenge")
-//        val mockAPI = AuthenticationAPIMockServer()
-//        mockAPI.willReturnEmptyJsonWebKeys()
-//        val authCallback = mock<Callback<Credentials, AuthenticationException>>()
-//        val proxyAccount: Auth0 = Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
-//        proxyAccount.networkingClient = SSLTestUtils.testClient
-//        login(proxyAccount)
-//            .withState("1234567890")
-//            .withNonce(JwtTestUtils.EXPECTED_NONCE)
-//            .withPKCE(pkce)
-//            .start(activity, authCallback)
-//        val managerInstance = WebAuthProvider.managerInstance as OAuthManager
-//        managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
-//        val jwtBody = JwtTestUtils.createJWTBody()
-//        jwtBody["iss"] = proxyAccount.getDomainUrl()
-//        val expectedIdToken = JwtTestUtils.createTestJWT("RS256", jwtBody)
-//        val intent = createAuthIntent(
-//            createHash(
-//                null,
-//                null,
-//                null,
-//                null,
-//                null,
-//                "1234567890",
-//                null,
-//                null,
-//                "1234"
-//            )
-//        )
-//        val codeCredentials =
-//            Credentials(
-//                expectedIdToken,
-//                "codeAccess",
-//                "codeType",
-//                "codeRefresh",
-//                Date(),
-//                "codeScope"
-//            )
-//        Mockito.doAnswer {
-//            callbackCaptor.firstValue.onSuccess(codeCredentials)
-//            null
-//        }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
-//        Assert.assertTrue(resume(intent))
-//        mockAPI.takeRequest()
-//        ShadowLooper.idleMainLooper()
-//        verify(authCallback).onFailure(authExceptionCaptor.capture())
-//        val error = authExceptionCaptor.firstValue
-//        assertThat(error, `is`(notNullValue()))
-//        assertThat(
-//            error.cause, `is`(
-//                Matchers.instanceOf(
-//                    TokenValidationException::class.java
-//                )
-//            )
-//        )
-//        assertThat(
-//            error.cause?.message,
-//            `is`("Could not find a public key for kid \"key123\"")
-//        )
-//        mockAPI.shutdown()
-//    }
+    // TODO: https://auth0team.atlassian.net/browse/SDK-7752
+    @Test
+    @Ignore("Fix these failing tests in CI once Roboelectric and other dependencies are updated")
+    @Throws(Exception::class)
+    public fun shouldFailToResumeLoginWhenRSAKeyIsMissingFromJWKSet() {
+        val pkce = Mockito.mock(PKCE::class.java)
+        `when`(pkce.codeChallenge).thenReturn("challenge")
+        val mockAPI = AuthenticationAPIMockServer()
+        mockAPI.willReturnEmptyJsonWebKeys()
+        val authCallback = mock<Callback<Credentials, AuthenticationException>>()
+        val proxyAccount: Auth0 = Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
+        proxyAccount.networkingClient = SSLTestUtils.testClient
+        login(proxyAccount)
+            .withState("1234567890")
+            .withNonce(JwtTestUtils.EXPECTED_NONCE)
+            .withPKCE(pkce)
+            .start(activity, authCallback)
+        val managerInstance = WebAuthProvider.managerInstance as OAuthManager
+        managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
+        val jwtBody = JwtTestUtils.createJWTBody()
+        jwtBody["iss"] = proxyAccount.getDomainUrl()
+        val expectedIdToken = JwtTestUtils.createTestJWT("RS256", jwtBody)
+        val intent = createAuthIntent(
+            createHash(
+                null,
+                null,
+                null,
+                null,
+                null,
+                "1234567890",
+                null,
+                null,
+                "1234"
+            )
+        )
+        val codeCredentials =
+            Credentials(
+                expectedIdToken,
+                "codeAccess",
+                "codeType",
+                "codeRefresh",
+                Date(),
+                "codeScope"
+            )
+        Mockito.doAnswer {
+            callbackCaptor.firstValue.onSuccess(codeCredentials)
+            null
+        }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
+        Assert.assertTrue(resume(intent))
+        mockAPI.takeRequest()
+        ShadowLooper.idleMainLooper()
+        verify(authCallback).onFailure(authExceptionCaptor.capture())
+        val error = authExceptionCaptor.firstValue
+        assertThat(error, `is`(notNullValue()))
+        assertThat(
+            error.cause, `is`(
+                Matchers.instanceOf(
+                    TokenValidationException::class.java
+                )
+            )
+        )
+        assertThat(
+            error.cause?.message,
+            `is`("Could not find a public key for kid \"key123\"")
+        )
+        mockAPI.shutdown()
+    }
 
     @Test
     @Throws(Exception::class)
@@ -1672,73 +1672,73 @@ public class WebAuthProviderTest {
         mockAPI.shutdown()
     }
 
-//TODO: Fix this failing tests in CI once the robo-electric and other dependencies are fixed
-// https://auth0team.atlassian.net/browse/SDK-7752
-//
-//    @Test
-//    @Throws(Exception::class)
-//    public fun shouldFailToResumeLoginWhenKeyIdIsMissingFromIdTokenHeader() {
-//        val pkce = Mockito.mock(PKCE::class.java)
-//        `when`(pkce.codeChallenge).thenReturn("challenge")
-//        val mockAPI = AuthenticationAPIMockServer()
-//        mockAPI.willReturnValidJsonWebKeys()
-//        val authCallback = mock<Callback<Credentials, AuthenticationException>>()
-//        val proxyAccount: Auth0 = Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
-//        proxyAccount.networkingClient = SSLTestUtils.testClient
-//        login(proxyAccount)
-//            .withState("1234567890")
-//            .withNonce("abcdefg")
-//            .withPKCE(pkce)
-//            .start(activity, authCallback)
-//        val managerInstance = WebAuthProvider.managerInstance as OAuthManager
-//        managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
-//        val expectedIdToken =
-//            "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhdXRoMHwxMjM0NTY3ODkifQ.PZivSuGSAWpSU62-iHwI16Po9DgO9lN7SLB3168P03wXBkue6nxbL3beq6jjW9uuhqRKfOiDtsvtr3paGXHONarPqQ1LEm4TDg8CM6AugaphH36EjEjL0zEYo0nxz9Fv1Xu9_bWSzfmLLgRefjZ5R0muV7JlyfBgtkfG0avD3PtjlNtToXX1sN9DyhgCT-STX9kSQAlk23V1XA3c8st09QgmQRgtZC3ZmTEHqq_FTmFUkVUNM6E0LbgLR7bLcOx4Xqayp1mqZxUgTg7ynHI6Ey4No-R5_twAki_BR8uG0TxqHlPxuU9QTzEvCQxrqzZZufRv_kIn2-fqrF3yr3z4Og"
-//        val intent = createAuthIntent(
-//            createHash(
-//                null,
-//                null,
-//                null,
-//                null,
-//                null,
-//                "1234567890",
-//                null,
-//                null,
-//                "1234"
-//            )
-//        )
-//        val codeCredentials =
-//            Credentials(
-//                expectedIdToken,
-//                "codeAccess",
-//                "codeType",
-//                "codeRefresh",
-//                Date(),
-//                "codeScope"
-//            )
-//        Mockito.doAnswer {
-//            callbackCaptor.firstValue.onSuccess(codeCredentials)
-//            null
-//        }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
-//        Assert.assertTrue(resume(intent))
-//        mockAPI.takeRequest()
-//        ShadowLooper.idleMainLooper()
-//        verify(authCallback).onFailure(authExceptionCaptor.capture())
-//        val error = authExceptionCaptor.firstValue
-//        assertThat(error, `is`(notNullValue()))
-//        assertThat(
-//            error.cause, `is`(
-//                Matchers.instanceOf(
-//                    TokenValidationException::class.java
-//                )
-//            )
-//        )
-//        assertThat(
-//            error.cause?.message,
-//            `is`("Could not find a public key for kid \"null\"")
-//        )
-//        mockAPI.shutdown()
-//    }
+
+    //TODO: https://auth0team.atlassian.net/browse/SDK-7752
+    @Test
+    @Ignore("Fix these failing tests in CI once Roboelectric and other dependencies are updated")
+    @Throws(Exception::class)
+    public fun shouldFailToResumeLoginWhenKeyIdIsMissingFromIdTokenHeader() {
+        val pkce = Mockito.mock(PKCE::class.java)
+        `when`(pkce.codeChallenge).thenReturn("challenge")
+        val mockAPI = AuthenticationAPIMockServer()
+        mockAPI.willReturnValidJsonWebKeys()
+        val authCallback = mock<Callback<Credentials, AuthenticationException>>()
+        val proxyAccount: Auth0 = Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
+        proxyAccount.networkingClient = SSLTestUtils.testClient
+        login(proxyAccount)
+            .withState("1234567890")
+            .withNonce("abcdefg")
+            .withPKCE(pkce)
+            .start(activity, authCallback)
+        val managerInstance = WebAuthProvider.managerInstance as OAuthManager
+        managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
+        val expectedIdToken =
+            "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhdXRoMHwxMjM0NTY3ODkifQ.PZivSuGSAWpSU62-iHwI16Po9DgO9lN7SLB3168P03wXBkue6nxbL3beq6jjW9uuhqRKfOiDtsvtr3paGXHONarPqQ1LEm4TDg8CM6AugaphH36EjEjL0zEYo0nxz9Fv1Xu9_bWSzfmLLgRefjZ5R0muV7JlyfBgtkfG0avD3PtjlNtToXX1sN9DyhgCT-STX9kSQAlk23V1XA3c8st09QgmQRgtZC3ZmTEHqq_FTmFUkVUNM6E0LbgLR7bLcOx4Xqayp1mqZxUgTg7ynHI6Ey4No-R5_twAki_BR8uG0TxqHlPxuU9QTzEvCQxrqzZZufRv_kIn2-fqrF3yr3z4Og"
+        val intent = createAuthIntent(
+            createHash(
+                null,
+                null,
+                null,
+                null,
+                null,
+                "1234567890",
+                null,
+                null,
+                "1234"
+            )
+        )
+        val codeCredentials =
+            Credentials(
+                expectedIdToken,
+                "codeAccess",
+                "codeType",
+                "codeRefresh",
+                Date(),
+                "codeScope"
+            )
+        Mockito.doAnswer {
+            callbackCaptor.firstValue.onSuccess(codeCredentials)
+            null
+        }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
+        Assert.assertTrue(resume(intent))
+        mockAPI.takeRequest()
+        ShadowLooper.idleMainLooper()
+        verify(authCallback).onFailure(authExceptionCaptor.capture())
+        val error = authExceptionCaptor.firstValue
+        assertThat(error, `is`(notNullValue()))
+        assertThat(
+            error.cause, `is`(
+                Matchers.instanceOf(
+                    TokenValidationException::class.java
+                )
+            )
+        )
+        assertThat(
+            error.cause?.message,
+            `is`("Could not find a public key for kid \"null\"")
+        )
+        mockAPI.shutdown()
+    }
 
     @Test
     @Throws(Exception::class)
