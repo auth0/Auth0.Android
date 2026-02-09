@@ -230,6 +230,43 @@ public class DefaultClientTest {
         requestAssertions(sentRequest, HttpMethod.PATCH)
     }
 
+    @Test
+    public fun shouldHaveNonRetryableClientConfigured() {
+        val client = createDefaultClientForTest(mapOf())
+
+        assertThat(client.okHttpClient, notNullValue())
+        assertThat(client.nonRetryableOkHttpClient, notNullValue())
+
+        assertThat(client.okHttpClient.retryOnConnectionFailure, equalTo(true))
+        assertThat(client.nonRetryableOkHttpClient.retryOnConnectionFailure, equalTo(false))
+    }
+
+    @Test
+    public fun shouldShareSameConfigBetweenClients() {
+        val client = createDefaultClientForTest(mapOf())
+
+        assertThat(
+            client.okHttpClient.interceptors.size,
+            equalTo(client.nonRetryableOkHttpClient.interceptors.size)
+        )
+
+        assertThat(
+            client.okHttpClient.interceptors[0] is RetryInterceptor,
+            equalTo(true)
+        )
+        assertThat(
+            client.nonRetryableOkHttpClient.interceptors[0] is RetryInterceptor,
+            equalTo(true)
+        )
+        assertThat(
+            client.okHttpClient.connectTimeoutMillis,
+            equalTo(client.nonRetryableOkHttpClient.connectTimeoutMillis)
+        )
+        assertThat(
+            client.okHttpClient.readTimeoutMillis,
+            equalTo(client.nonRetryableOkHttpClient.readTimeoutMillis)
+        )
+    }
 
     //Helper methods
     private fun requestAssertions(
