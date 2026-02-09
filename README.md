@@ -26,21 +26,21 @@
 
 ### Requirements
 
-Android API version 31 or later and Java 8+.
+Android API version 31 or later and Java 17+.
 
 > :warning: Applications targeting Android SDK version 30 (`targetSdkVersion = 30`) and below should use version 2.9.0.
 
-Here’s what you need in `build.gradle` to target Java 8 byte code for Android and Kotlin plugins respectively.
+Here’s what you need in `build.gradle` to target Java 17 bytecode for Android and Kotlin plugins respectively.
 
 ```groovy
 android {
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '17'
     }
 }
 ```
@@ -52,7 +52,7 @@ To install Auth0.Android with [Gradle](https://gradle.org/), simply add the foll
 
 ```gradle
 dependencies {
-    implementation 'com.auth0.android:auth0:3.12.2'
+    implementation 'com.auth0.android:auth0:<latest-version>'
 }
 ```
 
@@ -117,11 +117,11 @@ Next, define the Manifest Placeholders for the Auth0 Domain and Scheme which are
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion 35
     defaultConfig {
         applicationId "com.auth0.samples"
-        minSdkVersion 21
-        targetSdkVersion 30
+        minSdkVersion 24
+        targetSdkVersion 35
         //...
 
         //---> Add the next line
