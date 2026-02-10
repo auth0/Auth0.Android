@@ -4,13 +4,6 @@ buildscript {
     repositories {
         google()
         mavenCentral()
-        //noinspection JcenterRepositoryObsolete
-        jcenter() {
-            content {
-                // https://youtrack.jetbrains.com/issue/KT-44730
-                includeModule("org.jetbrains.trove4j", "trove4j")
-            }
-        }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:8.8.2'
@@ -48,14 +41,5 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        //noinspection JcenterRepositoryObsolete
-        jcenter() {
-            content {
-                // https://youtrack.jetbrains.com/issue/KT-44730
-                includeModule("org.jetbrains.trove4j", "trove4j")
-                includeModule("com.soywiz.korlibs.korte", "korte-jvm")
-                includeModule("org.jetbrains.kotlinx", "kotlinx-html-jvm")
-            }
-        }
     }
 }
