@@ -225,7 +225,7 @@ public class AuthenticationAPIClientTest {
                 defaultLocale
             )
         )
-        val body = bodyFromRequest<String>(request)
+        val body = bodyFromRequest<Any>(request)
         assertThat(request.path, Matchers.equalTo("/oauth/token"))
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(
@@ -254,7 +254,7 @@ public class AuthenticationAPIClientTest {
                 defaultLocale
             )
         )
-        val body = bodyFromRequest<String>(request)
+        val body = bodyFromRequest<Any>(request)
         assertThat(request.path, Matchers.equalTo("/passkey/register"))
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("realm", MY_CONNECTION))
@@ -1034,7 +1034,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
-        val body = bodyFromRequest<String>(request)
+        val body = bodyFromRequest<Any>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("username", SUPPORT))
         assertThat(body, Matchers.hasEntry("password", PASSWORD))
@@ -1058,7 +1058,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
-        val body = bodyFromRequest<String>(request)
+        val body = bodyFromRequest<Any>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("username", SUPPORT))
         assertThat(body, Matchers.hasEntry("password", PASSWORD))
@@ -1361,7 +1361,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
-        val body = bodyFromRequest<String>(request)
+        val body = bodyFromRequest<Any>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("username", SUPPORT))
         assertThat(body, Matchers.hasEntry("password", PASSWORD))
@@ -3132,8 +3132,8 @@ public class AuthenticationAPIClientTest {
         assertThat(exception.cause, Matchers.instanceOf(DPoPException::class.java))
     }
 
-    private fun <T> bodyFromRequest(request: RecordedRequest): Map<String, T> {
-        val mapType = object : TypeToken<Map<String?, T>?>() {}.type
+    private inline fun <reified T> bodyFromRequest(request: RecordedRequest): Map<String, T> {
+        val mapType = object : TypeToken<Map<String, T>>() {}.type
         return gson.fromJson(request.body.readUtf8(), mapType)
     }
 
