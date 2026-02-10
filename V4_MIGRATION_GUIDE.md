@@ -29,13 +29,13 @@ android {
 
 v4 requires:
 
-- **Gradle**: 8.10.2 or later
-- **Android Gradle Plugin (AGP)**: 8.8.2 or later
+- **Gradle**: 8.11.1 or later
+- **Android Gradle Plugin (AGP)**: 8.10.1 or later
 
 Update your `gradle/wrapper/gradle-wrapper.properties`:
 
 ```properties
-distributionUrl=https\://services.gradle.org/distributions/gradle-8.10.2-all.zip
+distributionUrl=https\://services.gradle.org/distributions/gradle-8.11.1-all.zip
 ```
 
 Update your root `build.gradle`:
@@ -43,7 +43,7 @@ Update your root `build.gradle`:
 ```groovy
 buildscript {
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.8.2'
+        classpath 'com.android.tools.build:gradle:8.10.1'
     }
 }
 ```
@@ -67,6 +67,34 @@ buildscript {
   - [signinWithPasskey()](auth0/src/main/java/com/auth0/android/authentication/AuthenticationAPIClient.kt#L235-L253) - Sign in a user using passkeys
   - [signupWithPasskey()](auth0/src/main/java/com/auth0/android/authentication/AuthenticationAPIClient.kt#L319-L344) - Sign up a user and returns a challenge for key generation
 
+## Dependency Changes
+
+### ⚠️ Gson 2.8.9 → 2.11.0 (Transitive Dependency)
+
+v4 updates the internal Gson dependency from **2.8.9** to **2.11.0**. While the SDK does not expose Gson types in its public API, Gson is included as a transitive runtime dependency. If your app also uses Gson, be aware of the following changes introduced in Gson 2.10+:
+
+- **`TypeToken` with unresolved type variables is rejected at runtime.** Code like `object : TypeToken<List<T>>() {}` (where `T` is a generic parameter) will throw `IllegalArgumentException`. Use Kotlin `reified` type parameters or pass concrete types instead.
+- **Strict type coercion is enforced.** Gson no longer silently coerces JSON objects or arrays to `String`. If your code relies on this behavior, you will see `JsonSyntaxException`.
+- **Built-in ProGuard/R8 rules are included.** Gson 2.11.0 ships its own keep rules, so you may be able to remove custom Gson ProGuard rules from your project.
+
+If you need to pin Gson to an older version, you can use Gradle's `resolutionStrategy`:
+
+```groovy
+configurations.all {
+    resolutionStrategy.force 'com.google.code.gson:gson:2.8.9'
+}
+```
+
+Alternatively, you can exclude Gson from the SDK entirely and provide your own version:
+
+```groovy
+implementation('com.auth0.android:auth0:<version>') {
+    exclude group: 'com.google.code.gson', module: 'gson'
+}
+implementation 'com.google.code.gson:gson:2.8.9' // your preferred version
+```
+
+> **Note:** Pinning or excluding is not recommended long-term, as the SDK has been tested and validated against Gson 2.11.0.
 
 ## Getting Help
 

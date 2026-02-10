@@ -467,8 +467,8 @@ public class MyAccountAPIClientTest {
         assertThat(body, Matchers.hasEntry("type", "push-notification" as Any))
     }
 
-    private fun <T> bodyFromRequest(request: RecordedRequest): Map<String, T> {
-        val mapType = object : TypeToken<Map<String?, T>?>() {}.type
+    private inline fun <reified T> bodyFromRequest(request: RecordedRequest): Map<String, T> {
+        val mapType = object : TypeToken<Map<String, T>>() {}.type
         return gson.fromJson(request.body.readUtf8(), mapType)
     }
 
