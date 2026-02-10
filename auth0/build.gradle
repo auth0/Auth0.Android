@@ -52,7 +52,7 @@ android {
 
         manifestPlaceholders = [auth0Domain: '${auth0Domain}', auth0Scheme: '${auth0Scheme}']
 
-        consumerProguardFiles '../proguard/proguard-gson.pro', '../proguard/proguard-okio.pro', '../proguard/proguard-jetpack.pro'
+        consumerProguardFiles '../proguard/proguard-gson.pro', '../proguard/proguard-okio.pro'
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     lint {
@@ -83,7 +83,6 @@ ext {
     okhttpVersion = '4.12.0'
     coroutinesVersion = '1.10.2'
     biometricLibraryVersion = '1.1.0'
-    credentialManagerVersion = "1.5.0"
 }
 
 
@@ -113,9 +112,6 @@ dependencies {
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion"
 
     testImplementation "androidx.biometric:biometric:$biometricLibraryVersion"
-
-    implementation "androidx.credentials:credentials-play-services-auth:$credentialManagerVersion"
-    implementation "androidx.credentials:credentials:$credentialManagerVersion"
 }
 
 apply from: rootProject.file('gradle/jacoco.gradle')
