@@ -60,7 +60,12 @@ buildscript {
 
 ## Breaking Changes
 
-No breaking API changes have been identified in v4. This section will be updated if any are discovered.
+### Classes Removed
+
+- The `com.auth0.android.provider.PasskeyAuthProvider` class has been removed. Use the APIs from the [AuthenticationAPIClient](auth0/src/main/java/com/auth0/android/authentication/AuthenticationAPIClient.kt) class for passkey operations:
+  - [passkeyChallenge()](auth0/src/main/java/com/auth0/android/authentication/AuthenticationAPIClient.kt#L366-L387) - Request a challenge to initiate passkey login flow
+  - [signinWithPasskey()](auth0/src/main/java/com/auth0/android/authentication/AuthenticationAPIClient.kt#L235-L253) - Sign in a user using passkeys
+  - [signupWithPasskey()](auth0/src/main/java/com/auth0/android/authentication/AuthenticationAPIClient.kt#L319-L344) - Sign up a user and returns a challenge for key generation
 
 
 ## Getting Help
