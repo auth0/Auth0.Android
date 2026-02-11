@@ -81,6 +81,7 @@ public class DefaultClientTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     public fun shouldHaveLoggingDisabledByDefault() {
         val netClient = DefaultClient(enableLogging = false)
         assertThat(netClient.okHttpClient.interceptors, hasSize(1))
@@ -91,6 +92,7 @@ public class DefaultClientTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     public fun shouldHaveRetryInterceptorEnabled() {
         val netClient = DefaultClient(enableLogging = false)
         assertThat(netClient.okHttpClient.interceptors, hasSize(1))
@@ -101,6 +103,7 @@ public class DefaultClientTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     public fun shouldHaveLoggingEnabledIfSpecified() {
         val netClient = DefaultClient(enableLogging = true)
         assertThat(netClient.okHttpClient.interceptors, hasSize(2))
@@ -113,6 +116,7 @@ public class DefaultClientTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     public fun shouldHaveDefaultTimeoutValues() {
         val client = DefaultClient()
         assertThat(client.okHttpClient.connectTimeoutMillis, equalTo(10 * 1000))
@@ -120,6 +124,7 @@ public class DefaultClientTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     public fun shouldUseTimeoutConfigIfSpecified() {
         val client = DefaultClient(connectTimeout = 100, readTimeout = 200)
         assertThat(client.okHttpClient.connectTimeoutMillis, equalTo(100 * 1000))
@@ -353,14 +358,283 @@ public class DefaultClientTest {
     }
 
     private fun createDefaultClientForTest(defaultHeaders: Map<String, String>): DefaultClient {
-        return DefaultClient(
-            defaultHeaders = defaultHeaders,
-            readTimeout = 10,
-            connectTimeout = 10,
-            enableLogging = false,
-            gson = gson,
-            sslSocketFactory = SSLTestUtils.clientCertificates.sslSocketFactory(),
-            trustManager = SSLTestUtils.clientCertificates.trustManager
+        return DefaultClient.Builder()
+            .connectTimeout(10)
+            .readTimeout(10)
+            .defaultHeaders(defaultHeaders)
+            .enableLogging(false)
+            .gson(gson)
+            .sslSocketFactory(
+                SSLTestUtils.clientCertificates.sslSocketFactory(),
+                SSLTestUtils.clientCertificates.trustManager
+            )
+            .build()
+    }
+
+    @Test
+    public fun builderShouldCreateClientWithDefaultValues() {
+        val client = DefaultClient.Builder().build()
+        assertThat(client.okHttpClient.connectTimeoutMillis, equalTo(10 * 1000))
+        assertThat(client.okHttpClient.readTimeoutMillis, equalTo(10 * 1000))
+        assertThat(client.okHttpClient.writeTimeoutMillis, equalTo(10 * 1000))
+        assertThat(client.okHttpClient.callTimeoutMillis, equalTo(0))
+        assertThat(client.okHttpClient.interceptors, hasSize(1))
+        assertThat(client.okHttpClient.interceptors[0] is RetryInterceptor, equalTo(true))
+    }
+
+    @Test
+    public fun builderShouldSetConnectTimeout() {
+        val client = DefaultClient.Builder()
+            .connectTimeout(30)
+            .build()
+        assertThat(client.okHttpClient.connectTimeoutMillis, equalTo(30 * 1000))
+    }
+
+    @Test
+    public fun builderShouldSetReadTimeout() {
+        val client = DefaultClient.Builder()
+            .readTimeout(45)
+            .build()
+        assertThat(client.okHttpClient.readTimeoutMillis, equalTo(45 * 1000))
+    }
+
+    @Test
+    public fun builderShouldSetWriteTimeout() {
+        val client = DefaultClient.Builder()
+            .writeTimeout(20)
+            .build()
+        assertThat(client.okHttpClient.writeTimeoutMillis, equalTo(20 * 1000))
+    }
+
+    @Test
+    public fun builderShouldSetCallTimeout() {
+        val client = DefaultClient.Builder()
+            .callTimeout(60)
+            .build()
+        assertThat(client.okHttpClient.callTimeoutMillis, equalTo(60 * 1000))
+    }
+
+    @Test
+    public fun builderShouldSetAllTimeouts() {
+        val client = DefaultClient.Builder()
+            .connectTimeout(15)
+            .readTimeout(25)
+            .writeTimeout(35)
+            .callTimeout(120)
+            .build()
+        assertThat(client.okHttpClient.connectTimeoutMillis, equalTo(15 * 1000))
+        assertThat(client.okHttpClient.readTimeoutMillis, equalTo(25 * 1000))
+        assertThat(client.okHttpClient.writeTimeoutMillis, equalTo(35 * 1000))
+        assertThat(client.okHttpClient.callTimeoutMillis, equalTo(120 * 1000))
+    }
+
+    @Test
+    public fun builderShouldEnableLoggingWithDefaultLevel() {
+        val client = DefaultClient.Builder()
+            .enableLogging(true)
+            .build()
+        assertThat(client.okHttpClient.interceptors, hasSize(2))
+        val loggingInterceptor = client.okHttpClient.interceptors[1] as HttpLoggingInterceptor
+        assertThat(loggingInterceptor.level, equalTo(HttpLoggingInterceptor.Level.BODY))
+    }
+
+    @Test
+    public fun builderShouldSetCustomLogLevel() {
+        val client = DefaultClient.Builder()
+            .enableLogging(true)
+            .logLevel(HttpLoggingInterceptor.Level.HEADERS)
+            .build()
+        assertThat(client.okHttpClient.interceptors, hasSize(2))
+        val loggingInterceptor = client.okHttpClient.interceptors[1] as HttpLoggingInterceptor
+        assertThat(loggingInterceptor.level, equalTo(HttpLoggingInterceptor.Level.HEADERS))
+    }
+
+    @Test
+    public fun builderShouldNotAddLoggingInterceptorWhenDisabled() {
+        val client = DefaultClient.Builder()
+            .enableLogging(false)
+            .logLevel(HttpLoggingInterceptor.Level.HEADERS)
+            .build()
+        assertThat(client.okHttpClient.interceptors, hasSize(1))
+        assertThat(client.okHttpClient.interceptors[0] is RetryInterceptor, equalTo(true))
+    }
+
+    @Test
+    public fun builderShouldSetCustomLogger() {
+        val logs = mutableListOf<String>()
+        val customLogger = HttpLoggingInterceptor.Logger { message -> logs.add(message) }
+
+        val client = DefaultClient.Builder()
+            .enableLogging(true)
+            .logger(customLogger)
+            .sslSocketFactory(
+                SSLTestUtils.clientCertificates.sslSocketFactory(),
+                SSLTestUtils.clientCertificates.trustManager
+            )
+            .build()
+
+        assertThat(client.okHttpClient.interceptors, hasSize(2))
+        assertThat(client.okHttpClient.interceptors[1] is HttpLoggingInterceptor, equalTo(true))
+
+        enqueueMockResponse(STATUS_SUCCESS, JSON_OK)
+        executeRequest(HttpMethod.GET, client)
+        assertThat(logs.isEmpty(), equalTo(false))
+    }
+
+    @Test
+    public fun builderShouldAddSingleCustomInterceptor() {
+        var intercepted = false
+        val customInterceptor = Interceptor { chain ->
+            intercepted = true
+            chain.proceed(chain.request())
+        }
+
+        val client = DefaultClient.Builder()
+            .addInterceptor(customInterceptor)
+            .sslSocketFactory(
+                SSLTestUtils.clientCertificates.sslSocketFactory(),
+                SSLTestUtils.clientCertificates.trustManager
+            )
+            .build()
+
+        assertThat(client.okHttpClient.interceptors, hasSize(2))
+        assertThat(client.okHttpClient.interceptors[0] is RetryInterceptor, equalTo(true))
+
+        enqueueMockResponse(STATUS_SUCCESS, JSON_OK)
+        executeRequest(HttpMethod.GET, client)
+        assertThat(intercepted, equalTo(true))
+    }
+
+    @Test
+    public fun builderShouldAddMultipleCustomInterceptors() {
+        val callOrder = mutableListOf<String>()
+        val firstInterceptor = Interceptor { chain ->
+            callOrder.add("first")
+            chain.proceed(chain.request())
+        }
+        val secondInterceptor = Interceptor { chain ->
+            callOrder.add("second")
+            chain.proceed(chain.request())
+        }
+
+        val client = DefaultClient.Builder()
+            .addInterceptor(firstInterceptor)
+            .addInterceptor(secondInterceptor)
+            .sslSocketFactory(
+                SSLTestUtils.clientCertificates.sslSocketFactory(),
+                SSLTestUtils.clientCertificates.trustManager
+            )
+            .build()
+
+        assertThat(client.okHttpClient.interceptors, hasSize(3))
+
+        enqueueMockResponse(STATUS_SUCCESS, JSON_OK)
+        executeRequest(HttpMethod.GET, client)
+        assertThat(callOrder, equalTo(listOf("first", "second")))
+    }
+
+    @Test
+    public fun builderShouldPlaceCustomInterceptorsBeforeLogging() {
+        val callOrder = mutableListOf<String>()
+        val customInterceptor = Interceptor { chain ->
+            callOrder.add("custom")
+            chain.proceed(chain.request())
+        }
+        val customLogger = HttpLoggingInterceptor.Logger { callOrder.add("logging") }
+
+        val client = DefaultClient.Builder()
+            .addInterceptor(customInterceptor)
+            .enableLogging(true)
+            .logger(customLogger)
+            .sslSocketFactory(
+                SSLTestUtils.clientCertificates.sslSocketFactory(),
+                SSLTestUtils.clientCertificates.trustManager
+            )
+            .build()
+
+        assertThat(client.okHttpClient.interceptors, hasSize(3))
+        assertThat(client.okHttpClient.interceptors[0] is RetryInterceptor, equalTo(true))
+        assertThat(client.okHttpClient.interceptors[2] is HttpLoggingInterceptor, equalTo(true))
+
+        enqueueMockResponse(STATUS_SUCCESS, JSON_OK)
+        executeRequest(HttpMethod.GET, client)
+        val customIndex = callOrder.indexOf("custom")
+        val loggingIndex = callOrder.indexOf("logging")
+        assertThat(customIndex, not(equalTo(-1)))
+        assertThat(loggingIndex, not(equalTo(-1)))
+        assertThat(customIndex < loggingIndex, equalTo(true))
+    }
+
+    @Test
+    public fun builderShouldSetDefaultHeaders() {
+        enqueueMockResponse(STATUS_SUCCESS, JSON_OK)
+        val client = DefaultClient.Builder()
+            .defaultHeaders(mapOf("x-custom" to "test-value"))
+            .sslSocketFactory(
+                SSLTestUtils.clientCertificates.sslSocketFactory(),
+                SSLTestUtils.clientCertificates.trustManager
+            )
+            .build()
+
+        executeRequest(HttpMethod.GET, client)
+        val sentRequest = mockServer.takeRequest()
+        requestAssertions(sentRequest, HttpMethod.GET, mapOf("x-custom" to "test-value"))
+    }
+
+    @Test
+    public fun builderNonRetryableClientShouldInheritConfiguration() {
+        val customInterceptor = Interceptor { chain -> chain.proceed(chain.request()) }
+        val client = DefaultClient.Builder()
+            .connectTimeout(25)
+            .readTimeout(35)
+            .writeTimeout(45)
+            .addInterceptor(customInterceptor)
+            .enableLogging(true)
+            .build()
+
+        assertThat(
+            client.nonRetryableOkHttpClient.connectTimeoutMillis,
+            equalTo(client.okHttpClient.connectTimeoutMillis)
         )
+        assertThat(
+            client.nonRetryableOkHttpClient.readTimeoutMillis,
+            equalTo(client.okHttpClient.readTimeoutMillis)
+        )
+        assertThat(
+            client.nonRetryableOkHttpClient.writeTimeoutMillis,
+            equalTo(client.okHttpClient.writeTimeoutMillis)
+        )
+        assertThat(
+            client.nonRetryableOkHttpClient.interceptors.size,
+            equalTo(client.okHttpClient.interceptors.size)
+        )
+        assertThat(client.okHttpClient.retryOnConnectionFailure, equalTo(true))
+        assertThat(client.nonRetryableOkHttpClient.retryOnConnectionFailure, equalTo(false))
+    }
+
+    @Test
+    @Suppress("DEPRECATION")
+    public fun legacyConstructorShouldStillWork() {
+        val client = DefaultClient()
+        assertThat(client.okHttpClient.connectTimeoutMillis, equalTo(10 * 1000))
+        assertThat(client.okHttpClient.readTimeoutMillis, equalTo(10 * 1000))
+        assertThat(client.okHttpClient.interceptors, hasSize(1))
+        assertThat(client.okHttpClient.interceptors[0] is RetryInterceptor, equalTo(true))
+    }
+
+    @Test
+    @Suppress("DEPRECATION")
+    public fun legacyConstructorWithParamsShouldStillWork() {
+        val client = DefaultClient(
+            connectTimeout = 30,
+            readTimeout = 45,
+            defaultHeaders = mapOf("X-Test" to "value"),
+            enableLogging = true
+        )
+        assertThat(client.okHttpClient.connectTimeoutMillis, equalTo(30 * 1000))
+        assertThat(client.okHttpClient.readTimeoutMillis, equalTo(45 * 1000))
+        assertThat(client.okHttpClient.interceptors, hasSize(2))
+        assertThat(client.okHttpClient.interceptors[0] is RetryInterceptor, equalTo(true))
+        assertThat(client.okHttpClient.interceptors[1] is HttpLoggingInterceptor, equalTo(true))
     }
 }

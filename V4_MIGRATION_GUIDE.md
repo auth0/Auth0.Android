@@ -96,6 +96,37 @@ implementation 'com.google.code.gson:gson:2.8.9' // your preferred version
 
 > **Note:** Pinning or excluding is not recommended long-term, as the SDK has been tested and validated against Gson 2.11.0.
 
+### DefaultClient.Builder
+
+v4 introduces a `DefaultClient.Builder` for configuring the HTTP client. This replaces the constructor-based approach with a more flexible builder pattern that supports additional options such as write/call timeouts, custom interceptors, and custom loggers.
+
+**v3 (constructor-based — deprecated):**
+
+```kotlin
+// ⚠️ Deprecated: still compiles but shows a warning
+val client = DefaultClient(
+    connectTimeout = 30,
+    readTimeout = 30,
+    enableLogging = true
+)
+```
+
+**v4 (builder pattern — recommended):**
+
+```kotlin
+val client = DefaultClient.Builder()
+    .connectTimeout(30)
+    .readTimeout(30)
+    .writeTimeout(30)
+    .callTimeout(120)
+    .enableLogging(true)
+    .logLevel(HttpLoggingInterceptor.Level.HEADERS)
+    .addInterceptor(myCustomInterceptor)
+    .build()
+```
+
+The legacy constructor is deprecated but **not removed** — existing code will continue to compile and run. Your IDE will show a deprecation warning with a suggested `ReplaceWith` quick-fix to migrate to the Builder.
+
 ## Getting Help
 
 If you encounter issues during migration:
