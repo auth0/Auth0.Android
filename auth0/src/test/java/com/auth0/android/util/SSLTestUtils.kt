@@ -31,15 +31,17 @@ internal object SSLTestUtils {
             .heldCertificate(localhostCertificate)
             .build()
 
-        testClient = DefaultClient(
-            defaultHeaders = mapOf(),
-            readTimeout = 10,
-            connectTimeout = 10,
-            enableLogging = false,
-            gson = GsonProvider.gson,
-            sslSocketFactory = clientCertificates.sslSocketFactory(),
-            trustManager = clientCertificates.trustManager
-        )
+        testClient = DefaultClient.Builder()
+            .connectTimeout(10)
+            .readTimeout(10)
+            .defaultHeaders(mapOf())
+            .enableLogging(false)
+            .gson(GsonProvider.gson)
+            .sslSocketFactory(
+                clientCertificates.sslSocketFactory(),
+                clientCertificates.trustManager
+            )
+            .build()
     }
 
     fun createMockWebServer(): MockWebServer {
