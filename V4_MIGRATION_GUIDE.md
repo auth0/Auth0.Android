@@ -50,13 +50,15 @@ buildscript {
 
 ### Kotlin Version
 
-v4 uses **Kotlin 2.0.21**. If you're using Kotlin in your project, you may need to update your Kotlin version to ensure compatibility.
+v4 uses **Kotlin 2.2.0**. If you're using Kotlin in your project, you may need to update your Kotlin version to ensure compatibility.
 
 ```groovy
 buildscript {
-    ext.kotlin_version = "2.0.21"
+    ext.kotlin_version = "2.2.0"
 }
 ```
+
+> **Note:** Kotlin 2.2.0 promotes the deprecation of `String.toLowerCase()` / `String.toUpperCase()` without a `Locale` parameter to an error. If your project uses these methods, replace them with `lowercase(Locale.ROOT)` / `uppercase(Locale.ROOT)`.
 
 ## Breaking Changes
 
@@ -95,6 +97,17 @@ implementation 'com.google.code.gson:gson:2.8.9' // your preferred version
 ```
 
 > **Note:** Pinning or excluding is not recommended long-term, as the SDK has been tested and validated against Gson 2.11.0.
+
+### OkHttp 4.12.0 → 5.0.0 (Internal Dependency)
+
+v4 upgrades the internal OkHttp dependency from **4.12.0** to **5.0.0**. OkHttp is used as an `implementation` dependency and is **not** exposed in the SDK's public API, so this change should be transparent to most applications.
+
+However, if your app provides a custom `NetworkingClient` implementation that interacts with OkHttp types, or if you depend on OkHttp transitively through the SDK, be aware of the following:
+
+- **OkHttp 5.0.0 requires Kotlin 2.2.0+** at compile time. This is already satisfied by the SDK's Kotlin version requirement.
+- **Okio 3.x is now required.** OkHttp 5.0.0 depends on Okio 3.x (previously Okio 2.x). If your app uses Okio directly, you may need to update your Okio dependency.
+
+> **Note:** Since OkHttp is an internal dependency of the SDK, no changes are required in your application code unless you are directly depending on OkHttp types from this SDK's classpath.
 
 ## Getting Help
 

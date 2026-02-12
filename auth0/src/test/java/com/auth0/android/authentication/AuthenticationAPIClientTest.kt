@@ -41,7 +41,7 @@ import org.mockito.kotlin.whenever
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
-import okhttp3.mockwebserver.RecordedRequest
+import mockwebserver3.RecordedRequest
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers
 import org.hamcrest.collection.IsMapContaining
@@ -183,12 +183,12 @@ public class AuthenticationAPIClientTest {
         )
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
         val body = bodyFromRequest<String>(request)
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(
             body,
@@ -221,12 +221,12 @@ public class AuthenticationAPIClientTest {
         )
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
         val body = bodyFromRequest<Any>(request)
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(
             body,
@@ -250,12 +250,12 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
         val body = bodyFromRequest<Any>(request)
-        assertThat(request.path, Matchers.equalTo("/passkey/register"))
+        assertThat(request.target, Matchers.equalTo("/passkey/register"))
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("realm", MY_CONNECTION))
         assertThat(body, Matchers.hasEntry("organization", "testOrganization"))
@@ -273,12 +273,12 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
         val body = bodyFromRequest<String>(request)
-        assertThat(request.path, Matchers.equalTo("/passkey/challenge"))
+        assertThat(request.target, Matchers.equalTo("/passkey/challenge"))
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("realm", MY_CONNECTION))
         assertThat(body, Matchers.hasEntry("organization", "testOrganization"))
@@ -304,12 +304,12 @@ public class AuthenticationAPIClientTest {
         assertThat(callback.payload.recoveryCode, Matchers.`is`("654321"))
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
         val body = bodyFromRequest<String>(request)
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(
             body,
@@ -336,12 +336,12 @@ public class AuthenticationAPIClientTest {
         )
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
         val body = bodyFromRequest<String>(request)
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(
             body,
@@ -369,12 +369,12 @@ public class AuthenticationAPIClientTest {
         )
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
         val body = bodyFromRequest<String>(request)
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(
             body,
@@ -395,11 +395,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/mfa/challenge"))
+        assertThat(request.target, Matchers.equalTo("/mfa/challenge"))
         val body = bodyFromRequest<Any>(request)
         assertThat(body, Matchers.hasEntry("mfa_token", "ey30.the-mfa-token.value"))
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
@@ -422,11 +422,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/mfa/challenge"))
+        assertThat(request.target, Matchers.equalTo("/mfa/challenge"))
         val body = bodyFromRequest<Any>(request)
         assertThat(body, Matchers.hasEntry("mfa_token", "ey30.the-mfa-token.value"))
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
@@ -451,7 +451,7 @@ public class AuthenticationAPIClientTest {
         assertThat(credentials.user.getId(), Matchers.`is`("auth0|123456"))
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
@@ -475,7 +475,7 @@ public class AuthenticationAPIClientTest {
         assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
@@ -505,12 +505,12 @@ public class AuthenticationAPIClientTest {
         )
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
         val body = bodyFromRequest<String>(request)
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(
             body,
@@ -537,9 +537,9 @@ public class AuthenticationAPIClientTest {
             )
         )
         val request = mockAPI.takeRequest()
-        assertThat(request.path, Matchers.`is`("/oauth/token"))
+        assertThat(request.target, Matchers.`is`("/oauth/token"))
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
@@ -562,9 +562,9 @@ public class AuthenticationAPIClientTest {
             .execute()
         assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
         val request = mockAPI.takeRequest()
-        assertThat(request.path, Matchers.`is`("/oauth/token"))
+        assertThat(request.target, Matchers.`is`("/oauth/token"))
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
@@ -588,9 +588,9 @@ public class AuthenticationAPIClientTest {
             .await()
         assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
         val request = mockAPI.takeRequest()
-        assertThat(request.path, Matchers.`is`("/oauth/token"))
+        assertThat(request.target, Matchers.`is`("/oauth/token"))
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
@@ -619,15 +619,15 @@ public class AuthenticationAPIClientTest {
         )
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
         assertThat(
-            request.getHeader("Authorization"),
+            request.headers["Authorization"],
             Matchers.`is`("Bearer ACCESS_TOKEN")
         )
-        assertThat(request.path, Matchers.equalTo("/userinfo"))
+        assertThat(request.target, Matchers.equalTo("/userinfo"))
     }
 
     @Test
@@ -639,15 +639,15 @@ public class AuthenticationAPIClientTest {
         assertThat(profile, Matchers.`is`(Matchers.notNullValue()))
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
         assertThat(
-            request.getHeader("Authorization"),
+            request.headers["Authorization"],
             Matchers.`is`("Bearer ACCESS_TOKEN")
         )
-        assertThat(request.path, Matchers.equalTo("/userinfo"))
+        assertThat(request.target, Matchers.equalTo("/userinfo"))
     }
 
     @Test
@@ -660,15 +660,15 @@ public class AuthenticationAPIClientTest {
         assertThat(profile, Matchers.`is`(Matchers.notNullValue()))
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
         assertThat(
-            request.getHeader("Authorization"),
+            request.headers["Authorization"],
             Matchers.`is`("Bearer ACCESS_TOKEN")
         )
-        assertThat(request.path, Matchers.equalTo("/userinfo"))
+        assertThat(request.target, Matchers.equalTo("/userinfo"))
     }
 
     @Test
@@ -680,11 +680,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(
@@ -709,11 +709,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(
@@ -735,11 +735,11 @@ public class AuthenticationAPIClientTest {
             .await()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(
@@ -763,11 +763,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(
             body,
@@ -795,11 +795,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(
             body,
@@ -826,11 +826,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(
             body,
@@ -854,11 +854,11 @@ public class AuthenticationAPIClientTest {
             .await()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(
             body,
@@ -882,11 +882,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(
             body,
@@ -914,11 +914,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(
             body,
@@ -946,11 +946,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(
             body,
@@ -975,11 +975,11 @@ public class AuthenticationAPIClientTest {
             .await()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(
             body,
@@ -1002,11 +1002,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
+        assertThat(request.target, Matchers.equalTo("/dbconnections/signup"))
         val body = bodyFromRequest<Any>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("username", SUPPORT))
@@ -1029,11 +1029,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
+        assertThat(request.target, Matchers.equalTo("/dbconnections/signup"))
         val body = bodyFromRequest<Any>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("username", SUPPORT))
@@ -1053,11 +1053,11 @@ public class AuthenticationAPIClientTest {
             .await()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
+        assertThat(request.target, Matchers.equalTo("/dbconnections/signup"))
         val body = bodyFromRequest<Any>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("username", SUPPORT))
@@ -1076,11 +1076,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
+        assertThat(request.target, Matchers.equalTo("/dbconnections/signup"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("username", SUPPORT))
@@ -1101,11 +1101,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
+        assertThat(request.target, Matchers.equalTo("/dbconnections/signup"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("username", SUPPORT))
@@ -1123,11 +1123,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
+        assertThat(request.target, Matchers.equalTo("/dbconnections/signup"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("username", SUPPORT))
@@ -1145,11 +1145,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
+        assertThat(request.target, Matchers.equalTo("/dbconnections/signup"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
@@ -1170,11 +1170,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
+        assertThat(request.target, Matchers.equalTo("/dbconnections/signup"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
@@ -1192,11 +1192,11 @@ public class AuthenticationAPIClientTest {
             .await()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
+        assertThat(request.target, Matchers.equalTo("/dbconnections/signup"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
@@ -1214,11 +1214,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
+        assertThat(request.target, Matchers.equalTo("/dbconnections/signup"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
@@ -1238,11 +1238,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
+        assertThat(request.target, Matchers.equalTo("/dbconnections/signup"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
@@ -1259,11 +1259,11 @@ public class AuthenticationAPIClientTest {
             .await()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
+        assertThat(request.target, Matchers.equalTo("/dbconnections/signup"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
@@ -1284,11 +1284,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
+        assertThat(request.target, Matchers.equalTo("/dbconnections/signup"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("username", SUPPORT))
@@ -1300,7 +1300,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         val loginRequest = mockAPI.takeRequest()
-        assertThat(loginRequest.path, Matchers.equalTo("/oauth/token"))
+        assertThat(loginRequest.target, Matchers.equalTo("/oauth/token"))
         val loginBody = bodyFromRequest<String>(loginRequest)
         assertThat(loginBody, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
         assertThat(loginBody, Matchers.hasEntry("password", PASSWORD))
@@ -1325,11 +1325,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
+        assertThat(request.target, Matchers.equalTo("/dbconnections/signup"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("username", SUPPORT))
@@ -1356,11 +1356,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
+        assertThat(request.target, Matchers.equalTo("/dbconnections/signup"))
         val body = bodyFromRequest<Any>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("username", SUPPORT))
@@ -1369,7 +1369,7 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.hasEntry("user_metadata", testMetadata))
         assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
         val loginRequest = mockAPI.takeRequest()
-        assertThat(loginRequest.path, Matchers.equalTo("/oauth/token"))
+        assertThat(loginRequest.target, Matchers.equalTo("/oauth/token"))
         val loginBody = bodyFromRequest<String>(loginRequest)
         assertThat(loginBody, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
         assertThat(loginBody, Matchers.hasEntry("password", PASSWORD))
@@ -1392,11 +1392,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
+        assertThat(request.target, Matchers.equalTo("/dbconnections/signup"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("username", SUPPORT))
@@ -1404,7 +1404,7 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.hasEntry("connection", MY_CONNECTION))
         assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
         val loginRequest = mockAPI.takeRequest()
-        assertThat(loginRequest.path, Matchers.equalTo("/oauth/token"))
+        assertThat(loginRequest.target, Matchers.equalTo("/oauth/token"))
         val loginBody = bodyFromRequest<String>(loginRequest)
         assertThat(loginBody, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
         assertThat(loginBody, Matchers.hasEntry("password", PASSWORD))
@@ -1429,11 +1429,11 @@ public class AuthenticationAPIClientTest {
             .await()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
+        assertThat(request.target, Matchers.equalTo("/dbconnections/signup"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("username", SUPPORT))
@@ -1441,7 +1441,7 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.hasEntry("connection", MY_CONNECTION))
         assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
         val loginRequest = mockAPI.takeRequest()
-        assertThat(loginRequest.path, Matchers.equalTo("/oauth/token"))
+        assertThat(loginRequest.target, Matchers.equalTo("/oauth/token"))
         val loginBody = bodyFromRequest<String>(loginRequest)
         assertThat(loginBody, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
         assertThat(loginBody, Matchers.hasEntry("password", PASSWORD))
@@ -1465,11 +1465,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
+        assertThat(request.target, Matchers.equalTo("/dbconnections/signup"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("password", PASSWORD))
@@ -1480,7 +1480,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         val loginRequest = mockAPI.takeRequest()
-        assertThat(loginRequest.path, Matchers.equalTo("/oauth/token"))
+        assertThat(loginRequest.target, Matchers.equalTo("/oauth/token"))
         val loginBody = bodyFromRequest<String>(loginRequest)
         assertThat(loginBody, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
         assertThat(loginBody, Matchers.hasEntry("password", PASSWORD))
@@ -1506,11 +1506,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
+        assertThat(request.target, Matchers.equalTo("/dbconnections/signup"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
@@ -1522,7 +1522,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         val loginRequest = mockAPI.takeRequest()
-        assertThat(loginRequest.path, Matchers.equalTo("/oauth/token"))
+        assertThat(loginRequest.target, Matchers.equalTo("/oauth/token"))
         val loginBody = bodyFromRequest<String>(loginRequest)
         assertThat(loginBody, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
         assertThat(loginBody, Matchers.hasEntry("password", PASSWORD))
@@ -1540,11 +1540,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/dbconnections/change_password"))
+        assertThat(request.target, Matchers.equalTo("/dbconnections/change_password"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
@@ -1559,11 +1559,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/dbconnections/change_password"))
+        assertThat(request.target, Matchers.equalTo("/dbconnections/change_password"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
@@ -1578,11 +1578,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/dbconnections/change_password"))
+        assertThat(request.target, Matchers.equalTo("/dbconnections/change_password"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
@@ -1598,11 +1598,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/dbconnections/change_password"))
+        assertThat(request.target, Matchers.equalTo("/dbconnections/change_password"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
@@ -1618,11 +1618,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/dbconnections/change_password"))
+        assertThat(request.target, Matchers.equalTo("/dbconnections/change_password"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
@@ -1638,11 +1638,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/dbconnections/change_password"))
+        assertThat(request.target, Matchers.equalTo("/dbconnections/change_password"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.not(Matchers.hasKey("username")))
@@ -1659,11 +1659,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(request.target, Matchers.equalTo("/passwordless/start"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
@@ -1681,11 +1681,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(request.target, Matchers.equalTo("/passwordless/start"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
@@ -1701,11 +1701,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(request.target, Matchers.equalTo("/passwordless/start"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
@@ -1721,11 +1721,11 @@ public class AuthenticationAPIClientTest {
             .await()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(request.target, Matchers.equalTo("/passwordless/start"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
@@ -1742,11 +1742,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(request.target, Matchers.equalTo("/passwordless/start"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
@@ -1764,11 +1764,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(request.target, Matchers.equalTo("/passwordless/start"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
@@ -1784,11 +1784,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(request.target, Matchers.equalTo("/passwordless/start"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
@@ -1804,11 +1804,11 @@ public class AuthenticationAPIClientTest {
             .await()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(request.target, Matchers.equalTo("/passwordless/start"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
@@ -1829,11 +1829,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(request.target, Matchers.equalTo("/passwordless/start"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
@@ -1851,11 +1851,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(request.target, Matchers.equalTo("/passwordless/start"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
@@ -1871,11 +1871,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(request.target, Matchers.equalTo("/passwordless/start"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
@@ -1891,11 +1891,11 @@ public class AuthenticationAPIClientTest {
             .await()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(request.target, Matchers.equalTo("/passwordless/start"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
@@ -1912,11 +1912,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(request.target, Matchers.equalTo("/passwordless/start"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("phone_number", "+1123123123"))
@@ -1934,11 +1934,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(request.target, Matchers.equalTo("/passwordless/start"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("phone_number", "+1123123123"))
@@ -1954,11 +1954,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(request.target, Matchers.equalTo("/passwordless/start"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("phone_number", "+1123123123"))
@@ -1974,11 +1974,11 @@ public class AuthenticationAPIClientTest {
             .await()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(request.target, Matchers.equalTo("/passwordless/start"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("phone_number", "+1123123123"))
@@ -1995,11 +1995,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(request.target, Matchers.equalTo("/passwordless/start"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("phone_number", "+1123123123"))
@@ -2017,11 +2017,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(request.target, Matchers.equalTo("/passwordless/start"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("phone_number", "+1123123123"))
@@ -2037,11 +2037,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(request.target, Matchers.equalTo("/passwordless/start"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("phone_number", "+1123123123"))
@@ -2057,11 +2057,11 @@ public class AuthenticationAPIClientTest {
             .await()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(request.target, Matchers.equalTo("/passwordless/start"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("phone_number", "+1123123123"))
@@ -2078,11 +2078,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(request.target, Matchers.equalTo("/passwordless/start"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("phone_number", "+1123123123"))
@@ -2100,11 +2100,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(request.target, Matchers.equalTo("/passwordless/start"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("phone_number", "+1123123123"))
@@ -2120,11 +2120,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(request.target, Matchers.equalTo("/passwordless/start"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("phone_number", "+1123123123"))
@@ -2140,11 +2140,11 @@ public class AuthenticationAPIClientTest {
             .await()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(request.target, Matchers.equalTo("/passwordless/start"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("phone_number", "+1123123123"))
@@ -2160,9 +2160,9 @@ public class AuthenticationAPIClientTest {
             .start(callback)
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
-        assertThat(request.path, Matchers.equalTo("/.well-known/jwks.json"))
+        assertThat(request.target, Matchers.equalTo("/.well-known/jwks.json"))
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
@@ -2175,9 +2175,9 @@ public class AuthenticationAPIClientTest {
         val result = client.fetchJsonWebKeys()
             .execute()
         val request = mockAPI.takeRequest()
-        assertThat(request.path, Matchers.equalTo("/.well-known/jwks.json"))
+        assertThat(request.target, Matchers.equalTo("/.well-known/jwks.json"))
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
@@ -2192,9 +2192,9 @@ public class AuthenticationAPIClientTest {
         val result = client.fetchJsonWebKeys()
             .await()
         val request = mockAPI.takeRequest()
-        assertThat(request.path, Matchers.equalTo("/.well-known/jwks.json"))
+        assertThat(request.target, Matchers.equalTo("/.well-known/jwks.json"))
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
@@ -2211,7 +2211,7 @@ public class AuthenticationAPIClientTest {
             .start(callback)
         ShadowLooper.idleMainLooper()
         val firstRequest = mockAPI.takeRequest()
-        assertThat(firstRequest.path, Matchers.equalTo("/oauth/token"))
+        assertThat(firstRequest.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(firstRequest)
         assertThat(body, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("password", "voidpassword"))
@@ -2223,10 +2223,10 @@ public class AuthenticationAPIClientTest {
         )
         val secondRequest = mockAPI.takeRequest()
         assertThat(
-            secondRequest.getHeader("Authorization"),
+            secondRequest.headers["Authorization"],
             Matchers.`is`("Bearer " + AuthenticationAPIMockServer.ACCESS_TOKEN)
         )
-        assertThat(secondRequest.path, Matchers.equalTo("/userinfo"))
+        assertThat(secondRequest.target, Matchers.equalTo("/userinfo"))
         assertThat(
             callback, AuthenticationCallbackMatcher.hasPayloadOfType(
                 Authentication::class.java
@@ -2245,11 +2245,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/revoke"))
+        assertThat(request.target, Matchers.equalTo("/oauth/revoke"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("token", "refreshToken"))
@@ -2265,11 +2265,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/revoke"))
+        assertThat(request.target, Matchers.equalTo("/oauth/revoke"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("token", "refreshToken"))
@@ -2285,11 +2285,11 @@ public class AuthenticationAPIClientTest {
             .await()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/revoke"))
+        assertThat(request.target, Matchers.equalTo("/oauth/revoke"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("token", "refreshToken"))
@@ -2304,11 +2304,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(
@@ -2334,11 +2334,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(
@@ -2361,11 +2361,11 @@ public class AuthenticationAPIClientTest {
             .await()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(
@@ -2388,11 +2388,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(
@@ -2418,11 +2418,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(
@@ -2443,11 +2443,11 @@ public class AuthenticationAPIClientTest {
             .await()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(
@@ -2473,11 +2473,11 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.not(Matchers.hasKey("scope")))
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
@@ -2499,11 +2499,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
@@ -2522,11 +2522,11 @@ public class AuthenticationAPIClientTest {
             .await()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
@@ -2545,11 +2545,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
@@ -2567,11 +2567,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
@@ -2591,11 +2591,11 @@ public class AuthenticationAPIClientTest {
                 .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
@@ -2614,11 +2614,11 @@ public class AuthenticationAPIClientTest {
             .execute()
         val request = mockAPI.takeRequest()
         assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
+            request.headers["Accept-Language"], Matchers.`is`(
                 defaultLocale
             )
         )
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("refresh_token", "refreshToken"))
@@ -2641,7 +2641,7 @@ public class AuthenticationAPIClientTest {
         )
             .execute()
         val firstRequest = mockAPI.takeRequest()
-        assertThat(firstRequest.path, Matchers.equalTo("/oauth/token"))
+        assertThat(firstRequest.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(firstRequest)
         assertThat(body, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("password", "voidpassword"))
@@ -2653,10 +2653,10 @@ public class AuthenticationAPIClientTest {
         )
         val secondRequest = mockAPI.takeRequest()
         assertThat(
-            secondRequest.getHeader("Authorization"),
+            secondRequest.headers["Authorization"],
             Matchers.`is`("Bearer " + AuthenticationAPIMockServer.ACCESS_TOKEN)
         )
-        assertThat(secondRequest.path, Matchers.equalTo("/userinfo"))
+        assertThat(secondRequest.target, Matchers.equalTo("/userinfo"))
         assertThat(authentication, Matchers.`is`(Matchers.notNullValue()))
     }
 
@@ -2674,7 +2674,7 @@ public class AuthenticationAPIClientTest {
         )
             .await()
         val firstRequest = mockAPI.takeRequest()
-        assertThat(firstRequest.path, Matchers.equalTo("/oauth/token"))
+        assertThat(firstRequest.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(firstRequest)
         assertThat(body, Matchers.hasEntry("username", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("password", "voidpassword"))
@@ -2686,10 +2686,10 @@ public class AuthenticationAPIClientTest {
         )
         val secondRequest = mockAPI.takeRequest()
         assertThat(
-            secondRequest.getHeader("Authorization"),
+            secondRequest.headers["Authorization"],
             Matchers.`is`("Bearer " + AuthenticationAPIMockServer.ACCESS_TOKEN)
         )
-        assertThat(secondRequest.path, Matchers.equalTo("/userinfo"))
+        assertThat(secondRequest.target, Matchers.equalTo("/userinfo"))
         assertThat(authentication, Matchers.`is`(Matchers.notNullValue()))
     }
 
@@ -2702,7 +2702,7 @@ public class AuthenticationAPIClientTest {
             .start(callback)
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(
             body,
@@ -2727,7 +2727,7 @@ public class AuthenticationAPIClientTest {
             .start(callback)
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(
             body,
@@ -2759,8 +2759,8 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
 
         val request = mockAPI.takeRequest()
-        assertThat(request.getHeader("DPoP"), Matchers.nullValue())
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.headers["DPoP"], Matchers.nullValue())
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         assertThat(
             callback, AuthenticationCallbackMatcher.hasPayloadOfType(
                 Credentials::class.java
@@ -2776,8 +2776,8 @@ public class AuthenticationAPIClientTest {
         val challengeResponse = client.passkeyChallenge(MY_CONNECTION, "testOrganization")
             .execute()
         val request = mockAPI.takeRequest()
-        assertThat(request.getHeader("DPoP"), Matchers.nullValue())
-        assertThat(request.path, Matchers.equalTo("/passkey/challenge"))
+        assertThat(request.headers["DPoP"], Matchers.nullValue())
+        assertThat(request.target, Matchers.equalTo("/passkey/challenge"))
         assertThat(challengeResponse, Matchers.`is`(Matchers.notNullValue()))
     }
 
@@ -2790,8 +2790,8 @@ public class AuthenticationAPIClientTest {
         val challengeResponse = client.passkeyChallenge(MY_CONNECTION, "testOrganization")
             .execute()
         val request = mockAPI.takeRequest()
-        assertThat(request.getHeader("DPoP"), Matchers.nullValue())
-        assertThat(request.path, Matchers.equalTo("/passkey/challenge"))
+        assertThat(request.headers["DPoP"], Matchers.nullValue())
+        assertThat(request.target, Matchers.equalTo("/passkey/challenge"))
         assertThat(challengeResponse, Matchers.`is`(Matchers.notNullValue()))
     }
 
@@ -2808,8 +2808,8 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
 
         val request = mockAPI.takeRequest()
-        assertThat(request.getHeader("DPoP"), Matchers.notNullValue())
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.headers["DPoP"], Matchers.notNullValue())
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         assertThat(
             callback, AuthenticationCallbackMatcher.hasPayloadOfType(
                 Credentials::class.java
@@ -2829,8 +2829,8 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
 
         val request = mockAPI.takeRequest()
-        assertThat(request.getHeader("DPoP"), Matchers.nullValue())
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.headers["DPoP"], Matchers.nullValue())
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         assertThat(
             callback, AuthenticationCallbackMatcher.hasPayloadOfType(
                 Credentials::class.java
@@ -2848,8 +2848,8 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
 
         val request = mockAPI.takeRequest()
-        assertThat(request.getHeader("DPoP"), Matchers.nullValue())
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.headers["DPoP"], Matchers.nullValue())
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         assertThat(
             callback, AuthenticationCallbackMatcher.hasPayloadOfType(
                 Credentials::class.java
@@ -2871,8 +2871,8 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
 
         val request = mockAPI.takeRequest()
-        assertThat(request.getHeader("DPoP"), Matchers.notNullValue())
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.headers["DPoP"], Matchers.notNullValue())
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
 
         val body = bodyFromRequest<String>(request)
         assertThat(
@@ -2906,8 +2906,8 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
 
         val request = mockAPI.takeRequest()
-        assertThat(request.getHeader("DPoP"), Matchers.nullValue())
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.headers["DPoP"], Matchers.nullValue())
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
 
         val body = bodyFromRequest<String>(request)
         assertThat(body, Matchers.hasEntry("grant_type", "refresh_token"))
@@ -2938,8 +2938,8 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
 
         val request = mockAPI.takeRequest()
-        assertThat(request.getHeader("DPoP"), Matchers.notNullValue())
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.headers["DPoP"], Matchers.notNullValue())
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
 
         val body = bodyFromRequest<String>(request)
         assertThat(
@@ -2973,9 +2973,9 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
 
         val request = mockAPI.takeRequest()
-        assertThat(request.getHeader("DPoP"), Matchers.notNullValue())
-        assertThat(request.getHeader("Authorization"), Matchers.`is`("DPoP ACCESS_TOKEN"))
-        assertThat(request.path, Matchers.equalTo("/userinfo"))
+        assertThat(request.headers["DPoP"], Matchers.notNullValue())
+        assertThat(request.headers["Authorization"], Matchers.`is`("DPoP ACCESS_TOKEN"))
+        assertThat(request.target, Matchers.equalTo("/userinfo"))
         assertThat(
             callback, AuthenticationCallbackMatcher.hasPayloadOfType(
                 UserProfile::class.java
@@ -2993,9 +2993,9 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
 
         val request = mockAPI.takeRequest()
-        assertThat(request.getHeader("DPoP"), Matchers.nullValue())
-        assertThat(request.getHeader("Authorization"), Matchers.`is`("Bearer ACCESS_TOKEN"))
-        assertThat(request.path, Matchers.equalTo("/userinfo"))
+        assertThat(request.headers["DPoP"], Matchers.nullValue())
+        assertThat(request.headers["Authorization"], Matchers.`is`("Bearer ACCESS_TOKEN"))
+        assertThat(request.target, Matchers.equalTo("/userinfo"))
         assertThat(
             callback, AuthenticationCallbackMatcher.hasPayloadOfType(
                 UserProfile::class.java
@@ -3017,8 +3017,8 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
 
         val request = mockAPI.takeRequest()
-        assertThat(request.getHeader("DPoP"), Matchers.nullValue())
-        assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
+        assertThat(request.headers["DPoP"], Matchers.nullValue())
+        assertThat(request.target, Matchers.equalTo("/dbconnections/signup"))
         assertThat(
             callback, AuthenticationCallbackMatcher.hasPayloadOfType(
                 DatabaseUser::class.java
@@ -3040,8 +3040,8 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
 
         val request = mockAPI.takeRequest()
-        assertThat(request.getHeader("DPoP"), Matchers.nullValue())
-        assertThat(request.path, Matchers.equalTo("/passwordless/start"))
+        assertThat(request.headers["DPoP"], Matchers.nullValue())
+        assertThat(request.target, Matchers.equalTo("/passwordless/start"))
         assertThat(callback, AuthenticationCallbackMatcher.hasNoError())
     }
 
@@ -3059,8 +3059,8 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
 
         val request = mockAPI.takeRequest()
-        assertThat(request.getHeader("DPoP"), Matchers.nullValue())
-        assertThat(request.path, Matchers.equalTo("/.well-known/jwks.json"))
+        assertThat(request.headers["DPoP"], Matchers.nullValue())
+        assertThat(request.target, Matchers.equalTo("/.well-known/jwks.json"))
         assertThat(callback, AuthenticationCallbackMatcher.hasPayload(emptyMap()))
     }
 
@@ -3077,8 +3077,8 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
 
         val request = mockAPI.takeRequest()
-        assertThat(request.getHeader("DPoP"), Matchers.notNullValue())
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.headers["DPoP"], Matchers.notNullValue())
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         val body = bodyFromRequest<String>(request)
         assertThat(
             body,
@@ -3104,8 +3104,8 @@ public class AuthenticationAPIClientTest {
         ShadowLooper.idleMainLooper()
 
         val request = mockAPI.takeRequest()
-        assertThat(request.getHeader("DPoP"), Matchers.notNullValue())
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        assertThat(request.headers["DPoP"], Matchers.notNullValue())
+        assertThat(request.target, Matchers.equalTo("/oauth/token"))
         assertThat(
             callback, AuthenticationCallbackMatcher.hasPayloadOfType(
                 SSOCredentials::class.java
@@ -3134,7 +3134,7 @@ public class AuthenticationAPIClientTest {
 
     private inline fun <reified T> bodyFromRequest(request: RecordedRequest): Map<String, T> {
         val mapType = object : TypeToken<Map<String, T>>() {}.type
-        return gson.fromJson(request.body.readUtf8(), mapType)
+        return gson.fromJson(request.body!!.utf8(), mapType)
     }
 
     private val defaultLocale: String

@@ -45,7 +45,6 @@ import org.hamcrest.core.IsNot.not
 import org.hamcrest.core.IsNull.notNullValue
 import org.junit.Assert
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers
@@ -1540,7 +1539,6 @@ public class WebAuthProviderTest {
 
     // TODO: https://auth0team.atlassian.net/browse/SDK-7752
     @Test
-    @Ignore("Fix these failing tests in CI once Roboelectric and other dependencies are updated")
     @Throws(Exception::class)
     public fun shouldFailToResumeLoginWhenRSAKeyIsMissingFromJWKSet() {
         val pkce = Mockito.mock(PKCE::class.java)
@@ -1675,7 +1673,6 @@ public class WebAuthProviderTest {
 
     //TODO: https://auth0team.atlassian.net/browse/SDK-7752
     @Test
-    @Ignore("Fix these failing tests in CI once Roboelectric and other dependencies are updated")
     @Throws(Exception::class)
     public fun shouldFailToResumeLoginWhenKeyIdIsMissingFromIdTokenHeader() {
         val pkce = Mockito.mock(PKCE::class.java)

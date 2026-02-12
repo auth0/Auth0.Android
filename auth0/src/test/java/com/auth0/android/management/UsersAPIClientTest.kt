@@ -21,7 +21,7 @@ import com.google.gson.reflect.TypeToken
 import org.mockito.kotlin.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
-import okhttp3.mockwebserver.RecordedRequest
+import mockwebserver3.RecordedRequest
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers
 import org.hamcrest.Matchers.instanceOf
@@ -143,11 +143,11 @@ public class UsersAPIClientTest {
 
         val request = mockAPI.takeRequest()
         assertThat(
-            request.path,
+            request.target,
             Matchers.equalTo("/api/v2/users/$USER_ID_PRIMARY/identities")
         )
         assertThat(
-            request.getHeader(HEADER_AUTHORIZATION),
+            request.headers[HEADER_AUTHORIZATION],
             Matchers.equalTo(BEARER + TOKEN_PRIMARY)
         )
         assertThat(request.method, Matchers.equalTo(METHOD_POST))
@@ -168,11 +168,11 @@ public class UsersAPIClientTest {
         val request = mockAPI.takeRequest()
 
         assertThat(
-            request.path,
+            request.target,
             Matchers.equalTo("/api/v2/users/$USER_ID_PRIMARY/identities")
         )
         assertThat(
-            request.getHeader(HEADER_AUTHORIZATION),
+            request.headers[HEADER_AUTHORIZATION],
             Matchers.equalTo(BEARER + TOKEN_PRIMARY)
         )
         assertThat(request.method, Matchers.equalTo(METHOD_POST))
@@ -194,11 +194,11 @@ public class UsersAPIClientTest {
         val request = mockAPI.takeRequest()
 
         assertThat(
-            request.path,
+            request.target,
             Matchers.equalTo("/api/v2/users/$USER_ID_PRIMARY/identities")
         )
         assertThat(
-            request.getHeader(HEADER_AUTHORIZATION),
+            request.headers[HEADER_AUTHORIZATION],
             Matchers.equalTo(BEARER + TOKEN_PRIMARY)
         )
         assertThat(request.method, Matchers.equalTo(METHOD_POST))
@@ -222,11 +222,11 @@ public class UsersAPIClientTest {
 
         val request = mockAPI.takeRequest()
         assertThat(
-            request.path,
+            request.target,
             Matchers.equalTo("/api/v2/users/$USER_ID_PRIMARY/identities/$PROVIDER/$USER_ID_SECONDARY")
         )
         assertThat(
-            request.getHeader(HEADER_AUTHORIZATION),
+            request.headers[HEADER_AUTHORIZATION],
             Matchers.equalTo(BEARER + TOKEN_PRIMARY)
         )
         assertThat(request.method, Matchers.equalTo(METHOD_DELETE))
@@ -247,11 +247,11 @@ public class UsersAPIClientTest {
 
         val request = mockAPI.takeRequest()
         assertThat(
-            request.path,
+            request.target,
             Matchers.equalTo("/api/v2/users/$USER_ID_PRIMARY/identities/$PROVIDER/$USER_ID_SECONDARY")
         )
         assertThat(
-            request.getHeader(HEADER_AUTHORIZATION),
+            request.headers[HEADER_AUTHORIZATION],
             Matchers.equalTo(BEARER + TOKEN_PRIMARY)
         )
         assertThat(request.method, Matchers.equalTo(METHOD_DELETE))
@@ -273,11 +273,11 @@ public class UsersAPIClientTest {
 
         val request = mockAPI.takeRequest()
         assertThat(
-            request.path,
+            request.target,
             Matchers.equalTo("/api/v2/users/$USER_ID_PRIMARY/identities/$PROVIDER/$USER_ID_SECONDARY")
         )
         assertThat(
-            request.getHeader(HEADER_AUTHORIZATION),
+            request.headers[HEADER_AUTHORIZATION],
             Matchers.equalTo(BEARER + TOKEN_PRIMARY)
         )
         assertThat(request.method, Matchers.equalTo(METHOD_DELETE))
@@ -303,9 +303,9 @@ public class UsersAPIClientTest {
         ShadowLooper.idleMainLooper()
 
         val request = mockAPI.takeRequest()
-        assertThat(request.path, Matchers.equalTo("/api/v2/users/$USER_ID_PRIMARY"))
+        assertThat(request.target, Matchers.equalTo("/api/v2/users/$USER_ID_PRIMARY"))
         assertThat(
-            request.getHeader(HEADER_AUTHORIZATION),
+            request.headers[HEADER_AUTHORIZATION],
             Matchers.equalTo(BEARER + TOKEN_PRIMARY)
         )
         assertThat(request.method, Matchers.equalTo(METHOD_PATCH))
@@ -332,11 +332,11 @@ public class UsersAPIClientTest {
         val request = mockAPI.takeRequest()
 
         assertThat(
-            request.path,
+            request.target,
             Matchers.equalTo("/api/v2/users/$USER_ID_PRIMARY")
         )
         assertThat(
-            request.getHeader(HEADER_AUTHORIZATION),
+            request.headers[HEADER_AUTHORIZATION],
             Matchers.equalTo(BEARER + TOKEN_PRIMARY)
         )
         assertThat(request.method, Matchers.equalTo(METHOD_PATCH))
@@ -361,11 +361,11 @@ public class UsersAPIClientTest {
         val request = mockAPI.takeRequest()
 
         assertThat(
-            request.path,
+            request.target,
             Matchers.equalTo("/api/v2/users/$USER_ID_PRIMARY")
         )
         assertThat(
-            request.getHeader(HEADER_AUTHORIZATION),
+            request.headers[HEADER_AUTHORIZATION],
             Matchers.equalTo(BEARER + TOKEN_PRIMARY)
         )
         assertThat(request.method, Matchers.equalTo(METHOD_PATCH))
@@ -384,11 +384,11 @@ public class UsersAPIClientTest {
         val request = mockAPI.takeRequest()
 
         assertThat(
-            request.path,
+            request.target,
             Matchers.equalTo("/api/v2/users/$USER_ID_PRIMARY")
         )
         assertThat(
-            request.getHeader(HEADER_AUTHORIZATION),
+            request.headers[HEADER_AUTHORIZATION],
             Matchers.equalTo(BEARER + TOKEN_PRIMARY)
         )
         assertThat(
@@ -407,11 +407,11 @@ public class UsersAPIClientTest {
         val request = mockAPI.takeRequest()
 
         assertThat(
-            request.path,
+            request.target,
             Matchers.equalTo("/api/v2/users/$USER_ID_PRIMARY")
         )
         assertThat(
-            request.getHeader(HEADER_AUTHORIZATION),
+            request.headers[HEADER_AUTHORIZATION],
             Matchers.equalTo(BEARER + TOKEN_PRIMARY)
         )
         assertThat(
@@ -430,8 +430,8 @@ public class UsersAPIClientTest {
         ShadowLooper.idleMainLooper()
 
         val request = mockAPI.takeRequest()
-        assertThat(request.path, Matchers.equalTo("/api/v2/users/$USER_ID_PRIMARY"))
-        assertThat(request.getHeader(HEADER_AUTHORIZATION),
+        assertThat(request.target, Matchers.equalTo("/api/v2/users/$USER_ID_PRIMARY"))
+        assertThat(request.headers[HEADER_AUTHORIZATION],
             Matchers.equalTo(BEARER + TOKEN_PRIMARY))
         assertThat(request.method, Matchers.equalTo(METHOD_GET))
         assertThat(
@@ -443,7 +443,7 @@ public class UsersAPIClientTest {
 
     private inline fun <reified T> bodyFromRequest(request: RecordedRequest): Map<String, T> {
         val mapType = object : TypeToken<Map<String, T>>() {}.type
-        return gson.fromJson(request.body.readUtf8(), mapType)
+        return gson.fromJson(request.body!!.utf8(), mapType)
     }
 
     private companion object {

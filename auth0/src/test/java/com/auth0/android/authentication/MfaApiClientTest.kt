@@ -21,9 +21,9 @@ import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
-import okhttp3.mockwebserver.MockResponse
-import okhttp3.mockwebserver.MockWebServer
-import okhttp3.mockwebserver.RecordedRequest
+import mockwebserver3.MockResponse
+import mockwebserver3.MockWebServer
+import mockwebserver3.RecordedRequest
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.hasSize
@@ -63,15 +63,16 @@ public class MfaApiClientTest {
 
     @After
     public fun tearDown(): Unit {
-        mockServer.shutdown()
+        mockServer.close()
     }
 
     private fun enqueueMockResponse(json: String, statusCode: Int = 200): Unit {
         mockServer.enqueue(
-            MockResponse()
-                .setResponseCode(statusCode)
+            MockResponse.Builder()
+                .code(statusCode)
                 .addHeader("Content-Type", "application/json")
-                .setBody(json)
+                .body(json)
+                .build()
         )
     }
 
@@ -86,7 +87,7 @@ public class MfaApiClientTest {
 
     private inline fun <reified T> bodyFromRequest(request: RecordedRequest): Map<String, T> {
         val mapType = object : TypeToken<Map<String, T>>() {}.type
-        return gson.fromJson(request.body.readUtf8(), mapType)
+        return gson.fromJson(request.body!!.utf8(), mapType)
     }
 
 
@@ -194,8 +195,8 @@ public class MfaApiClientTest {
         mfaClient.getAuthenticators(listOf("oob")).await()
 
         val request = mockServer.takeRequest()
-        assertThat(request.getHeader("Authorization"), `is`("Bearer $MFA_TOKEN"))
-        assertThat(request.path, `is`("/mfa/authenticators"))
+        assertThat(request.headers["Authorization"], `is`("Bearer $MFA_TOKEN"))
+        assertThat(request.target, `is`("/mfa/authenticators"))
         assertThat(request.method, `is`("GET"))
     }
 
@@ -248,9 +249,9 @@ public class MfaApiClientTest {
         mfaClient.enroll(MfaEnrollmentType.Phone("+12025550135")).await()
 
         val request = mockServer.takeRequest()
-        assertThat(request.path, `is`("/mfa/associate"))
+        assertThat(request.target, `is`("/mfa/associate"))
         assertThat(request.method, `is`("POST"))
-        assertThat(request.getHeader("Authorization"), `is`("Bearer $MFA_TOKEN"))
+        assertThat(request.headers["Authorization"], `is`("Bearer $MFA_TOKEN"))
 
         val body = bodyFromRequest<Any>(request)
         assertThat(body["authenticator_types"], `is`(listOf("oob")))
@@ -295,9 +296,9 @@ public class MfaApiClientTest {
         mfaClient.enroll(MfaEnrollmentType.Email("user@example.com")).await()
 
         val request = mockServer.takeRequest()
-        assertThat(request.path, `is`("/mfa/associate"))
+        assertThat(request.target, `is`("/mfa/associate"))
         assertThat(request.method, `is`("POST"))
-        assertThat(request.getHeader("Authorization"), `is`("Bearer $MFA_TOKEN"))
+        assertThat(request.headers["Authorization"], `is`("Bearer $MFA_TOKEN"))
 
         val body = bodyFromRequest<Any>(request)
         assertThat(body["authenticator_types"], `is`(listOf("oob")))
@@ -352,9 +353,9 @@ public class MfaApiClientTest {
         mfaClient.enroll(MfaEnrollmentType.Otp).await()
 
         val request = mockServer.takeRequest()
-        assertThat(request.path, `is`("/mfa/associate"))
+        assertThat(request.target, `is`("/mfa/associate"))
         assertThat(request.method, `is`("POST"))
-        assertThat(request.getHeader("Authorization"), `is`("Bearer $MFA_TOKEN"))
+        assertThat(request.headers["Authorization"], `is`("Bearer $MFA_TOKEN"))
 
         val body = bodyFromRequest<Any>(request)
         assertThat(body["authenticator_types"], `is`(listOf("otp")))
@@ -397,9 +398,9 @@ public class MfaApiClientTest {
         mfaClient.enroll(MfaEnrollmentType.Push).await()
 
         val request = mockServer.takeRequest()
-        assertThat(request.path, `is`("/mfa/associate"))
+        assertThat(request.target, `is`("/mfa/associate"))
         assertThat(request.method, `is`("POST"))
-        assertThat(request.getHeader("Authorization"), `is`("Bearer $MFA_TOKEN"))
+        assertThat(request.headers["Authorization"], `is`("Bearer $MFA_TOKEN"))
 
         val body = bodyFromRequest<Any>(request)
         assertThat(body["authenticator_types"], `is`(listOf("oob")))
@@ -445,7 +446,7 @@ public class MfaApiClientTest {
         mfaClient.challenge("sms|dev_123").await()
 
         val request = mockServer.takeRequest()
-        assertThat(request.path, `is`("/mfa/challenge"))
+        assertThat(request.target, `is`("/mfa/challenge"))
         assertThat(request.method, `is`("POST"))
 
         val body = bodyFromRequest<Any>(request)
@@ -498,7 +499,7 @@ public class MfaApiClientTest {
         mfaClient.verify(MfaVerificationType.Otp("123456")).await()
 
         val request = mockServer.takeRequest()
-        assertThat(request.path, `is`("/oauth/token"))
+        assertThat(request.target, `is`("/oauth/token"))
         assertThat(request.method, `is`("POST"))
 
         val body = bodyFromRequest<Any>(request)
@@ -577,7 +578,7 @@ public class MfaApiClientTest {
             .await()
 
         val request = mockServer.takeRequest()
-        assertThat(request.path, `is`("/oauth/token"))
+        assertThat(request.target, `is`("/oauth/token"))
         assertThat(request.method, `is`("POST"))
 
         val body = bodyFromRequest<Any>(request)
@@ -643,7 +644,7 @@ public class MfaApiClientTest {
         mfaClient.verify(MfaVerificationType.RecoveryCode("RECOVERY_123")).await()
 
         val request = mockServer.takeRequest()
-        assertThat(request.path, `is`("/oauth/token"))
+        assertThat(request.target, `is`("/oauth/token"))
         assertThat(request.method, `is`("POST"))
 
         val body = bodyFromRequest<Any>(request)
