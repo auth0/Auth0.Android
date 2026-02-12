@@ -1543,11 +1543,11 @@ public class WebAuthProviderTest {
     public fun shouldFailToResumeLoginWhenRSAKeyIsMissingFromJWKSet() {
         val pkce = Mockito.mock(PKCE::class.java)
         `when`(pkce.codeChallenge).thenReturn("challenge")
-        val mockAPI = AuthenticationAPIMockServer()
-        mockAPI.willReturnEmptyJsonWebKeys()
+        val networkingClient: NetworkingClient = Mockito.spy(DefaultClient())
         val authCallback = mock<Callback<Credentials, AuthenticationException>>()
-        val proxyAccount: Auth0 = Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
-        proxyAccount.networkingClient = SSLTestUtils.testClient
+        val proxyAccount =
+            Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, JwtTestUtils.EXPECTED_BASE_DOMAIN)
+        proxyAccount.networkingClient = networkingClient
         login(proxyAccount)
             .withState("1234567890")
             .withNonce(JwtTestUtils.EXPECTED_NONCE)
@@ -1584,11 +1584,17 @@ public class WebAuthProviderTest {
             callbackCaptor.firstValue.onSuccess(codeCredentials)
             null
         }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
+        // Mock JWKS response with empty keys (no matching RSA key for kid)
+        val emptyJwksJson = """{"keys": []}"""
+        val jwksInputStream: InputStream = ByteArrayInputStream(emptyJwksJson.toByteArray())
+        val jwksResponse = ServerResponse(200, jwksInputStream, emptyMap())
+        Mockito.doReturn(jwksResponse).`when`(networkingClient).load(
+            eq(proxyAccount.getDomainUrl() + ".well-known/jwks.json"),
+            any()
+        )
         Assert.assertTrue(resume(intent))
-        mockAPI.takeRequest()
         ShadowLooper.idleMainLooper()
-        // Use Mockito timeout to handle async JWKS response processing on slower CI environments
-        verify(authCallback, Mockito.timeout(5000)).onFailure(authExceptionCaptor.capture())
+        verify(authCallback).onFailure(authExceptionCaptor.capture())
         val error = authExceptionCaptor.firstValue
         assertThat(error, `is`(notNullValue()))
         assertThat(
@@ -1602,7 +1608,6 @@ public class WebAuthProviderTest {
             error.cause?.message,
             `is`("Could not find a public key for kid \"key123\"")
         )
-        mockAPI.shutdown()
     }
 
     @Test
@@ -1678,11 +1683,11 @@ public class WebAuthProviderTest {
     public fun shouldFailToResumeLoginWhenKeyIdIsMissingFromIdTokenHeader() {
         val pkce = Mockito.mock(PKCE::class.java)
         `when`(pkce.codeChallenge).thenReturn("challenge")
-        val mockAPI = AuthenticationAPIMockServer()
-        mockAPI.willReturnValidJsonWebKeys()
+        val networkingClient: NetworkingClient = Mockito.spy(DefaultClient())
         val authCallback = mock<Callback<Credentials, AuthenticationException>>()
-        val proxyAccount: Auth0 = Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
-        proxyAccount.networkingClient = SSLTestUtils.testClient
+        val proxyAccount =
+            Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, JwtTestUtils.EXPECTED_BASE_DOMAIN)
+        proxyAccount.networkingClient = networkingClient
         login(proxyAccount)
             .withState("1234567890")
             .withNonce("abcdefg")
@@ -1718,11 +1723,17 @@ public class WebAuthProviderTest {
             callbackCaptor.firstValue.onSuccess(codeCredentials)
             null
         }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
+        // Mock JWKS response with valid keys
+        val encoded = Files.readAllBytes(Paths.get("src/test/resources/rsa_jwks.json"))
+        val jwksInputStream: InputStream = ByteArrayInputStream(encoded)
+        val jwksResponse = ServerResponse(200, jwksInputStream, emptyMap())
+        Mockito.doReturn(jwksResponse).`when`(networkingClient).load(
+            eq(proxyAccount.getDomainUrl() + ".well-known/jwks.json"),
+            any()
+        )
         Assert.assertTrue(resume(intent))
-        mockAPI.takeRequest()
         ShadowLooper.idleMainLooper()
-        // Use Mockito timeout to handle async JWKS response processing on slower CI environments
-        verify(authCallback, Mockito.timeout(5000)).onFailure(authExceptionCaptor.capture())
+        verify(authCallback).onFailure(authExceptionCaptor.capture())
         val error = authExceptionCaptor.firstValue
         assertThat(error, `is`(notNullValue()))
         assertThat(
@@ -1736,7 +1747,6 @@ public class WebAuthProviderTest {
             error.cause?.message,
             `is`("Could not find a public key for kid \"null\"")
         )
-        mockAPI.shutdown()
     }
 
     @Test
