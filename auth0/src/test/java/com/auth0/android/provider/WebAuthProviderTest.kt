@@ -1588,7 +1588,8 @@ public class WebAuthProviderTest {
         Assert.assertTrue(resume(intent))
         mockAPI.takeRequest()
         ShadowLooper.idleMainLooper()
-        verify(authCallback).onFailure(authExceptionCaptor.capture())
+        // Use Mockito timeout to handle async JWKS response processing on slower CI environments
+        verify(authCallback, Mockito.timeout(5000)).onFailure(authExceptionCaptor.capture())
         val error = authExceptionCaptor.firstValue
         assertThat(error, `is`(notNullValue()))
         assertThat(
@@ -1721,7 +1722,8 @@ public class WebAuthProviderTest {
         Assert.assertTrue(resume(intent))
         mockAPI.takeRequest()
         ShadowLooper.idleMainLooper()
-        verify(authCallback).onFailure(authExceptionCaptor.capture())
+        // Use Mockito timeout to handle async JWKS response processing on slower CI environments
+        verify(authCallback, Mockito.timeout(5000)).onFailure(authExceptionCaptor.capture())
         val error = authExceptionCaptor.firstValue
         assertThat(error, `is`(notNullValue()))
         assertThat(
