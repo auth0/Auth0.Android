@@ -59,7 +59,9 @@ class DatabaseLoginFragment : Fragment() {
             getString(R.string.com_auth0_domain)
         )
         // Only enable network traffic logging on production environments!
-        account.networkingClient = DefaultClient(enableLogging = true)
+        account.networkingClient = DefaultClient.Builder()
+            .enableLogging(true)
+            .build()
         account
     }
 

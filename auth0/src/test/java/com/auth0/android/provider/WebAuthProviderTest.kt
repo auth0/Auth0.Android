@@ -1169,6 +1169,7 @@ public class WebAuthProviderTest {
 
     @Test
     @Throws(Exception::class)
+    @Suppress("DEPRECATION")
     public fun shouldResumeLoginWithCustomNetworkingClient() {
         val networkingClient: NetworkingClient = Mockito.spy(DefaultClient())
         val authCallback = mock<Callback<Credentials, AuthenticationException>>()
