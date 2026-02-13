@@ -9,7 +9,6 @@ import okhttp3.Headers
 import okhttp3.Headers.Companion.toHeaders
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
-import okhttp3.Interceptor
 import okhttp3.MediaType
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -33,7 +32,6 @@ import javax.net.ssl.X509TrustManager
  *     .readTimeout(30)
  *     .writeTimeout(30)
  *     .enableLogging(true)
- *     .addInterceptor(myInterceptor)
  *     .build()
  * ```
  *
@@ -57,9 +55,7 @@ public class DefaultClient private constructor(
      *     .callTimeout(60)
      *     .defaultHeaders(mapOf("X-Custom" to "value"))
      *     .enableLogging(true)
-     *     .logLevel(HttpLoggingInterceptor.Level.HEADERS)
      *     .logger(myCustomLogger)
-     *     .addInterceptor(myInterceptor)
      *     .build()
      * ```
      */
@@ -70,9 +66,7 @@ public class DefaultClient private constructor(
         private var callTimeout: Int = 0
         private var defaultHeaders: Map<String, String> = mapOf()
         private var enableLogging: Boolean = false
-        private var logLevel: HttpLoggingInterceptor.Level = HttpLoggingInterceptor.Level.BODY
         private var logger: HttpLoggingInterceptor.Logger? = null
-        private val interceptors: MutableList<Interceptor> = mutableListOf()
         private var gson: Gson = GsonProvider.gson
         private var sslSocketFactory: SSLSocketFactory? = null
         private var trustManager: X509TrustManager? = null
@@ -114,28 +108,12 @@ public class DefaultClient private constructor(
         public fun enableLogging(enable: Boolean): Builder = apply { this.enableLogging = enable }
 
         /**
-         * Sets the log level for the HTTP logging interceptor.
-         * Only takes effect if [enableLogging] is set to `true`.
-         * Default is [HttpLoggingInterceptor.Level.BODY].
-         */
-        public fun logLevel(level: HttpLoggingInterceptor.Level): Builder =
-            apply { this.logLevel = level }
-
-        /**
          * Sets a custom logger for the HTTP logging interceptor.
          * Only takes effect if [enableLogging] is set to `true`.
          * If not set, the default [HttpLoggingInterceptor.Logger] (which logs to logcat) is used.
          */
         public fun logger(logger: HttpLoggingInterceptor.Logger): Builder =
             apply { this.logger = logger }
-
-        /**
-         * Adds a custom OkHttp [Interceptor]. Multiple interceptors can be added
-         * by calling this method multiple times. They are invoked in the order they were added,
-         * after the built-in [RetryInterceptor] and before the logging interceptor.
-         */
-        public fun addInterceptor(interceptor: Interceptor): Builder =
-            apply { this.interceptors.add(interceptor) }
 
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         internal fun gson(gson: Gson): Builder = apply { this.gson = gson }
@@ -157,15 +135,13 @@ public class DefaultClient private constructor(
 
             okBuilder.addInterceptor(RetryInterceptor())
 
-            interceptors.forEach { okBuilder.addInterceptor(it) }
-
             if (enableLogging) {
                 val loggingInterceptor = if (logger != null) {
                     HttpLoggingInterceptor(logger!!)
                 } else {
                     HttpLoggingInterceptor()
                 }
-                loggingInterceptor.setLevel(logLevel)
+                loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY)
                 okBuilder.addInterceptor(loggingInterceptor)
             }
 
@@ -221,34 +197,6 @@ public class DefaultClient private constructor(
             }
             connectTimeout(connectTimeout.toLong(), TimeUnit.SECONDS)
             readTimeout(readTimeout.toLong(), TimeUnit.SECONDS)
-        }
-    )
-
-    /**
-     * Internal constructor used by tests to inject SSL and Gson.
-     */
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal constructor(
-        connectTimeout: Int,
-        readTimeout: Int,
-        defaultHeaders: Map<String, String>,
-        enableLogging: Boolean,
-        gson: Gson,
-        sslSocketFactory: SSLSocketFactory?,
-        trustManager: X509TrustManager?
-    ) : this(
-        defaultHeaders = defaultHeaders,
-        gson = gson,
-        okHttpClientBuilder = OkHttpClient.Builder().apply {
-            addInterceptor(RetryInterceptor())
-            if (enableLogging) {
-                addInterceptor(HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
-            }
-            connectTimeout(connectTimeout.toLong(), TimeUnit.SECONDS)
-            readTimeout(readTimeout.toLong(), TimeUnit.SECONDS)
-            if (sslSocketFactory != null && trustManager != null) {
-                sslSocketFactory(sslSocketFactory, trustManager)
-            }
         }
     )
 
