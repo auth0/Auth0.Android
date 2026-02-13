@@ -11,7 +11,6 @@ import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.Matchers.empty
 import org.hamcrest.Matchers.hasSize
 import org.hamcrest.collection.IsMapContaining.hasEntry
 import org.hamcrest.collection.IsMapWithSize.anEmptyMap
@@ -439,21 +438,9 @@ public class DefaultClientTest {
     }
 
     @Test
-    public fun builderShouldSetCustomLogLevel() {
-        val client = DefaultClient.Builder()
-            .enableLogging(true)
-            .logLevel(HttpLoggingInterceptor.Level.HEADERS)
-            .build()
-        assertThat(client.okHttpClient.interceptors, hasSize(2))
-        val loggingInterceptor = client.okHttpClient.interceptors[1] as HttpLoggingInterceptor
-        assertThat(loggingInterceptor.level, equalTo(HttpLoggingInterceptor.Level.HEADERS))
-    }
-
-    @Test
     public fun builderShouldNotAddLoggingInterceptorWhenDisabled() {
         val client = DefaultClient.Builder()
             .enableLogging(false)
-            .logLevel(HttpLoggingInterceptor.Level.HEADERS)
             .build()
         assertThat(client.okHttpClient.interceptors, hasSize(1))
         assertThat(client.okHttpClient.interceptors[0] is RetryInterceptor, equalTo(true))
@@ -482,90 +469,6 @@ public class DefaultClientTest {
     }
 
     @Test
-    public fun builderShouldAddSingleCustomInterceptor() {
-        var intercepted = false
-        val customInterceptor = Interceptor { chain ->
-            intercepted = true
-            chain.proceed(chain.request())
-        }
-
-        val client = DefaultClient.Builder()
-            .addInterceptor(customInterceptor)
-            .sslSocketFactory(
-                SSLTestUtils.clientCertificates.sslSocketFactory(),
-                SSLTestUtils.clientCertificates.trustManager
-            )
-            .build()
-
-        assertThat(client.okHttpClient.interceptors, hasSize(2))
-        assertThat(client.okHttpClient.interceptors[0] is RetryInterceptor, equalTo(true))
-
-        enqueueMockResponse(STATUS_SUCCESS, JSON_OK)
-        executeRequest(HttpMethod.GET, client)
-        assertThat(intercepted, equalTo(true))
-    }
-
-    @Test
-    public fun builderShouldAddMultipleCustomInterceptors() {
-        val callOrder = mutableListOf<String>()
-        val firstInterceptor = Interceptor { chain ->
-            callOrder.add("first")
-            chain.proceed(chain.request())
-        }
-        val secondInterceptor = Interceptor { chain ->
-            callOrder.add("second")
-            chain.proceed(chain.request())
-        }
-
-        val client = DefaultClient.Builder()
-            .addInterceptor(firstInterceptor)
-            .addInterceptor(secondInterceptor)
-            .sslSocketFactory(
-                SSLTestUtils.clientCertificates.sslSocketFactory(),
-                SSLTestUtils.clientCertificates.trustManager
-            )
-            .build()
-
-        assertThat(client.okHttpClient.interceptors, hasSize(3))
-
-        enqueueMockResponse(STATUS_SUCCESS, JSON_OK)
-        executeRequest(HttpMethod.GET, client)
-        assertThat(callOrder, equalTo(listOf("first", "second")))
-    }
-
-    @Test
-    public fun builderShouldPlaceCustomInterceptorsBeforeLogging() {
-        val callOrder = mutableListOf<String>()
-        val customInterceptor = Interceptor { chain ->
-            callOrder.add("custom")
-            chain.proceed(chain.request())
-        }
-        val customLogger = HttpLoggingInterceptor.Logger { callOrder.add("logging") }
-
-        val client = DefaultClient.Builder()
-            .addInterceptor(customInterceptor)
-            .enableLogging(true)
-            .logger(customLogger)
-            .sslSocketFactory(
-                SSLTestUtils.clientCertificates.sslSocketFactory(),
-                SSLTestUtils.clientCertificates.trustManager
-            )
-            .build()
-
-        assertThat(client.okHttpClient.interceptors, hasSize(3))
-        assertThat(client.okHttpClient.interceptors[0] is RetryInterceptor, equalTo(true))
-        assertThat(client.okHttpClient.interceptors[2] is HttpLoggingInterceptor, equalTo(true))
-
-        enqueueMockResponse(STATUS_SUCCESS, JSON_OK)
-        executeRequest(HttpMethod.GET, client)
-        val customIndex = callOrder.indexOf("custom")
-        val loggingIndex = callOrder.indexOf("logging")
-        assertThat(customIndex, not(equalTo(-1)))
-        assertThat(loggingIndex, not(equalTo(-1)))
-        assertThat(customIndex < loggingIndex, equalTo(true))
-    }
-
-    @Test
     public fun builderShouldSetDefaultHeaders() {
         enqueueMockResponse(STATUS_SUCCESS, JSON_OK)
         val client = DefaultClient.Builder()
@@ -583,12 +486,10 @@ public class DefaultClientTest {
 
     @Test
     public fun builderNonRetryableClientShouldInheritConfiguration() {
-        val customInterceptor = Interceptor { chain -> chain.proceed(chain.request()) }
         val client = DefaultClient.Builder()
             .connectTimeout(25)
             .readTimeout(35)
             .writeTimeout(45)
-            .addInterceptor(customInterceptor)
             .enableLogging(true)
             .build()
 
