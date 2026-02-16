@@ -120,8 +120,6 @@ val client = DefaultClient.Builder()
     .writeTimeout(30)
     .callTimeout(120)
     .enableLogging(true)
-    .logLevel(HttpLoggingInterceptor.Level.HEADERS)
-    .addInterceptor(myCustomInterceptor)
     .build()
 ```
 
