@@ -6,9 +6,9 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import okhttp3.Interceptor
 import okhttp3.logging.HttpLoggingInterceptor
-import mockwebserver3.MockResponse
-import mockwebserver3.MockWebServer
-import mockwebserver3.RecordedRequest
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.RecordedRequest
 import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.empty
@@ -51,7 +51,7 @@ public class DefaultClientTest {
 
     @After
     public fun tearDown() {
-        mockServer.close()
+        mockServer.shutdown()
     }
 
     @Test
@@ -274,7 +274,7 @@ public class DefaultClientTest {
         method: HttpMethod,
         headers: Map<String, String> = mapOf("a-header" to "b-value")
     ) {
-        val requestUri = Uri.parse(request.target)
+        val requestUri = Uri.parse(request.path)
         when (method) {
             HttpMethod.GET -> assertThat(request.method, equalTo("GET"))
             HttpMethod.POST -> assertThat(request.method, equalTo("POST"))
@@ -331,11 +331,10 @@ public class DefaultClientTest {
     }
 
     private fun enqueueMockResponse(responseCode: Int = STATUS_SUCCESS, jsonBody: String) {
-        val response = MockResponse.Builder()
-            .body(jsonBody)
-            .code(responseCode)
-            .setHeader("content-type", "application/json")
-            .build()
+        val response = MockResponse()
+        response.setBody(jsonBody)
+        response.setResponseCode(responseCode)
+        response.setHeader("content-type", "application/json")
         mockServer.enqueue(response)
     }
 
@@ -345,7 +344,7 @@ public class DefaultClientTest {
             .collect(Collectors.joining("\n"))
 
     private fun RecordedRequest.bodyFromJson(): Map<String, Any> {
-        val text = this.body?.utf8() ?: ""
+        val text = this.body.readUtf8()
         if (text.isEmpty()) {
             return emptyMap()
         }

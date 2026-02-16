@@ -2,7 +2,7 @@ package com.auth0.android.util
 
 import com.auth0.android.request.DefaultClient
 import com.auth0.android.request.internal.GsonProvider
-import mockwebserver3.MockWebServer
+import okhttp3.mockwebserver.MockWebServer
 import okhttp3.tls.HandshakeCertificates
 import okhttp3.tls.HeldCertificate
 import java.net.InetAddress
@@ -44,7 +44,7 @@ internal object SSLTestUtils {
 
     fun createMockWebServer(): MockWebServer {
         val mockServer = MockWebServer()
-        mockServer.useHttps(serverCertificates.sslSocketFactory())
+        mockServer.useHttps(serverCertificates.sslSocketFactory(), false)
         return mockServer
     }
 }
