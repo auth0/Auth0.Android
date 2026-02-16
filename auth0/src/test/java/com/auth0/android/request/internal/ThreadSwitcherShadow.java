@@ -26,9 +26,4 @@ public class ThreadSwitcherShadow {
     public void backgroundThread(Runnable runnable) {
         executor.execute(runnable);
     }
-
-    @Implementation
-    public void mainThread(Runnable runnable) {
-        executor.execute(runnable);
-    }
 }

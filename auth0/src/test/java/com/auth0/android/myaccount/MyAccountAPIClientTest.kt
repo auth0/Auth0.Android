@@ -18,7 +18,7 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import org.mockito.kotlin.mock
-import mockwebserver3.RecordedRequest
+import okhttp3.mockwebserver.RecordedRequest
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers
 import org.junit.After
@@ -56,7 +56,7 @@ public class MyAccountAPIClientTest {
         client.passkeyEnrollmentChallenge()
             .start(callback)
         val request = mockAPI.takeRequest()
-        assertThat(request.target, Matchers.equalTo("/me/v1/authentication-methods"))
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods"))
     }
 
     @Test
@@ -92,7 +92,7 @@ public class MyAccountAPIClientTest {
             .start(callback)
 
         val request = mockAPI.takeRequest()
-        val header = request.headers["Authorization"]
+        val header = request.getHeader("Authorization")
 
         assertThat(
             header, Matchers.`is`(
@@ -147,7 +147,7 @@ public class MyAccountAPIClientTest {
         // Take and verify the request was sent correctly
         val request = mockAPI.takeRequest()
         assertThat(
-            request.target,
+            request.path,
             Matchers.equalTo("/me/v1/authentication-methods")
         )
         // Verify error details
@@ -175,7 +175,7 @@ public class MyAccountAPIClientTest {
         }
         val request = mockAPI.takeRequest()
         assertThat(
-            request.target,
+            request.path,
             Matchers.equalTo("/me/v1/authentication-methods")
         )
 
@@ -206,7 +206,7 @@ public class MyAccountAPIClientTest {
             .start(callback)
         val request = mockAPI.takeRequest()
         assertThat(
-            request.target,
+            request.path,
             Matchers.equalTo("/me/v1/authentication-methods/${AUTHENTICATION_ID}/verify")
         )
     }
@@ -248,7 +248,7 @@ public class MyAccountAPIClientTest {
             .start(callback)
 
         val request = mockAPI.takeRequest()
-        val header = request.headers["Authorization"]
+        val header = request.getHeader("Authorization")
 
         assertThat(
             header, Matchers.`is`(
@@ -299,7 +299,7 @@ public class MyAccountAPIClientTest {
         // Take and verify the request was sent correctly
         val request = mockAPI.takeRequest()
         assertThat(
-            request.target,
+            request.path,
             Matchers.equalTo("/me/v1/authentication-methods/${AUTHENTICATION_ID}/verify")
         )
         assertThat(error, Matchers.notNullValue())
@@ -318,8 +318,8 @@ public class MyAccountAPIClientTest {
         client.getFactors().start(callback)
 
         val request = mockAPI.takeRequest()
-        assertThat(request.target, Matchers.equalTo("/me/v1/factors"))
-        assertThat(request.headers["Authorization"], Matchers.equalTo("Bearer $ACCESS_TOKEN"))
+        assertThat(request.path, Matchers.equalTo("/me/v1/factors"))
+        assertThat(request.getHeader("Authorization"), Matchers.equalTo("Bearer $ACCESS_TOKEN"))
         assertThat(request.method, Matchers.equalTo("GET"))
     }
 
@@ -329,8 +329,8 @@ public class MyAccountAPIClientTest {
         client.getAuthenticationMethods().start(callback)
 
         val request = mockAPI.takeRequest()
-        assertThat(request.target, Matchers.equalTo("/me/v1/authentication-methods"))
-        assertThat(request.headers["Authorization"], Matchers.equalTo("Bearer $ACCESS_TOKEN"))
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods"))
+        assertThat(request.getHeader("Authorization"), Matchers.equalTo("Bearer $ACCESS_TOKEN"))
         assertThat(request.method, Matchers.equalTo("GET"))
     }
 
@@ -341,8 +341,8 @@ public class MyAccountAPIClientTest {
         client.getAuthenticationMethodById(methodId).start(callback)
 
         val request = mockAPI.takeRequest()
-        assertThat(request.target, Matchers.equalTo("/me/v1/authentication-methods/email%7C12345"))
-        assertThat(request.headers["Authorization"], Matchers.equalTo("Bearer $ACCESS_TOKEN"))
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods/email%7C12345"))
+        assertThat(request.getHeader("Authorization"), Matchers.equalTo("Bearer $ACCESS_TOKEN"))
         assertThat(request.method, Matchers.equalTo("GET"))
     }
 
@@ -353,8 +353,8 @@ public class MyAccountAPIClientTest {
         client.deleteAuthenticationMethod(methodId).start(callback)
 
         val request = mockAPI.takeRequest()
-        assertThat(request.target, Matchers.equalTo("/me/v1/authentication-methods/email%7C12345"))
-        assertThat(request.headers["Authorization"], Matchers.equalTo("Bearer $ACCESS_TOKEN"))
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods/email%7C12345"))
+        assertThat(request.getHeader("Authorization"), Matchers.equalTo("Bearer $ACCESS_TOKEN"))
         assertThat(request.method, Matchers.equalTo("DELETE"))
     }
 
@@ -366,7 +366,7 @@ public class MyAccountAPIClientTest {
 
         val request = mockAPI.takeRequest()
         val body = bodyFromRequest<String>(request)
-        assertThat(request.target, Matchers.equalTo("/me/v1/authentication-methods/phone%7C12345"))
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods/phone%7C12345"))
         assertThat(request.method, Matchers.equalTo("PATCH"))
         assertThat(body, Matchers.hasEntry("preferred_authentication_method", "sms" as Any))
     }
@@ -380,7 +380,7 @@ public class MyAccountAPIClientTest {
 
         val request = mockAPI.takeRequest()
         val body = bodyFromRequest<String>(request)
-        assertThat(request.target, Matchers.equalTo("/me/v1/authentication-methods/totp%7C12345"))
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods/totp%7C12345"))
         assertThat(request.method, Matchers.equalTo("PATCH"))
         assertThat(body, Matchers.hasEntry("name", name as Any))
     }
@@ -393,7 +393,7 @@ public class MyAccountAPIClientTest {
 
         val request = mockAPI.takeRequest()
         val body = bodyFromRequest<String>(request)
-        assertThat(request.target, Matchers.equalTo("/me/v1/authentication-methods"))
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods"))
         assertThat(request.method, Matchers.equalTo("POST"))
         assertThat(body, Matchers.hasEntry("type", "email" as Any))
         assertThat(body, Matchers.hasEntry("email", email as Any))
@@ -407,7 +407,7 @@ public class MyAccountAPIClientTest {
 
         val request = mockAPI.takeRequest()
         val body = bodyFromRequest<String>(request)
-        assertThat(request.target, Matchers.equalTo("/me/v1/authentication-methods"))
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods"))
         assertThat(request.method, Matchers.equalTo("POST"))
         assertThat(body, Matchers.hasEntry("type", "phone" as Any))
         assertThat(body, Matchers.hasEntry("phone_number", phoneNumber as Any))
@@ -421,7 +421,7 @@ public class MyAccountAPIClientTest {
 
         val request = mockAPI.takeRequest()
         val body = bodyFromRequest<String>(request)
-        assertThat(request.target, Matchers.equalTo("/me/v1/authentication-methods"))
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods"))
         assertThat(request.method, Matchers.equalTo("POST"))
         assertThat(body, Matchers.hasEntry("type", "totp" as Any))
     }
@@ -434,7 +434,7 @@ public class MyAccountAPIClientTest {
 
         val request = mockAPI.takeRequest()
         val body = bodyFromRequest<String>(request)
-        assertThat(request.target, Matchers.equalTo("/me/v1/authentication-methods"))
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods"))
         assertThat(request.method, Matchers.equalTo("POST"))
         assertThat(body, Matchers.hasEntry("type", "recovery-code" as Any))
     }
@@ -449,7 +449,7 @@ public class MyAccountAPIClientTest {
 
         val request = mockAPI.takeRequest()
         val body = bodyFromRequest<String>(request)
-        assertThat(request.target, Matchers.equalTo("/me/v1/authentication-methods/email%7C123/verify"))
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods/email%7C123/verify"))
         assertThat(request.method, Matchers.equalTo("POST"))
         assertThat(body, Matchers.hasEntry("otp_code", otp as Any))
         assertThat(body, Matchers.hasEntry("auth_session", session as Any))
@@ -462,14 +462,14 @@ public class MyAccountAPIClientTest {
 
         val request = mockAPI.takeRequest()
         val body = bodyFromRequest<String>(request)
-        assertThat(request.target, Matchers.equalTo("/me/v1/authentication-methods"))
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods"))
         assertThat(request.method, Matchers.equalTo("POST"))
         assertThat(body, Matchers.hasEntry("type", "push-notification" as Any))
     }
 
     private inline fun <reified T> bodyFromRequest(request: RecordedRequest): Map<String, T> {
         val mapType = object : TypeToken<Map<String, T>>() {}.type
-        return gson.fromJson(request.body!!.utf8(), mapType)
+        return gson.fromJson(request.body.readUtf8(), mapType)
     }
 
     private val auth0: Auth0
