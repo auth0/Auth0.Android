@@ -67,6 +67,32 @@ buildscript {
   - [signinWithPasskey()](auth0/src/main/java/com/auth0/android/authentication/AuthenticationAPIClient.kt#L235-L253) - Sign in a user using passkeys
   - [signupWithPasskey()](auth0/src/main/java/com/auth0/android/authentication/AuthenticationAPIClient.kt#L319-L344) - Sign up a user and returns a challenge for key generation
 
+### DPoP Configuration Moved to Builder
+
+The `useDPoP()` method has been moved from the `WebAuthProvider` object to the login `Builder` class. This change allows DPoP to be configured per-request instead of globally.
+
+**v3 (global configuration — no longer supported):**
+
+```kotlin
+// ❌ This no longer works
+WebAuthProvider
+    .useDPoP(context)
+    .login(account)
+    .start(context, callback)
+```
+
+**v4 (builder-based configuration — required):**
+
+```kotlin
+// ✅ Use this instead
+WebAuthProvider
+    .login(account)
+    .useDPoP(context) 
+    .start(context, callback)
+```
+
+This change ensures that DPoP configuration is scoped to individual login requests rather than persisting across the entire application lifecycle.
+
 ## Dependency Changes
 
 ### ⚠️ Gson 2.8.9 → 2.11.0 (Transitive Dependency)

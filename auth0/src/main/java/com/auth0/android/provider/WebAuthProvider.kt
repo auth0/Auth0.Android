@@ -27,10 +27,9 @@ import kotlin.coroutines.resumeWithException
  *
  * It uses an external browser by sending the [android.content.Intent.ACTION_VIEW] intent.
  */
-public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
+public object WebAuthProvider {
     private val TAG: String? = WebAuthProvider::class.simpleName
     private const val KEY_BUNDLE_OAUTH_MANAGER_STATE = "oauth_manager_state"
-    private var dPoP : DPoP? = null
 
     private val callbacks = CopyOnWriteArraySet<Callback<Credentials, AuthenticationException>>()
 
@@ -47,12 +46,6 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
     @JvmStatic
     public fun removeCallback(callback: Callback<Credentials, AuthenticationException>) {
         callbacks -= callback
-    }
-
-    // Public methods
-    public override fun useDPoP(context: Context): WebAuthProvider {
-        dPoP = DPoP(context)
-        return this
     }
 
     /**
@@ -305,7 +298,7 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
         }
     }
 
-    public class Builder internal constructor(private val account: Auth0) {
+    public class Builder internal constructor(private val account: Auth0) : SenderConstraining<Builder> {
         private val values: MutableMap<String, String> = mutableMapOf()
         private val headers: MutableMap<String, String> = mutableMapOf()
         private var pkce: PKCE? = null
@@ -313,6 +306,7 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
         private var scheme: String = "https"
         private var redirectUri: String? = null
         private var invitationUrl: String? = null
+        private var dPoP: DPoP? = null
         private var ctOptions: CustomTabsOptions = CustomTabsOptions.newBuilder().build()
         private var leeway: Int? = null
         private var launchAsTwa: Boolean = false
@@ -545,6 +539,18 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         internal fun withPKCE(pkce: PKCE): Builder {
             this.pkce = pkce
+            return this
+        }
+
+        /**
+         * Enable DPoP (Demonstrating Proof-of-Possession) for this authentication request.
+         * DPoP binds access tokens to the client's cryptographic key, providing enhanced security.
+         *
+         * @param context the Android context used to access the keystore for DPoP key management
+         * @return the current builder instance
+         */
+        public override fun useDPoP(context: Context): Builder {
+            dPoP = DPoP(context)
             return this
         }
 
