@@ -176,7 +176,7 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
          * @return the current builder instance
          */
         public fun withScheme(scheme: String): LogoutBuilder {
-            val lowerCase = scheme.lowercase(Locale.ROOT)
+            val lowerCase = scheme.toLowerCase(Locale.ROOT)
             if (scheme != lowerCase) {
                 Log.w(
                     TAG,
@@ -397,7 +397,7 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
          * @return the current builder instance
          */
         public fun withScheme(scheme: String): Builder {
-            val lowerCase = scheme.lowercase(Locale.ROOT)
+            val lowerCase = scheme.toLowerCase(Locale.ROOT)
             if (scheme != lowerCase) {
                 Log.w(
                     TAG,

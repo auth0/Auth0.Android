@@ -1,8 +1,8 @@
 package com.auth0.android.util
 
-import mockwebserver3.MockResponse
-import mockwebserver3.MockWebServer
-import mockwebserver3.RecordedRequest
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.RecordedRequest
 import java.io.IOException
 
 internal abstract class APIMockServer {
@@ -12,7 +12,7 @@ internal abstract class APIMockServer {
 
     @Throws(IOException::class)
     fun shutdown() {
-        server.close()
+        server.shutdown()
     }
 
     @Throws(InterruptedException::class)
@@ -21,23 +21,22 @@ internal abstract class APIMockServer {
     }
 
     fun responseWithJSON(json: String, statusCode: Int): MockResponse {
-        return MockResponse.Builder()
-            .code(statusCode)
+        return MockResponse()
+            .setResponseCode(statusCode)
             .addHeader("Content-Type", "application/json")
-            .body(json)
-            .build()
+            .setBody(json)
     }
 
     fun responseWithJSON(json: String, statusCode: Int, header: Map<String, String>): MockResponse {
-        val builder = MockResponse.Builder()
-            .code(statusCode)
+        val response = MockResponse()
+            .setResponseCode(statusCode)
             .addHeader("Content-Type", "application/json")
-            .body(json)
+            .setBody(json)
 
         header.forEach { (key, value) ->
-            builder.addHeader(key, value)
+            response.addHeader(key, value)
         }
-        return builder.build()
+        return response
     }
 
     init {

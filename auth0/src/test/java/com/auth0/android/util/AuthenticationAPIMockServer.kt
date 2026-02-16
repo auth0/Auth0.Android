@@ -1,6 +1,6 @@
 package com.auth0.android.util
 
-import mockwebserver3.MockResponse
+import okhttp3.mockwebserver.MockResponse
 import java.nio.file.Files
 import java.nio.file.Paths
 
@@ -189,17 +189,15 @@ internal class AuthenticationAPIMockServer : APIMockServer() {
     }
 
     private fun responseEmpty(statusCode: Int): MockResponse {
-        return MockResponse.Builder()
-            .code(statusCode)
-            .build()
+        return MockResponse()
+            .setResponseCode(statusCode)
     }
 
     private fun responseWithPlainText(statusMessage: String, statusCode: Int): MockResponse {
-        return MockResponse.Builder()
-            .code(statusCode)
+        return MockResponse()
+            .setResponseCode(statusCode)
             .addHeader("Content-Type", "text/plain")
-            .body(statusMessage)
-            .build()
+            .setBody(statusMessage)
     }
 
     companion object {
