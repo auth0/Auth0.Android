@@ -3223,17 +3223,6 @@ account.setNetworkingClient(netClient);
 ```
 </details>
 
-<details>
-  <summary>Legacy constructor (still supported)</summary>
-
-```kotlin
-val netClient = DefaultClient(
-    connectTimeout = 30,
-    readTimeout = 30
-)
-```
-</details>
-
 ### Logging configuration
 
 ```kotlin
@@ -3245,12 +3234,11 @@ val account = Auth0.getInstance("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
 account.networkingClient = netClient
 ```
 
-You can also customize the log level and provide a custom logger:
+You can also provide a custom logger to control where logs are written:
 
 ```kotlin
 val netClient = DefaultClient.Builder()
     .enableLogging(true)
-    .logLevel(HttpLoggingInterceptor.Level.HEADERS)  // NONE, BASIC, HEADERS, or BODY (default)
     .logger(HttpLoggingInterceptor.Logger { message -> Log.d("Auth0Http", message) })
     .build()
 ```
@@ -3261,20 +3249,9 @@ val netClient = DefaultClient.Builder()
 ```java
 DefaultClient netClient = new DefaultClient.Builder()
     .enableLogging(true)
-    .logLevel(HttpLoggingInterceptor.Level.HEADERS)
     .build();
 Auth0 account = Auth0.getInstance("client id", "domain");
 account.setNetworkingClient(netClient);
-```
-</details>
-
-<details>
-  <summary>Legacy constructor (still supported)</summary>
-
-```kotlin
-val netClient = DefaultClient(
-    enableLogging = true
-)
 ```
 </details>
 
@@ -3303,37 +3280,6 @@ Auth0 account = Auth0.getInstance("client id", "domain");
 account.setNetworkingClient(netClient);
 ```
 </details>
-
-<details>
-  <summary>Legacy constructor (still supported)</summary>
-
-```kotlin
-val netClient = DefaultClient(
-    defaultHeaders = mapOf("{HEADER-NAME}" to "{HEADER-VALUE}")
-)
-```
-</details>
-
-### Custom interceptors
-
-You can add custom OkHttp interceptors to the `DefaultClient` for use cases such as auth token injection, analytics, or certificate pinning:
-
-```kotlin
-val netClient = DefaultClient.Builder()
-    .addInterceptor(Interceptor { chain ->
-        val request = chain.request().newBuilder()
-            .addHeader("X-Request-Id", UUID.randomUUID().toString())
-            .build()
-        chain.proceed(request)
-    })
-    .addInterceptor(myAnalyticsInterceptor)
-    .build()
-
-val account = Auth0.getInstance("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
-account.networkingClient = netClient
-```
-
-Interceptors are invoked in the order they were added, after the built-in retry interceptor and before the logging interceptor.
 
 ### Advanced configuration
 
