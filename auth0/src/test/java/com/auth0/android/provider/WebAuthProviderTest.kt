@@ -2886,6 +2886,38 @@ public class WebAuthProviderTest {
     }
 
     @Test
+    public fun shouldNotApplyDPoPToSubsequentLoginCallsWhenNotExplicitlyEnabled() {
+        `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
+        `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
+
+        // First login with DPoP enabled
+        login(account)
+            .useDPoP(mockContext)
+            .withScope("openid profile")
+            .start(activity, callback)
+
+        verify(activity).startActivity(intentCaptor.capture())
+        val firstUri =
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(firstUri, `is`(notNullValue()))
+        assertThat(firstUri, UriMatchers.hasParamWithName("dpop_jkt"))
+
+        // Reset the manager instance to simulate a fresh login flow
+        WebAuthProvider.resetManagerInstance()
+
+        // Second login WITHOUT DPoP - should not have dpop_jkt
+        login(account)
+            .withScope("openid email")
+            .start(activity, callback)
+
+        verify(activity, times(2)).startActivity(intentCaptor.capture())
+        val secondUri =
+            intentCaptor.allValues[1].getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(secondUri, `is`(notNullValue()))
+        assertThat(secondUri, not(UriMatchers.hasParamWithName("dpop_jkt")))
+    }
+
+    @Test
     @Throws(Exception::class)
     public fun shouldResumeLoginSuccessfullyWithDPoPEnabled() {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
