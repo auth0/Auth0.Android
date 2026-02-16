@@ -2901,19 +2901,21 @@ public class WebAuthProviderTest {
             intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         assertThat(firstUri, `is`(notNullValue()))
         assertThat(firstUri, UriMatchers.hasParamWithName("dpop_jkt"))
+        assertThat(firstUri?.getQueryParameter("scope"), `is`("openid profile"))
 
-        // Reset the manager instance to simulate a fresh login flow
+        // Reset the manager instance and captor for the second call
         WebAuthProvider.resetManagerInstance()
 
-        // Second login WITHOUT DPoP - should not have dpop_jkt
         login(account)
             .withScope("openid email")
             .start(activity, callback)
 
+        // Verify second startActivity call
         verify(activity, times(2)).startActivity(intentCaptor.capture())
         val secondUri =
-            intentCaptor.allValues[1].getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+            intentCaptor.lastValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
         assertThat(secondUri, `is`(notNullValue()))
+        assertThat(secondUri?.getQueryParameter("scope"), `is`("openid email"))
         assertThat(secondUri, not(UriMatchers.hasParamWithName("dpop_jkt")))
     }
 
