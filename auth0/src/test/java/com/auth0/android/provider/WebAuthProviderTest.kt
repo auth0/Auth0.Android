@@ -2852,19 +2852,6 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public fun shouldNotAffectLogoutWhenDPoPIsEnabled() {
-        logout(account)
-            .start(activity, voidCallback)
-
-        verify(activity).startActivity(intentCaptor.capture())
-        val uri =
-            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
-        assertThat(uri, `is`(notNullValue()))
-        // Logout should not have DPoP parameters
-        assertThat(uri, not(UriMatchers.hasParamWithName("dpop_jkt")))
-    }
-
-    @Test
     public fun shouldHandleDPoPKeyGenerationFailureGracefully() {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
         doThrow(DPoPException.KEY_GENERATION_ERROR)

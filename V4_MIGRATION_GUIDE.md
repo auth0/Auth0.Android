@@ -2,7 +2,9 @@
 
 ## Overview
 
-v4 of the Auth0 Android SDK includes significant build toolchain updates to support the latest Android development environment. This guide documents the changes required when migrating from v3 to v4.
+v4 of the Auth0 Android SDK includes significant build toolchain updates to support the latest
+Android development environment. This guide documents the changes required when migrating from v3 to
+v4.
 
 ## Requirements Changes
 
@@ -50,7 +52,8 @@ buildscript {
 
 ### Kotlin Version
 
-v4 uses **Kotlin 2.0.21**. If you're using Kotlin in your project, you may need to update your Kotlin version to ensure compatibility.
+v4 uses **Kotlin 2.0.21**. If you're using Kotlin in your project, you may need to update your
+Kotlin version to ensure compatibility.
 
 ```groovy
 buildscript {
@@ -62,14 +65,20 @@ buildscript {
 
 ### Classes Removed
 
-- The `com.auth0.android.provider.PasskeyAuthProvider` class has been removed. Use the APIs from the [AuthenticationAPIClient](auth0/src/main/java/com/auth0/android/authentication/AuthenticationAPIClient.kt) class for passkey operations:
-  - [passkeyChallenge()](auth0/src/main/java/com/auth0/android/authentication/AuthenticationAPIClient.kt#L366-L387) - Request a challenge to initiate passkey login flow
-  - [signinWithPasskey()](auth0/src/main/java/com/auth0/android/authentication/AuthenticationAPIClient.kt#L235-L253) - Sign in a user using passkeys
-  - [signupWithPasskey()](auth0/src/main/java/com/auth0/android/authentication/AuthenticationAPIClient.kt#L319-L344) - Sign up a user and returns a challenge for key generation
+- The `com.auth0.android.provider.PasskeyAuthProvider` class has been removed. Use the APIs from
+  the [AuthenticationAPIClient](auth0/src/main/java/com/auth0/android/authentication/AuthenticationAPIClient.kt)
+  class for passkey operations:
+    - [passkeyChallenge()](auth0/src/main/java/com/auth0/android/authentication/AuthenticationAPIClient.kt#L366-L387) -
+      Request a challenge to initiate passkey login flow
+    - [signinWithPasskey()](auth0/src/main/java/com/auth0/android/authentication/AuthenticationAPIClient.kt#L235-L253) -
+      Sign in a user using passkeys
+    - [signupWithPasskey()](auth0/src/main/java/com/auth0/android/authentication/AuthenticationAPIClient.kt#L319-L344) -
+      Sign up a user and returns a challenge for key generation
 
 ### DPoP Configuration Moved to Builder
 
-The `useDPoP()` method has been moved from the `WebAuthProvider` object to the login `Builder` class. This change allows DPoP to be configured per-request instead of globally.
+The `useDPoP(context: Context)` method has been moved from the `WebAuthProvider` object to the login
+`Builder` class. This change allows DPoP to be configured per-request instead of globally.
 
 **v3 (global configuration — no longer supported):**
 
@@ -87,21 +96,28 @@ WebAuthProvider
 // ✅ Use this instead
 WebAuthProvider
     .login(account)
-    .useDPoP(context) 
+    .useDPoP(context)
     .start(context, callback)
 ```
 
-This change ensures that DPoP configuration is scoped to individual login requests rather than persisting across the entire application lifecycle.
+This change ensures that DPoP configuration is scoped to individual login requests rather than
+persisting across the entire application lifecycle.
 
 ## Dependency Changes
 
 ### ⚠️ Gson 2.8.9 → 2.11.0 (Transitive Dependency)
 
-v4 updates the internal Gson dependency from **2.8.9** to **2.11.0**. While the SDK does not expose Gson types in its public API, Gson is included as a transitive runtime dependency. If your app also uses Gson, be aware of the following changes introduced in Gson 2.10+:
+v4 updates the internal Gson dependency from **2.8.9** to **2.11.0**. While the SDK does not expose
+Gson types in its public API, Gson is included as a transitive runtime dependency. If your app also
+uses Gson, be aware of the following changes introduced in Gson 2.10+:
 
-- **`TypeToken` with unresolved type variables is rejected at runtime.** Code like `object : TypeToken<List<T>>() {}` (where `T` is a generic parameter) will throw `IllegalArgumentException`. Use Kotlin `reified` type parameters or pass concrete types instead.
-- **Strict type coercion is enforced.** Gson no longer silently coerces JSON objects or arrays to `String`. If your code relies on this behavior, you will see `JsonSyntaxException`.
-- **Built-in ProGuard/R8 rules are included.** Gson 2.11.0 ships its own keep rules, so you may be able to remove custom Gson ProGuard rules from your project.
+- **`TypeToken` with unresolved type variables is rejected at runtime.** Code like
+  `object : TypeToken<List<T>>() {}` (where `T` is a generic parameter) will throw
+  `IllegalArgumentException`. Use Kotlin `reified` type parameters or pass concrete types instead.
+- **Strict type coercion is enforced.** Gson no longer silently coerces JSON objects or arrays to
+  `String`. If your code relies on this behavior, you will see `JsonSyntaxException`.
+- **Built-in ProGuard/R8 rules are included.** Gson 2.11.0 ships its own keep rules, so you may be
+  able to remove custom Gson ProGuard rules from your project.
 
 If you need to pin Gson to an older version, you can use Gradle's `resolutionStrategy`:
 
@@ -120,11 +136,14 @@ implementation('com.auth0.android:auth0:<version>') {
 implementation 'com.google.code.gson:gson:2.8.9' // your preferred version
 ```
 
-> **Note:** Pinning or excluding is not recommended long-term, as the SDK has been tested and validated against Gson 2.11.0.
+> **Note:** Pinning or excluding is not recommended long-term, as the SDK has been tested and
+> validated against Gson 2.11.0.
 
 ### DefaultClient.Builder
 
-v4 introduces a `DefaultClient.Builder` for configuring the HTTP client. This replaces the constructor-based approach with a more flexible builder pattern that supports additional options such as write/call timeouts, custom interceptors, and custom loggers.
+v4 introduces a `DefaultClient.Builder` for configuring the HTTP client. This replaces the
+constructor-based approach with a more flexible builder pattern that supports additional options
+such as write/call timeouts, custom interceptors, and custom loggers.
 
 **v3 (constructor-based — deprecated):**
 
@@ -149,7 +168,9 @@ val client = DefaultClient.Builder()
     .build()
 ```
 
-The legacy constructor is deprecated but **not removed** — existing code will continue to compile and run. Your IDE will show a deprecation warning with a suggested `ReplaceWith` quick-fix to migrate to the Builder.
+The legacy constructor is deprecated but **not removed** — existing code will continue to compile
+and run. Your IDE will show a deprecation warning with a suggested `ReplaceWith` quick-fix to
+migrate to the Builder.
 
 ## Getting Help
 

@@ -112,7 +112,7 @@ public object WebAuthProvider {
         }
     }
 
-    internal fun onRestoreInstanceState(bundle: Bundle) {
+    internal fun onRestoreInstanceState(bundle: Bundle, context: Context) {
         if (managerInstance == null) {
             val stateJson = bundle.getString(KEY_BUNDLE_OAUTH_MANAGER_STATE).orEmpty()
             if (stateJson.isNotBlank()) {
@@ -131,7 +131,8 @@ public object WebAuthProvider {
                                 callback.onFailure(error)
                             }
                         }
-                    }
+                    },
+                    context
                 )
             }
         }
