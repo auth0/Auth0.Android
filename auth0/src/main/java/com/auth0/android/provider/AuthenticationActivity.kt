@@ -40,7 +40,7 @@ public open class AuthenticationActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (savedInstanceState != null) {
-            WebAuthProvider.onRestoreInstanceState(savedInstanceState)
+            WebAuthProvider.onRestoreInstanceState(savedInstanceState, this)
             intentLaunched = savedInstanceState.getBoolean(EXTRA_INTENT_LAUNCHED, false)
         }
     }
