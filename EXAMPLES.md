@@ -301,12 +301,12 @@ WebAuthProvider.login(account)
 
 ## DPoP
 
-[DPoP](https://www.rfc-editor.org/rfc/rfc9449.html) (Demonstrating Proof of Possession) is an application-level mechanism for sender-constraining OAuth 2.0 access and refresh tokens by proving that the app is in possession of a certain private key. You can enable it by calling the `useDPoP()` method.
+[DPoP](https://www.rfc-editor.org/rfc/rfc9449.html) (Demonstrating Proof of Possession) is an application-level mechanism for sender-constraining OAuth 2.0 access and refresh tokens by proving that the app is in possession of a certain private key. You can enable it by calling the `useDPoP(context)` method on the login Builder.
 
 ```kotlin
 WebAuthProvider
-    .useDPoP()
     .login(account)
+    .useDPoP(requireContext())
     .start(requireContext(), object : Callback<Credentials, AuthenticationException> {
         override fun onSuccess(result: Credentials) {
            println("Credentials $result")

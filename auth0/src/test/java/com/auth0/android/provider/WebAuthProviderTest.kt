@@ -331,8 +331,8 @@ public class WebAuthProviderTest {
     @Test
     public fun enablingDPoPWillGenerateNewKeyPairIfOneDoesNotExist() {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
-        WebAuthProvider.useDPoP(mockContext)
-            .login(account)
+        login(account)
+            .useDPoP(mockContext)
             .start(activity, callback)
         verify(mockKeyStore).generateKeyPair(any(), any())
     }
@@ -358,8 +358,8 @@ public class WebAuthProviderTest {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
         `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
 
-        WebAuthProvider.useDPoP(mockContext)
-            .login(account)
+        login(account)
+            .useDPoP(mockContext)
             .start(activity, callback)
 
         verify(activity).startActivity(intentCaptor.capture())
@@ -2741,21 +2741,13 @@ public class WebAuthProviderTest {
 
     //DPoP
 
-    public fun shouldReturnSameInstanceWhenCallingUseDPoPMultipleTimes() {
-        val provider1 = WebAuthProvider.useDPoP(mockContext)
-        val provider2 = WebAuthProvider.useDPoP(mockContext)
-
-        assertThat(provider1, `is`(provider2))
-        assertThat(WebAuthProvider.useDPoP(mockContext), `is`(provider1))
-    }
-
     @Test
     public fun shouldPassDPoPInstanceToOAuthManagerWhenDPoPIsEnabled() {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
         `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
 
-        WebAuthProvider.useDPoP(mockContext)
-            .login(account)
+        login(account)
+            .useDPoP(mockContext)
             .start(activity, callback)
 
         val managerInstance = WebAuthProvider.managerInstance as OAuthManager
@@ -2775,8 +2767,8 @@ public class WebAuthProviderTest {
     public fun shouldGenerateKeyPairWhenDPoPIsEnabledAndNoKeyPairExists() {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
 
-        WebAuthProvider.useDPoP(mockContext)
-            .login(account)
+        login(account)
+            .useDPoP(mockContext)
             .start(activity, callback)
 
         verify(mockKeyStore).generateKeyPair(any(), any())
@@ -2787,8 +2779,8 @@ public class WebAuthProviderTest {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
         `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
 
-        WebAuthProvider.useDPoP(mockContext)
-            .login(account)
+        login(account)
+            .useDPoP(mockContext)
             .start(activity, callback)
 
         verify(mockKeyStore, never()).generateKeyPair(any(), any())
@@ -2809,8 +2801,8 @@ public class WebAuthProviderTest {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
         `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
 
-        WebAuthProvider.useDPoP(mockContext)
-            .login(account)
+        login(account)
+            .useDPoP(mockContext)
             .start(activity, callback)
 
         verify(activity).startActivity(intentCaptor.capture())
@@ -2829,8 +2821,8 @@ public class WebAuthProviderTest {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
         `when`(mockKeyStore.getKeyPair()).thenReturn(null)
 
-        WebAuthProvider.useDPoP(mockContext)
-            .login(account)
+        login(account)
+            .useDPoP(mockContext)
             .start(activity, callback)
 
         verify(activity).startActivity(intentCaptor.capture())
@@ -2845,8 +2837,8 @@ public class WebAuthProviderTest {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
         `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
 
-        val builder = WebAuthProvider.useDPoP(mockContext)
-            .login(account)
+        val builder = login(account)
+            .useDPoP(mockContext)
             .withConnection("test-connection")
 
         builder.start(activity, callback)
@@ -2860,27 +2852,13 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public fun shouldNotAffectLogoutWhenDPoPIsEnabled() {
-        WebAuthProvider.useDPoP(mockContext)
-            .logout(account)
-            .start(activity, voidCallback)
-
-        verify(activity).startActivity(intentCaptor.capture())
-        val uri =
-            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
-        assertThat(uri, `is`(notNullValue()))
-        // Logout should not have DPoP parameters
-        assertThat(uri, not(UriMatchers.hasParamWithName("dpop_jkt")))
-    }
-
-    @Test
     public fun shouldHandleDPoPKeyGenerationFailureGracefully() {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
         doThrow(DPoPException.KEY_GENERATION_ERROR)
             .`when`(mockKeyStore).generateKeyPair(any(), any())
 
-        WebAuthProvider.useDPoP(mockContext)
-            .login(account)
+        login(account)
+            .useDPoP(mockContext)
             .start(activity, callback)
 
         // Verify that the authentication fails when DPoP key generation fails
@@ -2892,6 +2870,40 @@ public class WebAuthProviderTest {
         assertThat(capturedException.cause, Matchers.instanceOf(DPoPException::class.java))
 
         verify(activity, never()).startActivity(any())
+    }
+
+    @Test
+    public fun shouldNotApplyDPoPToSubsequentLoginCallsWhenNotExplicitlyEnabled() {
+        `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
+        `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
+
+        // First login with DPoP enabled
+        login(account)
+            .useDPoP(mockContext)
+            .withScope("openid profile")
+            .start(activity, callback)
+
+        verify(activity).startActivity(intentCaptor.capture())
+        val firstUri =
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(firstUri, `is`(notNullValue()))
+        assertThat(firstUri, UriMatchers.hasParamWithName("dpop_jkt"))
+        assertThat(firstUri?.getQueryParameter("scope"), `is`("openid profile"))
+
+        // Reset the manager instance and captor for the second call
+        WebAuthProvider.resetManagerInstance()
+
+        login(account)
+            .withScope("openid email")
+            .start(activity, callback)
+
+        // Verify second startActivity call
+        verify(activity, times(2)).startActivity(intentCaptor.capture())
+        val secondUri =
+            intentCaptor.lastValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(secondUri, `is`(notNullValue()))
+        assertThat(secondUri?.getQueryParameter("scope"), `is`("openid email"))
+        assertThat(secondUri, not(UriMatchers.hasParamWithName("dpop_jkt")))
     }
 
     @Test
@@ -2909,8 +2921,8 @@ public class WebAuthProviderTest {
         val proxyAccount: Auth0 = Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
         proxyAccount.networkingClient = SSLTestUtils.testClient
 
-        WebAuthProvider.useDPoP(mockContext)
-            .login(proxyAccount)
+        login(proxyAccount)
+            .useDPoP(mockContext)
             .withPKCE(pkce)
             .start(activity, authCallback)
 
