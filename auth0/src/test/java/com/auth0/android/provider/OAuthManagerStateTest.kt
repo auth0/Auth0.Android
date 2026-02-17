@@ -44,4 +44,88 @@ internal class OAuthManagerStateTest {
         Assert.assertEquals(1, deserializedState.idTokenVerificationLeeway)
         Assert.assertEquals("issuer", deserializedState.idTokenVerificationIssuer)
     }
+
+    @Test
+    fun `serialize should persist dPoPEnabled flag as true`() {
+        val auth0 = Auth0.getInstance("clientId", "domain")
+        val state = OAuthManagerState(
+            auth0 = auth0,
+            parameters = mapOf("param1" to "value1"),
+            headers = mapOf("header1" to "value1"),
+            requestCode = 1,
+            ctOptions = CustomTabsOptions.newBuilder()
+                .showTitle(true)
+                .withBrowserPicker(
+                    BrowserPicker.newBuilder().withAllowedPackages(emptyList()).build()
+                )
+                .build(),
+            pkce = PKCE(mock(), "redirectUri", mapOf("header1" to "value1")),
+            idTokenVerificationLeeway = 1,
+            idTokenVerificationIssuer = "issuer",
+            dPoPEnabled = true
+        )
+
+        val json = state.serializeToJson()
+
+        Assert.assertTrue(json.isNotBlank())
+        Assert.assertTrue(json.contains("\"dPoPEnabled\":true"))
+
+        val deserializedState = OAuthManagerState.deserializeState(json)
+
+        Assert.assertTrue(deserializedState.dPoPEnabled)
+    }
+
+    @Test
+    fun `serialize should persist dPoPEnabled flag as false by default`() {
+        val auth0 = Auth0.getInstance("clientId", "domain")
+        val state = OAuthManagerState(
+            auth0 = auth0,
+            parameters = mapOf("param1" to "value1"),
+            headers = mapOf("header1" to "value1"),
+            requestCode = 1,
+            ctOptions = CustomTabsOptions.newBuilder()
+                .showTitle(true)
+                .withBrowserPicker(
+                    BrowserPicker.newBuilder().withAllowedPackages(emptyList()).build()
+                )
+                .build(),
+            pkce = PKCE(mock(), "redirectUri", mapOf("header1" to "value1")),
+            idTokenVerificationLeeway = 1,
+            idTokenVerificationIssuer = "issuer"
+        )
+
+        val json = state.serializeToJson()
+
+        val deserializedState = OAuthManagerState.deserializeState(json)
+
+        Assert.assertFalse(deserializedState.dPoPEnabled)
+    }
+
+    @Test
+    fun `deserialize should default dPoPEnabled to false when field is missing from JSON`() {
+        val auth0 = Auth0.getInstance("clientId", "domain")
+        val state = OAuthManagerState(
+            auth0 = auth0,
+            parameters = emptyMap(),
+            headers = emptyMap(),
+            requestCode = 0,
+            ctOptions = CustomTabsOptions.newBuilder()
+                .showTitle(true)
+                .withBrowserPicker(
+                    BrowserPicker.newBuilder().withAllowedPackages(emptyList()).build()
+                )
+                .build(),
+            pkce = PKCE(mock(), "redirectUri", emptyMap()),
+            idTokenVerificationLeeway = null,
+            idTokenVerificationIssuer = null
+        )
+
+        val json = state.serializeToJson()
+        // Remove the dPoPEnabled field to simulate legacy JSON
+        val legacyJson = json.replace(",\"dPoPEnabled\":false", "")
+
+        val deserializedState = OAuthManagerState.deserializeState(legacyJson)
+
+        Assert.assertFalse(deserializedState.dPoPEnabled)
+    }
 }
