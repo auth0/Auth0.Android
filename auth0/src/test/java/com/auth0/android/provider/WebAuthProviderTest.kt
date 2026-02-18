@@ -3038,6 +3038,27 @@ public class WebAuthProviderTest {
         return if (hash.length == 1) "" else hash
     }
 
+    @Test
+    public fun shouldStartLoginWithEphemeralBrowsing() {
+        val options = Mockito.mock(CustomTabsOptions::class.java)
+        `when`(options.hasCompatibleBrowser(activity.packageManager)).thenReturn(true)
+        login(account)
+            .withCustomTabsOptions(options)
+            .withEphemeralBrowsing()
+            .start(activity, callback)
+        verify(options).setEphemeralBrowsingCapability(true)
+    }
+
+    @Test
+    public fun shouldNotSetEphemeralBrowsingByDefault() {
+        val options = Mockito.mock(CustomTabsOptions::class.java)
+        `when`(options.hasCompatibleBrowser(activity.packageManager)).thenReturn(true)
+        login(account)
+            .withCustomTabsOptions(options)
+            .start(activity, callback)
+        verify(options).setEphemeralBrowsingCapability(false)
+    }
+
     private companion object {
         private const val KEY_STATE = "state"
         private const val KEY_NONCE = "nonce"

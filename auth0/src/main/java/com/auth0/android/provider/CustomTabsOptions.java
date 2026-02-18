@@ -7,11 +7,13 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
 
 import androidx.annotation.ColorRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.browser.customtabs.CustomTabColorSchemeParams;
+import androidx.browser.customtabs.CustomTabsClient;
 import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.browser.customtabs.CustomTabsSession;
 import androidx.browser.trusted.TrustedWebActivityIntentBuilder;
@@ -26,6 +28,8 @@ import java.util.List;
  */
 public class CustomTabsOptions implements Parcelable {
 
+    private static final String TAG = "CustomTabsOptions";
+
     private final boolean showTitle;
     @ColorRes
     private final int toolbarColor;
@@ -33,6 +37,8 @@ public class CustomTabsOptions implements Parcelable {
 
     @Nullable
     private final List<String> disabledCustomTabsPackages;
+
+    private boolean ephemeralBrowsing;
 
     private CustomTabsOptions(boolean showTitle, @ColorRes int toolbarColor, @NonNull BrowserPicker browserPicker, @Nullable List<String> disabledCustomTabsPackages) {
         this.showTitle = showTitle;
@@ -61,6 +67,13 @@ public class CustomTabsOptions implements Parcelable {
     }
 
     /**
+     * Enable ephemeral browsing for the Custom Tab.
+     */
+    void setEphemeralBrowsingCapability(boolean ephemeralBrowsing) {
+        this.ephemeralBrowsing = ephemeralBrowsing;
+    }
+
+    /**
      * Create a new CustomTabsOptions.Builder instance.
      *
      * @return a new CustomTabsOptions.Builder ready to customize.
@@ -82,6 +95,18 @@ public class CustomTabsOptions implements Parcelable {
         final CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder(session)
                 .setShowTitle(showTitle)
                 .setShareState(CustomTabsIntent.SHARE_STATE_OFF);
+
+        if (ephemeralBrowsing) {
+            if (preferredPackage != null
+                    && CustomTabsClient.isEphemeralBrowsingSupported(context, preferredPackage)) {
+                builder.setEphemeralBrowsingEnabled(true);
+            } else {
+                Log.w(TAG, "Ephemeral browsing was requested but is not supported by the "
+                        + "current browser (" + preferredPackage + "). "
+                        + "Falling back to a regular Custom Tab.");
+            }
+        }
+
         if (toolbarColor > 0) {
             //Resource exists
             final CustomTabColorSchemeParams.Builder colorBuilder = new CustomTabColorSchemeParams.Builder()
@@ -108,6 +133,7 @@ public class CustomTabsOptions implements Parcelable {
         toolbarColor = in.readInt();
         browserPicker = in.readParcelable(BrowserPicker.class.getClassLoader());
         disabledCustomTabsPackages = in.createStringArrayList();
+        ephemeralBrowsing = in.readByte() != 0;
     }
 
     @Override
@@ -116,6 +142,7 @@ public class CustomTabsOptions implements Parcelable {
         dest.writeInt(toolbarColor);
         dest.writeParcelable(browserPicker, flags);
         dest.writeStringList(disabledCustomTabsPackages);
+        dest.writeByte((byte) (ephemeralBrowsing ? 1 : 0));
     }
 
     @Override
