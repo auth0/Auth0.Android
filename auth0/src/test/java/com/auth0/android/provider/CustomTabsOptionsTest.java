@@ -252,12 +252,15 @@ public class CustomTabsOptionsTest {
         BrowserPicker browserPicker = BrowserPicker.newBuilder().build();
         CustomTabsOptions options = CustomTabsOptions.newBuilder()
                 .withBrowserPicker(browserPicker)
+                .withEphemeralBrowsing()
                 .build();
-        options.setEphemeralBrowsingCapability(true);
         assertThat(options, is(notNullValue()));
 
         Intent intent = options.toIntent(activity, null);
         assertThat(intent, is(notNullValue()));
+
+        // Verify ephemeral browsing extra is set on the intent
+        assertThat(intent.getBooleanExtra(CustomTabsIntent.EXTRA_ENABLE_EPHEMERAL_BROWSING, false), is(true));
 
         // Verify isEphemeralBrowsingSupported was called
         customTabsClientMock.verify(() ->
@@ -283,6 +286,9 @@ public class CustomTabsOptionsTest {
         Intent parceledIntent = parceledOptions.toIntent(activity, null);
         assertThat(parceledIntent, is(notNullValue()));
 
+        // Verify ephemeral browsing extra is set after Parcel round-trip
+        assertThat(parceledIntent.getBooleanExtra(CustomTabsIntent.EXTRA_ENABLE_EPHEMERAL_BROWSING, false), is(true));
+
         // Verify isEphemeralBrowsingSupported was called again after Parcel round-trip
         customTabsClientMock.verify(() ->
                 CustomTabsClient.isEphemeralBrowsingSupported(any(), eq("com.android.chrome"))
@@ -301,6 +307,9 @@ public class CustomTabsOptionsTest {
 
         customTabsClientMock.verifyNoInteractions();
 
+        // Verify ephemeral browsing extra is not set
+        assertThat(intent.getBooleanExtra(CustomTabsIntent.EXTRA_ENABLE_EPHEMERAL_BROWSING, false), is(false));
+
         assertThat(hasLogWithMessage("Ephemeral browsing was requested"), is(false));
     }
 
@@ -317,13 +326,16 @@ public class CustomTabsOptionsTest {
         BrowserPicker browserPicker = BrowserPicker.newBuilder().build();
         CustomTabsOptions options = CustomTabsOptions.newBuilder()
                 .withBrowserPicker(browserPicker)
+                .withEphemeralBrowsing()
                 .build();
-        options.setEphemeralBrowsingCapability(true);
 
         Intent intent = options.toIntent(activity, null);
         assertThat(intent, is(notNullValue()));
 
         assertThat(hasLogWithMessage("Ephemeral browsing was requested but is not supported"), is(true));
+
+        // Verify ephemeral browsing extra is not set (fallback to regular Custom Tab)
+        assertThat(intent.getBooleanExtra(CustomTabsIntent.EXTRA_ENABLE_EPHEMERAL_BROWSING, false), is(false));
 
         // Verify the intent still has standard Custom Tab extras (it's a regular Custom Tab)
         assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE), is(true));
@@ -336,11 +348,14 @@ public class CustomTabsOptionsTest {
 
         CustomTabsOptions options = CustomTabsOptions.newBuilder()
                 .withBrowserPicker(browserPicker)
+                .withEphemeralBrowsing()
                 .build();
-        options.setEphemeralBrowsingCapability(true);
 
         Intent intent = options.toIntent(context, null);
         assertThat(intent, is(notNullValue()));
+
+        // Verify ephemeral browsing extra is not set (fallback to regular Custom Tab)
+        assertThat(intent.getBooleanExtra(CustomTabsIntent.EXTRA_ENABLE_EPHEMERAL_BROWSING, false), is(false));
 
         // Verify the warning was logged with null package info
         assertThat(hasLogWithMessage("Ephemeral browsing was requested but is not supported"), is(true));
@@ -356,8 +371,8 @@ public class CustomTabsOptionsTest {
         CustomTabsOptions options = CustomTabsOptions.newBuilder()
                 .withBrowserPicker(browserPicker)
                 .withDisabledCustomTabsPackages(List.of("com.auth0.browser"))
+                .withEphemeralBrowsing()
                 .build();
-        options.setEphemeralBrowsingCapability(true);
         assertThat(options, is(notNullValue()));
 
         Intent intent = options.toIntent(activity, null);

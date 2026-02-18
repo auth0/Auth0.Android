@@ -3041,12 +3041,14 @@ public class WebAuthProviderTest {
     @Test
     public fun shouldStartLoginWithEphemeralBrowsing() {
         val options = Mockito.mock(CustomTabsOptions::class.java)
+        val ephemeralOptions = Mockito.mock(CustomTabsOptions::class.java)
         `when`(options.hasCompatibleBrowser(activity.packageManager)).thenReturn(true)
+        `when`(options.copyWithEphemeralBrowsing()).thenReturn(ephemeralOptions)
         login(account)
             .withCustomTabsOptions(options)
             .withEphemeralBrowsing()
             .start(activity, callback)
-        verify(options).setEphemeralBrowsingCapability(true)
+        verify(options).copyWithEphemeralBrowsing()
     }
 
     @Test
@@ -3056,7 +3058,7 @@ public class WebAuthProviderTest {
         login(account)
             .withCustomTabsOptions(options)
             .start(activity, callback)
-        verify(options).setEphemeralBrowsingCapability(false)
+        verify(options, Mockito.never()).copyWithEphemeralBrowsing()
     }
 
     private companion object {

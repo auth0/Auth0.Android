@@ -19,6 +19,7 @@ import androidx.browser.customtabs.CustomTabsSession;
 import androidx.browser.trusted.TrustedWebActivityIntentBuilder;
 import androidx.core.content.ContextCompat;
 
+import com.auth0.android.annotation.ExperimentalAuth0Api;
 import com.auth0.android.authentication.AuthenticationException;
 
 import java.util.List;
@@ -38,13 +39,14 @@ public class CustomTabsOptions implements Parcelable {
     @Nullable
     private final List<String> disabledCustomTabsPackages;
 
-    private boolean ephemeralBrowsing;
+    private final boolean ephemeralBrowsing;
 
-    private CustomTabsOptions(boolean showTitle, @ColorRes int toolbarColor, @NonNull BrowserPicker browserPicker, @Nullable List<String> disabledCustomTabsPackages) {
+    private CustomTabsOptions(boolean showTitle, @ColorRes int toolbarColor, @NonNull BrowserPicker browserPicker, @Nullable List<String> disabledCustomTabsPackages, boolean ephemeralBrowsing) {
         this.showTitle = showTitle;
         this.toolbarColor = toolbarColor;
         this.browserPicker = browserPicker;
         this.disabledCustomTabsPackages = disabledCustomTabsPackages;
+        this.ephemeralBrowsing = ephemeralBrowsing;
     }
 
     @Nullable
@@ -66,11 +68,10 @@ public class CustomTabsOptions implements Parcelable {
         return disabledCustomTabsPackages != null && disabledCustomTabsPackages.contains(preferredPackage);
     }
 
-    /**
-     * Enable ephemeral browsing for the Custom Tab.
-     */
-    void setEphemeralBrowsingCapability(boolean ephemeralBrowsing) {
-        this.ephemeralBrowsing = ephemeralBrowsing;
+    @NonNull
+    CustomTabsOptions copyWithEphemeralBrowsing() {
+        return new CustomTabsOptions(showTitle, toolbarColor, browserPicker,
+            disabledCustomTabsPackages, true);
     }
 
     /**
@@ -174,11 +175,14 @@ public class CustomTabsOptions implements Parcelable {
         @Nullable
         private List<String> disabledCustomTabsPackages;
 
+        private boolean ephemeralBrowsing;
+
         Builder() {
             this.showTitle = false;
             this.toolbarColor = 0;
             this.browserPicker = BrowserPicker.newBuilder().build();
             this.disabledCustomTabsPackages = null;
+            this.ephemeralBrowsing = false;
         }
 
         /**
@@ -240,13 +244,34 @@ public class CustomTabsOptions implements Parcelable {
         }
 
         /**
+         * Enable ephemeral browsing for the Custom Tab.
+         * When enabled, the Custom Tab runs in an isolated session — cookies, cache,
+         * history, and credentials are deleted when the tab closes.
+         * Requires Chrome 136+ or a compatible browser. On unsupported browsers,
+         * a warning is logged and a regular Custom Tab is used instead.
+         * By default, ephemeral browsing is disabled.
+         *
+         * <p><b>Warning:</b> Ephemeral browsing support in Auth0.Android is still experimental
+         * and can change in the future. Please test it thoroughly in all the targeted browsers
+         * and OS variants and let us know your feedback.</p>
+         *
+         * @return this same builder instance.
+         */
+        @ExperimentalAuth0Api
+        @NonNull
+        public Builder withEphemeralBrowsing() {
+            this.ephemeralBrowsing = true;
+            return this;
+        }
+
+        /**
          * Create a new CustomTabsOptions instance with the customization settings.
          *
          * @return an instance of CustomTabsOptions with the customization settings.
          */
         @NonNull
         public CustomTabsOptions build() {
-            return new CustomTabsOptions(showTitle, toolbarColor, browserPicker, disabledCustomTabsPackages);
+            return new CustomTabsOptions(showTitle, toolbarColor, browserPicker, disabledCustomTabsPackages, ephemeralBrowsing);
         }
     }
 

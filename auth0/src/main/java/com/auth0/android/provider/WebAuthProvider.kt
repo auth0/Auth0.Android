@@ -618,10 +618,14 @@ public object WebAuthProvider {
                 values[OAuthManager.KEY_INVITATION] = invitationId
             }
 
-            ctOptions.setEphemeralBrowsingCapability(ephemeralBrowsing)
+            val effectiveCtOptions = if (ephemeralBrowsing) {
+                ctOptions.copyWithEphemeralBrowsing()
+            } else {
+                ctOptions
+            }
 
             val manager = OAuthManager(
-                account, callback, values, ctOptions, launchAsTwa,
+                account, callback, values, effectiveCtOptions, launchAsTwa,
                 customAuthorizeUrl, dPoP
             )
             manager.setHeaders(headers)
