@@ -620,7 +620,6 @@ public object WebAuthProvider {
 
             ctOptions.setEphemeralBrowsingCapability(ephemeralBrowsing)
 
-
             val manager = OAuthManager(
                 account, callback, values, ctOptions, launchAsTwa,
                 customAuthorizeUrl, dPoP
