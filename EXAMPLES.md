@@ -246,6 +246,16 @@ WebAuthProvider.login(account)
 ```
 
 <details>
+<summary>Using async/await</summary>
+
+```kotlin
+WebAuthProvider.login(account)
+    .withEphemeralBrowsing()
+    .await(this)
+```
+</details>
+
+<details>
   <summary>Using Java</summary>
 
 ```java
