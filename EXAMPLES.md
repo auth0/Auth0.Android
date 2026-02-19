@@ -11,6 +11,7 @@
   - [Changing the Return To URL scheme](#changing-the-return-to-url-scheme)
   - [Specify a Custom Logout URL](#specify-a-custom-logout-url)
   - [Trusted Web Activity](#trusted-web-activity)
+  - [Ephemeral Browsing [Experimental]](#ephemeral-browsing-experimental)
   - [DPoP [EA]](#dpop-ea)
   - [Authentication API](#authentication-api)
     - [Login with database connection](#login-with-database-connection)
@@ -227,6 +228,42 @@ WebAuthProvider.login(account)
     .withTrustedWebActivity()
     .await(this)
 ```
+
+## Ephemeral Browsing [Experimental]
+
+> **WARNING**
+> Ephemeral browsing support in Auth0.Android is still experimental and can change in the future. Please test it thoroughly in all the targeted browsers
+> and OS variants and let us know your feedback.
+
+Ephemeral browsing launches the Chrome Custom Tab in a fully isolated session — cookies, cache, history, and credentials are deleted when the tab closes. This is equivalent to incognito/private mode for Custom Tabs, useful for privacy-focused authentication flows.
+
+Requires Chrome 136+ or a compatible browser. On unsupported browsers, the SDK falls back to a regular Custom Tab and logs a warning.
+
+```kotlin
+WebAuthProvider.login(account)
+    .withEphemeralBrowsing()
+    .start(this, callback)
+```
+
+<details>
+<summary>Using async/await</summary>
+
+```kotlin
+WebAuthProvider.login(account)
+    .withEphemeralBrowsing()
+    .await(this)
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+WebAuthProvider.login(account)
+    .withEphemeralBrowsing()
+    .start(this, callback);
+```
+</details>
 
 ## DPoP [EA]
 

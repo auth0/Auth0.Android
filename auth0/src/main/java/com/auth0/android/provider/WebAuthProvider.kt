@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
+import com.auth0.android.annotation.ExperimentalAuth0Api
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
 import com.auth0.android.dpop.DPoP
@@ -299,7 +300,8 @@ public object WebAuthProvider {
         }
     }
 
-    public class Builder internal constructor(private val account: Auth0) : SenderConstraining<Builder> {
+    public class Builder internal constructor(private val account: Auth0) :
+        SenderConstraining<Builder> {
         private val values: MutableMap<String, String> = mutableMapOf()
         private val headers: MutableMap<String, String> = mutableMapOf()
         private var pkce: PKCE? = null
@@ -311,6 +313,7 @@ public object WebAuthProvider {
         private var ctOptions: CustomTabsOptions = CustomTabsOptions.newBuilder().build()
         private var leeway: Int? = null
         private var launchAsTwa: Boolean = false
+        private var ephemeralBrowsing: Boolean = false
         private var customAuthorizeUrl: String? = null
 
         /**
@@ -526,6 +529,25 @@ public object WebAuthProvider {
         }
 
         /**
+         * Enable ephemeral browsing for the Custom Tab used in the login flow.
+         * When enabled, the Custom Tab runs in an isolated session — cookies, cache,
+         * history, and credentials are deleted when the tab closes.
+         * Requires Chrome 136+ or a compatible browser. On unsupported browsers,
+         * a warning is logged and a regular Custom Tab is used instead.
+         *
+         * **Warning:** Ephemeral browsing support in Auth0.Android is still experimental
+         * and can change in the future. Please test it thoroughly in all the targeted browsers
+         * and OS variants and let us know your feedback.
+         *
+         * @return the current builder instance
+         */
+        @ExperimentalAuth0Api
+        public fun withEphemeralBrowsing(): Builder {
+            ephemeralBrowsing = true
+            return this
+        }
+
+        /**
          * Specifies a custom Authorize URL to use for this login request, overriding the default
          * generated from the Auth0 domain (account.authorizeUrl).
          *
@@ -595,8 +617,15 @@ public object WebAuthProvider {
                 values[OAuthManager.KEY_ORGANIZATION] = organizationId
                 values[OAuthManager.KEY_INVITATION] = invitationId
             }
+
+            val effectiveCtOptions = if (ephemeralBrowsing) {
+                ctOptions.copyWithEphemeralBrowsing()
+            } else {
+                ctOptions
+            }
+
             val manager = OAuthManager(
-                account, callback, values, ctOptions, launchAsTwa,
+                account, callback, values, effectiveCtOptions, launchAsTwa,
                 customAuthorizeUrl, dPoP
             )
             manager.setHeaders(headers)
