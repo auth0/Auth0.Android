@@ -244,7 +244,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
     override suspend fun awaitCredentials(): Credentials {
-        return awaitCredentials(null, 0)
+        return awaitCredentials(null, DEFAULT_MIN_TTL)
     }
 
     /**
@@ -390,7 +390,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * @param callback the callback that will receive a valid [Credentials] or the [CredentialsManagerException].
      */
     override fun getCredentials(callback: Callback<Credentials, CredentialsManagerException>) {
-        getCredentials(null, 0, callback)
+        getCredentials(null, DEFAULT_MIN_TTL, callback)
     }
 
     /**
@@ -702,7 +702,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * @return whether there are valid credentials stored on this manager.
      */
     override fun hasValidCredentials(): Boolean {
-        return hasValidCredentials(0)
+        return hasValidCredentials(DEFAULT_MIN_TTL.toLong())
     }
 
     /**
