@@ -394,7 +394,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
     override suspend fun awaitCredentials(): Credentials {
-        return awaitCredentials(null, 0)
+        return awaitCredentials(null, DEFAULT_MIN_TTL)
     }
 
     /**
@@ -564,7 +564,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     override fun getCredentials(
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
-        getCredentials(null, 0, callback)
+        getCredentials(null, DEFAULT_MIN_TTL, callback)
     }
 
     /**
@@ -766,7 +766,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * @return whether this manager contains a valid non-expired pair of credentials or not.
      */
     override fun hasValidCredentials(): Boolean {
-        return hasValidCredentials(0)
+        return hasValidCredentials(DEFAULT_MIN_TTL.toLong())
     }
 
     /**
