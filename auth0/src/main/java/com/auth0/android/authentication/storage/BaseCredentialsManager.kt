@@ -22,6 +22,17 @@ public abstract class BaseCredentialsManager internal constructor(
 ) {
     private var _clock: Clock = ClockImpl()
 
+    public companion object {
+        /**
+         * Default minimum time to live (in seconds) for the access token.
+         * When retrieving credentials, if the access token has less than this amount of time
+         * remaining before expiration, it will be automatically renewed.
+         * This ensures the access token is valid for at least a short window after retrieval,
+         * preventing downstream API call failures from nearly-expired tokens.
+         */
+        public const val DEFAULT_MIN_TTL: Int = 60
+    }
+
     /**
      * Updates the clock instance used for expiration verification purposes.
      * The use of this method can help on situations where the clock comes from an external synced source.
@@ -83,7 +94,7 @@ public abstract class BaseCredentialsManager internal constructor(
     public abstract fun getApiCredentials(
         audience: String,
         scope: String? = null,
-        minTtl: Int = 0,
+        minTtl: Int = DEFAULT_MIN_TTL,
         parameters: Map<String, String> = emptyMap(),
         headers: Map<String, String> = emptyMap(),
         callback: Callback<APICredentials, CredentialsManagerException>
@@ -139,7 +150,7 @@ public abstract class BaseCredentialsManager internal constructor(
     public abstract suspend fun awaitApiCredentials(
         audience: String,
         scope: String? = null,
-        minTtl: Int = 0,
+        minTtl: Int = DEFAULT_MIN_TTL,
         parameters: Map<String, String> = emptyMap(),
         headers: Map<String, String> = emptyMap()
     ): APICredentials

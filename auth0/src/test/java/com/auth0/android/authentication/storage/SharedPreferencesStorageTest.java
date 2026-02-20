@@ -221,4 +221,13 @@ public class SharedPreferencesStorageTest {
         verify(sharedPreferencesEditor).apply();
     }
 
+    @Test
+    public void shouldRemoveAllPreferencesKeys() {
+        when(sharedPreferencesEditor.clear()).thenReturn(sharedPreferencesEditor);
+        SharedPreferencesStorage storage = new SharedPreferencesStorage(context);
+        storage.removeAll();
+        verify(sharedPreferencesEditor).clear();
+        verify(sharedPreferencesEditor).apply();
+    }
+
 }
