@@ -1525,14 +1525,7 @@ public class CredentialsManagerTest {
     @Test
     public fun shouldClearCredentials() {
         manager.clearCredentials()
-        verify(storage).remove("com.auth0.id_token")
-        verify(storage).remove("com.auth0.access_token")
-        verify(storage).remove("com.auth0.refresh_token")
-        verify(storage).remove("com.auth0.token_type")
-        verify(storage).remove("com.auth0.expires_at")
-        verify(storage).remove("com.auth0.scope")
-        verify(storage).remove("com.auth0.cache_expires_at")
-        verify(storage).remove("com.auth0.dpop_key_thumbprint")
+        verify(storage).removeAll()
         verifyNoMoreInteractions(storage)
     }
 
