@@ -727,13 +727,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * Removes the credentials from the storage if present.
      */
     override fun clearCredentials() {
-        storage.remove(KEY_ACCESS_TOKEN)
-        storage.remove(KEY_REFRESH_TOKEN)
-        storage.remove(KEY_ID_TOKEN)
-        storage.remove(KEY_TOKEN_TYPE)
-        storage.remove(KEY_EXPIRES_AT)
-        storage.remove(KEY_SCOPE)
-        storage.remove(LEGACY_KEY_CACHE_EXPIRES_AT)
+        storage.removeAll()
     }
 
     /**

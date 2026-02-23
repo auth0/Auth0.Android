@@ -1,10 +1,30 @@
 # Migration Guide from SDK v3 to v4
 
-## Overview
+> **Note:** This guide is actively maintained during the v4 development phase. As new changes are merged, this document will be updated to reflect the latest breaking changes and migration steps.
 
-v4 of the Auth0 Android SDK includes significant build toolchain updates to support the latest
-Android development environment. This guide documents the changes required when migrating from v3 to
-v4.
+v4 of the Auth0 Android SDK includes significant build toolchain updates, updated default values for better out-of-the-box behavior, and behavior changes to simplify credential management. This guide documents the changes required when migrating from v3 to v4.
+
+---
+
+## Table of Contents
+
+- [**Requirements Changes**](#requirements-changes)
+  + [Java Version](#java-version)
+  + [Gradle and Android Gradle Plugin](#gradle-and-android-gradle-plugin)
+  + [Kotlin Version](#kotlin-version)
+- [**Breaking Changes**](#breaking-changes)
+  + [Classes Removed](#classes-removed)
+  + [DPoP Configuration Moved to Builder](#dpop-configuration-moved-to-builder)
+- [**Default Values Changed**](#default-values-changed)
+  + [Credentials Manager minTTL](#credentials-manager-minttl)
+- [**Behavior Changes**](#behavior-changes)
+  + [clearCredentials() Now Clears All Storage](#clearCredentials-now-clears-all-storage)
+  + [Storage Interface: New removeAll() Method](#storage-interface-new-removeall-method)
+- [**Dependency Changes**](#dependency-changes)
+  + [Gson 2.8.9 → 2.11.0](#️-gson-289--2110-transitive-dependency)
+  + [DefaultClient.Builder](#defaultclientbuilder)
+
+---
 
 ## Requirements Changes
 
@@ -102,6 +122,60 @@ WebAuthProvider
 
 This change ensures that DPoP configuration is scoped to individual login requests rather than
 persisting across the entire application lifecycle.
+
+## Default Values Changed
+
+### Credentials Manager `minTTL`
+
+**Change:** The default `minTtl` value changed from `0` to `60` seconds.
+
+This change affects the following Credentials Manager methods:
+
+- `getCredentials(callback)` / `awaitCredentials()`
+- `getCredentials(scope, minTtl, callback)` / `awaitCredentials(scope, minTtl)`
+- `getCredentials(scope, minTtl, parameters, callback)` / `awaitCredentials(scope, minTtl, parameters)`
+- `getCredentials(scope, minTtl, parameters, forceRefresh, callback)` / `awaitCredentials(scope, minTtl, parameters, forceRefresh)`
+- `getCredentials(scope, minTtl, parameters, headers, forceRefresh, callback)` / `awaitCredentials(scope, minTtl, parameters, headers, forceRefresh)`
+- `hasValidCredentials()`
+
+**Impact:** Credentials will be renewed if they expire within 60 seconds, instead of only when already expired.
+
+<details>
+  <summary>Migration example</summary>
+
+```kotlin
+// v3 - minTtl defaulted to 0, had to be set explicitly
+credentialsManager.getCredentials(scope = null, minTtl = 60, callback = callback)
+
+// v4 - minTtl defaults to 60 seconds
+credentialsManager.getCredentials(callback)
+
+// v4 - use 0 to restore v3 behavior
+credentialsManager.getCredentials(scope = null, minTtl = 0, callback = callback)
+```
+</details>
+
+**Reason:** A `minTtl` of `0` meant credentials were not renewed until expired, which could result in delivering access tokens that expire immediately after retrieval, causing subsequent API requests to fail. Setting a default value of `60` seconds ensures the access token remains valid for a reasonable period.
+
+## Behavior Changes
+
+### `clearCredentials()` Now Clears All Storage
+
+**Change:** `clearCredentials()` now calls `Storage.removeAll()` instead of removing individual credential keys.
+
+In v3, `clearCredentials()` removed only specific credential keys (access token, refresh token, ID token, etc.) from the underlying `Storage`.
+
+In v4, `clearCredentials()` calls `Storage.removeAll()`, which clears **all** values in the storage — including any API credentials stored for specific audiences.
+
+**Impact:** If you need to remove only the primary credentials while preserving other stored data, consider using a separate `Storage` instance for API credentials.
+
+**Reason:** This simplifies credential cleanup and ensures no stale data remains in storage after logout. It aligns the behavior with the Swift SDK's `clear()` method, which also clears all stored values.
+
+### `Storage` Interface: New `removeAll()` Method
+
+**Change:** The `Storage` interface now includes a `removeAll()` method with a default empty implementation.
+
+**Impact:** Existing custom `Storage` implementations will continue to compile and work without changes. Override `removeAll()` to provide the actual clearing behavior if your custom storage is used with `clearCredentials()`.
 
 ## Dependency Changes
 

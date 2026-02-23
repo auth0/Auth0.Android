@@ -79,5 +79,5 @@ public interface Storage {
     /**
      * Removes all values from the storage.
      */
-    public fun removeAll()
+    public fun removeAll() {}
 }

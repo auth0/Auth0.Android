@@ -754,10 +754,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * Delete the stored credentials
      */
     override fun clearCredentials() {
-        storage.remove(KEY_CREDENTIALS)
-        storage.remove(KEY_EXPIRES_AT)
-        storage.remove(LEGACY_KEY_CACHE_EXPIRES_AT)
-        storage.remove(KEY_CAN_REFRESH)
+        storage.removeAll()
         clearBiometricSession()
         Log.d(TAG, "Credentials were just removed from the storage")
     }
