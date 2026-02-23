@@ -56,7 +56,6 @@ import org.mockito.MockitoAnnotations
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import org.robolectric.annotation.ConscryptMode
 import org.robolectric.shadows.ShadowLooper
 import java.io.ByteArrayInputStream
 import java.io.InputStream
@@ -1539,7 +1538,6 @@ public class WebAuthProviderTest {
     }
 
 
-    @ConscryptMode(ConscryptMode.Mode.OFF)
     @Test
     @Throws(Exception::class)
     public fun shouldFailToResumeLoginWhenRSAKeyIsMissingFromJWKSet() {
@@ -1679,7 +1677,6 @@ public class WebAuthProviderTest {
     }
 
 
-    @ConscryptMode(ConscryptMode.Mode.OFF)
     @Test
     @Throws(Exception::class)
     public fun shouldFailToResumeLoginWhenKeyIdIsMissingFromIdTokenHeader() {
