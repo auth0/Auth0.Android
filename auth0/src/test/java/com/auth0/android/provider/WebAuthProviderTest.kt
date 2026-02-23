@@ -1545,7 +1545,7 @@ public class WebAuthProviderTest {
     public fun shouldFailToResumeLoginWhenRSAKeyIsMissingFromJWKSet() {
         val pkce = Mockito.mock(PKCE::class.java)
         `when`(pkce.codeChallenge).thenReturn("challenge")
-        val networkingClient: NetworkingClient = Mockito.spy(DefaultClient())
+        val networkingClient: NetworkingClient = Mockito.mock(NetworkingClient::class.java)
         val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         val proxyAccount =
             Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, JwtTestUtils.EXPECTED_BASE_DOMAIN)
@@ -1685,7 +1685,7 @@ public class WebAuthProviderTest {
     public fun shouldFailToResumeLoginWhenKeyIdIsMissingFromIdTokenHeader() {
         val pkce = Mockito.mock(PKCE::class.java)
         `when`(pkce.codeChallenge).thenReturn("challenge")
-        val networkingClient: NetworkingClient = Mockito.spy(DefaultClient())
+        val networkingClient: NetworkingClient = Mockito.mock(NetworkingClient::class.java)
         val authCallback = mock<Callback<Credentials, AuthenticationException>>()
         val proxyAccount =
             Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, JwtTestUtils.EXPECTED_BASE_DOMAIN)
