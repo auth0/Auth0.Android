@@ -770,9 +770,7 @@ public class SecureCredentialsManagerTest {
             exception.message,
             Is.`is`("A change on the Lock Screen security settings have deemed the encryption keys invalid and have been recreated. Any previously stored content is now lost. Please try saving the credentials again.")
         )
-        verify(storage).remove("com.auth0.credentials")
-        verify(storage).remove("com.auth0.credentials_expires_at")
-        verify(storage).remove("com.auth0.credentials_can_refresh")
+        verify(storage).removeAll()
     }
 
     @Test
@@ -867,9 +865,7 @@ public class SecureCredentialsManagerTest {
                         "Any previously stored content is now lost. Please try saving the credentials again."
             )
         )
-        verify(storage).remove("com.auth0.credentials")
-        verify(storage).remove("com.auth0.credentials_expires_at")
-        verify(storage).remove("com.auth0.credentials_can_refresh")
+        verify(storage).removeAll()
     }
 
     @Test
@@ -2153,10 +2149,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldClearCredentials() {
         manager.clearCredentials()
-        verify(storage).remove("com.auth0.credentials")
-        verify(storage).remove("com.auth0.credentials_expires_at")
-        verify(storage).remove("com.auth0.credentials_access_token_expires_at")
-        verify(storage).remove("com.auth0.credentials_can_refresh")
+        verify(storage).removeAll()
         verifyNoMoreInteractions(storage)
     }
 
