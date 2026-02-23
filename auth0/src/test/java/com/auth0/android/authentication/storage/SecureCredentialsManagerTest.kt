@@ -9,6 +9,7 @@ import com.auth0.android.Auth0
 import com.auth0.android.NetworkErrorException
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
+import com.auth0.android.authentication.storage.BaseCredentialsManager.Companion.DEFAULT_MIN_TTL
 import com.auth0.android.callback.Callback
 import com.auth0.android.request.Request
 import com.auth0.android.request.internal.GsonProvider
@@ -769,9 +770,7 @@ public class SecureCredentialsManagerTest {
             exception.message,
             Is.`is`("A change on the Lock Screen security settings have deemed the encryption keys invalid and have been recreated. Any previously stored content is now lost. Please try saving the credentials again.")
         )
-        verify(storage).remove("com.auth0.credentials")
-        verify(storage).remove("com.auth0.credentials_expires_at")
-        verify(storage).remove("com.auth0.credentials_can_refresh")
+        verify(storage).removeAll()
     }
 
     @Test
@@ -866,9 +865,7 @@ public class SecureCredentialsManagerTest {
                         "Any previously stored content is now lost. Please try saving the credentials again."
             )
         )
-        verify(storage).remove("com.auth0.credentials")
-        verify(storage).remove("com.auth0.credentials_expires_at")
-        verify(storage).remove("com.auth0.credentials_can_refresh")
+        verify(storage).removeAll()
     }
 
     @Test
@@ -2152,10 +2149,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldClearCredentials() {
         manager.clearCredentials()
-        verify(storage).remove("com.auth0.credentials")
-        verify(storage).remove("com.auth0.credentials_expires_at")
-        verify(storage).remove("com.auth0.credentials_access_token_expires_at")
-        verify(storage).remove("com.auth0.credentials_can_refresh")
+        verify(storage).removeAll()
         verifyNoMoreInteractions(storage)
     }
 
@@ -2498,6 +2492,103 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(true))
         Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
             .thenReturn("{\"access_token\":\"accessToken\", \"refresh_token\":\"refreshToken\"}")
+        MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(true))
+    }
+
+    @Test
+    public fun shouldRenewCredentialsViaCallbackWhenTokenExpiresWithinDefaultMinTtl() {
+        Mockito.`when`(localAuthenticationManager.authenticate()).then {
+            localAuthenticationManager.resultCallback.onSuccess(true)
+        }
+        // Token expires in 30 seconds, which is within DEFAULT_MIN_TTL (60s)
+        val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + 30 * 1000)
+        insertTestCredentials(false, true, true, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_access_token_expires_at"))
+            .thenReturn(expiresAt.time)
+        val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        val jwtMock = mock<Jwt>()
+        Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
+        Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
+        Mockito.`when`(
+            client.renewAuth("refreshToken")
+        ).thenReturn(request)
+        val expectedCredentials =
+            Credentials("newId", "newAccess", "newType", "refreshToken", newDate, "newScope")
+        Mockito.`when`(request.execute()).thenReturn(expectedCredentials)
+        val expectedJson = gson.toJson(expectedCredentials)
+        Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
+            .thenReturn(expectedJson.toByteArray())
+        // Use no-arg getCredentials which now uses DEFAULT_MIN_TTL
+        manager.getCredentials(callback)
+        verify(callback).onSuccess(
+            credentialsCaptor.capture()
+        )
+        // Verify renewal was triggered
+        verify(client).renewAuth("refreshToken")
+        val retrievedCredentials = credentialsCaptor.firstValue
+        MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`("newId"))
+        MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`("newAccess"))
+    }
+
+    @Test
+    @ExperimentalCoroutinesApi
+    public fun shouldAwaitRenewedCredentialsWhenTokenExpiresWithinDefaultMinTtl(): Unit = runTest {
+        Mockito.`when`(localAuthenticationManager.authenticate()).then {
+            localAuthenticationManager.resultCallback.onSuccess(true)
+        }
+        // Token expires in 30 seconds, which is within DEFAULT_MIN_TTL (60s)
+        val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + 30 * 1000)
+        insertTestCredentials(false, true, true, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_access_token_expires_at"))
+            .thenReturn(expiresAt.time)
+        val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        val jwtMock = mock<Jwt>()
+        Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
+        Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
+        Mockito.`when`(
+            client.renewAuth("refreshToken")
+        ).thenReturn(request)
+        val expectedCredentials =
+            Credentials("newId", "newAccess", "newType", "refreshToken", newDate, "newScope")
+        Mockito.`when`(request.execute()).thenReturn(expectedCredentials)
+        val expectedJson = gson.toJson(expectedCredentials)
+        Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
+            .thenReturn(expectedJson.toByteArray())
+        // Use no-arg awaitCredentials which now uses DEFAULT_MIN_TTL
+        val result = manager.awaitCredentials()
+        // Verify renewal was triggered
+        verify(client).renewAuth("refreshToken")
+        MatcherAssert.assertThat(result, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(result.idToken, Is.`is`("newId"))
+        MatcherAssert.assertThat(result.accessToken, Is.`is`("newAccess"))
+    }
+
+    @Test
+    public fun shouldNotHaveValidCredentialsWhenTokenExpiresWithinDefaultMinTtlAndNoRefreshToken() {
+        // Token expires in 30 seconds, within DEFAULT_MIN_TTL (60s), and no refresh token
+        val expirationTime = CredentialsMock.CURRENT_TIME_MS + 30 * 1000
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_access_token_expires_at"))
+            .thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveBoolean("com.auth0.credentials_can_refresh"))
+            .thenReturn(false)
+        Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
+            .thenReturn("{\"access_token\":\"accessToken\"}")
+        // No-arg hasValidCredentials now uses DEFAULT_MIN_TTL, so token expiring in 30s is invalid
+        Assert.assertFalse(manager.hasValidCredentials())
+    }
+
+    @Test
+    public fun shouldHaveValidCredentialsWhenTokenExpiresWithinDefaultMinTtlButRefreshTokenAvailable() {
+        // Token expires in 30 seconds, within DEFAULT_MIN_TTL (60s), but refresh token is available
+        val expirationTime = CredentialsMock.CURRENT_TIME_MS + 30 * 1000
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_access_token_expires_at"))
+            .thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveBoolean("com.auth0.credentials_can_refresh"))
+            .thenReturn(true)
+        Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
+            .thenReturn("{\"access_token\":\"accessToken\", \"refresh_token\":\"refreshToken\"}")
+        // Even though token expires within DEFAULT_MIN_TTL, refresh token makes it valid
         MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(true))
     }
 
@@ -3334,7 +3425,7 @@ public class SecureCredentialsManagerTest {
         //now, update the clock and retry
         manager.setClock(object : Clock {
             override fun getCurrentTimeMillis(): Long {
-                return CredentialsMock.CURRENT_TIME_MS - 1000
+                return CredentialsMock.CURRENT_TIME_MS - (DEFAULT_MIN_TTL * 1000 + 1000)
             }
         })
         MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(true))

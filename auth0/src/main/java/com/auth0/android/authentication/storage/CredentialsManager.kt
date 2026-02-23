@@ -244,7 +244,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
     override suspend fun awaitCredentials(): Credentials {
-        return awaitCredentials(null, 0)
+        return awaitCredentials(null, DEFAULT_MIN_TTL)
     }
 
     /**
@@ -390,7 +390,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * @param callback the callback that will receive a valid [Credentials] or the [CredentialsManagerException].
      */
     override fun getCredentials(callback: Callback<Credentials, CredentialsManagerException>) {
-        getCredentials(null, 0, callback)
+        getCredentials(null, DEFAULT_MIN_TTL, callback)
     }
 
     /**
@@ -702,7 +702,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * @return whether there are valid credentials stored on this manager.
      */
     override fun hasValidCredentials(): Boolean {
-        return hasValidCredentials(0)
+        return hasValidCredentials(DEFAULT_MIN_TTL.toLong())
     }
 
     /**
@@ -727,13 +727,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * Removes the credentials from the storage if present.
      */
     override fun clearCredentials() {
-        storage.remove(KEY_ACCESS_TOKEN)
-        storage.remove(KEY_REFRESH_TOKEN)
-        storage.remove(KEY_ID_TOKEN)
-        storage.remove(KEY_TOKEN_TYPE)
-        storage.remove(KEY_EXPIRES_AT)
-        storage.remove(KEY_SCOPE)
-        storage.remove(LEGACY_KEY_CACHE_EXPIRES_AT)
+        storage.removeAll()
     }
 
     /**

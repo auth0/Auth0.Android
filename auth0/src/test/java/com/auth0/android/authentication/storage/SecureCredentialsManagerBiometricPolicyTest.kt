@@ -270,7 +270,7 @@ public class SecureCredentialsManagerBiometricPolicyTest {
 
         // Clear credentials
         manager.clearCredentials()
-        verify(mockStorage, atLeastOnce()).remove(any())
+        verify(mockStorage).removeAll()
 
         // Session should be invalid
         assert(!manager.isBiometricSessionValid())
