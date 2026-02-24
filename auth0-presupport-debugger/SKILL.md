@@ -31,6 +31,105 @@ Diagnose Auth0 integration issues in Android (auth0-android) and Swift/iOS (Auth
 
 Run through each phase in order. Confirm every item before moving to the next phase. A single misconfiguration in an early phase will cause failures that look like later-phase issues.
 
+### Phase 0 — Automated CLI Configuration Validation
+
+Use the Auth0 CLI to **programmatically validate** the developer's Auth0 dashboard configuration against their local app config. This is the fastest way to catch mismatches before doing any manual inspection.
+
+See the full [CLI Configuration Validation Reference](references/cli-config-validation.md) for all commands and the automated script.
+
+#### Prerequisites
+
+1. Install the Auth0 CLI:
+   ```bash
+   # macOS
+   brew tap auth0/auth0-cli && brew install auth0
+   ```
+2. Authenticate against the developer's tenant:
+   ```bash
+   auth0 login
+   auth0 tenants list   # verify correct tenant is active
+   ```
+3. Install `jq` for JSON parsing (if not already present):
+   ```bash
+   brew install jq
+   ```
+
+#### Extract App Config from Source Files
+
+Gather the **Client ID**, **Domain**, **Scheme**, and **Package Name / Bundle ID** from the developer's project:
+
+- **Android:** `res/values/strings.xml` (`com_auth0_client_id`, `com_auth0_domain`), `build.gradle` (`applicationId`, `manifestPlaceholders`)
+- **iOS:** `Auth0.plist` (`ClientId`, `Domain`), Xcode target settings (Bundle Identifier)
+
+#### Run the Validation
+
+```bash
+# Fetch the full app config from the Auth0 dashboard
+auth0 apps show <CLIENT_ID> --json
+```
+
+**Check each of the following via CLI (see [full reference](references/cli-config-validation.md) for commands):**
+
+| # | Check | Pass Criteria |
+|---|-------|---------------|
+| 1 | Application exists | CLI returns JSON, no error |
+| 2 | Application type | `"native"` |
+| 3 | Callback URL registered | Dashboard contains expected `{scheme}://{domain}/{platform}/{appId}/callback` |
+| 4 | Logout URL registered | Dashboard contains expected logout URL |
+| 5 | Authorization Code grant enabled | `grant_types` includes `"authorization_code"` |
+| 6 | Refresh Token grant enabled | `grant_types` includes `"refresh_token"` |
+| 7 | Allowed Web Origins empty | Empty or null (correct for native apps) |
+| 8 | Token endpoint auth method | `"none"` (PKCE, no client secret) |
+| 9 | Refresh Token Rotation | `"rotating"` (recommended for native) |
+| 10 | Connection enabled for app | At least one connection has this Client ID in `enabled_clients` |
+| 11 | OIDC discovery reachable | `https://{domain}/.well-known/openid-configuration` returns valid JSON |
+| | **DPoP (if used)** | |
+| 12 | DPoP advertised in OIDC discovery | `dpop_signing_alg_values_supported` is non-empty (Early Access — contact Auth0 support) |
+| 13 | Android minSdk ≥ 23 | DPoP requires API 23+ (Android 6.0) |
+| | **Passkeys (if used)** | |
+| 14 | Custom domain configured & verified | At least one domain with status `"ready"` (REQUIRED for passkeys) |
+| 15 | Passkey (WebAuthn) grant type enabled | `grant_types` contains `webauthn` |
+| 16 | `assetlinks.json` valid (Android) | Custom domain serves valid JSON with app's package + SHA-256 fingerprint |
+| 17 | Credential Manager dependency (Android) | `androidx.credentials` present in `build.gradle` |
+| 18 | Android minSdk ≥ 28 | Passkeys require API 28+ (Android 9) |
+
+#### One-Command Full Validation
+
+For a complete automated check, use the [full validation script](references/cli-config-validation.md#full-automated-validation-script) — fill in 5 variables and run:
+
+```bash
+# Fill in these values from the developer's project
+CLIENT_ID="..."  AUTH0_DOMAIN="..."  PLATFORM="android"  APP_IDENTIFIER="..."  SCHEME="..."
+
+# The script validates all 11 checks and prints ✅/❌/⚠️ for each
+bash validate-auth0-config.sh
+```
+
+#### CLI Quick-Fix Commands
+
+If the validation finds issues, the CLI can **fix them directly** without opening the dashboard:
+
+```bash
+# Add missing callback URL
+auth0 apps update <CLIENT_ID> --callbacks "<existing>,<new-callback-url>"
+
+# Add missing logout URL
+auth0 apps update <CLIENT_ID> --logout-urls "<existing>,<new-logout-url>"
+
+# Change app type to Native
+auth0 apps update <CLIENT_ID> --type native
+
+# Enable required grant types
+auth0 apps update <CLIENT_ID> --grants "authorization_code,refresh_token,implicit"
+
+# Set token auth method to None (PKCE)
+auth0 apps update <CLIENT_ID> --auth-method none
+```
+
+> **If all Phase 0 checks pass**, proceed to Phase 1 for visual dashboard verification and Phase 2 for SDK configuration checks. If any checks fail, fix them via CLI or dashboard before continuing.
+
+---
+
 ### Phase 1 — Auth0 Dashboard Checklist
 
 1. Log in to [manage.auth0.com](https://manage.auth0.com) and open the Application settings.
@@ -131,6 +230,7 @@ Before raising an ESD case or GitHub issue, collect the following information. P
 (Paste relevant SDK log lines here)
 
 ### Already Checked
+- [ ] Phase 0: Automated CLI Configuration Validation
 - [ ] Phase 1: Auth0 Dashboard Checklist
 - [ ] Phase 2: SDK Configuration Check
 - [ ] Phase 3: Runtime Diagnostics
@@ -140,6 +240,7 @@ Before raising an ESD case or GitHub issue, collect the following information. P
 
 ## Detailed Documentation
 
+- **[CLI Configuration Validation](references/cli-config-validation.md)** — Automated Auth0 CLI commands to validate dashboard config, full validation script, and CLI quick-fix commands
 - **[Android Validation Checklist](references/android-checklist.md)** — Gradle, manifest, intent-filter, credentials, and ProGuard configuration
 - **[Swift/iOS Validation Checklist](references/swift-checklist.md)** — Auth0.plist, Info.plist, Universal Links, Keychain, and SPM/CocoaPods setup
 - **[Common Issues & Diagnostics](references/common-issues.md)** — Symptom-to-root-cause mapping, error codes, and fix snippets
@@ -150,16 +251,28 @@ Before raising an ESD case or GitHub issue, collect the following information. P
 
 | Symptom | Likely Cause | Reference |
 |---------|-------------|-----------|
+| CLI returns "Unauthorized" | CLI not authenticated or wrong tenant | [CLI Validation](references/cli-config-validation.md#troubleshooting-the-cli-itself) |
+| CLI shows app type is SPA | Dashboard app created as SPA instead of Native | [CLI Validation → Step 2](references/cli-config-validation.md#step-2-validate-application-type) |
+| CLI reports callback URL not found | URL in dashboard doesn't match SDK-constructed URL | [CLI Validation → Step 3](references/cli-config-validation.md#step-3-validate-callback-urls) |
+| CLI reports missing grant types | Authorization Code or Refresh Token grant not enabled | [CLI Validation → Step 5](references/cli-config-validation.md#step-5-validate-grant-types) |
+| CLI shows no connections enabled | No database/social connection toggled on for the app | [CLI Validation → Step 8](references/cli-config-validation.md#step-8-validate-connections-enabled-for-the-application) |
 | "Callback URL mismatch" error | URL in dashboard doesn't match SDK-constructed URL | [Common Issues](references/common-issues.md#callback-url-mismatch) |
 | Browser opens but app never receives callback | Missing/incorrect intent-filter (Android) or URL scheme (iOS) | [Android Checklist](references/android-checklist.md#intent-filter) / [Swift Checklist](references/swift-checklist.md#url-scheme) |
 | `NetworkErrorException` or timeout | INTERNET permission missing (Android) or network misconfiguration | [Android Checklist](references/android-checklist.md#permissions) |
 | `Auth0Exception: invalid_grant` | Refresh token rotation misconfigured or reuse detected | [Common Issues](references/common-issues.md#token-errors) |
 | `Auth0Exception: access_denied` | Connection not enabled for the application | [Common Issues](references/common-issues.md#access-denied) |
-| App type not Native | Dashboard app created as SPA or Regular Web App | Phase 1, Step 2 above |
+| App type not Native | Dashboard app created as SPA or Regular Web App | Phase 0 CLI check or Phase 1, Step 2 above |
 | Silent auth returns no tokens | Offline access scope missing or refresh tokens not enabled | [Common Issues](references/common-issues.md#silent-auth) |
 | `Auth0.plist` not found (iOS) | File not added to the correct app target in Xcode | [Swift Checklist](references/swift-checklist.md#auth0-plist) |
 | Keychain access error (iOS) | Missing Keychain Sharing entitlement | [Swift Checklist](references/swift-checklist.md#keychain) |
 | Crash on Android API < 21 | `minSdk` below SDK minimum requirement | [Android Checklist](references/android-checklist.md#gradle) |
+| `DPoPException: UNSUPPORTED_ERROR` | DPoP used on Android < API 23 | [CLI Validation → Step 10](references/cli-config-validation.md#step-10-validate-dpop-demonstrating-proof-of-possession-configuration) |
+| Tokens not DPoP-bound after login | DPoP not enabled at tenant level (Early Access) | [CLI Validation → Step 10](references/cli-config-validation.md#step-10-validate-dpop-demonstrating-proof-of-possession-configuration) |
+| `DPoP.clearKeyPair()` not called on logout | Old DPoP key pair persists, causing key mismatch | [CLI Validation → DPoP Gotchas](references/cli-config-validation.md#dpop-configuration-gotchas) |
+| Passkey registration fails | Custom domain not configured or not verified | [CLI Validation → Step 11](references/cli-config-validation.md#step-11-validate-passkeys-configuration) |
+| `assetlinks.json` not found (Android passkeys) | Device Settings not configured in Auth0 dashboard | [CLI Validation → Step 11e](references/cli-config-validation.md#check-11e-verify-android-asset-links-digital-asset-links-for-passkeys) |
+| "No credentials available" from Credential Manager | No passkeys registered, or RP ID mismatch with custom domain | [CLI Validation → Passkeys Gotchas](references/cli-config-validation.md#passkeys-configuration-gotchas) |
+| Passkey WebAuthn grant type not recognized | Passkey grant type not enabled for the application | [CLI Validation → Step 11b](references/cli-config-validation.md#check-11b-verify-passkey-grant-type-is-enabled) |
 
 ---
 
@@ -173,6 +286,8 @@ Before raising an ESD case or GitHub issue, collect the following information. P
 
 ## References
 
+- [Auth0 CLI (auth0-cli)](https://github.com/auth0/auth0-cli) — Command-line tool for managing Auth0 tenants, apps, and connections
+- [Auth0 CLI Documentation](https://auth0.com/docs/get-started/auth0-overview/create-applications/auth0-cli) — Official CLI usage guide
 - [Auth0 Android SDK (auth0-android)](https://github.com/auth0/Auth0.Android)
 - [Auth0 Android Quickstart](https://auth0.com/docs/quickstart/native/android)
 - [Auth0 Swift SDK (Auth0.swift)](https://github.com/auth0/Auth0.swift)
