@@ -35,38 +35,50 @@ Run through each phase in order. Confirm every item before moving to the next ph
 
 Use the Auth0 CLI to **programmatically validate** the developer's Auth0 dashboard configuration against their local app config. This is the fastest way to catch mismatches before doing any manual inspection.
 
+> **How this phase runs:** The AI assistant executes all CLI commands directly using its Bash tool. The user only needs to act for the `auth0 login` browser step — everything else is automated.
+
 See the full [CLI Configuration Validation Reference](references/cli-config-validation.md) for all commands and the automated script.
 
-#### Prerequisites
-
-1. Install the Auth0 CLI:
-   ```bash
-   # macOS
-   brew tap auth0/auth0-cli && brew install auth0
-   ```
-2. Authenticate against the developer's tenant:
-   ```bash
-   auth0 login
-   auth0 tenants list   # verify correct tenant is active
-   ```
-3. Install `jq` for JSON parsing (if not already present):
-   ```bash
-   brew install jq
-   ```
-
-#### Extract App Config from Source Files
-
-Gather the **Client ID**, **Domain**, **Scheme**, and **Package Name / Bundle ID** from the developer's project:
-
-- **Android:** `res/values/strings.xml` (`com_auth0_client_id`, `com_auth0_domain`), `build.gradle` (`applicationId`, `manifestPlaceholders`)
-- **iOS:** `Auth0.plist` (`ClientId`, `Domain`), Xcode target settings (Bundle Identifier)
-
-#### Run the Validation
+#### Step 0a — Check CLI Installation (run directly)
 
 ```bash
-# Fetch the full app config from the Auth0 dashboard
-auth0 apps show <CLIENT_ID> --json
+auth0 --version
 ```
+
+- **If installed:** proceed to Step 0b.
+- **If not found:** detect OS with `uname -s`, then run the correct install command:
+  - **macOS:** `brew tap auth0/auth0-cli && brew install auth0`
+  - **Windows:** `scoop bucket add auth0 https://github.com/auth0/scoop-auth0-cli.git && scoop install auth0`
+  - **Linux:** `curl -sSfL https://raw.githubusercontent.com/auth0/auth0-cli/main/install.sh | sh -s -- -b /usr/local/bin`
+  - Re-run `auth0 --version` to confirm, then proceed to Step 0b.
+
+#### Step 0b — Check CLI Authentication (run directly)
+
+```bash
+auth0 tenants list
+```
+
+- **If it lists tenants:** CLI is authenticated — proceed to Step 0c.
+- **If it fails with `config.json file is missing`:** CLI is installed but never logged in. Run `auth0 login` using the Bash tool. The CLI will print a **device code URL** — tell the user to open it in their browser and complete the Auth0 authorization flow. The command blocks until auth completes, then continue automatically.
+- After login, re-run `auth0 tenants list` to confirm the correct tenant is active.
+
+#### Step 0c — Check jq (run directly)
+
+```bash
+jq --version
+```
+
+- **If not found:** run `brew install jq` (macOS) or `sudo apt-get install -y jq` (Linux).
+
+#### Step 0d — Extract App Config from Source Files (run directly)
+
+Ask the user ONE question: **"What is the path to your Android project root (or iOS project root)?"**
+
+Then run the appropriate extraction commands from [CLI Config Validation — Automated Config Extraction](references/cli-config-validation.md#automated-config-extraction-from-project-files) to read Client ID, Domain, Package/Bundle ID, and Scheme directly from the source files. Do not ask the user to type these values manually.
+
+#### Step 0e — Run the Full Validation (run directly)
+
+Run `auth0 apps show <CLIENT_ID> --json` and validate each check below. Execute each CLI command with the Bash tool — do not ask the user to run them.
 
 **Check each of the following via CLI (see [full reference](references/cli-config-validation.md) for commands):**
 
