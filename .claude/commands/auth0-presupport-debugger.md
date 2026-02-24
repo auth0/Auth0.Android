@@ -17,12 +17,18 @@ Start by asking the user:
 2. **Symptom** — What is failing? (e.g. login hangs, callback URL mismatch, token error, crash, DPoP error, passkey failure)
 3. **SDK version** in use
 4. **Advanced features** — Are they using **DPoP** or **Passkeys**?
-5. **Auth0 CLI available?** — Do they have the Auth0 CLI installed? (`auth0 --version`). If not, detect their OS first (`uname -s` or ask), then offer to install:
+5. **Auth0 CLI installed & authenticated?** — Check **both**:
+   - `auth0 --version` → confirms CLI is installed
+   - `auth0 tenants list` → confirms CLI is **authenticated** (common miss: CLI installed but never logged in, fails with `config.json file is missing`)
+   
+   **If CLI not installed**, detect their OS (`uname -s` or ask), then offer to install:
    - **macOS:** `brew tap auth0/auth0-cli && brew install auth0`
    - **Windows:** `scoop bucket add auth0 https://github.com/auth0/scoop-auth0-cli.git && scoop install auth0`
    - **Linux:** `curl -sSfL https://raw.githubusercontent.com/auth0/auth0-cli/main/install.sh | sh -s -- -b /usr/local/bin`
    
-   If they accept, install and proceed to Phase 0. If they decline, skip to Phase 1.
+   **If CLI installed but not authenticated**, run `auth0 login` (opens browser) then verify with `auth0 tenants list`.
+   
+   If they accept, install/authenticate and proceed to Phase 0. If they decline, skip to Phase 1.
 
 > **Note:** All CLI validation commands in `references/cli-config-validation.md` use `grep -oP` (Perl regex) which works on Linux/Windows(WSL) but not macOS default grep. On macOS, use `ggrep -oP` (install via `brew install grep`) or the equivalent `sed`/`awk` alternatives shown in the reference doc.
 

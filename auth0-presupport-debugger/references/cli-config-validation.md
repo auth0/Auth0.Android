@@ -35,6 +35,31 @@ auth0 tenants list
 
 > **Important:** The CLI must be authenticated against the **same tenant** the developer's app is configured to use. If the developer works with multiple tenants, confirm the active one with `auth0 tenants list`.
 
+### 2a. Pre-Flight: Verify CLI Is Authenticated
+
+A common issue is the CLI being **installed but not authenticated** (never ran `auth0 login`). Always verify before running any validation:
+
+```bash
+# Check CLI is installed
+auth0 --version || { echo "❌ Auth0 CLI not installed — see install steps above"; exit 1; }
+
+# Check CLI is authenticated (this is the step people miss)
+auth0 tenants list 2>/dev/null || {
+  echo "❌ Auth0 CLI is installed but NOT authenticated."
+  echo "   Error: 'config.json file is missing' means you need to log in first."
+  echo ""
+  echo "   Run:  auth0 login"
+  echo "   This opens your browser to complete the Auth0 authorization flow."
+  echo ""
+  echo "   For a specific tenant:  auth0 login --domain your-tenant.auth0.com"
+  exit 1
+}
+
+echo "✅ CLI is installed and authenticated"
+```
+
+> **Common pitfall:** The developer says "CLI is installed" after running `auth0 --version` but has never run `auth0 login`. The first `auth0 apps show` command then fails with `Failed to load tenants: config.json file is missing`. Always run `auth0 tenants list` to confirm authentication before proceeding.
+
 ### 3. Extract Local App Configuration
 
 Before running CLI checks, gather these values from the developer's project source files:
@@ -600,6 +625,15 @@ pass() { echo "  ✅ $1"; ((PASS++)); }
 fail() { echo "  ❌ $1"; ((FAIL++)); }
 warn() { echo "  ⚠️  $1"; ((WARN++)); }
 
+# Pre-flight: verify CLI is authenticated
+auth0 tenants list >/dev/null 2>&1 || {
+  echo "❌ FATAL: Auth0 CLI is not authenticated."
+  echo "   Run 'auth0 login' first, then re-run this script."
+  exit 1
+}
+echo "✅ CLI authenticated"
+echo ""
+
 # Fetch app config once
 APP_JSON=$(auth0 apps show "$CLIENT_ID" --json 2>/dev/null) || {
   echo "❌ FATAL: Could not fetch application '$CLIENT_ID' from Auth0."
@@ -948,8 +982,10 @@ curl -s "https://${AUTH0_DOMAIN}/.well-known/openid-configuration" | jq '.author
 | Problem | Fix |
 |---------|-----|
 | `auth0: command not found` | Install the CLI — see Prerequisites above |
-| `Unauthorized` or `Login required` | Run `auth0 login` to re-authenticate |
+| `Failed to load tenants: config.json file is missing` | CLI is installed but **never authenticated**. Run `auth0 login` first |
+| `Unauthorized` or `Login required` | Auth session expired. Run `auth0 login` to re-authenticate |
 | Wrong tenant data | Run `auth0 tenants list` and switch with `auth0 tenants use <tenant>` |
 | `jq: command not found` | Install jq: `brew install jq` (macOS) or `apt-get install jq` (Linux) |
+| `grep -oP` fails on macOS | macOS grep doesn't support `-P`. Install GNU grep: `brew install grep`, then use `ggrep -oP` |
 | CLI returns empty for callbacks | The app may have no callbacks set — this is itself the bug |
 | Rate limiting | Auth0 Management API has rate limits; avoid running the script in a tight loop |
