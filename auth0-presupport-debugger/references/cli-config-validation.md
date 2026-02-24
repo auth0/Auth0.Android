@@ -44,7 +44,7 @@ A common issue is the CLI being **installed but not authenticated** (never ran `
 auth0 --version || { echo "❌ Auth0 CLI not installed — see install steps above"; exit 1; }
 
 # Check CLI is authenticated (this is the step people miss)
-auth0 tenants list 2>/dev/null || {
+TENANTS_OUTPUT=$(auth0 tenants list 2>&1) || {
   echo "❌ Auth0 CLI is installed but NOT authenticated."
   echo "   Error: 'config.json file is missing' means you need to log in first."
   echo ""
@@ -55,7 +55,13 @@ auth0 tenants list 2>/dev/null || {
   exit 1
 }
 
-echo "✅ CLI is installed and authenticated"
+echo "✅ Authentication successful"
+echo ""
+echo "Active tenants:"
+echo "$TENANTS_OUTPUT"
+echo ""
+echo "⚠️  Confirm the correct tenant is active above before proceeding."
+echo "   To switch: auth0 tenants use <tenant-domain>"
 ```
 
 > **Common pitfall:** The developer says "CLI is installed" after running `auth0 --version` but has never run `auth0 login`. The first `auth0 apps show` command then fails with `Failed to load tenants: config.json file is missing`. Always run `auth0 tenants list` to confirm authentication before proceeding.
@@ -626,12 +632,14 @@ fail() { echo "  ❌ $1"; ((FAIL++)); }
 warn() { echo "  ⚠️  $1"; ((WARN++)); }
 
 # Pre-flight: verify CLI is authenticated
-auth0 tenants list >/dev/null 2>&1 || {
+TENANTS_OUTPUT=$(auth0 tenants list 2>&1) || {
   echo "❌ FATAL: Auth0 CLI is not authenticated."
   echo "   Run 'auth0 login' first, then re-run this script."
   exit 1
 }
-echo "✅ CLI authenticated"
+echo "✅ Authentication successful"
+echo "   Active tenants:"
+echo "$TENANTS_OUTPUT" | sed 's/^/   /'
 echo ""
 
 # Fetch app config once
