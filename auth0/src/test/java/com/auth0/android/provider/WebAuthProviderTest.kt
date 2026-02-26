@@ -53,7 +53,6 @@ import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations
-import org.junit.Ignore
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -1539,7 +1538,6 @@ public class WebAuthProviderTest {
     }
 
 
-    @Ignore("Requires security provider fix - see SDK-7752")
     @Test
     @Throws(Exception::class)
     public fun shouldFailToResumeLoginWhenRSAKeyIsMissingFromJWKSet() {
@@ -1557,9 +1555,7 @@ public class WebAuthProviderTest {
             .start(activity, authCallback)
         val managerInstance = WebAuthProvider.managerInstance as OAuthManager
         managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
-        val jwtBody = JwtTestUtils.createJWTBody()
-        jwtBody["iss"] = proxyAccount.getDomainUrl()
-        val expectedIdToken = JwtTestUtils.createTestJWT("RS256", jwtBody)
+        val expectedIdToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImtleTEyMyJ9.eyJzdWIiOiJ0ZXN0In0.fakesignature"
         val intent = createAuthIntent(
             createHash(
                 null,
@@ -1582,7 +1578,6 @@ public class WebAuthProviderTest {
                 Date(),
                 "codeScope"
             )
-        // Mock JWKS response with empty keys (no matching RSA key for kid)
         val emptyJwksJson = """{"keys": []}"""
         val jwksInputStream: InputStream = ByteArrayInputStream(emptyJwksJson.toByteArray())
         val jwksResponse = ServerResponse(200, jwksInputStream, emptyMap())
@@ -1679,7 +1674,6 @@ public class WebAuthProviderTest {
     }
 
 
-    @Ignore("Requires security provider fix - see SDK-7752")
     @Test
     @Throws(Exception::class)
     public fun shouldFailToResumeLoginWhenKeyIdIsMissingFromIdTokenHeader() {
@@ -1721,9 +1715,8 @@ public class WebAuthProviderTest {
                 Date(),
                 "codeScope"
             )
-        // Mock JWKS response with valid keys
-        val encoded = Files.readAllBytes(Paths.get("src/test/resources/rsa_jwks.json"))
-        val jwksInputStream: InputStream = ByteArrayInputStream(encoded)
+        val emptyJwksJson = """{"keys": []}"""
+        val jwksInputStream: InputStream = ByteArrayInputStream(emptyJwksJson.toByteArray())
         val jwksResponse = ServerResponse(200, jwksInputStream, emptyMap())
         Mockito.doReturn(jwksResponse).`when`(networkingClient).load(
             eq(proxyAccount.getDomainUrl() + ".well-known/jwks.json"),
