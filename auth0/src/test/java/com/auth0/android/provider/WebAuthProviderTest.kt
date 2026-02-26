@@ -1555,9 +1555,11 @@ public class WebAuthProviderTest {
             .start(activity, authCallback)
         val managerInstance = WebAuthProvider.managerInstance as OAuthManager
         managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
-        val jwtBody = JwtTestUtils.createJWTBody()
-        jwtBody["iss"] = proxyAccount.getDomainUrl()
-        val expectedIdToken = JwtTestUtils.createTestJWT("RS256", jwtBody)
+        // Hardcoded RS256 JWT with kid="key123". Avoids calling JwtTestUtils.createTestJWT("RS256")
+        // which invokes KeyFactory.getInstance("RSA") — this crashes under Conscrypt on Linux CI.
+        // The JWKS mock returns empty keys, so the key lookup fails before any RSA operations.
+        // Header: {"alg":"RS256","typ":"JWT","kid":"key123"}, Payload: {"sub":"test"}
+        val expectedIdToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImtleTEyMyJ9.eyJzdWIiOiJ0ZXN0In0.fakesignature"
         val intent = createAuthIntent(
             createHash(
                 null,
@@ -1718,9 +1720,12 @@ public class WebAuthProviderTest {
                 Date(),
                 "codeScope"
             )
-        // Mock JWKS response with valid keys
-        val encoded = Files.readAllBytes(Paths.get("src/test/resources/rsa_jwks.json"))
-        val jwksInputStream: InputStream = ByteArrayInputStream(encoded)
+        // Use empty JWKS to avoid JwksDeserializer calling KeyFactory.getInstance("RSA") on every
+        // key in rsa_jwks.json — that call crashes under Conscrypt on Linux CI.
+        // An empty JWKS still yields PublicKeyNotFoundException(null) since no key with kid=null
+        // is found, which is exactly what this test asserts.
+        val emptyJwksJson = """{"keys": []}"""
+        val jwksInputStream: InputStream = ByteArrayInputStream(emptyJwksJson.toByteArray())
         val jwksResponse = ServerResponse(200, jwksInputStream, emptyMap())
         Mockito.doReturn(jwksResponse).`when`(networkingClient).load(
             eq(proxyAccount.getDomainUrl() + ".well-known/jwks.json"),
