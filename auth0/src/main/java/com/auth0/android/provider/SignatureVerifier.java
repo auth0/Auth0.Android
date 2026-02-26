@@ -57,6 +57,10 @@ abstract class SignatureVerifier {
             @Override
             public void onSuccess(@Nullable Map<String, PublicKey> result) {
                 PublicKey publicKey = result.get(keyId);
+                if (publicKey == null) {
+                    callback.onFailure(new PublicKeyNotFoundException(keyId));
+                    return;
+                }
                 try {
                     callback.onSuccess(new AsymmetricSignatureVerifier(publicKey));
                 } catch (InvalidKeyException e) {
