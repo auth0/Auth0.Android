@@ -343,7 +343,8 @@ class CryptoUtil {
             Cipher cipher = Cipher.getInstance(RSA_TRANSFORMATION);
             cipher.init(Cipher.DECRYPT_MODE, privateKey, OAEP_SPEC);
             return cipher.doFinal(encryptedInput);
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | InvalidAlgorithmParameterException e) {
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException
+                | InvalidAlgorithmParameterException | ProviderException e) {
             /*
              * This exceptions are safe to be ignored:
              *
@@ -356,6 +357,11 @@ class CryptoUtil {
              *      Thrown if the given key is inappropriate for initializing this cipher.
              * - InvalidAlgorithmParameterException:
              *      Thrown if the OAEP parameters are invalid or unsupported.
+             * - ProviderException:
+             *      Thrown on Android 12+ (Keystore2) when the key's padding restriction is
+             *      incompatible with the cipher transformation (e.g. a PKCS1-restricted key
+             *      initialised with an OAEP spec). On Android < 12 this surfaces as
+             *      InvalidKeyException instead.
              *
              * Read more in https://developer.android.com/reference/javax/crypto/Cipher
              */
@@ -394,7 +400,8 @@ class CryptoUtil {
             Cipher cipher = Cipher.getInstance(RSA_TRANSFORMATION);
             cipher.init(Cipher.ENCRYPT_MODE, certificate.getPublicKey(), OAEP_SPEC);
             return cipher.doFinal(decryptedInput);
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | InvalidAlgorithmParameterException e) {
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException
+                | InvalidAlgorithmParameterException | ProviderException e) {
             /*
              * This exceptions are safe to be ignored:
              *
@@ -407,6 +414,11 @@ class CryptoUtil {
              *      Thrown if the given key is inappropriate for initializing this cipher.
              * - InvalidAlgorithmParameterException:
              *      Thrown if the OAEP parameters are invalid or unsupported.
+             * - ProviderException:
+             *      Thrown on Android 12+ (Keystore2) when the key's padding restriction is
+             *      incompatible with the cipher transformation (e.g. a PKCS1-restricted key
+             *      initialised with an OAEP spec). On Android < 12 this surfaces as
+             *      InvalidKeyException instead.
              *
              * Read more in https://developer.android.com/reference/javax/crypto/Cipher
              */
@@ -593,7 +605,9 @@ class CryptoUtil {
             KeyStore.PrivateKeyEntry rsaKeyEntry = getRSAKeyEntry();
 
             byte[] decryptedAESKey = RSADecryptLegacyPKCS1(encryptedOldAESBytes, rsaKeyEntry.getPrivateKey());
-            
+
+            deleteRSAKeys();
+
             // Re-encrypt with OAEP and store at new location
             byte[] encryptedAESWithOAEP = RSAEncrypt(decryptedAESKey);
             String newEncodedEncryptedAES = new String(Base64.encode(encryptedAESWithOAEP, Base64.DEFAULT), StandardCharsets.UTF_8);
@@ -632,8 +646,11 @@ class CryptoUtil {
         } catch (NoSuchAlgorithmException e) {
             Log.e(TAG, "AES algorithm not available.", e);
             throw new IncompatibleDeviceException(e);
+        } catch (IncompatibleDeviceException e) {
+            deleteRSAKeys();
+            deleteAESKeys();
+            throw e;
         } catch (CryptoException e) {
-            // Re-throw CryptoException and its subclasses (including IncompatibleDeviceException)
             throw e;
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while creating new AES key.", e);

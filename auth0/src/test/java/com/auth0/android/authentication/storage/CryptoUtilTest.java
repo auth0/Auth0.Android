@@ -16,6 +16,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
@@ -1940,5 +1941,145 @@ public class CryptoUtilTest {
         // deleteAESKeys() is called once in tryMigrateLegacyAESKey when getRSAKeyEntry throws
         Mockito.verify(storage, times(1)).remove(KEY_ALIAS);
         Mockito.verify(storage, times(1)).remove(OLD_KEY_ALIAS);
+    }
+
+    @Test
+    public void shouldWrapProviderExceptionFromCipherInitInRSADecryptAsIncompatibleDevice() {
+        Assert.assertThrows("The device is not compatible with the CryptoUtil class",
+                IncompatibleDeviceException.class, () -> {
+                    PrivateKey privateKey = PowerMockito.mock(PrivateKey.class);
+                    KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
+                    doReturn(privateKey).when(privateKeyEntry).getPrivateKey();
+                    doReturn(privateKeyEntry).when(cryptoUtil).getRSAKeyEntry();
+                    PowerMockito.mockStatic(Cipher.class);
+                    PowerMockito.when(Cipher.getInstance(RSA_TRANSFORMATION)).thenReturn(rsaOaepCipher);
+                    doThrow(new ProviderException(new KeyStoreException("Incompatible padding mode")))
+                            .when(rsaOaepCipher).init(eq(Cipher.DECRYPT_MODE), eq(privateKey),
+                                    any(AlgorithmParameterSpec.class));
+
+                    cryptoUtil.RSADecrypt(new byte[]{1, 2, 3});
+                });
+    }
+
+    @Test
+    public void shouldWrapProviderExceptionFromCipherInitInRSAEncryptAsIncompatibleDevice() {
+        Assert.assertThrows("The device is not compatible with the CryptoUtil class",
+                IncompatibleDeviceException.class, () -> {
+                    PublicKey publicKey = PowerMockito.mock(PublicKey.class);
+                    Certificate certificate = PowerMockito.mock(Certificate.class);
+                    doReturn(publicKey).when(certificate).getPublicKey();
+                    KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
+                    doReturn(certificate).when(privateKeyEntry).getCertificate();
+                    doReturn(privateKeyEntry).when(cryptoUtil).getRSAKeyEntry();
+                    PowerMockito.mockStatic(Cipher.class);
+                    PowerMockito.when(Cipher.getInstance(RSA_TRANSFORMATION)).thenReturn(rsaOaepCipher);
+                    doThrow(new ProviderException(new KeyStoreException("Incompatible padding mode")))
+                            .when(rsaOaepCipher).init(eq(Cipher.ENCRYPT_MODE), eq(publicKey),
+                                    any(AlgorithmParameterSpec.class));
+
+                    cryptoUtil.RSAEncrypt(new byte[]{1, 2, 3});
+                });
+    }
+
+    @Test
+    public void shouldTriggerPKCS1MigrationWhenRSADecryptThrowsProviderException() throws Exception {
+        CryptoUtil cryptoUtil = newCryptoUtilSpy();
+
+        byte[] encryptedAESPKCS1 = new byte[]{10, 11, 12, 13};
+        byte[] aesKeyBytes = new byte[32];
+        Arrays.fill(aesKeyBytes, (byte) 0xAB);
+        byte[] reEncryptedOAEP = new byte[]{20, 21, 22, 23};
+        String encodedPKCS1 = "pkcs1_encoded";
+        String encodedOAEP   = "oaep_encoded";
+
+        when(storage.retrieveString(KEY_ALIAS)).thenReturn(encodedPKCS1);
+        PowerMockito.mockStatic(Base64.class);
+        PowerMockito.when(Base64.decode(encodedPKCS1, Base64.DEFAULT)).thenReturn(encryptedAESPKCS1);
+        PowerMockito.when(Base64.encode(reEncryptedOAEP, Base64.DEFAULT))
+                .thenReturn(encodedOAEP.getBytes(StandardCharsets.UTF_8));
+
+        doThrow(new IncompatibleDeviceException(
+                new ProviderException(new KeyStoreException("Incompatible padding mode"))))
+                .when(cryptoUtil).RSADecrypt(encryptedAESPKCS1);
+
+        when(keyStore.containsAlias(KEY_ALIAS)).thenReturn(true);
+        KeyStore.PrivateKeyEntry mockEntry = mock(KeyStore.PrivateKeyEntry.class);
+        when(mockEntry.getPrivateKey()).thenReturn(mock(PrivateKey.class));
+        when(keyStore.getEntry(eq(KEY_ALIAS), nullable(KeyStore.ProtectionParameter.class)))
+                .thenReturn(mockEntry);
+        when(rsaPkcs1Cipher.doFinal(encryptedAESPKCS1)).thenReturn(aesKeyBytes);
+        doReturn(reEncryptedOAEP).when(cryptoUtil).RSAEncrypt(aesKeyBytes);
+
+        byte[] result = cryptoUtil.getAESKey();
+
+        assertThat(result, is(aesKeyBytes));
+        Mockito.verify(storage).store(KEY_ALIAS, encodedOAEP);
+        Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
+    }
+
+    @Test
+    public void shouldDeleteOldRSAKeyBeforeReEncryptingInTryMigrateLegacyAESKey() throws Exception {
+        CryptoUtil cryptoUtil = newCryptoUtilSpy();
+
+        byte[] aesKeyBytes = new byte[32];
+        Arrays.fill(aesKeyBytes, (byte) 0xCD);
+        byte[] encryptedOldAES = new byte[]{1, 2, 3, 4};
+        byte[] encryptedNewAES = new byte[]{4, 5, 6};
+        String encodedOldAES = "old_pkcs1_encoded";
+        String encodedNewAES = "new_oaep_encoded";
+
+        when(storage.retrieveString(KEY_ALIAS)).thenReturn(null);
+        when(storage.retrieveString(OLD_KEY_ALIAS)).thenReturn(encodedOldAES);
+
+        PowerMockito.mockStatic(Base64.class);
+        PowerMockito.when(Base64.decode(encodedOldAES, Base64.DEFAULT)).thenReturn(encryptedOldAES);
+        PowerMockito.when(Base64.encode(encryptedNewAES, Base64.DEFAULT))
+                .thenReturn(encodedNewAES.getBytes(StandardCharsets.UTF_8));
+
+        KeyStore.PrivateKeyEntry mockEntry = mock(KeyStore.PrivateKeyEntry.class);
+        PrivateKey mockPrivateKey = mock(PrivateKey.class);
+        when(mockEntry.getPrivateKey()).thenReturn(mockPrivateKey);
+        doReturn(mockEntry).when(cryptoUtil).getRSAKeyEntry();
+
+        when(rsaPkcs1Cipher.doFinal(encryptedOldAES)).thenReturn(aesKeyBytes);
+
+        doReturn(encryptedNewAES).when(cryptoUtil).RSAEncrypt(aesKeyBytes);
+
+        byte[] result = cryptoUtil.getAESKey();
+
+        assertThat(result, is(aesKeyBytes));
+        Mockito.verify(storage).store(KEY_ALIAS, encodedNewAES);
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS);
+
+
+        InOrder inOrder = Mockito.inOrder(keyStore, cryptoUtil);
+        inOrder.verify(keyStore).deleteEntry(KEY_ALIAS);
+        inOrder.verify(keyStore).deleteEntry(OLD_KEY_ALIAS);
+        inOrder.verify(cryptoUtil).RSAEncrypt(aesKeyBytes);
+    }
+
+    @Test
+    public void shouldDeleteStaleRSAKeyAndRethrowOnIncompatibleDeviceExceptionDuringGenerateNewAESKey() throws Exception {
+        CryptoUtil cryptoUtil = newCryptoUtilSpy();
+
+        when(storage.retrieveString(KEY_ALIAS)).thenReturn(null);
+        when(storage.retrieveString(OLD_KEY_ALIAS)).thenReturn(null);
+
+        byte[] newAESKey = new byte[32];
+        Arrays.fill(newAESKey, (byte) 0xEF);
+        SecretKey mockSecret = mock(SecretKey.class);
+        when(mockSecret.getEncoded()).thenReturn(newAESKey);
+        when(keyGenerator.generateKey()).thenReturn(mockSecret);
+
+        doThrow(new IncompatibleDeviceException(
+                new ProviderException(new KeyStoreException("Incompatible padding mode"))))
+                .when(cryptoUtil).RSAEncrypt(newAESKey);
+
+        Assert.assertThrows(IncompatibleDeviceException.class, () -> cryptoUtil.getAESKey());
+
+        Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
+        Mockito.verify(keyStore).deleteEntry(OLD_KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS);
     }
 }
