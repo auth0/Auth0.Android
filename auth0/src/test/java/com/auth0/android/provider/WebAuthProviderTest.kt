@@ -53,7 +53,6 @@ import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations
-import org.junit.Ignore
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -1539,7 +1538,6 @@ public class WebAuthProviderTest {
     }
 
 
-    @Ignore("Requires security provider fix - see SDK-7752")
     @Test
     @Throws(Exception::class)
     public fun shouldFailToResumeLoginWhenRSAKeyIsMissingFromJWKSet() {
@@ -1679,7 +1677,6 @@ public class WebAuthProviderTest {
     }
 
 
-    @Ignore("Requires security provider fix - see SDK-7752")
     @Test
     @Throws(Exception::class)
     public fun shouldFailToResumeLoginWhenKeyIdIsMissingFromIdTokenHeader() {
