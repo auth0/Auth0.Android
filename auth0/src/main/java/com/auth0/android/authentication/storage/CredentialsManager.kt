@@ -102,11 +102,6 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * parameter with the session transfer token. For example,
      *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
      *
-     * ## Availability
-     *
-     * This feature is currently available in
-     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
-     * Please reach out to Auth0 support to get it enabled for your tenant.
      *
      * It will fail with [CredentialsManagerException] if the existing refresh_token is null or no longer valid.
      * This method will handle saving the refresh_token, if a new one is issued.
@@ -123,11 +118,6 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * parameter with the session transfer token. For example,
      *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
      *
-     * ## Availability
-     *
-     * This feature is currently available in
-     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
-     * Please reach out to Auth0 support to get it enabled for your tenant.
      *
      * It will fail with [CredentialsManagerException] if the existing refresh_token is null or no longer valid.
      * This method will handle saving the refresh_token, if a new one is issued.
@@ -185,11 +175,6 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * parameter with the session transfer token. For example,
      *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
      *
-     * ## Availability
-     *
-     * This feature is currently available in
-     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
-     * Please reach out to Auth0 support to get it enabled for your tenant.
      *
      * It will fail with [CredentialsManagerException] if the existing refresh_token is null or no longer valid.
      * This method will handle saving the refresh_token, if a new one is issued.
@@ -208,11 +193,6 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * parameter with the session transfer token. For example,
      *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
      *
-     * ## Availability
-     *
-     * This feature is currently available in
-     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
-     * Please reach out to Auth0 support to get it enabled for your tenant.
      *
      * It will fail with [CredentialsManagerException] if the existing refresh_token is null or no longer valid.
      * This method will handle saving the refresh_token, if a new one is issued.
