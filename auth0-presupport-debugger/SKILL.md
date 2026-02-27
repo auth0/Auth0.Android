@@ -117,28 +117,7 @@ CLIENT_ID="..."  AUTH0_DOMAIN="..."  PLATFORM="android"  APP_IDENTIFIER="..."  S
 bash validate-auth0-config.sh
 ```
 
-#### CLI Quick-Fix Commands
-
-If the validation finds issues, the CLI can **fix them directly** without opening the dashboard:
-
-```bash
-# Add missing callback URL
-auth0 apps update <CLIENT_ID> --callbacks "<existing>,<new-callback-url>"
-
-# Add missing logout URL
-auth0 apps update <CLIENT_ID> --logout-urls "<existing>,<new-logout-url>"
-
-# Change app type to Native
-auth0 apps update <CLIENT_ID> --type native
-
-# Enable required grant types
-auth0 apps update <CLIENT_ID> --grants "authorization_code,refresh_token,implicit"
-
-# Set token auth method to None (PKCE)
-auth0 apps update <CLIENT_ID> --auth-method none
-```
-
-> **If all Phase 0 checks pass**, proceed to Phase 1 for visual dashboard verification and Phase 2 for SDK configuration checks. If any checks fail, fix them via CLI or dashboard before continuing.
+> **Scope:** This skill is diagnosis-only. It identifies root causes and reports findings — it does not apply fixes. If all Phase 0 checks pass, generate the All-Clear Report and stop. If any checks fail, continue to Phase 1 and collect all findings for the Diagnostic Summary.
 
 ---
 
@@ -206,9 +185,40 @@ See the full [Swift/iOS Validation Checklist](references/swift-checklist.md) for
 
 ---
 
-### Phase 4 — Pre-Ticket Diagnostic Summary
+### Phase 4 — Final Report
 
-Before raising an ESD case or GitHub issue, collect the following information. Paste it into your ticket.
+> **This skill is diagnosis-only.** It reports root causes — it does not apply fixes.
+
+#### Path A — All-Clear Report (all checks passed)
+
+Generate this when every check across all phases passes:
+
+```
+## Auth0 Pre-Support Debugger — All Clear
+
+All configuration checks passed. No misconfiguration detected.
+
+### Environment
+- Platform:
+- SDK version:
+- Auth0 Domain:
+- Client ID (first 8 chars):
+- Package / Bundle ID:
+
+### Checks Passed
+- [x] Phase 0: Automated CLI Configuration Validation — ALL PASSED
+- [x] Phase 1: Auth0 Dashboard Checklist — ALL PASSED
+- [x] Phase 2: SDK Configuration Check — ALL PASSED
+
+### Recommendation
+Auth0 dashboard and SDK configuration are correct. The reported symptom
+may be caused by a runtime or device-specific issue. Enable verbose SDK
+logging (Phase 3), reproduce the failure, and review the log output.
+```
+
+#### Path B — Diagnostic Summary (one or more checks failed)
+
+Generate this when any check fails. For every ❌ item, fill in the Root Cause field with a precise description of what was found and what the correct value should be. Do not include fix commands.
 
 ```
 ## Auth0 Pre-Support Diagnostic
@@ -238,10 +248,13 @@ Before raising an ESD case or GitHub issue, collect the following information. P
 - Frequency: Always / Intermittent
 - First occurrence: Always failing / Regression (worked before)
 
+### Root Causes Found
+(List each ❌ check with a precise description of what is wrong and what the correct value should be)
+
 ### Logs
 (Paste relevant SDK log lines here)
 
-### Already Checked
+### Checks Completed
 - [ ] Phase 0: Automated CLI Configuration Validation
 - [ ] Phase 1: Auth0 Dashboard Checklist
 - [ ] Phase 2: SDK Configuration Check
@@ -252,7 +265,7 @@ Before raising an ESD case or GitHub issue, collect the following information. P
 
 ## Detailed Documentation
 
-- **[CLI Configuration Validation](references/cli-config-validation.md)** — Automated Auth0 CLI commands to validate dashboard config, full validation script, and CLI quick-fix commands
+- **[CLI Configuration Validation](references/cli-config-validation.md)** — Automated Auth0 CLI commands to validate dashboard config and full validation script
 - **[Android Validation Checklist](references/android-checklist.md)** — Gradle, manifest, intent-filter, credentials, and ProGuard configuration
 - **[Swift/iOS Validation Checklist](references/swift-checklist.md)** — Auth0.plist, Info.plist, Universal Links, Keychain, and SPM/CocoaPods setup
 - **[Common Issues & Diagnostics](references/common-issues.md)** — Symptom-to-root-cause mapping, error codes, and fix snippets

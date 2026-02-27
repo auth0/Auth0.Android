@@ -100,7 +100,7 @@ If any value is NOT_FOUND, ask the user to supply just that one missing value be
 
 ### Step 0e — Run validation checks
 
-Use the extracted values to run each check from `references/cli-config-validation.md` — one at a time using Bash. After each check print ✅ / ❌ / ⚠️ and what it means. Fix any ❌ using the CLI quick-fix commands from the reference doc before moving to the next check.
+Use the extracted values to run each check from `references/cli-config-validation.md` — one at a time using Bash. After each check print ✅ / ❌ / ⚠️ and the **root cause** of any failure. **Do not attempt to fix anything.** This skill is diagnosis-only.
 
 > **macOS grep note:** Use `grep -F` or `grep -E` for plain/extended patterns. If a check uses `grep -oP`, substitute with `sed` or `awk` alternatives from the reference doc.
 
@@ -119,7 +119,9 @@ Checks to run (in order):
 12. DPoP checks (only if Q4 answer was DPoP)
 13. Passkeys checks (only if Q4 answer was Passkeys)
 
-When all checks are done, summarize results, then proceed to Phase 1.
+**When all checks are done:**
+- If **all checks passed (no ❌):** generate the All-Clear Report (see Phase 4 below) and stop. Do not proceed to Phase 1.
+- If **any check failed (❌ present):** continue to Phase 1 for manual dashboard verification, then Phase 2 for SDK checks, collecting all findings before generating the Diagnostic Summary in Phase 4.
 
 ---
 
@@ -161,6 +163,49 @@ Map log patterns to root causes using `references/common-issues.md`.
 
 ---
 
-## Phase 4 — Pre-Ticket Diagnostic Summary
+## Phase 4 — Final Report
 
-Generate the filled-in summary template from `SKILL.md` Phase 4, populated with everything collected during this session.
+**This skill does not fix anything.** It diagnoses and reports only.
+
+### If all checks passed — All-Clear Report
+
+Generate this report:
+
+```
+## Auth0 Pre-Support Debugger — All Clear
+
+All configuration checks passed for this client application.
+No misconfiguration was detected as a root cause for the reported symptom.
+
+### Environment
+- Platform:
+- SDK version:
+- Auth0 Domain:
+- Client ID (first 8 chars):
+- Package / Bundle ID:
+
+### Checks Run
+- [x] Phase 0: Automated CLI Configuration Validation — ALL PASSED
+  - [x] Application exists
+  - [x] Application type = native
+  - [x] Callback URL registered
+  - [x] Logout URL registered
+  - [x] Authorization Code grant enabled
+  - [x] Refresh Token grant enabled
+  - [x] Allowed Web Origins empty
+  - [x] Token endpoint auth method = none
+  - [x] Refresh Token Rotation = rotating
+  - [x] Connection enabled for app
+  - [x] OIDC discovery reachable
+
+### Recommendation
+Auth0 dashboard and SDK configuration look correct. The reported symptom
+may be caused by a runtime or device-specific issue. Proceed to Phase 3
+(runtime diagnostics with verbose logging) or escalate to ESD with this report.
+```
+
+### If any check failed — Diagnostic Summary
+
+Generate the filled-in pre-ticket summary template from `SKILL.md` Phase 4.
+For every ❌ item, populate the **Root Cause** field with a specific explanation of what is wrong and what the correct value should be.
+Do not include fix commands — only describe what was found and why it is wrong.
