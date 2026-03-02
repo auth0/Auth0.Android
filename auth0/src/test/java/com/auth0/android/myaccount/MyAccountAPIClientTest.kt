@@ -3,6 +3,7 @@ package com.auth0.android.myaccount
 import com.auth0.android.Auth0
 import com.auth0.android.request.PublicKeyCredentials
 import com.auth0.android.request.Response
+import com.auth0.android.request.internal.RequestFactory
 import com.auth0.android.result.AuthenticationMethod
 import com.auth0.android.result.EnrollmentChallenge
 import com.auth0.android.result.Factor
@@ -10,6 +11,7 @@ import com.auth0.android.result.PasskeyAuthenticationMethod
 import com.auth0.android.result.PasskeyEnrollmentChallenge
 import com.auth0.android.result.RecoveryCodeEnrollmentChallenge
 import com.auth0.android.result.TotpEnrollmentChallenge
+import com.auth0.android.util.Auth0UserAgent
 import com.auth0.android.util.AuthenticationAPIMockServer.Companion.SESSION_ID
 import com.auth0.android.util.MockMyAccountCallback
 import com.auth0.android.util.MyAccountAPIMockServer
@@ -18,6 +20,8 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import okhttp3.mockwebserver.RecordedRequest
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers
@@ -48,6 +52,19 @@ public class MyAccountAPIClientTest {
     @After
     public fun tearDown() {
         mockAPI.shutdown()
+    }
+
+    @Test
+    public fun shouldSetAuth0UserAgentIfPresent() {
+        val auth0UserAgent: Auth0UserAgent = mock()
+        val factory: RequestFactory<MyAccountException> = mock()
+        val account = Auth0.getInstance(CLIENT_ID, DOMAIN)
+
+        whenever(auth0UserAgent.value).thenReturn("the-user-agent-data")
+        account.auth0UserAgent = auth0UserAgent
+        MyAccountAPIClient(account, ACCESS_TOKEN, factory, gson)
+
+        verify(factory).setAuth0ClientInfo("the-user-agent-data")
     }
 
     @Test
@@ -113,7 +130,10 @@ public class MyAccountAPIClientTest {
         }
         mockAPI.takeRequest()
         assertThat(error, Matchers.notNullValue())
-        assertThat(error?.message, Matchers.`is`("Authentication method ID not found in Location header."))
+        assertThat(
+            error?.message,
+            Matchers.`is`("Authentication method ID not found in Location header.")
+        )
     }
 
 
@@ -362,7 +382,10 @@ public class MyAccountAPIClientTest {
     public fun `updateAuthenticationMethodById for phone should build correct URL and payload`() {
         val callback = MockMyAccountCallback<AuthenticationMethod>()
         val methodId = "phone|12345"
-        client.updateAuthenticationMethodById(methodId, preferredAuthenticationMethod = PhoneAuthenticationMethodType.SMS).start(callback)
+        client.updateAuthenticationMethodById(
+            methodId,
+            preferredAuthenticationMethod = PhoneAuthenticationMethodType.SMS
+        ).start(callback)
 
         val request = mockAPI.takeRequest()
         val body = bodyFromRequest<String>(request)
@@ -376,7 +399,8 @@ public class MyAccountAPIClientTest {
         val callback = MockMyAccountCallback<AuthenticationMethod>()
         val methodId = "totp|12345"
         val name = "My Authenticator"
-        client.updateAuthenticationMethodById(methodId, authenticationMethodName = name).start(callback)
+        client.updateAuthenticationMethodById(methodId, authenticationMethodName = name)
+            .start(callback)
 
         val request = mockAPI.takeRequest()
         val body = bodyFromRequest<String>(request)
@@ -449,7 +473,10 @@ public class MyAccountAPIClientTest {
 
         val request = mockAPI.takeRequest()
         val body = bodyFromRequest<String>(request)
-        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods/email%7C123/verify"))
+        assertThat(
+            request.path,
+            Matchers.equalTo("/me/v1/authentication-methods/email%7C123/verify")
+        )
         assertThat(request.method, Matchers.equalTo("POST"))
         assertThat(body, Matchers.hasEntry("otp_code", otp as Any))
         assertThat(body, Matchers.hasEntry("auth_session", session as Any))
@@ -497,6 +524,7 @@ public class MyAccountAPIClientTest {
 
     private companion object {
         private const val CLIENT_ID = "CLIENTID"
+        private const val DOMAIN = "test-domain"
         private const val USER_IDENTITY = "user123"
         private const val CONNECTION = "passkey-connection"
         private const val ACCESS_TOKEN = "accessToken"

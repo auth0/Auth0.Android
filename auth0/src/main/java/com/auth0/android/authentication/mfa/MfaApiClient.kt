@@ -4,7 +4,10 @@ import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.authentication.ParameterBuilder
-import com.auth0.android.authentication.mfa.MfaException.*
+import com.auth0.android.authentication.mfa.MfaException.MfaChallengeException
+import com.auth0.android.authentication.mfa.MfaException.MfaEnrollmentException
+import com.auth0.android.authentication.mfa.MfaException.MfaListAuthenticatorsException
+import com.auth0.android.authentication.mfa.MfaException.MfaVerifyException
 import com.auth0.android.request.ErrorAdapter
 import com.auth0.android.request.JsonAdapter
 import com.auth0.android.request.Request
@@ -175,7 +178,11 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
      */
     public fun enroll(type: MfaEnrollmentType): Request<EnrollmentChallenge, MfaEnrollmentException> {
         return when (type) {
-            is MfaEnrollmentType.Phone -> enrollOob(oobChannel = "sms", phoneNumber = type.phoneNumber)
+            is MfaEnrollmentType.Phone -> enrollOob(
+                oobChannel = "sms",
+                phoneNumber = type.phoneNumber
+            )
+
             is MfaEnrollmentType.Email -> enrollOob(oobChannel = "email", email = type.email)
             is MfaEnrollmentType.Otp -> enrollOtpInternal()
             is MfaEnrollmentType.Push -> enrollOob(oobChannel = "auth0")
@@ -226,7 +233,6 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
         return challengeFactory.post(url.toString(), challengeAdapter)
             .addParameters(parameters)
     }
-
 
 
     /**
@@ -290,7 +296,7 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
         return object : JsonAdapter<List<Authenticator>> {
             override fun fromJson(reader: Reader, metadata: Map<String, Any>): List<Authenticator> {
                 val allAuthenticators = baseAdapter.fromJson(reader, metadata)
-                
+
                 return allAuthenticators.filter { authenticator ->
                     matchesFactorType(authenticator, factorsAllowed)
                 }
@@ -313,9 +319,12 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
      * @param factorsAllowed List of allowed factor types
      * @return true if the authenticator matches any allowed factor type
      */
-    private fun matchesFactorType(authenticator: Authenticator, factorsAllowed: List<String>): Boolean {
+    private fun matchesFactorType(
+        authenticator: Authenticator,
+        factorsAllowed: List<String>
+    ): Boolean {
         val effectiveType = getEffectiveType(authenticator)
-        
+
         return factorsAllowed.any { factor ->
             val normalizedFactor = factor.lowercase(java.util.Locale.ROOT)
             when (normalizedFactor) {
@@ -325,7 +334,7 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
                 "oob" -> authenticator.authenticatorType == "oob" || authenticator.type == "oob"
                 "recovery-code" -> effectiveType == "recovery-code"
                 "push-notification" -> effectiveType == "push-notification"
-                else -> effectiveType == normalizedFactor || 
+                else -> effectiveType == normalizedFactor ||
                         authenticator.authenticatorType?.lowercase(java.util.Locale.ROOT) == normalizedFactor ||
                         authenticator.type.lowercase(java.util.Locale.ROOT) == normalizedFactor
             }
@@ -370,7 +379,7 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
             .addHeader(HEADER_AUTHORIZATION, "Bearer $mfaToken")
             .addParameter(AUTHENTICATOR_TYPES_KEY, listOf("oob"))
             .addParameter(OOB_CHANNELS_KEY, listOf(oobChannel))
-        
+
         if (phoneNumber != null) {
             request.addParameter(PHONE_NUMBER_KEY, phoneNumber)
         }
@@ -411,7 +420,7 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
             .setGrantType(GRANT_TYPE_MFA_OOB)
             .set(MFA_TOKEN_KEY, mfaToken)
             .set(OUT_OF_BAND_CODE_KEY, oobCode)
-        
+
         if (bindingCode != null) {
             parametersBuilder.set(BINDING_CODE_KEY, bindingCode)
         }
@@ -463,7 +472,6 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
         return verifyFactory.post(url.toString(), credentialsAdapter)
             .addParameters(parameters)
     }
-
 
 
     /**
@@ -643,6 +651,14 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
         private const val RECOVERY_CODE_KEY = "recovery_code"
         private const val GRANT_TYPE_MFA_OTP = "http://auth0.com/oauth/grant-type/mfa-otp"
         private const val GRANT_TYPE_MFA_OOB = "http://auth0.com/oauth/grant-type/mfa-oob"
-        private const val GRANT_TYPE_MFA_RECOVERY_CODE = "http://auth0.com/oauth/grant-type/mfa-recovery-code"
+        private const val GRANT_TYPE_MFA_RECOVERY_CODE =
+            "http://auth0.com/oauth/grant-type/mfa-recovery-code"
+    }
+
+    init {
+        listAuthenticatorsFactory.setAuth0ClientInfo(auth0.auth0UserAgent.value)
+        enrollmentFactory.setAuth0ClientInfo(auth0.auth0UserAgent.value)
+        challengeFactory.setAuth0ClientInfo(auth0.auth0UserAgent.value)
+        verifyFactory.setAuth0ClientInfo(auth0.auth0UserAgent.value)
     }
 }
