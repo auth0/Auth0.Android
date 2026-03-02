@@ -32,6 +32,7 @@ import kotlinx.coroutines.test.runTest
 import org.hamcrest.MatcherAssert
 import org.hamcrest.Matchers
 import org.hamcrest.core.Is
+import org.hamcrest.core.IsInstanceOf
 import org.junit.Assert
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -432,7 +433,7 @@ public class CredentialsManagerTest {
             "token", "type",
             Date(accessTokenExpiry), "scope"
         )
-        Mockito.`when`(storage.retrieveString("audience")).thenReturn(gson.toJson(apiCredentials))
+        Mockito.`when`(storage.retrieveString("audience::scope")).thenReturn(gson.toJson(apiCredentials))
         manager.getApiCredentials("audience", "scope", callback = apiCredentialsCallback)
         verify(apiCredentialsCallback).onSuccess(apiCredentialsCaptor.capture())
         val retrievedCredentials = apiCredentialsCaptor.firstValue
@@ -457,7 +458,7 @@ public class CredentialsManagerTest {
     @Test
     public fun shouldRenewApiCredentialsIfThereIsNoExistingApiCredentials() {
         verifyNoMoreInteractions(client)
-        Mockito.`when`(storage.retrieveString("audience")).thenReturn(null)
+        Mockito.`when`(storage.retrieveString("audience::newScope")).thenReturn(null)
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
         Mockito.`when`(
             client.renewAuth("refreshToken", "audience", "newScope")
@@ -481,7 +482,7 @@ public class CredentialsManagerTest {
         verify(storage).store("com.auth0.id_token", renewedCredentials.idToken)
         // RefreshToken should not be replaced
         verify(storage).store("com.auth0.refresh_token", "refreshToken")
-        verify(storage).store("audience", gson.toJson(renewedCredentials.toAPICredentials()))
+        verify(storage).store("audience::newScope", gson.toJson(renewedCredentials.toAPICredentials()))
         // Verify the returned credentials are the latest
         val newAPiCredentials = apiCredentialsCaptor.firstValue
         MatcherAssert.assertThat(newAPiCredentials, Is.`is`(Matchers.notNullValue()))
@@ -499,7 +500,7 @@ public class CredentialsManagerTest {
             "token", "type",
             Date(accessTokenExpiry), "scope"
         )
-        Mockito.`when`(storage.retrieveString("audience")).thenReturn(gson.toJson(apiCredentials))
+        Mockito.`when`(storage.retrieveString("audience::scope")).thenReturn(gson.toJson(apiCredentials))
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
         Mockito.`when`(
             client.renewAuth("refreshToken", "audience", "scope")
@@ -523,7 +524,7 @@ public class CredentialsManagerTest {
         verify(storage).store("com.auth0.id_token", renewedCredentials.idToken)
         // RefreshToken should not be replaced
         verify(storage).store("com.auth0.refresh_token", "refreshToken")
-        verify(storage).store("audience", gson.toJson(renewedCredentials.toAPICredentials()))
+        verify(storage).store("audience::scope", gson.toJson(renewedCredentials.toAPICredentials()))
         // Verify the returned credentials are the latest
         val newAPiCredentials = apiCredentialsCaptor.firstValue
         MatcherAssert.assertThat(newAPiCredentials, Is.`is`(Matchers.notNullValue()))
@@ -541,7 +542,7 @@ public class CredentialsManagerTest {
             "token", "type",
             Date(accessTokenExpiry), "scope"
         )
-        Mockito.`when`(storage.retrieveString("audience")).thenReturn(gson.toJson(apiCredentials))
+        Mockito.`when`(storage.retrieveString("audience::scope")).thenReturn(gson.toJson(apiCredentials))
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
         Mockito.`when`(
             client.renewAuth("refreshToken", "audience", "scope")
@@ -565,7 +566,7 @@ public class CredentialsManagerTest {
         verify(storage).store("com.auth0.id_token", renewedCredentials.idToken)
         // RefreshToken should not be replaced
         verify(storage).store("com.auth0.refresh_token", "refreshToken")
-        verify(storage).store("audience", gson.toJson(renewedCredentials.toAPICredentials()))
+        verify(storage).store("audience::scope", gson.toJson(renewedCredentials.toAPICredentials()))
         // Verify the returned credentials are the latest
         val newAPiCredentials = apiCredentialsCaptor.firstValue
         MatcherAssert.assertThat(newAPiCredentials, Is.`is`(Matchers.notNullValue()))
@@ -576,54 +577,12 @@ public class CredentialsManagerTest {
     }
 
     @Test
-    public fun shouldRenewApiCredentialsIfSavedScopeIsDifferentFromRequiredScope() {
-        verifyNoMoreInteractions(client)
-        val accessTokenExpiry = CredentialsMock.ONE_HOUR_AHEAD_MS
-        val apiCredentials = ApiCredentialsMock.create(
-            "token", "type",
-            Date(accessTokenExpiry), "scope"
-        )
-        Mockito.`when`(storage.retrieveString("audience")).thenReturn(gson.toJson(apiCredentials))
-        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
-        Mockito.`when`(
-            client.renewAuth("refreshToken", "audience", "newScope")
-        ).thenReturn(request)
-        val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS + ONE_HOUR_SECONDS * 1000)
-        val jwtMock = mock<Jwt>()
-        Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
-        Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
-
-        // Trigger success
-        val newRefresh: String? = null
-        val renewedCredentials =
-            Credentials("newId", "newAccess", "newType", newRefresh, newDate, "newScope")
-        Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
-        manager.getApiCredentials("audience", "newScope", callback = apiCredentialsCallback)
-        verify(apiCredentialsCallback).onSuccess(
-            apiCredentialsCaptor.capture()
-        )
-
-        // Verify the credentials are property stored
-        verify(storage).store("com.auth0.id_token", renewedCredentials.idToken)
-        // RefreshToken should not be replaced
-        verify(storage).store("com.auth0.refresh_token", "refreshToken")
-        verify(storage).store("audience", gson.toJson(renewedCredentials.toAPICredentials()))
-        // Verify the returned credentials are the latest
-        val newAPiCredentials = apiCredentialsCaptor.firstValue
-        MatcherAssert.assertThat(newAPiCredentials, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(newAPiCredentials.accessToken, Is.`is`("newAccess"))
-        MatcherAssert.assertThat(newAPiCredentials.type, Is.`is`("newType"))
-        MatcherAssert.assertThat(newAPiCredentials.expiresAt, Is.`is`(newDate))
-        MatcherAssert.assertThat(newAPiCredentials.scope, Is.`is`("newScope"))
-    }
-
-    @Test
     public fun shouldReplaceTheExistingRefreshTokenIfaNewOneIsObtainedInApiCredentials() {
         verifyNoMoreInteractions(client)
         Mockito.`when`(storage.retrieveString("audience")).thenReturn(null)
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
         Mockito.`when`(
-            client.renewAuth("refreshToken", "audience", "newScope")
+            client.renewAuth("refreshToken", "audience","newScope")
         ).thenReturn(request)
         val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS + ONE_HOUR_SECONDS * 1000)
         val jwtMock = mock<Jwt>()
@@ -643,7 +602,7 @@ public class CredentialsManagerTest {
         verify(storage).store("com.auth0.id_token", renewedCredentials.idToken)
         // RefreshToken should be replaced
         verify(storage).store("com.auth0.refresh_token", "newRefreshToken")
-        verify(storage).store("audience", gson.toJson(renewedCredentials.toAPICredentials()))
+        verify(storage).store("audience::newScope", gson.toJson(renewedCredentials.toAPICredentials()))
         // Verify the returned credentials are the latest
         val newAPiCredentials = apiCredentialsCaptor.firstValue
         MatcherAssert.assertThat(newAPiCredentials, Is.`is`(Matchers.notNullValue()))
@@ -692,7 +651,7 @@ public class CredentialsManagerTest {
             "token", "type",
             Date(accessTokenExpiry), "scope"
         )
-        Mockito.`when`(storage.retrieveString("audience")).thenReturn(gson.toJson(apiCredentials))
+        Mockito.`when`(storage.retrieveString("audience::scope")).thenReturn(gson.toJson(apiCredentials))
         val retrievedCredentials = manager.awaitApiCredentials("audience", "scope")
         MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
         Assert.assertEquals(retrievedCredentials.accessToken, apiCredentials.accessToken)
@@ -1536,6 +1495,220 @@ public class CredentialsManagerTest {
     }
 
     @Test
+    public fun shouldSaveApiCredentialsWithScopeAsKey() {
+        val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
+        val apiCredentials = APICredentials(
+            accessToken = "apiAccessToken",
+            type = "type",
+            expiresAt = Date(expirationTime),
+            scope = "read:data write:data"
+        )
+
+        manager.saveApiCredentials(apiCredentials, "audience", "read:data write:data")
+
+        verify(storage).store(
+            eq("audience::read:data::write:data"),
+            eq(gson.toJson(apiCredentials))
+        )
+    }
+
+    @Test
+    public fun shouldSaveApiCredentialsWithoutScopeUsingOnlyAudience() {
+        val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
+        val apiCredentials = APICredentials(
+            accessToken = "apiAccessToken",
+            type = "type",
+            expiresAt = Date(expirationTime),
+            scope = "read:data"
+        )
+
+        manager.saveApiCredentials(apiCredentials, "audience", null)
+
+        verify(storage).store(eq("audience"), eq(gson.toJson(apiCredentials)))
+    }
+
+    @Test
+    public fun shouldSaveApiCredentialsWithDifferentScopesUnderDifferentKeys() {
+        val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
+        val apiCredentials1 = APICredentials(
+            accessToken = "apiAccessToken1",
+            type = "type",
+            expiresAt = Date(expirationTime),
+            scope = "read:data"
+        )
+        val apiCredentials2 = APICredentials(
+            accessToken = "apiAccessToken2",
+            type = "type",
+            expiresAt = Date(expirationTime),
+            scope = "write:data"
+        )
+
+        manager.saveApiCredentials(apiCredentials1, "audience", "read:data")
+        manager.saveApiCredentials(apiCredentials2, "audience", "write:data")
+
+        verify(storage).store(eq("audience::read:data"), eq(gson.toJson(apiCredentials1)))
+        verify(storage).store(eq("audience::write:data"), eq(gson.toJson(apiCredentials2)))
+    }
+
+    @Test
+    public fun shouldClearApiCredentialsWithScope() {
+        manager.clearApiCredentials("audience", "read:data write:data")
+        verify(storage).remove("audience::read:data::write:data")
+    }
+
+    @Test
+    public fun shouldClearApiCredentialsWithoutScopeUsingAudienceOnly() {
+        manager.clearApiCredentials("audience", null)
+        verify(storage).remove("audience")
+    }
+
+    @Test
+    public fun shouldClearApiCredentialsWithDefaultNullScope() {
+        manager.clearApiCredentials("audience")
+        verify(storage).remove("audience")
+    }
+
+    @Test
+    public fun shouldGetApiCredentialsWithSpecificScope() {
+        verifyNoMoreInteractions(client)
+        val accessTokenExpiry = CredentialsMock.ONE_HOUR_AHEAD_MS
+        val apiCredentials = ApiCredentialsMock.create(
+            accessToken = "apiToken",
+            expiresAt = Date(accessTokenExpiry),
+            scope = "read:data"
+        )
+        Mockito.`when`(storage.retrieveString("audience::read:data"))
+            .thenReturn(gson.toJson(apiCredentials))
+
+        manager.getApiCredentials("audience", "read:data", callback = apiCredentialsCallback)
+
+        verify(apiCredentialsCallback).onSuccess(apiCredentialsCaptor.capture())
+        val retrievedCredentials = apiCredentialsCaptor.firstValue
+        MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`("apiToken"))
+        MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("read:data"))
+    }
+
+    @Test
+    public fun shouldGetApiCredentialsWithoutScopeFromAudienceKey() {
+        verifyNoMoreInteractions(client)
+        val accessTokenExpiry = CredentialsMock.ONE_HOUR_AHEAD_MS
+        val apiCredentials = ApiCredentialsMock.create(
+            accessToken = "apiToken",
+            expiresAt = Date(accessTokenExpiry),
+            scope = "openid"
+        )
+        Mockito.`when`(storage.retrieveString("audience"))
+            .thenReturn(gson.toJson(apiCredentials))
+
+        manager.getApiCredentials("audience", null, callback = apiCredentialsCallback)
+
+        verify(apiCredentialsCallback).onSuccess(apiCredentialsCaptor.capture())
+        val retrievedCredentials = apiCredentialsCaptor.firstValue
+        MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`("apiToken"))
+    }
+
+    @Test
+    public fun shouldRenewApiCredentialsWhenRequestingScopeButStoredUnderDifferentScopeKey() {
+        verifyNoMoreInteractions(client)
+        val accessTokenExpiry = CredentialsMock.ONE_HOUR_AHEAD_MS
+        Mockito.`when`(storage.retrieveString("audience::write:data"))
+            .thenReturn(null)
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token"))
+            .thenReturn("refreshToken")
+        Mockito.`when`(client.renewAuth("refreshToken", "audience", "write:data"))
+            .thenReturn(request)
+
+        val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS + ONE_HOUR_SECONDS * 1000)
+        val jwtMock = mock<Jwt>()
+        Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
+        Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
+
+        val renewedCredentials = Credentials(
+            "newId", "newAccess", "newType", null, newDate, "write:data"
+        )
+        Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
+
+        manager.getApiCredentials("audience", "write:data", callback = apiCredentialsCallback)
+
+        verify(apiCredentialsCallback).onSuccess(apiCredentialsCaptor.capture())
+        val newApiCredentials = apiCredentialsCaptor.firstValue
+        MatcherAssert.assertThat(newApiCredentials.scope, Is.`is`("write:data"))
+        MatcherAssert.assertThat(newApiCredentials.accessToken, Is.`is`("newAccess"))
+        verify(storage).store(eq("audience::write:data"), any<String>())
+    }
+
+    @Test
+    public fun shouldStoreApiCredentialsUnderCorrectKeyWhenRenewing() {
+        verifyNoMoreInteractions(client)
+        Mockito.`when`(storage.retrieveString("audience::custom:scope"))
+            .thenReturn(null)
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token"))
+            .thenReturn("refreshToken")
+        Mockito.`when`(client.renewAuth("refreshToken", "audience", "custom:scope"))
+            .thenReturn(request)
+
+        val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS + ONE_HOUR_SECONDS * 1000)
+        val jwtMock = mock<Jwt>()
+        Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
+        Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
+
+        val renewedCredentials = Credentials(
+            "newId", "newAccess", "newType", null, newDate, "custom:scope"
+        )
+        Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
+
+        manager.getApiCredentials("audience", "custom:scope", callback = apiCredentialsCallback)
+
+        verify(storage).store(eq("audience::custom:scope"), any<String>())
+    }
+
+    @Test
+    @ExperimentalCoroutinesApi
+    public fun shouldAwaitApiCredentialsWithSpecificScope(): Unit = runTest {
+        verifyNoMoreInteractions(client)
+        val accessTokenExpiry = CredentialsMock.ONE_HOUR_AHEAD_MS
+        val apiCredentials = ApiCredentialsMock.create(
+            accessToken = "apiToken",
+            expiresAt = Date(accessTokenExpiry),
+            scope = "read:data"
+        )
+        Mockito.`when`(storage.retrieveString("audience::read:data"))
+            .thenReturn(gson.toJson(apiCredentials))
+
+        val result = manager.awaitApiCredentials("audience", "read:data")
+
+        MatcherAssert.assertThat(result.accessToken, Is.`is`("apiToken"))
+        MatcherAssert.assertThat(result.scope, Is.`is`("read:data"))
+    }
+
+    @Test
+    @ExperimentalCoroutinesApi
+    public fun shouldAwaitAndRenewApiCredentialsWithScope(): Unit = runTest {
+        verifyNoMoreInteractions(client)
+        Mockito.`when`(storage.retrieveString("audience::write:data"))
+            .thenReturn(null)
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token"))
+            .thenReturn("refreshToken")
+        Mockito.`when`(client.renewAuth("refreshToken", "audience", "write:data"))
+            .thenReturn(request)
+
+        val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS + ONE_HOUR_SECONDS * 1000)
+        val jwtMock = mock<Jwt>()
+        Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
+        Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
+
+        val renewedCredentials = Credentials(
+            "newId", "newAccess", "newType", null, newDate, "write:data"
+        )
+        Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
+
+        val result = manager.awaitApiCredentials("audience", "write:data")
+
+        MatcherAssert.assertThat(result.scope, Is.`is`("write:data"))
+        MatcherAssert.assertThat(result.accessToken, Is.`is`("newAccess"))
+    }
+
+    @Test
     public fun shouldHaveCredentialsWhenTokenHasNotExpired() {
         val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
         Mockito.`when`(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime)
@@ -1774,6 +1947,190 @@ public class CredentialsManagerTest {
         MatcherAssert.assertThat(retrievedCredentials.expiresAt, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(retrievedCredentials.expiresAt.time, Is.`is`(expirationTime))
         MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("scope"))
+    }
+
+    // ========== MFA Required During Token Renewal Tests ==========
+
+    @Test
+    public fun shouldFailWithMfaRequiredWhenRenewingExpiredCredentials() {
+        Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("type")
+        val expirationTime = CredentialsMock.CURRENT_TIME_MS // Expired
+        Mockito.`when`(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveLong("com.auth0.cache_expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveString("com.auth0.scope")).thenReturn("scope")
+        Mockito.`when`(client.renewAuth("refreshToken")).thenReturn(request)
+
+        val mfaRequiredValues: MutableMap<String, Any> = mutableMapOf(
+            "error" to "mfa_required",
+            "error_description" to "Multifactor authentication required",
+            "mfa_token" to "test-mfa-token-12345",
+            "mfa_requirements" to mutableMapOf(
+                "challenge" to listOf(
+                    mutableMapOf("type" to "otp"),
+                    mutableMapOf("type" to "oob")
+                )
+            )
+        )
+        val mfaRequiredException = AuthenticationException(mfaRequiredValues, 403)
+        
+        MatcherAssert.assertThat(mfaRequiredException.isMultifactorRequired, Is.`is`(true))
+        MatcherAssert.assertThat(mfaRequiredException.getCode(), Is.`is`("mfa_required"))
+        
+        Mockito.`when`(request.execute()).thenThrow(mfaRequiredException)
+
+        manager.getCredentials(callback)
+
+        verify(callback).onFailure(exceptionCaptor.capture())
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exception.message, Matchers.containsString("authenticate"))
+        MatcherAssert.assertThat(exception.cause, Is.`is`(mfaRequiredException))
+        
+        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exception.mfaToken, Is.`is`("test-mfa-token-12345"))
+        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.challenge, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.challenge?.size, Is.`is`(2))
+    }
+
+    @Test
+    public fun shouldFailWithMfaRequiredWithEnrollmentOptionsWhenRenewingCredentials() {
+        Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("type")
+        val expirationTime = CredentialsMock.CURRENT_TIME_MS // Expired
+        Mockito.`when`(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveLong("com.auth0.cache_expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveString("com.auth0.scope")).thenReturn("scope")
+        Mockito.`when`(client.renewAuth("refreshToken")).thenReturn(request)
+
+        val mfaRequiredValues = mapOf(
+            "error" to "mfa_required",
+            "error_description" to "Multifactor authentication required",
+            "mfa_token" to "enroll-mfa-token",
+            "mfa_requirements" to mapOf(
+                "enroll" to listOf(
+                    mapOf("type" to "otp"),
+                    mapOf("type" to "sms"),
+                    mapOf("type" to "push-notification")
+                )
+            )
+        )
+        val mfaRequiredException = AuthenticationException(mfaRequiredValues, 403)
+        Mockito.`when`(request.execute()).thenThrow(mfaRequiredException)
+
+        manager.getCredentials(callback)
+
+        verify(callback).onFailure(exceptionCaptor.capture())
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception.message, Matchers.containsString("authenticate"))
+        MatcherAssert.assertThat(exception.mfaToken, Is.`is`("enroll-mfa-token"))
+        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.enroll, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.enroll?.size, Is.`is`(3))
+        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.challenge, Is.`is`(Matchers.nullValue()))
+    }
+
+    @Test
+    public fun shouldNotStoreMfaPayloadWhenNonMfaApiErrorOccurs() {
+        Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("type")
+        val expirationTime = CredentialsMock.CURRENT_TIME_MS // Expired
+        Mockito.`when`(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveLong("com.auth0.cache_expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveString("com.auth0.scope")).thenReturn("scope")
+        Mockito.`when`(client.renewAuth("refreshToken")).thenReturn(request)
+
+        // Create a regular API error (not MFA required)
+        val regularApiError = AuthenticationException(
+            mapOf(
+                "error" to "invalid_grant",
+                "error_description" to "Invalid refresh token"
+            ),
+            400
+        )
+        Mockito.`when`(request.execute()).thenThrow(regularApiError)
+
+        manager.getCredentials(callback)
+
+        verify(callback).onFailure(exceptionCaptor.capture())
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception.message, Matchers.containsString("processing the request"))
+        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload, Is.`is`(Matchers.nullValue()))
+        MatcherAssert.assertThat(exception.mfaToken, Is.`is`(Matchers.nullValue()))
+    }
+
+    @Test
+    @ExperimentalCoroutinesApi
+    public fun shouldThrowMfaRequiredExceptionWhenAwaitingExpiredCredentials(): Unit = runTest {
+        Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("type")
+        val expirationTime = CredentialsMock.CURRENT_TIME_MS // Expired
+        Mockito.`when`(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveLong("com.auth0.cache_expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveString("com.auth0.scope")).thenReturn("scope")
+        Mockito.`when`(client.renewAuth("refreshToken")).thenReturn(request)
+
+        val mfaRequiredValues = mapOf(
+            "error" to "mfa_required",
+            "error_description" to "Multifactor authentication required",
+            "mfa_token" to "await-mfa-token-12345",
+            "mfa_requirements" to mapOf(
+                "challenge" to listOf(
+                    mapOf("type" to "otp")
+                )
+            )
+        )
+        val mfaRequiredException = AuthenticationException(mfaRequiredValues, 403)
+        Mockito.`when`(request.execute()).thenThrow(mfaRequiredException)
+
+        val exception = assertThrows(CredentialsManagerException::class.java) {
+            runBlocking { manager.awaitCredentials() }
+        }
+        MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exception.cause, Is.`is`(mfaRequiredException))
+        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exception.mfaToken, Is.`is`("await-mfa-token-12345"))
+    }
+
+    @Test
+    public fun shouldPreserveOriginalAuthenticationExceptionAsCauseForMfaRequired() {
+        Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("type")
+        val expirationTime = CredentialsMock.CURRENT_TIME_MS // Expired
+        Mockito.`when`(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveLong("com.auth0.cache_expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveString("com.auth0.scope")).thenReturn("scope")
+        Mockito.`when`(client.renewAuth("refreshToken")).thenReturn(request)
+
+        val mfaRequiredValues = mapOf(
+            "error" to "mfa_required",
+            "error_description" to "MFA is required for this action",
+            "mfa_token" to "cause-test-token"
+        )
+        val originalException = AuthenticationException(mfaRequiredValues, 403)
+        Mockito.`when`(request.execute()).thenThrow(originalException)
+
+        manager.getCredentials(callback)
+
+        verify(callback).onFailure(exceptionCaptor.capture())
+        val exception = exceptionCaptor.firstValue
+        
+        MatcherAssert.assertThat(exception.cause, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exception.cause, IsInstanceOf.instanceOf(AuthenticationException::class.java))
+        
+        val causeException = exception.cause as AuthenticationException
+        MatcherAssert.assertThat(causeException.getCode(), Is.`is`("mfa_required"))
+        MatcherAssert.assertThat(causeException.isMultifactorRequired, Is.`is`(true))
+        MatcherAssert.assertThat(causeException.getDescription(), Is.`is`("MFA is required for this action"))
     }
 
     private fun prepareJwtDecoderMock(expiresAt: Date?) {

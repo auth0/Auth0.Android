@@ -4,8 +4,10 @@ import androidx.annotation.NonNull;
 
 import com.auth0.android.Auth0Exception;
 import com.auth0.android.callback.Callback;
-import com.auth0.android.request.HttpMethod;
 import com.auth0.android.request.Request;
+import com.auth0.android.request.RequestValidator;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
@@ -60,6 +62,11 @@ public class RequestMock<T, U extends Auth0Exception> implements Request<T, U> {
     @NonNull
     @Override
     public Request<T, U> addParameter(@NonNull String name, @NonNull Object value) {
+        return this;
+    }
+
+    @Override
+    public @NotNull Request<T, @NotNull U> addValidator(@NotNull RequestValidator validator) {
         return this;
     }
 }

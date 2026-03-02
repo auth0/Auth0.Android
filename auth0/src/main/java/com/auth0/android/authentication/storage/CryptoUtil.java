@@ -12,6 +12,7 @@ import android.util.Base64;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import java.io.IOException;
@@ -39,8 +40,12 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.OAEPParameterSpec;
+import javax.crypto.spec.PSource;
 import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.x500.X500Principal;
+
+import java.security.spec.MGF1ParameterSpec;
 
 /**
  * Created by lbalmaceda on 8/24/17.
@@ -53,7 +58,25 @@ class CryptoUtil {
 
     // Transformations available since API 18
     // https://developer.android.com/training/articles/keystore.html#SupportedCiphers
-    private static final String RSA_TRANSFORMATION = "RSA/ECB/PKCS1Padding";
+    private static final String RSA_TRANSFORMATION = "RSA/ECB/OAEPWithSHA-1AndMGF1Padding";
+    /**
+     * !!! WARNING !!!
+     * "RSA/ECB/PKCS1Padding" is cryptographically deprecated due to vulnerabilities
+     * (e.g. Bleichenbacher padding oracle attacks) and MUST NOT be used for encrypting
+     * new data or for any general-purpose RSA operations.
+     * 
+     * This transformation exists solely to DECRYPT pre-existing legacy data that was
+     * originally encrypted with PKCS#1 v1.5 padding, so that it can be re-encrypted
+     * using the secure OAEP-based {@link #RSA_TRANSFORMATION}. Once all legacy data has
+     * been migrated, support for this constant and any code paths that use it should be
+     * removed.
+     */
+    // CodeQL suppression: This legacy constant is required for backward compatibility
+    // to decrypt credentials encrypted with PKCS1 before the migration to OAEP.
+    // It is only used for decryption (reading old data), never encryption (writing new data).
+    // This constant will be removed once all users have migrated to OAEP.
+    @SuppressWarnings("java/rsa-without-oaep")
+    private static final String LEGACY_PKCS1_RSA_TRANSFORMATION = "RSA/ECB/PKCS1Padding";
     // https://developer.android.com/reference/javax/crypto/Cipher.html
     @SuppressWarnings("SpellCheckingInspection")
     private static final String AES_TRANSFORMATION = "AES/GCM/NOPADDING";
@@ -63,6 +86,17 @@ class CryptoUtil {
     private static final String ALGORITHM_AES = "AES";
     private static final int AES_KEY_SIZE = 256;
     private static final int RSA_KEY_SIZE = 2048;
+
+    // Explicit OAEP specification for consistent behavior across JCE providers.
+    // Using SHA-1 for both OAEP hash and MGF1 hash as it's well-supported by Android KeyStore.
+    // Note: SHA-1 in OAEP/MGF1 context only requires preimage resistance (still secure),
+    // unlike digital signatures which require collision resistance.
+    private static final OAEPParameterSpec OAEP_SPEC = new OAEPParameterSpec(
+        "SHA-1",
+        "MGF1",
+        MGF1ParameterSpec.SHA1,
+        PSource.PSpecified.DEFAULT
+    );
 
     private static final byte FORMAT_MARKER = 0x01;
 
@@ -89,6 +123,32 @@ class CryptoUtil {
         this.KEY_IV_ALIAS = context.getPackageName() + "." + keyAlias + iv_suffix;
         this.context = context;
         this.storage = storage;
+    }
+
+    /**
+     * Decrypts data that was encrypted using legacy RSA/PKCS1 padding.
+     * <p>
+     * WARNING: This must only be used for decrypting legacy data during migration.
+     * New code must always use OAEP padding for RSA encryption/decryption.
+     * 
+     * @param encryptedData The data encrypted with PKCS1 padding
+     * @param privateKey The private key for decryption
+     * @return The decrypted data
+     * @throws NoSuchPaddingException If PKCS1 padding is not available
+     * @throws NoSuchAlgorithmException If RSA algorithm is not available
+     * @throws InvalidKeyException If the private key is invalid
+     * @throws BadPaddingException If the encrypted data has invalid padding
+     * @throws IllegalBlockSizeException If the encrypted data size is invalid
+     */
+    @NonNull
+    @SuppressWarnings("java/rsa-without-oaep")
+    private static byte[] RSADecryptLegacyPKCS1(@NonNull byte[] encryptedData,
+                                                 @NonNull PrivateKey privateKey)
+            throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException,
+            BadPaddingException, IllegalBlockSizeException {
+        Cipher rsaPkcs1Cipher = Cipher.getInstance(LEGACY_PKCS1_RSA_TRANSFORMATION);
+        rsaPkcs1Cipher.init(Cipher.DECRYPT_MODE, privateKey);
+        return rsaPkcs1Cipher.doFinal(encryptedData);
     }
 
     /**
@@ -130,7 +190,8 @@ class CryptoUtil {
                         .setCertificateNotBefore(start.getTime())
                         .setCertificateNotAfter(end.getTime())
                         .setKeySize(RSA_KEY_SIZE)
-                        .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_RSA_PKCS1)
+                        .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_RSA_OAEP)
+                        .setDigests(KeyProperties.DIGEST_SHA1, KeyProperties.DIGEST_SHA256)
                         .setBlockModes(KeyProperties.BLOCK_MODE_ECB)
                         .build();
             } else {
@@ -280,9 +341,9 @@ class CryptoUtil {
         try {
             PrivateKey privateKey = getRSAKeyEntry().getPrivateKey();
             Cipher cipher = Cipher.getInstance(RSA_TRANSFORMATION);
-            cipher.init(Cipher.DECRYPT_MODE, privateKey);
+            cipher.init(Cipher.DECRYPT_MODE, privateKey, OAEP_SPEC);
             return cipher.doFinal(encryptedInput);
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException e) {
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | InvalidAlgorithmParameterException e) {
             /*
              * This exceptions are safe to be ignored:
              *
@@ -293,6 +354,8 @@ class CryptoUtil {
              *      implements it. Was introduced in API 1.
              * - InvalidKeyException:
              *      Thrown if the given key is inappropriate for initializing this cipher.
+             * - InvalidAlgorithmParameterException:
+             *      Thrown if the OAEP parameters are invalid or unsupported.
              *
              * Read more in https://developer.android.com/reference/javax/crypto/Cipher
              */
@@ -329,9 +392,9 @@ class CryptoUtil {
         try {
             Certificate certificate = getRSAKeyEntry().getCertificate();
             Cipher cipher = Cipher.getInstance(RSA_TRANSFORMATION);
-            cipher.init(Cipher.ENCRYPT_MODE, certificate);
+            cipher.init(Cipher.ENCRYPT_MODE, certificate.getPublicKey(), OAEP_SPEC);
             return cipher.doFinal(decryptedInput);
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException e) {
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | InvalidAlgorithmParameterException e) {
             /*
              * This exceptions are safe to be ignored:
              *
@@ -342,6 +405,8 @@ class CryptoUtil {
              *      implements it. Was introduced in API 1.
              * - InvalidKeyException:
              *      Thrown if the given key is inappropriate for initializing this cipher.
+             * - InvalidAlgorithmParameterException:
+             *      Thrown if the OAEP parameters are invalid or unsupported.
              *
              * Read more in https://developer.android.com/reference/javax/crypto/Cipher
              */
@@ -363,6 +428,83 @@ class CryptoUtil {
     }
 
     /**
+     * Attempts to migrate legacy PKCS1-encrypted AES key to OAEP format.
+     * This method tries to decrypt the AES key using legacy PKCS1 padding,
+     * then re-encrypts it with OAEP and stores it for future use.
+     *
+     * @param encryptedAESBytes the encrypted AES key bytes
+     * @return the decrypted AES key if migration succeeds, or null if migration fails
+     */
+    @Nullable
+    private byte[] attemptPKCS1Migration(byte[] encryptedAESBytes) {
+        try {
+            KeyStore keyStore = KeyStore.getInstance(ANDROID_KEY_STORE);
+            keyStore.load(null);
+
+            KeyStore.PrivateKeyEntry rsaKey = findRSAKeyEntry(keyStore);
+            if (rsaKey == null) {
+                Log.d(TAG, "No RSA key found for migration");
+                return null;
+            }
+
+            byte[] decryptedAESKey = RSADecryptLegacyPKCS1(encryptedAESBytes, rsaKey.getPrivateKey());
+
+            if (!isValidAESKeyLength(decryptedAESKey)) {
+                Log.e(TAG, "Decrypted AES key has invalid length: " + decryptedAESKey.length);
+                return null;
+            }
+
+            Log.d(TAG, "PKCS1 migration successful - deleting old keys");
+            
+            deleteRSAKeys();
+
+            byte[] encryptedAESWithOAEP = RSAEncrypt(decryptedAESKey);
+            String encodedEncryptedAES = new String(Base64.encode(encryptedAESWithOAEP, Base64.DEFAULT), StandardCharsets.UTF_8);
+            storage.store(KEY_ALIAS, encodedEncryptedAES);
+            
+            Log.d(TAG, "AES key re-encrypted with OAEP and stored");
+            return decryptedAESKey;
+
+        } catch (BadPaddingException | IllegalBlockSizeException e) {
+            Log.e(TAG, "PKCS1 decryption failed. Data may be corrupted.", e);
+        } catch (KeyStoreException | CertificateException | IOException | 
+                 NoSuchAlgorithmException | UnrecoverableEntryException |
+                 NoSuchPaddingException | InvalidKeyException e) {
+            Log.e(TAG, "Migration failed due to key access error.", e);
+        } catch (CryptoException e) {
+            Log.e(TAG, "Failed to re-encrypt AES key with OAEP.", e);
+        }
+        return null;
+    }
+
+    /**
+     * Finds the RSA private key entry from KeyStore, checking both current and legacy aliases.
+     *
+     * @param keyStore the initialized KeyStore instance
+     * @return the RSA key entry, or null if not found
+     */
+    @Nullable
+    private KeyStore.PrivateKeyEntry findRSAKeyEntry(KeyStore keyStore) 
+            throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableEntryException {
+        if (keyStore.containsAlias(KEY_ALIAS)) {
+            return getKeyEntryCompat(keyStore, KEY_ALIAS);
+        } else if (keyStore.containsAlias(OLD_KEY_ALIAS)) {
+            return getKeyEntryCompat(keyStore, OLD_KEY_ALIAS);
+        }
+        return null;
+    }
+
+    /**
+     * Validates that the decrypted AES key has the correct length for AES-256.
+     *
+     * @param aesKey the decrypted AES key bytes
+     * @return true if the key is valid (32 bytes), false otherwise
+     */
+    private boolean isValidAESKeyLength(byte[] aesKey) {
+        return aesKey != null && aesKey.length == AES_KEY_SIZE / 8;
+    }
+
+    /**
      * Attempts to recover the existing AES Key or generates a new one if none is found.
      *
      * @return a valid  AES Key bytes
@@ -371,42 +513,131 @@ class CryptoUtil {
      */
     @VisibleForTesting
     byte[] getAESKey() throws IncompatibleDeviceException, CryptoException {
+        // Step 1: Try to recover existing AES key encrypted with current format (OAEP)
+        byte[] aesKey = tryRecoverCurrentAESKey();
+        if (aesKey != null) {
+            return aesKey;
+        }
+
+        // Step 2: Try to migrate legacy AES key stored at OLD_KEY_ALIAS
+        aesKey = tryMigrateLegacyAESKey();
+        if (aesKey != null) {
+            return aesKey;
+        }
+
+        // Step 3: Generate new AES key
+        return generateNewAESKey();
+    }
+
+    /**
+     * Attempts to recover the AES key stored at KEY_ALIAS using OAEP decryption.
+     * If OAEP fails, attempts PKCS1 decryption for legacy data migration.
+     *
+     * @return the decrypted AES key, or null if no key exists or recovery failed
+     * @throws IncompatibleDeviceException if the device doesn't support required crypto operations
+     *         and migration also fails
+     */
+    @Nullable
+    private byte[] tryRecoverCurrentAESKey() throws IncompatibleDeviceException {
         String encodedEncryptedAES = storage.retrieveString(KEY_ALIAS);
         if (TextUtils.isEmpty(encodedEncryptedAES)) {
-            encodedEncryptedAES = storage.retrieveString(OLD_KEY_ALIAS);
+            return null;
         }
-        if (encodedEncryptedAES != null) {
-            //Return existing key
-            byte[] encryptedAES = Base64.decode(encodedEncryptedAES, Base64.DEFAULT);
-            byte[] existingAES = RSADecrypt(encryptedAES);
-            final int aesExpectedLengthInBytes = AES_KEY_SIZE / 8;
-            //Prevent returning an 'Empty key' (invalid/corrupted) that was mistakenly saved
-            if (existingAES != null && existingAES.length == aesExpectedLengthInBytes) {
-                //Key exists and has the right size
-                return existingAES;
-            }
+
+        byte[] encryptedAESBytes = Base64.decode(encodedEncryptedAES, Base64.DEFAULT);
+        CryptoException oaepException = null;
+
+        try {
+            return RSADecrypt(encryptedAESBytes);
+        } catch (CryptoException e) {
+            // OAEP decryption failed - could be legacy PKCS1 data or device incompatibility
+            // Store exception to re-throw if migration also fails
+            oaepException = e;
+            Log.d(TAG, "OAEP decryption failed, attempting PKCS1 migration", e);
         }
-        //Key doesn't exist. Generate new AES
+
+        // OAEP failed - attempt PKCS1 migration
+        byte[] migratedKey = attemptPKCS1Migration(encryptedAESBytes);
+        if (migratedKey != null) {
+            return migratedKey;
+        }
+
+        // Migration failed or wasn't attempted
+        // If the original error was IncompatibleDeviceException, re-throw it
+        if (oaepException instanceof IncompatibleDeviceException) {
+            throw (IncompatibleDeviceException) oaepException;
+        }
+
+        // Recovery failed - clean up corrupted keys
+        Log.w(TAG, "Could not recover AES key. Deleting corrupted keys.");
+        deleteRSAKeys();
+        deleteAESKeys();
+        return null;
+    }
+
+    /**
+     * Attempts to migrate a legacy AES key stored at OLD_KEY_ALIAS.
+     * Decrypts with PKCS1, re-encrypts with OAEP, and stores at KEY_ALIAS.
+     *
+     * @return the decrypted AES key if migration succeeds, or null otherwise
+     */
+    @Nullable
+    private byte[] tryMigrateLegacyAESKey() {
+        String encodedOldAES = storage.retrieveString(OLD_KEY_ALIAS);
+        if (TextUtils.isEmpty(encodedOldAES)) {
+            return null;
+        }
+
+        try {
+            byte[] encryptedOldAESBytes = Base64.decode(encodedOldAES, Base64.DEFAULT);
+            KeyStore.PrivateKeyEntry rsaKeyEntry = getRSAKeyEntry();
+
+            byte[] decryptedAESKey = RSADecryptLegacyPKCS1(encryptedOldAESBytes, rsaKeyEntry.getPrivateKey());
+            
+            // Re-encrypt with OAEP and store at new location
+            byte[] encryptedAESWithOAEP = RSAEncrypt(decryptedAESKey);
+            String newEncodedEncryptedAES = new String(Base64.encode(encryptedAESWithOAEP, Base64.DEFAULT), StandardCharsets.UTF_8);
+            storage.store(KEY_ALIAS, newEncodedEncryptedAES);
+            storage.remove(OLD_KEY_ALIAS);
+
+            Log.d(TAG, "Legacy AES key migrated successfully");
+            return decryptedAESKey;
+        } catch (CryptoException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException |
+                 BadPaddingException | IllegalBlockSizeException | IllegalArgumentException e) {
+            Log.e(TAG, "Could not migrate legacy AES key. Will generate new key.", e);
+            deleteAESKeys();
+            return null;
+        }
+    }
+
+    /**
+     * Generates a new AES-256 key, encrypts it with RSA-OAEP, and stores it.
+     *
+     * @return the newly generated AES key bytes
+     * @throws IncompatibleDeviceException if the device doesn't support required algorithms
+     * @throws CryptoException if key generation or encryption fails unexpectedly
+     */
+    private byte[] generateNewAESKey() throws IncompatibleDeviceException, CryptoException {
         try {
             KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM_AES);
             keyGen.init(AES_KEY_SIZE);
-            byte[] aes = keyGen.generateKey().getEncoded();
-            //Save encrypted encoded version
-            byte[] encryptedAES = RSAEncrypt(aes);
-            String encodedEncryptedAESText = new String(Base64.encode(encryptedAES, Base64.DEFAULT), StandardCharsets.UTF_8);
-            storage.store(KEY_ALIAS, encodedEncryptedAESText);
-            return aes;
+            byte[] decryptedAESKey = keyGen.generateKey().getEncoded();
+
+            byte[] encryptedNewAES = RSAEncrypt(decryptedAESKey);
+            String encodedEncryptedNewAESText = new String(Base64.encode(encryptedNewAES, Base64.DEFAULT), StandardCharsets.UTF_8);
+            storage.store(KEY_ALIAS, encodedEncryptedNewAESText);
+            
+            Log.d(TAG, "New AES key generated and stored");
+            return decryptedAESKey;
         } catch (NoSuchAlgorithmException e) {
-            /*
-             * This exceptions are safe to be ignored:
-             *
-             * - NoSuchAlgorithmException:
-             *      Thrown if the Algorithm implementation is not available. AES was introduced in API 1
-             *
-             * Read more in https://developer.android.com/reference/javax/crypto/KeyGenerator
-             */
-            Log.e(TAG, "Error while creating the AES key.", e);
+            Log.e(TAG, "AES algorithm not available.", e);
             throw new IncompatibleDeviceException(e);
+        } catch (CryptoException e) {
+            // Re-throw CryptoException and its subclasses (including IncompatibleDeviceException)
+            throw e;
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error while creating new AES key.", e);
+            throw new CryptoException("Unexpected error while creating new AES key.", e);
         }
     }
 

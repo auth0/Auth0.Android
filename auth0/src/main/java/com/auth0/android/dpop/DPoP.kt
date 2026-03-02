@@ -9,6 +9,7 @@ import com.auth0.android.request.HttpMethod
 import com.auth0.android.request.getErrorBody
 import okhttp3.Response
 import java.lang.reflect.Modifier.PRIVATE
+import java.util.concurrent.atomic.AtomicReference
 
 
 /**
@@ -22,7 +23,9 @@ public data class HeaderData(val authorizationHeader: String, val dpopProof: Str
  * Class for securing requests with DPoP (Demonstrating Proof of Possession) as described in
  * [RFC 9449](https://datatracker.ietf.org/doc/html/rfc9449).
  */
-public class DPoP(private val context: Context) {
+public class DPoP(context: Context) {
+
+    private val applicationContext: Context = context.applicationContext
 
     /**
      * Determines whether a DPoP proof should be generated for the given URL and parameters. The proof should
@@ -79,7 +82,7 @@ public class DPoP(private val context: Context) {
      */
     @Throws(DPoPException::class)
     internal fun generateKeyPair() {
-        DPoPUtil.generateKeyPair(context)
+        DPoPUtil.generateKeyPair(applicationContext)
     }
 
     /**
@@ -100,12 +103,11 @@ public class DPoP(private val context: Context) {
         private const val AUTHORIZATION_HEADER = "Authorization"
         private const val NONCE_HEADER = "DPoP-Nonce"
 
-        @Volatile
         @VisibleForTesting(otherwise  = PRIVATE)
-        internal var _auth0Nonce: String? = null
+        internal val _auth0Nonce: AtomicReference<String?> = AtomicReference(null)
 
         public val auth0Nonce: String?
-            get() = _auth0Nonce
+            get() = _auth0Nonce.get()
 
         /**
          * Stores the nonce value from the Okhttp3 [Response] headers.
@@ -125,9 +127,7 @@ public class DPoP(private val context: Context) {
         @JvmStatic
         internal fun storeNonce(response: Response) {
             response.headers[NONCE_HEADER]?.let {
-                synchronized(this) {
-                    _auth0Nonce = it
-                }
+                _auth0Nonce.set(it)
             }
         }
 
@@ -218,7 +218,7 @@ public class DPoP(private val context: Context) {
         @JvmStatic
         public fun clearKeyPair() {
             DPoPUtil.clearKeyPair()
-            _auth0Nonce = null
+            _auth0Nonce.set(null)
         }
     }
 }

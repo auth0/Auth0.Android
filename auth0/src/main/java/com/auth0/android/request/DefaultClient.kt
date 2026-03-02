@@ -1,12 +1,18 @@
 package com.auth0.android.request
 
 import androidx.annotation.VisibleForTesting
+import com.auth0.android.dpop.DPoPUtil
 import com.auth0.android.request.internal.GsonProvider
 import com.google.gson.Gson
-import okhttp3.*
+import okhttp3.Call
+import okhttp3.Headers
 import okhttp3.Headers.Companion.toHeaders
+import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.Interceptor
+import okhttp3.MediaType
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.logging.HttpLoggingInterceptor
@@ -56,6 +62,12 @@ public class DefaultClient @VisibleForTesting(otherwise = VisibleForTesting.PRIV
     @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal val okHttpClient: OkHttpClient
 
+    // Using another client to prevent OkHttp from retrying network calls especially when using DPoP with replay protection mechanism.
+    // https://auth0team.atlassian.net/browse/ESD-56048.
+    // TODO: This should be replaced with the chain.retryOnConnectionFailure() API when we update to OkHttp 5+
+    @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal val nonRetryableOkHttpClient: OkHttpClient
+
     @Throws(IllegalArgumentException::class, IOException::class)
     override fun load(url: String, options: RequestOptions): ServerResponse {
         val response = prepareCall(url.toHttpUrl(), options).execute()
@@ -90,12 +102,31 @@ public class DefaultClient @VisibleForTesting(otherwise = VisibleForTesting.PRIV
             .url(urlBuilder.build())
             .headers(headers)
             .build()
-        return okHttpClient.newCall(request)
+
+        // Use non-retryable client for DPoP requests
+        val client = if (shouldUseNonRetryableClient(headers)) {
+            nonRetryableOkHttpClient
+        } else {
+            okHttpClient
+        }
+
+        return client.newCall(request)
+    }
+
+    /**
+     * Determines if the request should use the non-retryable OkHttpClient.
+     * Returns true for:
+     * 1. Requests with DPoP header
+     */
+    private fun shouldUseNonRetryableClient(
+        headers: Headers
+    ): Boolean {
+        return headers[DPoPUtil.DPOP_HEADER] != null
     }
 
     init {
-        // client setup
         val builder = OkHttpClient.Builder()
+        // Add retry interceptor
         builder.addInterceptor(RetryInterceptor())
 
         // logging
@@ -115,6 +146,11 @@ public class DefaultClient @VisibleForTesting(otherwise = VisibleForTesting.PRIV
         }
 
         okHttpClient = builder.build()
+
+        // Non-retryable client for DPoP requests
+        nonRetryableOkHttpClient = okHttpClient.newBuilder()
+            .retryOnConnectionFailure(false)
+            .build()
     }
 
 

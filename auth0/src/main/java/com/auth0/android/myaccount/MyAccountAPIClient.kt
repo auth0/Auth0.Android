@@ -281,7 +281,10 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
         val url = getDomainUrlBuilder().addPathSegment(AUTHENTICATION_METHODS).build()
 
         val listAdapter = object : JsonAdapter<List<AuthenticationMethod>> {
-            override fun fromJson(reader: Reader, metadata: Map<String, Any>): List<AuthenticationMethod> {
+            override fun fromJson(
+                reader: Reader,
+                metadata: Map<String, Any>
+            ): List<AuthenticationMethod> {
                 val container = gson.fromJson(reader, AuthenticationMethods::class.java)
                 return container.authenticationMethods
             }
@@ -847,6 +850,10 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
                 }
             }
         }
+    }
+
+    init {
+        factory.setAuth0ClientInfo(auth0.auth0UserAgent.value)
     }
 }
 

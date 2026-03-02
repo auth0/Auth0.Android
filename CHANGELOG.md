@@ -1,5 +1,37 @@
 # Change Log
 
+## [3.13.0](https://github.com/auth0/Auth0.Android/tree/3.13.0) (2026-02-06)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.12.2...3.13.0)
+
+**Added**
+- Expanding Flexible Factors Grant Android Support [\#896](https://github.com/auth0/Auth0.Android/pull/896) ([utkrishtsahu](https://github.com/utkrishtsahu))
+- fix: Prevent DPoP replay protection error due to OkHttp retry [\#902](https://github.com/auth0/Auth0.Android/pull/902) ([pmathew92](https://github.com/pmathew92))
+
+## [3.12.2](https://github.com/auth0/Auth0.Android/tree/3.12.2) (2026-01-23)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.12.1...3.12.2)
+
+**Added**
+- RSA encryption padding change from PKCS1Padding to OAEPWithSHA1And… [\#834](https://github.com/auth0/Auth0.Android/pull/834) ([utkrishtsahu](https://github.com/utkrishtsahu))
+- refactor: Replace synchronized block with AtomicReference for DPoP nonce management [\#895](https://github.com/auth0/Auth0.Android/pull/895) ([pmathew92](https://github.com/pmathew92))
+
+## [3.12.1](https://github.com/auth0/Auth0.Android/tree/3.12.1) (2026-01-07)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.12.0...3.12.1)
+
+**Deprecated**
+- refactor: Deprecated the PasskeyAuthProvider class [\#890](https://github.com/auth0/Auth0.Android/pull/890) ([pmathew92](https://github.com/pmathew92))
+
+**Fixed**
+- fix: Fixing the memory leak introduced in the DPoP flow [\#891](https://github.com/auth0/Auth0.Android/pull/891) ([pmathew92](https://github.com/pmathew92))
+
+## [3.12.0](https://github.com/auth0/Auth0.Android/tree/3.12.0) (2025-12-11)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.11.0...3.12.0)
+
+**Added**
+- feat: Add support for `organization` to custom token exchange [\#885](https://github.com/auth0/Auth0.Android/pull/885) ([pmathew92](https://github.com/pmathew92))
+
+**Changed**
+- refactor: Updating MRRT token store logic [\#884](https://github.com/auth0/Auth0.Android/pull/884) ([pmathew92](https://github.com/pmathew92))
+
 ## [3.11.0](https://github.com/auth0/Auth0.Android/tree/3.11.0) (2025-11-24)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.10.0...3.11.0)
 

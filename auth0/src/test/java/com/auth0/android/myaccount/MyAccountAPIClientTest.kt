@@ -51,6 +51,14 @@ public class MyAccountAPIClientTest {
     }
 
     @Test
+    public fun `should sent user-agent header with request`() {
+        val callback = MockMyAccountCallback<List<Factor>>()
+        client.getFactors().start(callback)
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("Auth0-Client"), Matchers.`is`(Matchers.notNullValue()))
+    }
+
+    @Test
     public fun `passkeyEnrollmentChallenge should build correct URL`() {
         val callback = MockMyAccountCallback<PasskeyEnrollmentChallenge>()
         client.passkeyEnrollmentChallenge()
@@ -113,7 +121,10 @@ public class MyAccountAPIClientTest {
         }
         mockAPI.takeRequest()
         assertThat(error, Matchers.notNullValue())
-        assertThat(error?.message, Matchers.`is`("Authentication method ID not found in Location header."))
+        assertThat(
+            error?.message,
+            Matchers.`is`("Authentication method ID not found in Location header.")
+        )
     }
 
 
@@ -362,7 +373,10 @@ public class MyAccountAPIClientTest {
     public fun `updateAuthenticationMethodById for phone should build correct URL and payload`() {
         val callback = MockMyAccountCallback<AuthenticationMethod>()
         val methodId = "phone|12345"
-        client.updateAuthenticationMethodById(methodId, preferredAuthenticationMethod = PhoneAuthenticationMethodType.SMS).start(callback)
+        client.updateAuthenticationMethodById(
+            methodId,
+            preferredAuthenticationMethod = PhoneAuthenticationMethodType.SMS
+        ).start(callback)
 
         val request = mockAPI.takeRequest()
         val body = bodyFromRequest<String>(request)
@@ -376,7 +390,8 @@ public class MyAccountAPIClientTest {
         val callback = MockMyAccountCallback<AuthenticationMethod>()
         val methodId = "totp|12345"
         val name = "My Authenticator"
-        client.updateAuthenticationMethodById(methodId, authenticationMethodName = name).start(callback)
+        client.updateAuthenticationMethodById(methodId, authenticationMethodName = name)
+            .start(callback)
 
         val request = mockAPI.takeRequest()
         val body = bodyFromRequest<String>(request)
@@ -449,7 +464,10 @@ public class MyAccountAPIClientTest {
 
         val request = mockAPI.takeRequest()
         val body = bodyFromRequest<String>(request)
-        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods/email%7C123/verify"))
+        assertThat(
+            request.path,
+            Matchers.equalTo("/me/v1/authentication-methods/email%7C123/verify")
+        )
         assertThat(request.method, Matchers.equalTo("POST"))
         assertThat(body, Matchers.hasEntry("otp_code", otp as Any))
         assertThat(body, Matchers.hasEntry("auth_session", session as Any))
@@ -497,6 +515,7 @@ public class MyAccountAPIClientTest {
 
     private companion object {
         private const val CLIENT_ID = "CLIENTID"
+        private const val DOMAIN = "test-domain"
         private const val USER_IDENTITY = "user123"
         private const val CONNECTION = "passkey-connection"
         private const val ACCESS_TOKEN = "accessToken"

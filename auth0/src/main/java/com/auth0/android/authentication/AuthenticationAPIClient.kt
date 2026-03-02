@@ -5,13 +5,25 @@ import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
+import com.auth0.android.authentication.mfa.MfaApiClient
 import com.auth0.android.dpop.DPoP
 import com.auth0.android.dpop.DPoPException
 import com.auth0.android.dpop.SenderConstraining
-import com.auth0.android.request.*
-import com.auth0.android.request.internal.*
+import com.auth0.android.request.AuthenticationRequest
+import com.auth0.android.request.ErrorAdapter
+import com.auth0.android.request.JsonAdapter
+import com.auth0.android.request.ProfileRequest
+import com.auth0.android.request.PublicKeyCredentials
+import com.auth0.android.request.Request
+import com.auth0.android.request.SignUpRequest
+import com.auth0.android.request.UserData
+import com.auth0.android.request.internal.BaseAuthenticationRequest
+import com.auth0.android.request.internal.BaseRequest
+import com.auth0.android.request.internal.GsonAdapter
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMap
 import com.auth0.android.request.internal.GsonAdapter.Companion.forMapOf
+import com.auth0.android.request.internal.GsonProvider
+import com.auth0.android.request.internal.RequestFactory
 import com.auth0.android.request.internal.ResponseUtils.isNetworkError
 import com.auth0.android.result.Challenge
 import com.auth0.android.result.Credentials
@@ -71,6 +83,31 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     public override fun useDPoP(context: Context): AuthenticationAPIClient {
         dPoP = DPoP(context)
         return this
+    }
+
+    /**
+     * Creates a new [MfaApiClient] to handle a multi-factor authentication transaction.
+     *
+     * Example usage:
+     * ```
+     * try {
+     *     val credentials = authClient.login("user@example.com", "password").await()
+     * } catch (error: AuthenticationException) {
+     *     if (error.isMultifactorRequired) {
+     *         val mfaToken = error.mfaRequiredErrorPayload?.mfaToken
+     *         if (mfaToken != null) {
+     *             val mfaClient = authClient.mfaClient(mfaToken)
+     *             // Use mfaClient to handle MFA flow
+     *         }
+     *     }
+     * }
+     * ```
+     *
+     * @param mfaToken The token received in the 'mfa_required' error from a login attempt.
+     * @return A new [MfaApiClient] instance configured for the transaction.
+     */
+    public fun mfaClient(mfaToken: String): MfaApiClient {
+        return MfaApiClient(this.auth0, mfaToken)
     }
 
     /**
@@ -749,13 +786,15 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      *
      * @param subjectTokenType the subject token type that is associated with the existing Identity Provider. e.g. 'http://acme.com/legacy-token'
      * @param subjectToken   the subject token, typically obtained through the Identity Provider's SDK
+     * @param organization  id of the organization the user belongs to
      * @return a request to configure and start that will yield [Credentials]
      */
     public fun customTokenExchange(
         subjectTokenType: String,
         subjectToken: String,
+        organization: String? = null
     ): AuthenticationRequest {
-        return tokenExchange(subjectTokenType, subjectToken)
+        return tokenExchange(subjectTokenType, subjectToken, organization)
     }
 
     /**
@@ -974,12 +1013,6 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * parameter with the session transfer token. For example,
      * `https://example.com/login?session_transfer_token=THE_TOKEN`.
      *
-     * ##Availability
-     *
-     * This feature is currently available in
-     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
-     * Please reach out to Auth0 support to get it enabled for your tenant.
-     *
      *
      * @param refreshToken A valid refresh token obtained as part of Auth0 authentication
      * @return a request to fetch a session transfer token
@@ -1043,13 +1076,17 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      */
     private fun tokenExchange(
         subjectTokenType: String,
-        subjectToken: String
+        subjectToken: String,
+        organization: String? = null
     ): AuthenticationRequest {
-        val parameters = ParameterBuilder.newAuthenticationBuilder()
-            .setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
-            .set(SUBJECT_TOKEN_TYPE_KEY, subjectTokenType)
-            .set(SUBJECT_TOKEN_KEY, subjectToken)
-            .asDictionary()
+        val parameters = ParameterBuilder.newAuthenticationBuilder().apply {
+            setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
+            set(SUBJECT_TOKEN_TYPE_KEY, subjectTokenType)
+            set(SUBJECT_TOKEN_KEY, subjectToken)
+            organization?.let {
+                set(ORGANIZATION_KEY, it)
+            }
+        }.asDictionary()
         return loginWithToken(parameters)
     }
 
@@ -1064,7 +1101,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         return factory.get(url.toString(), userProfileAdapter, dPoP)
     }
 
-    private companion object {
+    internal companion object {
         private const val SMS_CONNECTION = "sms"
         private const val EMAIL_CONNECTION = "email"
         private const val USERNAME_KEY = "username"

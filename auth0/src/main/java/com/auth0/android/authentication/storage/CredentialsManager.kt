@@ -81,10 +81,16 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * Stores the given [APICredentials] in the storage for the given audience.
      * @param apiCredentials the API Credentials to be stored
      * @param audience the audience for which the credentials are stored
+     * @param scope the scope for which the credentials are stored
      */
-    override fun saveApiCredentials(apiCredentials: APICredentials, audience: String) {
+    override fun saveApiCredentials(
+        apiCredentials: APICredentials,
+        audience: String,
+        scope: String?
+    ) {
+        val key = getAPICredentialsKey(audience, scope)
         gson.toJson(apiCredentials).let {
-            storage.store(audience, it)
+            storage.store(key, it)
         }
     }
 
@@ -96,11 +102,6 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * parameter with the session transfer token. For example,
      *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
      *
-     * ## Availability
-     *
-     * This feature is currently available in
-     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
-     * Please reach out to Auth0 support to get it enabled for your tenant.
      *
      * It will fail with [CredentialsManagerException] if the existing refresh_token is null or no longer valid.
      * This method will handle saving the refresh_token, if a new one is issued.
@@ -117,11 +118,6 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * parameter with the session transfer token. For example,
      *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
      *
-     * ## Availability
-     *
-     * This feature is currently available in
-     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
-     * Please reach out to Auth0 support to get it enabled for your tenant.
      *
      * It will fail with [CredentialsManagerException] if the existing refresh_token is null or no longer valid.
      * This method will handle saving the refresh_token, if a new one is issued.
@@ -179,11 +175,6 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * parameter with the session transfer token. For example,
      *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
      *
-     * ## Availability
-     *
-     * This feature is currently available in
-     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
-     * Please reach out to Auth0 support to get it enabled for your tenant.
      *
      * It will fail with [CredentialsManagerException] if the existing refresh_token is null or no longer valid.
      * This method will handle saving the refresh_token, if a new one is issued.
@@ -202,11 +193,6 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * parameter with the session transfer token. For example,
      *  `https://example.com/login?session_transfer_token=THE_TOKEN`.
      *
-     * ## Availability
-     *
-     * This feature is currently available in
-     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
-     * Please reach out to Auth0 support to get it enabled for your tenant.
      *
      * It will fail with [CredentialsManagerException] if the existing refresh_token is null or no longer valid.
      * This method will handle saving the refresh_token, if a new one is issued.
@@ -538,6 +524,17 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                 saveCredentials(credentials)
                 callback.onSuccess(credentials)
             } catch (error: AuthenticationException) {
+                if (error.isMultifactorRequired) {
+                    callback.onFailure(
+                        CredentialsManagerException(
+                            CredentialsManagerException.Code.MFA_REQUIRED,
+                            error.message ?: "Multi-factor authentication is required to complete the credential renewal.",
+                            error,
+                            error.mfaRequiredErrorPayload
+                        )
+                    )
+                    return@execute
+                }
                 val exception = when {
                     error.isRefreshTokenDeleted || error.isInvalidRefreshToken -> CredentialsManagerException.Code.RENEW_FAILED
 
@@ -590,14 +587,23 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         headers: Map<String, String>,
         callback: Callback<APICredentials, CredentialsManagerException>
     ) {
+
         serialExecutor.execute {
             //Check if existing api credentials are present and valid
-            val apiCredentialsJson = storage.retrieveString(audience)
+            val key = getAPICredentialsKey(audience, scope)
+            val apiCredentialsJson = storage.retrieveString(key)
             apiCredentialsJson?.let {
                 val apiCredentials = gson.fromJson(it, APICredentials::class.java)
                 val willTokenExpire = willExpire(apiCredentials.expiresAt.time, minTtl.toLong())
-                val scopeChanged = hasScopeChanged(apiCredentials.scope, scope)
+
+                val scopeChanged = hasScopeChanged(
+                    apiCredentials.scope,
+                    scope,
+                    ignoreOpenid = scope?.contains("openid") == false
+                )
+
                 val hasExpired = hasExpired(apiCredentials.expiresAt.time)
+
                 if (!hasExpired && !willTokenExpire && !scopeChanged) {
                     callback.onSuccess(apiCredentials)
                     return@execute
@@ -641,12 +647,22 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                 val newApiCredentials = newCredentials.toAPICredentials()
                 storage.store(KEY_REFRESH_TOKEN, updatedRefreshToken)
                 storage.store(KEY_ID_TOKEN, newCredentials.idToken)
-                saveApiCredentials(newApiCredentials, audience)
+                saveApiCredentials(newApiCredentials, audience, scope)
                 callback.onSuccess(newApiCredentials)
             } catch (error: AuthenticationException) {
+                if (error.isMultifactorRequired) {
+                    callback.onFailure(
+                        CredentialsManagerException(
+                            CredentialsManagerException.Code.MFA_REQUIRED,
+                            error.message ?: "Multi-factor authentication is required to complete the credential renewal.",
+                            error,
+                            error.mfaRequiredErrorPayload
+                        )
+                    )
+                    return@execute
+                }
                 val exception = when {
                     error.isRefreshTokenDeleted || error.isInvalidRefreshToken -> CredentialsManagerException.Code.RENEW_FAILED
-
                     error.isNetworkError -> CredentialsManagerException.Code.NO_NETWORK
                     else -> CredentialsManagerException.Code.API_ERROR
                 }
@@ -702,10 +718,13 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
 
     /**
      * Removes the credentials for the given audience from the storage if present.
+     * @param audience Audience for which the [APICredentials] are stored
+     * @param scope Optional scope for which the [APICredentials] are stored. If the credentials were initially fetched/stored with scope,
+     * it is recommended to pass scope also while clearing them.
      */
-    override fun clearApiCredentials(audience: String) {
-        storage.remove(audience)
-        Log.d(TAG, "API Credentials for $audience were just removed from the storage")
+    override fun clearApiCredentials(audience: String, scope: String?) {
+        val key = getAPICredentialsKey(audience, scope)
+        storage.remove(key)
     }
 
     /**

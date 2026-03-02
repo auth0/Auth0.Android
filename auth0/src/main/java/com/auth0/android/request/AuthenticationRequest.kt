@@ -2,7 +2,6 @@ package com.auth0.android.request
 
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationException
-import com.auth0.android.callback.Callback
 import com.auth0.android.result.Credentials
 
 /**
@@ -74,4 +73,15 @@ public interface AuthenticationRequest : Request<Credentials, AuthenticationExce
      * @return the current builder instance
      */
     public fun withIdTokenVerificationIssuer(issuer: String): AuthenticationRequest
+
+    /**
+     * Adds a validator to be executed before the request is sent.
+     * Multiple validators can be added and will be executed in order.
+     *
+     * @param validator the validator to add
+     * @return itself
+     */
+    override fun addValidator(validator: RequestValidator): AuthenticationRequest {
+        return this
+    }
 }

@@ -1,18 +1,15 @@
 package com.auth0.android.authentication.storage
 
+import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.callback.Callback
-import com.auth0.android.request.internal.GsonProvider
-import com.auth0.android.request.internal.Jwt
 import com.auth0.android.result.APICredentials
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.SSOCredentials
 import com.auth0.android.result.UserProfile
 import com.auth0.android.util.Clock
 import java.util.*
-import kotlin.collections.component1
-import kotlin.collections.component2
 
 /**
  * Base class meant to abstract common logic across Credentials Manager implementations.
@@ -36,7 +33,12 @@ public abstract class BaseCredentialsManager internal constructor(
 
     @Throws(CredentialsManagerException::class)
     public abstract fun saveCredentials(credentials: Credentials)
-    public abstract fun saveApiCredentials(apiCredentials: APICredentials, audience: String)
+    public abstract fun saveApiCredentials(
+        apiCredentials: APICredentials,
+        audience: String,
+        scope: String? = null
+    )
+
     public abstract fun getCredentials(callback: Callback<Credentials, CredentialsManagerException>)
     public abstract fun getSsoCredentials(
         parameters: Map<String, String>,
@@ -145,7 +147,7 @@ public abstract class BaseCredentialsManager internal constructor(
     public abstract val userProfile: UserProfile?
 
     public abstract fun clearCredentials()
-    public abstract fun clearApiCredentials(audience: String)
+    public abstract fun clearApiCredentials(audience: String, scope: String? = null)
     public abstract fun hasValidCredentials(): Boolean
     public abstract fun hasValidCredentials(minTtl: Long): Boolean
 
@@ -158,17 +160,24 @@ public abstract class BaseCredentialsManager internal constructor(
      *
      * @param storedScope   the stored scope, separated by space characters.
      * @param requiredScope the required scope, separated by space characters.
+     * @param ignoreOpenid whether to ignore the openid scope from the storedScope or not while comparing.
      * @return whether the scope are different or not
      */
-    protected fun hasScopeChanged(storedScope: String?, requiredScope: String?): Boolean {
+    protected fun hasScopeChanged(
+        storedScope: String?,
+        requiredScope: String?,
+        ignoreOpenid: Boolean = false
+    ): Boolean {
         if (requiredScope == null) {
             return false
         }
-        val stored = storedScope.orEmpty().split(" ").toTypedArray()
-        Arrays.sort(stored)
-        val required = requiredScope.split(" ").toTypedArray()
-        Arrays.sort(required)
-        return !stored.contentEquals(required)
+        val storedScopes =
+            storedScope.orEmpty().split(" ").filter { it.isNotEmpty() }.toMutableSet()
+        if (ignoreOpenid) {
+            storedScopes.remove("openid")
+        }
+        val requiredScopes = requiredScope.split(" ").filter { it.isNotEmpty() }.toSet()
+        return storedScopes != requiredScopes
     }
 
     /**
@@ -195,5 +204,19 @@ public abstract class BaseCredentialsManager internal constructor(
      */
     protected fun hasExpired(expiresAt: Long): Boolean {
         return expiresAt <= currentTimeInMillis
+    }
+
+    /**
+     * Returns the key for storing the APICredentials in storage. Uses a combination of audience and scope.
+     *
+     * @param audience the audience of the credentials.
+     * @param scope    optional scope for the credentials.
+     */
+    protected fun getAPICredentialsKey(audience: String, scope: String?): String {
+        // Use audience if scope is null else use a combination of audience and scope
+        if (scope == null) return audience
+        val sortedScope = scope.split(" ").sorted().joinToString("::")
+        return "$audience::${sortedScope}"
+
     }
 }
