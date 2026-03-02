@@ -61,19 +61,27 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
 
     // Specialized factories for MFA-specific errors
     private val listAuthenticatorsFactory: RequestFactory<MfaListAuthenticatorsException> by lazy {
-        RequestFactory(auth0.networkingClient, createListAuthenticatorsErrorAdapter())
+        RequestFactory(auth0.networkingClient, createListAuthenticatorsErrorAdapter()).apply {
+            setAuth0ClientInfo(auth0.auth0UserAgent.value)
+        }
     }
 
     private val enrollmentFactory: RequestFactory<MfaEnrollmentException> by lazy {
-        RequestFactory(auth0.networkingClient, createEnrollmentErrorAdapter())
+        RequestFactory(auth0.networkingClient, createEnrollmentErrorAdapter()).apply {
+            setAuth0ClientInfo(auth0.auth0UserAgent.value)
+        }
     }
 
     private val challengeFactory: RequestFactory<MfaChallengeException> by lazy {
-        RequestFactory(auth0.networkingClient, createChallengeErrorAdapter())
+        RequestFactory(auth0.networkingClient, createChallengeErrorAdapter()).apply {
+            setAuth0ClientInfo(auth0.auth0UserAgent.value)
+        }
     }
 
     private val verifyFactory: RequestFactory<MfaVerifyException> by lazy {
-        RequestFactory(auth0.networkingClient, createVerifyErrorAdapter())
+        RequestFactory(auth0.networkingClient, createVerifyErrorAdapter()).apply {
+            setAuth0ClientInfo(auth0.auth0UserAgent.value)
+        }
     }
 
     /**
@@ -653,12 +661,5 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
         private const val GRANT_TYPE_MFA_OOB = "http://auth0.com/oauth/grant-type/mfa-oob"
         private const val GRANT_TYPE_MFA_RECOVERY_CODE =
             "http://auth0.com/oauth/grant-type/mfa-recovery-code"
-    }
-
-    init {
-        listAuthenticatorsFactory.setAuth0ClientInfo(auth0.auth0UserAgent.value)
-        enrollmentFactory.setAuth0ClientInfo(auth0.auth0UserAgent.value)
-        challengeFactory.setAuth0ClientInfo(auth0.auth0UserAgent.value)
-        verifyFactory.setAuth0ClientInfo(auth0.auth0UserAgent.value)
     }
 }

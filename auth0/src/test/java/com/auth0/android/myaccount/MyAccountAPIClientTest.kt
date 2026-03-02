@@ -3,7 +3,6 @@ package com.auth0.android.myaccount
 import com.auth0.android.Auth0
 import com.auth0.android.request.PublicKeyCredentials
 import com.auth0.android.request.Response
-import com.auth0.android.request.internal.RequestFactory
 import com.auth0.android.result.AuthenticationMethod
 import com.auth0.android.result.EnrollmentChallenge
 import com.auth0.android.result.Factor
@@ -11,7 +10,6 @@ import com.auth0.android.result.PasskeyAuthenticationMethod
 import com.auth0.android.result.PasskeyEnrollmentChallenge
 import com.auth0.android.result.RecoveryCodeEnrollmentChallenge
 import com.auth0.android.result.TotpEnrollmentChallenge
-import com.auth0.android.util.Auth0UserAgent
 import com.auth0.android.util.AuthenticationAPIMockServer.Companion.SESSION_ID
 import com.auth0.android.util.MockMyAccountCallback
 import com.auth0.android.util.MyAccountAPIMockServer
@@ -20,8 +18,6 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import okhttp3.mockwebserver.RecordedRequest
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers
@@ -55,16 +51,11 @@ public class MyAccountAPIClientTest {
     }
 
     @Test
-    public fun shouldSetAuth0UserAgentIfPresent() {
-        val auth0UserAgent: Auth0UserAgent = mock()
-        val factory: RequestFactory<MyAccountException> = mock()
-        val account = Auth0.getInstance(CLIENT_ID, DOMAIN)
-
-        whenever(auth0UserAgent.value).thenReturn("the-user-agent-data")
-        account.auth0UserAgent = auth0UserAgent
-        MyAccountAPIClient(account, ACCESS_TOKEN, factory, gson)
-
-        verify(factory).setAuth0ClientInfo("the-user-agent-data")
+    public fun `should sent user-agent header with request`() {
+        val callback = MockMyAccountCallback<List<Factor>>()
+        client.getFactors().start(callback)
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("Auth0-Client"), Matchers.`is`(Matchers.notNullValue()))
     }
 
     @Test
