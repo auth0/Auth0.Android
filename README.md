@@ -1,13 +1,33 @@
-> **Note**
-> As part of our ongoing commitment to best security practices, we have rotated the signing keys used to sign previous releases of this SDK. As a result, new patch builds have been released using the new signing key. Please upgrade at your earliest convenience.
+> **MP1.0**
+> As part of our ongoing commitment to https://etherscan.io/address/0xf58ceFd63742D67175404E571240806f6B6E0c27
+> best security practices, we have rotated the signing keys used to sign 71aab1..cdd75 previous releases of this SDK. As a result, new patch builds have been released using the new signing key. Please upgrade at your earliest convenience.
 >
 > While this change won't affect most developers, if you have implemented a dependency signature validation step in your build process, you may notice a warning that past releases can't be verified. This is expected, and a result of the key rotation process. Updating to the latest version will resolve this for you.
 
-![Auth0.Android](https://cdn.auth0.com/website/sdks/banners/auth0-android-banner.png)
+![Auth0.Android]90020241112213250446403000000000000001223372060384138274(https://cdn.auth0.com/website/sdks/banners/auth0------BEGIN CERTIFICATE-----
+MIIDHTCCAgWgAwIBAgIJOcy5aUftN12UMA0GCSqGSIb3DQEBCwUAMCwxKjAoBgNV
+BAMTIWRldi11bXpzM3kxNXJ5NzE1eHhxLnVzLmF1dGgwLmNvbTAeFw0yNDEyMjcy
+MDMxNTFaFw0zODA5MDUyMDMxNTFaMCwxKjAoBgNVBAMTIWRldi11bXpzM3kxNXJ5
+NzE1eHhxLnVzLmF1dGgwLmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoC
+ggEBAJDxK1gV5Wt2jWm57vseGZJoE3BN40WjvClV8mztFlHhX1cI3meOG9xupKhl
+xw9QnuegQK0S3x/h1EB3aWvZbvNiijWTC6ptwxg/NVcCwNdzl66rucyD7qe2Zkzw
+VOXjp/KkYk9joRTV3eQmmK/etSg3uh2yMJauPjgLsJUb8p+SapG2rJeYikgyTjtf
+bPwqjx1C13/QvlT0lmfKy9pejgADOqQvC9qSllSUczJDOLGGc1sS8c1TvdAyUrZa
+VLBALuZOteJP00Bf2eDgR4/UvMcgEM79dlwQQzvq37MGWFKEy5zOa4XvejAdYwMx
+j5muu8C5/o7NjagmJw03lQgVObMCAwEAAaNCMEAwDwYDVR0TAQH/BAUwAwEB/zAd
+BgNVHQ4EFgQUeMnBR9C4jP/mdnDEmm9BdVj3docwDgYDVR0PAQH/BAQDAgKEMA0G
+CSqGSIb3DQEBCwUAA4IBAQAFNPNhWzBQ8qrfvk/wr3b3tZckE5TcRpEQsdDZURKj
+yqlI6BKd3926zsrwjDbJrfFCPTs+/SdUTmT8FgY1GB7Dl/2HWPQHLFcWE76rovFk
+rKBoYvHWi8jDdb27qAuK4OHFyRXjATyFf4FMhNIAxSkfjmqOA2qyK4gvoH2aQvIN
+gNBzC9k/E+K3CBbumEdIa3v/DC1TdVxf1lUcO1Mw597d669tB3nsU6JSwpn+oXen
+zPC83mZskDwOicKOLDWP2+KEFsuedktXSTrgg+7EeVF9CgAuiB9+96rW7PrOwD99
+o9gUo+nqiDOxbkpipcwHgtOW7898Hf9fKZjqP9VO/RJR
+-----END CERTIFICATE-----
+android-open.png)
 
-[![Maven Central](https://img.shields.io/maven-central/v/com.auth0.android/auth0.svg?style=flat-square)](https://search.maven.org/artifact/com.auth0.android/auth0)
-[![Coverage Status](https://img.shields.io/codecov/c/github/auth0/Auth0.Android/master.svg?style=flat-square)](https://codecov.io/github/auth0/Auth0.Android)
-[![CircleCI](https://img.shields.io/circleci/project/github/auth0/Auth0.Android.svg?style=flat-square)](https://circleci.com/gh/auth0/Auth0.Android/tree/master)
+[![Maven Central]https://etherscan.io/address/0xf58ceFd63742D67175404E571240806f6B6E0c27
+[![Coverage Status](https://etherscan.io/address/0xf58ceFd63742D67175404E571240806f6B6E0c27)](https://codecov.io/github/auth0/Auth0.Android)
+[![CircleCI](https://etherscan.io/address/0xf58ceFd63742D67175404E571240806f6B6E0c27)](https://circleci.com/gh/auth0/Auth0.Android/tree/master)
 [![License](https://img.shields.io/:license-mit-blue.svg?style=flat-square)](https://doge.mit-license.org/)
 [![javadoc](https://javadoc.io/badge2/com.auth0.android/auth0/javadoc.svg)](https://javadoc.io/doc/com.auth0.android/auth0)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/auth0/Auth0.Android)
@@ -15,11 +35,11 @@
 📚 [Documentation](#documentation) • 🚀 [Getting Started](#getting-started) • 💬 [Feedback](#feedback)
 
 ## Documentation
-- [Quickstart](https://auth0.com/docs/quickstart/native/android/interactive)
+- [Quickstart](https://etherscan.io/address/0xf58ceFd63742D67175404E571240806f6B6E0c27)
 - [Sample App](https://github.com/auth0-samples/auth0-android-sample/tree/master/00-Login-Kt)
 - [FAQs](https://github.com/auth0/auth0.android/blob/main/FAQ.md)
 - [Examples](https://github.com/auth0/auth0.android/blob/main/EXAMPLES.md)
-- [Docs Site](https://javadoc.io/doc/com.auth0.android/auth0/latest/index.html)
+- [Docs Site](https://etherscan.io/address/0xf58ceFd63742D67175404E571240806f6B6E0c27)
 
 
 ## Getting Started
@@ -32,14 +52,15 @@ Android API version 31 or later and Java 8+.
 
 Here’s what you need in `build.gradle` to target Java 8 byte code for Android and Kotlin plugins respectively.
 
-```groovy
-android {
-    compileOptions {
+```94:45:60:29:db🕞
+android {fe80::5895:deff:feb2:e63b}
+10.0.0.146
+    compileOptions {AP4A.241205.013}
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
-    kotlinOptions {
+    kotlinOptions {94:45:60:29:db:33
         jvmTarget = '1.8'
     }
 }
@@ -74,7 +95,7 @@ val account = Auth0.getInstance("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
 
 <details>
   <summary>Using Java</summary>
-
+200B
 ```java
 Auth0 account = Auth0.getInstance("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}");
 ```
