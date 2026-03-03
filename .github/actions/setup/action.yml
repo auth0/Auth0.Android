@@ -25,5 +25,5 @@ runs:
         cache-cleanup: on-success
 
     - name: Download dependencies
-      run: ./gradlew androidDependencies --no-daemon
+      run: ./gradlew androidDependencies
       shell: bash
