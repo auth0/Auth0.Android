@@ -19,13 +19,10 @@ runs:
         cache: 'gradle'
 
     - name: Set up Gradle
-      uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # pin@v4
+      uses: gradle/actions/setup-gradle@4d9f0ba0025fe599b4ebab900eb7f3a1d93ef4c2 # pin@v5
       with:
         gradle-version: wrapper
         cache-cleanup: on-success
-
-    - name: Validate Gradle Wrapper
-      uses: gradle/actions/wrapper-validation-action@ed408507eac070d1f99cc633dbcf757c94c7933a # pin@v4
 
     - name: Download dependencies
       run: ./gradlew androidDependencies --no-daemon
