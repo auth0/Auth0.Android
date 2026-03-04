@@ -3,6 +3,11 @@ package com.auth0.android.management
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
 
+
+@Deprecated(
+    """ManagementException is deprecated and will be removed in the next major version of the SDK. """,
+    level = DeprecationLevel.WARNING
+)
 public class ManagementException @JvmOverloads constructor(
     message: String,
     exception: Auth0Exception? = null
