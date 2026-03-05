@@ -208,7 +208,7 @@ public class SecureCredentialsManagerTest {
         verifyNoMoreInteractions(storage)
         val ssoCredentials = SSOCredentialsMock.create(
             "accessToken", "identityToken",
-            "issuedTokenType", "tokenType", "refresh_token", 60
+            "issuedTokenType", "tokenType", "refresh_token", Date(CredentialsMock.CURRENT_TIME_MS + 60 * 1000)
         )
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         val storedJson = insertTestCredentials(
@@ -230,7 +230,7 @@ public class SecureCredentialsManagerTest {
         verifyNoMoreInteractions(storage)
         val sessionTransferCredentials = SSOCredentialsMock.create(
             "accessToken", "identityToken",
-            "issuedTokenType", "tokenType", "refresh_token", 60
+            "issuedTokenType", "tokenType", "refresh_token", Date(CredentialsMock.CURRENT_TIME_MS + 60 * 1000)
         )
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         insertTestCredentials(
@@ -331,6 +331,7 @@ public class SecureCredentialsManagerTest {
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         Mockito.`when`(client.ssoExchange("refreshToken"))
             .thenReturn(SSOCredentialsRequest)
+        val ssoExpiresAt = Date(CredentialsMock.CURRENT_TIME_MS + 60 * 1000)
         Mockito.`when`(SSOCredentialsRequest.execute()).thenReturn(
             SSOCredentialsMock.create(
                 "web-sso-token",
@@ -338,7 +339,7 @@ public class SecureCredentialsManagerTest {
                 "issued-token-type",
                 "token-type",
                 "refresh-token",
-                60
+                ssoExpiresAt
             )
         )
         insertTestCredentials(
@@ -368,7 +369,7 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(credentials.tokenType, Is.`is`("token-type"))
         MatcherAssert.assertThat(credentials.issuedTokenType, Is.`is`("issued-token-type"))
         MatcherAssert.assertThat(credentials.refreshToken, Is.`is`("refresh-token"))
-        MatcherAssert.assertThat(credentials.expiresIn, Is.`is`(60))
+        MatcherAssert.assertThat(credentials.expiresAt, Is.`is`(ssoExpiresAt))
         verify(storage).store(eq("com.auth0.credentials"), stringCaptor.capture())
         val encodedJson = stringCaptor.firstValue
         MatcherAssert.assertThat(encodedJson, Is.`is`(Matchers.notNullValue()))
@@ -512,6 +513,7 @@ public class SecureCredentialsManagerTest {
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         Mockito.`when`(client.ssoExchange("refreshToken"))
             .thenReturn(SSOCredentialsRequest)
+        val ssoExpiresAt = Date(CredentialsMock.CURRENT_TIME_MS + 60 * 1000)
         Mockito.`when`(SSOCredentialsRequest.execute()).thenReturn(
             SSOCredentialsMock.create(
                 "web-sso-token",
@@ -519,7 +521,7 @@ public class SecureCredentialsManagerTest {
                 "issued-token-type",
                 "token-type",
                 "refresh-token",
-                60
+                ssoExpiresAt
             )
         )
         insertTestCredentials(
@@ -547,7 +549,7 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(credentials.tokenType, Is.`is`("token-type"))
         MatcherAssert.assertThat(credentials.issuedTokenType, Is.`is`("issued-token-type"))
         MatcherAssert.assertThat(credentials.refreshToken, Is.`is`("refresh-token"))
-        MatcherAssert.assertThat(credentials.expiresIn, Is.`is`(60))
+        MatcherAssert.assertThat(credentials.expiresAt, Is.`is`(ssoExpiresAt))
         verify(storage).store(eq("com.auth0.credentials"), stringCaptor.capture())
         val encodedJson = stringCaptor.firstValue
         MatcherAssert.assertThat(encodedJson, Is.`is`(Matchers.notNullValue()))

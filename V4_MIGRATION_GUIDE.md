@@ -15,6 +15,7 @@ v4 of the Auth0 Android SDK includes significant build toolchain updates, update
 - [**Breaking Changes**](#breaking-changes)
   + [Classes Removed](#classes-removed)
   + [DPoP Configuration Moved to Builder](#dpop-configuration-moved-to-builder)
+  + [SSOCredentials.expiresIn Renamed to expiresAt](#ssocredentialsexpiresin-renamed-to-expiresat)
 - [**Default Values Changed**](#default-values-changed)
   + [Credentials Manager minTTL](#credentials-manager-minttl)
 - [**Behavior Changes**](#behavior-changes)
@@ -122,6 +123,28 @@ WebAuthProvider
 
 This change ensures that DPoP configuration is scoped to individual login requests rather than
 persisting across the entire application lifecycle.
+
+### `SSOCredentials.expiresIn` Renamed to `expiresAt`
+
+**Change:** The `expiresIn` property in `SSOCredentials` has been renamed to `expiresAt` and its type changed from `Int` to `Date`.
+
+In v3, `expiresIn` held the raw number of seconds until the session transfer token expired. In v4, the SDK now automatically converts this value into an absolute expiration `Date` (computed as current time + seconds) during deserialization, consistent with how `Credentials.expiresAt` works. The property has been renamed to `expiresAt` to reflect that it now represents an absolute point in time rather than a duration.
+
+**v3:**
+
+```kotlin
+val ssoCredentials: SSOCredentials = // ...
+val secondsUntilExpiry: Int = ssoCredentials.expiresIn
+```
+
+**v4:**
+
+```kotlin
+val ssoCredentials: SSOCredentials = // ...
+val expirationDate: Date = ssoCredentials.expiresAt
+```
+
+**Impact:** If your code references `ssoCredentials.expiresIn`, rename it to `ssoCredentials.expiresAt`. The value is now an absolute `Date` instead of a duration in seconds.
 
 ## Default Values Changed
 
