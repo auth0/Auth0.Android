@@ -2381,7 +2381,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public fun shouldSsoExchange() {
-        mockAPI.willReturnSuccessfulLogin()
+        mockAPI.willReturnSuccessfulSSOExchange()
         val callback = MockAuthenticationCallback<SSOCredentials>()
         client.ssoExchange("refresh-token")
             .start(callback)
@@ -2413,7 +2413,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public fun shouldSsoExchangeSync() {
-        mockAPI.willReturnSuccessfulLogin()
+        mockAPI.willReturnSuccessfulSSOExchange()
         val sessionTransferCredentials = client.ssoExchange("refresh-token")
             .execute()
         val request = mockAPI.takeRequest()
@@ -2437,7 +2437,7 @@ public class AuthenticationAPIClientTest {
     @Test
     @ExperimentalCoroutinesApi
     public fun shouldAwaitSsoExchange(): Unit = runTest {
-        mockAPI.willReturnSuccessfulLogin()
+        mockAPI.willReturnSuccessfulSSOExchange()
         val ssoCredentials = client
             .ssoExchange("refresh-token")
             .await()
@@ -3096,7 +3096,7 @@ public class AuthenticationAPIClientTest {
         whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
         whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
 
-        mockAPI.willReturnSuccessfulLogin()
+        mockAPI.willReturnSuccessfulSSOExchange()
         val callback = MockAuthenticationCallback<SSOCredentials>()
 
         client.useDPoP(mockContext).ssoExchange("refresh-token")

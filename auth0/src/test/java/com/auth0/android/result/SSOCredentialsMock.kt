@@ -1,19 +1,21 @@
 package com.auth0.android.result
 
+import java.util.Date
+
 public class SSOCredentialsMock {
 
     public companion object {
 
         public fun create(
             accessToken: String,
-            idToken:String ,
+            idToken: String,
             issuedTokenType: String,
             type: String,
             refreshToken: String?,
-            expiresIn: Int
+            expiresAt: Date
         ): SSOCredentials {
             return SSOCredentials(
-                accessToken,idToken, issuedTokenType, type, expiresIn, refreshToken
+                accessToken, idToken, issuedTokenType, type, expiresAt, refreshToken
             )
         }
     }
