@@ -96,6 +96,19 @@ internal class AuthenticationAPIMockServer : APIMockServer() {
         return this
     }
 
+    fun willReturnSuccessfulSSOExchange(): AuthenticationAPIMockServer {
+        val json = """{
+          "access_token": "$ACCESS_TOKEN",
+          "id_token": "$ID_TOKEN",
+          "issued_token_type": "urn:auth0:params:oauth:token-type:session-transfer-token",
+          "token_type": "N_A",
+          "expires_in": 86000,
+          "refresh_token": "$REFRESH_TOKEN"
+        }"""
+        server.enqueue(responseWithJSON(json, 200))
+        return this
+    }
+
     fun willReturnSuccessfulLoginWithRecoveryCode(): AuthenticationAPIMockServer {
         val json = """{
           "refresh_token": "$REFRESH_TOKEN",
