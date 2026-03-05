@@ -3,12 +3,10 @@ package com.auth0.android.request.internal
 import com.auth0.android.result.CredentialsMock
 import com.auth0.android.result.SSOCredentials
 import com.google.gson.Gson
-import com.google.gson.JsonParseException
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
 import org.hamcrest.Matchers
 import org.hamcrest.core.Is
-import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 

@@ -7,7 +7,7 @@ import com.google.gson.JsonDeserializer
 import com.google.gson.JsonElement
 import com.google.gson.JsonParseException
 import java.lang.reflect.Type
-import java.util.*
+import java.util.Date
 
 internal open class SSOCredentialsDeserializer : JsonDeserializer<SSOCredentials> {
     @Throws(JsonParseException::class)
@@ -33,9 +33,11 @@ internal open class SSOCredentialsDeserializer : JsonDeserializer<SSOCredentials
         val refreshToken =
             context.deserialize<String>(jsonObject.remove("refresh_token"), String::class.java)
 
-        var expiresInDate: Date? = null
+        var expiresInDate: Date?
         if (expiresIn != null) {
             expiresInDate = Date(currentTimeInMillis + expiresIn * 1000)
+        } else {
+            throw JsonParseException("Missing the required property expires_in")
         }
 
         return createSSOCredentials(
