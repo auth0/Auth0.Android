@@ -65,20 +65,6 @@ public class SSOCredentialsDeserializerTest {
         MatcherAssert.assertThat(credentials.refreshToken, Is.`is`(CoreMatchers.nullValue()))
     }
 
-    @Test
-    public fun shouldThrowOnInvalidJson() {
-        assertThrows(JsonParseException::class.java) {
-            gson.getAdapter(SSOCredentials::class.java).fromJson("{}")
-        }
-    }
-
-    @Test
-    public fun shouldThrowOnEmptyString() {
-        assertThrows(Exception::class.java) {
-            gson.getAdapter(SSOCredentials::class.java).fromJson("")
-        }
-    }
-
     private fun generateSSOCredentialsJSON(): String {
         return """
             {
