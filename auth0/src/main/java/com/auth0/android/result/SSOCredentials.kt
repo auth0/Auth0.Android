@@ -52,7 +52,7 @@ public data class SSOCredentials(
      *
      * @return the expiration Date of this session transfer token
      */
-    @field:SerializedName("expires_in") public val expiresIn: Date,
+    @field:SerializedName("expires_in") public val expiresAt: Date,
 
     /**
      *  Rotated refresh token. Only available when Refresh Token Rotation is enabled.
@@ -68,6 +68,6 @@ public data class SSOCredentials(
 ) {
 
     override fun toString(): String {
-        return "SSOCredentials(sessionTransferToken = ****, idToken = ****,issuedTokenType = $issuedTokenType, tokenType = $tokenType, expiresIn = $expiresIn, refreshToken = ****)"
+        return "SSOCredentials(sessionTransferToken = ****, idToken = ****,issuedTokenType = $issuedTokenType, tokenType = $tokenType, expiresAt = $expiresAt, refreshToken = ****)"
     }
 }

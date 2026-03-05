@@ -12,10 +12,10 @@ public class SSOCredentialsMock {
             issuedTokenType: String,
             type: String,
             refreshToken: String?,
-            expiresIn: Date
+            expiresAt: Date
         ): SSOCredentials {
             return SSOCredentials(
-                accessToken, idToken, issuedTokenType, type, expiresIn, refreshToken
+                accessToken, idToken, issuedTokenType, type, expiresAt, refreshToken
             )
         }
     }

@@ -348,7 +348,7 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(credentials.tokenType, Is.`is`("token-type"))
         MatcherAssert.assertThat(credentials.issuedTokenType, Is.`is`("issued-token-type"))
         MatcherAssert.assertThat(credentials.refreshToken, Is.`is`("refresh-token"))
-        MatcherAssert.assertThat(credentials.expiresIn, Is.`is`(ssoExpiresAt))
+        MatcherAssert.assertThat(credentials.expiresAt, Is.`is`(ssoExpiresAt))
         verify(storage).store(eq("com.auth0.credentials"), stringCaptor.capture())
         val encodedJson = stringCaptor.firstValue
         MatcherAssert.assertThat(encodedJson, Is.`is`(Matchers.notNullValue()))
@@ -528,7 +528,7 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(credentials.tokenType, Is.`is`("token-type"))
         MatcherAssert.assertThat(credentials.issuedTokenType, Is.`is`("issued-token-type"))
         MatcherAssert.assertThat(credentials.refreshToken, Is.`is`("refresh-token"))
-        MatcherAssert.assertThat(credentials.expiresIn, Is.`is`(ssoExpiresAt))
+        MatcherAssert.assertThat(credentials.expiresAt, Is.`is`(ssoExpiresAt))
         verify(storage).store(eq("com.auth0.credentials"), stringCaptor.capture())
         val encodedJson = stringCaptor.firstValue
         MatcherAssert.assertThat(encodedJson, Is.`is`(Matchers.notNullValue()))

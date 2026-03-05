@@ -334,7 +334,7 @@ public class CredentialsManagerTest {
         MatcherAssert.assertThat(credentials.tokenType, Is.`is`("token-type"))
         MatcherAssert.assertThat(credentials.issuedTokenType, Is.`is`("issued-token-type"))
         MatcherAssert.assertThat(credentials.refreshToken, Is.`is`("refresh-token"))
-        MatcherAssert.assertThat(credentials.expiresIn, Is.`is`(ssoExpiresAt))
+        MatcherAssert.assertThat(credentials.expiresAt, Is.`is`(ssoExpiresAt))
         verify(storage).store("com.auth0.refresh_token", credentials.refreshToken)
     }
 
@@ -427,7 +427,7 @@ public class CredentialsManagerTest {
         MatcherAssert.assertThat(credentials.tokenType, Is.`is`("token-type"))
         MatcherAssert.assertThat(credentials.issuedTokenType, Is.`is`("issued-token-type"))
         MatcherAssert.assertThat(credentials.refreshToken, Is.`is`("refresh-token"))
-        MatcherAssert.assertThat(credentials.expiresIn, Is.`is`(ssoExpiresAt))
+        MatcherAssert.assertThat(credentials.expiresAt, Is.`is`(ssoExpiresAt))
         verify(storage).store("com.auth0.refresh_token", credentials.refreshToken)
     }
 

@@ -60,11 +60,11 @@ internal open class SSOCredentialsDeserializer : JsonDeserializer<SSOCredentials
         idToken: String,
         issuedTokenType: String,
         tokenType: String,
-        expiresIn: Date,
+        expiresAt: Date,
         refreshToken: String?
     ): SSOCredentials {
         return SSOCredentials(
-            sessionTransferToken, idToken, issuedTokenType, tokenType, expiresIn, refreshToken
+            sessionTransferToken, idToken, issuedTokenType, tokenType, expiresAt, refreshToken
         )
     }
 }

@@ -26,8 +26,8 @@ public class SSOCredentialsDeserializerTest {
     public fun shouldSetExpiresInFromExpiresInSeconds() {
         val json = generateSSOCredentialsJSON()
         val credentials = gson.getAdapter(SSOCredentials::class.java).fromJson(json)
-        MatcherAssert.assertThat(credentials.expiresIn, Is.`is`(CoreMatchers.notNullValue()))
-        val expiresAt = credentials.expiresIn.time.toDouble()
+        MatcherAssert.assertThat(credentials.expiresAt, Is.`is`(CoreMatchers.notNullValue()))
+        val expiresAt = credentials.expiresAt.time.toDouble()
         val expectedExpiresAt = (CredentialsMock.CURRENT_TIME_MS + 300 * 1000).toDouble()
         MatcherAssert.assertThat(expiresAt, Is.`is`(Matchers.closeTo(expectedExpiresAt, 1.0)))
     }

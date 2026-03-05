@@ -11,11 +11,11 @@ internal class SSOCredentialsDeserializerMock : SSOCredentialsDeserializer() {
         idToken: String,
         issuedTokenType: String,
         tokenType: String,
-        expiresIn: Date,
+        expiresAt: Date,
         refreshToken: String?
     ): SSOCredentials {
         return SSOCredentialsMock.create(
-            sessionTransferToken, idToken, issuedTokenType, tokenType, refreshToken, expiresIn
+            sessionTransferToken, idToken, issuedTokenType, tokenType, refreshToken, expiresAt
         )
     }
 
