@@ -47,6 +47,22 @@
             app:layout_constraintTop_toBottomOf="@+id/textEmail" />
 
         <TextView
+            android:id="@+id/tvSdkVersion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:gravity="center"
+            android:padding="8dp"
+            android:background="#FFEB3B"
+            android:text="SDK Version: ..."
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#000000"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
             android:id="@+id/textView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -58,7 +74,7 @@
             app:layout_constraintBottom_toTopOf="@+id/textEmail"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toBottomOf="@+id/tvSdkVersion" />
 
         <TextView
             android:id="@+id/textView3"

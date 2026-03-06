@@ -1944,9 +1944,9 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldWrapProviderExceptionFromCipherInitInRSADecryptAsIncompatibleDevice() {
-        Assert.assertThrows("The device is not compatible with the CryptoUtil class",
-                IncompatibleDeviceException.class, () -> {
+    public void shouldWrapProviderExceptionFromCipherInitInRSADecryptAsCryptoException() {
+        Assert.assertThrows("The RSA key's padding mode is incompatible with the current cipher.",
+                CryptoException.class, () -> {
                     PrivateKey privateKey = PowerMockito.mock(PrivateKey.class);
                     KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
                     doReturn(privateKey).when(privateKeyEntry).getPrivateKey();
@@ -1962,9 +1962,9 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldWrapProviderExceptionFromCipherInitInRSAEncryptAsIncompatibleDevice() {
-        Assert.assertThrows("The device is not compatible with the CryptoUtil class",
-                IncompatibleDeviceException.class, () -> {
+    public void shouldWrapProviderExceptionFromCipherInitInRSAEncryptAsCryptoException() {
+        Assert.assertThrows("The RSA key's padding mode is incompatible with the current cipher.",
+                CryptoException.class, () -> {
                     PublicKey publicKey = PowerMockito.mock(PublicKey.class);
                     Certificate certificate = PowerMockito.mock(Certificate.class);
                     doReturn(publicKey).when(certificate).getPublicKey();

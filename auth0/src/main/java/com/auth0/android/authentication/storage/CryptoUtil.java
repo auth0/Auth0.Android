@@ -344,10 +344,8 @@ class CryptoUtil {
             cipher.init(Cipher.DECRYPT_MODE, privateKey, OAEP_SPEC);
             return cipher.doFinal(encryptedInput);
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException
-                | InvalidAlgorithmParameterException | ProviderException e) {
+                | InvalidAlgorithmParameterException e) {
             /*
-             * This exceptions are safe to be ignored:
-             *
              * - NoSuchPaddingException:
              *      Thrown if PKCS1Padding is not available. Was introduced in API 1.
              * - NoSuchAlgorithmException:
@@ -357,16 +355,22 @@ class CryptoUtil {
              *      Thrown if the given key is inappropriate for initializing this cipher.
              * - InvalidAlgorithmParameterException:
              *      Thrown if the OAEP parameters are invalid or unsupported.
-             * - ProviderException:
-             *      Thrown on Android 12+ (Keystore2) when the key's padding restriction is
-             *      incompatible with the cipher transformation (e.g. a PKCS1-restricted key
-             *      initialised with an OAEP spec). On Android < 12 this surfaces as
-             *      InvalidKeyException instead.
              *
              * Read more in https://developer.android.com/reference/javax/crypto/Cipher
              */
             Log.e(TAG, "The device can't decrypt input using a RSA Key.", e);
             throw new IncompatibleDeviceException(e);
+        } catch (ProviderException e) {
+            /*
+             * On Android 12+ (Keystore2), a padding mismatch throws ProviderException
+             * instead of InvalidKeyException. This is a KEY incompatibility (stale PKCS1
+             * key with OAEP cipher), not a DEVICE incompatibility. Wrapping as CryptoException
+             * allows the caller to fall through to key regeneration.
+             */
+            Log.e(TAG, "RSA key padding mismatch detected (Android 12+ Keystore2).", e);
+            deleteAESKeys();
+            throw new CryptoException(
+                    "The RSA key's padding mode is incompatible with the current cipher.", e);
         } catch (IllegalArgumentException | IllegalBlockSizeException | BadPaddingException e) {
             /*
              * Any of this exceptions mean the encrypted input is somehow corrupted and cannot be recovered.
@@ -401,10 +405,8 @@ class CryptoUtil {
             cipher.init(Cipher.ENCRYPT_MODE, certificate.getPublicKey(), OAEP_SPEC);
             return cipher.doFinal(decryptedInput);
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException
-                | InvalidAlgorithmParameterException | ProviderException e) {
+                | InvalidAlgorithmParameterException e) {
             /*
-             * This exceptions are safe to be ignored:
-             *
              * - NoSuchPaddingException:
              *      Thrown if PKCS1Padding is not available. Was introduced in API 1.
              * - NoSuchAlgorithmException:
@@ -414,16 +416,22 @@ class CryptoUtil {
              *      Thrown if the given key is inappropriate for initializing this cipher.
              * - InvalidAlgorithmParameterException:
              *      Thrown if the OAEP parameters are invalid or unsupported.
-             * - ProviderException:
-             *      Thrown on Android 12+ (Keystore2) when the key's padding restriction is
-             *      incompatible with the cipher transformation (e.g. a PKCS1-restricted key
-             *      initialised with an OAEP spec). On Android < 12 this surfaces as
-             *      InvalidKeyException instead.
              *
              * Read more in https://developer.android.com/reference/javax/crypto/Cipher
              */
             Log.e(TAG, "The device can't encrypt input using a RSA Key.", e);
             throw new IncompatibleDeviceException(e);
+        } catch (ProviderException e) {
+            /*
+             * On Android 12+ (Keystore2), a padding mismatch throws ProviderException
+             * instead of InvalidKeyException. This is a KEY incompatibility (stale PKCS1
+             * key with OAEP cipher), not a DEVICE incompatibility. Wrapping as CryptoException
+             * allows the caller to fall through to key regeneration.
+             */
+            Log.e(TAG, "RSA key padding mismatch detected (Android 12+ Keystore2).", e);
+            deleteAESKeys();
+            throw new CryptoException(
+                    "The RSA key's padding mode is incompatible with the current cipher.", e);
         } catch (IllegalBlockSizeException | BadPaddingException e) {
             /*
              * They really should not be thrown at all since padding is requested in the transformation.
@@ -479,10 +487,12 @@ class CryptoUtil {
 
         } catch (BadPaddingException | IllegalBlockSizeException e) {
             Log.e(TAG, "PKCS1 decryption failed. Data may be corrupted.", e);
-        } catch (KeyStoreException | CertificateException | IOException | 
+        } catch (KeyStoreException | CertificateException | IOException |
                  NoSuchAlgorithmException | UnrecoverableEntryException |
                  NoSuchPaddingException | InvalidKeyException e) {
             Log.e(TAG, "Migration failed due to key access error.", e);
+        } catch (ProviderException e) {
+            Log.e(TAG, "PKCS1 migration failed: key padding incompatible (Android 12+ Keystore2).", e);
         } catch (CryptoException e) {
             Log.e(TAG, "Failed to re-encrypt AES key with OAEP.", e);
         }
@@ -617,7 +627,8 @@ class CryptoUtil {
             Log.d(TAG, "Legacy AES key migrated successfully");
             return decryptedAESKey;
         } catch (CryptoException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException |
-                 BadPaddingException | IllegalBlockSizeException | IllegalArgumentException e) {
+                 BadPaddingException | IllegalBlockSizeException | IllegalArgumentException |
+                 ProviderException e) {
             Log.e(TAG, "Could not migrate legacy AES key. Will generate new key.", e);
             deleteAESKeys();
             return null;
