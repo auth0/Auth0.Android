@@ -198,8 +198,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @return a request to configure and start that will yield [Credentials]
      */
     @Deprecated(
-        message = """loginWithOTP method is deprecated and will be removed in the next major version of the SDK. 
-                "Use the APIs in the [com.auth0.android.authentication.mfa.MfaApiClient] class instead.""",
+        message = "loginWithOTP is deprecated and will be removed in the next major version of the SDK. Use the APIs in the [com.auth0.android.authentication.mfa.MfaApiClient] class instead.",
         level = DeprecationLevel.WARNING
     )
     public fun loginWithOTP(mfaToken: String, otp: String): AuthenticationRequest {
@@ -416,8 +415,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @return a request to configure and start that will yield [Credentials]
      */
     @Deprecated(
-        message = """loginWithOOB is deprecated and will be removed in the next major version of the SDK.
-                "Use the APIs in the [com.auth0.android.authentication.mfa.MfaApiClient] class instead.""",
+        message = "loginWithOOB is deprecated and will be removed in the next major version of the SDK. Use the APIs in the [com.auth0.android.authentication.mfa.MfaApiClient] class instead.",
         level = DeprecationLevel.WARNING
     )
     public fun loginWithOOB(
@@ -457,8 +455,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * which your application must display to the end-user to be stored securely for future use.
      */
     @Deprecated(
-        message = """loginWithRecoveryCode is deprecated and will be removed in the next major version of the SDK.
-                "Use the APIs in the [com.auth0.android.authentication.mfa.MfaApiClient] class instead.""",
+        message = "loginWithRecoveryCode is deprecated and will be removed in the next major version of the SDK. Use the APIs in the [com.auth0.android.authentication.mfa.MfaApiClient] class instead.",
         level = DeprecationLevel.WARNING
     )
     public fun loginWithRecoveryCode(
@@ -495,8 +492,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @return a request to configure and start that will yield [Challenge]
      */
     @Deprecated(
-        message = """multifactorChallenge is deprecated and will be removed in the next major version of the SDK.
-                "Use the APIs in the [com.auth0.android.authentication.mfa.MfaApiClient] class instead.""",
+        message = "multifactorChallenge is deprecated and will be removed in the next major version of the SDK. Use the APIs in the [com.auth0.android.authentication.mfa.MfaApiClient] class instead.",
         level = DeprecationLevel.WARNING
     )
     public fun multifactorChallenge(
