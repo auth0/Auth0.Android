@@ -426,6 +426,8 @@ authentication
 
 > The default scope used is `openid profile email`. Regardless of the scopes set to the request, the `openid` scope is always enforced.
 
+>  **Note** : The MFA APIs in Authentication client has been deprecated. Use the new MFA Flexible Factors APIs
+
 ### MFA Flexible Factors Grant
 
 > [!IMPORTANT]
