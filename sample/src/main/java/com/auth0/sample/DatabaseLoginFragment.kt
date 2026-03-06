@@ -2,7 +2,6 @@ package com.auth0.sample
 
 import android.os.Bundle
 import android.os.CancellationSignal
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -50,11 +49,6 @@ import java.util.concurrent.Executors
  * A simple [Fragment] subclass as the default destination in the navigation.
  */
 class DatabaseLoginFragment : Fragment() {
-
-    companion object {
-        private const val TAG = "Auth0CrashRepro"
-        private const val SDK_VERSION = "3.13.0 (OAEP)"
-    }
 
     private val scope = "openid profile email read:current_user update:current_user_metadata"
 
@@ -128,8 +122,6 @@ class DatabaseLoginFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         val binding = FragmentDatabaseLoginBinding.inflate(inflater, container, false)
-        binding.tvSdkVersion.text = "SDK: $SDK_VERSION"
-        Log.i(TAG, "=== App started with SDK version: $SDK_VERSION ===")
         binding.btLogin.setOnClickListener {
             val email = binding.textEmail.text.toString()
             val password = binding.textPassword.text.toString()
@@ -223,7 +215,6 @@ class DatabaseLoginFragment : Fragment() {
     }
 
     private suspend fun dbLoginAsync(email: String, password: String) {
-        Log.i(TAG, ">>> dbLoginAsync() called with email=$email")
         try {
             val result =
                 authenticationApiClient.login(email, password, "Username-Password-Authentication")
@@ -231,21 +222,7 @@ class DatabaseLoginFragment : Fragment() {
                     .addParameter("scope", scope)
                     .addParameter("audience", audience)
                     .await()
-            Log.i(TAG, ">>> dbLoginAsync SUCCESS - got credentials for ${result.user.name}")
-            Log.i(TAG, ">>> Calling credentialsManager.saveCredentials()...")
-            try {
-                credentialsManager.saveCredentials(result)
-                Log.i(TAG, ">>> credentialsManager.saveCredentials() OK")
-            } catch (e: Exception) {
-                Log.e(TAG, ">>> credentialsManager.saveCredentials() FAILED", e)
-            }
-            Log.i(TAG, ">>> Calling secureCredentialsManager.saveCredentials()...")
-            try {
-                secureCredentialsManager.saveCredentials(result)
-                Log.i(TAG, ">>> secureCredentialsManager.saveCredentials() OK")
-            } catch (e: Exception) {
-                Log.e(TAG, ">>> secureCredentialsManager.saveCredentials() FAILED", e)
-            }
+            credentialsManager.saveCredentials(result)
             Snackbar.make(
                 requireView(),
                 "Hello ${result.user.name}",
@@ -253,40 +230,24 @@ class DatabaseLoginFragment : Fragment() {
             )
                 .show()
         } catch (error: AuthenticationException) {
-            Log.e(TAG, ">>> dbLoginAsync FAILED", error)
             Snackbar.make(requireView(), error.getDescription(), Snackbar.LENGTH_LONG).show()
         }
     }
 
     private fun dbLogin(email: String, password: String) {
-        Log.i(TAG, ">>> dbLogin() called with email=$email")
         authenticationApiClient.login(email, password, "Username-Password-Authentication")
             .validateClaims()
             .addParameter("scope", scope)
             .addParameter("audience", audience)
+            //Additional customization to the request goes here
             .start(object : Callback<Credentials, AuthenticationException> {
                 override fun onFailure(error: AuthenticationException) {
-                    Log.e(TAG, ">>> dbLogin FAILED", error)
                     Snackbar.make(requireView(), error.getDescription(), Snackbar.LENGTH_LONG)
                         .show()
                 }
 
                 override fun onSuccess(result: Credentials) {
-                    Log.i(TAG, ">>> dbLogin SUCCESS - got credentials for ${result.user.name}")
-                    Log.i(TAG, ">>> Calling credentialsManager.saveCredentials()...")
-                    try {
-                        credentialsManager.saveCredentials(result)
-                        Log.i(TAG, ">>> credentialsManager.saveCredentials() OK")
-                    } catch (e: Exception) {
-                        Log.e(TAG, ">>> credentialsManager.saveCredentials() FAILED", e)
-                    }
-                    Log.i(TAG, ">>> Calling secureCredentialsManager.saveCredentials()...")
-                    try {
-                        secureCredentialsManager.saveCredentials(result)
-                        Log.i(TAG, ">>> secureCredentialsManager.saveCredentials() OK")
-                    } catch (e: Exception) {
-                        Log.e(TAG, ">>> secureCredentialsManager.saveCredentials() FAILED", e)
-                    }
+                    credentialsManager.saveCredentials(result)
                     Snackbar.make(
                         requireView(),
                         "Hello ${result.user.name}",
@@ -297,28 +258,14 @@ class DatabaseLoginFragment : Fragment() {
     }
 
     private fun webAuth() {
-        Log.i(TAG, ">>> webAuth() called - starting browser login")
         WebAuthProvider.login(account)
             .withScheme(getString(R.string.com_auth0_scheme))
             .withAudience(audience)
             .withScope(scope)
             .start(requireContext(), object : Callback<Credentials, AuthenticationException> {
                 override fun onSuccess(result: Credentials) {
-                    Log.i(TAG, ">>> webAuth SUCCESS - got credentials for ${result.user.name}")
-                    Log.i(TAG, ">>> Calling credentialsManager.saveCredentials()...")
-                    try {
-                        credentialsManager.saveCredentials(result)
-                        Log.i(TAG, ">>> credentialsManager.saveCredentials() OK")
-                    } catch (e: Exception) {
-                        Log.e(TAG, ">>> credentialsManager.saveCredentials() FAILED", e)
-                    }
-                    Log.i(TAG, ">>> Calling secureCredentialsManager.saveCredentials()...")
-                    try {
-                        secureCredentialsManager.saveCredentials(result)
-                        Log.i(TAG, ">>> secureCredentialsManager.saveCredentials() OK")
-                    } catch (e: Exception) {
-                        Log.e(TAG, ">>> secureCredentialsManager.saveCredentials() FAILED", e)
-                    }
+                    credentialsManager.saveCredentials(result)
+                    secureCredentialsManager.saveCredentials(result)
                     Snackbar.make(
                         requireView(),
                         "Hello ${result.user.name}",
@@ -327,7 +274,6 @@ class DatabaseLoginFragment : Fragment() {
                 }
 
                 override fun onFailure(error: AuthenticationException) {
-                    Log.e(TAG, ">>> webAuth FAILED", error)
                     val message =
                         if (error.isCanceled)
                             "Browser was closed"
