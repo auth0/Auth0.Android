@@ -362,10 +362,17 @@ class CryptoUtil {
             throw new IncompatibleDeviceException(e);
         } catch (ProviderException e) {
             /*
-             * On Android 12+ (Keystore2), a padding mismatch throws ProviderException
-             * instead of InvalidKeyException. This is a KEY incompatibility (stale PKCS1
-             * key with OAEP cipher), not a DEVICE incompatibility. Wrapping as CryptoException
-             * allows the caller to fall through to key regeneration.
+             * - ProviderException:
+             *      Thrown on Android 12+ (API 31+, Keystore2) when the RSA key's padding
+             *      restriction does not match the cipher transformation. For example, an RSA
+             *      key generated with ENCRYPTION_PADDING_RSA_PKCS1 will trigger this when
+             *      initialised with an OAEPWithSHA-1AndMGF1Padding cipher. On API 23-30 the
+             *      same condition surfaces as InvalidKeyException.
+             *
+             *      This is NOT a device-level incompatibility -- the key can be deleted and
+             *      regenerated with the correct padding. Wrapping as CryptoException (rather
+             *      than IncompatibleDeviceException) ensures the caller falls through to key
+             *      cleanup and regeneration instead of permanently blocking the user.
              */
             Log.e(TAG, "RSA key padding mismatch detected (Android 12+ Keystore2).", e);
             deleteAESKeys();
@@ -423,10 +430,17 @@ class CryptoUtil {
             throw new IncompatibleDeviceException(e);
         } catch (ProviderException e) {
             /*
-             * On Android 12+ (Keystore2), a padding mismatch throws ProviderException
-             * instead of InvalidKeyException. This is a KEY incompatibility (stale PKCS1
-             * key with OAEP cipher), not a DEVICE incompatibility. Wrapping as CryptoException
-             * allows the caller to fall through to key regeneration.
+             * - ProviderException:
+             *      Thrown on Android 12+ (API 31+, Keystore2) when the RSA key's padding
+             *      restriction does not match the cipher transformation. For example, an RSA
+             *      key generated with ENCRYPTION_PADDING_RSA_PKCS1 will trigger this when
+             *      initialised with an OAEPWithSHA-1AndMGF1Padding cipher. On API 23-30 the
+             *      same condition surfaces as InvalidKeyException.
+             *
+             *      This is NOT a device-level incompatibility -- the key can be deleted and
+             *      regenerated with the correct padding. Wrapping as CryptoException (rather
+             *      than IncompatibleDeviceException) ensures the caller falls through to key
+             *      cleanup and regeneration instead of permanently blocking the user.
              */
             Log.e(TAG, "RSA key padding mismatch detected (Android 12+ Keystore2).", e);
             deleteAESKeys();
