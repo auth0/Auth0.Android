@@ -3,16 +3,17 @@ package com.auth0.android.authentication
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.mfa.MfaApiClient
 import com.auth0.android.authentication.mfa.MfaEnrollmentType
+import com.auth0.android.authentication.mfa.MfaException.MfaChallengeException
+import com.auth0.android.authentication.mfa.MfaException.MfaEnrollmentException
+import com.auth0.android.authentication.mfa.MfaException.MfaListAuthenticatorsException
+import com.auth0.android.authentication.mfa.MfaException.MfaVerifyException
 import com.auth0.android.authentication.mfa.MfaVerificationType
-import com.auth0.android.authentication.mfa.MfaException.*
 import com.auth0.android.request.internal.ThreadSwitcherShadow
 import com.auth0.android.result.Authenticator
 import com.auth0.android.result.Challenge
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.EnrollmentChallenge
-import com.auth0.android.result.MfaEnrollmentChallenge
 import com.auth0.android.result.TotpEnrollmentChallenge
-import com.auth0.android.util.CallbackMatcher
 import com.auth0.android.util.MockCallback
 import com.auth0.android.util.SSLTestUtils
 import com.google.gson.Gson
@@ -24,7 +25,12 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.Matchers.*
+import org.hamcrest.Matchers.containsString
+import org.hamcrest.Matchers.hasSize
+import org.hamcrest.Matchers.instanceOf
+import org.hamcrest.Matchers.`is`
+import org.hamcrest.Matchers.notNullValue
+import org.hamcrest.Matchers.nullValue
 import org.junit.After
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -69,7 +75,11 @@ public class MfaApiClientTest {
         )
     }
 
-    private fun enqueueErrorResponse(error: String, description: String, statusCode: Int = 400): Unit {
+    private fun enqueueErrorResponse(
+        error: String,
+        description: String,
+        statusCode: Int = 400
+    ): Unit {
         val json = """{"error": "$error", "error_description": "$description"}"""
         enqueueMockResponse(json, statusCode)
     }
@@ -86,6 +96,51 @@ public class MfaApiClientTest {
         assertThat(client, `is`(notNullValue()))
     }
 
+
+    @Test
+    public fun shouldIncludeAuth0ClientHeaderInGetAuthenticators(): Unit = runTest {
+        val json = """[{"id": "sms|dev_123", "type": "oob", "active": true}]"""
+        enqueueMockResponse(json)
+
+        mfaClient.getAuthenticators(listOf("oob")).await()
+
+        val request = mockServer.takeRequest()
+        assertThat(request.getHeader("Auth0-Client"), `is`(notNullValue()))
+    }
+
+    @Test
+    public fun shouldIncludeAuth0ClientHeaderInEnroll(): Unit = runTest {
+        val json = """{"id": "sms|dev_123", "auth_session": "session_abc"}"""
+        enqueueMockResponse(json)
+
+        mfaClient.enroll(MfaEnrollmentType.Phone("+12025550135")).await()
+
+        val request = mockServer.takeRequest()
+        assertThat(request.getHeader("Auth0-Client"), `is`(notNullValue()))
+    }
+
+    @Test
+    public fun shouldIncludeAuth0ClientHeaderInChallenge(): Unit = runTest {
+        val json = """{"challenge_type": "oob", "oob_code": "oob_123"}"""
+        enqueueMockResponse(json)
+
+        mfaClient.challenge("sms|dev_123").await()
+
+        val request = mockServer.takeRequest()
+        assertThat(request.getHeader("Auth0-Client"), `is`(notNullValue()))
+    }
+
+    @Test
+    public fun shouldIncludeAuth0ClientHeaderInVerify(): Unit = runTest {
+        val json =
+            """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
+        enqueueMockResponse(json)
+
+        mfaClient.verify(MfaVerificationType.Otp("123456")).await()
+
+        val request = mockServer.takeRequest()
+        assertThat(request.getHeader("Auth0-Client"), `is`(notNullValue()))
+    }
 
     @Test
     public fun shouldGetAuthenticatorsSuccess(): Unit = runTest {
@@ -436,7 +491,8 @@ public class MfaApiClientTest {
 
     @Test
     public fun shouldVerifyOtpWithCorrectGrantType(): Unit = runTest {
-        val json = """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
+        val json =
+            """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
         enqueueMockResponse(json)
 
         mfaClient.verify(MfaVerificationType.Otp("123456")).await()
@@ -500,10 +556,12 @@ public class MfaApiClientTest {
 
     @Test
     public fun shouldVerifyOobWithoutBindingCodeSuccess(): Unit = runTest {
-        val json = """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
+        val json =
+            """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
         enqueueMockResponse(json)
 
-        val credentials = mfaClient.verify(MfaVerificationType.Oob(oobCode = "oob_code_123")).await()
+        val credentials =
+            mfaClient.verify(MfaVerificationType.Oob(oobCode = "oob_code_123")).await()
 
         assertThat(credentials, `is`(notNullValue()))
         assertThat(credentials.accessToken, `is`(ACCESS_TOKEN))
@@ -511,10 +569,12 @@ public class MfaApiClientTest {
 
     @Test
     public fun shouldVerifyOobWithCorrectParameters(): Unit = runTest {
-        val json = """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
+        val json =
+            """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
         enqueueMockResponse(json)
 
-        mfaClient.verify(MfaVerificationType.Oob(oobCode = "oob_code_123", bindingCode = "654321")).await()
+        mfaClient.verify(MfaVerificationType.Oob(oobCode = "oob_code_123", bindingCode = "654321"))
+            .await()
 
         val request = mockServer.takeRequest()
         assertThat(request.path, `is`("/oauth/token"))
@@ -530,7 +590,8 @@ public class MfaApiClientTest {
 
     @Test
     public fun shouldVerifyOobWithoutBindingCodeInRequest(): Unit = runTest {
-        val json = """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
+        val json =
+            """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
         enqueueMockResponse(json)
 
         mfaClient.verify(MfaVerificationType.Oob(oobCode = "oob_code_123")).await()
@@ -565,7 +626,8 @@ public class MfaApiClientTest {
         }"""
         enqueueMockResponse(json)
 
-        val credentials = mfaClient.verify(MfaVerificationType.RecoveryCode("OLD_RECOVERY_CODE")).await()
+        val credentials =
+            mfaClient.verify(MfaVerificationType.RecoveryCode("OLD_RECOVERY_CODE")).await()
 
         assertThat(credentials, `is`(notNullValue()))
         assertThat(credentials.accessToken, `is`(ACCESS_TOKEN))
@@ -574,7 +636,8 @@ public class MfaApiClientTest {
 
     @Test
     public fun shouldVerifyRecoveryCodeWithCorrectParameters(): Unit = runTest {
-        val json = """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
+        val json =
+            """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
         enqueueMockResponse(json)
 
         mfaClient.verify(MfaVerificationType.RecoveryCode("RECOVERY_123")).await()
@@ -671,7 +734,8 @@ public class MfaApiClientTest {
 
     @Test
     public fun shouldVerifyOtpWithCallback(): Unit {
-        val json = """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
+        val json =
+            """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
         enqueueMockResponse(json)
 
         val callback = MockCallback<Credentials, MfaVerifyException>()
@@ -763,8 +827,10 @@ public class MfaApiClientTest {
     private companion object {
         private const val CLIENT_ID = "CLIENT_ID"
         private const val MFA_TOKEN = "MFA_TOKEN_123"
-        private const val ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U"
-        private const val ID_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIn0.Gfx6VO9tcxwk6xqx9yYzSfebfeakZp5JYIgP_edcw_A"
+        private const val ACCESS_TOKEN =
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U"
+        private const val ID_TOKEN =
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIn0.Gfx6VO9tcxwk6xqx9yYzSfebfeakZp5JYIgP_edcw_A"
         private const val REFRESH_TOKEN = "REFRESH_TOKEN"
     }
 }
