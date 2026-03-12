@@ -12,7 +12,7 @@
   - [Specify a Custom Logout URL](#specify-a-custom-logout-url)
   - [Trusted Web Activity](#trusted-web-activity)
   - [Ephemeral Browsing [Experimental]](#ephemeral-browsing-experimental)
-  - [DPoP [EA]](#dpop-ea)
+  - [DPoP](#dpop)
   - [Authentication API](#authentication-api)
     - [Login with database connection](#login-with-database-connection)
     - [Login using MFA with One Time Password code](#login-using-mfa-with-one-time-password-code)
@@ -31,7 +31,7 @@
     - [Get user information](#get-user-information)
     - [Custom Token Exchange](#custom-token-exchange)
     - [Native to Web SSO login](#native-to-web-sso-login)
-    - [DPoP [EA]](#dpop-ea-1)
+    - [DPoP](#dpop-1)
   - [My Account API](#my-account-api)
     - [Enroll a new passkey](#enroll-a-new-passkey)
     - [Get Available Factors](#get-available-factors)
@@ -265,10 +265,7 @@ WebAuthProvider.login(account)
 ```
 </details>
 
-## DPoP [EA]
-
-> [!NOTE]  
-> This feature is currently available in [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access). Please reach out to Auth0 support to get it enabled for your tenant.
+## DPoP
 
 [DPoP](https://www.rfc-editor.org/rfc/rfc9449.html) (Demonstrating Proof of Possession) is an application-level mechanism for sender-constraining OAuth 2.0 access and refresh tokens by proving that the app is in possession of a certain private key. You can enable it by calling the `useDPoP(context)` method on the login Builder.
 
@@ -1643,10 +1640,7 @@ authentication
 ```
 </details>
 
-## DPoP [EA]
-
-> [!NOTE]  
-> This feature is currently available in [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access). Please reach out to Auth0 support to get it enabled for your tenant.
+## DPoP
 
 [DPoP](https://www.rfc-editor.org/rfc/rfc9449.html) (Demonstrating Proof of Possession) is an application-level mechanism for sender-constraining OAuth 2.0 access and refresh tokens by proving that the app is in possession of a certain private key. You can enable it by calling the `useDPoP(context: Context)` method. This ensures that DPoP proofs are generated for requests made through the AuthenticationAPI client.
 
