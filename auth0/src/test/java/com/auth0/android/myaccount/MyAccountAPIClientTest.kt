@@ -464,7 +464,10 @@ public class MyAccountAPIClientTest {
 
         val request = mockAPI.takeRequest()
         val body = bodyFromRequest<String>(request)
-        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods/email%7C123/verify"))
+        assertThat(
+            request.path,
+            Matchers.equalTo("/me/v1/authentication-methods/email%7C123/verify")
+        )
         assertThat(request.method, Matchers.equalTo("POST"))
         assertThat(body, Matchers.hasEntry("otp_code", otp as Any))
         assertThat(body, Matchers.hasEntry("auth_session", session as Any))
