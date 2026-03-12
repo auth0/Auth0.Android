@@ -146,17 +146,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/btWebLogoutAsync" />
 
-        <TextView
-            android:id="@+id/textView5"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="User Management API"
-            android:textSize="16sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/btDeleteCredentials" />
-
         <Button
             android:id="@+id/btLogin"
             android:layout_width="wrap_content"
@@ -234,47 +223,6 @@
             app:layout_constraintEnd_toStartOf="@+id/btGetCredentialsAsync"
             app:layout_constraintTop_toBottomOf="@+id/textView4" />
 
-        <Button
-            android:id="@+id/btGetProfileAsync"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Get User Profile (async)"
-            android:textSize="12sp"
-            app:layout_constraintEnd_toEndOf="@+id/btGetCredentialsAsync"
-            app:layout_constraintTop_toBottomOf="@+id/textView5" />
-
-        <Button
-            android:id="@+id/btUpdateMetaAsync"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Update Metadata (async)"
-            android:textSize="12sp"
-            app:layout_constraintEnd_toEndOf="@+id/btGetCredentialsAsync"
-            app:layout_constraintTop_toBottomOf="@+id/btGetProfileAsync" />
-
-        <Button
-            android:id="@+id/btUpdateMeta"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="4dp"
-            android:text="Update Metadata"
-            android:textSize="12sp"
-            app:layout_constraintEnd_toStartOf="@+id/btUpdateMetaAsync"
-            app:layout_constraintTop_toBottomOf="@+id/btGetProfileAsync" />
-
-        <Button
-            android:id="@+id/btGetProfile"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="4dp"
-            android:text="Get User Profile"
-            android:textSize="12sp"
-            app:layout_constraintEnd_toStartOf="@+id/btGetProfileAsync"
-            app:layout_constraintTop_toBottomOf="@+id/textView5" />
 
         <Button
             android:id="@+id/btWebLogoutAsync"
