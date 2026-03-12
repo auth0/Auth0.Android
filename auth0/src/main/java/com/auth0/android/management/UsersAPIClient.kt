@@ -32,6 +32,11 @@ import java.io.Reader
  *
  * @see [Auth API docs](https://auth0.com/docs/api/management/v2)
  */
+
+@Deprecated(
+    """UsersAPIClient is deprecated and will be removed in the next major version of the SDK.""",
+    level = DeprecationLevel.WARNING
+)
 public class UsersAPIClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal constructor(
     private val auth0: Auth0,
     private val factory: RequestFactory<ManagementException>,

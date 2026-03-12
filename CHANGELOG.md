@@ -1,5 +1,16 @@
 # Change Log
 
+## [3.14.0](https://github.com/auth0/Auth0.Android/tree/3.14.0) (2026-03-11)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.13.0...3.14.0)
+
+**Deprecated**
+- refactor : Deprecate the existing MFA APIs in `AuthenticationAPIClient` [\#932](https://github.com/auth0/Auth0.Android/pull/932) ([pmathew92](https://github.com/pmathew92))
+- refactor : Deprecated the UsersAPIClient [\#930](https://github.com/auth0/Auth0.Android/pull/930) ([pmathew92](https://github.com/pmathew92))
+
+**Fixed**
+- fix: Handle ProviderException in PKCS1→OAEP key migration to prevent saveCredentials() crash [\#924](https://github.com/auth0/Auth0.Android/pull/924) ([utkrishtsahu](https://github.com/utkrishtsahu))
+- fix : Added the missing user agent to MyAccount and MFAApiClient [\#926](https://github.com/auth0/Auth0.Android/pull/926) ([pmathew92](https://github.com/pmathew92))
+
 ## [3.13.0](https://github.com/auth0/Auth0.Android/tree/3.13.0) (2026-02-06)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.12.2...3.13.0)
 
