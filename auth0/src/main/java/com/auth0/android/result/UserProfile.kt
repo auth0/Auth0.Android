@@ -5,7 +5,7 @@ import java.util.*
 
 /**
  * Class that holds the information of a user's profile in Auth0.
- * Used both in [com.auth0.android.management.UsersAPIClient] and [com.auth0.android.authentication.AuthenticationAPIClient].
+ * Used in [com.auth0.android.authentication.AuthenticationAPIClient].
  */
 public class UserProfile(
     private val id: String?,
