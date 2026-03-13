@@ -96,6 +96,20 @@ buildscript {
     - [signupWithPasskey()](auth0/src/main/java/com/auth0/android/authentication/AuthenticationAPIClient.kt#L319-L344) -
       Sign up a user and returns a challenge for key generation
 
+- The Management API support has been removed. This includes the `UsersAPIClient` class, `ManagementException`, and `ManagementCallback`.
+
+  > **Note:** This only impacts you if your app used the Management API client (`UsersAPIClient`). 
+
+  **Impact:** Any code that references `UsersAPIClient`, `ManagementException`, or `ManagementCallback` will no longer compile.
+
+  **Migration:** Instead of calling the Management API directly from your mobile app, expose dedicated endpoints in your own backend that perform the required operations, and call those from the app using the access token you already have.
+
+  For example, if you were reading or updating user metadata:
+
+  1. Create a backend endpoint (e.g. `PATCH /me/metadata`) that accepts the operation your app needs.
+  2. Call that endpoint from your app, passing the user's access token as a `Bearer` token in the `Authorization` header.
+  3. On your backend, obtain a machine-to-machine token via the Client Credentials flow and use it to call the Management API with the precise scopes required.
+
 ### DPoP Configuration Moved to Builder
 
 The `useDPoP(context: Context)` method has been moved from the `WebAuthProvider` object to the login
