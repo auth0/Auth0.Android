@@ -75,6 +75,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         storage.store(KEY_EXPIRES_AT, credentials.expiresAt.time)
         storage.store(KEY_SCOPE, credentials.scope)
         storage.store(LEGACY_KEY_CACHE_EXPIRES_AT, credentials.expiresAt.time)
+        saveDPoPThumbprint(credentials)
     }
 
     /**
@@ -714,6 +715,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         storage.remove(KEY_EXPIRES_AT)
         storage.remove(KEY_SCOPE)
         storage.remove(LEGACY_KEY_CACHE_EXPIRES_AT)
+        storage.remove(KEY_DPOP_THUMBPRINT)
     }
 
     /**
