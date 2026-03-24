@@ -897,7 +897,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     callback.onFailure(
                         CredentialsManagerException(
                             CredentialsManagerException.Code.MFA_REQUIRED,
-                            error.message ?: "Multi-factor authentication is required to complete the credential renewal.",
+                            error.message
+                                ?: "Multi-factor authentication is required to complete the credential renewal.",
                             error,
                             error.mfaRequiredErrorPayload
                         )
@@ -1055,7 +1056,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     callback.onFailure(
                         CredentialsManagerException(
                             CredentialsManagerException.Code.MFA_REQUIRED,
-                            error.message ?: "Multi-factor authentication is required to complete the credential renewal.",
+                            error.message
+                                ?: "Multi-factor authentication is required to complete the credential renewal.",
                             error,
                             error.mfaRequiredErrorPayload
                         )
