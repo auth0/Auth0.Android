@@ -39,6 +39,66 @@ public object WebAuthProvider {
     internal var managerInstance: ResumableManager? = null
         private set
 
+    /**
+     * Represents a pending authentication or logout result that arrived while
+     * the original callback was no longer reachable (e.g. Activity destroyed
+     * during a configuration change).
+     */
+    internal sealed class PendingResult<out S, out E> {
+        data class Success<S>(val result: S) : PendingResult<S, Nothing>()
+        data class Failure<E>(val error: E) : PendingResult<Nothing, E>()
+    }
+
+    @Volatile
+    @JvmStatic
+    @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal var pendingLoginResult: PendingResult<Credentials, AuthenticationException>? = null
+
+    @Volatile
+    @JvmStatic
+    @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal var pendingLogoutResult: PendingResult<Void?, AuthenticationException>? = null
+
+    /**
+     * Check for and consume a pending login result that arrived during a configuration change.
+     * Call this in your Activity's `onResume()` to recover results that were delivered while the
+     * Activity was being recreated (e.g. due to screen rotation).
+     *
+     * @param callback the callback to deliver the pending result to
+     * @return true if a pending result was found and delivered, false otherwise
+     */
+    @JvmStatic
+    public fun consumePendingLoginResult(callback: Callback<Credentials, AuthenticationException>): Boolean {
+        val result = pendingLoginResult ?: return false
+        pendingLoginResult = null
+        when (result) {
+            is PendingResult.Success -> callback.onSuccess(result.result)
+            is PendingResult.Failure -> callback.onFailure(result.error)
+        }
+        resetManagerInstance()
+        return true
+    }
+
+    /**
+     * Check for and consume a pending logout result that arrived during a configuration change.
+     * Call this in your Activity's `onResume()` to recover results that were delivered while the
+     * Activity was being recreated (e.g. due to screen rotation).
+     *
+     * @param callback the callback to deliver the pending result to
+     * @return true if a pending result was found and delivered, false otherwise
+     */
+    @JvmStatic
+    public fun consumePendingLogoutResult(callback: Callback<Void?, AuthenticationException>): Boolean {
+        val result = pendingLogoutResult ?: return false
+        pendingLogoutResult = null
+        when (result) {
+            is PendingResult.Success -> callback.onSuccess(result.result)
+            is PendingResult.Failure -> callback.onFailure(result.error)
+        }
+        resetManagerInstance()
+        return true
+    }
+
     @JvmStatic
     public fun addCallback(callback: Callback<Credentials, AuthenticationException>) {
         callbacks += callback

@@ -24,6 +24,8 @@ v4 of the Auth0 Android SDK includes significant build toolchain updates, update
 - [**Dependency Changes**](#dependency-changes)
   + [Gson 2.8.9 → 2.11.0](#️-gson-289--2110-transitive-dependency)
   + [DefaultClient.Builder](#defaultclientbuilder)
+- [**New APIs**](#new-apis)
+  + [Handling Configuration Changes During Authentication](#handling-configuration-changes-during-authentication)
 
 ---
 
@@ -282,6 +284,44 @@ val client = DefaultClient.Builder()
 The legacy constructor is deprecated but **not removed** — existing code will continue to compile
 and run. Your IDE will show a deprecation warning with a suggested `ReplaceWith` quick-fix to
 migrate to the Builder.
+
+## New APIs
+
+### Handling Configuration Changes During Authentication
+
+v4 fixes a memory leak and lost callback issue when the Activity is destroyed during authentication
+(e.g. device rotation, locale change, dark mode toggle). The SDK now uses `WeakReference` for
+callbacks, so destroyed Activities are properly garbage collected.
+
+If the authentication result arrives while the Activity is being recreated, it is cached internally.
+Use `consumePendingLoginResult()` or `consumePendingLogoutResult()` in your `onResume()` to recover it:
+
+```kotlin
+class LoginActivity : AppCompatActivity() {
+    private val callback = object : Callback<Credentials, AuthenticationException> {
+        override fun onSuccess(result: Credentials) { /* handle credentials */ }
+        override fun onFailure(error: AuthenticationException) { /* handle error */ }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Recover result that arrived during configuration change
+        WebAuthProvider.consumePendingLoginResult(callback)
+    }
+
+    fun onLoginClick() {
+        WebAuthProvider.login(account)
+            .withScheme("myapp")
+            .start(this, callback)
+    }
+}
+```
+
+For logout flows, use `WebAuthProvider.consumePendingLogoutResult(callback)` in the same way.
+
+> **Note:** If you use the `suspend fun await()` API from a ViewModel coroutine scope, the
+> Activity is never captured in the callback chain, so you do not need `consumePending*` calls.
+> See the sample app for a ViewModel-based example.
 
 ## Getting Help
 
