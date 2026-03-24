@@ -170,15 +170,21 @@ public abstract class BaseCredentialsManager internal constructor(
     protected fun saveDPoPThumbprint(credentials: Credentials) {
         val dpopUsed = credentials.type.equals("DPoP", ignoreCase = true)
             || authenticationClient.isDPoPEnabled
-        if (dpopUsed && DPoPUtil.hasKeyPair()) {
-            try {
-                val thumbprint = DPoPUtil.getPublicKeyJWK()
-                if (thumbprint != null) {
-                    storage.store(KEY_DPOP_THUMBPRINT, thumbprint)
-                }
-            } catch (e: DPoPException) {
-                Log.w(this::class.java.simpleName, "Failed to store DPoP key thumbprint", e)
-            }
+
+        if (!dpopUsed) {
+            storage.remove(KEY_DPOP_THUMBPRINT)
+            return
+        }
+
+        val thumbprint = try {
+            if (DPoPUtil.hasKeyPair()) DPoPUtil.getPublicKeyJWK() else null
+        } catch (e: DPoPException) {
+            Log.w(this::class.java.simpleName, "Failed to fetch DPoP key thumbprint", e)
+            null
+        }
+
+        if (thumbprint != null) {
+            storage.store(KEY_DPOP_THUMBPRINT, thumbprint)
         } else {
             storage.remove(KEY_DPOP_THUMBPRINT)
         }
