@@ -25,7 +25,11 @@ public abstract class BaseCredentialsManager internal constructor(
 
     internal companion object {
         internal const val KEY_DPOP_THUMBPRINT = "com.auth0.dpop_key_thumbprint"
+
+        @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+        internal const val KEY_TOKEN_TYPE = "com.auth0.token_type"
     }
+
     private var _clock: Clock = ClockImpl()
 
     /**
@@ -169,7 +173,7 @@ public abstract class BaseCredentialsManager internal constructor(
      */
     protected fun saveDPoPThumbprint(credentials: Credentials) {
         val dpopUsed = credentials.type.equals("DPoP", ignoreCase = true)
-            || authenticationClient.isDPoPEnabled
+                || authenticationClient.isDPoPEnabled
 
         if (!dpopUsed) {
             storage.remove(KEY_DPOP_THUMBPRINT)

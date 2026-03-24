@@ -763,7 +763,6 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         private const val KEY_ACCESS_TOKEN = "com.auth0.access_token"
         private const val KEY_REFRESH_TOKEN = "com.auth0.refresh_token"
         private const val KEY_ID_TOKEN = "com.auth0.id_token"
-        private const val KEY_TOKEN_TYPE = "com.auth0.token_type"
         private const val KEY_EXPIRES_AT = "com.auth0.expires_at"
         private const val KEY_SCOPE = "com.auth0.scope"
 

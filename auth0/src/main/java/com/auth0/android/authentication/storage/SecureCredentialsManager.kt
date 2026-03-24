@@ -897,7 +897,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     callback.onFailure(
                         CredentialsManagerException(
                             CredentialsManagerException.Code.MFA_REQUIRED,
-                            error.message ?: "Multi-factor authentication is required to complete the credential renewal.",
+                            error.message
+                                ?: "Multi-factor authentication is required to complete the credential renewal.",
                             error,
                             error.mfaRequiredErrorPayload
                         )
@@ -1055,7 +1056,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     callback.onFailure(
                         CredentialsManagerException(
                             CredentialsManagerException.Code.MFA_REQUIRED,
-                            error.message ?: "Multi-factor authentication is required to complete the credential renewal.",
+                            error.message
+                                ?: "Multi-factor authentication is required to complete the credential renewal.",
                             error,
                             error.mfaRequiredErrorPayload
                         )
@@ -1255,8 +1257,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         internal const val KEY_ALIAS = "com.auth0.key"
 
-        @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-        internal const val KEY_TOKEN_TYPE = "com.auth0.token_type"
 
         // Using NO_SESSION to represent "no session" (uninitialized state)
         private const val NO_SESSION = -1L
