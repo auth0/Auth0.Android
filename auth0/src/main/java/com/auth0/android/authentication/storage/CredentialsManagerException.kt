@@ -214,7 +214,7 @@ public class CredentialsManagerException :
                 Code.API_ERROR -> "An error occurred while processing the request."
                 Code.SSO_EXCHANGE_FAILED ->"The exchange of the refresh token for SSO credentials failed."
                 Code.MFA_REQUIRED -> "Multi-factor authentication is required to complete the credential renewal."
-                Code.DPOP_KEY_MISSING -> "The stored credentials are DPoP-bound but the DPoP key pair is no longer available in the Android KeyStore. This can happen after a device backup/restore, factory reset, or biometric enrollment change. Re-authentication is required."
+                Code.DPOP_KEY_MISSING -> "The stored credentials are DPoP-bound but the DPoP key pair is no longer available in the Android KeyStore. Re-authentication is required."
                 Code.DPOP_NOT_CONFIGURED -> "The stored credentials are DPoP-bound but the AuthenticationAPIClient used by this CredentialsManager was not configured with useDPoP(context). Call AuthenticationAPIClient(auth0).useDPoP(context) and pass the configured client to CredentialsManager."
                 Code.UNKNOWN_ERROR -> "An unknown error has occurred while fetching the token. Please check the error cause for more details."
             }
