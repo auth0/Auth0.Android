@@ -20,6 +20,10 @@ public abstract class BaseCredentialsManager internal constructor(
     protected val storage: Storage,
     private val jwtDecoder: JWTDecoder
 ) {
+
+    internal companion object {
+        internal const val KEY_DPOP_THUMBPRINT = "com.auth0.dpop_key_thumbprint"
+    }
     private var _clock: Clock = ClockImpl()
 
     /**
