@@ -483,6 +483,10 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                 callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
                 return@execute
             }
+            validateDPoPState(tokenType)?.let { dpopError ->
+                callback.onFailure(dpopError)
+                return@execute
+            }
             val request = authenticationClient.renewAuth(refreshToken)
             request.addParameters(parameters)
             if (scope != null) {
@@ -593,8 +597,10 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
             //Check if existing api credentials are present and valid
             val key = getAPICredentialsKey(audience, scope)
             val apiCredentialsJson = storage.retrieveString(key)
+            var apiCredentialType: String? = null
             apiCredentialsJson?.let {
                 val apiCredentials = gson.fromJson(it, APICredentials::class.java)
+                apiCredentialType = apiCredentials.type
                 val willTokenExpire = willExpire(apiCredentials.expiresAt.time, minTtl.toLong())
 
                 val scopeChanged = hasScopeChanged(
@@ -614,6 +620,11 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
             val refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN)
             if (refreshToken == null) {
                 callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
+                return@execute
+            }
+
+            validateDPoPState(apiCredentialType)?.let { dpopError ->
+                callback.onFailure(dpopError)
                 return@execute
             }
 
