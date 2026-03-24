@@ -113,6 +113,9 @@ public class WebAuthProviderTest {
         )
 
         `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
+
+        WebAuthProvider.pendingLoginResult = null
+        WebAuthProvider.pendingLogoutResult = null
     }
 
 
@@ -3062,6 +3065,112 @@ public class WebAuthProviderTest {
             .withCustomTabsOptions(options)
             .start(activity, callback)
         verify(options, Mockito.never()).copyWithEphemeralBrowsing()
+    }
+
+    @Test
+    public fun shouldConsumePendingLoginSuccessResult() {
+        val credentials = Mockito.mock(Credentials::class.java)
+        WebAuthProvider.pendingLoginResult = WebAuthProvider.PendingResult.Success(credentials)
+
+        val consumed = WebAuthProvider.consumePendingLoginResult(callback)
+        Assert.assertTrue(consumed)
+        verify(callback).onSuccess(credentials)
+        Assert.assertNull(WebAuthProvider.pendingLoginResult)
+    }
+
+    @Test
+    public fun shouldConsumePendingLoginFailureResult() {
+        val error = AuthenticationException("test_error", "Test error description")
+        WebAuthProvider.pendingLoginResult = WebAuthProvider.PendingResult.Failure(error)
+
+        val consumed = WebAuthProvider.consumePendingLoginResult(callback)
+        Assert.assertTrue(consumed)
+        verify(callback).onFailure(error)
+        Assert.assertNull(WebAuthProvider.pendingLoginResult)
+    }
+
+    @Test
+    public fun shouldReturnFalseWhenNoPendingLoginResult() {
+        WebAuthProvider.pendingLoginResult = null
+
+        val consumed = WebAuthProvider.consumePendingLoginResult(callback)
+        Assert.assertFalse(consumed)
+        verify(callback, Mockito.never()).onSuccess(any())
+        verify(callback, Mockito.never()).onFailure(any())
+    }
+
+    @Test
+    public fun shouldNotConsumeLoginResultTwice() {
+        val credentials = Mockito.mock(Credentials::class.java)
+        WebAuthProvider.pendingLoginResult = WebAuthProvider.PendingResult.Success(credentials)
+
+        Assert.assertTrue(WebAuthProvider.consumePendingLoginResult(callback))
+        Assert.assertFalse(WebAuthProvider.consumePendingLoginResult(callback))
+        verify(callback, times(1)).onSuccess(credentials)
+    }
+
+    @Test
+    public fun shouldConsumePendingLogoutSuccessResult() {
+        WebAuthProvider.pendingLogoutResult = WebAuthProvider.PendingResult.Success(null)
+
+        val consumed = WebAuthProvider.consumePendingLogoutResult(voidCallback)
+        Assert.assertTrue(consumed)
+        verify(voidCallback).onSuccess(null)
+        Assert.assertNull(WebAuthProvider.pendingLogoutResult)
+    }
+
+    @Test
+    public fun shouldConsumePendingLogoutFailureResult() {
+        val error = AuthenticationException("test_error", "Test error description")
+        WebAuthProvider.pendingLogoutResult = WebAuthProvider.PendingResult.Failure(error)
+
+        val consumed = WebAuthProvider.consumePendingLogoutResult(voidCallback)
+        Assert.assertTrue(consumed)
+        verify(voidCallback).onFailure(error)
+        Assert.assertNull(WebAuthProvider.pendingLogoutResult)
+    }
+
+    @Test
+    public fun shouldReturnFalseWhenNoPendingLogoutResult() {
+        WebAuthProvider.pendingLogoutResult = null
+
+        val consumed = WebAuthProvider.consumePendingLogoutResult(voidCallback)
+        Assert.assertFalse(consumed)
+        verify(voidCallback, Mockito.never()).onSuccess(any())
+        verify(voidCallback, Mockito.never()).onFailure(any())
+    }
+
+    @Test
+    public fun shouldCacheLoginResultWhenCallbackIsGarbageCollected() {
+        WebAuthProvider.pendingLoginResult = null
+        val credentials = Mockito.mock(Credentials::class.java)
+
+
+        var weakCallback: Callback<Credentials, AuthenticationException>? =
+            object : Callback<Credentials, AuthenticationException> {
+                override fun onSuccess(result: Credentials) {}
+                override fun onFailure(error: AuthenticationException) {}
+            }
+        val manager = OAuthManager(
+            account,
+            weakCallback!!,
+            mapOf("response_type" to "code", "state" to "teststate", "nonce" to "testnonce"),
+            CustomTabsOptions.newBuilder().build()
+        )
+        @Suppress("UNUSED_VALUE")
+        weakCallback = null
+        System.gc()
+        Thread.sleep(100)
+
+        val exception = AuthenticationException(
+            AuthenticationException.ERROR_VALUE_AUTHENTICATION_CANCELED,
+            "The user closed the browser app and the authentication was canceled."
+        )
+        manager.failure(exception)
+
+        val pending = WebAuthProvider.pendingLoginResult
+        Assert.assertNotNull(pending)
+        Assert.assertTrue(pending is WebAuthProvider.PendingResult.Failure)
     }
 
     private companion object {
