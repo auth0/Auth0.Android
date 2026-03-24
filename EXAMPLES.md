@@ -418,6 +418,55 @@ WebAuthProvider.logout(account)
 > [!NOTE]
 > DPoP is supported only on Android version 6.0 (API level 23) and above. Trying to use DPoP in any older versions will result in an exception.
 
+## Handling Configuration Changes During Authentication
+
+When the Activity is destroyed during authentication due to a configuration change (e.g. device rotation, locale change, dark mode toggle), the SDK caches the authentication result internally. Use `consumePendingLoginResult()` or `consumePendingLogoutResult()` in your `onResume()` to recover it.
+
+```kotlin
+class LoginActivity : AppCompatActivity() {
+
+    private val loginCallback = object : Callback<Credentials, AuthenticationException> {
+        override fun onSuccess(result: Credentials) {
+            // Handle successful login
+        }
+        override fun onFailure(error: AuthenticationException) {
+            // Handle error
+        }
+    }
+
+    private val logoutCallback = object : Callback<Void?, AuthenticationException> {
+        override fun onSuccess(result: Void?) {
+            // Handle successful logout
+        }
+        override fun onFailure(error: AuthenticationException) {
+            // Handle error
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Recover any result that arrived while the Activity was being recreated
+        WebAuthProvider.consumePendingLoginResult(loginCallback)
+        WebAuthProvider.consumePendingLogoutResult(logoutCallback)
+    }
+
+    fun onLoginClick() {
+        WebAuthProvider.login(account)
+            .withScheme("demo")
+            .start(this, loginCallback)
+    }
+
+    fun onLogoutClick() {
+        WebAuthProvider.logout(account)
+            .withScheme("demo")
+            .start(this, logoutCallback)
+    }
+}
+```
+
+> [!NOTE]
+> If you use the `suspend fun await()` API from a ViewModel coroutine scope, the Activity is never captured in the callback chain, so you do not need `consumePending*` calls.
+
 ## Authentication API
 
 The client provides methods to authenticate the user against the Auth0 server.

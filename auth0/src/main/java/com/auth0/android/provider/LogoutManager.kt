@@ -6,17 +6,39 @@ import android.util.Log
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
+import java.lang.ref.WeakReference
 import java.util.*
 
 internal class LogoutManager(
     private val account: Auth0,
-    private val callback: Callback<Void?, AuthenticationException>,
+    callback: Callback<Void?, AuthenticationException>,
     returnToUrl: String,
     ctOptions: CustomTabsOptions,
     federated: Boolean = false,
     private val launchAsTwa: Boolean = false,
     private val customLogoutUrl: String? = null
 ) : ResumableManager() {
+    private val callbackRef = WeakReference(callback)
+
+    private fun deliverSuccess() {
+        val cb = callbackRef.get()
+        if (cb != null) {
+            cb.onSuccess(null)
+        } else {
+            WebAuthProvider.pendingLogoutResult =
+                WebAuthProvider.PendingResult.Success(null)
+        }
+    }
+
+    private fun deliverFailure(error: AuthenticationException) {
+        val cb = callbackRef.get()
+        if (cb != null) {
+            cb.onFailure(error)
+        } else {
+            WebAuthProvider.pendingLogoutResult =
+                WebAuthProvider.PendingResult.Failure(error)
+        }
+    }
     private val parameters: MutableMap<String, String>
     private val ctOptions: CustomTabsOptions
     fun startLogout(context: Context) {
@@ -31,15 +53,15 @@ internal class LogoutManager(
                 AuthenticationException.ERROR_VALUE_AUTHENTICATION_CANCELED,
                 "The user closed the browser app so the logout was cancelled."
             )
-            callback.onFailure(exception)
+            deliverFailure(exception)
         } else {
-            callback.onSuccess(null)
+            deliverSuccess()
         }
         return true
     }
 
     override fun failure(exception: AuthenticationException) {
-        callback.onFailure(exception)
+        deliverFailure(exception)
     }
 
     private fun buildLogoutUri(): Uri {
