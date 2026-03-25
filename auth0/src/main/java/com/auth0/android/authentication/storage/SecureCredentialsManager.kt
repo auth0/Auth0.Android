@@ -282,6 +282,12 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 return@execute
             }
 
+            val tokenType = storage.retrieveString(KEY_TOKEN_TYPE) ?: existingCredentials.type
+            validateDPoPState(tokenType)?.let { dpopError ->
+                callback.onFailure(dpopError)
+                return@execute
+            }
+
             val request =
                 authenticationClient.ssoExchange(existingCredentials.refreshToken)
             try {
@@ -1021,7 +1027,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 return@execute
             }
 
-            validateDPoPState(apiCredentialType)?.let { dpopError ->
+            val tokenType = apiCredentialType ?: storage.retrieveString(KEY_TOKEN_TYPE) ?: existingCredentials.type
+            validateDPoPState(tokenType)?.let { dpopError ->
                 callback.onFailure(dpopError)
                 return@execute
             }

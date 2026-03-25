@@ -134,6 +134,12 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                 return@execute
             }
 
+            val tokenType = storage.retrieveString(KEY_TOKEN_TYPE)
+            validateDPoPState(tokenType)?.let { dpopError ->
+                callback.onFailure(dpopError)
+                return@execute
+            }
+
             val request = authenticationClient.ssoExchange(refreshToken)
             try {
                 if (parameters.isNotEmpty()) {
@@ -623,7 +629,8 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                 return@execute
             }
 
-            validateDPoPState(apiCredentialType)?.let { dpopError ->
+            val tokenType = apiCredentialType ?: storage.retrieveString(KEY_TOKEN_TYPE)
+            validateDPoPState(tokenType)?.let { dpopError ->
                 callback.onFailure(dpopError)
                 return@execute
             }
