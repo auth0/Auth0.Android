@@ -230,6 +230,18 @@ public class DPoPKeyStoreTest {
     }
 
     @Test
+    public fun `getKeyPair should throw UNKNOWN_ERROR on unhandled exception`() {
+        val cause = RuntimeException("Unexpected error")
+        whenever(mockKeyStore.getKey(any(), anyOrNull())).thenThrow(cause)
+
+        val exception = assertThrows(DPoPException::class.java) {
+            dpopKeyStore.getKeyPair()
+        }
+        assertEquals(exception.message, DPoPException.UNKNOWN_ERROR.message)
+        assertThat(exception.cause, `is`(cause))
+    }
+
+    @Test
     public fun `hasKeyPair should return true when alias exists`() {
         whenever(mockKeyStore.containsAlias(any())).thenReturn(true)
         val result = dpopKeyStore.hasKeyPair()
@@ -256,6 +268,18 @@ public class DPoPKeyStoreTest {
     }
 
     @Test
+    public fun `hasKeyPair should throw UNKNOWN_ERROR on unhandled exception`() {
+        val cause = RuntimeException("Unexpected error")
+        whenever(mockKeyStore.containsAlias(any())).thenThrow(cause)
+
+        val exception = assertThrows(DPoPException::class.java) {
+            dpopKeyStore.hasKeyPair()
+        }
+        assertEquals(exception.message, DPoPException.UNKNOWN_ERROR.message)
+        assertThat(exception.cause, `is`(cause))
+    }
+
+    @Test
     public fun `deleteKeyPair should call deleteEntry`() {
         dpopKeyStore.deleteKeyPair()
         verify(mockKeyStore).deleteEntry(any())
@@ -273,6 +297,18 @@ public class DPoPKeyStoreTest {
         assertThat(exception.cause, `is`(cause))
     }
 
+
+    @Test
+    public fun `deleteKeyPair should throw UNKNOWN_ERROR on unhandled exception`() {
+        val cause = RuntimeException("Unexpected error")
+        whenever(mockKeyStore.deleteEntry(any())).thenThrow(cause)
+
+        val exception = assertThrows(DPoPException::class.java) {
+            dpopKeyStore.deleteKeyPair()
+        }
+        assertEquals(exception.message, DPoPException.UNKNOWN_ERROR.message)
+        assertThat(exception.cause, `is`(cause))
+    }
 
     @Test
     public fun `generateKeyPair should retry without StrongBox when ProviderException occurs with StrongBox enabled`() {
