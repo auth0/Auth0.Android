@@ -32,9 +32,11 @@ import java.security.InvalidAlgorithmParameterException
 import java.security.KeyPairGenerator
 import java.security.KeyStore
 import java.security.KeyStoreException
+import java.security.NoSuchAlgorithmException
 import java.security.PrivateKey
 import java.security.ProviderException
 import java.security.PublicKey
+import java.security.UnrecoverableKeyException
 import java.security.cert.Certificate
 import javax.security.auth.x500.X500Principal
 
@@ -192,6 +194,42 @@ public class DPoPKeyStoreTest {
     }
 
     @Test
+    public fun `getKeyPair should throw KEY_STORE_ERROR on NoSuchAlgorithmException`() {
+        val cause = NoSuchAlgorithmException("Test Exception")
+        whenever(mockKeyStore.getKey(any(), anyOrNull())).thenThrow(cause)
+
+        val exception = assertThrows(DPoPException::class.java) {
+            dpopKeyStore.getKeyPair()
+        }
+        assertEquals(exception.message, DPoPException.KEY_STORE_ERROR.message)
+        assertThat(exception.cause, `is`(cause))
+    }
+
+    @Test
+    public fun `getKeyPair should throw KEY_STORE_ERROR on UnrecoverableKeyException`() {
+        val cause = UnrecoverableKeyException("Test Exception")
+        whenever(mockKeyStore.getKey(any(), anyOrNull())).thenThrow(cause)
+
+        val exception = assertThrows(DPoPException::class.java) {
+            dpopKeyStore.getKeyPair()
+        }
+        assertEquals(exception.message, DPoPException.KEY_STORE_ERROR.message)
+        assertThat(exception.cause, `is`(cause))
+    }
+
+    @Test
+    public fun `getKeyPair should throw KEY_STORE_ERROR on ClassCastException`() {
+        val cause = ClassCastException("Test Exception")
+        whenever(mockKeyStore.getKey(any(), anyOrNull())).thenThrow(cause)
+
+        val exception = assertThrows(DPoPException::class.java) {
+            dpopKeyStore.getKeyPair()
+        }
+        assertEquals(exception.message, DPoPException.KEY_STORE_ERROR.message)
+        assertThat(exception.cause, `is`(cause))
+    }
+
+    @Test
     public fun `hasKeyPair should return true when alias exists`() {
         whenever(mockKeyStore.containsAlias(any())).thenReturn(true)
         val result = dpopKeyStore.hasKeyPair()
@@ -234,6 +272,7 @@ public class DPoPKeyStoreTest {
         assertEquals(exception.message, DPoPException.KEY_STORE_ERROR.message)
         assertThat(exception.cause, `is`(cause))
     }
+
 
     @Test
     public fun `generateKeyPair should retry without StrongBox when ProviderException occurs with StrongBox enabled`() {

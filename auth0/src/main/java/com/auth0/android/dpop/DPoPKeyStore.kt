@@ -6,19 +6,21 @@ import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Log
+import java.io.IOException
 import java.security.InvalidAlgorithmParameterException
 import java.security.KeyPairGenerator
 import java.security.KeyStore
 import java.security.KeyStoreException
 import java.security.NoSuchAlgorithmException
 import java.security.NoSuchProviderException
+import java.security.UnrecoverableKeyException
 import java.security.PrivateKey
 import java.security.ProviderException
 import java.security.PublicKey
+import java.security.cert.CertificateException
 import java.security.spec.ECGenParameterSpec
 import java.util.Calendar
 import javax.security.auth.x500.X500Principal
-import javax.security.cert.CertificateException
 
 /**
  * Class to handle all DPoP related keystore operations
@@ -99,6 +101,16 @@ internal open class DPoPKeyStore {
             }
         } catch (e: KeyStoreException) {
             throw DPoPException(DPoPException.Code.KEY_STORE_ERROR, e)
+        } catch (e: NoSuchAlgorithmException) {
+            throw DPoPException(DPoPException.Code.KEY_STORE_ERROR, e)
+        } catch (e: UnrecoverableKeyException) {
+            throw DPoPException(DPoPException.Code.KEY_STORE_ERROR, e)
+        } catch (e: ClassCastException) {
+            throw DPoPException(DPoPException.Code.KEY_STORE_ERROR, e)
+        } catch (e: IOException) {
+            throw DPoPException(DPoPException.Code.KEY_STORE_ERROR, e)
+        } catch (e: CertificateException) {
+            throw DPoPException(DPoPException.Code.KEY_STORE_ERROR, e)
         }
         Log.d(TAG, "Returning null key pair ")
         return null
@@ -109,6 +121,12 @@ internal open class DPoPKeyStore {
             return keyStore.containsAlias(KEY_ALIAS)
         } catch (e: KeyStoreException) {
             throw DPoPException(DPoPException.Code.KEY_STORE_ERROR, e)
+        } catch (e: NoSuchAlgorithmException) {
+            throw DPoPException(DPoPException.Code.KEY_STORE_ERROR, e)
+        } catch (e: IOException) {
+            throw DPoPException(DPoPException.Code.KEY_STORE_ERROR, e)
+        } catch (e: CertificateException) {
+            throw DPoPException(DPoPException.Code.KEY_STORE_ERROR, e)
         }
     }
 
@@ -116,6 +134,12 @@ internal open class DPoPKeyStore {
         try {
             keyStore.deleteEntry(KEY_ALIAS)
         } catch (e: KeyStoreException) {
+            throw DPoPException(DPoPException.Code.KEY_STORE_ERROR, e)
+        } catch (e: NoSuchAlgorithmException) {
+            throw DPoPException(DPoPException.Code.KEY_STORE_ERROR, e)
+        } catch (e: IOException) {
+            throw DPoPException(DPoPException.Code.KEY_STORE_ERROR, e)
+        } catch (e: CertificateException) {
             throw DPoPException(DPoPException.Code.KEY_STORE_ERROR, e)
         }
     }
