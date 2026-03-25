@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.callback.Callback
+import com.auth0.android.dpop.DPoPException
+import com.auth0.android.dpop.DPoPUtil
 import com.auth0.android.result.APICredentials
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.SSOCredentials
@@ -23,7 +25,11 @@ public abstract class BaseCredentialsManager internal constructor(
 
     internal companion object {
         internal const val KEY_DPOP_THUMBPRINT = "com.auth0.dpop_key_thumbprint"
+
+        @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+        internal const val KEY_TOKEN_TYPE = "com.auth0.token_type"
     }
+
     private var _clock: Clock = ClockImpl()
 
     /**
@@ -158,6 +164,35 @@ public abstract class BaseCredentialsManager internal constructor(
     @get:VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
     internal val currentTimeInMillis: Long
         get() = _clock.getCurrentTimeMillis()
+
+    /**
+     * Stores the DPoP key thumbprint if DPoP was used for this credential set.
+     * Uses a dual strategy to store the thumbprint:
+     * - credentials.type == "DPoP" when server confirms DPoP but client lacks useDPoP()
+     * - isDPoPEnabled catches the case where client used DPoP, server returned token_type: "Bearer"
+     */
+    protected fun saveDPoPThumbprint(credentials: Credentials) {
+        val dpopUsed = credentials.type.equals("DPoP", ignoreCase = true)
+                || authenticationClient.isDPoPEnabled
+
+        if (!dpopUsed) {
+            storage.remove(KEY_DPOP_THUMBPRINT)
+            return
+        }
+
+        val thumbprint = try {
+            if (DPoPUtil.hasKeyPair()) DPoPUtil.getPublicKeyJWK() else null
+        } catch (e: DPoPException) {
+            Log.w(this::class.java.simpleName, "Failed to fetch DPoP key thumbprint", e)
+            null
+        }
+
+        if (thumbprint != null) {
+            storage.store(KEY_DPOP_THUMBPRINT, thumbprint)
+        } else {
+            storage.remove(KEY_DPOP_THUMBPRINT)
+        }
+    }
 
     /**
      * Checks if the stored scope is the same as the requested one.

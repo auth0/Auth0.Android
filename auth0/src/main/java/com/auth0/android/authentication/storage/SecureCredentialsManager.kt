@@ -189,6 +189,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             )
             storage.store(LEGACY_KEY_CACHE_EXPIRES_AT, credentials.expiresAt.time)
             storage.store(KEY_CAN_REFRESH, canRefresh)
+            storage.store(KEY_TOKEN_TYPE, credentials.type)
+            saveDPoPThumbprint(credentials)
         } catch (e: IncompatibleDeviceException) {
             throw CredentialsManagerException(
                 CredentialsManagerException.Code.INCOMPATIBLE_DEVICE, e
@@ -735,6 +737,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         storage.remove(KEY_EXPIRES_AT)
         storage.remove(LEGACY_KEY_CACHE_EXPIRES_AT)
         storage.remove(KEY_CAN_REFRESH)
+        storage.remove(KEY_TOKEN_TYPE)
+        storage.remove(KEY_DPOP_THUMBPRINT)
         clearBiometricSession()
         Log.d(TAG, "Credentials were just removed from the storage")
     }
@@ -893,7 +897,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     callback.onFailure(
                         CredentialsManagerException(
                             CredentialsManagerException.Code.MFA_REQUIRED,
-                            error.message ?: "Multi-factor authentication is required to complete the credential renewal.",
+                            error.message
+                                ?: "Multi-factor authentication is required to complete the credential renewal.",
                             error,
                             error.mfaRequiredErrorPayload
                         )
@@ -1051,7 +1056,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     callback.onFailure(
                         CredentialsManagerException(
                             CredentialsManagerException.Code.MFA_REQUIRED,
-                            error.message ?: "Multi-factor authentication is required to complete the credential renewal.",
+                            error.message
+                                ?: "Multi-factor authentication is required to complete the credential renewal.",
                             error,
                             error.mfaRequiredErrorPayload
                         )
@@ -1250,6 +1256,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
 
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         internal const val KEY_ALIAS = "com.auth0.key"
+
 
         // Using NO_SESSION to represent "no session" (uninitialized state)
         private const val NO_SESSION = -1L
