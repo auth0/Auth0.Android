@@ -238,9 +238,9 @@ public abstract class BaseCredentialsManager internal constructor(
 
         if (storedThumbprint != null) {
             if (currentThumbprint != storedThumbprint) {
-                Log.w(this::class.java.simpleName, "DPoP key thumbprint mismatch. Clearing stale credentials.")
+                Log.w(this::class.java.simpleName, "DPoP key thumbprint mismatch. The key pair has changed since credentials were saved. Clearing stale credentials.")
                 clearCredentials()
-                return CredentialsManagerException(CredentialsManagerException.Code.DPOP_KEY_MISSING)
+                return CredentialsManagerException(CredentialsManagerException.Code.DPOP_KEY_MISMATCH)
             }
         } else if (currentThumbprint != null) {
             // Migration: existing DPoP user upgraded — no thumbprint stored yet.
