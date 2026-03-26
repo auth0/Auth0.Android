@@ -195,6 +195,63 @@ public abstract class BaseCredentialsManager internal constructor(
     }
 
     /**
+     * Validates DPoP key/token alignment before attempting a refresh.
+     *
+     * Uses two signals to detect DPoP-bound credentials:
+     * - tokenType == "DPoP"
+     * - KEY_DPOP_THUMBPRINT exists
+     *
+     * @param tokenType the token_type value from storage (or decrypted credentials for migration)
+     * @return null if validation passes, or a CredentialsManagerException if it fails
+     */
+    protected fun validateDPoPState(tokenType: String?): CredentialsManagerException? {
+        val storedThumbprint = storage.retrieveString(KEY_DPOP_THUMBPRINT)
+        val isDPoPBound = (tokenType?.equals("DPoP", ignoreCase = true) == true)
+            || (storedThumbprint != null)
+        if (!isDPoPBound) return null
+
+        // Check 1: Does the DPoP key still exist in KeyStore?
+        val hasKey = try {
+            DPoPUtil.hasKeyPair()
+        } catch (e: DPoPException) {
+            Log.e(this::class.java.simpleName, "Failed to check DPoP key existence", e)
+            false
+        }
+        if (!hasKey) {
+            Log.w(this::class.java.simpleName, "DPoP key missing from KeyStore. Clearing stale credentials.")
+            clearCredentials()
+            return CredentialsManagerException(CredentialsManagerException.Code.DPOP_KEY_MISSING)
+        }
+
+        // Check 2: Is the AuthenticationAPIClient configured with DPoP?
+        if (!authenticationClient.isDPoPEnabled) {
+            return CredentialsManagerException(CredentialsManagerException.Code.DPOP_NOT_CONFIGURED)
+        }
+
+        // Check 3: Does the current key match the one used when credentials were saved?
+        val currentThumbprint = try {
+            DPoPUtil.getPublicKeyJWK()
+        } catch (e: DPoPException) {
+            Log.e(this::class.java.simpleName, "Failed to read DPoP key thumbprint", e)
+            null
+        }
+
+        if (storedThumbprint != null) {
+            if (currentThumbprint != storedThumbprint) {
+                Log.w(this::class.java.simpleName, "DPoP key thumbprint mismatch. The key pair has changed since credentials were saved. Clearing stale credentials.")
+                clearCredentials()
+                return CredentialsManagerException(CredentialsManagerException.Code.DPOP_KEY_MISMATCH)
+            }
+        } else if (currentThumbprint != null) {
+            // Migration: existing DPoP user upgraded — no thumbprint stored yet.
+            // Backfill so future checks can detect key rotation.
+            storage.store(KEY_DPOP_THUMBPRINT, currentThumbprint)
+        }
+
+        return null
+    }
+
+    /**
      * Checks if the stored scope is the same as the requested one.
      *
      * @param storedScope   the stored scope, separated by space characters.

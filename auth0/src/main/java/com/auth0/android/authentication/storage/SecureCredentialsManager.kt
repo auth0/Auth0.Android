@@ -282,6 +282,12 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 return@execute
             }
 
+            val tokenType = storage.retrieveString(KEY_TOKEN_TYPE) ?: existingCredentials.type
+            validateDPoPState(tokenType)?.let { dpopError ->
+                callback.onFailure(dpopError)
+                return@execute
+            }
+
             val request =
                 authenticationClient.ssoExchange(existingCredentials.refreshToken)
             try {
@@ -848,6 +854,11 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
                 return@execute
             }
+            val tokenType = storage.retrieveString(KEY_TOKEN_TYPE) ?: credentials.type
+            validateDPoPState(tokenType)?.let { dpopError ->
+                callback.onFailure(dpopError)
+                return@execute
+            }
             Log.d(TAG, "Credentials have expired. Renewing them now...")
             val request = authenticationClient.renewAuth(
                 credentials.refreshToken
@@ -963,6 +974,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             val encryptedEncodedJson = storage.retrieveString(getAPICredentialsKey(audience, scope))
             //Check if existing api credentials are present and valid
 
+            var apiCredentialType: String? = null
             encryptedEncodedJson?.let { encryptedEncoded ->
                 val encrypted = Base64.decode(encryptedEncoded, Base64.DEFAULT)
                 val json: String = try {
@@ -987,6 +999,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 }
 
                 val apiCredentials = gson.fromJson(json, APICredentials::class.java)
+                apiCredentialType = apiCredentials.type
 
                 val expiresAt = apiCredentials.expiresAt.time
                 val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
@@ -1011,6 +1024,12 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             val refreshToken = existingCredentials.refreshToken
             if (refreshToken == null) {
                 callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
+                return@execute
+            }
+
+            val tokenType = apiCredentialType ?: storage.retrieveString(KEY_TOKEN_TYPE) ?: existingCredentials.type
+            validateDPoPState(tokenType)?.let { dpopError ->
+                callback.onFailure(dpopError)
                 return@execute
             }
 
