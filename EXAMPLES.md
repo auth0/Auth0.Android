@@ -267,7 +267,7 @@ httpRequest.apply{
     }
 }
 ```
-If your API is issuing DPoP nonce's to prevent replay attacks, you can pass the nonce value to the `getHeaderData()` method to include it in the DPoP proof. Use the `DPoP.isNonceRequiredError(response: Response)` method to check if a particular API response failed because a nonce is required.
+If your API is issuing DPoP nonces to prevent replay attacks, you can pass the nonce value to the `getHeaderData()` method to include it in the DPoP proof. Use the `DPoP.isNonceRequiredError(response: Response)` method to check if a particular API response failed because a nonce is required.
 
 ```kotlin
 if (DPoP.isNonceRequiredError(response)) {
@@ -1649,7 +1649,7 @@ httpRequest.apply{
     }
 }
 ```
-If your API is issuing DPoP nonce's to prevent replay attacks, you can pass the nonce value to the `getHeaderData()` method to include it in the DPoP proof. Use the `DPoP.isNonceRequiredError(response: Response)` method to check if a particular API response failed because a nonce is required.
+If your API is issuing DPoP nonces to prevent replay attacks, you can pass the nonce value to the `getHeaderData()` method to include it in the DPoP proof. Use the `DPoP.isNonceRequiredError(response: Response)` method to check if a particular API response failed because a nonce is required.
 
 ```kotlin
 if (DPoP.isNonceRequiredError(response)) {
