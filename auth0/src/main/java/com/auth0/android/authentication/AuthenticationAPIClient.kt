@@ -982,7 +982,6 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val TOKEN_PATH = "token"
         private const val USER_INFO_PATH = "userinfo"
         private const val REVOKE_PATH = "revoke"
-        private const val MFA_PATH = "mfa"
         private const val CHALLENGE_PATH = "challenge"
         private const val PASSKEY_PATH = "passkey"
         private const val REGISTER_PATH = "register"
