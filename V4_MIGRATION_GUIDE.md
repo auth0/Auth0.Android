@@ -14,6 +14,7 @@ v4 of the Auth0 Android SDK includes significant build toolchain updates, update
   + [Kotlin Version](#kotlin-version)
 - [**Breaking Changes**](#breaking-changes)
   + [Classes Removed](#classes-removed)
+  + [Deprecated MFA Methods Removed from AuthenticationAPIClient](#deprecated-mfa-methods-removed-from-authenticationapiclient)
   + [DPoP Configuration Moved to Builder](#dpop-configuration-moved-to-builder)
   + [SSOCredentials.expiresIn Renamed to expiresAt](#ssocredentialsexpiresin-renamed-to-expiresat)
 - [**Default Values Changed**](#default-values-changed)
@@ -109,6 +110,15 @@ buildscript {
   1. Create a backend endpoint (e.g. `PATCH /me/metadata`) that accepts the operation your app needs.
   2. Call that endpoint from your app, passing the user's access token as a `Bearer` token in the `Authorization` header.
   3. On your backend, obtain a machine-to-machine token via the Client Credentials flow and use it to call the Management API with the precise scopes required.
+
+### Deprecated MFA Methods Removed from AuthenticationAPIClient
+
+The following MFA methods have been removed from `AuthenticationAPIClient`. They were deprecated in v3 in favor of the `MfaApiClient` class APIs.
+
+- `loginWithOTP(mfaToken, otp)`
+- `loginWithOOB(mfaToken, oobCode, bindingCode)`
+- `loginWithRecoveryCode(mfaToken, recoveryCode)`
+- `multifactorChallenge(mfaToken, challengeType, authenticatorId)`
 
 ### DPoP Configuration Moved to Builder
 
