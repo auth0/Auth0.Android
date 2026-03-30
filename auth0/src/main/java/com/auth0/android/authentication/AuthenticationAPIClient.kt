@@ -25,7 +25,6 @@ import com.auth0.android.request.internal.GsonAdapter.Companion.forMapOf
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.request.internal.RequestFactory
 import com.auth0.android.request.internal.ResponseUtils.isNetworkError
-import com.auth0.android.result.Challenge
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
 import com.auth0.android.result.PasskeyChallenge
@@ -172,42 +171,6 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             .setGrantType(ParameterBuilder.GRANT_TYPE_PASSWORD)
             .asDictionary()
         return loginWithToken(requestParameters)
-    }
-
-
-    /**
-     * Log in a user using the One Time Password code after they have received the 'mfa_required' error.
-     * The MFA token tells the server the username or email, password, and realm values sent on the first request.
-     *
-     * Requires your client to have the **MFA OTP** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
-     *
-     * Example usage:
-     *
-     *```
-     * client.loginWithOTP("{mfa token}", "{one time password}")
-     *     .validateClaims() //mandatory
-     *     .start(object : Callback<Credentials, AuthenticationException> {
-     *         override fun onFailure(error: AuthenticationException) { }
-     *         override fun onSuccess(result: Credentials) { }
-     * })
-     *```
-     *
-     * @param mfaToken the token received in the previous [.login] response.
-     * @param otp      the one time password code provided by the resource owner, typically obtained from an
-     * MFA application such as Google Authenticator or Guardian.
-     * @return a request to configure and start that will yield [Credentials]
-     */
-    @Deprecated(
-        message = "loginWithOTP is deprecated and will be removed in the next major version of the SDK. Use the APIs in the [com.auth0.android.authentication.mfa.MfaApiClient] class instead.",
-        level = DeprecationLevel.WARNING
-    )
-    public fun loginWithOTP(mfaToken: String, otp: String): AuthenticationRequest {
-        val parameters = ParameterBuilder.newBuilder()
-            .setGrantType(ParameterBuilder.GRANT_TYPE_MFA_OTP)
-            .set(MFA_TOKEN_KEY, mfaToken)
-            .set(ONE_TIME_PASSWORD_KEY, otp)
-            .asDictionary()
-        return loginWithToken(parameters)
     }
 
 
@@ -388,132 +351,6 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         )
 
         return factory.post(url.toString(), passkeyChallengeAdapter)
-            .addParameters(parameters)
-    }
-
-    /**
-     * Log in a user using an Out Of Band authentication code after they have received the 'mfa_required' error.
-     * The MFA token tells the server the username or email, password, and realm values sent on the first request.
-     *
-     * Requires your client to have the **MFA OOB** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
-     *
-     * Example usage:
-     *
-     *```
-     * client.loginWithOOB("{mfa token}", "{out of band code}", "{binding code}")
-     *     .validateClaims() //mandatory
-     *     .start(object : Callback<Credentials, AuthenticationException> {
-     *         override fun onFailure(error: AuthenticationException) { }
-     *         override fun onSuccess(result: Credentials) { }
-     * })
-     *```
-     *
-     * @param mfaToken the token received in the previous [.login] response.
-     * @param oobCode the out of band code received in the challenge response.
-     * @param bindingCode the code used to bind the side channel (used to deliver the challenge) with the main channel you are using to authenticate.
-     * This is usually an OTP-like code delivered as part of the challenge message.
-     * @return a request to configure and start that will yield [Credentials]
-     */
-    @Deprecated(
-        message = "loginWithOOB is deprecated and will be removed in the next major version of the SDK. Use the APIs in the [com.auth0.android.authentication.mfa.MfaApiClient] class instead.",
-        level = DeprecationLevel.WARNING
-    )
-    public fun loginWithOOB(
-        mfaToken: String,
-        oobCode: String,
-        bindingCode: String? = null
-    ): AuthenticationRequest {
-        val parameters = ParameterBuilder.newBuilder()
-            .setGrantType(ParameterBuilder.GRANT_TYPE_MFA_OOB)
-            .set(MFA_TOKEN_KEY, mfaToken)
-            .set(OUT_OF_BAND_CODE_KEY, oobCode)
-            .set(BINDING_CODE_KEY, bindingCode)
-            .asDictionary()
-        return loginWithToken(parameters)
-    }
-
-    /**
-     * Log in a user using a multi-factor authentication Recovery Code after they have received the 'mfa_required' error.
-     * The MFA token tells the server the username or email, password, and realm values sent on the first request.
-     *
-     * Requires your client to have the **MFA** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
-     *
-     * Example usage:
-     *
-     *```
-     * client.loginWithRecoveryCode("{mfa token}", "{recovery code}")
-     *     .validateClaims() //mandatory
-     *     .start(object : Callback<Credentials, AuthenticationException> {
-     *         override fun onFailure(error: AuthenticationException) { }
-     *         override fun onSuccess(result: Credentials) { }
-     * })
-     *```
-     *
-     * @param mfaToken the token received in the previous [.login] response.
-     * @param recoveryCode the recovery code provided by the end-user.
-     * @return a request to configure and start that will yield [Credentials]. It might also include a [recoveryCode] field,
-     * which your application must display to the end-user to be stored securely for future use.
-     */
-    @Deprecated(
-        message = "loginWithRecoveryCode is deprecated and will be removed in the next major version of the SDK. Use the APIs in the [com.auth0.android.authentication.mfa.MfaApiClient] class instead.",
-        level = DeprecationLevel.WARNING
-    )
-    public fun loginWithRecoveryCode(
-        mfaToken: String,
-        recoveryCode: String
-    ): AuthenticationRequest {
-        val parameters = ParameterBuilder.newBuilder()
-            .setGrantType(ParameterBuilder.GRANT_TYPE_MFA_RECOVERY_CODE)
-            .set(MFA_TOKEN_KEY, mfaToken)
-            .set(RECOVERY_CODE_KEY, recoveryCode)
-            .asDictionary()
-        return loginWithToken(parameters)
-    }
-
-    /**
-     * Request a challenge for multi-factor authentication (MFA) based on the challenge types supported by the application and user.
-     * The challenge type is how the user will get the challenge and prove possession. Supported challenge types include: "otp" and "oob".
-     *
-     * Example usage:
-     *
-     *```
-     * client.multifactorChallenge("{mfa token}", "{challenge type}", "{authenticator id}")
-     *     .start(object : Callback<Challenge, AuthenticationException> {
-     *         override fun onFailure(error: AuthenticationException) { }
-     *         override fun onSuccess(result: Challenge) { }
-     * })
-     *```
-     *
-     * @param mfaToken the token received in the previous [.login] response.
-     * @param challengeType A whitespace-separated list of the challenges types accepted by your application.
-     * Accepted challenge types are oob or otp. Excluding this parameter means that your client application
-     * accepts all supported challenge types.
-     * @param authenticatorId The ID of the authenticator to challenge.
-     * @return a request to configure and start that will yield [Challenge]
-     */
-    @Deprecated(
-        message = "multifactorChallenge is deprecated and will be removed in the next major version of the SDK. Use the APIs in the [com.auth0.android.authentication.mfa.MfaApiClient] class instead.",
-        level = DeprecationLevel.WARNING
-    )
-    public fun multifactorChallenge(
-        mfaToken: String,
-        challengeType: String? = null,
-        authenticatorId: String? = null
-    ): Request<Challenge, AuthenticationException> {
-        val parameters = ParameterBuilder.newBuilder()
-            .setClientId(clientId)
-            .set(MFA_TOKEN_KEY, mfaToken)
-            .set(CHALLENGE_TYPE_KEY, challengeType)
-            .set(AUTHENTICATOR_ID_KEY, authenticatorId)
-            .asDictionary()
-        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
-            .addPathSegment(MFA_PATH)
-            .addPathSegment(CHALLENGE_PATH)
-            .build()
-        val challengeAdapter: JsonAdapter<Challenge> = GsonAdapter(
-            Challenge::class.java, gson
-        )
-        return factory.post(url.toString(), challengeAdapter)
             .addParameters(parameters)
     }
 
@@ -1128,13 +965,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val OAUTH_CODE_KEY = "code"
         private const val REDIRECT_URI_KEY = "redirect_uri"
         private const val TOKEN_KEY = "token"
-        private const val MFA_TOKEN_KEY = "mfa_token"
         private const val ONE_TIME_PASSWORD_KEY = "otp"
-        private const val OUT_OF_BAND_CODE_KEY = "oob_code"
-        private const val BINDING_CODE_KEY = "binding_code"
-        private const val CHALLENGE_TYPE_KEY = "challenge_type"
-        private const val AUTHENTICATOR_ID_KEY = "authenticator_id"
-        private const val RECOVERY_CODE_KEY = "recovery_code"
         private const val SUBJECT_TOKEN_KEY = "subject_token"
         private const val SUBJECT_TOKEN_TYPE_KEY = "subject_token_type"
         private const val ORGANIZATION_KEY = "organization"
