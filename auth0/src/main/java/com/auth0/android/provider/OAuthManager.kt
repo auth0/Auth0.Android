@@ -16,13 +16,12 @@ import com.auth0.android.dpop.DPoPException
 import com.auth0.android.request.internal.Jwt
 import com.auth0.android.request.internal.OidcUtils
 import com.auth0.android.result.Credentials
-import java.lang.ref.WeakReference
 import java.security.SecureRandom
 import java.util.*
 
 internal class OAuthManager(
     private val account: Auth0,
-    callback: Callback<Credentials, AuthenticationException>,
+    private val callback: Callback<Credentials, AuthenticationException>,
     parameters: Map<String, String>,
     ctOptions: CustomTabsOptions,
     private val launchAsTwa: Boolean = false,
@@ -30,27 +29,6 @@ internal class OAuthManager(
     @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal val dPoP: DPoP? = null
 ) : ResumableManager() {
-    private val callbackRef = WeakReference(callback)
-
-    private fun deliverSuccess(credentials: Credentials) {
-        val cb = callbackRef.get()
-        if (cb != null) {
-            cb.onSuccess(credentials)
-        } else {
-            WebAuthProvider.pendingLoginResult =
-                WebAuthProvider.PendingResult.Success(credentials)
-        }
-    }
-
-    private fun deliverFailure(error: AuthenticationException) {
-        val cb = callbackRef.get()
-        if (cb != null) {
-            cb.onFailure(error)
-        } else {
-            WebAuthProvider.pendingLoginResult =
-                WebAuthProvider.PendingResult.Failure(error)
-        }
-    }
 
     private val parameters: MutableMap<String, String>
     private val headers: MutableMap<String, String>
@@ -91,7 +69,7 @@ internal class OAuthManager(
         try {
             addDPoPJWKParameters(parameters)
         } catch (ex: DPoPException) {
-            deliverFailure(
+            callback.onFailure(
                 AuthenticationException(
                     ex.message ?: "Error generating the JWK",
                     ex
@@ -120,7 +98,7 @@ internal class OAuthManager(
                 AuthenticationException.ERROR_VALUE_AUTHENTICATION_CANCELED,
                 "The user closed the browser app and the authentication was canceled."
             )
-            deliverFailure(exception)
+            callback.onFailure(exception)
             return true
         }
         val values = CallbackHelper.getValuesFromUri(result.intentData)
@@ -133,7 +111,7 @@ internal class OAuthManager(
             assertNoError(values[KEY_ERROR], values[KEY_ERROR_DESCRIPTION])
             assertValidState(parameters[KEY_STATE]!!, values[KEY_STATE])
         } catch (e: AuthenticationException) {
-            deliverFailure(e)
+            callback.onFailure(e)
             return true
         }
 
@@ -146,14 +124,14 @@ internal class OAuthManager(
                         credentials.idToken,
                         object : Callback<Void?, Auth0Exception> {
                             override fun onSuccess(result: Void?) {
-                                deliverSuccess(credentials)
+                                callback.onSuccess(credentials)
                             }
 
                             override fun onFailure(error: Auth0Exception) {
                                 val wrappedError = AuthenticationException(
                                     ERROR_VALUE_ID_TOKEN_VALIDATION_FAILED, error
                                 )
-                                deliverFailure(wrappedError)
+                                callback.onFailure(wrappedError)
                             }
                         })
                 }
@@ -165,14 +143,14 @@ internal class OAuthManager(
                             "Unable to complete authentication with PKCE. PKCE support can be enabled by setting Application Type to 'Native' and Token Endpoint Authentication Method to 'None' for this app at 'https://manage.auth0.com/#/applications/" + apiClient.clientId + "/settings'."
                         )
                     }
-                    deliverFailure(error)
+                    callback.onFailure(error)
                 }
             })
         return true
     }
 
     public override fun failure(exception: AuthenticationException) {
-        deliverFailure(exception)
+        callback.onFailure(exception)
     }
 
     private fun assertValidIdToken(

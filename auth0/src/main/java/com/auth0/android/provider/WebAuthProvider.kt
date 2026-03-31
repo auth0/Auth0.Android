@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.annotation.VisibleForTesting
+import androidx.lifecycle.LifecycleOwner
 import com.auth0.android.Auth0
 import com.auth0.android.annotation.ExperimentalAuth0Api
 import com.auth0.android.authentication.AuthenticationException
@@ -18,6 +19,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import java.util.Locale
 import java.util.concurrent.CopyOnWriteArraySet
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -49,15 +51,13 @@ public object WebAuthProvider {
         data class Failure<E>(val error: E) : PendingResult<Nothing, E>()
     }
 
-    @Volatile
-    @JvmStatic
-    @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal var pendingLoginResult: PendingResult<Credentials, AuthenticationException>? = null
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal val pendingLoginResult =
+        AtomicReference<PendingResult<Credentials, AuthenticationException>?>(null)
 
-    @Volatile
-    @JvmStatic
-    @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal var pendingLogoutResult: PendingResult<Void?, AuthenticationException>? = null
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal val pendingLogoutResult =
+        AtomicReference<PendingResult<Void?, AuthenticationException>?>(null)
 
     /**
      * Check for and consume a pending login result that arrived during a configuration change.
@@ -69,8 +69,7 @@ public object WebAuthProvider {
      */
     @JvmStatic
     public fun consumePendingLoginResult(callback: Callback<Credentials, AuthenticationException>): Boolean {
-        val result = pendingLoginResult ?: return false
-        pendingLoginResult = null
+        val result = pendingLoginResult.getAndSet(null) ?: return false
         when (result) {
             is PendingResult.Success -> callback.onSuccess(result.result)
             is PendingResult.Failure -> callback.onFailure(result.error)
@@ -89,8 +88,7 @@ public object WebAuthProvider {
      */
     @JvmStatic
     public fun consumePendingLogoutResult(callback: Callback<Void?, AuthenticationException>): Boolean {
-        val result = pendingLogoutResult ?: return false
-        pendingLogoutResult = null
+        val result = pendingLogoutResult.getAndSet(null) ?: return false
         when (result) {
             is PendingResult.Success -> callback.onSuccess(result.result)
             is PendingResult.Failure -> callback.onFailure(result.error)
@@ -302,6 +300,27 @@ public object WebAuthProvider {
          * @see AuthenticationException.isAuthenticationCanceled
          */
         public fun start(context: Context, callback: Callback<Void?, AuthenticationException>) {
+            pendingLogoutResult.set(null)
+
+            val effectiveCallback = if (context is LifecycleOwner) {
+                LifecycleAwareCallback<Void?>(
+                    inner = callback,
+                    lifecycleOwner = context as LifecycleOwner,
+                    onDetached = { _: Void?, error: AuthenticationException? ->
+                        if (error != null) {
+                            pendingLogoutResult.set(PendingResult.Failure(error))
+                        } else {
+                            pendingLogoutResult.set(PendingResult.Success(null))
+                        }
+                    }
+                )
+            } else {
+                callback
+            }
+            startInternal(context, effectiveCallback)
+        }
+
+        internal fun startInternal(context: Context, callback: Callback<Void?, AuthenticationException>) {
             resetManagerInstance()
             if (!ctOptions.hasCompatibleBrowser(context.packageManager)) {
                 val ex = AuthenticationException(
@@ -346,7 +365,7 @@ public object WebAuthProvider {
         ) {
             return withContext(coroutineContext) {
                 suspendCancellableCoroutine { continuation ->
-                    start(context, object : Callback<Void?, AuthenticationException> {
+                    startInternal(context, object : Callback<Void?, AuthenticationException> {
                         override fun onSuccess(result: Void?) {
                             continuation.resume(Unit)
                         }
@@ -653,6 +672,29 @@ public object WebAuthProvider {
             context: Context,
             callback: Callback<Credentials, AuthenticationException>
         ) {
+            pendingLoginResult.set(null)
+            val effectiveCallback = if (context is LifecycleOwner) {
+                LifecycleAwareCallback<Credentials>(
+                    inner = callback,
+                    lifecycleOwner = context as LifecycleOwner,
+                    onDetached = { success: Credentials?, error: AuthenticationException? ->
+                        if (success != null) {
+                            pendingLoginResult.set(PendingResult.Success(success))
+                        } else if (error != null) {
+                            pendingLoginResult.set(PendingResult.Failure(error))
+                        }
+                    }
+                )
+            } else {
+                callback
+            }
+            startInternal(context, effectiveCallback)
+        }
+
+        internal fun startInternal(
+            context: Context,
+            callback: Callback<Credentials, AuthenticationException>
+        ) {
             resetManagerInstance()
             if (!ctOptions.hasCompatibleBrowser(context.packageManager)) {
                 val ex = AuthenticationException(
@@ -725,7 +767,9 @@ public object WebAuthProvider {
         ): Credentials {
             return withContext(coroutineContext) {
                 suspendCancellableCoroutine { continuation ->
-                    start(context, object : Callback<Credentials, AuthenticationException> {
+                    // Use startInternal directly — the anonymous callback captures only the
+                    // coroutine continuation, not an Activity, so lifecycle wrapping is not needed
+                    startInternal(context, object : Callback<Credentials, AuthenticationException> {
                         override fun onSuccess(result: Credentials) {
                             continuation.resume(result)
                         }
