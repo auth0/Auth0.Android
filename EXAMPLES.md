@@ -15,14 +15,12 @@
   - [DPoP](#dpop)
   - [Authentication API](#authentication-api)
     - [Login with database connection](#login-with-database-connection)
-    - [Login using MFA with One Time Password code](#login-using-mfa-with-one-time-password-code)
     - [MFA Flexible Factors Grant](#mfa-flexible-factors-grant)
       - [Understanding the mfa_required Error Payload](#understanding-the-mfa_required-error-payload)
       - [Handling MFA Required Errors](#handling-mfa-required-errors)
       - [Getting Available Authenticators](#getting-available-authenticators)
       - [Enrolling New Authenticators](#enrolling-new-authenticators)
       - [Challenging an Authenticator](#challenging-an-authenticator)
-      - [Verifying MFA](#verifying-mfa)
       - [MFA Client Errors](#mfa-client-errors)
     - [Passwordless Login](#passwordless-login)
       - [Step 1: Request the code](#step-1-request-the-code)
@@ -52,11 +50,6 @@
     - [Handling Credentials Manager exceptions](#handling-credentials-manager-exceptions)
   - [Passkeys](#passkeys)
   - [Bot Protection](#bot-protection)
-  - [Management API](#management-api)
-    - [Link users](#link-users)
-    - [Unlink users](#unlink-users)
-    - [Get User Profile](#get-user-profile)
-    - [Update User Metadata](#update-user-metadata)
   - [Token Validation](#token-validation)
   - [Organizations](#organizations)
     - [Log in to an organization](#log-in-to-an-organization)
@@ -387,62 +380,6 @@ try {
 ```java
 authentication
     .login("info@auth0.com", "a secret password", "my-database-connection")
-    .validateClaims() //mandatory
-    .start(new Callback<Credentials, AuthenticationException>() {
-        @Override
-        public void onSuccess(@Nullable Credentials payload) {
-            //Logged in!
-        }
-
-        @Override
-        public void onFailure(@NonNull AuthenticationException error) {
-            //Error!
-        }
-    });
-```
-</details>
-
-> The default scope used is `openid profile email`. Regardless of the scopes set to the request, the `openid` scope is always enforced.
-
-### Login using MFA with One Time Password code
-
-This call requires the client to have the *MFA* Client Grant Type enabled. Check [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
-
-When you sign in to a multifactor authentication enabled connection using the `login` method, you receive an error standing that MFA is required for that user along with an `mfa_token` value. Use this value to call `loginWithOTP` and complete the MFA flow passing the One Time Password from the enrolled MFA code generator app.
-
-```kotlin
-authentication
-    .loginWithOTP("the mfa token", "123456")
-    .validateClaims() //mandatory
-    .start(object: Callback<Credentials, AuthenticationException> {
-        override fun onFailure(exception: AuthenticationException) { }
-
-        override fun onSuccess(credentials: Credentials) { }
-    })
-```
-
-<details>
-  <summary>Using coroutines</summary>
-
-```kotlin
-try {
-    val credentials = authentication
-        .loginWithOTP("the mfa token", "123456")
-        .validateClaims()
-        .await()
-    println(credentials)
-} catch (e: AuthenticationException) {
-    e.printStacktrace()
-}
-```
-</details>
-
-<details>
-  <summary>Using Java</summary>
-
-```java
-authentication
-    .loginWithOTP("the mfa token", "123456")
     .validateClaims() //mandatory
     .start(new Callback<Credentials, AuthenticationException>() {
         @Override
