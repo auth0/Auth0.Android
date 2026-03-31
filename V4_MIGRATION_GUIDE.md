@@ -302,8 +302,10 @@ migrate to the Builder.
 ### Handling Configuration Changes During Authentication
 
 v4 fixes a memory leak and lost callback issue when the Activity is destroyed during authentication
-(e.g. device rotation, locale change, dark mode toggle). The SDK now uses `WeakReference` for
-callbacks, so destroyed Activities are properly garbage collected.
+(e.g. device rotation, locale change, dark mode toggle). The SDK wraps the callback in a
+`LifecycleAwareCallback` that observes the host Activity/Fragment lifecycle. When `onDestroy` fires,
+the reference to the callback is immediately nulled out so the destroyed Activity is no longer held
+in memory.
 
 If the authentication result arrives while the Activity is being recreated, it is cached internally.
 Use `consumePendingLoginResult()` or `consumePendingLogoutResult()` in your `onResume()` to recover it:
