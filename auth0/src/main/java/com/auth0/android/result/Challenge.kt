@@ -6,7 +6,7 @@ import com.google.gson.annotations.SerializedName
 /**
  * Multi-factor authentication (MFA) challenge
  *
- * @see [com.auth0.android.authentication.AuthenticationAPIClient.multifactorChallenge]
+ * @see [com.auth0.android.authentication.mfa.MfaApiClient]
  */
 public class Challenge(
     @field:JsonRequired @field:SerializedName("challenge_type")
