@@ -50,9 +50,9 @@ public object WebAuthProvider {
         data class Failure(val error: AuthenticationException) : PendingResult<Nothing>()
     }
 
-    internal val pendingLoginResult = AtomicReference<PendingResult<Credentials>?>(null)
+    private val pendingLoginResult = AtomicReference<PendingResult<Credentials>?>(null)
 
-    internal val pendingLogoutResult = AtomicReference<PendingResult<Void?>?>(null)
+    private val pendingLogoutResult = AtomicReference<PendingResult<Void?>?>(null)
 
     /**
      * Registers login (and optionally logout) callbacks for the duration of the given
