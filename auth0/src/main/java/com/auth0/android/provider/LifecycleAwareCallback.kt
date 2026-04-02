@@ -19,7 +19,7 @@ import com.auth0.android.callback.Callback
  * @param onDetached called when a result arrives but the callback is already detached
  */
 internal class LifecycleAwareCallback<S>(
-    private var delegateCallback: Callback<S, AuthenticationException>?,
+    @Volatile private var delegateCallback: Callback<S, AuthenticationException>?,
     lifecycleOwner: LifecycleOwner,
     private val onDetached: (success: S?, error: AuthenticationException?) -> Unit,
 ) : Callback<S, AuthenticationException>, DefaultLifecycleObserver {

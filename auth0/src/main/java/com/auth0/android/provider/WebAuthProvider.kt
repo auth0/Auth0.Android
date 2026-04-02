@@ -204,14 +204,22 @@ public object WebAuthProvider {
                     state,
                     object : Callback<Credentials, AuthenticationException> {
                         override fun onSuccess(result: Credentials) {
-                            for (callback in callbacks) {
-                                callback.onSuccess(result)
+                            if (callbacks.isNotEmpty()) {
+                                for (callback in callbacks) {
+                                    callback.onSuccess(result)
+                                }
+                            } else {
+                                pendingLoginResult.set(PendingResult.Success(result))
                             }
                         }
 
                         override fun onFailure(error: AuthenticationException) {
-                            for (callback in callbacks) {
-                                callback.onFailure(error)
+                            if (callbacks.isNotEmpty()) {
+                                for (callback in callbacks) {
+                                    callback.onFailure(error)
+                                }
+                            } else {
+                                pendingLoginResult.set(PendingResult.Failure(error))
                             }
                         }
                     },
@@ -713,7 +721,7 @@ public object WebAuthProvider {
             startInternal(context, effectiveCallback)
         }
 
-        internal fun startInternal(
+        private fun startInternal(
             context: Context,
             callback: Callback<Credentials, AuthenticationException>
         ) {
