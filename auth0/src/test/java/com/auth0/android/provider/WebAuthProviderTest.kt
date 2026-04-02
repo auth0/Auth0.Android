@@ -2,6 +2,7 @@ package com.auth0.android.provider
 
 import android.app.Activity
 import android.content.Context
+import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import android.content.Intent
@@ -116,6 +117,7 @@ public class WebAuthProviderTest {
 
         `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
 
+        // Clear any pending results left over from previous tests
         WebAuthProvider.pendingLoginResult.set(null)
         WebAuthProvider.pendingLogoutResult.set(null)
     }
@@ -3070,79 +3072,6 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public fun shouldConsumePendingLoginSuccessResult() {
-        val credentials = Mockito.mock(Credentials::class.java)
-        WebAuthProvider.pendingLoginResult.set(WebAuthProvider.PendingResult.Success(credentials))
-
-        val consumed = WebAuthProvider.consumePendingLoginResult(callback)
-        Assert.assertTrue(consumed)
-        verify(callback).onSuccess(credentials)
-        Assert.assertNull(WebAuthProvider.pendingLoginResult.get())
-    }
-
-    @Test
-    public fun shouldConsumePendingLoginFailureResult() {
-        val error = AuthenticationException("test_error", "Test error description")
-        WebAuthProvider.pendingLoginResult.set(WebAuthProvider.PendingResult.Failure(error))
-
-        val consumed = WebAuthProvider.consumePendingLoginResult(callback)
-        Assert.assertTrue(consumed)
-        verify(callback).onFailure(error)
-        Assert.assertNull(WebAuthProvider.pendingLoginResult.get())
-    }
-
-    @Test
-    public fun shouldReturnFalseWhenNoPendingLoginResult() {
-        WebAuthProvider.pendingLoginResult.set(null)
-
-        val consumed = WebAuthProvider.consumePendingLoginResult(callback)
-        Assert.assertFalse(consumed)
-        verify(callback, Mockito.never()).onSuccess(any())
-        verify(callback, Mockito.never()).onFailure(any())
-    }
-
-    @Test
-    public fun shouldNotConsumeLoginResultTwice() {
-        val credentials = Mockito.mock(Credentials::class.java)
-        WebAuthProvider.pendingLoginResult.set(WebAuthProvider.PendingResult.Success(credentials))
-
-        Assert.assertTrue(WebAuthProvider.consumePendingLoginResult(callback))
-        Assert.assertFalse(WebAuthProvider.consumePendingLoginResult(callback))
-        verify(callback, times(1)).onSuccess(credentials)
-    }
-
-    @Test
-    public fun shouldConsumePendingLogoutSuccessResult() {
-        WebAuthProvider.pendingLogoutResult.set(WebAuthProvider.PendingResult.Success(null))
-
-        val consumed = WebAuthProvider.consumePendingLogoutResult(voidCallback)
-        Assert.assertTrue(consumed)
-        verify(voidCallback).onSuccess(null)
-        Assert.assertNull(WebAuthProvider.pendingLogoutResult.get())
-    }
-
-    @Test
-    public fun shouldConsumePendingLogoutFailureResult() {
-        val error = AuthenticationException("test_error", "Test error description")
-        WebAuthProvider.pendingLogoutResult.set(WebAuthProvider.PendingResult.Failure(error))
-
-        val consumed = WebAuthProvider.consumePendingLogoutResult(voidCallback)
-        Assert.assertTrue(consumed)
-        verify(voidCallback).onFailure(error)
-        Assert.assertNull(WebAuthProvider.pendingLogoutResult.get())
-    }
-
-    @Test
-    public fun shouldReturnFalseWhenNoPendingLogoutResult() {
-        WebAuthProvider.pendingLogoutResult.set(null)
-
-        val consumed = WebAuthProvider.consumePendingLogoutResult(voidCallback)
-        Assert.assertFalse(consumed)
-        verify(voidCallback, Mockito.never()).onSuccess(any())
-        verify(voidCallback, Mockito.never()).onFailure(any())
-    }
-
-    @Test
     public fun shouldCacheLoginResultWhenLifecycleCallbackIsDetachedOnDestroy() {
         val credentials = Mockito.mock(Credentials::class.java)
         WebAuthProvider.pendingLoginResult.set(null)
@@ -3152,7 +3081,7 @@ public class WebAuthProviderTest {
         Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
 
         val lifecycleCallback = LifecycleAwareCallback<Credentials>(
-            inner = callback,
+            delegateCallback = callback,
             lifecycleOwner = lifecycleOwner,
             onDetached = { success, error ->
                 if (success != null) WebAuthProvider.pendingLoginResult.set(WebAuthProvider.PendingResult.Success(success))
@@ -3181,7 +3110,7 @@ public class WebAuthProviderTest {
         Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
 
         val lifecycleCallback = LifecycleAwareCallback<Credentials>(
-            inner = callback,
+            delegateCallback = callback,
             lifecycleOwner = lifecycleOwner,
             onDetached = { success, detachedError ->
                 if (success != null) WebAuthProvider.pendingLoginResult.set(WebAuthProvider.PendingResult.Success(success))
@@ -3207,7 +3136,7 @@ public class WebAuthProviderTest {
         Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
 
         val lifecycleCallback = LifecycleAwareCallback<Credentials>(
-            inner = callback,
+            delegateCallback = callback,
             lifecycleOwner = lifecycleOwner,
             onDetached = { success, error ->
                 if (success != null) WebAuthProvider.pendingLoginResult.set(WebAuthProvider.PendingResult.Success(success))
@@ -3230,7 +3159,7 @@ public class WebAuthProviderTest {
         Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
 
         val lifecycleCallback = LifecycleAwareCallback<Credentials>(
-            inner = callback,
+            delegateCallback = callback,
             lifecycleOwner = lifecycleOwner,
             onDetached = { success, detachedError ->
                 if (success != null) WebAuthProvider.pendingLoginResult.set(WebAuthProvider.PendingResult.Success(success))
@@ -3253,7 +3182,7 @@ public class WebAuthProviderTest {
         Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
 
         val lifecycleCallback = LifecycleAwareCallback<Void?>(
-            inner = voidCallback,
+            delegateCallback = voidCallback,
             lifecycleOwner = lifecycleOwner,
             onDetached = { success, error ->
                 if (error != null) WebAuthProvider.pendingLogoutResult.set(WebAuthProvider.PendingResult.Failure(error))
@@ -3280,7 +3209,7 @@ public class WebAuthProviderTest {
         Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
 
         val lifecycleCallback = LifecycleAwareCallback<Void?>(
-            inner = voidCallback,
+            delegateCallback = voidCallback,
             lifecycleOwner = lifecycleOwner,
             onDetached = { success, detachedError ->
                 if (detachedError != null) WebAuthProvider.pendingLogoutResult.set(WebAuthProvider.PendingResult.Failure(detachedError))
@@ -3304,7 +3233,7 @@ public class WebAuthProviderTest {
         Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
 
         val lifecycleCallback = LifecycleAwareCallback<Void?>(
-            inner = voidCallback,
+            delegateCallback = voidCallback,
             lifecycleOwner = lifecycleOwner,
             onDetached = { success, error ->
                 if (error != null) WebAuthProvider.pendingLogoutResult.set(WebAuthProvider.PendingResult.Failure(error))
@@ -3319,22 +3248,13 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public fun shouldNotConsumeLogoutResultTwice() {
-        WebAuthProvider.pendingLogoutResult.set(WebAuthProvider.PendingResult.Success(null))
-
-        Assert.assertTrue(WebAuthProvider.consumePendingLogoutResult(voidCallback))
-        Assert.assertFalse(WebAuthProvider.consumePendingLogoutResult(voidCallback))
-        verify(voidCallback, times(1)).onSuccess(null)
-    }
-
-    @Test
     public fun shouldRegisterAsLifecycleObserverOnInit() {
         val lifecycleOwner = Mockito.mock(LifecycleOwner::class.java)
         val lifecycle = Mockito.mock(Lifecycle::class.java)
         Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
 
         val lifecycleCallback = LifecycleAwareCallback<Credentials>(
-            inner = callback,
+            delegateCallback = callback,
             lifecycleOwner = lifecycleOwner,
             onDetached = { _, _ -> }
         )
@@ -3349,7 +3269,7 @@ public class WebAuthProviderTest {
         Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
 
         val lifecycleCallback = LifecycleAwareCallback<Credentials>(
-            inner = callback,
+            delegateCallback = callback,
             lifecycleOwner = lifecycleOwner,
             onDetached = { _, _ -> }
         )
@@ -3376,6 +3296,111 @@ public class WebAuthProviderTest {
         logout(account).start(activity, voidCallback)
 
         Assert.assertNull(WebAuthProvider.pendingLogoutResult.get())
+    }
+
+
+    @Test
+    public fun shouldDeliverPendingLoginResultOnAttach() {
+        val credentials = Mockito.mock(Credentials::class.java)
+        WebAuthProvider.pendingLoginResult.set(WebAuthProvider.PendingResult.Success(credentials))
+
+        val lifecycleOwner = Mockito.mock(LifecycleOwner::class.java)
+        val lifecycle = Mockito.mock(Lifecycle::class.java)
+        Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
+
+        WebAuthProvider.attach(lifecycleOwner, loginCallback = callback)
+
+        verify(callback).onSuccess(credentials)
+        Assert.assertNull(WebAuthProvider.pendingLoginResult.get())
+    }
+
+    @Test
+    public fun shouldDeliverPendingLoginFailureOnAttach() {
+        val error = AuthenticationException("canceled", "User canceled")
+        WebAuthProvider.pendingLoginResult.set(WebAuthProvider.PendingResult.Failure(error))
+
+        val lifecycleOwner = Mockito.mock(LifecycleOwner::class.java)
+        val lifecycle = Mockito.mock(Lifecycle::class.java)
+        Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
+
+        WebAuthProvider.attach(lifecycleOwner, loginCallback = callback)
+
+        verify(callback).onFailure(error)
+        Assert.assertNull(WebAuthProvider.pendingLoginResult.get())
+    }
+
+    @Test
+    public fun shouldDeliverPendingLogoutResultOnAttach() {
+        WebAuthProvider.pendingLogoutResult.set(WebAuthProvider.PendingResult.Success(null))
+
+        val lifecycleOwner = Mockito.mock(LifecycleOwner::class.java)
+        val lifecycle = Mockito.mock(Lifecycle::class.java)
+        Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
+
+        WebAuthProvider.attach(lifecycleOwner, loginCallback = callback, logoutCallback = voidCallback)
+
+        verify(voidCallback).onSuccess(null)
+        Assert.assertNull(WebAuthProvider.pendingLogoutResult.get())
+    }
+
+    @Test
+    public fun shouldDeliverPendingLogoutFailureOnAttach() {
+        val error = AuthenticationException("canceled", "User closed the browser")
+        WebAuthProvider.pendingLogoutResult.set(WebAuthProvider.PendingResult.Failure(error))
+
+        val lifecycleOwner = Mockito.mock(LifecycleOwner::class.java)
+        val lifecycle = Mockito.mock(Lifecycle::class.java)
+        Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
+
+        WebAuthProvider.attach(lifecycleOwner, loginCallback = callback, logoutCallback = voidCallback)
+
+        verify(voidCallback).onFailure(error)
+        Assert.assertNull(WebAuthProvider.pendingLogoutResult.get())
+    }
+
+    @Test
+    public fun shouldRegisterLoginCallbackForProcessDeathOnAttach() {
+        val lifecycleOwner = Mockito.mock(LifecycleOwner::class.java)
+        val lifecycle = Mockito.mock(Lifecycle::class.java)
+        Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
+
+        WebAuthProvider.attach(lifecycleOwner, loginCallback = callback)
+
+        Assert.assertTrue(WebAuthProvider.callbacks.contains(callback))
+    }
+
+    @Test
+    public fun shouldAutoRemoveLoginCallbackOnDestroyAfterAttach() {
+        val lifecycleOwner = Mockito.mock(LifecycleOwner::class.java)
+        val lifecycle = Mockito.mock(Lifecycle::class.java)
+        Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
+
+        // Capture the observer registered by attach()
+        val observerCaptor = argumentCaptor<DefaultLifecycleObserver>()
+        WebAuthProvider.attach(lifecycleOwner, loginCallback = callback)
+        verify(lifecycle).addObserver(observerCaptor.capture())
+
+        Assert.assertTrue(WebAuthProvider.callbacks.contains(callback))
+
+        // Simulate onDestroy
+        observerCaptor.firstValue.onDestroy(lifecycleOwner)
+
+        Assert.assertFalse(WebAuthProvider.callbacks.contains(callback))
+    }
+
+    @Test
+    public fun shouldNotDeliverLogoutResultWhenNoLogoutCallbackPassedToAttach() {
+        WebAuthProvider.pendingLogoutResult.set(WebAuthProvider.PendingResult.Success(null))
+
+        val lifecycleOwner = Mockito.mock(LifecycleOwner::class.java)
+        val lifecycle = Mockito.mock(Lifecycle::class.java)
+        Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
+
+        // attach without logoutCallback — pending logout result should stay untouched
+        WebAuthProvider.attach(lifecycleOwner, loginCallback = callback)
+
+        verify(voidCallback, Mockito.never()).onSuccess(any())
+        Assert.assertNotNull(WebAuthProvider.pendingLogoutResult.get())
     }
 
     private companion object {
