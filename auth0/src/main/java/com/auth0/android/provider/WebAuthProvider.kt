@@ -55,21 +55,21 @@ public object WebAuthProvider {
     internal val pendingLogoutResult = AtomicReference<PendingResult<Void?>?>(null)
 
     /**
-     * Attaches login (and optionally logout) callbacks for the duration of the given
-     * [lifecycleOwner]'s lifetime. Call this once in `onResume()` — it covers both recovery
+     * Registers login (and optionally logout) callbacks for the duration of the given
+     * [lifecycleOwner]'s lifetime. Call this once in `onCreate()` — it covers both recovery
      * scenarios automatically:
      *
-     * - **Configuration change** (rotation, locale, dark mode): if a login or logout result
-     *   arrived while the Activity was being recreated, it is delivered immediately.
-     * - **Process death**: [loginCallback] is registered as a listener so that if the process
+     * - **Process death**: [loginCallback] is registered immediately so that if the process
      *   was killed while the browser was open, the result is delivered when the Activity is
      *   restored. The callback is automatically unregistered when [lifecycleOwner] is destroyed,
      *   so there is no need to call [removeCallback] manually.
+     * - **Configuration change** (rotation, locale, dark mode): any login or logout result
+     *   that arrived while the Activity was being recreated is delivered on the next `onResume`.
      *
      * ```kotlin
-     * override fun onResume() {
-     *     super.onResume()
-     *     WebAuthProvider.attach(this, loginCallback = callback, logoutCallback = voidCallback)
+     * override fun onCreate(savedInstanceState: Bundle?) {
+     *     super.onCreate(savedInstanceState)
+     *     WebAuthProvider.registerCallbacks(this, loginCallback = callback, logoutCallback = voidCallback)
      * }
      * ```
      *
@@ -78,43 +78,44 @@ public object WebAuthProvider {
      * @param logoutCallback receives logout results recovered after a configuration change
      */
     @JvmStatic
-    public fun attach(
+    public fun registerCallbacks(
         lifecycleOwner: LifecycleOwner,
         loginCallback: Callback<Credentials, AuthenticationException>,
         logoutCallback: Callback<Void?, AuthenticationException>? = null,
     ) {
-        // Process-death recovery: register and auto-remove on destroy
+        // Process-death recovery: register immediately so result is routed here on restore
         callbacks += loginCallback
         lifecycleOwner.lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onResume(owner: LifecycleOwner) {
+                // Config-change recovery: deliver any result cached while Activity was recreating
+                pendingLoginResult.getAndSet(null)?.let { pending ->
+                    when (pending) {
+                        is PendingResult.Success -> loginCallback.onSuccess(pending.result)
+                        is PendingResult.Failure -> loginCallback.onFailure(pending.error)
+                    }
+                    resetManagerInstance()
+                }
+                logoutCallback?.let { cb ->
+                    pendingLogoutResult.getAndSet(null)?.let { pending ->
+                        when (pending) {
+                            is PendingResult.Success -> cb.onSuccess(pending.result)
+                            is PendingResult.Failure -> cb.onFailure(pending.error)
+                        }
+                        resetManagerInstance()
+                    }
+                }
+            }
+
             override fun onDestroy(owner: LifecycleOwner) {
                 callbacks -= loginCallback
                 owner.lifecycle.removeObserver(this)
             }
         })
-
-        // Config-change recovery: deliver any result cached while Activity was recreating
-        pendingLoginResult.getAndSet(null)?.let { pending ->
-            when (pending) {
-                is PendingResult.Success -> loginCallback.onSuccess(pending.result)
-                is PendingResult.Failure -> loginCallback.onFailure(pending.error)
-            }
-            resetManagerInstance()
-        }
-
-        logoutCallback?.let { cb ->
-            pendingLogoutResult.getAndSet(null)?.let { pending ->
-                when (pending) {
-                    is PendingResult.Success -> cb.onSuccess(pending.result)
-                    is PendingResult.Failure -> cb.onFailure(pending.error)
-                }
-                resetManagerInstance()
-            }
-        }
     }
 
     @Deprecated(
-        message = "Use attach() instead — it registers the callback and auto-removes it when the lifecycle owner is destroyed.",
-        replaceWith = ReplaceWith("attach(lifecycleOwner, loginCallback = callback)")
+        message = "Use registerCallbacks() instead — it registers the callback and auto-removes it when the lifecycle owner is destroyed.",
+        replaceWith = ReplaceWith("registerCallbacks(lifecycleOwner, loginCallback = callback)")
     )
     @JvmStatic
     public fun addCallback(callback: Callback<Credentials, AuthenticationException>) {
@@ -122,8 +123,8 @@ public object WebAuthProvider {
     }
 
     @Deprecated(
-        message = "Use attach() instead — it auto-removes the callback when the lifecycle owner is destroyed.",
-        replaceWith = ReplaceWith("attach(lifecycleOwner, loginCallback = callback)")
+        message = "Use registerCallbacks() instead — it auto-removes the callback when the lifecycle owner is destroyed.",
+        replaceWith = ReplaceWith("registerCallbacks(lifecycleOwner, loginCallback = callback)")
     )
     @JvmStatic
     public fun removeCallback(callback: Callback<Credentials, AuthenticationException>) {
@@ -342,7 +343,7 @@ public object WebAuthProvider {
             startInternal(context, effectiveCallback)
         }
 
-        internal fun startInternal(context: Context, callback: Callback<Void?, AuthenticationException>) {
+        private fun startInternal(context: Context, callback: Callback<Void?, AuthenticationException>) {
             resetManagerInstance()
             if (!ctOptions.hasCompatibleBrowser(context.packageManager)) {
                 val ex = AuthenticationException(
