@@ -65,7 +65,6 @@ import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
-import java.util.concurrent.atomic.AtomicReference
 
 @RunWith(RobolectricTestRunner::class)
 @Config(shadows = [ThreadSwitcherShadow::class])
@@ -3418,33 +3417,21 @@ public class WebAuthProviderTest {
         Assert.assertNotNull(getPendingLogoutResult())
     }
 
-    // Reflection helpers — pendingLoginResult/pendingLogoutResult are private in WebAuthProvider
-    @Suppress("UNCHECKED_CAST")
+    // Direct access — pendingLoginResult/pendingLogoutResult are internal in WebAuthProvider
     private fun setPendingLoginResult(result: WebAuthProvider.PendingResult<Credentials>?) {
-        val field = WebAuthProvider::class.java.getDeclaredField("pendingLoginResult")
-        field.isAccessible = true
-        (field.get(WebAuthProvider) as AtomicReference<WebAuthProvider.PendingResult<Credentials>?>).set(result)
+        WebAuthProvider.pendingLoginResult.set(result)
     }
 
-    @Suppress("UNCHECKED_CAST")
     private fun getPendingLoginResult(): WebAuthProvider.PendingResult<Credentials>? {
-        val field = WebAuthProvider::class.java.getDeclaredField("pendingLoginResult")
-        field.isAccessible = true
-        return (field.get(WebAuthProvider) as AtomicReference<WebAuthProvider.PendingResult<Credentials>?>).get()
+        return WebAuthProvider.pendingLoginResult.get()
     }
 
-    @Suppress("UNCHECKED_CAST")
     private fun setPendingLogoutResult(result: WebAuthProvider.PendingResult<Void?>?) {
-        val field = WebAuthProvider::class.java.getDeclaredField("pendingLogoutResult")
-        field.isAccessible = true
-        (field.get(WebAuthProvider) as AtomicReference<WebAuthProvider.PendingResult<Void?>?>).set(result)
+        WebAuthProvider.pendingLogoutResult.set(result)
     }
 
-    @Suppress("UNCHECKED_CAST")
     private fun getPendingLogoutResult(): WebAuthProvider.PendingResult<Void?>? {
-        val field = WebAuthProvider::class.java.getDeclaredField("pendingLogoutResult")
-        field.isAccessible = true
-        return (field.get(WebAuthProvider) as AtomicReference<WebAuthProvider.PendingResult<Void?>?>).get()
+        return WebAuthProvider.pendingLogoutResult.get()
     }
 
     private companion object {

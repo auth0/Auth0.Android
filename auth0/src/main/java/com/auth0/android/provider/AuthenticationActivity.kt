@@ -57,12 +57,14 @@ public open class AuthenticationActivity : Activity() {
             launchAuthenticationIntent()
             return
         }
+        // Only deliver result if intent.data is present (user returned from browser).
+        // If data is null, the Activity resumed due to rotation or other config change
+        // while the CustomTab is still open — don't finish, let the browser continue.
         val resultMissing = authenticationIntent.data == null
-        if (resultMissing) {
-            setResult(RESULT_CANCELED)
+        if (!resultMissing) {
+            deliverAuthenticationResult(authenticationIntent)
+            finish()
         }
-        deliverAuthenticationResult(authenticationIntent)
-        finish()
     }
 
     override fun onDestroy() {
