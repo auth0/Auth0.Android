@@ -413,17 +413,17 @@ WebAuthProvider.logout(account)
 
 ## Handling Configuration Changes During Authentication
 
-When the Activity is destroyed during authentication due to a configuration change (e.g. device rotation, locale change, dark mode toggle), the SDK caches the authentication result internally. Call `WebAuthProvider.attach()` in your `onResume()` to recover it. This single call handles both recovery scenarios:
+When the Activity is destroyed during authentication due to a configuration change (e.g. device rotation, locale change, dark mode toggle), the SDK caches the authentication result internally. Call `WebAuthProvider.registerCallbacks()` once in your `onCreate()` to recover it. This single call handles both recovery scenarios:
 
-- **Configuration change**: delivers any cached result immediately to the callback
+- **Configuration change**: delivers any cached result on the next `onResume` to the callback
 - **Process death**: registers `loginCallback` as a listener and auto-removes it when the Activity is destroyed
 
 ```kotlin
 class LoginActivity : AppCompatActivity() {
 
-    override fun onResume() {
-        super.onResume()
-        WebAuthProvider.attach(
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        WebAuthProvider.registerCallbacks(
             lifecycleOwner = this,
             loginCallback = object : Callback<Credentials, AuthenticationException> {
                 override fun onSuccess(result: Credentials) {
@@ -459,7 +459,7 @@ class LoginActivity : AppCompatActivity() {
 ```
 
 > [!NOTE]
-> If you use the `suspend fun await()` API from a ViewModel coroutine scope, the Activity is never captured in the callback chain, so you do not need `attach()` calls.
+> If you use the `suspend fun await()` API from a ViewModel coroutine scope, the Activity is never captured in the callback chain, so you do not need `registerCallbacks()` calls.
 
 ## Authentication API
 
