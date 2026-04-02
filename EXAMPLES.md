@@ -327,34 +327,35 @@ WebAuthProvider.logout(account)
 
 ## Handling Configuration Changes During Authentication
 
-When the Activity is destroyed during authentication due to a configuration change (e.g. device rotation, locale change, dark mode toggle), the SDK caches the authentication result internally. Use `consumePendingLoginResult()` or `consumePendingLogoutResult()` in your `onResume()` to recover it.
+When the Activity is destroyed during authentication due to a configuration change (e.g. device rotation, locale change, dark mode toggle), the SDK caches the authentication result internally. Call `WebAuthProvider.attach()` in your `onResume()` to recover it. This single call handles both recovery scenarios:
+
+- **Configuration change**: delivers any cached result immediately to the callback
+- **Process death**: registers `loginCallback` as a listener and auto-removes it when the Activity is destroyed
 
 ```kotlin
 class LoginActivity : AppCompatActivity() {
 
-    private val loginCallback = object : Callback<Credentials, AuthenticationException> {
-        override fun onSuccess(result: Credentials) {
-            // Handle successful login
-        }
-        override fun onFailure(error: AuthenticationException) {
-            // Handle error
-        }
-    }
-
-    private val logoutCallback = object : Callback<Void?, AuthenticationException> {
-        override fun onSuccess(result: Void?) {
-            // Handle successful logout
-        }
-        override fun onFailure(error: AuthenticationException) {
-            // Handle error
-        }
-    }
-
     override fun onResume() {
         super.onResume()
-        // Recover any result that arrived while the Activity was being recreated
-        WebAuthProvider.consumePendingLoginResult(loginCallback)
-        WebAuthProvider.consumePendingLogoutResult(logoutCallback)
+        WebAuthProvider.attach(
+            lifecycleOwner = this,
+            loginCallback = object : Callback<Credentials, AuthenticationException> {
+                override fun onSuccess(result: Credentials) {
+                    // Handle successful login
+                }
+                override fun onFailure(error: AuthenticationException) {
+                    // Handle error
+                }
+            },
+            logoutCallback = object : Callback<Void?, AuthenticationException> {
+                override fun onSuccess(result: Void?) {
+                    // Handle successful logout
+                }
+                override fun onFailure(error: AuthenticationException) {
+                    // Handle error
+                }
+            }
+        )
     }
 
     fun onLoginClick() {
@@ -372,7 +373,7 @@ class LoginActivity : AppCompatActivity() {
 ```
 
 > [!NOTE]
-> If you use the `suspend fun await()` API from a ViewModel coroutine scope, the Activity is never captured in the callback chain, so you do not need `consumePending*` calls.
+> If you use the `suspend fun await()` API from a ViewModel coroutine scope, the Activity is never captured in the callback chain, so you do not need `attach()` calls.
 
 ## Authentication API
 
