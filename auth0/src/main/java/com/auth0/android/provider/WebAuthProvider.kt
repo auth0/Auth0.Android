@@ -50,9 +50,9 @@ public object WebAuthProvider {
         data class Failure(val error: AuthenticationException) : PendingResult<Nothing>()
     }
 
-    private val pendingLoginResult = AtomicReference<PendingResult<Credentials>?>(null)
+    internal val pendingLoginResult = AtomicReference<PendingResult<Credentials>?>(null)
 
-    private val pendingLogoutResult = AtomicReference<PendingResult<Void?>?>(null)
+    internal val pendingLogoutResult = AtomicReference<PendingResult<Void?>?>(null)
 
     /**
      * Registers login (and optionally logout) callbacks for the duration of the given
@@ -332,6 +332,7 @@ public object WebAuthProvider {
          */
         public fun start(context: Context, callback: Callback<Void?, AuthenticationException>) {
             pendingLogoutResult.set(null)
+            pendingLoginResult.set(null)
 
             val effectiveCallback = if (context is LifecycleOwner) {
                 LifecycleAwareCallback<Void?>(
@@ -703,6 +704,7 @@ public object WebAuthProvider {
             callback: Callback<Credentials, AuthenticationException>
         ) {
             pendingLoginResult.set(null)
+            pendingLogoutResult.set(null)
             val effectiveCallback = if (context is LifecycleOwner) {
                 LifecycleAwareCallback<Credentials>(
                     delegateCallback = callback,
