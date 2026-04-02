@@ -5,7 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
-import androidx.annotation.VisibleForTesting
+import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.auth0.android.Auth0
 import com.auth0.android.annotation.ExperimentalAuth0Api
@@ -34,10 +34,9 @@ public object WebAuthProvider {
     private val TAG: String? = WebAuthProvider::class.simpleName
     private const val KEY_BUNDLE_OAUTH_MANAGER_STATE = "oauth_manager_state"
 
-    private val callbacks = CopyOnWriteArraySet<Callback<Credentials, AuthenticationException>>()
+    internal val callbacks = CopyOnWriteArraySet<Callback<Credentials, AuthenticationException>>()
 
     @JvmStatic
-    @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal var managerInstance: ResumableManager? = null
         private set
 
@@ -46,62 +45,86 @@ public object WebAuthProvider {
      * the original callback was no longer reachable (e.g. Activity destroyed
      * during a configuration change).
      */
-    internal sealed class PendingResult<out S, out E> {
-        data class Success<S>(val result: S) : PendingResult<S, Nothing>()
-        data class Failure<E>(val error: E) : PendingResult<Nothing, E>()
+    internal sealed class PendingResult<out S> {
+        data class Success<S>(val result: S) : PendingResult<S>()
+        data class Failure(val error: AuthenticationException) : PendingResult<Nothing>()
     }
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal val pendingLoginResult =
-        AtomicReference<PendingResult<Credentials, AuthenticationException>?>(null)
+    internal val pendingLoginResult = AtomicReference<PendingResult<Credentials>?>(null)
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal val pendingLogoutResult =
-        AtomicReference<PendingResult<Void?, AuthenticationException>?>(null)
+    internal val pendingLogoutResult = AtomicReference<PendingResult<Void?>?>(null)
 
     /**
-     * Check for and consume a pending login result that arrived during a configuration change.
-     * Call this in your Activity's `onResume()` to recover results that were delivered while the
-     * Activity was being recreated (e.g. due to screen rotation).
+     * Attaches login (and optionally logout) callbacks for the duration of the given
+     * [lifecycleOwner]'s lifetime. Call this once in `onResume()` — it covers both recovery
+     * scenarios automatically:
      *
-     * @param callback the callback to deliver the pending result to
-     * @return true if a pending result was found and delivered, false otherwise
+     * - **Configuration change** (rotation, locale, dark mode): if a login or logout result
+     *   arrived while the Activity was being recreated, it is delivered immediately.
+     * - **Process death**: [loginCallback] is registered as a listener so that if the process
+     *   was killed while the browser was open, the result is delivered when the Activity is
+     *   restored. The callback is automatically unregistered when [lifecycleOwner] is destroyed,
+     *   so there is no need to call [removeCallback] manually.
+     *
+     * ```kotlin
+     * override fun onResume() {
+     *     super.onResume()
+     *     WebAuthProvider.attach(this, loginCallback = callback, logoutCallback = voidCallback)
+     * }
+     * ```
+     *
+     * @param lifecycleOwner the Activity or Fragment whose lifecycle to observe
+     * @param loginCallback  receives login results (both direct delivery and recovered results)
+     * @param logoutCallback receives logout results recovered after a configuration change
      */
     @JvmStatic
-    public fun consumePendingLoginResult(callback: Callback<Credentials, AuthenticationException>): Boolean {
-        val result = pendingLoginResult.getAndSet(null) ?: return false
-        when (result) {
-            is PendingResult.Success -> callback.onSuccess(result.result)
-            is PendingResult.Failure -> callback.onFailure(result.error)
+    public fun attach(
+        lifecycleOwner: LifecycleOwner,
+        loginCallback: Callback<Credentials, AuthenticationException>,
+        logoutCallback: Callback<Void?, AuthenticationException>? = null,
+    ) {
+        // Process-death recovery: register and auto-remove on destroy
+        callbacks += loginCallback
+        lifecycleOwner.lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onDestroy(owner: LifecycleOwner) {
+                callbacks -= loginCallback
+                owner.lifecycle.removeObserver(this)
+            }
+        })
+
+        // Config-change recovery: deliver any result cached while Activity was recreating
+        pendingLoginResult.getAndSet(null)?.let { pending ->
+            when (pending) {
+                is PendingResult.Success -> loginCallback.onSuccess(pending.result)
+                is PendingResult.Failure -> loginCallback.onFailure(pending.error)
+            }
+            resetManagerInstance()
         }
-        resetManagerInstance()
-        return true
+
+        logoutCallback?.let { cb ->
+            pendingLogoutResult.getAndSet(null)?.let { pending ->
+                when (pending) {
+                    is PendingResult.Success -> cb.onSuccess(pending.result)
+                    is PendingResult.Failure -> cb.onFailure(pending.error)
+                }
+                resetManagerInstance()
+            }
+        }
     }
 
-    /**
-     * Check for and consume a pending logout result that arrived during a configuration change.
-     * Call this in your Activity's `onResume()` to recover results that were delivered while the
-     * Activity was being recreated (e.g. due to screen rotation).
-     *
-     * @param callback the callback to deliver the pending result to
-     * @return true if a pending result was found and delivered, false otherwise
-     */
-    @JvmStatic
-    public fun consumePendingLogoutResult(callback: Callback<Void?, AuthenticationException>): Boolean {
-        val result = pendingLogoutResult.getAndSet(null) ?: return false
-        when (result) {
-            is PendingResult.Success -> callback.onSuccess(result.result)
-            is PendingResult.Failure -> callback.onFailure(result.error)
-        }
-        resetManagerInstance()
-        return true
-    }
-
+    @Deprecated(
+        message = "Use attach() instead — it registers the callback and auto-removes it when the lifecycle owner is destroyed.",
+        replaceWith = ReplaceWith("attach(lifecycleOwner, loginCallback = callback)")
+    )
     @JvmStatic
     public fun addCallback(callback: Callback<Credentials, AuthenticationException>) {
         callbacks += callback
     }
 
+    @Deprecated(
+        message = "Use attach() instead — it auto-removes the callback when the lifecycle owner is destroyed.",
+        replaceWith = ReplaceWith("attach(lifecycleOwner, loginCallback = callback)")
+    )
     @JvmStatic
     public fun removeCallback(callback: Callback<Credentials, AuthenticationException>) {
         callbacks -= callback
@@ -198,7 +221,6 @@ public object WebAuthProvider {
     }
 
     @JvmStatic
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun resetManagerInstance() {
         managerInstance = null
     }
@@ -304,7 +326,7 @@ public object WebAuthProvider {
 
             val effectiveCallback = if (context is LifecycleOwner) {
                 LifecycleAwareCallback<Void?>(
-                    inner = callback,
+                    delegateCallback = callback,
                     lifecycleOwner = context as LifecycleOwner,
                     onDetached = { _: Void?, error: AuthenticationException? ->
                         if (error != null) {
@@ -638,7 +660,6 @@ public object WebAuthProvider {
             return this
         }
 
-        @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         internal fun withPKCE(pkce: PKCE): Builder {
             this.pkce = pkce
             return this
@@ -675,7 +696,7 @@ public object WebAuthProvider {
             pendingLoginResult.set(null)
             val effectiveCallback = if (context is LifecycleOwner) {
                 LifecycleAwareCallback<Credentials>(
-                    inner = callback,
+                    delegateCallback = callback,
                     lifecycleOwner = context as LifecycleOwner,
                     onDetached = { success: Credentials?, error: AuthenticationException? ->
                         if (success != null) {

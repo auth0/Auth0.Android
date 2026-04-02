@@ -308,19 +308,25 @@ the reference to the callback is immediately nulled out so the destroyed Activit
 in memory.
 
 If the authentication result arrives while the Activity is being recreated, it is cached internally.
-Use `consumePendingLoginResult()` or `consumePendingLogoutResult()` in your `onResume()` to recover it:
+Use `WebAuthProvider.attach()` in your `onResume()` to recover it — this single call handles both
+recovery scenarios and manages the callback lifecycle automatically:
 
 ```kotlin
 class LoginActivity : AppCompatActivity() {
-    private val callback = object : Callback<Credentials, AuthenticationException> {
-        override fun onSuccess(result: Credentials) { /* handle credentials */ }
-        override fun onFailure(error: AuthenticationException) { /* handle error */ }
-    }
 
     override fun onResume() {
         super.onResume()
-        // Recover result that arrived during configuration change
-        WebAuthProvider.consumePendingLoginResult(callback)
+        WebAuthProvider.attach(
+            lifecycleOwner = this,
+            loginCallback = object : Callback<Credentials, AuthenticationException> {
+                override fun onSuccess(result: Credentials) { /* handle credentials */ }
+                override fun onFailure(error: AuthenticationException) { /* handle error */ }
+            },
+            logoutCallback = object : Callback<Void?, AuthenticationException> {
+                override fun onSuccess(result: Void?) { /* handle logout */ }
+                override fun onFailure(error: AuthenticationException) { /* handle error */ }
+            }
+        )
     }
 
     fun onLoginClick() {
@@ -331,10 +337,17 @@ class LoginActivity : AppCompatActivity() {
 }
 ```
 
-For logout flows, use `WebAuthProvider.consumePendingLogoutResult(callback)` in the same way.
+`attach()` covers both scenarios in one call:
+
+| Scenario | How it's handled |
+|----------|-----------------|
+| **Configuration change** (rotation, locale, dark mode) | Any result cached while the Activity was recreating is delivered immediately to the callback |
+| **Process death** (system killed the app while browser was open) | `loginCallback` is registered as a listener and auto-removed when `lifecycleOwner` is destroyed — no manual `addCallback`/`removeCallback` calls needed |
+
+> **Note:** `logoutCallback` is optional — pass it only if your screen initiates logout flows.
 
 > **Note:** If you use the `suspend fun await()` API from a ViewModel coroutine scope, the
-> Activity is never captured in the callback chain, so you do not need `consumePending*` calls.
+> Activity is never captured in the callback chain, so you do not need `attach()` calls.
 > See the sample app for a ViewModel-based example.
 
 ## Getting Help
