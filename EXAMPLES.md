@@ -43,6 +43,7 @@
     - [Enroll a Recovery Code](#enroll-a-recovery-code)
     - [Verify an Enrollment](#verify-an-enrollment)
     - [Delete an Authentication Method](#delete-an-authentication-method)
+    - [Update an Authentication Method](#update-an-authentication-method)
   - [Credentials Manager](#credentials-manager)
     - [Secure Credentials Manager](#secure-credentials-manager)
       - [Usage](#usage)
@@ -2227,6 +2228,42 @@ myAccountClient.deleteAuthenticationMethod("phone|dev_...")
 
 ```java
 myAccountClient.deleteAuthenticationMethod("phone|dev_...")
+    .start(new Callback<Void, MyAccountException>() {
+        @Override
+        public void onSuccess(Void result) {
+            // Deletion successful
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+```
+</details>
+
+
+
+### Update an Authentication Method
+**Scopes required:** `update:me:authentication_methods`
+
+Updates a single authentication method.
+
+**Prerequisites:**
+
+The user must have the specific authentication method (identified by its ID) already enrolled.
+
+```kotlin
+myAccountClient.updateAuthenticationMethodById("{Authentication_Id}", "{Name}")
+    .start(object : Callback<Unit, MyAccountException> {
+        override fun onSuccess(result: Unit) {
+            // Deletion successful
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+```
+<details>
+    <summary>Using Java</summary>
+
+```java
+myAccountClient.updateAuthenticationMethodById("{Authentication_Id}", "{Name}")
     .start(new Callback<Void, MyAccountException>() {
         @Override
         public void onSuccess(Void result) {
