@@ -370,7 +370,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      *
      */
     @JvmOverloads
-    internal fun updateAuthenticationMethodById(
+    public fun updateAuthenticationMethodById(
         authenticationMethodId: String,
         authenticationMethodName: String? = null,
         preferredAuthenticationMethod: PhoneAuthenticationMethodType? = null
