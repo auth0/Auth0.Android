@@ -4,6 +4,8 @@ on:
   pull_request:
     types:
       - closed
+    branches:
+      - v4_development
   workflow_dispatch:
 
 permissions:
