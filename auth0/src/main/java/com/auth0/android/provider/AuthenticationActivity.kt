@@ -20,6 +20,7 @@ import com.google.androidbrowserhelper.trusted.TwaLauncher
 public open class AuthenticationActivity : Activity() {
     private var intentLaunched = false
     private var customTabsController: CustomTabsController? = null
+    private var returnedFromBrowser = false
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -45,6 +46,13 @@ public open class AuthenticationActivity : Activity() {
         }
     }
 
+    override fun onStop() {
+        super.onStop()
+        if (intentLaunched) {
+            returnedFromBrowser = true
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         val authenticationIntent = intent
@@ -57,11 +65,12 @@ public open class AuthenticationActivity : Activity() {
             launchAuthenticationIntent()
             return
         }
-        // Only deliver result if intent.data is present (user returned from browser).
-        // If data is null, the Activity resumed due to rotation or other config change
-        // while the CustomTab is still open — don't finish, let the browser continue.
-        val resultMissing = authenticationIntent.data == null
-        if (!resultMissing) {
+        val hasResult = authenticationIntent.data != null
+        if (hasResult || returnedFromBrowser) {
+            returnedFromBrowser = false
+            if (!hasResult) {
+                setResult(RESULT_CANCELED)
+            }
             deliverAuthenticationResult(authenticationIntent)
             finish()
         }

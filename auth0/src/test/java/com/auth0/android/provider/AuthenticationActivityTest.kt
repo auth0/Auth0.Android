@@ -214,10 +214,13 @@ public class AuthenticationActivityTest {
         MatcherAssert.assertThat(launchAsTwaCaptor.value, Is.`is`(false))
         MatcherAssert.assertThat(activity.deliveredIntent, Is.`is`(Matchers.nullValue()))
         activityController.pause().stop()
-        //Browser is shown, resume WITHOUT new intent — should NOT deliver or finish
         activityController.start().resume()
-        MatcherAssert.assertThat(activity.deliveredIntent, Is.`is`(Matchers.nullValue())) //nothing delivered
-        MatcherAssert.assertThat(activity.isFinishing, Is.`is`(false)) //still waiting for result
+        MatcherAssert.assertThat(activity.deliveredIntent, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(
+            activity.deliveredIntent!!.data,
+            Is.`is`(Matchers.nullValue())
+        ) 
+        MatcherAssert.assertThat(activity.isFinishing, Is.`is`(true))
         activityController.destroy()
         Mockito.verify(customTabsController).unbindService()
     }

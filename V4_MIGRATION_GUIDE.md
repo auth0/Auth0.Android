@@ -344,7 +344,7 @@ class LoginActivity : AppCompatActivity() {
 | **Configuration change** (rotation, locale, dark mode) | Any result cached while the Activity was recreating is delivered on the next `onResume` |
 | **Process death** (system killed the app while browser was open) | `loginCallback` is registered as a listener and auto-removed when `lifecycleOwner` is destroyed — no manual `addCallback`/`removeCallback` calls needed |
 
-> **Note:** `logoutCallback` is optional — pass it only if your screen initiates logout flows.
+> **Note:** Both `loginCallback` and `logoutCallback` are required — this ensures results from either flow are never lost during configuration changes or process death.
 
 > **Note:** If you use the `suspend fun await()` API from a ViewModel coroutine scope, the
 > Activity is never captured in the callback chain, so you do not need `registerCallbacks()` calls.
