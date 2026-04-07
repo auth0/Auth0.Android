@@ -55,16 +55,19 @@ public object WebAuthProvider {
     internal val pendingLogoutResult = AtomicReference<PendingResult<Void?>?>(null)
 
     /**
-     * Registers login (and optionally logout) callbacks for the duration of the given
+     * Registers login and logout callbacks for the duration of the given
      * [lifecycleOwner]'s lifetime. Call this once in `onCreate()` — it covers both recovery
      * scenarios automatically:
      *
-     * - **Process death**: [loginCallback] is registered immediately so that if the process
-     *   was killed while the browser was open, the result is delivered when the Activity is
-     *   restored. The callback is automatically unregistered when [lifecycleOwner] is destroyed,
+     * - **Process death**: callbacks are registered immediately so that if the process
+     *   was killed while the browser was open, results are delivered when the Activity is
+     *   restored. Callbacks are automatically unregistered when [lifecycleOwner] is destroyed,
      *   so there is no need to call [removeCallback] manually.
      * - **Configuration change** (rotation, locale, dark mode): any login or logout result
      *   that arrived while the Activity was being recreated is delivered on the next `onResume`.
+     *
+     * Both callbacks are required to ensure results are not lost during configuration changes
+     * (e.g. user logs out to switch accounts and rotates during the logout flow).
      *
      * ```kotlin
      * override fun onCreate(savedInstanceState: Bundle?) {
@@ -81,7 +84,7 @@ public object WebAuthProvider {
     public fun registerCallbacks(
         lifecycleOwner: LifecycleOwner,
         loginCallback: Callback<Credentials, AuthenticationException>,
-        logoutCallback: Callback<Void?, AuthenticationException>? = null,
+        logoutCallback: Callback<Void?, AuthenticationException>,
     ) {
         // Process-death recovery: register immediately so result is routed here on restore
         callbacks += loginCallback
@@ -95,14 +98,12 @@ public object WebAuthProvider {
                     }
                     resetManagerInstance()
                 }
-                logoutCallback?.let { cb ->
-                    pendingLogoutResult.getAndSet(null)?.let { pending ->
-                        when (pending) {
-                            is PendingResult.Success -> cb.onSuccess(pending.result)
-                            is PendingResult.Failure -> cb.onFailure(pending.error)
-                        }
-                        resetManagerInstance()
+                pendingLogoutResult.getAndSet(null)?.let { pending ->
+                    when (pending) {
+                        is PendingResult.Success -> logoutCallback.onSuccess(pending.result)
+                        is PendingResult.Failure -> logoutCallback.onFailure(pending.error)
                     }
+                    resetManagerInstance()
                 }
             }
 
@@ -115,7 +116,7 @@ public object WebAuthProvider {
 
     @Deprecated(
         message = "Use registerCallbacks() instead — it registers the callback and auto-removes it when the lifecycle owner is destroyed.",
-        replaceWith = ReplaceWith("registerCallbacks(lifecycleOwner, loginCallback = callback)")
+        replaceWith = ReplaceWith("registerCallbacks(lifecycleOwner, loginCallback = callback, logoutCallback = logoutCallback)")
     )
     @JvmStatic
     public fun addCallback(callback: Callback<Credentials, AuthenticationException>) {
@@ -124,7 +125,7 @@ public object WebAuthProvider {
 
     @Deprecated(
         message = "Use registerCallbacks() instead — it auto-removes the callback when the lifecycle owner is destroyed.",
-        replaceWith = ReplaceWith("registerCallbacks(lifecycleOwner, loginCallback = callback)")
+        replaceWith = ReplaceWith("registerCallbacks(lifecycleOwner, loginCallback = callback, logoutCallback = logoutCallback)")
     )
     @JvmStatic
     public fun removeCallback(callback: Callback<Credentials, AuthenticationException>) {

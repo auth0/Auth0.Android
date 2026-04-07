@@ -3302,7 +3302,7 @@ public class WebAuthProviderTest {
         Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
 
         val observerCaptor = argumentCaptor<DefaultLifecycleObserver>()
-        WebAuthProvider.registerCallbacks(lifecycleOwner, loginCallback = callback)
+        WebAuthProvider.registerCallbacks(lifecycleOwner, loginCallback = callback, logoutCallback = voidCallback)
         verify(lifecycle).addObserver(observerCaptor.capture())
 
         // Pending result is delivered on onResume, not immediately
@@ -3323,7 +3323,7 @@ public class WebAuthProviderTest {
         Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
 
         val observerCaptor = argumentCaptor<DefaultLifecycleObserver>()
-        WebAuthProvider.registerCallbacks(lifecycleOwner, loginCallback = callback)
+        WebAuthProvider.registerCallbacks(lifecycleOwner, loginCallback = callback, logoutCallback = voidCallback)
         verify(lifecycle).addObserver(observerCaptor.capture())
 
         observerCaptor.firstValue.onResume(lifecycleOwner)
@@ -3375,7 +3375,7 @@ public class WebAuthProviderTest {
         val lifecycle = Mockito.mock(Lifecycle::class.java)
         Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
 
-        WebAuthProvider.registerCallbacks(lifecycleOwner, loginCallback = callback)
+        WebAuthProvider.registerCallbacks(lifecycleOwner, loginCallback = callback, logoutCallback = voidCallback)
 
         Assert.assertTrue(WebAuthProvider.callbacks.contains(callback))
     }
@@ -3387,7 +3387,7 @@ public class WebAuthProviderTest {
         Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
 
         val observerCaptor = argumentCaptor<DefaultLifecycleObserver>()
-        WebAuthProvider.registerCallbacks(lifecycleOwner, loginCallback = callback)
+        WebAuthProvider.registerCallbacks(lifecycleOwner, loginCallback = callback, logoutCallback = voidCallback)
         verify(lifecycle).addObserver(observerCaptor.capture())
 
         Assert.assertTrue(WebAuthProvider.callbacks.contains(callback))
@@ -3398,24 +3398,6 @@ public class WebAuthProviderTest {
         Assert.assertFalse(WebAuthProvider.callbacks.contains(callback))
     }
 
-    @Test
-    public fun shouldNotDeliverLogoutResultWhenNoLogoutCallbackPassedToRegisterCallbacks() {
-        setPendingLogoutResult(WebAuthProvider.PendingResult.Success(null))
-
-        val lifecycleOwner = Mockito.mock(LifecycleOwner::class.java)
-        val lifecycle = Mockito.mock(Lifecycle::class.java)
-        Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
-
-        val observerCaptor = argumentCaptor<DefaultLifecycleObserver>()
-        WebAuthProvider.registerCallbacks(lifecycleOwner, loginCallback = callback)
-        verify(lifecycle).addObserver(observerCaptor.capture())
-
-        // registerCallbacks without logoutCallback — pending logout result should stay untouched
-        observerCaptor.firstValue.onResume(lifecycleOwner)
-
-        verify(voidCallback, Mockito.never()).onSuccess(any())
-        Assert.assertNotNull(getPendingLogoutResult())
-    }
 
     // Direct access — pendingLoginResult/pendingLogoutResult are internal in WebAuthProvider
     private fun setPendingLoginResult(result: WebAuthProvider.PendingResult<Credentials>?) {
