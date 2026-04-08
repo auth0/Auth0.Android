@@ -20,7 +20,6 @@ import com.google.androidbrowserhelper.trusted.TwaLauncher
 public open class AuthenticationActivity : Activity() {
     private var intentLaunched = false
     private var customTabsController: CustomTabsController? = null
-    private var returnedFromBrowser = false
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -46,13 +45,6 @@ public open class AuthenticationActivity : Activity() {
         }
     }
 
-    override fun onStop() {
-        super.onStop()
-        if (intentLaunched) {
-            returnedFromBrowser = true
-        }
-    }
-
     override fun onResume() {
         super.onResume()
         val authenticationIntent = intent
@@ -65,15 +57,12 @@ public open class AuthenticationActivity : Activity() {
             launchAuthenticationIntent()
             return
         }
-        val hasResult = authenticationIntent.data != null
-        if (hasResult || returnedFromBrowser) {
-            returnedFromBrowser = false
-            if (!hasResult) {
-                setResult(RESULT_CANCELED)
-            }
-            deliverAuthenticationResult(authenticationIntent)
-            finish()
+        val resultMissing = authenticationIntent.data == null
+        if (resultMissing) {
+            setResult(RESULT_CANCELED)
         }
+        deliverAuthenticationResult(authenticationIntent)
+        finish()
     }
 
     override fun onDestroy() {
