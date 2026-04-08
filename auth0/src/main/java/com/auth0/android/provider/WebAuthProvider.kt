@@ -34,7 +34,7 @@ public object WebAuthProvider {
     private val TAG: String? = WebAuthProvider::class.simpleName
     private const val KEY_BUNDLE_OAUTH_MANAGER_STATE = "oauth_manager_state"
 
-    internal val callbacks = CopyOnWriteArraySet<Callback<Credentials, AuthenticationException>>()
+    private val callbacks = CopyOnWriteArraySet<Callback<Credentials, AuthenticationException>>()
 
     @JvmStatic
     internal var managerInstance: ResumableManager? = null
@@ -45,14 +45,14 @@ public object WebAuthProvider {
      * the original callback was no longer reachable (e.g. Activity destroyed
      * during a configuration change).
      */
-    internal sealed class PendingResult<out S> {
+    private sealed class PendingResult<out S> {
         data class Success<S>(val result: S) : PendingResult<S>()
         data class Failure(val error: AuthenticationException) : PendingResult<Nothing>()
     }
 
-    internal val pendingLoginResult = AtomicReference<PendingResult<Credentials>?>(null)
+    private val pendingLoginResult = AtomicReference<PendingResult<Credentials>?>(null)
 
-    internal val pendingLogoutResult = AtomicReference<PendingResult<Void?>?>(null)
+    private val pendingLogoutResult = AtomicReference<PendingResult<Void?>?>(null)
 
     /**
      * Registers login and logout callbacks for the duration of the given
@@ -233,6 +233,13 @@ public object WebAuthProvider {
     @JvmStatic
     internal fun resetManagerInstance() {
         managerInstance = null
+    }
+
+    internal fun resetState() {
+        managerInstance = null
+        callbacks.clear()
+        pendingLoginResult.set(null)
+        pendingLogoutResult.set(null)
     }
 
     public class LogoutBuilder internal constructor(private val account: Auth0) {
@@ -711,10 +718,18 @@ public object WebAuthProvider {
                     delegateCallback = callback,
                     lifecycleOwner = context as LifecycleOwner,
                     onDetached = { success: Credentials?, error: AuthenticationException? ->
-                        if (success != null) {
-                            pendingLoginResult.set(PendingResult.Success(success))
-                        } else if (error != null) {
-                            pendingLoginResult.set(PendingResult.Failure(error))
+                        if (callbacks.isNotEmpty()) {
+                            if (success != null) {
+                                for (cb in callbacks) { cb.onSuccess(success) }
+                            } else if (error != null) {
+                                for (cb in callbacks) { cb.onFailure(error) }
+                            }
+                        } else {
+                            if (success != null) {
+                                pendingLoginResult.set(PendingResult.Success(success))
+                            } else if (error != null) {
+                                pendingLoginResult.set(PendingResult.Failure(error))
+                            }
                         }
                     }
                 )

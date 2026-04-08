@@ -341,7 +341,7 @@ class LoginActivity : AppCompatActivity() {
 
 | Scenario | How it's handled |
 |----------|-----------------|
-| **Configuration change** (rotation, locale, dark mode) | Any result cached while the Activity was recreating is delivered on the next `onResume` |
+| **Configuration change** (rotation, locale, dark mode) | The result is delivered directly to the registered callback once the async token exchange completes. If no callback is registered yet, the result is cached and delivered on the next `onResume` |
 | **Process death** (system killed the app while browser was open) | `loginCallback` is registered as a listener and auto-removed when `lifecycleOwner` is destroyed — no manual `addCallback`/`removeCallback` calls needed |
 
 > **Note:** Both `loginCallback` and `logoutCallback` are required — this ensures results from either flow are never lost during configuration changes or process death.
