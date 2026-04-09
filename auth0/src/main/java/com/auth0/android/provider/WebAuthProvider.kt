@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.auth0.android.Auth0
@@ -231,10 +232,12 @@ public object WebAuthProvider {
     }
 
     @JvmStatic
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun resetManagerInstance() {
         managerInstance = null
     }
 
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun resetState() {
         managerInstance = null
         callbacks.clear()
@@ -678,6 +681,7 @@ public object WebAuthProvider {
             return this
         }
 
+        @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         internal fun withPKCE(pkce: PKCE): Builder {
             this.pkce = pkce
             return this
