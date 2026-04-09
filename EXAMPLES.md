@@ -416,7 +416,7 @@ WebAuthProvider.logout(account)
 When the Activity is destroyed during authentication due to a configuration change (e.g. device rotation, locale change, dark mode toggle), the SDK caches the authentication result internally. Call `WebAuthProvider.registerCallbacks()` once in your `onCreate()` to recover it. This single call handles both recovery scenarios:
 
 - **Configuration change**: delivers any cached result on the next `onResume` to the callback
-- **Process death**: registers `loginCallback` as a listener and auto-removes it when the Activity is destroyed
+- **Process death**: `AuthenticationActivity` restores OAuth state and processes the redirect. Since static state was wiped, the result is cached and delivered to `loginCallback` on the next `onResume` after `registerCallbacks()` is called
 
 ```kotlin
 class LoginActivity : AppCompatActivity() {

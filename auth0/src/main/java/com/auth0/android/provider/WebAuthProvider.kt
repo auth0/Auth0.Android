@@ -38,6 +38,7 @@ public object WebAuthProvider {
     private val callbacks = CopyOnWriteArraySet<Callback<Credentials, AuthenticationException>>()
 
     @JvmStatic
+    @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal var managerInstance: ResumableManager? = null
         private set
 
