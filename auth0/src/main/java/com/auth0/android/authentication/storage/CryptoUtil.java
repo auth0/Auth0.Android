@@ -1,10 +1,7 @@
 package com.auth0.android.authentication.storage;
 
-import android.app.KeyguardManager;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Build;
-import android.security.KeyPairGeneratorSpec;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
 import android.text.TextUtils;
@@ -49,7 +46,7 @@ import java.security.spec.MGF1ParameterSpec;
 
 /**
  * Created by lbalmaceda on 8/24/17.
- * Class to handle encryption/decryption cryptographic operations using AES and RSA algorithms in devices with API 19 or higher.
+ * Class to handle encryption/decryption cryptographic operations using AES and RSA algorithms in devices with API 26 or higher.
  */
 @SuppressWarnings("WeakerAccess")
 class CryptoUtil {
@@ -180,43 +177,18 @@ class CryptoUtil {
             Calendar start = Calendar.getInstance();
             Calendar end = Calendar.getInstance();
             end.add(Calendar.YEAR, 25);
-            AlgorithmParameterSpec spec;
             X500Principal principal = new X500Principal("CN=Auth0.Android,O=Auth0");
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                spec = new KeyGenParameterSpec.Builder(KEY_ALIAS, KeyProperties.PURPOSE_DECRYPT | KeyProperties.PURPOSE_ENCRYPT)
-                        .setCertificateSubject(principal)
-                        .setCertificateSerialNumber(BigInteger.ONE)
-                        .setCertificateNotBefore(start.getTime())
-                        .setCertificateNotAfter(end.getTime())
-                        .setKeySize(RSA_KEY_SIZE)
-                        .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_RSA_OAEP)
-                        .setDigests(KeyProperties.DIGEST_SHA1, KeyProperties.DIGEST_SHA256)
-                        .setBlockModes(KeyProperties.BLOCK_MODE_ECB)
-                        .build();
-            } else {
-                //Following code is for API 18-22
-                //Generate new RSA KeyPair and save it on the KeyStore
-                KeyPairGeneratorSpec.Builder specBuilder = new KeyPairGeneratorSpec.Builder(context)
-                        .setAlias(KEY_ALIAS)
-                        .setSubject(principal)
-                        .setKeySize(RSA_KEY_SIZE)
-                        .setSerialNumber(BigInteger.ONE)
-                        .setStartDate(start.getTime())
-                        .setEndDate(end.getTime());
-
-                KeyguardManager kManager = (KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE);
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-                    //The next call can return null when the LockScreen is not configured
-                    Intent authIntent = kManager.createConfirmDeviceCredentialIntent(null, null);
-                    boolean keyguardEnabled = kManager.isKeyguardSecure() && authIntent != null;
-                    if (keyguardEnabled) {
-                        //If a ScreenLock is setup, protect this key pair.
-                        specBuilder.setEncryptionRequired();
-                    }
-                }
-                spec = specBuilder.build();
-            }
+            AlgorithmParameterSpec spec = new KeyGenParameterSpec.Builder(KEY_ALIAS, KeyProperties.PURPOSE_DECRYPT | KeyProperties.PURPOSE_ENCRYPT)
+                    .setCertificateSubject(principal)
+                    .setCertificateSerialNumber(BigInteger.ONE)
+                    .setCertificateNotBefore(start.getTime())
+                    .setCertificateNotAfter(end.getTime())
+                    .setKeySize(RSA_KEY_SIZE)
+                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_RSA_OAEP)
+                    .setDigests(KeyProperties.DIGEST_SHA1, KeyProperties.DIGEST_SHA256)
+                    .setBlockModes(KeyProperties.BLOCK_MODE_ECB)
+                    .build();
 
             KeyPairGenerator generator = KeyPairGenerator.getInstance(ALGORITHM_RSA, ANDROID_KEY_STORE);
             generator.initialize(spec);

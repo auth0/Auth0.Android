@@ -9,6 +9,7 @@ v4 of the Auth0 Android SDK includes significant build toolchain updates, update
 ## Table of Contents
 
 - [**Requirements Changes**](#requirements-changes)
+  + [Minimum SDK Version](#minimum-sdk-version)
   + [Java Version](#java-version)
   + [Gradle and Android Gradle Plugin](#gradle-and-android-gradle-plugin)
   + [Kotlin Version](#kotlin-version)
@@ -31,6 +32,22 @@ v4 of the Auth0 Android SDK includes significant build toolchain updates, update
 ---
 
 ## Requirements Changes
+
+### Minimum SDK Version
+
+v4 requires **API level 26** (Android 8.0 Oreo) or later (previously API 21 / Android 5.0 Lollipop).
+
+Update your `build.gradle` if your `minSdk` is below 26:
+
+```groovy
+android {
+    defaultConfig {
+        minSdk 26
+    }
+}
+```
+
+**Impact:** Apps targeting devices running Android 7.1 (API 25) or lower will need to increase their minimum SDK version, or continue using v3.
 
 ### Java Version
 
