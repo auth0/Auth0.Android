@@ -214,13 +214,12 @@ public class AuthenticationActivityTest {
         MatcherAssert.assertThat(launchAsTwaCaptor.value, Is.`is`(false))
         MatcherAssert.assertThat(activity.deliveredIntent, Is.`is`(Matchers.nullValue()))
         activityController.pause().stop()
-        //Browser is shown
         activityController.start().resume()
         MatcherAssert.assertThat(activity.deliveredIntent, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(
             activity.deliveredIntent!!.data,
             Is.`is`(Matchers.nullValue())
-        ) //null data == canceled
+        ) 
         MatcherAssert.assertThat(activity.isFinishing, Is.`is`(true))
         activityController.destroy()
         Mockito.verify(customTabsController).unbindService()

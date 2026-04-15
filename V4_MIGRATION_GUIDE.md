@@ -27,6 +27,8 @@ v4 of the Auth0 Android SDK includes significant build toolchain updates, update
 - [**Dependency Changes**](#dependency-changes)
   + [Gson 2.8.9 → 2.11.0](#️-gson-289--2110-transitive-dependency)
   + [DefaultClient.Builder](#defaultclientbuilder)
+- [**New APIs**](#new-apis)
+  + [Handling Configuration Changes During Authentication](#handling-configuration-changes-during-authentication)
 
 ---
 
@@ -316,6 +318,59 @@ val client = DefaultClient.Builder()
 The legacy constructor is deprecated but **not removed** — existing code will continue to compile
 and run. Your IDE will show a deprecation warning with a suggested `ReplaceWith` quick-fix to
 migrate to the Builder.
+
+## New APIs
+
+### Handling Configuration Changes During Authentication
+
+v4 fixes a memory leak and lost callback issue when the Activity is destroyed during authentication
+(e.g. device rotation, locale change, dark mode toggle). The SDK wraps the callback in a
+`LifecycleAwareCallback` that observes the host Activity/Fragment lifecycle. When `onDestroy` fires,
+the reference to the callback is immediately nulled out so the destroyed Activity is no longer held
+in memory.
+
+If the authentication result arrives while the Activity is being recreated, it is cached internally.
+Call `WebAuthProvider.registerCallbacks()` once in your `onCreate()` — this single call handles both
+recovery scenarios and manages the callback lifecycle automatically:
+
+```kotlin
+class LoginActivity : AppCompatActivity() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        WebAuthProvider.registerCallbacks(
+            lifecycleOwner = this,
+            loginCallback = object : Callback<Credentials, AuthenticationException> {
+                override fun onSuccess(result: Credentials) { /* handle credentials */ }
+                override fun onFailure(error: AuthenticationException) { /* handle error */ }
+            },
+            logoutCallback = object : Callback<Void?, AuthenticationException> {
+                override fun onSuccess(result: Void?) { /* handle logout */ }
+                override fun onFailure(error: AuthenticationException) { /* handle error */ }
+            }
+        )
+    }
+
+    fun onLoginClick() {
+        WebAuthProvider.login(account)
+            .withScheme("myapp")
+            .start(this, callback)
+    }
+}
+```
+
+`registerCallbacks()` covers both scenarios in one call:
+
+| Scenario | How it's handled |
+|----------|-----------------|
+| **Configuration change** (rotation, locale, dark mode) | The result is delivered directly to the registered callback once the async token exchange completes. If no callback is registered yet, the result is cached and delivered on the next `onResume` |
+| **Process death** (system killed the app while browser was open) | `AuthenticationActivity` restores the OAuth state and processes the redirect. Since all static state (including `callbacks`) was wiped, the result is cached in `pendingLoginResult`. When your Activity is recreated and calls `registerCallbacks()`, the cached result is delivered on the next `onResume` |
+
+> **Note:** Both `loginCallback` and `logoutCallback` are required — this ensures results from either flow are never lost during configuration changes or process death.
+
+> **Note:** If you use the `suspend fun await()` API from a ViewModel coroutine scope, the
+> Activity is never captured in the callback chain, so you do not need `registerCallbacks()` calls.
+> See the sample app for a ViewModel-based example.
 
 ## Getting Help
 
