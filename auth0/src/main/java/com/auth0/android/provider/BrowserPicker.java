@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 import androidx.annotation.NonNull;
@@ -116,7 +115,7 @@ public class BrowserPicker implements Parcelable {
             defaultBrowser = webHandler.activityInfo.packageName;
         }
 
-        final List<ResolveInfo> availableBrowsers = pm.queryIntentActivities(browserIntent, Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PackageManager.MATCH_ALL : 0);
+        final List<ResolveInfo> availableBrowsers = pm.queryIntentActivities(browserIntent, PackageManager.MATCH_ALL);
         final List<String> regularBrowsers = new ArrayList<>();
         final List<String> customTabsBrowsers = new ArrayList<>();
         final boolean isFilterEnabled = allowedPackages != null;
