@@ -22,6 +22,8 @@ v4 of the Auth0 Android SDK includes significant build toolchain updates, update
 - [**Behavior Changes**](#behavior-changes)
   + [clearCredentials() Now Clears All Storage](#clearCredentials-now-clears-all-storage)
   + [Storage Interface: New removeAll() Method](#storage-interface-new-removeall-method)
+- [**New APIs**](#new-apis)
+  + [clearAll() — Full Credential and Key Cleanup](#clearall--full-credential-and-key-cleanup)
 - [**Dependency Changes**](#dependency-changes)
   + [Gson 2.8.9 → 2.11.0](#️-gson-289--2110-transitive-dependency)
   + [DefaultClient.Builder](#defaultclientbuilder)
@@ -225,6 +227,26 @@ In v4, `clearCredentials()` calls `Storage.removeAll()`, which clears **all** va
 **Change:** The `Storage` interface now includes a `removeAll()` method with a default empty implementation.
 
 **Impact:** Existing custom `Storage` implementations will continue to compile and work without changes. Override `removeAll()` to provide the actual clearing behavior if your custom storage is used with `clearCredentials()`.
+
+## New APIs
+
+### `clearAll()` — Full Credential and Key Cleanup
+
+v4 introduces a new `clearAll()` method on `CredentialsManager` and `SecureCredentialsManager` that performs a complete cleanup of all stored credentials **and** cryptographic key pairs.
+
+**Usage:**
+
+```kotlin
+// Clear everything on logout — credentials, DPoP keys, and encryption keys
+credentialsManager.clearAll()
+```
+
+**When to use `clearAll()` vs `clearCredentials()`:**
+
+- Use **`clearCredentials()`** when you only need to remove stored tokens (e.g., forcing a re-login) but want to preserve cryptographic keys for future sessions.
+- Use **`clearAll()`** on full logout or account removal, when you want to ensure no credentials or key material remain on the device.
+
+> **Note:** `clearAll()` catches any errors from DPoP key pair deletion internally, so it will not throw even if the DPoP key pair was never created or has already been removed.
 
 ## Dependency Changes
 
