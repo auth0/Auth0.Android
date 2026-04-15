@@ -10,6 +10,8 @@ import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
+import com.auth0.android.dpop.DPoP
+import com.auth0.android.dpop.DPoPException
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.result.APICredentials
 import com.auth0.android.result.Credentials
@@ -737,6 +739,22 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     }
 
     /**
+     * Removes all credentials, API credentials, and cryptographic key pairs.
+     * This calls [Storage.removeAll] to clear all stored data
+     */
+    override fun clearAll() {
+        storage.removeAll()
+        crypto.deleteAllKeys()
+        clearBiometricSession()
+        try {
+            DPoP.clearKeyPair()
+        } catch (e: DPoPException) {
+            Log.e(TAG, "Failed to clear DPoP key pair ${e.stackTraceToString()}")
+        }
+        Log.d(TAG, "All credentials and key pairs were removed")
+    }
+
+    /**
      * Removes the credentials for the given audience from the storage if present.
      * @param audience Audience for which the [APICredentials] are stored
      * @param scope Optional scope for which the [APICredentials] are stored. If the credentials were initially fetched/stored with scope,
@@ -890,7 +908,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     callback.onFailure(
                         CredentialsManagerException(
                             CredentialsManagerException.Code.MFA_REQUIRED,
-                            error.message ?: "Multi-factor authentication is required to complete the credential renewal.",
+                            error.message
+                                ?: "Multi-factor authentication is required to complete the credential renewal.",
                             error,
                             error.mfaRequiredErrorPayload
                         )
@@ -1048,7 +1067,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     callback.onFailure(
                         CredentialsManagerException(
                             CredentialsManagerException.Code.MFA_REQUIRED,
-                            error.message ?: "Multi-factor authentication is required to complete the credential renewal.",
+                            error.message
+                                ?: "Multi-factor authentication is required to complete the credential renewal.",
                             error,
                             error.mfaRequiredErrorPayload
                         )

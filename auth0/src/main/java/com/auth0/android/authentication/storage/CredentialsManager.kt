@@ -6,6 +6,8 @@ import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
+import com.auth0.android.dpop.DPoP
+import com.auth0.android.dpop.DPoPException
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.request.internal.Jwt
 import com.auth0.android.result.APICredentials
@@ -528,7 +530,8 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                     callback.onFailure(
                         CredentialsManagerException(
                             CredentialsManagerException.Code.MFA_REQUIRED,
-                            error.message ?: "Multi-factor authentication is required to complete the credential renewal.",
+                            error.message
+                                ?: "Multi-factor authentication is required to complete the credential renewal.",
                             error,
                             error.mfaRequiredErrorPayload
                         )
@@ -654,7 +657,8 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                     callback.onFailure(
                         CredentialsManagerException(
                             CredentialsManagerException.Code.MFA_REQUIRED,
-                            error.message ?: "Multi-factor authentication is required to complete the credential renewal.",
+                            error.message
+                                ?: "Multi-factor authentication is required to complete the credential renewal.",
                             error,
                             error.mfaRequiredErrorPayload
                         )
@@ -708,6 +712,19 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      */
     override fun clearCredentials() {
         storage.removeAll()
+    }
+
+    /**
+     * Removes all credentials, API credentials, and cryptographic key pairs.
+     * This calls [Storage.removeAll] to clear all stored data
+     */
+    override fun clearAll() {
+        storage.removeAll()
+        try {
+            DPoP.clearKeyPair()
+        } catch (e: DPoPException) {
+            Log.e(TAG, "Failed to clear DPoP key pair ${e.stackTraceToString()}")
+        }
     }
 
     /**
