@@ -2165,6 +2165,13 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
+    public fun shouldClearAllCredentialsKeyPairsAndDPoPKeyPair() {
+        manager.clearAll()
+        verify(storage).removeAll()
+        verify(crypto).deleteAllKeys()
+    }
+
+    @Test
     public fun shouldSaveEncryptedApiCredentialsWithScopeAsKey() {
         val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
         val apiCredentials = APICredentials(
