@@ -1,5 +1,17 @@
 # Change Log
 
+## [3.15.0](https://github.com/auth0/Auth0.Android/tree/3.15.0) (2026-04-15)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.14.0...3.15.0)
+
+**Added**
+- feat: Add three new DPoP errors to `CredentialsManagerException` [\#949](https://github.com/auth0/Auth0.Android/pull/949) ([pmathew92](https://github.com/pmathew92))
+
+**Changed**
+- refactor : Made the updateAuthenticationMethodById public [\#948](https://github.com/auth0/Auth0.Android/pull/948) ([pmathew92](https://github.com/pmathew92))
+
+**Fixed**
+- refactor : Handling more exceptions scenario in DPoP key generation [\#943](https://github.com/auth0/Auth0.Android/pull/943) ([pmathew92](https://github.com/pmathew92))
+
 ## [3.14.0](https://github.com/auth0/Auth0.Android/tree/3.14.0) (2026-03-11)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.13.0...3.14.0)
 
