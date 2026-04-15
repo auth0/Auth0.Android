@@ -246,6 +246,25 @@ public object WebAuthProvider {
         pendingLogoutResult.set(null)
     }
 
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal fun setPendingLoginResult(credentials: Credentials) {
+        pendingLoginResult.set(PendingResult.Success(credentials))
+    }
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal fun setPendingLogoutResult() {
+        pendingLogoutResult.set(PendingResult.Success(null))
+    }
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal fun hasPendingLoginResult(): Boolean = pendingLoginResult.get() != null
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal fun hasPendingLogoutResult(): Boolean = pendingLogoutResult.get() != null
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal fun callbacksCount(): Int = callbacks.size
+
     public class LogoutBuilder internal constructor(private val account: Auth0) {
         private var scheme = "https"
         private var returnToUrl: String? = null
