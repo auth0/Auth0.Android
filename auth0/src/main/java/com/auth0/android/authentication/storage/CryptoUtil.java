@@ -300,6 +300,14 @@ class CryptoUtil {
     }
 
     /**
+     * Removes all cryptographic keys (both RSA and AES) used by this instance.
+     */
+    public void deleteAllKeys() {
+        deleteRSAKeys();
+        deleteAESKeys();
+    }
+
+    /**
      * Decrypts the given input using a generated RSA Private Key.
      * Used to decrypt the AES key for later usage.
      *

@@ -1952,6 +1952,41 @@ public class CryptoUtilTest {
     }
 
     /*
+     * deleteAllKeys() tests
+     */
+
+    @Test
+    public void shouldDeleteBothRSAAndAESKeysWhenDeleteAllKeysIsCalled() throws Exception {
+        cryptoUtil.deleteAllKeys();
+
+        // Verify RSA keys deleted from KeyStore
+        Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
+        Mockito.verify(keyStore).deleteEntry(OLD_KEY_ALIAS);
+
+        // Verify AES keys deleted from Storage
+        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS);
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS + "_iv");
+    }
+
+    @Test
+    public void shouldDeleteAESKeysEvenIfRSAKeyDeletionFails() throws Exception {
+        doThrow(new KeyStoreException("KeyStore error")).when(keyStore).deleteEntry(anyString());
+
+        cryptoUtil.deleteAllKeys();
+
+        // RSA deletion was attempted (first deleteEntry throws, second is never reached)
+        Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
+
+        // AES keys should still be deleted from Storage
+        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS);
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS + "_iv");
+    }
+
+    /*
      * Helper methods
      */
     private CryptoUtil newCryptoUtilSpy() throws Exception {

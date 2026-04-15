@@ -169,6 +169,7 @@ public abstract class BaseCredentialsManager internal constructor(
 
     public abstract fun clearCredentials()
     public abstract fun clearApiCredentials(audience: String, scope: String? = null)
+    public abstract fun clearAll()
     public abstract fun hasValidCredentials(): Boolean
     public abstract fun hasValidCredentials(minTtl: Long): Boolean
 

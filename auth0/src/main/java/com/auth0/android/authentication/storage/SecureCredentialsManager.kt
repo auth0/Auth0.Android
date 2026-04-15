@@ -10,6 +10,8 @@ import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
+import com.auth0.android.dpop.DPoP
+import com.auth0.android.dpop.DPoPException
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.result.APICredentials
 import com.auth0.android.result.Credentials
@@ -742,6 +744,22 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         storage.removeAll()
         clearBiometricSession()
         Log.d(TAG, "Credentials were just removed from the storage")
+    }
+
+    /**
+     * Removes all credentials, API credentials, and cryptographic key pairs.
+     * This calls [Storage.removeAll] to clear all stored data
+     */
+    override fun clearAll() {
+        storage.removeAll()
+        crypto.deleteAllKeys()
+        clearBiometricSession()
+        try {
+            DPoP.clearKeyPair()
+        } catch (e: DPoPException) {
+            Log.e(TAG, "Failed to clear DPoP key pair ${e.stackTraceToString()}")
+        }
+        Log.d(TAG, "All credentials and key pairs were removed")
     }
 
     /**
