@@ -2,6 +2,9 @@ package com.auth0.android.provider
 
 import android.app.Activity
 import android.content.Context
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import android.content.Intent
 import android.net.Uri
 import android.os.Parcelable
@@ -113,6 +116,9 @@ public class WebAuthProviderTest {
         )
 
         `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
+
+        // Clear any state left over from previous tests
+        WebAuthProvider.resetState()
     }
 
 
@@ -3064,8 +3070,362 @@ public class WebAuthProviderTest {
         verify(options, Mockito.never()).copyWithEphemeralBrowsing()
     }
 
+    // --- LifecycleAwareCallback tests ---
+
+    @Test
+    public fun shouldInvokeOnDetachedWithLoginResultAfterDestroy() {
+        val credentials = Mockito.mock(Credentials::class.java)
+        var capturedSuccess: Credentials? = null
+        var capturedError: AuthenticationException? = null
+
+        val lifecycleOwner = Mockito.mock(LifecycleOwner::class.java)
+        val lifecycle = Mockito.mock(Lifecycle::class.java)
+        Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
+
+        val lifecycleCallback = LifecycleAwareCallback<Credentials>(
+            delegateCallback = callback,
+            lifecycleOwner = lifecycleOwner,
+            onDetached = { success, error ->
+                capturedSuccess = success
+                capturedError = error
+            }
+        )
+
+        lifecycleCallback.onDestroy(lifecycleOwner)
+        lifecycleCallback.onSuccess(credentials)
+
+        Assert.assertEquals(credentials, capturedSuccess)
+        Assert.assertNull(capturedError)
+        verify(callback, Mockito.never()).onSuccess(any())
+    }
+
+    @Test
+    public fun shouldInvokeOnDetachedWithLoginFailureAfterDestroy() {
+        val error = AuthenticationException("canceled", "User canceled")
+        var capturedSuccess: Credentials? = null
+        var capturedError: AuthenticationException? = null
+
+        val lifecycleOwner = Mockito.mock(LifecycleOwner::class.java)
+        val lifecycle = Mockito.mock(Lifecycle::class.java)
+        Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
+
+        val lifecycleCallback = LifecycleAwareCallback<Credentials>(
+            delegateCallback = callback,
+            lifecycleOwner = lifecycleOwner,
+            onDetached = { success, detachedError ->
+                capturedSuccess = success
+                capturedError = detachedError
+            }
+        )
+
+        lifecycleCallback.onDestroy(lifecycleOwner)
+        lifecycleCallback.onFailure(error)
+
+        Assert.assertNull(capturedSuccess)
+        Assert.assertEquals(error, capturedError)
+        verify(callback, Mockito.never()).onFailure(any())
+    }
+
+    @Test
+    public fun shouldDeliverDirectlyWhenLifecycleCallbackIsAlive() {
+        val credentials = Mockito.mock(Credentials::class.java)
+        var onDetachedCalled = false
+
+        val lifecycleOwner = Mockito.mock(LifecycleOwner::class.java)
+        val lifecycle = Mockito.mock(Lifecycle::class.java)
+        Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
+
+        val lifecycleCallback = LifecycleAwareCallback<Credentials>(
+            delegateCallback = callback,
+            lifecycleOwner = lifecycleOwner,
+            onDetached = { _, _ -> onDetachedCalled = true }
+        )
+
+        lifecycleCallback.onSuccess(credentials)
+
+        verify(callback).onSuccess(credentials)
+        Assert.assertFalse(onDetachedCalled)
+    }
+
+    @Test
+    public fun shouldDeliverFailureDirectlyWhenLifecycleCallbackIsAlive() {
+        val error = AuthenticationException("canceled", "User canceled")
+        var onDetachedCalled = false
+
+        val lifecycleOwner = Mockito.mock(LifecycleOwner::class.java)
+        val lifecycle = Mockito.mock(Lifecycle::class.java)
+        Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
+
+        val lifecycleCallback = LifecycleAwareCallback<Credentials>(
+            delegateCallback = callback,
+            lifecycleOwner = lifecycleOwner,
+            onDetached = { _, _ -> onDetachedCalled = true }
+        )
+
+        lifecycleCallback.onFailure(error)
+
+        verify(callback).onFailure(error)
+        Assert.assertFalse(onDetachedCalled)
+    }
+
+    @Test
+    public fun shouldInvokeOnDetachedWithLogoutSuccessAfterDestroy() {
+        var onDetachedCalled = false
+        var capturedError: AuthenticationException? = null
+
+        val lifecycleOwner = Mockito.mock(LifecycleOwner::class.java)
+        val lifecycle = Mockito.mock(Lifecycle::class.java)
+        Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
+
+        val lifecycleCallback = LifecycleAwareCallback<Void?>(
+            delegateCallback = voidCallback,
+            lifecycleOwner = lifecycleOwner,
+            onDetached = { _, error ->
+                onDetachedCalled = true
+                capturedError = error
+            }
+        )
+
+        lifecycleCallback.onDestroy(lifecycleOwner)
+        lifecycleCallback.onSuccess(null)
+
+        Assert.assertTrue(onDetachedCalled)
+        Assert.assertNull(capturedError)
+        verify(voidCallback, Mockito.never()).onSuccess(any())
+    }
+
+    @Test
+    public fun shouldInvokeOnDetachedWithLogoutFailureAfterDestroy() {
+        val error = AuthenticationException("canceled", "User closed the browser")
+        var onDetachedCalled = false
+        var capturedError: AuthenticationException? = null
+
+        val lifecycleOwner = Mockito.mock(LifecycleOwner::class.java)
+        val lifecycle = Mockito.mock(Lifecycle::class.java)
+        Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
+
+        val lifecycleCallback = LifecycleAwareCallback<Void?>(
+            delegateCallback = voidCallback,
+            lifecycleOwner = lifecycleOwner,
+            onDetached = { _, detachedError ->
+                onDetachedCalled = true
+                capturedError = detachedError
+            }
+        )
+
+        lifecycleCallback.onDestroy(lifecycleOwner)
+        lifecycleCallback.onFailure(error)
+
+        Assert.assertTrue(onDetachedCalled)
+        Assert.assertEquals(error, capturedError)
+        verify(voidCallback, Mockito.never()).onFailure(any())
+    }
+
+    @Test
+    public fun shouldDeliverLogoutDirectlyWhenLifecycleCallbackIsAlive() {
+        var onDetachedCalled = false
+
+        val lifecycleOwner = Mockito.mock(LifecycleOwner::class.java)
+        val lifecycle = Mockito.mock(Lifecycle::class.java)
+        Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
+
+        val lifecycleCallback = LifecycleAwareCallback<Void?>(
+            delegateCallback = voidCallback,
+            lifecycleOwner = lifecycleOwner,
+            onDetached = { _, _ -> onDetachedCalled = true }
+        )
+
+        lifecycleCallback.onSuccess(null)
+
+        verify(voidCallback).onSuccess(null)
+        Assert.assertFalse(onDetachedCalled)
+    }
+
+    @Test
+    public fun shouldRegisterAsLifecycleObserverOnInit() {
+        val lifecycleOwner = Mockito.mock(LifecycleOwner::class.java)
+        val lifecycle = Mockito.mock(Lifecycle::class.java)
+        Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
+
+        val lifecycleCallback = LifecycleAwareCallback<Credentials>(
+            delegateCallback = callback,
+            lifecycleOwner = lifecycleOwner,
+            onDetached = { _, _ -> }
+        )
+
+        verify(lifecycle).addObserver(lifecycleCallback)
+    }
+
+    @Test
+    public fun shouldUnregisterLifecycleObserverOnDestroy() {
+        val lifecycleOwner = Mockito.mock(LifecycleOwner::class.java)
+        val lifecycle = Mockito.mock(Lifecycle::class.java)
+        Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
+
+        val lifecycleCallback = LifecycleAwareCallback<Credentials>(
+            delegateCallback = callback,
+            lifecycleOwner = lifecycleOwner,
+            onDetached = { _, _ -> }
+        )
+
+        lifecycleCallback.onDestroy(lifecycleOwner)
+
+        verify(lifecycle).removeObserver(lifecycleCallback)
+    }
+
+
+    @Test
+    public fun shouldWrapCallbackWithLifecycleAwareCallbackWhenStartedWithLifecycleOwner() {
+        val lifecycle = Mockito.mock(Lifecycle::class.java)
+        val lifecycleActivity = Mockito.mock(TestLifecycleOwnerActivity::class.java)
+        Mockito.`when`(lifecycleActivity.lifecycle).thenReturn(lifecycle)
+        Mockito.`when`(lifecycleActivity.applicationContext).thenReturn(lifecycleActivity)
+        Mockito.`when`(lifecycleActivity.packageName).thenReturn("com.auth0.test")
+        Mockito.doReturn(false).`when`(lifecycleActivity).bindService(any(), any(), ArgumentMatchers.anyInt())
+        BrowserPickerTest.setupBrowserContext(lifecycleActivity, listOf("com.auth0.browser"), null, null)
+
+        login(account).start(lifecycleActivity, callback)
+
+        verify(lifecycle).addObserver(any<LifecycleAwareCallback<Credentials>>())
+    }
+
+
+    @Test
+    public fun shouldRegisterLifecycleObserverOnRegisterCallbacks() {
+        val lifecycleOwner = Mockito.mock(LifecycleOwner::class.java)
+        val lifecycle = Mockito.mock(Lifecycle::class.java)
+        Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
+
+        WebAuthProvider.registerCallbacks(lifecycleOwner, loginCallback = callback, logoutCallback = voidCallback)
+
+        verify(lifecycle).addObserver(isA<DefaultLifecycleObserver>())
+    }
+
+    @Test
+    public fun shouldRemoveLifecycleObserverOnDestroyAfterRegisterCallbacks() {
+        val lifecycleOwner = Mockito.mock(LifecycleOwner::class.java)
+        val lifecycle = Mockito.mock(Lifecycle::class.java)
+        Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
+
+        val observerCaptor = argumentCaptor<DefaultLifecycleObserver>()
+        WebAuthProvider.registerCallbacks(lifecycleOwner, loginCallback = callback, logoutCallback = voidCallback)
+        verify(lifecycle).addObserver(observerCaptor.capture())
+
+        observerCaptor.firstValue.onDestroy(lifecycleOwner)
+
+        verify(lifecycle).removeObserver(observerCaptor.firstValue)
+    }
+
+    @Test
+    public fun shouldRemoveLoginCallbackFromCallbacksOnDestroy() {
+        val lifecycleOwner = Mockito.mock(LifecycleOwner::class.java)
+        val lifecycle = Mockito.mock(Lifecycle::class.java)
+        Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
+
+        val observerCaptor = argumentCaptor<DefaultLifecycleObserver>()
+        WebAuthProvider.registerCallbacks(lifecycleOwner, loginCallback = callback, logoutCallback = voidCallback)
+        verify(lifecycle).addObserver(observerCaptor.capture())
+
+        Assert.assertEquals(1, WebAuthProvider.callbacksCount())
+
+        observerCaptor.firstValue.onDestroy(lifecycleOwner)
+
+        Assert.assertEquals(0, WebAuthProvider.callbacksCount())
+    }
+
+
+    @Test
+    public fun shouldDeliverPendingLoginResultOnResume() {
+        val credentials = Mockito.mock(Credentials::class.java)
+        WebAuthProvider.setPendingLoginResult(credentials)
+
+        val lifecycleOwner = Mockito.mock(LifecycleOwner::class.java)
+        val lifecycle = Mockito.mock(Lifecycle::class.java)
+        Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
+
+        val observerCaptor = argumentCaptor<DefaultLifecycleObserver>()
+        WebAuthProvider.registerCallbacks(lifecycleOwner, loginCallback = callback, logoutCallback = voidCallback)
+        verify(lifecycle).addObserver(observerCaptor.capture())
+
+        observerCaptor.firstValue.onResume(lifecycleOwner)
+
+        verify(callback).onSuccess(credentials)
+        Assert.assertFalse(WebAuthProvider.hasPendingLoginResult())
+    }
+
+    @Test
+    public fun shouldDeliverPendingLogoutResultOnResume() {
+        WebAuthProvider.setPendingLogoutResult()
+
+        val lifecycleOwner = Mockito.mock(LifecycleOwner::class.java)
+        val lifecycle = Mockito.mock(Lifecycle::class.java)
+        Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
+
+        val observerCaptor = argumentCaptor<DefaultLifecycleObserver>()
+        WebAuthProvider.registerCallbacks(lifecycleOwner, loginCallback = callback, logoutCallback = voidCallback)
+        verify(lifecycle).addObserver(observerCaptor.capture())
+
+        observerCaptor.firstValue.onResume(lifecycleOwner)
+
+        verify(voidCallback).onSuccess(null)
+        Assert.assertFalse(WebAuthProvider.hasPendingLogoutResult())
+    }
+
+    @Test
+    public fun shouldNotDeliverLoginResultOnResumeWhenNoPendingResult() {
+        val lifecycleOwner = Mockito.mock(LifecycleOwner::class.java)
+        val lifecycle = Mockito.mock(Lifecycle::class.java)
+        Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
+
+        val observerCaptor = argumentCaptor<DefaultLifecycleObserver>()
+        WebAuthProvider.registerCallbacks(lifecycleOwner, loginCallback = callback, logoutCallback = voidCallback)
+        verify(lifecycle).addObserver(observerCaptor.capture())
+
+        observerCaptor.firstValue.onResume(lifecycleOwner)
+        verify(callback, Mockito.never()).onSuccess(any())
+        verify(callback, Mockito.never()).onFailure(any())
+    }
+
+    @Test
+    public fun shouldNotDeliverLogoutResultOnResumeWhenNoPendingResult() {
+        val lifecycleOwner = Mockito.mock(LifecycleOwner::class.java)
+        val lifecycle = Mockito.mock(Lifecycle::class.java)
+        Mockito.`when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
+
+        val observerCaptor = argumentCaptor<DefaultLifecycleObserver>()
+        WebAuthProvider.registerCallbacks(lifecycleOwner, loginCallback = callback, logoutCallback = voidCallback)
+        verify(lifecycle).addObserver(observerCaptor.capture())
+
+        observerCaptor.firstValue.onResume(lifecycleOwner)
+        verify(voidCallback, Mockito.never()).onSuccess(any())
+        verify(voidCallback, Mockito.never()).onFailure(any())
+    }
+
+    @Test
+    public fun shouldClearPendingLoginResultOnNewLoginStart() {
+        val credentials = Mockito.mock(Credentials::class.java)
+        WebAuthProvider.setPendingLoginResult(credentials)
+        Assert.assertTrue(WebAuthProvider.hasPendingLoginResult())
+
+        login(account).start(activity, callback)
+
+        Assert.assertFalse(WebAuthProvider.hasPendingLoginResult())
+    }
+
+    @Test
+    public fun shouldClearPendingLogoutResultOnNewLogoutStart() {
+        WebAuthProvider.setPendingLogoutResult()
+        Assert.assertTrue(WebAuthProvider.hasPendingLogoutResult())
+
+        logout(account).start(activity, voidCallback)
+
+        Assert.assertFalse(WebAuthProvider.hasPendingLogoutResult())
+    }
+
     private companion object {
         private const val KEY_STATE = "state"
         private const val KEY_NONCE = "nonce"
     }
 }
+
+internal abstract class TestLifecycleOwnerActivity : Activity(), LifecycleOwner
