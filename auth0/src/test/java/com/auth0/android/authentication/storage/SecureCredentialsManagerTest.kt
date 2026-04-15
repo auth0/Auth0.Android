@@ -2165,10 +2165,11 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
-    public fun shouldClearAllCredentialsKeyPairsAndDPoPKeyPair() {
+    public fun shouldClearAllCredentialsKeyPairsAndBiometricSession() {
         manager.clearAll()
         verify(storage).removeAll()
         verify(crypto).deleteAllKeys()
+        Assert.assertFalse(manager.isBiometricSessionValid())
     }
 
     @Test

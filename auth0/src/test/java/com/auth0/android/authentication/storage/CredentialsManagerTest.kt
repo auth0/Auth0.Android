@@ -1496,7 +1496,7 @@ public class CredentialsManagerTest {
     }
 
     @Test
-    public fun shouldClearAllCredentialsAndDPoPKeyPair() {
+    public fun shouldClearAllCredentials() {
         manager.clearAll()
         verify(storage).removeAll()
     }
