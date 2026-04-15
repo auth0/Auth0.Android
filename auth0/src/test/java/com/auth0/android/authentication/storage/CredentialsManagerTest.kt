@@ -1496,6 +1496,12 @@ public class CredentialsManagerTest {
     }
 
     @Test
+    public fun shouldClearAllCredentials() {
+        manager.clearAll()
+        verify(storage).removeAll()
+    }
+
+    @Test
     public fun shouldSaveApiCredentialsWithScopeAsKey() {
         val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
         val apiCredentials = APICredentials(

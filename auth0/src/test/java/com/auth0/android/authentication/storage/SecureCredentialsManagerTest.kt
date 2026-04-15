@@ -2165,6 +2165,14 @@ public class SecureCredentialsManagerTest {
     }
 
     @Test
+    public fun shouldClearAllCredentialsKeyPairsAndBiometricSession() {
+        manager.clearAll()
+        verify(storage).removeAll()
+        verify(crypto).deleteAllKeys()
+        Assert.assertFalse(manager.isBiometricSessionValid())
+    }
+
+    @Test
     public fun shouldSaveEncryptedApiCredentialsWithScopeAsKey() {
         val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
         val apiCredentials = APICredentials(
