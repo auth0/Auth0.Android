@@ -56,6 +56,13 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     private var dPoP: DPoP? = null
 
     /**
+     * Returns whether DPoP (Demonstrating Proof of Possession) is enabled on this client.
+     * DPoP is enabled by calling [useDPoP].
+     */
+    public val isDPoPEnabled: Boolean
+        get() = dPoP != null
+
+    /**
      * Creates a new API client instance providing Auth0 account info.
      *
      * Example usage:
