@@ -9,6 +9,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import androidx.annotation.ColorRes;
+import androidx.annotation.Dimension;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.browser.customtabs.CustomTabColorSchemeParams;
@@ -20,6 +21,8 @@ import androidx.core.content.ContextCompat;
 import com.auth0.android.authentication.AuthenticationException;
 
 import java.util.List;
+
+import android.util.DisplayMetrics;
 
 /**
  * Holder for Custom Tabs customization options. Use {@link CustomTabsOptions#newBuilder()} to begin.
@@ -34,11 +37,38 @@ public class CustomTabsOptions implements Parcelable {
     @Nullable
     private final List<String> disabledCustomTabsPackages;
 
-    private CustomTabsOptions(boolean showTitle, @ColorRes int toolbarColor, @NonNull BrowserPicker browserPicker, @Nullable List<String> disabledCustomTabsPackages) {
+    // Partial Custom Tabs - Bottom Sheet
+    private final int initialHeight;
+    private final int activityHeightResizeBehavior;
+    private final int toolbarCornerRadius;
+
+    // Partial Custom Tabs - Side Sheet
+    private final int initialWidth;
+    private final int sideSheetBreakpoint;
+
+    // Partial Custom Tabs - Background Interaction
+    private final boolean backgroundInteractionEnabled;
+
+    private CustomTabsOptions(boolean showTitle, @ColorRes int toolbarColor, @NonNull BrowserPicker browserPicker,
+                              @Nullable List<String> disabledCustomTabsPackages,
+                              int initialHeight, int activityHeightResizeBehavior, int toolbarCornerRadius,
+                              int initialWidth, int sideSheetBreakpoint,
+                              boolean backgroundInteractionEnabled) {
         this.showTitle = showTitle;
         this.toolbarColor = toolbarColor;
         this.browserPicker = browserPicker;
         this.disabledCustomTabsPackages = disabledCustomTabsPackages;
+        this.initialHeight = initialHeight;
+        this.activityHeightResizeBehavior = activityHeightResizeBehavior;
+        this.toolbarCornerRadius = toolbarCornerRadius;
+        this.initialWidth = initialWidth;
+        this.sideSheetBreakpoint = sideSheetBreakpoint;
+        this.backgroundInteractionEnabled = backgroundInteractionEnabled;
+    }
+
+    private static int dpToPx(@NonNull Context context, int dp) {
+        final DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+        return Math.round(dp * metrics.density);
     }
 
     @Nullable
@@ -88,6 +118,28 @@ public class CustomTabsOptions implements Parcelable {
                     .setToolbarColor(ContextCompat.getColor(context, toolbarColor));
             builder.setDefaultColorSchemeParams(colorBuilder.build());
         }
+
+        // Partial Custom Tabs - Bottom Sheet
+        if (initialHeight > 0) {
+            builder.setInitialActivityHeightPx(dpToPx(context, initialHeight), activityHeightResizeBehavior);
+        }
+        if (toolbarCornerRadius > 0) {
+            builder.setToolbarCornerRadiusDp(toolbarCornerRadius);
+        }
+
+        // Partial Custom Tabs - Side Sheet
+        if (initialWidth > 0) {
+            builder.setInitialActivityWidthPx(dpToPx(context, initialWidth));
+        }
+        if (sideSheetBreakpoint > 0) {
+            builder.setActivitySideSheetBreakpointDp(sideSheetBreakpoint);
+        }
+
+        // Partial Custom Tabs - Background Interaction
+        if (backgroundInteractionEnabled) {
+            builder.setBackgroundInteractionEnabled(true);
+        }
+
         return builder.build().intent;
     }
 
@@ -108,6 +160,12 @@ public class CustomTabsOptions implements Parcelable {
         toolbarColor = in.readInt();
         browserPicker = in.readParcelable(BrowserPicker.class.getClassLoader());
         disabledCustomTabsPackages = in.createStringArrayList();
+        initialHeight = in.readInt();
+        activityHeightResizeBehavior = in.readInt();
+        toolbarCornerRadius = in.readInt();
+        initialWidth = in.readInt();
+        sideSheetBreakpoint = in.readInt();
+        backgroundInteractionEnabled = in.readByte() != 0;
     }
 
     @Override
@@ -116,6 +174,12 @@ public class CustomTabsOptions implements Parcelable {
         dest.writeInt(toolbarColor);
         dest.writeParcelable(browserPicker, flags);
         dest.writeStringList(disabledCustomTabsPackages);
+        dest.writeInt(initialHeight);
+        dest.writeInt(activityHeightResizeBehavior);
+        dest.writeInt(toolbarCornerRadius);
+        dest.writeInt(initialWidth);
+        dest.writeInt(sideSheetBreakpoint);
+        dest.writeByte((byte) (backgroundInteractionEnabled ? 1 : 0));
     }
 
     @Override
@@ -147,11 +211,24 @@ public class CustomTabsOptions implements Parcelable {
         @Nullable
         private List<String> disabledCustomTabsPackages;
 
+        private int initialHeight;
+        private int activityHeightResizeBehavior;
+        private int toolbarCornerRadius;
+        private int initialWidth;
+        private int sideSheetBreakpoint;
+        private boolean backgroundInteractionEnabled;
+
         Builder() {
             this.showTitle = false;
             this.toolbarColor = 0;
             this.browserPicker = BrowserPicker.newBuilder().build();
             this.disabledCustomTabsPackages = null;
+            this.initialHeight = 0;
+            this.activityHeightResizeBehavior = CustomTabsIntent.ACTIVITY_HEIGHT_DEFAULT;
+            this.toolbarCornerRadius = 0;
+            this.initialWidth = 0;
+            this.sideSheetBreakpoint = 0;
+            this.backgroundInteractionEnabled = false;
         }
 
         /**
@@ -213,13 +290,110 @@ public class CustomTabsOptions implements Parcelable {
         }
 
         /**
+         * Sets the initial height for the Custom Tab to display as a bottom sheet.
+         * When set, the Custom Tab will appear as a bottom sheet instead of full screen.
+         * Pass the size in dp; it will be converted to pixels internally.
+         * The minimum height enforced by Chrome is 50% of the screen; values below this are auto-adjusted.
+         * Falls back to full screen on browsers that don't support Partial Custom Tabs (requires Chrome 107+).
+         * By default, the bottom sheet is resizable by the user. Use {@link #withResizableHeight(boolean)}
+         * to lock the height.
+         *
+         * @param height the initial bottom sheet height in dp.
+         * @return this same builder instance.
+         */
+        @NonNull
+        public Builder withInitialHeight(@Dimension(unit = Dimension.DP) int height) {
+            this.initialHeight = height;
+            return this;
+        }
+
+        /**
+         * Sets whether the user can resize the Partial Custom Tab by dragging.
+         * For bottom sheets, this controls whether the user can drag the toolbar handle to
+         * expand or collapse the sheet. For side sheets, this controls whether the sheet
+         * can be resized. By default, the Partial Custom Tab is resizable.
+         * Pass {@code false} to lock the size. Only takes effect when
+         * {@link #withInitialHeight(int)} is also set.
+         *
+         * @param resizable whether the Partial Custom Tab should be resizable.
+         * @return this same builder instance.
+         */
+        @NonNull
+        public Builder withResizable(boolean resizable) {
+            this.activityHeightResizeBehavior = resizable
+                    ? CustomTabsIntent.ACTIVITY_HEIGHT_ADJUSTABLE
+                    : CustomTabsIntent.ACTIVITY_HEIGHT_FIXED;
+            return this;
+        }
+
+        /**
+         * Sets the toolbar's top corner radii in dp. Only takes effect when the Custom Tab is
+         * displayed as a bottom sheet (i.e., when {@link #withInitialHeight(int)} is also set).
+         * Pass the size in dp.
+         *
+         * @param cornerRadius the toolbar's top corner radius in dp.
+         * @return this same builder instance.
+         */
+        @NonNull
+        public Builder withToolbarCornerRadius(@Dimension(unit = Dimension.DP) int cornerRadius) {
+            this.toolbarCornerRadius = cornerRadius;
+            return this;
+        }
+
+        /**
+         * Sets the initial width for the Custom Tab to display as a side sheet on larger screens.
+         * The Custom Tab will behave as a side sheet if the screen's width is bigger than the
+         * breakpoint value set by {@link #withSideSheetBreakpoint(int)}.
+         * Pass the size in dp; it will be converted to pixels internally.
+         * Falls back to bottom sheet or full screen on unsupported browsers.
+         *
+         * @param width the initial side sheet width in dp.
+         * @return this same builder instance.
+         */
+        @NonNull
+        public Builder withInitialWidth(@Dimension(unit = Dimension.DP) int width) {
+            this.initialWidth = width;
+            return this;
+        }
+
+        /**
+         * Sets the breakpoint in dp to switch between bottom sheet and side sheet mode.
+         * If the screen's width is bigger than this value, the Custom Tab will behave as a side sheet;
+         * otherwise it will behave as a bottom sheet. The browser default is typically 840dp.
+         * Pass the size in dp.
+         *
+         * @param breakpoint the breakpoint in dp.
+         * @return this same builder instance.
+         */
+        @NonNull
+        public Builder withSideSheetBreakpoint(@Dimension(unit = Dimension.DP) int breakpoint) {
+            this.sideSheetBreakpoint = breakpoint;
+            return this;
+        }
+
+        /**
+         * Enables or disables interaction with the background app when a Partial Custom Tab is displayed.
+         * By default, background interaction is disabled.
+         *
+         * @param enabled whether to enable interaction with the app behind the partial tab.
+         * @return this same builder instance.
+         */
+        @NonNull
+        public Builder withBackgroundInteractionEnabled(boolean enabled) {
+            this.backgroundInteractionEnabled = enabled;
+            return this;
+        }
+
+        /**
          * Create a new CustomTabsOptions instance with the customization settings.
          *
          * @return an instance of CustomTabsOptions with the customization settings.
          */
         @NonNull
         public CustomTabsOptions build() {
-            return new CustomTabsOptions(showTitle, toolbarColor, browserPicker, disabledCustomTabsPackages);
+            return new CustomTabsOptions(showTitle, toolbarColor, browserPicker, disabledCustomTabsPackages,
+                    initialHeight, activityHeightResizeBehavior, toolbarCornerRadius,
+                    initialWidth, sideSheetBreakpoint, backgroundInteractionEnabled);
         }
     }
 
