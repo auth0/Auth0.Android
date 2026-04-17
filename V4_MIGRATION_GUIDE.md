@@ -17,6 +17,7 @@ v4 of the Auth0 Android SDK includes significant build toolchain updates, update
   + [Classes Removed](#classes-removed)
   + [Deprecated MFA Methods Removed from AuthenticationAPIClient](#deprecated-mfa-methods-removed-from-authenticationapiclient)
   + [DPoP Configuration Moved to Builder](#dpop-configuration-moved-to-builder)
+  + [DPoPException.UNSUPPORTED_ERROR Removed](#dpopexceptionunsupported_error-removed)
   + [SSOCredentials.expiresIn Renamed to expiresAt](#ssocredentialsexpiresin-renamed-to-expiresat)
 - [**Default Values Changed**](#default-values-changed)
   + [Credentials Manager minTTL](#credentials-manager-minttl)
@@ -170,6 +171,12 @@ WebAuthProvider
 
 This change ensures that DPoP configuration is scoped to individual login requests rather than
 persisting across the entire application lifecycle.
+
+### `DPoPException.UNSUPPORTED_ERROR` Removed
+
+The `DPoPException.UNSUPPORTED_ERROR` constant has been removed. With the minimum SDK raised to API 26, the SDK no longer needs to guard against unsupported Android versions for DPoP, so this error code is no longer applicable.
+
+**Impact:** If your code references `DPoPException.UNSUPPORTED_ERROR` (e.g., in a `catch` block or error-handling logic), remove that reference. DPoP is supported on all API levels that v4 targets, so this check is no longer needed.
 
 ### `SSOCredentials.expiresIn` Renamed to `expiresAt`
 
