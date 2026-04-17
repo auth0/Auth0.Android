@@ -16,10 +16,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
-import android.app.KeyguardManager;
 import android.content.Context;
-import android.content.Intent;
-import android.security.KeyPairGeneratorSpec;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
 import android.text.TextUtils;
@@ -72,7 +69,7 @@ import javax.crypto.spec.IvParameterSpec;
 /**
  * This test class uses MockedStatic for static method mocking (KeyStore, Cipher, KeyGenerator,
  * KeyPairGenerator, Base64, TextUtils) and relies on Robolectric shadows for Android SDK
- * builder classes like KeyGenParameterSpec.Builder and KeyPairGeneratorSpec.Builder.
+ * builder classes like KeyGenParameterSpec.Builder.
  * Note: Robolectric 4.x requires SDK 21+ (Android 5.0+).
  */
 @RunWith(RobolectricTestRunner.class)
@@ -172,139 +169,7 @@ public class CryptoUtilTest {
     }
 
     @Test
-    @Config(sdk = 21)
-    public void shouldNotCreateProtectedRSAKeyPairIfMissingAndLockScreenEnabled() throws Exception {
-        Mockito.when(keyStore.containsAlias(KEY_ALIAS)).thenReturn(false);
-        KeyStore.PrivateKeyEntry expectedEntry = Mockito.mock(KeyStore.PrivateKeyEntry.class);
-        Mockito.when(keyStore.getEntry(KEY_ALIAS, null)).thenReturn(expectedEntry);
-
-        ArgumentCaptor<AlgorithmParameterSpec> specCaptor = ArgumentCaptor.forClass(AlgorithmParameterSpec.class);
-
-        //Set LockScreen as Enabled but with null device credential intent
-        KeyguardManager kService = Mockito.mock(KeyguardManager.class);
-        Mockito.when(context.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService);
-        Mockito.when(kService.isKeyguardSecure()).thenReturn(true);
-        Mockito.when(kService.createConfirmDeviceCredentialIntent(nullable(CharSequence.class), nullable(CharSequence.class))).thenReturn(null);
-
-        final KeyStore.PrivateKeyEntry entry = cryptoUtil.getRSAKeyEntry();
-
-        Mockito.verify(keyPairGenerator).initialize(specCaptor.capture());
-        Mockito.verify(keyPairGenerator).generateKeyPair();
-
-        // Verify the spec properties directly (Robolectric shadows the real builder)
-        KeyPairGeneratorSpec spec = (KeyPairGeneratorSpec) specCaptor.getValue();
-        assertThat(spec.getKeySize(), is(2048));
-        assertThat(spec.getKeystoreAlias(), is(KEY_ALIAS));
-        assertThat(spec.getSerialNumber(), is(BigInteger.ONE));
-        // Note: setEncryptionRequired was NOT called since authIntent is null
-
-        assertThat(spec.getSubjectDN(), is(notNullValue()));
-        assertThat(spec.getSubjectDN().getName(), is(CERTIFICATE_PRINCIPAL));
-
-        assertThat(spec.getStartDate(), is(notNullValue()));
-        long diffMillis = spec.getStartDate().getTime() - new Date().getTime();
-        long days = TimeUnit.MILLISECONDS.toDays(diffMillis);
-        assertThat(days, is(0L)); //Date is Today
-
-        assertThat(spec.getEndDate(), is(notNullValue()));
-        diffMillis = spec.getEndDate().getTime() - new Date().getTime();
-        days = TimeUnit.MILLISECONDS.toDays(diffMillis);
-        assertThat(days, is(greaterThan(25 * 365L))); //Date more than 25 Years in days
-
-        assertThat(entry, is(expectedEntry));
-    }
-
-    @Test
-    @Config(sdk = 21)
-    public void shouldCreateUnprotectedRSAKeyPairIfMissingAndLockScreenDisabledOnAPI21() throws Exception {
-
-        Mockito.when(keyStore.containsAlias(KEY_ALIAS)).thenReturn(false);
-        KeyStore.PrivateKeyEntry expectedEntry = Mockito.mock(KeyStore.PrivateKeyEntry.class);
-        Mockito.when(keyStore.getEntry(KEY_ALIAS, null)).thenReturn(expectedEntry);
-
-        ArgumentCaptor<AlgorithmParameterSpec> specCaptor = ArgumentCaptor.forClass(AlgorithmParameterSpec.class);
-
-        //Set LockScreen as Disabled
-        KeyguardManager kService = Mockito.mock(KeyguardManager.class);
-        Mockito.when(context.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService);
-        Mockito.when(kService.isKeyguardSecure()).thenReturn(false);
-        Mockito.when(kService.createConfirmDeviceCredentialIntent(any(CharSequence.class), any(CharSequence.class))).thenReturn(null);
-
-        final KeyStore.PrivateKeyEntry entry = cryptoUtil.getRSAKeyEntry();
-
-        Mockito.verify(keyPairGenerator).initialize(specCaptor.capture());
-        Mockito.verify(keyPairGenerator).generateKeyPair();
-
-        // Verify the spec properties directly
-        KeyPairGeneratorSpec spec = (KeyPairGeneratorSpec) specCaptor.getValue();
-        assertThat(spec.getKeySize(), is(2048));
-        assertThat(spec.getKeystoreAlias(), is(KEY_ALIAS));
-        assertThat(spec.getSerialNumber(), is(BigInteger.ONE));
-
-        assertThat(spec.getSubjectDN(), is(notNullValue()));
-        assertThat(spec.getSubjectDN().getName(), is(CERTIFICATE_PRINCIPAL));
-
-        assertThat(spec.getStartDate(), is(notNullValue()));
-        long diffMillis = spec.getStartDate().getTime() - new Date().getTime();
-        long days = TimeUnit.MILLISECONDS.toDays(diffMillis);
-        assertThat(days, is(0L)); //Date is Today
-
-        assertThat(spec.getEndDate(), is(notNullValue()));
-        diffMillis = spec.getEndDate().getTime() - new Date().getTime();
-        days = TimeUnit.MILLISECONDS.toDays(diffMillis);
-        assertThat(days, is(greaterThan(25 * 365L))); //Date more than 25 Years in days
-
-        assertThat(entry, is(expectedEntry));
-    }
-
-    @Test
-    @Config(sdk = 21)
-    public void shouldCreateProtectedRSAKeyPairIfMissingAndLockScreenEnabledOnAPI21() throws Exception {
-
-        Mockito.when(keyStore.containsAlias(KEY_ALIAS)).thenReturn(false);
-        KeyStore.PrivateKeyEntry expectedEntry = Mockito.mock(KeyStore.PrivateKeyEntry.class);
-        Mockito.when(keyStore.getEntry(KEY_ALIAS, null)).thenReturn(expectedEntry);
-
-        ArgumentCaptor<AlgorithmParameterSpec> specCaptor = ArgumentCaptor.forClass(AlgorithmParameterSpec.class);
-
-        //Set LockScreen as Enabled
-        KeyguardManager kService = Mockito.mock(KeyguardManager.class);
-        Mockito.when(context.getSystemService(Context.KEYGUARD_SERVICE)).thenReturn(kService);
-        Mockito.when(kService.isKeyguardSecure()).thenReturn(true);
-        Mockito.when(kService.createConfirmDeviceCredentialIntent(any(), any())).thenReturn(new Intent());
-
-        final KeyStore.PrivateKeyEntry entry = cryptoUtil.getRSAKeyEntry();
-
-        Mockito.verify(keyPairGenerator).initialize(specCaptor.capture());
-        Mockito.verify(keyPairGenerator).generateKeyPair();
-
-        // Verify the spec properties directly
-        KeyPairGeneratorSpec spec = (KeyPairGeneratorSpec) specCaptor.getValue();
-        assertThat(spec.getKeySize(), is(2048));
-        assertThat(spec.getKeystoreAlias(), is(KEY_ALIAS));
-        assertThat(spec.getSerialNumber(), is(BigInteger.ONE));
-        // Note: setEncryptionRequired WAS called since lock screen is enabled with valid authIntent
-        assertThat(spec.isEncryptionRequired(), is(true));
-
-        assertThat(spec.getSubjectDN(), is(notNullValue()));
-        assertThat(spec.getSubjectDN().getName(), is(CERTIFICATE_PRINCIPAL));
-
-        assertThat(spec.getStartDate(), is(notNullValue()));
-        long diffMillis = spec.getStartDate().getTime() - new Date().getTime();
-        long days = TimeUnit.MILLISECONDS.toDays(diffMillis);
-        assertThat(days, is(0L)); //Date is Today
-
-        assertThat(spec.getEndDate(), is(notNullValue()));
-        diffMillis = spec.getEndDate().getTime() - new Date().getTime();
-        days = TimeUnit.MILLISECONDS.toDays(diffMillis);
-        assertThat(days, is(greaterThan(25 * 365L))); //Date more than 25 Years in days
-
-        assertThat(entry, is(expectedEntry));
-    }
-
-    @Test
-    @Config(sdk = 23)
-    public void shouldCreateRSAKeyPairIfMissingOnAPI23AndUp() throws Exception {
+    public void shouldCreateRSAKeyPairIfMissing() throws Exception {
 
         Mockito.when(keyStore.containsAlias(KEY_ALIAS)).thenReturn(false);
         KeyStore.PrivateKeyEntry expectedEntry = Mockito.mock(KeyStore.PrivateKeyEntry.class);
