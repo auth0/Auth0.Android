@@ -201,7 +201,7 @@ public class CustomTabsOptionsTest {
 
         CustomTabsOptions options = CustomTabsOptions.newBuilder()
                 .withBrowserPicker(browserPicker)
-                .withDisabledCustomTabsPackages(List.of("com.auth0.browser"))
+                .withDisabledCustomTabsPackages(Collections.singletonList("com.auth0.browser"))
                 .withToolbarColor(android.R.color.black)
                 .build();
         assertThat(options, is(notNullValue()));
@@ -228,7 +228,7 @@ public class CustomTabsOptionsTest {
 
         CustomTabsOptions options2 = CustomTabsOptions.newBuilder()
                 .withBrowserPicker(browserPicker2)
-                .withDisabledCustomTabsPackages(List.of("com.auth0.browser"))
+                .withDisabledCustomTabsPackages(Collections.singletonList("com.auth0.browser"))
                 .withToolbarColor(android.R.color.black)
                 .build();
 
@@ -284,6 +284,20 @@ public class CustomTabsOptionsTest {
         Intent parceledIntent = parceledOptions.toIntent(context, null);
         assertThat(parceledIntent.getIntExtra(CustomTabsIntent.EXTRA_INITIAL_ACTIVITY_HEIGHT_PX, 0), is(600));
         assertThat(parceledIntent.getIntExtra(CustomTabsIntent.EXTRA_ACTIVITY_HEIGHT_RESIZE_BEHAVIOR, CustomTabsIntent.ACTIVITY_HEIGHT_DEFAULT), is(CustomTabsIntent.ACTIVITY_HEIGHT_FIXED));
+    }
+
+    @Test
+    public void shouldSetInitialActivityHeightWithAdjustableResize() {
+        CustomTabsOptions options = CustomTabsOptions.newBuilder()
+                .withInitialHeight(600)
+                .withResizable(true)
+                .build();
+        assertThat(options, is(notNullValue()));
+
+        Intent intent = options.toIntent(context, null);
+        assertThat(intent, is(notNullValue()));
+        assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_INITIAL_ACTIVITY_HEIGHT_PX), is(true));
+        assertThat(intent.getIntExtra(CustomTabsIntent.EXTRA_ACTIVITY_HEIGHT_RESIZE_BEHAVIOR, CustomTabsIntent.ACTIVITY_HEIGHT_DEFAULT), is(CustomTabsIntent.ACTIVITY_HEIGHT_ADJUSTABLE));
     }
 
     @Test
@@ -370,6 +384,7 @@ public class CustomTabsOptionsTest {
         assertThat(intent, is(notNullValue()));
         // When background interaction is enabled, EXTRA_DISABLE_BACKGROUND_INTERACTION should be present and false
         assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_DISABLE_BACKGROUND_INTERACTION), is(true));
+        assertThat(intent.getBooleanExtra(CustomTabsIntent.EXTRA_DISABLE_BACKGROUND_INTERACTION, true), is(false));
 
         Parcel parcel = Parcel.obtain();
         options.writeToParcel(parcel, 0);
@@ -377,6 +392,7 @@ public class CustomTabsOptionsTest {
         CustomTabsOptions parceledOptions = CustomTabsOptions.CREATOR.createFromParcel(parcel);
         Intent parceledIntent = parceledOptions.toIntent(context, null);
         assertThat(parceledIntent.hasExtra(CustomTabsIntent.EXTRA_DISABLE_BACKGROUND_INTERACTION), is(true));
+        assertThat(parceledIntent.getBooleanExtra(CustomTabsIntent.EXTRA_DISABLE_BACKGROUND_INTERACTION, true), is(false));
     }
 
     @Test
@@ -451,7 +467,7 @@ public class CustomTabsOptionsTest {
 
         CustomTabsOptions options = CustomTabsOptions.newBuilder()
                 .withBrowserPicker(browserPicker)
-                .withDisabledCustomTabsPackages(List.of("com.auth0.browser"))
+                .withDisabledCustomTabsPackages(Collections.singletonList("com.auth0.browser"))
                 .withInitialHeight(800)
                 .withToolbarCornerRadius(16)
                 .build();
