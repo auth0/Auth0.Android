@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.DisplayMetrics;
 
 import androidx.annotation.ColorRes;
 import androidx.annotation.Dimension;
@@ -21,8 +22,6 @@ import androidx.core.content.ContextCompat;
 import com.auth0.android.authentication.AuthenticationException;
 
 import java.util.List;
-
-import android.util.DisplayMetrics;
 
 /**
  * Holder for Custom Tabs customization options. Use {@link CustomTabsOptions#newBuilder()} to begin.
@@ -290,7 +289,7 @@ public class CustomTabsOptions implements Parcelable {
          * Pass the size in dp; it will be converted to pixels internally.
          * The minimum height enforced by Chrome is 50% of the screen; values below this are auto-adjusted.
          * Falls back to full screen on browsers that don't support Partial Custom Tabs (requires Chrome 107+).
-         * By default, the bottom sheet is resizable by the user. Use {@link #withResizableHeight(boolean)}
+         * By default, the bottom sheet is resizable by the user. Use {@link #withResizable(boolean)}
          * to lock the height.
          *
          * @param height the initial bottom sheet height in dp.
@@ -324,7 +323,10 @@ public class CustomTabsOptions implements Parcelable {
         /**
          * Sets the toolbar's top corner radii in dp. Only takes effect when the Custom Tab is
          * displayed as a bottom sheet (i.e., when {@link #withInitialHeight(int)} is also set).
-         * Pass the size in dp.
+         * Pass the size in dp. The underlying
+         * {@link CustomTabsIntent.Builder#setToolbarCornerRadiusDp(int)} currently accepts
+         * values in the range {@code 0}–{@code 16} (inclusive) and will throw an
+         * {@link IllegalArgumentException} for values outside that range.
          *
          * @param cornerRadius the toolbar's top corner radius in dp.
          * @return this same builder instance.
