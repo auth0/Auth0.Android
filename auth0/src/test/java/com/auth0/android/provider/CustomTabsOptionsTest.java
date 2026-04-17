@@ -322,6 +322,30 @@ public class CustomTabsOptionsTest {
         assertThat(parceledIntent.getIntExtra(CustomTabsIntent.EXTRA_TOOLBAR_CORNER_RADIUS_DP, 0), is(16));
     }
 
+    @Test
+    public void shouldClampToolbarCornerRadiusAboveMax() {
+        CustomTabsOptions options = CustomTabsOptions.newBuilder()
+                .withInitialHeight(800)
+                .withToolbarCornerRadius(50)
+                .build();
+
+        Intent intent = options.toIntent(context, null);
+        assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_CORNER_RADIUS_DP), is(true));
+        assertThat(intent.getIntExtra(CustomTabsIntent.EXTRA_TOOLBAR_CORNER_RADIUS_DP, 0), is(16));
+    }
+
+    @Test
+    public void shouldClampNegativeToolbarCornerRadiusToZero() {
+        CustomTabsOptions options = CustomTabsOptions.newBuilder()
+                .withInitialHeight(800)
+                .withToolbarCornerRadius(-10)
+                .build();
+
+        Intent intent = options.toIntent(context, null);
+        // Clamped to 0; since the toIntent guard is `if (toolbarCornerRadius > 0)`, no extra is set.
+        assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_CORNER_RADIUS_DP), is(false));
+    }
+
     // --- Partial Custom Tabs: Side Sheet ---
     // Note: withInitialWidth accepts dp; converted to px internally (1:1 in Robolectric mdpi).
 

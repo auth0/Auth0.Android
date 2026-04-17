@@ -324,15 +324,22 @@ public class CustomTabsOptions implements Parcelable {
          * Sets the toolbar's top corner radii in dp. Only takes effect when the Custom Tab is
          * displayed as a bottom sheet (i.e., when {@link #withInitialHeight(int)} is also set).
          * Pass the size in dp. The underlying
-         * {@link CustomTabsIntent.Builder#setToolbarCornerRadiusDp(int)} currently accepts
-         * values in the range {@code 0}–{@code 16} (inclusive) and will throw an
-         * {@link IllegalArgumentException} for values outside that range.
+         * {@link CustomTabsIntent.Builder#setToolbarCornerRadiusDp(int)} only accepts values in
+         * the range {@code 0}&ndash;{@code 16} (inclusive); to avoid a runtime crash, values
+         * outside that range are clamped: negative values are treated as {@code 0} and values
+         * greater than {@code 16} are capped to {@code 16}.
          *
-         * @param cornerRadius the toolbar's top corner radius in dp.
+         * @param cornerRadius the toolbar's top corner radius in dp. Clamped to {@code [0, 16]}.
          * @return this same builder instance.
          */
         @NonNull
         public Builder withToolbarCornerRadius(@Dimension(unit = Dimension.DP) int cornerRadius) {
+            if (cornerRadius < 0) {
+                cornerRadius = 0;
+            }
+            if (cornerRadius > 16) {
+                cornerRadius = 16;
+            }
             this.toolbarCornerRadius = cornerRadius;
             return this;
         }
