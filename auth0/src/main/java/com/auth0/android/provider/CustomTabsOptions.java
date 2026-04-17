@@ -66,11 +66,6 @@ public class CustomTabsOptions implements Parcelable {
         this.backgroundInteractionEnabled = backgroundInteractionEnabled;
     }
 
-    private static int dpToPx(@NonNull Context context, int dp) {
-        final DisplayMetrics metrics = context.getResources().getDisplayMetrics();
-        return Math.round(dp * metrics.density);
-    }
-
     @Nullable
     String getPreferredPackage(@NonNull PackageManager pm) {
         return browserPicker.getBestBrowserPackage(pm);
@@ -342,8 +337,11 @@ public class CustomTabsOptions implements Parcelable {
 
         /**
          * Sets the initial width for the Custom Tab to display as a side sheet on larger screens.
-         * The Custom Tab will behave as a side sheet if the screen's width is bigger than the
-         * breakpoint value set by {@link #withSideSheetBreakpoint(int)}.
+         * The Custom Tab will behave as a side sheet only if the screen's width is bigger than
+         * the breakpoint value set by {@link #withSideSheetBreakpoint(int)}. If no breakpoint is
+         * explicitly set, the browser's default breakpoint (typically 840dp in Chrome) is used,
+         * so smaller-width devices will continue to render as a bottom sheet or full screen
+         * rather than as a side sheet.
          * Pass the size in dp; it will be converted to pixels internally.
          * Falls back to bottom sheet or full screen on unsupported browsers.
          *
@@ -359,8 +357,12 @@ public class CustomTabsOptions implements Parcelable {
         /**
          * Sets the breakpoint in dp to switch between bottom sheet and side sheet mode.
          * If the screen's width is bigger than this value, the Custom Tab will behave as a side sheet;
-         * otherwise it will behave as a bottom sheet. The browser default is typically 840dp.
-         * Pass the size in dp.
+         * otherwise it will behave as a bottom sheet.
+         * <p>
+         * When this method is not called (or the value is left at the default {@code 0}), the
+         * breakpoint is <b>not</b> overridden and the browser's built-in default (typically
+         * {@code 840dp} in Chrome) is applied. This means devices with a screen width smaller
+         * than the browser default will still render as a bottom sheet, not a side sheet.
          *
          * @param breakpoint the breakpoint in dp.
          * @return this same builder instance.
@@ -395,6 +397,10 @@ public class CustomTabsOptions implements Parcelable {
                     initialHeight, activityHeightResizeBehavior, toolbarCornerRadius,
                     initialWidth, sideSheetBreakpoint, backgroundInteractionEnabled);
         }
+    }
+    private int dpToPx(@NonNull Context context, int dp) {
+        final DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+        return Math.round(dp * metrics.density);
     }
 
 }
