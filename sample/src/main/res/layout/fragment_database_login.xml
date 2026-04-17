@@ -135,6 +135,38 @@
             app:layout_constraintTop_toBottomOf="@+id/btSignInPasskey" />
 
         <TextView
+            android:id="@+id/textViewPartialTab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Partial Custom Tabs (Bottom Sheet)"
+            android:textSize="16sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/btWebLogoutAsync" />
+
+        <Button
+            android:id="@+id/btPartialTabLogin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="4dp"
+            android:text="Login (Partial Tab)"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toStartOf="@+id/btPartialTabLogout"
+            app:layout_constraintTop_toBottomOf="@+id/textViewPartialTab" />
+
+        <Button
+            android:id="@+id/btPartialTabLogout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Logout (Partial Tab)"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toEndOf="@+id/btLoginAsync"
+            app:layout_constraintTop_toBottomOf="@+id/textViewPartialTab" />
+
+        <TextView
             android:id="@+id/textView4"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -144,7 +176,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.512"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/btWebLogoutAsync" />
+            app:layout_constraintTop_toBottomOf="@+id/btPartialTabLogin" />
 
         <TextView
             android:id="@+id/textView5"

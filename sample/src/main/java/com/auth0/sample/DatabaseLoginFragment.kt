@@ -29,6 +29,7 @@ import com.auth0.android.authentication.storage.SharedPreferencesStorage
 import com.auth0.android.callback.Callback
 import com.auth0.android.management.ManagementException
 import com.auth0.android.management.UsersAPIClient
+import com.auth0.android.provider.CustomTabsOptions
 import com.auth0.android.provider.WebAuthProvider
 import com.auth0.android.request.DefaultClient
 import com.auth0.android.request.PublicKeyCredentials
@@ -171,6 +172,12 @@ class DatabaseLoginFragment : Fragment() {
                 webLogoutAsync()
             }
         }
+        binding.btPartialTabLogin.setOnClickListener {
+            webAuthPartialTab()
+        }
+        binding.btPartialTabLogout.setOnClickListener {
+            webLogoutPartialTab()
+        }
         binding.btDeleteCredentials.setOnClickListener {
             deleteCreds()
         }
@@ -304,6 +311,63 @@ class DatabaseLoginFragment : Fragment() {
                 error.getDescription()
             Snackbar.make(requireView(), message, Snackbar.LENGTH_LONG).show()
         }
+    }
+
+    private fun webAuthPartialTab() {
+        val ctOptions = CustomTabsOptions.newBuilder()
+            .withInitialHeight(400)
+            .withInitialWidth(400)
+            .withSideSheetBreakpoint(800)
+            .withToolbarCornerRadius(10)
+            .withResizable(false)
+            .build()
+        WebAuthProvider.login(account)
+            .withScheme(getString(R.string.com_auth0_scheme))
+            .withAudience(audience)
+            .withScope(scope)
+            .withCustomTabsOptions(ctOptions)
+            .start(requireContext(), object : Callback<Credentials, AuthenticationException> {
+                override fun onSuccess(result: Credentials) {
+                    credentialsManager.saveCredentials(result)
+                    Snackbar.make(
+                        requireView(),
+                        "Hello ${result.user.name}",
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
+
+                override fun onFailure(error: AuthenticationException) {
+                    val message =
+                        if (error.isCanceled) "Browser was closed" else error.getDescription()
+                    Snackbar.make(requireView(), message, Snackbar.LENGTH_LONG).show()
+                }
+            })
+    }
+
+    private fun webLogoutPartialTab() {
+        val ctOptions = CustomTabsOptions.newBuilder()
+            .withInitialHeight(400)
+            .withInitialWidth(400)
+            .withSideSheetBreakpoint(800)
+            .withToolbarCornerRadius(10)
+            .withResizable(false)
+            .build()
+        WebAuthProvider.logout(account)
+            .withScheme(getString(R.string.com_auth0_scheme))
+            .withCustomTabsOptions(ctOptions)
+            .start(requireContext(), object : Callback<Void?, AuthenticationException> {
+                override fun onSuccess(result: Void?) {
+                    Snackbar.make(
+                        requireView(), "Logged out", Snackbar.LENGTH_LONG
+                    ).show()
+                }
+
+                override fun onFailure(error: AuthenticationException) {
+                    val message =
+                        if (error.isCanceled) "Browser was closed" else error.getDescription()
+                    Snackbar.make(requireView(), message, Snackbar.LENGTH_LONG).show()
+                }
+            })
     }
 
     private fun webLogout() {
