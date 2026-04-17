@@ -28,11 +28,7 @@ public abstract class BaseCredentialsManager internal constructor(
 
         @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
         internal const val KEY_TOKEN_TYPE = "com.auth0.token_type"
-    }
 
-    private var _clock: Clock = ClockImpl()
-
-    public companion object {
         /**
          * Default minimum time to live (in seconds) for the access token.
          * When retrieving credentials, if the access token has less than this amount of time
@@ -40,8 +36,10 @@ public abstract class BaseCredentialsManager internal constructor(
          * This ensures the access token is valid for at least a short window after retrieval,
          * preventing downstream API call failures from nearly-expired tokens.
          */
-        public const val DEFAULT_MIN_TTL: Int = 60
+        internal const val DEFAULT_MIN_TTL: Int = 60
     }
+
+    private var _clock: Clock = ClockImpl()
 
     /**
      * Updates the clock instance used for expiration verification purposes.

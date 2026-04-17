@@ -21,20 +21,6 @@ import com.auth0.android.result.SSOCredentialsMock
 import com.auth0.android.result.toAPICredentials
 import com.auth0.android.util.Clock
 import com.google.gson.Gson
-import org.mockito.kotlin.KArgumentCaptor
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoMoreInteractions
-import org.mockito.kotlin.verifyNoMoreInteractions
-import org.mockito.kotlin.verifyNoMoreInteractions
-import org.mockito.kotlin.verifyNoMoreInteractions
-import org.mockito.kotlin.verifyNoMoreInteractions
-import org.mockito.kotlin.verifyNoMoreInteractions
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -63,6 +49,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
+import org.mockito.kotlin.whenever
 import org.robolectric.RobolectricTestRunner
 import java.util.Date
 import java.util.concurrent.Executor
@@ -295,8 +282,12 @@ public class CredentialsManagerTest {
     public fun shouldNotSaveIfTheNewSSOCredentialRefreshTokenIsSameAsTheExistingOne() {
         verifyNoMoreInteractions(storage)
         val ssoCredentials = SSOCredentialsMock.create(
-            "accessToken", "identityToken",
-            "issuedTokenType", "tokenType", "refresh_token", Date(CredentialsMock.CURRENT_TIME_MS + 60 * 1000)
+            "accessToken",
+            "identityToken",
+            "issuedTokenType",
+            "tokenType",
+            "refresh_token",
+            Date(CredentialsMock.CURRENT_TIME_MS + 60 * 1000)
         )
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token"))
             .thenReturn("refresh_token")
@@ -308,8 +299,12 @@ public class CredentialsManagerTest {
     public fun shouldSaveTheRefreshTokenIfTheNewSSOCredentialsRefreshTokenIsNotSameAsTheOldOne() {
         verifyNoMoreInteractions(storage)
         val ssoCredentials = SSOCredentialsMock.create(
-            "accessToken", "identityToken",
-            "issuedTokenType", "tokenType", "refresh_token", Date(CredentialsMock.CURRENT_TIME_MS + 60 * 1000)
+            "accessToken",
+            "identityToken",
+            "issuedTokenType",
+            "tokenType",
+            "refresh_token",
+            Date(CredentialsMock.CURRENT_TIME_MS + 60 * 1000)
         )
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token"))
             .thenReturn("refresh-token")
@@ -580,7 +575,8 @@ public class CredentialsManagerTest {
             "token", "type",
             Date(accessTokenExpiry), "scope"
         )
-        Mockito.`when`(storage.retrieveString("audience::scope")).thenReturn(gson.toJson(apiCredentials))
+        Mockito.`when`(storage.retrieveString("audience::scope"))
+            .thenReturn(gson.toJson(apiCredentials))
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
         Mockito.`when`(
             client.renewAuth("refreshToken", "audience", "scope")

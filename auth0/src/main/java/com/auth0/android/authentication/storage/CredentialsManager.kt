@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
+import com.auth0.android.authentication.storage.BaseCredentialsManager.Companion.DEFAULT_MIN_TTL
 import com.auth0.android.callback.Callback
 import com.auth0.android.dpop.DPoP
 import com.auth0.android.dpop.DPoPException

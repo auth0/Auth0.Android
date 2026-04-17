@@ -27,18 +27,6 @@ import com.auth0.android.result.SSOCredentialsMock
 import com.auth0.android.result.toAPICredentials
 import com.auth0.android.util.Clock
 import com.google.gson.Gson
-import org.mockito.kotlin.KArgumentCaptor
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoMoreInteractions
-import org.mockito.kotlin.verifyNoMoreInteractions
-import org.mockito.kotlin.verifyNoMoreInteractions
-import org.mockito.kotlin.verifyNoMoreInteractions
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -70,6 +58,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
+import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import java.lang.ref.WeakReference
@@ -207,8 +196,12 @@ public class SecureCredentialsManagerTest {
     public fun shouldNotSaveIfThereIsErrorInGettingTheExistingCredentials() {
         verifyNoMoreInteractions(storage)
         val ssoCredentials = SSOCredentialsMock.create(
-            "accessToken", "identityToken",
-            "issuedTokenType", "tokenType", "refresh_token", Date(CredentialsMock.CURRENT_TIME_MS + 60 * 1000)
+            "accessToken",
+            "identityToken",
+            "issuedTokenType",
+            "tokenType",
+            "refresh_token",
+            Date(CredentialsMock.CURRENT_TIME_MS + 60 * 1000)
         )
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         val storedJson = insertTestCredentials(
@@ -229,8 +222,12 @@ public class SecureCredentialsManagerTest {
     public fun shouldSaveIfTheNewSSOCredentialRefreshAndIdTokenIsNotSameAsTheExistingOne() {
         verifyNoMoreInteractions(storage)
         val sessionTransferCredentials = SSOCredentialsMock.create(
-            "accessToken", "identityToken",
-            "issuedTokenType", "tokenType", "refresh_token", Date(CredentialsMock.CURRENT_TIME_MS + 60 * 1000)
+            "accessToken",
+            "identityToken",
+            "issuedTokenType",
+            "tokenType",
+            "refresh_token",
+            Date(CredentialsMock.CURRENT_TIME_MS + 60 * 1000)
         )
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         insertTestCredentials(
