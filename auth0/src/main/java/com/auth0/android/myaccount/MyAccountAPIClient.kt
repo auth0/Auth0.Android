@@ -364,13 +364,13 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      *     })
      * ```
      *
-     * @param authenticationMethodId  Id of the authentication method to be retrieved
+     * @param authenticationMethodId  Id of the authentication method to be updated
      * @param authenticationMethodName  The friendly name of the authentication method
      * @param preferredAuthenticationMethod The preferred authentication method for the user. (for phone authenticators)
      *
      */
     @JvmOverloads
-    internal fun updateAuthenticationMethodById(
+    public fun updateAuthenticationMethodById(
         authenticationMethodId: String,
         authenticationMethodName: String? = null,
         preferredAuthenticationMethod: PhoneAuthenticationMethodType? = null

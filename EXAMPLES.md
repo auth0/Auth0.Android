@@ -8,6 +8,7 @@
   - [Specify Parameter](#specify-parameter)
   - [Specify a Custom Authorize URL](#specify-a-custom-authorize-url)
   - [Customize the Custom Tabs UI](#customize-the-custom-tabs-ui)
+    - [Partial Custom Tabs (Bottom Sheet and Side Sheet)](#partial-custom-tabs-bottom-sheet-and-side-sheet)
   - [Changing the Return To URL scheme](#changing-the-return-to-url-scheme)
   - [Specify a Custom Logout URL](#specify-a-custom-logout-url)
   - [Trusted Web Activity](#trusted-web-activity)
@@ -42,6 +43,7 @@
     - [Enroll a Recovery Code](#enroll-a-recovery-code)
     - [Verify an Enrollment](#verify-an-enrollment)
     - [Delete an Authentication Method](#delete-an-authentication-method)
+    - [Update an Authentication Method](#update-an-authentication-method)
   - [Credentials Manager](#credentials-manager)
     - [Secure Credentials Manager](#secure-credentials-manager)
       - [Usage](#usage)
@@ -165,6 +167,75 @@ CustomTabsOptions options = CustomTabsOptions.newBuilder()
 WebAuthProvider.login(account)
    .withCustomTabsOptions(options)
    .start(MainActivity.this, callback);
+```
+</details>
+
+### Partial Custom Tabs (Bottom Sheet and Side Sheet)
+
+You can present the authentication flow as a **bottom sheet** on compact screens or a **side sheet** on larger screens (e.g., tablets and foldables) instead of a full-screen browser tab. This is configured through `CustomTabsOptions`.
+
+> **Browser compatibility:**
+> - **Bottom sheet** (Partial Custom Tabs) requires **Chrome 107+** (or another Custom Tabs browser that supports the Partial Custom Tabs protocol).
+> - **Side sheet** requires **Chrome 120+** (or another browser that supports side-sheet Custom Tabs).
+>
+> If the user's browser does not meet the minimum version requirement, the authentication flow automatically falls back to a standard full-screen Custom Tab (or a full-screen browser tab if Custom Tabs are unsupported). It is therefore safe to enable these options unconditionally — users on older browsers will simply see the full-screen experience.
+
+#### Bottom sheet
+
+```kotlin
+val ctOptions = CustomTabsOptions.newBuilder()
+    .withInitialHeight(700)          // initial height in dp
+    .withResizable(true)             // allow the user to drag to resize (default)
+    .withToolbarCornerRadius(16)     // rounded top corners (0–16 dp)
+    .build()
+
+WebAuthProvider.login(account)
+    .withCustomTabsOptions(ctOptions)
+    .start(this, callback)
+```
+
+#### Side sheet (with bottom-sheet fallback on narrow screens)
+
+```kotlin
+val ctOptions = CustomTabsOptions.newBuilder()
+    .withInitialHeight(700)          // used when the screen is narrower than the breakpoint
+    .withInitialWidth(500)           // initial side-sheet width in dp
+    .withSideSheetBreakpoint(840)    // screens wider than this render as a side sheet
+    .build()
+
+WebAuthProvider.login(account)
+    .withCustomTabsOptions(ctOptions)
+    .start(this, callback)
+```
+
+If `withSideSheetBreakpoint` is not set, the browser's default breakpoint (typically 840 dp in Chrome) applies, so devices narrower than that will continue to render as a bottom sheet or full screen.
+
+#### Allow interaction with the app behind the partial tab
+
+By default, the app behind a Partial Custom Tab is non-interactive. Enable pass-through interaction with:
+
+```kotlin
+val ctOptions = CustomTabsOptions.newBuilder()
+    .withInitialHeight(700)
+    .withBackgroundInteractionEnabled(true)
+    .build()
+```
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+CustomTabsOptions options = CustomTabsOptions.newBuilder()
+    .withInitialHeight(700)
+    .withInitialWidth(500)
+    .withSideSheetBreakpoint(840)
+    .withToolbarCornerRadius(16)
+    .withBackgroundInteractionEnabled(true)
+    .build();
+
+WebAuthProvider.login(account)
+    .withCustomTabsOptions(options)
+    .start(MainActivity.this, callback);
 ```
 </details>
 
@@ -307,6 +378,21 @@ if (DPoP.isNonceRequiredError(response)) {
     )
     // Retry the request with the new proof
 }
+```
+
+When using DPoP with `CredentialsManager` or `SecureCredentialsManager`, the `AuthenticationAPIClient` passed to the credentials manager **must** also have DPoP enabled. Otherwise, token refresh requests will be sent without the DPoP proof and the SDK will throw a `CredentialsManagerException.DPOP_NOT_CONFIGURED` error.
+
+```kotlin
+
+val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+val apiClient = AuthenticationAPIClient(auth0).useDPoP(context)  // DPoP enabled
+val storage = SharedPreferencesStorage(context)
+val manager = CredentialsManager(apiClient, storage)
+
+WebAuthProvider
+    .useDPoP()
+    .login(auth0)
+    .start(context, callback)
 ```
 
 On logout, you should call `DPoP.clearKeyPair()` to delete the user's key pair from the Keychain.
@@ -1683,11 +1769,21 @@ val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
 val apiClient = AuthenticationAPIClient(auth0).useDPoP(this)
 val storage = SharedPreferencesStorage(this)
 val manager = SecureCredentialsManager(apiClient, this, auth0, storage)
-
 ```
 
+Similarly, for `CredentialsManager`:
 
-> [!NOTE]  
+```kotlin
+val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+val apiClient = AuthenticationAPIClient(auth0).useDPoP(this)
+val storage = SharedPreferencesStorage(this)
+val manager = CredentialsManager(apiClient, storage)
+```
+
+> [!IMPORTANT]
+> When credentials are DPoP-bound, the SDK validates the DPoP key state before each token refresh. If the DPoP key pair is lost, the SDK will throw `CredentialsManagerException.DPOP_KEY_MISSING` and the user must re-authenticate. If the key pair has changed since the credentials were saved, the SDK will throw `CredentialsManagerException.DPOP_KEY_MISMATCH`. If the `AuthenticationAPIClient` was not configured with `useDPoP()`, the SDK will throw `CredentialsManagerException.DPOP_NOT_CONFIGURED`.
+
+> [!NOTE]
 > DPoP is supported only on Android version 6.0 (API level 23) and above. Trying to use DPoP in any older versions will result in an exception.
 
 
@@ -2261,6 +2357,42 @@ myAccountClient.deleteAuthenticationMethod("phone|dev_...")
 </details>
 
 
+
+### Update an Authentication Method
+**Scopes required:** `update:me:authentication_methods`
+
+Updates a single authentication method.
+
+**Prerequisites:**
+
+The user must have the specific authentication method (identified by its ID) already enrolled.
+
+```kotlin
+myAccountClient.updateAuthenticationMethodById("{Authentication_Id}", "{Name}")
+    .start(object : Callback<Unit, MyAccountException> {
+        override fun onSuccess(result: Unit) {
+            // Deletion successful
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+```
+<details>
+    <summary>Using Java</summary>
+
+```java
+myAccountClient.updateAuthenticationMethodById("{Authentication_Id}", "{Name}")
+    .start(new Callback<Void, MyAccountException>() {
+        @Override
+        public void onSuccess(Void result) {
+            // Deletion successful
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+```
+</details>
+
+
 ## Credentials Manager
 
 ### Secure Credentials Manager
@@ -2572,23 +2704,41 @@ In the event that something happened while trying to save or retrieve the creden
 - Tokens have expired but no `refresh_token` is available to perform a refresh credentials request.
 - Device's Lock Screen security settings have changed (e.g. the PIN code was changed). Even when `hasCredentials` returns true, the encryption keys will be deemed invalid and until `saveCredentials` is called again it won't be possible to decrypt any previously existing content, since they keys used back then are not the same as the new ones.
 - Device is not compatible with some of the algorithms required by the `SecureCredentialsManager` class. This is considered a catastrophic event and might happen when the OEM has modified the Android ROM removing some of the officially included algorithms. Nevertheless, it can be checked in the exception instance itself by calling `isDeviceIncompatible`. By doing so you can decide the fallback for storing the credentials, such as using the regular `CredentialsManager`.
+- **DPoP key pair lost** — The DPoP key pair is no longer available in the Android KeyStore. The stored credentials are cleared and re-authentication is required.
+- **DPoP key pair mismatch** — The DPoP key pair exists but is different from the one used when the credentials were saved. The stored credentials are cleared and re-authentication is required.
+- **DPoP not configured** — The stored credentials are DPoP-bound but the `AuthenticationAPIClient` used by the credentials manager was not configured with `useDPoP(context)`. The developer needs to call `AuthenticationAPIClient(auth0).useDPoP(context)` and pass the configured client to the credentials manager.
 
-You can access the `code` property of the `CredentialsManagerException` to understand why the operation with `CredentialsManager` has failed and the `message` property of the `CredentialsManagerException` would give you a description of the exception. 
+You can access the `code` property of the `CredentialsManagerException` to understand why the operation with `CredentialsManager` has failed and the `message` property of the `CredentialsManagerException` would give you a description of the exception.
 
-Starting from version `3.0.0` you can even pass the exception to a `when` expression and handle the exception accordingly in your app's logic as shown in the below code snippet: 
+Starting from version `3.0.0` you can even pass the exception to a `when` expression and handle the exception accordingly in your app's logic as shown in the below code snippet:
 
 ```kotlin
 when(credentialsManagerException) {
-    CredentialsManagerException.NO_CREDENTIALS - > {
+    CredentialsManagerException.NO_CREDENTIALS -> {
         // handle no credentials scenario
     }
 
-    CredentialsManagerException.NO_REFRESH_TOKEN - > {
+    CredentialsManagerException.NO_REFRESH_TOKEN -> {
         // handle no refresh token scenario
     }
 
-    CredentialsManagerException.STORE_FAILED - > {
+    CredentialsManagerException.STORE_FAILED -> {
         // handle store failed scenario
+    }
+
+    CredentialsManagerException.DPOP_KEY_MISSING -> {
+        // DPoP key was lost 
+        // Clear local state and prompt user to re-authenticate
+    }
+
+    CredentialsManagerException.DPOP_KEY_MISMATCH -> {
+        // DPoP key exists but doesn't match the one used at login (key rotation)
+        // Clear local state and prompt user to re-authenticate
+    }
+
+    CredentialsManagerException.DPOP_NOT_CONFIGURED -> {
+        // Developer forgot to call useDPoP() on the AuthenticationAPIClient
+        // passed to the credentials manager. Fix the client configuration.
     }
     // ... similarly for other error codes
 }

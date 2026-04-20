@@ -191,6 +191,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             )
             storage.store(LEGACY_KEY_CACHE_EXPIRES_AT, credentials.expiresAt.time)
             storage.store(KEY_CAN_REFRESH, canRefresh)
+            storage.store(KEY_TOKEN_TYPE, credentials.type)
+            saveDPoPThumbprint(credentials)
         } catch (e: IncompatibleDeviceException) {
             throw CredentialsManagerException(
                 CredentialsManagerException.Code.INCOMPATIBLE_DEVICE, e
@@ -279,6 +281,12 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             }
             if (existingCredentials.refreshToken.isNullOrEmpty()) {
                 callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
+                return@execute
+            }
+
+            val tokenType = storage.retrieveString(KEY_TOKEN_TYPE) ?: existingCredentials.type
+            validateDPoPState(tokenType)?.let { dpopError ->
+                callback.onFailure(dpopError)
                 return@execute
             }
 
@@ -859,6 +867,11 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
                 return@execute
             }
+            val tokenType = storage.retrieveString(KEY_TOKEN_TYPE) ?: credentials.type
+            validateDPoPState(tokenType)?.let { dpopError ->
+                callback.onFailure(dpopError)
+                return@execute
+            }
             Log.d(TAG, "Credentials have expired. Renewing them now...")
             val request = authenticationClient.renewAuth(
                 credentials.refreshToken
@@ -974,6 +987,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             val encryptedEncodedJson = storage.retrieveString(getAPICredentialsKey(audience, scope))
             //Check if existing api credentials are present and valid
 
+            var apiCredentialType: String? = null
             encryptedEncodedJson?.let { encryptedEncoded ->
                 val encrypted = Base64.decode(encryptedEncoded, Base64.DEFAULT)
                 val json: String = try {
@@ -998,6 +1012,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 }
 
                 val apiCredentials = gson.fromJson(json, APICredentials::class.java)
+                apiCredentialType = apiCredentials.type
 
                 val expiresAt = apiCredentials.expiresAt.time
                 val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
@@ -1022,6 +1037,12 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
             val refreshToken = existingCredentials.refreshToken
             if (refreshToken == null) {
                 callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
+                return@execute
+            }
+
+            val tokenType = apiCredentialType ?: storage.retrieveString(KEY_TOKEN_TYPE) ?: existingCredentials.type
+            validateDPoPState(tokenType)?.let { dpopError ->
+                callback.onFailure(dpopError)
                 return@execute
             }
 
@@ -1267,6 +1288,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
 
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         internal const val KEY_ALIAS = "com.auth0.key"
+
 
         // Using NO_SESSION to represent "no session" (uninitialized state)
         private const val NO_SESSION = -1L

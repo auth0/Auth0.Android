@@ -6,19 +6,21 @@ import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Log
+import java.io.IOException
 import java.security.InvalidAlgorithmParameterException
 import java.security.KeyPairGenerator
 import java.security.KeyStore
 import java.security.KeyStoreException
 import java.security.NoSuchAlgorithmException
 import java.security.NoSuchProviderException
+import java.security.UnrecoverableKeyException
 import java.security.PrivateKey
 import java.security.ProviderException
 import java.security.PublicKey
+import java.security.cert.CertificateException
 import java.security.spec.ECGenParameterSpec
 import java.util.Calendar
 import javax.security.auth.x500.X500Principal
-import javax.security.cert.CertificateException
 
 /**
  * Class to handle all DPoP related keystore operations
@@ -94,8 +96,16 @@ internal open class DPoPKeyStore {
             if (publicKey != null) {
                 return Pair(privateKey, publicKey)
             }
-        } catch (e: KeyStoreException) {
-            throw DPoPException(DPoPException.Code.KEY_STORE_ERROR, e)
+        } catch (e: Exception) {
+            when (e) {
+                is KeyStoreException,
+                is NoSuchAlgorithmException,
+                is UnrecoverableKeyException,
+                is ClassCastException,
+                is IOException,
+                is CertificateException -> throw DPoPException(DPoPException.Code.KEY_STORE_ERROR, e)
+                else -> throw DPoPException(DPoPException.Code.UNKNOWN_ERROR, e)
+            }
         }
         Log.d(TAG, "Returning null key pair ")
         return null
@@ -104,16 +114,28 @@ internal open class DPoPKeyStore {
     fun hasKeyPair(): Boolean {
         try {
             return keyStore.containsAlias(KEY_ALIAS)
-        } catch (e: KeyStoreException) {
-            throw DPoPException(DPoPException.Code.KEY_STORE_ERROR, e)
+        } catch (e: Exception) {
+            when (e) {
+                is KeyStoreException,
+                is NoSuchAlgorithmException,
+                is IOException,
+                is CertificateException -> throw DPoPException(DPoPException.Code.KEY_STORE_ERROR, e)
+                else -> throw DPoPException(DPoPException.Code.UNKNOWN_ERROR, e)
+            }
         }
     }
 
     fun deleteKeyPair() {
         try {
             keyStore.deleteEntry(KEY_ALIAS)
-        } catch (e: KeyStoreException) {
-            throw DPoPException(DPoPException.Code.KEY_STORE_ERROR, e)
+        } catch (e: Exception) {
+            when (e) {
+                is KeyStoreException,
+                is NoSuchAlgorithmException,
+                is IOException,
+                is CertificateException -> throw DPoPException(DPoPException.Code.KEY_STORE_ERROR, e)
+                else -> throw DPoPException(DPoPException.Code.UNKNOWN_ERROR, e)
+            }
         }
     }
 

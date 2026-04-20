@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
+import com.auth0.android.authentication.storage.BaseCredentialsManager.Companion.DEFAULT_MIN_TTL
 import com.auth0.android.callback.Callback
 import com.auth0.android.dpop.DPoP
 import com.auth0.android.dpop.DPoPException
@@ -77,6 +78,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         storage.store(KEY_EXPIRES_AT, credentials.expiresAt.time)
         storage.store(KEY_SCOPE, credentials.scope)
         storage.store(LEGACY_KEY_CACHE_EXPIRES_AT, credentials.expiresAt.time)
+        saveDPoPThumbprint(credentials)
     }
 
     /**
@@ -132,6 +134,12 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
             val refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN)
             if (refreshToken.isNullOrEmpty()) {
                 callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
+                return@execute
+            }
+
+            val tokenType = storage.retrieveString(KEY_TOKEN_TYPE)
+            validateDPoPState(tokenType)?.let { dpopError ->
+                callback.onFailure(dpopError)
                 return@execute
             }
 
@@ -484,6 +492,10 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                 callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
                 return@execute
             }
+            validateDPoPState(tokenType)?.let { dpopError ->
+                callback.onFailure(dpopError)
+                return@execute
+            }
             val request = authenticationClient.renewAuth(refreshToken)
             request.addParameters(parameters)
             if (scope != null) {
@@ -595,8 +607,10 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
             //Check if existing api credentials are present and valid
             val key = getAPICredentialsKey(audience, scope)
             val apiCredentialsJson = storage.retrieveString(key)
+            var apiCredentialType: String? = null
             apiCredentialsJson?.let {
                 val apiCredentials = gson.fromJson(it, APICredentials::class.java)
+                apiCredentialType = apiCredentials.type
                 val willTokenExpire = willExpire(apiCredentials.expiresAt.time, minTtl.toLong())
 
                 val scopeChanged = hasScopeChanged(
@@ -616,6 +630,12 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
             val refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN)
             if (refreshToken == null) {
                 callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
+                return@execute
+            }
+
+            val tokenType = apiCredentialType ?: storage.retrieveString(KEY_TOKEN_TYPE)
+            validateDPoPState(tokenType)?.let { dpopError ->
+                callback.onFailure(dpopError)
                 return@execute
             }
 
@@ -772,7 +792,6 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         private const val KEY_ACCESS_TOKEN = "com.auth0.access_token"
         private const val KEY_REFRESH_TOKEN = "com.auth0.refresh_token"
         private const val KEY_ID_TOKEN = "com.auth0.id_token"
-        private const val KEY_TOKEN_TYPE = "com.auth0.token_type"
         private const val KEY_EXPIRES_AT = "com.auth0.expires_at"
         private const val KEY_SCOPE = "com.auth0.scope"
 

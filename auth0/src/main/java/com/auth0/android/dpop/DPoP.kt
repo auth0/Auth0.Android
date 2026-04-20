@@ -199,6 +199,29 @@ public class DPoP(context: Context) {
         }
 
         /**
+         * Returns whether a DPoP key pair currently exists in the Android KeyStore.
+         *
+         * This can be used to check if DPoP credentials are still available after events
+         * like device backup/restore or factory reset, which do not preserve KeyStore entries.
+         *
+         * ```kotlin
+         *
+         *  if (!DPoP.hasKeyPair()) {
+         *      // Key was lost — clear stored credentials and re-authenticate
+         *  }
+         *
+         * ```
+         *
+         * @return true if a DPoP key pair exists in the KeyStore, false otherwise.
+         * @throws DPoPException if there is an error accessing the KeyStore.
+         */
+        @Throws(DPoPException::class)
+        @JvmStatic
+        public fun hasKeyPair(): Boolean {
+            return DPoPUtil.hasKeyPair()
+        }
+
+        /**
          * Method to clear the DPoP key pair from the keystore. It must be called when the user logs out
          * to prevent reuse of the key pair in subsequent sessions.
          *

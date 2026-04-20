@@ -11,6 +11,10 @@ import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.authentication.storage.BaseCredentialsManager.Companion.DEFAULT_MIN_TTL
 import com.auth0.android.callback.Callback
+import com.auth0.android.dpop.DPoPKeyStore
+import com.auth0.android.dpop.DPoPUtil
+import com.auth0.android.dpop.FakeECPrivateKey
+import com.auth0.android.dpop.FakeECPublicKey
 import com.auth0.android.request.Request
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.request.internal.Jwt
@@ -23,18 +27,6 @@ import com.auth0.android.result.SSOCredentialsMock
 import com.auth0.android.result.toAPICredentials
 import com.auth0.android.util.Clock
 import com.google.gson.Gson
-import org.mockito.kotlin.KArgumentCaptor
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoMoreInteractions
-import org.mockito.kotlin.verifyNoMoreInteractions
-import org.mockito.kotlin.verifyNoMoreInteractions
-import org.mockito.kotlin.verifyNoMoreInteractions
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -42,6 +34,7 @@ import org.hamcrest.MatcherAssert
 import org.hamcrest.Matchers
 import org.hamcrest.core.Is
 import org.hamcrest.core.IsInstanceOf
+import org.junit.After
 import org.junit.Assert
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -56,6 +49,16 @@ import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.MockitoAnnotations
+import org.mockito.kotlin.KArgumentCaptor
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
+import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import java.lang.ref.WeakReference
@@ -107,6 +110,10 @@ public class SecureCredentialsManagerTest {
 
     private lateinit var fragmentActivity: FragmentActivity
 
+    private lateinit var mockDPoPKeyStore: DPoPKeyStore
+    private val fakePublicKey = FakeECPublicKey()
+    private val fakePrivateKey = FakeECPrivateKey()
+
     private val serialExecutor = Executor { runnable -> runnable.run() }
 
     private val credentialsCaptor: KArgumentCaptor<Credentials> = argumentCaptor()
@@ -126,6 +133,9 @@ public class SecureCredentialsManagerTest {
     @Before
     public fun setUp() {
         MockitoAnnotations.openMocks(this)
+        mockDPoPKeyStore = mock()
+        DPoPUtil.keyStore = mockDPoPKeyStore
+        whenever(mockDPoPKeyStore.hasKeyPair()).thenReturn(false)
         val activity =
             Robolectric.buildActivity(Activity::class.java).create().start().resume().get()
         val activityContext = Mockito.spy(activity)
@@ -186,8 +196,12 @@ public class SecureCredentialsManagerTest {
     public fun shouldNotSaveIfThereIsErrorInGettingTheExistingCredentials() {
         verifyNoMoreInteractions(storage)
         val ssoCredentials = SSOCredentialsMock.create(
-            "accessToken", "identityToken",
-            "issuedTokenType", "tokenType", "refresh_token", Date(CredentialsMock.CURRENT_TIME_MS + 60 * 1000)
+            "accessToken",
+            "identityToken",
+            "issuedTokenType",
+            "tokenType",
+            "refresh_token",
+            Date(CredentialsMock.CURRENT_TIME_MS + 60 * 1000)
         )
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         val storedJson = insertTestCredentials(
@@ -208,8 +222,12 @@ public class SecureCredentialsManagerTest {
     public fun shouldSaveIfTheNewSSOCredentialRefreshAndIdTokenIsNotSameAsTheExistingOne() {
         verifyNoMoreInteractions(storage)
         val sessionTransferCredentials = SSOCredentialsMock.create(
-            "accessToken", "identityToken",
-            "issuedTokenType", "tokenType", "refresh_token", Date(CredentialsMock.CURRENT_TIME_MS + 60 * 1000)
+            "accessToken",
+            "identityToken",
+            "issuedTokenType",
+            "tokenType",
+            "refresh_token",
+            Date(CredentialsMock.CURRENT_TIME_MS + 60 * 1000)
         )
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         insertTestCredentials(
@@ -618,6 +636,8 @@ public class SecureCredentialsManagerTest {
         verify(storage)
             .store("com.auth0.credentials_access_token_expires_at", sharedExpirationTime)
         verify(storage).store("com.auth0.credentials_can_refresh", true)
+        verify(storage).store("com.auth0.token_type", "type")
+        verify(storage).remove("com.auth0.dpop_key_thumbprint")
         verifyNoMoreInteractions(storage)
         val encodedJson = stringCaptor.firstValue
         MatcherAssert.assertThat(encodedJson, Is.`is`(Matchers.notNullValue()))
@@ -653,6 +673,8 @@ public class SecureCredentialsManagerTest {
         verify(storage)
             .store("com.auth0.credentials_access_token_expires_at", accessTokenExpirationTime)
         verify(storage).store("com.auth0.credentials_can_refresh", true)
+        verify(storage).store("com.auth0.token_type", "type")
+        verify(storage).remove("com.auth0.dpop_key_thumbprint")
         verifyNoMoreInteractions(storage)
         val encodedJson = stringCaptor.firstValue
         MatcherAssert.assertThat(encodedJson, Is.`is`(Matchers.notNullValue()))
@@ -692,6 +714,8 @@ public class SecureCredentialsManagerTest {
         verify(storage)
             .store("com.auth0.credentials_access_token_expires_at", accessTokenExpirationTime)
         verify(storage).store("com.auth0.credentials_can_refresh", true)
+        verify(storage).store("com.auth0.token_type", "type")
+        verify(storage).remove("com.auth0.dpop_key_thumbprint")
         verifyNoMoreInteractions(storage)
         val encodedJson = stringCaptor.firstValue
         MatcherAssert.assertThat(encodedJson, Is.`is`(Matchers.notNullValue()))
@@ -731,6 +755,8 @@ public class SecureCredentialsManagerTest {
         verify(storage)
             .store("com.auth0.credentials_access_token_expires_at", expirationTime)
         verify(storage).store("com.auth0.credentials_can_refresh", false)
+        verify(storage).store("com.auth0.token_type", "type")
+        verify(storage).remove("com.auth0.dpop_key_thumbprint")
         verifyNoMoreInteractions(storage)
         val encodedJson = stringCaptor.firstValue
         MatcherAssert.assertThat(encodedJson, Is.`is`(Matchers.notNullValue()))
@@ -1247,7 +1273,7 @@ public class SecureCredentialsManagerTest {
         verify(storage).store("com.auth0.credentials_expires_at", newDate.time)
         verify(storage).store("com.auth0.credentials_access_token_expires_at", newDate.time)
         verify(storage).store("com.auth0.credentials_can_refresh", true)
-        verify(storage, never()).remove(anyString())
+        verify(storage).remove("com.auth0.dpop_key_thumbprint")
 
         // Verify the returned credentials are the latest
         val retrievedCredentials = credentialsCaptor.firstValue
@@ -1371,7 +1397,7 @@ public class SecureCredentialsManagerTest {
         verify(storage).store("com.auth0.credentials_expires_at", newDate.time)
         verify(storage).store("com.auth0.credentials_access_token_expires_at", newDate.time)
         verify(storage).store("com.auth0.credentials_can_refresh", true)
-        verify(storage, never()).remove(anyString())
+        verify(storage).remove("com.auth0.dpop_key_thumbprint")
 
         // Verify the returned credentials are the latest
         val retrievedCredentials = credentialsCaptor.firstValue
@@ -1439,7 +1465,7 @@ public class SecureCredentialsManagerTest {
         verify(storage).store("com.auth0.credentials_expires_at", newDate.time)
         verify(storage).store("com.auth0.credentials_access_token_expires_at", newDate.time)
         verify(storage).store("com.auth0.credentials_can_refresh", true)
-        verify(storage, never()).remove(anyString())
+        verify(storage).remove("com.auth0.dpop_key_thumbprint")
 
         // Verify the returned credentials are the latest
         val retrievedCredentials = credentialsCaptor.firstValue
@@ -1509,7 +1535,7 @@ public class SecureCredentialsManagerTest {
         verify(storage).store("com.auth0.credentials_expires_at", newDate.time)
         verify(storage).store("com.auth0.credentials_access_token_expires_at", newDate.time)
         verify(storage).store("com.auth0.credentials_can_refresh", true)
-        verify(storage, never()).remove(anyString())
+        verify(storage).remove("com.auth0.dpop_key_thumbprint")
 
         // Verify the returned credentials are the latest
         val retrievedCredentials = credentialsCaptor.firstValue
@@ -1594,7 +1620,7 @@ public class SecureCredentialsManagerTest {
             .store(eq("com.auth0.credentials"), stringCaptor.capture())
         verify(storage).store("com.auth0.credentials_expires_at", newDate.time)
         verify(storage).store("com.auth0.credentials_can_refresh", true)
-        verify(storage, never()).remove(anyString())
+        verify(storage).remove("com.auth0.dpop_key_thumbprint")
 
         // Verify the returned credentials are the latest
         val retrievedCredentials = credentialsCaptor.firstValue
@@ -1658,7 +1684,7 @@ public class SecureCredentialsManagerTest {
             .store(eq("com.auth0.credentials"), stringCaptor.capture())
         verify(storage).store("com.auth0.credentials_expires_at", newDate.time)
         verify(storage).store("com.auth0.credentials_can_refresh", true)
-        verify(storage, never()).remove(anyString())
+        verify(storage).remove("com.auth0.dpop_key_thumbprint")
 
         // Verify the returned credentials are the latest
         val retrievedCredentials = credentialsCaptor.firstValue
@@ -1912,11 +1938,20 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(exception.message, Matchers.containsString("authenticate"))
         MatcherAssert.assertThat(exception.cause, Is.`is`(mfaRequiredException))
-        
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload, Is.`is`(Matchers.notNullValue()))
+
+        MatcherAssert.assertThat(
+            exception.mfaRequiredErrorPayload,
+            Is.`is`(Matchers.notNullValue())
+        )
         MatcherAssert.assertThat(exception.mfaToken, Is.`is`("test-mfa-token-12345"))
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.challenge, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.challenge?.size, Is.`is`(2))
+        MatcherAssert.assertThat(
+            exception.mfaRequiredErrorPayload?.mfaRequirements?.challenge,
+            Is.`is`(Matchers.notNullValue())
+        )
+        MatcherAssert.assertThat(
+            exception.mfaRequiredErrorPayload?.mfaRequirements?.challenge?.size,
+            Is.`is`(2)
+        )
     }
 
     @Test
@@ -1949,9 +1984,18 @@ public class SecureCredentialsManagerTest {
         val exception = exceptionCaptor.firstValue
         MatcherAssert.assertThat(exception.message, Matchers.containsString("authenticate"))
         MatcherAssert.assertThat(exception.mfaToken, Is.`is`("enroll-mfa-token"))
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.enroll, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.enroll?.size, Is.`is`(3))
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.challenge, Is.`is`(Matchers.nullValue()))
+        MatcherAssert.assertThat(
+            exception.mfaRequiredErrorPayload?.mfaRequirements?.enroll,
+            Is.`is`(Matchers.notNullValue())
+        )
+        MatcherAssert.assertThat(
+            exception.mfaRequiredErrorPayload?.mfaRequirements?.enroll?.size,
+            Is.`is`(3)
+        )
+        MatcherAssert.assertThat(
+            exception.mfaRequiredErrorPayload?.mfaRequirements?.challenge,
+            Is.`is`(Matchers.nullValue())
+        )
     }
 
     @Test
@@ -1976,7 +2020,10 @@ public class SecureCredentialsManagerTest {
 
         verify(callback).onFailure(exceptionCaptor.capture())
         val exception = exceptionCaptor.firstValue
-        MatcherAssert.assertThat(exception.message, Matchers.containsString("processing the request"))
+        MatcherAssert.assertThat(
+            exception.message,
+            Matchers.containsString("processing the request")
+        )
         MatcherAssert.assertThat(exception.mfaRequiredErrorPayload, Is.`is`(Matchers.nullValue()))
         MatcherAssert.assertThat(exception.mfaToken, Is.`is`(Matchers.nullValue()))
     }
@@ -2009,7 +2056,10 @@ public class SecureCredentialsManagerTest {
         }
         MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(exception.cause, Is.`is`(mfaRequiredException))
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(
+            exception.mfaRequiredErrorPayload,
+            Is.`is`(Matchers.notNullValue())
+        )
         MatcherAssert.assertThat(exception.mfaToken, Is.`is`("await-mfa-token-12345"))
     }
 
@@ -2034,14 +2084,20 @@ public class SecureCredentialsManagerTest {
 
         verify(callback).onFailure(exceptionCaptor.capture())
         val exception = exceptionCaptor.firstValue
-        
+
         MatcherAssert.assertThat(exception.cause, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(exception.cause, IsInstanceOf.instanceOf(AuthenticationException::class.java))
-        
+        MatcherAssert.assertThat(
+            exception.cause,
+            IsInstanceOf.instanceOf(AuthenticationException::class.java)
+        )
+
         val causeException = exception.cause as AuthenticationException
         MatcherAssert.assertThat(causeException.getCode(), Is.`is`("mfa_required"))
         MatcherAssert.assertThat(causeException.isMultifactorRequired, Is.`is`(true))
-        MatcherAssert.assertThat(causeException.getDescription(), Is.`is`("MFA is required for this action"))
+        MatcherAssert.assertThat(
+            causeException.getDescription(),
+            Is.`is`("MFA is required for this action")
+        )
     }
 
     /**
@@ -3701,6 +3757,267 @@ public class SecureCredentialsManagerTest {
         return storedJson
     }
 
+
+    @Test
+    public fun shouldStoreDPoPThumbprintWhenCredentialsTypeIsDPoP() {
+        val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
+        val credentials = CredentialsMock.create(
+            "idToken", "accessToken", "DPoP", "refreshToken", Date(expirationTime), "scope"
+        )
+        val json = gson.toJson(credentials)
+        prepareJwtDecoderMock(Date(expirationTime))
+        Mockito.`when`(crypto.encrypt(json.toByteArray())).thenReturn(json.toByteArray())
+        whenever(mockDPoPKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockDPoPKeyStore.getKeyPair()).thenReturn(Pair(fakePrivateKey, fakePublicKey))
+
+        manager.saveCredentials(credentials)
+
+        verify(storage).store(eq("com.auth0.dpop_key_thumbprint"), anyString())
+        verify(storage, never()).remove("com.auth0.dpop_key_thumbprint")
+    }
+
+    @Test
+    public fun shouldStoreDPoPThumbprintWhenIsDPoPEnabledIsTrue() {
+        val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
+        val credentials = CredentialsMock.create(
+            "idToken", "accessToken", "Bearer", "refreshToken", Date(expirationTime), "scope"
+        )
+        val json = gson.toJson(credentials)
+        prepareJwtDecoderMock(Date(expirationTime))
+        Mockito.`when`(crypto.encrypt(json.toByteArray())).thenReturn(json.toByteArray())
+        Mockito.doReturn(true).`when`(client).isDPoPEnabled
+        whenever(mockDPoPKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockDPoPKeyStore.getKeyPair()).thenReturn(Pair(fakePrivateKey, fakePublicKey))
+
+        manager.saveCredentials(credentials)
+
+        verify(storage).store(eq("com.auth0.dpop_key_thumbprint"), anyString())
+        verify(storage, never()).remove("com.auth0.dpop_key_thumbprint")
+    }
+
+    @Test
+    public fun shouldRemoveDPoPThumbprintForBearerCredentialsWithoutDPoP() {
+        val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
+        val credentials = CredentialsMock.create(
+            "idToken", "accessToken", "Bearer", "refreshToken", Date(expirationTime), "scope"
+        )
+        val json = gson.toJson(credentials)
+        prepareJwtDecoderMock(Date(expirationTime))
+        Mockito.`when`(crypto.encrypt(json.toByteArray())).thenReturn(json.toByteArray())
+
+        manager.saveCredentials(credentials)
+
+        verify(storage).remove("com.auth0.dpop_key_thumbprint")
+        verify(storage, never()).store(eq("com.auth0.dpop_key_thumbprint"), anyString())
+    }
+
+    @Test
+    public fun shouldRemoveDPoPThumbprintWhenNoKeyPairExists() {
+        val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
+        val credentials = CredentialsMock.create(
+            "idToken", "accessToken", "DPoP", "refreshToken", Date(expirationTime), "scope"
+        )
+        val json = gson.toJson(credentials)
+        prepareJwtDecoderMock(Date(expirationTime))
+        Mockito.`when`(crypto.encrypt(json.toByteArray())).thenReturn(json.toByteArray())
+        whenever(mockDPoPKeyStore.hasKeyPair()).thenReturn(false)
+
+        manager.saveCredentials(credentials)
+
+        verify(storage).remove("com.auth0.dpop_key_thumbprint")
+        verify(storage, never()).store(eq("com.auth0.dpop_key_thumbprint"), anyString())
+    }
+
+
+    @Test
+    public fun shouldFailOnGetCredentialsWithDPoPKeyMissingWhenKeyNotInKeyStore() {
+        Mockito.`when`(localAuthenticationManager.authenticate()).then {
+            localAuthenticationManager.resultCallback.onSuccess(true)
+        }
+        val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS) // expired
+        insertTestCredentials(true, true, true, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("DPoP")
+        whenever(mockDPoPKeyStore.hasKeyPair()).thenReturn(false)
+
+        manager.getCredentials(callback)
+
+        verify(callback).onFailure(exceptionCaptor.capture())
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception, Is.`is`(CredentialsManagerException.DPOP_KEY_MISSING))
+    }
+
+    @Test
+    public fun shouldFailOnGetCredentialsWithDPoPNotConfiguredWhenClientNotSetup() {
+        Mockito.`when`(localAuthenticationManager.authenticate()).then {
+            localAuthenticationManager.resultCallback.onSuccess(true)
+        }
+        val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS) // expired
+        insertTestCredentials(true, true, true, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("DPoP")
+        whenever(mockDPoPKeyStore.hasKeyPair()).thenReturn(true)
+
+        manager.getCredentials(callback)
+
+        verify(callback).onFailure(exceptionCaptor.capture())
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(
+            exception,
+            Is.`is`(CredentialsManagerException.DPOP_NOT_CONFIGURED)
+        )
+    }
+
+    @Test
+    public fun shouldFailOnGetCredentialsWithDPoPKeyMismatchWhenThumbprintsDontMatch() {
+        Mockito.`when`(localAuthenticationManager.authenticate()).then {
+            localAuthenticationManager.resultCallback.onSuccess(true)
+        }
+        val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS) // expired
+        insertTestCredentials(true, true, true, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("DPoP")
+        Mockito.`when`(storage.retrieveString("com.auth0.dpop_key_thumbprint"))
+            .thenReturn("old-thumbprint-from-previous-key")
+        whenever(mockDPoPKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockDPoPKeyStore.getKeyPair()).thenReturn(Pair(fakePrivateKey, fakePublicKey))
+        Mockito.doReturn(true).`when`(client).isDPoPEnabled
+
+        manager.getCredentials(callback)
+
+        verify(callback).onFailure(exceptionCaptor.capture())
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception, Is.`is`(CredentialsManagerException.DPOP_KEY_MISMATCH))
+    }
+
+    @Test
+    public fun shouldBackfillDPoPThumbprintForMigrationScenario() {
+        val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS) // expired
+        insertTestCredentials(true, true, true, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("DPoP")
+        // No stored thumbprint (migration scenario)
+        Mockito.`when`(storage.retrieveString("com.auth0.dpop_key_thumbprint")).thenReturn(null)
+        whenever(mockDPoPKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockDPoPKeyStore.getKeyPair()).thenReturn(Pair(fakePrivateKey, fakePublicKey))
+        Mockito.doReturn(true).`when`(client).isDPoPEnabled
+        Mockito.`when`(client.renewAuth("refreshToken")).thenReturn(request)
+        val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS + ONE_HOUR_SECONDS * 1000)
+        val jwtMock = mock<Jwt>()
+        Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
+        Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
+        val renewedCredentials =
+            Credentials("newId", "newAccess", "DPoP", "newRefresh", newDate, "scope")
+        Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
+        val expectedJson = gson.toJson(renewedCredentials)
+        Mockito.`when`(crypto.encrypt(any())).thenReturn(expectedJson.toByteArray())
+
+        manager.continueGetCredentials(null, 0, emptyMap(), emptyMap(), false, callback)
+
+        // Verify thumbprint was backfilled during validation (and also stored again during saveCredentials after renewal)
+        verify(storage, Mockito.atLeastOnce()).store(
+            eq("com.auth0.dpop_key_thumbprint"),
+            anyString()
+        )
+        verify(callback).onSuccess(credentialsCaptor.capture())
+    }
+
+    @Test
+    public fun shouldTriggerDPoPValidationViaStoredThumbprintEvenForBearerTokenType() {
+        val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS) // expired
+        insertTestCredentials(true, true, true, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("Bearer")
+        // Thumbprint exists (DPoP was used, but token_type is Bearer — RFC 9449 edge case)
+        Mockito.`when`(storage.retrieveString("com.auth0.dpop_key_thumbprint"))
+            .thenReturn("some-thumbprint")
+        whenever(mockDPoPKeyStore.hasKeyPair()).thenReturn(false)
+
+        manager.continueGetCredentials(null, 0, emptyMap(), emptyMap(), false, callback)
+
+        verify(callback).onFailure(exceptionCaptor.capture())
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception, Is.`is`(CredentialsManagerException.DPOP_KEY_MISSING))
+    }
+
+    @Test
+    public fun shouldFailOnGetSsoCredentialsWithDPoPKeyMissingWhenKeyNotInKeyStore() {
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        insertTestCredentials(true, true, true, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("DPoP")
+        whenever(mockDPoPKeyStore.hasKeyPair()).thenReturn(false)
+
+        manager.getSsoCredentials(ssoCallback)
+
+        verify(ssoCallback).onFailure(exceptionCaptor.capture())
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception, Is.`is`(CredentialsManagerException.DPOP_KEY_MISSING))
+    }
+
+    @Test
+    public fun shouldFailOnGetApiCredentialsWithDPoPKeyMissingWhenKeyNotInKeyStore() {
+        val accessTokenExpiry = CredentialsMock.CURRENT_TIME_MS // expired
+        val apiCredentials = ApiCredentialsMock.create(
+            accessToken = "apiToken",
+            type = "DPoP",
+            expiresAt = Date(accessTokenExpiry),
+            scope = "read:data"
+        )
+        val storedJson = gson.toJson(apiCredentials)
+        val encoded = String(Base64.encode(storedJson.toByteArray(), Base64.DEFAULT))
+        Mockito.`when`(crypto.decrypt(storedJson.toByteArray()))
+            .thenReturn(storedJson.toByteArray())
+        Mockito.`when`(storage.retrieveString("audience::read:data")).thenReturn(encoded)
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        insertTestCredentials(true, true, true, expiresAt, "scope")
+        whenever(mockDPoPKeyStore.hasKeyPair()).thenReturn(false)
+
+        manager.continueGetApiCredentials(
+            "audience",
+            "read:data",
+            0,
+            emptyMap(),
+            emptyMap(),
+            apiCredentialsCallback
+        )
+
+        verify(apiCredentialsCallback).onFailure(exceptionCaptor.capture())
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception, Is.`is`(CredentialsManagerException.DPOP_KEY_MISSING))
+    }
+
+    @Test
+    public fun shouldUseApiCredentialTypeForDPoPValidationInsteadOfBaseTokenType() {
+        val accessTokenExpiry = CredentialsMock.CURRENT_TIME_MS // expired
+        val apiCredentials = ApiCredentialsMock.create(
+            accessToken = "apiToken",
+            type = "DPoP",
+            expiresAt = Date(accessTokenExpiry),
+            scope = "read:data"
+        )
+        val storedJson = gson.toJson(apiCredentials)
+        val encoded = String(Base64.encode(storedJson.toByteArray(), Base64.DEFAULT))
+        Mockito.`when`(crypto.decrypt(storedJson.toByteArray()))
+            .thenReturn(storedJson.toByteArray())
+        Mockito.`when`(storage.retrieveString("audience::read:data")).thenReturn(encoded)
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("Bearer")
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        insertTestCredentials(true, true, true, expiresAt, "scope")
+        whenever(mockDPoPKeyStore.hasKeyPair()).thenReturn(false)
+
+        manager.continueGetApiCredentials(
+            "audience",
+            "read:data",
+            0,
+            emptyMap(),
+            emptyMap(),
+            apiCredentialsCallback
+        )
+
+        verify(apiCredentialsCallback).onFailure(exceptionCaptor.capture())
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception, Is.`is`(CredentialsManagerException.DPOP_KEY_MISSING))
+    }
+
+    @After
+    public fun tearDown() {
+        DPoPUtil.keyStore = DPoPKeyStore()
+    }
 
     private fun prepareJwtDecoderMock(expiresAt: Date?) {
         val jwtMock = mock<Jwt>()
