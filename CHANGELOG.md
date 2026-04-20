@@ -1,5 +1,14 @@
 # Change Log
 
+## [4.0.0-beta.0](https://github.com/auth0/Auth0.Android/tree/4.0.0-beta.0) (2026-04-20)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.15.0...4.0.0-beta.0)
+
+**⚠️ BREAKING CHANGES**
+- Update the Min SDK version for the Auth0.Android SDK 26 [\#953](https://github.com/auth0/Auth0.Android/pull/953) ([utkrishtsahu](https://github.com/utkrishtsahu))
+
+**Added**
+- feat: Add clearAll() API to credentials manager [\#951](https://github.com/auth0/Auth0.Android/pull/951) ([pmathew92](https://github.com/pmathew92))
+
 ## [3.15.0](https://github.com/auth0/Auth0.Android/tree/3.15.0) (2026-04-15)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.14.0...3.15.0)
 
