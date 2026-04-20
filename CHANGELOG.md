@@ -5,9 +5,24 @@
 
 **⚠️ BREAKING CHANGES**
 - Update the Min SDK version for the Auth0.Android SDK 26 [\#953](https://github.com/auth0/Auth0.Android/pull/953) ([utkrishtsahu](https://github.com/utkrishtsahu))
+- breaking: removed the deprecated MFA APIs [\#947](https://github.com/auth0/Auth0.Android/pull/947) ([pmathew92](https://github.com/pmathew92))
+- breaking: Remove the Management API support [\#937](https://github.com/auth0/Auth0.Android/pull/937) ([pmathew92](https://github.com/pmathew92))
+- breaking: Moved the `useDPoP` method in the `WebAuthProvider` class to the login builder class [\#914](https://github.com/auth0/Auth0.Android/pull/914) ([pmathew92](https://github.com/pmathew92))
+- breaking: Removed the PasskeyProvider and the PasskeyManager class [\#909](https://github.com/auth0/Auth0.Android/pull/909) ([pmathew92](https://github.com/pmathew92))
 
 **Added**
 - feat: Add clearAll() API to credentials manager [\#951](https://github.com/auth0/Auth0.Android/pull/951) ([pmathew92](https://github.com/pmathew92))
+- feat: Add SSOCredentialsDeserializer for proper JSON deserialization of SSOCredentials [\#931](https://github.com/auth0/Auth0.Android/pull/931) ([pmathew92](https://github.com/pmathew92))
+- feat: Add Storage.removeAll(), default minTTL of 60s [\#918](https://github.com/auth0/Auth0.Android/pull/918) ([utkrishtsahu](https://github.com/utkrishtsahu))
+- feat: Add support for ephemeral session for chrome custom tabs [\#916](https://github.com/auth0/Auth0.Android/pull/916) ([pmathew92](https://github.com/pmathew92))
+
+**Fixed**
+- fix: Handle configuration changes during WebAuth flow to prevent memory leak [\#941](https://github.com/auth0/Auth0.Android/pull/941) ([utkrishtsahu](https://github.com/utkrishtsahu))
+
+**Changed**
+- refactor: Refactor DefaultClient from constructor-based to Builder pattern for configurable HTTP client options [\#910](https://github.com/auth0/Auth0.Android/pull/910) ([utkrishtsahu](https://github.com/utkrishtsahu))
+- update: Gradle AGP 8 upgrade [\#900](https://github.com/auth0/Auth0.Android/pull/900) ([pmathew92](https://github.com/pmathew92))
+- update: Update dependencies [\#908](https://github.com/auth0/Auth0.Android/pull/908) ([utkrishtsahu](https://github.com/utkrishtsahu))
 
 ## [3.15.0](https://github.com/auth0/Auth0.Android/tree/3.15.0) (2026-04-15)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.14.0...3.15.0)
