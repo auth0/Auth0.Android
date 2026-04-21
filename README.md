@@ -14,6 +14,14 @@
 
 📚 [Documentation](#documentation) • 🚀 [Getting Started](#getting-started) • 💬 [Feedback](#feedback)
 
+## 🚀 v4 Beta Available
+
+A new major version [v4.0.0-beta.0](https://github.com/auth0/Auth0.Android/releases/tag/4.0.0-beta.0) of Auth0.Android is now available in beta. It includes breaking changes and improvements over v3.
+
+We'd love for you to try it out and share your feedback! Please [open an issue](https://github.com/auth0/Auth0.Android/issues/new) if you encounter any problems or have suggestions.
+
+📚 [Migration Guide](https://github.com/auth0/Auth0.Android/blob/v4_development/V4_MIGRATION_GUIDE.md)   📦 [v4 Changelog](https://github.com/auth0/Auth0.Android/blob/v4_development/CHANGELOG.md)
+
 ## Documentation
 - [Quickstart](https://auth0.com/docs/quickstart/native/android/interactive)
 - [Sample App](https://github.com/auth0-samples/auth0-android-sample/tree/master/00-Login-Kt)
