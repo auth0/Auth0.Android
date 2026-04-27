@@ -6,7 +6,6 @@ import android.util.Base64
 import android.util.Log
 import androidx.annotation.VisibleForTesting
 import androidx.fragment.app.FragmentActivity
-import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
@@ -49,92 +48,39 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     private val lastBiometricAuthTime = AtomicLong(NO_SESSION)
 
     /**
-     * Creates a new SecureCredentialsManager to handle Credentials
+     * Creates a new SecureCredentialsManager to handle Credentials.
      *
-     * @param context   a valid context
-     * @param auth0     the Auth0 account information to use
-     * @param storage   the storage implementation to use
-     */
-    public constructor(
-        context: Context,
-        auth0: Auth0,
-        storage: Storage,
-    ) : this(
-        AuthenticationAPIClient(auth0),
-        context,
-        auth0,
-        storage
-    )
-
-    /**
-     * Creates a new SecureCredentialsManager to handle Credentials with a custom AuthenticationAPIClient instance.
-     * Use this constructor when you need to configure the API client with advanced features like DPoP.
-     *
-     * Example usage:
+     * To enable DPoP, configure the [apiClient] before passing it in:
      * ```
-     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
      * val apiClient = AuthenticationAPIClient(auth0).useDPoP(context)
-     * val manager = SecureCredentialsManager(apiClient, context, auth0, storage)
+     * val manager = SecureCredentialsManager(apiClient, context, storage)
      * ```
      *
      * @param apiClient a configured AuthenticationAPIClient instance
      * @param context   a valid context
-     * @param auth0     the Auth0 account information to use
      * @param storage   the storage implementation to use
      */
     public constructor(
         apiClient: AuthenticationAPIClient,
         context: Context,
-        auth0: Auth0,
-        storage: Storage
+        storage: Storage,
     ) : this(
         apiClient,
         storage,
         CryptoUtil(context, storage, KEY_ALIAS),
         JWTDecoder(),
-        auth0.executor
+        apiClient.executor
     )
 
-
     /**
-     * Creates a new SecureCredentialsManager to handle Credentials with biometrics Authentication
+     * Creates a new SecureCredentialsManager to handle Credentials with biometric authentication.
      *
-     * @param context   a valid context
-     * @param auth0     the Auth0 account information to use
-     * @param storage   the storage implementation to use
-     * @param fragmentActivity the FragmentActivity to use for the biometric authentication
-     * @param localAuthenticationOptions the options of type [LocalAuthenticationOptions] to use for the biometric authentication
-     */
-    public constructor(
-        context: Context,
-        auth0: Auth0,
-        storage: Storage,
-        fragmentActivity: FragmentActivity,
-        localAuthenticationOptions: LocalAuthenticationOptions
-    ) : this(
-        AuthenticationAPIClient(auth0),
-        context,
-        auth0,
-        storage,
-        fragmentActivity,
-        localAuthenticationOptions
-    )
-
-
-    /**
-     * Creates a new SecureCredentialsManager to handle Credentials with biometrics Authentication
-     * and a custom AuthenticationAPIClient instance.
-     * Use this constructor when you need to configure the API client with advanced features like DPoP
-     * along with biometric authentication.
-     *
-     * Example usage:
+     * To enable DPoP, configure the [apiClient] before passing it in:
      * ```
-     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
      * val apiClient = AuthenticationAPIClient(auth0).useDPoP(context)
      * val manager = SecureCredentialsManager(
      *     apiClient,
      *     context,
-     *     auth0,
      *     storage,
      *     fragmentActivity,
      *     localAuthenticationOptions
@@ -143,7 +89,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      *
      * @param apiClient a configured AuthenticationAPIClient instance
      * @param context   a valid context
-     * @param auth0     the Auth0 account information to use
      * @param storage   the storage implementation to use
      * @param fragmentActivity the FragmentActivity to use for the biometric authentication
      * @param localAuthenticationOptions the options of type [LocalAuthenticationOptions] to use for the biometric authentication
@@ -151,7 +96,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     public constructor(
         apiClient: AuthenticationAPIClient,
         context: Context,
-        auth0: Auth0,
         storage: Storage,
         fragmentActivity: FragmentActivity,
         localAuthenticationOptions: LocalAuthenticationOptions
@@ -160,7 +104,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         storage,
         CryptoUtil(context, storage, KEY_ALIAS),
         JWTDecoder(),
-        auth0.executor,
+        apiClient.executor,
         WeakReference(fragmentActivity),
         localAuthenticationOptions,
         DefaultLocalAuthenticationManagerFactory()
@@ -170,9 +114,12 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     /**
      * Saves the given credentials in the Storage.
      *
+     * ** Imp:** This method is not thread safe
+     *
      * @param credentials the credentials to save.
      * @throws CredentialsManagerException if the credentials couldn't be encrypted. Some devices are not compatible at all with the cryptographic
      * implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
+     *
      */
     @Throws(CredentialsManagerException::class)
     override fun saveCredentials(credentials: Credentials) {
@@ -211,10 +158,13 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
 
     /**
      * Stores the given [APICredentials] in the storage for the given audience.
+     *
+     * ** Imp:** This method is not thread safe
      * @param apiCredentials the API Credentials to be stored
      * @param audience the audience for which the credentials are stored
      * @param scope the scope for which the credentials are stored
      */
+    @Throws(CredentialsManagerException::class)
     override fun saveApiCredentials(
         apiCredentials: APICredentials,
         audience: String,
@@ -1040,7 +990,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 return@execute
             }
 
-            val tokenType = apiCredentialType ?: storage.retrieveString(KEY_TOKEN_TYPE) ?: existingCredentials.type
+            val tokenType = apiCredentialType ?: storage.retrieveString(KEY_TOKEN_TYPE)
+            ?: existingCredentials.type
             validateDPoPState(tokenType)?.let { dpopError ->
                 callback.onFailure(dpopError)
                 return@execute

@@ -2,6 +2,7 @@ package com.auth0.android.authentication
 
 import android.content.Context
 import androidx.annotation.VisibleForTesting
+import java.util.concurrent.Executor
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
@@ -82,6 +83,9 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         get() = auth0.clientId
     public val baseURL: String
         get() = auth0.getDomainUrl()
+
+    public val executor: Executor
+        get() = auth0.executor
 
     /**
      * Enable DPoP for this client.

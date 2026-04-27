@@ -156,6 +156,7 @@ public class SecureCredentialsManagerTest {
         weakFragmentActivity = WeakReference(fragmentActivity)
         auth0 = Mockito.spy(Auth0.getInstance("clientId", "domain"))
         Mockito.`when`(auth0.executor).thenReturn(serialExecutor)
+        Mockito.`when`(client.executor).thenReturn(serialExecutor)
 
         val secureCredentialsManager =
             SecureCredentialsManager(
@@ -179,8 +180,8 @@ public class SecureCredentialsManagerTest {
             Robolectric.buildActivity(Activity::class.java).create().start().resume().get()
         val storage: Storage = SharedPreferencesStorage(context)
         val manager = SecureCredentialsManager(
+            client,
             context,
-            auth0,
             storage,
             fragmentActivity,
             getAuthenticationOptions()
