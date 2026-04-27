@@ -77,8 +77,8 @@ class DatabaseLoginFragment : Fragment() {
     private val secureCredentialsManager: SecureCredentialsManager by lazy {
         val storage = SharedPreferencesStorage(requireContext())
         val manager = SecureCredentialsManager(
+            authenticationApiClient,
             requireContext(),
-            account,
             storage,
             requireActivity(),
             localAuthenticationOptions
