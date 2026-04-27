@@ -5,7 +5,6 @@ import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
-import com.auth0.android.authentication.storage.BaseCredentialsManager.Companion.DEFAULT_MIN_TTL
 import com.auth0.android.callback.Callback
 import com.auth0.android.dpop.DPoP
 import com.auth0.android.dpop.DPoPException
@@ -21,7 +20,6 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executor
-import java.util.concurrent.Executors
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -47,7 +45,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         authenticationClient,
         storage,
         JWTDecoder(),
-        Executors.newSingleThreadExecutor()
+        authenticationClient.executor
     )
 
     public override val userProfile: UserProfile?

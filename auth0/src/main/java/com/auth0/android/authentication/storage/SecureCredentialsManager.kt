@@ -29,8 +29,9 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 /**
- * A safer alternative to the [CredentialsManager] class. A combination of RSA and AES keys is used to keep the values secure.
- * On devices with a Secure LockScreen configured (PIN, Pattern, Password or Fingerprint) an extra authentication step can be required.
+ * A safer alternative to the [CredentialsManager] class. A combination of RSA and AES keys is used
+ * to keep the values secure. On devices with a Secure LockScreen configured (PIN, Pattern, Password
+ * or Fingerprint) an extra authentication step can be required.
  */
 public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal constructor(
     apiClient: AuthenticationAPIClient,

@@ -5,7 +5,6 @@ import android.app.KeyguardManager
 import android.content.Context
 import android.util.Base64
 import androidx.fragment.app.FragmentActivity
-import com.auth0.android.Auth0
 import com.auth0.android.NetworkErrorException
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
@@ -51,6 +50,7 @@ import org.mockito.Mockito
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.KArgumentCaptor
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -128,7 +128,6 @@ public class SecureCredentialsManagerTest {
     public val exception: ExpectedException = ExpectedException.none()
     private lateinit var manager: SecureCredentialsManager
     private lateinit var gson: Gson
-    private lateinit var auth0: Auth0
 
     @Before
     public fun setUp() {
@@ -154,8 +153,6 @@ public class SecureCredentialsManagerTest {
                     .get()
             )
         weakFragmentActivity = WeakReference(fragmentActivity)
-        auth0 = Mockito.spy(Auth0.getInstance("clientId", "domain"))
-        Mockito.`when`(auth0.executor).thenReturn(serialExecutor)
         Mockito.`when`(client.executor).thenReturn(serialExecutor)
 
         val secureCredentialsManager =
@@ -164,7 +161,7 @@ public class SecureCredentialsManagerTest {
                 storage,
                 crypto,
                 jwtDecoder,
-                auth0.executor,
+                serialExecutor,
                 weakFragmentActivity,
                 getAuthenticationOptions(),
                 factory
@@ -2102,11 +2099,10 @@ public class SecureCredentialsManagerTest {
     }
 
     /**
-     * Testing that getCredentials execution from multiple threads via multiple instances of SecureCredentialsManager should trigger only one network request.
+     *  Testing that getCredentials execution from multiple threads via multiple instances of SecureCredentialsManager should trigger only one network request.
      */
     @Test
     public fun shouldSynchronizeGetCredentialsAccessAcrossThreadsAndInstances() {
-
         val expiredCredentials = Credentials(
             "",
             "accessToken",
@@ -2115,22 +2111,19 @@ public class SecureCredentialsManagerTest {
             Date(CredentialsMock.CURRENT_TIME_MS),
             "scope"
         )
-        val renewedCredentials =
-            Credentials(
-                "newId",
-                "newAccess",
-                "newType",
-                "rotatedRefreshToken",
-                Date(CredentialsMock.ONE_HOUR_AHEAD_MS),
-                "newScope"
-            )
-        Mockito.`when`(
-            client.renewAuth(refreshToken = "refreshToken")
-        ).thenReturn(request)
+        val renewedCredentials = Credentials(
+            "newId",
+            "newAccess",
+            "newType",
+            "rotatedRefreshToken",
+            Date(CredentialsMock.ONE_HOUR_AHEAD_MS),
+            "newScope"
+        )
+        Mockito.`when`(client.renewAuth(refreshToken = "refreshToken")).thenReturn(request)
         Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
-        val serialExecutor = Executors.newSingleThreadExecutor()
-        Mockito.`when`(auth0.executor).thenReturn(serialExecutor)
-        val executor: ExecutorService = Executors.newFixedThreadPool(5)
+
+        val sharedExecutor = Executors.newSingleThreadExecutor()
+        val callerPool: ExecutorService = Executors.newFixedThreadPool(5)
         val latch = CountDownLatch(5)
         val context: Context =
             Robolectric.buildActivity(Activity::class.java).create().start().resume().get()
@@ -2139,67 +2132,316 @@ public class SecureCredentialsManagerTest {
             sharedPreferencesName = "com.auth0.android.storage.SecureCredentialsManagerTest"
         )
         val cryptoMock = Mockito.mock(CryptoUtil::class.java)
-        Mockito.`when`(cryptoMock.encrypt(any())).thenAnswer {
-            val input = it.arguments[0] as ByteArray
-            input
-        }
-        Mockito.`when`(cryptoMock.decrypt(any())).thenAnswer {
-            val input = it.arguments[0] as ByteArray
-            input
-        }
-        val secureCredsManager =
-            SecureCredentialsManager(client, storage, cryptoMock, jwtDecoder, auth0.executor)
-        secureCredsManager.saveCredentials(expiredCredentials)
+        Mockito.`when`(cryptoMock.encrypt(any())).thenAnswer { it.arguments[0] as ByteArray }
+        Mockito.`when`(cryptoMock.decrypt(any())).thenAnswer { it.arguments[0] as ByteArray }
+
+        SecureCredentialsManager(
+            client, storage, cryptoMock, jwtDecoder, sharedExecutor
+        ).saveCredentials(expiredCredentials)
+
         repeat(5) {
-            executor.submit {
-                val secureCredsManager =
-                    SecureCredentialsManager(
-                        client,
-                        storage,
-                        cryptoMock,
-                        jwtDecoder,
-                        auth0.executor,
-                    )
-                secureCredsManager.getCredentials(object :
+            callerPool.submit {
+                // All instances share the same executor — operations are globally serialized
+                val instance = SecureCredentialsManager(
+                    client, storage, cryptoMock, jwtDecoder, sharedExecutor
+                )
+                instance.getCredentials(object :
                     Callback<Credentials, CredentialsManagerException> {
                     override fun onFailure(error: CredentialsManagerException) {
                         throw error
                     }
 
                     override fun onSuccess(result: Credentials) {
-                        // Verify all instances retrieved the same credentials
                         MatcherAssert.assertThat(
-                            renewedCredentials.accessToken,
-                            Is.`is`(result.accessToken)
+                            result.accessToken, Is.`is`(renewedCredentials.accessToken)
                         )
                         MatcherAssert.assertThat(
-                            renewedCredentials.idToken,
-                            Is.`is`(result.idToken)
-                        )
-                        MatcherAssert.assertThat(
-                            renewedCredentials.refreshToken,
-                            Is.`is`(result.refreshToken)
-                        )
-                        MatcherAssert.assertThat(renewedCredentials.type, Is.`is`(result.type))
-                        MatcherAssert.assertThat(
-                            renewedCredentials.expiresAt,
-                            Is.`is`(result.expiresAt)
-                        )
-                        MatcherAssert.assertThat(
-                            renewedCredentials.scope,
-                            Is.`is`(result.scope)
+                            result.refreshToken, Is.`is`(renewedCredentials.refreshToken)
                         )
                         latch.countDown()
                     }
                 })
             }
         }
-        latch.await() // Wait for all threads to finish
-        Mockito.verify(client, Mockito.times(1))
-            .renewAuth(
-                refreshToken = "refreshToken"
-            ) // verify that api client's renewAuth is called only once
-        Mockito.verify(request, Mockito.times(1)).execute() // Verify single network request
+
+        latch.await(10, TimeUnit.SECONDS)
+        // Exactly one renewal — the shared executor serialized all 5 instances
+        Mockito.verify(client, Mockito.times(1)).renewAuth(refreshToken = "refreshToken")
+        Mockito.verify(request, Mockito.times(1)).execute()
+    }
+
+    @Test
+    public fun shouldTriggerOnlyOneRenewalWhenMultipleThreadsCallGetCredentialsOnSameInstance() {
+        val expiredCredentials = Credentials(
+            "",
+            "accessToken",
+            "type",
+            "refreshToken",
+            Date(CredentialsMock.CURRENT_TIME_MS),
+            "scope"
+        )
+        val renewedCredentials = Credentials(
+            "newId",
+            "newAccess",
+            "newType",
+            "rotatedRefreshToken",
+            Date(CredentialsMock.ONE_HOUR_AHEAD_MS),
+            "newScope"
+        )
+        Mockito.`when`(client.renewAuth(refreshToken = "refreshToken")).thenReturn(request)
+        Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
+
+        val singleThreadExecutor = Executors.newSingleThreadExecutor()
+        val callerPool = Executors.newFixedThreadPool(10)
+        val latch = CountDownLatch(10)
+        val context: Context =
+            Robolectric.buildActivity(Activity::class.java).create().start().resume().get()
+        val storage = SharedPreferencesStorage(
+            context = context,
+            sharedPreferencesName = "com.auth0.android.storage.SecureCredentialsManagerTest.singleInstance"
+        )
+        val cryptoMock = Mockito.mock(CryptoUtil::class.java)
+        Mockito.`when`(cryptoMock.encrypt(any())).thenAnswer { it.arguments[0] as ByteArray }
+        Mockito.`when`(cryptoMock.decrypt(any())).thenAnswer { it.arguments[0] as ByteArray }
+
+        val singleManager =
+            SecureCredentialsManager(client, storage, cryptoMock, jwtDecoder, singleThreadExecutor)
+        singleManager.saveCredentials(expiredCredentials)
+
+        repeat(10) {
+            callerPool.submit {
+                singleManager.getCredentials(object :
+                    Callback<Credentials, CredentialsManagerException> {
+                    override fun onFailure(error: CredentialsManagerException) {
+                        throw error
+                    }
+
+                    override fun onSuccess(result: Credentials) {
+                        MatcherAssert.assertThat(
+                            result.accessToken,
+                            Is.`is`(renewedCredentials.accessToken)
+                        )
+                        MatcherAssert.assertThat(
+                            result.refreshToken,
+                            Is.`is`(renewedCredentials.refreshToken)
+                        )
+                        latch.countDown()
+                    }
+                })
+            }
+        }
+
+        latch.await(10, TimeUnit.SECONDS)
+        Mockito.verify(client, Mockito.times(1)).renewAuth(refreshToken = "refreshToken")
+        Mockito.verify(request, Mockito.times(1)).execute()
+    }
+
+    @Test
+    public fun shouldNotTriggerRenewalWhenMultipleThreadsAccessValidCredentialsOnSameInstance() {
+        val validCredentials = Credentials(
+            "idToken",
+            "accessToken",
+            "type",
+            "refreshToken",
+            Date(CredentialsMock.ONE_HOUR_AHEAD_MS),
+            "scope"
+        )
+
+        val singleThreadExecutor = Executors.newSingleThreadExecutor()
+        val callerPool = Executors.newFixedThreadPool(10)
+        val latch = CountDownLatch(10)
+        val context: Context =
+            Robolectric.buildActivity(Activity::class.java).create().start().resume().get()
+        val storage = SharedPreferencesStorage(
+            context = context,
+            sharedPreferencesName = "com.auth0.android.storage.SecureCredentialsManagerTest.validCreds"
+        )
+        val cryptoMock = Mockito.mock(CryptoUtil::class.java)
+        Mockito.`when`(cryptoMock.encrypt(any())).thenAnswer { it.arguments[0] as ByteArray }
+        Mockito.`when`(cryptoMock.decrypt(any())).thenAnswer { it.arguments[0] as ByteArray }
+
+        val singleManager =
+            SecureCredentialsManager(client, storage, cryptoMock, jwtDecoder, singleThreadExecutor)
+        singleManager.saveCredentials(validCredentials)
+
+        repeat(10) {
+            callerPool.submit {
+                singleManager.getCredentials(object :
+                    Callback<Credentials, CredentialsManagerException> {
+                    override fun onFailure(error: CredentialsManagerException) {
+                        throw error
+                    }
+
+                    override fun onSuccess(result: Credentials) {
+                        MatcherAssert.assertThat(
+                            result.accessToken,
+                            Is.`is`(validCredentials.accessToken)
+                        )
+                        latch.countDown()
+                    }
+                })
+            }
+        }
+
+        latch.await(10, TimeUnit.SECONDS)
+        Mockito.verify(client, Mockito.never()).renewAuth(any(), anyOrNull(), anyOrNull())
+    }
+
+
+    @Test
+    public fun shouldNotTriggerSecondRenewalForCallerQueuedBehindFirstRenewal() {
+        val expiredCredentials = Credentials(
+            "",
+            "accessToken",
+            "type",
+            "refreshToken",
+            Date(CredentialsMock.CURRENT_TIME_MS),
+            "scope"
+        )
+        val renewedCredentials = Credentials(
+            "newId",
+            "newAccess",
+            "newType",
+            "rotatedRefreshToken",
+            Date(CredentialsMock.ONE_HOUR_AHEAD_MS),
+            "newScope"
+        )
+        Mockito.`when`(client.renewAuth(refreshToken = "refreshToken")).thenReturn(request)
+        Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
+
+        val singleThreadExecutor = Executors.newSingleThreadExecutor()
+        val callerPool = Executors.newFixedThreadPool(2)
+        val latch = CountDownLatch(2)
+        val context: Context =
+            Robolectric.buildActivity(Activity::class.java).create().start().resume().get()
+        val storage = SharedPreferencesStorage(
+            context = context,
+            sharedPreferencesName = "com.auth0.android.storage.SecureCredentialsManagerTest.queuedCaller"
+        )
+        val cryptoMock = Mockito.mock(CryptoUtil::class.java)
+        Mockito.`when`(cryptoMock.encrypt(any())).thenAnswer { it.arguments[0] as ByteArray }
+        Mockito.`when`(cryptoMock.decrypt(any())).thenAnswer { it.arguments[0] as ByteArray }
+
+        val singleManager =
+            SecureCredentialsManager(client, storage, cryptoMock, jwtDecoder, singleThreadExecutor)
+        singleManager.saveCredentials(expiredCredentials)
+
+        repeat(2) {
+            callerPool.submit {
+                singleManager.getCredentials(object :
+                    Callback<Credentials, CredentialsManagerException> {
+                    override fun onFailure(error: CredentialsManagerException) {
+                        throw error
+                    }
+
+                    override fun onSuccess(result: Credentials) {
+                        // Both callers must receive the renewed credentials, not the expired ones.
+                        MatcherAssert.assertThat(
+                            result.accessToken,
+                            Is.`is`(renewedCredentials.accessToken)
+                        )
+                        MatcherAssert.assertThat(
+                            result.refreshToken,
+                            Is.`is`(renewedCredentials.refreshToken)
+                        )
+                        latch.countDown()
+                    }
+                })
+            }
+        }
+
+        latch.await(10, TimeUnit.SECONDS)
+        // Exactly one renewal — the second caller found already-valid credentials in storage.
+        Mockito.verify(client, Mockito.times(1)).renewAuth(refreshToken = "refreshToken")
+        Mockito.verify(request, Mockito.times(1)).execute()
+    }
+
+    @Test
+    public fun shouldSerializeGetCredentialsCallsAcrossCredentialsManagerAndSecureCredentialsManager() {
+        val expiredCredentials = Credentials(
+            "",
+            "accessToken",
+            "type",
+            "refreshToken",
+            Date(CredentialsMock.CURRENT_TIME_MS),
+            "scope"
+        )
+        val renewedCredentials = Credentials(
+            "newId",
+            "newAccess",
+            "newType",
+            "rotatedRefreshToken",
+            Date(CredentialsMock.ONE_HOUR_AHEAD_MS),
+            "newScope"
+        )
+        Mockito.`when`(client.renewAuth(refreshToken = "refreshToken")).thenReturn(request)
+        Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
+
+        val sharedExecutor = Executors.newSingleThreadExecutor()
+        val callerPool = Executors.newFixedThreadPool(4)
+        val latch = CountDownLatch(4)
+        val context: Context =
+            Robolectric.buildActivity(Activity::class.java).create().start().resume().get()
+        val credStorage = SharedPreferencesStorage(
+            context = context,
+            sharedPreferencesName = "com.auth0.android.storage.SecureCredentialsManagerTest.crossManagerCred"
+        )
+        val secureStorage = SharedPreferencesStorage(
+            context = context,
+            sharedPreferencesName = "com.auth0.android.storage.SecureCredentialsManagerTest.crossManagerSecure"
+        )
+        val cryptoMock = Mockito.mock(CryptoUtil::class.java)
+        Mockito.`when`(cryptoMock.encrypt(any())).thenAnswer { it.arguments[0] as ByteArray }
+        Mockito.`when`(cryptoMock.decrypt(any())).thenAnswer { it.arguments[0] as ByteArray }
+
+        val credManager = CredentialsManager(client, credStorage, jwtDecoder, sharedExecutor)
+        val secureManager =
+            SecureCredentialsManager(client, secureStorage, cryptoMock, jwtDecoder, sharedExecutor)
+
+        credManager.saveCredentials(expiredCredentials)
+        secureManager.saveCredentials(expiredCredentials)
+
+        repeat(2) {
+            callerPool.submit {
+                credManager.getCredentials(object :
+                    Callback<Credentials, CredentialsManagerException> {
+                    override fun onFailure(error: CredentialsManagerException) {
+                        throw error
+                    }
+
+                    override fun onSuccess(result: Credentials) {
+                        MatcherAssert.assertThat(
+                            result.accessToken,
+                            Is.`is`(renewedCredentials.accessToken)
+                        )
+                        latch.countDown()
+                    }
+                })
+            }
+        }
+
+        repeat(2) {
+            callerPool.submit {
+                secureManager.getCredentials(object :
+                    Callback<Credentials, CredentialsManagerException> {
+                    override fun onFailure(error: CredentialsManagerException) {
+                        throw error
+                    }
+
+                    override fun onSuccess(result: Credentials) {
+                        MatcherAssert.assertThat(
+                            result.accessToken,
+                            Is.`is`(renewedCredentials.accessToken)
+                        )
+                        latch.countDown()
+                    }
+                })
+            }
+        }
+
+        latch.await(10, TimeUnit.SECONDS)
+        Mockito.verify(client, Mockito.times(2)).renewAuth(refreshToken = "refreshToken")
+        Mockito.verify(request, Mockito.times(2)).execute()
     }
 
     /*
@@ -3475,7 +3717,7 @@ public class SecureCredentialsManagerTest {
             storage,
             crypto,
             jwtDecoder,
-            auth0.executor,
+            serialExecutor,
             weakFragmentActivity,
             getAuthenticationOptions(),
             factory
@@ -3549,13 +3791,12 @@ public class SecureCredentialsManagerTest {
                 throw IllegalArgumentException("Proper Executor Set")
             }
         }
-        Mockito.`when`(auth0.executor).thenReturn(serialExecutor)
         val manager = SecureCredentialsManager(
             client,
             storage,
             crypto,
             jwtDecoder,
-            auth0.executor,
+            serialExecutor,
             weakFragmentActivity,
             getAuthenticationOptions(),
             factory

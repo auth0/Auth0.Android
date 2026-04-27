@@ -84,7 +84,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     public val baseURL: String
         get() = auth0.getDomainUrl()
 
-    public val executor: Executor
+
+    internal val executor: Executor
         get() = auth0.executor
 
     /**
