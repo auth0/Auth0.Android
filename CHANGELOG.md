@@ -1,5 +1,11 @@
 # Change Log
 
+## [3.16.0](https://github.com/auth0/Auth0.Android/tree/3.16.0) (2026-04-27)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.15.0...3.16.0)
+
+**Added**
+- feat : Add Partial Custom Tabs support (bottom sheet & side sheet) [\#954](https://github.com/auth0/Auth0.Android/pull/954) ([subhankarmaiti](https://github.com/subhankarmaiti))
+
 ## [3.15.0](https://github.com/auth0/Auth0.Android/tree/3.15.0) (2026-04-15)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.14.0...3.15.0)
 
