@@ -19,6 +19,7 @@ v4 of the Auth0 Android SDK includes significant build toolchain updates, update
   + [DPoP Configuration Moved to Builder](#dpop-configuration-moved-to-builder)
   + [DPoPException.UNSUPPORTED_ERROR Removed](#dpopexceptionunsupported_error-removed)
   + [SSOCredentials.expiresIn Renamed to expiresAt](#ssocredentialsexpiresin-renamed-to-expiresat)
+  + [SecureCredentialsManager Auth0 Constructors Removed](#securecredentialsmanager-auth0-constructors-removed)
 - [**Default Values Changed**](#default-values-changed)
   + [Credentials Manager minTTL](#credentials-manager-minttl)
 - [**Behavior Changes**](#behavior-changes)
@@ -199,6 +200,73 @@ val expirationDate: Date = ssoCredentials.expiresAt
 ```
 
 **Impact:** If your code references `ssoCredentials.expiresIn`, rename it to `ssoCredentials.expiresAt`. The value is now an absolute `Date` instead of a duration in seconds.
+
+### SecureCredentialsManager Auth0 Constructors Removed
+
+**Change:** The two `SecureCredentialsManager` constructors that accepted an `Auth0` instance as their first parameter have been removed. Only the `AuthenticationAPIClient`-based constructors remain.
+
+In v3, `SecureCredentialsManager` offered four public constructors — two that accepted an `Auth0` object (which the manager used internally to create an `AuthenticationAPIClient`) and two that accepted a pre-built `AuthenticationAPIClient` directly. In v4 the `Auth0`-based constructors are gone, leaving two constructors that both require an `AuthenticationAPIClient`.
+
+**v3 (removed):**
+
+```kotlin
+// ❌ Auth0-based constructor — no longer exists
+val manager = SecureCredentialsManager(
+    auth0,    // Auth0 instance
+    context,
+    storage
+)
+
+// ❌ Auth0-based biometric constructor — no longer exists
+val manager = SecureCredentialsManager(
+    auth0,    // Auth0 instance
+    context,
+    storage,
+    fragmentActivity,
+    localAuthenticationOptions
+)
+```
+
+**v4 (required):**
+
+The manager uses the supplied `AuthenticationAPIClient` for all token renewals and DPoP-bound refreshes, so configure that client first and then pass the same instance into `SecureCredentialsManager`.
+
+```kotlin
+// ✅ Create the AuthenticationAPIClient first, then pass it in
+val apiClient = AuthenticationAPIClient(auth0)
+val manager = SecureCredentialsManager(apiClient, context, storage)
+
+// ✅ Biometric variant
+val apiClient = AuthenticationAPIClient(auth0)
+val manager = SecureCredentialsManager(
+    apiClient,
+    context,
+    storage,
+    fragmentActivity,
+    localAuthenticationOptions
+)
+```
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+// ✅ Standard
+AuthenticationAPIClient apiClient = new AuthenticationAPIClient(auth0);
+SecureCredentialsManager manager = new SecureCredentialsManager(apiClient, context, storage);
+
+// ✅ Biometric variant
+AuthenticationAPIClient apiClient = new AuthenticationAPIClient(auth0);
+SecureCredentialsManager manager = new SecureCredentialsManager(
+    apiClient, context, storage, fragmentActivity, localAuthenticationOptions);
+```
+</details>
+
+**Impact:** Any code that constructs `SecureCredentialsManager` with an `Auth0` instance as the first argument will no longer compile. Create an `AuthenticationAPIClient(auth0)` first and pass that instead. The same change applies to Java — there is no Java-specific overload.
+
+**Reason:** The `Auth0` parameter was redundant — `AuthenticationAPIClient` already holds a reference to the `Auth0` configuration object. Removing it eliminates the duplication, makes DPoP opt-in configuration (via `AuthenticationAPIClient.useDPoP(context)`) a natural part of construction, and reduces the public API surface.
+
+---
 
 ## Default Values Changed
 
