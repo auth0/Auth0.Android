@@ -36,6 +36,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 import java.io.IOException
 import java.io.Reader
 import java.security.PublicKey
+import java.util.concurrent.Executor
 
 /**
  * API client for Auth0 Authentication API.
@@ -82,6 +83,10 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         get() = auth0.clientId
     public val baseURL: String
         get() = auth0.getDomainUrl()
+
+
+    internal val executor: Executor
+        get() = auth0.executor
 
     /**
      * Enable DPoP for this client.

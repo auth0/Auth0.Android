@@ -105,6 +105,7 @@ public class CredentialsManagerTest {
         mockDPoPKeyStore = mock()
         DPoPUtil.keyStore = mockDPoPKeyStore
         whenever(mockDPoPKeyStore.hasKeyPair()).thenReturn(false)
+        Mockito.`when`(client.executor).thenReturn(serialExecutor)
 
         val credentialsManager = CredentialsManager(client, storage, jwtDecoder, serialExecutor)
         manager = Mockito.spy(credentialsManager)

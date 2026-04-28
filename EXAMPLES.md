@@ -1768,7 +1768,7 @@ To use DPoP with `SecureCredentialsManager` you need to pass an instance of the 
 val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
 val apiClient = AuthenticationAPIClient(auth0).useDPoP(this)
 val storage = SharedPreferencesStorage(this)
-val manager = SecureCredentialsManager(apiClient, this, auth0, storage)
+val manager = SecureCredentialsManager(apiClient, this, storage)
 ```
 
 Similarly, for `CredentialsManager`:
@@ -2400,31 +2400,34 @@ myAccountClient.updateAuthenticationMethodById("{Authentication_Id}", "{Name}")
 This version adds encryption to the data storage. Additionally, in those devices where a Secure Lock Screen has been configured it can require the user to authenticate before letting them obtain the stored credentials. The class is called `SecureCredentialsManager`.
 
 #### Usage
-The usage is similar to the previous version, with the slight difference that the manager now requires a valid android `Context` as shown below:
+
+`SecureCredentialsManager` requires an `AuthenticationAPIClient` instance. The manager uses the supplied client for all token renewals and DPoP-bound refreshes, so configure that client first and then pass the same instance into `SecureCredentialsManager`. Create one from your `Auth0` configuration object and pass it to the manager:
 
 ```kotlin
+val account = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+val apiClient = AuthenticationAPIClient(account)
 val storage = SharedPreferencesStorage(this)
-val manager = SecureCredentialsManager(this, account, storage)
+val manager = SecureCredentialsManager(apiClient, this, storage)
 ```
 
 <details>
   <summary>Using Java</summary>
 
 ```java
+Auth0 account = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN");
+AuthenticationAPIClient apiClient = new AuthenticationAPIClient(account);
 Storage storage = new SharedPreferencesStorage(this);
-SecureCredentialsManager manager = new SecureCredentialsManager(this, account, storage);
+SecureCredentialsManager manager = new SecureCredentialsManager(apiClient, this, storage);
 ```
 </details>
 
-#### Using a Custom AuthenticationAPIClient
-
-If you need to configure the `AuthenticationAPIClient` with advanced features (such as DPoP), you can pass your own configured instance to `SecureCredentialsManager`:
+To configure the `AuthenticationAPIClient` with advanced features such as DPoP, set them up on the client before passing it in:
 
 ```kotlin
 val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
 val apiClient = AuthenticationAPIClient(auth0).useDPoP(this)
 val storage = SharedPreferencesStorage(this)
-val manager = SecureCredentialsManager(apiClient, this, auth0, storage)
+val manager = SecureCredentialsManager(apiClient, this, storage)
 ```
 
 <details>
@@ -2434,7 +2437,7 @@ val manager = SecureCredentialsManager(apiClient, this, auth0, storage)
 Auth0 auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN");
 AuthenticationAPIClient apiClient = new AuthenticationAPIClient(auth0).useDPoP(this);
 Storage storage = new SharedPreferencesStorage(this);
-SecureCredentialsManager manager = new SecureCredentialsManager(apiClient, this, auth0, storage);
+SecureCredentialsManager manager = new SecureCredentialsManager(apiClient, this, storage);
 ```
 </details>
 
@@ -2451,9 +2454,11 @@ val localAuthenticationOptions =
         .setDeviceCredentialFallback(true)
         .setPolicy(BiometricPolicy.Session(300)) // Optional: Use session-based policy (5 minutes)
         .build()
+val account = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+val apiClient = AuthenticationAPIClient(account)
 val storage = SharedPreferencesStorage(this)
 val manager = SecureCredentialsManager(
-    this, account, storage, fragmentActivity,
+    apiClient, this, storage, fragmentActivity,
     localAuthenticationOptions
 )
 ```
@@ -2468,9 +2473,11 @@ LocalAuthenticationOptions localAuthenticationOptions =
                 .setDeviceCredentialFallback(true)
                 .setPolicy(new BiometricPolicy.Session(300)) // Optional: Use session-based policy (5 minutes)
                 .build();
+Auth0 account = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN");
+AuthenticationAPIClient apiClient = new AuthenticationAPIClient(account);
 Storage storage = new SharedPreferencesStorage(context);
 SecureCredentialsManager secureCredentialsManager = new SecureCredentialsManager(
-        context, auth0, storage, fragmentActivity,
+        apiClient, context, storage, fragmentActivity,
         localAuthenticationOptions);
 ```
 </details>
@@ -2491,7 +2498,7 @@ val localAuthenticationOptions =
         .build()
 val storage = SharedPreferencesStorage(this)
 val manager = SecureCredentialsManager(
-    apiClient, this, auth0, storage, fragmentActivity,
+    apiClient, this, storage, fragmentActivity,
     localAuthenticationOptions
 )
 ```
@@ -2513,7 +2520,7 @@ LocalAuthenticationOptions localAuthenticationOptions =
                 .build();
 Storage storage = new SharedPreferencesStorage(this);
 SecureCredentialsManager secureCredentialsManager = new SecureCredentialsManager(
-        apiClient, this, auth0, storage, fragmentActivity,
+        apiClient, this, storage, fragmentActivity,
         localAuthenticationOptions);
 ```
 </details>
