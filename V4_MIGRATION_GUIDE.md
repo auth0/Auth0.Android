@@ -23,6 +23,7 @@ v4 of the Auth0 Android SDK includes significant build toolchain updates, update
 - [**Default Values Changed**](#default-values-changed)
   + [Credentials Manager minTTL](#credentials-manager-minttl)
 - [**Behavior Changes**](#behavior-changes)
+  + [CredentialsManager Now Uses the Global Executor](#credentialsmanager-now-uses-the-global-executor)
   + [clearCredentials() Now Clears All Storage](#clearCredentials-now-clears-all-storage)
   + [Storage Interface: New removeAll() Method](#storage-interface-new-removeall-method)
 - [**New APIs**](#new-apis)
@@ -303,6 +304,20 @@ credentialsManager.getCredentials(scope = null, minTtl = 0, callback = callback)
 **Reason:** A `minTtl` of `0` meant credentials were not renewed until expired, which could result in delivering access tokens that expire immediately after retrieval, causing subsequent API requests to fail. Setting a default value of `60` seconds ensures the access token remains valid for a reasonable period.
 
 ## Behavior Changes
+
+### `CredentialsManager` Now Uses the Global Executor
+
+**Change:** `CredentialsManager` no longer creates a per-instance `Executor`. It now uses the same process-wide single-thread executor already used by `SecureCredentialsManager` .
+
+In v3, each `CredentialsManager` instance created its own `Executors.newSingleThreadExecutor()`. Two `CredentialsManager` instances could therefore run `getCredentials` concurrently, racing to exchange the same refresh token and potentially triggering duplicate `invalid_grant` errors on token rotation. `SecureCredentialsManager` was already on the global executor — this was an inconsistency between the two manager types.
+
+In v4, `getCredentials` and `getApiCredentials` calls from any manager instance backed by the same `Auth0` object are queued on one global single-thread executor. The first caller renews the token, saves the updated credentials, and returns. Subsequent callers find the already-refreshed credentials in storage and return without making a network request.
+
+**Impact:** If your app creates multiple `CredentialsManager` instances backed by the same `Auth0` object, their renewal operations are now serialized rather than concurrent. In practice this eliminates duplicate refresh-token exchanges. The only observable downside is that a slow renewal blocks other callers until it completes.
+
+No code changes are required. This is a runtime-only behavior change.
+
+---
 
 ### `clearCredentials()` Now Clears All Storage
 

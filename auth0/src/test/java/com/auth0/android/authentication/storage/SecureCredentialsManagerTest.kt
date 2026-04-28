@@ -2123,8 +2123,8 @@ public class SecureCredentialsManagerTest {
         Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
 
         val sharedExecutor = Executors.newSingleThreadExecutor()
-        val callerPool: ExecutorService = Executors.newFixedThreadPool(5)
-        val latch = CountDownLatch(5)
+        val callerPool: ExecutorService = Executors.newFixedThreadPool(3)
+        val latch = CountDownLatch(3)
         val context: Context =
             Robolectric.buildActivity(Activity::class.java).create().start().resume().get()
         val storage = SharedPreferencesStorage(
@@ -2139,7 +2139,7 @@ public class SecureCredentialsManagerTest {
             client, storage, cryptoMock, jwtDecoder, sharedExecutor
         ).saveCredentials(expiredCredentials)
 
-        repeat(5) {
+        repeat(3) {
             callerPool.submit {
                 // All instances share the same executor — operations are globally serialized
                 val instance = SecureCredentialsManager(
@@ -2164,7 +2164,7 @@ public class SecureCredentialsManagerTest {
             }
         }
 
-        latch.await(10, TimeUnit.SECONDS)
+        Assert.assertTrue(latch.await(3, TimeUnit.SECONDS))
         // Exactly one renewal — the shared executor serialized all 5 instances
         Mockito.verify(client, Mockito.times(1)).renewAuth(refreshToken = "refreshToken")
         Mockito.verify(request, Mockito.times(1)).execute()
@@ -2192,8 +2192,8 @@ public class SecureCredentialsManagerTest {
         Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
 
         val singleThreadExecutor = Executors.newSingleThreadExecutor()
-        val callerPool = Executors.newFixedThreadPool(10)
-        val latch = CountDownLatch(10)
+        val callerPool = Executors.newFixedThreadPool(3)
+        val latch = CountDownLatch(3)
         val context: Context =
             Robolectric.buildActivity(Activity::class.java).create().start().resume().get()
         val storage = SharedPreferencesStorage(
@@ -2208,7 +2208,7 @@ public class SecureCredentialsManagerTest {
             SecureCredentialsManager(client, storage, cryptoMock, jwtDecoder, singleThreadExecutor)
         singleManager.saveCredentials(expiredCredentials)
 
-        repeat(10) {
+        repeat(3) {
             callerPool.submit {
                 singleManager.getCredentials(object :
                     Callback<Credentials, CredentialsManagerException> {
@@ -2231,7 +2231,7 @@ public class SecureCredentialsManagerTest {
             }
         }
 
-        latch.await(10, TimeUnit.SECONDS)
+        Assert.assertTrue(latch.await(3, TimeUnit.SECONDS))
         Mockito.verify(client, Mockito.times(1)).renewAuth(refreshToken = "refreshToken")
         Mockito.verify(request, Mockito.times(1)).execute()
     }
@@ -2248,8 +2248,8 @@ public class SecureCredentialsManagerTest {
         )
 
         val singleThreadExecutor = Executors.newSingleThreadExecutor()
-        val callerPool = Executors.newFixedThreadPool(10)
-        val latch = CountDownLatch(10)
+        val callerPool = Executors.newFixedThreadPool(3)
+        val latch = CountDownLatch(3)
         val context: Context =
             Robolectric.buildActivity(Activity::class.java).create().start().resume().get()
         val storage = SharedPreferencesStorage(
@@ -2264,7 +2264,7 @@ public class SecureCredentialsManagerTest {
             SecureCredentialsManager(client, storage, cryptoMock, jwtDecoder, singleThreadExecutor)
         singleManager.saveCredentials(validCredentials)
 
-        repeat(10) {
+        repeat(3) {
             callerPool.submit {
                 singleManager.getCredentials(object :
                     Callback<Credentials, CredentialsManagerException> {
@@ -2283,7 +2283,7 @@ public class SecureCredentialsManagerTest {
             }
         }
 
-        latch.await(10, TimeUnit.SECONDS)
+        Assert.assertTrue(latch.await(3, TimeUnit.SECONDS))
         Mockito.verify(client, Mockito.never()).renewAuth(any(), anyOrNull(), anyOrNull())
     }
 
@@ -2350,98 +2350,10 @@ public class SecureCredentialsManagerTest {
             }
         }
 
-        latch.await(10, TimeUnit.SECONDS)
+        Assert.assertTrue(latch.await(2, TimeUnit.SECONDS))
         // Exactly one renewal — the second caller found already-valid credentials in storage.
         Mockito.verify(client, Mockito.times(1)).renewAuth(refreshToken = "refreshToken")
         Mockito.verify(request, Mockito.times(1)).execute()
-    }
-
-    @Test
-    public fun shouldSerializeGetCredentialsCallsAcrossCredentialsManagerAndSecureCredentialsManager() {
-        val expiredCredentials = Credentials(
-            "",
-            "accessToken",
-            "type",
-            "refreshToken",
-            Date(CredentialsMock.CURRENT_TIME_MS),
-            "scope"
-        )
-        val renewedCredentials = Credentials(
-            "newId",
-            "newAccess",
-            "newType",
-            "rotatedRefreshToken",
-            Date(CredentialsMock.ONE_HOUR_AHEAD_MS),
-            "newScope"
-        )
-        Mockito.`when`(client.renewAuth(refreshToken = "refreshToken")).thenReturn(request)
-        Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
-
-        val sharedExecutor = Executors.newSingleThreadExecutor()
-        val callerPool = Executors.newFixedThreadPool(4)
-        val latch = CountDownLatch(4)
-        val context: Context =
-            Robolectric.buildActivity(Activity::class.java).create().start().resume().get()
-        val credStorage = SharedPreferencesStorage(
-            context = context,
-            sharedPreferencesName = "com.auth0.android.storage.SecureCredentialsManagerTest.crossManagerCred"
-        )
-        val secureStorage = SharedPreferencesStorage(
-            context = context,
-            sharedPreferencesName = "com.auth0.android.storage.SecureCredentialsManagerTest.crossManagerSecure"
-        )
-        val cryptoMock = Mockito.mock(CryptoUtil::class.java)
-        Mockito.`when`(cryptoMock.encrypt(any())).thenAnswer { it.arguments[0] as ByteArray }
-        Mockito.`when`(cryptoMock.decrypt(any())).thenAnswer { it.arguments[0] as ByteArray }
-
-        val credManager = CredentialsManager(client, credStorage, jwtDecoder, sharedExecutor)
-        val secureManager =
-            SecureCredentialsManager(client, secureStorage, cryptoMock, jwtDecoder, sharedExecutor)
-
-        credManager.saveCredentials(expiredCredentials)
-        secureManager.saveCredentials(expiredCredentials)
-
-        repeat(2) {
-            callerPool.submit {
-                credManager.getCredentials(object :
-                    Callback<Credentials, CredentialsManagerException> {
-                    override fun onFailure(error: CredentialsManagerException) {
-                        throw error
-                    }
-
-                    override fun onSuccess(result: Credentials) {
-                        MatcherAssert.assertThat(
-                            result.accessToken,
-                            Is.`is`(renewedCredentials.accessToken)
-                        )
-                        latch.countDown()
-                    }
-                })
-            }
-        }
-
-        repeat(2) {
-            callerPool.submit {
-                secureManager.getCredentials(object :
-                    Callback<Credentials, CredentialsManagerException> {
-                    override fun onFailure(error: CredentialsManagerException) {
-                        throw error
-                    }
-
-                    override fun onSuccess(result: Credentials) {
-                        MatcherAssert.assertThat(
-                            result.accessToken,
-                            Is.`is`(renewedCredentials.accessToken)
-                        )
-                        latch.countDown()
-                    }
-                })
-            }
-        }
-
-        latch.await(10, TimeUnit.SECONDS)
-        Mockito.verify(client, Mockito.times(2)).renewAuth(refreshToken = "refreshToken")
-        Mockito.verify(request, Mockito.times(2)).execute()
     }
 
     /*

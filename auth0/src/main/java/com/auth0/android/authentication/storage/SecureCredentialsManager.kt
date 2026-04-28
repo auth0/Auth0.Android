@@ -115,7 +115,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     /**
      * Saves the given credentials in the Storage.
      *
-     * ** Imp:** This method is not thread safe
+     * **Important:** This method is not thread safe
      *
      * @param credentials the credentials to save.
      * @throws CredentialsManagerException if the credentials couldn't be encrypted. Some devices are not compatible at all with the cryptographic
@@ -160,7 +160,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     /**
      * Stores the given [APICredentials] in the storage for the given audience.
      *
-     * ** Imp:** This method is not thread safe
+     * **Important:** This method is not thread safe
      * @param apiCredentials the API Credentials to be stored
      * @param audience the audience for which the credentials are stored
      * @param scope the scope for which the credentials are stored

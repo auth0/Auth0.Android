@@ -2,7 +2,6 @@ package com.auth0.android.authentication
 
 import android.content.Context
 import androidx.annotation.VisibleForTesting
-import java.util.concurrent.Executor
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
@@ -37,6 +36,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 import java.io.IOException
 import java.io.Reader
 import java.security.PublicKey
+import java.util.concurrent.Executor
 
 /**
  * API client for Auth0 Authentication API.
