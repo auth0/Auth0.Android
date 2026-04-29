@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.Parcelable
+import androidx.browser.auth.AuthTabIntent
 import androidx.test.espresso.intent.matcher.IntentMatchers
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.RunnableTask
@@ -302,6 +303,60 @@ public class AuthenticationActivityTest {
         }
         activityController.create().start().resume()
         MatcherAssert.assertThat(activity.deliveredException, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(activity.isFinishing, Is.`is`(true))
+        activityController.destroy()
+    }
+
+    @Test
+    public fun shouldDeliverResultWhenAuthTabSucceeds() {
+        AuthenticationActivity.authenticateUsingBrowser(
+            callerActivity, uri, false, customTabsOptions
+        )
+        Mockito.verify(callerActivity).startActivity(intentCaptor.capture())
+        createActivity(intentCaptor.value)
+        activityController.create().start().resume()
+
+        activity.authTabResultHandler.handle(Activity.RESULT_OK, resultUri)
+
+        MatcherAssert.assertThat(activity.deliveredIntent, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(activity.deliveredIntent!!.data, Is.`is`(resultUri))
+        MatcherAssert.assertThat(activity.isFinishing, Is.`is`(true))
+        activityController.destroy()
+    }
+
+    @Test
+    public fun shouldDeliverCanceledWhenAuthTabCanceled() {
+        AuthenticationActivity.authenticateUsingBrowser(
+            callerActivity, uri, false, customTabsOptions
+        )
+        Mockito.verify(callerActivity).startActivity(intentCaptor.capture())
+        createActivity(intentCaptor.value)
+        activityController.create().start().resume()
+
+        activity.authTabResultHandler.handle(Activity.RESULT_CANCELED, null)
+
+        MatcherAssert.assertThat(activity.deliveredIntent, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(activity.deliveredIntent!!.data, Is.`is`(Matchers.nullValue()))
+        MatcherAssert.assertThat(activity.isFinishing, Is.`is`(true))
+        activityController.destroy()
+    }
+
+    @Test
+    public fun shouldDeliverFailureWhenAuthTabVerificationFails() {
+        AuthenticationActivity.authenticateUsingBrowser(
+            callerActivity, uri, false, customTabsOptions
+        )
+        Mockito.verify(callerActivity).startActivity(intentCaptor.capture())
+        createActivity(intentCaptor.value)
+        activityController.create().start().resume()
+
+        activity.authTabResultHandler.handle(AuthTabIntent.RESULT_VERIFICATION_FAILED, null)
+
+        MatcherAssert.assertThat(activity.deliveredException, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(
+            activity.deliveredException!!.getCode(),
+            Is.`is`("a0.auth_tab_verification_failed")
+        )
         MatcherAssert.assertThat(activity.isFinishing, Is.`is`(true))
         activityController.destroy()
     }

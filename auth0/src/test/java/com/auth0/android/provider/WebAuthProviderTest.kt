@@ -3070,6 +3070,53 @@ public class WebAuthProviderTest {
         verify(options, Mockito.never()).copyWithEphemeralBrowsing()
     }
 
+    @Test
+    public fun shouldStartLoginWithAuthTab() {
+        val options = Mockito.mock(CustomTabsOptions::class.java)
+        val authTabOptions = Mockito.mock(CustomTabsOptions::class.java)
+        `when`(options.hasCompatibleBrowser(activity.packageManager)).thenReturn(true)
+        `when`(options.copyWithAuthTab()).thenReturn(authTabOptions)
+        login(account)
+            .withCustomTabsOptions(options)
+            .withAuthTab()
+            .start(activity, callback)
+        verify(options).copyWithAuthTab()
+    }
+
+    @Test
+    public fun shouldNotSetAuthTabByDefault() {
+        val options = Mockito.mock(CustomTabsOptions::class.java)
+        `when`(options.hasCompatibleBrowser(activity.packageManager)).thenReturn(true)
+        login(account)
+            .withCustomTabsOptions(options)
+            .start(activity, callback)
+        verify(options, Mockito.never()).copyWithAuthTab()
+    }
+
+    @Test
+    public fun shouldStartLogoutWithAuthTab() {
+        val options = Mockito.mock(CustomTabsOptions::class.java)
+        val authTabOptions = Mockito.mock(CustomTabsOptions::class.java)
+        `when`(options.hasCompatibleBrowser(activity.packageManager)).thenReturn(true)
+        `when`(options.copyWithAuthTab()).thenReturn(authTabOptions)
+        `when`(authTabOptions.hasCompatibleBrowser(activity.packageManager)).thenReturn(true)
+        logout(account)
+            .withCustomTabsOptions(options)
+            .withAuthTab()
+            .start(activity, voidCallback)
+        verify(options).copyWithAuthTab()
+    }
+
+    @Test
+    public fun shouldNotSetAuthTabByDefaultOnLogout() {
+        val options = Mockito.mock(CustomTabsOptions::class.java)
+        `when`(options.hasCompatibleBrowser(activity.packageManager)).thenReturn(true)
+        logout(account)
+            .withCustomTabsOptions(options)
+            .start(activity, voidCallback)
+        verify(options, Mockito.never()).copyWithAuthTab()
+    }
+
     // --- LifecycleAwareCallback tests ---
 
     @Test
