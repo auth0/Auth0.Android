@@ -45,6 +45,10 @@ public open class AuthenticationActivity : ComponentActivity() {
 
     @Suppress("DEPRECATION")
     public override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        // If the Activity Result API (e.g. auth tab) already handled this result and called
+        // finish(), skip our legacy delivery to prevent a second delivery.
+        if (isFinishing) return
         val resultData = if (resultCode == RESULT_CANCELED) Intent() else data
         deliverAuthenticationResult(resultData)
         finish()
