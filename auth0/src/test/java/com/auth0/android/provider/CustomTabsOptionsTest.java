@@ -664,6 +664,64 @@ public class CustomTabsOptionsTest {
         assertEquals(intentNoExtras.getAction(), "android.intent.action.VIEW");
     }
 
+    // --- Auth Tab ---
+
+    @Test
+    public void shouldHaveAuthTabDisabledByDefault() {
+        CustomTabsOptions options = CustomTabsOptions.newBuilder().build();
+        assertThat(options.isAuthTab(), is(false));
+
+        Parcel parcel = Parcel.obtain();
+        options.writeToParcel(parcel, 0);
+        parcel.setDataPosition(0);
+        CustomTabsOptions parceledOptions = CustomTabsOptions.CREATOR.createFromParcel(parcel);
+        assertThat(parceledOptions.isAuthTab(), is(false));
+    }
+
+    @Test
+    public void shouldSetAuthTab() {
+        CustomTabsOptions options = CustomTabsOptions.newBuilder()
+                .withAuthTab()
+                .build();
+        assertThat(options.isAuthTab(), is(true));
+
+        Parcel parcel = Parcel.obtain();
+        options.writeToParcel(parcel, 0);
+        parcel.setDataPosition(0);
+        CustomTabsOptions parceledOptions = CustomTabsOptions.CREATOR.createFromParcel(parcel);
+        assertThat(parceledOptions.isAuthTab(), is(true));
+    }
+
+    @Test
+    public void shouldCopyWithEphemeralBrowsingPreservesAuthTab() {
+        CustomTabsOptions options = CustomTabsOptions.newBuilder()
+                .withAuthTab()
+                .build();
+        assertThat(options.isAuthTab(), is(true));
+
+        CustomTabsOptions copied = options.copyWithEphemeralBrowsing();
+        assertThat(copied.isAuthTab(), is(true));
+    }
+
+    @Test
+    public void shouldCopyWithAuthTab() {
+        CustomTabsOptions options = CustomTabsOptions.newBuilder().build();
+        assertThat(options.isAuthTab(), is(false));
+
+        CustomTabsOptions copied = options.copyWithAuthTab();
+        assertThat(copied.isAuthTab(), is(true));
+    }
+
+    @Test
+    public void shouldCopyWithAuthTabPreservesEphemeralBrowsing() {
+        CustomTabsOptions options = CustomTabsOptions.newBuilder()
+                .withEphemeralBrowsing()
+                .build();
+
+        CustomTabsOptions copied = options.copyWithAuthTab();
+        assertThat(copied.isAuthTab(), is(true));
+    }
+
     /**
      * Helper to check if a log message containing the given text was emitted.
      */

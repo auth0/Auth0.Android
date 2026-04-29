@@ -271,6 +271,7 @@ public object WebAuthProvider {
         private var ctOptions: CustomTabsOptions = CustomTabsOptions.newBuilder().build()
         private var federated: Boolean = false
         private var launchAsTwa: Boolean = false
+        private var authTab: Boolean = false
         private var customLogoutUrl: String? = null
 
         /**
@@ -340,6 +341,22 @@ public object WebAuthProvider {
         }
 
         /**
+         * Opts into using Auth Tab for the logout flow when the browser supports it.
+         * Auth Tab provides a dedicated, security-focused UI for OAuth flows with no address bar
+         * or share button. Falls back to a regular Custom Tab on browsers that do not support it.
+         *
+         * **Warning:** Auth Tab support in Auth0.Android is still experimental and can change in
+         * the future.
+         *
+         * @return the current builder instance
+         */
+        @ExperimentalAuth0Api
+        public fun withAuthTab(): LogoutBuilder {
+            authTab = true
+            return this
+        }
+
+        /**
          * Specifies a custom Logout URL to use for this logout request, overriding the default
          * generated from the Auth0 domain (account.logoutUrl).
          *
@@ -385,7 +402,8 @@ public object WebAuthProvider {
 
         private fun startInternal(context: Context, callback: Callback<Void?, AuthenticationException>) {
             resetManagerInstance()
-            if (!ctOptions.hasCompatibleBrowser(context.packageManager)) {
+            val effectiveCtOptions = if (authTab) ctOptions.copyWithAuthTab() else ctOptions
+            if (!effectiveCtOptions.hasCompatibleBrowser(context.packageManager)) {
                 val ex = AuthenticationException(
                     "a0.browser_not_available",
                     "No compatible Browser application is installed."
@@ -404,7 +422,7 @@ public object WebAuthProvider {
                 account,
                 callback,
                 returnToUrl!!,
-                ctOptions,
+                effectiveCtOptions,
                 federated,
                 launchAsTwa,
                 customLogoutUrl
@@ -456,6 +474,7 @@ public object WebAuthProvider {
         private var leeway: Int? = null
         private var launchAsTwa: Boolean = false
         private var ephemeralBrowsing: Boolean = false
+        private var authTab: Boolean = false
         private var customAuthorizeUrl: String? = null
 
         /**
@@ -690,6 +709,22 @@ public object WebAuthProvider {
         }
 
         /**
+         * Opts into using Auth Tab for the authentication flow when the browser supports it.
+         * Auth Tab provides a dedicated, security-focused UI for OAuth flows with no address bar
+         * or share button. Falls back to a regular Custom Tab on browsers that do not support it.
+         *
+         * **Warning:** Auth Tab support in Auth0.Android is still experimental and can change in
+         * the future.
+         *
+         * @return the current builder instance
+         */
+        @ExperimentalAuth0Api
+        public fun withAuthTab(): Builder {
+            authTab = true
+            return this
+        }
+
+        /**
          * Specifies a custom Authorize URL to use for this login request, overriding the default
          * generated from the Auth0 domain (account.authorizeUrl).
          *
@@ -792,11 +827,9 @@ public object WebAuthProvider {
                 values[OAuthManager.KEY_INVITATION] = invitationId
             }
 
-            val effectiveCtOptions = if (ephemeralBrowsing) {
-                ctOptions.copyWithEphemeralBrowsing()
-            } else {
-                ctOptions
-            }
+            var effectiveCtOptions = ctOptions
+            if (ephemeralBrowsing) effectiveCtOptions = effectiveCtOptions.copyWithEphemeralBrowsing()
+            if (authTab) effectiveCtOptions = effectiveCtOptions.copyWithAuthTab()
 
             val manager = OAuthManager(
                 account, callback, values, effectiveCtOptions, launchAsTwa,
