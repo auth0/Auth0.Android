@@ -7,8 +7,8 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.util.Log;
 import android.util.DisplayMetrics;
+import android.util.Log;
 
 import androidx.annotation.ColorRes;
 import androidx.annotation.Dimension;
@@ -23,7 +23,6 @@ import androidx.browser.customtabs.CustomTabsSession;
 import androidx.browser.trusted.TrustedWebActivityIntentBuilder;
 import androidx.core.content.ContextCompat;
 
-import com.auth0.android.annotation.ExperimentalAuth0Api;
 import com.auth0.android.authentication.AuthenticationException;
 
 import java.util.List;
@@ -103,17 +102,31 @@ public class CustomTabsOptions implements Parcelable {
     }
 
     @NonNull
+    Builder toBuilder() {
+        Builder builder = new Builder();
+        builder.showTitle = this.showTitle;
+        builder.toolbarColor = this.toolbarColor;
+        builder.browserPicker = this.browserPicker;
+        builder.disabledCustomTabsPackages = this.disabledCustomTabsPackages;
+        builder.initialHeight = this.initialHeight;
+        builder.activityHeightResizeBehavior = this.activityHeightResizeBehavior;
+        builder.toolbarCornerRadius = this.toolbarCornerRadius;
+        builder.initialWidth = this.initialWidth;
+        builder.sideSheetBreakpoint = this.sideSheetBreakpoint;
+        builder.backgroundInteractionEnabled = this.backgroundInteractionEnabled;
+        builder.ephemeralBrowsing = this.ephemeralBrowsing;
+        builder.authTab = this.authTab;
+        return builder;
+    }
+
+    @NonNull
     CustomTabsOptions copyWithEphemeralBrowsing() {
-        return new CustomTabsOptions(showTitle, toolbarColor, browserPicker,
-            disabledCustomTabsPackages, initialHeight, activityHeightResizeBehavior, toolbarCornerRadius,
-                initialWidth, sideSheetBreakpoint, backgroundInteractionEnabled, true, authTab);
+        return toBuilder().withEphemeralBrowsing().build();
     }
 
     @NonNull
     CustomTabsOptions copyWithAuthTab() {
-        return new CustomTabsOptions(showTitle, toolbarColor, browserPicker,
-            disabledCustomTabsPackages, initialHeight, activityHeightResizeBehavior, toolbarCornerRadius,
-                initialWidth, sideSheetBreakpoint, backgroundInteractionEnabled, ephemeralBrowsing, true);
+        return toBuilder().withAuthTab().build();
     }
 
     /**
@@ -348,41 +361,12 @@ public class CustomTabsOptions implements Parcelable {
             return this;
         }
 
-        /**
-         * Enable ephemeral browsing for the Custom Tab.
-         * When enabled, the Custom Tab runs in an isolated session — cookies, cache,
-         * history, and credentials are deleted when the tab closes.
-         * Requires Chrome 136+ or a compatible browser. On unsupported browsers,
-         * a warning is logged and a regular Custom Tab is used instead.
-         * By default, ephemeral browsing is disabled.
-         *
-         * <p><b>Warning:</b> Ephemeral browsing support in Auth0.Android is still experimental
-         * and can change in the future. Please test it thoroughly in all the targeted browsers
-         * and OS variants and let us know your feedback.</p>
-         *
-         * @return this same builder instance.
-         */
-        @ExperimentalAuth0Api
-        @NonNull
-        public Builder withEphemeralBrowsing() {
+        Builder withEphemeralBrowsing() {
             this.ephemeralBrowsing = true;
             return this;
         }
 
-        /**
-         * Opts into using Auth Tab for the authentication flow when the browser supports it.
-         * Auth Tab provides a dedicated, security-focused UI for OAuth flows with no address bar
-         * or share button. Falls back to a regular Custom Tab on browsers that do not support it.
-         * By default, Auth Tab is disabled.
-         *
-         * <p><b>Warning:</b> Auth Tab support in Auth0.Android is still experimental
-         * and can change in the future.</p>
-         *
-         * @return this same builder instance.
-         */
-        @ExperimentalAuth0Api
-        @NonNull
-        public Builder withAuthTab() {
+        Builder withAuthTab() {
             this.authTab = true;
             return this;
         }
@@ -512,6 +496,7 @@ public class CustomTabsOptions implements Parcelable {
                     authTab);
         }
     }
+
     private int dpToPx(@NonNull Context context, int dp) {
         final DisplayMetrics metrics = context.getResources().getDisplayMetrics();
         return Math.round(dp * metrics.density);

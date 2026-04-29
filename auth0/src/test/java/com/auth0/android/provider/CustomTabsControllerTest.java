@@ -442,7 +442,6 @@ public class CustomTabsControllerTest {
         customTabsClientMock.when(() -> CustomTabsClient.isAuthTabSupported(eq(context), any(String.class))).thenReturn(true);
 
         CustomTabsOptions ctOptions = CustomTabsOptions.newBuilder()
-                .withAuthTab()
                 .build();
 
         CustomTabsController authTabController =

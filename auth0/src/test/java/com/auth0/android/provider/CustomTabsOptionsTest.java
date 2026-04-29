@@ -695,8 +695,7 @@ public class CustomTabsOptionsTest {
     @Test
     public void shouldCopyWithEphemeralBrowsingPreservesAuthTab() {
         CustomTabsOptions options = CustomTabsOptions.newBuilder()
-                .withAuthTab()
-                .build();
+                .withAuthTab().build();
         assertThat(options.isAuthTab(), is(true));
 
         CustomTabsOptions copied = options.copyWithEphemeralBrowsing();
@@ -715,11 +714,22 @@ public class CustomTabsOptionsTest {
     @Test
     public void shouldCopyWithAuthTabPreservesEphemeralBrowsing() {
         CustomTabsOptions options = CustomTabsOptions.newBuilder()
-                .withEphemeralBrowsing()
-                .build();
+                .withEphemeralBrowsing().build();
 
         CustomTabsOptions copied = options.copyWithAuthTab();
         assertThat(copied.isAuthTab(), is(true));
+    }
+
+    @Test
+    public void shouldToBuilderPreserveAllFields() {
+        CustomTabsOptions original = CustomTabsOptions.newBuilder()
+                .showTitle(true)
+                .withToolbarColor(android.R.color.black)
+                .withEphemeralBrowsing().withAuthTab().build();
+
+        CustomTabsOptions rebuilt = original.toBuilder().build();
+
+        assertThat(rebuilt.isAuthTab(), is(true));
     }
 
     /**
