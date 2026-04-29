@@ -13,6 +13,7 @@
   - [Specify a Custom Logout URL](#specify-a-custom-logout-url)
   - [Trusted Web Activity](#trusted-web-activity)
   - [Ephemeral Browsing [Experimental]](#ephemeral-browsing-experimental)
+  - [Auth Tab [Experimental]](#auth-tab-experimental)
   - [DPoP](#dpop)
   - [Authentication API](#authentication-api)
     - [Login with database connection](#login-with-database-connection)
@@ -326,6 +327,59 @@ WebAuthProvider.login(account)
 WebAuthProvider.login(account)
     .withEphemeralBrowsing()
     .start(this, callback);
+```
+</details>
+
+## Auth Tab [Experimental]
+
+> **WARNING**
+> Auth Tab support in Auth0.Android is still experimental and can change in the future. Please test it thoroughly on all targeted devices and OS variants and let us know your feedback.
+
+Auth Tab uses [`AuthTabIntent`](https://developer.android.com/reference/androidx/browser/auth/AuthTabIntent) from `androidx.browser` to open the authentication flow in a dedicated browser tab that verifies the redirect URI scheme before delivering the result back to your app. This provides an additional layer of security by ensuring only your app — whose redirect URI scheme is verified at registration time — can receive the authentication callback, preventing other apps from intercepting it.
+
+Requires `androidx.browser` 1.9.0+ and a browser that supports Auth Tab on the device. On unsupported browsers, the SDK automatically falls back to a regular Custom Tab.
+
+```kotlin
+WebAuthProvider.login(account)
+    .withAuthTab()
+    .start(this, callback)
+```
+
+<details>
+<summary>Using async/await</summary>
+
+```kotlin
+WebAuthProvider.login(account)
+    .withAuthTab()
+    .await(this)
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+WebAuthProvider.login(account)
+    .withAuthTab()
+    .start(this, callback);
+```
+</details>
+
+Auth Tab can also be used for logout:
+
+```kotlin
+WebAuthProvider.logout(account)
+    .withAuthTab()
+    .start(this, logoutCallback)
+```
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+WebAuthProvider.logout(account)
+    .withAuthTab()
+    .start(this, logoutCallback);
 ```
 </details>
 
