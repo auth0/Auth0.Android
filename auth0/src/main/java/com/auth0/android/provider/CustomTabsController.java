@@ -19,7 +19,6 @@ import androidx.browser.customtabs.CustomTabsSession;
 
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.RunnableTask;
-import com.auth0.android.request.internal.CommonThreadSwitcher;
 import com.auth0.android.request.internal.ThreadSwitcher;
 import com.google.androidbrowserhelper.trusted.TwaLauncher;
 
@@ -52,8 +51,8 @@ class CustomTabsController extends CustomTabsServiceConnection {
 
     @VisibleForTesting
     CustomTabsController(@NonNull Context context, @NonNull CustomTabsOptions options,
-            @NonNull TwaLauncher twaLauncher,
-            @Nullable ActivityResultLauncher<Intent> authTabLauncher) {
+                         @NonNull TwaLauncher twaLauncher,
+                         @Nullable ActivityResultLauncher<Intent> authTabLauncher) {
         this.context = new WeakReference<>(context);
         this.session = new AtomicReference<>();
         this.authTabSession = new AtomicReference<>();
@@ -180,6 +179,12 @@ class CustomTabsController extends CustomTabsServiceConnection {
             launchAsDefault(context, uri);
             return;
         }
+        String scheme = Uri.parse(redirectUri).getScheme();
+        if (scheme == null) {
+            Log.w(TAG, "Could not determine scheme from redirect URI: " + redirectUri + ". Falling back to Custom Tab.");
+            launchAsDefault(context, uri);
+            return;
+        }
 
         bindService();
         boolean sessionAvailable = false;
@@ -195,12 +200,6 @@ class CustomTabsController extends CustomTabsServiceConnection {
             builder.setSession(authSession);
         }
         AuthTabIntent authTabIntent = builder.build();
-        String scheme = Uri.parse(redirectUri).getScheme();
-        if (scheme == null) {
-            Log.w(TAG, "Could not determine scheme from redirect URI: " + redirectUri + ". Falling back to Custom Tab.");
-            launchAsDefault(context, uri);
-            return;
-        }
         authTabIntent.launch(authTabLauncher, uri, scheme);
     }
 

@@ -294,6 +294,9 @@ WebAuthProvider.login(account)
     .await(this)
 ```
 
+> [!NOTE]
+> `withTrustedWebActivity()` and `withAuthTab()` are mutually exclusive. If both are set on the same builder, TWA takes precedence and Auth Tab will not be used. They rely on different underlying launch mechanisms and cannot be combined. For standard OAuth flows against Auth0, prefer [Auth Tab](#auth-tab-experimental) — it requires no server-side setup and works with any domain.
+
 ## Ephemeral Browsing [Experimental]
 
 > **WARNING**
@@ -338,6 +341,9 @@ WebAuthProvider.login(account)
 Auth Tab uses [`AuthTabIntent`](https://developer.android.com/reference/androidx/browser/auth/AuthTabIntent) from `androidx.browser` to open the authentication flow in a dedicated browser tab that verifies the redirect URI scheme before delivering the result back to your app. This provides an additional layer of security by ensuring only your app — whose redirect URI scheme is verified at registration time — can receive the authentication callback, preventing other apps from intercepting it.
 
 Requires `androidx.browser` 1.9.0+ and a browser that supports Auth Tab on the device. On unsupported browsers, the SDK automatically falls back to a regular Custom Tab.
+
+> [!NOTE]
+> `withAuthTab()` and `withTrustedWebActivity()` are mutually exclusive. If both are set on the same builder, TWA takes precedence and Auth Tab will not be used. They rely on different underlying launch mechanisms and cannot be combined.
 
 ```kotlin
 WebAuthProvider.login(account)

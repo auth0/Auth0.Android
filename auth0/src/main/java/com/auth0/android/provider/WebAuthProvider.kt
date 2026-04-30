@@ -334,6 +334,9 @@ public object WebAuthProvider {
          * Launches the Logout experience with a native feel (without address bar). For this to work,
          * you have to setup the app as trusted following the steps mentioned [here](https://github.com/auth0/Auth0.Android/blob/main/EXAMPLES.md#trusted-web-activity-experimental).
          *
+         * Note: [withAuthTab] and [withTrustedWebActivity] are mutually exclusive. If both are set,
+         * TWA takes precedence and Auth Tab will not be used. They rely on different underlying
+         * launch mechanisms and cannot be combined.
          */
         public fun withTrustedWebActivity(): LogoutBuilder {
             launchAsTwa = true
@@ -347,6 +350,10 @@ public object WebAuthProvider {
          *
          * **Warning:** Auth Tab support in Auth0.Android is still experimental and can change in
          * the future.
+         *
+         * Note: [withAuthTab] and [withTrustedWebActivity] are mutually exclusive. If both are set,
+         * TWA takes precedence and Auth Tab will not be used. They rely on different underlying
+         * launch mechanisms and cannot be combined.
          *
          * @return the current builder instance
          */
@@ -683,6 +690,9 @@ public object WebAuthProvider {
          * Launches the Login experience with a native feel (without address bar). For this to work,
          * you have to setup the app as trusted following the steps mentioned [here](https://github.com/auth0/Auth0.Android/blob/main/EXAMPLES.md#trusted-web-activity-experimental).
          *
+         * Note: [withAuthTab] and [withTrustedWebActivity] are mutually exclusive. If both are set,
+         * TWA takes precedence and Auth Tab will not be used. They rely on different underlying
+         * launch mechanisms and cannot be combined.
          */
         public fun withTrustedWebActivity(): Builder {
             launchAsTwa = true
@@ -715,6 +725,10 @@ public object WebAuthProvider {
          *
          * **Warning:** Auth Tab support in Auth0.Android is still experimental and can change in
          * the future.
+         *
+         * Note: [withAuthTab] and [withTrustedWebActivity] are mutually exclusive. If both are set,
+         * TWA takes precedence and Auth Tab will not be used. They rely on different underlying
+         * launch mechanisms and cannot be combined.
          *
          * @return the current builder instance
          */
