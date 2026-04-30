@@ -383,6 +383,20 @@ WebAuthProvider.logout(account)
 ```
 </details>
 
+### Limitations with `CustomTabsOptions`
+
+When `withAuthTab()` is combined with `withCustomTabsOptions()`, only a subset of options take effect. Auth Tab uses a separate intent builder (`AuthTabIntent`) and is always presented full-screen.
+
+| Option | Supported |
+|---|---|
+| `withToolbarColor()` | ✅ Applied to the Auth Tab toolbar |
+| `showTitle()` | ❌ Ignored — Auth Tab has no title-visibility option |
+| `withEphemeralBrowsing()` | ❌ Ignored — Auth Tab does not support ephemeral sessions. Use a regular Custom Tab if session isolation is required |
+| `withInitialHeight()` / `withInitialWidth()` | ❌ Ignored — Auth Tab is always full-screen |
+| `withToolbarCornerRadius()` | ❌ Ignored |
+| `withSideSheetBreakpoint()` | ❌ Ignored |
+| `withBackgroundInteractionEnabled()` | ❌ Ignored |
+
 ## DPoP
 
 [DPoP](https://www.rfc-editor.org/rfc/rfc9449.html) (Demonstrating Proof of Possession) is an application-level mechanism for sender-constraining OAuth 2.0 access and refresh tokens by proving that the app is in possession of a certain private key. You can enable it by calling the `useDPoP(context)` method on the login Builder.
