@@ -61,6 +61,7 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 @RunWith(RobolectricTestRunner.class)
 public class CustomTabsControllerTest {
@@ -435,24 +436,93 @@ public class CustomTabsControllerTest {
     }
 
     @Test
-    public void shouldFallbackToCustomTabWhenRedirectUriHasNoScheme() {
+    public void shouldFallbackToCustomTabWhenAuthTabLauncherIsNull() {
+        customTabsClientMock = Mockito.mockStatic(CustomTabsClient.class);
+        customTabsClientMock.when(() ->
+                CustomTabsClient.isAuthTabSupported(any(), eq(DEFAULT_BROWSER_PACKAGE))
+        ).thenReturn(true);
+
+        BrowserPicker browserPicker = mock(BrowserPicker.class);
+        when(browserPicker.getBestBrowserPackage(context.getPackageManager())).thenReturn(DEFAULT_BROWSER_PACKAGE);
+        CustomTabsOptions ctOptions = CustomTabsOptions.newBuilder()
+                .withBrowserPicker(browserPicker)
+                .withAuthTab()
+                .build();
+
+        // Pass null authTabLauncher — simulates launcher not being registered
+        CustomTabsController authTabController =
+                new CustomTabsController(context, ctOptions, twaLauncher, null);
+        doReturn(false).when(context).bindService(any(), any(), anyInt());
+
+        Uri authorizeUri = Uri.parse(AUTH_URL_WITH_REDIRECT);
+        authTabController.launchUri(authorizeUri, false, mockThreadSwitcher, null);
+
+        verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
+    }
+
+    @Test
+    public void shouldReturnErrorWhenRedirectUriIsMissing() {
+        customTabsClientMock = Mockito.mockStatic(CustomTabsClient.class);
+        customTabsClientMock.when(() ->
+                CustomTabsClient.isAuthTabSupported(any(), eq(DEFAULT_BROWSER_PACKAGE))
+        ).thenReturn(true);
+
         @SuppressWarnings("unchecked")
         ActivityResultLauncher<Intent> mockAuthTabLauncher = mock(ActivityResultLauncher.class);
-        customTabsClientMock = Mockito.mockStatic(CustomTabsClient.class);
-        customTabsClientMock.when(() -> CustomTabsClient.isAuthTabSupported(eq(context), any(String.class))).thenReturn(true);
 
+        BrowserPicker browserPicker = mock(BrowserPicker.class);
+        when(browserPicker.getBestBrowserPackage(context.getPackageManager())).thenReturn(DEFAULT_BROWSER_PACKAGE);
         CustomTabsOptions ctOptions = CustomTabsOptions.newBuilder()
+                .withBrowserPicker(browserPicker)
                 .withAuthTab()
                 .build();
 
         CustomTabsController authTabController =
                 new CustomTabsController(context, ctOptions, twaLauncher, mockAuthTabLauncher);
 
-        // redirect_uri with no scheme (no "://" part)
-        Uri authorizeUri = Uri.parse("https://example.auth0.com/authorize?redirect_uri=callback");
-        authTabController.launchUri(authorizeUri, false, mockThreadSwitcher, null);
+        // No redirect_uri query parameter at all
+        Uri authorizeUri = Uri.parse("https://example.auth0.com/authorize?response_type=code");
+        AtomicReference<AuthenticationException> capturedException = new AtomicReference<>();
+        authTabController.launchUri(authorizeUri, false, mockThreadSwitcher, capturedException::set);
 
-        verify(context, timeout(MAX_TEST_WAIT_TIME_MS)).startActivity(launchIntentCaptor.capture());
+        verify(mockThreadSwitcher, timeout(MAX_TEST_WAIT_TIME_MS)).mainThread(any());
+        assertThat(capturedException.get(), is(notNullValue()));
+        assertThat(capturedException.get().getCode(), is("a0.invalid_authorize_url"));
+        assertThat(capturedException.get().getDescription(), is("Could not determine redirect URI from authorize URL"));
+        verify(context, never()).startActivity(any(Intent.class));
+        verify(mockAuthTabLauncher, never()).launch(any(Intent.class));
+    }
+
+    @Test
+    public void shouldReturnErrorWhenRedirectUriHasNoScheme() {
+        customTabsClientMock = Mockito.mockStatic(CustomTabsClient.class);
+        customTabsClientMock.when(() ->
+                CustomTabsClient.isAuthTabSupported(any(), eq(DEFAULT_BROWSER_PACKAGE))
+        ).thenReturn(true);
+
+        @SuppressWarnings("unchecked")
+        ActivityResultLauncher<Intent> mockAuthTabLauncher = mock(ActivityResultLauncher.class);
+
+        BrowserPicker browserPicker = mock(BrowserPicker.class);
+        when(browserPicker.getBestBrowserPackage(context.getPackageManager())).thenReturn(DEFAULT_BROWSER_PACKAGE);
+        CustomTabsOptions ctOptions = CustomTabsOptions.newBuilder()
+                .withBrowserPicker(browserPicker)
+                .withAuthTab()
+                .build();
+
+        CustomTabsController authTabController =
+                new CustomTabsController(context, ctOptions, twaLauncher, mockAuthTabLauncher);
+
+        // redirect_uri query param present but has no scheme — Uri.parse("callback").getScheme() == null
+        Uri authorizeUri = Uri.parse("https://example.auth0.com/authorize?redirect_uri=callback");
+        AtomicReference<AuthenticationException> capturedException = new AtomicReference<>();
+        authTabController.launchUri(authorizeUri, false, mockThreadSwitcher, capturedException::set);
+
+        verify(mockThreadSwitcher, timeout(MAX_TEST_WAIT_TIME_MS)).mainThread(any());
+        assertThat(capturedException.get(), is(notNullValue()));
+        assertThat(capturedException.get().getCode(), is("a0.invalid_authorize_url"));
+        assertThat(capturedException.get().getDescription(), is("Could not determine scheme from redirect URI: callback"));
+        verify(context, never()).startActivity(any(Intent.class));
         verify(mockAuthTabLauncher, never()).launch(any(Intent.class));
     }
 

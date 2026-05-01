@@ -143,7 +143,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
                             TwaLauncher.CCT_FALLBACK_STRATEGY
                     );
                 } else if (customTabsOptions.isAuthTab()) {
-                    launchAsAuthTab(context, uri);
+                    launchAsAuthTab(context, uri, threadSwitcher, failureCallback);
                 } else {
                     launchAsDefault(context, uri);
                 }
@@ -157,7 +157,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
         });
     }
 
-    private void launchAsAuthTab(@NonNull Context context, @NonNull Uri uri) {
+    private void launchAsAuthTab(@NonNull Context context, @NonNull Uri uri, @NonNull ThreadSwitcher threadSwitcher, @Nullable RunnableTask<AuthenticationException> failureCallback) {
         if (preferredPackage == null) {
             Log.d(TAG, "No compatible browser found for Auth Tab. Falling back to Custom Tab.");
             launchAsDefault(context, uri);
@@ -175,14 +175,22 @@ class CustomTabsController extends CustomTabsServiceConnection {
         }
         String redirectUri = uri.getQueryParameter("redirect_uri");
         if (redirectUri == null) {
-            Log.w(TAG, "Could not determine redirect URI from authorize URL. Falling back to Custom Tab.");
-            launchAsDefault(context, uri);
+            Log.e(TAG, "Could not determine redirect URI from authorize URL. This is likely a configuration error.");
+            if (failureCallback != null) {
+                AuthenticationException e = new AuthenticationException(
+                        "a0.invalid_authorize_url", "Could not determine redirect URI from authorize URL");
+                threadSwitcher.mainThread(() -> failureCallback.apply(e));
+            }
             return;
         }
         String scheme = Uri.parse(redirectUri).getScheme();
         if (scheme == null) {
-            Log.w(TAG, "Could not determine scheme from redirect URI: " + redirectUri + ". Falling back to Custom Tab.");
-            launchAsDefault(context, uri);
+            Log.e(TAG, "Could not determine scheme from redirect URI: " + redirectUri + ". This is likely a configuration error.");
+            if (failureCallback != null) {
+                AuthenticationException e = new AuthenticationException(
+                        "a0.invalid_authorize_url", "Could not determine scheme from redirect URI: " + redirectUri);
+                threadSwitcher.mainThread(() -> failureCallback.apply(e));
+            }
             return;
         }
 
