@@ -7,13 +7,15 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.util.Log;
 import android.util.DisplayMetrics;
+import android.util.Log;
 
 import androidx.annotation.ColorRes;
 import androidx.annotation.Dimension;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.browser.auth.AuthTabColorSchemeParams;
+import androidx.browser.auth.AuthTabIntent;
 import androidx.browser.customtabs.CustomTabColorSchemeParams;
 import androidx.browser.customtabs.CustomTabsClient;
 import androidx.browser.customtabs.CustomTabsIntent;
@@ -21,7 +23,6 @@ import androidx.browser.customtabs.CustomTabsSession;
 import androidx.browser.trusted.TrustedWebActivityIntentBuilder;
 import androidx.core.content.ContextCompat;
 
-import com.auth0.android.annotation.ExperimentalAuth0Api;
 import com.auth0.android.authentication.AuthenticationException;
 
 import java.util.List;
@@ -55,11 +56,14 @@ public class CustomTabsOptions implements Parcelable {
     // Partial Custom Tabs - Background Interaction
     private final boolean backgroundInteractionEnabled;
 
+    private final boolean authTab;
+
     private CustomTabsOptions(boolean showTitle, @ColorRes int toolbarColor, @NonNull BrowserPicker browserPicker,
                               @Nullable List<String> disabledCustomTabsPackages,
                               int initialHeight, int activityHeightResizeBehavior, int toolbarCornerRadius,
                               int initialWidth, int sideSheetBreakpoint,
-                              boolean backgroundInteractionEnabled, boolean ephemeralBrowsing) {
+                              boolean backgroundInteractionEnabled, boolean ephemeralBrowsing,
+                              boolean authTab) {
         this.showTitle = showTitle;
         this.toolbarColor = toolbarColor;
         this.browserPicker = browserPicker;
@@ -71,6 +75,11 @@ public class CustomTabsOptions implements Parcelable {
         this.initialWidth = initialWidth;
         this.sideSheetBreakpoint = sideSheetBreakpoint;
         this.backgroundInteractionEnabled = backgroundInteractionEnabled;
+        this.authTab = authTab;
+    }
+
+    boolean isAuthTab() {
+        return authTab;
     }
 
     @Nullable
@@ -93,10 +102,31 @@ public class CustomTabsOptions implements Parcelable {
     }
 
     @NonNull
+    Builder toBuilder() {
+        Builder builder = new Builder();
+        builder.showTitle = this.showTitle;
+        builder.toolbarColor = this.toolbarColor;
+        builder.browserPicker = this.browserPicker;
+        builder.disabledCustomTabsPackages = this.disabledCustomTabsPackages;
+        builder.initialHeight = this.initialHeight;
+        builder.activityHeightResizeBehavior = this.activityHeightResizeBehavior;
+        builder.toolbarCornerRadius = this.toolbarCornerRadius;
+        builder.initialWidth = this.initialWidth;
+        builder.sideSheetBreakpoint = this.sideSheetBreakpoint;
+        builder.backgroundInteractionEnabled = this.backgroundInteractionEnabled;
+        builder.ephemeralBrowsing = this.ephemeralBrowsing;
+        builder.authTab = this.authTab;
+        return builder;
+    }
+
+    @NonNull
     CustomTabsOptions copyWithEphemeralBrowsing() {
-        return new CustomTabsOptions(showTitle, toolbarColor, browserPicker,
-            disabledCustomTabsPackages, initialHeight, activityHeightResizeBehavior, toolbarCornerRadius,
-                initialWidth, sideSheetBreakpoint, backgroundInteractionEnabled, true);
+        return toBuilder().withEphemeralBrowsing().build();
+    }
+
+    @NonNull
+    CustomTabsOptions copyWithAuthTab() {
+        return toBuilder().withAuthTab().build();
     }
 
     /**
@@ -165,6 +195,18 @@ public class CustomTabsOptions implements Parcelable {
     }
 
     @SuppressLint("ResourceType")
+    AuthTabIntent.Builder toAuthTabIntentBuilder(@NonNull Context context) {
+        AuthTabIntent.Builder builder = new AuthTabIntent.Builder();
+        if (toolbarColor > 0) {
+            final AuthTabColorSchemeParams params = new AuthTabColorSchemeParams.Builder()
+                    .setToolbarColor(ContextCompat.getColor(context, toolbarColor))
+                    .build();
+            builder.setDefaultColorSchemeParams(params);
+        }
+        return builder;
+    }
+
+    @SuppressLint("ResourceType")
     TrustedWebActivityIntentBuilder toTwaIntentBuilder(@NonNull Context context, @NonNull Uri uri) {
         TrustedWebActivityIntentBuilder builder = new TrustedWebActivityIntentBuilder(uri);
         if (toolbarColor > 0) {
@@ -188,6 +230,7 @@ public class CustomTabsOptions implements Parcelable {
         initialWidth = in.readInt();
         sideSheetBreakpoint = in.readInt();
         backgroundInteractionEnabled = in.readByte() != 0;
+        authTab = in.readByte() != 0;
     }
 
     @Override
@@ -203,6 +246,7 @@ public class CustomTabsOptions implements Parcelable {
         dest.writeInt(initialWidth);
         dest.writeInt(sideSheetBreakpoint);
         dest.writeByte((byte) (backgroundInteractionEnabled ? 1 : 0));
+        dest.writeByte((byte) (authTab ? 1 : 0));
     }
 
     @Override
@@ -235,6 +279,7 @@ public class CustomTabsOptions implements Parcelable {
         private List<String> disabledCustomTabsPackages;
 
         private boolean ephemeralBrowsing;
+        private boolean authTab;
 
         private int initialHeight;
         private int activityHeightResizeBehavior;
@@ -249,6 +294,7 @@ public class CustomTabsOptions implements Parcelable {
             this.browserPicker = BrowserPicker.newBuilder().build();
             this.disabledCustomTabsPackages = null;
             this.ephemeralBrowsing = false;
+            this.authTab = false;
             this.initialHeight = 0;
             this.activityHeightResizeBehavior = CustomTabsIntent.ACTIVITY_HEIGHT_DEFAULT;
             this.toolbarCornerRadius = 0;
@@ -315,24 +361,13 @@ public class CustomTabsOptions implements Parcelable {
             return this;
         }
 
-        /**
-         * Enable ephemeral browsing for the Custom Tab.
-         * When enabled, the Custom Tab runs in an isolated session — cookies, cache,
-         * history, and credentials are deleted when the tab closes.
-         * Requires Chrome 136+ or a compatible browser. On unsupported browsers,
-         * a warning is logged and a regular Custom Tab is used instead.
-         * By default, ephemeral browsing is disabled.
-         *
-         * <p><b>Warning:</b> Ephemeral browsing support in Auth0.Android is still experimental
-         * and can change in the future. Please test it thoroughly in all the targeted browsers
-         * and OS variants and let us know your feedback.</p>
-         *
-         * @return this same builder instance.
-         */
-        @ExperimentalAuth0Api
-        @NonNull
-        public Builder withEphemeralBrowsing() {
+        Builder withEphemeralBrowsing() {
             this.ephemeralBrowsing = true;
+            return this;
+        }
+
+        Builder withAuthTab() {
+            this.authTab = true;
             return this;
         }
 
@@ -457,9 +492,11 @@ public class CustomTabsOptions implements Parcelable {
         public CustomTabsOptions build() {
             return new CustomTabsOptions(showTitle, toolbarColor, browserPicker, disabledCustomTabsPackages,
                     initialHeight, activityHeightResizeBehavior, toolbarCornerRadius,
-                    initialWidth, sideSheetBreakpoint, backgroundInteractionEnabled, ephemeralBrowsing);
+                    initialWidth, sideSheetBreakpoint, backgroundInteractionEnabled, ephemeralBrowsing,
+                    authTab);
         }
     }
+
     private int dpToPx(@NonNull Context context, int dp) {
         final DisplayMetrics metrics = context.getResources().getDisplayMetrics();
         return Math.round(dp * metrics.density);

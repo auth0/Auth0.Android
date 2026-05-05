@@ -271,6 +271,7 @@ public object WebAuthProvider {
         private var ctOptions: CustomTabsOptions = CustomTabsOptions.newBuilder().build()
         private var federated: Boolean = false
         private var launchAsTwa: Boolean = false
+        private var authTab: Boolean = false
         private var customLogoutUrl: String? = null
 
         /**
@@ -333,9 +334,32 @@ public object WebAuthProvider {
          * Launches the Logout experience with a native feel (without address bar). For this to work,
          * you have to setup the app as trusted following the steps mentioned [here](https://github.com/auth0/Auth0.Android/blob/main/EXAMPLES.md#trusted-web-activity-experimental).
          *
+         * Note: [withAuthTab] and [withTrustedWebActivity] are mutually exclusive. If both are set,
+         * TWA takes precedence and Auth Tab will not be used. They rely on different underlying
+         * launch mechanisms and cannot be combined.
          */
         public fun withTrustedWebActivity(): LogoutBuilder {
             launchAsTwa = true
+            return this
+        }
+
+        /**
+         * Opts into using Auth Tab for the logout flow when the browser supports it.
+         * Auth Tab provides a dedicated, security-focused UI for OAuth flows with no address bar
+         * or share button. Falls back to a regular Custom Tab on browsers that do not support it.
+         *
+         * **Warning:** Auth Tab support in Auth0.Android is still experimental and can change in
+         * the future.
+         *
+         * Note: [withAuthTab] and [withTrustedWebActivity] are mutually exclusive. If both are set,
+         * TWA takes precedence and Auth Tab will not be used. They rely on different underlying
+         * launch mechanisms and cannot be combined.
+         *
+         * @return the current builder instance
+         */
+        @ExperimentalAuth0Api
+        public fun withAuthTab(): LogoutBuilder {
+            authTab = true
             return this
         }
 
@@ -385,7 +409,8 @@ public object WebAuthProvider {
 
         private fun startInternal(context: Context, callback: Callback<Void?, AuthenticationException>) {
             resetManagerInstance()
-            if (!ctOptions.hasCompatibleBrowser(context.packageManager)) {
+            val effectiveCtOptions = if (authTab) ctOptions.copyWithAuthTab() else ctOptions
+            if (!effectiveCtOptions.hasCompatibleBrowser(context.packageManager)) {
                 val ex = AuthenticationException(
                     "a0.browser_not_available",
                     "No compatible Browser application is installed."
@@ -404,7 +429,7 @@ public object WebAuthProvider {
                 account,
                 callback,
                 returnToUrl!!,
-                ctOptions,
+                effectiveCtOptions,
                 federated,
                 launchAsTwa,
                 customLogoutUrl
@@ -456,6 +481,7 @@ public object WebAuthProvider {
         private var leeway: Int? = null
         private var launchAsTwa: Boolean = false
         private var ephemeralBrowsing: Boolean = false
+        private var authTab: Boolean = false
         private var customAuthorizeUrl: String? = null
 
         /**
@@ -664,6 +690,9 @@ public object WebAuthProvider {
          * Launches the Login experience with a native feel (without address bar). For this to work,
          * you have to setup the app as trusted following the steps mentioned [here](https://github.com/auth0/Auth0.Android/blob/main/EXAMPLES.md#trusted-web-activity-experimental).
          *
+         * Note: [withAuthTab] and [withTrustedWebActivity] are mutually exclusive. If both are set,
+         * TWA takes precedence and Auth Tab will not be used. They rely on different underlying
+         * launch mechanisms and cannot be combined.
          */
         public fun withTrustedWebActivity(): Builder {
             launchAsTwa = true
@@ -686,6 +715,26 @@ public object WebAuthProvider {
         @ExperimentalAuth0Api
         public fun withEphemeralBrowsing(): Builder {
             ephemeralBrowsing = true
+            return this
+        }
+
+        /**
+         * Opts into using Auth Tab for the authentication flow when the browser supports it.
+         * Auth Tab provides a dedicated, security-focused UI for OAuth flows with no address bar
+         * or share button. Falls back to a regular Custom Tab on browsers that do not support it.
+         *
+         * **Warning:** Auth Tab support in Auth0.Android is still experimental and can change in
+         * the future.
+         *
+         * Note: [withAuthTab] and [withTrustedWebActivity] are mutually exclusive. If both are set,
+         * TWA takes precedence and Auth Tab will not be used. They rely on different underlying
+         * launch mechanisms and cannot be combined.
+         *
+         * @return the current builder instance
+         */
+        @ExperimentalAuth0Api
+        public fun withAuthTab(): Builder {
+            authTab = true
             return this
         }
 
@@ -792,11 +841,9 @@ public object WebAuthProvider {
                 values[OAuthManager.KEY_INVITATION] = invitationId
             }
 
-            val effectiveCtOptions = if (ephemeralBrowsing) {
-                ctOptions.copyWithEphemeralBrowsing()
-            } else {
-                ctOptions
-            }
+            var effectiveCtOptions = ctOptions
+            if (ephemeralBrowsing) effectiveCtOptions = effectiveCtOptions.copyWithEphemeralBrowsing()
+            if (authTab) effectiveCtOptions = effectiveCtOptions.copyWithAuthTab()
 
             val manager = OAuthManager(
                 account, callback, values, effectiveCtOptions, launchAsTwa,

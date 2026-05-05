@@ -7,15 +7,18 @@ import android.content.Intent;
 import android.net.Uri;
 import android.util.Log;
 
+import androidx.activity.result.ActivityResultLauncher;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import androidx.browser.auth.AuthTabIntent;
+import androidx.browser.auth.AuthTabSession;
 import androidx.browser.customtabs.CustomTabsClient;
 import androidx.browser.customtabs.CustomTabsServiceConnection;
 import androidx.browser.customtabs.CustomTabsSession;
 
 import com.auth0.android.authentication.AuthenticationException;
 import com.auth0.android.callback.RunnableTask;
-import com.auth0.android.request.internal.CommonThreadSwitcher;
 import com.auth0.android.request.internal.ThreadSwitcher;
 import com.google.androidbrowserhelper.trusted.TwaLauncher;
 
@@ -33,9 +36,12 @@ class CustomTabsController extends CustomTabsServiceConnection {
 
     private final WeakReference<Context> context;
     private final AtomicReference<CustomTabsSession> session;
+    private final AtomicReference<AuthTabSession> authTabSession;
     private final CountDownLatch sessionLatch;
     private final String preferredPackage;
     private final TwaLauncher twaLauncher;
+    @Nullable
+    private final ActivityResultLauncher<Intent> authTabLauncher;
 
     @NonNull
     private final CustomTabsOptions customTabsOptions;
@@ -44,13 +50,17 @@ class CustomTabsController extends CustomTabsServiceConnection {
     boolean launchedAsTwa;
 
     @VisibleForTesting
-    CustomTabsController(@NonNull Context context, @NonNull CustomTabsOptions options, @NonNull TwaLauncher twaLauncher) {
+    CustomTabsController(@NonNull Context context, @NonNull CustomTabsOptions options,
+                         @NonNull TwaLauncher twaLauncher,
+                         @Nullable ActivityResultLauncher<Intent> authTabLauncher) {
         this.context = new WeakReference<>(context);
         this.session = new AtomicReference<>();
+        this.authTabSession = new AtomicReference<>();
         this.sessionLatch = new CountDownLatch(1);
         this.customTabsOptions = options;
         this.preferredPackage = options.getPreferredPackage(context.getPackageManager());
-        this.twaLauncher  = twaLauncher;
+        this.twaLauncher = twaLauncher;
+        this.authTabLauncher = authTabLauncher;
     }
 
     @VisibleForTesting
@@ -63,6 +73,9 @@ class CustomTabsController extends CustomTabsServiceConnection {
         Log.d(TAG, "CustomTabs Service connected");
         customTabsClient.warmup(0L);
         session.set(customTabsClient.newSession(null));
+        if (customTabsOptions.isAuthTab()) {
+            authTabSession.set(customTabsClient.newAuthTabSession(null, Runnable::run));
+        }
         sessionLatch.countDown();
     }
 
@@ -70,6 +83,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
     public void onServiceDisconnected(ComponentName componentName) {
         Log.d(TAG, "CustomTabs Service disconnected");
         session.set(null);
+        authTabSession.set(null);
     }
 
     /**
@@ -128,6 +142,8 @@ class CustomTabsController extends CustomTabsServiceConnection {
                             null,
                             TwaLauncher.CCT_FALLBACK_STRATEGY
                     );
+                } else if (customTabsOptions.isAuthTab()) {
+                    launchAsAuthTab(context, uri, threadSwitcher, failureCallback);
                 } else {
                     launchAsDefault(context, uri);
                 }
@@ -139,6 +155,60 @@ class CustomTabsController extends CustomTabsServiceConnection {
                 threadSwitcher.mainThread(() -> failureCallback.apply(e));
             }
         });
+    }
+
+    private void launchAsAuthTab(@NonNull Context context, @NonNull Uri uri, @NonNull ThreadSwitcher threadSwitcher, @Nullable RunnableTask<AuthenticationException> failureCallback) {
+        if (preferredPackage == null) {
+            Log.d(TAG, "No compatible browser found for Auth Tab. Falling back to Custom Tab.");
+            launchAsDefault(context, uri);
+            return;
+        }
+        if (!CustomTabsClient.isAuthTabSupported(context, preferredPackage)) {
+            Log.d(TAG, "Auth Tab is not supported by " + preferredPackage + ". Falling back to Custom Tab.");
+            launchAsDefault(context, uri);
+            return;
+        }
+        if (authTabLauncher == null) {
+            Log.w(TAG, "Auth Tab launcher is not available. Falling back to Custom Tab.");
+            launchAsDefault(context, uri);
+            return;
+        }
+        String redirectUri = uri.getQueryParameter("redirect_uri");
+        if (redirectUri == null) {
+            Log.e(TAG, "Could not determine redirect URI from authorize URL. This is likely a configuration error.");
+            if (failureCallback != null) {
+                AuthenticationException e = new AuthenticationException(
+                        "a0.invalid_authorize_url", "Could not determine redirect URI from authorize URL");
+                threadSwitcher.mainThread(() -> failureCallback.apply(e));
+            }
+            return;
+        }
+        String scheme = Uri.parse(redirectUri).getScheme();
+        if (scheme == null) {
+            Log.e(TAG, "Could not determine scheme from redirect URI: " + redirectUri + ". This is likely a configuration error.");
+            if (failureCallback != null) {
+                AuthenticationException e = new AuthenticationException(
+                        "a0.invalid_authorize_url", "Could not determine scheme from redirect URI: " + redirectUri);
+                threadSwitcher.mainThread(() -> failureCallback.apply(e));
+            }
+            return;
+        }
+
+        bindService();
+        boolean sessionAvailable = false;
+        try {
+            sessionAvailable = sessionLatch.await(MAX_WAIT_TIME_SECONDS, TimeUnit.SECONDS);
+        } catch (InterruptedException ignored) {
+        }
+        Log.d(TAG, "Launching URI as Auth Tab. Session available: " + sessionAvailable);
+
+        AuthTabIntent.Builder builder = customTabsOptions.toAuthTabIntentBuilder(context);
+        AuthTabSession authSession = authTabSession.get();
+        if (authSession != null) {
+            builder.setSession(authSession);
+        }
+        AuthTabIntent authTabIntent = builder.build();
+        authTabIntent.launch(authTabLauncher, uri, scheme);
     }
 
     private void launchAsDefault(Context context, Uri uri) {
