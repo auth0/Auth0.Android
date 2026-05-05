@@ -1,5 +1,14 @@
 # Change Log
 
+## [4.0.0-beta.1](https://github.com/auth0/Auth0.Android/tree/4.0.0-beta.1) (2026-05-05)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/4.0.0-beta.0...4.0.0-beta.1)
+
+**⚠️ BREAKING CHANGES**
+- breaking : Remove redundant constructors from SecureCredentialsManager [\#961](https://github.com/auth0/Auth0.Android/pull/961) ([pmathew92](https://github.com/pmathew92))
+
+**Added**
+- feat: Added Auth tab support [\#962](https://github.com/auth0/Auth0.Android/pull/962) ([pmathew92](https://github.com/pmathew92))
+
 ## [4.0.0-beta.0](https://github.com/auth0/Auth0.Android/tree/4.0.0-beta.0) (2026-04-20)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.15.0...4.0.0-beta.0)
 
