@@ -45,6 +45,7 @@ jobs:
           PRODSEC_TOOLS_ARN: ${{ secrets.PRODSEC_TOOLS_ARN }}
           PRODSEC_TOOLS_USER: ${{ secrets.PRODSEC_TOOLS_USER }}
           PRODSEC_TOOLS_TOKEN: ${{ secrets.PRODSEC_TOOLS_TOKEN }}
+          PRODSEC_PYTHON_TOOLS_REPO: ${{ secrets.PRODSEC_PYTHON_TOOLS_REPO }}
 
   release:
     uses: ./.github/workflows/java-release.yml
