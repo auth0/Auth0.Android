@@ -1,5 +1,11 @@
 # Change Log
 
+## [3.16.1](https://github.com/auth0/Auth0.Android/tree/v3.16.1) (2026-05-11)
+
+**Fixed**
+- chore: migrate RL scanner to shared devsecops-tooling action [\#963](https://github.com/auth0/Auth0.Android/pull/963) ([@pmathew92](https://github.com/pmathew92))
+
+
 ## [3.16.0](https://github.com/auth0/Auth0.Android/tree/3.16.0) (2026-04-27)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.15.0...3.16.0)
 
