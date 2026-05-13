@@ -3022,4 +3022,89 @@ public class WebAuthProviderTest {
         private const val KEY_STATE = "state"
         private const val KEY_NONCE = "nonce"
     }
+
+    //** ** ** ** ** ** PAR (authorizeWithRequestUri) ** ** ** ** ** **//
+
+    @Test
+    public fun shouldAuthorizeWithRequestUri() {
+        val requestUri = "urn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY22c"
+        val parCallback: Callback<com.auth0.android.result.AuthorizationCode, AuthenticationException> = mock()
+
+        WebAuthProvider.authorizeWithRequestUri(account)
+            .start(activity, requestUri, parCallback)
+
+        Assert.assertNotNull(WebAuthProvider.managerInstance)
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri = intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+
+        assertThat(uri, `is`(notNullValue()))
+        assertThat(uri?.getQueryParameter("client_id"), `is`(JwtTestUtils.EXPECTED_AUDIENCE))
+        assertThat(uri?.getQueryParameter("request_uri"), `is`(requestUri))
+    }
+
+    @Test
+    public fun shouldAuthorizeWithRequestUriAndSessionTransferToken() {
+        val requestUri = "urn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY22c"
+        val sessionTransferToken = "stt_test_token_value"
+        val parCallback: Callback<com.auth0.android.result.AuthorizationCode, AuthenticationException> = mock()
+
+        WebAuthProvider.authorizeWithRequestUri(account)
+            .withSessionTransferToken(sessionTransferToken)
+            .start(activity, requestUri, parCallback)
+
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri = intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+
+        assertThat(uri, `is`(notNullValue()))
+        assertThat(uri?.getQueryParameter("client_id"), `is`(JwtTestUtils.EXPECTED_AUDIENCE))
+        assertThat(uri?.getQueryParameter("request_uri"), `is`(requestUri))
+        assertThat(uri?.getQueryParameter("session_transfer_token"), `is`(sessionTransferToken))
+    }
+
+    @Test
+    public fun shouldFailAuthorizeWithRequestUriWhenInvalidRequestUri() {
+        val parCallback: Callback<com.auth0.android.result.AuthorizationCode, AuthenticationException> = mock()
+        val exceptionCaptor: KArgumentCaptor<AuthenticationException> = argumentCaptor()
+
+        WebAuthProvider.authorizeWithRequestUri(account)
+            .start(activity, "invalid-uri", parCallback)
+
+        verify(parCallback).onFailure(exceptionCaptor.capture())
+        assertThat(exceptionCaptor.firstValue.getCode(), `is`("a0.invalid_request_uri"))
+    }
+
+    @Test
+    public fun shouldFailAuthorizeWithRequestUriWhenNoBrowserAvailable() {
+        BrowserPickerTest.setupBrowserContext(activity, emptyList(), null, null)
+        val requestUri = "urn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY22c"
+        val parCallback: Callback<com.auth0.android.result.AuthorizationCode, AuthenticationException> = mock()
+        val exceptionCaptor: KArgumentCaptor<AuthenticationException> = argumentCaptor()
+
+        WebAuthProvider.authorizeWithRequestUri(account)
+            .start(activity, requestUri, parCallback)
+
+        verify(parCallback).onFailure(exceptionCaptor.capture())
+        assertThat(exceptionCaptor.firstValue.isBrowserAppNotAvailable, `is`(true))
+    }
+
+    @Test
+    public fun shouldResumeAuthorizeWithRequestUriWithCode() {
+        val requestUri = "urn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY22c"
+        val parCallback: Callback<com.auth0.android.result.AuthorizationCode, AuthenticationException> = mock()
+        val codeCaptor: KArgumentCaptor<com.auth0.android.result.AuthorizationCode> = argumentCaptor()
+
+        WebAuthProvider.authorizeWithRequestUri(account)
+            .start(activity, requestUri, parCallback)
+
+        verify(activity).startActivity(intentCaptor.capture())
+
+        val intent = Intent().apply {
+            data = Uri.parse("https://${JwtTestUtils.EXPECTED_BASE_DOMAIN}/android/com.auth0.test/callback?code=test-code&state=test-state")
+        }
+        Assert.assertTrue(resume(intent))
+
+        verify(parCallback).onSuccess(codeCaptor.capture())
+        assertThat(codeCaptor.firstValue.code, `is`("test-code"))
+        assertThat(codeCaptor.firstValue.state, `is`("test-state"))
+    }
 }
