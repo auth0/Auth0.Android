@@ -32,7 +32,7 @@ internal object PARUtils {
         val builder = account.authorizeUrl.toUri().buildUpon()
             .appendQueryParameter("client_id", account.clientId)
             .appendQueryParameter("request_uri", requestUri)
-        additionalParameters.forEach { (key, value) ->
+        for ((key, value) in additionalParameters) {
             builder.appendQueryParameter(key, value)
         }
         return builder.build()
