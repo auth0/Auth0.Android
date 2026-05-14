@@ -31,6 +31,7 @@
     - [Get user information](#get-user-information)
     - [Custom Token Exchange](#custom-token-exchange)
     - [Native to Web SSO login](#native-to-web-sso-login)
+    - [Pushed Authorization Requests (PAR)](#pushed-authorization-requests-par)
     - [DPoP](#dpop-1)
   - [My Account API](#my-account-api)
     - [Enroll a new passkey](#enroll-a-new-passkey)
@@ -1690,6 +1691,69 @@ authentication
     });
 ```
 </details>
+
+### Pushed Authorization Requests (PAR)
+
+This feature handles the browser authorization step of a [PAR (RFC 9126)](https://www.rfc-editor.org/rfc/rfc9126.html) flow. It opens the `/authorize` endpoint with a `request_uri` obtained from your backend's PAR endpoint call, and returns the authorization code for your backend to exchange for tokens.
+
+> [!IMPORTANT]
+> Auth0 only supports PAR for **confidential clients**. Since mobile apps are public clients, the `/oauth/par` and `/oauth/token` calls must be made by your backend (BFF - Backend for Frontend). The SDK only handles opening the browser with the `request_uri` and returning the resulting authorization code.
+>
+> Your Auth0 application configured in the SDK should use the **same client_id** as the one your backend uses when calling the `/oauth/par` endpoint.
+
+```kotlin
+WebAuthProvider.authorizeWithRequestUri(account)
+    .start(context, requestUri, object : Callback<AuthorizationCode, AuthenticationException> {
+        override fun onSuccess(result: AuthorizationCode) {
+            // Send result.code to your BFF for token exchange
+        }
+
+        override fun onFailure(exception: AuthenticationException) {
+            // Handle error
+        }
+    })
+```
+
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    val authCode = WebAuthProvider.authorizeWithRequestUri(account)
+        .await(context, requestUri)
+    // Send authCode.code to your BFF for token exchange
+} catch (e: AuthenticationException) {
+    e.printStackTrace()
+}
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+WebAuthProvider.authorizeWithRequestUri(account)
+    .start(context, requestUri, new Callback<AuthorizationCode, AuthenticationException>() {
+        @Override
+        public void onSuccess(@NonNull AuthorizationCode result) {
+            // Send result.getCode() to your BFF for token exchange
+        }
+
+        @Override
+        public void onFailure(@NonNull AuthenticationException exception) {
+            // Handle error
+        }
+    });
+```
+</details>
+
+You can also pass a session transfer token to enable web SSO by transferring an existing native session to the browser:
+
+```kotlin
+WebAuthProvider.authorizeWithRequestUri(account)
+    .withSessionTransferToken(sessionTransferToken)
+    .await(context, requestUri)
+```
 
 ## DPoP
 
