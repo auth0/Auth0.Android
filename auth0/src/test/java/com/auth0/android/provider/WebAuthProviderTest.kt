@@ -3023,7 +3023,6 @@ public class WebAuthProviderTest {
         private const val KEY_NONCE = "nonce"
     }
 
-    //** ** ** ** ** ** PAR (authorizeWithRequestUri) ** ** ** ** ** **//
 
     @Test
     public fun shouldAuthorizeWithRequestUri() {

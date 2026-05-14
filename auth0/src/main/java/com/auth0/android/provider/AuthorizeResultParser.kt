@@ -4,7 +4,6 @@ import com.auth0.android.authentication.AuthenticationException
 
 /**
  * Parses the result from an authorization redirect callback.
- * Shared across PAR flows (code-only and login) to avoid duplication.
  */
 internal object AuthorizeResultParser {
 

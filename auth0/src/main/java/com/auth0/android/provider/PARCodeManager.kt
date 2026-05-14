@@ -24,7 +24,7 @@ internal class PARCodeManager(
     private var requestCode = 0
 
     private companion object {
-        private val TAG = PARCodeManager::class.java.simpleName
+        private val TAG = "PARCodeManager"
     }
 
     fun startAuthentication(context: Context, requestCode: Int) {
@@ -33,7 +33,6 @@ internal class PARCodeManager(
             sessionTransferToken?.let { put("session_transfer_token", it) }
         }
         val uri = PARUtils.buildAuthorizeUri(account, requestUri, additionalParams)
-        Log.d(TAG, "Using the following PAR Authorize URI: $uri")
         AuthenticationActivity.authenticateUsingBrowser(context, uri, false, ctOptions)
     }
 

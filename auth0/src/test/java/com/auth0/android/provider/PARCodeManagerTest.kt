@@ -103,7 +103,7 @@ public class PARCodeManagerTest {
     }
 
     @Test
-    public fun shouldResumeWithCodeAndState() {
+    public fun shouldResumeWithCodeAndStateFromRedirect() {
         authorizeWithRequestUri(account)
             .start(activity, REQUEST_URI, callback)
 
