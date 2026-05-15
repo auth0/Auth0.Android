@@ -11,6 +11,7 @@ import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
 import com.auth0.android.dpop.DPoP
 import com.auth0.android.dpop.SenderConstraining
+import com.auth0.android.result.AuthorizationCode
 import com.auth0.android.result.Credentials
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -30,9 +31,12 @@ import kotlin.coroutines.resumeWithException
 public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
     private val TAG: String? = WebAuthProvider::class.simpleName
     private const val KEY_BUNDLE_OAUTH_MANAGER_STATE = "oauth_manager_state"
+    private const val KEY_BUNDLE_PAR_MANAGER_STATE = "par_manager_state"
+    private const val AUTH_REQUEST_CODE = 110
     private var dPoP : DPoP? = null
 
     private val callbacks = CopyOnWriteArraySet<Callback<Credentials, AuthenticationException>>()
+    private val parCallbacks = CopyOnWriteArraySet<Callback<AuthorizationCode, AuthenticationException>>()
 
     @JvmStatic
     @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
@@ -80,6 +84,22 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
     }
 
     /**
+     * Initialize the WebAuthProvider instance for request_uri based authorization flows (PAR).
+     * Use this when your backend (BFF) has already called the /oauth/par endpoint and you need to
+     * complete the authorization by opening /authorize with the request_uri.
+     *
+     * The SDK only handles opening the browser and returning the authorization code.
+     * Token exchange must be performed by your backend server which holds the client_secret.
+     *
+     * @param account to use for authentication
+     * @return a new PARBuilder instance to customize.
+     */
+    @JvmStatic
+    public fun authorizeWithRequestUri(account: Auth0): PARBuilder {
+        return PARBuilder(account)
+    }
+
+    /**
      * Finishes the authentication or log out flow by passing the data received in the activity's onNewIntent() callback.
      * The final result will be delivered to the callback specified when calling start().
      *
@@ -116,14 +136,18 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
         if (manager is OAuthManager) {
             val managerState = manager.toState()
             bundle.putString(KEY_BUNDLE_OAUTH_MANAGER_STATE, managerState.serializeToJson())
+        } else if (manager is PARCodeManager) {
+            val managerState = manager.toState()
+            bundle.putString(KEY_BUNDLE_PAR_MANAGER_STATE, managerState.serializeToJson())
         }
     }
 
     internal fun onRestoreInstanceState(bundle: Bundle) {
         if (managerInstance == null) {
-            val stateJson = bundle.getString(KEY_BUNDLE_OAUTH_MANAGER_STATE).orEmpty()
-            if (stateJson.isNotBlank()) {
-                val state = OAuthManagerState.deserializeState(stateJson)
+            val oauthStateJson = bundle.getString(KEY_BUNDLE_OAUTH_MANAGER_STATE).orEmpty()
+            val parStateJson = bundle.getString(KEY_BUNDLE_PAR_MANAGER_STATE).orEmpty()
+            if (oauthStateJson.isNotBlank()) {
+                val state = OAuthManagerState.deserializeState(oauthStateJson)
                 managerInstance = OAuthManager.fromState(
                     state,
                     object : Callback<Credentials, AuthenticationException> {
@@ -135,6 +159,24 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
 
                         override fun onFailure(error: AuthenticationException) {
                             for (callback in callbacks) {
+                                callback.onFailure(error)
+                            }
+                        }
+                    }
+                )
+            } else if (parStateJson.isNotBlank()) {
+                val state = PARCodeManagerState.deserializeState(parStateJson)
+                managerInstance = PARCodeManager.fromState(
+                    state,
+                    object : Callback<AuthorizationCode, AuthenticationException> {
+                        override fun onSuccess(result: AuthorizationCode) {
+                            for (callback in parCallbacks) {
+                                callback.onSuccess(result)
+                            }
+                        }
+
+                        override fun onFailure(error: AuthenticationException) {
+                            for (callback in parCallbacks) {
                                 callback.onFailure(error)
                             }
                         }
@@ -604,7 +646,7 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
                     account.getDomainUrl()
                 )
             }
-            manager.startAuthentication(context, redirectUri!!, 110)
+            manager.startAuthentication(context, redirectUri!!, AUTH_REQUEST_CODE)
         }
 
         /**
@@ -646,5 +688,142 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
             private const val KEY_AUDIENCE = "audience"
             private const val KEY_CONNECTION_SCOPE = "connection_scope"
         }
+    }
+
+    /**
+     * Builder for PAR (Pushed Authorization Request) code-only authentication flows.
+     *
+     * Use this builder when your backend (BFF) has already called the PAR endpoint
+     * and you need to complete the authorization flow by opening the authorize URL
+     * with the request_uri.
+     *
+     * Example usage:
+     * ```kotlin
+     * val authCode = WebAuthProvider.authorizeWithRequestUri(account)
+     *     .await(context, requestUri)
+     * // Send authCode.code to your BFF for token exchange
+     * // IMPORTANT: Validate authCode.state against the state your BFF
+     * // used in the PAR request to prevent CSRF attacks.
+     * ```
+     */
+    public class PARBuilder internal constructor(private val account: Auth0) {
+        private var ctOptions: CustomTabsOptions = CustomTabsOptions.newBuilder().build()
+        private var sessionTransferToken: String? = null
+
+        /**
+         * When using a Custom Tabs compatible Browser, apply these customization options.
+         *
+         * @param options the Custom Tabs customization options
+         * @return the current builder instance
+         */
+        public fun withCustomTabsOptions(options: CustomTabsOptions): PARBuilder {
+            ctOptions = options
+            return this
+        }
+
+        /**
+         * Provide a session transfer token to be passed as a query parameter to the /authorize endpoint.
+         * This enables web single sign-on by transferring an existing session to the browser.
+         *
+         * @param token the session transfer token obtained from [AuthenticationAPIClient.ssoExchange]
+         * @return the current builder instance
+         */
+        public fun withSessionTransferToken(token: String): PARBuilder {
+            this.sessionTransferToken = token
+            return this
+        }
+
+        /**
+         * Start the PAR authorization flow using a request_uri from a PAR response.
+         * Opens the browser with the authorize URL and returns the authorization code
+         * for the app to exchange via BFF.
+         *
+         * @param context An Activity context to run the authentication.
+         * @param requestUri The request_uri obtained from the PAR endpoint (must start with "urn:ietf:params:oauth:request_uri:")
+         * @param callback Callback with authorization code result
+         */
+        public fun start(
+            context: Context,
+            requestUri: String,
+            callback: Callback<AuthorizationCode, AuthenticationException>
+        ) {
+            resetManagerInstance()
+
+            if (!PARUtils.isValidRequestUri(requestUri)) {
+                val ex = AuthenticationException(
+                    "a0.invalid_request_uri",
+                    "The request_uri must start with \"${PARUtils.REQUEST_URI_PREFIX}\"."
+                )
+                callback.onFailure(ex)
+                return
+            }
+
+            if (!ctOptions.hasCompatibleBrowser(context.packageManager)) {
+                val ex = AuthenticationException(
+                    "a0.browser_not_available",
+                    "No compatible Browser application is installed."
+                )
+                callback.onFailure(ex)
+                return
+            }
+
+            val manager = PARCodeManager(
+                account = account,
+                callback = callback,
+                requestUri = requestUri,
+                sessionTransferToken = sessionTransferToken,
+                ctOptions = ctOptions
+            )
+
+            managerInstance = manager
+            manager.startAuthentication(context, AUTH_REQUEST_CODE)
+        }
+
+        /**
+         * Start the PAR authorization flow using a request_uri from a PAR response.
+         * Opens the browser with the authorize URL and returns the authorization code
+         * for the app to exchange via BFF.
+         *
+         * @param context An Activity context to run the authentication.
+         * @param requestUri The request_uri obtained from the PAR endpoint (must start with "urn:ietf:params:oauth:request_uri:")
+         * @return AuthorizationCode containing the authorization code
+         * @throws AuthenticationException if authentication fails or the request_uri is invalid
+         */
+        @JvmSynthetic
+        @Throws(AuthenticationException::class)
+        public suspend fun await(
+            context: Context,
+            requestUri: String
+        ): AuthorizationCode {
+            return await(context, requestUri, Dispatchers.Main.immediate)
+        }
+
+        /**
+         * Used internally so that [CoroutineContext] can be injected for testing purpose
+         */
+        internal suspend fun await(
+            context: Context,
+            requestUri: String,
+            coroutineContext: CoroutineContext
+        ): AuthorizationCode {
+            return withContext(coroutineContext) {
+                suspendCancellableCoroutine { continuation ->
+                    start(
+                        context,
+                        requestUri,
+                        object : Callback<AuthorizationCode, AuthenticationException> {
+                            override fun onSuccess(result: AuthorizationCode) {
+                                continuation.resume(result)
+                            }
+
+                            override fun onFailure(error: AuthenticationException) {
+                                continuation.resumeWithException(error)
+                            }
+                        }
+                    )
+                }
+            }
+        }
+
     }
 }
