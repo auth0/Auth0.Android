@@ -702,6 +702,8 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
      * val authCode = WebAuthProvider.authorizeWithRequestUri(account)
      *     .await(context, requestUri)
      * // Send authCode.code to your BFF for token exchange
+     * // IMPORTANT: Validate authCode.state against the state your BFF
+     * // used in the PAR request to prevent CSRF attacks.
      * ```
      */
     public class PARBuilder internal constructor(private val account: Auth0) {
