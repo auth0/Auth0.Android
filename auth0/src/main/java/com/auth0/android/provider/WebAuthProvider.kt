@@ -31,9 +31,12 @@ import kotlin.coroutines.resumeWithException
 public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
     private val TAG: String? = WebAuthProvider::class.simpleName
     private const val KEY_BUNDLE_OAUTH_MANAGER_STATE = "oauth_manager_state"
+    private const val KEY_BUNDLE_PAR_MANAGER_STATE = "par_manager_state"
+    private const val AUTH_REQUEST_CODE = 110
     private var dPoP : DPoP? = null
 
     private val callbacks = CopyOnWriteArraySet<Callback<Credentials, AuthenticationException>>()
+    private val parCallbacks = CopyOnWriteArraySet<Callback<AuthorizationCode, AuthenticationException>>()
 
     @JvmStatic
     @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
@@ -133,14 +136,18 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
         if (manager is OAuthManager) {
             val managerState = manager.toState()
             bundle.putString(KEY_BUNDLE_OAUTH_MANAGER_STATE, managerState.serializeToJson())
+        } else if (manager is PARCodeManager) {
+            val managerState = manager.toState()
+            bundle.putString(KEY_BUNDLE_PAR_MANAGER_STATE, managerState.serializeToJson())
         }
     }
 
     internal fun onRestoreInstanceState(bundle: Bundle) {
         if (managerInstance == null) {
-            val stateJson = bundle.getString(KEY_BUNDLE_OAUTH_MANAGER_STATE).orEmpty()
-            if (stateJson.isNotBlank()) {
-                val state = OAuthManagerState.deserializeState(stateJson)
+            val oauthStateJson = bundle.getString(KEY_BUNDLE_OAUTH_MANAGER_STATE).orEmpty()
+            val parStateJson = bundle.getString(KEY_BUNDLE_PAR_MANAGER_STATE).orEmpty()
+            if (oauthStateJson.isNotBlank()) {
+                val state = OAuthManagerState.deserializeState(oauthStateJson)
                 managerInstance = OAuthManager.fromState(
                     state,
                     object : Callback<Credentials, AuthenticationException> {
@@ -152,6 +159,24 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
 
                         override fun onFailure(error: AuthenticationException) {
                             for (callback in callbacks) {
+                                callback.onFailure(error)
+                            }
+                        }
+                    }
+                )
+            } else if (parStateJson.isNotBlank()) {
+                val state = PARCodeManagerState.deserializeState(parStateJson)
+                managerInstance = PARCodeManager.fromState(
+                    state,
+                    object : Callback<AuthorizationCode, AuthenticationException> {
+                        override fun onSuccess(result: AuthorizationCode) {
+                            for (callback in parCallbacks) {
+                                callback.onSuccess(result)
+                            }
+                        }
+
+                        override fun onFailure(error: AuthenticationException) {
+                            for (callback in parCallbacks) {
                                 callback.onFailure(error)
                             }
                         }
@@ -621,7 +646,7 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
                     account.getDomainUrl()
                 )
             }
-            manager.startAuthentication(context, redirectUri!!, 110)
+            manager.startAuthentication(context, redirectUri!!, AUTH_REQUEST_CODE)
         }
 
         /**
@@ -749,7 +774,7 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
             )
 
             managerInstance = manager
-            manager.startAuthentication(context, 110)
+            manager.startAuthentication(context, AUTH_REQUEST_CODE)
         }
 
         /**

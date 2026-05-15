@@ -1,8 +1,6 @@
 package com.auth0.android.provider
 
 import android.content.Context
-import android.net.Uri
-import android.util.Log
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
@@ -22,10 +20,6 @@ internal class PARCodeManager(
 ) : ResumableManager() {
 
     private var requestCode = 0
-
-    private companion object {
-        private val TAG = "PARCodeManager"
-    }
 
     fun startAuthentication(context: Context, requestCode: Int) {
         this.requestCode = requestCode
@@ -61,5 +55,34 @@ internal class PARCodeManager(
 
     override fun failure(exception: AuthenticationException) {
         callback.onFailure(exception)
+    }
+
+    internal fun toState(): PARCodeManagerState {
+        return PARCodeManagerState(
+            auth0 = account,
+            requestCode = requestCode,
+            requestUri = requestUri,
+            sessionTransferToken = sessionTransferToken,
+            ctOptions = ctOptions
+        )
+    }
+
+    internal companion object {
+        private val TAG = PARCodeManager::class.java.simpleName
+
+        fun fromState(
+            state: PARCodeManagerState,
+            callback: Callback<AuthorizationCode, AuthenticationException>
+        ): PARCodeManager {
+            val manager = PARCodeManager(
+                account = state.auth0,
+                callback = callback,
+                requestUri = state.requestUri,
+                sessionTransferToken = state.sessionTransferToken,
+                ctOptions = state.ctOptions
+            )
+            manager.requestCode = state.requestCode
+            return manager
+        }
     }
 }

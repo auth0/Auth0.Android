@@ -109,14 +109,14 @@ public class PARCodeManagerTest {
 
         verify(activity).startActivity(intentCaptor.capture())
 
-        val intent = createAuthIntent("code=$AUTH_CODE&state=test-state")
+        val intent = createAuthIntent("code=$AUTH_CODE&state=par-state")
 
         Assert.assertTrue(resume(intent))
 
         verify(callback).onSuccess(authCodeCaptor.capture())
         val authCode = authCodeCaptor.firstValue
         assertThat(authCode.code, `is`(AUTH_CODE))
-        assertThat(authCode.state, `is`("test-state"))
+        assertThat(authCode.state, `is`("par-state"))
     }
 
     @Test
