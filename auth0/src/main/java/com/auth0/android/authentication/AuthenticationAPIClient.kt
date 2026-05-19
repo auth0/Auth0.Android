@@ -313,17 +313,24 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      *
      * Example usage:
      *
-     *
      * ```
-     * client.signupWithPasskey("{userData}","{realm}","{organization}")
-     *      .addParameter("scope","scope")
-     *      .start(object: Callback<PasskeyRegistration, AuthenticationException> {
-     *          override fun onSuccess(result: PasskeyRegistration) { }
+     * val userData = UserData(
+     *     email = "user@example.com",
+     *     name = "John Doe",
+     *     givenName = "John",
+     *     familyName = "Doe",
+     *     nickName = "johnny",
+     *     picture = "https://example.com/photo.png",
+     *     userMetadata = mapOf("signup_source" to "android_app")
+     * )
+     * client.signupWithPasskey(userData, "{realm}", "{organization}")
+     *      .start(object: Callback<PasskeyRegistrationChallenge, AuthenticationException> {
+     *          override fun onSuccess(result: PasskeyRegistrationChallenge) { }
      *          override fun onFailure(error: AuthenticationException) { }
      * })
      * ```
      *
-     *  @param userData user information of the client
+     *  @param userData user information for registration.
      *  @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
      *  @param organization id of the organization to be associated with the user while signing up
      *  @return  a request to configure and start that will yield [PasskeyRegistrationChallenge]
@@ -333,7 +340,6 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         realm: String? = null,
         organization: String? = null
     ): Request<PasskeyRegistrationChallenge, AuthenticationException> {
-        val user = gson.toJsonTree(userData)
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(PASSKEY_PATH)
             .addPathSegment(REGISTER_PATH)
@@ -351,7 +357,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             )
         val post = factory.post(url.toString(), passkeyRegistrationChallengeAdapter)
             .addParameters(params) as BaseRequest<PasskeyRegistrationChallenge, AuthenticationException>
-        post.addParameter(USER_PROFILE_KEY, user)
+        post.addParameter(USER_PROFILE_KEY, gson.toJsonTree(userData.toUserProfile()))
+        userData.userMetadata?.let { post.addParameter(USER_METADATA_KEY, it) }
         return post
     }
 
