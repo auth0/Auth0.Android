@@ -270,59 +270,50 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         callback: Callback<SSOCredentials, CredentialsManagerException>
     ) {
         serialExecutor.execute {
-            val existingCredentials: Credentials = try {
-                getExistingCredentials()
-            } catch (exception: CredentialsManagerException) {
-                Log.e(TAG, "Error while fetching existing credentials", exception)
-                callback.onFailure(exception)
-                return@execute
-            }
-            if (existingCredentials.refreshToken.isNullOrEmpty()) {
-                callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
-                return@execute
-            }
-
-            val tokenType = storage.retrieveString(KEY_TOKEN_TYPE) ?: existingCredentials.type
-            validateDPoPState(tokenType)?.let { dpopError ->
-                callback.onFailure(dpopError)
-                return@execute
-            }
-
-            val request =
-                authenticationClient.ssoExchange(existingCredentials.refreshToken)
-            try {
-                if (parameters.isNotEmpty()) {
-                    request.addParameters(parameters)
+            runCatchingOnExecutor(callback) {
+                val existingCredentials: Credentials = try {
+                    getExistingCredentials()
+                } catch (exception: CredentialsManagerException) {
+                    Log.e(TAG, "Error while fetching existing credentials", exception)
+                    callback.onFailure(exception)
+                    return@execute
                 }
-                val sessionCredentials = request.execute()
-                saveSsoCredentials(sessionCredentials)
-                callback.onSuccess(sessionCredentials)
-            } catch (error: AuthenticationException) {
-                val exception = when {
-                    error.isNetworkError -> CredentialsManagerException.Code.NO_NETWORK
-                    else -> CredentialsManagerException.Code.SSO_EXCHANGE_FAILED
+                if (existingCredentials.refreshToken.isNullOrEmpty()) {
+                    callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
+                    return@execute
                 }
-                callback.onFailure(
-                    CredentialsManagerException(
-                        exception, error
+
+                val tokenType = storage.retrieveString(KEY_TOKEN_TYPE) ?: existingCredentials.type
+                validateDPoPState(tokenType)?.let { dpopError ->
+                    callback.onFailure(dpopError)
+                    return@execute
+                }
+
+                val request =
+                    authenticationClient.ssoExchange(existingCredentials.refreshToken)
+                try {
+                    if (parameters.isNotEmpty()) {
+                        request.addParameters(parameters)
+                    }
+                    val sessionCredentials = request.execute()
+                    saveSsoCredentials(sessionCredentials)
+                    callback.onSuccess(sessionCredentials)
+                } catch (error: AuthenticationException) {
+                    val exception = when {
+                        error.isNetworkError -> CredentialsManagerException.Code.NO_NETWORK
+                        else -> CredentialsManagerException.Code.SSO_EXCHANGE_FAILED
+                    }
+                    callback.onFailure(
+                        CredentialsManagerException(
+                            exception, error
+                        )
                     )
-                )
-            } catch (error: CredentialsManagerException) {
-                val exception = CredentialsManagerException(
-                    CredentialsManagerException.Code.STORE_FAILED, error
-                )
-                callback.onFailure(exception)
-            } catch (exception: RuntimeException) {
-                Log.e(
-                    TAG,
-                    "Caught unexpected exceptions while fetching sso token ${exception.stackTraceToString()}"
-                )
-                callback.onFailure(
-                    CredentialsManagerException(
-                        CredentialsManagerException.Code.UNKNOWN_ERROR,
-                        exception
+                } catch (error: CredentialsManagerException) {
+                    val exception = CredentialsManagerException(
+                        CredentialsManagerException.Code.STORE_FAILED, error
                     )
-                )
+                    callback.onFailure(exception)
+                }
             }
         }
     }
@@ -799,163 +790,147 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
         serialExecutor.execute {
-            val encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS)
-            if (encryptedEncoded.isNullOrBlank()) {
-                callback.onFailure(CredentialsManagerException.NO_CREDENTIALS)
-                return@execute
-            }
-            val encrypted = Base64.decode(encryptedEncoded, Base64.DEFAULT)
-            val json: String
-            try {
-                json = String(crypto.decrypt(encrypted))
-            } catch (e: IncompatibleDeviceException) {
-                callback.onFailure(
-                    CredentialsManagerException(
-                        CredentialsManagerException.Code.INCOMPATIBLE_DEVICE, e
-                    )
-                )
-                return@execute
-            } catch (e: CryptoException) {
-                //If keys were invalidated, existing credentials will not be recoverable.
-                clearCredentials()
-                callback.onFailure(
-                    CredentialsManagerException(
-                        CredentialsManagerException.Code.CRYPTO_EXCEPTION, e
-                    )
-                )
-                return@execute
-            }
-            val bridgeCredentials = gson.fromJson(json, OptionalCredentials::class.java)/* OPTIONAL CREDENTIALS
-             * This bridge is required to prevent users from being logged out when
-             * migrating from Credentials with optional Access Token and ID token
-             */
-            val credentials = Credentials(
-                bridgeCredentials.idToken.orEmpty(),
-                bridgeCredentials.accessToken.orEmpty(),
-                bridgeCredentials.type.orEmpty(),
-                bridgeCredentials.refreshToken,
-                bridgeCredentials.expiresAt ?: Date(),
-                bridgeCredentials.scope
-            )
-            val expiresAt = credentials.expiresAt.time
-            val hasEmptyCredentials =
-                TextUtils.isEmpty(credentials.accessToken) && TextUtils.isEmpty(credentials.idToken)
-            if (hasEmptyCredentials) {
-                callback.onFailure(CredentialsManagerException.NO_CREDENTIALS)
-                return@execute
-            }
-            val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
-            val scopeChanged = hasScopeChanged(credentials.scope, scope)
-            if (!forceRefresh && !willAccessTokenExpire && !scopeChanged) {
-                callback.onSuccess(credentials)
-                return@execute
-            }
-            if (credentials.refreshToken == null) {
-                callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
-                return@execute
-            }
-            val tokenType = storage.retrieveString(KEY_TOKEN_TYPE) ?: credentials.type
-            validateDPoPState(tokenType)?.let { dpopError ->
-                callback.onFailure(dpopError)
-                return@execute
-            }
-            Log.d(TAG, "Credentials have expired. Renewing them now...")
-            val request = authenticationClient.renewAuth(
-                credentials.refreshToken
-            )
-
-            request.addParameters(parameters)
-            if (scope != null) {
-                request.addParameter("scope", scope)
-            }
-
-            for (header in headers) {
-                request.addHeader(header.key, header.value)
-            }
-
-            val freshCredentials: Credentials
-            try {
-                val fresh = request.execute()
-                val expiresAt = fresh.expiresAt.time
-                val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
-                if (willAccessTokenExpire) {
-                    val tokenLifetime = (expiresAt - currentTimeInMillis - minTtl * 1000) / -1000
-                    val wrongTtlException = CredentialsManagerException(
-                        CredentialsManagerException.Code.LARGE_MIN_TTL, String.format(
-                            Locale.getDefault(),
-                            "The lifetime of the renewed Access Token (%d) is less than the minTTL requested (%d). Increase the 'Token Expiration' setting of your Auth0 API in the dashboard, or request a lower minTTL.",
-                            tokenLifetime,
-                            minTtl
-                        )
-                    )
-                    callback.onFailure(wrongTtlException)
+            runCatchingOnExecutor(callback) {
+                val encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS)
+                if (encryptedEncoded.isNullOrBlank()) {
+                    callback.onFailure(CredentialsManagerException.NO_CREDENTIALS)
                     return@execute
                 }
-
-                //non-empty refresh token for refresh token rotation scenarios
-                val updatedRefreshToken =
-                    if (TextUtils.isEmpty(fresh.refreshToken)) credentials.refreshToken else fresh.refreshToken
-                freshCredentials = Credentials(
-                    fresh.idToken,
-                    fresh.accessToken,
-                    fresh.type,
-                    updatedRefreshToken,
-                    fresh.expiresAt,
-                    fresh.scope
-                )
-            } catch (error: AuthenticationException) {
-                if (error.isMultifactorRequired) {
+                val encrypted = Base64.decode(encryptedEncoded, Base64.DEFAULT)
+                val json: String
+                try {
+                    json = String(crypto.decrypt(encrypted))
+                } catch (e: IncompatibleDeviceException) {
                     callback.onFailure(
                         CredentialsManagerException(
-                            CredentialsManagerException.Code.MFA_REQUIRED,
-                            error.message
-                                ?: "Multi-factor authentication is required to complete the credential renewal.",
-                            error,
-                            error.mfaRequiredErrorPayload
+                            CredentialsManagerException.Code.INCOMPATIBLE_DEVICE, e
+                        )
+                    )
+                    return@execute
+                } catch (e: CryptoException) {
+                    clearCredentials()
+                    callback.onFailure(
+                        CredentialsManagerException(
+                            CredentialsManagerException.Code.CRYPTO_EXCEPTION, e
                         )
                     )
                     return@execute
                 }
-                val exception = when {
-                    error.isRefreshTokenDeleted || error.isInvalidRefreshToken -> CredentialsManagerException.Code.RENEW_FAILED
-
-                    error.isNetworkError -> CredentialsManagerException.Code.NO_NETWORK
-                    else -> CredentialsManagerException.Code.API_ERROR
+                val bridgeCredentials =
+                    gson.fromJson(json, OptionalCredentials::class.java)
+                val credentials = Credentials(
+                    bridgeCredentials.idToken.orEmpty(),
+                    bridgeCredentials.accessToken.orEmpty(),
+                    bridgeCredentials.type.orEmpty(),
+                    bridgeCredentials.refreshToken,
+                    bridgeCredentials.expiresAt ?: Date(),
+                    bridgeCredentials.scope
+                )
+                val expiresAt = credentials.expiresAt.time
+                val hasEmptyCredentials =
+                    TextUtils.isEmpty(credentials.accessToken) && TextUtils.isEmpty(credentials.idToken)
+                if (hasEmptyCredentials) {
+                    callback.onFailure(CredentialsManagerException.NO_CREDENTIALS)
+                    return@execute
                 }
-                callback.onFailure(
-                    CredentialsManagerException(
-                        exception, error
-                    )
-                )
-                return@execute
-            } catch (exception: RuntimeException) {
-                /**
-                 *  Catching any unexpected runtime errors in the token renewal flow
-                 */
-                Log.e(
-                    TAG,
-                    "Caught unexpected exceptions for token renewal ${exception.stackTraceToString()}"
-                )
-                callback.onFailure(
-                    CredentialsManagerException(
-                        CredentialsManagerException.Code.UNKNOWN_ERROR,
-                        exception
-                    )
-                )
-                return@execute
-            }
-
-            try {
-                saveCredentials(freshCredentials)
-                callback.onSuccess(freshCredentials)
-            } catch (error: CredentialsManagerException) {
-                val exception = CredentialsManagerException(
-                    CredentialsManagerException.Code.STORE_FAILED, error
-                )
-                if (error.cause is IncompatibleDeviceException || error.cause is CryptoException) {
-                    exception.refreshedCredentials = freshCredentials
+                val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
+                val scopeChanged = hasScopeChanged(credentials.scope, scope)
+                if (!forceRefresh && !willAccessTokenExpire && !scopeChanged) {
+                    callback.onSuccess(credentials)
+                    return@execute
                 }
-                callback.onFailure(exception)
+                if (credentials.refreshToken == null) {
+                    callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
+                    return@execute
+                }
+                val tokenType = storage.retrieveString(KEY_TOKEN_TYPE) ?: credentials.type
+                validateDPoPState(tokenType)?.let { dpopError ->
+                    callback.onFailure(dpopError)
+                    return@execute
+                }
+                Log.d(TAG, "Credentials have expired. Renewing them now...")
+                val request = authenticationClient.renewAuth(
+                    credentials.refreshToken
+                )
+
+                request.addParameters(parameters)
+                if (scope != null) {
+                    request.addParameter("scope", scope)
+                }
+
+                for (header in headers) {
+                    request.addHeader(header.key, header.value)
+                }
+
+                val freshCredentials: Credentials
+                try {
+                    val fresh = request.execute()
+                    val expiresAt = fresh.expiresAt.time
+                    val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
+                    if (willAccessTokenExpire) {
+                        val tokenLifetime =
+                            (expiresAt - currentTimeInMillis - minTtl * 1000) / -1000
+                        val wrongTtlException = CredentialsManagerException(
+                            CredentialsManagerException.Code.LARGE_MIN_TTL, String.format(
+                                Locale.getDefault(),
+                                "The lifetime of the renewed Access Token (%d) is less than the minTTL requested (%d). Increase the 'Token Expiration' setting of your Auth0 API in the dashboard, or request a lower minTTL.",
+                                tokenLifetime,
+                                minTtl
+                            )
+                        )
+                        callback.onFailure(wrongTtlException)
+                        return@execute
+                    }
+
+                    val updatedRefreshToken =
+                        if (TextUtils.isEmpty(fresh.refreshToken)) credentials.refreshToken else fresh.refreshToken
+                    freshCredentials = Credentials(
+                        fresh.idToken,
+                        fresh.accessToken,
+                        fresh.type,
+                        updatedRefreshToken,
+                        fresh.expiresAt,
+                        fresh.scope
+                    )
+                } catch (error: AuthenticationException) {
+                    if (error.isMultifactorRequired) {
+                        callback.onFailure(
+                            CredentialsManagerException(
+                                CredentialsManagerException.Code.MFA_REQUIRED,
+                                error.message
+                                    ?: "Multi-factor authentication is required to complete the credential renewal.",
+                                error,
+                                error.mfaRequiredErrorPayload
+                            )
+                        )
+                        return@execute
+                    }
+                    val exception = when {
+                        error.isRefreshTokenDeleted || error.isInvalidRefreshToken -> CredentialsManagerException.Code.RENEW_FAILED
+
+                        error.isNetworkError -> CredentialsManagerException.Code.NO_NETWORK
+                        else -> CredentialsManagerException.Code.API_ERROR
+                    }
+                    callback.onFailure(
+                        CredentialsManagerException(
+                            exception, error
+                        )
+                    )
+                    return@execute
+                }
+
+                try {
+                    saveCredentials(freshCredentials)
+                    callback.onSuccess(freshCredentials)
+                } catch (error: CredentialsManagerException) {
+                    val exception = CredentialsManagerException(
+                        CredentialsManagerException.Code.STORE_FAILED, error
+                    )
+                    if (error.cause is IncompatibleDeviceException || error.cause is CryptoException) {
+                        exception.refreshedCredentials = freshCredentials
+                    }
+                    callback.onFailure(exception)
+                }
             }
         }
     }
@@ -971,130 +946,140 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         callback: Callback<APICredentials, CredentialsManagerException>
     ) {
         serialExecutor.execute {
-            val encryptedEncodedJson = storage.retrieveString(getAPICredentialsKey(audience, scope))
-            //Check if existing api credentials are present and valid
+            runCatchingOnExecutor(callback) {
+                val encryptedEncodedJson =
+                    storage.retrieveString(getAPICredentialsKey(audience, scope))
 
-            var apiCredentialType: String? = null
-            encryptedEncodedJson?.let { encryptedEncoded ->
-                val encrypted = Base64.decode(encryptedEncoded, Base64.DEFAULT)
-                val json: String = try {
-                    String(crypto.decrypt(encrypted))
-                } catch (e: IncompatibleDeviceException) {
+                var apiCredentialType: String? = null
+                encryptedEncodedJson?.let { encryptedEncoded ->
+                    val encrypted = Base64.decode(encryptedEncoded, Base64.DEFAULT)
+                    val json: String = try {
+                        String(crypto.decrypt(encrypted))
+                    } catch (e: IncompatibleDeviceException) {
+                        callback.onFailure(
+                            CredentialsManagerException(
+                                CredentialsManagerException.Code.INCOMPATIBLE_DEVICE,
+                                e
+                            )
+                        )
+                        return@execute
+                    } catch (e: CryptoException) {
+                        clearApiCredentials(audience, scope)
+                        callback.onFailure(
+                            CredentialsManagerException(
+                                CredentialsManagerException.Code.CRYPTO_EXCEPTION,
+                                e
+                            )
+                        )
+                        return@execute
+                    }
+
+                    val apiCredentials = gson.fromJson(json, APICredentials::class.java)
+                    apiCredentialType = apiCredentials.type
+
+                    val expiresAt = apiCredentials.expiresAt.time
+                    val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
+                    val scopeChanged = hasScopeChanged(
+                        apiCredentials.scope, scope,
+                        ignoreOpenid = scope?.contains("openid") == false
+                    )
+                    val hasExpired = hasExpired(apiCredentials.expiresAt.time)
+                    if (!hasExpired && !willAccessTokenExpire && !scopeChanged) {
+                        callback.onSuccess(apiCredentials)
+                        return@execute
+                    }
+                }
+
+                val existingCredentials: Credentials = try {
+                    getExistingCredentials()
+                } catch (exception: CredentialsManagerException) {
+                    callback.onFailure(exception)
+                    return@execute
+                }
+                val refreshToken = existingCredentials.refreshToken
+                if (refreshToken == null) {
+                    callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
+                    return@execute
+                }
+
+                val tokenType =
+                    apiCredentialType ?: storage.retrieveString(KEY_TOKEN_TYPE)
+                    ?: existingCredentials.type
+                validateDPoPState(tokenType)?.let { dpopError ->
+                    callback.onFailure(dpopError)
+                    return@execute
+                }
+
+                val request = authenticationClient.renewAuth(refreshToken, audience, scope)
+                request.addParameters(parameters)
+                for (header in headers) {
+                    request.addHeader(header.key, header.value)
+                }
+
+                val newApiCredentials: APICredentials
+                try {
+                    val newCredentials = request.execute()
+                    val expiresAt = newCredentials.expiresAt.time
+                    val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
+                    if (willAccessTokenExpire) {
+                        val tokenLifetime =
+                            (expiresAt - currentTimeInMillis - minTtl * 1000) / -1000
+                        val wrongTtlException = CredentialsManagerException(
+                            CredentialsManagerException.Code.LARGE_MIN_TTL, String.format(
+                                Locale.getDefault(),
+                                "The lifetime of the renewed Access Token (%d) is less than the minTTL requested (%d). Increase the 'Token Expiration' setting of your Auth0 API in the dashboard, or request a lower minTTL.",
+                                tokenLifetime,
+                                minTtl
+                            )
+                        )
+                        callback.onFailure(wrongTtlException)
+                        return@execute
+                    }
+
+                    val updatedRefreshToken =
+                        if (TextUtils.isEmpty(newCredentials.refreshToken)) refreshToken else newCredentials.refreshToken
+                    newApiCredentials = newCredentials.toAPICredentials()
+                    saveCredentials(
+                        existingCredentials.copy(
+                            refreshToken = updatedRefreshToken,
+                            idToken = newCredentials.idToken
+                        )
+                    )
+                    saveApiCredentials(newApiCredentials, audience, scope)
+                } catch (error: AuthenticationException) {
+                    if (error.isMultifactorRequired) {
+                        callback.onFailure(
+                            CredentialsManagerException(
+                                CredentialsManagerException.Code.MFA_REQUIRED,
+                                error.message
+                                    ?: "Multi-factor authentication is required to complete the credential renewal.",
+                                error,
+                                error.mfaRequiredErrorPayload
+                            )
+                        )
+                        return@execute
+                    }
+                    val exception = when {
+                        error.isRefreshTokenDeleted || error.isInvalidRefreshToken -> CredentialsManagerException.Code.RENEW_FAILED
+                        error.isNetworkError -> CredentialsManagerException.Code.NO_NETWORK
+                        else -> CredentialsManagerException.Code.API_ERROR
+                    }
                     callback.onFailure(
                         CredentialsManagerException(
-                            CredentialsManagerException.Code.INCOMPATIBLE_DEVICE,
-                            e
+                            exception, error
                         )
                     )
                     return@execute
-                } catch (e: CryptoException) {
-                    clearApiCredentials(audience, scope)
-                    callback.onFailure(
-                        CredentialsManagerException(
-                            CredentialsManagerException.Code.CRYPTO_EXCEPTION,
-                            e
-                        )
+                } catch (error: CredentialsManagerException) {
+                    val storeException = CredentialsManagerException(
+                        CredentialsManagerException.Code.STORE_FAILED, error
                     )
+                    callback.onFailure(storeException)
                     return@execute
                 }
 
-                val apiCredentials = gson.fromJson(json, APICredentials::class.java)
-                apiCredentialType = apiCredentials.type
-
-                val expiresAt = apiCredentials.expiresAt.time
-                val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
-                val scopeChanged = hasScopeChanged(
-                    apiCredentials.scope, scope,
-                    ignoreOpenid = scope?.contains("openid") == false
-                )
-                val hasExpired = hasExpired(apiCredentials.expiresAt.time)
-                if (!hasExpired && !willAccessTokenExpire && !scopeChanged) {
-                    callback.onSuccess(apiCredentials)
-                    return@execute
-                }
-            }
-
-            //Check if refresh token exists or not
-            val existingCredentials: Credentials = try {
-                getExistingCredentials()
-            } catch (exception: CredentialsManagerException) {
-                callback.onFailure(exception)
-                return@execute
-            }
-            val refreshToken = existingCredentials.refreshToken
-            if (refreshToken == null) {
-                callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
-                return@execute
-            }
-
-            val tokenType = apiCredentialType ?: storage.retrieveString(KEY_TOKEN_TYPE) ?: existingCredentials.type
-            validateDPoPState(tokenType)?.let { dpopError ->
-                callback.onFailure(dpopError)
-                return@execute
-            }
-
-            val request = authenticationClient.renewAuth(refreshToken, audience, scope)
-            request.addParameters(parameters)
-            for (header in headers) {
-                request.addHeader(header.key, header.value)
-            }
-
-            try {
-                val newCredentials = request.execute()
-                val expiresAt = newCredentials.expiresAt.time
-                val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
-                if (willAccessTokenExpire) {
-                    val tokenLifetime = (expiresAt - currentTimeInMillis - minTtl * 1000) / -1000
-                    val wrongTtlException = CredentialsManagerException(
-                        CredentialsManagerException.Code.LARGE_MIN_TTL, String.format(
-                            Locale.getDefault(),
-                            "The lifetime of the renewed Access Token (%d) is less than the minTTL requested (%d). Increase the 'Token Expiration' setting of your Auth0 API in the dashboard, or request a lower minTTL.",
-                            tokenLifetime,
-                            minTtl
-                        )
-                    )
-                    callback.onFailure(wrongTtlException)
-                    return@execute
-                }
-
-                // non-empty refresh token for refresh token rotation scenarios
-                val updatedRefreshToken =
-                    if (TextUtils.isEmpty(newCredentials.refreshToken)) refreshToken else newCredentials.refreshToken
-                val newApiCredentials = newCredentials.toAPICredentials()
-                saveCredentials(
-                    existingCredentials.copy(
-                        refreshToken = updatedRefreshToken,
-                        idToken = newCredentials.idToken
-                    )
-                )
-                saveApiCredentials(newApiCredentials, audience, scope)
                 callback.onSuccess(newApiCredentials)
-
-            } catch (error: AuthenticationException) {
-                if (error.isMultifactorRequired) {
-                    callback.onFailure(
-                        CredentialsManagerException(
-                            CredentialsManagerException.Code.MFA_REQUIRED,
-                            error.message
-                                ?: "Multi-factor authentication is required to complete the credential renewal.",
-                            error,
-                            error.mfaRequiredErrorPayload
-                        )
-                    )
-                    return@execute
-                }
-                val exception = when {
-                    error.isRefreshTokenDeleted || error.isInvalidRefreshToken -> CredentialsManagerException.Code.RENEW_FAILED
-                    error.isNetworkError -> CredentialsManagerException.Code.NO_NETWORK
-                    else -> CredentialsManagerException.Code.API_ERROR
-                }
-                callback.onFailure(
-                    CredentialsManagerException(
-                        exception, error
-                    )
-                )
             }
-
         }
     }
 
