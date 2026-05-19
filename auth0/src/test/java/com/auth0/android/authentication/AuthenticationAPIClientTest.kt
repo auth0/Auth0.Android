@@ -244,7 +244,7 @@ public class AuthenticationAPIClientTest {
         val auth0 = auth0
         val client = AuthenticationAPIClient(auth0)
         val registrationResponse = client.signupWithPasskey(
-            mock(),
+            UserData(email = "test@example.com"),
             MY_CONNECTION,
             "testOrganization"
         )
