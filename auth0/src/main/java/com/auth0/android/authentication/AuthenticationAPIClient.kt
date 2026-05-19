@@ -333,7 +333,6 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         realm: String? = null,
         organization: String? = null
     ): Request<PasskeyRegistrationChallenge, AuthenticationException> {
-        val user = gson.toJsonTree(userData)
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(PASSKEY_PATH)
             .addPathSegment(REGISTER_PATH)
@@ -351,7 +350,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             )
         val post = factory.post(url.toString(), passkeyRegistrationChallengeAdapter)
             .addParameters(params) as BaseRequest<PasskeyRegistrationChallenge, AuthenticationException>
-        post.addParameter(USER_PROFILE_KEY, user)
+        post.addParameter(USER_PROFILE_KEY, gson.toJsonTree(userData.toUserProfile()))
+        userData.userMetadata?.let { post.addParameter(USER_METADATA_KEY, it) }
         return post
     }
 

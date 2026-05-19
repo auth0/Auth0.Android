@@ -24,4 +24,6 @@ public data class UserData(
     @field:SerializedName("nickname") val nickName: String? = null,
     @field:SerializedName("picture") val picture: String? = null,
     @field:SerializedName("user_metadata") val userMetadata: Map<String, String>? = null,
-)
+) {
+    internal fun toUserProfile(): UserData = copy(userMetadata = null)
+}

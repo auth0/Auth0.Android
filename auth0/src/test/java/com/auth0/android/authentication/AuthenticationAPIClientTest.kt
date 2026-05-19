@@ -300,9 +300,10 @@ public class AuthenticationAPIClientTest {
         assertThat(userProfile, Matchers.hasEntry("family_name", "User"))
         assertThat(userProfile, Matchers.hasEntry("nickname", "testy"))
         assertThat(userProfile, Matchers.hasEntry("picture", "https://example.com/photo.png"))
-        assertThat(userProfile, Matchers.hasKey("user_metadata"))
+        assertThat(userProfile, Matchers.not(Matchers.hasKey("user_metadata")))
+        assertThat(body, Matchers.hasKey("user_metadata"))
         @Suppress("UNCHECKED_CAST")
-        val metadata = userProfile["user_metadata"] as Map<String, String>
+        val metadata = body["user_metadata"] as Map<String, String>
         assertThat(metadata, Matchers.hasEntry("key1", "value1"))
         assertThat(registrationResponse, Matchers.`is`(Matchers.notNullValue()))
     }
