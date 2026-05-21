@@ -1845,6 +1845,30 @@ Use the Auth0 My Account API to manage the current user's account.
 
 To call the My Account API, you need an access token issued specifically for this API, including any required scopes for the operations you want to perform. See [API credentials [EA]](#api-credentials-ea) to learn how to obtain one.
 
+```kotlin
+val client = MyAccountAPIClient(auth0, accessToken)
+```
+
+#### Using DPoP
+
+If your application uses [DPoP (Demonstrating Proof of Possession)](https://auth0.com/docs/get-started/authentication-and-authorization-flow/call-your-api-using-the-authorization-code-flow-with-dpop), you can enable it on the My Account API client:
+
+```kotlin
+val client = MyAccountAPIClient(auth0, accessToken).useDPoP(context)
+```
+
+When DPoP is enabled, the client will automatically:
+- Use the `DPoP` authorization scheme instead of `Bearer`
+- Include a DPoP proof header on every request
+
+<details>
+    <summary>Using Java</summary>
+
+```java
+MyAccountAPIClient client = new MyAccountAPIClient(auth0, accessToken).useDPoP(context);
+```
+</details>
+
 ### Enroll a new passkey
 
 **Scopes required:** `create:me:authentication_methods`
