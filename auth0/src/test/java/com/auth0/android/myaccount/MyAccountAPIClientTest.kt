@@ -346,6 +346,53 @@ public class MyAccountAPIClientTest {
     }
 
     @Test
+    public fun `getAuthenticationMethods should include type query parameter when specified`() {
+        val callback = MockMyAccountCallback<List<AuthenticationMethod>>()
+        client.getAuthenticationMethods(AuthenticationMethodType.PASSKEY).start(callback)
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods?type=passkey"))
+        assertThat(request.getHeader("Authorization"), Matchers.equalTo("Bearer $ACCESS_TOKEN"))
+        assertThat(request.method, Matchers.equalTo("GET"))
+    }
+
+    @Test
+    public fun `getAuthenticationMethods should not include type query parameter when null`() {
+        val callback = MockMyAccountCallback<List<AuthenticationMethod>>()
+        client.getAuthenticationMethods(null).start(callback)
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods"))
+        assertThat(request.method, Matchers.equalTo("GET"))
+    }
+
+    @Test
+    public fun `getAuthenticationMethods should include correct type value for each AuthenticationMethodType`() {
+        val typesToExpected = mapOf(
+            AuthenticationMethodType.PHONE to "phone",
+            AuthenticationMethodType.EMAIL to "email",
+            AuthenticationMethodType.TOTP to "totp",
+            AuthenticationMethodType.PUSH to "push-notification",
+            AuthenticationMethodType.RECOVERY_CODE to "recovery-code",
+            AuthenticationMethodType.PASSWORD to "password",
+            AuthenticationMethodType.WEBAUTHN_PLATFORM to "webauthn-platform",
+            AuthenticationMethodType.WEBAUTHN_ROAMING to "webauthn-roaming"
+        )
+
+        for ((type, expected) in typesToExpected) {
+            val callback = MockMyAccountCallback<List<AuthenticationMethod>>()
+            client.getAuthenticationMethods(type).start(callback)
+
+            val request = mockAPI.takeRequest()
+            assertThat(
+                "type=$expected should be in query",
+                request.path,
+                Matchers.equalTo("/me/v1/authentication-methods?type=$expected")
+            )
+        }
+    }
+
+    @Test
     public fun `getAuthenticationMethodById should build correct URL and Authorization header`() {
         val callback = MockMyAccountCallback<AuthenticationMethod>()
         val methodId = "email|12345"

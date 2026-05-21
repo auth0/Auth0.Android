@@ -2052,7 +2052,7 @@ myAccountClient.getFactors()
 ### Get All Enrolled Authentication Methods
 **Scopes required:** `read:me:authentication_methods`
 
-Retrieves a detailed list of all the authentication methods that the current user has already enrolled in.
+Retrieves a detailed list of all the authentication methods that the current user has already enrolled in. You can optionally filter the results by type using `AuthenticationMethodType`.
 
 
 **Prerequisites:**
@@ -2060,10 +2060,20 @@ Retrieves a detailed list of all the authentication methods that the current use
 The user must have one or more authentication methods already enrolled.
 
 ```kotlin
+// Get all authentication methods
 myAccountClient.getAuthenticationMethods()
     .start(object : Callback<List<AuthenticationMethod>, MyAccountException> {
-        override fun onSuccess(result: AuthenticationMethods) {
-            // List of enrolled methods in result.authenticationMethods
+        override fun onSuccess(result: List<AuthenticationMethod>) {
+            // List of enrolled methods
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+
+// Get authentication methods filtered by type
+myAccountClient.getAuthenticationMethods(AuthenticationMethodType.PASSKEY)
+    .start(object : Callback<List<AuthenticationMethod>, MyAccountException> {
+        override fun onSuccess(result: List<AuthenticationMethod>) {
+            // List of enrolled passkey methods only
         }
         override fun onFailure(error: MyAccountException) { }
     })
@@ -2072,11 +2082,23 @@ myAccountClient.getAuthenticationMethods()
     <summary>Using Java</summary>
 
 ```java
+// Get all authentication methods
 myAccountClient.getAuthenticationMethods()
     .start(new Callback<List<AuthenticationMethod>, MyAccountException>() {
         @Override
-        public void onSuccess(AuthenticationMethods result) {
-            // List of enrolled methods in result.getAuthenticationMethods()
+        public void onSuccess(List<AuthenticationMethod> result) {
+            // List of enrolled methods
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+
+// Get authentication methods filtered by type
+myAccountClient.getAuthenticationMethods(AuthenticationMethodType.PASSKEY)
+    .start(new Callback<List<AuthenticationMethod>, MyAccountException>() {
+        @Override
+        public void onSuccess(List<AuthenticationMethod> result) {
+            // List of enrolled passkey methods only
         }
         @Override
         public void onFailure(@NonNull MyAccountException error) { }

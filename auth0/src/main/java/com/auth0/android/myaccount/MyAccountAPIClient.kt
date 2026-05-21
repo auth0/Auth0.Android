@@ -24,7 +24,6 @@ import com.auth0.android.result.PasskeyEnrollmentChallenge
 import com.auth0.android.result.PasskeyRegistrationChallenge
 import com.auth0.android.result.RecoveryCodeEnrollmentChallenge
 import com.auth0.android.result.TotpEnrollmentChallenge
-
 import com.google.gson.Gson
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -256,6 +255,9 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
      * Please reach out to Auth0 support to get it enabled for your tenant.
      *
+     * ## Scopes Required
+     *
+     * `read:me:authentication_methods`
      *
      * ## Usage
      *
@@ -263,7 +265,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
      * val apiClient = MyAccountAPIClient(auth0, accessToken)
      *
-     *
+     * // Get all authentication methods
      * apiClient.getAuthenticationMethods()
      *     .start(object : Callback<List<AuthenticationMethod>, MyAccountException> {
      *         override fun onSuccess(result: List<AuthenticationMethod>) {
@@ -274,11 +276,30 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      *             Log.e("MyApp", "Failed with: ${error.message}")
      *         }
      *     })
+     *
+     * // Get authentication methods filtered by type
+     * apiClient.getAuthenticationMethods(AuthenticationMethodType.PASSKEY)
+     *     .start(object : Callback<List<AuthenticationMethod>, MyAccountException> {
+     *         override fun onSuccess(result: List<AuthenticationMethod>) {
+     *             Log.d("MyApp", "Passkey methods: $result")
+     *         }
+     *
+     *         override fun onFailure(error: MyAccountException) {
+     *             Log.e("MyApp", "Failed with: ${error.message}")
+     *         }
+     *     })
      * ```
      *
+     * @param type Optional filter to retrieve only authentication methods of a specific type.
+     * @return A request to get the list of authentication methods.
+     *
      */
-    public fun getAuthenticationMethods(): Request<List<AuthenticationMethod>, MyAccountException> {
-        val url = getDomainUrlBuilder().addPathSegment(AUTHENTICATION_METHODS).build()
+    @JvmOverloads
+    public fun getAuthenticationMethods(type: AuthenticationMethodType? = null): Request<List<AuthenticationMethod>, MyAccountException> {
+        val url = getDomainUrlBuilder().apply {
+            addPathSegment(AUTHENTICATION_METHODS)
+            type?.let { addQueryParameter(TYPE_KEY, it.type) }
+        }.build()
 
         val listAdapter = object : JsonAdapter<List<AuthenticationMethod>> {
             override fun fromJson(
