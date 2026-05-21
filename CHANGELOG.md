@@ -1,5 +1,12 @@
 # Change Log
 
+## [3.17.0](https://github.com/auth0/Auth0.Android/tree/3.17.0) (2026-05-21)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.16.0...3.17.0)
+
+**Added**
+- feat : Added additional properties support to passkeys signup API [\#969](https://github.com/auth0/Auth0.Android/pull/969) ([pmathew92](https://github.com/pmathew92))
+- feat :Add partial support for PAR auth flow [\#967](https://github.com/auth0/Auth0.Android/pull/967) ([pmathew92](https://github.com/pmathew92))
+
 ## [3.16.0](https://github.com/auth0/Auth0.Android/tree/3.16.0) (2026-04-27)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.15.0...3.16.0)
 

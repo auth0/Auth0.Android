@@ -2800,8 +2800,19 @@ To sign up a user with passkey
 ```kotlin
 // Using Coroutines 
 try {
+    val userData = UserData(
+        email = "user@example.com",
+        phoneNumber = "+11234567890",
+        name = "John Doe",
+        givenName = "John",
+        familyName = "Doe",
+        nickName = "johnny",
+        picture = "https://example.com/photo.png",
+        userMetadata = mapOf("signup_source" to "android_app")
+    )
+
     val challenge = authenticationApiClient.signupWithPasskey(
-        "{user-data}",
+        userData,
         "{realm}",
         "{organization-id}"
     ).await()
@@ -2831,7 +2842,19 @@ try {
   <summary>Using Java</summary>
 
 ```java
- authenticationAPIClient.signupWithPasskey("{user-data}", "{realm}","{organization-id}")
+ UserData userData = new UserData(
+    "user@example.com",    // email
+    "+11234567890",        // phoneNumber
+    null,                  // userName
+    "John Doe",            // name
+    "John",                // givenName
+    "Doe",                 // familyName
+    "johnny",              // nickName
+    "https://example.com/photo.png", // picture
+    Map.of("signup_source", "android_app") // userMetadata
+ );
+
+ authenticationAPIClient.signupWithPasskey(userData, "{realm}","{organization-id}")
         .start(new Callback<PasskeyRegistrationChallenge, AuthenticationException>() {
     @Override
     public void onSuccess(PasskeyRegistrationChallenge result) {

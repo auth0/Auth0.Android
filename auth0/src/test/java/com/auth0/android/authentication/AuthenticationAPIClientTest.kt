@@ -13,6 +13,7 @@ import com.auth0.android.provider.JwtTestUtils
 import com.auth0.android.request.HttpMethod
 import com.auth0.android.request.NetworkingClient
 import com.auth0.android.request.PublicKeyCredentials
+import com.auth0.android.request.UserData
 import com.auth0.android.request.RequestOptions
 import com.auth0.android.request.ServerResponse
 import com.auth0.android.request.internal.RequestFactory
@@ -243,7 +244,7 @@ public class AuthenticationAPIClientTest {
         val auth0 = auth0
         val client = AuthenticationAPIClient(auth0)
         val registrationResponse = client.signupWithPasskey(
-            mock(),
+            UserData(email = "test@example.com"),
             MY_CONNECTION,
             "testOrganization"
         )
@@ -262,6 +263,49 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.hasKey("user_profile"))
         assertThat(registrationResponse, Matchers.`is`(Matchers.notNullValue()))
         assertThat(registrationResponse.authSession, Matchers.comparesEqualTo(SESSION_ID))
+    }
+
+    @Test
+    public fun shouldSignupWithPasskeyWithAllUserDataFields() {
+        mockAPI.willReturnSuccessfulPasskeyRegistration()
+        val auth0 = auth0
+        val client = AuthenticationAPIClient(auth0)
+        val userData = UserData(
+            email = "test@example.com",
+            phoneNumber = "+1234567890",
+            userName = "testuser",
+            name = "Test User",
+            givenName = "Test",
+            familyName = "User",
+            nickName = "testy",
+            picture = "https://example.com/photo.png",
+            userMetadata = mapOf("key1" to "value1")
+        )
+        val registrationResponse = client.signupWithPasskey(
+            userData,
+            MY_CONNECTION,
+            "testOrganization"
+        ).execute()
+        val request = mockAPI.takeRequest()
+        val body = bodyFromRequest<Any>(request)
+        assertThat(request.path, Matchers.equalTo("/passkey/register"))
+        assertThat(body, Matchers.hasKey("user_profile"))
+        @Suppress("UNCHECKED_CAST")
+        val userProfile = body["user_profile"] as Map<String, Any>
+        assertThat(userProfile, Matchers.hasEntry("email", "test@example.com"))
+        assertThat(userProfile, Matchers.hasEntry("phone_number", "+1234567890"))
+        assertThat(userProfile, Matchers.hasEntry("username", "testuser"))
+        assertThat(userProfile, Matchers.hasEntry("name", "Test User"))
+        assertThat(userProfile, Matchers.hasEntry("given_name", "Test"))
+        assertThat(userProfile, Matchers.hasEntry("family_name", "User"))
+        assertThat(userProfile, Matchers.hasEntry("nickname", "testy"))
+        assertThat(userProfile, Matchers.hasEntry("picture", "https://example.com/photo.png"))
+        assertThat(userProfile, Matchers.not(Matchers.hasKey("user_metadata")))
+        assertThat(body, Matchers.hasKey("user_metadata"))
+        @Suppress("UNCHECKED_CAST")
+        val metadata = body["user_metadata"] as Map<String, String>
+        assertThat(metadata, Matchers.hasEntry("key1", "value1"))
+        assertThat(registrationResponse, Matchers.`is`(Matchers.notNullValue()))
     }
 
     @Test
