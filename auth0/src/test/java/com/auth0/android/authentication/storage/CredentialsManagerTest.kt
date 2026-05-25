@@ -2445,6 +2445,84 @@ public class CredentialsManagerTest {
         MatcherAssert.assertThat(exception, Is.`is`(CredentialsManagerException.DPOP_KEY_MISSING))
     }
 
+    // Verifies the outer runCatchingOnExecutor safety net in getCredentials.
+    // The IllegalStateException is thrown from storage.retrieveString() which is outside any inner
+    // try/catch block — only the outer catch(Throwable) in runCatchingOnExecutor can handle it.
+    @Test
+    public fun shouldCatchUnexpectedExceptionFromStorageOnGetCredentials() {
+        val error = IllegalStateException("storage corrupted")
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenThrow(error)
+        manager.getCredentials(callback)
+        verify(callback).onFailure(exceptionCaptor.capture())
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exception, Is.`is`(CredentialsManagerException.UNKNOWN_ERROR))
+        MatcherAssert.assertThat(exception.cause, Is.`is`(error))
+    }
+
+    // Same as above but via the coroutine path (awaitCredentials -> suspendCancellableCoroutine).
+    // Verifies that the outer catch routes the error through callback.onFailure which then
+    // resumes the continuation with the exception.
+    @Test
+    @ExperimentalCoroutinesApi
+    public fun shouldCatchUnexpectedExceptionFromStorageOnAwaitCredentials(): Unit = runTest {
+        val error = IllegalStateException("storage corrupted")
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenThrow(error)
+        val exception = assertThrows(CredentialsManagerException::class.java) {
+            runBlocking { manager.awaitCredentials() }
+        }
+        MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exception, Is.`is`(CredentialsManagerException.UNKNOWN_ERROR))
+        MatcherAssert.assertThat(exception.cause, Is.`is`(error))
+    }
+
+    // Verifies the outer runCatchingOnExecutor safety net in getSsoCredentials.
+    // The exception is thrown from storage before any inner try/catch is reached.
+    @Test
+    public fun shouldCatchUnexpectedExceptionFromStorageOnGetSsoCredentials() {
+        val error = IllegalStateException("storage corrupted")
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenThrow(error)
+        manager.getSsoCredentials(ssoCallback)
+        verify(ssoCallback).onFailure(exceptionCaptor.capture())
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exception, Is.`is`(CredentialsManagerException.UNKNOWN_ERROR))
+        MatcherAssert.assertThat(exception.cause, Is.`is`(error))
+    }
+
+    // Verifies the outer runCatchingOnExecutor safety net in getApiCredentials.
+    // The exception is thrown from storage before any inner try/catch is reached.
+    @Test
+    public fun shouldCatchUnexpectedExceptionFromStorageOnGetApiCredentials() {
+        val error = IllegalStateException("storage corrupted")
+        Mockito.`when`(storage.retrieveString("audience")).thenThrow(error)
+        manager.getApiCredentials("audience", callback = apiCredentialsCallback)
+        verify(apiCredentialsCallback).onFailure(exceptionCaptor.capture())
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exception, Is.`is`(CredentialsManagerException.UNKNOWN_ERROR))
+        MatcherAssert.assertThat(exception.cause, Is.`is`(error))
+    }
+
+    // Verifies the outer runCatchingOnExecutor safety net during API credential renewal.
+    // NullPointerException from request.execute() is not an AuthenticationException, so it
+    // escapes the inner catch(AuthenticationException) block. Only the outer catch(Throwable)
+    // in runCatchingOnExecutor handles it.
+    @Test
+    public fun shouldCatchUnexpectedExceptionDuringApiCredentialRenewal() {
+        val error = NullPointerException("unexpected null")
+        Mockito.`when`(storage.retrieveString("audience")).thenReturn(null)
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
+        Mockito.`when`(client.renewAuth("refreshToken", "audience", null)).thenReturn(request)
+        Mockito.`when`(request.execute()).thenThrow(error)
+        manager.getApiCredentials("audience", callback = apiCredentialsCallback)
+        verify(apiCredentialsCallback).onFailure(exceptionCaptor.capture())
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(exception, Is.`is`(CredentialsManagerException.UNKNOWN_ERROR))
+        MatcherAssert.assertThat(exception.cause, Is.`is`(error))
+    }
+
     @After
     public fun tearDown() {
         DPoPUtil.keyStore = DPoPKeyStore()
