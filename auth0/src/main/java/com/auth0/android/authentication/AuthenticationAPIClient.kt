@@ -6,6 +6,7 @@ import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
 import com.auth0.android.authentication.mfa.MfaApiClient
+import com.auth0.android.authentication.request.CustomTokenExchangeOptions
 import com.auth0.android.dpop.DPoP
 import com.auth0.android.dpop.DPoPException
 import com.auth0.android.dpop.SenderConstraining
@@ -823,9 +824,15 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     public fun customTokenExchange(
         subjectTokenType: String,
         subjectToken: String,
-        organization: String? = null
+        organization: String? = null,
+        customTokenExchangeOptions: CustomTokenExchangeOptions? = null
     ): AuthenticationRequest {
-        return tokenExchange(subjectTokenType, subjectToken, organization)
+        return tokenExchange(
+            subjectTokenType,
+            subjectToken,
+            organization,
+            customTokenExchangeOptions
+        )
     }
 
     /**
@@ -1108,7 +1115,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     private fun tokenExchange(
         subjectTokenType: String,
         subjectToken: String,
-        organization: String? = null
+        organization: String? = null,
+        customTokenExchangeOptions: CustomTokenExchangeOptions? = null
     ): AuthenticationRequest {
         val parameters = ParameterBuilder.newAuthenticationBuilder().apply {
             setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
@@ -1116,6 +1124,10 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             set(SUBJECT_TOKEN_KEY, subjectToken)
             organization?.let {
                 set(ORGANIZATION_KEY, it)
+            }
+            customTokenExchangeOptions?.let {
+                set(ACTOR_TOKEN_KEY, it.actorToken)
+                set(ACTOR_TOKEN_TYPE_KEY, it.actorTokenType)
             }
         }.asDictionary()
         return loginWithToken(parameters)
@@ -1150,7 +1162,9 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val AUTHENTICATOR_ID_KEY = "authenticator_id"
         private const val RECOVERY_CODE_KEY = "recovery_code"
         private const val SUBJECT_TOKEN_KEY = "subject_token"
+        private const val ACTOR_TOKEN_KEY = "actor_token"
         private const val SUBJECT_TOKEN_TYPE_KEY = "subject_token_type"
+        private const val ACTOR_TOKEN_TYPE_KEY = "actor_token_type"
         private const val ORGANIZATION_KEY = "organization"
         private const val USER_METADATA_KEY = "user_metadata"
         private const val AUTH_SESSION_KEY = "auth_session"
@@ -1172,7 +1186,6 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val HEADER_AUTHORIZATION = "Authorization"
         private const val WELL_KNOWN_PATH = ".well-known"
         private const val JWKS_FILE_PATH = "jwks.json"
-        private const val TAG = "AuthenticationAPIClient"
         private fun createErrorAdapter(): ErrorAdapter<AuthenticationException> {
             val mapAdapter = forMap(GsonProvider.gson)
             return object : ErrorAdapter<AuthenticationException> {
