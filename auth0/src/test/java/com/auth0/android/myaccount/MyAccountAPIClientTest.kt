@@ -1,6 +1,11 @@
 package com.auth0.android.myaccount
 
+import android.content.Context
 import com.auth0.android.Auth0
+import com.auth0.android.dpop.DPoPKeyStore
+import com.auth0.android.dpop.DPoPUtil
+import com.auth0.android.dpop.FakeECPrivateKey
+import com.auth0.android.dpop.FakeECPublicKey
 import com.auth0.android.request.PublicKeyCredentials
 import com.auth0.android.request.Response
 import com.auth0.android.result.AuthenticationMethod
@@ -18,6 +23,7 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.whenever
 import okhttp3.mockwebserver.RecordedRequest
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers
@@ -36,11 +42,17 @@ public class MyAccountAPIClientTest {
     private lateinit var client: MyAccountAPIClient
     private lateinit var gson: Gson
     private lateinit var mockAPI: MyAccountAPIMockServer
+    private lateinit var mockKeyStore: DPoPKeyStore
+    private lateinit var mockContext: Context
 
     @Before
     public fun setUp() {
         mockAPI = MyAccountAPIMockServer()
         MockitoAnnotations.openMocks(this)
+        mockKeyStore = mock()
+        mockContext = mock()
+        whenever(mockContext.applicationContext).thenReturn(mockContext)
+        DPoPUtil.keyStore = mockKeyStore
         gson = GsonBuilder().serializeNulls().create()
         client = MyAccountAPIClient(auth0, ACCESS_TOKEN)
     }
@@ -346,6 +358,53 @@ public class MyAccountAPIClientTest {
     }
 
     @Test
+    public fun `getAuthenticationMethods should include type query parameter when specified`() {
+        val callback = MockMyAccountCallback<List<AuthenticationMethod>>()
+        client.getAuthenticationMethods(AuthenticationMethodType.PASSKEY).start(callback)
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods?type=passkey"))
+        assertThat(request.getHeader("Authorization"), Matchers.equalTo("Bearer $ACCESS_TOKEN"))
+        assertThat(request.method, Matchers.equalTo("GET"))
+    }
+
+    @Test
+    public fun `getAuthenticationMethods should not include type query parameter when null`() {
+        val callback = MockMyAccountCallback<List<AuthenticationMethod>>()
+        client.getAuthenticationMethods(null).start(callback)
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods"))
+        assertThat(request.method, Matchers.equalTo("GET"))
+    }
+
+    @Test
+    public fun `getAuthenticationMethods should include correct type value for each AuthenticationMethodType`() {
+        val typesToExpected = mapOf(
+            AuthenticationMethodType.PHONE to "phone",
+            AuthenticationMethodType.EMAIL to "email",
+            AuthenticationMethodType.TOTP to "totp",
+            AuthenticationMethodType.PUSH to "push-notification",
+            AuthenticationMethodType.RECOVERY_CODE to "recovery-code",
+            AuthenticationMethodType.PASSWORD to "password",
+            AuthenticationMethodType.WEBAUTHN_PLATFORM to "webauthn-platform",
+            AuthenticationMethodType.WEBAUTHN_ROAMING to "webauthn-roaming"
+        )
+
+        for ((type, expected) in typesToExpected) {
+            val callback = MockMyAccountCallback<List<AuthenticationMethod>>()
+            client.getAuthenticationMethods(type).start(callback)
+
+            val request = mockAPI.takeRequest()
+            assertThat(
+                "type=$expected should be in query",
+                request.path,
+                Matchers.equalTo("/me/v1/authentication-methods?type=$expected")
+            )
+        }
+    }
+
+    @Test
     public fun `getAuthenticationMethodById should build correct URL and Authorization header`() {
         val callback = MockMyAccountCallback<AuthenticationMethod>()
         val methodId = "email|12345"
@@ -483,6 +542,101 @@ public class MyAccountAPIClientTest {
         assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods"))
         assertThat(request.method, Matchers.equalTo("POST"))
         assertThat(body, Matchers.hasEntry("type", "push-notification" as Any))
+    }
+
+    // DPoP tests
+
+    @Test
+    public fun `should use Bearer authorization header when DPoP is not enabled`() {
+        val callback = MockMyAccountCallback<List<Factor>>()
+        client.getFactors().start(callback)
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("Authorization"), Matchers.equalTo("Bearer $ACCESS_TOKEN"))
+        assertThat(request.getHeader("DPoP"), Matchers.nullValue())
+    }
+
+    @Test
+    public fun `should use DPoP authorization header when DPoP is enabled`() {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
+
+        val dpopClient = MyAccountAPIClient(auth0, ACCESS_TOKEN).useDPoP(mockContext)
+        val callback = MockMyAccountCallback<List<Factor>>()
+        dpopClient.getFactors().start(callback)
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("Authorization"), Matchers.equalTo("DPoP $ACCESS_TOKEN"))
+        assertThat(request.getHeader("DPoP"), Matchers.notNullValue())
+    }
+
+    @Test
+    public fun `should include DPoP proof header on POST requests when DPoP is enabled`() {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
+
+        val dpopClient = MyAccountAPIClient(auth0, ACCESS_TOKEN).useDPoP(mockContext)
+        val callback = MockMyAccountCallback<EnrollmentChallenge>()
+        dpopClient.enrollEmail("test@example.com").start(callback)
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("Authorization"), Matchers.equalTo("DPoP $ACCESS_TOKEN"))
+        assertThat(request.getHeader("DPoP"), Matchers.notNullValue())
+        assertThat(request.method, Matchers.equalTo("POST"))
+    }
+
+    @Test
+    public fun `should not include DPoP proof header when DPoP is not enabled`() {
+        val callback = MockMyAccountCallback<EnrollmentChallenge>()
+        client.enrollEmail("test@example.com").start(callback)
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("Authorization"), Matchers.equalTo("Bearer $ACCESS_TOKEN"))
+        assertThat(request.getHeader("DPoP"), Matchers.nullValue())
+    }
+
+    @Test
+    public fun `should not include DPoP proof header when DPoP is enabled but no key pair exists`() {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(false)
+
+        val dpopClient = MyAccountAPIClient(auth0, ACCESS_TOKEN).useDPoP(mockContext)
+        val callback = MockMyAccountCallback<List<Factor>>()
+        dpopClient.getFactors().start(callback)
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("Authorization"), Matchers.equalTo("DPoP $ACCESS_TOKEN"))
+        assertThat(request.getHeader("DPoP"), Matchers.nullValue())
+    }
+
+    @Test
+    public fun `should use DPoP authorization header on PATCH requests when DPoP is enabled`() {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
+
+        val dpopClient = MyAccountAPIClient(auth0, ACCESS_TOKEN).useDPoP(mockContext)
+        val callback = MockMyAccountCallback<AuthenticationMethod>()
+        dpopClient.updateAuthenticationMethodById("method|123", authenticationMethodName = "Test")
+            .start(callback)
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("Authorization"), Matchers.equalTo("DPoP $ACCESS_TOKEN"))
+        assertThat(request.getHeader("DPoP"), Matchers.notNullValue())
+        assertThat(request.method, Matchers.equalTo("PATCH"))
+    }
+
+    @Test
+    public fun `should use DPoP authorization header on DELETE requests when DPoP is enabled`() {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
+
+        val dpopClient = MyAccountAPIClient(auth0, ACCESS_TOKEN).useDPoP(mockContext)
+        val callback = MockMyAccountCallback<Void?>()
+        dpopClient.deleteAuthenticationMethod("method|123").start(callback)
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("Authorization"), Matchers.equalTo("DPoP $ACCESS_TOKEN"))
+        assertThat(request.getHeader("DPoP"), Matchers.notNullValue())
+        assertThat(request.method, Matchers.equalTo("DELETE"))
     }
 
     private fun <T> bodyFromRequest(request: RecordedRequest): Map<String, T> {

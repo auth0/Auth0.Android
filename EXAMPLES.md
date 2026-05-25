@@ -1845,6 +1845,30 @@ Use the Auth0 My Account API to manage the current user's account.
 
 To call the My Account API, you need an access token issued specifically for this API, including any required scopes for the operations you want to perform. See [API credentials [EA]](#api-credentials-ea) to learn how to obtain one.
 
+```kotlin
+val client = MyAccountAPIClient(auth0, accessToken)
+```
+
+#### Using DPoP
+
+If your application uses [DPoP (Demonstrating Proof of Possession)](https://auth0.com/docs/get-started/authentication-and-authorization-flow/call-your-api-using-the-authorization-code-flow-with-dpop), you can enable it on the My Account API client:
+
+```kotlin
+val client = MyAccountAPIClient(auth0, accessToken).useDPoP(context)
+```
+
+When DPoP is enabled, the client will automatically:
+- Use the `DPoP` authorization scheme instead of `Bearer`
+- Include a DPoP proof header on every request
+
+<details>
+    <summary>Using Java</summary>
+
+```java
+MyAccountAPIClient client = new MyAccountAPIClient(auth0, accessToken).useDPoP(context);
+```
+</details>
+
 ### Enroll a new passkey
 
 **Scopes required:** `create:me:authentication_methods`
@@ -2052,7 +2076,7 @@ myAccountClient.getFactors()
 ### Get All Enrolled Authentication Methods
 **Scopes required:** `read:me:authentication_methods`
 
-Retrieves a detailed list of all the authentication methods that the current user has already enrolled in.
+Retrieves a detailed list of all the authentication methods that the current user has already enrolled in. You can optionally filter the results by type using `AuthenticationMethodType`.
 
 
 **Prerequisites:**
@@ -2060,10 +2084,20 @@ Retrieves a detailed list of all the authentication methods that the current use
 The user must have one or more authentication methods already enrolled.
 
 ```kotlin
+// Get all authentication methods
 myAccountClient.getAuthenticationMethods()
     .start(object : Callback<List<AuthenticationMethod>, MyAccountException> {
-        override fun onSuccess(result: AuthenticationMethods) {
-            // List of enrolled methods in result.authenticationMethods
+        override fun onSuccess(result: List<AuthenticationMethod>) {
+            // List of enrolled methods
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+
+// Get authentication methods filtered by type
+myAccountClient.getAuthenticationMethods(AuthenticationMethodType.PASSKEY)
+    .start(object : Callback<List<AuthenticationMethod>, MyAccountException> {
+        override fun onSuccess(result: List<AuthenticationMethod>) {
+            // List of enrolled passkey methods only
         }
         override fun onFailure(error: MyAccountException) { }
     })
@@ -2072,11 +2106,23 @@ myAccountClient.getAuthenticationMethods()
     <summary>Using Java</summary>
 
 ```java
+// Get all authentication methods
 myAccountClient.getAuthenticationMethods()
     .start(new Callback<List<AuthenticationMethod>, MyAccountException>() {
         @Override
-        public void onSuccess(AuthenticationMethods result) {
-            // List of enrolled methods in result.getAuthenticationMethods()
+        public void onSuccess(List<AuthenticationMethod> result) {
+            // List of enrolled methods
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+
+// Get authentication methods filtered by type
+myAccountClient.getAuthenticationMethods(AuthenticationMethodType.PASSKEY)
+    .start(new Callback<List<AuthenticationMethod>, MyAccountException>() {
+        @Override
+        public void onSuccess(List<AuthenticationMethod> result) {
+            // List of enrolled passkey methods only
         }
         @Override
         public void onFailure(@NonNull MyAccountException error) { }

@@ -1,10 +1,13 @@
 package com.auth0.android.myaccount
 
+import android.content.Context
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
 import com.auth0.android.authentication.ParameterBuilder
+import com.auth0.android.dpop.DPoP
+import com.auth0.android.dpop.SenderConstraining
 import com.auth0.android.request.ErrorAdapter
 import com.auth0.android.request.JsonAdapter
 import com.auth0.android.request.PublicKeyCredentials
@@ -24,7 +27,6 @@ import com.auth0.android.result.PasskeyEnrollmentChallenge
 import com.auth0.android.result.PasskeyRegistrationChallenge
 import com.auth0.android.result.RecoveryCodeEnrollmentChallenge
 import com.auth0.android.result.TotpEnrollmentChallenge
-
 import com.google.gson.Gson
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -52,7 +54,12 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
     private val accessToken: String,
     private val factory: RequestFactory<MyAccountException>,
     private val gson: Gson
-) {
+) : SenderConstraining<MyAccountAPIClient> {
+
+    private var dPoP: DPoP? = null
+
+    private val authorizationHeader: String
+        get() = if (dPoP != null) "DPoP $accessToken" else "Bearer $accessToken"
 
     /**
      * Creates a new MyAccountAPI client instance.
@@ -74,6 +81,25 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
         RequestFactory<MyAccountException>(auth0.networkingClient, createErrorAdapter()),
         GsonProvider.gson
     )
+
+    /**
+     * Enable DPoP (Demonstrating Proof of Possession) for this client.
+     *
+     * When enabled, requests will include a DPoP proof header and the Authorization header
+     * will use the "DPoP" scheme instead of "Bearer".
+     *
+     * Example usage:
+     * ```kotlin
+     * val client = MyAccountAPIClient(auth0, accessToken).useDPoP(context)
+     * ```
+     *
+     * @param context the Android context
+     * @return this client instance for chaining
+     */
+    override fun useDPoP(context: Context): MyAccountAPIClient {
+        dPoP = DPoP(context)
+        return this
+    }
 
 
     /**
@@ -171,9 +197,9 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
                     )
                 }
             }
-        return factory.post(url.toString(), passkeyEnrollmentAdapter)
+        return factory.post(url.toString(), passkeyEnrollmentAdapter, dPoP)
             .addParameters(params)
-            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+            .addHeader(AUTHORIZATION_KEY, authorizationHeader)
     }
 
     /**
@@ -239,11 +265,12 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
 
         return factory.post(
             url.toString(),
-            GsonAdapter(PasskeyAuthenticationMethod::class.java, gson)
+            GsonAdapter(PasskeyAuthenticationMethod::class.java, gson),
+            dPoP
         )
             .addParameters(params)
             .addParameter(AUTHN_RESPONSE_KEY, authnResponse)
-            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+            .addHeader(AUTHORIZATION_KEY, authorizationHeader)
     }
 
 
@@ -256,6 +283,9 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
      * Please reach out to Auth0 support to get it enabled for your tenant.
      *
+     * ## Scopes Required
+     *
+     * `read:me:authentication_methods`
      *
      * ## Usage
      *
@@ -263,7 +293,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
      * val apiClient = MyAccountAPIClient(auth0, accessToken)
      *
-     *
+     * // Get all authentication methods
      * apiClient.getAuthenticationMethods()
      *     .start(object : Callback<List<AuthenticationMethod>, MyAccountException> {
      *         override fun onSuccess(result: List<AuthenticationMethod>) {
@@ -274,11 +304,30 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      *             Log.e("MyApp", "Failed with: ${error.message}")
      *         }
      *     })
+     *
+     * // Get authentication methods filtered by type
+     * apiClient.getAuthenticationMethods(AuthenticationMethodType.PASSKEY)
+     *     .start(object : Callback<List<AuthenticationMethod>, MyAccountException> {
+     *         override fun onSuccess(result: List<AuthenticationMethod>) {
+     *             Log.d("MyApp", "Passkey methods: $result")
+     *         }
+     *
+     *         override fun onFailure(error: MyAccountException) {
+     *             Log.e("MyApp", "Failed with: ${error.message}")
+     *         }
+     *     })
      * ```
      *
+     * @param type Optional filter to retrieve only authentication methods of a specific type.
+     * @return A request to get the list of authentication methods.
+     *
      */
-    public fun getAuthenticationMethods(): Request<List<AuthenticationMethod>, MyAccountException> {
-        val url = getDomainUrlBuilder().addPathSegment(AUTHENTICATION_METHODS).build()
+    @JvmOverloads
+    public fun getAuthenticationMethods(type: AuthenticationMethodType? = null): Request<List<AuthenticationMethod>, MyAccountException> {
+        val url = getDomainUrlBuilder().apply {
+            addPathSegment(AUTHENTICATION_METHODS)
+            type?.let { addQueryParameter(TYPE_KEY, it.type) }
+        }.build()
 
         val listAdapter = object : JsonAdapter<List<AuthenticationMethod>> {
             override fun fromJson(
@@ -289,8 +338,8 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
                 return container.authenticationMethods
             }
         }
-        return factory.get(url.toString(), listAdapter)
-            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+        return factory.get(url.toString(), listAdapter, dPoP)
+            .addHeader(AUTHORIZATION_KEY, authorizationHeader)
     }
 
 
@@ -331,8 +380,8 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
             .addPathSegment(AUTHENTICATION_METHODS)
             .addPathSegment(authenticationMethodId)
             .build()
-        return factory.get(url.toString(), GsonAdapter(AuthenticationMethod::class.java, gson))
-            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+        return factory.get(url.toString(), GsonAdapter(AuthenticationMethod::class.java, gson), dPoP)
+            .addHeader(AUTHORIZATION_KEY, authorizationHeader)
     }
 
     /**
@@ -390,9 +439,9 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
             }
         }.asDictionary()
 
-        return factory.patch(url.toString(), GsonAdapter(AuthenticationMethod::class.java, gson))
+        return factory.patch(url.toString(), GsonAdapter(AuthenticationMethod::class.java, gson), dPoP)
             .addParameters(params)
-            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+            .addHeader(AUTHORIZATION_KEY, authorizationHeader)
     }
 
 
@@ -438,8 +487,8 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
         val voidAdapter = object : JsonAdapter<Void?> {
             override fun fromJson(reader: Reader, metadata: Map<String, Any>): Void? = null
         }
-        return factory.delete(url.toString(), voidAdapter)
-            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+        return factory.delete(url.toString(), voidAdapter, dPoP)
+            .addHeader(AUTHORIZATION_KEY, authorizationHeader)
     }
 
     /**
@@ -475,8 +524,8 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
                 return container.factors
             }
         }
-        return factory.get(url.toString(), listAdapter)
-            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+        return factory.get(url.toString(), listAdapter, dPoP)
+            .addHeader(AUTHORIZATION_KEY, authorizationHeader)
     }
 
     /**
@@ -579,9 +628,9 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
         val params = ParameterBuilder.newBuilder().set(TYPE_KEY, "totp").asDictionary()
         val url = getDomainUrlBuilder().addPathSegment(AUTHENTICATION_METHODS).build()
         val adapter = GsonAdapter(TotpEnrollmentChallenge::class.java, gson)
-        return factory.post(url.toString(), adapter)
+        return factory.post(url.toString(), adapter, dPoP)
             .addParameters(params)
-            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+            .addHeader(AUTHORIZATION_KEY, authorizationHeader)
     }
 
     /**
@@ -612,9 +661,9 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
         val url = getDomainUrlBuilder().addPathSegment(AUTHENTICATION_METHODS).build()
         // The response structure for push notification challenge is the same as TOTP (contains barcode_uri)
         val adapter = GsonAdapter(TotpEnrollmentChallenge::class.java, gson)
-        return factory.post(url.toString(), adapter)
+        return factory.post(url.toString(), adapter, dPoP)
             .addParameters(params)
-            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+            .addHeader(AUTHORIZATION_KEY, authorizationHeader)
     }
 
     /**
@@ -644,9 +693,9 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
         val params = ParameterBuilder.newBuilder().set(TYPE_KEY, "recovery-code").asDictionary()
         val url = getDomainUrlBuilder().addPathSegment(AUTHENTICATION_METHODS).build()
         val adapter = GsonAdapter(RecoveryCodeEnrollmentChallenge::class.java, gson)
-        return factory.post(url.toString(), adapter)
+        return factory.post(url.toString(), adapter, dPoP)
             .addParameters(params)
-            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+            .addHeader(AUTHORIZATION_KEY, authorizationHeader)
     }
 
     /**
@@ -687,9 +736,9 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
             .addPathSegment(VERIFY)
             .build()
         val params = mapOf("otp_code" to otpCode, AUTH_SESSION_KEY to authSession)
-        return factory.post(url.toString(), GsonAdapter(AuthenticationMethod::class.java, gson))
+        return factory.post(url.toString(), GsonAdapter(AuthenticationMethod::class.java, gson), dPoP)
             .addParameters(params)
-            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+            .addHeader(AUTHORIZATION_KEY, authorizationHeader)
     }
 
     /**
@@ -727,9 +776,9 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
             .addPathSegment(VERIFY)
             .build()
         val params = mapOf(AUTH_SESSION_KEY to authSession)
-        return factory.post(url.toString(), GsonAdapter(AuthenticationMethod::class.java, gson))
+        return factory.post(url.toString(), GsonAdapter(AuthenticationMethod::class.java, gson), dPoP)
             .addParameters(params)
-            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+            .addHeader(AUTHORIZATION_KEY, authorizationHeader)
     }
 
     // WebAuthn methods are private.
@@ -790,9 +839,9 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
 
     private fun buildEnrollmentRequest(params: Map<String, String>): Request<EnrollmentChallenge, MyAccountException> {
         val url = getDomainUrlBuilder().addPathSegment(AUTHENTICATION_METHODS).build()
-        return factory.post(url.toString(), GsonAdapter(EnrollmentChallenge::class.java, gson))
+        return factory.post(url.toString(), GsonAdapter(EnrollmentChallenge::class.java, gson), dPoP)
             .addParameters(params)
-            .addHeader(AUTHORIZATION_KEY, "Bearer $accessToken")
+            .addHeader(AUTHORIZATION_KEY, authorizationHeader)
     }
 
     private fun getDomainUrlBuilder(): HttpUrl.Builder {
