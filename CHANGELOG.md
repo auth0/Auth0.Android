@@ -1,5 +1,14 @@
 # Change Log
 
+## [3.18.0](https://github.com/auth0/Auth0.Android/tree/3.18.0) (2026-05-26)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.17.0...3.18.0)
+
+**Added**
+- feat : Add support to pass type parameter to the MyAccount list authentication method API [\#974](https://github.com/auth0/Auth0.Android/pull/974) ([pmathew92](https://github.com/pmathew92))
+
+**Fixed**
+- fix : Guard against all uncaught exception in the serial executor block [\#970](https://github.com/auth0/Auth0.Android/pull/970) ([pmathew92](https://github.com/pmathew92))
+
 ## [3.17.0](https://github.com/auth0/Auth0.Android/tree/3.17.0) (2026-05-21)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.16.0...3.17.0)
 
