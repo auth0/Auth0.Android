@@ -1,5 +1,7 @@
 package com.auth0.android.request.internal;
 
+import android.util.Log;
+
 import com.auth0.android.result.ActorClaim;
 import android.util.Log;
 
