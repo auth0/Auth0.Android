@@ -345,6 +345,125 @@ public class UserProfileGsonTest : GsonBaseTest() {
         )
     }
 
+    @Test
+    @Throws(Exception::class)
+    public fun shouldReturnProfileWithActorClaim() {
+        val userProfile = pojoFrom(
+            StringReader(
+                """{
+  "sub": "auth0|123",
+  "name": "Test User",
+  "act": {
+    "sub": "agent-id-456",
+    "type": "ai_agent",
+    "name": "My Agent"
+  }
+}"""
+            ), UserProfile::class.java
+        )
+        assertThat(userProfile, `is`(notNullValue()))
+        assertThat(userProfile.actor, `is`(notNullValue()))
+        assertThat(userProfile.actor!!.sub, `is`("agent-id-456"))
+        assertThat(userProfile.actor!!.extraProperties, hasEntry("type", "ai_agent" as Any))
+        assertThat(userProfile.actor!!.extraProperties, hasEntry("name", "My Agent" as Any))
+        assertThat(userProfile.actor!!.actor, `is`(nullValue()))
+    }
+
+    @Test
+    @Throws(Exception::class)
+    public fun shouldReturnProfileWithNestedActorClaim() {
+        val userProfile = pojoFrom(
+            StringReader(
+                """{
+  "sub": "auth0|123",
+  "name": "Test User",
+  "act": {
+    "sub": "agent-id-456",
+    "act": {
+      "sub": "service-id-789",
+      "role": "intermediary"
+    }
+  }
+}"""
+            ), UserProfile::class.java
+        )
+        assertThat(userProfile, `is`(notNullValue()))
+        assertThat(userProfile.actor, `is`(notNullValue()))
+        assertThat(userProfile.actor!!.sub, `is`("agent-id-456"))
+        assertThat(userProfile.actor!!.actor, `is`(notNullValue()))
+        assertThat(userProfile.actor!!.actor!!.sub, `is`("service-id-789"))
+        assertThat(userProfile.actor!!.actor!!.extraProperties, hasEntry("role", "intermediary" as Any))
+        assertThat(userProfile.actor!!.actor!!.actor, `is`(nullValue()))
+    }
+
+    @Test
+    @Throws(Exception::class)
+    public fun shouldReturnProfileWithNullActorWhenNotPresent() {
+        val userProfile = pojoFrom(
+            StringReader(
+                """{
+  "sub": "auth0|123",
+  "name": "Test User"
+}"""
+            ), UserProfile::class.java
+        )
+        assertThat(userProfile, `is`(notNullValue()))
+        assertThat(userProfile.actor, `is`(nullValue()))
+    }
+
+    @Test
+    @Throws(Exception::class)
+    public fun shouldReturnProfileWithNullActorWhenActIsNull() {
+        val userProfile = pojoFrom(
+            StringReader(
+                """{
+  "sub": "auth0|123",
+  "name": "Test User",
+  "act": null
+}"""
+            ), UserProfile::class.java
+        )
+        assertThat(userProfile, `is`(notNullValue()))
+        assertThat(userProfile.actor, `is`(nullValue()))
+    }
+
+    @Test
+    @Throws(Exception::class)
+    public fun shouldReturnProfileWithNullActorWhenActHasNoSub() {
+        val userProfile = pojoFrom(
+            StringReader(
+                """{
+  "sub": "auth0|123",
+  "name": "Test User",
+  "act": {
+    "type": "ai_agent"
+  }
+}"""
+            ), UserProfile::class.java
+        )
+        assertThat(userProfile, `is`(notNullValue()))
+        assertThat(userProfile.actor, `is`(nullValue()))
+    }
+
+    @Test
+    @Throws(Exception::class)
+    public fun shouldNotIncludeActInExtraInfo() {
+        val userProfile = pojoFrom(
+            StringReader(
+                """{
+  "sub": "auth0|123",
+  "name": "Test User",
+  "act": {
+    "sub": "agent-id-456"
+  }
+}"""
+            ), UserProfile::class.java
+        )
+        assertThat(userProfile, `is`(notNullValue()))
+        assertThat(userProfile.actor, `is`(notNullValue()))
+        assertThat(userProfile.getExtraInfo(), not(hasKey("act")))
+    }
+
     private fun getUTCDate(year: Int, month: Int, day: Int, hr: Int, min: Int, sec: Int, ms: Int): Date {
         val cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
         cal[Calendar.YEAR] = year

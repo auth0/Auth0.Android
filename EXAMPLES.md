@@ -30,6 +30,7 @@
     - [Sign Up with a database connection](#sign-up-with-a-database-connection)
     - [Get user information](#get-user-information)
     - [Custom Token Exchange](#custom-token-exchange)
+      - [Custom Token Exchange with Actor Token (Delegation/Impersonation)](#custom-token-exchange-with-actor-token-delegationimpersonation)
     - [Native to Web SSO login](#native-to-web-sso-login)
     - [Pushed Authorization Requests (PAR)](#pushed-authorization-requests-par)
     - [DPoP](#dpop-1)
@@ -1635,6 +1636,94 @@ authentication
 ```
 
 
+</details>
+
+#### Custom Token Exchange with Actor Token (Delegation/Impersonation)
+
+For delegation or impersonation scenarios where one principal acts on behalf of another (e.g., an AI agent acting on behalf of a user), pass `CustomTokenExchangeOptions` with the actor token details:
+
+```kotlin
+import com.auth0.android.authentication.request.CustomTokenExchangeOptions
+
+val options = CustomTokenExchangeOptions(
+    actorToken = "actor-token-value",
+    actorTokenType = "urn:my-org:actor-token-type"
+)
+
+authentication
+    .customTokenExchange(
+        subjectTokenType = "http://my-org/custom-token",
+        subjectToken = "subject-token-value",
+        organization = "org_12345",
+        customTokenExchangeOptions = options
+    )
+    .start(object : Callback<Credentials, AuthenticationException> {
+        override fun onSuccess(result: Credentials) {
+            // Access the actor claim from the ID token
+            val actor = result.user.actor
+            if (actor != null) {
+                println("Actor sub: ${actor.sub}")
+                println("Actor properties: ${actor.extraProperties}")
+                // Nested delegation chain (if present)
+                val nestedActor = actor.actor
+            }
+        }
+
+        override fun onFailure(exception: AuthenticationException) {
+            // Handle error
+        }
+    })
+```
+
+<details>
+    <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    val options = CustomTokenExchangeOptions(
+        actorToken = "actor-token-value",
+        actorTokenType = "urn:my-org:actor-token-type"
+    )
+    val credentials = authentication
+        .customTokenExchange(
+            subjectTokenType = "http://my-org/custom-token",
+            subjectToken = "subject-token-value",
+            customTokenExchangeOptions = options
+        )
+        .await()
+    // Access the actor claim
+    val actor = credentials.user.actor
+} catch (e: AuthenticationException) {
+    e.printStackTrace()
+}
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+CustomTokenExchangeOptions options = new CustomTokenExchangeOptions(
+    "actor-token-value",
+    "urn:my-org:actor-token-type"
+);
+
+authentication
+    .customTokenExchange("http://my-org/custom-token", "subject-token-value", null, options)
+    .start(new Callback<Credentials, AuthenticationException>() {
+        @Override
+        public void onSuccess(@Nullable Credentials payload) {
+            ActorClaim actor = payload.getUser().getActor();
+            if (actor != null) {
+                Log.d("CTE", "Actor: " + actor.getSub());
+            }
+        }
+        @Override
+        public void onFailure(@NonNull AuthenticationException error) {
+            // Handle error
+        }
+    });
+```
 </details>
 
 
