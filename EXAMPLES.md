@@ -1642,6 +1642,8 @@ authentication
 
 For delegation or impersonation scenarios where one principal acts on behalf of another (e.g., an AI agent acting on behalf of a user), pass `CustomTokenExchangeOptions` with the actor token details:
 
+> **Note:** When `actor_token` is present in the request, Auth0 will not issue a refresh token regardless of whether `offline_access` is in the scope. The `Credentials.refreshToken` will be `null` in this flow.
+
 ```kotlin
 import com.auth0.android.authentication.request.CustomTokenExchangeOptions
 

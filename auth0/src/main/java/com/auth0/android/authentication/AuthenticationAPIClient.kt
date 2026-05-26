@@ -819,12 +819,16 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * For delegation/impersonation scenarios, pass [CustomTokenExchangeOptions] with actor token details.
      * When the server issues tokens with an `act` claim, it will be available via [Credentials.user] actor property.
      *
+     * Note: When `actor_token` is present, Auth0 will not issue a refresh token regardless of
+     * whether `offline_access` is in the scope. The [Credentials.refreshToken] will be null.
+     *
      * @param subjectTokenType the subject token type that is associated with the existing Identity Provider. e.g. 'http://acme.com/legacy-token'
      * @param subjectToken   the subject token, typically obtained through the Identity Provider's SDK
      * @param organization  id of the organization the user belongs to
      * @param customTokenExchangeOptions optional actor token details for delegation/impersonation flows. Both actorToken and actorTokenType are required when using this parameter.
      * @return a request to configure and start that will yield [Credentials]
      */
+    @JvmOverloads
     public fun customTokenExchange(
         subjectTokenType: String,
         subjectToken: String,
