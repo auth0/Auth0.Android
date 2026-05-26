@@ -47,12 +47,14 @@ class UserProfileDeserializer implements JsonDeserializer<UserProfile> {
         final Boolean emailVerified = object.has("email_verified") ? context.<Boolean>deserialize(object.remove("email_verified"), Boolean.class) : false;
         final Date createdAt = iso8601DateGson.fromJson(object.remove("created_at"), Date.class);
 
-        final Type identitiesType = new TypeToken<List<UserIdentity>>() {}.getType();
+        final Type identitiesType = new TypeToken<List<UserIdentity>>() {
+        }.getType();
         final List<UserIdentity> identities = context.deserialize(object.remove("identities"), identitiesType);
 
         final ActorClaim actor = deserializeActorClaim(object.remove("act"), context);
 
-        final Type metadataType = new TypeToken<Map<String, Object>>() {}.getType();
+        final Type metadataType = new TypeToken<Map<String, Object>>() {
+        }.getType();
         Map<String, Object> userMetadata = context.deserialize(object.remove("user_metadata"), metadataType);
         Map<String, Object> appMetadata = context.deserialize(object.remove("app_metadata"), metadataType);
         Map<String, Object> extraInfo = context.deserialize(object, metadataType);
@@ -73,7 +75,8 @@ class UserProfileDeserializer implements JsonDeserializer<UserProfile> {
 
         ActorClaim nestedActor = deserializeActorClaim(actObject.remove("act"), context);
 
-        final Type mapType = new TypeToken<Map<String, Object>>() {}.getType();
+        final Type mapType = new TypeToken<Map<String, Object>>() {
+        }.getType();
         Map<String, Object> extraProperties = context.deserialize(actObject, mapType);
         if (extraProperties == null) {
             extraProperties = Collections.emptyMap();
