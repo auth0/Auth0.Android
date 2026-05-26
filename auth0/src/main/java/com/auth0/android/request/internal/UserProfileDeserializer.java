@@ -3,9 +3,6 @@ package com.auth0.android.request.internal;
 import android.util.Log;
 
 import com.auth0.android.result.ActorClaim;
-import android.util.Log;
-
-import com.auth0.android.result.ActorClaim;
 import com.auth0.android.result.UserIdentity;
 import com.auth0.android.result.UserProfile;
 import com.google.gson.Gson;
@@ -19,6 +16,7 @@ import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
