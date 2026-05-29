@@ -1640,16 +1640,16 @@ authentication
 
 #### Custom Token Exchange with Actor Token (Delegation/Impersonation)
 
-For delegation or impersonation scenarios where one principal acts on behalf of another (e.g., an AI agent acting on behalf of a user), pass `CustomTokenExchangeOptions` with the actor token details:
+For delegation or impersonation scenarios where one principal acts on behalf of another (e.g., an AI agent acting on behalf of a user), pass `ActorToken` with the actor token details:
 
 > **Note:** When `actor_token` is present in the request, Auth0 will not issue a refresh token regardless of whether `offline_access` is in the scope. The `Credentials.refreshToken` will be `null` in this flow.
 
 ```kotlin
-import com.auth0.android.authentication.request.CustomTokenExchangeOptions
+import com.auth0.android.authentication.request.ActorToken
 
-val options = CustomTokenExchangeOptions(
-    actorToken = "actor-token-value",
-    actorTokenType = "urn:my-org:actor-token-type"
+val actorToken = ActorToken(
+    token = "actor-token-value",
+    tokenType = "urn:my-org:actor-token-type"
 )
 
 authentication
@@ -1657,7 +1657,7 @@ authentication
         subjectTokenType = "http://my-org/custom-token",
         subjectToken = "subject-token-value",
         organization = "org_12345",
-        customTokenExchangeOptions = options
+        actorToken = actorToken
     )
     .start(object : Callback<Credentials, AuthenticationException> {
         override fun onSuccess(result: Credentials) {
@@ -1682,15 +1682,15 @@ authentication
 
 ```kotlin
 try {
-    val options = CustomTokenExchangeOptions(
-        actorToken = "actor-token-value",
-        actorTokenType = "urn:my-org:actor-token-type"
+    val actorToken = ActorToken(
+        token = "actor-token-value",
+        tokenType = "urn:my-org:actor-token-type"
     )
     val credentials = authentication
         .customTokenExchange(
             subjectTokenType = "http://my-org/custom-token",
             subjectToken = "subject-token-value",
-            customTokenExchangeOptions = options
+            actorToken = actorToken
         )
         .await()
     // Access the actor claim
@@ -1705,13 +1705,13 @@ try {
   <summary>Using Java</summary>
 
 ```java
-CustomTokenExchangeOptions options = new CustomTokenExchangeOptions(
+ActorToken actorToken = new ActorToken(
     "actor-token-value",
     "urn:my-org:actor-token-type"
 );
 
 authentication
-    .customTokenExchange("http://my-org/custom-token", "subject-token-value", null, options)
+    .customTokenExchange("http://my-org/custom-token", "subject-token-value", null, actorToken)
     .start(new Callback<Credentials, AuthenticationException>() {
         @Override
         public void onSuccess(@Nullable Credentials payload) {

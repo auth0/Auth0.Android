@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.res.Resources
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.ParameterBuilder.Companion.newBuilder
-import com.auth0.android.authentication.request.CustomTokenExchangeOptions
+import com.auth0.android.authentication.request.ActorToken
 import com.auth0.android.dpop.DPoPException
 import com.auth0.android.dpop.DPoPKeyStore
 import com.auth0.android.dpop.DPoPUtil
@@ -2428,15 +2428,15 @@ public class AuthenticationAPIClientTest {
     public fun shouldCustomTokenExchangeWithOptions() {
         mockAPI.willReturnSuccessfulLogin()
         val callback = MockAuthenticationCallback<Credentials>()
-        val options = CustomTokenExchangeOptions(
-            actorToken = "actor-token-value",
-            actorTokenType = "urn:custom:actor-token-type"
+        val actorToken = ActorToken(
+            token = "actor-token-value",
+            tokenType = "urn:custom:actor-token-type"
         )
         client.customTokenExchange(
             "subject-token-type",
             "subject-token",
             "org_12345",
-            options
+            actorToken
         ).start(callback)
         ShadowLooper.idleMainLooper()
         val request = mockAPI.takeRequest()
@@ -2463,15 +2463,15 @@ public class AuthenticationAPIClientTest {
     @Test
     public fun shouldCustomTokenExchangeWithOptionsSyncWithoutOrganization() {
         mockAPI.willReturnSuccessfulLogin()
-        val options = CustomTokenExchangeOptions(
-            actorToken = "actor-token-value",
-            actorTokenType = "urn:custom:actor-token-type"
+        val actorToken = ActorToken(
+            token = "actor-token-value",
+            tokenType = "urn:custom:actor-token-type"
         )
         val credentials = client
             .customTokenExchange(
                 "subject-token-type",
                 "subject-token",
-                customTokenExchangeOptions = options
+                actorToken = actorToken
             )
             .execute()
         val request = mockAPI.takeRequest()
@@ -2495,16 +2495,16 @@ public class AuthenticationAPIClientTest {
     @ExperimentalCoroutinesApi
     public fun shouldAwaitCustomTokenExchangeWithOptions(): Unit = runTest {
         mockAPI.willReturnSuccessfulLogin()
-        val options = CustomTokenExchangeOptions(
-            actorToken = "actor-token-value",
-            actorTokenType = "urn:custom:actor-token-type"
+        val actorToken = ActorToken(
+            token = "actor-token-value",
+            tokenType = "urn:custom:actor-token-type"
         )
         val credentials = client
             .customTokenExchange(
                 "subject-token-type",
                 "subject-token",
                 "org_abc",
-                options
+                actorToken
             )
             .await()
         val request = mockAPI.takeRequest()

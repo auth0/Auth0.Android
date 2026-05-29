@@ -6,7 +6,7 @@ import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
 import com.auth0.android.authentication.mfa.MfaApiClient
-import com.auth0.android.authentication.request.CustomTokenExchangeOptions
+import com.auth0.android.authentication.request.ActorToken
 import com.auth0.android.dpop.DPoP
 import com.auth0.android.dpop.DPoPException
 import com.auth0.android.dpop.SenderConstraining
@@ -816,7 +816,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      *  })
      *  ```
      *
-     * For delegation/impersonation scenarios, pass [CustomTokenExchangeOptions] with actor token details.
+     * For delegation/impersonation scenarios, pass [ActorToken] with actor token details.
      * When the server issues tokens with an `act` claim, it will be available via [Credentials.user] actor property.
      *
      * Note: When `actor_token` is present, Auth0 will not issue a refresh token regardless of
@@ -825,7 +825,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param subjectTokenType the subject token type that is associated with the existing Identity Provider. e.g. 'http://acme.com/legacy-token'
      * @param subjectToken   the subject token, typically obtained through the Identity Provider's SDK
      * @param organization  id of the organization the user belongs to
-     * @param customTokenExchangeOptions optional actor token details for delegation/impersonation flows. Both actorToken and actorTokenType are required when using this parameter.
+     * @param actorToken optional actor token details for delegation/impersonation flows.
      * @return a request to configure and start that will yield [Credentials]
      */
     @JvmOverloads
@@ -833,13 +833,13 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         subjectTokenType: String,
         subjectToken: String,
         organization: String? = null,
-        customTokenExchangeOptions: CustomTokenExchangeOptions? = null
+        actorToken: ActorToken? = null
     ): AuthenticationRequest {
         return tokenExchange(
             subjectTokenType,
             subjectToken,
             organization,
-            customTokenExchangeOptions
+            actorToken
         )
     }
 
@@ -1124,7 +1124,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         subjectTokenType: String,
         subjectToken: String,
         organization: String? = null,
-        customTokenExchangeOptions: CustomTokenExchangeOptions? = null
+        actorToken: ActorToken? = null
     ): AuthenticationRequest {
         val parameters = ParameterBuilder.newAuthenticationBuilder().apply {
             setGrantType(ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
@@ -1133,9 +1133,9 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             organization?.let {
                 set(ORGANIZATION_KEY, it)
             }
-            customTokenExchangeOptions?.let {
-                set(ACTOR_TOKEN_KEY, it.actorToken)
-                set(ACTOR_TOKEN_TYPE_KEY, it.actorTokenType)
+            actorToken?.let {
+                set(ACTOR_TOKEN_KEY, it.token)
+                set(ACTOR_TOKEN_TYPE_KEY, it.tokenType)
             }
         }.asDictionary()
         return loginWithToken(parameters)
