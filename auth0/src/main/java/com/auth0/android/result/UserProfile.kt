@@ -7,7 +7,7 @@ import java.util.*
  * Class that holds the information of a user's profile in Auth0.
  * Used both in [com.auth0.android.management.UsersAPIClient] and [com.auth0.android.authentication.AuthenticationAPIClient].
  */
-public class UserProfile(
+public class UserProfile @JvmOverloads constructor(
     private val id: String?,
     public val name: String?,
     public val nickname: String?,
@@ -25,7 +25,13 @@ public class UserProfile(
     private val extraInfo: Map<String, Any>?,
     private val userMetadata: Map<String, Any>?,
     private val appMetadata: Map<String, Any>?,
-    public val givenName: String?
+    public val givenName: String?,
+    /**
+     * The actor claim from the ID token, representing the acting party in delegation
+     * or impersonation scenarios (e.g., an AI agent acting on behalf of a user).
+     * Only present when the token was issued via Custom Token Exchange with an actor.
+     */
+    public val actor: ActorClaim? = null
 ) : Serializable {
 
     /**

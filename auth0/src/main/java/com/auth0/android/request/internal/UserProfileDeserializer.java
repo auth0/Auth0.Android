@@ -1,5 +1,8 @@
 package com.auth0.android.request.internal;
 
+import android.util.Log;
+
+import com.auth0.android.result.ActorClaim;
 import com.auth0.android.result.UserIdentity;
 import com.auth0.android.result.UserProfile;
 import com.google.gson.Gson;
@@ -11,11 +14,14 @@ import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 class UserProfileDeserializer implements JsonDeserializer<UserProfile> {
+
+    private static final String TAG = UserProfileDeserializer.class.getSimpleName();
 
     private final Gson iso8601DateGson;
 
@@ -41,13 +47,41 @@ class UserProfileDeserializer implements JsonDeserializer<UserProfile> {
         final Boolean emailVerified = object.has("email_verified") ? context.<Boolean>deserialize(object.remove("email_verified"), Boolean.class) : false;
         final Date createdAt = iso8601DateGson.fromJson(object.remove("created_at"), Date.class);
 
-        final Type identitiesType = new TypeToken<List<UserIdentity>>() {}.getType();
+        final Type identitiesType = new TypeToken<List<UserIdentity>>() {
+        }.getType();
         final List<UserIdentity> identities = context.deserialize(object.remove("identities"), identitiesType);
 
-        final Type metadataType = new TypeToken<Map<String, Object>>() {}.getType();
+        final ActorClaim actor = deserializeActorClaim(object.remove("act"), context);
+
+        final Type metadataType = new TypeToken<Map<String, Object>>() {
+        }.getType();
         Map<String, Object> userMetadata = context.deserialize(object.remove("user_metadata"), metadataType);
         Map<String, Object> appMetadata = context.deserialize(object.remove("app_metadata"), metadataType);
         Map<String, Object> extraInfo = context.deserialize(object, metadataType);
-        return new UserProfile(id, name, nickname, picture, email, emailVerified, familyName, createdAt, identities, extraInfo, userMetadata, appMetadata, givenName);
+        return new UserProfile(id, name, nickname, picture, email, emailVerified, familyName, createdAt, identities, extraInfo, userMetadata, appMetadata, givenName, actor);
+    }
+
+    private ActorClaim deserializeActorClaim(JsonElement actElement, JsonDeserializationContext context) {
+        if (actElement == null || actElement.isJsonNull() || !actElement.isJsonObject()) {
+            return null;
+        }
+
+        JsonObject actObject = actElement.getAsJsonObject();
+        String sub = context.deserialize(actObject.remove("sub"), String.class);
+        if (sub == null) {
+            Log.w(TAG, "act claim present but missing required 'sub' field, ignoring actor");
+            return null;
+        }
+
+        ActorClaim nestedActor = deserializeActorClaim(actObject.remove("act"), context);
+
+        final Type mapType = new TypeToken<Map<String, Object>>() {
+        }.getType();
+        Map<String, Object> extraProperties = context.deserialize(actObject, mapType);
+        if (extraProperties == null) {
+            extraProperties = Collections.emptyMap();
+        }
+
+        return new ActorClaim(sub, nestedActor, extraProperties);
     }
 }

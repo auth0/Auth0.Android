@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.res.Resources
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.ParameterBuilder.Companion.newBuilder
+import com.auth0.android.authentication.request.ActorToken
 import com.auth0.android.dpop.DPoPException
 import com.auth0.android.dpop.DPoPKeyStore
 import com.auth0.android.dpop.DPoPUtil
@@ -2421,6 +2422,128 @@ public class AuthenticationAPIClientTest {
         assertThat(body, Matchers.not(Matchers.hasKey("organization")))
         assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
         assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
+    }
+
+    @Test
+    public fun shouldCustomTokenExchangeWithOptions() {
+        mockAPI.willReturnSuccessfulLogin()
+        val callback = MockAuthenticationCallback<Credentials>()
+        val actorToken = ActorToken(
+            token = "actor-token-value",
+            tokenType = "urn:custom:actor-token-type"
+        )
+        client.customTokenExchange(
+            "subject-token-type",
+            "subject-token",
+            "org_12345",
+            actorToken
+        ).start(callback)
+        ShadowLooper.idleMainLooper()
+        val request = mockAPI.takeRequest()
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
+        assertThat(
+            body,
+            Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
+        )
+        assertThat(body, Matchers.hasEntry("subject_token", "subject-token"))
+        assertThat(body, Matchers.hasEntry("subject_token_type", "subject-token-type"))
+        assertThat(body, Matchers.hasEntry("organization", "org_12345"))
+        assertThat(body, Matchers.hasEntry("actor_token", "actor-token-value"))
+        assertThat(body, Matchers.hasEntry("actor_token_type", "urn:custom:actor-token-type"))
+        assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
+        assertThat(
+            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
+                Credentials::class.java
+            )
+        )
+    }
+
+    @Test
+    public fun shouldCustomTokenExchangeWithOptionsSyncWithoutOrganization() {
+        mockAPI.willReturnSuccessfulLogin()
+        val actorToken = ActorToken(
+            token = "actor-token-value",
+            tokenType = "urn:custom:actor-token-type"
+        )
+        val credentials = client
+            .customTokenExchange(
+                "subject-token-type",
+                "subject-token",
+                actorToken = actorToken
+            )
+            .execute()
+        val request = mockAPI.takeRequest()
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
+        assertThat(
+            body,
+            Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
+        )
+        assertThat(body, Matchers.hasEntry("subject_token", "subject-token"))
+        assertThat(body, Matchers.hasEntry("subject_token_type", "subject-token-type"))
+        assertThat(body, Matchers.not(Matchers.hasKey("organization")))
+        assertThat(body, Matchers.hasEntry("actor_token", "actor-token-value"))
+        assertThat(body, Matchers.hasEntry("actor_token_type", "urn:custom:actor-token-type"))
+        assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
+        assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
+    }
+
+    @Test
+    @ExperimentalCoroutinesApi
+    public fun shouldAwaitCustomTokenExchangeWithOptions(): Unit = runTest {
+        mockAPI.willReturnSuccessfulLogin()
+        val actorToken = ActorToken(
+            token = "actor-token-value",
+            tokenType = "urn:custom:actor-token-type"
+        )
+        val credentials = client
+            .customTokenExchange(
+                "subject-token-type",
+                "subject-token",
+                "org_abc",
+                actorToken
+            )
+            .await()
+        val request = mockAPI.takeRequest()
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
+        assertThat(
+            body,
+            Matchers.hasEntry("grant_type", ParameterBuilder.GRANT_TYPE_TOKEN_EXCHANGE)
+        )
+        assertThat(body, Matchers.hasEntry("subject_token", "subject-token"))
+        assertThat(body, Matchers.hasEntry("subject_token_type", "subject-token-type"))
+        assertThat(body, Matchers.hasEntry("organization", "org_abc"))
+        assertThat(body, Matchers.hasEntry("actor_token", "actor-token-value"))
+        assertThat(body, Matchers.hasEntry("actor_token_type", "urn:custom:actor-token-type"))
+        assertThat(body, Matchers.hasEntry("scope", "openid profile email"))
+        assertThat(credentials, Matchers.`is`(Matchers.notNullValue()))
+    }
+
+    @Test
+    public fun shouldCustomTokenExchangeWithoutOptions() {
+        mockAPI.willReturnSuccessfulLogin()
+        val callback = MockAuthenticationCallback<Credentials>()
+        client.customTokenExchange("subject-token-type", "subject-token", "org_12345")
+            .start(callback)
+        ShadowLooper.idleMainLooper()
+        val request = mockAPI.takeRequest()
+        assertThat(request.path, Matchers.equalTo("/oauth/token"))
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("subject_token", "subject-token"))
+        assertThat(body, Matchers.hasEntry("subject_token_type", "subject-token-type"))
+        assertThat(body, Matchers.hasEntry("organization", "org_12345"))
+        assertThat(body, Matchers.not(Matchers.hasKey("actor_token")))
+        assertThat(body, Matchers.not(Matchers.hasKey("actor_token_type")))
+        assertThat(
+            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
+                Credentials::class.java
+            )
+        )
     }
 
     @Test

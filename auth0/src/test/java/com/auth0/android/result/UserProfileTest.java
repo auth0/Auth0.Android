@@ -29,7 +29,7 @@ public class UserProfileTest {
         extraInfo = Collections.emptyMap();
         userMetadata = Collections.emptyMap();
         appMetadata = Collections.emptyMap();
-        userProfile = new UserProfile("id", "name", "nickname", "pictureUrl", "email", true, "familyName", createdAt, identities, extraInfo, userMetadata, appMetadata, "givenName");
+        userProfile = new UserProfile("id", "name", "nickname", "pictureUrl", "email", true, "familyName", createdAt, identities, extraInfo, userMetadata, appMetadata, "givenName", null);
     }
 
     @Test
@@ -40,13 +40,13 @@ public class UserProfileTest {
     @Test
     public void shouldReturnSubIfMissingId() {
         Map<String, Object> extraInfo = Collections.singletonMap("sub", "fromSub");
-        UserProfile userProfile = new UserProfile(null, null, null, null, null, false, null, null, null, extraInfo, null, null, null);
+        UserProfile userProfile = new UserProfile(null, null, null, null, null, false, null, null, null, extraInfo, null, null, null, null);
         assertThat(userProfile.getId(), is("fromSub"));
     }
 
     @Test
     public void shouldGetNullIdIfMissing() {
-        UserProfile userProfile = new UserProfile(null, null, null, null, null, false, null, null, null, null, null, null, null);
+        UserProfile userProfile = new UserProfile(null, null, null, null, null, false, null, null, null, null, null, null, null, null);
         assertThat(userProfile.getId(), is(nullValue()));
     }
 
