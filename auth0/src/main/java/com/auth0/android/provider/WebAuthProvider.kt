@@ -142,7 +142,7 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
         }
     }
 
-    internal fun onRestoreInstanceState(bundle: Bundle) {
+    internal fun onRestoreInstanceState(bundle: Bundle, context: Context) {
         if (managerInstance == null) {
             val oauthStateJson = bundle.getString(KEY_BUNDLE_OAUTH_MANAGER_STATE).orEmpty()
             val parStateJson = bundle.getString(KEY_BUNDLE_PAR_MANAGER_STATE).orEmpty()
@@ -162,7 +162,8 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
                                 callback.onFailure(error)
                             }
                         }
-                    }
+                    },
+                    context
                 )
             } else if (parStateJson.isNotBlank()) {
                 val state = PARCodeManagerState.deserializeState(parStateJson)
