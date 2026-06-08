@@ -394,7 +394,7 @@ internal fun OAuthManager.Companion.fromState(
 ): OAuthManager {
     // Enable DPoP on the restored PKCE's AuthenticationAPIClient so that
     // the token exchange request includes the DPoP proof after process restore.
-    if (state.dPoPEnabled  && state.pkce != null) {
+    if (state.dPoPEnabled && state.pkce != null) {
         state.pkce.apiClient.useDPoP(context)
     }
     return OAuthManager(
@@ -403,7 +403,7 @@ internal fun OAuthManager.Companion.fromState(
         parameters = state.parameters,
         callback = callback,
         customAuthorizeUrl = state.customAuthorizeUrl,
-        dPoP = if (state.dPoPEnabled ) DPoP(context) else null
+        dPoP = if (state.dPoPEnabled) DPoP(context) else null
     ).apply {
         setHeaders(
             state.headers

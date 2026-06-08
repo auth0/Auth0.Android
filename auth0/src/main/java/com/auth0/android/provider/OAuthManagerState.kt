@@ -36,7 +36,7 @@ internal data class OAuthManagerState(
         val idTokenVerificationLeeway: Int?,
         val idTokenVerificationIssuer: String?,
         val customAuthorizeUrl: String? = null,
-        val dPoPEnabled: Boolean
+        val dPoPEnabled: Boolean = false
     )
 
     fun serializeToJson(
