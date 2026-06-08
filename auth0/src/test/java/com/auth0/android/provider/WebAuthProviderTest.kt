@@ -2977,6 +2977,10 @@ public class WebAuthProviderTest {
         WebAuthProvider.onRestoreInstanceState(bundle, activity)
 
         val restoredManager = WebAuthProvider.managerInstance as OAuthManager
+        // This asserts the save/restore wiring reconstructs a DPoP-enabled manager. The actual
+        // regression guard — that DPoP is re-enabled on the restored PKCE's API client so the
+        // token exchange carries the proof — lives in OAuthManagerStateTest.fromState tests,
+        // since OAuthManager.pkce is private and not reachable here without reflection.
         assertThat(restoredManager.dPoP, `is`(notNullValue()))
     }
 

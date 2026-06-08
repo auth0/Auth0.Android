@@ -1,8 +1,16 @@
 package com.auth0.android.provider
 
+import android.content.Context
 import android.graphics.Color
 import com.auth0.android.Auth0
+import com.auth0.android.authentication.AuthenticationAPIClient
+import com.auth0.android.authentication.AuthenticationException
+import com.auth0.android.callback.Callback
+import com.auth0.android.result.Credentials
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.whenever
+import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.core.Is.`is`
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -127,5 +135,55 @@ internal class OAuthManagerStateTest {
         val deserializedState = OAuthManagerState.deserializeState(legacyJson)
 
         Assert.assertFalse(deserializedState.dPoPEnabled)
+    }
+
+    @Test
+    fun `fromState should re-enable DPoP on the restored PKCE's API client when dPoPEnabled is true`() {
+        val context = mock<Context>()
+        whenever(context.applicationContext).thenReturn(context)
+        val auth0 = Auth0.getInstance("clientId", "domain")
+        val apiClient = AuthenticationAPIClient(auth0)
+        val state = OAuthManagerState(
+            auth0 = auth0,
+            parameters = emptyMap(),
+            headers = emptyMap(),
+            requestCode = 0,
+            ctOptions = CustomTabsOptions.newBuilder().build(),
+            pkce = PKCE(apiClient, "codeVerifier", "redirectUri", "codeChallenge", emptyMap()),
+            idTokenVerificationLeeway = null,
+            idTokenVerificationIssuer = null,
+            dPoPEnabled = true
+        )
+        val callback = mock<Callback<Credentials, AuthenticationException>>()
+
+        OAuthManager.fromState(state, callback, context)
+
+        // This is the actual regression guard: the token exchange after process death only
+        // includes the DPoP proof because fromState re-enables DPoP on the restored API client.
+        assertThat(apiClient.isDPoPEnabled, `is`(true))
+    }
+
+    @Test
+    fun `fromState should not enable DPoP on the restored PKCE's API client when dPoPEnabled is false`() {
+        val context = mock<Context>()
+        whenever(context.applicationContext).thenReturn(context)
+        val auth0 = Auth0.getInstance("clientId", "domain")
+        val apiClient = AuthenticationAPIClient(auth0)
+        val state = OAuthManagerState(
+            auth0 = auth0,
+            parameters = emptyMap(),
+            headers = emptyMap(),
+            requestCode = 0,
+            ctOptions = CustomTabsOptions.newBuilder().build(),
+            pkce = PKCE(apiClient, "codeVerifier", "redirectUri", "codeChallenge", emptyMap()),
+            idTokenVerificationLeeway = null,
+            idTokenVerificationIssuer = null,
+            dPoPEnabled = false
+        )
+        val callback = mock<Callback<Credentials, AuthenticationException>>()
+
+        OAuthManager.fromState(state, callback, context)
+
+        assertThat(apiClient.isDPoPEnabled, `is`(false))
     }
 }
