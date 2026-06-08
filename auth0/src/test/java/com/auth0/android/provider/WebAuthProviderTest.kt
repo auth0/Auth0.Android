@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Bundle
 import android.os.Parcelable
 import androidx.test.espresso.intent.matcher.IntentMatchers
 import androidx.test.espresso.intent.matcher.UriMatchers
@@ -2956,6 +2957,27 @@ public class WebAuthProviderTest {
         assertThat(credentials, `is`(notNullValue()))
         assertThat(credentials.type, `is`("DPoP"))
         mockAPI.shutdown()
+    }
+
+    @Test
+    public fun shouldReEnableDPoPOnOAuthManagerAfterProcessDeathRestore() {
+        `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
+        `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
+
+        WebAuthProvider.useDPoP(mockContext)
+            .login(account)
+            .start(activity, callback)
+
+        val bundle = Bundle()
+        WebAuthProvider.onSaveInstanceState(bundle)
+
+        // Simulate the host process being killed and recreated: the manager instance is gone,
+        // and the activity is recreated with the saved state.
+        WebAuthProvider.resetManagerInstance()
+        WebAuthProvider.onRestoreInstanceState(bundle, activity)
+
+        val restoredManager = WebAuthProvider.managerInstance as OAuthManager
+        assertThat(restoredManager.dPoP, `is`(notNullValue()))
     }
 
     //**  ** ** ** ** **  **//

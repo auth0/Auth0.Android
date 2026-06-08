@@ -6,7 +6,6 @@ import android.util.Base64
 import androidx.core.os.ParcelCompat
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationAPIClient
-import com.auth0.android.dpop.DPoP
 import com.auth0.android.request.internal.GsonProvider
 import com.google.gson.Gson
 
@@ -20,7 +19,7 @@ internal data class OAuthManagerState(
     val idTokenVerificationLeeway: Int?,
     val idTokenVerificationIssuer: String?,
     val customAuthorizeUrl: String? = null,
-    val dPoP: DPoP? = null
+    val dPoPEnabled: Boolean = false
 ) {
 
     private class OAuthManagerJson(
@@ -37,7 +36,7 @@ internal data class OAuthManagerState(
         val idTokenVerificationLeeway: Int?,
         val idTokenVerificationIssuer: String?,
         val customAuthorizeUrl: String? = null,
-        val dPoP: DPoP? = null
+        val dPoPEnabled: Boolean
     )
 
     fun serializeToJson(
@@ -62,7 +61,7 @@ internal data class OAuthManagerState(
                 idTokenVerificationIssuer = idTokenVerificationIssuer,
                 idTokenVerificationLeeway = idTokenVerificationLeeway,
                 customAuthorizeUrl = this.customAuthorizeUrl,
-                dPoP = this.dPoP
+                dPoPEnabled = this.dPoPEnabled
             )
             return gson.toJson(json)
         } finally {
@@ -112,7 +111,7 @@ internal data class OAuthManagerState(
                     idTokenVerificationIssuer = oauthManagerJson.idTokenVerificationIssuer,
                     idTokenVerificationLeeway = oauthManagerJson.idTokenVerificationLeeway,
                     customAuthorizeUrl = oauthManagerJson.customAuthorizeUrl,
-                    dPoP = oauthManagerJson.dPoP
+                    dPoPEnabled = oauthManagerJson.dPoPEnabled
                 )
             } finally {
                 parcel.recycle()
