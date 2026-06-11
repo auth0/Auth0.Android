@@ -38,14 +38,43 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
     private val callbacks = CopyOnWriteArraySet<Callback<Credentials, AuthenticationException>>()
     private val parCallbacks = CopyOnWriteArraySet<Callback<AuthorizationCode, AuthenticationException>>()
 
+    // Buffers a state-restore result that completed before any callback was registered (process
+    // death during login: the restored AuthenticationActivity finishes the token exchange before
+    // the host app can subscribe). Delivered to the next addCallback subscriber.
+    private sealed class RecoveredResult {
+        class Success(val credentials: Credentials) : RecoveredResult()
+        class Failure(val error: AuthenticationException) : RecoveredResult()
+    }
+
+    private val recoveryLock = Any()
+    private var pendingRecovered: RecoveredResult? = null
+
     @JvmStatic
     @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal var managerInstance: ResumableManager? = null
         private set
 
+    /**
+     * Registers a callback for Universal Login results from the state-restore path
+     * ([onRestoreInstanceState]). A result buffered before this call is delivered immediately and
+     * consumed. Normal in-process logins resolve through the [Builder.start] callback, not here.
+     */
     @JvmStatic
     public fun addCallback(callback: Callback<Credentials, AuthenticationException>) {
-        callbacks += callback
+        val buffered = synchronized(recoveryLock) {
+            val pending = pendingRecovered
+            if (pending != null) {
+                pendingRecovered = null
+            } else {
+                callbacks += callback
+            }
+            pending
+        }
+        when (buffered) {
+            is RecoveredResult.Success -> callback.onSuccess(buffered.credentials)
+            is RecoveredResult.Failure -> callback.onFailure(buffered.error)
+            null -> {}
+        }
     }
 
     @JvmStatic
@@ -152,12 +181,24 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
                     state,
                     object : Callback<Credentials, AuthenticationException> {
                         override fun onSuccess(result: Credentials) {
+                            synchronized(recoveryLock) {
+                                if (callbacks.isEmpty()) {
+                                    pendingRecovered = RecoveredResult.Success(result)
+                                    return
+                                }
+                            }
                             for (callback in callbacks) {
                                 callback.onSuccess(result)
                             }
                         }
 
                         override fun onFailure(error: AuthenticationException) {
+                            synchronized(recoveryLock) {
+                                if (callbacks.isEmpty()) {
+                                    pendingRecovered = RecoveredResult.Failure(error)
+                                    return
+                                }
+                            }
                             for (callback in callbacks) {
                                 callback.onFailure(error)
                             }
