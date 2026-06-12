@@ -118,6 +118,17 @@ class DatabaseLoginFragment : Fragment() {
         }
     }
 
+    private val logoutCallback = object : Callback<Void?, AuthenticationException> {
+        override fun onSuccess(result: Void?) {
+            Snackbar.make(requireView(), "Logged out", Snackbar.LENGTH_LONG).show()
+        }
+
+        override fun onFailure(error: AuthenticationException) {
+            Snackbar.make(requireView(), error.getDescription(), Snackbar.LENGTH_LONG)
+                .show()
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
@@ -204,14 +215,15 @@ class DatabaseLoginFragment : Fragment() {
         return binding.root
     }
 
-    override fun onStart() {
-        super.onStart()
-        WebAuthProvider.addCallback(callback)
-    }
-
-    override fun onStop() {
-        super.onStop()
-        WebAuthProvider.removeCallback(callback)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        // Registers login + logout callbacks for the lifetime of this view. Covers
+        // process-death and configuration-change recovery; auto-removed on destroy.
+        WebAuthProvider.registerCallbacks(
+            viewLifecycleOwner,
+            loginCallback = callback,
+            logoutCallback = logoutCallback
+        )
     }
 
     private suspend fun dbLoginAsync(email: String, password: String) {
