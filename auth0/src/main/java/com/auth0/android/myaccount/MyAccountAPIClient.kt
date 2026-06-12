@@ -108,12 +108,6 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * You can specify an optional user identity identifier and an optional database connection name.
      * If a connection name is not specified, your tenant's default directory will be used.
      *
-     * ## Availability
-     *
-     * This feature is currently available in
-     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
-     * Please reach out to Auth0 support to get it enabled for your tenant.
-     *
      * ## Scopes Required
      *
      * `create:me:authentication_methods`
@@ -205,12 +199,6 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
     /**
      * Enrolls a new passkey credential. This is the last part of the enrollment flow.
      *
-     * ## Availability
-     *
-     * This feature is currently available in
-     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
-     * Please reach out to Auth0 support to get it enabled for your tenant.
-     *
      * ## Scopes Required
      *
      * `create:me:authentication_methods`
@@ -277,12 +265,6 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
     /**
      * Retrieves a detailed list of authentication methods belonging to the user.
      *
-     * ## Availability
-     *
-     * This feature is currently available in
-     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
-     * Please reach out to Auth0 support to get it enabled for your tenant.
-     *
      * ## Scopes Required
      *
      * `read:me:authentication_methods`
@@ -346,13 +328,6 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
     /**
      * Retrieves a single authentication method belonging to the user.
      *
-     * ## Availability
-     *
-     * This feature is currently available in
-     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
-     * Please reach out to Auth0 support to get it enabled for your tenant.
-     *
-     *
      * ## Usage
      *
      * ```kotlin
@@ -386,13 +361,6 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
 
     /**
      * Updates a single authentication method belonging to the user.
-     *
-     * ## Availability
-     *
-     * This feature is currently available in
-     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
-     * Please reach out to Auth0 support to get it enabled for your tenant.
-     *
      *
      * ## Usage
      *
@@ -447,12 +415,6 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
 
     /**
      * Deletes an existing authentication method belonging to the user.
-     *
-     * ## Availability
-     *
-     * This feature is currently available in
-     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
-     * Please reach out to Auth0 support to get it enabled for your tenant.
      *
      * ## Scopes Required
      * `delete:me:authentication_methods`
