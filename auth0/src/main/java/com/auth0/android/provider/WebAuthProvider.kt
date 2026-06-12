@@ -79,9 +79,7 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
 
     @JvmStatic
     public fun removeCallback(callback: Callback<Credentials, AuthenticationException>) {
-        synchronized(recoveryLock) {
-            callbacks -= callback
-        }
+        callbacks -= callback
     }
 
     // Public methods
@@ -183,27 +181,25 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
                     state,
                     object : Callback<Credentials, AuthenticationException> {
                         override fun onSuccess(result: Credentials) {
-                            val subscribers = synchronized(recoveryLock) {
+                            synchronized(recoveryLock) {
                                 if (callbacks.isEmpty()) {
                                     pendingRecovered = RecoveredResult.Success(result)
                                     return
                                 }
-                                callbacks.toList()
                             }
-                            for (callback in subscribers) {
+                            for (callback in callbacks) {
                                 callback.onSuccess(result)
                             }
                         }
 
                         override fun onFailure(error: AuthenticationException) {
-                            val subscribers = synchronized(recoveryLock) {
+                            synchronized(recoveryLock) {
                                 if (callbacks.isEmpty()) {
                                     pendingRecovered = RecoveredResult.Failure(error)
                                     return
                                 }
-                                callbacks.toList()
                             }
-                            for (callback in subscribers) {
+                            for (callback in callbacks) {
                                 callback.onFailure(error)
                             }
                         }
