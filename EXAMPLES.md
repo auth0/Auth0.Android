@@ -1929,12 +1929,9 @@ val manager = CredentialsManager(apiClient, storage)
 
 ## My Account API
 
-> [!NOTE]
-> The My Account API is currently available in [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access). Please reach out to Auth0 support to get it enabled for your tenant.
-
 Use the Auth0 My Account API to manage the current user's account.
 
-To call the My Account API, you need an access token issued specifically for this API, including any required scopes for the operations you want to perform. See [API credentials [EA]](#api-credentials-ea) to learn how to obtain one.
+To call the My Account API, you need an access token issued specifically for this API, including any required scopes for the operations you want to perform. See [API credentials](#api-credentials) to learn how to obtain one.
 
 ```kotlin
 val client = MyAccountAPIClient(auth0, accessToken)
@@ -2809,10 +2806,7 @@ val isValid = secureCredentialsManager.isBiometricSessionValid()
 
 ### Other Credentials
 
-#### API credentials [EA]
-
-> [!NOTE]
-> This feature is currently available in [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access). Please reach out to Auth0 support to get it enabled for your tenant.
+#### API credentials
 
 When the user logs in, you can request an access token for a specific API by passing its API identifier as the [audience](#specify-audience) value. The access token in the resulting credentials can then be used to make authenticated requests to that API.
 
