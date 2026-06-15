@@ -1,5 +1,14 @@
 # Change Log
 
+## [3.19.0](https://github.com/auth0/Auth0.Android/tree/3.19.0) (2026-06-15)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.18.0...3.19.0)
+
+**Added**
+- feat: CTE delegation and impersonation support [\#975](https://github.com/auth0/Auth0.Android/pull/975) ([pmathew92](https://github.com/pmathew92))
+
+**Fixed**
+- fix : Handling DPoP enabled WebAuth flow after process death [\#977](https://github.com/auth0/Auth0.Android/pull/977) ([pmathew92](https://github.com/pmathew92))
+
 ## [3.18.0](https://github.com/auth0/Auth0.Android/tree/3.18.0) (2026-05-26)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.17.0...3.18.0)
 
