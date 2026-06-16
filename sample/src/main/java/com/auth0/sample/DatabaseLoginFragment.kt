@@ -2,6 +2,7 @@ package com.auth0.sample
 
 import android.os.Bundle
 import android.os.CancellationSignal
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,12 +21,15 @@ import androidx.fragment.app.Fragment
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
+import com.auth0.android.authentication.PasswordlessType
 import com.auth0.android.authentication.storage.AuthenticationLevel
 import com.auth0.android.authentication.storage.CredentialsManager
 import com.auth0.android.authentication.storage.CredentialsManagerException
 import com.auth0.android.authentication.storage.LocalAuthenticationOptions
 import com.auth0.android.authentication.storage.SecureCredentialsManager
 import com.auth0.android.authentication.storage.SharedPreferencesStorage
+import com.auth0.android.authentication.passwordless.DeliveryMethod
+import com.auth0.android.authentication.passwordless.PasswordlessClient
 import com.auth0.android.callback.Callback
 import com.auth0.android.management.ManagementException
 import com.auth0.android.management.UsersAPIClient
@@ -34,6 +38,7 @@ import com.auth0.android.request.DefaultClient
 import com.auth0.android.request.PublicKeyCredentials
 import com.auth0.android.request.UserData
 import com.auth0.android.result.Credentials
+import com.auth0.android.result.PasswordlessChallenge
 import com.auth0.android.result.PasskeyChallenge
 import com.auth0.android.result.PasskeyRegistrationChallenge
 import com.auth0.android.result.UserProfile
@@ -75,6 +80,16 @@ class DatabaseLoginFragment : Fragment() {
         AuthenticationAPIClient(account)
     }
 
+    private val passwordlessClient: PasswordlessClient by lazy {
+        authenticationApiClient.passwordlessClient()
+    }
+
+    // Database connection that has email_otp / phone_otp enabled.
+    private val passwordlessConnection = "Username-Password-Authentication"
+
+    // Holds the auth_session from the most recent challenge, consumed by loginWithOTP.
+    private var authSession: String? = null
+
     private val secureCredentialsManager: SecureCredentialsManager by lazy {
         val storage = SharedPreferencesStorage(requireContext())
         val manager = SecureCredentialsManager(
@@ -102,7 +117,7 @@ class DatabaseLoginFragment : Fragment() {
             .setDeviceCredentialFallback(true)
             .build()
 
-    private val callback = object: Callback<Credentials, AuthenticationException> {
+    private val callback = object : Callback<Credentials, AuthenticationException> {
         override fun onSuccess(result: Credentials) {
             credentialsManager.saveCredentials(result)
             Snackbar.make(
@@ -143,6 +158,31 @@ class DatabaseLoginFragment : Fragment() {
                 val email = binding.textEmail.text.toString()
                 val password = binding.textPassword.text.toString()
                 dbLoginAsync(email, password)
+            }
+        }
+
+        binding.btChallengeEmail.setOnClickListener {
+            challengeWithEmail(binding.textEmail.text.toString())
+        }
+        binding.btChallengeEmailAsync.setOnClickListener {
+            launchAsync {
+                challengeWithEmailAsync(binding.textEmail.text.toString())
+            }
+        }
+        binding.btChallengePhone.setOnClickListener {
+            challengeWithPhone(binding.textPhoneNumber.text.toString())
+        }
+        binding.btChallengePhoneAsync.setOnClickListener {
+            launchAsync {
+                challengeWithPhoneAsync(binding.textPhoneNumber.text.toString())
+            }
+        }
+        binding.btLoginOtp.setOnClickListener {
+            loginWithOtp(binding.textOtp.text.toString())
+        }
+        binding.btLoginOtpAsync.setOnClickListener {
+            launchAsync {
+                loginWithOtpAsync(binding.textOtp.text.toString())
             }
         }
 
@@ -356,7 +396,8 @@ class DatabaseLoginFragment : Fragment() {
     }
 
     private fun getCreds() {
-        credentialsManager.getCredentials(null,
+        credentialsManager.getCredentials(
+            null,
             300,
             emptyMap(),
             emptyMap(),
@@ -517,6 +558,119 @@ class DatabaseLoginFragment : Fragment() {
         }
     }
 
+    private fun challengeWithEmail(email: String) {
+
+        passwordlessClient.challengeWithEmail(email, passwordlessConnection, allowSignup = true)
+            .start(object : Callback<PasswordlessChallenge, AuthenticationException> {
+                override fun onSuccess(result: PasswordlessChallenge) {
+                    authSession = result.authSession
+                    Snackbar.make(
+                        requireView(),
+                        "Code sent to email. Enter it and tap Login with OTP.",
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
+
+                override fun onFailure(error: AuthenticationException) {
+                    Snackbar.make(requireView(), error.getDescription(), Snackbar.LENGTH_LONG)
+                        .show()
+                }
+            })
+    }
+
+    private suspend fun challengeWithEmailAsync(email: String) {
+        try {
+            val challenge =
+                passwordlessClient.challengeWithEmail(email, passwordlessConnection).await()
+            authSession = challenge.authSession
+            Snackbar.make(
+                requireView(),
+                "Code sent to email. Enter it and tap Login with OTP.",
+                Snackbar.LENGTH_LONG
+            ).show()
+        } catch (error: AuthenticationException) {
+            Snackbar.make(requireView(), error.getDescription(), Snackbar.LENGTH_LONG).show()
+        }
+    }
+
+    private fun challengeWithPhone(phoneNumber: String) {
+        passwordlessClient.challengeWithPhoneNumber(
+            phoneNumber,
+            passwordlessConnection,
+            deliveryMethod = DeliveryMethod.VOICE,
+            allowSignup = true
+        ).start(object : Callback<PasswordlessChallenge, AuthenticationException> {
+            override fun onSuccess(result: PasswordlessChallenge) {
+                authSession = result.authSession
+                Snackbar.make(
+                    requireView(),
+                    "Code sent via SMS. Enter it and tap Login with OTP.",
+                    Snackbar.LENGTH_LONG
+                ).show()
+            }
+
+            override fun onFailure(error: AuthenticationException) {
+                Snackbar.make(requireView(), error.getDescription(), Snackbar.LENGTH_LONG).show()
+            }
+        })
+    }
+
+    private suspend fun challengeWithPhoneAsync(phoneNumber: String) {
+        try {
+            val challenge = passwordlessClient.challengeWithPhoneNumber(
+                phoneNumber, passwordlessConnection, DeliveryMethod.TEXT
+            ).await()
+            authSession = challenge.authSession
+            Snackbar.make(
+                requireView(),
+                "Code sent via SMS. Enter it and tap Login with OTP.",
+                Snackbar.LENGTH_LONG
+            ).show()
+        } catch (error: AuthenticationException) {
+            Snackbar.make(requireView(), error.getDescription(), Snackbar.LENGTH_LONG).show()
+        }
+    }
+
+    private fun loginWithOtp(otp: String) {
+
+        val session = authSession
+        if (session == null) {
+            Snackbar.make(requireView(), "Request a challenge first.", Snackbar.LENGTH_LONG).show()
+            return
+        }
+        passwordlessClient.loginWithOTP(session, otp)
+            .start(object : Callback<Credentials, AuthenticationException> {
+                override fun onSuccess(result: Credentials) {
+                    credentialsManager.saveCredentials(result)
+                    Snackbar.make(
+                        requireView(), "Hello ${result.user.name}", Snackbar.LENGTH_LONG
+                    ).show()
+                }
+
+                override fun onFailure(error: AuthenticationException) {
+                    Snackbar.make(requireView(), error.getDescription(), Snackbar.LENGTH_LONG)
+                        .show()
+                }
+            })
+    }
+
+    private suspend fun loginWithOtpAsync(otp: String) {
+        val session = authSession
+        if (session == null) {
+            Snackbar.make(requireView(), "Request a challenge first.", Snackbar.LENGTH_LONG).show()
+            return
+        }
+        try {
+            val result = passwordlessClient.loginWithOTP(session, otp).await()
+            credentialsManager.saveCredentials(result)
+            Snackbar.make(
+                requireView(), "Hello ${result.user.name}", Snackbar.LENGTH_LONG
+            ).show()
+        } catch (error: AuthenticationException) {
+            Snackbar.make(requireView(), error.getDescription(), Snackbar.LENGTH_LONG).show()
+        }
+    }
+
     private fun launchAsync(runnable: suspend () -> Unit) {
         //Use a better scope like lifecycleScope or viewModelScope
         GlobalScope.launch(Dispatchers.Main) {
@@ -539,7 +693,8 @@ class DatabaseLoginFragment : Fragment() {
                 )
                 var response: CreatePublicKeyCredentialResponse?
 
-                credentialManager.createCredentialAsync(requireContext(),
+                credentialManager.createCredentialAsync(
+                    requireContext(),
                     request,
                     CancellationSignal(),
                     Executors.newSingleThreadExecutor(),
@@ -606,7 +761,8 @@ class DatabaseLoginFragment : Fragment() {
                         listOf(request)
                     )
 
-                    credentialManager.getCredentialAsync(requireContext(),
+                    credentialManager.getCredentialAsync(
+                        requireContext(),
                         getCredRequest,
                         CancellationSignal(),
                         Executors.newSingleThreadExecutor(),

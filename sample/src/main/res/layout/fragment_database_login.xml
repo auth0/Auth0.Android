@@ -72,6 +72,117 @@
             app:layout_constraintTop_toBottomOf="@+id/btSigninPasskeyAsync" />
 
         <TextView
+            android:id="@+id/textViewPasswordless"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Authenticate with Passwordless OTP"
+            android:textSize="16sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/btLoginAsync" />
+
+        <EditText
+            android:id="@+id/textPhoneNumber"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="16dp"
+            android:autofillHints="phoneNumber"
+            android:ems="10"
+            android:hint="Phone number (E.164, e.g. +15555550123)"
+            android:inputType="phone"
+            android:textSize="14sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textViewPasswordless" />
+
+        <Button
+            android:id="@+id/btChallengeEmail"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="4dp"
+            android:text="Email Challenge"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toStartOf="@+id/btChallengeEmailAsync"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textPhoneNumber" />
+
+        <Button
+            android:id="@+id/btChallengeEmailAsync"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Email Challenge (async)"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/btChallengeEmail"
+            app:layout_constraintTop_toBottomOf="@+id/textPhoneNumber" />
+
+        <Button
+            android:id="@+id/btChallengePhone"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="4dp"
+            android:text="Phone Challenge"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toStartOf="@+id/btChallengePhoneAsync"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/btChallengeEmail" />
+
+        <Button
+            android:id="@+id/btChallengePhoneAsync"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Phone Challenge (async)"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/btChallengePhone"
+            app:layout_constraintTop_toBottomOf="@+id/btChallengeEmailAsync" />
+
+        <EditText
+            android:id="@+id/textOtp"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="16dp"
+            android:ems="10"
+            android:hint="One-time code"
+            android:inputType="number"
+            android:textSize="14sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/btChallengePhone" />
+
+        <Button
+            android:id="@+id/btLoginOtp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="4dp"
+            android:text="Login with OTP"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toStartOf="@+id/btLoginOtpAsync"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textOtp" />
+
+        <Button
+            android:id="@+id/btLoginOtpAsync"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Login with OTP (async)"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/btLoginOtp"
+            app:layout_constraintTop_toBottomOf="@+id/textOtp" />
+
+        <TextView
             android:id="@+id/textViewPasskey"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -80,7 +191,7 @@
             android:textSize="16sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/btLoginAsync" />
+            app:layout_constraintTop_toBottomOf="@+id/btLoginOtp" />
 
         <Button
             android:id="@+id/btSignupPasskey"
