@@ -22,9 +22,6 @@
 - [Docs Site](https://javadoc.io/doc/com.auth0.android/auth0/latest/index.html)
 - [Migration Guide](V4_MIGRATION_GUIDE.md)
 
-**Skill for Coding Agents:** If you use coding agents such as Claude Code or Cursor, add the Auth0.Android migration skill to automate the upgrade: `npx skills add auth0/agent-skills --skill auth0-android-major-migration`
-
-
 ## Getting Started
 
 ### Requirements
