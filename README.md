@@ -22,7 +22,11 @@ We'd love for you to try it out and share your feedback! Please [open an issue](
 
 📚 [Migration Guide](https://github.com/auth0/Auth0.Android/blob/v4_development/V4_MIGRATION_GUIDE.md)   📦 [v4 Changelog](https://github.com/auth0/Auth0.Android/blob/v4_development/CHANGELOG.md)
 
-**Skill for Coding Agents:** If you use coding agents such as Claude Code or Cursor, add the Auth0.Android migration skill to automate the upgrade: `npx skills add auth0/agent-skills --skill auth0-android-major-migration`
+**Migrating with a coding agent?** If you use [Claude Code](https://claude.ai/code) or [Cursor](https://cursor.com), add the Auth0.Android migration skill to automate the v3 → v4 upgrade:
+
+```bash
+npx skills add auth0/agent-skills --skill auth0-android-major-migration
+```
 
 ## Documentation
 - [Quickstart](https://auth0.com/docs/quickstart/native/android/interactive)
