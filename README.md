@@ -20,7 +20,7 @@
 - [FAQs](https://github.com/auth0/auth0.android/blob/main/FAQ.md)
 - [Examples](https://github.com/auth0/auth0.android/blob/main/EXAMPLES.md)
 - [Docs Site](https://javadoc.io/doc/com.auth0.android/auth0/latest/index.html)
-
+- [Migration Guide](V4_MIGRATION_GUIDE.md)
 
 ## Getting Started
 

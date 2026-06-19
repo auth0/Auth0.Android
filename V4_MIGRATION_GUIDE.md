@@ -1,5 +1,9 @@
 # Migration Guide from SDK v3 to v4
 
+## Skill for Coding Agents
+
+If you use coding agents such as Claude Code or Cursor, we highly recommend adding the Auth0.Android migration skill to your repository: `npx skills add auth0/agent-skills --skill auth0-android-major-migration`
+
 > **Note:** This guide is actively maintained during the v4 development phase. As new changes are merged, this document will be updated to reflect the latest breaking changes and migration steps.
 
 v4 of the Auth0 Android SDK includes significant build toolchain updates, updated default values for better out-of-the-box behavior, and behavior changes to simplify credential management. This guide documents the changes required when migrating from v3 to v4.
