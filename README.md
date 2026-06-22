@@ -131,11 +131,11 @@ Next, define the Manifest Placeholders for the Auth0 Domain and Scheme which are
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion 34
     defaultConfig {
         applicationId "com.auth0.samples"
-        minSdkVersion 21
-        targetSdkVersion 30
+        minSdkVersion 31
+        targetSdkVersion 34
         //...
 
         //---> Add the next line
