@@ -6,6 +6,7 @@ import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
 import com.auth0.android.authentication.mfa.MfaApiClient
+import com.auth0.android.authentication.passwordless.PasswordlessClient
 import com.auth0.android.authentication.request.ActorToken
 import com.auth0.android.dpop.DPoP
 import com.auth0.android.dpop.DPoPException
@@ -116,6 +117,27 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      */
     public fun mfaClient(mfaToken: String): MfaApiClient {
         return MfaApiClient(this.auth0, mfaToken)
+    }
+
+    /**
+     * Creates a [PasswordlessClient] for the database-connection passwordless flow.
+     *
+     * ## Availability
+     *
+     * This feature is currently available in
+     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
+     * Please reach out to Auth0 support to get it enabled for your tenant.
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val passwordless = authClient.passwordlessClient()
+     * ```
+     *
+     * @return a new [PasswordlessClient] instance bound to this client's Auth0 account.
+     */
+    public fun passwordlessClient(): PasswordlessClient {
+        return PasswordlessClient(this.auth0, gson, this.dPoP)
     }
 
     /**
