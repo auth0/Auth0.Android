@@ -27,6 +27,9 @@
     - [Passwordless Login](#passwordless-login)
       - [Step 1: Request the code](#step-1-request-the-code)
       - [Step 2: Input the code](#step-2-input-the-code)
+    - [Passwordless Login with a Database Connection (EA)](#passwordless-login-with-a-database-connection-ea)
+      - [Step 1: Issue an OTP challenge](#step-1-issue-an-otp-challenge)
+      - [Step 2: Verify the code and log in](#step-2-verify-the-code-and-log-in)
     - [Sign Up with a database connection](#sign-up-with-a-database-connection)
     - [Get user information](#get-user-information)
     - [Custom Token Exchange](#custom-token-exchange)
@@ -1472,6 +1475,139 @@ try {
 authentication
     .loginWithEmail("info@auth0.com", "123456", "my-passwordless-connection")
     .validateClaims() //mandatory
+    .start(new Callback<Credentials, AuthenticationException>() {
+        @Override
+        public void onSuccess(@Nullable Credentials payload) {
+            //Logged in!
+        }
+
+        @Override
+        public void onFailure(@NonNull AuthenticationException error) {
+            //Error!
+        }
+    });
+```
+</details>
+
+> The default scope used is `openid profile email`. Regardless of the scopes set to the request, the `openid` scope is always enforced.
+
+### Passwordless Login with a Database Connection (EA)
+
+> [!IMPORTANT]
+> Passwordless Login for database connections is currently in [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access). Please reach out to Auth0 support to get it enabled for your tenant.
+
+This flow lets users authenticate with a one-time code sent over email or SMS/voice against a **database connection** that has `email_otp` or `phone_otp` enabled. It is distinct from the `/passwordless/start` flow described above, which uses dedicated passwordless connections.
+
+Obtain a `PasswordlessClient` from the `AuthenticationAPIClient`:
+
+```kotlin
+val passwordless = AuthenticationAPIClient(account).passwordlessClient()
+```
+
+The flow has two steps: request an OTP challenge, then exchange the code for credentials.
+
+#### Step 1: Issue an OTP challenge
+
+Send a one-time code to the user's email. For privacy, the server **always responds successfully regardless of whether the user exists**. On success you receive an opaque `auth_session` that you must keep for step 2.
+
+```kotlin
+passwordless
+    .challengeWithEmail("info@auth0.com", "my-database-connection")
+    .start(object: Callback<PasswordlessChallenge, AuthenticationException> {
+        override fun onFailure(exception: AuthenticationException) { }
+
+        override fun onSuccess(result: PasswordlessChallenge) {
+            val authSession = result.authSession
+        }
+    })
+```
+
+To send the code over SMS or voice instead, use `challengeWithPhoneNumber` against a connection with `phone_otp` enabled, choosing the `DeliveryMethod`:
+
+```kotlin
+passwordless
+    .challengeWithPhoneNumber("+15555550123", "my-database-connection", DeliveryMethod.TEXT)
+    .start(object: Callback<PasswordlessChallenge, AuthenticationException> {
+        override fun onFailure(exception: AuthenticationException) { }
+
+        override fun onSuccess(result: PasswordlessChallenge) {
+            val authSession = result.authSession
+        }
+    })
+```
+
+Both challenge methods accept an optional `allowSignup` parameter (defaults to `false`) that controls whether a new user is created if one does not yet exist.
+
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    val challenge = passwordless
+        .challengeWithEmail("info@auth0.com", "my-database-connection")
+        .await()
+    val authSession = challenge.authSession
+} catch (e: AuthenticationException) {
+    e.printStackTrace()
+}
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+passwordless
+    .challengeWithEmail("info@auth0.com", "my-database-connection", false)
+    .start(new Callback<PasswordlessChallenge, AuthenticationException>() {
+        @Override
+        public void onSuccess(PasswordlessChallenge result) {
+            String authSession = result.getAuthSession();
+        }
+
+        @Override
+        public void onFailure(@NonNull AuthenticationException error) {
+            //Error!
+        }
+    });
+```
+</details>
+
+#### Step 2: Verify the code and log in
+
+Exchange the `auth_session` from step 1 together with the code the user received for `Credentials`. If DPoP is enabled on the originating `AuthenticationAPIClient`, a DPoP proof is attached automatically to this token request.
+
+```kotlin
+passwordless
+    .loginWithOTP(authSession, "123456")
+    .start(object: Callback<Credentials, AuthenticationException> {
+        override fun onFailure(exception: AuthenticationException) { }
+
+        override fun onSuccess(credentials: Credentials) { }
+    })
+```
+
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    val credentials = passwordless
+        .loginWithOTP(authSession, "123456")
+        .await()
+    println(credentials)
+} catch (e: AuthenticationException) {
+    e.printStackTrace()
+}
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+passwordless
+    .loginWithOTP(authSession, "123456")
     .start(new Callback<Credentials, AuthenticationException>() {
         @Override
         public void onSuccess(@Nullable Credentials payload) {
