@@ -204,7 +204,7 @@ public class PasswordlessClientTest {
             """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
         )
 
-        passwordlessClient.loginWithOTP("session_abc", "123456").await()
+        passwordlessClient.loginWithOTP(PasswordlessChallenge("session_abc"), "123456").await()
 
         val request = mockServer.takeRequest()
         assertThat(request.path, `is`("/oauth/token"))
@@ -222,7 +222,7 @@ public class PasswordlessClientTest {
             """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
         )
 
-        val credentials = passwordlessClient.loginWithOTP("session_abc", "123456").await()
+        val credentials = passwordlessClient.loginWithOTP(PasswordlessChallenge("session_abc"), "123456").await()
 
         assertThat(credentials.accessToken, `is`(ACCESS_TOKEN))
     }
@@ -232,25 +232,15 @@ public class PasswordlessClientTest {
         enqueueErrorResponse("invalid_grant", "Invalid or expired code", 403)
 
         val exception = assertThrows(AuthenticationException::class.java) {
-            runTest { passwordlessClient.loginWithOTP("session_abc", "000000").await() }
+            runTest { passwordlessClient.loginWithOTP(PasswordlessChallenge("session_abc"), "000000").await() }
         }
         assertThat(exception.getCode(), `is`("invalid_grant"))
     }
 
     @Test
-    public fun shouldFailLoginWithBlankAuthSessionWithoutNetworkCall() {
-        val exception = assertThrows(AuthenticationException::class.java) {
-            runTest { passwordlessClient.loginWithOTP("", "123456").await() }
-        }
-        assertThat(exception.getCode(), `is`("invalid_request"))
-        assertThat(exception.getDescription(), containsString("auth_session is required"))
-        assertThat(mockServer.requestCount, `is`(0))
-    }
-
-    @Test
     public fun shouldFailLoginWithBlankOtpWithoutNetworkCall() {
         val exception = assertThrows(AuthenticationException::class.java) {
-            runTest { passwordlessClient.loginWithOTP("session_abc", "").await() }
+            runTest { passwordlessClient.loginWithOTP(PasswordlessChallenge("session_abc"), "").await() }
         }
         assertThat(exception.getCode(), `is`("invalid_request"))
         assertThat(exception.getDescription(), containsString("otp is required"))
@@ -266,7 +256,7 @@ public class PasswordlessClientTest {
             """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
         )
 
-        dpopClient.loginWithOTP("session_abc", "123456").await()
+        dpopClient.loginWithOTP(PasswordlessChallenge("session_abc"), "123456").await()
 
         val request = mockServer.takeRequest()
         assertThat(request.getHeader("DPoP"), `is`(notNullValue()))

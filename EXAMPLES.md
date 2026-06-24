@@ -1508,7 +1508,7 @@ The flow has two steps: request an OTP challenge, then exchange the code for cre
 
 #### Step 1: Issue an OTP challenge
 
-Send a one-time code to the user's email. For privacy, the server **always responds successfully regardless of whether the user exists**. On success you receive an opaque `auth_session` that you must keep for step 2.
+Send a one-time code to the user's email. For privacy, the server **always responds successfully regardless of whether the user exists**. On success you receive a `PasswordlessChallenge` containing an opaque `auth_session` that you must keep for step 2.
 
 ```kotlin
 passwordless
@@ -1517,7 +1517,7 @@ passwordless
         override fun onFailure(exception: AuthenticationException) { }
 
         override fun onSuccess(result: PasswordlessChallenge) {
-            val authSession = result.authSession
+            val challenge = result
         }
     })
 ```
@@ -1531,7 +1531,7 @@ passwordless
         override fun onFailure(exception: AuthenticationException) { }
 
         override fun onSuccess(result: PasswordlessChallenge) {
-            val authSession = result.authSession
+            val challenge = result
         }
     })
 ```
@@ -1546,7 +1546,6 @@ try {
     val challenge = passwordless
         .challengeWithEmail("info@auth0.com", "my-database-connection")
         .await()
-    val authSession = challenge.authSession
 } catch (e: AuthenticationException) {
     e.printStackTrace()
 }
@@ -1562,7 +1561,7 @@ passwordless
     .start(new Callback<PasswordlessChallenge, AuthenticationException>() {
         @Override
         public void onSuccess(PasswordlessChallenge result) {
-            String authSession = result.getAuthSession();
+            PasswordlessChallenge challenge = result;
         }
 
         @Override
@@ -1575,11 +1574,11 @@ passwordless
 
 #### Step 2: Verify the code and log in
 
-Exchange the `auth_session` from step 1 together with the code the user received for `Credentials`. If DPoP is enabled on the originating `AuthenticationAPIClient`, a DPoP proof is attached automatically to this token request.
+Exchange the `PasswordlessChallenge` from step 1 together with the code the user received for `Credentials`. If DPoP is enabled on the originating `AuthenticationAPIClient`, a DPoP proof is attached automatically to this token request.
 
 ```kotlin
 passwordless
-    .loginWithOTP(authSession, "123456")
+    .loginWithOTP(challenge, "123456")
     .start(object: Callback<Credentials, AuthenticationException> {
         override fun onFailure(exception: AuthenticationException) { }
 
@@ -1593,7 +1592,7 @@ passwordless
 ```kotlin
 try {
     val credentials = passwordless
-        .loginWithOTP(authSession, "123456")
+        .loginWithOTP(challenge, "123456")
         .await()
     println(credentials)
 } catch (e: AuthenticationException) {
@@ -1607,7 +1606,7 @@ try {
 
 ```java
 passwordless
-    .loginWithOTP(authSession, "123456")
+    .loginWithOTP(challenge, "123456")
     .start(new Callback<Credentials, AuthenticationException>() {
         @Override
         public void onSuccess(@Nullable Credentials payload) {

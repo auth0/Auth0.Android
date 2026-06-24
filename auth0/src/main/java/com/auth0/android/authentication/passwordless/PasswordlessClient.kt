@@ -82,7 +82,7 @@ public class PasswordlessClient @VisibleForTesting(otherwise = VisibleForTesting
      * passwordless.challengeWithEmail("user@example.com", "Username-Password-Authentication")
      *     .start(object : Callback<PasswordlessChallenge, AuthenticationException> {
      *         override fun onSuccess(result: PasswordlessChallenge) {
-     *             val authSession = result.authSession
+     *             val challenge = result
      *         }
      *         override fun onFailure(error: AuthenticationException) { }
      *     })
@@ -133,7 +133,7 @@ public class PasswordlessClient @VisibleForTesting(otherwise = VisibleForTesting
      * passwordless.challengeWithPhoneNumber("+15555550123", "Username-Password-Authentication", DeliveryMethod.TEXT)
      *     .start(object : Callback<PasswordlessChallenge, AuthenticationException> {
      *         override fun onSuccess(result: PasswordlessChallenge) {
-     *             val authSession = result.authSession
+     *             val challenge = result
      *         }
      *         override fun onFailure(error: AuthenticationException) { }
      *     })
@@ -185,21 +185,21 @@ public class PasswordlessClient @VisibleForTesting(otherwise = VisibleForTesting
      * ## Usage
      *
      * ```kotlin
-     * passwordless.loginWithOTP(authSession, "123456")
+     * passwordless.loginWithOTP(challenge, "123456")
      *     .start(object : Callback<Credentials, AuthenticationException> {
      *         override fun onSuccess(result: Credentials) { }
      *         override fun onFailure(error: AuthenticationException) { }
      *     })
      * ```
      *
-     * @param authSession the opaque session token from a prior challenge (see [PasswordlessChallenge.authSession]).
+     * @param passwordlessChallenge the challenge from a prior challenge (see [PasswordlessChallenge]).
      * @param otp the one-time code the user received via email, SMS, or voice call.
      * @return a request that, when started, yields [Credentials] on success.
      * @see challengeWithEmail
      * @see challengeWithPhoneNumber
      */
     public fun loginWithOTP(
-        authSession: String,
+        passwordlessChallenge: PasswordlessChallenge,
         otp: String
     ): AuthenticationRequest {
         val url = baseURL.toHttpUrl().newBuilder()
@@ -210,7 +210,7 @@ public class PasswordlessClient @VisibleForTesting(otherwise = VisibleForTesting
         val parameters = ParameterBuilder.newAuthenticationBuilder()
             .setClientId(clientId)
             .setGrantType(ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP)
-            .set(AUTH_SESSION_KEY, authSession)
+            .set(AUTH_SESSION_KEY, passwordlessChallenge.authSession)
             .set(ONE_TIME_PASSWORD_KEY, otp)
             .asDictionary()
 
@@ -223,7 +223,6 @@ public class PasswordlessClient @VisibleForTesting(otherwise = VisibleForTesting
             addParameters(parameters)
             addValidator(object : RequestValidator {
                 override fun validate(options: RequestOptions) {
-                    requireNotBlank(authSession, AUTH_SESSION_KEY)
                     requireNotBlank(otp, ONE_TIME_PASSWORD_KEY)
                 }
             })
