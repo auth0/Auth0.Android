@@ -92,6 +92,7 @@ public class PasswordlessClient @VisibleForTesting(otherwise = VisibleForTesting
      * @return a request that, when started, yields a [PasswordlessChallenge] containing the `auth_session`.
      * @see loginWithOTP
      */
+    @JvmOverloads
     public fun challengeWithEmail(
         email: String,
         connection: String,
@@ -143,6 +144,7 @@ public class PasswordlessClient @VisibleForTesting(otherwise = VisibleForTesting
      * @return a request that, when started, yields a [PasswordlessChallenge] containing the `auth_session`.
      * @see loginWithOTP
      */
+    @JvmOverloads
     public fun challengeWithPhoneNumber(
         phoneNumber: String,
         connection: String,
