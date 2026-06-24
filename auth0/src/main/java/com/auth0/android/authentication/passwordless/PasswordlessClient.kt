@@ -8,11 +8,13 @@ import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.authentication.ParameterBuilder
 import com.auth0.android.dpop.DPoP
 import com.auth0.android.dpop.DPoPException
+import com.auth0.android.request.AuthenticationRequest
 import com.auth0.android.request.ErrorAdapter
 import com.auth0.android.request.JsonAdapter
 import com.auth0.android.request.Request
 import com.auth0.android.request.RequestOptions
 import com.auth0.android.request.RequestValidator
+import com.auth0.android.request.internal.BaseAuthenticationRequest
 import com.auth0.android.request.internal.GsonAdapter
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.request.internal.RequestFactory
@@ -199,13 +201,13 @@ public class PasswordlessClient @VisibleForTesting(otherwise = VisibleForTesting
     public fun loginWithOTP(
         authSession: String,
         otp: String
-    ): Request<Credentials, AuthenticationException> {
+    ): AuthenticationRequest {
         val url = baseURL.toHttpUrl().newBuilder()
             .addPathSegment(OAUTH_PATH)
             .addPathSegment(TOKEN_PATH)
             .build()
 
-        val parameters = ParameterBuilder.newBuilder()
+        val parameters = ParameterBuilder.newAuthenticationBuilder()
             .setClientId(clientId)
             .setGrantType(ParameterBuilder.GRANT_TYPE_PASSWORDLESS_OTP)
             .set(AUTH_SESSION_KEY, authSession)
@@ -215,14 +217,18 @@ public class PasswordlessClient @VisibleForTesting(otherwise = VisibleForTesting
         val credentialsAdapter: JsonAdapter<Credentials> =
             GsonAdapter(Credentials::class.java, gson)
 
-        return requestFactory.post(url.toString(), credentialsAdapter, dPoP)
-            .addParameters(parameters)
-            .addValidator(object : RequestValidator {
+        val request = BaseAuthenticationRequest(
+            requestFactory.post(url.toString(), credentialsAdapter, dPoP), clientId, baseURL
+        ).apply {
+            addParameters(parameters)
+            addValidator(object : RequestValidator {
                 override fun validate(options: RequestOptions) {
                     requireNotBlank(authSession, AUTH_SESSION_KEY)
                     requireNotBlank(otp, ONE_TIME_PASSWORD_KEY)
                 }
             })
+        }
+        return request
     }
 
     private fun challengeRequest(
@@ -254,7 +260,10 @@ public class PasswordlessClient @VisibleForTesting(otherwise = VisibleForTesting
             ): AuthenticationException = AuthenticationException(bodyText, statusCode)
 
             @Throws(IOException::class)
-            override fun fromJsonResponse(statusCode: Int, reader: Reader): AuthenticationException {
+            override fun fromJsonResponse(
+                statusCode: Int,
+                reader: Reader
+            ): AuthenticationException {
                 val values = mapAdapter.fromJson(reader)
                 return AuthenticationException(values, statusCode)
             }
