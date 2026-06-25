@@ -1504,20 +1504,23 @@ Obtain a `PasswordlessClient` from the `AuthenticationAPIClient`:
 val passwordless = AuthenticationAPIClient(account).passwordlessClient()
 ```
 
-The flow has two steps: request an OTP challenge, then exchange the code for credentials.
+The flow has two steps: first issue an OTP challenge, then — after the user enters the code they received — exchange it for credentials. **Save the `PasswordlessChallenge` from step 1**, as you pass that same object into `loginWithOTP` in step 2.
 
 #### Step 1: Issue an OTP challenge
 
-Send a one-time code to the user's email. For privacy, the server **always responds successfully regardless of whether the user exists**. On success you receive a `PasswordlessChallenge` containing an opaque `auth_session` that you must keep for step 2.
+Send a one-time code to the user's email. For privacy, the server **always responds successfully regardless of whether the user exists**. On success, save the returned `PasswordlessChallenge` for step 2.
 
 ```kotlin
+// keep this reference until the user enters the code
+var challenge: PasswordlessChallenge? = null
+
 passwordless
     .challengeWithEmail("info@auth0.com", "my-database-connection")
     .start(object: Callback<PasswordlessChallenge, AuthenticationException> {
         override fun onFailure(exception: AuthenticationException) { }
 
         override fun onSuccess(result: PasswordlessChallenge) {
-            val challenge = result
+            challenge = result
         }
     })
 ```
@@ -1531,50 +1534,16 @@ passwordless
         override fun onFailure(exception: AuthenticationException) { }
 
         override fun onSuccess(result: PasswordlessChallenge) {
-            val challenge = result
+            challenge = result
         }
     })
 ```
 
 Both challenge methods accept an optional `allowSignup` parameter (defaults to `false`) that controls whether a new user is created if one does not yet exist.
 
-<details>
-  <summary>Using coroutines</summary>
-
-```kotlin
-try {
-    val challenge = passwordless
-        .challengeWithEmail("info@auth0.com", "my-database-connection")
-        .await()
-} catch (e: AuthenticationException) {
-    e.printStackTrace()
-}
-```
-</details>
-
-<details>
-  <summary>Using Java</summary>
-
-```java
-passwordless
-    .challengeWithEmail("info@auth0.com", "my-database-connection", false)
-    .start(new Callback<PasswordlessChallenge, AuthenticationException>() {
-        @Override
-        public void onSuccess(PasswordlessChallenge result) {
-            PasswordlessChallenge challenge = result;
-        }
-
-        @Override
-        public void onFailure(@NonNull AuthenticationException error) {
-            //Error!
-        }
-    });
-```
-</details>
-
 #### Step 2: Verify the code and log in
 
-Exchange the `PasswordlessChallenge` from step 1 together with the code the user received for `Credentials`. If DPoP is enabled on the originating `AuthenticationAPIClient`, a DPoP proof is attached automatically to this token request.
+Once the user enters the code, pass the saved `challenge` together with that code to `loginWithOTP` to obtain `Credentials`. If DPoP is enabled on the originating `AuthenticationAPIClient`, a DPoP proof is attached automatically to this token request.
 
 ```kotlin
 passwordless
@@ -1590,14 +1559,15 @@ passwordless
   <summary>Using coroutines</summary>
 
 ```kotlin
-try {
-    val credentials = passwordless
-        .loginWithOTP(challenge, "123456")
-        .await()
-    println(credentials)
-} catch (e: AuthenticationException) {
-    e.printStackTrace()
-}
+// Step 1: issue the challenge and keep it
+val challenge = passwordless
+    .challengeWithEmail("info@auth0.com", "my-database-connection")
+    .await()
+
+// Step 2: once the user enters the code, pass the saved challenge back to log in
+val credentials = passwordless
+    .loginWithOTP(challenge, "123456")
+    .await()
 ```
 </details>
 
@@ -1605,6 +1575,22 @@ try {
   <summary>Using Java</summary>
 
 ```java
+// Step 1: issue the challenge and keep it
+passwordless
+    .challengeWithEmail("info@auth0.com", "my-database-connection", false)
+    .start(new Callback<PasswordlessChallenge, AuthenticationException>() {
+        @Override
+        public void onSuccess(PasswordlessChallenge result) {
+            challenge = result;
+        }
+
+        @Override
+        public void onFailure(@NonNull AuthenticationException error) {
+            //Error!
+        }
+    });
+
+// Step 2: once the user enters the code, pass the saved challenge back to log in
 passwordless
     .loginWithOTP(challenge, "123456")
     .start(new Callback<Credentials, AuthenticationException>() {
