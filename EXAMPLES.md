@@ -3221,6 +3221,8 @@ params.put("screen_hint", "signup");
 
 The client provides a few methods to interact with the [Users Management API](https://auth0.com/docs/api/management/v2/#!/Users).
 
+> ⚠️ **Deprecated** — `UsersAPIClient` is deprecated and will be removed in the next major version of the SDK. See the [CHANGELOG](CHANGELOG.md) for migration guidance.
+
 Create a new instance passing the account and an access token with the Management API audience and the right scope:
 
 ```kotlin
