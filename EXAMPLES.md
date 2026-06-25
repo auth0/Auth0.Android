@@ -457,6 +457,8 @@ authentication
 
 ### Login using MFA with One Time Password code
 
+> ⚠️ **Deprecated** — `loginWithOTP`, `loginWithOOB`, `loginWithRecoveryCode`, and `multifactorChallenge` are deprecated and will be removed in the next major version. Use `MfaApiClient` instead — see the [MFA Flexible Factors Grant](#mfa-flexible-factors-grant) section below.
+
 This call requires the client to have the *MFA* Client Grant Type enabled. Check [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
 
 When you sign in to a multifactor authentication enabled connection using the `login` method, you receive an error standing that MFA is required for that user along with an `mfa_token` value. Use this value to call `loginWithOTP` and complete the MFA flow passing the One Time Password from the enrolled MFA code generator app.
@@ -510,8 +512,6 @@ authentication
 </details>
 
 > The default scope used is `openid profile email`. Regardless of the scopes set to the request, the `openid` scope is always enforced.
-
->  **Note** : The MFA APIs in Authentication client has been deprecated. Use the new MFA Flexible Factors APIs
 
 ### MFA Flexible Factors Grant
 
@@ -3221,7 +3221,7 @@ params.put("screen_hint", "signup");
 
 The client provides a few methods to interact with the [Users Management API](https://auth0.com/docs/api/management/v2/#!/Users).
 
-> ⚠️ **Deprecated** — `UsersAPIClient` is deprecated and will be removed in the next major version of the SDK. See the [CHANGELOG](CHANGELOG.md) for migration guidance.
+> ⚠️ **Deprecated** — `UsersAPIClient` will be removed in the next major version.
 
 Create a new instance passing the account and an access token with the Management API audience and the right scope:
 
