@@ -1,5 +1,13 @@
 # Change Log
 
+## [3.20.0](https://github.com/auth0/Auth0.Android/tree/3.20.0) (2026-06-29)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.19.0...3.20.0)
+
+**Added**
+- feat: Added DPoP support for MFA APIs [\#992](https://github.com/auth0/Auth0.Android/pull/992) ([pmathew92](https://github.com/pmathew92))
+- feat: enforce IPSIE session_expiry ceiling in credentials managers [\#983](https://github.com/auth0/Auth0.Android/pull/983) ([utkrishtsahu](https://github.com/utkrishtsahu))
+- feat : Added passwordless API for DB-Connections [\#989](https://github.com/auth0/Auth0.Android/pull/989) ([pmathew92](https://github.com/pmathew92))
+
 ## [3.19.0](https://github.com/auth0/Auth0.Android/tree/3.19.0) (2026-06-15)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.18.0...3.19.0)
 
