@@ -28,6 +28,19 @@ public abstract class BaseCredentialsManager internal constructor(
 
         @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
         internal const val KEY_TOKEN_TYPE = "com.auth0.token_type"
+
+        /**
+         * Storage key for the IPSIE `session_expiry` ceiling (Unix seconds), persisted at login so it
+         * survives a refresh whose ID token does not re-emit the claim. See [isSessionExpired].
+         */
+        @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+        internal const val KEY_SESSION_EXPIRY = "com.auth0.session_expiry"
+
+        /**
+         * Negative clock-skew leeway (seconds) applied when checking the `session_expiry` ceiling, so
+         * the session is treated as expired slightly *before* the wall-clock ceiling, never after.
+         */
+        private const val SESSION_EXPIRY_LEEWAY_SECONDS = 30L
     }
 
     private var _clock: Clock = ClockImpl()
@@ -300,6 +313,93 @@ public abstract class BaseCredentialsManager internal constructor(
      */
     protected fun hasExpired(expiresAt: Long): Boolean {
         return expiresAt <= currentTimeInMillis
+    }
+
+    /**
+     * Reads the IPSIE `session_expiry` ceiling (Unix seconds) from the given ID token, or null when
+     * the token is absent/unparseable or does not carry the claim.
+     */
+    private fun sessionExpiryFromIdToken(idToken: String?): Long? {
+        if (idToken.isNullOrBlank()) return null
+        return runCatching { jwtDecoder.decode(idToken).sessionExpiry }.getOrNull()
+    }
+
+    /**
+     * Checks whether the upstream-IdP session ceiling (`session_expiry`) has been reached.
+     *
+     * The ceiling is resolved in order: (1) the value pinned at login under [KEY_SESSION_EXPIRY];
+     * (2) the live claim in [idToken], as a fallback only when nothing is pinned yet (migration of a
+     * session saved before this control existed); (3) if neither is present there is no ceiling and
+     * the session is NOT expired — a missing value must fall through to existing behavior, never be
+     * treated as already-expired. The pinned value is read first because the ceiling is fixed at the
+     * initial login: a refresh whose ID token re-emits a *later* `session_expiry` must never raise it.
+     *
+     * A small negative clock-skew leeway is applied so the session is treated as expired slightly
+     * before the wall-clock ceiling, never after.
+     */
+    protected fun isSessionExpired(idToken: String?): Boolean {
+        // A non-positive value is not a valid Unix timestamp; treat it as "not pinned"/"no ceiling"
+        // (mirrors the unset/migration guard in [willExpire]) so a 0/negative stored sentinel falls
+        // through to the live claim rather than fail-open as "no ceiling".
+        val sessionExpiry = storage.retrieveLong(KEY_SESSION_EXPIRY)?.takeIf { it > 0 }
+            ?: sessionExpiryFromIdToken(idToken)?.takeIf { it > 0 }
+            ?: return false
+        val nowSeconds = currentTimeInMillis / 1000
+        return nowSeconds + SESSION_EXPIRY_LEEWAY_SECONDS >= sessionExpiry
+    }
+
+    /**
+     * Stamps the pinned `session_expiry` ceiling (the value persisted at login under
+     * [KEY_SESSION_EXPIRY]) onto [credentials] so its public `sessionExpiresAt` reflects the value
+     * the SDK actually enforces, rather than re-decoding the live ID token — which would diverge
+     * after a refresh whose token omits or re-emits the claim. No-op when nothing is pinned, so the
+     * getter falls back to the token claim. Returns the same instance for call-site convenience.
+     */
+    protected fun stampPinnedSessionExpiry(credentials: Credentials): Credentials {
+        storage.retrieveLong(KEY_SESSION_EXPIRY)?.takeIf { it > 0 }?.let {
+            credentials.pinnedSessionExpiresAt = it
+        }
+        return credentials
+    }
+
+    /**
+     * Pins the `session_expiry` ceiling from the initial login and preserves it across refreshes.
+     *
+     * The ceiling is read once and stamped onto the session at login: it is stored only when no value
+     * is already persisted. A `session_expiry` re-emitted on a later (refresh) grant is deliberately
+     * ignored, so the bound stays pinned to the initial-login value and a refresh can never extend the
+     * session past it. [clearCredentials] removes the stored value on logout, so the next login re-pins
+     * a fresh ceiling. Call from `saveCredentials`.
+     */
+    protected fun persistSessionExpiry(idToken: String?) {
+        val incoming = sessionExpiryFromIdToken(idToken) ?: return
+        // A positive value is already pinned from the initial login -> keep it; ignore the claim
+        // re-emitted on this (refresh) grant. A null/non-positive stored value means nothing is pinned
+        // yet (mirrors the unset/migration guard in [isSessionExpired]), so stamp the ceiling now.
+        val pinned = storage.retrieveLong(KEY_SESSION_EXPIRY)
+        if (pinned != null && pinned > 0) return
+        storage.store(KEY_SESSION_EXPIRY, incoming)
+    }
+
+    /**
+     * Validates, at session-creation time, that the given ID token is not already past its
+     * `session_expiry` ceiling. Throws [CredentialsManagerException] with code `SESSION_EXPIRED`
+     * when it is, so an already-expired session is never persisted. No-op when the token is absent
+     * or does not carry both `session_expiry` and `iat`.
+     *
+     * The same [SESSION_EXPIRY_LEEWAY_SECONDS] leeway used by [isSessionExpired] is applied here so
+     * the two checks agree: a ceiling within the leeway of `iat` is rejected up front rather than
+     * being persisted only to be treated as expired on the very next read.
+     */
+    @Throws(CredentialsManagerException::class)
+    protected fun validateSessionExpiryAtCreation(idToken: String?) {
+        if (idToken.isNullOrBlank()) return
+        val jwt = runCatching { jwtDecoder.decode(idToken) }.getOrNull() ?: return
+        val sessionExpiry = jwt.sessionExpiry ?: return
+        val issuedAtSeconds = jwt.issuedAt?.time?.div(1000) ?: return
+        if (sessionExpiry <= issuedAtSeconds + SESSION_EXPIRY_LEEWAY_SECONDS) {
+            throw CredentialsManagerException.SESSION_EXPIRED
+        }
     }
 
     /**

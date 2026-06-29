@@ -2176,6 +2176,7 @@ public class SecureCredentialsManagerTest {
         verify(storage).remove("com.auth0.credentials_can_refresh")
         verify(storage).remove("com.auth0.token_type")
         verify(storage).remove("com.auth0.dpop_key_thumbprint")
+        verify(storage).remove("com.auth0.session_expiry")
         verifyNoMoreInteractions(storage)
     }
 
@@ -3571,6 +3572,204 @@ public class SecureCredentialsManagerTest {
     /**
      * Used to simplify the tests length
      */
+    // IPSIE session_expiry enforcement
+
+    @Test
+    public fun shouldFailWithSessionExpiredWithoutBiometricsOrRenewWhenStoredCeilingReached() {
+        Mockito.`when`(localAuthenticationManager.authenticate()).then {
+            localAuthenticationManager.resultCallback.onSuccess(true)
+        }
+        val nowSeconds = CredentialsMock.CURRENT_TIME_MS / 1000
+        // Stored ceiling already in the past.
+        Mockito.`when`(storage.retrieveLong("com.auth0.session_expiry")).thenReturn(nowSeconds - 100)
+
+        manager.getCredentials(callback)
+
+        verify(callback).onFailure(exceptionCaptor.capture())
+        MatcherAssert.assertThat(
+            exceptionCaptor.firstValue,
+            Is.`is`(CredentialsManagerException.SESSION_EXPIRED)
+        )
+        // No biometric prompt should be raised for a dead session.
+        verify(localAuthenticationManager, never()).authenticate()
+        // The breached session must be cleared.
+        verify(storage).remove("com.auth0.session_expiry")
+        verify(storage).remove("com.auth0.credentials")
+        // The refresh-token grant must never be used past the ceiling.
+        verifyNoMoreInteractions(client)
+    }
+
+    @Test
+    public fun shouldFailWithSessionExpiredWhenStoredCeilingFallsWithinLeeway() {
+        Mockito.`when`(localAuthenticationManager.authenticate()).then {
+            localAuthenticationManager.resultCallback.onSuccess(true)
+        }
+        val nowSeconds = CredentialsMock.CURRENT_TIME_MS / 1000
+        // 10s ahead, but inside the 30s negative leeway -> treated as expired.
+        Mockito.`when`(storage.retrieveLong("com.auth0.session_expiry")).thenReturn(nowSeconds + 10)
+
+        manager.getCredentials(callback)
+
+        verify(callback).onFailure(exceptionCaptor.capture())
+        MatcherAssert.assertThat(
+            exceptionCaptor.firstValue,
+            Is.`is`(CredentialsManagerException.SESSION_EXPIRED)
+        )
+        // No refresh past the ceiling.
+        verifyNoMoreInteractions(client)
+    }
+
+    @Test
+    public fun shouldGetCredentialsWhenStoredSessionCeilingNotReached() {
+        Mockito.`when`(localAuthenticationManager.authenticate()).then {
+            localAuthenticationManager.resultCallback.onSuccess(true)
+        }
+        val nowSeconds = CredentialsMock.CURRENT_TIME_MS / 1000
+        Mockito.`when`(storage.retrieveLong("com.auth0.session_expiry"))
+            .thenReturn(nowSeconds + 100_000)
+        val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + ONE_HOUR_SECONDS * 1000)
+        insertTestCredentials(true, true, true, expiresAt, "scope")
+
+        manager.getCredentials(callback)
+
+        verify(callback).onSuccess(credentialsCaptor.capture())
+        MatcherAssert.assertThat(credentialsCaptor.firstValue, Is.`is`(Matchers.notNullValue()))
+        // No refresh needed (token not expired).
+        verifyNoMoreInteractions(client)
+    }
+
+    @Test
+    public fun shouldNotEnforceSessionExpiryWhenNoStoredCeiling() {
+        Mockito.`when`(localAuthenticationManager.authenticate()).then {
+            localAuthenticationManager.resultCallback.onSuccess(true)
+        }
+        // No stored ceiling -> existing behavior, no regression.
+        Mockito.`when`(storage.retrieveLong("com.auth0.session_expiry")).thenReturn(null)
+        val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + ONE_HOUR_SECONDS * 1000)
+        insertTestCredentials(true, true, true, expiresAt, "scope")
+
+        manager.getCredentials(callback)
+
+        verify(callback).onSuccess(credentialsCaptor.capture())
+        MatcherAssert.assertThat(credentialsCaptor.firstValue, Is.`is`(Matchers.notNullValue()))
+        verifyNoMoreInteractions(client)
+    }
+
+    @Test
+    public fun shouldThrowWhenSavingCredentialsAlreadyPastSessionCeiling() {
+        val credentials = CredentialsMock.create(
+            "idToken", "accessToken", "type", "refreshToken",
+            Date(CredentialsMock.ONE_HOUR_AHEAD_MS), "scope"
+        )
+        val jwtMock = mock<Jwt>()
+        // session_expiry (1000) is at/below iat (2000) -> already expired at creation.
+        Mockito.`when`(jwtMock.sessionExpiry).thenReturn(1000L)
+        Mockito.`when`(jwtMock.issuedAt).thenReturn(Date(2000L * 1000))
+        Mockito.`when`(jwtDecoder.decode("idToken")).thenReturn(jwtMock)
+
+        val exception = assertThrows(CredentialsManagerException::class.java) {
+            manager.saveCredentials(credentials)
+        }
+        MatcherAssert.assertThat(exception, Is.`is`(CredentialsManagerException.SESSION_EXPIRED))
+        verify(storage, never()).store(eq("com.auth0.credentials"), anyString())
+    }
+
+    @Test
+    public fun shouldPersistSessionExpiryWhenSavingCredentials() {
+        val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
+        val credentials = CredentialsMock.create(
+            "idToken", "accessToken", "type", "refreshToken", Date(expirationTime), "scope"
+        )
+        val sessionExpiry = (expirationTime / 1000) + 100_000
+        val json = gson.toJson(credentials)
+        val jwtMock = mock<Jwt>()
+        Mockito.`when`(jwtMock.expiresAt).thenReturn(Date(expirationTime))
+        Mockito.`when`(jwtMock.sessionExpiry).thenReturn(sessionExpiry)
+        Mockito.`when`(jwtMock.issuedAt).thenReturn(Date(CredentialsMock.CURRENT_TIME_MS))
+        Mockito.`when`(jwtDecoder.decode("idToken")).thenReturn(jwtMock)
+        Mockito.`when`(crypto.encrypt(json.toByteArray())).thenReturn(json.toByteArray())
+
+        manager.saveCredentials(credentials)
+
+        verify(storage).store("com.auth0.session_expiry", sessionExpiry)
+    }
+
+    @Test
+    public fun shouldNotOverwriteStoredSessionExpiryWhenSavingRefreshedCredentials() {
+        val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
+        val credentials = CredentialsMock.create(
+            "idToken", "accessToken", "type", "refreshToken", Date(expirationTime), "scope"
+        )
+        // A ceiling is already pinned from the initial login.
+        val pinnedCeiling = (expirationTime / 1000) + 100_000
+        Mockito.`when`(storage.retrieveLong("com.auth0.session_expiry")).thenReturn(pinnedCeiling)
+        val json = gson.toJson(credentials)
+        // The refreshed ID token re-emits a later session_expiry that must be ignored.
+        val jwtMock = mock<Jwt>()
+        Mockito.`when`(jwtMock.expiresAt).thenReturn(Date(expirationTime))
+        Mockito.`when`(jwtMock.sessionExpiry).thenReturn(pinnedCeiling + 100_000)
+        Mockito.`when`(jwtMock.issuedAt).thenReturn(Date(CredentialsMock.CURRENT_TIME_MS))
+        Mockito.`when`(jwtDecoder.decode("idToken")).thenReturn(jwtMock)
+        Mockito.`when`(crypto.encrypt(json.toByteArray())).thenReturn(json.toByteArray())
+
+        manager.saveCredentials(credentials)
+
+        // The pinned ceiling must not be moved by a refresh-grant claim.
+        verify(storage, never()).store(eq("com.auth0.session_expiry"), anyLong())
+    }
+
+    @Test
+    public fun shouldFailGetSsoCredentialsWithSessionExpiredWhenSessionCeilingReached() {
+        val nowSeconds = CredentialsMock.CURRENT_TIME_MS / 1000
+        insertTestCredentials(
+            hasIdToken = true,
+            hasAccessToken = true,
+            hasRefreshToken = true,
+            willExpireAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS),
+            scope = "scope"
+        )
+        // Nothing pinned in storage, so the ceiling resolves from the decrypted ID token claim
+        // below. (Mockito returns 0L for the unstubbed key, which the storage-first lookup in
+        // isSessionExpired would otherwise consume as a bogus "no ceiling" value.)
+        Mockito.`when`(storage.retrieveLong("com.auth0.session_expiry")).thenReturn(null)
+        // The decrypted ID token carries a session_expiry ceiling already in the past.
+        val jwtMock = mock<Jwt>()
+        Mockito.`when`(jwtMock.sessionExpiry).thenReturn(nowSeconds - 100)
+        Mockito.`when`(jwtDecoder.decode("idToken")).thenReturn(jwtMock)
+
+        manager.getSsoCredentials(ssoCallback)
+
+        verify(ssoCallback).onFailure(exceptionCaptor.capture())
+        MatcherAssert.assertThat(
+            exceptionCaptor.firstValue,
+            Is.`is`(CredentialsManagerException.SESSION_EXPIRED)
+        )
+        // The refresh-token grant must never be exchanged for SSO credentials past the ceiling.
+        verifyNoMoreInteractions(client)
+        verify(storage).remove("com.auth0.session_expiry")
+        verify(storage).remove("com.auth0.credentials")
+    }
+
+    @Test
+    public fun shouldFailGetApiCredentialsWithSessionExpiredWhenStoredCeilingReached() {
+        val nowSeconds = CredentialsMock.CURRENT_TIME_MS / 1000
+        // Stored ceiling already in the past; the encrypted blob need not be read.
+        Mockito.`when`(storage.retrieveLong("com.auth0.session_expiry")).thenReturn(nowSeconds - 100)
+
+        manager.getApiCredentials("audience", "scope", callback = apiCredentialsCallback)
+
+        verify(apiCredentialsCallback).onFailure(exceptionCaptor.capture())
+        MatcherAssert.assertThat(
+            exceptionCaptor.firstValue,
+            Is.`is`(CredentialsManagerException.SESSION_EXPIRED)
+        )
+        // No biometric prompt and no refresh past the ceiling.
+        verify(localAuthenticationManager, never()).authenticate()
+        verifyNoMoreInteractions(client)
+        verify(storage).remove("com.auth0.session_expiry")
+        verify(storage).remove("com.auth0.credentials")
+    }
+
     private fun insertTestCredentials(
         hasIdToken: Boolean,
         hasAccessToken: Boolean,
@@ -3934,6 +4133,9 @@ public class SecureCredentialsManagerTest {
     private fun prepareJwtDecoderMock(expiresAt: Date?) {
         val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(expiresAt)
+        // Default to a token without the IPSIE session_expiry claim. Mockito returns 0 (not null) for
+        // an unstubbed Long?-returning property, which would otherwise trigger a spurious persist.
+        Mockito.`when`(jwtMock.sessionExpiry).thenReturn(null)
         Mockito.`when`(jwtDecoder.decode("idToken")).thenReturn(jwtMock)
     }
 

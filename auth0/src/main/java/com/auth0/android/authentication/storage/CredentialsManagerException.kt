@@ -51,6 +51,7 @@ public class CredentialsManagerException :
         DPOP_KEY_MISSING,
         DPOP_KEY_MISMATCH,
         DPOP_NOT_CONFIGURED,
+        SESSION_EXPIRED,
         UNKNOWN_ERROR
     }
 
@@ -169,6 +170,9 @@ public class CredentialsManagerException :
         public val DPOP_NOT_CONFIGURED: CredentialsManagerException =
             CredentialsManagerException(Code.DPOP_NOT_CONFIGURED)
 
+        public val SESSION_EXPIRED: CredentialsManagerException =
+            CredentialsManagerException(Code.SESSION_EXPIRED)
+
         public val UNKNOWN_ERROR: CredentialsManagerException = CredentialsManagerException(Code.UNKNOWN_ERROR)
 
 
@@ -220,6 +224,7 @@ public class CredentialsManagerException :
                 Code.DPOP_KEY_MISSING -> "The stored credentials are DPoP-bound but the DPoP key pair is no longer available in the Android KeyStore. Re-authentication is required."
                 Code.DPOP_KEY_MISMATCH -> "The stored credentials are DPoP-bound but the current DPoP key pair does not match the one used when credentials were saved. Re-authentication is required."
                 Code.DPOP_NOT_CONFIGURED -> "The stored credentials are DPoP-bound but the AuthenticationAPIClient used by this credentials manager was not configured with useDPoP(context). Call AuthenticationAPIClient(auth0).useDPoP(context) and pass the configured client to the credentials manager."
+                Code.SESSION_EXPIRED -> "The session has reached the session_expiry ceiling set by the identity provider and is no longer valid. The user must re-authenticate."
                 Code.UNKNOWN_ERROR -> "An unknown error has occurred while fetching the token. Please check the error cause for more details."
             }
         }

@@ -3007,6 +3007,7 @@ In the event that something happened while trying to save or retrieve the creden
 - **DPoP key pair lost** — The DPoP key pair is no longer available in the Android KeyStore. The stored credentials are cleared and re-authentication is required.
 - **DPoP key pair mismatch** — The DPoP key pair exists but is different from the one used when the credentials were saved. The stored credentials are cleared and re-authentication is required.
 - **DPoP not configured** — The stored credentials are DPoP-bound but the `AuthenticationAPIClient` used by the credentials manager was not configured with `useDPoP(context)`. The developer needs to call `AuthenticationAPIClient(auth0).useDPoP(context)` and pass the configured client to the credentials manager.
+- **Session expired** — The session has reached the `session_expiry` ceiling asserted by the upstream identity provider. The stored credentials are cleared and re-authentication is required. See [Upstream session expiry](#upstream-session-expiry) below.
 
 You can access the `code` property of the `CredentialsManagerException` to understand why the operation with `CredentialsManager` has failed and the `message` property of the `CredentialsManagerException` would give you a description of the exception.
 
@@ -3040,8 +3041,51 @@ when(credentialsManagerException) {
         // Developer forgot to call useDPoP() on the AuthenticationAPIClient
         // passed to the credentials manager. Fix the client configuration.
     }
+
+    CredentialsManagerException.SESSION_EXPIRED -> {
+        // The upstream identity provider's session_expiry ceiling was reached.
+        // The stored credentials have already been cleared; prompt the user to
+        // re-authenticate.
+    }
     // ... similarly for other error codes
 }
+```
+
+### Upstream session expiry
+
+When an enterprise connection (for example an OIDC or Okta connection) is configured to assert a session lifetime, Auth0 includes a `session_expiry` claim in the ID token. This claim is an absolute ceiling — expressed in **Unix seconds** — on how long the local session may live, independently of the access-token expiry. It usually sits much further out than `expiresAt`, and it cannot be extended by a refresh-token renewal.
+
+The credentials managers enforce this ceiling automatically:
+
+- The ceiling is read from the ID token at login and persisted, so it survives refreshes whose ID token does not re-emit the claim.
+- `saveCredentials` rejects an already-expired session up front: if the ID token is already past its ceiling at login, the save throws `CredentialsManagerException.SESSION_EXPIRED` and nothing is persisted.
+- On every `getCredentials` call, if the ceiling has been reached the stored credentials are cleared and the call fails with `CredentialsManagerException.SESSION_EXPIRED`. The refresh token is **never** used to renew a session past the ceiling.
+- A small negative clock-skew leeway (~30 seconds) is applied, so the session is treated as expired slightly *before* the wall-clock ceiling, never after.
+- Connections that do not emit the claim are unaffected — there is no ceiling and behavior is unchanged.
+
+> ⚠️ **The `session_expiry` value must be Unix seconds.** Per [RFC 7519](https://datatracker.ietf.org/doc/html/rfc7519), the claim is interpreted as seconds since the Unix epoch. A millisecond-magnitude value (e.g. `1700000000000`) resolves to a date ~50,000 years out and would **silently disable** the ceiling, so the SDK treats any implausibly large value (`>= 10_000_000_000`) as "no ceiling". The SDK also **fails open** on any malformed value — a non-numeric, zero, negative, or millisecond value is treated as "no ceiling" and the session proceeds without enforcement. When emitting the claim from an Action, always use seconds (divide a milliseconds timestamp by 1000).
+
+> ⚠️ **Upgrade note:** For a user whose connection asserts `session_expiry`, a `getCredentials` call that previously succeeded can now fail with `SESSION_EXPIRED` once the ceiling is reached. Make sure your error handling treats `SESSION_EXPIRED` as a prompt to re-authenticate.
+
+#### Emitting the claim
+
+The `session_expiry` claim is not emitted by default — it is set on your tenant by a [Post-Login Action](https://auth0.com/docs/customize/actions/flows-and-triggers/login-flow) that adds it to the ID token, for example:
+
+```javascript
+exports.onExecutePostLogin = async (event, api) => {
+  // session_expiry must be expressed in Unix seconds
+  const sessionExpiry = Math.floor(Date.now() / 1000) + 8 * 60 * 60; // 8 hours from now
+  api.idToken.setCustomClaim('session_expiry', sessionExpiry);
+};
+```
+
+> 📝 A link to the canonical Auth0 `session_expiry` Action guide will be added here once it is published.
+
+You can read the ceiling for a given credential set from `Credentials.sessionExpiresAt` (a nullable `Long` of Unix seconds, `null` when the connection does not emit the claim):
+
+```kotlin
+val credentials = credentialsManager.awaitCredentials()
+val ceiling: Long? = credentials.sessionExpiresAt
 ```
 
 ## Passkeys

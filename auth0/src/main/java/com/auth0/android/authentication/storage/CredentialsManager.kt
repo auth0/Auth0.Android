@@ -63,11 +63,17 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * Stores the given credentials in the storage. Must have an access_token or id_token and a expires_in value.
      *
      * @param credentials the credentials to save in the storage.
+     * @throws CredentialsManagerException with code `SESSION_EXPIRED` if the credentials carry an
+     * IPSIE `session_expiry` claim that is already past its ceiling at creation time, or with code
+     * `INVALID_CREDENTIALS` if neither an access_token nor an id_token is present.
      */
+    @Throws(CredentialsManagerException::class)
     override fun saveCredentials(credentials: Credentials) {
         if (TextUtils.isEmpty(credentials.accessToken) && TextUtils.isEmpty(credentials.idToken)) {
             throw CredentialsManagerException.INVALID_CREDENTIALS
         }
+        // IPSIE session_expiry: reject a session already past its ceiling at creation time.
+        validateSessionExpiryAtCreation(credentials.idToken)
         storage.store(KEY_ACCESS_TOKEN, credentials.accessToken)
         storage.store(KEY_REFRESH_TOKEN, credentials.refreshToken)
         storage.store(KEY_ID_TOKEN, credentials.idToken)
@@ -75,6 +81,9 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         storage.store(KEY_EXPIRES_AT, credentials.expiresAt.time)
         storage.store(KEY_SCOPE, credentials.scope)
         storage.store(LEGACY_KEY_CACHE_EXPIRES_AT, credentials.expiresAt.time)
+        // Preserve the session_expiry ceiling across refreshes: only ever written, never cleared,
+        // so a refresh whose ID token omits the claim does not silently remove the limit.
+        persistSessionExpiry(credentials.idToken)
         saveDPoPThumbprint(credentials)
     }
 
@@ -129,6 +138,13 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
     ) {
         serialExecutor.execute {
             runCatchingOnExecutor(callback) {
+                // IPSIE session_expiry: enforce the upstream-IdP session ceiling before exchanging the
+                // refresh token, so the SSO exchange is never used to outlive the session.
+                if (isSessionExpired(storage.retrieveString(KEY_ID_TOKEN))) {
+                    clearCredentials()
+                    callback.onFailure(CredentialsManagerException.SESSION_EXPIRED)
+                    return@execute
+                }
                 val refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN)
                 if (refreshToken.isNullOrEmpty()) {
                     callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
@@ -462,17 +478,27 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                     callback.onFailure(CredentialsManagerException.NO_CREDENTIALS)
                     return@execute
                 }
+                // IPSIE session_expiry: enforce the upstream-IdP session ceiling before serving any
+                // cached token or attempting a refresh. Past the ceiling, clear and surface the error
+                // so the refresh-token grant is never used to outlive the session.
+                if (isSessionExpired(idToken)) {
+                    clearCredentials()
+                    callback.onFailure(CredentialsManagerException.SESSION_EXPIRED)
+                    return@execute
+                }
                 val willAccessTokenExpire = willExpire(expiresAt!!, minTtl.toLong())
                 val scopeChanged = hasScopeChanged(storedScope, scope)
                 if (!forceRefresh && !willAccessTokenExpire && !scopeChanged) {
                     callback.onSuccess(
-                        recreateCredentials(
-                            idToken.orEmpty(),
-                            accessToken.orEmpty(),
-                            tokenType.orEmpty(),
-                            refreshToken,
-                            Date(expiresAt),
-                            storedScope
+                        stampPinnedSessionExpiry(
+                            recreateCredentials(
+                                idToken.orEmpty(),
+                                accessToken.orEmpty(),
+                                tokenType.orEmpty(),
+                                refreshToken,
+                                Date(expiresAt),
+                                storedScope
+                            )
                         )
                     )
                     return@execute
@@ -525,7 +551,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                         fresh.scope
                     )
                     saveCredentials(credentials)
-                    callback.onSuccess(credentials)
+                    callback.onSuccess(stampPinnedSessionExpiry(credentials))
                 } catch (error: AuthenticationException) {
                     if (error.isMultifactorRequired) {
                         callback.onFailure(
@@ -580,6 +606,13 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
     ) {
         serialExecutor.execute {
             runCatchingOnExecutor(callback) {
+                // IPSIE session_expiry: enforce the upstream-IdP session ceiling before serving cached
+                // API credentials or exchanging the refresh token, so the session is never extended past it.
+                if (isSessionExpired(storage.retrieveString(KEY_ID_TOKEN))) {
+                    clearCredentials()
+                    callback.onFailure(CredentialsManagerException.SESSION_EXPIRED)
+                    return@execute
+                }
                 val key = getAPICredentialsKey(audience, scope)
                 val apiCredentialsJson = storage.retrieveString(key)
                 var apiCredentialType: String? = null
@@ -697,9 +730,15 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         val expiresAt = storage.retrieveLong(KEY_EXPIRES_AT)
         val emptyCredentials =
             TextUtils.isEmpty(accessToken) && TextUtils.isEmpty(idToken) || expiresAt == null
-        return !(emptyCredentials || willExpire(
-            expiresAt!!, minTtl
-        ) && refreshToken == null)
+        if (emptyCredentials) {
+            return false
+        }
+        // IPSIE session_expiry: once the upstream-IdP ceiling passes, no valid credentials remain and
+        // a refresh cannot extend the session past it, so report no valid credentials.
+        if (isSessionExpired(idToken)) {
+            return false
+        }
+        return !(willExpire(expiresAt!!, minTtl) && refreshToken == null)
     }
 
     /**
@@ -714,6 +753,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         storage.remove(KEY_SCOPE)
         storage.remove(LEGACY_KEY_CACHE_EXPIRES_AT)
         storage.remove(KEY_DPOP_THUMBPRINT)
+        storage.remove(KEY_SESSION_EXPIRY)
     }
 
     /**
