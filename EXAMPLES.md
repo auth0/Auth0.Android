@@ -682,6 +682,32 @@ MfaApiClient mfaClient = authentication.mfaClient(mfaToken);
 ```
 </details>
 
+##### Using DPoP with MFA
+
+If the originating `AuthenticationAPIClient` has [DPoP](#dpop) enabled, the resulting `mfaClient` inherits it automatically, and the final `verify()` call exchanging credentials at `/oauth/token` will carry a DPoP proof:
+
+```kotlin
+val authentication = AuthenticationAPIClient(account).useDPoP(context)
+val mfaClient = authentication.mfaClient(mfaToken) // DPoP inherited
+```
+
+Alternatively, if you are using the `MfaApiClient` on its own, enable DPoP directly on it:
+
+```kotlin
+val mfaClient = MfaApiClient(account, mfaToken).useDPoP(context)
+```
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+MfaApiClient mfaClient = new MfaApiClient(account, mfaToken).useDPoP(context);
+```
+</details>
+
+> [!NOTE]
+> The proof is only attached to the token exchange performed by `verify()`. The `getAuthenticators()`, `enroll()`, and `challenge()` calls authenticate with the MFA token as a bearer credential and do not carry a DPoP proof.
+
 #### Getting Available Authenticators
 
 Retrieve the list of authenticators that the user has enrolled and are allowed for this authentication flow. The `factorsAllowed` parameter filters the authenticators based on the allowed factor types from the MFA requirements.

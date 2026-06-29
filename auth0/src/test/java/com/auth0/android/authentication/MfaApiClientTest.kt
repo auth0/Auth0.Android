@@ -78,6 +78,7 @@ public class MfaApiClientTest {
     @After
     public fun tearDown(): Unit {
         mockServer.shutdown()
+        DPoPUtil.keyStore = DPoPKeyStore()
     }
 
     private fun enqueueMockResponse(json: String, statusCode: Int = 200): Unit {
@@ -209,6 +210,44 @@ public class MfaApiClientTest {
             }
         }
         assertThat(exception.getCode(), `is`("dpop_error"))
+        assertThat(mockServer.requestCount, `is`(0))
+    }
+
+    @Test
+    public fun shouldAttachDpopHeaderOnVerifyWhenDpopEnabledWithCallback(): Unit {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
+        val dpopClient = MfaApiClient(auth0, MFA_TOKEN).useDPoP(mockContext)
+        enqueueMockResponse(
+            """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
+        )
+
+        val callback = MockCallback<Credentials, MfaVerifyException>()
+        dpopClient.verify(MfaVerificationType.Otp("123456")).start(callback)
+        ShadowLooper.idleMainLooper()
+
+        assertThat(callback.getPayload(), `is`(notNullValue()))
+        assertThat(callback.getPayload().accessToken, `is`(ACCESS_TOKEN))
+        assertThat(callback.getError(), `is`(nullValue()))
+
+        val request = mockServer.takeRequest()
+        assertThat(request.path, `is`("/oauth/token"))
+        assertThat(request.getHeader("DPoP"), `is`(notNullValue()))
+    }
+
+    @Test
+    public fun shouldWrapDPoPExceptionAsMfaVerifyExceptionWithCallback(): Unit {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockKeyStore.getKeyPair()).thenReturn(null)
+        val dpopClient = MfaApiClient(auth0, MFA_TOKEN).useDPoP(mockContext)
+
+        val callback = MockCallback<Credentials, MfaVerifyException>()
+        dpopClient.verify(MfaVerificationType.Otp("123456")).start(callback)
+        ShadowLooper.idleMainLooper()
+
+        assertThat(callback.getPayload(), `is`(nullValue()))
+        assertThat(callback.getError(), `is`(notNullValue()))
+        assertThat(callback.getError().getCode(), `is`("dpop_error"))
         assertThat(mockServer.requestCount, `is`(0))
     }
 
