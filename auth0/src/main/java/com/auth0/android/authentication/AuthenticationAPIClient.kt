@@ -116,7 +116,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @return A new [MfaApiClient] instance configured for the transaction.
      */
     public fun mfaClient(mfaToken: String): MfaApiClient {
-        return MfaApiClient(this.auth0, mfaToken)
+        return MfaApiClient(this.auth0, mfaToken, gson, this.dPoP)
     }
 
     /**
