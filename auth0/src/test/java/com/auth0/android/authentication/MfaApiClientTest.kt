@@ -9,6 +9,7 @@ import com.auth0.android.authentication.mfa.MfaException.MfaEnrollmentException
 import com.auth0.android.authentication.mfa.MfaException.MfaListAuthenticatorsException
 import com.auth0.android.authentication.mfa.MfaException.MfaVerifyException
 import com.auth0.android.authentication.mfa.MfaVerificationType
+import com.auth0.android.dpop.DPoPException
 import com.auth0.android.dpop.DPoPKeyStore
 import com.auth0.android.dpop.DPoPUtil
 import com.auth0.android.dpop.FakeECPrivateKey
@@ -201,7 +202,7 @@ public class MfaApiClientTest {
     @Test
     public fun shouldWrapDPoPExceptionAsMfaVerifyException(): Unit {
         whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
-        whenever(mockKeyStore.getKeyPair()).thenReturn(null)
+        whenever(mockKeyStore.getKeyPair()).thenThrow(DPoPException.KEY_PAIR_NOT_FOUND)
         val dpopClient = MfaApiClient(auth0, MFA_TOKEN).useDPoP(mockContext)
 
         val exception = assertThrows(MfaVerifyException::class.java) {
@@ -238,7 +239,7 @@ public class MfaApiClientTest {
     @Test
     public fun shouldWrapDPoPExceptionAsMfaVerifyExceptionWithCallback(): Unit {
         whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
-        whenever(mockKeyStore.getKeyPair()).thenReturn(null)
+        whenever(mockKeyStore.getKeyPair()).thenThrow(DPoPException.KEY_PAIR_NOT_FOUND)
         val dpopClient = MfaApiClient(auth0, MFA_TOKEN).useDPoP(mockContext)
 
         val callback = MockCallback<Credentials, MfaVerifyException>()

@@ -113,7 +113,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * ```
      *
      * @param mfaToken The token received in the 'mfa_required' error from a login attempt.
-     * @return A new [MfaApiClient] instance configured for the transaction.
+     * @return A new [MfaApiClient] instance configured for the transaction. If this client has
+     * DPoP enabled via [useDPoP], the returned MFA client inherits that configuration.
      */
     public fun mfaClient(mfaToken: String): MfaApiClient {
         return MfaApiClient(this.auth0, mfaToken, gson, this.dPoP)
