@@ -1,5 +1,6 @@
 package com.auth0.android.request.internal
 
+import android.util.Base64
 import androidx.test.espresso.matcher.ViewMatchers.assertThat
 import com.google.gson.stream.MalformedJsonException
 import org.hamcrest.Matchers.*
@@ -203,4 +204,63 @@ public class JwtTest {
 
         assertThat(jwt.issuedAt, `is`(nullValue()))
     }
+
+    // IPSIE session_expiry claim
+
+    @Test
+    public fun shouldGetSessionExpiryAsLongSeconds() {
+        val jwt = Jwt(jwtWithPayload("""{"session_expiry":1700000000}"""))
+        assertThat(jwt, `is`(notNullValue()))
+        assertThat(jwt.sessionExpiry, `is`(1700000000L))
+    }
+
+    @Test
+    public fun shouldGetNullSessionExpiryIfMissing() {
+        val jwt = Jwt("eyJhbGciOiJIUzI1NiJ9.e30.something")
+        assertThat(jwt, `is`(notNullValue()))
+
+        assertThat(jwt.sessionExpiry, `is`(nullValue()))
+    }
+
+    @Test
+    public fun shouldGetNullSessionExpiryIfNonNumeric() {
+        val jwt = Jwt(jwtWithPayload("""{"session_expiry":"not-a-number"}"""))
+        assertThat(jwt, `is`(notNullValue()))
+
+        assertThat(jwt.sessionExpiry, `is`(nullValue()))
+    }
+
+    @Test
+    public fun shouldTruncateFractionalSessionExpiryToLong() {
+        val jwt = Jwt(jwtWithPayload("""{"session_expiry":1700000000.75}"""))
+        assertThat(jwt, `is`(notNullValue()))
+
+        assertThat(jwt.sessionExpiry, `is`(1700000000L))
+    }
+
+    @Test
+    public fun shouldGetNullSessionExpiryIfImplausiblyLarge() {
+        // A value mistakenly emitted in milliseconds (1700000000000) is ~50,000 years out in seconds
+        // and would silently disable the ceiling; it must be treated as "no ceiling" (null) instead.
+        val jwt = Jwt(jwtWithPayload("""{"session_expiry":1700000000000}"""))
+        assertThat(jwt, `is`(notNullValue()))
+
+        assertThat(jwt.sessionExpiry, `is`(nullValue()))
+    }
+
+    /**
+     * Builds a JWT with a fixed `alg=HS256` header and a dummy signature, encoding the given JSON
+     * payload so that [Jwt] can decode it. The signature is never verified by [Jwt].
+     */
+    private fun jwtWithPayload(jsonPayload: String): String {
+        val header = encode("""{"alg":"HS256","typ":"JWT"}""")
+        val payload = encode(jsonPayload)
+        return "$header.$payload.signature"
+    }
+
+    private fun encode(json: String): String =
+        Base64.encodeToString(
+            json.toByteArray(Charsets.UTF_8),
+            Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
+        )
 }

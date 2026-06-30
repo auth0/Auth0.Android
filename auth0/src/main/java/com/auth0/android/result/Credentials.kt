@@ -79,4 +79,27 @@ public data class Credentials(
             return gson.fromJson(Jwt.decodeBase64(payload), UserProfile::class.java)
         }
 
+    /**
+     * The session-expiry ceiling pinned at the initial login, in Unix seconds, stamped by the
+     * credentials manager when it serves these credentials. When set, it is the value actually
+     * enforced by the SDK and takes precedence over the live [idToken] claim — so [sessionExpiresAt]
+     * does not diverge from enforcement after a refresh whose token omits or re-emits the claim.
+     */
+    @Transient
+    internal var pinnedSessionExpiresAt: Long? = null
+
+    /**
+     * The absolute session-expiry ceiling, in **Unix seconds**, asserted by the upstream identity
+     * provider via the IPSIE `session_expiry` claim, or `null` when the connection does not emit it.
+     *
+     * This is a session-level ceiling that is independent of [expiresAt] (the access-token expiry):
+     * it usually sits much further out and caps how long the local session may live, regardless of
+     * access-token renewals. A `null` value means there is no such ceiling.
+     *
+     * When these credentials were served by a credentials manager, this reflects the value pinned at
+     * the initial login (the one the SDK enforces). Otherwise it is decoded on demand from [idToken].
+     */
+    public val sessionExpiresAt: Long?
+        get() = pinnedSessionExpiresAt ?: runCatching { Jwt(idToken).sessionExpiry }.getOrNull()
+
 }
