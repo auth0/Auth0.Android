@@ -27,12 +27,17 @@
     - [Passwordless Login](#passwordless-login)
       - [Step 1: Request the code](#step-1-request-the-code)
       - [Step 2: Input the code](#step-2-input-the-code)
+    - [Passwordless Login with a Database Connection (EA)](#passwordless-login-with-a-database-connection-ea)
+      - [Step 1: Issue an OTP challenge](#step-1-issue-an-otp-challenge)
+      - [Step 2: Verify the code and log in](#step-2-verify-the-code-and-log-in)
     - [Sign Up with a database connection](#sign-up-with-a-database-connection)
     - [Get user information](#get-user-information)
     - [Custom Token Exchange](#custom-token-exchange)
+      - [Custom Token Exchange with Actor Token (Delegation/Impersonation)](#custom-token-exchange-with-actor-token-delegationimpersonation)
     - [Native to Web SSO login](#native-to-web-sso-login)
     - [DPoP](#dpop-1)
   - [My Account API](#my-account-api)
+    - [Using DPoP](#using-dpop)
     - [Enroll a new passkey](#enroll-a-new-passkey)
     - [Get Available Factors](#get-available-factors)
     - [Get All Enrolled Authentication Methods](#get-all-enrolled-authentication-methods)
@@ -1582,6 +1587,124 @@ authentication
 
 > The default scope used is `openid profile email`. Regardless of the scopes set to the request, the `openid` scope is always enforced.
 
+### Passwordless Login with a Database Connection (EA)
+
+> [!IMPORTANT]
+> Passwordless Login for database connections is currently in [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access). Please reach out to Auth0 support to get it enabled for your tenant.
+
+This flow lets users authenticate with a one-time code sent over email or SMS/voice against a **database connection** that has `email_otp` or `phone_otp` enabled. It is distinct from the `/passwordless/start` flow described above, which uses dedicated passwordless connections.
+
+Obtain a `PasswordlessClient` from the `AuthenticationAPIClient`:
+
+```kotlin
+val passwordless = AuthenticationAPIClient(account).passwordlessClient()
+```
+
+The flow has two steps: first issue an OTP challenge, then — after the user enters the code they received — exchange it for credentials. **Save the `PasswordlessChallenge` from step 1**, as you pass that same object into `loginWithOTP` in step 2.
+
+#### Step 1: Issue an OTP challenge
+
+Send a one-time code to the user's email. For privacy, the server **always responds successfully regardless of whether the user exists**. On success, save the returned `PasswordlessChallenge` for step 2.
+
+```kotlin
+// keep this reference until the user enters the code
+var challenge: PasswordlessChallenge? = null
+
+passwordless
+    .challengeWithEmail("info@auth0.com", "my-database-connection")
+    .start(object: Callback<PasswordlessChallenge, AuthenticationException> {
+        override fun onFailure(exception: AuthenticationException) { }
+
+        override fun onSuccess(result: PasswordlessChallenge) {
+            challenge = result
+        }
+    })
+```
+
+To send the code over SMS or voice instead, use `challengeWithPhoneNumber` against a connection with `phone_otp` enabled, choosing the `DeliveryMethod`:
+
+```kotlin
+passwordless
+    .challengeWithPhoneNumber("+15555550123", "my-database-connection", DeliveryMethod.TEXT)
+    .start(object: Callback<PasswordlessChallenge, AuthenticationException> {
+        override fun onFailure(exception: AuthenticationException) { }
+
+        override fun onSuccess(result: PasswordlessChallenge) {
+            challenge = result
+        }
+    })
+```
+
+Both challenge methods accept an optional `allowSignup` parameter (defaults to `false`) that controls whether a new user is created if one does not yet exist.
+
+#### Step 2: Verify the code and log in
+
+Once the user enters the code, pass the saved `challenge` together with that code to `loginWithOTP` to obtain `Credentials`. If DPoP is enabled on the originating `AuthenticationAPIClient`, a DPoP proof is attached automatically to this token request.
+
+```kotlin
+passwordless
+    .loginWithOTP(challenge, "123456")
+    .start(object: Callback<Credentials, AuthenticationException> {
+        override fun onFailure(exception: AuthenticationException) { }
+
+        override fun onSuccess(credentials: Credentials) { }
+    })
+```
+
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+// Step 1: issue the challenge and keep it
+val challenge = passwordless
+    .challengeWithEmail("info@auth0.com", "my-database-connection")
+    .await()
+
+// Step 2: once the user enters the code, pass the saved challenge back to log in
+val credentials = passwordless
+    .loginWithOTP(challenge, "123456")
+    .await()
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+// Step 1: issue the challenge and keep it
+passwordless
+    .challengeWithEmail("info@auth0.com", "my-database-connection", false)
+    .start(new Callback<PasswordlessChallenge, AuthenticationException>() {
+        @Override
+        public void onSuccess(PasswordlessChallenge result) {
+            challenge = result;
+        }
+
+        @Override
+        public void onFailure(@NonNull AuthenticationException error) {
+            //Error!
+        }
+    });
+
+// Step 2: once the user enters the code, pass the saved challenge back to log in
+passwordless
+    .loginWithOTP(challenge, "123456")
+    .start(new Callback<Credentials, AuthenticationException>() {
+        @Override
+        public void onSuccess(@Nullable Credentials payload) {
+            //Logged in!
+        }
+
+        @Override
+        public void onFailure(@NonNull AuthenticationException error) {
+            //Error!
+        }
+    });
+```
+</details>
+
+> The default scope used is `openid profile email`. Regardless of the scopes set to the request, the `openid` scope is always enforced.
+
 ### Sign Up with a database connection
 
 ```kotlin
@@ -1732,6 +1855,96 @@ authentication
 
 </details>
 
+#### Custom Token Exchange with Actor Token (Delegation/Impersonation)
+
+For delegation or impersonation scenarios where one principal acts on behalf of another (e.g., an AI agent acting on behalf of a user), pass `ActorToken` with the actor token details:
+
+> **Note:** When `actor_token` is present in the request, Auth0 will not issue a refresh token regardless of whether `offline_access` is in the scope. The `Credentials.refreshToken` will be `null` in this flow.
+
+```kotlin
+import com.auth0.android.authentication.request.ActorToken
+
+val actorToken = ActorToken(
+    token = "actor-token-value",
+    tokenType = "urn:my-org:actor-token-type"
+)
+
+authentication
+    .customTokenExchange(
+        subjectTokenType = "http://my-org/custom-token",
+        subjectToken = "subject-token-value",
+        organization = "org_12345",
+        actorToken = actorToken
+    )
+    .start(object : Callback<Credentials, AuthenticationException> {
+        override fun onSuccess(result: Credentials) {
+            // Access the actor claim from the ID token
+            val actor = result.user.actor
+            if (actor != null) {
+                println("Actor sub: ${actor.sub}")
+                println("Actor properties: ${actor.extraProperties}")
+                // Nested delegation chain (if present)
+                val nestedActor = actor.actor
+            }
+        }
+
+        override fun onFailure(exception: AuthenticationException) {
+            // Handle error
+        }
+    })
+```
+
+<details>
+    <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    val actorToken = ActorToken(
+        token = "actor-token-value",
+        tokenType = "urn:my-org:actor-token-type"
+    )
+    val credentials = authentication
+        .customTokenExchange(
+            subjectTokenType = "http://my-org/custom-token",
+            subjectToken = "subject-token-value",
+            actorToken = actorToken
+        )
+        .await()
+    // Access the actor claim
+    val actor = credentials.user.actor
+} catch (e: AuthenticationException) {
+    e.printStackTrace()
+}
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+ActorToken actorToken = new ActorToken(
+    "actor-token-value",
+    "urn:my-org:actor-token-type"
+);
+
+authentication
+    .customTokenExchange("http://my-org/custom-token", "subject-token-value", null, actorToken)
+    .start(new Callback<Credentials, AuthenticationException>() {
+        @Override
+        public void onSuccess(@Nullable Credentials payload) {
+            ActorClaim actor = payload.getUser().getActor();
+            if (actor != null) {
+                Log.d("CTE", "Actor: " + actor.getSub());
+            }
+        }
+        @Override
+        public void onFailure(@NonNull AuthenticationException error) {
+            // Handle error
+        }
+    });
+```
+</details>
+
 
 ## Native to Web SSO login
 
@@ -1864,12 +2077,33 @@ val manager = CredentialsManager(apiClient, storage)
 
 ## My Account API
 
-> [!NOTE]
-> The My Account API is currently available in [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access). Please reach out to Auth0 support to get it enabled for your tenant.
-
 Use the Auth0 My Account API to manage the current user's account.
 
-To call the My Account API, you need an access token issued specifically for this API, including any required scopes for the operations you want to perform. See [API credentials [EA]](#api-credentials-ea) to learn how to obtain one.
+To call the My Account API, you need an access token issued specifically for this API, including any required scopes for the operations you want to perform. See [API credentials](#api-credentials) to learn how to obtain one.
+
+```kotlin
+val client = MyAccountAPIClient(auth0, accessToken)
+```
+
+#### Using DPoP
+
+If your application uses [DPoP (Demonstrating Proof of Possession)](https://auth0.com/docs/get-started/authentication-and-authorization-flow/call-your-api-using-the-authorization-code-flow-with-dpop), you can enable it on the My Account API client:
+
+```kotlin
+val client = MyAccountAPIClient(auth0, accessToken).useDPoP(context)
+```
+
+When DPoP is enabled, the client will automatically:
+- Use the `DPoP` authorization scheme instead of `Bearer`
+- Include a DPoP proof header on every request
+
+<details>
+    <summary>Using Java</summary>
+
+```java
+MyAccountAPIClient client = new MyAccountAPIClient(auth0, accessToken).useDPoP(context);
+```
+</details>
 
 ### Enroll a new passkey
 
@@ -2078,7 +2312,7 @@ myAccountClient.getFactors()
 ### Get All Enrolled Authentication Methods
 **Scopes required:** `read:me:authentication_methods`
 
-Retrieves a detailed list of all the authentication methods that the current user has already enrolled in.
+Retrieves a detailed list of all the authentication methods that the current user has already enrolled in. You can optionally filter the results by type using `AuthenticationMethodType`.
 
 
 **Prerequisites:**
@@ -2086,10 +2320,20 @@ Retrieves a detailed list of all the authentication methods that the current use
 The user must have one or more authentication methods already enrolled.
 
 ```kotlin
+// Get all authentication methods
 myAccountClient.getAuthenticationMethods()
     .start(object : Callback<List<AuthenticationMethod>, MyAccountException> {
-        override fun onSuccess(result: AuthenticationMethods) {
-            // List of enrolled methods in result.authenticationMethods
+        override fun onSuccess(result: List<AuthenticationMethod>) {
+            // List of enrolled methods
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+
+// Get authentication methods filtered by type
+myAccountClient.getAuthenticationMethods(AuthenticationMethodType.PASSKEY)
+    .start(object : Callback<List<AuthenticationMethod>, MyAccountException> {
+        override fun onSuccess(result: List<AuthenticationMethod>) {
+            // List of enrolled passkey methods only
         }
         override fun onFailure(error: MyAccountException) { }
     })
@@ -2098,11 +2342,23 @@ myAccountClient.getAuthenticationMethods()
     <summary>Using Java</summary>
 
 ```java
+// Get all authentication methods
 myAccountClient.getAuthenticationMethods()
     .start(new Callback<List<AuthenticationMethod>, MyAccountException>() {
         @Override
-        public void onSuccess(AuthenticationMethods result) {
-            // List of enrolled methods in result.getAuthenticationMethods()
+        public void onSuccess(List<AuthenticationMethod> result) {
+            // List of enrolled methods
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+
+// Get authentication methods filtered by type
+myAccountClient.getAuthenticationMethods(AuthenticationMethodType.PASSKEY)
+    .start(new Callback<List<AuthenticationMethod>, MyAccountException>() {
+        @Override
+        public void onSuccess(List<AuthenticationMethod> result) {
+            // List of enrolled passkey methods only
         }
         @Override
         public void onFailure(@NonNull MyAccountException error) { }
@@ -2705,10 +2961,7 @@ val isValid = secureCredentialsManager.isBiometricSessionValid()
 
 ### Other Credentials
 
-#### API credentials [EA]
-
-> [!NOTE]
-> This feature is currently available in [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access). Please reach out to Auth0 support to get it enabled for your tenant.
+#### API credentials
 
 When the user logs in, you can request an access token for a specific API by passing its API identifier as the [audience](#specify-audience) value. The access token in the resulting credentials can then be used to make authenticated requests to that API.
 
@@ -2833,8 +3086,19 @@ To sign up a user with passkey
 ```kotlin
 // Using Coroutines 
 try {
+    val userData = UserData(
+        email = "user@example.com",
+        phoneNumber = "+11234567890",
+        name = "John Doe",
+        givenName = "John",
+        familyName = "Doe",
+        nickName = "johnny",
+        picture = "https://example.com/photo.png",
+        userMetadata = mapOf("signup_source" to "android_app")
+    )
+
     val challenge = authenticationApiClient.signupWithPasskey(
-        "{user-data}",
+        userData,
         "{realm}",
         "{organization-id}"
     ).await()
@@ -2864,7 +3128,19 @@ try {
   <summary>Using Java</summary>
 
 ```java
- authenticationAPIClient.signupWithPasskey("{user-data}", "{realm}","{organization-id}")
+ UserData userData = new UserData(
+    "user@example.com",    // email
+    "+11234567890",        // phoneNumber
+    null,                  // userName
+    "John Doe",            // name
+    "John",                // givenName
+    "Doe",                 // familyName
+    "johnny",              // nickName
+    "https://example.com/photo.png", // picture
+    Map.of("signup_source", "android_app") // userMetadata
+ );
+
+ authenticationAPIClient.signupWithPasskey(userData, "{realm}","{organization-id}")
         .start(new Callback<PasskeyRegistrationChallenge, AuthenticationException>() {
     @Override
     public void onSuccess(PasskeyRegistrationChallenge result) {
