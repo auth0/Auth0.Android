@@ -325,4 +325,18 @@ public abstract class BaseCredentialsManager internal constructor(
         return "$audience::${sortedScope}"
 
     }
+
+    internal inline fun <T> runCatchingOnExecutor(
+        callback: Callback<T, CredentialsManagerException>,
+        block: () -> Unit
+    ) {
+        try {
+            block()
+        } catch (t: Throwable) {
+            Log.e("BaseCredentialsManager", "Unexpected error in executor block", t)
+            callback.onFailure(
+                CredentialsManagerException(CredentialsManagerException.Code.UNKNOWN_ERROR, t)
+            )
+        }
+    }
 }
