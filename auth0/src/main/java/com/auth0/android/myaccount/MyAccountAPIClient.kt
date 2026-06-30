@@ -264,6 +264,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * val apiClient = MyAccountAPIClient(auth0, accessToken)
      *
      *
+     * // Get all authentication methods
      * apiClient.getAuthenticationMethods()
      *     .start(object : Callback<List<AuthenticationMethod>, MyAccountException> {
      *         override fun onSuccess(result: List<AuthenticationMethod>) {
@@ -274,11 +275,30 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      *             Log.e("MyApp", "Failed with: ${error.message}")
      *         }
      *     })
+     *
+     * // Get authentication methods filtered by type
+     * apiClient.getAuthenticationMethods(AuthenticationMethodType.PASSKEY)
+     *     .start(object : Callback<List<AuthenticationMethod>, MyAccountException> {
+     *         override fun onSuccess(result: List<AuthenticationMethod>) {
+     *             Log.d("MyApp", "Passkey methods: $result")
+     *         }
+     *
+     *         override fun onFailure(error: MyAccountException) {
+     *             Log.e("MyApp", "Failed with: ${error.message}")
+     *         }
+     *     })
      * ```
      *
+     * @param type Optional filter to retrieve only authentication methods of a specific type.
+     * @return A request to get the list of authentication methods.
+     *
      */
-    public fun getAuthenticationMethods(): Request<List<AuthenticationMethod>, MyAccountException> {
-        val url = getDomainUrlBuilder().addPathSegment(AUTHENTICATION_METHODS).build()
+    @JvmOverloads
+    public fun getAuthenticationMethods(type: AuthenticationMethodType? = null): Request<List<AuthenticationMethod>, MyAccountException> {
+        val url = getDomainUrlBuilder().apply {
+            addPathSegment(AUTHENTICATION_METHODS)
+            type?.let { addQueryParameter(TYPE_KEY, it.type) }
+        }.build()
 
         val listAdapter = object : JsonAdapter<List<AuthenticationMethod>> {
             override fun fromJson(
