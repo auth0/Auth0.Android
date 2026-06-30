@@ -1,5 +1,6 @@
 package com.auth0.android.authentication.mfa
 
+import android.content.Context
 import androidx.annotation.VisibleForTesting
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
@@ -8,6 +9,9 @@ import com.auth0.android.authentication.mfa.MfaException.MfaChallengeException
 import com.auth0.android.authentication.mfa.MfaException.MfaEnrollmentException
 import com.auth0.android.authentication.mfa.MfaException.MfaListAuthenticatorsException
 import com.auth0.android.authentication.mfa.MfaException.MfaVerifyException
+import com.auth0.android.dpop.DPoP
+import com.auth0.android.dpop.DPoPException
+import com.auth0.android.dpop.SenderConstraining
 import com.auth0.android.request.ErrorAdapter
 import com.auth0.android.request.JsonAdapter
 import com.auth0.android.request.Request
@@ -56,8 +60,19 @@ import java.io.Reader
 public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal constructor(
     private val auth0: Auth0,
     private val mfaToken: String,
-    private val gson: Gson
-) {
+    private val gson: Gson,
+    private var dPoP: DPoP? = null
+) : SenderConstraining<MfaApiClient> {
+
+    /**
+     * Enable DPoP for this client. When enabled, the MFA verification request to
+     * `/oauth/token` will carry a DPoP proof, binding the issued tokens to a key pair
+     * held in the Android KeyStore.
+     */
+    public override fun useDPoP(context: Context): MfaApiClient {
+        dPoP = DPoP(context)
+        return this
+    }
 
     // Specialized factories for MFA-specific errors
     private val listAuthenticatorsFactory: RequestFactory<MfaListAuthenticatorsException> by lazy {
@@ -477,7 +492,7 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
             Credentials::class.java, gson
         )
 
-        return verifyFactory.post(url.toString(), credentialsAdapter)
+        return verifyFactory.post(url.toString(), credentialsAdapter, dPoP)
             .addParameters(parameters)
     }
 
@@ -621,14 +636,20 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
             }
 
             override fun fromException(cause: Throwable): MfaVerifyException {
-                return if (isNetworkError(cause)) {
-                    MfaVerifyException(
+                return when {
+                    isNetworkError(cause) -> MfaVerifyException(
                         code = "network_error",
                         description = "Failed to execute the network request",
                         cause = cause
                     )
-                } else {
-                    MfaVerifyException(
+
+                    cause is DPoPException -> MfaVerifyException(
+                        code = "dpop_error",
+                        description = cause.message ?: "Error while attaching DPoP proof",
+                        cause = cause
+                    )
+
+                    else -> MfaVerifyException(
                         code = Auth0Exception.UNKNOWN_ERROR,
                         description = cause.message ?: "Something went wrong",
                         cause = cause
