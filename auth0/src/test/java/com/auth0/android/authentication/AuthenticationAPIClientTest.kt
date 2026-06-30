@@ -142,6 +142,12 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
+    public fun shouldCreatePasswordlessClient() {
+        val client = AuthenticationAPIClient(Auth0.getInstance(CLIENT_ID, DOMAIN))
+        assertThat(client.passwordlessClient(), Matchers.`is`(Matchers.notNullValue()))
+    }
+
+    @Test
     public fun shouldCreateClientWithContextInfo() {
         val context: Context = mock()
         val resources: Resources = mock()

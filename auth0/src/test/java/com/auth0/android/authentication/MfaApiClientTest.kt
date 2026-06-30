@@ -1,5 +1,6 @@
 package com.auth0.android.authentication
 
+import android.content.Context
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.mfa.MfaApiClient
 import com.auth0.android.authentication.mfa.MfaEnrollmentType
@@ -8,6 +9,11 @@ import com.auth0.android.authentication.mfa.MfaException.MfaEnrollmentException
 import com.auth0.android.authentication.mfa.MfaException.MfaListAuthenticatorsException
 import com.auth0.android.authentication.mfa.MfaException.MfaVerifyException
 import com.auth0.android.authentication.mfa.MfaVerificationType
+import com.auth0.android.dpop.DPoPException
+import com.auth0.android.dpop.DPoPKeyStore
+import com.auth0.android.dpop.DPoPUtil
+import com.auth0.android.dpop.FakeECPrivateKey
+import com.auth0.android.dpop.FakeECPublicKey
 import com.auth0.android.request.internal.ThreadSwitcherShadow
 import com.auth0.android.result.Authenticator
 import com.auth0.android.result.Challenge
@@ -19,6 +25,8 @@ import com.auth0.android.util.SSLTestUtils
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.whenever
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import okhttp3.mockwebserver.MockResponse
@@ -31,6 +39,7 @@ import org.hamcrest.Matchers.instanceOf
 import org.hamcrest.Matchers.`is`
 import org.hamcrest.Matchers.notNullValue
 import org.hamcrest.Matchers.nullValue
+import org.hamcrest.Matchers.sameInstance
 import org.junit.After
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -49,6 +58,8 @@ public class MfaApiClientTest {
     private lateinit var auth0: Auth0
     private lateinit var mfaClient: MfaApiClient
     private lateinit var gson: Gson
+    private lateinit var mockKeyStore: DPoPKeyStore
+    private lateinit var mockContext: Context
 
     @Before
     public fun setUp(): Unit {
@@ -59,11 +70,16 @@ public class MfaApiClientTest {
         auth0.networkingClient = SSLTestUtils.testClient
         mfaClient = MfaApiClient(auth0, MFA_TOKEN)
         gson = GsonBuilder().serializeNulls().create()
+        mockKeyStore = mock()
+        mockContext = mock()
+        whenever(mockContext.applicationContext).thenReturn(mockContext)
+        DPoPUtil.keyStore = mockKeyStore
     }
 
     @After
     public fun tearDown(): Unit {
         mockServer.shutdown()
+        DPoPUtil.keyStore = DPoPKeyStore()
     }
 
     private fun enqueueMockResponse(json: String, statusCode: Int = 200): Unit {
@@ -94,6 +110,146 @@ public class MfaApiClientTest {
     public fun shouldCreateClientWithAuth0AndMfaToken(): Unit {
         val client = MfaApiClient(auth0, "test_mfa_token")
         assertThat(client, `is`(notNullValue()))
+    }
+
+    @Test
+    public fun shouldAttachDpopHeaderOnVerifyWhenDpopEnabledViaUseDPoP(): Unit = runTest {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
+        val dpopClient = MfaApiClient(auth0, MFA_TOKEN).useDPoP(mockContext)
+        enqueueMockResponse(
+            """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
+        )
+
+        dpopClient.verify(MfaVerificationType.Otp("123456")).await()
+
+        val request = mockServer.takeRequest()
+        assertThat(request.path, `is`("/oauth/token"))
+        assertThat(request.getHeader("DPoP"), `is`(notNullValue()))
+    }
+
+    @Test
+    public fun shouldAttachDpopHeaderOnVerifyWhenDpopInheritedFromAuthClient(): Unit = runTest {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
+        val dpopClient = AuthenticationAPIClient(auth0).useDPoP(mockContext).mfaClient(MFA_TOKEN)
+        enqueueMockResponse(
+            """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
+        )
+
+        dpopClient.verify(MfaVerificationType.Otp("123456")).await()
+
+        val request = mockServer.takeRequest()
+        assertThat(request.path, `is`("/oauth/token"))
+        assertThat(request.getHeader("DPoP"), `is`(notNullValue()))
+    }
+
+    @Test
+    public fun shouldNotAttachDpopHeaderOnVerifyWhenDpopDisabled(): Unit = runTest {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(false)
+        enqueueMockResponse(
+            """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
+        )
+
+        mfaClient.verify(MfaVerificationType.Otp("123456")).await()
+
+        val request = mockServer.takeRequest()
+        assertThat(request.getHeader("DPoP"), `is`(nullValue()))
+    }
+
+    @Test
+    public fun shouldNotAttachDpopHeaderOnChallengeWhenDpopEnabled(): Unit = runTest {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
+        val dpopClient = MfaApiClient(auth0, MFA_TOKEN).useDPoP(mockContext)
+        enqueueMockResponse("""{"challenge_type": "oob", "oob_code": "oob_123"}""")
+
+        dpopClient.challenge("sms|dev_123").await()
+
+        val request = mockServer.takeRequest()
+        assertThat(request.path, `is`("/mfa/challenge"))
+        assertThat(request.getHeader("DPoP"), `is`(nullValue()))
+    }
+
+    @Test
+    public fun shouldNotAttachDpopHeaderOnEnrollWhenDpopEnabled(): Unit = runTest {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
+        val dpopClient = MfaApiClient(auth0, MFA_TOKEN).useDPoP(mockContext)
+        enqueueMockResponse("""{"id": "sms|dev_123", "auth_session": "session_abc"}""")
+
+        dpopClient.enroll(MfaEnrollmentType.Phone("+12025550135")).await()
+
+        val request = mockServer.takeRequest()
+        assertThat(request.path, `is`("/mfa/associate"))
+        assertThat(request.getHeader("DPoP"), `is`(nullValue()))
+    }
+
+    @Test
+    public fun shouldNotAttachDpopHeaderOnGetAuthenticatorsWhenDpopEnabled(): Unit = runTest {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
+        val dpopClient = MfaApiClient(auth0, MFA_TOKEN).useDPoP(mockContext)
+        enqueueMockResponse("""[{"id": "sms|dev_123", "type": "oob", "active": true}]""")
+
+        dpopClient.getAuthenticators(listOf("oob")).await()
+
+        val request = mockServer.takeRequest()
+        assertThat(request.path, `is`("/mfa/authenticators"))
+        assertThat(request.getHeader("DPoP"), `is`(nullValue()))
+    }
+
+    @Test
+    public fun shouldWrapDPoPExceptionAsMfaVerifyException(): Unit {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockKeyStore.getKeyPair()).thenThrow(DPoPException.KEY_PAIR_NOT_FOUND)
+        val dpopClient = MfaApiClient(auth0, MFA_TOKEN).useDPoP(mockContext)
+
+        val exception = assertThrows(MfaVerifyException::class.java) {
+            runTest {
+                dpopClient.verify(MfaVerificationType.Otp("123456")).await()
+            }
+        }
+        assertThat(exception.getCode(), `is`("dpop_error"))
+        assertThat(mockServer.requestCount, `is`(0))
+    }
+
+    @Test
+    public fun shouldAttachDpopHeaderOnVerifyWhenDpopEnabledWithCallback(): Unit {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
+        val dpopClient = MfaApiClient(auth0, MFA_TOKEN).useDPoP(mockContext)
+        enqueueMockResponse(
+            """{"access_token": "$ACCESS_TOKEN", "id_token": "$ID_TOKEN", "token_type": "Bearer", "expires_in": 86400}"""
+        )
+
+        val callback = MockCallback<Credentials, MfaVerifyException>()
+        dpopClient.verify(MfaVerificationType.Otp("123456")).start(callback)
+        ShadowLooper.idleMainLooper()
+
+        assertThat(callback.getPayload(), `is`(notNullValue()))
+        assertThat(callback.getPayload().accessToken, `is`(ACCESS_TOKEN))
+        assertThat(callback.getError(), `is`(nullValue()))
+
+        val request = mockServer.takeRequest()
+        assertThat(request.path, `is`("/oauth/token"))
+        assertThat(request.getHeader("DPoP"), `is`(notNullValue()))
+    }
+
+    @Test
+    public fun shouldWrapDPoPExceptionAsMfaVerifyExceptionWithCallback(): Unit {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockKeyStore.getKeyPair()).thenThrow(DPoPException.KEY_PAIR_NOT_FOUND)
+        val dpopClient = MfaApiClient(auth0, MFA_TOKEN).useDPoP(mockContext)
+
+        val callback = MockCallback<Credentials, MfaVerifyException>()
+        dpopClient.verify(MfaVerificationType.Otp("123456")).start(callback)
+        ShadowLooper.idleMainLooper()
+
+        assertThat(callback.getPayload(), `is`(nullValue()))
+        assertThat(callback.getError(), `is`(notNullValue()))
+        assertThat(callback.getError().getCode(), `is`("dpop_error"))
+        assertThat(mockServer.requestCount, `is`(0))
     }
 
 

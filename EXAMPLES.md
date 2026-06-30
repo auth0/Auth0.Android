@@ -27,6 +27,9 @@
     - [Passwordless Login](#passwordless-login)
       - [Step 1: Request the code](#step-1-request-the-code)
       - [Step 2: Input the code](#step-2-input-the-code)
+    - [Passwordless Login with a Database Connection (EA)](#passwordless-login-with-a-database-connection-ea)
+      - [Step 1: Issue an OTP challenge](#step-1-issue-an-otp-challenge)
+      - [Step 2: Verify the code and log in](#step-2-verify-the-code-and-log-in)
     - [Sign Up with a database connection](#sign-up-with-a-database-connection)
     - [Get user information](#get-user-information)
     - [Custom Token Exchange](#custom-token-exchange)
@@ -678,6 +681,32 @@ val mfaClient = authentication.mfaClient(mfaToken)
 MfaApiClient mfaClient = authentication.mfaClient(mfaToken);
 ```
 </details>
+
+##### Using DPoP with MFA
+
+If the originating `AuthenticationAPIClient` has [DPoP](#dpop) enabled, the resulting `mfaClient` inherits it automatically, and the final `verify()` call exchanging credentials at `/oauth/token` will carry a DPoP proof:
+
+```kotlin
+val authentication = AuthenticationAPIClient(account).useDPoP(context)
+val mfaClient = authentication.mfaClient(mfaToken) // DPoP inherited
+```
+
+Alternatively, if you are using the `MfaApiClient` on its own, enable DPoP directly on it:
+
+```kotlin
+val mfaClient = MfaApiClient(account, mfaToken).useDPoP(context)
+```
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+MfaApiClient mfaClient = new MfaApiClient(account, mfaToken).useDPoP(context);
+```
+</details>
+
+> [!NOTE]
+> The proof is only attached to the token exchange performed by `verify()`. The `getAuthenticators()`, `enroll()`, and `challenge()` calls authenticate with the MFA token as a bearer credential and do not carry a DPoP proof.
 
 #### Getting Available Authenticators
 
@@ -1472,6 +1501,124 @@ try {
 authentication
     .loginWithEmail("info@auth0.com", "123456", "my-passwordless-connection")
     .validateClaims() //mandatory
+    .start(new Callback<Credentials, AuthenticationException>() {
+        @Override
+        public void onSuccess(@Nullable Credentials payload) {
+            //Logged in!
+        }
+
+        @Override
+        public void onFailure(@NonNull AuthenticationException error) {
+            //Error!
+        }
+    });
+```
+</details>
+
+> The default scope used is `openid profile email`. Regardless of the scopes set to the request, the `openid` scope is always enforced.
+
+### Passwordless Login with a Database Connection (EA)
+
+> [!IMPORTANT]
+> Passwordless Login for database connections is currently in [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access). Please reach out to Auth0 support to get it enabled for your tenant.
+
+This flow lets users authenticate with a one-time code sent over email or SMS/voice against a **database connection** that has `email_otp` or `phone_otp` enabled. It is distinct from the `/passwordless/start` flow described above, which uses dedicated passwordless connections.
+
+Obtain a `PasswordlessClient` from the `AuthenticationAPIClient`:
+
+```kotlin
+val passwordless = AuthenticationAPIClient(account).passwordlessClient()
+```
+
+The flow has two steps: first issue an OTP challenge, then — after the user enters the code they received — exchange it for credentials. **Save the `PasswordlessChallenge` from step 1**, as you pass that same object into `loginWithOTP` in step 2.
+
+#### Step 1: Issue an OTP challenge
+
+Send a one-time code to the user's email. For privacy, the server **always responds successfully regardless of whether the user exists**. On success, save the returned `PasswordlessChallenge` for step 2.
+
+```kotlin
+// keep this reference until the user enters the code
+var challenge: PasswordlessChallenge? = null
+
+passwordless
+    .challengeWithEmail("info@auth0.com", "my-database-connection")
+    .start(object: Callback<PasswordlessChallenge, AuthenticationException> {
+        override fun onFailure(exception: AuthenticationException) { }
+
+        override fun onSuccess(result: PasswordlessChallenge) {
+            challenge = result
+        }
+    })
+```
+
+To send the code over SMS or voice instead, use `challengeWithPhoneNumber` against a connection with `phone_otp` enabled, choosing the `DeliveryMethod`:
+
+```kotlin
+passwordless
+    .challengeWithPhoneNumber("+15555550123", "my-database-connection", DeliveryMethod.TEXT)
+    .start(object: Callback<PasswordlessChallenge, AuthenticationException> {
+        override fun onFailure(exception: AuthenticationException) { }
+
+        override fun onSuccess(result: PasswordlessChallenge) {
+            challenge = result
+        }
+    })
+```
+
+Both challenge methods accept an optional `allowSignup` parameter (defaults to `false`) that controls whether a new user is created if one does not yet exist.
+
+#### Step 2: Verify the code and log in
+
+Once the user enters the code, pass the saved `challenge` together with that code to `loginWithOTP` to obtain `Credentials`. If DPoP is enabled on the originating `AuthenticationAPIClient`, a DPoP proof is attached automatically to this token request.
+
+```kotlin
+passwordless
+    .loginWithOTP(challenge, "123456")
+    .start(object: Callback<Credentials, AuthenticationException> {
+        override fun onFailure(exception: AuthenticationException) { }
+
+        override fun onSuccess(credentials: Credentials) { }
+    })
+```
+
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+// Step 1: issue the challenge and keep it
+val challenge = passwordless
+    .challengeWithEmail("info@auth0.com", "my-database-connection")
+    .await()
+
+// Step 2: once the user enters the code, pass the saved challenge back to log in
+val credentials = passwordless
+    .loginWithOTP(challenge, "123456")
+    .await()
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+// Step 1: issue the challenge and keep it
+passwordless
+    .challengeWithEmail("info@auth0.com", "my-database-connection", false)
+    .start(new Callback<PasswordlessChallenge, AuthenticationException>() {
+        @Override
+        public void onSuccess(PasswordlessChallenge result) {
+            challenge = result;
+        }
+
+        @Override
+        public void onFailure(@NonNull AuthenticationException error) {
+            //Error!
+        }
+    });
+
+// Step 2: once the user enters the code, pass the saved challenge back to log in
+passwordless
+    .loginWithOTP(challenge, "123456")
     .start(new Callback<Credentials, AuthenticationException>() {
         @Override
         public void onSuccess(@Nullable Credentials payload) {
@@ -2886,6 +3033,7 @@ In the event that something happened while trying to save or retrieve the creden
 - **DPoP key pair lost** — The DPoP key pair is no longer available in the Android KeyStore. The stored credentials are cleared and re-authentication is required.
 - **DPoP key pair mismatch** — The DPoP key pair exists but is different from the one used when the credentials were saved. The stored credentials are cleared and re-authentication is required.
 - **DPoP not configured** — The stored credentials are DPoP-bound but the `AuthenticationAPIClient` used by the credentials manager was not configured with `useDPoP(context)`. The developer needs to call `AuthenticationAPIClient(auth0).useDPoP(context)` and pass the configured client to the credentials manager.
+- **Session expired** — The session has reached the `session_expiry` ceiling asserted by the upstream identity provider. The stored credentials are cleared and re-authentication is required. See [Upstream session expiry](#upstream-session-expiry) below.
 
 You can access the `code` property of the `CredentialsManagerException` to understand why the operation with `CredentialsManager` has failed and the `message` property of the `CredentialsManagerException` would give you a description of the exception.
 
@@ -2919,8 +3067,51 @@ when(credentialsManagerException) {
         // Developer forgot to call useDPoP() on the AuthenticationAPIClient
         // passed to the credentials manager. Fix the client configuration.
     }
+
+    CredentialsManagerException.SESSION_EXPIRED -> {
+        // The upstream identity provider's session_expiry ceiling was reached.
+        // The stored credentials have already been cleared; prompt the user to
+        // re-authenticate.
+    }
     // ... similarly for other error codes
 }
+```
+
+### Upstream session expiry
+
+When an enterprise connection (for example an OIDC or Okta connection) is configured to assert a session lifetime, Auth0 includes a `session_expiry` claim in the ID token. This claim is an absolute ceiling — expressed in **Unix seconds** — on how long the local session may live, independently of the access-token expiry. It usually sits much further out than `expiresAt`, and it cannot be extended by a refresh-token renewal.
+
+The credentials managers enforce this ceiling automatically:
+
+- The ceiling is read from the ID token at login and persisted, so it survives refreshes whose ID token does not re-emit the claim.
+- `saveCredentials` rejects an already-expired session up front: if the ID token is already past its ceiling at login, the save throws `CredentialsManagerException.SESSION_EXPIRED` and nothing is persisted.
+- On every `getCredentials` call, if the ceiling has been reached the stored credentials are cleared and the call fails with `CredentialsManagerException.SESSION_EXPIRED`. The refresh token is **never** used to renew a session past the ceiling.
+- A small negative clock-skew leeway (~30 seconds) is applied, so the session is treated as expired slightly *before* the wall-clock ceiling, never after.
+- Connections that do not emit the claim are unaffected — there is no ceiling and behavior is unchanged.
+
+> ⚠️ **The `session_expiry` value must be Unix seconds.** Per [RFC 7519](https://datatracker.ietf.org/doc/html/rfc7519), the claim is interpreted as seconds since the Unix epoch. A millisecond-magnitude value (e.g. `1700000000000`) resolves to a date ~50,000 years out and would **silently disable** the ceiling, so the SDK treats any implausibly large value (`>= 10_000_000_000`) as "no ceiling". The SDK also **fails open** on any malformed value — a non-numeric, zero, negative, or millisecond value is treated as "no ceiling" and the session proceeds without enforcement. When emitting the claim from an Action, always use seconds (divide a milliseconds timestamp by 1000).
+
+> ⚠️ **Upgrade note:** For a user whose connection asserts `session_expiry`, a `getCredentials` call that previously succeeded can now fail with `SESSION_EXPIRED` once the ceiling is reached. Make sure your error handling treats `SESSION_EXPIRED` as a prompt to re-authenticate.
+
+#### Emitting the claim
+
+The `session_expiry` claim is not emitted by default — it is set on your tenant by a [Post-Login Action](https://auth0.com/docs/customize/actions/flows-and-triggers/login-flow) that adds it to the ID token, for example:
+
+```javascript
+exports.onExecutePostLogin = async (event, api) => {
+  // session_expiry must be expressed in Unix seconds
+  const sessionExpiry = Math.floor(Date.now() / 1000) + 8 * 60 * 60; // 8 hours from now
+  api.idToken.setCustomClaim('session_expiry', sessionExpiry);
+};
+```
+
+> 📝 A link to the canonical Auth0 `session_expiry` Action guide will be added here once it is published.
+
+You can read the ceiling for a given credential set from `Credentials.sessionExpiresAt` (a nullable `Long` of Unix seconds, `null` when the connection does not emit the claim):
+
+```kotlin
+val credentials = credentialsManager.awaitCredentials()
+val ceiling: Long? = credentials.sessionExpiresAt
 ```
 
 ## Passkeys
