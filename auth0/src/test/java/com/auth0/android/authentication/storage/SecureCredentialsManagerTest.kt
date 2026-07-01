@@ -4237,6 +4237,46 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(exception.cause, Is.`is`(error))
     }
 
+    @Test
+    public fun shouldFailWithStoreFailedWhenSavingRenewedApiCredentialsThrows() {
+        Mockito.`when`(storage.retrieveString("audience")).thenReturn(null)
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        insertTestCredentials(
+            hasIdToken = true,
+            hasAccessToken = true,
+            hasRefreshToken = true,
+            willExpireAt = expiresAt,
+            scope = "scope"
+        )
+        Mockito.`when`(
+            client.renewAuth("refreshToken", "audience", "newScope")
+        ).thenReturn(request)
+        val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS + ONE_HOUR_SECONDS * 1000)
+        val jwtMock = mock<Jwt>()
+        Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
+        Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
+
+        // Renewal succeeds but persisting the credentials fails
+        val renewedCredentials =
+            Credentials("newId", "newAccess", "newType", null, newDate, "newScope")
+        Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
+        Mockito.`when`(crypto.encrypt(any()))
+            .thenThrow(CryptoException("CryptoException is thrown"))
+
+        manager.continueGetApiCredentials(
+            "audience", "newScope", 0, emptyMap(), emptyMap(), apiCredentialsCallback
+        )
+
+        verify(apiCredentialsCallback).onFailure(exceptionCaptor.capture())
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(
+            exception.message,
+            Is.`is`("An error occurred while saving the refreshed Credentials.")
+        )
+        Mockito.verify(apiCredentialsCallback, Mockito.never()).onSuccess(any())
+    }
+
     @After
     public fun tearDown() {
         DPoPUtil.keyStore = DPoPKeyStore()

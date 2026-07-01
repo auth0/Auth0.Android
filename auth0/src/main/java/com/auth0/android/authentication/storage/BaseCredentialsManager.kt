@@ -333,6 +333,9 @@ public abstract class BaseCredentialsManager internal constructor(
         try {
             block()
         } catch (t: Throwable) {
+            if (t is VirtualMachineError || t is ThreadDeath || t is LinkageError) {
+                throw t
+            }
             Log.e("BaseCredentialsManager", "Unexpected error in executor block", t)
             callback.onFailure(
                 CredentialsManagerException(CredentialsManagerException.Code.UNKNOWN_ERROR, t)
