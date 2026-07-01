@@ -839,7 +839,7 @@ public class MfaApiClientTest {
 
     @Test
     public fun shouldGetAuthenticatorsWithCallback(): Unit {
-        val json = """[{"id": "sms|dev_123", "authenticator_type": "oob", "active": true}]"""
+        val json = """[{"id": "sms|dev_123", "type": "oob", "authenticator_type": "oob", "active": true}]"""
         enqueueMockResponse(json)
 
         val callback = MockCallback<List<Authenticator>, MfaListAuthenticatorsException>()
