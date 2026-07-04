@@ -96,6 +96,54 @@ internal class MyAccountAPIMockServer : APIMockServer() {
         return this
     }
 
+    fun willReturnPasswordEnrollmentChallenge(): MyAccountAPIMockServer {
+        val json = """
+            {
+              "id": "$PASSWORD_METHOD_ID",
+              "auth_session": "$SESSION_ID",
+              "policy": {
+                "complexity": {
+                  "min_length": 8,
+                  "character_types": ["uppercase", "lowercase", "number", "special"],
+                  "character_type_rule": "three_of_four",
+                  "identical_characters": "block",
+                  "sequential_characters": "block",
+                  "max_length_exceeded": "error"
+                },
+                "profile_data": {
+                  "active": true,
+                  "blocked_fields": ["name", "email"]
+                },
+                "history": {
+                  "active": true,
+                  "size": 5
+                },
+                "dictionary": {
+                  "active": true,
+                  "default": "en_10k"
+                }
+              }
+            }
+        """.trimIndent()
+        server.enqueue(responseWithJSON(json, 202))
+        return this
+    }
+
+    fun willReturnPasswordAuthenticationMethod(): MyAccountAPIMockServer {
+        val json = """
+            {
+              "id": "$PASSWORD_METHOD_ID",
+              "type": "password",
+              "created_at": "2023-06-15T14:30:25.000Z",
+              "usage": ["authentication"],
+              "identity_user_id": "user_98765432",
+              "last_password_reset": "2023-06-15T14:30:25.000Z"
+            }
+        """.trimIndent()
+        server.enqueue(responseWithJSON(json, 201))
+        return this
+    }
+
     fun willReturnErrorForBadRequest(): MyAccountAPIMockServer {
         val responseBody = """
         {
@@ -148,5 +196,6 @@ internal class MyAccountAPIMockServer : APIMockServer() {
     private companion object {
         private const val SESSION_ID = "SESSION_ID"
         private const val CHALLENGE = "CHALLENGE"
+        private const val PASSWORD_METHOD_ID = "password|123"
     }
 }

@@ -13,6 +13,8 @@ import com.auth0.android.result.EnrollmentChallenge
 import com.auth0.android.result.Factor
 import com.auth0.android.result.PasskeyAuthenticationMethod
 import com.auth0.android.result.PasskeyEnrollmentChallenge
+import com.auth0.android.result.PasswordAuthenticationMethod
+import com.auth0.android.result.PasswordEnrollmentChallenge
 import com.auth0.android.result.RecoveryCodeEnrollmentChallenge
 import com.auth0.android.result.TotpEnrollmentChallenge
 import com.auth0.android.util.AuthenticationAPIMockServer.Companion.SESSION_ID
@@ -542,6 +544,101 @@ public class MyAccountAPIClientTest {
         assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods"))
         assertThat(request.method, Matchers.equalTo("POST"))
         assertThat(body, Matchers.hasEntry("type", "push-notification" as Any))
+    }
+
+    @Test
+    public fun `enrollPassword should send correct payload`() {
+        val callback = MockMyAccountCallback<PasswordEnrollmentChallenge>()
+        client.enrollPassword().start(callback)
+
+        val request = mockAPI.takeRequest()
+        val body = bodyFromRequest<String>(request)
+        assertThat(request.path, Matchers.equalTo("/me/v1/authentication-methods"))
+        assertThat(request.method, Matchers.equalTo("POST"))
+        assertThat(body, Matchers.hasEntry("type", "password" as Any))
+    }
+
+    @Test
+    public fun `enrollPassword should include userIdentity and connection parameters`() {
+        val callback = MockMyAccountCallback<PasswordEnrollmentChallenge>()
+        client.enrollPassword(USER_IDENTITY, CONNECTION).start(callback)
+
+        val request = mockAPI.takeRequest()
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("type", "password" as Any))
+        assertThat(body, Matchers.hasEntry("identity_user_id", USER_IDENTITY as Any))
+        assertThat(body, Matchers.hasEntry("connection", CONNECTION as Any))
+    }
+
+    @Test
+    public fun `enrollPassword should parse challenge with policy`() {
+        mockAPI.willReturnPasswordEnrollmentChallenge()
+        val challenge = client.enrollPassword().execute()
+        mockAPI.takeRequest()
+
+        assertThat(challenge, Matchers.instanceOf(PasswordEnrollmentChallenge::class.java))
+        assertThat(challenge.id, Matchers.equalTo("password|123"))
+        assertThat(challenge.authSession, Matchers.equalTo("SESSION_ID"))
+        assertThat(challenge.policy.complexity?.minLength, Matchers.equalTo(8))
+        assertThat(
+            challenge.policy.complexity?.characterTypes,
+            Matchers.contains("uppercase", "lowercase", "number", "special")
+        )
+        assertThat(
+            challenge.policy.complexity?.characterTypeRule,
+            Matchers.equalTo("three_of_four")
+        )
+        assertThat(challenge.policy.profileData?.active, Matchers.equalTo(true))
+        assertThat(challenge.policy.profileData?.blockedFields, Matchers.contains("name", "email"))
+        assertThat(challenge.policy.history?.size, Matchers.equalTo(5))
+        assertThat(challenge.policy.dictionary?.default, Matchers.equalTo("en_10k"))
+    }
+
+    @Test
+    public fun `verifyPassword should send correct payload`() {
+        val callback = MockMyAccountCallback<PasswordAuthenticationMethod>()
+        val methodId = "password|123"
+        val newPassword = "S3cr3tP@ssw0rd"
+        val session = "abc-def"
+        client.verifyPassword(methodId, session, newPassword).start(callback)
+
+        val request = mockAPI.takeRequest()
+        val body = bodyFromRequest<String>(request)
+        assertThat(
+            request.path,
+            Matchers.equalTo("/me/v1/authentication-methods/password%7C123/verify")
+        )
+        assertThat(request.method, Matchers.equalTo("POST"))
+        assertThat(body, Matchers.hasEntry("new_password", newPassword as Any))
+        assertThat(body, Matchers.hasEntry("auth_session", session as Any))
+    }
+
+    @Test
+    public fun `verifyPassword should return PasswordAuthenticationMethod on success`() {
+        mockAPI.willReturnPasswordAuthenticationMethod()
+        val response = client.verifyPassword("password|123", "S3cr3tP@ssw0rd", AUTH_SESSION)
+            .execute()
+        mockAPI.takeRequest()
+
+        assertThat(response, Matchers.instanceOf(PasswordAuthenticationMethod::class.java))
+        assertThat(response.id, Matchers.equalTo("password|123"))
+        assertThat(response.type, Matchers.equalTo("password"))
+        assertThat(response.identityUserId, Matchers.equalTo("user_98765432"))
+    }
+
+    @Test
+    public fun `enrollPassword should include DPoP proof header on POST when DPoP is enabled`() {
+        whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
+        whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
+
+        val dpopClient = MyAccountAPIClient(auth0, ACCESS_TOKEN).useDPoP(mockContext)
+        val callback = MockMyAccountCallback<PasswordEnrollmentChallenge>()
+        dpopClient.enrollPassword().start(callback)
+
+        val request = mockAPI.takeRequest()
+        assertThat(request.getHeader("Authorization"), Matchers.equalTo("DPoP $ACCESS_TOKEN"))
+        assertThat(request.getHeader("DPoP"), Matchers.notNullValue())
+        assertThat(request.method, Matchers.equalTo("POST"))
     }
 
     // DPoP tests
