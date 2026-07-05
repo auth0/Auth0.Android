@@ -132,10 +132,10 @@ internal class MyAccountAPIMockServer : APIMockServer() {
     fun willReturnPasswordAuthenticationMethod(): MyAccountAPIMockServer {
         val json = """
             {
-              "id": "$PASSWORD_METHOD_ID",
+              "id": "$PASSWORD_VERIFIED_METHOD_ID",
               "type": "password",
               "created_at": "2023-06-15T14:30:25.000Z",
-              "usage": ["authentication"],
+              "usage": ["primary"],
               "identity_user_id": "user_98765432",
               "last_password_reset": "2023-06-15T14:30:25.000Z"
             }
@@ -196,6 +196,7 @@ internal class MyAccountAPIMockServer : APIMockServer() {
     private companion object {
         private const val SESSION_ID = "SESSION_ID"
         private const val CHALLENGE = "CHALLENGE"
-        private const val PASSWORD_METHOD_ID = "password|123"
+        private const val PASSWORD_METHOD_ID = "password|new"
+        private const val PASSWORD_VERIFIED_METHOD_ID = "password|pwd_a1b2c3d4e5f6"
     }
 }

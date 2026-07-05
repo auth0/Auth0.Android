@@ -577,7 +577,7 @@ public class MyAccountAPIClientTest {
         mockAPI.takeRequest()
 
         assertThat(challenge, Matchers.instanceOf(PasswordEnrollmentChallenge::class.java))
-        assertThat(challenge.id, Matchers.equalTo("password|123"))
+        assertThat(challenge.id, Matchers.equalTo("password|new"))
         assertThat(challenge.authSession, Matchers.equalTo("SESSION_ID"))
         assertThat(challenge.policy.complexity?.minLength, Matchers.equalTo(8))
         assertThat(
@@ -597,7 +597,7 @@ public class MyAccountAPIClientTest {
     @Test
     public fun `verifyPassword should send correct payload`() {
         val callback = MockMyAccountCallback<PasswordAuthenticationMethod>()
-        val methodId = "password|123"
+        val methodId = "password|new"
         val newPassword = "S3cr3tP@ssw0rd"
         val session = "abc-def"
         client.verifyPassword(methodId, session, newPassword).start(callback)
@@ -606,7 +606,7 @@ public class MyAccountAPIClientTest {
         val body = bodyFromRequest<String>(request)
         assertThat(
             request.path,
-            Matchers.equalTo("/me/v1/authentication-methods/password%7C123/verify")
+            Matchers.equalTo("/me/v1/authentication-methods/password%7Cnew/verify")
         )
         assertThat(request.method, Matchers.equalTo("POST"))
         assertThat(body, Matchers.hasEntry("new_password", newPassword as Any))
@@ -616,12 +616,12 @@ public class MyAccountAPIClientTest {
     @Test
     public fun `verifyPassword should return PasswordAuthenticationMethod on success`() {
         mockAPI.willReturnPasswordAuthenticationMethod()
-        val response = client.verifyPassword("password|123", "S3cr3tP@ssw0rd", AUTH_SESSION)
+        val response = client.verifyPassword("password|new", "S3cr3tP@ssw0rd", AUTH_SESSION)
             .execute()
         mockAPI.takeRequest()
 
         assertThat(response, Matchers.instanceOf(PasswordAuthenticationMethod::class.java))
-        assertThat(response.id, Matchers.equalTo("password|123"))
+        assertThat(response.id, Matchers.equalTo("password|pwd_a1b2c3d4e5f6"))
         assertThat(response.type, Matchers.equalTo("password"))
         assertThat(response.identityUserId, Matchers.equalTo("user_98765432"))
     }
