@@ -2634,7 +2634,7 @@ myAccountClient.enrollPassword()
 #### 2. Confirm the enrollment
 
 ```kotlin
-myAccountClient.verifyPassword("challenge_id_from_enroll", "new_password", "auth_session_from_enroll")
+myAccountClient.verifyPassword("challenge_id_from_enroll", "auth_session_from_enroll", "new_password")
     .start(object : Callback<PasswordAuthenticationMethod, MyAccountException> {
         override fun onSuccess(result: PasswordAuthenticationMethod) {
             // Enrollment successful
@@ -2647,7 +2647,7 @@ myAccountClient.verifyPassword("challenge_id_from_enroll", "new_password", "auth
     <summary>Using Java</summary>
 
 ```java
-myAccountClient.verifyPassword("challenge_id_from_enroll", "new_password", "auth_session_from_enroll")
+myAccountClient.verifyPassword("challenge_id_from_enroll", "auth_session_from_enroll", "new_password")
     .start(new Callback<PasswordAuthenticationMethod, MyAccountException>() {
         @Override
         public void onSuccess(PasswordAuthenticationMethod result) {

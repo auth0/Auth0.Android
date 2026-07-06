@@ -616,7 +616,7 @@ public class MyAccountAPIClientTest {
     @Test
     public fun `verifyPassword should return PasswordAuthenticationMethod on success`() {
         mockAPI.willReturnPasswordAuthenticationMethod()
-        val response = client.verifyPassword("password|new", "S3cr3tP@ssw0rd", AUTH_SESSION)
+        val response = client.verifyPassword("password|new", AUTH_SESSION, "S3cr3tP@ssw0rd")
             .execute()
         mockAPI.takeRequest()
 

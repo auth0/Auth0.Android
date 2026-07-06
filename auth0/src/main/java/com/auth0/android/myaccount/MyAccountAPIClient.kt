@@ -808,7 +808,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * val authSession = "from_enrollment_challenge"
      * val newPassword = "the_users_new_password"
      *
-     * apiClient.verifyPassword(authMethodId, newPassword, authSession)
+     * apiClient.verifyPassword(authMethodId, authSession, newPassword)
      *      .start(object : Callback<PasswordAuthenticationMethod, MyAccountException> {
      *              override fun onSuccess(result: PasswordAuthenticationMethod) { //... }
      *              override fun onFailure(error: MyAccountException) { //... }
