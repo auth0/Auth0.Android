@@ -5,29 +5,29 @@ import com.google.gson.annotations.SerializedName
 /**
  * Describes the password policy that a new password must satisfy, as returned by the My Account API
  * when starting a password enrollment. Use it to build a UI that guides the user toward a compliant
- * password. All fields are nullable to tolerate policies that only configure a subset of rules.
+ * password.
  */
 public data class PasswordPolicy(
     /**
      * Rules governing the structural complexity of the password (length, character types, etc.).
      */
     @SerializedName("complexity")
-    public val complexity: PasswordComplexity?,
+    public val complexity: PasswordComplexity,
     /**
      * Rules that prevent the password from containing personal information taken from the user profile.
      */
     @SerializedName("profile_data")
-    public val profileData: PasswordProfileData?,
+    public val profileData: PasswordProfileData,
     /**
      * Rules that prevent reuse of previously used passwords.
      */
     @SerializedName("history")
-    public val history: PasswordHistory?,
+    public val history: PasswordHistory,
     /**
      * Rules that prevent the use of common dictionary words as passwords.
      */
     @SerializedName("dictionary")
-    public val dictionary: PasswordDictionary?
+    public val dictionary: PasswordDictionary
 )
 
 /**

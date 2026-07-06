@@ -579,19 +579,19 @@ public class MyAccountAPIClientTest {
         assertThat(challenge, Matchers.instanceOf(PasswordEnrollmentChallenge::class.java))
         assertThat(challenge.id, Matchers.equalTo("password|new"))
         assertThat(challenge.authSession, Matchers.equalTo("SESSION_ID"))
-        assertThat(challenge.policy.complexity?.minLength, Matchers.equalTo(8))
+        assertThat(challenge.policy.complexity.minLength, Matchers.equalTo(8))
         assertThat(
-            challenge.policy.complexity?.characterTypes,
+            challenge.policy.complexity.characterTypes,
             Matchers.contains("uppercase", "lowercase", "number", "special")
         )
         assertThat(
-            challenge.policy.complexity?.characterTypeRule,
+            challenge.policy.complexity.characterTypeRule,
             Matchers.equalTo("three_of_four")
         )
-        assertThat(challenge.policy.profileData?.active, Matchers.equalTo(true))
-        assertThat(challenge.policy.profileData?.blockedFields, Matchers.contains("name", "email"))
-        assertThat(challenge.policy.history?.size, Matchers.equalTo(5))
-        assertThat(challenge.policy.dictionary?.default, Matchers.equalTo("en_10k"))
+        assertThat(challenge.policy.profileData.active, Matchers.equalTo(true))
+        assertThat(challenge.policy.profileData.blockedFields, Matchers.contains("name", "email"))
+        assertThat(challenge.policy.history.size, Matchers.equalTo(5))
+        assertThat(challenge.policy.dictionary.default, Matchers.equalTo("en_10k"))
     }
 
     @Test
