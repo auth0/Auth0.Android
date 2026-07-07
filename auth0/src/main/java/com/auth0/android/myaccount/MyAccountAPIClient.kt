@@ -24,7 +24,9 @@ import com.auth0.android.result.Factor
 import com.auth0.android.result.Factors
 import com.auth0.android.result.PasskeyAuthenticationMethod
 import com.auth0.android.result.PasskeyEnrollmentChallenge
+import com.auth0.android.result.PasswordAuthenticationMethod
 import com.auth0.android.result.PasskeyRegistrationChallenge
+import com.auth0.android.result.PasswordEnrollmentChallenge
 import com.auth0.android.result.RecoveryCodeEnrollmentChallenge
 import com.auth0.android.result.TotpEnrollmentChallenge
 import com.google.gson.Gson
@@ -743,6 +745,100 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
             .addHeader(AUTHORIZATION_KEY, authorizationHeader)
     }
 
+    /**
+     * Starts the enrollment of a password authentication method. This is the first part of a
+     * two-step flow: the returned challenge carries the [com.auth0.android.result.PasswordPolicy]
+     * the new password must satisfy, along with the `id` and `authSession` needed to confirm the
+     * enrollment via [verifyPassword].
+     *
+     * ## Scopes Required
+     * `create:me:authentication_methods`
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
+     * apiClient.enrollPassword()
+     *      .start(object : Callback<PasswordEnrollmentChallenge, MyAccountException> {
+     *              override fun onSuccess(result: PasswordEnrollmentChallenge) {
+     *                  // Use result.policy to guide the user, then call verifyPassword(...)
+     *              }
+     *              override fun onFailure(error: MyAccountException) { //... }
+     *       })
+     * ```
+     * @param userIdentity Unique identifier of the current user's identity. Needed if the user logged in with a [linked account](https://auth0.com/docs/manage-users/user-accounts/user-account-linking)
+     * @param connection Name of the database connection where the user is stored
+     * @return a request that will yield a password enrollment challenge.
+     */
+    @JvmOverloads
+    public fun enrollPassword(
+        userIdentity: String? = null,
+        connection: String? = null
+    ): Request<PasswordEnrollmentChallenge, MyAccountException> {
+        val url = getDomainUrlBuilder().addPathSegment(AUTHENTICATION_METHODS).build()
+        val params = ParameterBuilder.newBuilder().apply {
+            set(TYPE_KEY, AuthenticationMethodType.PASSWORD.type)
+            userIdentity?.let { set(USER_IDENTITY_ID_KEY, it) }
+            connection?.let { set(CONNECTION_KEY, it) }
+        }.asDictionary()
+        return factory.post(
+            url.toString(),
+            GsonAdapter(PasswordEnrollmentChallenge::class.java, gson),
+            dPoP
+        )
+            .addParameters(params)
+            .addHeader(AUTHORIZATION_KEY, authorizationHeader)
+    }
+
+    /**
+     * Confirms the enrollment of a password method by providing the new password.
+     *
+     * ## Scopes Required
+     * `create:me:authentication_methods`
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
+     * val authMethodId = "from_enrollment_challenge"
+     * val authSession = "from_enrollment_challenge"
+     * val newPassword = "the_users_new_password"
+     *
+     * apiClient.verifyPassword(authMethodId, authSession, newPassword)
+     *      .start(object : Callback<PasswordAuthenticationMethod, MyAccountException> {
+     *              override fun onSuccess(result: PasswordAuthenticationMethod) { //... }
+     *              override fun onFailure(error: MyAccountException) { //... }
+     *       })
+     * ```
+     * @param authenticationMethodId The ID of the method being verified (from the enrollment challenge).
+     * @param authSession The auth session from the enrollment challenge.
+     * @param newPassword The new password to set, satisfying the policy from the enrollment challenge.
+     * @return a request that will yield the newly verified password authentication method.
+     */
+    public fun verifyPassword(
+        authenticationMethodId: String,
+        authSession: String,
+        newPassword: String
+    ): Request<PasswordAuthenticationMethod, MyAccountException> {
+        val url = getDomainUrlBuilder()
+            .addPathSegment(AUTHENTICATION_METHODS)
+            .addPathSegment(authenticationMethodId)
+            .addPathSegment(VERIFY)
+            .build()
+        val params = mapOf(NEW_PASSWORD_KEY to newPassword, AUTH_SESSION_KEY to authSession)
+        return factory.post(
+            url.toString(),
+            GsonAdapter(PasswordAuthenticationMethod::class.java, gson),
+            dPoP
+        )
+            .addParameters(params)
+            .addHeader(AUTHORIZATION_KEY, authorizationHeader)
+    }
+
     // WebAuthn methods are private.
     /**
      * Starts the enrollment of a WebAuthn Platform (e.g., biometrics) authenticator.
@@ -824,6 +920,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
         private const val AUTHORIZATION_KEY = "Authorization"
         private const val LOCATION_KEY = "location"
         private const val AUTH_SESSION_KEY = "auth_session"
+        private const val NEW_PASSWORD_KEY = "new_password"
         private const val AUTHN_RESPONSE_KEY = "authn_response"
         private const val PREFERRED_AUTHENTICATION_METHOD = "preferred_authentication_method"
         private const val AUTHENTICATION_METHOD_NAME = "name"
