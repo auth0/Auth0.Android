@@ -48,6 +48,7 @@
     - [Enroll a TOTP (Authenticator App) Method](#enroll-a-totp-authenticator-app-method)
     - [Enroll a Push Notification Method](#enroll-a-push-notification-method)
     - [Enroll a Recovery Code](#enroll-a-recovery-code)
+    - [Enroll a Password Method](#enroll-a-password-method)
     - [Verify an Enrollment](#verify-an-enrollment)
     - [Delete an Authentication Method](#delete-an-authentication-method)
     - [Update an Authentication Method](#update-an-authentication-method)
@@ -2689,6 +2690,69 @@ myAccountClient.enrollRecoveryCode()
     @Override
     public void onFailure(@NonNull MyAccountException error) { }
 });
+```
+</details>
+
+### Enroll a Password Method
+**Scopes required:** `create:me:authentication_methods`
+
+Enrolling a password authentication method is a two-step process. First, you request an enrollment challenge, which returns the connection's password [policy](https://auth0.com/docs/authenticate/database-connections/password-options) so you can guide the user to choose a compliant password. Then, you confirm the enrollment with the new password.
+
+#### 1. Request an enrollment challenge
+
+```kotlin
+myAccountClient.enrollPassword()
+    .start(object : Callback<PasswordEnrollmentChallenge, MyAccountException> {
+        override fun onSuccess(result: PasswordEnrollmentChallenge) {
+            // Use result.policy to validate the user's new password before confirming.
+            // Then use result.id and result.authSession to verify.
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+```
+
+<details>
+    <summary>Using Java</summary>
+
+```java
+myAccountClient.enrollPassword()
+    .start(new Callback<PasswordEnrollmentChallenge, MyAccountException>() {
+        @Override
+        public void onSuccess(PasswordEnrollmentChallenge result) {
+            // Use result.getPolicy() to validate the user's new password before confirming.
+            // Then use result.getId() and result.getAuthSession() to verify.
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+```
+</details>
+
+#### 2. Confirm the enrollment
+
+```kotlin
+myAccountClient.verifyPassword("challenge_id_from_enroll", "auth_session_from_enroll", "new_password")
+    .start(object : Callback<PasswordAuthenticationMethod, MyAccountException> {
+        override fun onSuccess(result: PasswordAuthenticationMethod) {
+            // Enrollment successful
+        }
+        override fun onFailure(error: MyAccountException) { }
+    })
+```
+
+<details>
+    <summary>Using Java</summary>
+
+```java
+myAccountClient.verifyPassword("challenge_id_from_enroll", "auth_session_from_enroll", "new_password")
+    .start(new Callback<PasswordAuthenticationMethod, MyAccountException>() {
+        @Override
+        public void onSuccess(PasswordAuthenticationMethod result) {
+            // Enrollment successful
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
 ```
 </details>
 
