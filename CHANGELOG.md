@@ -33,6 +33,54 @@
 - update: Gradle AGP 8 upgrade [\#900](https://github.com/auth0/Auth0.Android/pull/900) ([pmathew92](https://github.com/pmathew92))
 - update: Update dependencies [\#908](https://github.com/auth0/Auth0.Android/pull/908) ([utkrishtsahu](https://github.com/utkrishtsahu))
 
+## [3.21.0](https://github.com/auth0/Auth0.Android/tree/3.21.0) (2026-07-08)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.20.0...3.21.0)
+
+**Added**
+- feat: Add password enrollment to MyAccount API [\#1003](https://github.com/auth0/Auth0.Android/pull/1003) ([pmathew92](https://github.com/pmathew92))
+
+**Fixed**
+- fix: MFAClient getAuthenticators filtering based on Authenticator.type field [\#998](https://github.com/auth0/Auth0.Android/pull/998) ([utkrishtsahu](https://github.com/utkrishtsahu))
+
+## [3.20.0](https://github.com/auth0/Auth0.Android/tree/3.20.0) (2026-06-29)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.19.0...3.20.0)
+
+**Added**
+- feat: Added DPoP support for MFA APIs [\#992](https://github.com/auth0/Auth0.Android/pull/992) ([pmathew92](https://github.com/pmathew92))
+- feat: enforce IPSIE session_expiry ceiling in credentials managers [\#983](https://github.com/auth0/Auth0.Android/pull/983) ([utkrishtsahu](https://github.com/utkrishtsahu))
+- feat : Added passwordless API for DB-Connections [\#989](https://github.com/auth0/Auth0.Android/pull/989) ([pmathew92](https://github.com/pmathew92))
+
+## [3.19.0](https://github.com/auth0/Auth0.Android/tree/3.19.0) (2026-06-15)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.18.0...3.19.0)
+
+**Added**
+- feat: CTE delegation and impersonation support [\#975](https://github.com/auth0/Auth0.Android/pull/975) ([pmathew92](https://github.com/pmathew92))
+
+**Fixed**
+- fix : Handling DPoP enabled WebAuth flow after process death [\#977](https://github.com/auth0/Auth0.Android/pull/977) ([pmathew92](https://github.com/pmathew92))
+
+## [3.18.0](https://github.com/auth0/Auth0.Android/tree/3.18.0) (2026-05-26)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.17.0...3.18.0)
+
+**Added**
+- feat : Add support to pass type parameter to the MyAccount list authentication method API [\#974](https://github.com/auth0/Auth0.Android/pull/974) ([pmathew92](https://github.com/pmathew92))
+
+**Fixed**
+- fix : Guard against all uncaught exception in the serial executor block [\#970](https://github.com/auth0/Auth0.Android/pull/970) ([pmathew92](https://github.com/pmathew92))
+
+## [3.17.0](https://github.com/auth0/Auth0.Android/tree/3.17.0) (2026-05-21)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.16.0...3.17.0)
+
+**Added**
+- feat : Added additional properties support to passkeys signup API [\#969](https://github.com/auth0/Auth0.Android/pull/969) ([pmathew92](https://github.com/pmathew92))
+- feat :Add partial support for PAR auth flow [\#967](https://github.com/auth0/Auth0.Android/pull/967) ([pmathew92](https://github.com/pmathew92))
+
+## [3.16.0](https://github.com/auth0/Auth0.Android/tree/3.16.0) (2026-04-27)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.15.0...3.16.0)
+
+**Added**
+- feat : Add Partial Custom Tabs support (bottom sheet & side sheet) [\#954](https://github.com/auth0/Auth0.Android/pull/954) ([subhankarmaiti](https://github.com/subhankarmaiti))
+
 ## [3.15.0](https://github.com/auth0/Auth0.Android/tree/3.15.0) (2026-04-15)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.14.0...3.15.0)
 
