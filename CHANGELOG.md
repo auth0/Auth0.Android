@@ -33,6 +33,15 @@
 - update: Gradle AGP 8 upgrade [\#900](https://github.com/auth0/Auth0.Android/pull/900) ([pmathew92](https://github.com/pmathew92))
 - update: Update dependencies [\#908](https://github.com/auth0/Auth0.Android/pull/908) ([utkrishtsahu](https://github.com/utkrishtsahu))
 
+## [3.21.0](https://github.com/auth0/Auth0.Android/tree/3.21.0) (2026-07-08)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.20.0...3.21.0)
+
+**Added**
+- feat: Add password enrollment to MyAccount API [\#1003](https://github.com/auth0/Auth0.Android/pull/1003) ([pmathew92](https://github.com/pmathew92))
+
+**Fixed**
+- fix: MFAClient getAuthenticators filtering based on Authenticator.type field [\#998](https://github.com/auth0/Auth0.Android/pull/998) ([utkrishtsahu](https://github.com/utkrishtsahu))
+
 ## [3.20.0](https://github.com/auth0/Auth0.Android/tree/3.20.0) (2026-06-29)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.19.0...3.20.0)
 
