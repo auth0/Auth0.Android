@@ -69,6 +69,23 @@ public data class OobEnrollmentChallenge(
  * [secret] and [manualInputCode] both carry the human-readable key for manual entry into an
  * authenticator app; only one is populated depending on the endpoint. The [barcodeUri]
  * (`otpauth://` URI) is always present and embeds the same secret.
+ *
+ * @property id Identifier of the created authentication method. `null` on the `/mfa/associate`
+ * response (which does not return it); populated by the My Account `/authentication-methods`
+ * endpoint.
+ * @property authSession Authentication session for the enrollment. `null` on the
+ * `/mfa/associate` response; populated by the My Account `/authentication-methods` endpoint.
+ * @property barcodeUri The `otpauth://` URI to render as a QR code. Always present on both
+ * endpoints.
+ * @property manualInputCode Human-readable key for manual entry, returned only by the My Account
+ * `/authentication-methods` endpoint; `null` on the `/mfa/associate` response (which returns the
+ * key as [secret] instead).
+ * @property authenticatorType Low-level authenticator type (e.g. `otp`), returned only by the
+ * `/mfa/associate` endpoint; `null` on the My Account response.
+ * @property secret Human-readable key for manual entry, returned only by the `/mfa/associate`
+ * endpoint; `null` on the My Account response (which returns the key as [manualInputCode]).
+ * @property recoveryCodes Recovery codes generated during enrollment, returned only by the
+ * `/mfa/associate` endpoint; `null` on the My Account response.
  */
 public data class TotpEnrollmentChallenge(
     @SerializedName("id")
