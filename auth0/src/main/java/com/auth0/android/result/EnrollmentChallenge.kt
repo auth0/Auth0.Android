@@ -54,15 +54,36 @@ public data class OobEnrollmentChallenge(
     public val bindingMethod: String? = null
 ) : EnrollmentChallenge()
 
+/**
+ * Enrollment challenge for TOTP (authenticator app) and Push factors, returned by both
+ * the MFA `/mfa/associate` endpoint and the My Account `/authentication-methods` endpoint.
+ *
+ * The two endpoints return different field sets, so every field except [barcodeUri] is
+ * optional:
+ *  - `/mfa/associate` (ROPG MFA flow) returns [authenticatorType], [secret], [barcodeUri]
+ *    and [recoveryCodes]. It does NOT return `id`, `auth_session` or `manual_input_code`.
+ *  - `/authentication-methods` (My Account) returns [id], [authSession], [barcodeUri] and
+ *    [manualInputCode].
+ *
+ * [secret] and [manualInputCode] both carry the human-readable key for manual entry into an
+ * authenticator app; only one is populated depending on the endpoint. The [barcodeUri]
+ * (`otpauth://` URI) is always present and embeds the same secret.
+ */
 public data class TotpEnrollmentChallenge(
     @SerializedName("id")
-    override val id: String,
+    override val id: String? = null,
     @SerializedName("auth_session")
-    override val authSession: String,
+    override val authSession: String? = null,
     @SerializedName("barcode_uri")
     public val barcodeUri: String,
     @SerializedName("manual_input_code")
-    public val manualInputCode: String?
+    public val manualInputCode: String? = null,
+    @SerializedName("authenticator_type")
+    public val authenticatorType: String? = null,
+    @SerializedName("secret")
+    public val secret: String? = null,
+    @SerializedName("recovery_codes")
+    public val recoveryCodes: List<String>? = null
 ) : EnrollmentChallenge()
 
 public data class RecoveryCodeEnrollmentChallenge(

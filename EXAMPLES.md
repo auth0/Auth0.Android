@@ -868,10 +868,13 @@ mfaClient
         override fun onFailure(exception: MfaEnrollmentException) { }
 
         override fun onSuccess(enrollment: EnrollmentChallenge) {
-            // Display QR code or secret for user to scan/enter in authenticator app
+            // Display QR code or secret for user to scan/enter in authenticator app.
+            // The `/mfa/associate` endpoint returns the manual-entry key as `secret`
+            // (not `manualInputCode`, which is only populated by the My Account API).
             if (enrollment is TotpEnrollmentChallenge) {
-                val secret = enrollment.manualInputCode
+                val secret = enrollment.secret
                 val barcodeUri = enrollment.barcodeUri
+                val recoveryCodes = enrollment.recoveryCodes
             }
         }
     })
@@ -889,11 +892,14 @@ mfaClient
 
         @Override
         public void onSuccess(EnrollmentChallenge enrollment) {
-            // Display QR code or secret for user to scan/enter in authenticator app
+            // Display QR code or secret for user to scan/enter in authenticator app.
+            // The `/mfa/associate` endpoint returns the manual-entry key as `secret`
+            // (not `manualInputCode`, which is only populated by the My Account API).
             if (enrollment instanceof TotpEnrollmentChallenge) {
                 TotpEnrollmentChallenge totpEnrollment = (TotpEnrollmentChallenge) enrollment;
-                String secret = totpEnrollment.getManualInputCode();
+                String secret = totpEnrollment.getSecret();
                 String barcodeUri = totpEnrollment.getBarcodeUri();
+                List<String> recoveryCodes = totpEnrollment.getRecoveryCodes();
             }
         }
     });

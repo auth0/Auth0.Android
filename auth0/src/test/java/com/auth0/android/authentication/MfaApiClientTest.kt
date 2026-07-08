@@ -190,9 +190,9 @@ public class MfaApiClientTest {
         whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
         whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
         val dpopClient = MfaApiClient(auth0, MFA_TOKEN).useDPoP(mockContext)
-        enqueueMockResponse("""[{"id": "sms|dev_123", "type": "oob", "active": true}]""")
+        enqueueMockResponse("""[{"id": "sms|dev_123", "type": "phone", "authenticator_type": "oob", "oob_channel": "sms", "active": true}]""")
 
-        dpopClient.getAuthenticators(listOf("oob")).await()
+        dpopClient.getAuthenticators(listOf("phone")).await()
 
         val request = mockServer.takeRequest()
         assertThat(request.path, `is`("/mfa/authenticators"))
@@ -255,10 +255,10 @@ public class MfaApiClientTest {
 
     @Test
     public fun shouldIncludeAuth0ClientHeaderInGetAuthenticators(): Unit = runTest {
-        val json = """[{"id": "sms|dev_123", "type": "oob", "active": true}]"""
+        val json = """[{"id": "sms|dev_123", "type": "phone", "authenticator_type": "oob", "oob_channel": "sms", "active": true}]"""
         enqueueMockResponse(json)
 
-        mfaClient.getAuthenticators(listOf("oob")).await()
+        mfaClient.getAuthenticators(listOf("phone")).await()
 
         val request = mockServer.takeRequest()
         assertThat(request.getHeader("Auth0-Client"), `is`(notNullValue()))
@@ -301,34 +301,38 @@ public class MfaApiClientTest {
     @Test
     public fun shouldGetAuthenticatorsSuccess(): Unit = runTest {
         val json = """[
-            {"id": "sms|dev_123", "type": "oob", "authenticator_type": "oob", "active": true, "oob_channel": "sms"},
-            {"id": "totp|dev_456", "type": "otp", "authenticator_type": "otp", "active": true}
+            {"id": "sms|dev_123", "type": "phone", "authenticator_type": "oob", "active": true, "oob_channel": "sms"},
+            {"id": "voice|dev_123", "type": "phone", "authenticator_type": "oob", "active": true, "oob_channel": "voice"},
+            {"id": "recovery|dev_789", "type": "recovery-code", "authenticator_type": "recovery-code", "active": true},
+            {"id": "email|dev_456", "type": "email", "authenticator_type": "oob", "active": true, "oob_channel": "email"}
         ]"""
         enqueueMockResponse(json)
 
-        val authenticators = mfaClient.getAuthenticators(listOf("oob", "otp")).await()
+        val authenticators = mfaClient.getAuthenticators(listOf("phone", "email")).await()
 
-        assertThat(authenticators, hasSize(2))
+        assertThat(authenticators, hasSize(3))
         assertThat(authenticators[0].id, `is`("sms|dev_123"))
-        assertThat(authenticators[0].type, `is`("oob"))
-        assertThat(authenticators[1].id, `is`("totp|dev_456"))
-        assertThat(authenticators[1].type, `is`("otp"))
+        assertThat(authenticators[0].type, `is`("phone"))
+        assertThat(authenticators[1].id, `is`("voice|dev_123"))
+        assertThat(authenticators[1].type, `is`("phone"))
+        assertThat(authenticators[2].id, `is`("email|dev_456"))
+        assertThat(authenticators[2].type, `is`("email"))
     }
 
     @Test
     public fun shouldFilterAuthenticatorsByFactorsAllowed(): Unit = runTest {
         val json = """[
-            {"id": "sms|dev_123", "type": "oob", "authenticator_type": "oob", "active": true, "oob_channel": "sms"},
-            {"id": "totp|dev_456", "type": "otp", "authenticator_type": "otp", "active": true},
+            {"id": "sms|dev_123", "type": "phone", "authenticator_type": "oob", "active": true, "oob_channel": "sms"},
+            {"id": "email|dev_456", "type": "email", "authenticator_type": "oob", "active": true, "oob_channel": "email"},
             {"id": "recovery|dev_789", "type": "recovery-code", "authenticator_type": "recovery-code", "active": true}
         ]"""
         enqueueMockResponse(json)
 
-        val authenticators = mfaClient.getAuthenticators(listOf("otp")).await()
+        val authenticators = mfaClient.getAuthenticators(listOf("recovery-code")).await()
 
         assertThat(authenticators, hasSize(1))
-        assertThat(authenticators[0].id, `is`("totp|dev_456"))
-        assertThat(authenticators[0].type, `is`("otp"))
+        assertThat(authenticators[0].id, `is`("recovery|dev_789"))
+        assertThat(authenticators[0].type, `is`("recovery-code"))
     }
 
     @Test
@@ -344,10 +348,10 @@ public class MfaApiClientTest {
 
     @Test
     public fun shouldIncludeAuthorizationHeaderInGetAuthenticators(): Unit = runTest {
-        val json = """[{"id": "sms|dev_123", "type": "oob", "active": true}]"""
+        val json = """[{"id": "sms|dev_123", "type": "phone", "authenticator_type": "oob", "oob_channel": "sms", "active": true}]"""
         enqueueMockResponse(json)
 
-        mfaClient.getAuthenticators(listOf("oob")).await()
+        mfaClient.getAuthenticators(listOf("phone")).await()
 
         val request = mockServer.takeRequest()
         assertThat(request.getHeader("Authorization"), `is`("Bearer $MFA_TOKEN"))
@@ -361,7 +365,7 @@ public class MfaApiClientTest {
 
         val exception = assertThrows(MfaListAuthenticatorsException::class.java) {
             runTest {
-                mfaClient.getAuthenticators(listOf("oob")).await()
+                mfaClient.getAuthenticators(listOf("phone")).await()
             }
         }
         assertThat(exception.getCode(), `is`("access_denied"))
@@ -372,7 +376,7 @@ public class MfaApiClientTest {
     @Test
     public fun shouldReturnEmptyListWhenNoMatchingFactors(): Unit = runTest {
         val json = """[
-            {"id": "sms|dev_123", "type": "oob", "active": true}
+            {"id": "sms|dev_123", "type": "phone", "authenticator_type": "oob", "oob_channel": "sms", "active": true}
         ]"""
         enqueueMockResponse(json)
 
@@ -477,11 +481,13 @@ public class MfaApiClientTest {
 
     @Test
     public fun shouldEnrollOtpSuccess(): Unit = runTest {
+        // Real /mfa/associate TOTP response shape: authenticator_type + secret + barcode_uri
+        // + recovery_codes. It does NOT contain id, auth_session or manual_input_code.
         val json = """{
-            "id": "totp|dev_789",
-            "auth_session": "session_ghi",
+            "authenticator_type": "otp",
+            "secret": "JBSWY3DPEHPK3PXP",
             "barcode_uri": "otpauth://totp/Example:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Example",
-            "manual_input_code": "JBSWY3DPEHPK3PXP"
+            "recovery_codes": ["ABCD1234EFGH5678"]
         }"""
         enqueueMockResponse(json)
 
@@ -489,10 +495,14 @@ public class MfaApiClientTest {
 
         assertThat(challenge, `is`(instanceOf(TotpEnrollmentChallenge::class.java)))
         val totpChallenge = challenge as TotpEnrollmentChallenge
-        assertThat(totpChallenge.id, `is`("totp|dev_789"))
-        assertThat(totpChallenge.authSession, `is`("session_ghi"))
+        assertThat(totpChallenge.authenticatorType, `is`("otp"))
+        assertThat(totpChallenge.secret, `is`("JBSWY3DPEHPK3PXP"))
         assertThat(totpChallenge.barcodeUri, containsString("otpauth://"))
-        assertThat(totpChallenge.manualInputCode, `is`("JBSWY3DPEHPK3PXP"))
+        assertThat(totpChallenge.recoveryCodes, `is`(listOf("ABCD1234EFGH5678")))
+        // Fields not returned by /mfa/associate must be null (not force-unwrapped non-null).
+        assertThat(totpChallenge.id, `is`(nullValue()))
+        assertThat(totpChallenge.authSession, `is`(nullValue()))
+        assertThat(totpChallenge.manualInputCode, `is`(nullValue()))
     }
 
     @Test
@@ -839,12 +849,12 @@ public class MfaApiClientTest {
 
     @Test
     public fun shouldGetAuthenticatorsWithCallback(): Unit {
-        val json = """[{"id": "sms|dev_123", "type": "oob", "authenticator_type": "oob", "active": true}]"""
+        val json = """[{"id": "sms|dev_123", "type": "phone", "authenticator_type": "oob", "oob_channel": "sms", "active": true}]"""
         enqueueMockResponse(json)
 
         val callback = MockCallback<List<Authenticator>, MfaListAuthenticatorsException>()
 
-        mfaClient.getAuthenticators(listOf("oob"))
+        mfaClient.getAuthenticators(listOf("phone"))
             .start(callback)
 
         ShadowLooper.idleMainLooper()
