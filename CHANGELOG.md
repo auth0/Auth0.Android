@@ -1,5 +1,12 @@
 # Change Log
 
+## [3.21.0](https://github.com/auth0/Auth0.Android/tree/3.21.0) (2026-07-08)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.20.0...3.21.0)
+
+**Added**
+- fix: MFAClient getAuthenticators filtering based on Authenticator.type field [\#998](https://github.com/auth0/Auth0.Android/pull/998) ([utkrishtsahu](https://github.com/utkrishtsahu))
+- feat: Add password enrollment to MyAccount API [\#1003](https://github.com/auth0/Auth0.Android/pull/1003) ([pmathew92](https://github.com/pmathew92))
+
 ## [3.20.0](https://github.com/auth0/Auth0.Android/tree/3.20.0) (2026-06-29)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.19.0...3.20.0)
 
