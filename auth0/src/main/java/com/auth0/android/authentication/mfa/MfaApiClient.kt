@@ -124,16 +124,19 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
      * ## Usage
      *
      * ```kotlin
-     * mfaClient.getAuthenticators(listOf("otp", "oob"))
+     * mfaClient.getAuthenticators(listOf("otp", "phone"))
      *     .start(object : Callback<List<Authenticator>, MfaListAuthenticatorsException> {
      *         override fun onSuccess(result: List<Authenticator>) {
-     *             // Only OTP and OOB authenticators returned
+     *             // Only authenticators whose `type` is "otp" or "phone" are returned
      *         }
      *         override fun onFailure(error: MfaListAuthenticatorsException) { }
      *     })
      * ```
      *
-     * @param factorsAllowed Array of factor types to filter the authenticators (e.g., `["otp", "oob", "recovery-code"]`).
+     * Filtering matches each authenticator's [Authenticator.type] field against the
+     * provided values using exact (case-sensitive) equality.
+     *
+     * @param factorsAllowed Array of factor types to filter the authenticators (e.g., `["otp", "phone", "email", "recovery-code"]`).
      *                       Must contain at least one factor type.
      * @return a request to configure and start that will yield a list of [Authenticator]
      *
@@ -307,11 +310,11 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
      * transparently by the SDK.
      *
      * **Filtering:**
-     * Authenticators are filtered by their effective type:
-     * - OOB authenticators: matched by their channel ("sms" or "email")
-     * - Other authenticators: matched by their type ("otp", "recovery-code", etc.)
+     * An authenticator is included when [Authenticator.type] exactly matches one of the
+     * provided [factorsAllowed] values (case-sensitive equality). This mirrors the
+     * filtering behavior of the Auth0.swift SDK.
      *
-     * @param factorsAllowed List of factor types to include (e.g., ["sms", "email", "otp"])
+     * @param factorsAllowed List of factor types to include (e.g., ["phone", "email", "otp"])
      * @return A JsonAdapter that produces a filtered list of authenticators
      */
     private fun createFilteringAuthenticatorsAdapter(factorsAllowed: List<String>): JsonAdapter<List<Authenticator>> {
@@ -321,63 +324,9 @@ public class MfaApiClient @VisibleForTesting(otherwise = VisibleForTesting.PRIVA
                 val allAuthenticators = baseAdapter.fromJson(reader, metadata)
 
                 return allAuthenticators.filter { authenticator ->
-                    matchesFactorType(authenticator, factorsAllowed)
+                    factorsAllowed.contains(authenticator.type)
                 }
             }
-        }
-    }
-
-    /**
-     * Checks if an authenticator matches any of the allowed factor types.
-     *
-     * The matching logic handles various factor type aliases:
-     * - "sms" or "phone": matches OOB authenticators with SMS channel
-     * - "email": matches OOB authenticators with email channel
-     * - "otp" or "totp": matches time-based one-time password authenticators
-     * - "oob": matches any out-of-band authenticator regardless of channel
-     * - "recovery-code": matches recovery code authenticators
-     * - "push-notification": matches push notification authenticators
-     *
-     * @param authenticator The authenticator to check
-     * @param factorsAllowed List of allowed factor types
-     * @return true if the authenticator matches any allowed factor type
-     */
-    private fun matchesFactorType(
-        authenticator: Authenticator,
-        factorsAllowed: List<String>
-    ): Boolean {
-        val effectiveType = getEffectiveType(authenticator)
-
-        return factorsAllowed.any { factor ->
-            val normalizedFactor = factor.lowercase(java.util.Locale.ROOT)
-            when (normalizedFactor) {
-                "sms", "phone" -> effectiveType == "sms" || effectiveType == "phone"
-                "email" -> effectiveType == "email"
-                "otp", "totp" -> effectiveType == "otp" || effectiveType == "totp"
-                "oob" -> authenticator.authenticatorType == "oob" || authenticator.type == "oob"
-                "recovery-code" -> effectiveType == "recovery-code"
-                "push-notification" -> effectiveType == "push-notification"
-                else -> effectiveType == normalizedFactor ||
-                        authenticator.authenticatorType?.lowercase(java.util.Locale.ROOT) == normalizedFactor ||
-                        authenticator.type.lowercase(java.util.Locale.ROOT) == normalizedFactor
-            }
-        }
-    }
-
-    /**
-     * Resolves the effective type of an authenticator for filtering purposes.
-     *
-     * OOB (out-of-band) authenticators use their channel ("sms" or "email") as the
-     * effective type, since users typically filter by delivery method rather than
-     * the generic "oob" type. Other authenticators use their authenticatorType directly.
-     *
-     * @param authenticator The authenticator to get the type for
-     * @return The effective type string used for filtering
-     */
-    private fun getEffectiveType(authenticator: Authenticator): String {
-        return when (authenticator.authenticatorType) {
-            "oob" -> authenticator.oobChannel ?: "oob"
-            else -> authenticator.authenticatorType ?: authenticator.type
         }
     }
 
