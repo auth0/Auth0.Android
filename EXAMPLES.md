@@ -561,7 +561,7 @@ authentication
                 requirements?.enroll?.let { enrollTypes ->
                     println("User needs to enroll MFA")
                     println("Available enrollment types: ${enrollTypes.map { it.type }}")
-                    // Example output: ["otp", "sms", "push-notification"]
+                    // Example output: ["otp", "phone", "push-notification"]
                     // Proceed with MFA enrollment using one of these types
                 }
                 
@@ -569,7 +569,7 @@ authentication
                 requirements?.challenge?.let { challengeTypes ->
                     println("User has enrolled MFA factors")
                     println("Available challenge types: ${challengeTypes.map { it.type }}")
-                    // Example output: ["otp", "sms"]
+                    // Example output: ["otp", "phone"]
                     // Get authenticators and challenge one of them
                 }
                 
@@ -651,14 +651,14 @@ try {
         requirements?.enroll?.let { enrollTypes ->
             println("User needs to enroll MFA")
             println("Available enrollment types: ${enrollTypes.map { it.type }}")
-            // Example output: ["otp", "sms", "push-notification"]
+            // Example output: ["otp", "phone", "push-notification"]
         }
         
         // Check if challenge is available
         requirements?.challenge?.let { challengeTypes ->
             println("User has enrolled MFA factors")
             println("Available challenge types: ${challengeTypes.map { it.type }}")
-            // Example output: ["otp", "sms"]
+            // Example output: ["otp", "phone"]
         }
         
         // Proceed with MFA flow using mfaToken
@@ -869,10 +869,13 @@ mfaClient
         override fun onFailure(exception: MfaEnrollmentException) { }
 
         override fun onSuccess(enrollment: EnrollmentChallenge) {
-            // Display QR code or secret for user to scan/enter in authenticator app
+            // Display QR code or secret for user to scan/enter in authenticator app.
+            // The `/mfa/associate` endpoint returns the manual-entry key as `secret`
+            // (not `manualInputCode`, which is only populated by the My Account API).
             if (enrollment is TotpEnrollmentChallenge) {
-                val secret = enrollment.manualInputCode
+                val secret = enrollment.secret
                 val barcodeUri = enrollment.barcodeUri
+                val recoveryCodes = enrollment.recoveryCodes
             }
         }
     })
@@ -890,11 +893,14 @@ mfaClient
 
         @Override
         public void onSuccess(EnrollmentChallenge enrollment) {
-            // Display QR code or secret for user to scan/enter in authenticator app
+            // Display QR code or secret for user to scan/enter in authenticator app.
+            // The `/mfa/associate` endpoint returns the manual-entry key as `secret`
+            // (not `manualInputCode`, which is only populated by the My Account API).
             if (enrollment instanceof TotpEnrollmentChallenge) {
                 TotpEnrollmentChallenge totpEnrollment = (TotpEnrollmentChallenge) enrollment;
-                String secret = totpEnrollment.getManualInputCode();
+                String secret = totpEnrollment.getSecret();
                 String barcodeUri = totpEnrollment.getBarcodeUri();
+                List<String> recoveryCodes = totpEnrollment.getRecoveryCodes();
             }
         }
     });
