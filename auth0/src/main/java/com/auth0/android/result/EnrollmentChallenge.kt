@@ -24,7 +24,8 @@ public sealed class EnrollmentChallenge {
                 jsonObject.has("barcode_uri") -> TotpEnrollmentChallenge::class.java
                 jsonObject.has("recovery_code") -> RecoveryCodeEnrollmentChallenge::class.java
                 jsonObject.has("authn_params_public_key") -> PasskeyEnrollmentChallenge::class.java
-                jsonObject.has("oob_code") -> OobEnrollmentChallenge::class.java 
+                jsonObject.has("oob_code") -> OobEnrollmentChallenge::class.java
+                jsonObject.has("policy") -> PasswordEnrollmentChallenge::class.java
                 else -> MfaEnrollmentChallenge::class.java
             }
             return context.deserialize(jsonObject, targetClass)
@@ -93,4 +94,17 @@ public data class RecoveryCodeEnrollmentChallenge(
     override val authSession: String,
     @SerializedName("recovery_code")
     public val recoveryCode: String
+) : EnrollmentChallenge()
+
+/**
+ * Enrollment challenge for a password authentication method. Includes the [policy] the new password
+ * must satisfy, so the app can guide the user before confirming the enrollment.
+ */
+public data class PasswordEnrollmentChallenge(
+    @SerializedName("id")
+    override val id: String,
+    @SerializedName("auth_session")
+    override val authSession: String,
+    @SerializedName("policy")
+    public val policy: PasswordPolicy
 ) : EnrollmentChallenge()
