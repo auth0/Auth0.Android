@@ -3,6 +3,7 @@ package com.auth0.android.authentication.storage
 import com.auth0.android.NetworkErrorException
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
+import com.auth0.android.authentication.storage.BaseCredentialsManager.Companion.DEFAULT_MIN_TTL
 import com.auth0.android.callback.Callback
 import com.auth0.android.dpop.DPoPKeyStore
 import com.auth0.android.dpop.DPoPUtil
@@ -20,17 +21,6 @@ import com.auth0.android.result.SSOCredentialsMock
 import com.auth0.android.result.toAPICredentials
 import com.auth0.android.util.Clock
 import com.google.gson.Gson
-import com.nhaarman.mockitokotlin2.KArgumentCaptor
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.argumentCaptor
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
-import com.nhaarman.mockitokotlin2.verifyZeroInteractions
-import com.nhaarman.mockitokotlin2.whenever
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -50,6 +40,17 @@ import org.mockito.ArgumentMatchers
 import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.MockitoAnnotations
+import org.mockito.kotlin.KArgumentCaptor
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.verifyNoMoreInteractions
+import org.mockito.kotlin.whenever
 import org.robolectric.RobolectricTestRunner
 import java.util.Date
 import java.util.concurrent.Executor
@@ -105,6 +106,7 @@ public class CredentialsManagerTest {
         mockDPoPKeyStore = mock()
         DPoPUtil.keyStore = mockDPoPKeyStore
         whenever(mockDPoPKeyStore.hasKeyPair()).thenReturn(false)
+        Mockito.`when`(client.executor).thenReturn(serialExecutor)
 
         val credentialsManager = CredentialsManager(client, storage, jwtDecoder, serialExecutor)
         manager = Mockito.spy(credentialsManager)
@@ -270,10 +272,10 @@ public class CredentialsManagerTest {
 
     @Test
     public fun shouldNotSaveIfTheSSOCredentialsHasNoRefreshToken() {
-        verifyZeroInteractions(storage)
+        verifyNoMoreInteractions(storage)
         val ssoCredentials = SSOCredentialsMock.create(
             "accessToken", "identityToken",
-            "issuedTokenType", "tokenType", null, 60
+            "issuedTokenType", "tokenType", null, Date(CredentialsMock.CURRENT_TIME_MS + 60 * 1000)
         )
         manager.saveSsoCredentials(ssoCredentials)
     }
@@ -282,8 +284,12 @@ public class CredentialsManagerTest {
     public fun shouldNotSaveIfTheNewSSOCredentialRefreshTokenIsSameAsTheExistingOne() {
         verifyNoMoreInteractions(storage)
         val ssoCredentials = SSOCredentialsMock.create(
-            "accessToken", "identityToken",
-            "issuedTokenType", "tokenType", "refresh_token", 60
+            "accessToken",
+            "identityToken",
+            "issuedTokenType",
+            "tokenType",
+            "refresh_token",
+            Date(CredentialsMock.CURRENT_TIME_MS + 60 * 1000)
         )
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token"))
             .thenReturn("refresh_token")
@@ -295,8 +301,12 @@ public class CredentialsManagerTest {
     public fun shouldSaveTheRefreshTokenIfTheNewSSOCredentialsRefreshTokenIsNotSameAsTheOldOne() {
         verifyNoMoreInteractions(storage)
         val ssoCredentials = SSOCredentialsMock.create(
-            "accessToken", "identityToken",
-            "issuedTokenType", "tokenType", "refresh_token", 60
+            "accessToken",
+            "identityToken",
+            "issuedTokenType",
+            "tokenType",
+            "refresh_token",
+            Date(CredentialsMock.CURRENT_TIME_MS + 60 * 1000)
         )
         Mockito.`when`(storage.retrieveString("com.auth0.refresh_token"))
             .thenReturn("refresh-token")
@@ -326,6 +336,7 @@ public class CredentialsManagerTest {
             .thenReturn("refresh_token_old")
         Mockito.`when`(client.ssoExchange("refresh_token_old"))
             .thenReturn(SSOCredentialsRequest)
+        val ssoExpiresAt = Date(CredentialsMock.CURRENT_TIME_MS + 60 * 1000)
         Mockito.`when`(SSOCredentialsRequest.execute()).thenReturn(
             SSOCredentialsMock.create(
                 "web-sso-token",
@@ -333,7 +344,7 @@ public class CredentialsManagerTest {
                 "issued-token-type",
                 "token-type",
                 "refresh-token",
-                60
+                ssoExpiresAt
             )
         )
         manager.getSsoCredentials(ssoCallback)
@@ -346,7 +357,7 @@ public class CredentialsManagerTest {
         MatcherAssert.assertThat(credentials.tokenType, Is.`is`("token-type"))
         MatcherAssert.assertThat(credentials.issuedTokenType, Is.`is`("issued-token-type"))
         MatcherAssert.assertThat(credentials.refreshToken, Is.`is`("refresh-token"))
-        MatcherAssert.assertThat(credentials.expiresIn, Is.`is`(60))
+        MatcherAssert.assertThat(credentials.expiresAt, Is.`is`(ssoExpiresAt))
         verify(storage).store("com.auth0.refresh_token", credentials.refreshToken)
     }
 
@@ -422,6 +433,7 @@ public class CredentialsManagerTest {
             .thenReturn("refresh_token_old")
         Mockito.`when`(client.ssoExchange("refresh_token_old"))
             .thenReturn(SSOCredentialsRequest)
+        val ssoExpiresAt = Date(CredentialsMock.CURRENT_TIME_MS + 60 * 1000)
         Mockito.`when`(SSOCredentialsRequest.execute()).thenReturn(
             SSOCredentialsMock.create(
                 "web-sso-token",
@@ -429,7 +441,7 @@ public class CredentialsManagerTest {
                 "issued-token-type",
                 "token-type",
                 "refresh-token",
-                60
+                ssoExpiresAt
             )
         )
         val credentials = manager.awaitSsoCredentials()
@@ -438,7 +450,7 @@ public class CredentialsManagerTest {
         MatcherAssert.assertThat(credentials.tokenType, Is.`is`("token-type"))
         MatcherAssert.assertThat(credentials.issuedTokenType, Is.`is`("issued-token-type"))
         MatcherAssert.assertThat(credentials.refreshToken, Is.`is`("refresh-token"))
-        MatcherAssert.assertThat(credentials.expiresIn, Is.`is`(60))
+        MatcherAssert.assertThat(credentials.expiresAt, Is.`is`(ssoExpiresAt))
         verify(storage).store("com.auth0.refresh_token", credentials.refreshToken)
     }
 
@@ -706,7 +718,7 @@ public class CredentialsManagerTest {
         Mockito.`when`(
             client.renewAuth("refresh_token", "audience")
         ).thenReturn(request)
-        val newDate = Date(CredentialsMock.CURRENT_TIME_MS + 1 * 1000)
+        val newDate = Date(CredentialsMock.CURRENT_TIME_MS + (DEFAULT_MIN_TTL + 10) * 1000L)
         val jwtMock = mock<Jwt>()
         Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
         Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
@@ -1513,15 +1525,7 @@ public class CredentialsManagerTest {
     @Test
     public fun shouldClearCredentials() {
         manager.clearCredentials()
-        verify(storage).remove("com.auth0.id_token")
-        verify(storage).remove("com.auth0.access_token")
-        verify(storage).remove("com.auth0.refresh_token")
-        verify(storage).remove("com.auth0.token_type")
-        verify(storage).remove("com.auth0.expires_at")
-        verify(storage).remove("com.auth0.scope")
-        verify(storage).remove("com.auth0.cache_expires_at")
-        verify(storage).remove("com.auth0.dpop_key_thumbprint")
-        verify(storage).remove("com.auth0.session_expiry")
+        verify(storage).removeAll()
         verifyNoMoreInteractions(storage)
     }
 
@@ -1532,6 +1536,12 @@ public class CredentialsManagerTest {
         verify(storage).remove(captor.capture())
         Assert.assertEquals("audience", captor.firstValue)
         verifyNoMoreInteractions(storage)
+    }
+
+    @Test
+    public fun shouldClearAllCredentials() {
+        manager.clearAll()
+        verify(storage).removeAll()
     }
 
     @Test
@@ -1807,13 +1817,6 @@ public class CredentialsManagerTest {
     }
 
     @Test
-    public fun shouldNotHaveCredentialsWhenAccessTokenAndIdTokenAreMissing() {
-        Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn(null)
-        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn(null)
-        Assert.assertFalse(manager.hasValidCredentials())
-    }
-
-    @Test
     public fun shouldNotHaveCredentialsWhenSessionCeilingReachedEvenWithRefreshToken() {
         val nowSeconds = CredentialsMock.CURRENT_TIME_MS / 1000
         // Access token still valid and a refresh token is present, so absent the ceiling this would
@@ -1824,6 +1827,110 @@ public class CredentialsManagerTest {
         Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
         Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
         Mockito.`when`(storage.retrieveLong("com.auth0.session_expiry")).thenReturn(nowSeconds - 100)
+        Assert.assertFalse(manager.hasValidCredentials())
+    }
+
+    @Test
+    public fun shouldRenewCredentialsViaCallbackWhenTokenExpiresWithinDefaultMinTtl() {
+        // Token expires in 30 seconds, which is within DEFAULT_MIN_TTL (60s)
+        val expirationTime = CredentialsMock.CURRENT_TIME_MS + 30 * 1000
+        Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("type")
+        Mockito.`when`(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveLong("com.auth0.cache_expires_at"))
+            .thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveString("com.auth0.scope")).thenReturn("scope")
+        Mockito.`when`(
+            client.renewAuth("refreshToken")
+        ).thenReturn(request)
+        val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        val jwtMock = mock<Jwt>()
+        Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
+        Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
+
+        val renewedCredentials =
+            Credentials("newId", "newAccess", "newType", "refreshToken", newDate, "newScope")
+        Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
+        // Use no-arg getCredentials which now uses DEFAULT_MIN_TTL
+        manager.getCredentials(callback)
+        verify(callback).onSuccess(
+            credentialsCaptor.capture()
+        )
+        // Verify renewal was triggered (client.renewAuth was called)
+        verify(client).renewAuth("refreshToken")
+        val retrievedCredentials = credentialsCaptor.firstValue
+        MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`("newId"))
+        MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`("newAccess"))
+    }
+
+    @Test
+    @ExperimentalCoroutinesApi
+    public fun shouldAwaitRenewedCredentialsWhenTokenExpiresWithinDefaultMinTtl(): Unit = runTest {
+        // Token expires in 30 seconds, which is within DEFAULT_MIN_TTL (60s)
+        val expirationTime = CredentialsMock.CURRENT_TIME_MS + 30 * 1000
+        Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("type")
+        Mockito.`when`(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveLong("com.auth0.cache_expires_at"))
+            .thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveString("com.auth0.scope")).thenReturn("scope")
+        Mockito.`when`(
+            client.renewAuth("refreshToken")
+        ).thenReturn(request)
+        val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        val jwtMock = mock<Jwt>()
+        Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
+        Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
+
+        val renewedCredentials =
+            Credentials("newId", "newAccess", "newType", "refreshToken", newDate, "newScope")
+        Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
+        // Use no-arg awaitCredentials which now uses DEFAULT_MIN_TTL
+        val result = manager.awaitCredentials()
+        // Verify renewal was triggered
+        verify(client).renewAuth("refreshToken")
+        MatcherAssert.assertThat(result, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(result.idToken, Is.`is`("newId"))
+        MatcherAssert.assertThat(result.accessToken, Is.`is`("newAccess"))
+    }
+
+    @Test
+    public fun shouldNotHaveValidCredentialsWhenTokenExpiresWithinDefaultMinTtlAndNoRefreshToken() {
+        // Token expires in 30 seconds, within DEFAULT_MIN_TTL (60s), and no refresh token
+        val expirationTime = CredentialsMock.CURRENT_TIME_MS + 30 * 1000
+        Mockito.`when`(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveLong("com.auth0.cache_expires_at"))
+            .thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn(null)
+        Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
+        // No-arg hasValidCredentials now uses DEFAULT_MIN_TTL, so token expiring in 30s is invalid
+        Assert.assertFalse(manager.hasValidCredentials())
+    }
+
+    @Test
+    public fun shouldHaveValidCredentialsWhenTokenExpiresWithinDefaultMinTtlButRefreshTokenAvailable() {
+        // Token expires in 30 seconds, within DEFAULT_MIN_TTL (60s), but refresh token is available
+        val expirationTime = CredentialsMock.CURRENT_TIME_MS + 30 * 1000
+        Mockito.`when`(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveLong("com.auth0.cache_expires_at"))
+            .thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
+        // Even though token expires within DEFAULT_MIN_TTL, refresh token makes it valid
+        MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(true))
+    }
+
+    @Test
+    public fun shouldNotHaveCredentialsWhenAccessTokenAndIdTokenAreMissing() {
+        Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn(null)
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn(null)
         Assert.assertFalse(manager.hasValidCredentials())
     }
 
@@ -1862,7 +1969,7 @@ public class CredentialsManagerTest {
         //now, update the clock and retry
         manager.setClock(object : Clock {
             override fun getCurrentTimeMillis(): Long {
-                return CredentialsMock.CURRENT_TIME_MS - 1000
+                return CredentialsMock.CURRENT_TIME_MS - (DEFAULT_MIN_TTL * 1000 + 1000)
             }
         })
         MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(true))
@@ -1878,7 +1985,6 @@ public class CredentialsManagerTest {
             override fun onFailure(error: CredentialsManagerException) {}
         })
     }
-
 
     @Test
     public fun shouldAddParametersToRequest() {
@@ -2566,10 +2672,9 @@ public class CredentialsManagerTest {
             Is.`is`(CredentialsManagerException.SESSION_EXPIRED)
         )
         // The refresh-token grant must never be used past the session ceiling.
-        verifyZeroInteractions(client)
+        verifyNoInteractions(client)
         // The breached session must be cleared.
-        verify(storage).remove("com.auth0.session_expiry")
-        verify(storage).remove("com.auth0.id_token")
+        verify(storage).removeAll()
     }
 
     @Test
@@ -2592,7 +2697,7 @@ public class CredentialsManagerTest {
             exceptionCaptor.firstValue,
             Is.`is`(CredentialsManagerException.SESSION_EXPIRED)
         )
-        verifyZeroInteractions(client)
+        verifyNoInteractions(client)
     }
 
     @Test
@@ -2612,7 +2717,7 @@ public class CredentialsManagerTest {
 
         verify(callback).onSuccess(credentialsCaptor.capture())
         MatcherAssert.assertThat(credentialsCaptor.firstValue, Is.`is`(Matchers.notNullValue()))
-        verifyZeroInteractions(client)
+        verifyNoInteractions(client)
     }
 
     @Test
@@ -2681,7 +2786,7 @@ public class CredentialsManagerTest {
             exceptionCaptor.firstValue,
             Is.`is`(CredentialsManagerException.SESSION_EXPIRED)
         )
-        verifyZeroInteractions(client)
+        verifyNoInteractions(client)
     }
 
     @Test
@@ -2736,9 +2841,8 @@ public class CredentialsManagerTest {
             Is.`is`(CredentialsManagerException.SESSION_EXPIRED)
         )
         // The refresh-token grant must never be exchanged for SSO credentials past the ceiling.
-        verifyZeroInteractions(client)
-        verify(storage).remove("com.auth0.session_expiry")
-        verify(storage).remove("com.auth0.id_token")
+        verifyNoInteractions(client)
+        verify(storage).removeAll()
     }
 
     @Test
@@ -2756,9 +2860,8 @@ public class CredentialsManagerTest {
             Is.`is`(CredentialsManagerException.SESSION_EXPIRED)
         )
         // The refresh-token grant must never be exchanged for API credentials past the ceiling.
-        verifyZeroInteractions(client)
-        verify(storage).remove("com.auth0.session_expiry")
-        verify(storage).remove("com.auth0.id_token")
+        verifyNoInteractions(client)
+        verify(storage).removeAll()
     }
 
     @Test
@@ -2785,8 +2888,8 @@ public class CredentialsManagerTest {
             Is.`is`(CredentialsManagerException.SESSION_EXPIRED)
         )
         // Enforcement honors the pinned value, so the refresh-token grant is never used.
-        verifyZeroInteractions(client)
-        verify(storage).remove("com.auth0.session_expiry")
+        verifyNoInteractions(client)
+        verify(storage).removeAll()
     }
 
     @Test

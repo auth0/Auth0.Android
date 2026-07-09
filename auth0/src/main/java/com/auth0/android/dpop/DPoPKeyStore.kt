@@ -32,9 +32,6 @@ internal open class DPoPKeyStore {
     }
 
     fun generateKeyPair(context: Context, useStrongBox: Boolean = true) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            throw DPoPException.UNSUPPORTED_ERROR
-        }
         try {
             val keyPairGenerator = KeyPairGenerator.getInstance(
                 KeyProperties.KEY_ALGORITHM_EC,

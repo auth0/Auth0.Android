@@ -24,8 +24,8 @@ import com.auth0.android.util.SSLTestUtils.testClient
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import okhttp3.mockwebserver.RecordedRequest
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers
@@ -399,10 +399,10 @@ public class MyAccountAPIClientTest {
 
             val request = mockAPI.takeRequest()
             assertThat(
-                "type=$expected should be in query",
                 request.path,
                 Matchers.equalTo("/me/v1/authentication-methods?type=$expected")
             )
+            assertThat(request.method, Matchers.equalTo("GET"))
         }
     }
 
@@ -736,8 +736,8 @@ public class MyAccountAPIClientTest {
         assertThat(request.method, Matchers.equalTo("DELETE"))
     }
 
-    private fun <T> bodyFromRequest(request: RecordedRequest): Map<String, T> {
-        val mapType = object : TypeToken<Map<String?, T>?>() {}.type
+    private inline fun <reified T> bodyFromRequest(request: RecordedRequest): Map<String, T> {
+        val mapType = object : TypeToken<Map<String, T>>() {}.type
         return gson.fromJson(request.body.readUtf8(), mapType)
     }
 

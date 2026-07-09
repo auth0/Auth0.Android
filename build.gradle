@@ -1,21 +1,14 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 buildscript {
-    ext.kotlin_version = "1.8.22"
+    ext.kotlin_version = "2.0.21"
     repositories {
         google()
         mavenCentral()
-        //noinspection JcenterRepositoryObsolete
-        jcenter() {
-            content {
-                // https://youtrack.jetbrains.com/issue/KT-44730
-                includeModule("org.jetbrains.trove4j", "trove4j")
-            }
-        }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.4.0'
+        classpath 'com.android.tools.build:gradle:8.10.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath "org.jacoco:org.jacoco.core:0.8.5"
+        classpath "org.jacoco:org.jacoco.core:0.8.12"
     }
 }
 
@@ -48,14 +41,5 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        //noinspection JcenterRepositoryObsolete
-        jcenter() {
-            content {
-                // https://youtrack.jetbrains.com/issue/KT-44730
-                includeModule("org.jetbrains.trove4j", "trove4j")
-                includeModule("com.soywiz.korlibs.korte", "korte-jvm")
-                includeModule("org.jetbrains.kotlinx", "kotlinx-html-jvm")
-            }
-        }
     }
 }

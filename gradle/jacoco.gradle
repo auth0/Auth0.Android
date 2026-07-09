@@ -1,7 +1,7 @@
 apply plugin: 'jacoco'
 
 jacoco {
-    toolVersion = "0.8.5"
+    toolVersion = "0.8.12"
 }
 
 android {
@@ -45,8 +45,8 @@ afterEvaluate {
             executionData.from = "${buildDir}/jacoco/${testTaskName}.exec"
 
             reports {
-                xml.enabled = true
-                html.enabled = true
+                xml.required = true
+                html.required = true
             }
         }
         jacocoTestReportTask.dependsOn reportTask

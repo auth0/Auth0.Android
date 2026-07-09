@@ -75,4 +75,9 @@ public interface Storage {
      * @param name the name of the value to remove.
      */
     public fun remove(name: String)
+
+    /**
+     * Removes all values from the storage.
+     */
+    public fun removeAll() {}
 }

@@ -33,7 +33,7 @@ jobs:
           echo "version=$version" >> $GITHUB_OUTPUT
 
       - name: Run RL Scanner
-        uses: auth0/devsecops-tooling/.github/actions/rl-scan@e29f26478db18ff0bcbe4bc447a8fbd54fbeec9e # main on 2026-06-09, TODO: use a release instead
+        uses: auth0/devsecops-tooling/.github/actions/rl-scan@main
         with:
           artifact-name: "auth0-android"
           artifact-path: "${{ github.workspace }}/auth0/build/outputs/aar/auth0-release.aar"
@@ -51,7 +51,7 @@ jobs:
     uses: ./.github/workflows/java-release.yml
     needs: rl-scanner
     with:
-      java-version: 8.0.402-zulu
+      java-version: '17'
     secrets:
       ossr-username: ${{ secrets.OSSR_USERNAME }}
       ossr-token: ${{ secrets.OSSR_TOKEN }}

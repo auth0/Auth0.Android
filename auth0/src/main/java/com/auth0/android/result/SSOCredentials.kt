@@ -1,6 +1,7 @@
 package com.auth0.android.result
 
 import com.google.gson.annotations.SerializedName
+import java.util.Date
 
 /**
  * Holds the token credentials required for web SSO.
@@ -46,12 +47,12 @@ public data class SSOCredentials(
     @field:SerializedName("token_type") public val tokenType: String,
 
     /**
-     * Expiration duration of the session transfer token in seconds. Session transfer tokens are short-lived and expire after a few minutes.
+     * Expiration date of the session transfer token. Session transfer tokens are short-lived and expire after a few minutes.
      * Once expired, the session transfer tokens can no longer be used for web SSO.
      *
-     * @return the expiration duration of this session transfer token
+     * @return the expiration Date of this session transfer token
      */
-    @field:SerializedName("expires_in") public val expiresIn: Int,
+    @field:SerializedName("expires_in") public val expiresAt: Date,
 
     /**
      *  Rotated refresh token. Only available when Refresh Token Rotation is enabled.
@@ -67,6 +68,6 @@ public data class SSOCredentials(
 ) {
 
     override fun toString(): String {
-        return "SSOCredentials(sessionTransferToken = ****, idToken = ****,issuedTokenType = $issuedTokenType, tokenType = $tokenType, expiresIn = $expiresIn, refreshToken = ****)"
+        return "SSOCredentials(sessionTransferToken = ****, idToken = ****,issuedTokenType = $issuedTokenType, tokenType = $tokenType, expiresAt = $expiresAt, refreshToken = ****)"
     }
 }

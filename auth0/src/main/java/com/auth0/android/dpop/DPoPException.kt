@@ -5,7 +5,6 @@ import com.auth0.android.Auth0Exception
 public class DPoPException : Auth0Exception {
 
     internal enum class Code {
-        UNSUPPORTED_ERROR,
         KEY_GENERATION_ERROR,
         KEY_STORE_ERROR,
         SIGNING_ERROR,
@@ -39,7 +38,6 @@ public class DPoPException : Auth0Exception {
 
     public companion object {
 
-        public val UNSUPPORTED_ERROR :DPoPException = DPoPException(Code.UNSUPPORTED_ERROR)
         public val KEY_GENERATION_ERROR: DPoPException = DPoPException(Code.KEY_GENERATION_ERROR)
         public val KEY_STORE_ERROR: DPoPException = DPoPException(Code.KEY_STORE_ERROR)
         public val SIGNING_ERROR: DPoPException = DPoPException(Code.SIGNING_ERROR)
@@ -52,7 +50,6 @@ public class DPoPException : Auth0Exception {
 
         private fun getMessage(code: Code): String {
             return when (code) {
-                Code.UNSUPPORTED_ERROR -> "DPoP is not supported in versions below Android 9 (API level 28)."
                 Code.KEY_GENERATION_ERROR -> "Error generating DPoP key pair."
                 Code.KEY_STORE_ERROR -> "Error while accessing the key pair in the keystore."
                 Code.SIGNING_ERROR -> "Error while signing the DPoP proof."

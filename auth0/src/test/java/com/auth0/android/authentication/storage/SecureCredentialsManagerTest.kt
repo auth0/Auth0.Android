@@ -5,10 +5,10 @@ import android.app.KeyguardManager
 import android.content.Context
 import android.util.Base64
 import androidx.fragment.app.FragmentActivity
-import com.auth0.android.Auth0
 import com.auth0.android.NetworkErrorException
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
+import com.auth0.android.authentication.storage.BaseCredentialsManager.Companion.DEFAULT_MIN_TTL
 import com.auth0.android.callback.Callback
 import com.auth0.android.dpop.DPoPKeyStore
 import com.auth0.android.dpop.DPoPUtil
@@ -26,16 +26,6 @@ import com.auth0.android.result.SSOCredentialsMock
 import com.auth0.android.result.toAPICredentials
 import com.auth0.android.util.Clock
 import com.google.gson.Gson
-import com.nhaarman.mockitokotlin2.KArgumentCaptor
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.argumentCaptor
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
-import com.nhaarman.mockitokotlin2.whenever
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -58,6 +48,17 @@ import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.MockitoAnnotations
+import org.mockito.kotlin.KArgumentCaptor
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
+import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import java.lang.ref.WeakReference
@@ -127,7 +128,6 @@ public class SecureCredentialsManagerTest {
     public val exception: ExpectedException = ExpectedException.none()
     private lateinit var manager: SecureCredentialsManager
     private lateinit var gson: Gson
-    private lateinit var auth0: Auth0
 
     @Before
     public fun setUp() {
@@ -153,8 +153,7 @@ public class SecureCredentialsManagerTest {
                     .get()
             )
         weakFragmentActivity = WeakReference(fragmentActivity)
-        auth0 = Mockito.spy(Auth0.getInstance("clientId", "domain"))
-        Mockito.`when`(auth0.executor).thenReturn(serialExecutor)
+        Mockito.`when`(client.executor).thenReturn(serialExecutor)
 
         val secureCredentialsManager =
             SecureCredentialsManager(
@@ -162,7 +161,7 @@ public class SecureCredentialsManagerTest {
                 storage,
                 crypto,
                 jwtDecoder,
-                auth0.executor,
+                serialExecutor,
                 weakFragmentActivity,
                 getAuthenticationOptions(),
                 factory
@@ -178,8 +177,8 @@ public class SecureCredentialsManagerTest {
             Robolectric.buildActivity(Activity::class.java).create().start().resume().get()
         val storage: Storage = SharedPreferencesStorage(context)
         val manager = SecureCredentialsManager(
+            client,
             context,
-            auth0,
             storage,
             fragmentActivity,
             getAuthenticationOptions()
@@ -195,8 +194,12 @@ public class SecureCredentialsManagerTest {
     public fun shouldNotSaveIfThereIsErrorInGettingTheExistingCredentials() {
         verifyNoMoreInteractions(storage)
         val ssoCredentials = SSOCredentialsMock.create(
-            "accessToken", "identityToken",
-            "issuedTokenType", "tokenType", "refresh_token", 60
+            "accessToken",
+            "identityToken",
+            "issuedTokenType",
+            "tokenType",
+            "refresh_token",
+            Date(CredentialsMock.CURRENT_TIME_MS + 60 * 1000)
         )
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         val storedJson = insertTestCredentials(
@@ -217,8 +220,12 @@ public class SecureCredentialsManagerTest {
     public fun shouldSaveIfTheNewSSOCredentialRefreshAndIdTokenIsNotSameAsTheExistingOne() {
         verifyNoMoreInteractions(storage)
         val sessionTransferCredentials = SSOCredentialsMock.create(
-            "accessToken", "identityToken",
-            "issuedTokenType", "tokenType", "refresh_token", 60
+            "accessToken",
+            "identityToken",
+            "issuedTokenType",
+            "tokenType",
+            "refresh_token",
+            Date(CredentialsMock.CURRENT_TIME_MS + 60 * 1000)
         )
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         insertTestCredentials(
@@ -319,6 +326,7 @@ public class SecureCredentialsManagerTest {
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         Mockito.`when`(client.ssoExchange("refreshToken"))
             .thenReturn(SSOCredentialsRequest)
+        val ssoExpiresAt = Date(CredentialsMock.CURRENT_TIME_MS + 60 * 1000)
         Mockito.`when`(SSOCredentialsRequest.execute()).thenReturn(
             SSOCredentialsMock.create(
                 "web-sso-token",
@@ -326,7 +334,7 @@ public class SecureCredentialsManagerTest {
                 "issued-token-type",
                 "token-type",
                 "refresh-token",
-                60
+                ssoExpiresAt
             )
         )
         insertTestCredentials(
@@ -356,7 +364,7 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(credentials.tokenType, Is.`is`("token-type"))
         MatcherAssert.assertThat(credentials.issuedTokenType, Is.`is`("issued-token-type"))
         MatcherAssert.assertThat(credentials.refreshToken, Is.`is`("refresh-token"))
-        MatcherAssert.assertThat(credentials.expiresIn, Is.`is`(60))
+        MatcherAssert.assertThat(credentials.expiresAt, Is.`is`(ssoExpiresAt))
         verify(storage).store(eq("com.auth0.credentials"), stringCaptor.capture())
         val encodedJson = stringCaptor.firstValue
         MatcherAssert.assertThat(encodedJson, Is.`is`(Matchers.notNullValue()))
@@ -500,6 +508,7 @@ public class SecureCredentialsManagerTest {
         val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
         Mockito.`when`(client.ssoExchange("refreshToken"))
             .thenReturn(SSOCredentialsRequest)
+        val ssoExpiresAt = Date(CredentialsMock.CURRENT_TIME_MS + 60 * 1000)
         Mockito.`when`(SSOCredentialsRequest.execute()).thenReturn(
             SSOCredentialsMock.create(
                 "web-sso-token",
@@ -507,7 +516,7 @@ public class SecureCredentialsManagerTest {
                 "issued-token-type",
                 "token-type",
                 "refresh-token",
-                60
+                ssoExpiresAt
             )
         )
         insertTestCredentials(
@@ -535,7 +544,7 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(credentials.tokenType, Is.`is`("token-type"))
         MatcherAssert.assertThat(credentials.issuedTokenType, Is.`is`("issued-token-type"))
         MatcherAssert.assertThat(credentials.refreshToken, Is.`is`("refresh-token"))
-        MatcherAssert.assertThat(credentials.expiresIn, Is.`is`(60))
+        MatcherAssert.assertThat(credentials.expiresAt, Is.`is`(ssoExpiresAt))
         verify(storage).store(eq("com.auth0.credentials"), stringCaptor.capture())
         val encodedJson = stringCaptor.firstValue
         MatcherAssert.assertThat(encodedJson, Is.`is`(Matchers.notNullValue()))
@@ -787,9 +796,7 @@ public class SecureCredentialsManagerTest {
             exception.message,
             Is.`is`("A change on the Lock Screen security settings have deemed the encryption keys invalid and have been recreated. Any previously stored content is now lost. Please try saving the credentials again.")
         )
-        verify(storage).remove("com.auth0.credentials")
-        verify(storage).remove("com.auth0.credentials_expires_at")
-        verify(storage).remove("com.auth0.credentials_can_refresh")
+        verify(storage).removeAll()
     }
 
     @Test
@@ -884,9 +891,7 @@ public class SecureCredentialsManagerTest {
                         "Any previously stored content is now lost. Please try saving the credentials again."
             )
         )
-        verify(storage).remove("com.auth0.credentials")
-        verify(storage).remove("com.auth0.credentials_expires_at")
-        verify(storage).remove("com.auth0.credentials_can_refresh")
+        verify(storage).removeAll()
     }
 
     @Test
@@ -1931,11 +1936,20 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(exception.message, Matchers.containsString("authenticate"))
         MatcherAssert.assertThat(exception.cause, Is.`is`(mfaRequiredException))
-        
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload, Is.`is`(Matchers.notNullValue()))
+
+        MatcherAssert.assertThat(
+            exception.mfaRequiredErrorPayload,
+            Is.`is`(Matchers.notNullValue())
+        )
         MatcherAssert.assertThat(exception.mfaToken, Is.`is`("test-mfa-token-12345"))
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.challenge, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.challenge?.size, Is.`is`(2))
+        MatcherAssert.assertThat(
+            exception.mfaRequiredErrorPayload?.mfaRequirements?.challenge,
+            Is.`is`(Matchers.notNullValue())
+        )
+        MatcherAssert.assertThat(
+            exception.mfaRequiredErrorPayload?.mfaRequirements?.challenge?.size,
+            Is.`is`(2)
+        )
     }
 
     @Test
@@ -1968,9 +1982,18 @@ public class SecureCredentialsManagerTest {
         val exception = exceptionCaptor.firstValue
         MatcherAssert.assertThat(exception.message, Matchers.containsString("authenticate"))
         MatcherAssert.assertThat(exception.mfaToken, Is.`is`("enroll-mfa-token"))
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.enroll, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.enroll?.size, Is.`is`(3))
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload?.mfaRequirements?.challenge, Is.`is`(Matchers.nullValue()))
+        MatcherAssert.assertThat(
+            exception.mfaRequiredErrorPayload?.mfaRequirements?.enroll,
+            Is.`is`(Matchers.notNullValue())
+        )
+        MatcherAssert.assertThat(
+            exception.mfaRequiredErrorPayload?.mfaRequirements?.enroll?.size,
+            Is.`is`(3)
+        )
+        MatcherAssert.assertThat(
+            exception.mfaRequiredErrorPayload?.mfaRequirements?.challenge,
+            Is.`is`(Matchers.nullValue())
+        )
     }
 
     @Test
@@ -1995,7 +2018,10 @@ public class SecureCredentialsManagerTest {
 
         verify(callback).onFailure(exceptionCaptor.capture())
         val exception = exceptionCaptor.firstValue
-        MatcherAssert.assertThat(exception.message, Matchers.containsString("processing the request"))
+        MatcherAssert.assertThat(
+            exception.message,
+            Matchers.containsString("processing the request")
+        )
         MatcherAssert.assertThat(exception.mfaRequiredErrorPayload, Is.`is`(Matchers.nullValue()))
         MatcherAssert.assertThat(exception.mfaToken, Is.`is`(Matchers.nullValue()))
     }
@@ -2028,7 +2054,10 @@ public class SecureCredentialsManagerTest {
         }
         MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(exception.cause, Is.`is`(mfaRequiredException))
-        MatcherAssert.assertThat(exception.mfaRequiredErrorPayload, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(
+            exception.mfaRequiredErrorPayload,
+            Is.`is`(Matchers.notNullValue())
+        )
         MatcherAssert.assertThat(exception.mfaToken, Is.`is`("await-mfa-token-12345"))
     }
 
@@ -2053,22 +2082,27 @@ public class SecureCredentialsManagerTest {
 
         verify(callback).onFailure(exceptionCaptor.capture())
         val exception = exceptionCaptor.firstValue
-        
+
         MatcherAssert.assertThat(exception.cause, Is.`is`(Matchers.notNullValue()))
-        MatcherAssert.assertThat(exception.cause, IsInstanceOf.instanceOf(AuthenticationException::class.java))
-        
+        MatcherAssert.assertThat(
+            exception.cause,
+            IsInstanceOf.instanceOf(AuthenticationException::class.java)
+        )
+
         val causeException = exception.cause as AuthenticationException
         MatcherAssert.assertThat(causeException.getCode(), Is.`is`("mfa_required"))
         MatcherAssert.assertThat(causeException.isMultifactorRequired, Is.`is`(true))
-        MatcherAssert.assertThat(causeException.getDescription(), Is.`is`("MFA is required for this action"))
+        MatcherAssert.assertThat(
+            causeException.getDescription(),
+            Is.`is`("MFA is required for this action")
+        )
     }
 
     /**
-     * Testing that getCredentials execution from multiple threads via multiple instances of SecureCredentialsManager should trigger only one network request.
+     *  Testing that getCredentials execution from multiple threads via multiple instances of SecureCredentialsManager should trigger only one network request.
      */
     @Test
     public fun shouldSynchronizeGetCredentialsAccessAcrossThreadsAndInstances() {
-
         val expiredCredentials = Credentials(
             "",
             "accessToken",
@@ -2077,23 +2111,20 @@ public class SecureCredentialsManagerTest {
             Date(CredentialsMock.CURRENT_TIME_MS),
             "scope"
         )
-        val renewedCredentials =
-            Credentials(
-                "newId",
-                "newAccess",
-                "newType",
-                "rotatedRefreshToken",
-                Date(CredentialsMock.ONE_HOUR_AHEAD_MS),
-                "newScope"
-            )
-        Mockito.`when`(
-            client.renewAuth(refreshToken = "refreshToken")
-        ).thenReturn(request)
+        val renewedCredentials = Credentials(
+            "newId",
+            "newAccess",
+            "newType",
+            "rotatedRefreshToken",
+            Date(CredentialsMock.ONE_HOUR_AHEAD_MS),
+            "newScope"
+        )
+        Mockito.`when`(client.renewAuth(refreshToken = "refreshToken")).thenReturn(request)
         Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
-        val serialExecutor = Executors.newSingleThreadExecutor()
-        Mockito.`when`(auth0.executor).thenReturn(serialExecutor)
-        val executor: ExecutorService = Executors.newFixedThreadPool(5)
-        val latch = CountDownLatch(5)
+
+        val sharedExecutor = Executors.newSingleThreadExecutor()
+        val callerPool: ExecutorService = Executors.newFixedThreadPool(3)
+        val latch = CountDownLatch(3)
         val context: Context =
             Robolectric.buildActivity(Activity::class.java).create().start().resume().get()
         val storage = SharedPreferencesStorage(
@@ -2101,67 +2132,228 @@ public class SecureCredentialsManagerTest {
             sharedPreferencesName = "com.auth0.android.storage.SecureCredentialsManagerTest"
         )
         val cryptoMock = Mockito.mock(CryptoUtil::class.java)
-        Mockito.`when`(cryptoMock.encrypt(any())).thenAnswer {
-            val input = it.arguments[0] as ByteArray
-            input
-        }
-        Mockito.`when`(cryptoMock.decrypt(any())).thenAnswer {
-            val input = it.arguments[0] as ByteArray
-            input
-        }
-        val secureCredsManager =
-            SecureCredentialsManager(client, storage, cryptoMock, jwtDecoder, auth0.executor)
-        secureCredsManager.saveCredentials(expiredCredentials)
-        repeat(5) {
-            executor.submit {
-                val secureCredsManager =
-                    SecureCredentialsManager(
-                        client,
-                        storage,
-                        cryptoMock,
-                        jwtDecoder,
-                        auth0.executor,
-                    )
-                secureCredsManager.getCredentials(object :
+        Mockito.`when`(cryptoMock.encrypt(any())).thenAnswer { it.arguments[0] as ByteArray }
+        Mockito.`when`(cryptoMock.decrypt(any())).thenAnswer { it.arguments[0] as ByteArray }
+
+        SecureCredentialsManager(
+            client, storage, cryptoMock, jwtDecoder, sharedExecutor
+        ).saveCredentials(expiredCredentials)
+
+        repeat(3) {
+            callerPool.submit {
+                // All instances share the same executor — operations are globally serialized
+                val instance = SecureCredentialsManager(
+                    client, storage, cryptoMock, jwtDecoder, sharedExecutor
+                )
+                instance.getCredentials(object :
                     Callback<Credentials, CredentialsManagerException> {
                     override fun onFailure(error: CredentialsManagerException) {
                         throw error
                     }
 
                     override fun onSuccess(result: Credentials) {
-                        // Verify all instances retrieved the same credentials
                         MatcherAssert.assertThat(
-                            renewedCredentials.accessToken,
-                            Is.`is`(result.accessToken)
+                            result.accessToken, Is.`is`(renewedCredentials.accessToken)
                         )
                         MatcherAssert.assertThat(
-                            renewedCredentials.idToken,
-                            Is.`is`(result.idToken)
-                        )
-                        MatcherAssert.assertThat(
-                            renewedCredentials.refreshToken,
-                            Is.`is`(result.refreshToken)
-                        )
-                        MatcherAssert.assertThat(renewedCredentials.type, Is.`is`(result.type))
-                        MatcherAssert.assertThat(
-                            renewedCredentials.expiresAt,
-                            Is.`is`(result.expiresAt)
-                        )
-                        MatcherAssert.assertThat(
-                            renewedCredentials.scope,
-                            Is.`is`(result.scope)
+                            result.refreshToken, Is.`is`(renewedCredentials.refreshToken)
                         )
                         latch.countDown()
                     }
                 })
             }
         }
-        latch.await() // Wait for all threads to finish
-        Mockito.verify(client, Mockito.times(1))
-            .renewAuth(
-                refreshToken = "refreshToken"
-            ) // verify that api client's renewAuth is called only once
-        Mockito.verify(request, Mockito.times(1)).execute() // Verify single network request
+
+        Assert.assertTrue(latch.await(3, TimeUnit.SECONDS))
+        // Exactly one renewal — the shared executor serialized all 5 instances
+        Mockito.verify(client, Mockito.times(1)).renewAuth(refreshToken = "refreshToken")
+        Mockito.verify(request, Mockito.times(1)).execute()
+    }
+
+    @Test
+    public fun shouldTriggerOnlyOneRenewalWhenMultipleThreadsCallGetCredentialsOnSameInstance() {
+        val expiredCredentials = Credentials(
+            "",
+            "accessToken",
+            "type",
+            "refreshToken",
+            Date(CredentialsMock.CURRENT_TIME_MS),
+            "scope"
+        )
+        val renewedCredentials = Credentials(
+            "newId",
+            "newAccess",
+            "newType",
+            "rotatedRefreshToken",
+            Date(CredentialsMock.ONE_HOUR_AHEAD_MS),
+            "newScope"
+        )
+        Mockito.`when`(client.renewAuth(refreshToken = "refreshToken")).thenReturn(request)
+        Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
+
+        val singleThreadExecutor = Executors.newSingleThreadExecutor()
+        val callerPool = Executors.newFixedThreadPool(3)
+        val latch = CountDownLatch(3)
+        val context: Context =
+            Robolectric.buildActivity(Activity::class.java).create().start().resume().get()
+        val storage = SharedPreferencesStorage(
+            context = context,
+            sharedPreferencesName = "com.auth0.android.storage.SecureCredentialsManagerTest.singleInstance"
+        )
+        val cryptoMock = Mockito.mock(CryptoUtil::class.java)
+        Mockito.`when`(cryptoMock.encrypt(any())).thenAnswer { it.arguments[0] as ByteArray }
+        Mockito.`when`(cryptoMock.decrypt(any())).thenAnswer { it.arguments[0] as ByteArray }
+
+        val singleManager =
+            SecureCredentialsManager(client, storage, cryptoMock, jwtDecoder, singleThreadExecutor)
+        singleManager.saveCredentials(expiredCredentials)
+
+        repeat(3) {
+            callerPool.submit {
+                singleManager.getCredentials(object :
+                    Callback<Credentials, CredentialsManagerException> {
+                    override fun onFailure(error: CredentialsManagerException) {
+                        throw error
+                    }
+
+                    override fun onSuccess(result: Credentials) {
+                        MatcherAssert.assertThat(
+                            result.accessToken,
+                            Is.`is`(renewedCredentials.accessToken)
+                        )
+                        MatcherAssert.assertThat(
+                            result.refreshToken,
+                            Is.`is`(renewedCredentials.refreshToken)
+                        )
+                        latch.countDown()
+                    }
+                })
+            }
+        }
+
+        Assert.assertTrue(latch.await(3, TimeUnit.SECONDS))
+        Mockito.verify(client, Mockito.times(1)).renewAuth(refreshToken = "refreshToken")
+        Mockito.verify(request, Mockito.times(1)).execute()
+    }
+
+    @Test
+    public fun shouldNotTriggerRenewalWhenMultipleThreadsAccessValidCredentialsOnSameInstance() {
+        val validCredentials = Credentials(
+            "idToken",
+            "accessToken",
+            "type",
+            "refreshToken",
+            Date(CredentialsMock.ONE_HOUR_AHEAD_MS),
+            "scope"
+        )
+
+        val singleThreadExecutor = Executors.newSingleThreadExecutor()
+        val callerPool = Executors.newFixedThreadPool(3)
+        val latch = CountDownLatch(3)
+        val context: Context =
+            Robolectric.buildActivity(Activity::class.java).create().start().resume().get()
+        val storage = SharedPreferencesStorage(
+            context = context,
+            sharedPreferencesName = "com.auth0.android.storage.SecureCredentialsManagerTest.validCreds"
+        )
+        val cryptoMock = Mockito.mock(CryptoUtil::class.java)
+        Mockito.`when`(cryptoMock.encrypt(any())).thenAnswer { it.arguments[0] as ByteArray }
+        Mockito.`when`(cryptoMock.decrypt(any())).thenAnswer { it.arguments[0] as ByteArray }
+
+        val singleManager =
+            SecureCredentialsManager(client, storage, cryptoMock, jwtDecoder, singleThreadExecutor)
+        singleManager.saveCredentials(validCredentials)
+
+        repeat(3) {
+            callerPool.submit {
+                singleManager.getCredentials(object :
+                    Callback<Credentials, CredentialsManagerException> {
+                    override fun onFailure(error: CredentialsManagerException) {
+                        throw error
+                    }
+
+                    override fun onSuccess(result: Credentials) {
+                        MatcherAssert.assertThat(
+                            result.accessToken,
+                            Is.`is`(validCredentials.accessToken)
+                        )
+                        latch.countDown()
+                    }
+                })
+            }
+        }
+
+        Assert.assertTrue(latch.await(3, TimeUnit.SECONDS))
+        Mockito.verify(client, Mockito.never()).renewAuth(any(), anyOrNull(), anyOrNull())
+    }
+
+
+    @Test
+    public fun shouldNotTriggerSecondRenewalForCallerQueuedBehindFirstRenewal() {
+        val expiredCredentials = Credentials(
+            "",
+            "accessToken",
+            "type",
+            "refreshToken",
+            Date(CredentialsMock.CURRENT_TIME_MS),
+            "scope"
+        )
+        val renewedCredentials = Credentials(
+            "newId",
+            "newAccess",
+            "newType",
+            "rotatedRefreshToken",
+            Date(CredentialsMock.ONE_HOUR_AHEAD_MS),
+            "newScope"
+        )
+        Mockito.`when`(client.renewAuth(refreshToken = "refreshToken")).thenReturn(request)
+        Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
+
+        val singleThreadExecutor = Executors.newSingleThreadExecutor()
+        val callerPool = Executors.newFixedThreadPool(2)
+        val latch = CountDownLatch(2)
+        val context: Context =
+            Robolectric.buildActivity(Activity::class.java).create().start().resume().get()
+        val storage = SharedPreferencesStorage(
+            context = context,
+            sharedPreferencesName = "com.auth0.android.storage.SecureCredentialsManagerTest.queuedCaller"
+        )
+        val cryptoMock = Mockito.mock(CryptoUtil::class.java)
+        Mockito.`when`(cryptoMock.encrypt(any())).thenAnswer { it.arguments[0] as ByteArray }
+        Mockito.`when`(cryptoMock.decrypt(any())).thenAnswer { it.arguments[0] as ByteArray }
+
+        val singleManager =
+            SecureCredentialsManager(client, storage, cryptoMock, jwtDecoder, singleThreadExecutor)
+        singleManager.saveCredentials(expiredCredentials)
+
+        repeat(2) {
+            callerPool.submit {
+                singleManager.getCredentials(object :
+                    Callback<Credentials, CredentialsManagerException> {
+                    override fun onFailure(error: CredentialsManagerException) {
+                        throw error
+                    }
+
+                    override fun onSuccess(result: Credentials) {
+                        // Both callers must receive the renewed credentials, not the expired ones.
+                        MatcherAssert.assertThat(
+                            result.accessToken,
+                            Is.`is`(renewedCredentials.accessToken)
+                        )
+                        MatcherAssert.assertThat(
+                            result.refreshToken,
+                            Is.`is`(renewedCredentials.refreshToken)
+                        )
+                        latch.countDown()
+                    }
+                })
+            }
+        }
+
+        Assert.assertTrue(latch.await(2, TimeUnit.SECONDS))
+        // Exactly one renewal — the second caller found already-valid credentials in storage.
+        Mockito.verify(client, Mockito.times(1)).renewAuth(refreshToken = "refreshToken")
+        Mockito.verify(request, Mockito.times(1)).execute()
     }
 
     /*
@@ -2170,13 +2362,7 @@ public class SecureCredentialsManagerTest {
     @Test
     public fun shouldClearCredentials() {
         manager.clearCredentials()
-        verify(storage).remove("com.auth0.credentials")
-        verify(storage).remove("com.auth0.credentials_expires_at")
-        verify(storage).remove("com.auth0.credentials_access_token_expires_at")
-        verify(storage).remove("com.auth0.credentials_can_refresh")
-        verify(storage).remove("com.auth0.token_type")
-        verify(storage).remove("com.auth0.dpop_key_thumbprint")
-        verify(storage).remove("com.auth0.session_expiry")
+        verify(storage).removeAll()
         verifyNoMoreInteractions(storage)
     }
 
@@ -2187,6 +2373,14 @@ public class SecureCredentialsManagerTest {
         verify(storage).remove(captor.capture())
         Assert.assertEquals("audience", captor.firstValue)
         verifyNoMoreInteractions(storage)
+    }
+
+    @Test
+    public fun shouldClearAllCredentialsKeyPairsAndBiometricSession() {
+        manager.clearAll()
+        verify(storage).removeAll()
+        verify(crypto).deleteAllKeys()
+        Assert.assertFalse(manager.isBiometricSessionValid())
     }
 
     @Test
@@ -2519,6 +2713,103 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(true))
         Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
             .thenReturn("{\"access_token\":\"accessToken\", \"refresh_token\":\"refreshToken\"}")
+        MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(true))
+    }
+
+    @Test
+    public fun shouldRenewCredentialsViaCallbackWhenTokenExpiresWithinDefaultMinTtl() {
+        Mockito.`when`(localAuthenticationManager.authenticate()).then {
+            localAuthenticationManager.resultCallback.onSuccess(true)
+        }
+        // Token expires in 30 seconds, which is within DEFAULT_MIN_TTL (60s)
+        val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + 30 * 1000)
+        insertTestCredentials(false, true, true, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_access_token_expires_at"))
+            .thenReturn(expiresAt.time)
+        val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        val jwtMock = mock<Jwt>()
+        Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
+        Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
+        Mockito.`when`(
+            client.renewAuth("refreshToken")
+        ).thenReturn(request)
+        val expectedCredentials =
+            Credentials("newId", "newAccess", "newType", "refreshToken", newDate, "newScope")
+        Mockito.`when`(request.execute()).thenReturn(expectedCredentials)
+        val expectedJson = gson.toJson(expectedCredentials)
+        Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
+            .thenReturn(expectedJson.toByteArray())
+        // Use no-arg getCredentials which now uses DEFAULT_MIN_TTL
+        manager.getCredentials(callback)
+        verify(callback).onSuccess(
+            credentialsCaptor.capture()
+        )
+        // Verify renewal was triggered
+        verify(client).renewAuth("refreshToken")
+        val retrievedCredentials = credentialsCaptor.firstValue
+        MatcherAssert.assertThat(retrievedCredentials, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`("newId"))
+        MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`("newAccess"))
+    }
+
+    @Test
+    @ExperimentalCoroutinesApi
+    public fun shouldAwaitRenewedCredentialsWhenTokenExpiresWithinDefaultMinTtl(): Unit = runTest {
+        Mockito.`when`(localAuthenticationManager.authenticate()).then {
+            localAuthenticationManager.resultCallback.onSuccess(true)
+        }
+        // Token expires in 30 seconds, which is within DEFAULT_MIN_TTL (60s)
+        val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + 30 * 1000)
+        insertTestCredentials(false, true, true, expiresAt, "scope")
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_access_token_expires_at"))
+            .thenReturn(expiresAt.time)
+        val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        val jwtMock = mock<Jwt>()
+        Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
+        Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
+        Mockito.`when`(
+            client.renewAuth("refreshToken")
+        ).thenReturn(request)
+        val expectedCredentials =
+            Credentials("newId", "newAccess", "newType", "refreshToken", newDate, "newScope")
+        Mockito.`when`(request.execute()).thenReturn(expectedCredentials)
+        val expectedJson = gson.toJson(expectedCredentials)
+        Mockito.`when`(crypto.encrypt(expectedJson.toByteArray()))
+            .thenReturn(expectedJson.toByteArray())
+        // Use no-arg awaitCredentials which now uses DEFAULT_MIN_TTL
+        val result = manager.awaitCredentials()
+        // Verify renewal was triggered
+        verify(client).renewAuth("refreshToken")
+        MatcherAssert.assertThat(result, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(result.idToken, Is.`is`("newId"))
+        MatcherAssert.assertThat(result.accessToken, Is.`is`("newAccess"))
+    }
+
+    @Test
+    public fun shouldNotHaveValidCredentialsWhenTokenExpiresWithinDefaultMinTtlAndNoRefreshToken() {
+        // Token expires in 30 seconds, within DEFAULT_MIN_TTL (60s), and no refresh token
+        val expirationTime = CredentialsMock.CURRENT_TIME_MS + 30 * 1000
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_access_token_expires_at"))
+            .thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveBoolean("com.auth0.credentials_can_refresh"))
+            .thenReturn(false)
+        Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
+            .thenReturn("{\"access_token\":\"accessToken\"}")
+        // No-arg hasValidCredentials now uses DEFAULT_MIN_TTL, so token expiring in 30s is invalid
+        Assert.assertFalse(manager.hasValidCredentials())
+    }
+
+    @Test
+    public fun shouldHaveValidCredentialsWhenTokenExpiresWithinDefaultMinTtlButRefreshTokenAvailable() {
+        // Token expires in 30 seconds, within DEFAULT_MIN_TTL (60s), but refresh token is available
+        val expirationTime = CredentialsMock.CURRENT_TIME_MS + 30 * 1000
+        Mockito.`when`(storage.retrieveLong("com.auth0.credentials_access_token_expires_at"))
+            .thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveBoolean("com.auth0.credentials_can_refresh"))
+            .thenReturn(true)
+        Mockito.`when`(storage.retrieveString("com.auth0.credentials"))
+            .thenReturn("{\"access_token\":\"accessToken\", \"refresh_token\":\"refreshToken\"}")
+        // Even though token expires within DEFAULT_MIN_TTL, refresh token makes it valid
         MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(true))
     }
 
@@ -3338,7 +3629,7 @@ public class SecureCredentialsManagerTest {
             storage,
             crypto,
             jwtDecoder,
-            auth0.executor,
+            serialExecutor,
             weakFragmentActivity,
             getAuthenticationOptions(),
             factory
@@ -3355,7 +3646,7 @@ public class SecureCredentialsManagerTest {
         //now, update the clock and retry
         manager.setClock(object : Clock {
             override fun getCurrentTimeMillis(): Long {
-                return CredentialsMock.CURRENT_TIME_MS - 1000
+                return CredentialsMock.CURRENT_TIME_MS - (DEFAULT_MIN_TTL * 1000 + 1000)
             }
         })
         MatcherAssert.assertThat(manager.hasValidCredentials(), Is.`is`(true))
@@ -3412,13 +3703,12 @@ public class SecureCredentialsManagerTest {
                 throw IllegalArgumentException("Proper Executor Set")
             }
         }
-        Mockito.`when`(auth0.executor).thenReturn(serialExecutor)
         val manager = SecureCredentialsManager(
             client,
             storage,
             crypto,
             jwtDecoder,
-            auth0.executor,
+            serialExecutor,
             weakFragmentActivity,
             getAuthenticationOptions(),
             factory
@@ -3566,12 +3856,6 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(retrievedCredentials.scope, Is.`is`("scope"))
     }
 
-    /*
-     * Helper methods
-     */
-    /**
-     * Used to simplify the tests length
-     */
     // IPSIE session_expiry enforcement
 
     @Test
@@ -3593,8 +3877,7 @@ public class SecureCredentialsManagerTest {
         // No biometric prompt should be raised for a dead session.
         verify(localAuthenticationManager, never()).authenticate()
         // The breached session must be cleared.
-        verify(storage).remove("com.auth0.session_expiry")
-        verify(storage).remove("com.auth0.credentials")
+        verify(storage).removeAll()
         // The refresh-token grant must never be used past the ceiling.
         verifyNoMoreInteractions(client)
     }
@@ -3746,8 +4029,7 @@ public class SecureCredentialsManagerTest {
         )
         // The refresh-token grant must never be exchanged for SSO credentials past the ceiling.
         verifyNoMoreInteractions(client)
-        verify(storage).remove("com.auth0.session_expiry")
-        verify(storage).remove("com.auth0.credentials")
+        verify(storage).removeAll()
     }
 
     @Test
@@ -3766,10 +4048,15 @@ public class SecureCredentialsManagerTest {
         // No biometric prompt and no refresh past the ceiling.
         verify(localAuthenticationManager, never()).authenticate()
         verifyNoMoreInteractions(client)
-        verify(storage).remove("com.auth0.session_expiry")
-        verify(storage).remove("com.auth0.credentials")
+        verify(storage).removeAll()
     }
 
+    /*
+     * Helper methods
+     */
+    /**
+     * Used to simplify the tests length
+     */
     private fun insertTestCredentials(
         hasIdToken: Boolean,
         hasAccessToken: Boolean,
@@ -3922,7 +4209,10 @@ public class SecureCredentialsManagerTest {
 
         verify(callback).onFailure(exceptionCaptor.capture())
         val exception = exceptionCaptor.firstValue
-        MatcherAssert.assertThat(exception, Is.`is`(CredentialsManagerException.DPOP_NOT_CONFIGURED))
+        MatcherAssert.assertThat(
+            exception,
+            Is.`is`(CredentialsManagerException.DPOP_NOT_CONFIGURED)
+        )
     }
 
     @Test
@@ -3970,7 +4260,10 @@ public class SecureCredentialsManagerTest {
         manager.continueGetCredentials(null, 0, emptyMap(), emptyMap(), false, callback)
 
         // Verify thumbprint was backfilled during validation (and also stored again during saveCredentials after renewal)
-        verify(storage, Mockito.atLeastOnce()).store(eq("com.auth0.dpop_key_thumbprint"), anyString())
+        verify(storage, Mockito.atLeastOnce()).store(
+            eq("com.auth0.dpop_key_thumbprint"),
+            anyString()
+        )
         verify(callback).onSuccess(credentialsCaptor.capture())
     }
 
@@ -4023,7 +4316,14 @@ public class SecureCredentialsManagerTest {
         insertTestCredentials(true, true, true, expiresAt, "scope")
         whenever(mockDPoPKeyStore.hasKeyPair()).thenReturn(false)
 
-        manager.continueGetApiCredentials("audience", "read:data", 0, emptyMap(), emptyMap(), apiCredentialsCallback)
+        manager.continueGetApiCredentials(
+            "audience",
+            "read:data",
+            0,
+            emptyMap(),
+            emptyMap(),
+            apiCredentialsCallback
+        )
 
         verify(apiCredentialsCallback).onFailure(exceptionCaptor.capture())
         val exception = exceptionCaptor.firstValue
@@ -4049,7 +4349,14 @@ public class SecureCredentialsManagerTest {
         insertTestCredentials(true, true, true, expiresAt, "scope")
         whenever(mockDPoPKeyStore.hasKeyPair()).thenReturn(false)
 
-        manager.continueGetApiCredentials("audience", "read:data", 0, emptyMap(), emptyMap(), apiCredentialsCallback)
+        manager.continueGetApiCredentials(
+            "audience",
+            "read:data",
+            0,
+            emptyMap(),
+            emptyMap(),
+            apiCredentialsCallback
+        )
 
         verify(apiCredentialsCallback).onFailure(exceptionCaptor.capture())
         val exception = exceptionCaptor.firstValue
@@ -4123,6 +4430,46 @@ public class SecureCredentialsManagerTest {
         MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
         MatcherAssert.assertThat(exception, Is.`is`(CredentialsManagerException.UNKNOWN_ERROR))
         MatcherAssert.assertThat(exception.cause, Is.`is`(error))
+    }
+
+    @Test
+    public fun shouldFailWithStoreFailedWhenSavingRenewedApiCredentialsThrows() {
+        Mockito.`when`(storage.retrieveString("audience")).thenReturn(null)
+        val expiresAt = Date(CredentialsMock.ONE_HOUR_AHEAD_MS)
+        insertTestCredentials(
+            hasIdToken = true,
+            hasAccessToken = true,
+            hasRefreshToken = true,
+            willExpireAt = expiresAt,
+            scope = "scope"
+        )
+        Mockito.`when`(
+            client.renewAuth("refreshToken", "audience", "newScope")
+        ).thenReturn(request)
+        val newDate = Date(CredentialsMock.ONE_HOUR_AHEAD_MS + ONE_HOUR_SECONDS * 1000)
+        val jwtMock = mock<Jwt>()
+        Mockito.`when`(jwtMock.expiresAt).thenReturn(newDate)
+        Mockito.`when`(jwtDecoder.decode("newId")).thenReturn(jwtMock)
+
+        // Renewal succeeds but persisting the credentials fails
+        val renewedCredentials =
+            Credentials("newId", "newAccess", "newType", null, newDate, "newScope")
+        Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
+        Mockito.`when`(crypto.encrypt(any()))
+            .thenThrow(CryptoException("CryptoException is thrown"))
+
+        manager.continueGetApiCredentials(
+            "audience", "newScope", 0, emptyMap(), emptyMap(), apiCredentialsCallback
+        )
+
+        verify(apiCredentialsCallback).onFailure(exceptionCaptor.capture())
+        val exception = exceptionCaptor.firstValue
+        MatcherAssert.assertThat(exception, Is.`is`(Matchers.notNullValue()))
+        MatcherAssert.assertThat(
+            exception.message,
+            Is.`is`("An error occurred while saving the refreshed Credentials.")
+        )
+        Mockito.verify(apiCredentialsCallback, Mockito.never()).onSuccess(any())
     }
 
     @After

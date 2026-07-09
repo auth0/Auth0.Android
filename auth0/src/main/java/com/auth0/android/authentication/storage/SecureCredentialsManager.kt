@@ -6,10 +6,11 @@ import android.util.Base64
 import android.util.Log
 import androidx.annotation.VisibleForTesting
 import androidx.fragment.app.FragmentActivity
-import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
+import com.auth0.android.dpop.DPoP
+import com.auth0.android.dpop.DPoPException
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.result.APICredentials
 import com.auth0.android.result.Credentials
@@ -28,8 +29,9 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 /**
- * A safer alternative to the [CredentialsManager] class. A combination of RSA and AES keys is used to keep the values secure.
- * On devices with a Secure LockScreen configured (PIN, Pattern, Password or Fingerprint) an extra authentication step can be required.
+ * A safer alternative to the [CredentialsManager] class. A combination of RSA and AES keys is used
+ * to keep the values secure. On devices with a Secure LockScreen configured (PIN, Pattern, Password
+ * or Fingerprint) an extra authentication step can be required.
  */
 public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal constructor(
     apiClient: AuthenticationAPIClient,
@@ -47,92 +49,39 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     private val lastBiometricAuthTime = AtomicLong(NO_SESSION)
 
     /**
-     * Creates a new SecureCredentialsManager to handle Credentials
+     * Creates a new SecureCredentialsManager to handle Credentials.
      *
-     * @param context   a valid context
-     * @param auth0     the Auth0 account information to use
-     * @param storage   the storage implementation to use
-     */
-    public constructor(
-        context: Context,
-        auth0: Auth0,
-        storage: Storage,
-    ) : this(
-        AuthenticationAPIClient(auth0),
-        context,
-        auth0,
-        storage
-    )
-
-    /**
-     * Creates a new SecureCredentialsManager to handle Credentials with a custom AuthenticationAPIClient instance.
-     * Use this constructor when you need to configure the API client with advanced features like DPoP.
-     *
-     * Example usage:
+     * To enable DPoP, configure the [apiClient] before passing it in:
      * ```
-     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
      * val apiClient = AuthenticationAPIClient(auth0).useDPoP(context)
-     * val manager = SecureCredentialsManager(apiClient, context, auth0, storage)
+     * val manager = SecureCredentialsManager(apiClient, context, storage)
      * ```
      *
      * @param apiClient a configured AuthenticationAPIClient instance
      * @param context   a valid context
-     * @param auth0     the Auth0 account information to use
      * @param storage   the storage implementation to use
      */
     public constructor(
         apiClient: AuthenticationAPIClient,
         context: Context,
-        auth0: Auth0,
-        storage: Storage
+        storage: Storage,
     ) : this(
         apiClient,
         storage,
         CryptoUtil(context, storage, KEY_ALIAS),
         JWTDecoder(),
-        auth0.executor
+        apiClient.executor
     )
 
-
     /**
-     * Creates a new SecureCredentialsManager to handle Credentials with biometrics Authentication
+     * Creates a new SecureCredentialsManager to handle Credentials with biometric authentication.
      *
-     * @param context   a valid context
-     * @param auth0     the Auth0 account information to use
-     * @param storage   the storage implementation to use
-     * @param fragmentActivity the FragmentActivity to use for the biometric authentication
-     * @param localAuthenticationOptions the options of type [LocalAuthenticationOptions] to use for the biometric authentication
-     */
-    public constructor(
-        context: Context,
-        auth0: Auth0,
-        storage: Storage,
-        fragmentActivity: FragmentActivity,
-        localAuthenticationOptions: LocalAuthenticationOptions
-    ) : this(
-        AuthenticationAPIClient(auth0),
-        context,
-        auth0,
-        storage,
-        fragmentActivity,
-        localAuthenticationOptions
-    )
-
-
-    /**
-     * Creates a new SecureCredentialsManager to handle Credentials with biometrics Authentication
-     * and a custom AuthenticationAPIClient instance.
-     * Use this constructor when you need to configure the API client with advanced features like DPoP
-     * along with biometric authentication.
-     *
-     * Example usage:
+     * To enable DPoP, configure the [apiClient] before passing it in:
      * ```
-     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
      * val apiClient = AuthenticationAPIClient(auth0).useDPoP(context)
      * val manager = SecureCredentialsManager(
      *     apiClient,
      *     context,
-     *     auth0,
      *     storage,
      *     fragmentActivity,
      *     localAuthenticationOptions
@@ -141,7 +90,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      *
      * @param apiClient a configured AuthenticationAPIClient instance
      * @param context   a valid context
-     * @param auth0     the Auth0 account information to use
      * @param storage   the storage implementation to use
      * @param fragmentActivity the FragmentActivity to use for the biometric authentication
      * @param localAuthenticationOptions the options of type [LocalAuthenticationOptions] to use for the biometric authentication
@@ -149,7 +97,6 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     public constructor(
         apiClient: AuthenticationAPIClient,
         context: Context,
-        auth0: Auth0,
         storage: Storage,
         fragmentActivity: FragmentActivity,
         localAuthenticationOptions: LocalAuthenticationOptions
@@ -158,7 +105,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         storage,
         CryptoUtil(context, storage, KEY_ALIAS),
         JWTDecoder(),
-        auth0.executor,
+        apiClient.executor,
         WeakReference(fragmentActivity),
         localAuthenticationOptions,
         DefaultLocalAuthenticationManagerFactory()
@@ -168,12 +115,15 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     /**
      * Saves the given credentials in the Storage.
      *
+     * **Important:** This method is not thread safe
+     *
      * @param credentials the credentials to save.
      * @throws CredentialsManagerException with code `SESSION_EXPIRED` if the credentials carry an
      * IPSIE `session_expiry` claim that is already past its ceiling at creation time, with code
      * `INVALID_CREDENTIALS` if neither an access_token nor an id_token is present, or if the
      * credentials couldn't be encrypted. Some devices are not compatible at all with the cryptographic
      * implementation and will have [CredentialsManagerException.isDeviceIncompatible] return true.
+     *
      */
     @Throws(CredentialsManagerException::class)
     override fun saveCredentials(credentials: Credentials) {
@@ -217,10 +167,13 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
 
     /**
      * Stores the given [APICredentials] in the storage for the given audience.
+     *
+     * **Important:** This method is not thread safe
      * @param apiCredentials the API Credentials to be stored
      * @param audience the audience for which the credentials are stored
      * @param scope the scope for which the credentials are stored
      */
+    @Throws(CredentialsManagerException::class)
     override fun saveApiCredentials(
         apiCredentials: APICredentials,
         audience: String,
@@ -286,8 +239,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     callback.onFailure(exception)
                     return@execute
                 }
-                // IPSIE session_expiry: enforce the upstream-IdP session ceiling before exchanging the
-                // refresh token, so the SSO exchange is never used to outlive the session.
+                // IPSIE session_expiry: enforce the upstream-IdP session ceiling before exchanging
+                // the refresh token, so the SSO exchange is never used to outlive the session.
                 if (isSessionExpired(existingCredentials.idToken)) {
                     clearCredentials()
                     callback.onFailure(CredentialsManagerException.SESSION_EXPIRED)
@@ -400,7 +353,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
     override suspend fun awaitCredentials(): Credentials {
-        return awaitCredentials(null, 0)
+        return awaitCredentials(null, DEFAULT_MIN_TTL)
     }
 
     /**
@@ -570,7 +523,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     override fun getCredentials(
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
-        getCredentials(null, 0, callback)
+        getCredentials(null, DEFAULT_MIN_TTL, callback)
     }
 
     /**
@@ -762,15 +715,25 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * Delete the stored credentials
      */
     override fun clearCredentials() {
-        storage.remove(KEY_CREDENTIALS)
-        storage.remove(KEY_EXPIRES_AT)
-        storage.remove(LEGACY_KEY_CACHE_EXPIRES_AT)
-        storage.remove(KEY_CAN_REFRESH)
-        storage.remove(KEY_TOKEN_TYPE)
-        storage.remove(KEY_DPOP_THUMBPRINT)
-        storage.remove(KEY_SESSION_EXPIRY)
+        storage.removeAll()
         clearBiometricSession()
         Log.d(TAG, "Credentials were just removed from the storage")
+    }
+
+    /**
+     * Removes all credentials, API credentials, and cryptographic key pairs.
+     * This calls [Storage.removeAll] to clear all stored data
+     */
+    override fun clearAll() {
+        storage.removeAll()
+        crypto.deleteAllKeys()
+        clearBiometricSession()
+        try {
+            DPoP.clearKeyPair()
+        } catch (e: DPoPException) {
+            Log.e(TAG, "Failed to clear DPoP key pair ${e.stackTraceToString()}")
+        }
+        Log.d(TAG, "All credentials and key pairs were removed")
     }
 
     /**
@@ -790,7 +753,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
      * @return whether this manager contains a valid non-expired pair of credentials or not.
      */
     override fun hasValidCredentials(): Boolean {
-        return hasValidCredentials(0)
+        return hasValidCredentials(DEFAULT_MIN_TTL.toLong())
     }
 
     /**
@@ -848,6 +811,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     )
                     return@execute
                 } catch (e: CryptoException) {
+                    //If keys were invalidated, existing credentials will not be recoverable.
                     clearCredentials()
                     callback.onFailure(
                         CredentialsManagerException(
@@ -856,8 +820,10 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     )
                     return@execute
                 }
-                val bridgeCredentials =
-                    gson.fromJson(json, OptionalCredentials::class.java)
+                val bridgeCredentials = gson.fromJson(json, OptionalCredentials::class.java)/* OPTIONAL CREDENTIALS
+                 * This bridge is required to prevent users from being logged out when
+                 * migrating from Credentials with optional Access Token and ID token
+                 */
                 val credentials = Credentials(
                     bridgeCredentials.idToken.orEmpty(),
                     bridgeCredentials.accessToken.orEmpty(),
@@ -916,8 +882,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     val expiresAt = fresh.expiresAt.time
                     val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
                     if (willAccessTokenExpire) {
-                        val tokenLifetime =
-                            (expiresAt - currentTimeInMillis - minTtl * 1000) / -1000
+                        val tokenLifetime = (expiresAt - currentTimeInMillis - minTtl * 1000) / -1000
                         val wrongTtlException = CredentialsManagerException(
                             CredentialsManagerException.Code.LARGE_MIN_TTL, String.format(
                                 Locale.getDefault(),
@@ -930,6 +895,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                         return@execute
                     }
 
+                    //non-empty refresh token for refresh token rotation scenarios
                     val updatedRefreshToken =
                         if (TextUtils.isEmpty(fresh.refreshToken)) credentials.refreshToken else fresh.refreshToken
                     freshCredentials = Credentials(
@@ -995,17 +961,17 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
     ) {
         serialExecutor.execute {
             runCatchingOnExecutor(callback) {
-                // IPSIE session_expiry: enforce the upstream-IdP session ceiling before serving cached
-                // API credentials or exchanging the refresh token. The ceiling is read from the value
-                // persisted at login (KEY_SESSION_EXPIRY) so it holds even though the credentials blob
-                // is encrypted; past it we clear and surface the dedicated error.
+                // IPSIE session_expiry: enforce the upstream-IdP session ceiling before serving
+                // cached API credentials or exchanging the refresh token. The ceiling is read from
+                // the value persisted at login (KEY_SESSION_EXPIRY) so it holds even though the
+                // credentials blob is encrypted; past it we clear and surface the dedicated error.
                 if (isSessionExpired(null)) {
                     clearCredentials()
                     callback.onFailure(CredentialsManagerException.SESSION_EXPIRED)
                     return@execute
                 }
-                val encryptedEncodedJson =
-                    storage.retrieveString(getAPICredentialsKey(audience, scope))
+                val encryptedEncodedJson = storage.retrieveString(getAPICredentialsKey(audience, scope))
+                //Check if existing api credentials are present and valid
 
                 var apiCredentialType: String? = null
                 encryptedEncodedJson?.let { encryptedEncoded ->
@@ -1047,6 +1013,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     }
                 }
 
+                //Check if refresh token exists or not
                 val existingCredentials: Credentials = try {
                     getExistingCredentials()
                 } catch (exception: CredentialsManagerException) {
@@ -1059,9 +1026,8 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     return@execute
                 }
 
-                val tokenType =
-                    apiCredentialType ?: storage.retrieveString(KEY_TOKEN_TYPE)
-                    ?: existingCredentials.type
+                val tokenType = apiCredentialType ?: storage.retrieveString(KEY_TOKEN_TYPE)
+                ?: existingCredentials.type
                 validateDPoPState(tokenType)?.let { dpopError ->
                     callback.onFailure(dpopError)
                     return@execute
@@ -1079,8 +1045,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                     val expiresAt = newCredentials.expiresAt.time
                     val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
                     if (willAccessTokenExpire) {
-                        val tokenLifetime =
-                            (expiresAt - currentTimeInMillis - minTtl * 1000) / -1000
+                        val tokenLifetime = (expiresAt - currentTimeInMillis - minTtl * 1000) / -1000
                         val wrongTtlException = CredentialsManagerException(
                             CredentialsManagerException.Code.LARGE_MIN_TTL, String.format(
                                 Locale.getDefault(),
@@ -1093,6 +1058,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                         return@execute
                     }
 
+                    // non-empty refresh token for refresh token rotation scenarios
                     val updatedRefreshToken =
                         if (TextUtils.isEmpty(newCredentials.refreshToken)) refreshToken else newCredentials.refreshToken
                     newApiCredentials = newCredentials.toAPICredentials()

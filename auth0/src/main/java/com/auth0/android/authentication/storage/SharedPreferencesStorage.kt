@@ -75,6 +75,10 @@ public class SharedPreferencesStorage @JvmOverloads constructor(
         sp.edit().remove(name).apply()
     }
 
+    override fun removeAll() {
+        sp.edit().clear().apply()
+    }
+
     private companion object {
         private const val SHARED_PREFERENCES_NAME = "com.auth0.authentication.storage"
     }

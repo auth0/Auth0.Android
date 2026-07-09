@@ -10,7 +10,7 @@ import com.auth0.android.provider.WebAuthProvider.authorizeWithRequestUri
 import com.auth0.android.provider.WebAuthProvider.resume
 import com.auth0.android.request.internal.ThreadSwitcherShadow
 import com.auth0.android.result.AuthorizationCode
-import com.nhaarman.mockitokotlin2.*
+import org.mockito.kotlin.*
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.CoreMatchers.notNullValue
 import org.hamcrest.MatcherAssert.assertThat

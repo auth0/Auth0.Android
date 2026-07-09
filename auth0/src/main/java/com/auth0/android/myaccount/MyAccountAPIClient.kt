@@ -24,11 +24,12 @@ import com.auth0.android.result.Factor
 import com.auth0.android.result.Factors
 import com.auth0.android.result.PasskeyAuthenticationMethod
 import com.auth0.android.result.PasskeyEnrollmentChallenge
-import com.auth0.android.result.PasswordAuthenticationMethod
 import com.auth0.android.result.PasskeyRegistrationChallenge
+import com.auth0.android.result.PasswordAuthenticationMethod
 import com.auth0.android.result.PasswordEnrollmentChallenge
 import com.auth0.android.result.RecoveryCodeEnrollmentChallenge
 import com.auth0.android.result.TotpEnrollmentChallenge
+
 import com.google.gson.Gson
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -267,15 +268,13 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
     /**
      * Retrieves a detailed list of authentication methods belonging to the user.
      *
-     * ## Scopes Required
-     *
-     * `read:me:authentication_methods`
      *
      * ## Usage
      *
      * ```kotlin
      * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
      * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
      *
      * // Get all authentication methods
      * apiClient.getAuthenticationMethods()
@@ -330,6 +329,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
     /**
      * Retrieves a single authentication method belonging to the user.
      *
+     *
      * ## Usage
      *
      * ```kotlin
@@ -363,6 +363,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
 
     /**
      * Updates a single authentication method belonging to the user.
+     *
      *
      * ## Usage
      *

@@ -97,7 +97,3 @@ gen-external-apklibs
 .Trashes
 
 version.txt
-
-# Internal planning docs
-plans/
-docs/

@@ -6,6 +6,8 @@ import androidx.annotation.VisibleForTesting
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
+import com.auth0.android.dpop.DPoP
+import com.auth0.android.dpop.DPoPException
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.request.internal.Jwt
 import com.auth0.android.result.APICredentials
@@ -18,7 +20,6 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executor
-import java.util.concurrent.Executors
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -44,7 +45,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         authenticationClient,
         storage,
         JWTDecoder(),
-        Executors.newSingleThreadExecutor()
+        authenticationClient.executor
     )
 
     public override val userProfile: UserProfile?
@@ -238,7 +239,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
     @JvmSynthetic
     @Throws(CredentialsManagerException::class)
     override suspend fun awaitCredentials(): Credentials {
-        return awaitCredentials(null, 0)
+        return awaitCredentials(null, DEFAULT_MIN_TTL)
     }
 
     /**
@@ -384,7 +385,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * @param callback the callback that will receive a valid [Credentials] or the [CredentialsManagerException].
      */
     override fun getCredentials(callback: Callback<Credentials, CredentialsManagerException>) {
-        getCredentials(null, 0, callback)
+        getCredentials(null, DEFAULT_MIN_TTL, callback)
     }
 
     /**
@@ -526,8 +527,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                     val expiresAt = fresh.expiresAt.time
                     val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
                     if (willAccessTokenExpire) {
-                        val tokenLifetime =
-                            (expiresAt - currentTimeInMillis - minTtl * 1000) / -1000
+                        val tokenLifetime = (expiresAt - currentTimeInMillis - minTtl * 1000) / -1000
                         val wrongTtlException = CredentialsManagerException(
                             CredentialsManagerException.Code.LARGE_MIN_TTL, String.format(
                                 Locale.getDefault(),
@@ -540,6 +540,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                         return@execute
                     }
 
+                    // non-empty refresh token for refresh token rotation scenarios
                     val updatedRefreshToken =
                         if (TextUtils.isEmpty(fresh.refreshToken)) refreshToken else fresh.refreshToken
                     val credentials = Credentials(
@@ -604,6 +605,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         headers: Map<String, String>,
         callback: Callback<APICredentials, CredentialsManagerException>
     ) {
+
         serialExecutor.execute {
             runCatchingOnExecutor(callback) {
                 // IPSIE session_expiry: enforce the upstream-IdP session ceiling before serving cached
@@ -613,14 +615,14 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                     callback.onFailure(CredentialsManagerException.SESSION_EXPIRED)
                     return@execute
                 }
+                //Check if existing api credentials are present and valid
                 val key = getAPICredentialsKey(audience, scope)
                 val apiCredentialsJson = storage.retrieveString(key)
                 var apiCredentialType: String? = null
                 apiCredentialsJson?.let {
                     val apiCredentials = gson.fromJson(it, APICredentials::class.java)
                     apiCredentialType = apiCredentials.type
-                    val willTokenExpire =
-                        willExpire(apiCredentials.expiresAt.time, minTtl.toLong())
+                    val willTokenExpire = willExpire(apiCredentials.expiresAt.time, minTtl.toLong())
 
                     val scopeChanged = hasScopeChanged(
                         apiCredentials.scope,
@@ -635,6 +637,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                         return@execute
                     }
                 }
+                //Check if refresh token exists or not
                 val refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN)
                 if (refreshToken == null) {
                     callback.onFailure(CredentialsManagerException.NO_REFRESH_TOKEN)
@@ -659,8 +662,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                     val expiresAt = newCredentials.expiresAt.time
                     val willAccessTokenExpire = willExpire(expiresAt, minTtl.toLong())
                     if (willAccessTokenExpire) {
-                        val tokenLifetime =
-                            (expiresAt - currentTimeInMillis - minTtl * 1000) / -1000
+                        val tokenLifetime = (expiresAt - currentTimeInMillis - minTtl * 1000) / -1000
                         val wrongTtlException = CredentialsManagerException(
                             CredentialsManagerException.Code.LARGE_MIN_TTL, String.format(
                                 Locale.getDefault(),
@@ -673,6 +675,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                         return@execute
                     }
 
+                    // non-empty refresh token for refresh token rotation scenarios
                     val updatedRefreshToken =
                         if (TextUtils.isEmpty(newCredentials.refreshToken)) refreshToken else newCredentials.refreshToken
                     val newApiCredentials = newCredentials.toAPICredentials()
@@ -706,6 +709,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                 }
             }
         }
+
     }
 
     /**
@@ -714,7 +718,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * @return whether there are valid credentials stored on this manager.
      */
     override fun hasValidCredentials(): Boolean {
-        return hasValidCredentials(0)
+        return hasValidCredentials(DEFAULT_MIN_TTL.toLong())
     }
 
     /**
@@ -745,15 +749,20 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
      * Removes the credentials from the storage if present.
      */
     override fun clearCredentials() {
-        storage.remove(KEY_ACCESS_TOKEN)
-        storage.remove(KEY_REFRESH_TOKEN)
-        storage.remove(KEY_ID_TOKEN)
-        storage.remove(KEY_TOKEN_TYPE)
-        storage.remove(KEY_EXPIRES_AT)
-        storage.remove(KEY_SCOPE)
-        storage.remove(LEGACY_KEY_CACHE_EXPIRES_AT)
-        storage.remove(KEY_DPOP_THUMBPRINT)
-        storage.remove(KEY_SESSION_EXPIRY)
+        storage.removeAll()
+    }
+
+    /**
+     * Removes all credentials, API credentials, and cryptographic key pairs.
+     * This calls [Storage.removeAll] to clear all stored data
+     */
+    override fun clearAll() {
+        storage.removeAll()
+        try {
+            DPoP.clearKeyPair()
+        } catch (e: DPoPException) {
+            Log.e(TAG, "Failed to clear DPoP key pair ${e.stackTraceToString()}")
+        }
     }
 
     /**

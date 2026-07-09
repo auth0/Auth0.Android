@@ -9,6 +9,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.auth0.android.Auth0
+import com.auth0.android.annotation.ExperimentalAuth0Api
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.callback.Callback
 import com.auth0.android.dpop.DPoP
@@ -31,15 +32,15 @@ import kotlin.coroutines.resumeWithException
  *
  * It uses an external browser by sending the [android.content.Intent.ACTION_VIEW] intent.
  */
-public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
+public object WebAuthProvider {
     private val TAG: String? = WebAuthProvider::class.simpleName
     private const val KEY_BUNDLE_OAUTH_MANAGER_STATE = "oauth_manager_state"
     private const val KEY_BUNDLE_PAR_MANAGER_STATE = "par_manager_state"
     private const val AUTH_REQUEST_CODE = 110
-    private var dPoP : DPoP? = null
 
     private val callbacks = CopyOnWriteArraySet<Callback<Credentials, AuthenticationException>>()
-    private val parCallbacks = CopyOnWriteArraySet<Callback<AuthorizationCode, AuthenticationException>>()
+    private val parCallbacks =
+        CopyOnWriteArraySet<Callback<AuthorizationCode, AuthenticationException>>()
 
     @JvmStatic
     @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
@@ -136,12 +137,6 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
     @JvmStatic
     public fun removeCallback(callback: Callback<Credentials, AuthenticationException>) {
         callbacks -= callback
-    }
-
-    // Public methods
-    public override fun useDPoP(context: Context): WebAuthProvider {
-        dPoP = DPoP(context)
-        return this
     }
 
     /**
@@ -290,6 +285,7 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
     internal fun resetState() {
         managerInstance = null
         callbacks.clear()
+        parCallbacks.clear()
         pendingLoginResult.set(null)
         pendingLogoutResult.set(null)
     }
@@ -319,6 +315,7 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
         private var ctOptions: CustomTabsOptions = CustomTabsOptions.newBuilder().build()
         private var federated: Boolean = false
         private var launchAsTwa: Boolean = false
+        private var authTab: Boolean = false
         private var customLogoutUrl: String? = null
 
         /**
@@ -381,9 +378,32 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
          * Launches the Logout experience with a native feel (without address bar). For this to work,
          * you have to setup the app as trusted following the steps mentioned [here](https://github.com/auth0/Auth0.Android/blob/main/EXAMPLES.md#trusted-web-activity-experimental).
          *
+         * Note: [withAuthTab] and [withTrustedWebActivity] are mutually exclusive. If both are set,
+         * TWA takes precedence and Auth Tab will not be used. They rely on different underlying
+         * launch mechanisms and cannot be combined.
          */
         public fun withTrustedWebActivity(): LogoutBuilder {
             launchAsTwa = true
+            return this
+        }
+
+        /**
+         * Opts into using Auth Tab for the logout flow when the browser supports it.
+         * Auth Tab provides a dedicated, security-focused UI for OAuth flows with no address bar
+         * or share button. Falls back to a regular Custom Tab on browsers that do not support it.
+         *
+         * **Warning:** Auth Tab support in Auth0.Android is still experimental and can change in
+         * the future.
+         *
+         * Note: [withAuthTab] and [withTrustedWebActivity] are mutually exclusive. If both are set,
+         * TWA takes precedence and Auth Tab will not be used. They rely on different underlying
+         * launch mechanisms and cannot be combined.
+         *
+         * @return the current builder instance
+         */
+        @ExperimentalAuth0Api
+        public fun withAuthTab(): LogoutBuilder {
+            authTab = true
             return this
         }
 
@@ -433,7 +453,8 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
 
         private fun startInternal(context: Context, callback: Callback<Void?, AuthenticationException>) {
             resetManagerInstance()
-            if (!ctOptions.hasCompatibleBrowser(context.packageManager)) {
+            val effectiveCtOptions = if (authTab) ctOptions.copyWithAuthTab() else ctOptions
+            if (!effectiveCtOptions.hasCompatibleBrowser(context.packageManager)) {
                 val ex = AuthenticationException(
                     "a0.browser_not_available",
                     "No compatible Browser application is installed."
@@ -452,7 +473,7 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
                 account,
                 callback,
                 returnToUrl!!,
-                ctOptions,
+                effectiveCtOptions,
                 federated,
                 launchAsTwa,
                 customLogoutUrl
@@ -490,7 +511,8 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
         }
     }
 
-    public class Builder internal constructor(private val account: Auth0) {
+    public class Builder internal constructor(private val account: Auth0) :
+        SenderConstraining<Builder> {
         private val values: MutableMap<String, String> = mutableMapOf()
         private val headers: MutableMap<String, String> = mutableMapOf()
         private var pkce: PKCE? = null
@@ -498,9 +520,12 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
         private var scheme: String = "https"
         private var redirectUri: String? = null
         private var invitationUrl: String? = null
+        private var dPoP: DPoP? = null
         private var ctOptions: CustomTabsOptions = CustomTabsOptions.newBuilder().build()
         private var leeway: Int? = null
         private var launchAsTwa: Boolean = false
+        private var ephemeralBrowsing: Boolean = false
+        private var authTab: Boolean = false
         private var customAuthorizeUrl: String? = null
 
         /**
@@ -709,9 +734,51 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
          * Launches the Login experience with a native feel (without address bar). For this to work,
          * you have to setup the app as trusted following the steps mentioned [here](https://github.com/auth0/Auth0.Android/blob/main/EXAMPLES.md#trusted-web-activity-experimental).
          *
+         * Note: [withAuthTab] and [withTrustedWebActivity] are mutually exclusive. If both are set,
+         * TWA takes precedence and Auth Tab will not be used. They rely on different underlying
+         * launch mechanisms and cannot be combined.
          */
         public fun withTrustedWebActivity(): Builder {
             launchAsTwa = true
+            return this
+        }
+
+        /**
+         * Enable ephemeral browsing for the Custom Tab used in the login flow.
+         * When enabled, the Custom Tab runs in an isolated session — cookies, cache,
+         * history, and credentials are deleted when the tab closes.
+         * Requires Chrome 136+ or a compatible browser. On unsupported browsers,
+         * a warning is logged and a regular Custom Tab is used instead.
+         *
+         * **Warning:** Ephemeral browsing support in Auth0.Android is still experimental
+         * and can change in the future. Please test it thoroughly in all the targeted browsers
+         * and OS variants and let us know your feedback.
+         *
+         * @return the current builder instance
+         */
+        @ExperimentalAuth0Api
+        public fun withEphemeralBrowsing(): Builder {
+            ephemeralBrowsing = true
+            return this
+        }
+
+        /**
+         * Opts into using Auth Tab for the authentication flow when the browser supports it.
+         * Auth Tab provides a dedicated, security-focused UI for OAuth flows with no address bar
+         * or share button. Falls back to a regular Custom Tab on browsers that do not support it.
+         *
+         * **Warning:** Auth Tab support in Auth0.Android is still experimental and can change in
+         * the future.
+         *
+         * Note: [withAuthTab] and [withTrustedWebActivity] are mutually exclusive. If both are set,
+         * TWA takes precedence and Auth Tab will not be used. They rely on different underlying
+         * launch mechanisms and cannot be combined.
+         *
+         * @return the current builder instance
+         */
+        @ExperimentalAuth0Api
+        public fun withAuthTab(): Builder {
+            authTab = true
             return this
         }
 
@@ -730,6 +797,18 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         internal fun withPKCE(pkce: PKCE): Builder {
             this.pkce = pkce
+            return this
+        }
+
+        /**
+         * Enable DPoP (Demonstrating Proof-of-Possession) for this authentication request.
+         * DPoP binds access tokens to the client's cryptographic key, providing enhanced security.
+         *
+         * @param context the Android context used to access the keystore for DPoP key management
+         * @return the current builder instance
+         */
+        public override fun useDPoP(context: Context): Builder {
+            dPoP = DPoP(context)
             return this
         }
 
@@ -805,8 +884,13 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
                 values[OAuthManager.KEY_ORGANIZATION] = organizationId
                 values[OAuthManager.KEY_INVITATION] = invitationId
             }
+
+            var effectiveCtOptions = ctOptions
+            if (ephemeralBrowsing) effectiveCtOptions = effectiveCtOptions.copyWithEphemeralBrowsing()
+            if (authTab) effectiveCtOptions = effectiveCtOptions.copyWithAuthTab()
+
             val manager = OAuthManager(
-                account, callback, values, ctOptions, launchAsTwa,
+                account, callback, values, effectiveCtOptions, launchAsTwa,
                 customAuthorizeUrl, dPoP
             )
             manager.setHeaders(headers)
@@ -1001,6 +1085,5 @@ public object WebAuthProvider : SenderConstraining<WebAuthProvider> {
                 }
             }
         }
-
     }
 }

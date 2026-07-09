@@ -41,6 +41,15 @@ public abstract class BaseCredentialsManager internal constructor(
          * the session is treated as expired slightly *before* the wall-clock ceiling, never after.
          */
         private const val SESSION_EXPIRY_LEEWAY_SECONDS = 30L
+
+        /**
+         * Default minimum time to live (in seconds) for the access token.
+         * When retrieving credentials, if the access token has less than this amount of time
+         * remaining before expiration, it will be automatically renewed.
+         * This ensures the access token is valid for at least a short window after retrieval,
+         * preventing downstream API call failures from nearly-expired tokens.
+         */
+        internal const val DEFAULT_MIN_TTL: Int = 60
     }
 
     private var _clock: Clock = ClockImpl()
@@ -106,7 +115,7 @@ public abstract class BaseCredentialsManager internal constructor(
     public abstract fun getApiCredentials(
         audience: String,
         scope: String? = null,
-        minTtl: Int = 0,
+        minTtl: Int = DEFAULT_MIN_TTL,
         parameters: Map<String, String> = emptyMap(),
         headers: Map<String, String> = emptyMap(),
         callback: Callback<APICredentials, CredentialsManagerException>
@@ -162,7 +171,7 @@ public abstract class BaseCredentialsManager internal constructor(
     public abstract suspend fun awaitApiCredentials(
         audience: String,
         scope: String? = null,
-        minTtl: Int = 0,
+        minTtl: Int = DEFAULT_MIN_TTL,
         parameters: Map<String, String> = emptyMap(),
         headers: Map<String, String> = emptyMap()
     ): APICredentials
@@ -171,6 +180,7 @@ public abstract class BaseCredentialsManager internal constructor(
 
     public abstract fun clearCredentials()
     public abstract fun clearApiCredentials(audience: String, scope: String? = null)
+    public abstract fun clearAll()
     public abstract fun hasValidCredentials(): Boolean
     public abstract fun hasValidCredentials(minTtl: Long): Boolean
 
@@ -413,6 +423,7 @@ public abstract class BaseCredentialsManager internal constructor(
         if (scope == null) return audience
         val sortedScope = scope.split(" ").sorted().joinToString("::")
         return "$audience::${sortedScope}"
+
     }
 
     internal inline fun <T> runCatchingOnExecutor(
@@ -422,6 +433,9 @@ public abstract class BaseCredentialsManager internal constructor(
         try {
             block()
         } catch (t: Throwable) {
+            if (t is VirtualMachineError || t is ThreadDeath || t is LinkageError) {
+                throw t
+            }
             Log.e("BaseCredentialsManager", "Unexpected error in executor block", t)
             callback.onFailure(
                 CredentialsManagerException(CredentialsManagerException.Code.UNKNOWN_ERROR, t)

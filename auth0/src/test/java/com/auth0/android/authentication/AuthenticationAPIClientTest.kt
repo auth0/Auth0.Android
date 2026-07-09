@@ -20,7 +20,6 @@ import com.auth0.android.request.ServerResponse
 import com.auth0.android.request.internal.RequestFactory
 import com.auth0.android.request.internal.ThreadSwitcherShadow
 import com.auth0.android.result.Authentication
-import com.auth0.android.result.Challenge
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
 import com.auth0.android.result.SSOCredentials
@@ -34,12 +33,12 @@ import com.auth0.android.util.SSLTestUtils.testClient
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.argumentCaptor
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
@@ -176,41 +175,6 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public fun shouldLoginWithMFAOTPCode() {
-        mockAPI.willReturnSuccessfulLogin()
-        val callback = MockAuthenticationCallback<Credentials>()
-        val auth0 = auth0
-        val client = AuthenticationAPIClient(auth0)
-        client.loginWithOTP("ey30.the-mfa-token.value", "123456")
-            .start(callback)
-        ShadowLooper.idleMainLooper()
-        assertThat(
-            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
-                Credentials::class.java
-            )
-        )
-        val request = mockAPI.takeRequest()
-        assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
-                defaultLocale
-            )
-        )
-        val body = bodyFromRequest<String>(request)
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
-        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
-        assertThat(
-            body,
-            Matchers.hasEntry("grant_type", "http://auth0.com/oauth/grant-type/mfa-otp")
-        )
-        assertThat(body, Matchers.hasEntry("mfa_token", "ey30.the-mfa-token.value"))
-        assertThat(body, Matchers.hasEntry("otp", "123456"))
-        assertThat(body, Matchers.not(Matchers.hasKey("scope")))
-        assertThat(body, Matchers.not(Matchers.hasKey("username")))
-        assertThat(body, Matchers.not(Matchers.hasKey("password")))
-        assertThat(body, Matchers.not(Matchers.hasKey("connection")))
-    }
-
-    @Test
     public fun shouldSigninWithPasskey() {
         mockAPI.willReturnSuccessfulLogin()
         val callback = MockAuthenticationCallback<Credentials>()
@@ -233,7 +197,7 @@ public class AuthenticationAPIClientTest {
                 defaultLocale
             )
         )
-        val body = bodyFromRequest<String>(request)
+        val body = bodyFromRequest<Any>(request)
         assertThat(request.path, Matchers.equalTo("/oauth/token"))
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(
@@ -262,7 +226,7 @@ public class AuthenticationAPIClientTest {
                 defaultLocale
             )
         )
-        val body = bodyFromRequest<String>(request)
+        val body = bodyFromRequest<Any>(request)
         assertThat(request.path, Matchers.equalTo("/passkey/register"))
         assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
         assertThat(body, Matchers.hasEntry("realm", MY_CONNECTION))
@@ -336,159 +300,6 @@ public class AuthenticationAPIClientTest {
         assertThat(challengeResponse, Matchers.`is`(Matchers.notNullValue()))
         assertThat(challengeResponse.authSession, Matchers.comparesEqualTo(SESSION_ID))
 
-    }
-
-    @Test
-    public fun shouldLoginWithMFARecoveryCode() {
-        mockAPI.willReturnSuccessfulLoginWithRecoveryCode()
-        val callback = MockAuthenticationCallback<Credentials>()
-        val auth0 = auth0
-        val client = AuthenticationAPIClient(auth0)
-        client.loginWithRecoveryCode("ey30.the-mfa-token.value", "123456")
-            .start(callback)
-        ShadowLooper.idleMainLooper()
-        assertThat(
-            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
-                Credentials::class.java
-            )
-        )
-        assertThat(callback.payload.recoveryCode, Matchers.`is`("654321"))
-        val request = mockAPI.takeRequest()
-        assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
-                defaultLocale
-            )
-        )
-        val body = bodyFromRequest<String>(request)
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
-        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
-        assertThat(
-            body,
-            Matchers.hasEntry("grant_type", "http://auth0.com/oauth/grant-type/mfa-recovery-code")
-        )
-        assertThat(body, Matchers.hasEntry("mfa_token", "ey30.the-mfa-token.value"))
-        assertThat(body, Matchers.hasEntry("recovery_code", "123456"))
-        assertThat(body, Matchers.not(Matchers.hasKey("scope")))
-    }
-
-    @Test
-    public fun shouldLoginWithMFAOOBCode() {
-        mockAPI.willReturnSuccessfulLogin()
-        val callback = MockAuthenticationCallback<Credentials>()
-        val auth0 = auth0
-        val client = AuthenticationAPIClient(auth0)
-        client.loginWithOOB("ey30.the-mfa-token.value", "123456", null)
-            .start(callback)
-        ShadowLooper.idleMainLooper()
-        assertThat(
-            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
-                Credentials::class.java
-            )
-        )
-        val request = mockAPI.takeRequest()
-        assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
-                defaultLocale
-            )
-        )
-        val body = bodyFromRequest<String>(request)
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
-        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
-        assertThat(
-            body,
-            Matchers.hasEntry("grant_type", "http://auth0.com/oauth/grant-type/mfa-oob")
-        )
-        assertThat(body, Matchers.hasEntry("mfa_token", "ey30.the-mfa-token.value"))
-        assertThat(body, Matchers.hasEntry("oob_code", "123456"))
-        assertThat(body, Matchers.not(Matchers.hasKey("scope")))
-        assertThat(body, Matchers.not(Matchers.hasKey("binding_code")))
-    }
-
-    @Test
-    public fun shouldLoginWithMFAOOBCodeAndBindingCode() {
-        mockAPI.willReturnSuccessfulLogin()
-        val callback = MockAuthenticationCallback<Credentials>()
-        val auth0 = auth0
-        val client = AuthenticationAPIClient(auth0)
-        client.loginWithOOB("ey30.the-mfa-token.value", "123456", "abcdefg")
-            .start(callback)
-        ShadowLooper.idleMainLooper()
-        assertThat(
-            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
-                Credentials::class.java
-            )
-        )
-        val request = mockAPI.takeRequest()
-        assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
-                defaultLocale
-            )
-        )
-        val body = bodyFromRequest<String>(request)
-        assertThat(request.path, Matchers.equalTo("/oauth/token"))
-        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
-        assertThat(
-            body,
-            Matchers.hasEntry("grant_type", "http://auth0.com/oauth/grant-type/mfa-oob")
-        )
-        assertThat(body, Matchers.hasEntry("mfa_token", "ey30.the-mfa-token.value"))
-        assertThat(body, Matchers.hasEntry("oob_code", "123456"))
-        assertThat(body, Matchers.hasEntry("binding_code", "abcdefg"))
-        assertThat(body, Matchers.not(Matchers.hasKey("scope")))
-    }
-
-    @Test
-    public fun shouldStartMFAChallenge() {
-        mockAPI.willReturnSuccessfulMFAChallenge()
-        val callback = MockAuthenticationCallback<Challenge>()
-        client.multifactorChallenge("ey30.the-mfa-token.value", null, null)
-            .start(callback)
-        ShadowLooper.idleMainLooper()
-        val request = mockAPI.takeRequest()
-        assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
-                defaultLocale
-            )
-        )
-        assertThat(request.path, Matchers.equalTo("/mfa/challenge"))
-        val body = bodyFromRequest<Any>(request)
-        assertThat(body, Matchers.hasEntry("mfa_token", "ey30.the-mfa-token.value"))
-        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
-        assertThat(body, Matchers.not(Matchers.hasKey("challenge_type")))
-        assertThat(body, Matchers.not(Matchers.hasKey("authenticator_id")))
-        assertThat(body, Matchers.not(Matchers.hasKey("scope")))
-        assertThat(
-            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
-                Challenge::class.java
-            )
-        )
-    }
-
-    @Test
-    public fun shouldStartMFAChallengeWithTypeAndAuthenticator() {
-        mockAPI.willReturnSuccessfulMFAChallenge()
-        val callback = MockAuthenticationCallback<Challenge>()
-        client.multifactorChallenge("ey30.the-mfa-token.value", "oob", "sms|dev_NU1Ofuw3Cw0XCt5x")
-            .start(callback)
-        ShadowLooper.idleMainLooper()
-        val request = mockAPI.takeRequest()
-        assertThat(
-            request.getHeader("Accept-Language"), Matchers.`is`(
-                defaultLocale
-            )
-        )
-        assertThat(request.path, Matchers.equalTo("/mfa/challenge"))
-        val body = bodyFromRequest<Any>(request)
-        assertThat(body, Matchers.hasEntry("mfa_token", "ey30.the-mfa-token.value"))
-        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
-        assertThat(body, Matchers.hasEntry("challenge_type", "oob"))
-        assertThat(body, Matchers.hasEntry("authenticator_id", "sms|dev_NU1Ofuw3Cw0XCt5x"))
-        assertThat(body, Matchers.not(Matchers.hasKey("scope")))
-        assertThat(
-            callback, AuthenticationCallbackMatcher.hasPayloadOfType(
-                Challenge::class.java
-            )
-        )
     }
 
     @Test
@@ -1085,7 +896,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
-        val body = bodyFromRequest<String>(request)
+        val body = bodyFromRequest<Any>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("username", SUPPORT))
         assertThat(body, Matchers.hasEntry("password", PASSWORD))
@@ -1109,7 +920,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
-        val body = bodyFromRequest<String>(request)
+        val body = bodyFromRequest<Any>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("username", SUPPORT))
         assertThat(body, Matchers.hasEntry("password", PASSWORD))
@@ -1412,7 +1223,7 @@ public class AuthenticationAPIClientTest {
             )
         )
         assertThat(request.path, Matchers.equalTo("/dbconnections/signup"))
-        val body = bodyFromRequest<String>(request)
+        val body = bodyFromRequest<Any>(request)
         assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
         assertThat(body, Matchers.hasEntry("username", SUPPORT))
         assertThat(body, Matchers.hasEntry("password", PASSWORD))
@@ -2554,7 +2365,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public fun shouldSsoExchange() {
-        mockAPI.willReturnSuccessfulLogin()
+        mockAPI.willReturnSuccessfulSSOExchange()
         val callback = MockAuthenticationCallback<SSOCredentials>()
         client.ssoExchange("refresh-token")
             .start(callback)
@@ -2586,7 +2397,7 @@ public class AuthenticationAPIClientTest {
 
     @Test
     public fun shouldSsoExchangeSync() {
-        mockAPI.willReturnSuccessfulLogin()
+        mockAPI.willReturnSuccessfulSSOExchange()
         val sessionTransferCredentials = client.ssoExchange("refresh-token")
             .execute()
         val request = mockAPI.takeRequest()
@@ -2610,7 +2421,7 @@ public class AuthenticationAPIClientTest {
     @Test
     @ExperimentalCoroutinesApi
     public fun shouldAwaitSsoExchange(): Unit = runTest {
-        mockAPI.willReturnSuccessfulLogin()
+        mockAPI.willReturnSuccessfulSSOExchange()
         val ssoCredentials = client
             .ssoExchange("refresh-token")
             .await()
@@ -3269,7 +3080,7 @@ public class AuthenticationAPIClientTest {
         whenever(mockKeyStore.hasKeyPair()).thenReturn(true)
         whenever(mockKeyStore.getKeyPair()).thenReturn(Pair(FakeECPrivateKey(), FakeECPublicKey()))
 
-        mockAPI.willReturnSuccessfulLogin()
+        mockAPI.willReturnSuccessfulSSOExchange()
         val callback = MockAuthenticationCallback<SSOCredentials>()
 
         client.useDPoP(mockContext).ssoExchange("refresh-token")
@@ -3305,8 +3116,8 @@ public class AuthenticationAPIClientTest {
         assertThat(exception.cause, Matchers.instanceOf(DPoPException::class.java))
     }
 
-    private fun <T> bodyFromRequest(request: RecordedRequest): Map<String, T> {
-        val mapType = object : TypeToken<Map<String?, T>?>() {}.type
+    private inline fun <reified T> bodyFromRequest(request: RecordedRequest): Map<String, T> {
+        val mapType = object : TypeToken<Map<String, T>>() {}.type
         return gson.fromJson(request.body.readUtf8(), mapType)
     }
 

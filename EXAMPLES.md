@@ -12,17 +12,17 @@
   - [Changing the Return To URL scheme](#changing-the-return-to-url-scheme)
   - [Specify a Custom Logout URL](#specify-a-custom-logout-url)
   - [Trusted Web Activity](#trusted-web-activity)
+  - [Ephemeral Browsing [Experimental]](#ephemeral-browsing-experimental)
+  - [Auth Tab [Experimental]](#auth-tab-experimental)
   - [DPoP](#dpop)
   - [Authentication API](#authentication-api)
     - [Login with database connection](#login-with-database-connection)
-    - [Login using MFA with One Time Password code](#login-using-mfa-with-one-time-password-code)
     - [MFA Flexible Factors Grant](#mfa-flexible-factors-grant)
       - [Understanding the mfa_required Error Payload](#understanding-the-mfa_required-error-payload)
       - [Handling MFA Required Errors](#handling-mfa-required-errors)
       - [Getting Available Authenticators](#getting-available-authenticators)
       - [Enrolling New Authenticators](#enrolling-new-authenticators)
       - [Challenging an Authenticator](#challenging-an-authenticator)
-      - [Verifying MFA](#verifying-mfa)
       - [MFA Client Errors](#mfa-client-errors)
     - [Passwordless Login](#passwordless-login)
       - [Step 1: Request the code](#step-1-request-the-code)
@@ -38,6 +38,7 @@
     - [Pushed Authorization Requests (PAR)](#pushed-authorization-requests-par)
     - [DPoP](#dpop-1)
   - [My Account API](#my-account-api)
+    - [Using DPoP](#using-dpop)
     - [Enroll a new passkey](#enroll-a-new-passkey)
     - [Get Available Factors](#get-available-factors)
     - [Get All Enrolled Authentication Methods](#get-all-enrolled-authentication-methods)
@@ -59,11 +60,6 @@
     - [Handling Credentials Manager exceptions](#handling-credentials-manager-exceptions)
   - [Passkeys](#passkeys)
   - [Bot Protection](#bot-protection)
-  - [Management API](#management-api)
-    - [Link users](#link-users)
-    - [Unlink users](#unlink-users)
-    - [Get User Profile](#get-user-profile)
-    - [Update User Metadata](#update-user-metadata)
   - [Token Validation](#token-validation)
   - [Organizations](#organizations)
     - [Log in to an organization](#log-in-to-an-organization)
@@ -305,14 +301,123 @@ WebAuthProvider.login(account)
     .await(this)
 ```
 
+> [!NOTE]
+> `withTrustedWebActivity()` and `withAuthTab()` are mutually exclusive. If both are set on the same builder, TWA takes precedence and Auth Tab will not be used. They rely on different underlying launch mechanisms and cannot be combined. For standard OAuth flows against Auth0, prefer [Auth Tab](#auth-tab-experimental) — it requires no server-side setup and works with any domain.
+
+## Ephemeral Browsing [Experimental]
+
+> **WARNING**
+> Ephemeral browsing support in Auth0.Android is still experimental and can change in the future. Please test it thoroughly in all the targeted browsers
+> and OS variants and let us know your feedback.
+
+Ephemeral browsing launches the Chrome Custom Tab in a fully isolated session — cookies, cache, history, and credentials are deleted when the tab closes. This is equivalent to incognito/private mode for Custom Tabs, useful for privacy-focused authentication flows.
+
+Requires Chrome 136+ or a compatible browser. On unsupported browsers, the SDK falls back to a regular Custom Tab and logs a warning.
+
+```kotlin
+WebAuthProvider.login(account)
+    .withEphemeralBrowsing()
+    .start(this, callback)
+```
+
+<details>
+<summary>Using async/await</summary>
+
+```kotlin
+WebAuthProvider.login(account)
+    .withEphemeralBrowsing()
+    .await(this)
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+WebAuthProvider.login(account)
+    .withEphemeralBrowsing()
+    .start(this, callback);
+```
+</details>
+
+## Auth Tab [Experimental]
+
+> **WARNING**
+> Auth Tab support in Auth0.Android is still experimental and can change in the future. Please test it thoroughly on all targeted devices and OS variants and let us know your feedback.
+
+Auth Tab uses [`AuthTabIntent`](https://developer.android.com/reference/androidx/browser/auth/AuthTabIntent) from `androidx.browser` to open the authentication flow in a dedicated browser tab that verifies the redirect URI scheme before delivering the result back to your app. This provides an additional layer of security by ensuring only your app — whose redirect URI scheme is verified at registration time — can receive the authentication callback, preventing other apps from intercepting it.
+
+Requires `androidx.browser` 1.9.0+ and a browser that supports Auth Tab on the device. On unsupported browsers, the SDK automatically falls back to a regular Custom Tab.
+
+> [!NOTE]
+> `withAuthTab()` and `withTrustedWebActivity()` are mutually exclusive. If both are set on the same builder, TWA takes precedence and Auth Tab will not be used. They rely on different underlying launch mechanisms and cannot be combined.
+
+```kotlin
+WebAuthProvider.login(account)
+    .withAuthTab()
+    .start(this, callback)
+```
+
+<details>
+<summary>Using async/await</summary>
+
+```kotlin
+WebAuthProvider.login(account)
+    .withAuthTab()
+    .await(this)
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+WebAuthProvider.login(account)
+    .withAuthTab()
+    .start(this, callback);
+```
+</details>
+
+Auth Tab can also be used for logout:
+
+```kotlin
+WebAuthProvider.logout(account)
+    .withAuthTab()
+    .start(this, logoutCallback)
+```
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+WebAuthProvider.logout(account)
+    .withAuthTab()
+    .start(this, logoutCallback);
+```
+</details>
+
+### Limitations with `CustomTabsOptions`
+
+When `withAuthTab()` is combined with `withCustomTabsOptions()`, only a subset of options take effect. Auth Tab uses a separate intent builder (`AuthTabIntent`) and is always presented full-screen.
+
+| Option | Supported |
+|---|---|
+| `withToolbarColor()` | ✅ Applied to the Auth Tab toolbar |
+| `showTitle()` | ❌ Ignored — Auth Tab has no title-visibility option |
+| `withEphemeralBrowsing()` | ❌ Ignored — Auth Tab does not support ephemeral sessions. Use a regular Custom Tab if session isolation is required |
+| `withInitialHeight()` / `withInitialWidth()` | ❌ Ignored — Auth Tab is always full-screen |
+| `withToolbarCornerRadius()` | ❌ Ignored |
+| `withSideSheetBreakpoint()` | ❌ Ignored |
+| `withBackgroundInteractionEnabled()` | ❌ Ignored |
+
 ## DPoP
 
-[DPoP](https://www.rfc-editor.org/rfc/rfc9449.html) (Demonstrating Proof of Possession) is an application-level mechanism for sender-constraining OAuth 2.0 access and refresh tokens by proving that the app is in possession of a certain private key. You can enable it by calling the `useDPoP()` method.
+[DPoP](https://www.rfc-editor.org/rfc/rfc9449.html) (Demonstrating Proof of Possession) is an application-level mechanism for sender-constraining OAuth 2.0 access and refresh tokens by proving that the app is in possession of a certain private key. You can enable it by calling the `useDPoP(context)` method on the login Builder.
 
 ```kotlin
 WebAuthProvider
-    .useDPoP()
     .login(account)
+    .useDPoP(requireContext())
     .start(requireContext(), object : Callback<Credentials, AuthenticationException> {
         override fun onSuccess(result: Credentials) {
            println("Credentials $result")
@@ -387,6 +492,56 @@ WebAuthProvider.logout(account)
 > [!NOTE]
 > DPoP is supported only on Android version 6.0 (API level 23) and above. Trying to use DPoP in any older versions will result in an exception.
 
+## Handling Configuration Changes During Authentication
+
+When the Activity is destroyed during authentication due to a configuration change (e.g. device rotation, locale change, dark mode toggle), the SDK caches the authentication result internally. Call `WebAuthProvider.registerCallbacks()` once in your `onCreate()` to recover it. This single call handles both recovery scenarios:
+
+- **Configuration change**: delivers any cached result on the next `onResume` to the callback
+- **Process death**: `AuthenticationActivity` restores OAuth state and processes the redirect. Since static state was wiped, the result is cached and delivered to `loginCallback` on the next `onResume` after `registerCallbacks()` is called
+
+```kotlin
+class LoginActivity : AppCompatActivity() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        WebAuthProvider.registerCallbacks(
+            lifecycleOwner = this,
+            loginCallback = object : Callback<Credentials, AuthenticationException> {
+                override fun onSuccess(result: Credentials) {
+                    // Handle successful login
+                }
+                override fun onFailure(error: AuthenticationException) {
+                    // Handle error
+                }
+            },
+            logoutCallback = object : Callback<Void?, AuthenticationException> {
+                override fun onSuccess(result: Void?) {
+                    // Handle successful logout
+                }
+                override fun onFailure(error: AuthenticationException) {
+                    // Handle error
+                }
+            }
+        )
+    }
+
+    fun onLoginClick() {
+        WebAuthProvider.login(account)
+            .withScheme("demo")
+            .start(this, loginCallback)
+    }
+
+    fun onLogoutClick() {
+        WebAuthProvider.logout(account)
+            .withScheme("demo")
+            .start(this, logoutCallback)
+    }
+}
+```
+
+> [!NOTE]
+> If you use the `suspend fun await()` API from a ViewModel coroutine scope, the Activity is never captured in the callback chain, so you do not need `registerCallbacks()` calls.
+
 ## Authentication API
 
 The client provides methods to authenticate the user against the Auth0 server.
@@ -458,64 +613,6 @@ authentication
 </details>
 
 > The default scope used is `openid profile email`. Regardless of the scopes set to the request, the `openid` scope is always enforced.
-
-### Login using MFA with One Time Password code
-
-This call requires the client to have the *MFA* Client Grant Type enabled. Check [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
-
-When you sign in to a multifactor authentication enabled connection using the `login` method, you receive an error standing that MFA is required for that user along with an `mfa_token` value. Use this value to call `loginWithOTP` and complete the MFA flow passing the One Time Password from the enrolled MFA code generator app.
-
-```kotlin
-authentication
-    .loginWithOTP("the mfa token", "123456")
-    .validateClaims() //mandatory
-    .start(object: Callback<Credentials, AuthenticationException> {
-        override fun onFailure(exception: AuthenticationException) { }
-
-        override fun onSuccess(credentials: Credentials) { }
-    })
-```
-
-<details>
-  <summary>Using coroutines</summary>
-
-```kotlin
-try {
-    val credentials = authentication
-        .loginWithOTP("the mfa token", "123456")
-        .validateClaims()
-        .await()
-    println(credentials)
-} catch (e: AuthenticationException) {
-    e.printStacktrace()
-}
-```
-</details>
-
-<details>
-  <summary>Using Java</summary>
-
-```java
-authentication
-    .loginWithOTP("the mfa token", "123456")
-    .validateClaims() //mandatory
-    .start(new Callback<Credentials, AuthenticationException>() {
-        @Override
-        public void onSuccess(@Nullable Credentials payload) {
-            //Logged in!
-        }
-
-        @Override
-        public void onFailure(@NonNull AuthenticationException error) {
-            //Error!
-        }
-    });
-```
-</details>
-
-> The default scope used is `openid profile email`. Regardless of the scopes set to the request, the `openid` scope is always enforced.
-
->  **Note** : The MFA APIs in Authentication client has been deprecated. Use the new MFA Flexible Factors APIs
 
 ### MFA Flexible Factors Grant
 
@@ -1937,7 +2034,7 @@ authentication
 ```
 </details>
 
-### Pushed Authorization Requests (PAR)
+## Pushed Authorization Requests (PAR)
 
 This feature handles the browser authorization step of a [PAR (RFC 9126)](https://www.rfc-editor.org/rfc/rfc9126.html) flow. It opens the `/authorize` endpoint with a `request_uri` obtained from your backend's PAR endpoint call, and returns the authorization code for your backend to exchange for tokens.
 
@@ -2061,7 +2158,7 @@ To use DPoP with `SecureCredentialsManager` you need to pass an instance of the 
 val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
 val apiClient = AuthenticationAPIClient(auth0).useDPoP(this)
 val storage = SharedPreferencesStorage(this)
-val manager = SecureCredentialsManager(apiClient, this, auth0, storage)
+val manager = SecureCredentialsManager(apiClient, this, storage)
 ```
 
 Similarly, for `CredentialsManager`:
@@ -2799,31 +2896,34 @@ myAccountClient.updateAuthenticationMethodById("{Authentication_Id}", "{Name}")
 This version adds encryption to the data storage. Additionally, in those devices where a Secure Lock Screen has been configured it can require the user to authenticate before letting them obtain the stored credentials. The class is called `SecureCredentialsManager`.
 
 #### Usage
-The usage is similar to the previous version, with the slight difference that the manager now requires a valid android `Context` as shown below:
+
+`SecureCredentialsManager` requires an `AuthenticationAPIClient` instance. The manager uses the supplied client for all token renewals and DPoP-bound refreshes, so configure that client first and then pass the same instance into `SecureCredentialsManager`. Create one from your `Auth0` configuration object and pass it to the manager:
 
 ```kotlin
+val account = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+val apiClient = AuthenticationAPIClient(account)
 val storage = SharedPreferencesStorage(this)
-val manager = SecureCredentialsManager(this, account, storage)
+val manager = SecureCredentialsManager(apiClient, this, storage)
 ```
 
 <details>
   <summary>Using Java</summary>
 
 ```java
+Auth0 account = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN");
+AuthenticationAPIClient apiClient = new AuthenticationAPIClient(account);
 Storage storage = new SharedPreferencesStorage(this);
-SecureCredentialsManager manager = new SecureCredentialsManager(this, account, storage);
+SecureCredentialsManager manager = new SecureCredentialsManager(apiClient, this, storage);
 ```
 </details>
 
-#### Using a Custom AuthenticationAPIClient
-
-If you need to configure the `AuthenticationAPIClient` with advanced features (such as DPoP), you can pass your own configured instance to `SecureCredentialsManager`:
+To configure the `AuthenticationAPIClient` with advanced features such as DPoP, set them up on the client before passing it in:
 
 ```kotlin
 val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
 val apiClient = AuthenticationAPIClient(auth0).useDPoP(this)
 val storage = SharedPreferencesStorage(this)
-val manager = SecureCredentialsManager(apiClient, this, auth0, storage)
+val manager = SecureCredentialsManager(apiClient, this, storage)
 ```
 
 <details>
@@ -2833,7 +2933,7 @@ val manager = SecureCredentialsManager(apiClient, this, auth0, storage)
 Auth0 auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN");
 AuthenticationAPIClient apiClient = new AuthenticationAPIClient(auth0).useDPoP(this);
 Storage storage = new SharedPreferencesStorage(this);
-SecureCredentialsManager manager = new SecureCredentialsManager(apiClient, this, auth0, storage);
+SecureCredentialsManager manager = new SecureCredentialsManager(apiClient, this, storage);
 ```
 </details>
 
@@ -2850,9 +2950,11 @@ val localAuthenticationOptions =
         .setDeviceCredentialFallback(true)
         .setPolicy(BiometricPolicy.Session(300)) // Optional: Use session-based policy (5 minutes)
         .build()
+val account = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+val apiClient = AuthenticationAPIClient(account)
 val storage = SharedPreferencesStorage(this)
 val manager = SecureCredentialsManager(
-    this, account, storage, fragmentActivity,
+    apiClient, this, storage, fragmentActivity,
     localAuthenticationOptions
 )
 ```
@@ -2867,9 +2969,11 @@ LocalAuthenticationOptions localAuthenticationOptions =
                 .setDeviceCredentialFallback(true)
                 .setPolicy(new BiometricPolicy.Session(300)) // Optional: Use session-based policy (5 minutes)
                 .build();
+Auth0 account = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN");
+AuthenticationAPIClient apiClient = new AuthenticationAPIClient(account);
 Storage storage = new SharedPreferencesStorage(context);
 SecureCredentialsManager secureCredentialsManager = new SecureCredentialsManager(
-        context, auth0, storage, fragmentActivity,
+        apiClient, context, storage, fragmentActivity,
         localAuthenticationOptions);
 ```
 </details>
@@ -2890,7 +2994,7 @@ val localAuthenticationOptions =
         .build()
 val storage = SharedPreferencesStorage(this)
 val manager = SecureCredentialsManager(
-    apiClient, this, auth0, storage, fragmentActivity,
+    apiClient, this, storage, fragmentActivity,
     localAuthenticationOptions
 )
 ```
@@ -2912,7 +3016,7 @@ LocalAuthenticationOptions localAuthenticationOptions =
                 .build();
 Storage storage = new SharedPreferencesStorage(this);
 SecureCredentialsManager secureCredentialsManager = new SecureCredentialsManager(
-        apiClient, this, auth0, storage, fragmentActivity,
+        apiClient, this, storage, fragmentActivity,
         localAuthenticationOptions);
 ```
 </details>
@@ -3478,232 +3582,6 @@ params.put("screen_hint", "signup");
 ```
 </details>
 
-## Management API
-
-The client provides a few methods to interact with the [Users Management API](https://auth0.com/docs/api/management/v2/#!/Users).
-
-Create a new instance passing the account and an access token with the Management API audience and the right scope:
-
-```kotlin
-val users = UsersAPIClient(account, "api access token")
-```
-
-<details>
-  <summary>Using Java</summary>
-
-```java
-Auth0 account = Auth0.getInstance("client id", "domain");
-UsersAPIClient users = new UsersAPIClient(account, "api token");
-```
-</details>
-
-### Link users
-
-```kotlin
-users
-    .link("primary user id", "secondary user token")
-    .start(object: Callback<List<UserIdentity>, ManagementException> {
-    
-        override fun onFailure(exception: ManagementException) { }
-    
-        override fun onSuccess(identities: List<UserIdentity>) { }
-    })
-```
-
-<details>
-  <summary>Using coroutines</summary>
-
-```kotlin
-try {
-    val identities = users
-        .link("primary user id", "secondary user token")
-        .await()
-    println(identities)
-} catch (e: ManagementException) {
-    e.printStacktrace()
-}
-```
-</details>
-
-<details>
-  <summary>Using Java</summary>
-
-```java
-users
-    .link("primary user id", "secondary user token")
-    .start(new Callback<List<UserIdentity>, ManagementException>() {
-        @Override
-        public void onSuccess(List<UserIdentity> payload) {
-            //Got the updated identities! Accounts linked.
-        }
-
-        @Override
-        public void onFailure(@NonNull ManagementException error) {
-            //Error!
-        }
-    });
-```
-</details>
-
-### Unlink users
-
-```kotlin
-users
-    .unlink("primary user id", "secondary user id", "secondary provider")
-    .start(object: Callback<List<UserIdentity>, ManagementException> {
-    
-        override fun onFailure(exception: ManagementException) { }
-    
-        override fun onSuccess(identities: List<UserIdentity>) { }
-    })
-```
-
-<details>
-  <summary>Using coroutines</summary>
-
-```kotlin
-try {
-    val identities = users
-        .unlink("primary user id", "secondary user id", "secondary provider")
-        .await()
-    println(identities)
-} catch (e: ManagementException) {
-    e.printStacktrace()
-}
-```
-</details>
-
-<details>
-  <summary>Using Java</summary>
-
-```java
-users
-    .unlink("primary user id", "secondary user id", "secondary provider")
-    .start(new Callback<List<UserIdentity>, ManagementException>() {
-        @Override
-        public void onSuccess(List<UserIdentity> payload) {
-            //Got the updated identities! Accounts linked.
-        }
-
-        @Override
-        public void onFailure(@NonNull ManagementException error) {
-            //Error!
-        }
-    });
-```
-</details>
-
-### Get User Profile
-
-```kotlin
-users
-    .getProfile("user id")
-    .start(object: Callback<UserProfile, ManagementException> {
-    
-        override fun onFailure(exception: ManagementException) { }
-    
-        override fun onSuccess(identities: UserProfile) { }
-    })
-```
-
-<details>
-  <summary>Using coroutines</summary>
-
-```kotlin
-try {
-    val user = users
-        .getProfile("user id")
-        .await()
-    println(user)
-} catch (e: ManagementException) {
-    e.printStacktrace()
-}
-```
-</details>
-
-<details>
-  <summary>Using Java</summary>
-
-```java
-users
-    .getProfile("user id")
-    .start(new Callback<UserProfile, ManagementException>() {
-        @Override
-        public void onSuccess(@Nullable UserProfile payload) {
-            //Profile received
-        }
-
-        @Override
-        public void onFailure(@NonNull ManagementException error) {
-            //Error!
-        }
-    });
-```
-</details>
-
-### Update User Metadata
-
-```kotlin
-val metadata = mapOf(
-    "name" to listOf("My", "Name", "Is"),
-    "phoneNumber" to "1234567890"
-)
-
-users
-    .updateMetadata("user id", metadata)
-    .start(object: Callback<UserProfile, ManagementException> {
-    
-        override fun onFailure(exception: ManagementException) { }
-    
-        override fun onSuccess(identities: UserProfile) { }
-    })
-```
-
-<details>
-  <summary>Using coroutines</summary>
-
-```kotlin
-val metadata = mapOf(
-    "name" to listOf("My", "Name", "Is"),
-    "phoneNumber" to "1234567890"
-)
-
-try {
-    val user = users
-        .updateMetadata("user id", metadata)
-        .await()
-    println(user)
-} catch (e: ManagementException) {
-    e.printStacktrace()
-}
-```
-</details>
-
-<details>
-  <summary>Using Java</summary>
-
-```java
-Map<String, Object> metadata = new HashMap<>();
-metadata.put("name", Arrays.asList("My", "Name", "Is"));
-metadata.put("phoneNumber", "1234567890");
-
-users
-    .updateMetadata("user id", metadata)
-    .start(new Callback<UserProfile, ManagementException>() {
-        @Override
-        public void onSuccess(@Nullable UserProfile payload) {
-            //User Metadata updated
-        }
-
-        @Override
-        public void onFailure(@NonNull ManagementException error) {
-            //Error!
-        }
-    });
-```
-</details>
-
-> In all the cases, the `user ID` parameter is the unique identifier of the auth0 account instance. i.e. in `google-oauth2|123456789` it would be the part after the '|' pipe: `123456789`.
 
 ## Token Validation
 The ID token received as part of the authentication flow is should be verified following the [OpenID Connect specification](https://openid.net/specs/openid-connect-core-1_0.html).
@@ -3828,10 +3706,12 @@ The Auth0 class can be configured with a `NetworkingClient`, which will be used 
 ### Timeout configuration
 
 ```kotlin
-val netClient = DefaultClient(
-    connectTimeout = 30,
-    readTimeout = 30
-)
+val netClient = DefaultClient.Builder()
+    .connectTimeout(30)
+    .readTimeout(30)
+    .writeTimeout(30)  
+    .callTimeout(120) 
+    .build()
 
 val account = Auth0.getInstance("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
 account.networkingClient = netClient
@@ -3841,7 +3721,12 @@ account.networkingClient = netClient
   <summary>Using Java</summary>
 
 ```java
-DefaultClient netClient = new DefaultClient(30, 30);
+DefaultClient netClient = new DefaultClient.Builder()
+    .connectTimeout(30)
+    .readTimeout(30)
+    .writeTimeout(30)
+    .callTimeout(120)
+    .build();
 Auth0 account = Auth0.getInstance("client id", "domain");
 account.setNetworkingClient(netClient);
 ```
@@ -3850,23 +3735,30 @@ account.setNetworkingClient(netClient);
 ### Logging configuration
 
 ```kotlin
-val netClient = DefaultClient(
-    enableLogging = true
-)
+val netClient = DefaultClient.Builder()
+    .enableLogging(true)
+    .build()
 
 val account = Auth0.getInstance("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
 account.networkingClient = netClient
+```
+
+You can also provide a custom logger to control where logs are written:
+
+```kotlin
+val netClient = DefaultClient.Builder()
+    .enableLogging(true)
+    .logger(HttpLoggingInterceptor.Logger { message -> Log.d("Auth0Http", message) })
+    .build()
 ```
 
 <details>
   <summary>Using Java</summary>
 
 ```java
-import java.util.HashMap;
-
-DefaultClient netClient = new DefaultClient(
-        10, 10, new HashMap<>() ,true
-);
+DefaultClient netClient = new DefaultClient.Builder()
+    .enableLogging(true)
+    .build();
 Auth0 account = Auth0.getInstance("client id", "domain");
 account.setNetworkingClient(netClient);
 ```
@@ -3875,9 +3767,9 @@ account.setNetworkingClient(netClient);
 ### Set additional headers for all requests
 
 ```kotlin
-val netClient = DefaultClient(
-    defaultHeaders = mapOf("{HEADER-NAME}" to "{HEADER-VALUE}")
-)
+val netClient = DefaultClient.Builder()
+    .defaultHeaders(mapOf("{HEADER-NAME}" to "{HEADER-VALUE}"))
+    .build()
 
 val account = Auth0.getInstance("{YOUR_CLIENT_ID}", "{YOUR_DOMAIN}")
 account.networkingClient = netClient
@@ -3890,9 +3782,9 @@ account.networkingClient = netClient
 Map<String, String> defaultHeaders = new HashMap<>();
 defaultHeaders.put("{HEADER-NAME}", "{HEADER-VALUE}");
 
-DefaultClient netClient = new DefaultClient(
-        10,10 , defaultHeaders
-);
+DefaultClient netClient = new DefaultClient.Builder()
+    .defaultHeaders(defaultHeaders)
+    .build();
 Auth0 account = Auth0.getInstance("client id", "domain");
 account.setNetworkingClient(netClient);
 ```

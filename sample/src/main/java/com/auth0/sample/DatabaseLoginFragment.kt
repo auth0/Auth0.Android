@@ -27,8 +27,6 @@ import com.auth0.android.authentication.storage.LocalAuthenticationOptions
 import com.auth0.android.authentication.storage.SecureCredentialsManager
 import com.auth0.android.authentication.storage.SharedPreferencesStorage
 import com.auth0.android.callback.Callback
-import com.auth0.android.management.ManagementException
-import com.auth0.android.management.UsersAPIClient
 import com.auth0.android.provider.WebAuthProvider
 import com.auth0.android.request.DefaultClient
 import com.auth0.android.request.PublicKeyCredentials
@@ -36,7 +34,6 @@ import com.auth0.android.request.UserData
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.PasskeyChallenge
 import com.auth0.android.result.PasskeyRegistrationChallenge
-import com.auth0.android.result.UserProfile
 import com.auth0.sample.databinding.FragmentDatabaseLoginBinding
 import com.google.android.material.snackbar.Snackbar
 import com.google.gson.Gson
@@ -50,7 +47,7 @@ import java.util.concurrent.Executors
  */
 class DatabaseLoginFragment : Fragment() {
 
-    private val scope = "openid profile email read:current_user update:current_user_metadata"
+    private val scope = "openid profile email offline_access"
 
     private val account: Auth0 by lazy {
         // -- REPLACE this credentials with your own Auth0 app credentials!
@@ -59,7 +56,9 @@ class DatabaseLoginFragment : Fragment() {
             getString(R.string.com_auth0_domain)
         )
         // Only enable network traffic logging on production environments!
-        account.networkingClient = DefaultClient(enableLogging = true)
+        account.networkingClient = DefaultClient.Builder()
+            .enableLogging(true)
+            .build()
         account
     }
 
@@ -78,8 +77,8 @@ class DatabaseLoginFragment : Fragment() {
     private val secureCredentialsManager: SecureCredentialsManager by lazy {
         val storage = SharedPreferencesStorage(requireContext())
         val manager = SecureCredentialsManager(
+            authenticationApiClient,
             requireContext(),
-            account,
             storage,
             requireActivity(),
             localAuthenticationOptions
@@ -102,7 +101,7 @@ class DatabaseLoginFragment : Fragment() {
             .setDeviceCredentialFallback(true)
             .build()
 
-    private val callback = object: Callback<Credentials, AuthenticationException> {
+    private val callback = object : Callback<Credentials, AuthenticationException> {
         override fun onSuccess(result: Credentials) {
             credentialsManager.saveCredentials(result)
             Snackbar.make(
@@ -110,17 +109,6 @@ class DatabaseLoginFragment : Fragment() {
                 "Hello ${result.user.name}",
                 Snackbar.LENGTH_LONG
             ).show()
-        }
-
-        override fun onFailure(error: AuthenticationException) {
-            Snackbar.make(requireView(), error.getDescription(), Snackbar.LENGTH_LONG)
-                .show()
-        }
-    }
-
-    private val logoutCallback = object : Callback<Void?, AuthenticationException> {
-        override fun onSuccess(result: Void?) {
-            Snackbar.make(requireView(), "Logged out", Snackbar.LENGTH_LONG).show()
         }
 
         override fun onFailure(error: AuthenticationException) {
@@ -196,34 +184,17 @@ class DatabaseLoginFragment : Fragment() {
                 getCredsAsync()
             }
         }
-        binding.btGetProfile.setOnClickListener {
-            getProfile()
-        }
-        binding.btGetProfileAsync.setOnClickListener {
-            launchAsync {
-                getProfileAsync()
-            }
-        }
-        binding.btUpdateMeta.setOnClickListener {
-            updateMeta()
-        }
-        binding.btUpdateMetaAsync.setOnClickListener {
-            launchAsync {
-                updateMetaAsync()
-            }
-        }
         return binding.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        // Registers login + logout callbacks for the lifetime of this view. Covers
-        // process-death and configuration-change recovery; auto-removed on destroy.
-        WebAuthProvider.registerCallbacks(
-            viewLifecycleOwner,
-            loginCallback = callback,
-            logoutCallback = logoutCallback
-        )
+    override fun onStart() {
+        super.onStart()
+        WebAuthProvider.addCallback(callback)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        WebAuthProvider.removeCallback(callback)
     }
 
     private suspend fun dbLoginAsync(email: String, password: String) {
@@ -356,7 +327,8 @@ class DatabaseLoginFragment : Fragment() {
     }
 
     private fun getCreds() {
-        credentialsManager.getCredentials(null,
+        credentialsManager.getCredentials(
+            null,
             300,
             emptyMap(),
             emptyMap(),
@@ -419,104 +391,6 @@ class DatabaseLoginFragment : Fragment() {
         }
     }
 
-    private fun getProfile() {
-        credentialsManager.getCredentials(object :
-            Callback<Credentials, CredentialsManagerException> {
-            override fun onSuccess(result: Credentials) {
-                val users = UsersAPIClient(account, result.accessToken)
-                users.getProfile(result.user.getId()!!)
-                    .start(object : Callback<UserProfile, ManagementException> {
-                        override fun onFailure(error: ManagementException) {
-                            Snackbar.make(
-                                requireView(), error.getDescription(), Snackbar.LENGTH_LONG
-                            ).show()
-                        }
-
-                        override fun onSuccess(result: UserProfile) {
-                            Snackbar.make(
-                                requireView(),
-                                "Got profile for ${result.name}",
-                                Snackbar.LENGTH_LONG
-                            ).show()
-                        }
-                    })
-            }
-
-            override fun onFailure(error: CredentialsManagerException) {
-                Snackbar.make(requireView(), "${error.message}", Snackbar.LENGTH_LONG).show()
-            }
-        })
-    }
-
-    private suspend fun getProfileAsync() {
-        try {
-            val credentials = credentialsManager.awaitCredentials()
-            val users = UsersAPIClient(account, credentials.accessToken)
-            val user = users.getProfile(credentials.user.getId()!!).await()
-            Snackbar.make(
-                requireView(), "Got profile for ${user.name}", Snackbar.LENGTH_LONG
-            ).show()
-        } catch (error: CredentialsManagerException) {
-            Snackbar.make(requireView(), "${error.message}", Snackbar.LENGTH_LONG).show()
-        } catch (error: ManagementException) {
-            Snackbar.make(requireView(), error.getDescription(), Snackbar.LENGTH_LONG).show()
-        }
-    }
-
-    private fun updateMeta() {
-        val metadata = mapOf(
-            "random" to (0..100).random(),
-        )
-
-        credentialsManager.getCredentials(object :
-            Callback<Credentials, CredentialsManagerException> {
-            override fun onSuccess(result: Credentials) {
-                val users = UsersAPIClient(account, result.accessToken)
-                users.updateMetadata(result.user.getId()!!, metadata)
-                    .start(object : Callback<UserProfile, ManagementException> {
-                        override fun onFailure(error: ManagementException) {
-                            Snackbar.make(
-                                requireView(), error.getDescription(), Snackbar.LENGTH_LONG
-                            ).show()
-                        }
-
-                        override fun onSuccess(result: UserProfile) {
-                            Snackbar.make(
-                                requireView(),
-                                "Updated metadata for ${result.name} to ${result.getUserMetadata()}",
-                                Snackbar.LENGTH_LONG
-                            ).show()
-                        }
-                    })
-            }
-
-            override fun onFailure(error: CredentialsManagerException) {
-                Snackbar.make(requireView(), "${error.message}", Snackbar.LENGTH_LONG).show()
-            }
-        })
-    }
-
-    private suspend fun updateMetaAsync() {
-        val metadata = mapOf(
-            "random" to (0..100).random(),
-        )
-
-        try {
-            val credentials = credentialsManager.awaitCredentials()
-            val users = UsersAPIClient(account, credentials.accessToken)
-            val user = users.updateMetadata(credentials.user.getId()!!, metadata).await()
-            Snackbar.make(
-                requireView(),
-                "Updated metadata for ${user.name} to ${user.getUserMetadata()}",
-                Snackbar.LENGTH_LONG
-            ).show()
-        } catch (error: CredentialsManagerException) {
-            Snackbar.make(requireView(), "${error.message}", Snackbar.LENGTH_LONG).show()
-        } catch (error: ManagementException) {
-            Snackbar.make(requireView(), error.getDescription(), Snackbar.LENGTH_LONG).show()
-        }
-    }
-
     private fun launchAsync(runnable: suspend () -> Unit) {
         //Use a better scope like lifecycleScope or viewModelScope
         GlobalScope.launch(Dispatchers.Main) {
@@ -539,7 +413,8 @@ class DatabaseLoginFragment : Fragment() {
                 )
                 var response: CreatePublicKeyCredentialResponse?
 
-                credentialManager.createCredentialAsync(requireContext(),
+                credentialManager.createCredentialAsync(
+                    requireContext(),
                     request,
                     CancellationSignal(),
                     Executors.newSingleThreadExecutor(),
@@ -606,7 +481,8 @@ class DatabaseLoginFragment : Fragment() {
                         listOf(request)
                     )
 
-                    credentialManager.getCredentialAsync(requireContext(),
+                    credentialManager.getCredentialAsync(
+                        requireContext(),
                         getCredRequest,
                         CancellationSignal(),
                         Executors.newSingleThreadExecutor(),

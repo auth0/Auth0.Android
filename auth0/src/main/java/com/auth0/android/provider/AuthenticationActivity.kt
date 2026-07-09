@@ -1,11 +1,13 @@
 package com.auth0.android.provider
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.result.ActivityResultLauncher
 import androidx.annotation.VisibleForTesting
+import androidx.browser.auth.AuthTabIntent
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.authentication.AuthenticationException.Companion.ERROR_KEY_CT_OPTIONS_NULL
 import com.auth0.android.authentication.AuthenticationException.Companion.ERROR_KEY_URI_NULL
@@ -17,15 +19,36 @@ import com.auth0.android.provider.WebAuthProvider.resume
 import com.auth0.android.request.internal.CommonThreadSwitcher.Companion.getInstance
 import com.google.androidbrowserhelper.trusted.TwaLauncher
 
-public open class AuthenticationActivity : Activity() {
+public open class AuthenticationActivity : ComponentActivity() {
     private var intentLaunched = false
+    internal val authTabResultHandler = AuthTabResultHandler(
+        onSuccess = { uri ->
+            deliverAuthenticationResult(uri?.let { Intent().setData(it) } ?: Intent())
+            finish()
+        },
+        onFailure = { ex -> deliverAuthenticationFailure(ex) },
+        onCancel = {
+            deliverAuthenticationResult(Intent())
+            finish()
+        }
+    )
+
+    private val authTabLauncher: ActivityResultLauncher<Intent> =
+        AuthTabIntent.registerActivityResultLauncher(this) { result ->
+            authTabResultHandler.handle(result.resultCode, result.resultUri)
+        }
     private var customTabsController: CustomTabsController? = null
-    override fun onNewIntent(intent: Intent?) {
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
     }
 
+    @Suppress("DEPRECATION")
     public override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        // If the Activity Result API (e.g. auth tab) already handled this result and called
+        // finish(), skip our legacy delivery to prevent a second delivery.
+        if (isFinishing) return
         val resultData = if (resultCode == RESULT_CANCELED) Intent() else data
         deliverAuthenticationResult(resultData)
         finish()
@@ -47,6 +70,10 @@ public open class AuthenticationActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        // Auth Tab results are delivered via the Activity Result API callback (onAuthTabResult)
+        // before onResume, which calls finish(). Without this guard, onResume would treat the
+        // missing intent data as a cancellation and deliver a second, spurious result.
+        if (isFinishing) return
         val authenticationIntent = intent
         if (!intentLaunched && authenticationIntent.extras == null) {
             //Activity was launched in an unexpected way
@@ -113,7 +140,7 @@ public open class AuthenticationActivity : Activity() {
     internal open fun createCustomTabsController(
         context: Context, options: CustomTabsOptions
     ): CustomTabsController {
-        return CustomTabsController(context, options, TwaLauncher(context))
+        return CustomTabsController(context, options, TwaLauncher(context), authTabLauncher)
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)

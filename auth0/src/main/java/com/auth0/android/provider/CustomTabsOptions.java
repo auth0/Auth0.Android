@@ -8,12 +8,16 @@ import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.DisplayMetrics;
+import android.util.Log;
 
 import androidx.annotation.ColorRes;
 import androidx.annotation.Dimension;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.browser.auth.AuthTabColorSchemeParams;
+import androidx.browser.auth.AuthTabIntent;
 import androidx.browser.customtabs.CustomTabColorSchemeParams;
+import androidx.browser.customtabs.CustomTabsClient;
 import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.browser.customtabs.CustomTabsSession;
 import androidx.browser.trusted.TrustedWebActivityIntentBuilder;
@@ -28,6 +32,8 @@ import java.util.List;
  */
 public class CustomTabsOptions implements Parcelable {
 
+    private static final String TAG = "CustomTabsOptions";
+
     private final boolean showTitle;
     @ColorRes
     private final int toolbarColor;
@@ -35,6 +41,8 @@ public class CustomTabsOptions implements Parcelable {
 
     @Nullable
     private final List<String> disabledCustomTabsPackages;
+
+    private final boolean ephemeralBrowsing;
 
     // Partial Custom Tabs - Bottom Sheet
     private final int initialHeight;
@@ -48,21 +56,30 @@ public class CustomTabsOptions implements Parcelable {
     // Partial Custom Tabs - Background Interaction
     private final boolean backgroundInteractionEnabled;
 
+    private final boolean authTab;
+
     private CustomTabsOptions(boolean showTitle, @ColorRes int toolbarColor, @NonNull BrowserPicker browserPicker,
                               @Nullable List<String> disabledCustomTabsPackages,
                               int initialHeight, int activityHeightResizeBehavior, int toolbarCornerRadius,
                               int initialWidth, int sideSheetBreakpoint,
-                              boolean backgroundInteractionEnabled) {
+                              boolean backgroundInteractionEnabled, boolean ephemeralBrowsing,
+                              boolean authTab) {
         this.showTitle = showTitle;
         this.toolbarColor = toolbarColor;
         this.browserPicker = browserPicker;
         this.disabledCustomTabsPackages = disabledCustomTabsPackages;
+        this.ephemeralBrowsing = ephemeralBrowsing;
         this.initialHeight = initialHeight;
         this.activityHeightResizeBehavior = activityHeightResizeBehavior;
         this.toolbarCornerRadius = toolbarCornerRadius;
         this.initialWidth = initialWidth;
         this.sideSheetBreakpoint = sideSheetBreakpoint;
         this.backgroundInteractionEnabled = backgroundInteractionEnabled;
+        this.authTab = authTab;
+    }
+
+    boolean isAuthTab() {
+        return authTab;
     }
 
     @Nullable
@@ -82,6 +99,34 @@ public class CustomTabsOptions implements Parcelable {
      */
     boolean isDisabledCustomTabBrowser(@NonNull String preferredPackage) {
         return disabledCustomTabsPackages != null && disabledCustomTabsPackages.contains(preferredPackage);
+    }
+
+    @NonNull
+    Builder toBuilder() {
+        Builder builder = new Builder();
+        builder.showTitle = this.showTitle;
+        builder.toolbarColor = this.toolbarColor;
+        builder.browserPicker = this.browserPicker;
+        builder.disabledCustomTabsPackages = this.disabledCustomTabsPackages;
+        builder.initialHeight = this.initialHeight;
+        builder.activityHeightResizeBehavior = this.activityHeightResizeBehavior;
+        builder.toolbarCornerRadius = this.toolbarCornerRadius;
+        builder.initialWidth = this.initialWidth;
+        builder.sideSheetBreakpoint = this.sideSheetBreakpoint;
+        builder.backgroundInteractionEnabled = this.backgroundInteractionEnabled;
+        builder.ephemeralBrowsing = this.ephemeralBrowsing;
+        builder.authTab = this.authTab;
+        return builder;
+    }
+
+    @NonNull
+    CustomTabsOptions copyWithEphemeralBrowsing() {
+        return toBuilder().withEphemeralBrowsing().build();
+    }
+
+    @NonNull
+    CustomTabsOptions copyWithAuthTab() {
+        return toBuilder().withAuthTab().build();
     }
 
     /**
@@ -106,6 +151,18 @@ public class CustomTabsOptions implements Parcelable {
         final CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder(session)
                 .setShowTitle(showTitle)
                 .setShareState(CustomTabsIntent.SHARE_STATE_OFF);
+
+        if (ephemeralBrowsing) {
+            if (preferredPackage != null
+                    && CustomTabsClient.isEphemeralBrowsingSupported(context, preferredPackage)) {
+                builder.setEphemeralBrowsingEnabled(true);
+            } else {
+                Log.w(TAG, "Ephemeral browsing was requested but is not supported by the "
+                        + "current browser (" + preferredPackage + "). "
+                        + "Falling back to a regular Custom Tab.");
+            }
+        }
+
         if (toolbarColor > 0) {
             //Resource exists
             final CustomTabColorSchemeParams.Builder colorBuilder = new CustomTabColorSchemeParams.Builder()
@@ -138,6 +195,18 @@ public class CustomTabsOptions implements Parcelable {
     }
 
     @SuppressLint("ResourceType")
+    AuthTabIntent.Builder toAuthTabIntentBuilder(@NonNull Context context) {
+        AuthTabIntent.Builder builder = new AuthTabIntent.Builder();
+        if (toolbarColor > 0) {
+            final AuthTabColorSchemeParams params = new AuthTabColorSchemeParams.Builder()
+                    .setToolbarColor(ContextCompat.getColor(context, toolbarColor))
+                    .build();
+            builder.setDefaultColorSchemeParams(params);
+        }
+        return builder;
+    }
+
+    @SuppressLint("ResourceType")
     TrustedWebActivityIntentBuilder toTwaIntentBuilder(@NonNull Context context, @NonNull Uri uri) {
         TrustedWebActivityIntentBuilder builder = new TrustedWebActivityIntentBuilder(uri);
         if (toolbarColor > 0) {
@@ -154,12 +223,14 @@ public class CustomTabsOptions implements Parcelable {
         toolbarColor = in.readInt();
         browserPicker = in.readParcelable(BrowserPicker.class.getClassLoader());
         disabledCustomTabsPackages = in.createStringArrayList();
+        ephemeralBrowsing = in.readByte() != 0;
         initialHeight = in.readInt();
         activityHeightResizeBehavior = in.readInt();
         toolbarCornerRadius = in.readInt();
         initialWidth = in.readInt();
         sideSheetBreakpoint = in.readInt();
         backgroundInteractionEnabled = in.readByte() != 0;
+        authTab = in.readByte() != 0;
     }
 
     @Override
@@ -168,12 +239,14 @@ public class CustomTabsOptions implements Parcelable {
         dest.writeInt(toolbarColor);
         dest.writeParcelable(browserPicker, flags);
         dest.writeStringList(disabledCustomTabsPackages);
+        dest.writeByte((byte) (ephemeralBrowsing ? 1 : 0));
         dest.writeInt(initialHeight);
         dest.writeInt(activityHeightResizeBehavior);
         dest.writeInt(toolbarCornerRadius);
         dest.writeInt(initialWidth);
         dest.writeInt(sideSheetBreakpoint);
         dest.writeByte((byte) (backgroundInteractionEnabled ? 1 : 0));
+        dest.writeByte((byte) (authTab ? 1 : 0));
     }
 
     @Override
@@ -205,6 +278,9 @@ public class CustomTabsOptions implements Parcelable {
         @Nullable
         private List<String> disabledCustomTabsPackages;
 
+        private boolean ephemeralBrowsing;
+        private boolean authTab;
+
         private int initialHeight;
         private int activityHeightResizeBehavior;
         private int toolbarCornerRadius;
@@ -217,6 +293,8 @@ public class CustomTabsOptions implements Parcelable {
             this.toolbarColor = 0;
             this.browserPicker = BrowserPicker.newBuilder().build();
             this.disabledCustomTabsPackages = null;
+            this.ephemeralBrowsing = false;
+            this.authTab = false;
             this.initialHeight = 0;
             this.activityHeightResizeBehavior = CustomTabsIntent.ACTIVITY_HEIGHT_DEFAULT;
             this.toolbarCornerRadius = 0;
@@ -280,6 +358,16 @@ public class CustomTabsOptions implements Parcelable {
         @NonNull
         public Builder withDisabledCustomTabsPackages(List<String> disabledCustomTabsPackages) {
             this.disabledCustomTabsPackages = disabledCustomTabsPackages;
+            return this;
+        }
+
+        Builder withEphemeralBrowsing() {
+            this.ephemeralBrowsing = true;
+            return this;
+        }
+
+        Builder withAuthTab() {
+            this.authTab = true;
             return this;
         }
 
@@ -404,9 +492,11 @@ public class CustomTabsOptions implements Parcelable {
         public CustomTabsOptions build() {
             return new CustomTabsOptions(showTitle, toolbarColor, browserPicker, disabledCustomTabsPackages,
                     initialHeight, activityHeightResizeBehavior, toolbarCornerRadius,
-                    initialWidth, sideSheetBreakpoint, backgroundInteractionEnabled);
+                    initialWidth, sideSheetBreakpoint, backgroundInteractionEnabled, ephemeralBrowsing,
+                    authTab);
         }
     }
+
     private int dpToPx(@NonNull Context context, int dp) {
         final DisplayMetrics metrics = context.getResources().getDisplayMetrics();
         return Math.round(dp * metrics.density);

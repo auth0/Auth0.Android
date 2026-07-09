@@ -6,27 +6,16 @@ import com.auth0.android.util.UserIdentityMatcher
 import com.auth0.android.util.UserProfileMatcher
 import com.google.gson.JsonParseException
 import org.hamcrest.MatcherAssert.assertThat
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.hamcrest.Matchers.anyOf
-import org.hamcrest.Matchers.emptyCollectionOf
-import org.hamcrest.Matchers.equalTo
-import org.hamcrest.Matchers.hasEntry
-import org.hamcrest.Matchers.hasItem
-import org.hamcrest.Matchers.hasKey
-import org.hamcrest.Matchers.hasSize
-import org.hamcrest.Matchers.`is`
-import org.hamcrest.Matchers.not
-import org.hamcrest.Matchers.notNullValue
-import org.hamcrest.Matchers.nullValue
+import org.hamcrest.Matchers.*
 import org.hamcrest.collection.IsMapWithSize
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 import java.io.StringReader
-import java.util.Calendar
-import java.util.Date
-import java.util.TimeZone
+import java.text.SimpleDateFormat
+import java.util.*
 
 @RunWith(RobolectricTestRunner::class)
 public class UserProfileGsonTest : GsonBaseTest() {
@@ -481,15 +470,7 @@ public class UserProfileGsonTest : GsonBaseTest() {
         assertThat(userProfile.getExtraInfo(), not(hasKey("act")))
     }
 
-    private fun getUTCDate(
-        year: Int,
-        month: Int,
-        day: Int,
-        hr: Int,
-        min: Int,
-        sec: Int,
-        ms: Int
-    ): Date {
+    private fun getUTCDate(year: Int, month: Int, day: Int, hr: Int, min: Int, sec: Int, ms: Int): Date {
         val cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
         cal[Calendar.YEAR] = year
         cal[Calendar.MONTH] = month

@@ -2,13 +2,12 @@ package com.auth0.android.provider
 
 import android.app.Activity
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import android.os.Bundle
-import android.os.Parcelable
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
+import android.content.Intent
+import android.net.Uri
+import android.os.Parcelable
 import androidx.test.espresso.intent.matcher.IntentMatchers
 import androidx.test.espresso.intent.matcher.UriMatchers
 import com.auth0.android.Auth0
@@ -31,7 +30,7 @@ import com.auth0.android.request.internal.ThreadSwitcherShadow
 import com.auth0.android.result.Credentials
 import com.auth0.android.util.AuthenticationAPIMockServer
 import com.auth0.android.util.SSLTestUtils
-import com.nhaarman.mockitokotlin2.*
+import org.mockito.kotlin.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -337,8 +336,8 @@ public class WebAuthProviderTest {
     @Test
     public fun enablingDPoPWillGenerateNewKeyPairIfOneDoesNotExist() {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
-        WebAuthProvider.useDPoP(mockContext)
-            .login(account)
+        login(account)
+            .useDPoP(mockContext)
             .start(activity, callback)
         verify(mockKeyStore).generateKeyPair(any(), any())
     }
@@ -364,8 +363,8 @@ public class WebAuthProviderTest {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
         `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
 
-        WebAuthProvider.useDPoP(mockContext)
-            .login(account)
+        login(account)
+            .useDPoP(mockContext)
             .start(activity, callback)
 
         verify(activity).startActivity(intentCaptor.capture())
@@ -1175,6 +1174,7 @@ public class WebAuthProviderTest {
 
     @Test
     @Throws(Exception::class)
+    @Suppress("DEPRECATION")
     public fun shouldResumeLoginWithCustomNetworkingClient() {
         val networkingClient: NetworkingClient = Mockito.spy(DefaultClient())
         val authCallback = mock<Callback<Credentials, AuthenticationException>>()
@@ -1543,16 +1543,17 @@ public class WebAuthProviderTest {
         )
     }
 
+
     @Test
     @Throws(Exception::class)
     public fun shouldFailToResumeLoginWhenRSAKeyIsMissingFromJWKSet() {
         val pkce = Mockito.mock(PKCE::class.java)
         `when`(pkce.codeChallenge).thenReturn("challenge")
-        val mockAPI = AuthenticationAPIMockServer()
-        mockAPI.willReturnEmptyJsonWebKeys()
+        val networkingClient: NetworkingClient = Mockito.mock(NetworkingClient::class.java)
         val authCallback = mock<Callback<Credentials, AuthenticationException>>()
-        val proxyAccount: Auth0 = Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
-        proxyAccount.networkingClient = SSLTestUtils.testClient
+        val proxyAccount =
+            Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, JwtTestUtils.EXPECTED_BASE_DOMAIN)
+        proxyAccount.networkingClient = networkingClient
         login(proxyAccount)
             .withState("1234567890")
             .withNonce(JwtTestUtils.EXPECTED_NONCE)
@@ -1560,9 +1561,7 @@ public class WebAuthProviderTest {
             .start(activity, authCallback)
         val managerInstance = WebAuthProvider.managerInstance as OAuthManager
         managerInstance.currentTimeInMillis = JwtTestUtils.FIXED_CLOCK_CURRENT_TIME_MS
-        val jwtBody = JwtTestUtils.createJWTBody()
-        jwtBody["iss"] = proxyAccount.getDomainUrl()
-        val expectedIdToken = JwtTestUtils.createTestJWT("RS256", jwtBody)
+        val expectedIdToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImtleTEyMyJ9.eyJzdWIiOiJ0ZXN0In0.fakesignature"
         val intent = createAuthIntent(
             createHash(
                 null,
@@ -1585,12 +1584,18 @@ public class WebAuthProviderTest {
                 Date(),
                 "codeScope"
             )
+        val emptyJwksJson = """{"keys": []}"""
+        val jwksInputStream: InputStream = ByteArrayInputStream(emptyJwksJson.toByteArray())
+        val jwksResponse = ServerResponse(200, jwksInputStream, emptyMap())
+        Mockito.doReturn(jwksResponse).`when`(networkingClient).load(
+            eq(proxyAccount.getDomainUrl() + ".well-known/jwks.json"),
+            any()
+        )
         Mockito.doAnswer {
             callbackCaptor.firstValue.onSuccess(codeCredentials)
             null
         }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
         Assert.assertTrue(resume(intent))
-        mockAPI.takeRequest()
         ShadowLooper.idleMainLooper()
         verify(authCallback).onFailure(authExceptionCaptor.capture())
         val error = authExceptionCaptor.firstValue
@@ -1606,7 +1611,6 @@ public class WebAuthProviderTest {
             error.cause?.message,
             `is`("Could not find a public key for kid \"key123\"")
         )
-        mockAPI.shutdown()
     }
 
     @Test
@@ -1675,16 +1679,17 @@ public class WebAuthProviderTest {
         mockAPI.shutdown()
     }
 
+
     @Test
     @Throws(Exception::class)
     public fun shouldFailToResumeLoginWhenKeyIdIsMissingFromIdTokenHeader() {
         val pkce = Mockito.mock(PKCE::class.java)
         `when`(pkce.codeChallenge).thenReturn("challenge")
-        val mockAPI = AuthenticationAPIMockServer()
-        mockAPI.willReturnValidJsonWebKeys()
+        val networkingClient: NetworkingClient = Mockito.mock(NetworkingClient::class.java)
         val authCallback = mock<Callback<Credentials, AuthenticationException>>()
-        val proxyAccount: Auth0 = Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
-        proxyAccount.networkingClient = SSLTestUtils.testClient
+        val proxyAccount =
+            Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, JwtTestUtils.EXPECTED_BASE_DOMAIN)
+        proxyAccount.networkingClient = networkingClient
         login(proxyAccount)
             .withState("1234567890")
             .withNonce("abcdefg")
@@ -1716,12 +1721,18 @@ public class WebAuthProviderTest {
                 Date(),
                 "codeScope"
             )
+        val emptyJwksJson = """{"keys": []}"""
+        val jwksInputStream: InputStream = ByteArrayInputStream(emptyJwksJson.toByteArray())
+        val jwksResponse = ServerResponse(200, jwksInputStream, emptyMap())
+        Mockito.doReturn(jwksResponse).`when`(networkingClient).load(
+            eq(proxyAccount.getDomainUrl() + ".well-known/jwks.json"),
+            any()
+        )
         Mockito.doAnswer {
             callbackCaptor.firstValue.onSuccess(codeCredentials)
             null
         }.`when`(pkce).getToken(eq("1234"), callbackCaptor.capture())
         Assert.assertTrue(resume(intent))
-        mockAPI.takeRequest()
         ShadowLooper.idleMainLooper()
         verify(authCallback).onFailure(authExceptionCaptor.capture())
         val error = authExceptionCaptor.firstValue
@@ -1737,7 +1748,6 @@ public class WebAuthProviderTest {
             error.cause?.message,
             `is`("Could not find a public key for kid \"null\"")
         )
-        mockAPI.shutdown()
     }
 
     @Test
@@ -2740,21 +2750,13 @@ public class WebAuthProviderTest {
 
     //DPoP
 
-    public fun shouldReturnSameInstanceWhenCallingUseDPoPMultipleTimes() {
-        val provider1 = WebAuthProvider.useDPoP(mockContext)
-        val provider2 = WebAuthProvider.useDPoP(mockContext)
-
-        assertThat(provider1, `is`(provider2))
-        assertThat(WebAuthProvider.useDPoP(mockContext), `is`(provider1))
-    }
-
     @Test
     public fun shouldPassDPoPInstanceToOAuthManagerWhenDPoPIsEnabled() {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
         `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
 
-        WebAuthProvider.useDPoP(mockContext)
-            .login(account)
+        login(account)
+            .useDPoP(mockContext)
             .start(activity, callback)
 
         val managerInstance = WebAuthProvider.managerInstance as OAuthManager
@@ -2774,8 +2776,8 @@ public class WebAuthProviderTest {
     public fun shouldGenerateKeyPairWhenDPoPIsEnabledAndNoKeyPairExists() {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
 
-        WebAuthProvider.useDPoP(mockContext)
-            .login(account)
+        login(account)
+            .useDPoP(mockContext)
             .start(activity, callback)
 
         verify(mockKeyStore).generateKeyPair(any(), any())
@@ -2786,8 +2788,8 @@ public class WebAuthProviderTest {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
         `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
 
-        WebAuthProvider.useDPoP(mockContext)
-            .login(account)
+        login(account)
+            .useDPoP(mockContext)
             .start(activity, callback)
 
         verify(mockKeyStore, never()).generateKeyPair(any(), any())
@@ -2808,8 +2810,8 @@ public class WebAuthProviderTest {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
         `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
 
-        WebAuthProvider.useDPoP(mockContext)
-            .login(account)
+        login(account)
+            .useDPoP(mockContext)
             .start(activity, callback)
 
         verify(activity).startActivity(intentCaptor.capture())
@@ -2828,8 +2830,8 @@ public class WebAuthProviderTest {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
         `when`(mockKeyStore.getKeyPair()).thenReturn(null)
 
-        WebAuthProvider.useDPoP(mockContext)
-            .login(account)
+        login(account)
+            .useDPoP(mockContext)
             .start(activity, callback)
 
         verify(activity).startActivity(intentCaptor.capture())
@@ -2844,8 +2846,8 @@ public class WebAuthProviderTest {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
         `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
 
-        val builder = WebAuthProvider.useDPoP(mockContext)
-            .login(account)
+        val builder = login(account)
+            .useDPoP(mockContext)
             .withConnection("test-connection")
 
         builder.start(activity, callback)
@@ -2859,27 +2861,13 @@ public class WebAuthProviderTest {
     }
 
     @Test
-    public fun shouldNotAffectLogoutWhenDPoPIsEnabled() {
-        WebAuthProvider.useDPoP(mockContext)
-            .logout(account)
-            .start(activity, voidCallback)
-
-        verify(activity).startActivity(intentCaptor.capture())
-        val uri =
-            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
-        assertThat(uri, `is`(notNullValue()))
-        // Logout should not have DPoP parameters
-        assertThat(uri, not(UriMatchers.hasParamWithName("dpop_jkt")))
-    }
-
-    @Test
     public fun shouldHandleDPoPKeyGenerationFailureGracefully() {
         `when`(mockKeyStore.hasKeyPair()).thenReturn(false)
         doThrow(DPoPException.KEY_GENERATION_ERROR)
             .`when`(mockKeyStore).generateKeyPair(any(), any())
 
-        WebAuthProvider.useDPoP(mockContext)
-            .login(account)
+        login(account)
+            .useDPoP(mockContext)
             .start(activity, callback)
 
         // Verify that the authentication fails when DPoP key generation fails
@@ -2891,6 +2879,40 @@ public class WebAuthProviderTest {
         assertThat(capturedException.cause, Matchers.instanceOf(DPoPException::class.java))
 
         verify(activity, never()).startActivity(any())
+    }
+
+    @Test
+    public fun shouldNotApplyDPoPToSubsequentLoginCallsWhenNotExplicitlyEnabled() {
+        `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
+        `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
+
+        // First login with DPoP enabled
+        login(account)
+            .useDPoP(mockContext)
+            .withScope("openid profile")
+            .start(activity, callback)
+
+        verify(activity).startActivity(intentCaptor.capture())
+        val firstUri =
+            intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(firstUri, `is`(notNullValue()))
+        assertThat(firstUri, UriMatchers.hasParamWithName("dpop_jkt"))
+        assertThat(firstUri?.getQueryParameter("scope"), `is`("openid profile"))
+
+        // Reset the manager instance and captor for the second call
+        WebAuthProvider.resetManagerInstance()
+
+        login(account)
+            .withScope("openid email")
+            .start(activity, callback)
+
+        // Verify second startActivity call
+        verify(activity, times(2)).startActivity(intentCaptor.capture())
+        val secondUri =
+            intentCaptor.lastValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+        assertThat(secondUri, `is`(notNullValue()))
+        assertThat(secondUri?.getQueryParameter("scope"), `is`("openid email"))
+        assertThat(secondUri, not(UriMatchers.hasParamWithName("dpop_jkt")))
     }
 
     @Test
@@ -2908,8 +2930,8 @@ public class WebAuthProviderTest {
         val proxyAccount: Auth0 = Auth0.getInstance(JwtTestUtils.EXPECTED_AUDIENCE, mockAPI.domain)
         proxyAccount.networkingClient = SSLTestUtils.testClient
 
-        WebAuthProvider.useDPoP(mockContext)
-            .login(proxyAccount)
+        login(proxyAccount)
+            .useDPoP(mockContext)
             .withPKCE(pkce)
             .start(activity, authCallback)
 
@@ -2963,31 +2985,6 @@ public class WebAuthProviderTest {
         assertThat(credentials, `is`(notNullValue()))
         assertThat(credentials.type, `is`("DPoP"))
         mockAPI.shutdown()
-    }
-
-    @Test
-    public fun shouldReEnableDPoPOnOAuthManagerAfterProcessDeathRestore() {
-        `when`(mockKeyStore.hasKeyPair()).thenReturn(true)
-        `when`(mockKeyStore.getKeyPair()).thenReturn(Pair(mock(), FakeECPublicKey()))
-
-        WebAuthProvider.useDPoP(mockContext)
-            .login(account)
-            .start(activity, callback)
-
-        val bundle = Bundle()
-        WebAuthProvider.onSaveInstanceState(bundle)
-
-        // Simulate the host process being killed and recreated: the manager instance is gone,
-        // and the activity is recreated with the saved state.
-        WebAuthProvider.resetManagerInstance()
-        WebAuthProvider.onRestoreInstanceState(bundle, activity)
-
-        val restoredManager = WebAuthProvider.managerInstance as OAuthManager
-        // This asserts the save/restore wiring reconstructs a DPoP-enabled manager. The actual
-        // regression guard — that DPoP is re-enabled on the restored PKCE's API client so the
-        // token exchange carries the proof — lives in OAuthManagerStateTest.fromState tests,
-        // since OAuthManager.pkce is private and not reachable here without reflection.
-        assertThat(restoredManager.dPoP, `is`(notNullValue()))
     }
 
     //**  ** ** ** ** **  **//
@@ -3050,93 +3047,74 @@ public class WebAuthProviderTest {
         return if (hash.length == 1) "" else hash
     }
 
-    private companion object {
-        private const val KEY_STATE = "state"
-        private const val KEY_NONCE = "nonce"
-    }
-
-
     @Test
-    public fun shouldAuthorizeWithRequestUri() {
-        val requestUri = "urn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY22c"
-        val parCallback: Callback<com.auth0.android.result.AuthorizationCode, AuthenticationException> = mock()
-
-        WebAuthProvider.authorizeWithRequestUri(account)
-            .start(activity, requestUri, parCallback)
-
-        Assert.assertNotNull(WebAuthProvider.managerInstance)
-        verify(activity).startActivity(intentCaptor.capture())
-        val uri = intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
-
-        assertThat(uri, `is`(notNullValue()))
-        assertThat(uri?.getQueryParameter("client_id"), `is`(JwtTestUtils.EXPECTED_AUDIENCE))
-        assertThat(uri?.getQueryParameter("request_uri"), `is`(requestUri))
+    public fun shouldStartLoginWithEphemeralBrowsing() {
+        val options = Mockito.mock(CustomTabsOptions::class.java)
+        val ephemeralOptions = Mockito.mock(CustomTabsOptions::class.java)
+        `when`(options.hasCompatibleBrowser(activity.packageManager)).thenReturn(true)
+        `when`(options.copyWithEphemeralBrowsing()).thenReturn(ephemeralOptions)
+        login(account)
+            .withCustomTabsOptions(options)
+            .withEphemeralBrowsing()
+            .start(activity, callback)
+        verify(options).copyWithEphemeralBrowsing()
     }
 
     @Test
-    public fun shouldAuthorizeWithRequestUriAndSessionTransferToken() {
-        val requestUri = "urn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY22c"
-        val sessionTransferToken = "stt_test_token_value"
-        val parCallback: Callback<com.auth0.android.result.AuthorizationCode, AuthenticationException> = mock()
-
-        WebAuthProvider.authorizeWithRequestUri(account)
-            .withSessionTransferToken(sessionTransferToken)
-            .start(activity, requestUri, parCallback)
-
-        verify(activity).startActivity(intentCaptor.capture())
-        val uri = intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
-
-        assertThat(uri, `is`(notNullValue()))
-        assertThat(uri?.getQueryParameter("client_id"), `is`(JwtTestUtils.EXPECTED_AUDIENCE))
-        assertThat(uri?.getQueryParameter("request_uri"), `is`(requestUri))
-        assertThat(uri?.getQueryParameter("session_transfer_token"), `is`(sessionTransferToken))
+    public fun shouldNotSetEphemeralBrowsingByDefault() {
+        val options = Mockito.mock(CustomTabsOptions::class.java)
+        `when`(options.hasCompatibleBrowser(activity.packageManager)).thenReturn(true)
+        login(account)
+            .withCustomTabsOptions(options)
+            .start(activity, callback)
+        verify(options, Mockito.never()).copyWithEphemeralBrowsing()
     }
 
     @Test
-    public fun shouldFailAuthorizeWithRequestUriWhenInvalidRequestUri() {
-        val parCallback: Callback<com.auth0.android.result.AuthorizationCode, AuthenticationException> = mock()
-        val exceptionCaptor: KArgumentCaptor<AuthenticationException> = argumentCaptor()
-
-        WebAuthProvider.authorizeWithRequestUri(account)
-            .start(activity, "invalid-uri", parCallback)
-
-        verify(parCallback).onFailure(exceptionCaptor.capture())
-        assertThat(exceptionCaptor.firstValue.getCode(), `is`("a0.invalid_request_uri"))
+    public fun shouldStartLoginWithAuthTab() {
+        val options = Mockito.mock(CustomTabsOptions::class.java)
+        val authTabOptions = Mockito.mock(CustomTabsOptions::class.java)
+        `when`(options.hasCompatibleBrowser(activity.packageManager)).thenReturn(true)
+        `when`(options.copyWithAuthTab()).thenReturn(authTabOptions)
+        login(account)
+            .withCustomTabsOptions(options)
+            .withAuthTab()
+            .start(activity, callback)
+        verify(options).copyWithAuthTab()
     }
 
     @Test
-    public fun shouldFailAuthorizeWithRequestUriWhenNoBrowserAvailable() {
-        BrowserPickerTest.setupBrowserContext(activity, emptyList(), null, null)
-        val requestUri = "urn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY22c"
-        val parCallback: Callback<com.auth0.android.result.AuthorizationCode, AuthenticationException> = mock()
-        val exceptionCaptor: KArgumentCaptor<AuthenticationException> = argumentCaptor()
-
-        WebAuthProvider.authorizeWithRequestUri(account)
-            .start(activity, requestUri, parCallback)
-
-        verify(parCallback).onFailure(exceptionCaptor.capture())
-        assertThat(exceptionCaptor.firstValue.isBrowserAppNotAvailable, `is`(true))
+    public fun shouldNotSetAuthTabByDefault() {
+        val options = Mockito.mock(CustomTabsOptions::class.java)
+        `when`(options.hasCompatibleBrowser(activity.packageManager)).thenReturn(true)
+        login(account)
+            .withCustomTabsOptions(options)
+            .start(activity, callback)
+        verify(options, Mockito.never()).copyWithAuthTab()
     }
 
     @Test
-    public fun shouldResumeAuthorizeWithRequestUriWithCode() {
-        val requestUri = "urn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY22c"
-        val parCallback: Callback<com.auth0.android.result.AuthorizationCode, AuthenticationException> = mock()
-        val codeCaptor: KArgumentCaptor<com.auth0.android.result.AuthorizationCode> = argumentCaptor()
+    public fun shouldStartLogoutWithAuthTab() {
+        val options = Mockito.mock(CustomTabsOptions::class.java)
+        val authTabOptions = Mockito.mock(CustomTabsOptions::class.java)
+        `when`(options.hasCompatibleBrowser(activity.packageManager)).thenReturn(true)
+        `when`(options.copyWithAuthTab()).thenReturn(authTabOptions)
+        `when`(authTabOptions.hasCompatibleBrowser(activity.packageManager)).thenReturn(true)
+        logout(account)
+            .withCustomTabsOptions(options)
+            .withAuthTab()
+            .start(activity, voidCallback)
+        verify(options).copyWithAuthTab()
+    }
 
-        WebAuthProvider.authorizeWithRequestUri(account)
-            .start(activity, requestUri, parCallback)
-
-        verify(activity).startActivity(intentCaptor.capture())
-
-        val intent = Intent().apply {
-            data = Uri.parse("https://${JwtTestUtils.EXPECTED_BASE_DOMAIN}/android/com.auth0.test/callback?code=test-code&state=test-state")
-        }
-        Assert.assertTrue(resume(intent))
-
-        verify(parCallback).onSuccess(codeCaptor.capture())
-        assertThat(codeCaptor.firstValue.code, `is`("test-code"))
-        assertThat(codeCaptor.firstValue.state, `is`("test-state"))
+    @Test
+    public fun shouldNotSetAuthTabByDefaultOnLogout() {
+        val options = Mockito.mock(CustomTabsOptions::class.java)
+        `when`(options.hasCompatibleBrowser(activity.packageManager)).thenReturn(true)
+        logout(account)
+            .withCustomTabsOptions(options)
+            .start(activity, voidCallback)
+        verify(options, Mockito.never()).copyWithAuthTab()
     }
 
     // --- LifecycleAwareCallback tests ---
@@ -3489,6 +3467,94 @@ public class WebAuthProviderTest {
         logout(account).start(activity, voidCallback)
 
         Assert.assertFalse(WebAuthProvider.hasPendingLogoutResult())
+    }
+
+    @Test
+    public fun shouldAuthorizeWithRequestUri() {
+        val requestUri = "urn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY22c"
+        val parCallback: Callback<com.auth0.android.result.AuthorizationCode, AuthenticationException> = mock()
+
+        WebAuthProvider.authorizeWithRequestUri(account)
+            .start(activity, requestUri, parCallback)
+
+        Assert.assertNotNull(WebAuthProvider.managerInstance)
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri = intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+
+        assertThat(uri, `is`(notNullValue()))
+        assertThat(uri?.getQueryParameter("client_id"), `is`(JwtTestUtils.EXPECTED_AUDIENCE))
+        assertThat(uri?.getQueryParameter("request_uri"), `is`(requestUri))
+    }
+
+    @Test
+    public fun shouldAuthorizeWithRequestUriAndSessionTransferToken() {
+        val requestUri = "urn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY22c"
+        val sessionTransferToken = "stt_test_token_value"
+        val parCallback: Callback<com.auth0.android.result.AuthorizationCode, AuthenticationException> = mock()
+
+        WebAuthProvider.authorizeWithRequestUri(account)
+            .withSessionTransferToken(sessionTransferToken)
+            .start(activity, requestUri, parCallback)
+
+        verify(activity).startActivity(intentCaptor.capture())
+        val uri = intentCaptor.firstValue.getParcelableExtra<Uri>(AuthenticationActivity.EXTRA_AUTHORIZE_URI)
+
+        assertThat(uri, `is`(notNullValue()))
+        assertThat(uri?.getQueryParameter("client_id"), `is`(JwtTestUtils.EXPECTED_AUDIENCE))
+        assertThat(uri?.getQueryParameter("request_uri"), `is`(requestUri))
+        assertThat(uri?.getQueryParameter("session_transfer_token"), `is`(sessionTransferToken))
+    }
+
+    @Test
+    public fun shouldFailAuthorizeWithRequestUriWhenInvalidRequestUri() {
+        val parCallback: Callback<com.auth0.android.result.AuthorizationCode, AuthenticationException> = mock()
+        val exceptionCaptor: KArgumentCaptor<AuthenticationException> = argumentCaptor()
+
+        WebAuthProvider.authorizeWithRequestUri(account)
+            .start(activity, "invalid-uri", parCallback)
+
+        verify(parCallback).onFailure(exceptionCaptor.capture())
+        assertThat(exceptionCaptor.firstValue.getCode(), `is`("a0.invalid_request_uri"))
+    }
+
+    @Test
+    public fun shouldFailAuthorizeWithRequestUriWhenNoBrowserAvailable() {
+        BrowserPickerTest.setupBrowserContext(activity, emptyList(), null, null)
+        val requestUri = "urn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY22c"
+        val parCallback: Callback<com.auth0.android.result.AuthorizationCode, AuthenticationException> = mock()
+        val exceptionCaptor: KArgumentCaptor<AuthenticationException> = argumentCaptor()
+
+        WebAuthProvider.authorizeWithRequestUri(account)
+            .start(activity, requestUri, parCallback)
+
+        verify(parCallback).onFailure(exceptionCaptor.capture())
+        assertThat(exceptionCaptor.firstValue.isBrowserAppNotAvailable, `is`(true))
+    }
+
+    @Test
+    public fun shouldResumeAuthorizeWithRequestUriWithCode() {
+        val requestUri = "urn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY22c"
+        val parCallback: Callback<com.auth0.android.result.AuthorizationCode, AuthenticationException> = mock()
+        val codeCaptor: KArgumentCaptor<com.auth0.android.result.AuthorizationCode> = argumentCaptor()
+
+        WebAuthProvider.authorizeWithRequestUri(account)
+            .start(activity, requestUri, parCallback)
+
+        verify(activity).startActivity(intentCaptor.capture())
+
+        val intent = Intent().apply {
+            data = Uri.parse("https://${JwtTestUtils.EXPECTED_BASE_DOMAIN}/android/com.auth0.test/callback?code=test-code&state=test-state")
+        }
+        Assert.assertTrue(resume(intent))
+
+        verify(parCallback).onSuccess(codeCaptor.capture())
+        assertThat(codeCaptor.firstValue.code, `is`("test-code"))
+        assertThat(codeCaptor.firstValue.state, `is`("test-state"))
+    }
+
+    private companion object {
+        private const val KEY_STATE = "state"
+        private const val KEY_NONCE = "nonce"
     }
 }
 
