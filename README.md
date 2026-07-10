@@ -26,9 +26,9 @@
 
 ### Requirements
 
-Android API version 31 or later and Java 17+.
+Android API version 26 or later and Java 17+.
 
-> :warning: Applications targeting Android SDK version 30 (`targetSdkVersion = 30`) and below should use version 2.9.0.
+> :warning: Applications with `minSdkVersion` below 26 should continue using the v3 line of the SDK.
 
 Here’s what you need in `build.gradle` to target Java 17 bytecode for Android and Kotlin plugins respectively.
 
@@ -120,7 +120,7 @@ android {
     compileSdkVersion 36
     defaultConfig {
         applicationId "com.auth0.samples"
-        minSdkVersion 24
+        minSdkVersion 26
         targetSdkVersion 36
         //...
 

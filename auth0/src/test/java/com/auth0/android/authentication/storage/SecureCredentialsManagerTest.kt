@@ -10,6 +10,7 @@ import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
 import com.auth0.android.authentication.storage.BaseCredentialsManager.Companion.DEFAULT_MIN_TTL
 import com.auth0.android.callback.Callback
+import com.auth0.android.dpop.DPoPException
 import com.auth0.android.dpop.DPoPKeyStore
 import com.auth0.android.dpop.DPoPUtil
 import com.auth0.android.dpop.FakeECPrivateKey
@@ -115,6 +116,15 @@ public class SecureCredentialsManagerTest {
     private val fakePrivateKey = FakeECPrivateKey()
 
     private val serialExecutor = Executor { runnable -> runnable.run() }
+
+    // Executors spun up by the concurrency tests, shut down in tearDown() so no
+    // non-daemon threads leak and cause the suite to hang or flake afterwards.
+    private val managedExecutors = mutableListOf<ExecutorService>()
+
+    private fun <T : ExecutorService> track(executor: T): T {
+        managedExecutors.add(executor)
+        return executor
+    }
 
     private val credentialsCaptor: KArgumentCaptor<Credentials> = argumentCaptor()
 
@@ -2122,8 +2132,8 @@ public class SecureCredentialsManagerTest {
         Mockito.`when`(client.renewAuth(refreshToken = "refreshToken")).thenReturn(request)
         Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
 
-        val sharedExecutor = Executors.newSingleThreadExecutor()
-        val callerPool: ExecutorService = Executors.newFixedThreadPool(3)
+        val sharedExecutor = track(Executors.newSingleThreadExecutor())
+        val callerPool: ExecutorService = track(Executors.newFixedThreadPool(3))
         val latch = CountDownLatch(3)
         val context: Context =
             Robolectric.buildActivity(Activity::class.java).create().start().resume().get()
@@ -2191,8 +2201,8 @@ public class SecureCredentialsManagerTest {
         Mockito.`when`(client.renewAuth(refreshToken = "refreshToken")).thenReturn(request)
         Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
 
-        val singleThreadExecutor = Executors.newSingleThreadExecutor()
-        val callerPool = Executors.newFixedThreadPool(3)
+        val singleThreadExecutor = track(Executors.newSingleThreadExecutor())
+        val callerPool = track(Executors.newFixedThreadPool(3))
         val latch = CountDownLatch(3)
         val context: Context =
             Robolectric.buildActivity(Activity::class.java).create().start().resume().get()
@@ -2247,8 +2257,8 @@ public class SecureCredentialsManagerTest {
             "scope"
         )
 
-        val singleThreadExecutor = Executors.newSingleThreadExecutor()
-        val callerPool = Executors.newFixedThreadPool(3)
+        val singleThreadExecutor = track(Executors.newSingleThreadExecutor())
+        val callerPool = track(Executors.newFixedThreadPool(3))
         val latch = CountDownLatch(3)
         val context: Context =
             Robolectric.buildActivity(Activity::class.java).create().start().resume().get()
@@ -2309,8 +2319,8 @@ public class SecureCredentialsManagerTest {
         Mockito.`when`(client.renewAuth(refreshToken = "refreshToken")).thenReturn(request)
         Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
 
-        val singleThreadExecutor = Executors.newSingleThreadExecutor()
-        val callerPool = Executors.newFixedThreadPool(2)
+        val singleThreadExecutor = track(Executors.newSingleThreadExecutor())
+        val callerPool = track(Executors.newFixedThreadPool(2))
         val latch = CountDownLatch(2)
         val context: Context =
             Robolectric.buildActivity(Activity::class.java).create().start().resume().get()
@@ -2380,6 +2390,22 @@ public class SecureCredentialsManagerTest {
         manager.clearAll()
         verify(storage).removeAll()
         verify(crypto).deleteAllKeys()
+        verify(mockDPoPKeyStore).deleteKeyPair()
+        Assert.assertFalse(manager.isBiometricSessionValid())
+    }
+
+    @Test
+    public fun shouldClearStorageAndKeysEvenWhenDPoPKeyDeletionFails() {
+        whenever(mockDPoPKeyStore.deleteKeyPair())
+            .thenThrow(DPoPException.KEY_STORE_ERROR)
+
+        // clearAll swallows DPoP deletion errors, so it must not throw and the
+        // storage / crypto / biometric cleanup must still complete.
+        manager.clearAll()
+
+        verify(storage).removeAll()
+        verify(crypto).deleteAllKeys()
+        verify(mockDPoPKeyStore).deleteKeyPair()
         Assert.assertFalse(manager.isBiometricSessionValid())
     }
 
@@ -4455,7 +4481,11 @@ public class SecureCredentialsManagerTest {
         val renewedCredentials =
             Credentials("newId", "newAccess", "newType", null, newDate, "newScope")
         Mockito.`when`(request.execute()).thenReturn(renewedCredentials)
+        // First encryption (base credentials save) succeeds; the second
+        // (renewed API credentials save) throws, so the failure under test is
+        // the API-credential persistence path, not the preceding base save.
         Mockito.`when`(crypto.encrypt(any()))
+            .thenAnswer { it.arguments[0] as ByteArray }
             .thenThrow(CryptoException("CryptoException is thrown"))
 
         manager.continueGetApiCredentials(
@@ -4475,6 +4505,8 @@ public class SecureCredentialsManagerTest {
     @After
     public fun tearDown() {
         DPoPUtil.keyStore = DPoPKeyStore()
+        managedExecutors.forEach { it.shutdownNow() }
+        managedExecutors.clear()
     }
 
     private fun prepareJwtDecoderMock(expiresAt: Date?) {

@@ -3,10 +3,12 @@ package com.auth0.android.request.internal
 import com.auth0.android.result.CredentialsMock
 import com.auth0.android.result.SSOCredentials
 import com.google.gson.Gson
+import com.google.gson.JsonParseException
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
 import org.hamcrest.Matchers
 import org.hamcrest.core.Is
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
@@ -61,6 +63,50 @@ public class SSOCredentialsDeserializerTest {
         )
         MatcherAssert.assertThat(credentials.idToken, Is.`is`("id-token-value"))
         MatcherAssert.assertThat(credentials.refreshToken, Is.`is`(CoreMatchers.nullValue()))
+    }
+
+    @Test
+    @Throws(Exception::class)
+    public fun shouldThrowWhenJsonIsNotObject() {
+        val exception = Assert.assertThrows(JsonParseException::class.java) {
+            gson.getAdapter(SSOCredentials::class.java).fromJson("[]")
+        }
+        MatcherAssert.assertThat(
+            exception.message,
+            Is.`is`("sso credentials json is not a valid json object")
+        )
+    }
+
+    @Test
+    @Throws(Exception::class)
+    public fun shouldThrowWhenJsonObjectIsEmpty() {
+        val exception = Assert.assertThrows(JsonParseException::class.java) {
+            gson.getAdapter(SSOCredentials::class.java).fromJson("{}")
+        }
+        MatcherAssert.assertThat(
+            exception.message,
+            Is.`is`("sso credentials json is not a valid json object")
+        )
+    }
+
+    @Test
+    @Throws(Exception::class)
+    public fun shouldThrowWhenExpiresInIsMissing() {
+        val json = """
+            {
+                "access_token": "session-transfer-token",
+                "id_token": "id-token-value",
+                "issued_token_type": "urn:auth0:params:oauth:token-type:session-transfer-token",
+                "token_type": "N_A"
+            }
+            """.trimIndent()
+        val exception = Assert.assertThrows(JsonParseException::class.java) {
+            gson.getAdapter(SSOCredentials::class.java).fromJson(json)
+        }
+        MatcherAssert.assertThat(
+            exception.message,
+            Is.`is`("Missing the required property expires_in")
+        )
     }
 
     private fun generateSSOCredentialsJSON(): String {

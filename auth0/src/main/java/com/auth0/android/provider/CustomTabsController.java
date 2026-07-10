@@ -208,7 +208,7 @@ class CustomTabsController extends CustomTabsServiceConnection {
             builder.setSession(authSession);
         }
         AuthTabIntent authTabIntent = builder.build();
-        authTabIntent.launch(authTabLauncher, uri, scheme);
+        threadSwitcher.mainThread(() -> authTabIntent.launch(authTabLauncher, uri, scheme));
     }
 
     private void launchAsDefault(Context context, Uri uri) {

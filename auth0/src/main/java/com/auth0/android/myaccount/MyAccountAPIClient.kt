@@ -268,6 +268,9 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
     /**
      * Retrieves a detailed list of authentication methods belonging to the user.
      *
+     * ## Scopes Required
+     *
+     * `read:me:authentication_methods`
      *
      * ## Usage
      *
