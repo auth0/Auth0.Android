@@ -6,7 +6,6 @@ on:
   pull_request:
     branches:
       - main
-      - v4_development
   push:
     branches:
       - main
