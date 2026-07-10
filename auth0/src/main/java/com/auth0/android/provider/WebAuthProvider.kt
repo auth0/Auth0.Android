@@ -451,7 +451,10 @@ public object WebAuthProvider {
             startInternal(context, effectiveCallback)
         }
 
-        private fun startInternal(context: Context, callback: Callback<Void?, AuthenticationException>) {
+        private fun startInternal(
+            context: Context,
+            callback: Callback<Void?, AuthenticationException>
+        ) {
             resetManagerInstance()
             val effectiveCtOptions = if (authTab) ctOptions.copyWithAuthTab() else ctOptions
             if (!effectiveCtOptions.hasCompatibleBrowser(context.packageManager)) {
@@ -750,13 +753,9 @@ public object WebAuthProvider {
          * Requires Chrome 136+ or a compatible browser. On unsupported browsers,
          * a warning is logged and a regular Custom Tab is used instead.
          *
-         * **Warning:** Ephemeral browsing support in Auth0.Android is still experimental
-         * and can change in the future. Please test it thoroughly in all the targeted browsers
-         * and OS variants and let us know your feedback.
          *
          * @return the current builder instance
          */
-        @ExperimentalAuth0Api
         public fun withEphemeralBrowsing(): Builder {
             ephemeralBrowsing = true
             return this
@@ -767,8 +766,6 @@ public object WebAuthProvider {
          * Auth Tab provides a dedicated, security-focused UI for OAuth flows with no address bar
          * or share button. Falls back to a regular Custom Tab on browsers that do not support it.
          *
-         * **Warning:** Auth Tab support in Auth0.Android is still experimental and can change in
-         * the future.
          *
          * Note: [withAuthTab] and [withTrustedWebActivity] are mutually exclusive. If both are set,
          * TWA takes precedence and Auth Tab will not be used. They rely on different underlying
@@ -776,7 +773,6 @@ public object WebAuthProvider {
          *
          * @return the current builder instance
          */
-        @ExperimentalAuth0Api
         public fun withAuthTab(): Builder {
             authTab = true
             return this
@@ -837,9 +833,13 @@ public object WebAuthProvider {
                     onDetached = { success: Credentials?, error: AuthenticationException? ->
                         if (callbacks.isNotEmpty()) {
                             if (success != null) {
-                                for (cb in callbacks) { cb.onSuccess(success) }
+                                for (cb in callbacks) {
+                                    cb.onSuccess(success)
+                                }
                             } else if (error != null) {
-                                for (cb in callbacks) { cb.onFailure(error) }
+                                for (cb in callbacks) {
+                                    cb.onFailure(error)
+                                }
                             }
                         } else {
                             if (success != null) {
@@ -886,7 +886,8 @@ public object WebAuthProvider {
             }
 
             var effectiveCtOptions = ctOptions
-            if (ephemeralBrowsing) effectiveCtOptions = effectiveCtOptions.copyWithEphemeralBrowsing()
+            if (ephemeralBrowsing) effectiveCtOptions =
+                effectiveCtOptions.copyWithEphemeralBrowsing()
             if (authTab) effectiveCtOptions = effectiveCtOptions.copyWithAuthTab()
 
             val manager = OAuthManager(

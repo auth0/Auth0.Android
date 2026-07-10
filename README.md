@@ -6,8 +6,7 @@
 ![Auth0.Android](https://cdn.auth0.com/website/sdks/banners/auth0-android-banner.png)
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.auth0.android/auth0.svg?style=flat-square)](https://search.maven.org/artifact/com.auth0.android/auth0)
-[![Coverage Status](https://img.shields.io/codecov/c/github/auth0/Auth0.Android/master.svg?style=flat-square)](https://codecov.io/github/auth0/Auth0.Android)
-[![CircleCI](https://img.shields.io/circleci/project/github/auth0/Auth0.Android.svg?style=flat-square)](https://circleci.com/gh/auth0/Auth0.Android/tree/master)
+[![Coverage Status](https://img.shields.io/codecov/c/github/auth0/Auth0.Android/master.svg?style=flat-square)](https://app.codecov.io/github/auth0/Auth0.Android)
 [![License](https://img.shields.io/:license-mit-blue.svg?style=flat-square)](https://doge.mit-license.org/)
 [![javadoc](https://javadoc.io/badge2/com.auth0.android/auth0/javadoc.svg)](https://javadoc.io/doc/com.auth0.android/auth0)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/auth0/Auth0.Android)
@@ -15,7 +14,7 @@
 📚 [Documentation](#documentation) • 🚀 [Getting Started](#getting-started) • 💬 [Feedback](#feedback)
 
 ## Documentation
-- [Quickstart](https://auth0.com/docs/quickstart/native/android/interactive)
+- [Quickstart](https://auth0.com/docs/quickstart/native/android)
 - [Sample App](https://github.com/auth0-samples/auth0-android-sample/tree/master/00-Login-Kt)
 - [FAQs](https://github.com/auth0/auth0.android/blob/main/FAQ.md)
 - [Examples](https://github.com/auth0/auth0.android/blob/main/EXAMPLES.md)
