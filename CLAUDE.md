@@ -52,7 +52,7 @@ Guidance for AI coding assistants working on the Auth0.Android SDK.
 # Clean build artifacts
 ./gradlew clean
 
-# Check Kotlin API surface for breaking changes (explicit API mode strict)
+# Check Kotlin API surface for explicit API mode (strict) violations
 ./gradlew auth0:compileReleaseKotlin
 ```
 
@@ -71,7 +71,7 @@ Guidance for AI coding assistants working on the Auth0.Android SDK.
 - Espresso Intents (for browser interaction tests)
 
 **Test Locations:**
-```
+```text
 auth0/src/test/
 ├── java/com/auth0/android/
 │   ├── authentication/          # Auth API client tests
@@ -100,7 +100,7 @@ auth0/src/test/
 
 ## Project Structure
 
-```
+```text
 Auth0.Android/
 ├── auth0/                                      # Main SDK library module
 │   ├── src/main/java/com/auth0/android/
@@ -478,7 +478,7 @@ SecureCredentialsManager(context, account, storage)
 **DPoP (Demonstration of Proof-of-Possession):**
 - Optional but secure-by-default when enabled
 - SDK manages key pair lifecycle via `DPoPKeyStore` (Android Keystore-backed)
-- Nonce retry logic prevents replay attacks
+- Nonce retry logic reduces replay risk; replay protection also depends on server-enforced freshness, request binding, key binding, and uniqueness
 - Validate DPoP proofs match sender's public key
 
 **Credential Storage:**
@@ -657,7 +657,7 @@ SecureCredentialsManager(context, account, storage)
 - **[Android Biometric Library](https://developer.android.com/jetpack/androidx/releases/biometric)** — biometric auth docs
 - **[OkHttp Documentation](https://square.github.io/okhttp/)** — HTTP client reference
 - **[OAuth 2.0 PKCE](https://tools.ietf.org/html/rfc7636)** — PKCE spec
-- **[DPoP (Draft)](https://tools.ietf.org/html/draft-ietf-oauth-dpop)** — DPoP spec
+- **[DPoP (RFC 9449)](https://tools.ietf.org/html/rfc9449)** — DPoP spec
 - **[Android Keystore](https://developer.android.com/training/articles/keystore)** — secure key storage
 
 ---
