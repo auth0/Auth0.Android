@@ -1,5 +1,11 @@
 # Change Log
 
+## [4.0.0](https://github.com/auth0/Auth0.Android/tree/4.0.0) (2026-07-13)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.21.0...4.0.0)
+
+**Fixed**
+- refactor: Address post-V4-merge review comments and add missing tests [\#1017](https://github.com/auth0/Auth0.Android/pull/1017) ([pmathew92](https://github.com/pmathew92))
+
 ## [4.0.0-beta.1](https://github.com/auth0/Auth0.Android/tree/4.0.0-beta.1) (2026-05-05)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/4.0.0-beta.0...4.0.0-beta.1)
 
