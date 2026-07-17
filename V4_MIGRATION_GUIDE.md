@@ -2,7 +2,7 @@
 
 ## Skill for Coding Agents
 
-If you use coding agents such as Claude Code or Cursor, we highly recommend adding the [Auth0 skill](https://github.com/auth0/agent-skills/blob/main/plugins/auth0/skills/auth0/SKILL.md) to your repository: `npx skills add auth0/agent-skills --skill auth0`
+If you use coding agents such as Claude Code or Cursor, we highly recommend adding the [Auth0 skill](https://github.com/auth0/agent-skills/blob/main/plugins/auth0/skills/auth0/SKILL.md) to your repository: `npx skills add auth0/agent-skills --skill auth0`. Using this skill, your agent will automatically upgrade your project from v3 to v4.
 
 > **Note:** This guide is actively maintained during the v4 development phase. As new changes are merged, this document will be updated to reflect the latest breaking changes and migration steps.
 
