@@ -175,6 +175,9 @@ class CustomTabsController extends CustomTabsServiceConnection {
         }
         String redirectUri = uri.getQueryParameter("redirect_uri");
         if (redirectUri == null) {
+            redirectUri = uri.getQueryParameter("returnTo");
+        }
+        if (redirectUri == null) {
             Log.e(TAG, "Could not determine redirect URI from authorize URL. This is likely a configuration error.");
             if (failureCallback != null) {
                 AuthenticationException e = new AuthenticationException(
