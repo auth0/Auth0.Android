@@ -386,6 +386,33 @@ public class CustomTabsControllerTest {
     }
 
     @Test
+    public void shouldLaunchAsAuthTabUsingReturnToWhenRedirectUriIsAbsent() throws Exception {
+        customTabsClientMock = Mockito.mockStatic(CustomTabsClient.class);
+        customTabsClientMock.when(() ->
+                CustomTabsClient.isAuthTabSupported(any(), eq(DEFAULT_BROWSER_PACKAGE))
+        ).thenReturn(true);
+
+        @SuppressWarnings("unchecked")
+        ActivityResultLauncher<Intent> mockAuthTabLauncher = mock(ActivityResultLauncher.class);
+
+        BrowserPicker browserPicker = mock(BrowserPicker.class);
+        when(browserPicker.getBestBrowserPackage(context.getPackageManager())).thenReturn(DEFAULT_BROWSER_PACKAGE);
+        CustomTabsOptions ctOptions = CustomTabsOptions.newBuilder()
+                .withBrowserPicker(browserPicker)
+                .withAuthTab()
+                .build();
+
+        CustomTabsController authTabController =
+                new CustomTabsController(context, ctOptions, twaLauncher, mockAuthTabLauncher);
+
+        Uri logoutUri = Uri.parse("https://example.auth0.com/v2/logout?returnTo=myapp%3A%2F%2Fcallback");
+        authTabController.launchUri(logoutUri, false, mockThreadSwitcher, null);
+
+        verify(mockAuthTabLauncher, timeout(MAX_TEST_WAIT_TIME_MS)).launch(any(Intent.class));
+        verify(context, never()).startActivity(any(Intent.class));
+    }
+
+    @Test
     public void shouldFallbackToCustomTabWhenAuthTabNotSupportedByBrowser() {
         customTabsClientMock = Mockito.mockStatic(CustomTabsClient.class);
         customTabsClientMock.when(() ->
