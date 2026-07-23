@@ -11,7 +11,7 @@ import com.auth0.android.result.Credentials
 import com.auth0.android.result.SSOCredentials
 import com.auth0.android.result.UserProfile
 import com.auth0.android.util.Clock
-import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Base class meant to abstract common logic across Credentials Manager implementations.
@@ -428,18 +428,42 @@ public abstract class BaseCredentialsManager internal constructor(
 
     internal inline fun <T> runCatchingOnExecutor(
         callback: Callback<T, CredentialsManagerException>,
-        block: () -> Unit
+        block: (Callback<T, CredentialsManagerException>) -> Unit
     ) {
+        val singleShotCallback = SingleShotCallback(callback)
         try {
-            block()
+            block(singleShotCallback)
         } catch (t: Throwable) {
             if (t is VirtualMachineError || t is ThreadDeath || t is LinkageError) {
                 throw t
             }
             Log.e("BaseCredentialsManager", "Unexpected error in executor block", t)
-            callback.onFailure(
+            singleShotCallback.onFailure(
                 CredentialsManagerException(CredentialsManagerException.Code.UNKNOWN_ERROR, t)
             )
+        }
+    }
+
+    /**
+     * Delegates to [delegate] at most once. Any [onSuccess]/[onFailure] call after the first is
+     * silently dropped, upholding the fire-once contract of [Callback] even when the executor block
+     * both invokes the callback and later throws.
+     */
+    internal class SingleShotCallback<T>(
+        private val delegate: Callback<T, CredentialsManagerException>
+    ) : Callback<T, CredentialsManagerException> {
+        private val handled = AtomicBoolean(false)
+
+        override fun onSuccess(result: T) {
+            if (handled.compareAndSet(false, true)) {
+                delegate.onSuccess(result)
+            }
+        }
+
+        override fun onFailure(error: CredentialsManagerException) {
+            if (handled.compareAndSet(false, true)) {
+                delegate.onFailure(error)
+            }
         }
     }
 }

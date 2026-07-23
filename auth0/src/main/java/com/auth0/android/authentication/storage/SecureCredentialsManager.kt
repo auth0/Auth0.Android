@@ -231,7 +231,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         callback: Callback<SSOCredentials, CredentialsManagerException>
     ) {
         serialExecutor.execute {
-            runCatchingOnExecutor(callback) {
+            runCatchingOnExecutor(callback) { callback ->
                 val existingCredentials: Credentials = try {
                     getExistingCredentials()
                 } catch (exception: CredentialsManagerException) {
@@ -330,11 +330,11 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 parameters,
                 object : Callback<SSOCredentials, CredentialsManagerException> {
                     override fun onSuccess(result: SSOCredentials) {
-                        continuation.resume(result)
+                        if (continuation.isActive) continuation.resume(result)
                     }
 
                     override fun onFailure(error: CredentialsManagerException) {
-                        continuation.resumeWithException(error)
+                        if (continuation.isActive) continuation.resumeWithException(error)
                     }
                 })
         }
@@ -459,11 +459,11 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 forceRefresh,
                 object : Callback<Credentials, CredentialsManagerException> {
                     override fun onSuccess(result: Credentials) {
-                        continuation.resume(result)
+                        if (continuation.isActive) continuation.resume(result)
                     }
 
                     override fun onFailure(error: CredentialsManagerException) {
-                        continuation.resumeWithException(error)
+                        if (continuation.isActive) continuation.resumeWithException(error)
                     }
                 })
         }
@@ -500,11 +500,11 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
                 headers,
                 object : Callback<APICredentials, CredentialsManagerException> {
                     override fun onSuccess(result: APICredentials) {
-                        continuation.resume(result)
+                        if (continuation.isActive) continuation.resume(result)
                     }
 
                     override fun onFailure(error: CredentialsManagerException) {
-                        continuation.resumeWithException(error)
+                        if (continuation.isActive) continuation.resumeWithException(error)
                     }
                 })
         }
@@ -793,7 +793,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
         serialExecutor.execute {
-            runCatchingOnExecutor(callback) {
+            runCatchingOnExecutor(callback) { callback ->
                 val encryptedEncoded = storage.retrieveString(KEY_CREDENTIALS)
                 if (encryptedEncoded.isNullOrBlank()) {
                     callback.onFailure(CredentialsManagerException.NO_CREDENTIALS)
@@ -960,7 +960,7 @@ public class SecureCredentialsManager @VisibleForTesting(otherwise = VisibleForT
         callback: Callback<APICredentials, CredentialsManagerException>
     ) {
         serialExecutor.execute {
-            runCatchingOnExecutor(callback) {
+            runCatchingOnExecutor(callback) { callback ->
                 // IPSIE session_expiry: enforce the upstream-IdP session ceiling before serving
                 // cached API credentials or exchanging the refresh token. The ceiling is read from
                 // the value persisted at login (KEY_SESSION_EXPIRY) so it holds even though the

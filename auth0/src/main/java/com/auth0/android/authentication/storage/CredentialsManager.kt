@@ -138,7 +138,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         callback: Callback<SSOCredentials, CredentialsManagerException>
     ) {
         serialExecutor.execute {
-            runCatchingOnExecutor(callback) {
+            runCatchingOnExecutor(callback) { callback ->
                 // IPSIE session_expiry: enforce the upstream-IdP session ceiling before exchanging the
                 // refresh token, so the SSO exchange is never used to outlive the session.
                 if (isSessionExpired(storage.retrieveString(KEY_ID_TOKEN))) {
@@ -220,11 +220,11 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                 parameters,
                 object : Callback<SSOCredentials, CredentialsManagerException> {
                     override fun onSuccess(result: SSOCredentials) {
-                        continuation.resume(result)
+                        if (continuation.isActive) continuation.resume(result)
                     }
 
                     override fun onFailure(error: CredentialsManagerException) {
-                        continuation.resumeWithException(error)
+                        if (continuation.isActive) continuation.resumeWithException(error)
                     }
                 })
         }
@@ -329,11 +329,11 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                 forceRefresh,
                 object : Callback<Credentials, CredentialsManagerException> {
                     override fun onSuccess(result: Credentials) {
-                        continuation.resume(result)
+                        if (continuation.isActive) continuation.resume(result)
                     }
 
                     override fun onFailure(error: CredentialsManagerException) {
-                        continuation.resumeWithException(error)
+                        if (continuation.isActive) continuation.resumeWithException(error)
                     }
                 })
         }
@@ -366,11 +366,11 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
                 audience, scope, minTtl, parameters, headers,
                 object : Callback<APICredentials, CredentialsManagerException> {
                     override fun onSuccess(result: APICredentials) {
-                        continuation.resume(result)
+                        if (continuation.isActive) continuation.resume(result)
                     }
 
                     override fun onFailure(error: CredentialsManagerException) {
-                        continuation.resumeWithException(error)
+                        if (continuation.isActive) continuation.resumeWithException(error)
                     }
                 }
             )
@@ -466,7 +466,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
         callback: Callback<Credentials, CredentialsManagerException>
     ) {
         serialExecutor.execute {
-            runCatchingOnExecutor(callback) {
+            runCatchingOnExecutor(callback) { callback ->
                 val accessToken = storage.retrieveString(KEY_ACCESS_TOKEN)
                 val refreshToken = storage.retrieveString(KEY_REFRESH_TOKEN)
                 val idToken = storage.retrieveString(KEY_ID_TOKEN)
@@ -607,7 +607,7 @@ public class CredentialsManager @VisibleForTesting(otherwise = VisibleForTesting
     ) {
 
         serialExecutor.execute {
-            runCatchingOnExecutor(callback) {
+            runCatchingOnExecutor(callback) { callback ->
                 // IPSIE session_expiry: enforce the upstream-IdP session ceiling before serving cached
                 // API credentials or exchanging the refresh token, so the session is never extended past it.
                 if (isSessionExpired(storage.retrieveString(KEY_ID_TOKEN))) {

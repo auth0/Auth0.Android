@@ -42,6 +42,7 @@ import org.mockito.Mockito
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.KArgumentCaptor
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -2643,6 +2644,69 @@ public class CredentialsManagerTest {
         MatcherAssert.assertThat(exception, Is.`is`(CredentialsManagerException.UNKNOWN_ERROR))
         MatcherAssert.assertThat(exception.cause, Is.`is`(error))
     }
+
+    //  a Throwable escaping the executor block AFTER onSuccess already fired must not
+    // trigger a second terminal callback. runCatchingOnExecutor wraps the callback in a single-shot
+    // guard, so onFailure is dropped. Without it, the coroutine bridge would resume twice
+    // ("Already resumed") and crash the process.
+    @Test
+    public fun shouldNotInvokeCallbackTwiceWhenConsumerThrowsAfterSuccessOnGetCredentials() {
+        Mockito.`when`(storage.retrieveString("com.auth0.id_token")).thenReturn("idToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.access_token")).thenReturn("accessToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.refresh_token")).thenReturn("refreshToken")
+        Mockito.`when`(storage.retrieveString("com.auth0.token_type")).thenReturn("type")
+        val expirationTime = CredentialsMock.ONE_HOUR_AHEAD_MS
+        Mockito.`when`(storage.retrieveLong("com.auth0.expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveLong("com.auth0.cache_expires_at")).thenReturn(expirationTime)
+        Mockito.`when`(storage.retrieveString("com.auth0.scope")).thenReturn("scope")
+
+        var successCount = 0
+        var failureCount = 0
+        manager.getCredentials(object : Callback<Credentials, CredentialsManagerException> {
+            override fun onSuccess(result: Credentials) {
+                successCount++
+                // Simulate a consumer/bridge that throws right after receiving the result.
+                throw IllegalStateException("Simulated post-resume failure in executor block")
+            }
+
+            override fun onFailure(error: CredentialsManagerException) {
+                failureCount++
+            }
+        })
+
+        MatcherAssert.assertThat(successCount, Is.`is`(1))
+        MatcherAssert.assertThat(failureCount, Is.`is`(0))
+    }
+
+    // Layer B (coroutine bridge) regression: if the underlying callback getCredentials fires a
+    // terminal callback twice (onSuccess then onFailure), the suspendCancellableCoroutine bridge
+    // must resume the continuation only once. Without the `if (continuation.isActive)` guard the
+    // second resume throws IllegalStateException("Already resumed") on the executor thread and
+    // crashes the process. Here the first resume wins, so awaitCredentials returns normally.
+    @Test
+    @ExperimentalCoroutinesApi
+    public fun shouldNotResumeContinuationTwiceWhenCallbackFiresTwiceOnAwaitCredentials(): Unit =
+        runTest {
+            val credentials = CredentialsMock.create(
+                "idToken", "accessToken", "type", "refreshToken",
+                Date(CredentialsMock.ONE_HOUR_AHEAD_MS), "scope"
+            )
+            Mockito.doAnswer { invocation ->
+                @Suppress("UNCHECKED_CAST")
+                val cb =
+                    invocation.arguments.last() as Callback<Credentials, CredentialsManagerException>
+                // Simulate a double terminal callback reaching the bridge.
+                cb.onSuccess(credentials)
+                cb.onFailure(CredentialsManagerException(CredentialsManagerException.Code.UNKNOWN_ERROR))
+                null
+            }.`when`(manager).getCredentials(
+                anyOrNull(), any(), any(), any(), any(), any()
+            )
+
+            val result = manager.awaitCredentials()
+            MatcherAssert.assertThat(result, Is.`is`(Matchers.notNullValue()))
+            MatcherAssert.assertThat(result.accessToken, Is.`is`("accessToken"))
+        }
 
     @After
     public fun tearDown() {
