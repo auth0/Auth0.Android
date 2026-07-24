@@ -1,5 +1,12 @@
 # Change Log
 
+## [4.0.1](https://github.com/auth0/Auth0.Android/tree/4.0.1) (2026-07-24)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/4.0.0...4.0.1)
+
+**Fixed**
+- fix: guard against fatal double-resume crash in CredentialsManager [\#1031](https://github.com/auth0/Auth0.Android/pull/1031) ([pmathew92](https://github.com/pmathew92))
+- fix(provider): fall back to returnTo for Auth Tab logout scheme [\#1026](https://github.com/auth0/Auth0.Android/pull/1026) ([utkrishtsahu](https://github.com/utkrishtsahu))
+
 ## [4.0.0](https://github.com/auth0/Auth0.Android/tree/4.0.0) (2026-07-13)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.21.0...4.0.0)
 
