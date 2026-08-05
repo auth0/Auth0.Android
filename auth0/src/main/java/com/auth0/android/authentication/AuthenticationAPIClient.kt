@@ -606,7 +606,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * Example usage:
      *
      * ```
-     * client.resetPassword("{email}", "{database connection name}")
+     * client.resetPassword("{email}", "{database connection name}", "{organization}")
      *     .start(object: Callback<Void?, AuthenticationException> {
      *         override fun onSuccess(result: Void?) { }
      *         override fun onFailure(error: AuthenticationException) { }
@@ -615,21 +615,27 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      *
      * @param email      of the user to request the password reset. An email will be sent with the reset instructions.
      * @param connection of the database to request the reset password on
+     * @param organization id of the organization the user belongs to. When set, Auth0 associates the password
+     * reset request with this organization, making the organization details available in the reset redirect URL
+     * and in customized email templates. Must be the organization id, not the organization name.
      * @return a request to configure and start
      */
+    @JvmOverloads
     public fun resetPassword(
         email: String,
-        connection: String
+        connection: String,
+        organization: String? = null
     ): Request<Void?, AuthenticationException> {
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(DB_CONNECTIONS_PATH)
             .addPathSegment(CHANGE_PASSWORD_PATH)
             .build()
-        val parameters = ParameterBuilder.newBuilder()
-            .set(EMAIL_KEY, email)
-            .setClientId(clientId)
-            .setConnection(connection)
-            .asDictionary()
+        val parameters = ParameterBuilder.newBuilder().apply {
+            set(EMAIL_KEY, email)
+            setClientId(clientId)
+            setConnection(connection)
+            organization?.let { set(ORGANIZATION_KEY, it) }
+        }.asDictionary()
         return factory.post(url.toString())
             .addParameters(parameters)
     }
