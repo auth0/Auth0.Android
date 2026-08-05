@@ -31,6 +31,7 @@
       - [Step 1: Issue an OTP challenge](#step-1-issue-an-otp-challenge)
       - [Step 2: Verify the code and log in](#step-2-verify-the-code-and-log-in)
     - [Sign Up with a database connection](#sign-up-with-a-database-connection)
+    - [Reset a password](#reset-a-password)
     - [Get user information](#get-user-information)
     - [Custom Token Exchange](#custom-token-exchange)
       - [Custom Token Exchange with Actor Token (Delegation/Impersonation)](#custom-token-exchange-with-actor-token-delegationimpersonation)
@@ -1785,6 +1786,69 @@ authentication
 </details>
 
 > The default scope used is `openid profile email`. Regardless of the scopes set to the request, the `openid` scope is always enforced.
+
+### Reset a password
+
+Send a password reset email to a database user.
+
+```kotlin
+authentication
+    .resetPassword("info@auth0.com", "my-database-connection")
+    .start(object: Callback<Void?, AuthenticationException> {
+        override fun onFailure(exception: AuthenticationException) { }
+
+        override fun onSuccess(result: Void?) { }
+    })
+```
+
+If the user belongs to an [organization](#organizations), pass its identifier to associate the reset request with that organization. Auth0 then includes the `organization_id` and `organization_name` values in the password reset redirect URL, and makes them available as variables in customized email templates.
+
+```kotlin
+authentication
+    .resetPassword("info@auth0.com", "my-database-connection", "org_abc123")
+    .start(object: Callback<Void?, AuthenticationException> {
+        override fun onFailure(exception: AuthenticationException) { }
+
+        override fun onSuccess(result: Void?) { }
+    })
+```
+
+<details>
+  <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    authentication
+        .resetPassword("info@auth0.com", "my-database-connection", "org_abc123")
+        .await()
+    println("Password reset email sent")
+} catch (e: AuthenticationException) {
+    e.printStacktrace()
+}
+```
+</details>
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+authentication
+    .resetPassword("info@auth0.com", "my-database-connection", "org_abc123")
+    .start(new Callback<Void, AuthenticationException>() {
+        @Override
+        public void onSuccess(@Nullable Void payload) {
+            //Password reset email sent!
+        }
+
+        @Override
+        public void onFailure(@NonNull AuthenticationException error) {
+            //Error!
+        }
+    });
+```
+</details>
+
+> The `organization` parameter must be the organization ID (for example, `org_abc123`), not the organization name. It is optional — omit it to send a password reset that is not associated with an organization.
 
 ### Get user information
 
@@ -3655,6 +3719,8 @@ client
 
 [Organizations](https://auth0.com/docs/organizations) is a set of features that provide better support for developers who build and maintain SaaS and Business-to-Business (B2B) applications.
 Note that Organizations is currently only available to customers on our Enterprise and Startup subscription plans.
+
+Besides Web Auth login, the Authentication API client can also associate a password reset request with an organization. See [Reset a password](#reset-a-password).
 
 ### Log in to an organization
 
