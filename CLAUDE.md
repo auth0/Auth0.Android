@@ -158,8 +158,7 @@ Auth0.Android/
 │   └── [other shared build logic]
 ├── .github/workflows/
 │   ├── test.yml                                 # CI: unit tests + linting
-│   ├── release.yml                              # CI: trigger release workflow
-│   ├── java-release.yml                         # Maven Central publish automation
+│   ├── release.yml                              # CI: RL scan + Maven Central publish + GitHub release
 │   ├── codeql.yml                               # Security scanning
 │   └── sca_scan.yml                             # Dependency scanning
 ├── .version                                     # SDK version source of truth (4.0.0)
@@ -574,9 +573,9 @@ SecureCredentialsManager(context, account, storage)
    - Push to main or use GitHub Actions "Run Workflow" button
    - `.github/workflows/release.yml` is triggered on merge of `release/X.Y.Z` branches
    - Workflow runs RL Scanner for security (via devsecops-tooling)
-   - Calls `java-release.yml` which publishes to Maven Central
+   - The `release` job then publishes to Maven Central
 
-5. **Release workflow details (`java-release.yml`):**
+5. **Release workflow details (`release.yml` → `release` job):**
    - Builds release AAR: `./gradlew :auth0:assembleRelease`
    - Signs artifacts with GPG key (env var `SIGNING_KEY`)
    - Publishes to Sonatype OSS Repository (Maven Central)
