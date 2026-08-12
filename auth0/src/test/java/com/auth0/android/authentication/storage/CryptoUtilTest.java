@@ -247,6 +247,44 @@ public class CryptoUtilTest {
         assertThat(entry, is(expectedEntry));
     }
 
+
+    @Test
+    @Config(sdk = 30)
+    public void shouldNotAuthorizeMgf1DigestWhenCreatingRSAKeyPairBelowAPI33() throws Exception {
+        // Below API 33 setMgf1Digests does not exist; the key must be generated without it (the
+        // pre-existing behavior), relying on the SHA-1 default that older Keystore uses.
+        Mockito.when(keyStore.containsAlias(KEY_ALIAS)).thenReturn(false);
+        KeyStore.PrivateKeyEntry expectedEntry = Mockito.mock(KeyStore.PrivateKeyEntry.class);
+        Mockito.when(keyStore.getEntry(KEY_ALIAS, null)).thenReturn(expectedEntry);
+
+        ArgumentCaptor<AlgorithmParameterSpec> specCaptor = ArgumentCaptor.forClass(AlgorithmParameterSpec.class);
+
+        cryptoUtil.getRSAKeyEntry();
+
+        Mockito.verify(keyPairGenerator).initialize(specCaptor.capture());
+        Mockito.verify(keyPairGenerator).generateKeyPair();
+        KeyGenParameterSpec spec = (KeyGenParameterSpec) specCaptor.getValue();
+
+        // The rest of the spec is unchanged from the pre-fix behavior.
+        assertThat(spec.getEncryptionPaddings(), is(new String[]{KeyProperties.ENCRYPTION_PADDING_RSA_OAEP}));
+        assertThat(spec.getDigests(), is(new String[]{KeyProperties.DIGEST_SHA1, KeyProperties.DIGEST_SHA256}));
+
+        String[] mgf1Digests = readMgf1Digests(spec);
+        // No MGF1 digest was authorized (null/empty), matching the pre-fix key spec.
+        assertThat(mgf1Digests == null || mgf1Digests.length == 0, is(true));
+    }
+
+
+    private static String[] readMgf1Digests(KeyGenParameterSpec spec) {
+        try {
+            java.lang.reflect.Method m = spec.getClass().getMethod("getMgf1Digests");
+            Object result = m.invoke(spec);
+            return (String[]) result;
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
     @Test
     @Config(sdk = 28)
     public void shouldCreateNewRSAKeyPairWhenExistingRSAKeyPairCannotBeRebuiltOnAPI28AndUp() throws Exception {
@@ -705,8 +743,8 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldThrowOnInvalidKeyExceptionWhenTryingToRSADecrypt() {
-        Assert.assertThrows("The device is not compatible with the CryptoUtil class", IncompatibleDeviceException.class, () -> {
+    public void shouldRecreateKeysAndThrowCryptoExceptionOnInvalidKeyExceptionWhenTryingToRSADecrypt() throws Exception {
+        Assert.assertThrows("The RSA key's authorized parameters are incompatible with the current cipher. The keys have been recreated; please retry.", CryptoException.class, () -> {
             byte[] sampleBytes = new byte[0];
             PrivateKey privateKey = Mockito.mock(PrivateKey.class);
             KeyStore.PrivateKeyEntry privateKeyEntry = Mockito.mock(KeyStore.PrivateKeyEntry.class);
@@ -717,6 +755,33 @@ public class CryptoUtilTest {
 
             cryptoUtil.RSADecrypt(sampleBytes);
         });
+
+        Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
+        Mockito.verify(keyStore).deleteEntry(OLD_KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS);
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS + "_iv");
+    }
+
+    @Test
+    public void shouldRecreateKeysAndThrowCryptoExceptionOnInvalidAlgorithmParameterExceptionWhenTryingToRSADecrypt() throws Exception {
+        Assert.assertThrows("The RSA key's authorized parameters are incompatible with the current cipher. The keys have been recreated; please retry.", CryptoException.class, () -> {
+            byte[] sampleBytes = new byte[0];
+            PrivateKey privateKey = Mockito.mock(PrivateKey.class);
+            KeyStore.PrivateKeyEntry privateKeyEntry = Mockito.mock(KeyStore.PrivateKeyEntry.class);
+            doReturn(privateKey).when(privateKeyEntry).getPrivateKey();
+            doReturn(privateKeyEntry).when(cryptoUtil).getRSAKeyEntry();
+            Mockito.when(Cipher.getInstance(RSA_TRANSFORMATION)).thenReturn(rsaOaepCipher);
+            doThrow(new InvalidAlgorithmParameterException()).when(rsaOaepCipher).init(eq(Cipher.DECRYPT_MODE), eq(privateKey), any(AlgorithmParameterSpec.class));
+
+            cryptoUtil.RSADecrypt(sampleBytes);
+        });
+
+        Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
+        Mockito.verify(keyStore).deleteEntry(OLD_KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS);
     }
 
     @Test
