@@ -898,8 +898,8 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldThrowOnInvalidKeyExceptionWhenTryingToRSADecrypt() {
-        Assert.assertThrows("The device is not compatible with the CryptoUtil class", IncompatibleDeviceException.class, () -> {
+    public void shouldRecreateKeysAndThrowCryptoExceptionOnInvalidKeyExceptionWhenTryingToRSADecrypt() throws Exception {
+        Assert.assertThrows("The RSA key's authorized parameters are incompatible with the current cipher. The keys have been recreated; please retry.", CryptoException.class, () -> {
             byte[] sampleBytes = new byte[0];
             PrivateKey privateKey = PowerMockito.mock(PrivateKey.class);
             KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
@@ -911,6 +911,34 @@ public class CryptoUtilTest {
 
             cryptoUtil.RSADecrypt(sampleBytes);
         });
+
+        Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
+        Mockito.verify(keyStore).deleteEntry(OLD_KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS);
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS + "_iv");
+    }
+
+    @Test
+    public void shouldRecreateKeysAndThrowCryptoExceptionOnInvalidAlgorithmParameterExceptionWhenTryingToRSADecrypt() throws Exception {
+        Assert.assertThrows("The RSA key's authorized parameters are incompatible with the current cipher. The keys have been recreated; please retry.", CryptoException.class, () -> {
+            byte[] sampleBytes = new byte[0];
+            PrivateKey privateKey = PowerMockito.mock(PrivateKey.class);
+            KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
+            doReturn(privateKey).when(privateKeyEntry).getPrivateKey();
+            doReturn(privateKeyEntry).when(cryptoUtil).getRSAKeyEntry();
+            PowerMockito.mockStatic(Cipher.class);
+            PowerMockito.when(Cipher.getInstance(RSA_TRANSFORMATION)).thenReturn(rsaOaepCipher);
+            doThrow(new InvalidAlgorithmParameterException()).when(rsaOaepCipher).init(eq(Cipher.DECRYPT_MODE), eq(privateKey), any(AlgorithmParameterSpec.class));
+
+            cryptoUtil.RSADecrypt(sampleBytes);
+        });
+
+        Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
+        Mockito.verify(keyStore).deleteEntry(OLD_KEY_ALIAS);
+        Mockito.verify(storage).remove(KEY_ALIAS);
+        Mockito.verify(storage).remove(OLD_KEY_ALIAS);
     }
 
     @Test
