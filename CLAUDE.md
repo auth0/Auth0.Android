@@ -19,7 +19,7 @@ Apply these on every task in this repo — they keep changes correct, small, and
 
 ## Project Structure
 
-```
+```text
 Auth0.Android/
 ├── auth0/src/main/java/com/auth0/android/
 │   ├── Auth0.kt                            # SDK entry point
@@ -87,7 +87,7 @@ Auth0.Android/
 
 **Credential storage:** `SecureCredentialsManager` uses RSA+AES with Keystore-backed keys; credentials are encrypted before SharedPreferences writes. Keystore init failure must throw explicitly — never fall back to plaintext.
 
-**Auth0-Client header:** Every request carries a base64-encoded `{name, version, env}` payload assembled in `Auth0UserAgent.kt` and attached by `RequestFactory`. Preserve the opt-out toggle on `Auth0.auth0UserAgent`.
+**Auth0-Client header:** Every eligible request carries a base64-encoded `{name, version, env}` payload assembled in `Auth0UserAgent.kt` and attached by `RequestFactory`, unless the `Auth0.auth0UserAgent` opt-out is enabled.
 
 **Token logging:** Never log access/refresh/ID tokens — use typed error codes only.
 

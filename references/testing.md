@@ -16,7 +16,7 @@
 
 ## Test locations
 
-```
+```text
 auth0/src/test/java/com/auth0/android/
 ├── authentication/          # AuthenticationAPIClient + request tests
 ├── authentication/storage/  # CredentialsManager + SecureCredentialsManager tests
