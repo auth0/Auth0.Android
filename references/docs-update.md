@@ -4,7 +4,7 @@
 
 | Doc | What it covers |
 |-----|---------------|
-| `README.md` | Installation (Gradle coords), requirements (minSdk 26, Java 8+), Auth0 dashboard config, `AndroidManifest.xml` setup, quick-start login/logout, ProGuard rules |
+| `README.md` | Installation (Gradle coords), requirements (minSdk 26, Java 17), Auth0 dashboard config, `AndroidManifest.xml` setup, quick-start login/logout, ProGuard rules |
 | `EXAMPLES.md` | Full Kotlin + Java usage for all features: WebAuthProvider, CredentialsManager, SecureCredentialsManager, AuthenticationAPIClient, MFA, DPoP, My Account API, passkeys, bot protection, PAR, SSO |
 
 Migration guides (`V4_MIGRATION_GUIDE.md`) are not tracked as fixed docs — filename is version-specific, inferred from the target branch at breaking-change time.

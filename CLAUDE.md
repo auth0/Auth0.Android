@@ -52,12 +52,12 @@ Auth0.Android/
 
 ### ✅ Always Do
 
-- Run CI pipeline before committing: `./gradlew testReleaseUnitTest jacocoTestReleaseUnitTestReport lintRelease --continue --console=plain`
+- Run CI pipeline before committing: `./gradlew testReleaseUnitTest jacocoTestReleaseUnitTestReport lintRelease --continue --console=plain` (locally you can skip `jacocoTestReleaseUnitTestReport` to save time — CI always runs it)
 - Add unit tests for every change — both success and error paths
 - Provide both callback and `suspend` variants for every async public method (Java consumers need callbacks)
 - Declare explicit visibility modifiers and return types on all public declarations (`-Xexplicit-api=strict` — CI fails on implicit visibility)
 - Use specific exception types (`AuthenticationException`, `CredentialsManagerException`, `DPoPException`) — never bare `catch (Exception e)`
-- Update `README.md` and `EXAMPLES.md` in the same PR when changing public API, configuration, or integration patterns
+- Update `README.md` and `EXAMPLES.md` in the same PR when changing public API, configuration, or integration patterns — `EXAMPLES.md` must include Kotlin callback, coroutine, and Java samples for every async method
 - Route new outbound requests through `RequestFactory` so they carry the `Auth0-Client` header via `Auth0UserAgent` — don't create a separate HTTP client
 - Keep `.version` as the sole version source of truth (injected via `gradle/versioning.gradle`)
 
@@ -83,7 +83,7 @@ Auth0.Android/
 
 **PKCE:** Mandatory for all `WebAuthProvider` browser flows; SDK generates challenge/verifier automatically with no bypass mechanism.
 
-**DPoP (RFC 9449):** Opt-in. `DPoPKeyStore` manages an Android Keystore-backed key pair; nonce retry on 401 is handled transparently in `OAuthManager`.
+**DPoP (RFC 9449):** Opt-in. `DPoPKeyStore` manages an Android Keystore-backed key pair; nonce retry on 401 is handled transparently in `RetryInterceptor`.
 
 **Credential storage:** `SecureCredentialsManager` uses RSA+AES with Keystore-backed keys; credentials are encrypted before SharedPreferences writes. Keystore init failure must throw explicitly — never fall back to plaintext.
 

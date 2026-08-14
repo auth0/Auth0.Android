@@ -6,7 +6,7 @@ Always use `Awaitility.await()` for callback tests and `runTest {}` for coroutin
 
 ## 2. DPoP nonce expiry — missing retry on 401
 
-Server DPoP nonce expiry returns 401 + `DPoP-Nonce` header. Ensure the retry path in `OAuthManager` is covered by a test mocking 401-then-200 with a new nonce. Missing it means all DPoP requests fail after nonce refresh.
+Server DPoP nonce expiry returns 401 + `DPoP-Nonce` header. Ensure the retry path in `RetryInterceptor` is covered by a test mocking 401-then-200 with a new nonce. Missing it means all DPoP requests fail after nonce refresh.
 
 ## 3. Keystore init failure — silent fallback to plaintext
 
