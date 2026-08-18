@@ -58,6 +58,8 @@
       - [Usage](#usage)
       - [Requiring Authentication](#requiring-authentication)
     - [Other Credentials](#other-credentials)
+      - [API credentials](#api-credentials)
+      - [SSO credentials](#sso-credentials)
     - [Handling Credentials Manager exceptions](#handling-credentials-manager-exceptions)
   - [Passkeys](#passkeys)
   - [Bot Protection](#bot-protection)
@@ -2045,6 +2047,9 @@ This feature allows you to authenticate a user in a web session using the refres
 
 Call the API to fetch a webSessionTransferToken in exchange for a refresh token. Use the obtained token to authenticate the user by calling the `/authorize` endpoint, passing the token as a query parameter or a cookie value.
 
+> [!TIP]
+> If you store the user's credentials with a credentials manager, use [SSO credentials](#sso-credentials) instead. It reads the refresh token for you, stores the rotated one, and serializes concurrent requests. The method below does none of that.
+
 ```kotlin
     authentication
     .ssoExchange("refresh_token")
@@ -2092,6 +2097,9 @@ authentication
     });
 ```
 </details>
+
+> [!IMPORTANT]
+> You don't need to store the `SSOCredentials`, as the session transfer token is single-use and short-lived. However, if you use [refresh token rotation](https://auth0.com/docs/secure/tokens/refresh-tokens/refresh-token-rotation), the response contains a new refresh token that you must store in place of the previous one, which is now invalid.
 
 ## Pushed Authorization Requests (PAR)
 
@@ -3192,8 +3200,6 @@ When the user logs in, you can request an access token for a specific API by pas
 
 However, if you need an access token for a different API, you can exchange the [refresh token](https://auth0.com/docs/secure/tokens/refresh-tokens) for credentials containing an access token specific to this other API.
 
-> [!IMPORTANT]
-> Currently, only the Auth0 My Account API is supported. Support for other APIs will be added in the future.
 
 ```kotlin
 
@@ -3254,6 +3260,78 @@ credentialsManager.getApiCredentials("audience",
 
 ```
 </details>
+
+#### SSO credentials
+
+To log the user in to your website without asking them to authenticate again, exchange the stored [refresh token](https://auth0.com/docs/secure/tokens/refresh-tokens) for a session transfer token. Add that token to the URL when opening your website from your app — for example, `https://example.com/login?session_transfer_token=THE_TOKEN` — and have your website redirect the user to Auth0's `/authorize` endpoint, passing the token along. This works with any browser or web view, including standalone browser apps.
+
+Prefer this over [`ssoExchange`](#native-to-web-sso-login) whenever you store credentials with a credentials manager. It reads the refresh token from storage, persists the rotated refresh token for you, and runs on the manager's serial executor so concurrent calls can't trigger overlapping exchanges.
+
+> [!CAUTION]
+> Requests are only serialized within a single credentials manager instance. Share one instance across your app rather than creating several against the same storage.
+
+```kotlin
+credentialsManager.getSsoCredentials(object :
+    Callback<SSOCredentials, CredentialsManagerException> {
+    override fun onSuccess(result: SSOCredentials) {
+        print("Obtained SSO credentials: ${result.sessionTransferToken}")
+    }
+
+    override fun onFailure(error: CredentialsManagerException) {
+        print("Failed with: $error")
+    }
+})
+```
+
+<details>
+  <summary>Using Coroutines</summary>
+
+```kotlin
+try {
+    val ssoCredentials = credentialsManager.awaitSsoCredentials()
+    print("Obtained SSO credentials: ${ssoCredentials.sessionTransferToken}")
+} catch (error: CredentialsManagerException) {
+    print("Failed with: $error")
+}
+```
+
+</details>
+
+<details>
+    <summary>Using Java</summary>
+
+```java
+credentialsManager.getSsoCredentials(new Callback<SSOCredentials, CredentialsManagerException>() {
+    @Override
+    public void onSuccess(SSOCredentials result) {
+        System.out.println(result.getSessionTransferToken());
+    }
+
+    @Override
+    public void onFailure(@NonNull CredentialsManagerException error) {
+        System.out.println(error);
+    }
+});
+```
+</details>
+
+An overload accepts a map of additional parameters to send with the exchange request:
+
+```kotlin
+credentialsManager.getSsoCredentials(
+    parameters = mapOf("some_parameter" to "some_value"),
+    callback = object : Callback<SSOCredentials, CredentialsManagerException> {
+        override fun onSuccess(result: SSOCredentials) {
+            print("Obtained SSO credentials: ${result.sessionTransferToken}")
+        }
+
+        override fun onFailure(error: CredentialsManagerException) {
+            print("Failed with: $error")
+        }
+    })
+```
+
+This fails with `CredentialsManagerException.NO_REFRESH_TOKEN` when no refresh token is stored, and with `CredentialsManagerException.SSO_EXCHANGE_FAILED` when the exchange itself is rejected. See [Handling Credentials Manager exceptions](#handling-credentials-manager-exceptions).
 
 ### Handling Credentials Manager exceptions
 
