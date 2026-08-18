@@ -1,5 +1,11 @@
 # Change Log
 
+## [3.21.1-beta.0](https://github.com/auth0/Auth0.Android/tree/3.21.1-beta.0) (2026-08-18)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.21.0...3.21.1-beta.0)
+
+**Fixed**
+- fix(storage): authorize MGF1 digest to prevent INCOMPATIBLE_DEVICE on Keystore2 [\#1048](https://github.com/auth0/Auth0.Android/pull/1048) ([utkrishtsahu](https://github.com/utkrishtsahu))
+
 ## [3.21.0](https://github.com/auth0/Auth0.Android/tree/3.21.0) (2026-07-08)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.20.0...3.21.0)
 
