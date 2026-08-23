@@ -17,6 +17,7 @@ import androidx.credentials.PublicKeyCredential
 import androidx.credentials.exceptions.CreateCredentialException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
@@ -58,6 +59,7 @@ class DatabaseLoginFragment : Fragment() {
         // Only enable network traffic logging on production environments!
         account.networkingClient = DefaultClient.Builder()
             .enableLogging(true)
+
             .build()
         account
     }
@@ -183,6 +185,9 @@ class DatabaseLoginFragment : Fragment() {
             launchAsync {
                 getCredsAsync()
             }
+        }
+        binding.btEmbeddedLogin.setOnClickListener {
+            findNavController().navigate(R.id.action_to_EmbeddedLoginFragment)
         }
         return binding.root
     }

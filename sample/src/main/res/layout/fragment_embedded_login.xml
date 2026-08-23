@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="16dp"
+        tools:context=".EmbeddedLoginFragment">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Discover what this client can log in with"
+            android:textSize="16sp" />
+
+        <Button
+            android:id="@+id/btDiscover"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Discover"
+            android:textSize="12sp" />
+
+        <Button
+            android:id="@+id/btDiscoverAsync"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Discover (async)"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/textStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Nothing discovered yet."
+            android:textSize="12sp" />
+
+        <!-- One entry point per way to sign in, added at runtime from the discovery result. -->
+        <LinearLayout
+            android:id="@+id/containerOptions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <!-- Shown when a password option is picked. -->
+        <LinearLayout
+            android:id="@+id/groupPassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <TextView
+                android:id="@+id/textPasswordHeader"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Log in with a password"
+                android:textSize="16sp" />
+
+            <EditText
+                android:id="@+id/textEmail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:autofillHints="emailAddress"
+                android:hint="Email"
+                android:inputType="textEmailAddress"
+                android:isCredential="true"
+                android:textSize="14sp" />
+
+            <EditText
+                android:id="@+id/textPassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:autofillHints="password"
+                android:hint="Password"
+                android:inputType="textPassword"
+                android:isCredential="true"
+                android:textSize="14sp" />
+
+            <Button
+                android:id="@+id/btPasswordLogin"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Log in"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- Shown when a one-time-code option is picked, to collect the identifier. -->
+        <LinearLayout
+            android:id="@+id/groupOtpIdentifier"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <TextView
+                android:id="@+id/textOtpHeader"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Log in with a one-time code"
+                android:textSize="16sp" />
+
+            <EditText
+                android:id="@+id/textOtpIdentifier"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Email or phone number"
+                android:inputType="text"
+                android:textSize="14sp" />
+
+            <Button
+                android:id="@+id/btOtpSend"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Send the code"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- Shown once the code has been sent. -->
+        <LinearLayout
+            android:id="@+id/groupOtpCode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <EditText
+                android:id="@+id/textOtpCode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="One-time code"
+                android:inputType="number"
+                android:textSize="14sp" />
+
+            <Button
+                android:id="@+id/btOtpVerify"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Verify the code"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

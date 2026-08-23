@@ -8,5 +8,15 @@
     <fragment
         android:id="@+id/DatabaseLoginFragment"
         android:name="com.auth0.sample.DatabaseLoginFragment"
-        tools:layout="@layout/fragment_database_login"/>
+        tools:layout="@layout/fragment_database_login">
+
+        <action
+            android:id="@+id/action_to_EmbeddedLoginFragment"
+            app:destination="@id/EmbeddedLoginFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/EmbeddedLoginFragment"
+        android:name="com.auth0.sample.EmbeddedLoginFragment"
+        tools:layout="@layout/fragment_embedded_login" />
 </navigation>
