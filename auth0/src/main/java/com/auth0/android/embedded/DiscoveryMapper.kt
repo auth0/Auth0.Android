@@ -33,7 +33,7 @@ internal fun Alternative.toLoginOption(): LoginOption? {
         GRANT_AUTHORIZATION_CODE -> connection?.let { LoginOption.EmbeddedAuthorize(connection = it) }
 
         GRANT_TOKEN_EXCHANGE -> subjectTokenType?.let {
-            LoginOption.NativeSocial(provider = it.toSocialProvider())
+            LoginOption.NativeSocial(subjectTokenType = it)
         }
 
         else -> LoginOption.Unknown(rawGrantType = grantType, connection = connection ?: realm)
@@ -49,13 +49,6 @@ private fun List<String>?.toOtpIdentifiers(): Set<PasswordlessIdentifier> =
         }
     }
 
-private fun String.toSocialProvider(): SocialProvider = when (this) {
-    TOKEN_TYPE_GOOGLE -> SocialProvider.GOOGLE
-    TOKEN_TYPE_APPLE -> SocialProvider.APPLE
-    TOKEN_TYPE_FACEBOOK -> SocialProvider.FACEBOOK
-    else -> SocialProvider.UNKNOWN
-}
-
 private const val GRANT_PASSWORD = "password"
 private const val GRANT_PASSWORD_REALM = "http://auth0.com/oauth/grant-type/password-realm"
 private const val GRANT_WEBAUTHN = "urn:okta:params:oauth:grant-type:webauthn"
@@ -67,8 +60,3 @@ private const val TYPE_AUTH0 = "auth0"
 
 private const val IDENTIFIER_EMAIL = "email"
 private const val IDENTIFIER_PHONE_NUMBER = "phone_number"
-
-private const val TOKEN_TYPE_GOOGLE = "http://auth0.com/oauth/token-type/google-id-token"
-private const val TOKEN_TYPE_APPLE = "http://auth0.com/oauth/token-type/apple-authz-code"
-private const val TOKEN_TYPE_FACEBOOK =
-    "http://auth0.com/oauth/token-type/facebook-info-session-access-token"

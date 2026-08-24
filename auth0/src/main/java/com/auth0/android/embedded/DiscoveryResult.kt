@@ -27,9 +27,6 @@ public class DiscoveryResult internal constructor(
     /** The kinds of login available. */
     public val types: Set<GrantType> = options.mapTo(LinkedHashSet()) { it.grantType }
 
-    /** Native social providers to offer, in the order the server returned them. */
-    public val socialProviders: List<SocialProvider> =
-        options.filterIsInstance<LoginOption.NativeSocial>().map { it.provider }
 
     /** Whether a given kind of login is available. */
     public fun supports(grantType: GrantType): Boolean = grantType in types

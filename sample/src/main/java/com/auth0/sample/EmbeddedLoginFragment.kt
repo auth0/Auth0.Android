@@ -15,7 +15,7 @@ import androidx.lifecycle.lifecycleScope
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
-import com.auth0.android.authentication.PasswordlessType
+import com.auth0.android.authentication.PasswordlessType as PasswordlessDelivery
 import com.auth0.android.authentication.passwordless.DeliveryMethod
 import com.auth0.android.callback.Callback
 import com.auth0.android.embedded.DiscoveryResult
@@ -25,7 +25,6 @@ import com.auth0.android.embedded.LoginOption
 import com.auth0.android.embedded.GrantType
 import com.auth0.android.embedded.PasswordlessIdentifier
 import com.auth0.android.embedded.PasswordlessType
-import com.auth0.android.embedded.SocialProvider
 import com.auth0.android.request.DefaultClient
 import com.auth0.android.request.PublicKeyCredentials
 import com.auth0.android.result.Credentials
@@ -130,7 +129,7 @@ class EmbeddedLoginFragment : Fragment() {
             append("${result.options.size} option(s): ")
             append(result.types.joinToString { it.name })
             if (result.socialProviders.isNotEmpty()) {
-                append("\nSocial: ${result.socialProviders.joinToString { it.name }}")
+                append("\nSocial: ${result.socialProviders.joinToString()}")
             }
             val password = GrantType.PASSWORD in result.types
             val passwordRealm = GrantType.PASSWORD_REALM in result.types
@@ -168,8 +167,8 @@ class EmbeddedLoginFragment : Fragment() {
                 addButton(label) { showOtpForm(option, identifier) }
             }
 
-            is LoginOption.NativeSocial -> addButton(socialLabel(option.provider)) {
-                show("Get a token from the ${option.provider.name} SDK, then call loginWithNativeSocialToken.")
+            is LoginOption.NativeSocial -> addButton("Continue with a social provider") {
+                show("Get a ${option.subjectTokenType} token from the provider's SDK, then call loginWithNativeSocialToken.")
             }
 
             is LoginOption.EmbeddedAuthorize -> addButton("Continue (${option.connection})") {
@@ -180,13 +179,6 @@ class EmbeddedLoginFragment : Fragment() {
                 show("This SDK version does not model ${option.rawGrantType}. Upgrade to use it.")
             }
         }
-    }
-
-    private fun socialLabel(provider: SocialProvider): String = when (provider) {
-        SocialProvider.GOOGLE -> "Continue with Google"
-        SocialProvider.APPLE -> "Continue with Apple"
-        SocialProvider.FACEBOOK -> "Continue with Facebook"
-        SocialProvider.UNKNOWN -> "Continue with another provider"
     }
 
     private fun addButton(label: String, onClick: () -> Unit) {
@@ -302,15 +294,15 @@ class EmbeddedLoginFragment : Fragment() {
                     when (identifier) {
                         // The default is a magic link, so a code has to be asked for.
                         PasswordlessIdentifier.EMAIL -> authenticationApiClient
-                            .passwordlessWithEmail(value, PasswordlessType.CODE, option.connection)
+                            .passwordlessWithEmail(value, PasswordlessDelivery.CODE, option.connection)
 
                         PasswordlessIdentifier.PHONE_NUMBER -> authenticationApiClient
-                            .passwordlessWithSMS(value, PasswordlessType.CODE, option.connection)
+                            .passwordlessWithSMS(value, PasswordlessDelivery.CODE, option.connection)
                     }.await()
                     PendingOtp.Legacy(option.connection, identifier, value)
                 }
 
-                PasswordlessType.DATABASE -> {
+                PasswordlessType.AUTH0 -> {
                     val passwordless = authenticationApiClient.passwordlessClient()
                     val challenge = when (identifier) {
                         PasswordlessIdentifier.EMAIL ->

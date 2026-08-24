@@ -78,7 +78,7 @@ public class DiscoveryMapperTest {
     }
 
     @Test
-    public fun `maps each token exchange subject token type to its provider`() {
+    public fun `carries each token exchange subject token type verbatim`() {
         val options = map(
             """{"alternatives":[
               {"grant_type":"urn:ietf:params:oauth:grant-type:token-exchange","subject_token_type":"http://auth0.com/oauth/token-type/google-id-token"},
@@ -88,9 +88,9 @@ public class DiscoveryMapperTest {
         )
         assertThat(
             options, contains(
-                LoginOption.NativeSocial(SocialProvider.GOOGLE),
-                LoginOption.NativeSocial(SocialProvider.APPLE),
-                LoginOption.NativeSocial(SocialProvider.FACEBOOK)
+                LoginOption.NativeSocial("http://auth0.com/oauth/token-type/google-id-token"),
+                LoginOption.NativeSocial("http://auth0.com/oauth/token-type/apple-authz-code"),
+                LoginOption.NativeSocial("http://auth0.com/oauth/token-type/facebook-info-session-access-token")
             )
         )
     }
@@ -105,11 +105,14 @@ public class DiscoveryMapperTest {
     }
 
     @Test
-    public fun `maps an unmodelled subject token type to the UNKNOWN provider`() {
+    public fun `carries an unmodelled subject token type verbatim`() {
         val options = map(
             """{"alternatives":[{"grant_type":"urn:ietf:params:oauth:grant-type:token-exchange","subject_token_type":"http://auth0.com/oauth/token-type/future-token"}]}"""
         )
-        assertThat(options, contains(LoginOption.NativeSocial(SocialProvider.UNKNOWN)))
+        assertThat(
+            options,
+            contains(LoginOption.NativeSocial("http://auth0.com/oauth/token-type/future-token"))
+        )
     }
 
     @Test
@@ -237,7 +240,7 @@ public class DiscoveryMapperTest {
     public fun `projects native social options into socialProviders`() {
         val result = gson.fromJson(FakeDiscoveryData.SUCCESS_RESPONSE, DiscoveryResponse::class.java)
             .toDiscoveryResult()
-        assertThat(result.socialProviders, contains(SocialProvider.GOOGLE))
+        assertThat(result.socialProviders, contains("http://auth0.com/oauth/token-type/google-id-token"))
     }
 
     @Test

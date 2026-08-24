@@ -107,10 +107,11 @@ public sealed interface LoginOption {
     /**
      * Login by exchanging a token obtained from a social provider's own native SDK.
      *
-     * @param provider the provider to obtain the token from.
+     * @param subjectTokenType the `subject_token_type` the server advertised, identifying which
+     * provider's token to exchange — e.g. `http://auth0.com/oauth/token-type/google-id-token`.
      */
     public data class NativeSocial internal constructor(
-        public val provider: SocialProvider
+         val subjectTokenType: String
     ) : LoginOption {
         override val connection: String? = null
         override val grantType: GrantType = GrantType.NATIVE_SOCIAL
@@ -162,16 +163,4 @@ public enum class PasswordlessType {
 
     /** Passwordless on a database connection. */
     AUTH0
-}
-
-/**
- * A social provider whose native SDK can supply a token to exchange for credentials.
- */
-public enum class SocialProvider {
-    GOOGLE,
-    APPLE,
-    FACEBOOK,
-
-    /** A provider this version of the SDK does not model. */
-    UNKNOWN
 }
