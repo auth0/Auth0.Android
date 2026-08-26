@@ -37,6 +37,25 @@ public class DiscoveryResult internal constructor(
     public val capabilities: List<LoginOption> =
         options.filter { it.grantType in CAPABILITY_GRANT_TYPES }
 
+    /** Realm names of the password-realm logins on offer, in the order the server returned them. */
+    public val passwordRealms: List<String> =
+        options.filterIsInstance<LoginOption.PasswordRealm>().map { it.realm }
+
+    /** Connections holding a passkey credential, in the order the server returned them. */
+    public val passkeyConnections: List<String> =
+        options.filterIsInstance<LoginOption.Passkey>().map { it.connection }
+
+    /** One-time-code logins on offer, in the order the server returned them. */
+    public val otpOptions: List<LoginOption.PasswordlessOtp> =
+        options.filterIsInstance<LoginOption.PasswordlessOtp>()
+
+    /**
+     * `subject_token_type` values of the native social logins to offer, in the order the server
+     * returned them. Each identifies which provider's native SDK to obtain a token from.
+     */
+    public val socialProviders: List<String> =
+        options.filterIsInstance<LoginOption.NativeSocial>().map { it.subjectTokenType }
+
     /** Whether a given kind of login is available. */
     public fun supports(grantType: GrantType): Boolean = grantType in types
 }

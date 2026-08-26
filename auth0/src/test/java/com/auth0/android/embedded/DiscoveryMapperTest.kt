@@ -252,6 +252,44 @@ public class DiscoveryMapperTest {
     }
 
     @Test
+    public fun `projects password-realm realms in server order`() {
+        val result = gson.fromJson(FakeDiscoveryData.SUCCESS_RESPONSE, DiscoveryResponse::class.java)
+            .toDiscoveryResult()
+        assertThat(result.passwordRealms, contains("Username-Password-Authentication"))
+    }
+
+    @Test
+    public fun `projects passkey connections in server order`() {
+        val result = gson.fromJson(FakeDiscoveryData.SUCCESS_RESPONSE, DiscoveryResponse::class.java)
+            .toDiscoveryResult()
+        assertThat(result.passkeyConnections, contains("Username-Password-Authentication"))
+    }
+
+    @Test
+    public fun `projects the otp options in server order`() {
+        val result = gson.fromJson(FakeDiscoveryData.SUCCESS_RESPONSE, DiscoveryResponse::class.java)
+            .toDiscoveryResult()
+        assertThat(result.otpOptions.map { it.connection }, contains("Username-Password-Authentication", "email"))
+    }
+
+    @Test
+    public fun `projects native social subject token types into socialProviders`() {
+        val result = gson.fromJson(FakeDiscoveryData.SUCCESS_RESPONSE, DiscoveryResponse::class.java)
+            .toDiscoveryResult()
+        assertThat(result.socialProviders, contains("http://auth0.com/oauth/token-type/google-id-token"))
+    }
+
+    @Test
+    public fun `exposes empty projections when only direct grants are advertised`() {
+        val result = gson.fromJson("""{"alternatives":[{"grant_type":"password"}]}""", DiscoveryResponse::class.java)
+            .toDiscoveryResult()
+        assertThat(result.passwordRealms, empty())
+        assertThat(result.passkeyConnections, empty())
+        assertThat(result.otpOptions, empty())
+        assertThat(result.socialProviders, empty())
+    }
+
+    @Test
     public fun `exposes the connection on the base type so options can be grouped`() {
         val result = gson.fromJson(FakeDiscoveryData.SUCCESS_RESPONSE, DiscoveryResponse::class.java)
             .toDiscoveryResult()
