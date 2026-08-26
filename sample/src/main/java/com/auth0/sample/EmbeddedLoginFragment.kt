@@ -128,8 +128,9 @@ class EmbeddedLoginFragment : Fragment() {
         binding.textStatus.text = buildString {
             append("${result.options.size} option(s): ")
             append(result.types.joinToString { it.name })
-            if (result.socialProviders.isNotEmpty()) {
-                append("\nSocial: ${result.socialProviders.joinToString()}")
+            val socials = result.options.filterIsInstance<LoginOption.NativeSocial>()
+            if (socials.isNotEmpty()) {
+                append("\nSocial: ${socials.joinToString { it.subjectTokenType }}")
             }
             val password = GrantType.PASSWORD in result.types
             val passwordRealm = GrantType.PASSWORD_REALM in result.types

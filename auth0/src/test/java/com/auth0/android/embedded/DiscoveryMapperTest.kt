@@ -237,17 +237,18 @@ public class DiscoveryMapperTest {
     }
 
     @Test
-    public fun `projects native social options into socialProviders`() {
+    public fun `projects the e-authorize pipeline options into capabilities`() {
         val result = gson.fromJson(FakeDiscoveryData.SUCCESS_RESPONSE, DiscoveryResponse::class.java)
             .toDiscoveryResult()
-        assertThat(result.socialProviders, contains("http://auth0.com/oauth/token-type/google-id-token"))
+        assertThat(result.capabilities.map { it.grantType }, equalTo(listOf(GrantType.AUTHORIZATION_CODE)))
+        assertThat(result.capabilities.single(), instanceOf(LoginOption.EmbeddedAuthorize::class.java))
     }
 
     @Test
-    public fun `exposes no social providers when none are advertised`() {
+    public fun `exposes no capabilities when only direct grants are advertised`() {
         val result = gson.fromJson("""{"alternatives":[{"grant_type":"password"}]}""", DiscoveryResponse::class.java)
             .toDiscoveryResult()
-        assertThat(result.socialProviders, empty())
+        assertThat(result.capabilities, empty())
     }
 
     @Test
