@@ -165,7 +165,8 @@ Auth0.Android/
 ├── .version                                     # SDK version source of truth (4.0.0)
 ├── .editorconfig                                # EditorConfig (LF line endings)
 ├── README.md                                    # User onboarding and requirements
-├── EXAMPLES.md                                  # Usage patterns and API examples
+├── EXAMPLES.md                                  # Index linking to examples/
+├── examples/                                    # Usage patterns and API examples, one file per feature
 ├── CHANGELOG.md                                 # Release notes and breaking changes
 ├── V4_MIGRATION_GUIDE.md                        # Migration from v3 to v4
 ├── FAQ.md                                       # Known issues and troubleshooting
@@ -325,7 +326,7 @@ SecureCredentialsManager(context, account, storage)
 **Pre-commit Checklist:**
 - Run `./gradlew testReleaseUnitTest jacocoTestReleaseUnitTestReport lintRelease --continue --console=plain`
 - Verify no new linting errors or coverage regressions
-- Update `README.md` and/or `EXAMPLES.md` if behavior or API changes
+- Update `README.md` and/or the relevant file under `examples/` if behavior or API changes
 - Update `CHANGELOG.md` with user-facing changes
 - Never commit secrets (API keys, tokens, credentials) — use environment variables or `.gitignore`
 
@@ -347,7 +348,7 @@ SecureCredentialsManager(context, account, storage)
    - Test async/callback patterns for both Kotlin and Java consumers
    - Use Robolectric and Mockito for Android/network dependencies
 
-3. **Update `README.md` and `EXAMPLES.md` when changing public API or behavior:**
+3. **Update `README.md` and the relevant file under `examples/` when changing public API or behavior:**
    - Document new methods, parameters, and options
    - Provide Kotlin and Java examples
    - Verify examples compile and match the current SDK version
@@ -596,7 +597,7 @@ SecureCredentialsManager(context, account, storage)
 
 ## Common Pitfalls
 
-1. **Forgetting to update `EXAMPLES.md` when changing public API:**
+1. **Forgetting to update the relevant file under `examples/` when changing public API:**
    - Example: Adding a new parameter to `WebAuthProvider.login()` without updating the examples
    - Impact: Users follow outdated examples; frustration and support overhead
    - Prevention: CI should validate that examples match current API (manual for now)
@@ -669,7 +670,7 @@ SecureCredentialsManager(context, account, storage)
 | File | Status | Notes |
 |------|--------|-------|
 | `README.md` | ✅ Current | Requirements (API 26+, Java 17), installation, configuration, and getting started sections are up-to-date. |
-| `EXAMPLES.md` | ✅ Current | Comprehensive examples for all major features (auth, credentials, MFA, DPoP, My Account, etc.). Kotlin and Java patterns shown throughout. |
+| `EXAMPLES.md` + `examples/` | ✅ Current | `EXAMPLES.md` is an index; each feature has its own file under `examples/` (auth, credentials, MFA, DPoP, My Account, etc.). Kotlin and Java patterns shown throughout. |
 | `CHANGELOG.md` | ✅ Current | Latest release (4.0.0) fully documented with breaking changes highlighted. |
 | `V4_MIGRATION_GUIDE.md` | ✅ Current | Migration from v3 to v4 is comprehensive (breaking API changes, new requirements, deprecations). |
 | `FAQ.md` | ✅ Current | Known issues, ProGuard rules, and troubleshooting tips documented. |
@@ -679,24 +680,24 @@ SecureCredentialsManager(context, account, storage)
 | Public API | Location in Code | Documentation |
 |------------|------------------|---------------|
 | `Auth0.getInstance()` | `auth0/src/main/java/com/auth0/android/Auth0.kt` | README.md → "Getting Started" section |
-| `WebAuthProvider.login()` / `logout()` | `auth0/src/main/java/com/auth0/android/provider/WebAuthProvider.kt` | EXAMPLES.md → "Authenticate with any Auth0 connection" + "Specify a Custom Logout URL" sections |
-| `SecureCredentialsManager` | `auth0/src/main/java/com/auth0/android/authentication/storage/SecureCredentialsManager.kt` | EXAMPLES.md → "Secure Credentials Manager" section + "Requiring Authentication" subsection |
-| `AuthenticationAPIClient.login()` / passwordless / MFA | `auth0/src/main/java/com/auth0/android/authentication/AuthenticationAPIClient.kt` | EXAMPLES.md → "Authentication API" section (all subsections) |
-| `DPoP` support | `auth0/src/main/java/com/auth0/android/dpop/` | EXAMPLES.md → "DPoP" sections (both WebAuth and Authentication API) |
-| `MyAccountAPIClient` | `auth0/src/main/java/com/auth0/android/myaccount/MyAccountAPIClient.kt` | EXAMPLES.md → "My Account API" section (all subsections) |
-| `MfaApiClient` | `auth0/src/main/java/com/auth0/android/authentication/mfa/MfaApiClient.kt` | EXAMPLES.md → "MFA Flexible Factors Grant" subsection |
-| Passkey support | `auth0/src/main/java/com/auth0/android/` | EXAMPLES.md → "Passkeys" section |
-| `CredentialsManager` | `auth0/src/main/java/com/auth0/android/authentication/storage/CredentialsManager.kt` | EXAMPLES.md → "Credentials Manager" section |
+| `WebAuthProvider.login()` / `logout()` | `auth0/src/main/java/com/auth0/android/provider/WebAuthProvider.kt` | `examples/authenticate-with-connection.md` + `examples/web-auth-configuration.md` |
+| `SecureCredentialsManager` | `auth0/src/main/java/com/auth0/android/authentication/storage/SecureCredentialsManager.kt` | `examples/credentials-manager.md` |
+| `AuthenticationAPIClient.login()` / passwordless / MFA | `auth0/src/main/java/com/auth0/android/authentication/AuthenticationAPIClient.kt` | `examples/authentication-api/` |
+| `DPoP` support | `auth0/src/main/java/com/auth0/android/dpop/` | `examples/dpop.md` + `examples/authentication-api/dpop.md` |
+| `MyAccountAPIClient` | `auth0/src/main/java/com/auth0/android/myaccount/MyAccountAPIClient.kt` | `examples/my-account-api.md` |
+| `MfaApiClient` | `auth0/src/main/java/com/auth0/android/authentication/mfa/MfaApiClient.kt` | `examples/authentication-api/mfa-flexible-factors.md` |
+| Passkey support | `auth0/src/main/java/com/auth0/android/` | `examples/passkeys.md` |
+| `CredentialsManager` | `auth0/src/main/java/com/auth0/android/authentication/storage/CredentialsManager.kt` | `examples/credentials-manager.md` |
 
 **Update Rules:**
 
 1. **When adding a new public method/class to the SDK:**
-   - Add entry to `EXAMPLES.md` with Kotlin and Java examples
+   - Add entry to the relevant file under `examples/` (and link it from `EXAMPLES.md` if it is a new file) with Kotlin and Java examples
    - Update `README.md` if it's a major feature or requirement change
    - Add entry to `CHANGELOG.md` under "Added" section
 
 2. **When modifying an existing public API:**
-   - Update relevant examples in `EXAMPLES.md`
+   - Update relevant files under `examples/`
    - Update parameter descriptions and usage patterns
    - Add migration note to `CHANGELOG.md` under "Changed" section
    - If breaking: add full entry to migration guide
@@ -704,11 +705,11 @@ SecureCredentialsManager(context, account, storage)
 3. **When removing a public API (breaking change):**
    - Add migration guide entry with old → new mapping
    - Update `CHANGELOG.md` under "Removed" section with deprecation history
-   - Remove related examples from `EXAMPLES.md` and note removal
+   - Remove related examples from `examples/` and note removal
 
 4. **When changing default behavior:**
    - Update `README.md` "Getting Started" or relevant section
-   - Provide before/after examples in `EXAMPLES.md`
+   - Provide before/after examples under `examples/`
    - Document in `CHANGELOG.md` under "Changed" section
 
 5. **When updating requirements (min SDK, Java version, etc.):**
@@ -716,7 +717,7 @@ SecureCredentialsManager(context, account, storage)
    - Add note to `CHANGELOG.md`
    - Update migration guide if it's a major version bump
 
-**Every PR that changes public API, configuration, or supported integration patterns MUST update `README.md` and/or `EXAMPLES.md` in the same commit.**
+**Every PR that changes public API, configuration, or supported integration patterns MUST update `README.md` and/or the relevant file under `examples/` in the same commit.**
 
 ---
 
@@ -741,7 +742,7 @@ SecureCredentialsManager(context, account, storage)
 
 4. ✅ **Public API changes documented:**
    - `README.md` updated if requirements or onboarding changes
-   - `EXAMPLES.md` updated with new/changed API usage (Kotlin + Java)
+   - `examples/` updated with new/changed API usage (Kotlin + Java)
    - `CHANGELOG.md` entry added
 
 5. ✅ **Security-sensitive changes flagged:**

@@ -148,7 +148,7 @@ The following MFA methods have been removed from `AuthenticationAPIClient`. They
 - `loginWithRecoveryCode(mfaToken, recoveryCode)`
 - `multifactorChallenge(mfaToken, challengeType, authenticatorId)`
 
-Use `AuthenticationAPIClient.mfaClient(mfaToken)` to obtain a `MfaApiClient` instance and handle MFA flows using the new APIs. See the [MFA Flexible Factors Grant](EXAMPLES.md#mfa-flexible-factors-grant) section in `EXAMPLES.md` for usage guidance.
+Use `AuthenticationAPIClient.mfaClient(mfaToken)` to obtain a `MfaApiClient` instance and handle MFA flows using the new APIs. See the [MFA Flexible Factors Grant](examples/authentication-api/mfa-flexible-factors.md) section for usage guidance.
 
 ### DPoP Configuration Moved to Builder
 
