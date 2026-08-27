@@ -197,6 +197,17 @@ public class CustomTabsOptions implements Parcelable {
     @SuppressLint("ResourceType")
     AuthTabIntent.Builder toAuthTabIntentBuilder(@NonNull Context context) {
         AuthTabIntent.Builder builder = new AuthTabIntent.Builder();
+        if (ephemeralBrowsing) {
+            String preferredPackage = this.getPreferredPackage(context.getPackageManager());
+            if (preferredPackage != null
+                    && CustomTabsClient.isEphemeralBrowsingSupported(context, preferredPackage)) {
+                builder.setEphemeralBrowsingEnabled(true);
+            } else {
+                Log.w(TAG, "Ephemeral browsing was requested but is not supported by the "
+                        + "current browser (" + preferredPackage + "). "
+                        + "Falling back to a regular Auth Tab.");
+            }
+        }
         if (toolbarColor > 0) {
             final AuthTabColorSchemeParams params = new AuthTabColorSchemeParams.Builder()
                     .setToolbarColor(ContextCompat.getColor(context, toolbarColor))

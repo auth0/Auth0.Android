@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Parcel;
 
+import androidx.browser.auth.AuthTabIntent;
 import androidx.browser.customtabs.CustomTabsClient;
 import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.core.content.ContextCompat;
@@ -397,6 +398,86 @@ public class CustomTabsOptionsTest {
         assertEquals(intent.getAction(), "android.intent.action.VIEW");
 
         // No warning should be logged since the entire Custom Tab path is skipped
+        assertThat(hasLogWithMessage("Ephemeral browsing was requested"), is(false));
+    }
+
+    @Test
+    public void shouldSetEphemeralBrowsingOnAuthTabWhenSupported() {
+        Activity activity = spy(Robolectric.setupActivity(Activity.class));
+        BrowserPickerTest.setupBrowserContext(activity, Collections.singletonList("com.android.chrome"), null, null);
+
+        customTabsClientMock = Mockito.mockStatic(CustomTabsClient.class);
+        customTabsClientMock.when(() ->
+                CustomTabsClient.isEphemeralBrowsingSupported(any(), eq("com.android.chrome"))
+        ).thenReturn(true);
+
+        BrowserPicker browserPicker = BrowserPicker.newBuilder().build();
+        CustomTabsOptions options = CustomTabsOptions.newBuilder()
+                .withBrowserPicker(browserPicker)
+                .withEphemeralBrowsing()
+                .withAuthTab()
+                .build();
+        assertThat(options, is(notNullValue()));
+
+        AuthTabIntent authTabIntent = options.toAuthTabIntentBuilder(activity).build();
+        assertThat(authTabIntent, is(notNullValue()));
+
+        // Verify ephemeral browsing extra is set on the Auth Tab intent
+        assertThat(authTabIntent.intent.getBooleanExtra(CustomTabsIntent.EXTRA_ENABLE_EPHEMERAL_BROWSING, false), is(true));
+
+        // Verify isEphemeralBrowsingSupported was called
+        customTabsClientMock.verify(() ->
+                CustomTabsClient.isEphemeralBrowsingSupported(any(), eq("com.android.chrome"))
+        );
+
+        // Verify no warning was logged
+        assertThat(hasLogWithMessage("Ephemeral browsing was requested"), is(false));
+    }
+
+    @Test
+    public void shouldFallbackWithWarningWhenEphemeralNotSupportedOnAuthTab() {
+        Activity activity = spy(Robolectric.setupActivity(Activity.class));
+        BrowserPickerTest.setupBrowserContext(activity, Collections.singletonList("com.android.chrome"), null, null);
+
+        customTabsClientMock = Mockito.mockStatic(CustomTabsClient.class);
+        customTabsClientMock.when(() ->
+                CustomTabsClient.isEphemeralBrowsingSupported(any(), eq("com.android.chrome"))
+        ).thenReturn(false);
+
+        BrowserPicker browserPicker = BrowserPicker.newBuilder().build();
+        CustomTabsOptions options = CustomTabsOptions.newBuilder()
+                .withBrowserPicker(browserPicker)
+                .withEphemeralBrowsing()
+                .withAuthTab()
+                .build();
+
+        AuthTabIntent authTabIntent = options.toAuthTabIntentBuilder(activity).build();
+        assertThat(authTabIntent, is(notNullValue()));
+
+        assertThat(hasLogWithMessage("Ephemeral browsing was requested but is not supported"), is(true));
+
+        // Verify ephemeral browsing extra is not set (fallback to a regular Auth Tab)
+        assertThat(authTabIntent.intent.getBooleanExtra(CustomTabsIntent.EXTRA_ENABLE_EPHEMERAL_BROWSING, false), is(false));
+    }
+
+    @Test
+    public void shouldNotSetEphemeralBrowsingOnAuthTabByDefault() {
+        customTabsClientMock = Mockito.mockStatic(CustomTabsClient.class);
+
+        CustomTabsOptions options = CustomTabsOptions.newBuilder()
+                .withAuthTab()
+                .build();
+        assertThat(options, is(notNullValue()));
+
+        AuthTabIntent authTabIntent = options.toAuthTabIntentBuilder(context).build();
+        assertThat(authTabIntent, is(notNullValue()));
+
+        // Ephemeral support should not be queried when ephemeral browsing was not requested
+        customTabsClientMock.verifyNoInteractions();
+
+        // Verify ephemeral browsing extra is not set
+        assertThat(authTabIntent.intent.getBooleanExtra(CustomTabsIntent.EXTRA_ENABLE_EPHEMERAL_BROWSING, false), is(false));
+
         assertThat(hasLogWithMessage("Ephemeral browsing was requested"), is(false));
     }
 
