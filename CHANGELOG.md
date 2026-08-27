@@ -1,5 +1,12 @@
 # Change Log
 
+## [4.1.0](https://github.com/auth0/Auth0.Android/tree/4.1.0) (2026-08-27)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/4.0.1...4.1.0)
+
+**Added**
+- feat: enable ephemeral browsing for Auth Tab [\#1059](https://github.com/auth0/Auth0.Android/pull/1059) ([pmathew92](https://github.com/pmathew92))
+- feat(authentication): add organization parameter to resetPassword [\#1038](https://github.com/auth0/Auth0.Android/pull/1038) ([NandanPrabhu](https://github.com/NandanPrabhu))
+
 ## [4.0.1](https://github.com/auth0/Auth0.Android/tree/4.0.1) (2026-07-24)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/4.0.0...4.0.1)
 
