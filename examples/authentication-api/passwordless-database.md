@@ -3,7 +3,7 @@
 > [!IMPORTANT]
 > Passwordless Login for database connections is currently in [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access). Please reach out to Auth0 support to get it enabled for your tenant.
 
-This flow lets users authenticate with a one-time code sent over email or SMS/voice against a **database connection** that has `email_otp` or `phone_otp` enabled. It is distinct from the `/passwordless/start` flow described above, which uses dedicated passwordless connections.
+This flow lets users authenticate with a one-time code sent over email or SMS/voice against a **database connection** that has `email_otp` or `phone_otp` enabled. It is distinct from the [`/passwordless/start` flow](passwordless.md#passwordless-login), which uses dedicated passwordless connections.
 
 Obtain a `PasswordlessClient` from the `AuthenticationAPIClient`:
 
@@ -53,8 +53,10 @@ Both challenge methods accept an optional `allowSignup` parameter (defaults to `
 Once the user enters the code, pass the saved `challenge` together with that code to `loginWithOTP` to obtain `Credentials`. If DPoP is enabled on the originating `AuthenticationAPIClient`, a DPoP proof is attached automatically to this token request.
 
 ```kotlin
+val savedChallenge = requireNotNull(challenge) { "Complete step 1 before verifying the code" }
+
 passwordless
-    .loginWithOTP(challenge, "123456")
+    .loginWithOTP(savedChallenge, "123456")
     .start(object: Callback<Credentials, AuthenticationException> {
         override fun onFailure(exception: AuthenticationException) { }
 

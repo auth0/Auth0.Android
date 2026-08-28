@@ -1,7 +1,7 @@
 ## Auth Tab
 
 
-Auth Tab uses [`AuthTabIntent`](https://developer.android.com/reference/androidx/browser/auth/AuthTabIntent) from `androidx.browser` to open the authentication flow in a dedicated browser tab that verifies the redirect URI scheme before delivering the result back to your app. This provides an additional layer of security by ensuring only your app — whose redirect URI scheme is verified at registration time — can receive the authentication callback, preventing other apps from intercepting it.
+Auth Tab uses [`AuthTabIntent`](https://developer.android.com/reference/androidx/browser/auth/AuthTabIntent) from `androidx.browser` to open the authentication flow in a dedicated browser tab and deliver the result back to your app. It supports two kinds of redirect: an HTTPS redirect, whose ownership the browser verifies through [Digital Asset Links](https://developer.android.com/training/app-links/verify-android-applinks) so that only your app can receive the callback, and a custom URI scheme. A custom scheme is **not** exclusive to one app — another app can register the same scheme and intercept the callback — so prefer an HTTPS (App Links) redirect when interception resistance matters.
 
 Requires `androidx.browser` 1.9.0+ and a browser that supports Auth Tab on the device. On unsupported browsers, the SDK automatically falls back to a regular Custom Tab.
 

@@ -316,7 +316,7 @@ Prefer this over [`ssoExchange`](authentication-api/native-to-web-sso.md#native-
 credentialsManager.getSsoCredentials(object :
     Callback<SSOCredentials, CredentialsManagerException> {
     override fun onSuccess(result: SSOCredentials) {
-        print("Obtained SSO credentials: ${result.sessionTransferToken}")
+        print("SSO credentials obtained")
     }
 
     override fun onFailure(error: CredentialsManagerException) {
@@ -331,7 +331,7 @@ credentialsManager.getSsoCredentials(object :
 ```kotlin
 try {
     val ssoCredentials = credentialsManager.awaitSsoCredentials()
-    print("Obtained SSO credentials: ${ssoCredentials.sessionTransferToken}")
+    print("SSO credentials obtained")
 } catch (error: CredentialsManagerException) {
     print("Failed with: $error")
 }
@@ -346,7 +346,7 @@ try {
 credentialsManager.getSsoCredentials(new Callback<SSOCredentials, CredentialsManagerException>() {
     @Override
     public void onSuccess(SSOCredentials result) {
-        System.out.println(result.getSessionTransferToken());
+        System.out.println("SSO credentials obtained");
     }
 
     @Override
@@ -364,7 +364,7 @@ credentialsManager.getSsoCredentials(
     parameters = mapOf("some_parameter" to "some_value"),
     callback = object : Callback<SSOCredentials, CredentialsManagerException> {
         override fun onSuccess(result: SSOCredentials) {
-            print("Obtained SSO credentials: ${result.sessionTransferToken}")
+            print("SSO credentials obtained")
         }
 
         override fun onFailure(error: CredentialsManagerException) {

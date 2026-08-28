@@ -34,7 +34,7 @@ try {
         .await()
     println("Password reset email sent")
 } catch (e: AuthenticationException) {
-    e.printStacktrace()
+    e.printStackTrace()
 }
 ```
 </details>

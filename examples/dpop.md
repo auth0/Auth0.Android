@@ -42,10 +42,10 @@ If your API is issuing DPoP nonces to prevent replay attacks, you can pass the n
 ```kotlin
 if (DPoP.isNonceRequiredError(response)) {
     val nonce = response.headers["DPoP-Nonce"]
-    val dpopProof = DPoPProvider.generateProof(
-        url, httpMethod, accessToken, nonce
+    val headerData = DPoP.getHeaderData(
+        httpMethod, url, accessToken, tokenType, nonce
     )
-    // Retry the request with the new proof
+    // Retry the request with the new proof in headerData.dpopProof
 }
 ```
 
@@ -59,18 +59,18 @@ val storage = SharedPreferencesStorage(context)
 val manager = CredentialsManager(apiClient, storage)
 
 WebAuthProvider
-    .useDPoP()
     .login(auth0)
+    .useDPoP(context)
     .start(context, callback)
 ```
 
-On logout, you should call `DPoP.clearKeyPair()` to delete the user's key pair from the Keychain.
+On logout, you should call `DPoP.clearKeyPair()` to delete the user's key pair from the Android KeyStore.
 
 ```kotlin
 WebAuthProvider.logout(account)
             .start(requireContext(), object : Callback<Void?, AuthenticationException> {
                 override fun onSuccess(result: Void?) {
-                    DPoPProvider.clearKeyPair()
+                    DPoP.clearKeyPair()
                 }
                 override fun onFailure(error: AuthenticationException) {
                 }

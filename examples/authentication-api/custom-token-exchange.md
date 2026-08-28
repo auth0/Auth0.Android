@@ -23,7 +23,7 @@ try {
         .customTokenExchange("subject_token_type", "subject_token", "organization_id")
         .await()
 } catch (e: AuthenticationException) {
-    e.printStacktrace()
+    e.printStackTrace()
 }
 ```
 </details>

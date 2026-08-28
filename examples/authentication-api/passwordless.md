@@ -9,7 +9,7 @@ Passwordless is a 2 step flow:
 ```kotlin
 authentication
     .passwordlessWithEmail("info@auth0.com", PasswordlessType.CODE, "my-passwordless-connection")
-    .start(object: Callback<Void, AuthenticationException> {
+    .start(object: Callback<Void?, AuthenticationException> {
         override fun onFailure(exception: AuthenticationException) { }
 
         override fun onSuccess(result: Void?) { }
@@ -26,7 +26,7 @@ try {
         .await()
     println(result)
 } catch (e: AuthenticationException) {
-    e.printStacktrace()
+    e.printStackTrace()
 }
 ```
 </details>
@@ -75,7 +75,7 @@ try {
         .await()
     println(credentials)
 } catch (e: AuthenticationException) {
-    e.printStacktrace()
+    e.printStackTrace()
 }
 ```
 </details>

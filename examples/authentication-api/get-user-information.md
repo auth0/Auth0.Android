@@ -20,7 +20,7 @@ try {
         .await()
     println(user)
 } catch (e: AuthenticationException) {
-    e.printStacktrace()
+    e.printStackTrace()
 }
 ```
 </details>

@@ -4,6 +4,9 @@ This feature allows you to authenticate a user in a web session using the refres
 
 Call the API to fetch a webSessionTransferToken in exchange for a refresh token. Use the obtained token to authenticate the user by calling the `/authorize` endpoint, passing the token as a query parameter or a cookie value.
 
+> [!CAUTION]
+> Passing the token in the query string can leak it through browser history, `Referer` headers, and server or proxy logs. If you use query-string delivery, send it only to a trusted HTTPS target, redeem it immediately, strip it from the URL after use, and redact it from any logs. Prefer cookie delivery when you can.
+
 > [!TIP]
 > If you store the user's credentials with a credentials manager, use [SSO credentials](../credentials-manager.md#sso-credentials) instead. It reads the refresh token for you, stores the rotated one, and serializes concurrent requests. The method below does none of that.
 
@@ -31,7 +34,7 @@ try {
         .ssoExchange("refresh_token")
         .await()
 } catch (e: AuthenticationException) {
-    e.printStacktrace()
+    e.printStackTrace()
 }
 ```
 </details>

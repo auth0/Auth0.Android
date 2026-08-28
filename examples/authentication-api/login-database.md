@@ -22,7 +22,7 @@ try {
         .await()
     println(credentials)
 } catch (e: AuthenticationException) {
-    e.printStacktrace()
+    e.printStackTrace()
 }
 ```
 </details>

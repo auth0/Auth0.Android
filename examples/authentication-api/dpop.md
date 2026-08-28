@@ -32,14 +32,14 @@ If your API is issuing DPoP nonces to prevent replay attacks, you can pass the n
 ```kotlin
 if (DPoP.isNonceRequiredError(response)) {
     val nonce = response.headers["DPoP-Nonce"]
-    val dpopProof = DPoPProvider.generateProof(
-        url, httpMethod, accessToken, nonce
+    val headerData = DPoP.getHeaderData(
+        httpMethod, url, accessToken, tokenType, nonce
     )
-    // Retry the request with the new proof
+    // Retry the request with the new proof in headerData.dpopProof
 }
 ```
 
-On logout, you should call `DPoP.clearKeyPair()` to delete the user's key pair from the Keychain.
+On logout, you should call `DPoP.clearKeyPair()` to delete the user's key pair from the Android KeyStore.
 
 ```kotlin
 
