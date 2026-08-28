@@ -60,7 +60,7 @@ When `withAuthTab()` is combined with `withCustomTabsOptions()`, only a subset o
 |---|---|
 | `withToolbarColor()` | ✅ Applied to the Auth Tab toolbar |
 | `showTitle()` | ❌ Ignored — Auth Tab has no title-visibility option |
-| `withEphemeralBrowsing()` | ❌ Ignored — Auth Tab does not support ephemeral sessions. Use a regular Custom Tab if session isolation is required |
+| `withEphemeralBrowsing()` | ✅ Honored — the Auth Tab runs in an isolated ephemeral session when the browser supports it (requires Chrome 136+ or a compatible browser); otherwise a warning is logged and it falls back to a regular Auth Tab |
 | `withInitialHeight()` / `withInitialWidth()` | ❌ Ignored — Auth Tab is always full-screen |
 | `withToolbarCornerRadius()` | ❌ Ignored |
 | `withSideSheetBreakpoint()` | ❌ Ignored |

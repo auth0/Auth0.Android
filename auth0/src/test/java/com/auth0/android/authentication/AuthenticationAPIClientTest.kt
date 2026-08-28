@@ -1513,6 +1513,89 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
+    public fun shouldChangePasswordWithOrganization() {
+        mockAPI.willReturnSuccessfulChangePassword()
+        val callback = MockAuthenticationCallback<Void>()
+        client.resetPassword(SUPPORT_AUTH0_COM, MY_CONNECTION, "org_12345")
+            .start(callback)
+        ShadowLooper.idleMainLooper()
+        val request = mockAPI.takeRequest()
+        assertThat(request.path, Matchers.equalTo("/dbconnections/change_password"))
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
+        assertThat(body, Matchers.hasEntry("connection", MY_CONNECTION))
+        assertThat(body, Matchers.hasEntry("client_id", CLIENT_ID))
+        assertThat(body, Matchers.hasEntry("organization", "org_12345"))
+        assertThat(callback, AuthenticationCallbackMatcher.hasNoError())
+    }
+
+    @Test
+    public fun shouldChangePasswordWithOrganizationSync() {
+        mockAPI.willReturnSuccessfulChangePassword()
+        client.resetPassword(SUPPORT_AUTH0_COM, MY_CONNECTION, "org_12345")
+            .execute()
+        val request = mockAPI.takeRequest()
+        assertThat(request.path, Matchers.equalTo("/dbconnections/change_password"))
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
+        assertThat(body, Matchers.hasEntry("connection", MY_CONNECTION))
+        assertThat(body, Matchers.hasEntry("organization", "org_12345"))
+    }
+
+    @Test
+    @ExperimentalCoroutinesApi
+    public fun shouldAwaitChangePasswordWithOrganization(): Unit = runTest {
+        mockAPI.willReturnSuccessfulChangePassword()
+        client.resetPassword(SUPPORT_AUTH0_COM, MY_CONNECTION, "org_12345")
+            .await()
+        val request = mockAPI.takeRequest()
+        assertThat(request.path, Matchers.equalTo("/dbconnections/change_password"))
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
+        assertThat(body, Matchers.hasEntry("connection", MY_CONNECTION))
+        assertThat(body, Matchers.hasEntry("organization", "org_12345"))
+    }
+
+    @Test
+    public fun shouldNotSendOrganizationOnChangePasswordWhenNull() {
+        mockAPI.willReturnSuccessfulChangePassword()
+        client.resetPassword(SUPPORT_AUTH0_COM, MY_CONNECTION, null)
+            .execute()
+        val request = mockAPI.takeRequest()
+        assertThat(request.path, Matchers.equalTo("/dbconnections/change_password"))
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
+        assertThat(body, Matchers.hasEntry("connection", MY_CONNECTION))
+        assertThat(body, Matchers.not(Matchers.hasKey("organization")))
+    }
+
+    @Test
+    public fun shouldNotSendOrganizationOnChangePasswordWhenNotProvided() {
+        mockAPI.willReturnSuccessfulChangePassword()
+        client.resetPassword(SUPPORT_AUTH0_COM, MY_CONNECTION)
+            .execute()
+        val request = mockAPI.takeRequest()
+        assertThat(request.path, Matchers.equalTo("/dbconnections/change_password"))
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
+        assertThat(body, Matchers.hasEntry("connection", MY_CONNECTION))
+        assertThat(body, Matchers.not(Matchers.hasKey("organization")))
+    }
+
+    @Test
+    public fun shouldSendEmptyOrganizationOnChangePasswordWithoutValidating() {
+        mockAPI.willReturnSuccessfulChangePassword()
+        client.resetPassword(SUPPORT_AUTH0_COM, MY_CONNECTION, "")
+            .execute()
+        val request = mockAPI.takeRequest()
+        assertThat(request.path, Matchers.equalTo("/dbconnections/change_password"))
+        val body = bodyFromRequest<String>(request)
+        assertThat(body, Matchers.hasEntry("email", SUPPORT_AUTH0_COM))
+        assertThat(body, Matchers.hasEntry("connection", MY_CONNECTION))
+        assertThat(body, Matchers.hasEntry("organization", ""))
+    }
+
+    @Test
     public fun shouldSendEmailCodeWithCustomConnection() {
         mockAPI.willReturnSuccessfulPasswordlessStart()
         val callback = MockAuthenticationCallback<Void>()

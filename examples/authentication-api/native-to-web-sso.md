@@ -4,6 +4,9 @@ This feature allows you to authenticate a user in a web session using the refres
 
 Call the API to fetch a webSessionTransferToken in exchange for a refresh token. Use the obtained token to authenticate the user by calling the `/authorize` endpoint, passing the token as a query parameter or a cookie value.
 
+> [!TIP]
+> If you store the user's credentials with a credentials manager, use [SSO credentials](../credentials-manager.md#sso-credentials) instead. It reads the refresh token for you, stores the rotated one, and serializes concurrent requests. The method below does none of that.
+
 ```kotlin
     authentication
     .ssoExchange("refresh_token")
@@ -51,3 +54,6 @@ authentication
     });
 ```
 </details>
+
+> [!IMPORTANT]
+> You don't need to store the `SSOCredentials`, as the session transfer token is single-use and short-lived. However, if you use [refresh token rotation](https://auth0.com/docs/secure/tokens/refresh-tokens/refresh-token-rotation), the response contains a new refresh token that you must store in place of the previous one, which is now invalid.

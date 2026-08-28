@@ -21,6 +21,7 @@ Each topic lives in its own file under [`examples/`](examples).
 - [Passwordless Login](examples/authentication-api/passwordless.md)
 - [Passwordless Login with a Database Connection (EA)](examples/authentication-api/passwordless-database.md)
 - [Sign Up with a database connection](examples/authentication-api/signup-database.md)
+- [Reset a password](examples/authentication-api/reset-password.md)
 - [Get user information](examples/authentication-api/get-user-information.md)
 - [Custom Token Exchange](examples/authentication-api/custom-token-exchange.md)
 - [Native to Web SSO login](examples/authentication-api/native-to-web-sso.md)

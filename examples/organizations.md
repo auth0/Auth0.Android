@@ -3,6 +3,8 @@
 [Organizations](https://auth0.com/docs/organizations) is a set of features that provide better support for developers who build and maintain SaaS and Business-to-Business (B2B) applications.
 Note that Organizations is currently only available to customers on our Enterprise and Startup subscription plans.
 
+Besides Web Auth login, the Authentication API client can also associate a password reset request with an organization. See [Reset a password](authentication-api/reset-password.md#reset-a-password).
+
 ### Log in to an organization
 
 ```kotlin

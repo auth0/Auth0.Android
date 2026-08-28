@@ -30,3 +30,7 @@ WebAuthProvider.login(account)
     .start(this, callback);
 ```
 </details>
+
+
+> [!NOTE]
+> Ephemeral browsing is not supported with Trusted Web Activity. When `withTrustedWebActivity()` is used, `withEphemeralBrowsing()` has no effect and the flow launches as a Trusted Web Activity using the browser's normal (non-isolated) session. This is a platform limitation — a TWA shares the user's browser profile by design, so it cannot run in an isolated ephemeral session.
