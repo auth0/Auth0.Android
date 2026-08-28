@@ -198,20 +198,27 @@ Retrieve the list of authenticators that the user has enrolled and are allowed f
 // Convert List<MfaFactor> to List<String> for the factorsAllowed parameter
 val factorTypes = requirements?.challenge?.map { it.type } ?: emptyList()
 
-mfaClient
-    .getAuthenticators(factorsAllowed = factorTypes)
-    .start(object: Callback<List<Authenticator>, MfaListAuthenticatorsException> {
-        override fun onFailure(exception: MfaListAuthenticatorsException) {
-            // Handle error
-        }
-
-        override fun onSuccess(authenticators: List<Authenticator>) {
-            // Display authenticators for user to choose
-            authenticators.forEach { auth ->
-                println("Type: ${auth.authenticatorType}, ID: ${auth.id}")
+// getAuthenticators() requires at least one factor type. An empty list means the
+// requirements carried `enroll` rather than `challenge`, so enroll a factor instead
+// (see "Enrolling New Authenticators" below).
+if (factorTypes.isEmpty()) {
+    // start enrollment
+} else {
+    mfaClient
+        .getAuthenticators(factorsAllowed = factorTypes)
+        .start(object: Callback<List<Authenticator>, MfaListAuthenticatorsException> {
+            override fun onFailure(exception: MfaListAuthenticatorsException) {
+                // Handle error
             }
-        }
-    })
+
+            override fun onSuccess(authenticators: List<Authenticator>) {
+                // Display authenticators for user to choose
+                authenticators.forEach { auth ->
+                    println("Type: ${auth.authenticatorType}, ID: ${auth.id}")
+                }
+            }
+        })
+}
 ```
 
 <details>
@@ -220,6 +227,8 @@ mfaClient
 ```kotlin
 try {
     val factorTypes = requirements?.challenge?.map { it.type } ?: emptyList()
+    // An empty list means enrollment is required — enroll a factor instead of listing authenticators.
+    require(factorTypes.isNotEmpty()) { "No challenge factors; start enrollment instead" }
     val authenticators = mfaClient
         .getAuthenticators(factorsAllowed = factorTypes)
         .await()
@@ -242,22 +251,29 @@ if (requirements != null && requirements.getChallenge() != null) {
     }
 }
 
-mfaClient
-    .getAuthenticators(factorTypes)
-    .start(new Callback<List<Authenticator>, MfaListAuthenticatorsException>() {
-        @Override
-        public void onFailure(@NonNull MfaListAuthenticatorsException exception) {
-            // Handle error
-        }
-
-        @Override
-        public void onSuccess(List<Authenticator> authenticators) {
-            // Display authenticators for user to choose
-            for (Authenticator auth : authenticators) {
-                Log.d(TAG, "Type: " + auth.getAuthenticatorType() + ", ID: " + auth.getId());
+// getAuthenticators() requires at least one factor type. An empty list means the
+// requirements carried `enroll` rather than `challenge`, so enroll a factor instead
+// (see "Enrolling New Authenticators" below).
+if (factorTypes.isEmpty()) {
+    // start enrollment
+} else {
+    mfaClient
+        .getAuthenticators(factorTypes)
+        .start(new Callback<List<Authenticator>, MfaListAuthenticatorsException>() {
+            @Override
+            public void onFailure(@NonNull MfaListAuthenticatorsException exception) {
+                // Handle error
             }
-        }
-    });
+
+            @Override
+            public void onSuccess(List<Authenticator> authenticators) {
+                // Display authenticators for user to choose
+                for (Authenticator auth : authenticators) {
+                    Log.d(TAG, "Type: " + auth.getAuthenticatorType() + ", ID: " + auth.getId());
+                }
+            }
+        });
+}
 ```
 </details>
 
