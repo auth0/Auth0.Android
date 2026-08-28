@@ -376,7 +376,7 @@ public object WebAuthProvider {
 
         /**
          * Launches the Logout experience with a native feel (without address bar). For this to work,
-         * you have to setup the app as trusted following the steps mentioned [here](https://github.com/auth0/Auth0.Android/blob/main/EXAMPLES.md#trusted-web-activity-experimental).
+         * you have to setup the app as trusted following the steps mentioned [here](https://github.com/auth0/Auth0.Android/blob/main/examples/trusted-web-activity.md).
          *
          * Note: [withAuthTab] and [withTrustedWebActivity] are mutually exclusive. If both are set,
          * TWA takes precedence and Auth Tab will not be used. They rely on different underlying
@@ -735,7 +735,7 @@ public object WebAuthProvider {
 
         /**
          * Launches the Login experience with a native feel (without address bar). For this to work,
-         * you have to setup the app as trusted following the steps mentioned [here](https://github.com/auth0/Auth0.Android/blob/main/EXAMPLES.md#trusted-web-activity-experimental).
+         * you have to setup the app as trusted following the steps mentioned [here](https://github.com/auth0/Auth0.Android/blob/main/examples/trusted-web-activity.md).
          *
          * Note: [withAuthTab] and [withTrustedWebActivity] are mutually exclusive. If both are set,
          * TWA takes precedence and Auth Tab will not be used. They rely on different underlying

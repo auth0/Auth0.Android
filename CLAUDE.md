@@ -42,7 +42,9 @@ Auth0.Android/
 ├── gradle/versioning.gradle                 # Reads version from .version
 ├── .github/workflows/test.yml               # CI: tests + lint + coverage
 ├── .version                                 # Single version source of truth
-├── README.md / EXAMPLES.md                  # User-facing docs
+├── README.md                                # User onboarding and requirements
+├── EXAMPLES.md                              # Index linking to examples/
+├── examples/                                # Usage patterns, one file per feature
 └── V4_MIGRATION_GUIDE.md                    # v3 → v4 migration
 ```
 
@@ -57,7 +59,7 @@ Auth0.Android/
 - Provide both callback and `suspend` variants for every async public method (Java consumers need callbacks)
 - Declare explicit visibility modifiers and return types on all public declarations (`-Xexplicit-api=strict` — CI fails on implicit visibility)
 - Use specific exception types (`AuthenticationException`, `CredentialsManagerException`, `DPoPException`) — never bare `catch (Exception e)`
-- Update `README.md` and `EXAMPLES.md` in the same PR when changing public API, configuration, or integration patterns — `EXAMPLES.md` must include Kotlin callback, coroutine, and Java samples for every async method
+- Update `README.md` and the relevant file under `examples/` in the same PR when changing public API, configuration, or integration patterns — examples must include Kotlin callback, coroutine, and Java samples for every async method
 - Route new outbound requests through `RequestFactory` so they carry the `Auth0-Client` header via `Auth0UserAgent` — don't create a separate HTTP client
 - Keep `.version` as the sole version source of truth (injected via `gradle/versioning.gradle`)
 
@@ -130,6 +132,6 @@ A PR touching public API, config, or integration patterns is not complete until 
 | Doc | Covers |
 |-----|--------|
 | `README.md` | Installation, requirements, quick-start, config |
-| `EXAMPLES.md` | Full Kotlin + Java usage for every feature |
+| `EXAMPLES.md` + `examples/` | `EXAMPLES.md` is an index; each feature has its own file under `examples/` with full Kotlin + Java usage |
 
 See [references/docs-update.md](references/docs-update.md) for the full code-to-docs mapping. Read before finalizing any public API PR.
