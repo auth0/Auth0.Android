@@ -27,15 +27,6 @@ public class DiscoveryResult internal constructor(
     /** The kinds of login available. */
     public val types: Set<GrantType> = options.mapTo(LinkedHashSet()) { it.grantType }
 
-    /**
-     * Login options that arrive through the interactive `/e/authorize` pipeline rather than a
-     * direct `/oauth/token` grant, in the order the server returned them. Today this is just
-     * [LoginOption.EmbeddedAuthorize]; as the server advertises more `/e/authorize` capabilities
-     * they surface here automatically, so a caller can list the newer options without tracking
-     * each grant type by hand.
-     */
-    public val capabilities: List<LoginOption> =
-        options.filter { it.grantType in CAPABILITY_GRANT_TYPES }
 
     /** Realm names of the password-realm logins on offer, in the order the server returned them. */
     public val passwordRealms: List<String> =
@@ -60,5 +51,3 @@ public class DiscoveryResult internal constructor(
     public fun supports(grantType: GrantType): Boolean = grantType in types
 }
 
-/** Grant types served by the interactive `/e/authorize` pipeline, projected as [DiscoveryResult.capabilities]. */
-private val CAPABILITY_GRANT_TYPES: Set<GrantType> = setOf(GrantType.AUTHORIZATION_CODE)
