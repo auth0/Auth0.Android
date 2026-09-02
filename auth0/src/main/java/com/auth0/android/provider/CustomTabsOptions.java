@@ -56,6 +56,8 @@ public class CustomTabsOptions implements Parcelable {
     // Partial Custom Tabs - Background Interaction
     private final boolean backgroundInteractionEnabled;
 
+    private final boolean sendToExternalDefaultHandlerEnabled;
+
     private final boolean authTab;
 
     private CustomTabsOptions(boolean showTitle, @ColorRes int toolbarColor, @NonNull BrowserPicker browserPicker,
@@ -63,7 +65,7 @@ public class CustomTabsOptions implements Parcelable {
                               int initialHeight, int activityHeightResizeBehavior, int toolbarCornerRadius,
                               int initialWidth, int sideSheetBreakpoint,
                               boolean backgroundInteractionEnabled, boolean ephemeralBrowsing,
-                              boolean authTab) {
+                              boolean sendToExternalDefaultHandlerEnabled, boolean authTab) {
         this.showTitle = showTitle;
         this.toolbarColor = toolbarColor;
         this.browserPicker = browserPicker;
@@ -75,6 +77,7 @@ public class CustomTabsOptions implements Parcelable {
         this.initialWidth = initialWidth;
         this.sideSheetBreakpoint = sideSheetBreakpoint;
         this.backgroundInteractionEnabled = backgroundInteractionEnabled;
+        this.sendToExternalDefaultHandlerEnabled = sendToExternalDefaultHandlerEnabled;
         this.authTab = authTab;
     }
 
@@ -114,6 +117,7 @@ public class CustomTabsOptions implements Parcelable {
         builder.initialWidth = this.initialWidth;
         builder.sideSheetBreakpoint = this.sideSheetBreakpoint;
         builder.backgroundInteractionEnabled = this.backgroundInteractionEnabled;
+        builder.sendToExternalDefaultHandlerEnabled = this.sendToExternalDefaultHandlerEnabled;
         builder.ephemeralBrowsing = this.ephemeralBrowsing;
         builder.authTab = this.authTab;
         return builder;
@@ -191,6 +195,14 @@ public class CustomTabsOptions implements Parcelable {
             builder.setBackgroundInteractionEnabled(true);
         }
 
+        // Allow the initial navigation chain (e.g. /authorize redirecting straight to an https
+        // callback URL) to leave the browser and launch this app. Without this, Chrome versions
+        // prior to 120 keep such redirects inside the Custom Tab because the launching intent
+        // explicitly targets the browser package.
+        if (sendToExternalDefaultHandlerEnabled) {
+            builder.setSendToExternalDefaultHandlerEnabled(true);
+        }
+
         return builder.build().intent;
     }
 
@@ -241,6 +253,7 @@ public class CustomTabsOptions implements Parcelable {
         initialWidth = in.readInt();
         sideSheetBreakpoint = in.readInt();
         backgroundInteractionEnabled = in.readByte() != 0;
+        sendToExternalDefaultHandlerEnabled = in.readByte() != 0;
         authTab = in.readByte() != 0;
     }
 
@@ -257,6 +270,7 @@ public class CustomTabsOptions implements Parcelable {
         dest.writeInt(initialWidth);
         dest.writeInt(sideSheetBreakpoint);
         dest.writeByte((byte) (backgroundInteractionEnabled ? 1 : 0));
+        dest.writeByte((byte) (sendToExternalDefaultHandlerEnabled ? 1 : 0));
         dest.writeByte((byte) (authTab ? 1 : 0));
     }
 
@@ -298,6 +312,7 @@ public class CustomTabsOptions implements Parcelable {
         private int initialWidth;
         private int sideSheetBreakpoint;
         private boolean backgroundInteractionEnabled;
+        private boolean sendToExternalDefaultHandlerEnabled;
 
         Builder() {
             this.showTitle = false;
@@ -312,6 +327,7 @@ public class CustomTabsOptions implements Parcelable {
             this.initialWidth = 0;
             this.sideSheetBreakpoint = 0;
             this.backgroundInteractionEnabled = false;
+            this.sendToExternalDefaultHandlerEnabled = false;
         }
 
         /**
@@ -495,6 +511,33 @@ public class CustomTabsOptions implements Parcelable {
         }
 
         /**
+         * Allows the initial navigation chain of the Custom Tab to leave the browser and launch
+         * an external app, by setting {@link CustomTabsIntent#EXTRA_SEND_TO_EXTERNAL_DEFAULT_HANDLER}
+         * on the Custom Tab intent.
+         * <p>
+         * This is relevant when the redirect scheme is {@code https} (Android App Links). A Custom
+         * Tab intent created from a Custom Tabs session always targets the browser package
+         * explicitly, and Chrome versions prior to 120 interpret that as a request to keep the
+         * initial navigation chain inside the browser. When the {@code /authorize} request redirects
+         * straight to the callback URL without any user interaction, for example because the user
+         * already has a session or {@code prompt=none} is used, those Chrome versions load the
+         * callback URL in the Custom Tab instead of launching the app, and the user sees a
+         * "Not found." page. Enabling this option lets the redirect launch the app instead.
+         * <p>
+         * It has no effect on flows that already require user interaction, on Chrome 120 and
+         * later for redirects back to the calling app, or on the Auth Tab flow.
+         * By default, this option is disabled.
+         *
+         * @param enabled whether to allow the initial navigation chain to launch an external app.
+         * @return this same builder instance.
+         */
+        @NonNull
+        public Builder withSendToExternalDefaultHandlerEnabled(boolean enabled) {
+            this.sendToExternalDefaultHandlerEnabled = enabled;
+            return this;
+        }
+
+        /**
          * Create a new CustomTabsOptions instance with the customization settings.
          *
          * @return an instance of CustomTabsOptions with the customization settings.
@@ -504,7 +547,7 @@ public class CustomTabsOptions implements Parcelable {
             return new CustomTabsOptions(showTitle, toolbarColor, browserPicker, disabledCustomTabsPackages,
                     initialHeight, activityHeightResizeBehavior, toolbarCornerRadius,
                     initialWidth, sideSheetBreakpoint, backgroundInteractionEnabled, ephemeralBrowsing,
-                    authTab);
+                    sendToExternalDefaultHandlerEnabled, authTab);
         }
     }
 
