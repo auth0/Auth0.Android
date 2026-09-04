@@ -30,7 +30,9 @@ internal fun Alternative.toLoginOption(): LoginOption? {
             )
         }
 
-        GRANT_AUTHORIZATION_CODE -> connection?.let { LoginOption.EmbeddedAuthorize(connection = it) }
+        GRANT_AUTHORIZATION_CODE -> connection?.let {
+            LoginOption.AuthorizationCode(connection = it, type = type)
+        }
 
         GRANT_TOKEN_EXCHANGE -> subjectTokenType?.let {
             LoginOption.NativeSocial(subjectTokenType = it)

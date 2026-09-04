@@ -34,6 +34,7 @@ internal class EmbeddedAuthMockServer : APIMockServer() {
                 },
                 {
                   "grant_type": "authorization_code",
+                  "type": "embedded_authorize",
                   "connection": "$AUTHORIZE_CONNECTION"
                 },
                 {

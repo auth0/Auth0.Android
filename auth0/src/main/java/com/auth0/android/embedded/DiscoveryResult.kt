@@ -34,6 +34,20 @@ public class DiscoveryResult internal constructor(
     public val socialProviders: List<String> =
         options.filterIsInstance<LoginOption.NativeSocial>().map { it.subjectTokenType }
 
+    /**
+     * Whether the new embedded-authorize flow is available for this client.
+     *
+     * `true` when the discovery response contains an `authorization_code` entry with
+     * `type == "embedded_authorize"`.
+     */
+    public val hasEmbeddedAuthorization: Boolean =
+        options.filterIsInstance<LoginOption.AuthorizationCode>()
+            .any { it.type == EMBEDDED_AUTHORIZE_TYPE }
+
+    private companion object {
+        private const val EMBEDDED_AUTHORIZE_TYPE = "embedded_authorize"
+    }
+
     /** Whether a given kind of login is available. */
     public fun supports(grantType: GrantType): Boolean = grantType in types
 }

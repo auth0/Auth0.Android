@@ -101,13 +101,15 @@ public sealed interface LoginOption {
     }
 
     /**
-     * Interactive login through the embedded authorize endpoint.
+     * Login by exchanging an authorization code for a valid set of Credentials.
      *
      * @param connection connection to authenticate against.
+     * @param type the `type` value the server sent, e.g. `"embedded_authorize"`.
      */
     @ConsistentCopyVisibility
-    public data class EmbeddedAuthorize internal constructor(
-        override val connection: String
+    public data class AuthorizationCode internal constructor(
+        override val connection: String,
+        public val type: String?
     ) : LoginOption {
         override val grantType: GrantType = GrantType.AUTHORIZATION_CODE
     }

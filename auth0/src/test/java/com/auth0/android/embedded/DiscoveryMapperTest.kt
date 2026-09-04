@@ -91,12 +91,28 @@ public class DiscoveryMapperTest {
     }
 
     @Test
-    public fun `authorization_code maps its connection to EmbeddedAuthorize`() {
-        val option =
-            Alternative(grantType = GRANT_AUTHORIZATION_CODE, connection = "google").toLoginOption()
+    public fun `authorization_code maps its connection and type to EmbeddedAuthorize`() {
+        val option = Alternative(
+            grantType = GRANT_AUTHORIZATION_CODE,
+            type = "embedded_authorize",
+            connection = "google"
+        ).toLoginOption()
 
-        assertThat(option, `is`(instanceOf(LoginOption.EmbeddedAuthorize::class.java)))
-        assertThat((option as LoginOption.EmbeddedAuthorize).connection, `is`("google"))
+        val authorize = option as LoginOption.AuthorizationCode
+        assertThat(authorize.connection, `is`("google"))
+        assertThat(authorize.type, `is`("embedded_authorize"))
+        assertThat(authorize.grantType, `is`(GrantType.AUTHORIZATION_CODE))
+    }
+
+    @Test
+    public fun `authorization_code without a type still maps to EmbeddedAuthorize`() {
+        val option = Alternative(
+            grantType = GRANT_AUTHORIZATION_CODE,
+            connection = "google"
+        ).toLoginOption()
+
+        val authorize = option as LoginOption.AuthorizationCode
+        assertThat(authorize.type, `is`(nullValue()))
     }
 
     @Test
@@ -178,6 +194,54 @@ public class DiscoveryMapperTest {
                 GrantType.PASSWORDLESS_OTP
             )
         )
+    }
+
+    @Test
+    public fun `hasEmbeddedAuthorize is true when authorization_code with embedded_authorize type is present`() {
+        val result = DiscoveryResponse(
+            listOf(
+                Alternative(
+                    grantType = GRANT_AUTHORIZATION_CODE,
+                    type = "embedded_authorize",
+                    connection = "my-db"
+                )
+            )
+        ).toDiscoveryResult()
+
+        assertThat(result.hasEmbeddedAuthorization, `is`(true))
+    }
+
+    @Test
+    public fun `hasEmbeddedAuthorize is false when authorization_code has no type`() {
+        val result = DiscoveryResponse(
+            listOf(Alternative(grantType = GRANT_AUTHORIZATION_CODE, connection = "my-db"))
+        ).toDiscoveryResult()
+
+        assertThat(result.hasEmbeddedAuthorization, `is`(false))
+    }
+
+    @Test
+    public fun `hasEmbeddedAuthorize is false when authorization_code has an unrecognised type`() {
+        val result = DiscoveryResponse(
+            listOf(
+                Alternative(
+                    grantType = GRANT_AUTHORIZATION_CODE,
+                    type = "future_type",
+                    connection = "my-db"
+                )
+            )
+        ).toDiscoveryResult()
+
+        assertThat(result.hasEmbeddedAuthorization, `is`(false))
+    }
+
+    @Test
+    public fun `hasEmbeddedAuthorize is false when no authorization_code entry is present`() {
+        val result = DiscoveryResponse(
+            listOf(Alternative(grantType = GRANT_PASSWORD))
+        ).toDiscoveryResult()
+
+        assertThat(result.hasEmbeddedAuthorization, `is`(false))
     }
 
     @Test
