@@ -31,7 +31,7 @@ internal fun Alternative.toLoginOption(): LoginOption? {
         }
 
         GRANT_AUTHORIZATION_CODE -> connection?.let {
-            LoginOption.AuthorizationCode(connection = it, type = type)
+            LoginOption.AuthorizationCode(connection = it, type = type.orEmpty())
         }
 
         GRANT_TOKEN_EXCHANGE -> subjectTokenType?.let {

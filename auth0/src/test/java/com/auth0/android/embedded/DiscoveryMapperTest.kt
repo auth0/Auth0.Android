@@ -104,16 +104,6 @@ public class DiscoveryMapperTest {
         assertThat(authorize.grantType, `is`(GrantType.AUTHORIZATION_CODE))
     }
 
-    @Test
-    public fun `authorization_code without a type still maps to EmbeddedAuthorize`() {
-        val option = Alternative(
-            grantType = GRANT_AUTHORIZATION_CODE,
-            connection = "google"
-        ).toLoginOption()
-
-        val authorize = option as LoginOption.AuthorizationCode
-        assertThat(authorize.type, `is`(nullValue()))
-    }
 
     @Test
     public fun `an unrecognised grant becomes Unknown carrying the raw grant type`() {

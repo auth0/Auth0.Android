@@ -109,7 +109,7 @@ public sealed interface LoginOption {
     @ConsistentCopyVisibility
     public data class AuthorizationCode internal constructor(
         override val connection: String,
-        public val type: String?
+        public val type: String
     ) : LoginOption {
         override val grantType: GrantType = GrantType.AUTHORIZATION_CODE
     }
