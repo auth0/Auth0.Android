@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Auth0 Embedded Sample</string>
+
+
+    <string name="com_auth0_domain">p-mathew.us.auth0.com</string>
+    <string name="com_auth0_client_id">gkba7X6OJM2b0cdlUlTCqXD7AwT3FYVV</string>
+    <string name="com_auth0_scheme">demo</string>
+
+    <string name="title_embedded">Embedded Authentication</string>
+    <string name="label_response_log">Mock responses</string>
+    <string name="status_idle">Tap Start to begin the embedded login flow.</string>
+    <string name="status_working">Contacting the server…</string>
+    <string name="status_signed_in">Signed in. Received %1$s credentials.</string>
+    <string name="action_start">Start</string>
+    <string name="action_restart">Restart</string>
+    <string name="action_submit_email">Submit email</string>
+    <string name="action_send_code">Send code</string>
+    <string name="action_verify">Verify</string>
+    <string name="hint_email">Email</string>
+    <string name="hint_otp">One-time code (use 123456)</string>
+
+    <string name="prompt_identify">Enter your email to continue.</string>
+    <string name="prompt_challenge">Ready to send a one-time code to your email.</string>
+    <string name="prompt_verify">Enter the code sent to %1$s.</string>
+    <string name="prompt_verify_generic">Enter the one-time code.</string>
+    <string name="prompt_retry_otp">That code was rejected (invalid_identifier_or_code). Try again.</string>
+    <string name="status_terminal">Flow ended: %1$s</string>
+</resources>

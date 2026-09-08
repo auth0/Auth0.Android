@@ -80,7 +80,73 @@ internal class EmbeddedAuthMockServer : APIMockServer() {
         return this
     }
 
+    /** A `403 insufficient_authorization` continuation carrying a fresh session and a `next` menu. */
+    fun willReturnContinuation(
+        session: String,
+        next: String,
+        description: String = "Another step is required."
+    ): EmbeddedAuthMockServer {
+        val json = """
+            {
+              "error": "insufficient_authorization",
+              "error_description": "$description",
+              "auth_session": "$session",
+              "next": $next
+            }
+        """.trimIndent()
+        server.enqueue(responseWithJSON(json, 403))
+        return this
+    }
+
+    /** The `200` that ends `/e/authorize`: the code to exchange for tokens. */
+    fun willReturnAuthorizationCode(code: String = AUTHORIZATION_CODE): EmbeddedAuthMockServer {
+        server.enqueue(responseWithJSON("""{ "authorization_code": "$code" }""", 200))
+        return this
+    }
+
+    /** The `/oauth/token` success exchanged for [com.auth0.android.result.Credentials]. */
+    fun willReturnTokens(): EmbeddedAuthMockServer {
+        val json = """
+            {
+              "id_token": "$ID_TOKEN",
+              "access_token": "$ACCESS_TOKEN",
+              "token_type": "$TOKEN_TYPE",
+              "expires_in": 86000
+            }
+        """.trimIndent()
+        server.enqueue(responseWithJSON(json, 200))
+        return this
+    }
+
+    /** A terminal `403 access_denied` (no `next` menu). */
+    fun willReturnAccessDenied(): EmbeddedAuthMockServer {
+        val json = """
+            {
+              "error": "access_denied",
+              "error_description": "The user was denied access."
+            }
+        """.trimIndent()
+        server.enqueue(responseWithJSON(json, 403))
+        return this
+    }
+
     companion object {
+        const val SESSION_IDENTIFY = "sess-identify"
+        const val SESSION_CHALLENGE = "sess-challenge"
+        const val SESSION_VERIFY = "sess-verify"
+        const val AUTHORIZATION_CODE = "embedded-auth-code-abc123"
+        const val ACCESS_TOKEN = "s6GS5FGJN2jfd4l6"
+        const val TOKEN_TYPE = "Bearer"
+
+        // A decodable HS256 JWT (from credentials_openid.json) so CredentialsDeserializer succeeds.
+        const val ID_TOKEN =
+            "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL3NhbXBsZXMuYXV0aDAuY29tLyIsInN1YiI6ImF1dGgwfDUzYjk5NWY4YmNlNjhkOWZjOTAwMDk5YyIsImF1ZCI6Ikk5bWhVcmZrVEdGVldqbEVxWlNUQ0JVRkFCTGJKRkdMMyIsImV4cCI6MTQ2NTEwOTAzMywiaWF0IjoxNDY1MDczMDMzfQ.TdRc-lnVcX0LT7ZySzVysjVcYzAUIRnCPufTO8VV6g8"
+
+        const val NEXT_IDENTIFY_EMAIL = """[{"action":"action:identify:email:v1"}]"""
+        const val NEXT_CHALLENGE_EMAIL = """[{"action":"action:challenge:email:v1"}]"""
+        const val NEXT_VERIFY_OTP =
+            """[{"action":"action:verify:otp:v1","channel":"email","identifier":"a***@example.com"}]"""
+
         const val PASSWORD_REALM = "Username-Password-Authentication"
         const val PASSKEY_CONNECTION = "passkey-connection"
         const val OTP_EMAIL_CONNECTION = "email"
