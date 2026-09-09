@@ -30,9 +30,8 @@ internal fun Alternative.toLoginOption(): LoginOption? {
             )
         }
 
-        GRANT_AUTHORIZATION_CODE -> connection?.let {
-            LoginOption.AuthorizationCode(connection = it, type = type.orEmpty())
-        }
+        GRANT_AUTHORIZATION_CODE ->
+            LoginOption.AuthorizationCode(connection = connection, type = type.orEmpty())
 
         GRANT_TOKEN_EXCHANGE -> subjectTokenType?.let {
             LoginOption.NativeSocial(subjectTokenType = it)

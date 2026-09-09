@@ -104,6 +104,19 @@ public class DiscoveryMapperTest {
         assertThat(authorize.grantType, `is`(GrantType.AUTHORIZATION_CODE))
     }
 
+    @Test
+    public fun `authorization_code without a connection is kept with a null connection`() {
+        val option = Alternative(
+            grantType = GRANT_AUTHORIZATION_CODE,
+            type = "embedded_authorize"
+        ).toLoginOption()
+
+        val authorize = option as LoginOption.AuthorizationCode
+        assertThat(authorize.connection, `is`(nullValue()))
+        assertThat(authorize.type, `is`("embedded_authorize"))
+        assertThat(authorize.grantType, `is`(GrantType.AUTHORIZATION_CODE))
+    }
+
 
     @Test
     public fun `an unrecognised grant becomes Unknown carrying the raw grant type`() {
@@ -133,7 +146,6 @@ public class DiscoveryMapperTest {
         assertThat(Alternative(grantType = GRANT_PASSWORD_REALM).toLoginOption(), `is`(nullValue()))
         assertThat(Alternative(grantType = GRANT_WEBAUTHN).toLoginOption(), `is`(nullValue()))
         assertThat(Alternative(grantType = GRANT_PASSWORDLESS_OTP).toLoginOption(), `is`(nullValue()))
-        assertThat(Alternative(grantType = GRANT_AUTHORIZATION_CODE).toLoginOption(), `is`(nullValue()))
         assertThat(Alternative(grantType = GRANT_TOKEN_EXCHANGE).toLoginOption(), `is`(nullValue()))
     }
 
@@ -196,6 +208,15 @@ public class DiscoveryMapperTest {
                     connection = "my-db"
                 )
             )
+        ).toDiscoveryResult()
+
+        assertThat(result.hasEmbeddedAuthorization, `is`(true))
+    }
+
+    @Test
+    public fun `hasEmbeddedAuthorize is true when embedded_authorize is present without a connection`() {
+        val result = DiscoveryResponse(
+            listOf(Alternative(grantType = GRANT_AUTHORIZATION_CODE, type = "embedded_authorize"))
         ).toDiscoveryResult()
 
         assertThat(result.hasEmbeddedAuthorization, `is`(true))
