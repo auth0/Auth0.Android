@@ -2,8 +2,8 @@ package com.auth0.sample.embedded
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.viewModelScope
 import com.auth0.android.Auth0
+import com.auth0.android.callback.Callback
 import com.auth0.android.embedded.EmbeddedAuthClient
 import com.auth0.android.embedded.EmbeddedAuthException
 import com.auth0.android.embedded.NextAction
@@ -12,23 +12,21 @@ import com.auth0.android.result.Credentials
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 
 /**
- * Drives the mocked embedded-authentication loop and exposes it as observable state.
-
- * There is one method per step — [start], [identifyEmail], [challengeEmail], [verifyOtp] — each
- * wired to the button the previous step put on screen. Every call awaits one
- * `Request<Credentials, EmbeddedAuthException>`: success ends the flow with [UiState.SignedIn], a
- * continuation failure maps the server's `next` menu to the next [UiState], and any other failure is
- * terminal ([UiState.Failed]).
+ * The callback-based twin of [EmbeddedAuthViewModel]: same public surface, same [UiState] output, but
+ * each step is driven with [Request.start] and a [Callback] instead of a suspending `await()`.
  *
- * Holding the client here (rather than in the Activity) keeps it — and the flow in progress — alive
- * across configuration changes: the current [UiState] simply re-renders after a rotation.
+ * Both view models are interchangeable — the Activity swaps one for the other by changing the type it
+ * asks `by viewModels()` for; nothing else in the Activity changes. The step logic is duplicated on
+ * purpose so each file reads as a complete example of its style, side by side.
+ *
+ * The SDK delivers [Callback.onSuccess] / [Callback.onFailure] on the main thread, so the state
+ * updates here need no dispatching.
  *
  * All traffic is served by [FakeAuthorizeClient] — no live tenant is contacted.
  */
-class EmbeddedAuthViewModel(application: Application) : AndroidViewModel(application) {
+class EmbeddedAuthCallbackViewModel(application: Application) : AndroidViewModel(application) {
 
     private val fake = FakeAuthorizeClient()
 
@@ -44,6 +42,19 @@ class EmbeddedAuthViewModel(application: Application) : AndroidViewModel(applica
 
     private val _log = MutableStateFlow("")
     val log: StateFlow<String> = _log.asStateFlow()
+
+    /** Handles the outcome of every step; reused across calls since it does not depend on the request. */
+    private val callback = object : Callback<Credentials, EmbeddedAuthException> {
+        override fun onSuccess(result: Credentials) {
+            _uiState.value = UiState.SignedIn(result.type)
+            refreshLog()
+        }
+
+        override fun onFailure(error: EmbeddedAuthException) {
+            _uiState.value = error.toUiState()
+            refreshLog()
+        }
+    }
 
     /** Begins a fresh flow from a clean log. */
     fun start() {
@@ -65,23 +76,10 @@ class EmbeddedAuthViewModel(application: Application) : AndroidViewModel(applica
         _uiState.value = UiState.Idle
     }
 
-    /**
-     * Awaits one request and publishes the outcome.
-     *
-     * The launch runs on [viewModelScope] (the main dispatcher). [Request.await] hops to
-     * `Dispatchers.IO` for the network and resumes here, so the client's `transactionState` stays
-     * main-thread confined — the same guarantee the callback path relied on.
-     */
+    /** Fires one request and lets [callback] publish the outcome. */
     private fun execute(request: Request<Credentials, EmbeddedAuthException>) {
         _uiState.value = UiState.Working
-        viewModelScope.launch {
-            _uiState.value = try {
-                UiState.SignedIn(request.await().type)
-            } catch (error: EmbeddedAuthException) {
-                error.toUiState()
-            }
-            refreshLog()
-        }
+        request.start(callback)
     }
 
     /**
@@ -100,7 +98,7 @@ class EmbeddedAuthViewModel(application: Application) : AndroidViewModel(applica
                 destination = action.identifier,
                 isRetry = description == INVALID_CODE
             )
-
+            // IdentifyPhone / Unknown, or no menu at all — terminal for this demo.
             else -> UiState.Failed(code)
         }
 
@@ -108,7 +106,7 @@ class EmbeddedAuthViewModel(application: Application) : AndroidViewModel(applica
     private fun refreshLog() {
         _log.value = fake.log.mapIndexed { index, exchange ->
             "#${index + 1}  POST ${exchange.endpoint} → ${exchange.statusCode}\n" +
-                    redactTokens(exchange.body)
+                redactTokens(exchange.body)
         }.joinToString("\n\n")
     }
 
