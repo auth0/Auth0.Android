@@ -2,176 +2,119 @@ package com.auth0.sample.embedded
 
 import android.os.Bundle
 import android.view.View
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import com.auth0.android.Auth0
-import com.auth0.android.callback.Callback
-import com.auth0.android.embedded.EmbeddedAuthClient
-import com.auth0.android.embedded.EmbeddedAuthException
-import com.auth0.android.embedded.NextAction
-import com.auth0.android.result.Credentials
+import androidx.lifecycle.lifecycleScope
 import com.auth0.sample.embedded.databinding.ActivityMainBinding
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 /**
- * Drives the mocked embedded-authentication loop end to end.
+ * Renders the embedded-authentication flow owned by [EmbeddedAuthViewModel] and forwards user input.
  *
- * Each [EmbeddedAuthClient] call returns a `Request<Credentials, EmbeddedAuthException>`. A step that
- * does not finish the flow fails with `insufficient_authorization`, whose `next` menu tells us which
- * method to call next; we render the matching input and button. The flow ends when a call succeeds
- * with [Credentials] or fails with any other error.
- *
- * All traffic is served by [FakeAuthorizeClient] — no live tenant is contacted.
+ * The Activity holds no flow logic: it collects [EmbeddedAuthViewModel.uiState] and paints each
+ * [UiState], collecting [EmbeddedAuthViewModel.log] into the log view. Each state wires the action
+ * button to the ViewModel call that drives the next step — so tapping the button triggers one API
+ * call, and the resulting state decides what to show next.
  */
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
-    private val fake = FakeAuthorizeClient()
-
-    private val client: EmbeddedAuthClient by lazy {
-        val auth0 = Auth0.getInstance(
-            "EMBEDDED_SAMPLE_CLIENT_ID",
-            getString(R.string.com_auth0_domain)
-        )
-        auth0.networkingClient = fake
-        EmbeddedAuthClient(auth0)
-    }
-
-    private val callback = object : Callback<Credentials, EmbeddedAuthException> {
-        override fun onSuccess(result: Credentials) = onSignedIn(result)
-        override fun onFailure(error: EmbeddedAuthException) = onStep(error)
-    }
+    private val viewModel: EmbeddedAuthViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        showStart()
-        binding.btnRestart.setOnClickListener { showStart() }
+        binding.btnRestart.setOnClickListener { viewModel.restart() }
+        lifecycleScope.launch { viewModel.uiState.collect { render(it) } }
+        lifecycleScope.launch { viewModel.log.collect { binding.tvLog.text = it } }
     }
 
-    /** Resets the UI to the initial "Start" state, abandoning any flow in progress. */
-    private fun showStart() {
+    private fun render(state: UiState) {
+        when (state) {
+            UiState.Idle -> showIdle()
+            UiState.Working -> showWorking()
+
+            UiState.IdentifyEmail -> showInput(
+                status = getString(R.string.prompt_identify),
+                hintRes = R.string.hint_email,
+                actionRes = R.string.action_submit_email
+            ) { viewModel.identifyEmail(it) }
+
+            UiState.ChallengeEmail -> showButton(
+                status = getString(R.string.prompt_challenge),
+                actionRes = R.string.action_send_code
+            ) { viewModel.challengeEmail() }
+
+            is UiState.VerifyOtp -> showInput(
+                status = otpStatus(state),
+                hintRes = R.string.hint_otp,
+                actionRes = R.string.action_verify
+            ) { viewModel.verifyOtp(it) }
+
+            is UiState.SignedIn ->
+                showFinished(getString(R.string.status_signed_in, state.credentialType))
+
+            is UiState.Failed ->
+                showFinished(getString(R.string.status_terminal, state.errorCode))
+        }
+    }
+
+    /** The verify-OTP status line: a retry note if the last code was rejected, else where it was sent. */
+    private fun otpStatus(state: UiState.VerifyOtp): String = when {
+        state.isRetry -> getString(R.string.prompt_retry_otp)
+        state.destination != null -> getString(R.string.prompt_verify, state.destination)
+        else -> getString(R.string.prompt_verify_generic)
+    }
+
+    /** The initial "Start" screen. */
+    private fun showIdle() {
         binding.tvStatus.setText(R.string.status_idle)
         binding.tilInput.visibility = View.GONE
         binding.btnRestart.visibility = View.GONE
         binding.btnAction.isEnabled = true
         binding.btnAction.setText(R.string.action_start)
-        fake.clearLog()
-        binding.tvLog.text = ""
-        binding.btnAction.setOnClickListener {
-            binding.tvStatus.text = getString(R.string.status_working)
-            client.authorize().start(callback)
-        }
+        binding.btnAction.setOnClickListener { viewModel.start() }
     }
 
-    /**
-     * Renders the next step from the server's continuation menu, or a terminal error.
-     *
-     * We switch on the first offered [NextAction] rather than on [EmbeddedAuthException.description]:
-     * per the spec the progression responses omit `error_description`, so `description` would just be
-     * the SDK's generic fallback on every step. `error_description` is only populated on recoverable or
-     * terminal outcomes (e.g. the wrong-code retry surfaces `invalid_identifier_or_code`).
-     */
-    private fun onStep(error: EmbeddedAuthException) {
+    /** A request is in flight: lock the action button, keep Restart available. */
+    private fun showWorking() {
+        binding.tvStatus.setText(R.string.status_working)
+        binding.tilInput.visibility = View.GONE
         binding.btnRestart.visibility = View.VISIBLE
-        renderLog()
-        when (val action = error.nextActions.firstOrNull()) {
-            is NextAction.IdentifyEmail -> {
-                binding.tvStatus.setText(R.string.prompt_identify)
-                promptForInput(R.string.hint_email, R.string.action_submit_email) { value ->
-                    client.identifyEmail(value).start(callback)
-                }
-            }
-
-            is NextAction.ChallengeEmail -> {
-                binding.tvStatus.setText(R.string.prompt_challenge)
-                promptForButton(R.string.action_send_code) { client.challengeEmail().start(callback) }
-            }
-
-            is NextAction.VerifyOtp -> {
-                binding.tvStatus.text = verifyPrompt(error, action)
-                promptForInput(R.string.hint_otp, R.string.action_verify) { value ->
-                    client.verifyOtp(value).start(callback)
-                }
-            }
-
-            else -> {
-                // IdentifyPhone / Unknown, or no menu at all — treat as terminal for this demo.
-                binding.tvStatus.text = getString(R.string.status_terminal, error.code)
-                showTerminal()
-            }
-        }
+        binding.btnAction.isEnabled = false
     }
 
-    /** The verify-OTP prompt: a retry note if the last code was rejected, else where the code was sent. */
-    private fun verifyPrompt(error: EmbeddedAuthException, action: NextAction.VerifyOtp): String {
-        if (error.description == INVALID_CODE) return getString(R.string.prompt_retry_otp)
-        val destination = action.identifier
-        return if (destination != null) {
-            getString(R.string.prompt_verify, destination)
-        } else {
-            getString(R.string.prompt_verify_generic)
-        }
-    }
-
-    /** Shows a text field and an action button that submits its contents. */
-    private fun promptForInput(hintRes: Int, actionRes: Int, submit: (String) -> Unit) {
+    /** A prompt with a text field; the button submits its contents via [onSubmit]. */
+    private fun showInput(status: String, hintRes: Int, actionRes: Int, onSubmit: (String) -> Unit) {
+        binding.btnRestart.visibility = View.VISIBLE
+        binding.tvStatus.text = status
         binding.tilInput.visibility = View.VISIBLE
         binding.tilInput.hint = getString(hintRes)
         binding.etInput.text?.clear()
         binding.btnAction.isEnabled = true
         binding.btnAction.setText(actionRes)
-        binding.btnAction.setOnClickListener {
-            binding.tvStatus.setText(R.string.status_working)
-            submit(binding.etInput.text?.toString().orEmpty())
-        }
+        binding.btnAction.setOnClickListener { onSubmit(binding.etInput.text?.toString().orEmpty()) }
     }
 
-    /** Shows a single action button with no input (e.g. requesting an email challenge). */
-    private fun promptForButton(actionRes: Int, submit: () -> Unit) {
+    /** A prompt with just a button and no input (e.g. requesting the email challenge). */
+    private fun showButton(status: String, actionRes: Int, onClick: () -> Unit) {
+        binding.btnRestart.visibility = View.VISIBLE
+        binding.tvStatus.text = status
         binding.tilInput.visibility = View.GONE
         binding.btnAction.isEnabled = true
         binding.btnAction.setText(actionRes)
-        binding.btnAction.setOnClickListener {
-            binding.tvStatus.setText(R.string.status_working)
-            submit()
-        }
+        binding.btnAction.setOnClickListener { onClick() }
     }
 
-    private fun onSignedIn(credentials: Credentials) {
-        binding.tvStatus.text = getString(R.string.status_signed_in, credentials.type)
-        renderLog()
-        showTerminal()
-    }
-
-    /** Locks the action button; only Restart remains usable. */
-    private fun showTerminal() {
+    /** A terminal screen (signed in or failed): lock the action button, only Restart remains. */
+    private fun showFinished(status: String) {
+        binding.tvStatus.text = status
         binding.tilInput.visibility = View.GONE
         binding.btnAction.isEnabled = false
         binding.btnRestart.visibility = View.VISIBLE
-    }
-
-    /** Dumps every response the mock has served so far, newest step last. */
-    private fun renderLog() {
-        binding.tvLog.text = fake.log.mapIndexed { index, exchange ->
-            "#${index + 1}  POST ${exchange.endpoint} → ${exchange.statusCode}\n" +
-                redactTokens(exchange.body)
-        }.joinToString("\n\n")
-    }
-
-    /**
-     * Replaces token values with a placeholder before display. The mock's tokens are throwaway
-     * fixtures, but the project rule is to never surface token values — so we honour it here too.
-     */
-    private fun redactTokens(body: String): String =
-        TOKEN_FIELD.replace(body) { "\"${it.groupValues[1]}\":\"«redacted»\"" }
-
-    private companion object {
-        /** The spec's `error_description` for a rejected code / unknown user; surfaced as-is by the SDK. */
-        private const val INVALID_CODE = "invalid_identifier_or_code"
-
-        private val TOKEN_FIELD =
-            Regex("\"(access_token|refresh_token|id_token)\"\\s*:\\s*\"[^\"]*\"")
     }
 }
