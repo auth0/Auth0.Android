@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Auth0 Embedded Discovery</string>
+
+    <string name="com_auth0_domain">DOMAIN</string>
+    <string name="com_auth0_client_id">CLIENT_ID</string>
+    <string name="com_auth0_scheme">demo</string>
+
+    <string name="title_discovery">Embedded  (/e/discovery)</string>
+    <string name="hint_connection">Connection (optional)</string>
+    <string name="action_discover">Discover</string>
+    <string name="label_result">Result</string>
+    <string name="status_idle_discovery">Enter a connection (optional) and tap Discover.</string>
+    <string name="status_discovering">Discovering…</string>
+</resources>

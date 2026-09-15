@@ -1,3 +1,4 @@
 rootProject.name = 'Auth0.Android'
 include 'auth0'
 include ':sample'
+include ':sample-embedded'
