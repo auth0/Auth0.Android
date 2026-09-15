@@ -20,8 +20,19 @@ public sealed interface NextAction {
         override val action: EmbeddedAction = EmbeddedAction.IDENTIFY_PHONE
     }
 
-    /** Continue by requesting an email challenge. Act on it with [EmbeddedAuthClient.challenge]. */
-    public data object ChallengeEmail : NextAction {
+    /**
+     * Continue by requesting an email challenge. Act on it with [EmbeddedAuthClient.challengeEmail].
+     *
+     * @param index the authenticator index to challenge, when the server reports it. Pass it to
+     * [EmbeddedAuthClient.challengeEmail].
+     * @param identifier the masked destination the challenge will be sent to, when the server reports
+     * it.
+     */
+    @ConsistentCopyVisibility
+    public data class ChallengeEmail internal constructor(
+        public val index: Int?,
+        public val identifier: String?
+    ) : NextAction {
         override val action: EmbeddedAction = EmbeddedAction.CHALLENGE_EMAIL
     }
 

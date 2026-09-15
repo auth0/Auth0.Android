@@ -25,10 +25,13 @@ internal object FakeAuthorizeData {
         next = """[{"action":"action:identify:email:v1"}]"""
     )
 
-    /** Step 2 — the server offers to send an email challenge. */
+    /**
+     * Step 2 — the server offers to send an email challenge. Per the OAS descriptor the server
+     * advertises the authenticator `index` to challenge and the masked destination.
+     */
     val challengeOfferBody: String = continuation(
         session = "sess-challenge",
-        next = """[{"action":"action:challenge:email:v1"}]"""
+        next = """[{"action":"action:challenge:email:v1","index":0,"identifier":"jame*@jame*****"}]"""
     )
 
     /** Step 3 — the code has been sent; the server waits for it to be verified. */

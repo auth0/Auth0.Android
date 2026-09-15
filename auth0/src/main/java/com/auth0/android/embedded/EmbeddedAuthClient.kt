@@ -32,7 +32,7 @@ import java.io.Reader
  * [authorize] begins a server-driven, multi-step flow. Each step that does not complete the flow
  * fails with an [EmbeddedAuthException] whose [EmbeddedAuthException.isInsufficientAuthorization] is
  * `true` and whose [EmbeddedAuthException.nextActions] lists the actions the server
- * will accept next — act on one by calling [identifyEmail], [identifyPhone], [challenge] or
+ * will accept next — act on one by calling [identifyEmail], [identifyPhone], [challengeEmail] or
  * [verifyOtp]. The `auth_session` threading those calls together is managed internally; the flow
  * ends when a step succeeds with [Credentials] or fails terminally (e.g. `access_denied`).
  *
@@ -87,7 +87,7 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
      *
      * On success yields [Credentials]; more commonly the first step fails with an
      * `insufficient_authorization` [EmbeddedAuthException] whose [EmbeddedAuthException.nextActions]
-     * tells you which of [identifyEmail] / [identifyPhone] / [challenge] / [verifyOtp] to call next.
+     * tells you which of [identifyEmail] / [identifyPhone] / [challengeEmail] / [verifyOtp] to call next.
      *
      * @param connection the connection to authenticate against, or `null` to let the server resolve
      * it.
@@ -115,28 +115,47 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
      * [EmbeddedAuthException.nextActions] offers [NextAction.IdentifyEmail].
      */
     public fun identifyEmail(email: String): Request<Credentials, EmbeddedAuthException> =
-        continueWith(EmbeddedAction.IDENTIFY_EMAIL, mapOf(EMAIL_KEY to email))
+        continueWith(EmbeddedAction.IDENTIFY_EMAIL) { addParameter(EMAIL_KEY, email) }
 
     /**
      * Continues the flow by submitting a phone identifier. Valid when the current
      * [EmbeddedAuthException.nextActions] offers [NextAction.IdentifyPhone].
      */
     public fun identifyPhone(phone: String): Request<Credentials, EmbeddedAuthException> =
-        continueWith(EmbeddedAction.IDENTIFY_PHONE, mapOf(PHONE_KEY to phone))
+        continueWith(EmbeddedAction.IDENTIFY_PHONE) { addParameter(PHONE_KEY, phone) }
 
     /**
      * Continues the flow by requesting an email challenge. Valid when the current
      * [EmbeddedAuthException.nextActions] offers [NextAction.ChallengeEmail].
+     *
+     * @param index the authenticator index to challenge, as reported on
+     * [NextAction.ChallengeEmail.index]. Defaults to `0` — the first (and only) authenticator in the
+     * email OTP first-factor flow.
      */
-    public fun challengeEmail(): Request<Credentials, EmbeddedAuthException> =
-        continueWith(EmbeddedAction.CHALLENGE_EMAIL, emptyMap())
+    @JvmOverloads
+    public fun challengeEmail(index: Int = 0): Request<Credentials, EmbeddedAuthException> =
+        continueWith(EmbeddedAction.CHALLENGE_EMAIL) {
+            addParameter(INDEX_KEY, index)
+        }
 
     /**
      * Continues the flow by verifying a one-time code. Valid when the current
      * [EmbeddedAuthException.nextActions] offers [NextAction.VerifyOtp].
+     *
+     * @param code the one-time password to verify.
+     * @param type the kind of one-time password. Defaults to [OtpType.OOB] — the out-of-band code
+     * (email/SMS/voice) used by the passwordless first-factor flow. Pass [OtpType.TOTP] to verify an
+     * authenticator-app code.
      */
-    public fun verifyOtp(code: String): Request<Credentials, EmbeddedAuthException> =
-        continueWith(EmbeddedAction.VERIFY_OTP, mapOf(OTP_KEY to code))
+    @JvmOverloads
+    public fun verifyOtp(
+        code: String,
+        type: OtpType = OtpType.OOB
+    ): Request<Credentials, EmbeddedAuthException> =
+        continueWith(EmbeddedAction.VERIFY_OTP) {
+            addParameter(OTP_KEY, code)
+            addParameter(TYPE_KEY, type.value)
+        }
 
     /**
      * Builds a continuation request for [action], attaching the current session token. If no flow is
@@ -145,7 +164,7 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
      */
     private fun continueWith(
         action: EmbeddedAction,
-        payload: Map<String, String>
+        addPayload: Request<AuthorizeCode, EmbeddedAuthException>.() -> Unit = {}
     ): Request<Credentials, EmbeddedAuthException> {
         val session = transactionState?.authSession ?: return FailedRequest(
             EmbeddedAuthException(
@@ -154,11 +173,14 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
             )
         )
         val request = factory.post(authorizeUrl(), authorizeCodeAdapter(gson))
-            .addParameters(buildMap {
-                put(AUTH_SESSION_KEY, session)
-                put(ACTION_KEY, action.value)
-                putAll(payload)
-            })
+            .addParameters(
+                mapOf(
+                    AUTH_SESSION_KEY to session,
+                    ACTION_KEY to action.value,
+                    CLIENT_ID_KEY to clientId
+                )
+            )
+        request.addPayload()
         return AdvancingRequest(request)
     }
 
@@ -304,6 +326,8 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
         private const val EMAIL_KEY = "email"
         private const val PHONE_KEY = "phone"
         private const val OTP_KEY = "otp"
+        private const val INDEX_KEY = "index"
+        private const val TYPE_KEY = "type"
         private const val GRANT_TYPE_KEY = "grant_type"
         private const val CODE_KEY = "code"
         private const val GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code"

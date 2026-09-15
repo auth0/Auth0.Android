@@ -143,7 +143,8 @@ internal class EmbeddedAuthMockServer : APIMockServer() {
             "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL3NhbXBsZXMuYXV0aDAuY29tLyIsInN1YiI6ImF1dGgwfDUzYjk5NWY4YmNlNjhkOWZjOTAwMDk5YyIsImF1ZCI6Ikk5bWhVcmZrVEdGVldqbEVxWlNUQ0JVRkFCTGJKRkdMMyIsImV4cCI6MTQ2NTEwOTAzMywiaWF0IjoxNDY1MDczMDMzfQ.TdRc-lnVcX0LT7ZySzVysjVcYzAUIRnCPufTO8VV6g8"
 
         const val NEXT_IDENTIFY_EMAIL = """[{"action":"action:identify:email:v1"}]"""
-        const val NEXT_CHALLENGE_EMAIL = """[{"action":"action:challenge:email:v1"}]"""
+        const val NEXT_CHALLENGE_EMAIL =
+            """[{"action":"action:challenge:email:v1","index":0,"identifier":"a***@example.com"}]"""
         const val NEXT_VERIFY_OTP =
             """[{"action":"action:verify:otp:v1","channel":"email","identifier":"a***@example.com"}]"""
 

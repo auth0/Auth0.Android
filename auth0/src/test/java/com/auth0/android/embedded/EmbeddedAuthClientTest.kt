@@ -223,7 +223,7 @@ public class EmbeddedAuthClientTest {
     }
 
     @Test
-    public fun `continuation should carry the rotated auth_session and action, and drop client_id`() {
+    public fun `continuation should carry the rotated auth_session, action, and client_id`() {
         mockAPI.willReturnContinuation(
             EmbeddedAuthMockServer.SESSION_IDENTIFY,
             EmbeddedAuthMockServer.NEXT_IDENTIFY_EMAIL
@@ -244,7 +244,60 @@ public class EmbeddedAuthClientTest {
         )
         assertThat(body, hasEntry<String, Any>("action", EmbeddedAction.IDENTIFY_EMAIL.value))
         assertThat(body, hasEntry<String, Any>("email", "user@example.com"))
-        assertThat(body, not(hasKey("client_id")))
+        assertThat(body, hasEntry<String, Any>("client_id", CLIENT_ID))
+    }
+
+    @Test
+    public fun `challengeEmail should carry the index required by the OAS`() {
+        mockAPI.willReturnContinuation(
+            EmbeddedAuthMockServer.SESSION_CHALLENGE,
+            EmbeddedAuthMockServer.NEXT_CHALLENGE_EMAIL
+        )
+
+        primeVerifyStep()
+        executeExpectingError { client.challengeEmail() }
+
+        mockAPI.takeRequest() // the priming authorize request
+        val body = bodyFromRequest<Any>(mockAPI.takeRequest())
+        assertThat(body, hasEntry<String, Any>("action", EmbeddedAction.CHALLENGE_EMAIL.value))
+        // Gson deserializes JSON numbers to Double, so the integer index reads back as 0.0.
+        assertThat(body, hasEntry<String, Any>("index", 0.0))
+    }
+
+    @Test
+    public fun `verifyOtp should carry the out-of-band type required by the OAS`() {
+        mockAPI.willReturnContinuation(
+            EmbeddedAuthMockServer.SESSION_VERIFY,
+            EmbeddedAuthMockServer.NEXT_VERIFY_OTP
+        )
+        mockAPI.willReturnAuthorizationCode()
+        mockAPI.willReturnTokens()
+
+        primeVerifyStep()
+        client.verifyOtp("123456").execute()
+
+        mockAPI.takeRequest() // the priming authorize request
+        val body = bodyFromRequest<Any>(mockAPI.takeRequest())
+        assertThat(body, hasEntry<String, Any>("action", EmbeddedAction.VERIFY_OTP.value))
+        assertThat(body, hasEntry<String, Any>("otp", "123456"))
+        assertThat(body, hasEntry<String, Any>("type", "oob"))
+    }
+
+    @Test
+    public fun `verifyOtp should send the OTP type it is given`() {
+        mockAPI.willReturnContinuation(
+            EmbeddedAuthMockServer.SESSION_VERIFY,
+            EmbeddedAuthMockServer.NEXT_VERIFY_OTP
+        )
+        mockAPI.willReturnAuthorizationCode()
+        mockAPI.willReturnTokens()
+
+        primeVerifyStep()
+        client.verifyOtp("123456", OtpType.TOTP).execute()
+
+        mockAPI.takeRequest() // the priming authorize request
+        val body = bodyFromRequest<Any>(mockAPI.takeRequest())
+        assertThat(body, hasEntry<String, Any>("type", "totp"))
     }
 
     @Test
@@ -269,6 +322,10 @@ public class EmbeddedAuthClientTest {
 
         val challenge = executeExpectingError { client.identifyEmail("user@example.com") }
         assertThat(challenge.nextActions.map { it.action }, hasItem(EmbeddedAction.CHALLENGE_EMAIL))
+        val challengeAction =
+            challenge.nextActions.filterIsInstance<NextAction.ChallengeEmail>().single()
+        assertThat(challengeAction.index, `is`(0))
+        assertThat(challengeAction.identifier, `is`("a***@example.com"))
 
         val verify = executeExpectingError { client.challengeEmail() }
         assertThat(verify.nextActions.map { it.action }, hasItem(EmbeddedAction.VERIFY_OTP))

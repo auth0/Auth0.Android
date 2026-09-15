@@ -3,6 +3,7 @@ package com.auth0.android.embedded
 private const val ACTION_KEY = "action"
 private const val CHANNEL_KEY = "channel"
 private const val IDENTIFIER_KEY = "identifier"
+private const val INDEX_KEY = "index"
 
 /**
  * Translates the raw `next` array of an `insufficient_authorization` response into the public
@@ -16,7 +17,10 @@ private fun Map<String, Any>.toNextAction(): NextAction? {
     return when (EmbeddedAction.fromValue(raw)) {
         EmbeddedAction.IDENTIFY_EMAIL -> NextAction.IdentifyEmail
         EmbeddedAction.IDENTIFY_PHONE -> NextAction.IdentifyPhone
-        EmbeddedAction.CHALLENGE_EMAIL -> NextAction.ChallengeEmail
+        EmbeddedAction.CHALLENGE_EMAIL -> NextAction.ChallengeEmail(
+            index = (this[INDEX_KEY] as? Number)?.toInt(),
+            identifier = this[IDENTIFIER_KEY] as? String
+        )
         EmbeddedAction.VERIFY_OTP -> NextAction.VerifyOtp(
             channel = this[CHANNEL_KEY] as? String,
             identifier = this[IDENTIFIER_KEY] as? String
