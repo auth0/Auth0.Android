@@ -1,25 +1,22 @@
 package com.auth0.android.embedded
 
-/**
- * What a client can currently use to log a user in, as reported by the embedded discovery endpoint.
- *
- * @param options every login available, in the order the server returned them — which is a
- * reasonable default order to render. An empty list is a valid result: it means this client has
- * nothing enabled, not that the call failed.
- */
 public class DiscoveryResult internal constructor(
     public val options: List<LoginOption>
 ) {
 
-    /** The kinds of grant-types available. */
+    /** Lists the unique grant-types available for a client */
     public val types: Set<GrantType> = options.mapTo(LinkedHashSet()) { it.grantType }
 
 
-    /** Realm names of the password-realm logins on offer, in the order the server returned them. */
+    /**
+     * Lists the connection names supporting password-realm
+     */
     public val passwordRealms: List<String> =
         options.filterIsInstance<LoginOption.PasswordRealm>().map { it.realm }
 
-    /** Connections holding a passkey credential, in the order the server returned them. */
+    /**
+     * Lists the connection names supporting webauthn
+     */
     public val passkeyConnections: List<String> =
         options.filterIsInstance<LoginOption.Passkey>().map { it.connection }
 
@@ -35,7 +32,7 @@ public class DiscoveryResult internal constructor(
         options.filterIsInstance<LoginOption.NativeSocial>().map { it.subjectTokenType }
 
     /**
-     * Whether the new embedded-authorize flow is available for this client.
+     *  Whether the new embedded-authorize flow is available for this client.
      *
      * `true` when the discovery response contains an `authorization_code` entry with
      * `type == "embedded_authorize"`.
@@ -48,6 +45,6 @@ public class DiscoveryResult internal constructor(
         private const val EMBEDDED_AUTHORIZE_TYPE = "embedded_authorize"
     }
 
-    /** Whether a given kind of login is available. */
+    /** Whether a given kind of grant-type  is supported or not. */
     public fun supports(grantType: GrantType): Boolean = grantType in types
 }

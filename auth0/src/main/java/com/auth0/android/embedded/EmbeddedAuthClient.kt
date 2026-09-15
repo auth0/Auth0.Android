@@ -37,7 +37,8 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
 
     /**
      *
-     * Fetches the list of login grant types enabled for the client
+     * Returns the grant types a client can use, derived from the client's enabled grants,
+     * its enabled connections, and each connection's configured authentication methods.
      *
      * Example usage:
      *
@@ -92,10 +93,7 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
         private fun createErrorAdapter(): ErrorAdapter<EmbeddedAuthException> {
             val mapAdapter = forMap(GsonProvider.gson)
             return object : ErrorAdapter<EmbeddedAuthException> {
-                /**
-                 * The response body was not JSON. Notably the case for the `404` returned when
-                 * embedded authentication is not enabled for the tenant, whose body is empty.
-                 */
+
                 override fun fromRawResponse(
                     statusCode: Int,
                     bodyText: String,

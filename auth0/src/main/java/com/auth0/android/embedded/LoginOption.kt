@@ -33,9 +33,7 @@ public sealed interface LoginOption {
     /**
      * Username and password login against the tenant's default directory.
      *
-     * Carries no connection: the server resolves it from the tenant's default directory. Log in
-     * with `AuthenticationAPIClient.login(email, password)`. See [PasswordRealm] for the same login
-     * against a named realm; a tenant can advertise both.
+     * Carries no connection: the server resolves it from the tenant's default directory.
      */
     public object Password : LoginOption {
         override val connection: String? = null
@@ -43,8 +41,7 @@ public sealed interface LoginOption {
     }
 
     /**
-     * Username and password login against a named realm. Log in with
-     * `AuthenticationAPIClient.login(email, password, realm)`.
+     * Username and password login against a named realm.
      *
      * @param realm connection to authenticate against.
      */
@@ -72,8 +69,7 @@ public sealed interface LoginOption {
      * Login with a one-time code.
      *
      * @param connection connection to challenge.
-     * @param identifiers what the connection accepts. Offer one entry point per identifier — a
-     * connection accepting both is two ways to sign in, not one.
+     * @param identifiers what the connection accepts.
      * @param type which challenge call this connection needs, and which parameters the token
      * exchange then takes. See [PasswordlessType].
      */
