@@ -745,6 +745,51 @@ public class CustomTabsOptionsTest {
         assertEquals(intentNoExtras.getAction(), "android.intent.action.VIEW");
     }
 
+    // --- Send To External Default Handler ---
+
+    @Test
+    public void shouldSetSendToExternalDefaultHandlerEnabled() {
+        CustomTabsOptions options = CustomTabsOptions.newBuilder()
+                .withSendToExternalDefaultHandlerEnabled(true)
+                .build();
+        assertThat(options, is(notNullValue()));
+
+        Intent intent = options.toIntent(context, null);
+        assertThat(intent, is(notNullValue()));
+        assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_SEND_TO_EXTERNAL_DEFAULT_HANDLER), is(true));
+        assertThat(CustomTabsIntent.isSendToExternalDefaultHandlerEnabled(intent), is(true));
+
+        Parcel parcel = Parcel.obtain();
+        options.writeToParcel(parcel, 0);
+        parcel.setDataPosition(0);
+        CustomTabsOptions parceledOptions = CustomTabsOptions.CREATOR.createFromParcel(parcel);
+        Intent parceledIntent = parceledOptions.toIntent(context, null);
+        assertThat(CustomTabsIntent.isSendToExternalDefaultHandlerEnabled(parceledIntent), is(true));
+    }
+
+    @Test
+    public void shouldNotSetSendToExternalDefaultHandlerByDefault() {
+        CustomTabsOptions options = CustomTabsOptions.newBuilder()
+                .build();
+        assertThat(options, is(notNullValue()));
+
+        Intent intent = options.toIntent(context, null);
+        assertThat(intent, is(notNullValue()));
+        assertThat(intent.hasExtra(CustomTabsIntent.EXTRA_SEND_TO_EXTERNAL_DEFAULT_HANDLER), is(false));
+        assertThat(CustomTabsIntent.isSendToExternalDefaultHandlerEnabled(intent), is(false));
+    }
+
+    @Test
+    public void shouldKeepSendToExternalDefaultHandlerWhenCopied() {
+        CustomTabsOptions options = CustomTabsOptions.newBuilder()
+                .withSendToExternalDefaultHandlerEnabled(true)
+                .build();
+
+        CustomTabsOptions copy = options.copyWithEphemeralBrowsing();
+        Intent intent = copy.toIntent(context, null);
+        assertThat(CustomTabsIntent.isSendToExternalDefaultHandlerEnabled(intent), is(true));
+    }
+
     // --- Auth Tab ---
 
     @Test
