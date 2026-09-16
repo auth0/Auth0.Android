@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Manifest theme applied before Compose takes over. Kept minimal (framework, no ActionBar);
+         the real theming lives in the Compose EmbeddedDiscoveryTheme. -->
+    <style name="Theme.EmbeddedSample" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
