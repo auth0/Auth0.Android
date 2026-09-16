@@ -6,9 +6,11 @@ on:
   pull_request:
     branches:
       - main
+      - v5_development
   push:
     branches:
       - main
+      - v5_development
 
 permissions:
   contents: read
