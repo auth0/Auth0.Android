@@ -2,6 +2,7 @@ package com.auth0.android.embedded
 
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
+import com.auth0.android.embedded.discovery.GrantType
 import com.auth0.android.util.EmbeddedAuthMockServer
 import com.auth0.android.util.SSLTestUtils.testClient
 import org.hamcrest.MatcherAssert.assertThat

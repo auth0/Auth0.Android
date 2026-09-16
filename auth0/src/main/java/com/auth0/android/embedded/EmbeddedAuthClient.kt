@@ -3,6 +3,9 @@ package com.auth0.android.embedded
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
+import com.auth0.android.embedded.discovery.DiscoveryResponse
+import com.auth0.android.embedded.discovery.DiscoveryResult
+import com.auth0.android.embedded.discovery.toDiscoveryResult
 import com.auth0.android.request.ErrorAdapter
 import com.auth0.android.request.JsonAdapter
 import com.auth0.android.request.Request
@@ -52,7 +55,7 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
      *
      * @param connection name of the connection to limit the results to. When omitted, all the
      * client's enabled connections are considered.
-     * @return a request to configure and start that will yield a [DiscoveryResult]
+     * @return a request to configure and start that will yield a [com.auth0.android.embedded.discovery.DiscoveryResult]
      */
     @JvmOverloads
     public fun discover(connection: String? = null): Request<DiscoveryResult, EmbeddedAuthException> {

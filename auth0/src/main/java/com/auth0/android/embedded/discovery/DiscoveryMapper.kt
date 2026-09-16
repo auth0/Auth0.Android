@@ -1,4 +1,4 @@
-package com.auth0.android.embedded
+package com.auth0.android.embedded.discovery
 
 /**
  * Translates the `GET /e/discovery` wire payload into the public [DiscoveryResult].

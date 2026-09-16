@@ -1,6 +1,6 @@
 package com.auth0.sample.embedded
 
-import com.auth0.android.embedded.DiscoveryResult
+import com.auth0.android.embedded.discovery.DiscoveryResult
 import com.auth0.android.embedded.EmbeddedAuthException
 
 sealed interface DiscoveryUiState {

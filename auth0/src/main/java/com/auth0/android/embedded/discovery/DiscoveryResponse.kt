@@ -1,4 +1,4 @@
-package com.auth0.android.embedded
+package com.auth0.android.embedded.discovery
 
 import com.google.gson.annotations.SerializedName
 

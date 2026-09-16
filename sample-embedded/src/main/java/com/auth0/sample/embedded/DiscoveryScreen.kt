@@ -36,7 +36,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.auth0.android.embedded.DiscoveryResult
+import com.auth0.android.embedded.discovery.DiscoveryResult
 import com.auth0.android.embedded.EmbeddedAuthException
 
 @OptIn(ExperimentalMaterial3Api::class)

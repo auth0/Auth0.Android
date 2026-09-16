@@ -1,5 +1,13 @@
 package com.auth0.android.embedded
 
+import com.auth0.android.embedded.discovery.Alternative
+import com.auth0.android.embedded.discovery.DiscoveryResponse
+import com.auth0.android.embedded.discovery.GrantType
+import com.auth0.android.embedded.discovery.LoginOption
+import com.auth0.android.embedded.discovery.PasswordlessIdentifier
+import com.auth0.android.embedded.discovery.PasswordlessType
+import com.auth0.android.embedded.discovery.toDiscoveryResult
+import com.auth0.android.embedded.discovery.toLoginOption
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.containsInAnyOrder

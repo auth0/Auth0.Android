@@ -1,4 +1,4 @@
-package com.auth0.android.embedded
+package com.auth0.android.embedded.discovery
 
 public class DiscoveryResult internal constructor(
     public val options: List<LoginOption>
