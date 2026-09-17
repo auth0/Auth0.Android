@@ -1,4 +1,4 @@
-package com.auth0.android.embedded
+package com.auth0.android.embedded.discovery
 
 import com.auth0.android.embedded.discovery.Alternative
 import com.auth0.android.embedded.discovery.DiscoveryResponse
