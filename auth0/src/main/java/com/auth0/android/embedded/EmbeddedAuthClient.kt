@@ -82,14 +82,14 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
      */
     @JvmOverloads
     public fun authorize(
-        connection: String? = null,
+        connection: String,
         capabilities: Set<EmbeddedAction> = DEFAULT_CAPABILITIES
     ): Request<Void?, EmbeddedAuthException> {
         transactionState = null
         val request = factory.post(authorizeUrl())
             .addParameters(buildMap {
                 put(CLIENT_ID_KEY, clientId)
-                connection?.let { put(CONNECTION_KEY, it) }
+                put(CONNECTION_KEY, connection)
             })
             .addParameter(CAPABILITIES_KEY, capabilities.map { it.value })
         return stepping(request)
