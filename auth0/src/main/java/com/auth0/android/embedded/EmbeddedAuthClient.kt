@@ -79,10 +79,18 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
      * request completes through [EmbeddedAuthException]. Inspect
      * [EmbeddedAuthException.isInsufficientAuthorization] and [EmbeddedAuthException.nextActions] to
      * learn which step to call next. A terminal error is reported on the same failure channel.
+     *
+     * @param connection name of the connection to authenticate against.
+     * @param scope space-separated scopes to request. Must include `openid` for the terminal token
+     * exchange to return an ID token; defaults to `"openid profile email"`.
+     * @param audience optional API audience to request an access token for.
+     * @param capabilities the set of steps this client can handle in the flow.
      */
     @JvmOverloads
     public fun authorize(
         connection: String,
+        scope: String = DEFAULT_SCOPE,
+        audience: String? = null,
         capabilities: Set<EmbeddedAction> = DEFAULT_CAPABILITIES
     ): Request<Void?, EmbeddedAuthException> {
         transactionState = null
@@ -90,6 +98,8 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
             .addParameters(buildMap {
                 put(CLIENT_ID_KEY, clientId)
                 put(CONNECTION_KEY, connection)
+                put(SCOPE_KEY, scope)
+                audience?.let { put(AUDIENCE_KEY, it) }
             })
             .addParameter(CAPABILITIES_KEY, capabilities.map { it.value })
         return stepping(request)
@@ -226,6 +236,8 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
 
         private const val CLIENT_ID_KEY = "client_id"
         private const val CONNECTION_KEY = "connection"
+        private const val SCOPE_KEY = "scope"
+        private const val AUDIENCE_KEY = "audience"
         private const val CAPABILITIES_KEY = "capabilities"
         private const val AUTH_SESSION_KEY = "auth_session"
         private const val ACTION_KEY = "action"
@@ -238,6 +250,8 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
         private const val CODE_KEY = "code"
         private const val GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code"
         private const val NO_ACTIVE_SESSION_ERROR = "no_active_session"
+
+        private const val DEFAULT_SCOPE = "openid profile email offline_access"
 
         private val DEFAULT_CAPABILITIES: Set<EmbeddedAction> =
             EmbeddedAction.entries.toSet() - EmbeddedAction.UNKNOWN
