@@ -41,9 +41,12 @@ import com.auth0.android.embedded.EmbeddedAuthException
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-public fun EmbeddedScreen(viewModel: EmbeddedViewModel = viewModel()) {
+public fun EmbeddedScreen(
+    viewModel: EmbeddedViewModel = viewModel(),
+    onAuthorize: (connection: String) -> Unit = {},
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    var connection by rememberSaveable { mutableStateOf("") }
+    var connection by rememberSaveable { mutableStateOf("Username-Password-Authentication") }
     val isLoading = state is DiscoveryUiState.Loading
 
     val runDiscovery = { viewModel.discover(connection.trim().ifBlank { null }) }
@@ -51,7 +54,7 @@ public fun EmbeddedScreen(viewModel: EmbeddedViewModel = viewModel()) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.title_discovery)) },
+                title = { Text(stringResource(R.string.title_screen)) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
@@ -110,6 +113,8 @@ public fun EmbeddedScreen(viewModel: EmbeddedViewModel = viewModel()) {
 
             ResultCard(
                 state = state,
+                connection = connection.trim(),
+                onAuthorize = onAuthorize,
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
@@ -119,7 +124,42 @@ public fun EmbeddedScreen(viewModel: EmbeddedViewModel = viewModel()) {
 }
 
 @Composable
-private fun ResultCard(state: DiscoveryUiState, modifier: Modifier = Modifier) {
+private fun ResultCard(
+    state: DiscoveryUiState,
+    modifier: Modifier = Modifier,
+    connection: String = "",
+    onAuthorize: (String) -> Unit = {},
+) {
+    // When discovery confirms embedded authorization is available, offer the authorize flow.
+    if (state is DiscoveryUiState.Success
+//        && state.result.hasEmbeddedAuthorization
+        ) {
+        OutlinedCard(modifier = modifier) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Text(
+                    text = stringResource(R.string.status_authorize_available),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(Modifier.height(20.dp))
+                Button(
+                    onClick = { onAuthorize(connection) },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                ) {
+                    Text(stringResource(R.string.action_start_authorize))
+                }
+            }
+        }
+        return
+    }
+
     OutlinedCard(modifier = modifier) {
         val text = when (state) {
             DiscoveryUiState.Idle -> stringResource(R.string.status_idle_discovery)
