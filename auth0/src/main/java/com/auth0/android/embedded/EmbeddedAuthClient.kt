@@ -82,7 +82,7 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
      *
      * @param connection name of the connection to authenticate against.
      * @param scope space-separated scopes to request. Must include `openid` for the terminal token
-     * exchange to return an ID token; defaults to `"openid profile email"`.
+     * exchange to return an ID token; defaults to `"openid profile email offline_access"`.
      * @param audience optional API audience to request an access token for.
      * @param capabilities the set of steps this client can handle in the flow.
      */
@@ -94,7 +94,7 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
         capabilities: Set<EmbeddedAction> = DEFAULT_CAPABILITIES
     ): Request<Void?, EmbeddedAuthException> {
         transactionState = null
-        val request = factory.post(authorizeUrl())
+        val request = factory.post(authorizeUrl)
             .addParameters(buildMap {
                 put(CLIENT_ID_KEY, clientId)
                 put(CONNECTION_KEY, connection)
@@ -138,7 +138,7 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
     /**
      * Verifies a one-time [code] of the given [type]. This is the terminal step of the flow.
      *
-     * On success it yields the [Credentials]. If the server requires further steps the request
+     * On success, it yields the [Credentials]. If the server requires further steps the request
      * completes through [EmbeddedAuthException] instead, with the next step on
      * [EmbeddedAuthException.nextActions].
      */
@@ -148,7 +148,7 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
         type: OtpType = OtpType.OOB
     ): Request<Credentials, EmbeddedAuthException> {
         val session = transactionState?.authSession ?: return noActiveSession()
-        val request = factory.post(authorizeUrl(), authorizeCodeAdapter(gson))
+        val request = factory.post(authorizeUrl, authorizeCodeAdapter(gson))
             .addParameters(
                 mapOf(
                     AUTH_SESSION_KEY to session,
@@ -166,7 +166,7 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
         addPayload: Request<Void?, EmbeddedAuthException>.() -> Unit = {}
     ): Request<Void?, EmbeddedAuthException> {
         val session = transactionState?.authSession ?: return noActiveSession()
-        val request = factory.post(authorizeUrl())
+        val request = factory.post(authorizeUrl)
             .addParameters(
                 mapOf(
                     AUTH_SESSION_KEY to session,
@@ -213,11 +213,13 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
             )
     }
 
-    private fun authorizeUrl(): String = auth0.getDomainUrl().toHttpUrl().newBuilder()
-        .addPathSegment(EMBEDDED_PATH)
-        .addPathSegment(AUTHORIZE_PATH)
-        .build()
-        .toString()
+    private val authorizeUrl: String by lazy {
+        auth0.getDomainUrl().toHttpUrl().newBuilder()
+            .addPathSegment(EMBEDDED_PATH)
+            .addPathSegment(AUTHORIZE_PATH)
+            .build()
+            .toString()
+    }
 
     private fun updateSessionFromFailure(error: EmbeddedAuthException) {
         transactionState = if (error.isInsufficientAuthorization && error.authSession != null) {
