@@ -80,6 +80,90 @@ internal class EmbeddedAuthMockServer : APIMockServer() {
         return this
     }
 
+    /** The `403 insufficient_authorization` continuation that carries the rotated session and next step. */
+    fun willReturnInsufficientAuthorization(
+        authSession: String = AUTH_SESSION
+    ): EmbeddedAuthMockServer {
+        val json = """
+            {
+              "error": "insufficient_authorization",
+              "error_description": "The flow is not complete.",
+              "auth_session": "$authSession",
+              "next": [
+                { "action": "action:verify:otp:v1", "channel": "email", "identifier": "$IDENTIFIER" }
+              ]
+            }
+        """.trimIndent()
+        server.enqueue(responseWithJSON(json, 403))
+        return this
+    }
+
+    fun willReturnContinuationWith(vararg actions: String, authSession: String = AUTH_SESSION): EmbeddedAuthMockServer {
+        val actionsJson = actions.joinToString(",\n") { "        $it" }
+        val json = """
+            {
+              "error": "insufficient_authorization",
+              "error_description": "The flow is not complete.",
+              "auth_session": "$authSession",
+              "next": [
+$actionsJson
+              ]
+            }
+        """.trimIndent()
+        server.enqueue(responseWithJSON(json, 403))
+        return this
+    }
+
+    fun willReturnAccessDenied(): EmbeddedAuthMockServer {
+        server.enqueue(responseWithJSON("""{ "error": "access_denied", "error_description": "Access denied." }""", 403))
+        return this
+    }
+
+    fun willReturnTooManyAttempts(): EmbeddedAuthMockServer {
+        server.enqueue(responseWithJSON("""{ "error": "too_many_requests", "error_description": "too_many_attempts" }""", 429))
+        return this
+    }
+
+    fun willReturnTooManyLogins(): EmbeddedAuthMockServer {
+        server.enqueue(responseWithJSON("""{ "error": "too_many_requests", "error_description": "too_many_logins" }""", 429))
+        return this
+    }
+
+    /** The `200` that ends `/e/authorize`, carrying the code to exchange for tokens. */
+    fun willReturnAuthorizeCode(): EmbeddedAuthMockServer {
+        server.enqueue(responseWithJSON("""{ "authorization_code": "$AUTHORIZATION_CODE" }""", 200))
+        return this
+    }
+
+    /** A standard token response, including an `id_token`. */
+    fun willReturnTokens(): EmbeddedAuthMockServer {
+        val json = """
+            {
+              "access_token": "$ACCESS_TOKEN",
+              "id_token": "$ID_TOKEN",
+              "token_type": "Bearer",
+              "expires_in": 86400,
+              "scope": "openid profile email"
+            }
+        """.trimIndent()
+        server.enqueue(responseWithJSON(json, 200))
+        return this
+    }
+
+    /** A `200` token response missing `id_token` — reproduces the openid-less exchange failure. */
+    fun willReturnTokensWithoutIdToken(): EmbeddedAuthMockServer {
+        val json = """
+            {
+              "access_token": "$ACCESS_TOKEN",
+              "token_type": "Bearer",
+              "expires_in": 86400,
+              "scope": "profile email"
+            }
+        """.trimIndent()
+        server.enqueue(responseWithJSON(json, 200))
+        return this
+    }
+
     companion object {
         const val PASSWORD_REALM = "Username-Password-Authentication"
         const val PASSKEY_CONNECTION = "passkey-connection"
@@ -92,5 +176,18 @@ internal class EmbeddedAuthMockServer : APIMockServer() {
         const val PLAIN_TEXT_ERROR = "Internal Server Error"
         const val ERROR_CODE = "invalid_request"
         const val ERROR_DESCRIPTION = "The connection was not found."
+        const val AUTH_SESSION = "auth-session-token"
+        const val ROTATED_AUTH_SESSION = "auth-session-token-rotated"
+
+        // Prebuilt action JSON fragments for willReturnContinuationWith().
+        const val NEXT_IDENTIFY_EMAIL = """{ "action": "action:identify:email:v1" }"""
+        const val NEXT_IDENTIFY_PHONE = """{ "action": "action:identify:phone:v1" }"""
+        const val NEXT_CHALLENGE_EMAIL = """{ "action": "action:challenge:email:v1", "index": 1, "identifier": "jane@example.com" }"""
+        const val NEXT_VERIFY_OTP = """{ "action": "action:verify:otp:v1", "channel": "email", "identifier": "jane@example.com" }"""
+        const val NEXT_UNKNOWN = """{ "action": "action:future:unknown:v1" }"""
+        const val IDENTIFIER = "jane@example.com"
+        const val AUTHORIZATION_CODE = "the-authorization-code"
+        const val ACCESS_TOKEN = "the-access-token"
+        const val ID_TOKEN = "the-id-token"
     }
 }
