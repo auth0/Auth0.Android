@@ -5,7 +5,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.0.21"
+        classpath "org.jetbrains.kotlin:compose-compiler-gradle-plugin:${rootProject.ext.kotlin_version}"
     }
 }
 
