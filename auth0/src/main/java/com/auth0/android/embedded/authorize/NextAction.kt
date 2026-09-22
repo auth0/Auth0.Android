@@ -21,7 +21,7 @@ public sealed interface NextAction {
     /** Continue by requesting an email challenge. Act on it with [EmbeddedAuthClient.challengeEmail]. */
     @ConsistentCopyVisibility
     public data class ChallengeEmail internal constructor(
-        public val index: Int?,
+        public val index: Int,
         public val identifier: String?
     ) : NextAction {
         override val action: EmbeddedAction = EmbeddedAction.CHALLENGE_EMAIL

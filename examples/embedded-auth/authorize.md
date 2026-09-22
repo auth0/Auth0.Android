@@ -47,7 +47,7 @@ for (action in exception.nextActions) {
     when (action) {
         is NextAction.IdentifyEmail  -> { /* show email field, call identifyEmail() */ }
         is NextAction.IdentifyPhone  -> { /* show phone field, call identifyPhone() */ }
-        is NextAction.ChallengeEmail -> { /* show "send code" button, call challengeEmail(action.index ?: 0) */ }
+        is NextAction.ChallengeEmail -> { /* show "send code" button, call challengeEmail(action.index) */ }
         is NextAction.VerifyOtp      -> { /* show OTP field, call verifyOtp() */ }
         is NextAction.Unknown        -> { /* unsupported — skip or show disabled */ }
     }
@@ -79,8 +79,8 @@ client.identifyPhone("+15550001234").await()
 When `NextAction.ChallengeEmail` is present, ask the server to send a one-time code:
 
 ```kotlin
-// action.index selects which email authenticator to challenge (defaults to 0).
-client.challengeEmail(action.index ?: 0).await()
+// action.index selects which email authenticator to challenge (0 if not specified by the server).
+client.challengeEmail(action.index).await()
 ```
 
 #### Verify the one-time code

@@ -173,7 +173,7 @@ private fun ActionsSection(actions: List<NextAction>, viewModel: EmbeddedViewMod
 
             is NextAction.ChallengeEmail -> ChallengeEmailCard(
                 identifier = action.identifier,
-                onChallenge = { viewModel.challengeEmail(action.index ?: 0) },
+                onChallenge = { viewModel.challengeEmail(action.index) },
             )
 
             is NextAction.VerifyOtp -> VerifyOtpCard(

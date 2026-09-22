@@ -13,7 +13,7 @@ private fun Map<String, Any>.toNextAction(): NextAction? {
         EmbeddedAction.IDENTIFY_EMAIL -> NextAction.IdentifyEmail
         EmbeddedAction.IDENTIFY_PHONE -> NextAction.IdentifyPhone
         EmbeddedAction.CHALLENGE_EMAIL -> NextAction.ChallengeEmail(
-            index = (this[INDEX_KEY] as? Number)?.toInt(),
+            index = (this[INDEX_KEY] as? Number)?.toInt() ?: 0,
             identifier = this[IDENTIFIER_KEY] as? String
         )
         EmbeddedAction.VERIFY_OTP -> NextAction.VerifyOtp(
