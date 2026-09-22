@@ -5,6 +5,7 @@ import com.auth0.android.Auth0Exception
 import com.auth0.android.embedded.discovery.GrantType
 import com.auth0.android.util.EmbeddedAuthMockServer
 import com.auth0.android.util.SSLTestUtils.testClient
+import kotlinx.coroutines.test.runTest
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.`is`
@@ -160,6 +161,27 @@ public class EmbeddedAuthClientTest {
         assertThat(error, `is`(notNullValue()))
         assertThat(error?.isNetworkError, `is`(true))
     }
+
+    @Test
+    public fun `discover await should parse a full response into a DiscoveryResult`(): Unit =
+        runTest {
+            mockAPI.willReturnFullDiscovery()
+
+            val result = client.discover().await()
+
+            assertThat(
+                result.types,
+                containsInAnyOrder(
+                    GrantType.PASSWORD,
+                    GrantType.PASSWORD_REALM,
+                    GrantType.PASSKEY,
+                    GrantType.PASSWORDLESS_OTP,
+                    GrantType.NATIVE_SOCIAL,
+                    GrantType.AUTHORIZATION_CODE,
+                    GrantType.UNKNOWN
+                )
+            )
+        }
 
     private companion object {
         private const val CLIENT_ID = "CLIENT_ID"
