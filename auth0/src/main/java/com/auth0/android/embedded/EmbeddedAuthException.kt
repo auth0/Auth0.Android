@@ -31,9 +31,22 @@ public class EmbeddedAuthException internal constructor(
     public val isInsufficientAuthorization: Boolean
         get() = code == INSUFFICIENT_AUTHORIZATION
 
+    /** Recoverable: the submitted code or identifier was wrong — let the user retry with [nextActions]. */
+    public val isInvalidCode: Boolean
+        get() = code == INSUFFICIENT_AUTHORIZATION &&
+            description in INVALID_CODE_DESCRIPTIONS
+
     /** Terminal: the attempt was denied and must not be retried. */
     public val isAccessDenied: Boolean
         get() = code == ACCESS_DENIED
+
+    /** Terminal: the challenge was denied after too many wrong one-time-code attempts. */
+    public val isTooManyWrongOtpAttempts: Boolean
+        get() = code == ACCESS_DENIED && description == TOO_MANY_WRONG_OTP_ATTEMPTS
+
+    /** Terminal: the challenge expired before it was verified. */
+    public val isChallengeExpired: Boolean
+        get() = code == ACCESS_DENIED && description == CHALLENGE_EXPIRED
 
     /** Terminal: too many failed verification attempts. */
     public val isTooManyAttempts: Boolean
@@ -48,6 +61,9 @@ public class EmbeddedAuthException internal constructor(
     private companion object {
         private const val INSUFFICIENT_AUTHORIZATION = "insufficient_authorization"
         private const val ACCESS_DENIED = "access_denied"
+        private const val TOO_MANY_WRONG_OTP_ATTEMPTS = "too_many_wrong_otp_attempts"
+        private const val CHALLENGE_EXPIRED = "challenge_expired"
+        private val INVALID_CODE_DESCRIPTIONS = setOf("invalid_code", "invalid_identifier_or_code")
         private const val TOO_MANY_REQUESTS = "too_many_requests"
         private const val TOO_MANY_ATTEMPTS = "too_many_attempts"
         private const val TOO_MANY_LOGINS = "too_many_logins"

@@ -119,6 +119,26 @@ $actionsJson
         return this
     }
 
+    fun willReturnInvalidCode(): EmbeddedAuthMockServer {
+        server.enqueue(
+            responseWithJSON(
+                """{ "error": "insufficient_authorization", "error_description": "invalid_code", "auth_session": "$ROTATED_AUTH_SESSION", "next": [ $NEXT_VERIFY_OTP ] }""",
+                403
+            )
+        )
+        return this
+    }
+
+    fun willReturnTooManyWrongOtpAttempts(): EmbeddedAuthMockServer {
+        server.enqueue(responseWithJSON("""{ "error": "access_denied", "error_description": "too_many_wrong_otp_attempts" }""", 403))
+        return this
+    }
+
+    fun willReturnChallengeExpired(): EmbeddedAuthMockServer {
+        server.enqueue(responseWithJSON("""{ "error": "access_denied", "error_description": "challenge_expired" }""", 403))
+        return this
+    }
+
     fun willReturnTooManyAttempts(): EmbeddedAuthMockServer {
         server.enqueue(responseWithJSON("""{ "error": "too_many_requests", "error_description": "too_many_attempts" }""", 429))
         return this

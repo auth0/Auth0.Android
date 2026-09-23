@@ -96,7 +96,14 @@ val credentials = client.verifyOtp(
 // credentials.accessToken, credentials.idToken, etc. are now available.
 ```
 
-If the server still requires further steps it throws `EmbeddedAuthException` with `isInsufficientAuthorization = true`, just like the earlier steps.
+If the server still requires further steps it throws `EmbeddedAuthException` with `isInsufficientAuthorization = true`, just like the earlier steps. When the user submitted a wrong code, `isInvalidCode` is `true` on that same continuation — the flow is still recoverable, so re-prompt and retry with the `nextActions` the exception carries:
+
+```kotlin
+if (e.isInsufficientAuthorization) {
+    if (e.isInvalidCode) { /* wrong code — re-prompt the user */ }
+    // Continue with e.nextActions.
+}
+```
 
 #### Terminal errors
 
@@ -104,12 +111,16 @@ Some errors end the flow and must not be retried without restarting from `author
 
 ```kotlin
 when {
-    e.isAccessDenied      -> { /* deny — do not retry */ }
-    e.isTooManyAttempts   -> { /* too many failed OTP attempts */ }
-    e.isTooManyLogins     -> { /* too many login attempts */ }
-    e.isNetworkError      -> { /* transient — safe to retry the same step */ }
+    e.isTooManyWrongOtpAttempts -> { /* too many wrong codes — flow denied */ }
+    e.isChallengeExpired        -> { /* the code expired — restart the flow */ }
+    e.isAccessDenied            -> { /* denied for another reason — do not retry */ }
+    e.isTooManyAttempts         -> { /* too many failed OTP attempts */ }
+    e.isTooManyLogins           -> { /* too many login attempts */ }
+    e.isNetworkError            -> { /* transient — safe to retry the same step */ }
 }
 ```
+
+`isTooManyWrongOtpAttempts` and `isChallengeExpired` are specific cases of `isAccessDenied`, so check them first.
 
 <details>
   <summary>Using callbacks</summary>

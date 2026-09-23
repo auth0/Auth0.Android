@@ -13,6 +13,7 @@ import okhttp3.mockwebserver.RecordedRequest
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.empty
+import org.hamcrest.Matchers.not
 import org.hamcrest.Matchers.hasSize
 import org.hamcrest.Matchers.instanceOf
 import org.hamcrest.Matchers.`is`
@@ -501,6 +502,42 @@ public class EmbeddedAuthClientTest {
 
         assertThat(error.isTooManyLogins, `is`(true))
         assertThat(error.statusCode, `is`(429))
+    }
+
+    @Test
+    public fun `verifyOtp flags a wrong code as recoverable with retry actions`() {
+        establishSession()
+        mockAPI.willReturnInvalidCode()
+
+        val error = assertEmbeddedError { client.verifyOtp("000000").execute() }
+
+        assertThat(error.isInvalidCode, `is`(true))
+        assertThat(error.isInsufficientAuthorization, `is`(true))
+        assertThat(error.isAccessDenied, `is`(false))
+        assertThat(error.nextActions, `is`(not(empty())))
+    }
+
+    @Test
+    public fun `verifyOtp flags too many wrong OTP attempts as terminal`() {
+        establishSession()
+        mockAPI.willReturnTooManyWrongOtpAttempts()
+
+        val error = assertEmbeddedError { client.verifyOtp("000000").execute() }
+
+        assertThat(error.isTooManyWrongOtpAttempts, `is`(true))
+        assertThat(error.isAccessDenied, `is`(true))
+        assertThat(error.isInvalidCode, `is`(false))
+    }
+
+    @Test
+    public fun `verifyOtp flags an expired challenge as terminal`() {
+        establishSession()
+        mockAPI.willReturnChallengeExpired()
+
+        val error = assertEmbeddedError { client.verifyOtp("000000").execute() }
+
+        assertThat(error.isChallengeExpired, `is`(true))
+        assertThat(error.isAccessDenied, `is`(true))
     }
 
     @Test
