@@ -3,6 +3,7 @@ package com.auth0.android.embedded
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.embedded.authorize.NextAction
+import com.auth0.android.embedded.authorize.OtpChannel
 import com.auth0.android.embedded.authorize.OtpType
 import com.auth0.android.embedded.discovery.GrantType
 import com.auth0.android.util.EmbeddedAuthMockServer
@@ -423,8 +424,28 @@ public class EmbeddedAuthClientTest {
         val error = assertEmbeddedError { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).execute() }
 
         val action = error.nextActions[0] as NextAction.VerifyOtp
-        assertThat(action.channel, `is`("email"))
+        assertThat(action.channel, `is`(OtpChannel.EMAIL))
         assertThat(action.identifier, `is`(EmbeddedAuthMockServer.IDENTIFIER))
+    }
+
+    @Test
+    public fun `authorize continuation maps an unrecognised OTP channel to a null channel`() {
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_VERIFY_OTP_UNKNOWN_CHANNEL)
+
+        val error = assertEmbeddedError { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).execute() }
+
+        val action = error.nextActions[0] as NextAction.VerifyOtp
+        assertThat(action.channel, `is`(nullValue()))
+    }
+
+    @Test
+    public fun `authorize continuation maps the OTP channel case insensitively`() {
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_VERIFY_OTP_MIXED_CASE_CHANNEL)
+
+        val error = assertEmbeddedError { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).execute() }
+
+        val action = error.nextActions[0] as NextAction.VerifyOtp
+        assertThat(action.channel, `is`(OtpChannel.SMS))
     }
 
     @Test

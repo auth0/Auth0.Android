@@ -17,7 +17,7 @@ private fun Map<String, Any>.toNextAction(): NextAction? {
             identifier = this[IDENTIFIER_KEY] as? String
         )
         EmbeddedAction.VERIFY_OTP -> NextAction.VerifyOtp(
-            channel = this[CHANNEL_KEY] as? String,
+            channel = OtpChannel.fromValue(this[CHANNEL_KEY] as? String),
             identifier = this[IDENTIFIER_KEY] as? String
         )
         EmbeddedAction.UNKNOWN -> NextAction.Unknown(raw)
