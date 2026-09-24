@@ -2,14 +2,32 @@
 <resources>
     <string name="app_name">Auth0 Embedded Discovery</string>
 
-    <string name="com_auth0_domain">DOMAIN</string>
-    <string name="com_auth0_client_id">CLIENT_ID</string>
+    <string name="com_auth0_domain">prince.test-aws-alien-lovebird-260921.auth0c.com</string>
+    <string name="com_auth0_client_id">gZhGB6VKrO0pfJjiLPbJHcFfMJzzJfvB</string>
     <string name="com_auth0_scheme">demo</string>
 
-    <string name="title_discovery">Embedded  (/e/discovery)</string>
+    <string name="title_screen">Embedded</string>
     <string name="hint_connection">Connection (optional)</string>
     <string name="action_discover">Discover</string>
     <string name="label_result">Result</string>
     <string name="status_idle_discovery">Enter a connection (optional) and tap Discover.</string>
     <string name="status_discovering">Discovering…</string>
+
+    <string name="status_authorize_available">Embedded authorization is available for this connection. Tap below to start the flow.</string>
+    <string name="hint_connection_required">Connection</string>
+    <string name="action_start_authorize">Start Authorize</string>
+    <string name="status_authorizing">Working…</string>
+    <string name="status_idle_authorize">Enter a connection and tap Start Authorize.</string>
+    <string name="label_choose_action">Choose how to continue</string>
+    <string name="action_start_over">Start over</string>
+    <string name="hint_email">Email</string>
+    <string name="hint_phone">Phone number</string>
+    <string name="hint_otp">One-time code</string>
+    <string name="action_identify_email">Identify with email</string>
+    <string name="action_identify_phone">Identify with phone</string>
+    <string name="action_challenge_email">Email me a code</string>
+    <string name="action_verify_otp">Verify code</string>
+    <string name="action_submit">Submit</string>
+    <string name="action_verify">Verify</string>
+    <string name="label_unsupported_action">Unsupported action: %1$s</string>
 </resources>

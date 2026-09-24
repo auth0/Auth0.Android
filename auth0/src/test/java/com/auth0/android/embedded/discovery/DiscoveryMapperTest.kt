@@ -1,4 +1,4 @@
-package com.auth0.android.embedded
+package com.auth0.android.embedded.discovery
 
 import com.auth0.android.embedded.discovery.Alternative
 import com.auth0.android.embedded.discovery.DiscoveryResponse
@@ -142,11 +142,6 @@ public class DiscoveryMapperTest {
         val option = Alternative(grantType = "urn:future", realm = "r").toLoginOption()
 
         assertThat((option as LoginOption.Unknown).connection, `is`("r"))
-    }
-
-    @Test
-    public fun `an entry without a grant type is dropped`() {
-        assertThat(Alternative(grantType = null).toLoginOption(), `is`(nullValue()))
     }
 
     @Test

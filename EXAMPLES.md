@@ -31,6 +31,7 @@ Each topic lives in its own file under [`examples/`](examples).
 ## Embedded Authentication (EA)
 
 - [Discovery](examples/embedded-auth/discovery.md)
+- [Authorize (email OTP flow)](examples/embedded-auth/authorize.md)
 
 ## Other APIs and features
 

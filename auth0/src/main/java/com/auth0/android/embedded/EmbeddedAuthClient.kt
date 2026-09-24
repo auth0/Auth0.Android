@@ -1,23 +1,24 @@
 package com.auth0.android.embedded
 
 import com.auth0.android.Auth0
-import com.auth0.android.Auth0Exception
-import com.auth0.android.NetworkErrorException
-import com.auth0.android.embedded.discovery.DiscoveryResponse
+import com.auth0.android.embedded.authorize.AdvancingRequest
+import com.auth0.android.embedded.authorize.AuthorizeCode
+import com.auth0.android.embedded.authorize.EmbeddedAction
+import com.auth0.android.embedded.authorize.EmbeddedAuthState
+import com.auth0.android.embedded.authorize.FailedRequest
+import com.auth0.android.embedded.authorize.OtpType
+import com.auth0.android.embedded.authorize.StepRequest
+import com.auth0.android.embedded.authorize.authorizeCodeAdapter
+import com.auth0.android.embedded.authorize.discoveryAdapter
+import com.auth0.android.embedded.authorize.embeddedAuthErrorAdapter
 import com.auth0.android.embedded.discovery.DiscoveryResult
-import com.auth0.android.embedded.discovery.toDiscoveryResult
-import com.auth0.android.request.ErrorAdapter
-import com.auth0.android.request.JsonAdapter
 import com.auth0.android.request.Request
 import com.auth0.android.request.internal.GsonAdapter
-import com.auth0.android.request.internal.GsonAdapter.Companion.forMap
 import com.auth0.android.request.internal.GsonProvider
 import com.auth0.android.request.internal.RequestFactory
-import com.auth0.android.request.internal.ResponseUtils.isNetworkError
+import com.auth0.android.result.Credentials
 import com.google.gson.Gson
 import okhttp3.HttpUrl.Companion.toHttpUrl
-import java.io.IOException
-import java.io.Reader
 
 /**
  * API client for Auth0's embedded authentication API.
@@ -31,12 +32,14 @@ import java.io.Reader
 public class EmbeddedAuthClient(private val auth0: Auth0) {
 
     private val factory: RequestFactory<EmbeddedAuthException> =
-        RequestFactory(auth0.networkingClient, createErrorAdapter())
+        RequestFactory(auth0.networkingClient, embeddedAuthErrorAdapter())
 
     private val gson: Gson = GsonProvider.gson
 
     private val clientId: String
         get() = auth0.clientId
+
+    private var transactionState: EmbeddedAuthState? = null
 
     /**
      *
@@ -69,76 +72,191 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
         return factory.get(url.toString(), discoveryAdapter(gson))
     }
 
+    /**
+     * Begins an embedded authorization flow, abandoning any flow already in progress.
+     *
+     * This call never resolves successfully: the server always answers with a continuation, so the
+     * request completes through [EmbeddedAuthException]. Inspect
+     * [EmbeddedAuthException.isInsufficientAuthorization] and [EmbeddedAuthException.nextActions] to
+     * learn which step to call next. A terminal error is reported on the same failure channel.
+     *
+     * @param connection name of the connection to authenticate against.
+     * @param scope space-separated scopes to request. Must include `openid` for the terminal token
+     * exchange to return an ID token; defaults to `"openid profile email offline_access"`.
+     * @param audience optional API audience to request an access token for.
+     * @param capabilities the set of steps this client can handle in the flow.
+     */
+    @JvmOverloads
+    public fun authorize(
+        connection: String,
+        scope: String = DEFAULT_SCOPE,
+        audience: String? = null,
+        capabilities: Set<EmbeddedAction> = DEFAULT_CAPABILITIES
+    ): Request<Void?, EmbeddedAuthException> {
+        transactionState = null
+        val request = factory.post(authorizeUrl)
+            .addParameters(buildMap {
+                put(CLIENT_ID_KEY, clientId)
+                put(CONNECTION_KEY, connection)
+                put(SCOPE_KEY, scope)
+                audience?.let { put(AUDIENCE_KEY, it) }
+            })
+            .addParameter(CAPABILITIES_KEY, capabilities.map { it.value })
+        return stepping(request)
+    }
+
+    /**
+     * Continues the flow by submitting an email identifier.
+     *
+     * This call never resolves successfully; it completes through [EmbeddedAuthException] whose
+     * [EmbeddedAuthException.nextActions] carry the next step to call.
+     */
+    public fun identifyEmail(email: String): Request<Void?, EmbeddedAuthException> =
+        continueStep(EmbeddedAction.IDENTIFY_EMAIL) { addParameter(EMAIL_KEY, email) }
+
+    /**
+     * Continues the flow by submitting a phone identifier.
+     *
+     * This call never resolves successfully; it completes through [EmbeddedAuthException] whose
+     * [EmbeddedAuthException.nextActions] carry the next step to call.
+     */
+    public fun identifyPhone(phone: String): Request<Void?, EmbeddedAuthException> =
+        continueStep(EmbeddedAction.IDENTIFY_PHONE) { addParameter(PHONE_KEY, phone) }
+
+    /**
+     * Continues the flow by requesting an email challenge for the authenticator at [index].
+     *
+     * This call never resolves successfully; it completes through [EmbeddedAuthException] whose
+     * [EmbeddedAuthException.nextActions] carry the next step to call.
+     */
+    @JvmOverloads
+    public fun challengeEmail(index: Int = 0): Request<Void?, EmbeddedAuthException> =
+        continueStep(EmbeddedAction.CHALLENGE_EMAIL) {
+            addParameter(INDEX_KEY, index)
+        }
+
+    /**
+     * Verifies a one-time [code] of the given [type]. This is the terminal step of the flow.
+     *
+     * On success, it yields the [Credentials]. If the server requires further steps the request
+     * completes through [EmbeddedAuthException] instead, with the next step on
+     * [EmbeddedAuthException.nextActions].
+     */
+    @JvmOverloads
+    public fun verifyOtp(
+        code: String,
+        type: OtpType = OtpType.OOB
+    ): Request<Credentials, EmbeddedAuthException> {
+        val session = transactionState?.authSession ?: return noActiveSession()
+        val request = factory.post(authorizeUrl, authorizeCodeAdapter(gson))
+            .addParameters(
+                mapOf(
+                    AUTH_SESSION_KEY to session,
+                    ACTION_KEY to EmbeddedAction.VERIFY_OTP.value,
+                    CLIENT_ID_KEY to clientId
+                )
+            )
+            .addParameter(OTP_KEY, code)
+            .addParameter(TYPE_KEY, type.value)
+        return advancing(request)
+    }
+
+    private fun continueStep(
+        action: EmbeddedAction,
+        addPayload: Request<Void?, EmbeddedAuthException>.() -> Unit = {}
+    ): Request<Void?, EmbeddedAuthException> {
+        val session = transactionState?.authSession ?: return noActiveSession()
+        val request = factory.post(authorizeUrl)
+            .addParameters(
+                mapOf(
+                    AUTH_SESSION_KEY to session,
+                    ACTION_KEY to action.value,
+                    CLIENT_ID_KEY to clientId
+                )
+            )
+        request.addPayload()
+        return stepping(request)
+    }
+
+    private fun <T> noActiveSession(): Request<T, EmbeddedAuthException> = FailedRequest<T>(
+        EmbeddedAuthException(
+            NO_ACTIVE_SESSION_ERROR,
+            "No embedded authentication flow is in progress. Call authorize() first."
+        )
+    )
+
+    private fun stepping(
+        request: Request<Void?, EmbeddedAuthException>
+    ): Request<Void?, EmbeddedAuthException> = StepRequest(request, ::updateSessionFromFailure)
+
+    private fun advancing(
+        request: Request<AuthorizeCode, EmbeddedAuthException>
+    ): Request<Credentials, EmbeddedAuthException> = AdvancingRequest(
+        authorize = request,
+        exchange = ::exchange,
+        onStepFailure = ::updateSessionFromFailure,
+        onFlowComplete = { transactionState = null }
+    )
+
+    private fun exchange(authorizationCode: String): Request<Credentials, EmbeddedAuthException> {
+        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
+            .addPathSegment(OAUTH_PATH)
+            .addPathSegment(TOKEN_PATH)
+            .build()
+        return factory.post(url.toString(), GsonAdapter(Credentials::class.java, gson))
+            .addParameters(
+                mapOf(
+                    CLIENT_ID_KEY to clientId,
+                    GRANT_TYPE_KEY to GRANT_TYPE_AUTHORIZATION_CODE,
+                    CODE_KEY to authorizationCode
+                )
+            )
+    }
+
+    private val authorizeUrl: String by lazy {
+        auth0.getDomainUrl().toHttpUrl().newBuilder()
+            .addPathSegment(EMBEDDED_PATH)
+            .addPathSegment(AUTHORIZE_PATH)
+            .build()
+            .toString()
+    }
+
+    private fun updateSessionFromFailure(error: EmbeddedAuthException) {
+        transactionState = if (error.isInsufficientAuthorization && error.authSession != null) {
+            EmbeddedAuthState(error.authSession)
+        } else {
+            null
+        }
+    }
+
     private companion object {
         private const val EMBEDDED_PATH = "e"
         private const val DISCOVERY_PATH = "discovery"
+        private const val AUTHORIZE_PATH = "authorize"
+        private const val OAUTH_PATH = "oauth"
+        private const val TOKEN_PATH = "token"
+
         private const val CLIENT_ID_KEY = "client_id"
         private const val CONNECTION_KEY = "connection"
-        private const val ERROR_KEY = "error"
-        private const val ERROR_DESCRIPTION_KEY = "error_description"
-        private const val DEFAULT_DESCRIPTION =
-            "An error occurred when trying to authenticate with the server."
+        private const val SCOPE_KEY = "scope"
+        private const val AUDIENCE_KEY = "audience"
+        private const val CAPABILITIES_KEY = "capabilities"
+        private const val AUTH_SESSION_KEY = "auth_session"
+        private const val ACTION_KEY = "action"
+        private const val EMAIL_KEY = "email"
+        private const val PHONE_KEY = "phone"
+        private const val OTP_KEY = "otp"
+        private const val INDEX_KEY = "index"
+        private const val TYPE_KEY = "type"
+        private const val GRANT_TYPE_KEY = "grant_type"
+        private const val CODE_KEY = "code"
+        private const val GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code"
+        private const val NO_ACTIVE_SESSION_ERROR = "no_active_session"
 
-        /**
-         * Parses the wire payload and translates it into the public [DiscoveryResult].
-         */
-        private fun discoveryAdapter(gson: Gson): JsonAdapter<DiscoveryResult> {
-            val adapter = GsonAdapter(DiscoveryResponse::class.java, gson)
-            return object : JsonAdapter<DiscoveryResult> {
-                @Throws(IOException::class)
-                override fun fromJson(
-                    reader: Reader,
-                    metadata: Map<String, Any>
-                ): DiscoveryResult = adapter.fromJson(reader, metadata).toDiscoveryResult()
-            }
-        }
+        private const val DEFAULT_SCOPE = "openid profile email offline_access"
 
-        private fun createErrorAdapter(): ErrorAdapter<EmbeddedAuthException> {
-            val mapAdapter = forMap(GsonProvider.gson)
-            return object : ErrorAdapter<EmbeddedAuthException> {
-
-                override fun fromRawResponse(
-                    statusCode: Int,
-                    bodyText: String,
-                    headers: Map<String, List<String>>
-                ): EmbeddedAuthException {
-                    return if (bodyText.isBlank()) EmbeddedAuthException(
-                        Auth0Exception.EMPTY_BODY_ERROR,
-                        Auth0Exception.EMPTY_RESPONSE_BODY_DESCRIPTION,
-                        statusCode
-                    ) else EmbeddedAuthException(
-                        Auth0Exception.NON_JSON_ERROR,
-                        bodyText,
-                        statusCode
-                    )
-                }
-
-                @Throws(IOException::class)
-                override fun fromJsonResponse(
-                    statusCode: Int,
-                    reader: Reader
-                ): EmbeddedAuthException {
-                    val values = mapAdapter.fromJson(reader)
-                    return EmbeddedAuthException(
-                        values[ERROR_KEY] as? String ?: Auth0Exception.UNKNOWN_ERROR,
-                        values[ERROR_DESCRIPTION_KEY] as? String ?: DEFAULT_DESCRIPTION,
-                        statusCode
-                    )
-                }
-
-                override fun fromException(cause: Throwable): EmbeddedAuthException {
-                    return if (isNetworkError(cause)) EmbeddedAuthException(
-                        Auth0Exception.UNKNOWN_ERROR,
-                        "Failed to execute the network request",
-                        cause = NetworkErrorException(cause)
-                    ) else EmbeddedAuthException(
-                        Auth0Exception.UNKNOWN_ERROR,
-                        DEFAULT_DESCRIPTION,
-                        cause = Auth0Exception(DEFAULT_DESCRIPTION, cause)
-                    )
-                }
-            }
-        }
+        private val DEFAULT_CAPABILITIES: Set<EmbeddedAction> =
+            EmbeddedAction.entries.toSet() - EmbeddedAction.UNKNOWN
     }
 
     init {
