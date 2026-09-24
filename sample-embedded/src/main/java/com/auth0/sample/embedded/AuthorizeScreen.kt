@@ -229,17 +229,15 @@ private fun IdentifyCard(
 }
 
 @Composable
-private fun ChallengeEmailCard(identifier: String?, onChallenge: () -> Unit) {
+private fun ChallengeEmailCard(identifier: String, onChallenge: () -> Unit) {
     OutlinedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 stringResource(R.string.action_challenge_email),
                 style = MaterialTheme.typography.titleSmall,
             )
-            if (identifier != null) {
-                Spacer(Modifier.height(4.dp))
-                Text(identifier, style = MaterialTheme.typography.bodySmall)
-            }
+            Spacer(Modifier.height(4.dp))
+            Text(identifier, style = MaterialTheme.typography.bodySmall)
             Spacer(Modifier.height(12.dp))
             Button(onClick = onChallenge, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.action_challenge_email))

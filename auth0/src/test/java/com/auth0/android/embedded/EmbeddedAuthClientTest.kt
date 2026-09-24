@@ -430,13 +430,39 @@ public class EmbeddedAuthClientTest {
     }
 
     @Test
-    public fun `authorize continuation maps an unrecognised OTP channel to a null channel`() {
+    public fun `authorize continuation drops a VerifyOtp action with an unrecognised channel`() {
         mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_VERIFY_OTP_UNKNOWN_CHANNEL)
 
         val error = assertEmbeddedError { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).execute() }
 
-        val action = error.nextActions[0] as NextAction.VerifyOtp
-        assertThat(action.channel, `is`(nullValue()))
+        assertThat(error.nextActions, `is`(empty()))
+    }
+
+    @Test
+    public fun `authorize continuation drops a VerifyOtp action without a channel`() {
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_VERIFY_OTP_NO_CHANNEL)
+
+        val error = assertEmbeddedError { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).execute() }
+
+        assertThat(error.nextActions, `is`(empty()))
+    }
+
+    @Test
+    public fun `authorize continuation drops a ChallengeEmail action without an identifier`() {
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CHALLENGE_EMAIL_NO_IDENTIFIER)
+
+        val error = assertEmbeddedError { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).execute() }
+
+        assertThat(error.nextActions, `is`(empty()))
+    }
+
+    @Test
+    public fun `authorize continuation drops a ChallengeEmail action without an index`() {
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CHALLENGE_EMAIL_NO_INDEX)
+
+        val error = assertEmbeddedError { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).execute() }
+
+        assertThat(error.nextActions, `is`(empty()))
     }
 
     @Test

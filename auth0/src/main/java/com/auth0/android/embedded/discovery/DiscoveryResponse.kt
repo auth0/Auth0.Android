@@ -26,7 +26,7 @@ internal data class DiscoveryResponse(
  */
 internal data class Alternative(
     @SerializedName("grant_type")
-    val grantType: String?,
+    val grantType: String,
 
     @SerializedName("type")
     val type: String? = null,

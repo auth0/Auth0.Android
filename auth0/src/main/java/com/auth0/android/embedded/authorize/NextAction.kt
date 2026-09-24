@@ -22,7 +22,7 @@ public sealed interface NextAction {
     @ConsistentCopyVisibility
     public data class ChallengeEmail internal constructor(
         public val index: Int,
-        public val identifier: String?
+        public val identifier: String
     ) : NextAction {
         override val action: EmbeddedAction = EmbeddedAction.CHALLENGE_EMAIL
     }
@@ -30,7 +30,7 @@ public sealed interface NextAction {
     /** Continue by verifying a one-time code. Act on it with [EmbeddedAuthClient.verifyOtp]. */
     @ConsistentCopyVisibility
     public data class VerifyOtp internal constructor(
-        public val channel: OtpChannel?,
+        public val channel: OtpChannel,
         public val identifier: String?
     ) : NextAction {
         override val action: EmbeddedAction = EmbeddedAction.VERIFY_OTP

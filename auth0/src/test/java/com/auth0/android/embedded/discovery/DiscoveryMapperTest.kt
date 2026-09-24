@@ -145,11 +145,6 @@ public class DiscoveryMapperTest {
     }
 
     @Test
-    public fun `an entry without a grant type is dropped`() {
-        assertThat(Alternative(grantType = null).toLoginOption(), `is`(nullValue()))
-    }
-
-    @Test
     public fun `a known grant missing a required property is dropped`() {
         assertThat(Alternative(grantType = GRANT_PASSWORD_REALM).toLoginOption(), `is`(nullValue()))
         assertThat(Alternative(grantType = GRANT_WEBAUTHN).toLoginOption(), `is`(nullValue()))
