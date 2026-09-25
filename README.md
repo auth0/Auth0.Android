@@ -318,6 +318,9 @@ WebAuthProvider.login(account)
 
 ### Experiment Center
 
+> [!NOTE]
+> Experiment Center support via SDKs is currently in Early Access. To request access to this feature, contact your Auth0 representative.
+
 [Experiment Center](https://auth0.com/docs/customize/experiment-center/overview) is Auth0's A/B testing platform for authentication flows. Pass `experiment_id`, `variation_id`, and optionally `segment_id` via `withParameters()` to force a specific variation on a Web Auth login request:
 
 ```kotlin
@@ -330,8 +333,7 @@ WebAuthProvider.login(account)
     .start(this, callback)
 ```
 
-> [!NOTE]
-> Experiment Center is currently in Beta and runs only on development tenants. See the [full usage example](examples/experiment-center.md) for coroutine and Java samples.
+See the [full usage example](examples/experiment-center.md) for coroutine and Java samples.
 
 ## Credentials Manager
 
