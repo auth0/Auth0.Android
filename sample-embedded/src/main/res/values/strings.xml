@@ -2,8 +2,8 @@
 <resources>
     <string name="app_name">Auth0 Embedded Discovery</string>
 
-    <string name="com_auth0_domain">prince.test-aws-alien-lovebird-260921.auth0c.com</string>
-    <string name="com_auth0_client_id">gZhGB6VKrO0pfJjiLPbJHcFfMJzzJfvB</string>
+    <string name="com_auth0_domain">DOMAIN</string>
+    <string name="com_auth0_client_id">CLIENT_ID</string>
     <string name="com_auth0_scheme">demo</string>
 
     <string name="title_screen">Embedded</string>
