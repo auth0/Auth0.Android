@@ -3,7 +3,7 @@ package com.auth0.android.embedded
 import com.auth0.android.Auth0
 import com.auth0.android.embedded.authorize.AdvancingRequest
 import com.auth0.android.embedded.authorize.AuthorizeCode
-import com.auth0.android.embedded.authorize.EmbeddedAction
+import com.auth0.android.embedded.authorize.EmbeddedCapability
 import com.auth0.android.embedded.authorize.EmbeddedAuthState
 import com.auth0.android.embedded.authorize.FailedRequest
 import com.auth0.android.embedded.authorize.OtpType
@@ -91,7 +91,7 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
         connection: String,
         scope: String = DEFAULT_SCOPE,
         audience: String? = null,
-        capabilities: Set<EmbeddedAction> = DEFAULT_CAPABILITIES
+        capabilities: Set<EmbeddedCapability> = DEFAULT_CAPABILITIES
     ): Request<Void?, EmbeddedAuthException> {
         transactionState = null
         val request = factory.post(authorizeUrl)
@@ -112,7 +112,7 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
      * [EmbeddedAuthException.nextActions] carry the next step to call.
      */
     public fun identifyEmail(email: String): Request<Void?, EmbeddedAuthException> =
-        continueStep(EmbeddedAction.IDENTIFY_EMAIL) { addParameter(EMAIL_KEY, email) }
+        continueStep(EmbeddedCapability.IDENTIFY_EMAIL) { addParameter(EMAIL_KEY, email) }
 
     /**
      * Continues the flow by submitting a phone identifier.
@@ -121,7 +121,7 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
      * [EmbeddedAuthException.nextActions] carry the next step to call.
      */
     internal fun identifyPhone(phone: String): Request<Void?, EmbeddedAuthException> =
-        continueStep(EmbeddedAction.IDENTIFY_PHONE) { addParameter(PHONE_KEY, phone) }
+        continueStep(EmbeddedCapability.IDENTIFY_PHONE) { addParameter(PHONE_KEY, phone) }
 
     /**
      * Continues the flow by requesting an email challenge for the authenticator at [index].
@@ -131,7 +131,7 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
      */
     @JvmOverloads
     public fun challengeEmail(index: Int = 0): Request<Void?, EmbeddedAuthException> =
-        continueStep(EmbeddedAction.CHALLENGE_EMAIL) {
+        continueStep(EmbeddedCapability.CHALLENGE_EMAIL) {
             addParameter(INDEX_KEY, index)
         }
 
@@ -152,7 +152,7 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
             .addParameters(
                 mapOf(
                     AUTH_SESSION_KEY to session,
-                    ACTION_KEY to EmbeddedAction.VERIFY_OTP.value,
+                    ACTION_KEY to EmbeddedCapability.VERIFY_OTP.value,
                     CLIENT_ID_KEY to clientId
                 )
             )
@@ -162,7 +162,7 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
     }
 
     private fun continueStep(
-        action: EmbeddedAction,
+        action: EmbeddedCapability,
         addPayload: Request<Void?, EmbeddedAuthException>.() -> Unit = {}
     ): Request<Void?, EmbeddedAuthException> {
         val session = transactionState?.authSession ?: return noActiveSession()
@@ -255,8 +255,8 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
 
         private const val DEFAULT_SCOPE = "openid profile email offline_access"
 
-        private val DEFAULT_CAPABILITIES: Set<EmbeddedAction> =
-            EmbeddedAction.entries.toSet() - EmbeddedAction.UNKNOWN
+        private val DEFAULT_CAPABILITIES: Set<EmbeddedCapability> =
+            EmbeddedCapability.entries.toSet() - EmbeddedCapability.UNKNOWN
     }
 
     init {

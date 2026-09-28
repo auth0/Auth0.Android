@@ -13,15 +13,15 @@ internal fun List<Map<String, Any>>.toNextActions(): List<NextAction> = mapNotNu
 
 private fun Map<String, Any>.toNextAction(): NextAction? {
     val raw = this[ACTION_KEY] as? String ?: return null
-    return when (EmbeddedAction.fromValue(raw)) {
-        EmbeddedAction.IDENTIFY_EMAIL -> NextAction.IdentifyEmail
-        EmbeddedAction.IDENTIFY_PHONE -> NextAction.IdentifyPhone
-        EmbeddedAction.CHALLENGE_EMAIL -> {
+    return when (EmbeddedCapability.fromValue(raw)) {
+        EmbeddedCapability.IDENTIFY_EMAIL -> NextAction.IdentifyEmail
+        EmbeddedCapability.IDENTIFY_PHONE -> NextAction.IdentifyPhone
+        EmbeddedCapability.CHALLENGE_EMAIL -> {
             val index = (this[INDEX_KEY] as? Number)?.toInt() ?: return dropped(raw, INDEX_KEY)
             val identifier = this[IDENTIFIER_KEY] as? String ?: return dropped(raw, IDENTIFIER_KEY)
             NextAction.ChallengeEmail(index = index, identifier = identifier)
         }
-        EmbeddedAction.VERIFY_OTP -> {
+        EmbeddedCapability.VERIFY_OTP -> {
             val channel = OtpChannel.fromValue(this[CHANNEL_KEY] as? String)
                 ?: return dropped(raw, CHANNEL_KEY)
             NextAction.VerifyOtp(
@@ -29,7 +29,7 @@ private fun Map<String, Any>.toNextAction(): NextAction? {
                 identifier = this[IDENTIFIER_KEY] as? String
             )
         }
-        EmbeddedAction.UNKNOWN -> NextAction.Unknown(raw)
+        EmbeddedCapability.UNKNOWN -> NextAction.Unknown(raw)
     }
 }
 
