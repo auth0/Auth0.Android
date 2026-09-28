@@ -163,12 +163,8 @@ private fun ActionsSection(actions: List<NextAction>, viewModel: EmbeddedViewMod
                 onSubmit = { viewModel.identifyEmail(it) },
             )
 
-            NextAction.IdentifyPhone -> IdentifyCard(
-                labelRes = R.string.action_identify_phone,
-                hintRes = R.string.hint_phone,
-                keyboardType = KeyboardType.Phone,
-                submitRes = R.string.action_submit,
-                onSubmit = { viewModel.identifyPhone(it) },
+            NextAction.IdentifyPhone -> InfoCard(
+                stringResource(R.string.label_unsupported_action, "identify:phone"),
             )
 
             is NextAction.ChallengeEmail -> ChallengeEmailCard(

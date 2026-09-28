@@ -56,8 +56,6 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
 
     fun identifyEmail(email: String): Unit = runStep { client.identifyEmail(email).await() }
 
-    fun identifyPhone(phone: String): Unit = runStep { client.identifyPhone(phone).await() }
-
     fun challengeEmail(index: Int): Unit = runStep { client.challengeEmail(index).await() }
 
     /** Terminal step: on success this yields [Credentials][com.auth0.android.result.Credentials]. */

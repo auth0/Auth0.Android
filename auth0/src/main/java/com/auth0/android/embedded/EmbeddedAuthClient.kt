@@ -120,7 +120,7 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
      * This call never resolves successfully; it completes through [EmbeddedAuthException] whose
      * [EmbeddedAuthException.nextActions] carry the next step to call.
      */
-    public fun identifyPhone(phone: String): Request<Void?, EmbeddedAuthException> =
+    internal fun identifyPhone(phone: String): Request<Void?, EmbeddedAuthException> =
         continueStep(EmbeddedAction.IDENTIFY_PHONE) { addParameter(PHONE_KEY, phone) }
 
     /**
