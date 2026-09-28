@@ -3,8 +3,8 @@ package com.auth0.android.embedded
 import com.auth0.android.Auth0
 import com.auth0.android.embedded.authorize.AdvancingRequest
 import com.auth0.android.embedded.authorize.AuthorizeCode
-import com.auth0.android.embedded.authorize.EmbeddedCapability
 import com.auth0.android.embedded.authorize.EmbeddedAuthState
+import com.auth0.android.embedded.authorize.EmbeddedCapability
 import com.auth0.android.embedded.authorize.FailedRequest
 import com.auth0.android.embedded.authorize.OtpType
 import com.auth0.android.embedded.authorize.StepRequest
@@ -38,7 +38,8 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
 
     private val clientId: String
         get() = auth0.clientId
-
+    
+    @Volatile
     private var transactionState: EmbeddedAuthState? = null
 
     /**
@@ -222,10 +223,12 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
     }
 
     private fun updateSessionFromFailure(error: EmbeddedAuthException) {
-        transactionState = if (error.isInsufficientAuthorization && error.authSession != null) {
-            EmbeddedAuthState(error.authSession)
-        } else {
-            null
+        when {
+            error.isInsufficientAuthorization && error.authSession != null ->
+                transactionState = EmbeddedAuthState(error.authSession)
+
+            error.isAccessDenied || error.isTooManyAttempts || error.isTooManyLogins ->
+                transactionState = null
         }
     }
 
@@ -255,8 +258,11 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
 
         private const val DEFAULT_SCOPE = "openid profile email offline_access"
 
-        private val DEFAULT_CAPABILITIES: Set<EmbeddedCapability> =
-            EmbeddedCapability.entries.toSet() - EmbeddedCapability.UNKNOWN
+        private val DEFAULT_CAPABILITIES: Set<EmbeddedCapability> = setOf(
+            EmbeddedCapability.IDENTIFY_EMAIL,
+            EmbeddedCapability.CHALLENGE_EMAIL,
+            EmbeddedCapability.VERIFY_OTP
+        )
     }
 
     init {

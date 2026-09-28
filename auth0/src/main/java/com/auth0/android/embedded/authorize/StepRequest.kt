@@ -4,6 +4,7 @@ import com.auth0.android.Auth0Exception
 import com.auth0.android.callback.Callback
 import com.auth0.android.embedded.EmbeddedAuthException
 import com.auth0.android.request.Request
+import com.auth0.android.request.RequestValidator
 
 /**
  * Runs one non-terminal step of the embedded flow as a single [Request]. These steps never yield
@@ -52,8 +53,18 @@ internal class StepRequest(
         return this
     }
 
+    override fun addParameter(name: String, value: Any): Request<Void?, EmbeddedAuthException> {
+        request.addParameter(name, value)
+        return this
+    }
+
     override fun addHeader(name: String, value: String): Request<Void?, EmbeddedAuthException> {
         request.addHeader(name, value)
+        return this
+    }
+
+    override fun addValidator(validator: RequestValidator): Request<Void?, EmbeddedAuthException> {
+        request.addValidator(validator)
         return this
     }
 }

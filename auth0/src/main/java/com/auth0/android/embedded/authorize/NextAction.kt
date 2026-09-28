@@ -13,7 +13,7 @@ public sealed interface NextAction {
         override val capability: EmbeddedCapability = EmbeddedCapability.IDENTIFY_EMAIL
     }
 
-    /** Continue by submitting a phone number. Act on it with [EmbeddedAuthClient.identifyPhone]. */
+    /** Continue by submitting a phone number. */
     public data object IdentifyPhone : NextAction {
         override val capability: EmbeddedCapability = EmbeddedCapability.IDENTIFY_PHONE
     }

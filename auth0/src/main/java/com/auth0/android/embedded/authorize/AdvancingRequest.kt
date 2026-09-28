@@ -4,6 +4,7 @@ import com.auth0.android.Auth0Exception
 import com.auth0.android.callback.Callback
 import com.auth0.android.embedded.EmbeddedAuthException
 import com.auth0.android.request.Request
+import com.auth0.android.request.RequestValidator
 import com.auth0.android.result.Credentials
 
 /**
@@ -71,8 +72,18 @@ internal class AdvancingRequest(
         return this
     }
 
+    override fun addParameter(name: String, value: Any): Request<Credentials, EmbeddedAuthException> {
+        authorize.addParameter(name, value)
+        return this
+    }
+
     override fun addHeader(name: String, value: String): Request<Credentials, EmbeddedAuthException> {
         authorize.addHeader(name, value)
+        return this
+    }
+
+    override fun addValidator(validator: RequestValidator): Request<Credentials, EmbeddedAuthException> {
+        authorize.addValidator(validator)
         return this
     }
 }

@@ -1,9 +1,7 @@
 package com.auth0.android.embedded.authorize
 
-import com.auth0.android.embedded.EmbeddedAuthClient
-
-/** How a phone one-time code is delivered, chosen when calling [EmbeddedAuthClient.challengePhone]. */
-public enum class PhoneDeliveryMethod(public val value: String) {
+/** How a phone one-time code is delivered. */
+internal enum class PhoneDeliveryMethod(val value: String) {
     /** Deliver the code as an SMS text message. */
     TEXT("text"),
 

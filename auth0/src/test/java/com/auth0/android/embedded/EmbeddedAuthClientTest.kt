@@ -718,6 +718,142 @@ public class EmbeddedAuthClientTest {
         )
     }
 
+    @Test
+    public fun `a transient server error leaves the session intact for retry`() {
+        establishSession()
+
+        // A 5xx is not terminal — the session must survive so the same step can be retried.
+        mockAPI.willReturnPlainTextError()
+        assertEmbeddedError { client.challengeEmail().execute() }
+        mockAPI.takeRequest()
+
+        // The retry must still carry the established session, not fail with no_active_session.
+        mockAPI.willReturnInsufficientAuthorization(EmbeddedAuthMockServer.ROTATED_AUTH_SESSION)
+        assertEmbeddedError { client.challengeEmail().execute() }
+        assertThat(
+            bodyOf(mockAPI.takeRequest()).getString("auth_session"),
+            `is`(EmbeddedAuthMockServer.AUTH_SESSION)
+        )
+    }
+
+    @Test
+    public fun `a network error leaves the session intact for retry`() {
+        establishSession()
+        mockAPI.shutdown()
+
+        // The step fails at the network layer — transient, so the session must survive.
+        val error = assertEmbeddedError { client.challengeEmail().execute() }
+        assertThat(error.isNetworkError, `is`(true))
+
+        // A preserved session means the retry reaches the network again (another network error);
+        // a wrongly-cleared session would instead short-circuit client-side with no_active_session.
+        val retry = assertEmbeddedError { client.challengeEmail().execute() }
+        assertThat(retry.isNetworkError, `is`(true))
+        assertThat(retry.code, not(`is`("no_active_session")))
+    }
+
+    @Test
+    public fun `a terminal access_denied clears the session`() {
+        establishSession()
+
+        mockAPI.willReturnAccessDenied()
+        assertEmbeddedError { client.challengeEmail().execute() }
+        mockAPI.takeRequest()
+
+        // Terminal failure ended the flow — any follow-on step must fail with no_active_session.
+        val error = assertEmbeddedError { client.challengeEmail().execute() }
+        assertThat(error.code, `is`("no_active_session"))
+    }
+
+    @Test
+    public fun `a terminal rate-limit error clears the session`() {
+        establishSession()
+
+        mockAPI.willReturnTooManyAttempts()
+        assertEmbeddedError { client.challengeEmail().execute() }
+        mockAPI.takeRequest()
+
+        // Rate limiting is terminal for this flow — the session must be dropped.
+        val error = assertEmbeddedError { client.challengeEmail().execute() }
+        assertThat(error.code, `is`("no_active_session"))
+    }
+
+
+
+    // --- await() (coroutine) coverage: the step wrappers run distinct code paths for await() ---
+
+    @Test
+    public fun `authorize await surfaces a continuation through the coroutine path`(): Unit = runTest {
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_IDENTIFY_EMAIL)
+
+        val error = assertEmbeddedErrorSuspending {
+            client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await()
+        }
+
+        assertThat(error.isInsufficientAuthorization, `is`(true))
+        assertThat(error.nextActions[0], instanceOf(NextAction.IdentifyEmail::class.java))
+    }
+
+    @Test
+    public fun `identifyEmail await POSTs the correct action and surfaces a continuation`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CHALLENGE_EMAIL)
+
+        val error = assertEmbeddedErrorSuspending { client.identifyEmail("jane@example.com").await() }
+
+        assertThat(error.nextActions[0], instanceOf(NextAction.ChallengeEmail::class.java))
+        val body = bodyOf(mockAPI.takeRequest())
+        assertThat(body.getString("action"), `is`("action:identify:email:v1"))
+        assertThat(body.getString("email"), `is`("jane@example.com"))
+    }
+
+    @Test
+    public fun `challengeEmail await surfaces a terminal error and clears the session`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnAccessDenied()
+
+        val error = assertEmbeddedErrorSuspending { client.challengeEmail().await() }
+        assertThat(error.isAccessDenied, `is`(true))
+        mockAPI.takeRequest()
+
+        // onStepFailure ran on the coroutine path — the session must be gone.
+        val followOn = assertEmbeddedErrorSuspending { client.challengeEmail().await() }
+        assertThat(followOn.code, `is`("no_active_session"))
+    }
+
+    @Test
+    public fun `verifyOtp await exchanges the code and returns credentials`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+
+        val credentials = client.verifyOtp("123456", OtpType.OOB).await()
+
+        assertThat(credentials.idToken, `is`(EmbeddedAuthMockServer.ID_TOKEN))
+        assertThat(credentials.accessToken, `is`(EmbeddedAuthMockServer.ACCESS_TOKEN))
+
+        // onFlowComplete ran on the coroutine path — the session must be cleared.
+        val followOn = assertEmbeddedErrorSuspending { client.verifyOtp("999999").await() }
+        assertThat(followOn.code, `is`("no_active_session"))
+    }
+
+    @Test
+    public fun `verifyOtp await leaves the session intact when the token exchange fails`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokensWithoutIdToken()
+
+        assertEmbeddedErrorSuspending { client.verifyOtp("123456").await() }
+        mockAPI.takeRequest()
+        mockAPI.takeRequest()
+
+        // The failed exchange must not clear the session — a retry should reach the server.
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+        val credentials = client.verifyOtp("123456").await()
+        assertThat(credentials.accessToken, `is`(EmbeddedAuthMockServer.ACCESS_TOKEN))
+    }
+
 
 
     /** Enqueues a continuation and calls authorize to populate [transactionState]. */
@@ -728,6 +864,13 @@ public class EmbeddedAuthClientTest {
     }
 
     private fun assertEmbeddedError(block: () -> Unit): EmbeddedAuthException {
+        var error: EmbeddedAuthException? = null
+        try { block() } catch (ex: EmbeddedAuthException) { error = ex }
+        assertThat("expected EmbeddedAuthException", error, `is`(notNullValue()))
+        return error!!
+    }
+
+    private suspend fun assertEmbeddedErrorSuspending(block: suspend () -> Unit): EmbeddedAuthException {
         var error: EmbeddedAuthException? = null
         try { block() } catch (ex: EmbeddedAuthException) { error = ex }
         assertThat("expected EmbeddedAuthException", error, `is`(notNullValue()))
