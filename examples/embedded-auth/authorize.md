@@ -46,7 +46,6 @@ Each non-terminal step throws `EmbeddedAuthException` with `isInsufficientAuthor
 for (action in exception.nextActions) {
     when (action) {
         is NextAction.IdentifyEmail  -> { /* show email field, call identifyEmail() */ }
-        is NextAction.IdentifyPhone  -> { /* show phone field, call identifyPhone() */ }
         is NextAction.ChallengeEmail -> { /* show "send code" button, call challengeEmail(action.index) */ }
         is NextAction.VerifyOtp      -> { /* show OTP field, call verifyOtp() */ }
         is NextAction.Unknown        -> { /* unsupported — skip or show disabled */ }
@@ -67,8 +66,6 @@ try {
     }
 }
 ```
-
-Or by phone number when `NextAction.IdentifyPhone` is present:
 
 ```kotlin
 client.identifyPhone("+15550001234").await()
