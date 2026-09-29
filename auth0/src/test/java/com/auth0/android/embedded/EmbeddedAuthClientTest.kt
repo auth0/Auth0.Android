@@ -308,29 +308,6 @@ public class EmbeddedAuthClientTest {
 
 
     @Test
-    public fun `identifyPhone should fail with no_active_session when no flow is in progress`() {
-        val error = assertEmbeddedError { client.identifyPhone("+15550001234").execute() }
-        assertThat(error.code, `is`("no_active_session"))
-    }
-
-    @Test
-    public fun `identifyPhone should POST the authorize endpoint with the correct action and phone`() {
-        establishSession()
-        mockAPI.willReturnInsufficientAuthorization()
-
-        try {
-            client.identifyPhone("+15550001234").execute()
-        } catch (_: EmbeddedAuthException) {
-        }
-
-        val body = bodyOf(mockAPI.takeRequest())
-        assertThat(body.getString("action"), `is`("action:identify:phone:v1"))
-        assertThat(body.getString("phone"), `is`("+15550001234"))
-    }
-
-
-
-    @Test
     public fun `challengeEmail should fail with no_active_session when no flow is in progress`() {
         val error = assertEmbeddedError { client.challengeEmail().execute() }
         assertThat(error.code, `is`("no_active_session"))
@@ -587,27 +564,6 @@ public class EmbeddedAuthClientTest {
 
         assertThat(error.isAccessDenied, `is`(true))
         assertThat(error.nextActions, `is`(empty()))
-    }
-
-    @Test
-    public fun `identifyPhone continuation sets isInsufficientAuthorization and populates nextActions`() {
-        establishSession()
-        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_VERIFY_OTP)
-
-        val error = assertEmbeddedError { client.identifyPhone("+15550001234").execute() }
-
-        assertThat(error.isInsufficientAuthorization, `is`(true))
-        assertThat(error.nextActions[0], instanceOf(NextAction.VerifyOtp::class.java))
-    }
-
-    @Test
-    public fun `identifyPhone surfaces a terminal error`() {
-        establishSession()
-        mockAPI.willReturnAccessDenied()
-
-        val error = assertEmbeddedError { client.identifyPhone("+15550001234").execute() }
-
-        assertThat(error.isAccessDenied, `is`(true))
     }
 
     @Test

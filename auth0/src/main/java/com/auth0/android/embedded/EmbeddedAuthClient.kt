@@ -122,15 +122,6 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
     }
 
     /**
-     * Continues the flow by submitting a phone identifier.
-     *
-     * This call never resolves successfully; it completes through [EmbeddedAuthException] whose
-     * [EmbeddedAuthException.nextActions] carry the next step to call.
-     */
-    internal fun identifyPhone(phone: String): Request<Void?, EmbeddedAuthException> =
-        continueStep(EmbeddedCapability.IDENTIFY_PHONE) { addParameter(PHONE_KEY, phone) }
-
-    /**
      * Continues the flow by requesting an email challenge for the authenticator at [index].
      *
      * This call never resolves successfully; it completes through [EmbeddedAuthException] whose
