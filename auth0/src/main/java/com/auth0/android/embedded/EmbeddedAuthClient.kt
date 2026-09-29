@@ -22,6 +22,8 @@ import com.google.gson.Gson
 import okhttp3.HttpUrl.Companion.toHttpUrl
 
 /**
+ *
+ *
  * API client for Auth0's embedded authentication API.
  *
  * ```
@@ -29,6 +31,8 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
  * val client = EmbeddedAuthClient(auth0)
  * ```
  *
+ * **Note**
+ * Embedded Authorization is currently in [Beta](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#beta). Please reach out to Auth0 support to get it enabled for your tenant.
  */
 public class EmbeddedAuthClient(private val auth0: Auth0) {
 
