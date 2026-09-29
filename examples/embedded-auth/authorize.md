@@ -1,7 +1,7 @@
-### Embedded Authorization (EA)
+### Embedded Authorization (Beta)
 
 > [!IMPORTANT]
-> Embedded Authorization is currently in [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access). Please reach out to Auth0 support to get it enabled for your tenant.
+> Embedded Authorization is currently in [Beta](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#beta). Please reach out to Auth0 support to get it enabled for your tenant.
 
 The embedded authorization flow (`/e/authorize`) lets your app authenticate users without leaving the app for a browser. The server drives the flow step-by-step: each call completes through an `EmbeddedAuthException` that carries the next action to take, until the terminal  call succeeds and returns `Credentials`.
 
