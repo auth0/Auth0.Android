@@ -45,7 +45,7 @@ Each non-terminal step throws `EmbeddedAuthException` with `isInsufficientAuthor
 ```kotlin
 for (action in exception.nextActions) {
     when (action) {
-        is NextAction.IdentifyEmail  -> { /* show email field, call identifyEmail() */ }
+        is NextAction.IdentifyEmail  -> { /* show email field, call identify() */ }
         is NextAction.ChallengeEmail -> { /* show "send code" button, call challengeEmail(action.index) */ }
         is NextAction.VerifyOtp      -> { /* show OTP field, call verifyOtp() */ }
         is NextAction.Unknown        -> { /* unsupported — skip or show disabled */ }
@@ -59,7 +59,7 @@ After `authorize()` returns a continuation with `NextAction.IdentifyEmail`:
 
 ```kotlin
 try {
-    client.identifyEmail("jane@example.com").await()
+    client.identify("jane@example.com", IdentifierType.EMAIL).await()
 } catch (e: EmbeddedAuthException) {
     if (e.isInsufficientAuthorization) {
         // Continue with e.nextActions (e.g. ChallengeEmail or VerifyOtp).

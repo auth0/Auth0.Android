@@ -6,6 +6,7 @@ import com.auth0.android.embedded.authorize.AuthorizeCode
 import com.auth0.android.embedded.authorize.EmbeddedAuthState
 import com.auth0.android.embedded.authorize.EmbeddedCapability
 import com.auth0.android.embedded.authorize.FailedRequest
+import com.auth0.android.embedded.authorize.IdentifierType
 import com.auth0.android.embedded.authorize.OtpType
 import com.auth0.android.embedded.authorize.StepRequest
 import com.auth0.android.embedded.authorize.authorizeCodeAdapter
@@ -107,13 +108,18 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
     }
 
     /**
-     * Continues the flow by submitting an email identifier.
+     * Continues the flow by submitting an identifier of the given [type].
      *
      * This call never resolves successfully; it completes through [EmbeddedAuthException] whose
      * [EmbeddedAuthException.nextActions] carry the next step to call.
      */
-    public fun identifyEmail(email: String): Request<Void?, EmbeddedAuthException> =
-        continueStep(EmbeddedCapability.IDENTIFY_EMAIL) { addParameter(EMAIL_KEY, email) }
+    public fun identify(
+        identifier: String,
+        type: IdentifierType,
+    ): Request<Void?, EmbeddedAuthException> = when (type) {
+        IdentifierType.EMAIL ->
+            continueStep(EmbeddedCapability.IDENTIFY_EMAIL) { addParameter(EMAIL_KEY, identifier) }
+    }
 
     /**
      * Continues the flow by submitting a phone identifier.

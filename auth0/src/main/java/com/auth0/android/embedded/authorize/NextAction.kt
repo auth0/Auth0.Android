@@ -8,7 +8,7 @@ public sealed interface NextAction {
 
     public val capability: EmbeddedCapability
 
-    /** Continue by submitting an email address. Act on it with [EmbeddedAuthClient.identifyEmail]. */
+    /** Continue by submitting an email address. Act on it with [EmbeddedAuthClient.identify]. */
     public data object IdentifyEmail : NextAction {
         override val capability: EmbeddedCapability = EmbeddedCapability.IDENTIFY_EMAIL
     }

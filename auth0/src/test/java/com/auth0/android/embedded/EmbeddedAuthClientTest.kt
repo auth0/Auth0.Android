@@ -2,6 +2,7 @@ package com.auth0.android.embedded
 
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
+import com.auth0.android.embedded.authorize.IdentifierType
 import com.auth0.android.embedded.authorize.NextAction
 import com.auth0.android.embedded.authorize.OtpChannel
 import com.auth0.android.embedded.authorize.OtpType
@@ -281,18 +282,18 @@ public class EmbeddedAuthClientTest {
 
 
     @Test
-    public fun `identifyEmail should fail with no_active_session when no flow is in progress`() {
-        val error = assertEmbeddedError { client.identifyEmail("jane@example.com").execute() }
+    public fun `identify with email should fail with no_active_session when no flow is in progress`() {
+        val error = assertEmbeddedError { client.identify("jane@example.com", IdentifierType.EMAIL).execute() }
         assertThat(error.code, `is`("no_active_session"))
     }
 
     @Test
-    public fun `identifyEmail should POST the authorize endpoint with the correct action and email`() {
+    public fun `identify with email should POST the authorize endpoint with the correct action and email`() {
         establishSession()
         mockAPI.willReturnInsufficientAuthorization()
 
         try {
-            client.identifyEmail("jane@example.com").execute()
+            client.identify("jane@example.com", IdentifierType.EMAIL).execute()
         } catch (_: EmbeddedAuthException) {
         }
 
@@ -567,22 +568,22 @@ public class EmbeddedAuthClientTest {
     }
 
     @Test
-    public fun `identifyEmail continuation sets isInsufficientAuthorization and populates nextActions`() {
+    public fun `identify with email continuation sets isInsufficientAuthorization and populates nextActions`() {
         establishSession()
         mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CHALLENGE_EMAIL)
 
-        val error = assertEmbeddedError { client.identifyEmail("jane@example.com").execute() }
+        val error = assertEmbeddedError { client.identify("jane@example.com", IdentifierType.EMAIL).execute() }
 
         assertThat(error.isInsufficientAuthorization, `is`(true))
         assertThat(error.nextActions[0], instanceOf(NextAction.ChallengeEmail::class.java))
     }
 
     @Test
-    public fun `identifyEmail surfaces a terminal error`() {
+    public fun `identify with email surfaces a terminal error`() {
         establishSession()
         mockAPI.willReturnAccessDenied()
 
-        val error = assertEmbeddedError { client.identifyEmail("jane@example.com").execute() }
+        val error = assertEmbeddedError { client.identify("jane@example.com", IdentifierType.EMAIL).execute() }
 
         assertThat(error.isAccessDenied, `is`(true))
         assertThat(error.nextActions, `is`(empty()))
@@ -655,13 +656,13 @@ public class EmbeddedAuthClientTest {
 
     @Test
     public fun `the auth_session is rotated between steps`() {
-        // authorize → session A; identifyEmail → should send A, server returns B; challengeEmail → should send B
+        // authorize → session A; identify → should send A, server returns B; challengeEmail → should send B
         mockAPI.willReturnInsufficientAuthorization(EmbeddedAuthMockServer.AUTH_SESSION)
         try { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).execute() } catch (_: EmbeddedAuthException) {}
         mockAPI.takeRequest()
 
         mockAPI.willReturnInsufficientAuthorization(EmbeddedAuthMockServer.ROTATED_AUTH_SESSION)
-        try { client.identifyEmail("jane@example.com").execute() } catch (_: EmbeddedAuthException) {}
+        try { client.identify("jane@example.com", IdentifierType.EMAIL).execute() } catch (_: EmbeddedAuthException) {}
         assertThat(bodyOf(mockAPI.takeRequest()).getString("auth_session"), `is`(EmbeddedAuthMockServer.AUTH_SESSION))
 
         mockAPI.willReturnAuthorizeCode()
@@ -795,11 +796,11 @@ public class EmbeddedAuthClientTest {
     }
 
     @Test
-    public fun `identifyEmail await POSTs the correct action and surfaces a continuation`(): Unit = runTest {
+    public fun `identify with email await POSTs the correct action and surfaces a continuation`(): Unit = runTest {
         establishSession()
         mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CHALLENGE_EMAIL)
 
-        val error = assertEmbeddedErrorSuspending { client.identifyEmail("jane@example.com").await() }
+        val error = assertEmbeddedErrorSuspending { client.identify("jane@example.com", IdentifierType.EMAIL).await() }
 
         assertThat(error.nextActions[0], instanceOf(NextAction.ChallengeEmail::class.java))
         val body = bodyOf(mockAPI.takeRequest())

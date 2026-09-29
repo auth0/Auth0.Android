@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.auth0.android.Auth0
 import com.auth0.android.embedded.EmbeddedAuthClient
 import com.auth0.android.embedded.EmbeddedAuthException
+import com.auth0.android.embedded.authorize.IdentifierType
 import com.auth0.android.embedded.authorize.OtpType
 import com.auth0.android.request.DefaultClient
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -54,7 +55,7 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
     /** Kicks off the flow. Completes via a continuation (see [runStep]). */
     fun startAuthorize(connection: String): Unit = runStep { client.authorize(connection).await() }
 
-    fun identifyEmail(email: String): Unit = runStep { client.identifyEmail(email).await() }
+    fun identifyEmail(email: String): Unit = runStep { client.identify(email, IdentifierType.EMAIL).await() }
 
     fun challengeEmail(index: Int): Unit = runStep { client.challengeEmail(index).await() }
 
