@@ -10,9 +10,7 @@ import com.auth0.android.embedded.authorize.IdentifierType
 import com.auth0.android.embedded.authorize.OtpType
 import com.auth0.android.embedded.authorize.StepRequest
 import com.auth0.android.embedded.authorize.authorizeCodeAdapter
-import com.auth0.android.embedded.authorize.discoveryAdapter
 import com.auth0.android.embedded.authorize.embeddedAuthErrorAdapter
-import com.auth0.android.embedded.discovery.DiscoveryResult
 import com.auth0.android.request.Request
 import com.auth0.android.request.internal.GsonAdapter
 import com.auth0.android.request.internal.GsonProvider
@@ -46,37 +44,6 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
     
     @Volatile
     private var transactionState: EmbeddedAuthState? = null
-
-    /**
-     *
-     * Returns the grant types a client can use, derived from the client's enabled grants,
-     * its enabled connections, and each connection's configured authentication methods.
-     *
-     * Example usage:
-     *
-     * ```
-     * client.discover("my-connection")
-     *     .start(object : Callback<DiscoveryResult, EmbeddedAuthException> {
-     *         override fun onSuccess(result: DiscoveryResult) { }
-     *         override fun onFailure(error: EmbeddedAuthException) { }
-     *     })
-     * ```
-     *
-     * @param connection name of the connection to limit the results to. When omitted, all the
-     * client's enabled connections are considered.
-     * @return a request to configure and start that will yield a [com.auth0.android.embedded.discovery.DiscoveryResult]
-     */
-    @JvmOverloads
-    public fun discover(connection: String? = null): Request<DiscoveryResult, EmbeddedAuthException> {
-        val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
-            .addPathSegment(EMBEDDED_PATH)
-            .addPathSegment(DISCOVERY_PATH)
-            .addQueryParameter(CLIENT_ID_KEY, clientId)
-            .apply { connection?.let { addQueryParameter(CONNECTION_KEY, it) } }
-            .build()
-
-        return factory.get(url.toString(), discoveryAdapter(gson))
-    }
 
     /**
      * Begins an embedded authorization flow, abandoning any flow already in progress.
@@ -235,7 +202,6 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
 
     private companion object {
         private const val EMBEDDED_PATH = "e"
-        private const val DISCOVERY_PATH = "discovery"
         private const val AUTHORIZE_PATH = "authorize"
         private const val OAUTH_PATH = "oauth"
         private const val TOKEN_PATH = "token"

@@ -6,13 +6,11 @@ import com.auth0.android.embedded.authorize.IdentifierType
 import com.auth0.android.embedded.authorize.NextAction
 import com.auth0.android.embedded.authorize.OtpChannel
 import com.auth0.android.embedded.authorize.OtpType
-import com.auth0.android.embedded.discovery.GrantType
 import com.auth0.android.util.EmbeddedAuthMockServer
 import com.auth0.android.util.SSLTestUtils.testClient
 import kotlinx.coroutines.test.runTest
 import okhttp3.mockwebserver.RecordedRequest
 import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.empty
 import org.hamcrest.Matchers.not
 import org.hamcrest.Matchers.hasSize
@@ -52,146 +50,6 @@ public class EmbeddedAuthClientTest {
     public fun tearDown() {
         mockAPI.shutdown()
     }
-
-    @Test
-    public fun `discover should GET the discovery endpoint with the client id`() {
-        mockAPI.willReturnEmptyDiscovery()
-
-        client.discover().execute()
-
-        val request = mockAPI.takeRequest()
-        assertThat(request.method, `is`("GET"))
-        assertThat(request.requestUrl?.encodedPath, `is`("/e/discovery"))
-        assertThat(request.requestUrl?.queryParameter("client_id"), `is`(CLIENT_ID))
-        assertThat(request.requestUrl?.queryParameter("connection"), `is`(nullValue()))
-    }
-
-    @Test
-    public fun `discover should add the connection query parameter when given`() {
-        mockAPI.willReturnEmptyDiscovery()
-
-        client.discover("my-connection").execute()
-
-        val request = mockAPI.takeRequest()
-        assertThat(request.requestUrl?.queryParameter("connection"), `is`("my-connection"))
-    }
-
-    @Test
-    public fun `discover should send the Auth0-Client header`() {
-        mockAPI.willReturnEmptyDiscovery()
-
-        client.discover().execute()
-
-        val request = mockAPI.takeRequest()
-        assertThat(request.getHeader("Auth0-Client"), `is`(notNullValue()))
-    }
-
-    @Test
-    public fun `discover should parse a full response into a DiscoveryResult`() {
-        mockAPI.willReturnFullDiscovery()
-
-        val result = client.discover().execute()
-
-        assertThat(
-            result.types,
-            containsInAnyOrder(
-                GrantType.PASSWORD,
-                GrantType.PASSWORD_REALM,
-                GrantType.PASSKEY,
-                GrantType.PASSWORDLESS_OTP,
-                GrantType.NATIVE_SOCIAL,
-                GrantType.AUTHORIZATION_CODE,
-                GrantType.UNKNOWN
-            )
-        )
-    }
-
-    @Test
-    public fun `discover should surface an empty body 404 as an embedded auth error`() {
-        mockAPI.willReturnNotEnabled()
-
-        var error: EmbeddedAuthException? = null
-        try {
-            client.discover().execute()
-        } catch (ex: EmbeddedAuthException) {
-            error = ex
-        }
-
-        assertThat(error, `is`(notNullValue()))
-        assertThat(error?.code, `is`(Auth0Exception.EMPTY_BODY_ERROR))
-        assertThat(error?.statusCode, `is`(404))
-        assertThat(error?.isNetworkError, `is`(false))
-    }
-
-    @Test
-    public fun `discover should surface a non JSON error body`() {
-        mockAPI.willReturnPlainTextError()
-
-        var error: EmbeddedAuthException? = null
-        try {
-            client.discover().execute()
-        } catch (ex: EmbeddedAuthException) {
-            error = ex
-        }
-
-        assertThat(error, `is`(notNullValue()))
-        assertThat(error?.code, `is`(Auth0Exception.NON_JSON_ERROR))
-        assertThat(error?.description, `is`(EmbeddedAuthMockServer.PLAIN_TEXT_ERROR))
-        assertThat(error?.statusCode, `is`(500))
-    }
-
-    @Test
-    public fun `discover should surface a JSON error envelope`() {
-        mockAPI.willReturnJsonError()
-
-        var error: EmbeddedAuthException? = null
-        try {
-            client.discover().execute()
-        } catch (ex: EmbeddedAuthException) {
-            error = ex
-        }
-
-        assertThat(error, `is`(notNullValue()))
-        assertThat(error?.code, `is`(EmbeddedAuthMockServer.ERROR_CODE))
-        assertThat(error?.description, `is`(EmbeddedAuthMockServer.ERROR_DESCRIPTION))
-        assertThat(error?.statusCode, `is`(400))
-    }
-
-    @Test
-    public fun `discover should surface a network failure as a network error`() {
-        mockAPI.shutdown()
-
-        var error: EmbeddedAuthException? = null
-        try {
-            client.discover().execute()
-        } catch (ex: EmbeddedAuthException) {
-            error = ex
-        }
-
-        assertThat(error, `is`(notNullValue()))
-        assertThat(error?.isNetworkError, `is`(true))
-    }
-
-    @Test
-    public fun `discover await should parse a full response into a DiscoveryResult`(): Unit =
-        runTest {
-            mockAPI.willReturnFullDiscovery()
-
-            val result = client.discover().await()
-
-            assertThat(
-                result.types,
-                containsInAnyOrder(
-                    GrantType.PASSWORD,
-                    GrantType.PASSWORD_REALM,
-                    GrantType.PASSKEY,
-                    GrantType.PASSWORDLESS_OTP,
-                    GrantType.NATIVE_SOCIAL,
-                    GrantType.AUTHORIZATION_CODE,
-                    GrantType.UNKNOWN
-                )
-            )
-        }
 
     @Test
     public fun `authorize should POST the authorize endpoint with the default scope and no audience`() {

@@ -38,7 +38,6 @@ private fun EmbeddedApp(viewModel: EmbeddedViewModel = viewModel()) {
         )
     } else {
         EmbeddedScreen(
-            viewModel = viewModel,
             onAuthorize = { connection ->
                 authorizeConnection = connection
                 showAuthorize = true

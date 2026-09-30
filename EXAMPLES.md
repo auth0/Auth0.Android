@@ -28,9 +28,8 @@ Each topic lives in its own file under [`examples/`](examples).
 - [Pushed Authorization Requests (PAR)](examples/authentication-api/pushed-authorization-requests.md)
 - [DPoP](examples/authentication-api/dpop.md)
 
-## Embedded Authentication (EA)
+## Embedded Authentication (Beta)
 
-- [Discovery](examples/embedded-auth/discovery.md)
 - [Authorize (email OTP flow)](examples/embedded-auth/authorize.md)
 
 ## Other APIs and features
