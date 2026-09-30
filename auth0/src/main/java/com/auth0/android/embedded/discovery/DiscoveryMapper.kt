@@ -3,18 +3,17 @@ package com.auth0.android.embedded.discovery
 /**
  * Translates the `GET /e/discovery` wire payload into the public [DiscoveryResult].
  *
- * An entry the SDK does not recognise becomes [LoginOption.Unknown] rather than being dropped, and
+ * An entry the SDK does not recognize becomes [LoginOption.Unknown] rather than being dropped, and
  * no single entry can fail the whole response.
  */
 internal fun DiscoveryResponse.toDiscoveryResult(): DiscoveryResult =
-    DiscoveryResult(alternatives.orEmpty().mapNotNull { it.toLoginOption() })
+    DiscoveryResult(alternatives.mapNotNull { it.toLoginOption() })
 
 /**
- * Maps one wire entry to its [LoginOption], or `null` if it named no grant type or omitted a
- * property its variant needs to be usable.
+ * Maps one wire entry to its [LoginOption], or `null` if it omitted a property its variant needs
+ * to be usable.
  */
 internal fun Alternative.toLoginOption(): LoginOption? {
-    val grantType = grantType ?: return null
     return when (grantType) {
         GRANT_PASSWORD -> LoginOption.Password
 
