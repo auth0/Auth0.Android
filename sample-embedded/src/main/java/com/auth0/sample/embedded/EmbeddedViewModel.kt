@@ -29,24 +29,6 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
         )
     }
 
-    // region Discovery (/e/discovery) — retained for reference; not shown in the UI.
-
-    private val _uiState = MutableStateFlow<DiscoveryUiState>(DiscoveryUiState.Idle)
-    val uiState: StateFlow<DiscoveryUiState> = _uiState.asStateFlow()
-
-    fun discover(connection: String? = null) {
-        _uiState.value = DiscoveryUiState.Loading
-        viewModelScope.launch {
-            _uiState.value = try {
-                DiscoveryUiState.Success(client.discover(connection).await())
-            } catch (error: EmbeddedAuthException) {
-                DiscoveryUiState.Failure(error)
-            }
-        }
-    }
-
-    // endregion
-
     // region Authorize (/e/authorize) — the interactive multi-step flow.
 
     private val _authorizeState = MutableStateFlow<AuthorizeUiState>(AuthorizeUiState.Idle)

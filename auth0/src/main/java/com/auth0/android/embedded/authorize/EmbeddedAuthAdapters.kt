@@ -3,9 +3,6 @@ package com.auth0.android.embedded.authorize
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
 import com.auth0.android.embedded.EmbeddedAuthException
-import com.auth0.android.embedded.discovery.DiscoveryResponse
-import com.auth0.android.embedded.discovery.DiscoveryResult
-import com.auth0.android.embedded.discovery.toDiscoveryResult
 import com.auth0.android.request.ErrorAdapter
 import com.auth0.android.request.JsonAdapter
 import com.auth0.android.request.internal.GsonAdapter
@@ -22,18 +19,6 @@ private const val NEXT_KEY = "next"
 private const val AUTH_SESSION_KEY = "auth_session"
 private const val DEFAULT_DESCRIPTION =
     "An error occurred when trying to authenticate with the server."
-
-/** Parses the discovery payload and translates it into the public [DiscoveryResult]. */
-internal fun discoveryAdapter(gson: Gson): JsonAdapter<DiscoveryResult> {
-    val adapter = GsonAdapter(DiscoveryResponse::class.java, gson)
-    return object : JsonAdapter<DiscoveryResult> {
-        @Throws(IOException::class)
-        override fun fromJson(
-            reader: Reader,
-            metadata: Map<String, Any>
-        ): DiscoveryResult = adapter.fromJson(reader, metadata).toDiscoveryResult()
-    }
-}
 
 /** Parses the `200` body of `/e/authorize` into the code to exchange for tokens. */
 internal fun authorizeCodeAdapter(gson: Gson): JsonAdapter<AuthorizeCode> =
