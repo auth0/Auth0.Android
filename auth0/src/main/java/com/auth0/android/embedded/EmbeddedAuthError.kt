@@ -54,6 +54,12 @@ public sealed interface EmbeddedAuthError {
      */
     public data object SessionExpired : EmbeddedAuthError
 
+    /**
+     * Terminal: the request was malformed (`code == "invalid_request"`).Read [EmbeddedAuthException.description] for
+     * specifics, fix the request, and start a new flow with [EmbeddedAuthClient.authorize].
+     */
+    public data object InvalidRequest : EmbeddedAuthError
+
     /** The request never reached the server (`cause` is a network error). Retry the step. */
     public data object Network : EmbeddedAuthError
 

@@ -748,10 +748,10 @@ public class EmbeddedAuthClientTest {
     }
 
     @Test
-    public fun `adapter maps invalid_request to Unknown`() {
+    public fun `adapter maps invalid_request to InvalidRequest`() {
         val json = """{"error":"invalid_request","error_description":"Bad request."}"""
         val ex = embeddedAuthErrorAdapter().fromJsonResponse(400, StringReader(json))
-        assertThat(ex.error, `is`(EmbeddedAuthError.Unknown))
+        assertThat(ex.error, `is`(EmbeddedAuthError.InvalidRequest))
     }
 
     @Test

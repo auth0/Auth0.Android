@@ -31,6 +31,7 @@ private const val TOO_MANY_LOGINS = "too_many_logins"
 private const val INVALID_CODE = "invalid_code"
 private const val INVALID_IDENTIFIER_OR_CODE = "invalid_identifier_or_code"
 private const val INVALID_GRANT = "invalid_grant"
+private const val INVALID_REQUEST = "invalid_request"
 private const val TOO_MANY_REQUESTS_STATUS = 429
 
 /** Parses the `200` body of `/e/authorize` into the code to exchange for tokens. */
@@ -92,6 +93,8 @@ internal fun embeddedAuthErrorAdapter(): ErrorAdapter<EmbeddedAuthException> {
                     EmbeddedAuthError.TooManyLogins
                 code == INVALID_GRANT ->
                     EmbeddedAuthError.SessionExpired
+                code == INVALID_REQUEST ->
+                    EmbeddedAuthError.InvalidRequest
                 else ->
                     EmbeddedAuthError.Unknown
             }

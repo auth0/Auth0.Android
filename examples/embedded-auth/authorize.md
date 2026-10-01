@@ -132,6 +132,7 @@ when (e.error) {
     EmbeddedAuthError.TooManyAttempts         -> { /* rate-limited by attack protection */ }
     EmbeddedAuthError.TooManyLogins           -> { /* too many login attempts */ }
     EmbeddedAuthError.SessionExpired          -> { /* the grant expired — restart via authorize() */ }
+    EmbeddedAuthError.InvalidRequest          -> { /* malformed request — integration fault, fix and restart */ }
     EmbeddedAuthError.Network                 -> { /* transient — safe to retry the same step */ }
     else                                      -> { /* Unknown/unclassified — inspect e.code and e.description */ }
 }
