@@ -511,22 +511,16 @@ public class CustomTabsOptions implements Parcelable {
         }
 
         /**
-         * Allows the initial navigation chain of the Custom Tab to leave the browser and launch
-         * an external app, by setting {@link CustomTabsIntent#EXTRA_SEND_TO_EXTERNAL_DEFAULT_HANDLER}
-         * on the Custom Tab intent.
+         * Allows the initial navigation chain of the Custom Tab to leave the browser and launch an
+         * external app, by setting {@link CustomTabsIntent#EXTRA_SEND_TO_EXTERNAL_DEFAULT_HANDLER}
+         * on the intent.
          * <p>
-         * This is relevant when the redirect scheme is {@code https} (Android App Links). A Custom
-         * Tab intent created from a Custom Tabs session always targets the browser package
-         * explicitly, and Chrome versions prior to 120 interpret that as a request to keep the
-         * initial navigation chain inside the browser. When the {@code /authorize} request redirects
-         * straight to the callback URL without any user interaction, for example because the user
-         * already has a session or {@code prompt=none} is used, those Chrome versions load the
-         * callback URL in the Custom Tab instead of launching the app, and the user sees a
-         * "Not found." page. Enabling this option lets the redirect launch the app instead.
-         * <p>
-         * It has no effect on flows that already require user interaction, on Chrome 120 and
-         * later for redirects back to the calling app, or on the Auth Tab flow.
-         * By default, this option is disabled.
+         * Relevant only for the {@code https} redirect scheme (Android App Links) on Chrome
+         * versions prior to 120: when {@code /authorize} redirects straight to the callback URL
+         * without user interaction (e.g. an existing session or {@code prompt=none}), those
+         * versions load the callback inside the Custom Tab and the user sees a "Not found." page.
+         * Enabling this lets the redirect launch the app instead. Has no effect otherwise.
+         * Disabled by default.
          *
          * @param enabled whether to allow the initial navigation chain to launch an external app.
          * @return this same builder instance.

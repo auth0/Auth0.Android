@@ -96,3 +96,35 @@ WebAuthProvider.login(account)
     .start(MainActivity.this, callback);
 ```
 </details>
+
+### Allow the initial redirect to leave the browser (`https` scheme)
+
+> **When you need this:** only if you use an `https` redirect scheme (Android App Links) **and** need to support **Chrome 119 or older**. On Chrome 120+ this is handled automatically, and the Auth Tab flow is unaffected. The option is disabled by default and is safe to leave off otherwise.
+
+When the redirect scheme is `https`, a Custom Tab opened from a Custom Tabs session always targets the browser package explicitly. Chrome versions prior to 120 interpret that as a request to keep the *initial* navigation chain inside the browser. If the `/authorize` request redirects straight to the callback URL without any user interaction — for example because the user already has a session or `prompt=none` is used — those Chrome versions load the callback URL inside the Custom Tab instead of launching your app, and the user sees a `Not found.` page.
+
+Enabling `withSendToExternalDefaultHandlerEnabled(true)` sets `CustomTabsIntent.EXTRA_SEND_TO_EXTERNAL_DEFAULT_HANDLER` on the intent, which lets that initial redirect launch your app instead:
+
+```kotlin
+val ctOptions = CustomTabsOptions.newBuilder()
+    .withSendToExternalDefaultHandlerEnabled(true)
+    .build()
+
+WebAuthProvider.login(account)
+    .withCustomTabsOptions(ctOptions)
+    .start(this, callback)
+```
+
+<details>
+  <summary>Using Java</summary>
+
+```java
+CustomTabsOptions options = CustomTabsOptions.newBuilder()
+    .withSendToExternalDefaultHandlerEnabled(true)
+    .build();
+
+WebAuthProvider.login(account)
+    .withCustomTabsOptions(options)
+    .start(MainActivity.this, callback);
+```
+</details>
