@@ -20,8 +20,6 @@ import com.google.gson.Gson
 import okhttp3.HttpUrl.Companion.toHttpUrl
 
 /**
- *
- *
  * API client for Auth0's embedded authentication API.
  *
  * ```
@@ -34,6 +32,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
  */
 public class EmbeddedAuthClient(private val auth0: Auth0) {
 
+    /** Used for both `/e/authorize` and the `/oauth/token` exchange. */
     private val factory: RequestFactory<EmbeddedAuthException> =
         RequestFactory(auth0.networkingClient, embeddedAuthErrorAdapter())
 
@@ -41,7 +40,7 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
 
     private val clientId: String
         get() = auth0.clientId
-    
+
     @Volatile
     private var transactionState: EmbeddedAuthState? = null
 
@@ -50,8 +49,8 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
      *
      * This call never resolves successfully: the server always answers with a continuation, so the
      * request completes through [EmbeddedAuthException]. Inspect
-     * [EmbeddedAuthException.isInsufficientAuthorization] and [EmbeddedAuthException.nextActions] to
-     * learn which step to call next. A terminal error is reported on the same failure channel.
+     * [EmbeddedAuthError.InsufficientAuthorization.nextActions] on [EmbeddedAuthException.error]
+     * to learn which step to call next. A terminal error is reported on the same failure channel.
      *
      * @param connection name of the connection to authenticate against.
      * @param scope space-separated scopes to request. Must include `openid` for the terminal token
@@ -82,7 +81,7 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
      * Continues the flow by submitting an identifier of the given [type].
      *
      * This call never resolves successfully; it completes through [EmbeddedAuthException] whose
-     * [EmbeddedAuthException.nextActions] carry the next step to call.
+     * [EmbeddedAuthError.InsufficientAuthorization.nextActions] carry the next step to call.
      */
     public fun identify(
         identifier: String,
@@ -96,7 +95,7 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
      * Continues the flow by requesting an email challenge for the authenticator at [index].
      *
      * This call never resolves successfully; it completes through [EmbeddedAuthException] whose
-     * [EmbeddedAuthException.nextActions] carry the next step to call.
+     * [EmbeddedAuthError.InsufficientAuthorization.nextActions] carry the next step to call.
      */
     @JvmOverloads
     public fun challengeEmail(index: Int = 0): Request<Void?, EmbeddedAuthException> =
@@ -108,8 +107,8 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
      * Verifies a one-time [code] of the given [type]. This is the terminal step of the flow.
      *
      * On success, it yields the [Credentials]. If the server requires further steps the request
-     * completes through [EmbeddedAuthException] instead, with the next step on
-     * [EmbeddedAuthException.nextActions].
+     * completes through [EmbeddedAuthException] instead, with
+     * [EmbeddedAuthError.InsufficientAuthorization.nextActions] on [EmbeddedAuthException.error].
      */
     @JvmOverloads
     public fun verifyOtp(
@@ -150,7 +149,8 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
     private fun <T> noActiveSession(): Request<T, EmbeddedAuthException> = FailedRequest<T>(
         EmbeddedAuthException(
             NO_ACTIVE_SESSION_ERROR,
-            "No embedded authentication flow is in progress. Call authorize() first."
+            "No embedded authentication flow is in progress. Call authorize() first.",
+            error = EmbeddedAuthError.NoActiveSession
         )
     )
 
@@ -191,12 +191,14 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
     }
 
     private fun updateSessionFromFailure(error: EmbeddedAuthException) {
-        when {
-            error.isInsufficientAuthorization && error.authSession != null ->
-                transactionState = EmbeddedAuthState(error.authSession)
+        if (error.statusCode in 500..599) return
 
-            error.isAccessDenied || error.isTooManyAttempts || error.isTooManyLogins ->
-                transactionState = null
+        when (error.error) {
+            is EmbeddedAuthError.InsufficientAuthorization ->
+                error.authSession?.let { transactionState = EmbeddedAuthState(it) }
+
+            is EmbeddedAuthError.Network -> Unit
+            else -> transactionState = null
         }
     }
 
@@ -214,6 +216,8 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
         private const val AUTH_SESSION_KEY = "auth_session"
         private const val ACTION_KEY = "action"
         private const val EMAIL_KEY = "email"
+
+        @Suppress("unused")
         private const val PHONE_KEY = "phone"
         private const val OTP_KEY = "otp"
         private const val INDEX_KEY = "index"

@@ -94,6 +94,12 @@ $actionsJson
         return this
     }
 
+    /** An `invalid_grant` returned by `/e/authorize` continuation (expired `auth_session`). */
+    fun willReturnInvalidGrant(description: String = "The auth_session has expired."): EmbeddedAuthMockServer {
+        server.enqueue(responseWithJSON("""{ "error": "invalid_grant", "error_description": "$description" }""", 400))
+        return this
+    }
+
     /** The `200` that ends `/e/authorize`, carrying the code to exchange for tokens. */
     fun willReturnAuthorizeCode(): EmbeddedAuthMockServer {
         server.enqueue(responseWithJSON("""{ "authorization_code": "$AUTHORIZATION_CODE" }""", 200))

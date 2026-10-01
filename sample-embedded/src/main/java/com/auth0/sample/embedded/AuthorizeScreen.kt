@@ -42,6 +42,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.auth0.android.embedded.EmbeddedAuthError
 import com.auth0.android.embedded.EmbeddedAuthException
 import com.auth0.android.embedded.authorize.NextAction
 import com.auth0.android.embedded.authorize.OtpType
@@ -320,12 +321,11 @@ private fun formatCredentials(credentials: Credentials): String = buildString {
 }
 
 private fun formatError(error: EmbeddedAuthException): String = buildString {
-    appendLine("Authorize step failed.")
+    appendLine(explain(error.error))
     appendLine()
-    appendLine("code:          ${error.code}")
-    appendLine("description:   ${error.description}")
-    appendLine("HTTP status:   ${error.statusCode}")
-    appendLine("network error: ${error.isNetworkError}")
+    appendLine("code:        ${error.code}")
+    appendLine("description: ${error.description}")
+    appendLine("HTTP status: ${error.statusCode}")
     // Surface the underlying cause chain — client-side parse errors hide here, not in code/description.
     var cause = error.cause
     if (cause != null) {
@@ -336,4 +336,19 @@ private fun formatError(error: EmbeddedAuthException): String = buildString {
             cause = cause.cause
         }
     }
+}
+
+/**
+ * Turns the typed [EmbeddedAuthError] into a user-facing headline. Note the trailing `else`:
+ * future flows (MFA, passkeys) add variants, and the catch-all keeps this compiling when they do.
+ */
+private fun explain(error: EmbeddedAuthError): String = when (error) {
+    is EmbeddedAuthError.InsufficientAuthorization -> "More steps are required to continue."
+    EmbeddedAuthError.TooManyWrongOtpAttempts,
+    EmbeddedAuthError.ChallengeExpired,
+    EmbeddedAuthError.SessionExpired -> "This flow can't continue — start over."
+    EmbeddedAuthError.TooManyAttempts,
+    EmbeddedAuthError.TooManyLogins -> "Rate limited — try again later."
+    EmbeddedAuthError.Network -> "The request didn't reach the server — check your connection and retry."
+    else -> "Authorize step failed."
 }
