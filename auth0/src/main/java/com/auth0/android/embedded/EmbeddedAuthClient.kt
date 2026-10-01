@@ -191,6 +191,8 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
     }
 
     private fun updateSessionFromFailure(error: EmbeddedAuthException) {
+        if (error.statusCode in 500..599) return
+
         when (error.error) {
             is EmbeddedAuthError.InsufficientAuthorization ->
                 error.authSession?.let { transactionState = EmbeddedAuthState(it) }

@@ -102,7 +102,22 @@ val credentials = client.verifyOtp(
 // credentials.accessToken, credentials.idToken, etc. are now available.
 ```
 
-If the server still requires further steps it throws `EmbeddedAuthException` whose `error` is `EmbeddedAuthError.InsufficientAuthorization`, just like the earlier steps. A wrong code comes back as that same continuation — the flow is still recoverable, so re-prompt and retry with the `nextActions` the case carries. 
+If the server still requires further steps it throws `EmbeddedAuthException` whose `error` is `EmbeddedAuthError.InsufficientAuthorization`, just like the earlier steps. A wrong code comes back as that same continuation — the flow is still recoverable, so re-prompt and retry with the `nextActions` the case carries. The continuation's `reason` tells you *why* the previous input was rejected, so you can show a precise message before re-prompting:
+
+```kotlin
+val error = exception.error
+if (error is EmbeddedAuthError.InsufficientAuthorization) {
+    val message = when (error.reason) {
+        EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_CODE ->
+            "That code was incorrect. Try again."
+        EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_CODE ->
+            "That identifier or code was incorrect. Try again."
+        EmbeddedAuthError.InsufficientAuthorization.Reason.NONE ->
+            null // plain step-forward — no rejection to report
+    }
+    // Re-prompt using error.nextActions, optionally surfacing `message`.
+}
+```
 
 
 #### Terminal errors

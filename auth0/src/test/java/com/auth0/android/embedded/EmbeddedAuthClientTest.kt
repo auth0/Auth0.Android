@@ -537,15 +537,16 @@ public class EmbeddedAuthClientTest {
     }
 
     @Test
-    public fun `a transient server error clears the session`() {
+    public fun `a 5xx server error leaves the session intact for retry`() {
         establishSession()
 
         mockAPI.willReturnPlainTextError()
         assertEmbeddedError { client.challengeEmail().execute() }
         mockAPI.takeRequest()
 
-        val error = assertEmbeddedError { client.challengeEmail().execute() }
-        assertThat(error.code, `is`("no_active_session"))
+        mockAPI.willReturnPlainTextError()
+        val retry = assertEmbeddedError { client.challengeEmail().execute() }
+        assertThat(retry.code, not(`is`("no_active_session")))
     }
 
     @Test
@@ -677,6 +678,31 @@ public class EmbeddedAuthClientTest {
         val error = ex.error as EmbeddedAuthError.InsufficientAuthorization
         assertThat(error.nextActions, hasSize(1))
         assertThat(error.nextActions[0], instanceOf(NextAction.IdentifyEmail::class.java))
+        assertThat(error.reason, `is`(EmbeddedAuthError.InsufficientAuthorization.Reason.NONE))
+    }
+
+    @Test
+    public fun `adapter maps insufficient_authorization + invalid_code to reason INVALID_CODE`() {
+        val json = """{"error":"insufficient_authorization","error_description":"invalid_code","auth_session":"s","next":[${EmbeddedAuthMockServer.NEXT_VERIFY_OTP}]}"""
+        val ex = embeddedAuthErrorAdapter().fromJsonResponse(403, StringReader(json))
+        val error = ex.error as EmbeddedAuthError.InsufficientAuthorization
+        assertThat(error.reason, `is`(EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_CODE))
+    }
+
+    @Test
+    public fun `adapter maps insufficient_authorization + invalid_identifier_or_code to reason INVALID_IDENTIFIER_OR_CODE`() {
+        val json = """{"error":"insufficient_authorization","error_description":"invalid_identifier_or_code","auth_session":"s","next":[${EmbeddedAuthMockServer.NEXT_IDENTIFY_EMAIL}]}"""
+        val ex = embeddedAuthErrorAdapter().fromJsonResponse(403, StringReader(json))
+        val error = ex.error as EmbeddedAuthError.InsufficientAuthorization
+        assertThat(error.reason, `is`(EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_CODE))
+    }
+
+    @Test
+    public fun `adapter maps insufficient_authorization without a known description to reason NONE`() {
+        val json = """{"error":"insufficient_authorization","auth_session":"s","next":[${EmbeddedAuthMockServer.NEXT_IDENTIFY_EMAIL}]}"""
+        val ex = embeddedAuthErrorAdapter().fromJsonResponse(403, StringReader(json))
+        val error = ex.error as EmbeddedAuthError.InsufficientAuthorization
+        assertThat(error.reason, `is`(EmbeddedAuthError.InsufficientAuthorization.Reason.NONE))
     }
 
     @Test

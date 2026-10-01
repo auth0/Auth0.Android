@@ -28,6 +28,8 @@ private const val CHALLENGE_EXPIRED = "challenge_expired"
 private const val TOO_MANY_REQUESTS = "too_many_requests"
 private const val TOO_MANY_ATTEMPTS = "too_many_attempts"
 private const val TOO_MANY_LOGINS = "too_many_logins"
+private const val INVALID_CODE = "invalid_code"
+private const val INVALID_IDENTIFIER_OR_CODE = "invalid_identifier_or_code"
 private const val INVALID_GRANT = "invalid_grant"
 private const val TOO_MANY_REQUESTS_STATUS = 429
 
@@ -74,7 +76,10 @@ internal fun embeddedAuthErrorAdapter(): ErrorAdapter<EmbeddedAuthException> {
 
             val error: EmbeddedAuthError = when {
                 code == INSUFFICIENT_AUTHORIZATION ->
-                    EmbeddedAuthError.InsufficientAuthorization(nextRaw.toNextActions())
+                    EmbeddedAuthError.InsufficientAuthorization(
+                        nextRaw.toNextActions(),
+                        insufficientAuthorizationReason(description)
+                    )
                 code == ACCESS_DENIED && description == TOO_MANY_WRONG_OTP_ATTEMPTS ->
                     EmbeddedAuthError.TooManyWrongOtpAttempts
                 code == ACCESS_DENIED && description == CHALLENGE_EXPIRED ->
@@ -98,6 +103,14 @@ internal fun embeddedAuthErrorAdapter(): ErrorAdapter<EmbeddedAuthException> {
                 error = error,
                 authSession = authSession
             )
+        }
+
+        fun insufficientAuthorizationReason(description: String):
+                EmbeddedAuthError.InsufficientAuthorization.Reason = when (description) {
+            INVALID_CODE -> EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_CODE
+            INVALID_IDENTIFIER_OR_CODE ->
+                EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_CODE
+            else -> EmbeddedAuthError.InsufficientAuthorization.Reason.NONE
         }
 
         override fun fromException(cause: Throwable): EmbeddedAuthException {

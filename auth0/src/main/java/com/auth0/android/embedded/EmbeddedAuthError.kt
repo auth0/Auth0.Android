@@ -10,11 +10,25 @@ public sealed interface EmbeddedAuthError {
 
     /**
      * The flow is not complete and can continue: act on one of [nextActions].
-     * Corresponds to `code == "insufficient_authorization"`.
+     * Corresponds to `code == "insufficient_authorization"`. [reason] reports why the
+     * previous step's input was rejected, when the server says so.
      */
     public data class InsufficientAuthorization(
-        public val nextActions: List<NextAction>
-    ) : EmbeddedAuthError
+        public val nextActions: List<NextAction>,
+        public val reason: Reason
+    ) : EmbeddedAuthError {
+
+        public enum class Reason {
+            /**  a plain step-forward continuation. */
+            NONE,
+
+            /** The submitted one-time code was invalid. */
+            INVALID_CODE,
+
+            /** The identifier or the code was invalid; the server does not say which. */
+            INVALID_IDENTIFIER_OR_CODE
+        }
+    }
 
     /** Terminal: too many wrong OTP submissions. Restart the flow. */
     public data object TooManyWrongOtpAttempts : EmbeddedAuthError
