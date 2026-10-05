@@ -1,5 +1,12 @@
 # Change Log
 
+## [5.0.0-beta.0](https://github.com/auth0/Auth0.Android/tree/5.0.0-beta.0) (2026-10-05)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/4.1.0...5.0.0-beta.0)
+
+**Added**
+- refactor(embedded): replace boolean accessors with typed EmbeddedAuthError [\#1079](https://github.com/auth0/Auth0.Android/pull/1079) ([pmathew92](https://github.com/pmathew92))
+- refactor : Removed discover API from Embedded Auth Client- #1301 [\#1078](https://github.com/auth0/Auth0.Android/pull/1078) ([pmathew92](https://github.com/pmathew92))
+
 ## [4.1.0](https://github.com/auth0/Auth0.Android/tree/4.1.0) (2026-08-27)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/4.0.1...4.1.0)
 
