@@ -1,5 +1,11 @@
 # Change Log
 
+## [5.0.0-beta.0](https://github.com/auth0/Auth0.Android/tree/5.0.0-beta.0) (2026-10-05)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/4.1.0...5.0.0-beta.0)
+
+**Added**
+- feat(embedded): add /e/authorize email OTP flow  [\#1075](https://github.com/auth0/Auth0.Android/pull/1075) ([pmathew92](https://github.com/pmathew92))
+
 ## [4.1.0](https://github.com/auth0/Auth0.Android/tree/4.1.0) (2026-08-27)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/4.0.1...4.1.0)
 
