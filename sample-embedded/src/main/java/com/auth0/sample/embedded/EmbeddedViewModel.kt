@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.auth0.android.Auth0
 import com.auth0.android.embedded.EmbeddedAuthClient
+import com.auth0.android.embedded.EmbeddedAuthError
 import com.auth0.android.embedded.EmbeddedAuthException
 import com.auth0.android.embedded.authorize.IdentifierType
 import com.auth0.android.embedded.authorize.OtpType
@@ -75,10 +76,11 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun EmbeddedAuthException.toAuthorizeState(): AuthorizeUiState =
-        if (isInsufficientAuthorization && nextActions.isNotEmpty()) {
-            AuthorizeUiState.ActionsAvailable(nextActions)
-        } else {
-            AuthorizeUiState.Failed(this)
+        when (val e = error) {
+            is EmbeddedAuthError.InsufficientAuthorization ->
+                if (e.nextActions.isNotEmpty()) AuthorizeUiState.ActionsAvailable(e.nextActions)
+                else AuthorizeUiState.Failed(this)
+            else -> AuthorizeUiState.Failed(this)
         }
 
     // endregion

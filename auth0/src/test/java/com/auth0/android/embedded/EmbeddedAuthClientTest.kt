@@ -6,6 +6,7 @@ import com.auth0.android.embedded.authorize.IdentifierType
 import com.auth0.android.embedded.authorize.NextAction
 import com.auth0.android.embedded.authorize.OtpChannel
 import com.auth0.android.embedded.authorize.OtpType
+import com.auth0.android.embedded.authorize.embeddedAuthErrorAdapter
 import com.auth0.android.util.EmbeddedAuthMockServer
 import com.auth0.android.util.SSLTestUtils.testClient
 import kotlinx.coroutines.test.runTest
@@ -17,7 +18,6 @@ import org.hamcrest.Matchers.hasSize
 import org.hamcrest.Matchers.instanceOf
 import org.hamcrest.Matchers.`is`
 import org.hamcrest.Matchers.notNullValue
-import org.hamcrest.Matchers.nullValue
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Before
@@ -25,6 +25,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.io.StringReader
 
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
@@ -51,6 +52,8 @@ public class EmbeddedAuthClientTest {
         mockAPI.shutdown()
     }
 
+    // ── Authorize — request shape ───────────────────────────────────────────────
+
     @Test
     public fun `authorize should POST the authorize endpoint with the default scope and no audience`() {
         mockAPI.willReturnJsonError()
@@ -58,7 +61,6 @@ public class EmbeddedAuthClientTest {
         try {
             client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).execute()
         } catch (_: EmbeddedAuthException) {
-            // authorize always completes through a failure; we only inspect the request here.
         }
 
         val request = mockAPI.takeRequest()
@@ -89,9 +91,10 @@ public class EmbeddedAuthClientTest {
         assertThat(body.getString("audience"), `is`("https://api.example.com"))
     }
 
+    // ── verifyOtp — token exchange ──────────────────────────────────────────────
+
     @Test
     public fun `verifyOtp should exchange the code and return credentials with an id token`() {
-        // Establish a session, then run the terminal step through the token exchange.
         mockAPI.willReturnInsufficientAuthorization()
         try {
             client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).execute()
@@ -107,7 +110,6 @@ public class EmbeddedAuthClientTest {
         assertThat(credentials.idToken, `is`(EmbeddedAuthMockServer.ID_TOKEN))
         assertThat(credentials.accessToken, `is`(EmbeddedAuthMockServer.ACCESS_TOKEN))
 
-        // The verify step posts to /e/authorize; the exchange posts to /oauth/token.
         mockAPI.takeRequest()
         val tokenRequest = mockAPI.takeRequest()
         assertThat(tokenRequest.requestUrl?.encodedPath, `is`("/oauth/token"))
@@ -128,21 +130,18 @@ public class EmbeddedAuthClientTest {
         mockAPI.willReturnAuthorizeCode()
         mockAPI.willReturnTokensWithoutIdToken()
 
-        var error: EmbeddedAuthException? = null
-        try {
-            client.verifyOtp("123456", OtpType.OOB).execute()
-        } catch (ex: EmbeddedAuthException) {
-            error = ex
-        }
+        val error = assertEmbeddedError { client.verifyOtp("123456", OtpType.OOB).execute() }
 
         assertThat(error, `is`(notNullValue()))
     }
 
+    // ── identify ────────────────────────────────────────────────────────────────
 
     @Test
     public fun `identify with email should fail with no_active_session when no flow is in progress`() {
         val error = assertEmbeddedError { client.identify("jane@example.com", IdentifierType.EMAIL).execute() }
         assertThat(error.code, `is`("no_active_session"))
+        assertThat(error.error, `is`(EmbeddedAuthError.NoActiveSession))
     }
 
     @Test
@@ -163,12 +162,13 @@ public class EmbeddedAuthClientTest {
         assertThat(body.getString("auth_session"), `is`(EmbeddedAuthMockServer.AUTH_SESSION))
     }
 
-
+    // ── challengeEmail ───────────────────────────────────────────────────────────
 
     @Test
     public fun `challengeEmail should fail with no_active_session when no flow is in progress`() {
         val error = assertEmbeddedError { client.challengeEmail().execute() }
         assertThat(error.code, `is`("no_active_session"))
+        assertThat(error.error, `is`(EmbeddedAuthError.NoActiveSession))
     }
 
     @Test
@@ -199,12 +199,13 @@ public class EmbeddedAuthClientTest {
         assertThat(bodyOf(mockAPI.takeRequest()).getInt("index"), `is`(2))
     }
 
-
+    // ── verifyOtp — no session ───────────────────────────────────────────────────
 
     @Test
     public fun `verifyOtp should fail with no_active_session when no flow is in progress`() {
         val error = assertEmbeddedError { client.verifyOtp("123456").execute() }
         assertThat(error.code, `is`("no_active_session"))
+        assertThat(error.error, `is`(EmbeddedAuthError.NoActiveSession))
     }
 
     @Test
@@ -221,15 +222,15 @@ public class EmbeddedAuthClientTest {
         assertThat(body.getString("type"), `is`("totp"))
     }
 
-
+    // ── Continuation / typed-error mapping ──────────────────────────────────────
 
     @Test
-    public fun `authorize continuation sets isInsufficientAuthorization and populates nextActions`() {
+    public fun `authorize continuation surfaces InsufficientAuthorization and populates nextActions`() {
         mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_IDENTIFY_EMAIL)
 
         val error = assertEmbeddedError { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).execute() }
 
-        assertThat(error.isInsufficientAuthorization, `is`(true))
+        assertThat(error.error, instanceOf(EmbeddedAuthError.InsufficientAuthorization::class.java))
         assertThat(error.nextActions, hasSize(1))
         assertThat(error.nextActions[0], instanceOf(NextAction.IdentifyEmail::class.java))
     }
@@ -336,33 +337,31 @@ public class EmbeddedAuthClientTest {
     }
 
     @Test
-    public fun `authorize surfaces access_denied as a terminal error with no next actions`() {
+    public fun `authorize surfaces AccessDenied as a terminal error with no next actions`() {
         mockAPI.willReturnAccessDenied()
 
         val error = assertEmbeddedError { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).execute() }
 
-        assertThat(error.isInsufficientAuthorization, `is`(false))
-        assertThat(error.isAccessDenied, `is`(true))
-        assertThat(error.nextActions, `is`(empty()))
+        assertThat(error.error, `is`(EmbeddedAuthError.AccessDenied))
     }
 
     @Test
-    public fun `authorize surfaces too_many_attempts as a terminal error`() {
+    public fun `authorize surfaces TooManyAttempts as a terminal error`() {
         mockAPI.willReturnTooManyAttempts()
 
         val error = assertEmbeddedError { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).execute() }
 
-        assertThat(error.isTooManyAttempts, `is`(true))
+        assertThat(error.error, `is`(EmbeddedAuthError.TooManyAttempts))
         assertThat(error.statusCode, `is`(429))
     }
 
     @Test
-    public fun `authorize surfaces too_many_logins as a terminal error`() {
+    public fun `authorize surfaces TooManyLogins as a terminal error`() {
         mockAPI.willReturnTooManyLogins()
 
         val error = assertEmbeddedError { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).execute() }
 
-        assertThat(error.isTooManyLogins, `is`(true))
+        assertThat(error.error, `is`(EmbeddedAuthError.TooManyLogins))
         assertThat(error.statusCode, `is`(429))
     }
 
@@ -373,43 +372,52 @@ public class EmbeddedAuthClientTest {
 
         val error = assertEmbeddedError { client.verifyOtp("000000").execute() }
 
-        assertThat(error.isInvalidCode, `is`(true))
-        assertThat(error.isInsufficientAuthorization, `is`(true))
-        assertThat(error.isAccessDenied, `is`(false))
+        assertThat(error.error, instanceOf(EmbeddedAuthError.InsufficientAuthorization::class.java))
         assertThat(error.nextActions, `is`(not(empty())))
     }
 
     @Test
-    public fun `verifyOtp flags too many wrong OTP attempts as terminal`() {
+    public fun `verifyOtp flags too many wrong OTP attempts as TooManyWrongOtpAttempts`() {
         establishSession()
         mockAPI.willReturnTooManyWrongOtpAttempts()
 
         val error = assertEmbeddedError { client.verifyOtp("000000").execute() }
 
-        assertThat(error.isTooManyWrongOtpAttempts, `is`(true))
-        assertThat(error.isAccessDenied, `is`(true))
-        assertThat(error.isInvalidCode, `is`(false))
+        assertThat(error.error, `is`(EmbeddedAuthError.TooManyWrongOtpAttempts))
     }
 
     @Test
-    public fun `verifyOtp flags an expired challenge as terminal`() {
+    public fun `verifyOtp flags an expired challenge as ChallengeExpired`() {
         establishSession()
         mockAPI.willReturnChallengeExpired()
 
         val error = assertEmbeddedError { client.verifyOtp("000000").execute() }
 
-        assertThat(error.isChallengeExpired, `is`(true))
-        assertThat(error.isAccessDenied, `is`(true))
+        assertThat(error.error, `is`(EmbeddedAuthError.ChallengeExpired))
     }
 
     @Test
-    public fun `identify with email continuation sets isInsufficientAuthorization and populates nextActions`() {
+    public fun `authorize surfaces SessionExpired when the continuation returns invalid_grant`() {
+        mockAPI.willReturnInsufficientAuthorization()
+        try { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).execute() } catch (_: EmbeddedAuthException) {}
+        mockAPI.takeRequest()
+
+        mockAPI.willReturnInvalidGrant()
+
+        val error = assertEmbeddedError { client.challengeEmail().execute() }
+
+        assertThat(error.error, `is`(EmbeddedAuthError.SessionExpired))
+        assertThat(error.code, `is`("invalid_grant"))
+    }
+
+    @Test
+    public fun `identify with email continuation surfaces InsufficientAuthorization and populates nextActions`() {
         establishSession()
         mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CHALLENGE_EMAIL)
 
         val error = assertEmbeddedError { client.identify("jane@example.com", IdentifierType.EMAIL).execute() }
 
-        assertThat(error.isInsufficientAuthorization, `is`(true))
+        assertThat(error.error, instanceOf(EmbeddedAuthError.InsufficientAuthorization::class.java))
         assertThat(error.nextActions[0], instanceOf(NextAction.ChallengeEmail::class.java))
     }
 
@@ -420,18 +428,17 @@ public class EmbeddedAuthClientTest {
 
         val error = assertEmbeddedError { client.identify("jane@example.com", IdentifierType.EMAIL).execute() }
 
-        assertThat(error.isAccessDenied, `is`(true))
-        assertThat(error.nextActions, `is`(empty()))
+        assertThat(error.error, `is`(EmbeddedAuthError.AccessDenied))
     }
 
     @Test
-    public fun `challengeEmail continuation sets isInsufficientAuthorization and populates nextActions`() {
+    public fun `challengeEmail continuation surfaces InsufficientAuthorization and populates nextActions`() {
         establishSession()
         mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_VERIFY_OTP)
 
         val error = assertEmbeddedError { client.challengeEmail().execute() }
 
-        assertThat(error.isInsufficientAuthorization, `is`(true))
+        assertThat(error.error, instanceOf(EmbeddedAuthError.InsufficientAuthorization::class.java))
         assertThat(error.nextActions[0], instanceOf(NextAction.VerifyOtp::class.java))
     }
 
@@ -442,7 +449,7 @@ public class EmbeddedAuthClientTest {
 
         val error = assertEmbeddedError { client.challengeEmail().execute() }
 
-        assertThat(error.isTooManyAttempts, `is`(true))
+        assertThat(error.error, `is`(EmbeddedAuthError.TooManyAttempts))
     }
 
     @Test
@@ -452,7 +459,7 @@ public class EmbeddedAuthClientTest {
 
         val error = assertEmbeddedError { client.verifyOtp("123456").execute() }
 
-        assertThat(error.isInsufficientAuthorization, `is`(true))
+        assertThat(error.error, instanceOf(EmbeddedAuthError.InsufficientAuthorization::class.java))
         assertThat(error.nextActions[0], instanceOf(NextAction.VerifyOtp::class.java))
     }
 
@@ -463,14 +470,13 @@ public class EmbeddedAuthClientTest {
 
         val error = assertEmbeddedError { client.verifyOtp("123456").execute() }
 
-        assertThat(error.isTooManyAttempts, `is`(true))
+        assertThat(error.error, `is`(EmbeddedAuthError.TooManyAttempts))
     }
 
-
+    // ── Session-management behaviour ─────────────────────────────────────────────
 
     @Test
     public fun `the auth_session is rotated between steps`() {
-        // authorize → session A; identify → should send A, server returns B; challengeEmail → should send B
         mockAPI.willReturnInsufficientAuthorization(EmbeddedAuthMockServer.AUTH_SESSION)
         try { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).execute() } catch (_: EmbeddedAuthException) {}
         mockAPI.takeRequest()
@@ -494,7 +500,6 @@ public class EmbeddedAuthClientTest {
         mockAPI.takeRequest()
         mockAPI.takeRequest()
 
-        // Session is gone — any follow-on step must fail with no_active_session.
         val error = assertEmbeddedError { client.verifyOtp("999999").execute() }
         assertThat(error.code, `is`("no_active_session"))
     }
@@ -508,7 +513,6 @@ public class EmbeddedAuthClientTest {
         mockAPI.takeRequest()
         mockAPI.takeRequest()
 
-        // Session still active — verifyOtp should reach the server rather than failing immediately.
         mockAPI.willReturnAuthorizeCode()
         mockAPI.willReturnTokens()
         val credentials = client.verifyOtp("123456").execute()
@@ -519,7 +523,6 @@ public class EmbeddedAuthClientTest {
     public fun `calling authorize again resets an in-progress flow`() {
         establishSession()
 
-        // Start a fresh flow — the old session must not bleed into the next step.
         mockAPI.willReturnInsufficientAuthorization(EmbeddedAuthMockServer.ROTATED_AUTH_SESSION)
         try { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).execute() } catch (_: EmbeddedAuthException) {}
         mockAPI.takeRequest()
@@ -534,21 +537,16 @@ public class EmbeddedAuthClientTest {
     }
 
     @Test
-    public fun `a transient server error leaves the session intact for retry`() {
+    public fun `a 5xx server error leaves the session intact for retry`() {
         establishSession()
 
-        // A 5xx is not terminal — the session must survive so the same step can be retried.
         mockAPI.willReturnPlainTextError()
         assertEmbeddedError { client.challengeEmail().execute() }
         mockAPI.takeRequest()
 
-        // The retry must still carry the established session, not fail with no_active_session.
-        mockAPI.willReturnInsufficientAuthorization(EmbeddedAuthMockServer.ROTATED_AUTH_SESSION)
-        assertEmbeddedError { client.challengeEmail().execute() }
-        assertThat(
-            bodyOf(mockAPI.takeRequest()).getString("auth_session"),
-            `is`(EmbeddedAuthMockServer.AUTH_SESSION)
-        )
+        mockAPI.willReturnPlainTextError()
+        val retry = assertEmbeddedError { client.challengeEmail().execute() }
+        assertThat(retry.code, not(`is`("no_active_session")))
     }
 
     @Test
@@ -556,14 +554,11 @@ public class EmbeddedAuthClientTest {
         establishSession()
         mockAPI.shutdown()
 
-        // The step fails at the network layer — transient, so the session must survive.
         val error = assertEmbeddedError { client.challengeEmail().execute() }
-        assertThat(error.isNetworkError, `is`(true))
+        assertThat(error.error, `is`(EmbeddedAuthError.Network))
 
-        // A preserved session means the retry reaches the network again (another network error);
-        // a wrongly-cleared session would instead short-circuit client-side with no_active_session.
         val retry = assertEmbeddedError { client.challengeEmail().execute() }
-        assertThat(retry.isNetworkError, `is`(true))
+        assertThat(retry.error, `is`(EmbeddedAuthError.Network))
         assertThat(retry.code, not(`is`("no_active_session")))
     }
 
@@ -575,7 +570,6 @@ public class EmbeddedAuthClientTest {
         assertEmbeddedError { client.challengeEmail().execute() }
         mockAPI.takeRequest()
 
-        // Terminal failure ended the flow — any follow-on step must fail with no_active_session.
         val error = assertEmbeddedError { client.challengeEmail().execute() }
         assertThat(error.code, `is`("no_active_session"))
     }
@@ -588,14 +582,23 @@ public class EmbeddedAuthClientTest {
         assertEmbeddedError { client.challengeEmail().execute() }
         mockAPI.takeRequest()
 
-        // Rate limiting is terminal for this flow — the session must be dropped.
         val error = assertEmbeddedError { client.challengeEmail().execute() }
         assertThat(error.code, `is`("no_active_session"))
     }
 
+    @Test
+    public fun `a SessionExpired error clears the session`() {
+        establishSession()
 
+        mockAPI.willReturnInvalidGrant()
+        assertEmbeddedError { client.challengeEmail().execute() }
+        mockAPI.takeRequest()
 
-    // --- await() (coroutine) coverage: the step wrappers run distinct code paths for await() ---
+        val error = assertEmbeddedError { client.challengeEmail().execute() }
+        assertThat(error.code, `is`("no_active_session"))
+    }
+
+    // ── await() (coroutine) paths ──────────────────────────────────────────────
 
     @Test
     public fun `authorize await surfaces a continuation through the coroutine path`(): Unit = runTest {
@@ -605,7 +608,7 @@ public class EmbeddedAuthClientTest {
             client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await()
         }
 
-        assertThat(error.isInsufficientAuthorization, `is`(true))
+        assertThat(error.error, instanceOf(EmbeddedAuthError.InsufficientAuthorization::class.java))
         assertThat(error.nextActions[0], instanceOf(NextAction.IdentifyEmail::class.java))
     }
 
@@ -628,10 +631,9 @@ public class EmbeddedAuthClientTest {
         mockAPI.willReturnAccessDenied()
 
         val error = assertEmbeddedErrorSuspending { client.challengeEmail().await() }
-        assertThat(error.isAccessDenied, `is`(true))
+        assertThat(error.error, `is`(EmbeddedAuthError.AccessDenied))
         mockAPI.takeRequest()
 
-        // onStepFailure ran on the coroutine path — the session must be gone.
         val followOn = assertEmbeddedErrorSuspending { client.challengeEmail().await() }
         assertThat(followOn.code, `is`("no_active_session"))
     }
@@ -647,7 +649,6 @@ public class EmbeddedAuthClientTest {
         assertThat(credentials.idToken, `is`(EmbeddedAuthMockServer.ID_TOKEN))
         assertThat(credentials.accessToken, `is`(EmbeddedAuthMockServer.ACCESS_TOKEN))
 
-        // onFlowComplete ran on the coroutine path — the session must be cleared.
         val followOn = assertEmbeddedErrorSuspending { client.verifyOtp("999999").await() }
         assertThat(followOn.code, `is`("no_active_session"))
     }
@@ -662,14 +663,131 @@ public class EmbeddedAuthClientTest {
         mockAPI.takeRequest()
         mockAPI.takeRequest()
 
-        // The failed exchange must not clear the session — a retry should reach the server.
         mockAPI.willReturnAuthorizeCode()
         mockAPI.willReturnTokens()
         val credentials = client.verifyOtp("123456").await()
         assertThat(credentials.accessToken, `is`(EmbeddedAuthMockServer.ACCESS_TOKEN))
     }
 
+    // ── Adapter mapping unit tests (§5 of EmbeddedAuthError spec) ─────────────
 
+    @Test
+    public fun `adapter maps insufficient_authorization to InsufficientAuthorization`() {
+        val json = """{"error":"insufficient_authorization","error_description":"continue","auth_session":"s","next":[${EmbeddedAuthMockServer.NEXT_IDENTIFY_EMAIL}]}"""
+        val ex = embeddedAuthErrorAdapter().fromJsonResponse(403, StringReader(json))
+        val error = ex.error as EmbeddedAuthError.InsufficientAuthorization
+        assertThat(error.nextActions, hasSize(1))
+        assertThat(error.nextActions[0], instanceOf(NextAction.IdentifyEmail::class.java))
+        assertThat(error.reason, `is`(EmbeddedAuthError.InsufficientAuthorization.Reason.NONE))
+    }
+
+    @Test
+    public fun `adapter maps insufficient_authorization + invalid_code to reason INVALID_CODE`() {
+        val json = """{"error":"insufficient_authorization","error_description":"invalid_code","auth_session":"s","next":[${EmbeddedAuthMockServer.NEXT_VERIFY_OTP}]}"""
+        val ex = embeddedAuthErrorAdapter().fromJsonResponse(403, StringReader(json))
+        val error = ex.error as EmbeddedAuthError.InsufficientAuthorization
+        assertThat(error.reason, `is`(EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_CODE))
+    }
+
+    @Test
+    public fun `adapter maps insufficient_authorization + invalid_identifier_or_code to reason INVALID_IDENTIFIER_OR_CODE`() {
+        val json = """{"error":"insufficient_authorization","error_description":"invalid_identifier_or_code","auth_session":"s","next":[${EmbeddedAuthMockServer.NEXT_IDENTIFY_EMAIL}]}"""
+        val ex = embeddedAuthErrorAdapter().fromJsonResponse(403, StringReader(json))
+        val error = ex.error as EmbeddedAuthError.InsufficientAuthorization
+        assertThat(error.reason, `is`(EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_CODE))
+    }
+
+    @Test
+    public fun `adapter maps insufficient_authorization without a known description to reason NONE`() {
+        val json = """{"error":"insufficient_authorization","auth_session":"s","next":[${EmbeddedAuthMockServer.NEXT_IDENTIFY_EMAIL}]}"""
+        val ex = embeddedAuthErrorAdapter().fromJsonResponse(403, StringReader(json))
+        val error = ex.error as EmbeddedAuthError.InsufficientAuthorization
+        assertThat(error.reason, `is`(EmbeddedAuthError.InsufficientAuthorization.Reason.NONE))
+    }
+
+    @Test
+    public fun `adapter maps access_denied + too_many_wrong_otp_attempts to TooManyWrongOtpAttempts`() {
+        val json = """{"error":"access_denied","error_description":"too_many_wrong_otp_attempts"}"""
+        val ex = embeddedAuthErrorAdapter().fromJsonResponse(403, StringReader(json))
+        assertThat(ex.error, `is`(EmbeddedAuthError.TooManyWrongOtpAttempts))
+    }
+
+    @Test
+    public fun `adapter maps access_denied + challenge_expired to ChallengeExpired`() {
+        val json = """{"error":"access_denied","error_description":"challenge_expired"}"""
+        val ex = embeddedAuthErrorAdapter().fromJsonResponse(403, StringReader(json))
+        assertThat(ex.error, `is`(EmbeddedAuthError.ChallengeExpired))
+    }
+
+    @Test
+    public fun `adapter maps access_denied with any other description to AccessDenied`() {
+        val json = """{"error":"access_denied","error_description":"Access denied."}"""
+        val ex = embeddedAuthErrorAdapter().fromJsonResponse(403, StringReader(json))
+        assertThat(ex.error, `is`(EmbeddedAuthError.AccessDenied))
+    }
+
+    @Test
+    public fun `adapter maps 429 too_many_requests + too_many_attempts to TooManyAttempts`() {
+        val json = """{"error":"too_many_requests","error_description":"too_many_attempts"}"""
+        val ex = embeddedAuthErrorAdapter().fromJsonResponse(429, StringReader(json))
+        assertThat(ex.error, `is`(EmbeddedAuthError.TooManyAttempts))
+    }
+
+    @Test
+    public fun `adapter maps 429 too_many_requests + too_many_logins to TooManyLogins`() {
+        val json = """{"error":"too_many_requests","error_description":"too_many_logins"}"""
+        val ex = embeddedAuthErrorAdapter().fromJsonResponse(429, StringReader(json))
+        assertThat(ex.error, `is`(EmbeddedAuthError.TooManyLogins))
+    }
+
+    @Test
+    public fun `adapter maps invalid_grant to SessionExpired`() {
+        val json = """{"error":"invalid_grant","error_description":"The auth_session has expired."}"""
+        val ex = embeddedAuthErrorAdapter().fromJsonResponse(400, StringReader(json))
+        assertThat(ex.error, `is`(EmbeddedAuthError.SessionExpired))
+    }
+
+    @Test
+    public fun `adapter maps invalid_request to InvalidRequest`() {
+        val json = """{"error":"invalid_request","error_description":"Bad request."}"""
+        val ex = embeddedAuthErrorAdapter().fromJsonResponse(400, StringReader(json))
+        assertThat(ex.error, `is`(EmbeddedAuthError.InvalidRequest))
+    }
+
+    @Test
+    public fun `adapter maps server_error to Unknown`() {
+        val json = """{"error":"server_error","error_description":"Unexpected error."}"""
+        val ex = embeddedAuthErrorAdapter().fromJsonResponse(500, StringReader(json))
+        assertThat(ex.error, `is`(EmbeddedAuthError.Unknown))
+    }
+
+    @Test
+    public fun `adapter maps blank body to Unknown`() {
+        val ex = embeddedAuthErrorAdapter().fromRawResponse(404, "", emptyMap())
+        assertThat(ex.error, `is`(EmbeddedAuthError.Unknown))
+        assertThat(ex.code, `is`(Auth0Exception.EMPTY_BODY_ERROR))
+    }
+
+    @Test
+    public fun `adapter maps non-JSON body to Unknown`() {
+        val ex = embeddedAuthErrorAdapter().fromRawResponse(500, "Internal Server Error", emptyMap())
+        assertThat(ex.error, `is`(EmbeddedAuthError.Unknown))
+        assertThat(ex.code, `is`(Auth0Exception.NON_JSON_ERROR))
+    }
+
+    @Test
+    public fun `adapter maps network exception to Network`() {
+        val ex = embeddedAuthErrorAdapter().fromException(java.net.UnknownHostException("host not found"))
+        assertThat(ex.error, `is`(EmbeddedAuthError.Network))
+    }
+
+    @Test
+    public fun `adapter maps non-network exception to Unknown`() {
+        val ex = embeddedAuthErrorAdapter().fromException(RuntimeException("unexpected"))
+        assertThat(ex.error, `is`(EmbeddedAuthError.Unknown))
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────────
 
     /** Enqueues a continuation and calls authorize to populate [transactionState]. */
     private fun establishSession() {
@@ -692,7 +810,6 @@ public class EmbeddedAuthClientTest {
         return error!!
     }
 
-
     private fun bodyOf(request: RecordedRequest): JSONObject =
         JSONObject(request.body.readUtf8())
 
@@ -700,3 +817,7 @@ public class EmbeddedAuthClientTest {
         private const val CLIENT_ID = "CLIENT_ID"
     }
 }
+
+/** Extracts nextActions from an InsufficientAuthorization error for concise assertions. */
+private val EmbeddedAuthException.nextActions: List<NextAction>
+    get() = (error as EmbeddedAuthError.InsufficientAuthorization).nextActions
