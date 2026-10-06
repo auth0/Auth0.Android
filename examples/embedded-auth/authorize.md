@@ -82,6 +82,9 @@ client.identifyPhone("+15550001234").await()
 
 #### Request an email challenge
 
+> [!NOTE]
+> The Email OTP flow is supported only for **existing users** who have already signed up. It does not work for fresh / new user sign-ups.
+
 When `NextAction.ChallengeEmail` is present, ask the server to send a one-time code:
 
 ```kotlin
