@@ -36,6 +36,46 @@ public sealed interface NextAction {
         override val capability: EmbeddedCapability = EmbeddedCapability.VERIFY_OTP
     }
 
+    /** Continue by challenging a phone factor. Act on it with [EmbeddedAuthClient.challengePhone]. */
+    @ConsistentCopyVisibility
+    public data class ChallengePhone internal constructor(
+        public val index: Int,
+        public val identifier: String,
+        public val deliveryMethods: List<PhoneDeliveryMethod>,
+    ) : NextAction {
+        override val capability: EmbeddedCapability = EmbeddedCapability.CHALLENGE_PHONE
+    }
+
+    /** Continue by challenging a push notification factor. Act on it with [EmbeddedAuthClient.challengePush]. */
+    @ConsistentCopyVisibility
+    public data class ChallengePush internal constructor(
+        public val index: Int,
+        public val name: String?,
+    ) : NextAction {
+        override val capability: EmbeddedCapability = EmbeddedCapability.CHALLENGE_PUSH
+    }
+
+    /** Continue by verifying an out-of-band (push) notification. Act on it with [EmbeddedAuthClient.verifyOob]. */
+    @ConsistentCopyVisibility
+    public data class VerifyOob internal constructor(
+        public val pollInMs: Int,
+    ) : NextAction {
+        override val capability: EmbeddedCapability = EmbeddedCapability.VERIFY_OOB
+    }
+
+    /** Continue by verifying a recovery code. Act on it with [EmbeddedAuthClient.verifyRecoveryCode]. */
+    public data object VerifyRecoveryCode : NextAction {
+        override val capability: EmbeddedCapability = EmbeddedCapability.VERIFY_RECOVERY_CODE
+    }
+
+    /** Continue by confirming a recovery code after verification. Act on it with [EmbeddedAuthClient.confirmRecoveryCode]. */
+    @ConsistentCopyVisibility
+    public data class ConfirmRecoveryCode internal constructor(
+        public val newCode: String,
+    ) : NextAction {
+        override val capability: EmbeddedCapability = EmbeddedCapability.CONFIRM_RECOVERY_CODE
+    }
+
     /** An action the server offered that this version of the SDK does not model. */
     @ConsistentCopyVisibility
     public data class Unknown internal constructor(

@@ -7,7 +7,9 @@ import com.auth0.android.embedded.authorize.EmbeddedAuthState
 import com.auth0.android.embedded.authorize.EmbeddedCapability
 import com.auth0.android.embedded.authorize.FailedRequest
 import com.auth0.android.embedded.authorize.IdentifierType
+import com.auth0.android.embedded.authorize.NextAction
 import com.auth0.android.embedded.authorize.OtpType
+import com.auth0.android.embedded.authorize.PhoneDeliveryMethod
 import com.auth0.android.embedded.authorize.StepRequest
 import com.auth0.android.embedded.authorize.authorizeCodeAdapter
 import com.auth0.android.embedded.authorize.embeddedAuthErrorAdapter
@@ -89,6 +91,9 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
     ): Request<Void?, EmbeddedAuthException> = when (type) {
         IdentifierType.EMAIL ->
             continueStep(EmbeddedCapability.IDENTIFY_EMAIL) { addParameter(EMAIL_KEY, identifier) }
+
+        IdentifierType.PHONE ->
+            continueStep(EmbeddedCapability.IDENTIFY_PHONE) { addParameter(PHONE_KEY, identifier) }
     }
 
     /**
@@ -126,6 +131,103 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
             )
             .addParameter(OTP_KEY, code)
             .addParameter(TYPE_KEY, type.value)
+        return advancing(request)
+    }
+
+    /**
+     * Continues the flow by requesting a phone challenge for the authenticator at [index].
+     *
+     * This call never resolves successfully; it completes through [EmbeddedAuthException] whose
+     * [EmbeddedAuthError.InsufficientAuthorization.nextActions] carry the next step to call.
+     */
+    @JvmOverloads
+    public fun challengePhone(
+        index: Int = 0,
+        deliveryMethod: PhoneDeliveryMethod = PhoneDeliveryMethod.TEXT
+    ): Request<Void?, EmbeddedAuthException> =
+        continueStep(EmbeddedCapability.CHALLENGE_PHONE) {
+            addParameter(INDEX_KEY, index)
+            addParameter(DELIVERY_METHOD_KEY, deliveryMethod.value)
+        }
+
+    /**
+     * Continues the flow by requesting a push notification challenge for the authenticator at [index].
+     *
+     * This call never resolves successfully; it completes through [EmbeddedAuthException] whose
+     * [EmbeddedAuthError.InsufficientAuthorization.nextActions] will contain a [NextAction.VerifyOob]
+     * entry. After receiving that continuation, call [verifyOob] repeatedly, waiting
+     * [NextAction.VerifyOob.pollInMs] milliseconds between each call, until the push is approved,
+     * rejected, or expires.
+     */
+    @JvmOverloads
+    public fun challengePush(index: Int = 0): Request<Void?, EmbeddedAuthException> =
+        continueStep(EmbeddedCapability.CHALLENGE_PUSH) {
+            addParameter(INDEX_KEY, index)
+        }
+
+    /**
+     * Performs a single poll to check whether the push notification sent by [challengePush] has
+     * been approved.
+     *
+     * This method performs **one poll per call** — the SDK does not poll automatically. After
+     * calling [challengePush], wait [NextAction.VerifyOob.pollInMs] milliseconds, then call this
+     * method. On each [EmbeddedAuthError.InsufficientAuthorization] continuation with reason
+     * [EmbeddedAuthError.InsufficientAuthorization.Reason.AUTHORIZATION_PENDING] or
+     * [EmbeddedAuthError.InsufficientAuthorization.Reason.SLOW_DOWN], read the updated
+     * [NextAction.VerifyOob.pollInMs] from [EmbeddedAuthError.InsufficientAuthorization.nextActions],
+     * wait that interval (back off on SLOW_DOWN), and call this method again.
+     *
+     * On approval the server returns an authorization code and this call yields [Credentials].
+     * On rejection or expiry the request completes with a terminal [EmbeddedAuthError] such as
+     * [EmbeddedAuthError.AuthorizationRejected] or [EmbeddedAuthError.ChallengeExpired].
+     */
+    public fun verifyOob(): Request<Credentials, EmbeddedAuthException> {
+        val session = transactionState?.authSession ?: return noActiveSession()
+        val request = factory.post(authorizeUrl, authorizeCodeAdapter(gson))
+            .addParameters(
+                mapOf(
+                    AUTH_SESSION_KEY to session,
+                    ACTION_KEY to EmbeddedCapability.VERIFY_OOB.value,
+                    CLIENT_ID_KEY to clientId
+                )
+            )
+        return advancing(request)
+    }
+
+    /**
+     * Verifies a recovery [code].
+     *
+     * This call **never** yields [Credentials] directly. The server always responds with a
+     * continuation whose [EmbeddedAuthError.InsufficientAuthorization.nextActions] contains a
+     * [NextAction.ConfirmRecoveryCode] entry carrying the newly rotated code to display to the
+     * user. Call [confirmRecoveryCode] next to acknowledge the new code and complete the flow.
+     */
+    public fun verifyRecoveryCode(code: String): Request<Void?, EmbeddedAuthException> =
+        continueStep(
+            EmbeddedCapability.VERIFY_RECOVERY_CODE,
+            addPayload = { addParameter(CODE_KEY, code) }
+        )
+
+    /**
+     * Acknowledges the rotated recovery code returned by [verifyRecoveryCode] and completes
+     * the flow.
+     *
+     * Must only be called after [verifyRecoveryCode] returns a continuation with a
+     * [NextAction.ConfirmRecoveryCode] next action. Display [NextAction.ConfirmRecoveryCode.newCode]
+     * to the user before calling this method so they can record their new recovery code.
+     *
+     * On success, it yields the [Credentials].
+     */
+    public fun confirmRecoveryCode(): Request<Credentials, EmbeddedAuthException> {
+        val session = transactionState?.authSession ?: return noActiveSession()
+        val request = factory.post(authorizeUrl, authorizeCodeAdapter(gson))
+            .addParameters(
+                mapOf(
+                    AUTH_SESSION_KEY to session,
+                    ACTION_KEY to EmbeddedCapability.CONFIRM_RECOVERY_CODE.value,
+                    CLIENT_ID_KEY to clientId
+                )
+            )
         return advancing(request)
     }
 
@@ -216,9 +318,8 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
         private const val AUTH_SESSION_KEY = "auth_session"
         private const val ACTION_KEY = "action"
         private const val EMAIL_KEY = "email"
-
-        @Suppress("unused")
         private const val PHONE_KEY = "phone"
+        private const val DELIVERY_METHOD_KEY = "delivery_method"
         private const val OTP_KEY = "otp"
         private const val INDEX_KEY = "index"
         private const val TYPE_KEY = "type"
@@ -231,8 +332,14 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
 
         private val DEFAULT_CAPABILITIES: Set<EmbeddedCapability> = setOf(
             EmbeddedCapability.IDENTIFY_EMAIL,
+            EmbeddedCapability.IDENTIFY_PHONE,
             EmbeddedCapability.CHALLENGE_EMAIL,
-            EmbeddedCapability.VERIFY_OTP
+            EmbeddedCapability.CHALLENGE_PHONE,
+            EmbeddedCapability.CHALLENGE_PUSH,
+            EmbeddedCapability.VERIFY_OTP,
+            EmbeddedCapability.VERIFY_OOB,
+            EmbeddedCapability.VERIFY_RECOVERY_CODE,
+            EmbeddedCapability.CONFIRM_RECOVERY_CODE
         )
     }
 

@@ -45,25 +45,35 @@ client.authorize(
 
 #### Handle next actions
 
-Each non-terminal step throws `EmbeddedAuthException` whose `error` is `EmbeddedAuthError.InsufficientAuthorization`, carrying a list of `NextAction` entries describing what the server will accept next. Iterate them to build your UI:
+Each non-terminal step throws `EmbeddedAuthException` whose `error` is `EmbeddedAuthError.InsufficientAuthorization`, carrying a list of `NextAction` entries describing what the server will accept next. The list is a *menu*, not a sequence: the server advertises every action valid right now given what the user has enrolled.
+
+The same actions appear whether a factor is the **first factor** or an **MFA second factor** — the server decides which to offer based on the connection and the user's enrollment. For example, `IdentifyPhone` + `ChallengePhone` + `VerifyOtp` can log a user in by SMS/voice as a first factor, and the same `ChallengePhone` + `VerifyOtp` pair can appear later as a step-up second factor after a password. Iterate the menu to build your UI:
 
 ```kotlin
 val error = exception.error
 if (error is EmbeddedAuthError.InsufficientAuthorization) {
     for (action in error.nextActions) {
         when (action) {
-            is NextAction.IdentifyEmail  -> { /* show email field, call identify() */ }
-            is NextAction.ChallengeEmail -> { /* show "send code" button, call challengeEmail(action.index) */ }
-            is NextAction.VerifyOtp      -> { /* show OTP field, call verifyOtp() */ }
-            is NextAction.Unknown        -> { /* unsupported — skip or show disabled */ }
+            is NextAction.IdentifyEmail       -> { /* show email field, call identify(..., EMAIL) */ }
+            is NextAction.IdentifyPhone       -> { /* show phone field, call identify(..., PHONE) */ }
+            is NextAction.ChallengeEmail      -> { /* send email code, call challengeEmail(action.index) */ }
+            is NextAction.ChallengePhone      -> { /* send SMS/voice code, call challengePhone(action.index, ...) */ }
+            is NextAction.ChallengePush       -> { /* trigger push, call challengePush(action.index) */ }
+            is NextAction.VerifyOtp           -> { /* show OTP field, call verifyOtp() */ }
+            is NextAction.VerifyOob           -> { /* poll the pending push, call verifyOob() */ }
+            is NextAction.VerifyRecoveryCode  -> { /* show recovery-code field, call verifyRecoveryCode() */ }
+            is NextAction.ConfirmRecoveryCode -> { /* show action.newCode, call confirmRecoveryCode() */ }
+            is NextAction.Unknown             -> { /* unsupported — skip or show disabled */ }
         }
     }
 }
 ```
 
+See the dedicated examples for each factor: [Phone OTP (SMS/Voice)](phone-authorize.md), [Push (OOB)](push-oob-polling.md), [TOTP](totp.md), and [Recovery Code](recovery-code.md).
+
 #### Identify the user
 
-After `authorize()` returns a continuation with `NextAction.IdentifyEmail`:
+`identify()` takes the identifier and its `IdentifierType`. When `authorize()` returns a continuation with `NextAction.IdentifyEmail`, submit an email:
 
 ```kotlin
 try {
@@ -76,8 +86,10 @@ try {
 }
 ```
 
+When `NextAction.IdentifyPhone` is present, submit a phone number instead — the server then continues with a `ChallengePhone` action (see [Phone OTP](phone-authorize.md)):
+
 ```kotlin
-client.identifyPhone("+15550001234").await()
+client.identify("+15550001234", IdentifierType.PHONE).await()
 ```
 
 #### Request an email challenge
@@ -99,7 +111,7 @@ client.challengeEmail(action.index).await()
 ```kotlin
 val credentials = client.verifyOtp(
     code = "123456",
-    type = OtpType.OOB   // OOB for emailed codes; TOTP for authenticator-app codes
+    type = OtpType.OOB   // OOB for email and SMS/voice codes; TOTP for authenticator-app codes
 ).await()
 
 // credentials.accessToken, credentials.idToken, etc. are now available.
@@ -140,41 +152,6 @@ when (e.error) {
     else                                      -> { /* Unknown/unclassified — inspect e.code and e.description */ }
 }
 ```
-
-<details>
-  <summary>Using callbacks</summary>
-
-```kotlin
-client
-    .authorize("Username-Password-Authentication")
-    .start(object : Callback<Void?, EmbeddedAuthException> {
-        override fun onSuccess(result: Void?) {
-            // Unexpected — authorize always continues through onFailure.
-        }
-        override fun onFailure(exception: EmbeddedAuthException) {
-            val error = exception.error
-            if (error is EmbeddedAuthError.InsufficientAuthorization) {
-                // Handle error.nextActions.
-            }
-        }
-    })
-```
-
-Terminal step with callbacks:
-
-```kotlin
-client
-    .verifyOtp("123456", OtpType.OOB)
-    .start(object : Callback<Credentials, EmbeddedAuthException> {
-        override fun onSuccess(result: Credentials) {
-            // Authenticated.
-        }
-        override fun onFailure(exception: EmbeddedAuthException) {
-            // Handle continuation or terminal error.
-        }
-    })
-```
-</details>
 
 <details>
   <summary>Using Java</summary>

@@ -178,6 +178,26 @@ private fun ActionsSection(actions: List<NextAction>, viewModel: EmbeddedViewMod
                 onVerify = { code, type -> viewModel.verifyOtp(code, type) },
             )
 
+            is NextAction.ChallengePhone -> InfoCard(
+                stringResource(R.string.label_unsupported_action, "challenge:phone"),
+            )
+
+            is NextAction.ChallengePush -> InfoCard(
+                stringResource(R.string.label_unsupported_action, "challenge:push"),
+            )
+
+            is NextAction.VerifyOob -> InfoCard(
+                stringResource(R.string.label_unsupported_action, "verify:oob"),
+            )
+
+            NextAction.VerifyRecoveryCode -> InfoCard(
+                stringResource(R.string.label_unsupported_action, "verify:recovery-code"),
+            )
+
+            is NextAction.ConfirmRecoveryCode -> InfoCard(
+                stringResource(R.string.label_unsupported_action, "confirm:recovery-code"),
+            )
+
             is NextAction.Unknown -> InfoCard(
                 stringResource(R.string.label_unsupported_action, action.rawAction),
             )
