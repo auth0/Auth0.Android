@@ -5,3 +5,10 @@
 # Isolate binary files in case the auto-detection algorithm fails and
 # marks them as text files (which could brick them).
 *.{png,jpg,jpeg,gif,webp,woff,woff2} binary
+
+# Keep this branch's own copy of these files when syncing main into v5.
+# `.version` and README carry v5-specific content, so always keep ours.
+.version     merge=ours
+README.md    merge=ours
+# CHANGELOG gets release entries from main AND beta entries here — keep both.
+CHANGELOG.md merge=union
