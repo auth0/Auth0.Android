@@ -1,8 +1,5 @@
 ### MFA Flexible Factors Grant
 
-> [!IMPORTANT]
-> Multi Factor Authentication support via SDKs is currently in Early Access. To request access to this feature, contact your Auth0 representative.
-
 The MFA Flexible Factors Grant allows you to handle MFA challenges during the authentication flow when users sign in to MFA-enabled connections. This feature requires your Application to have the *MFA* grant type enabled. Check [this article](https://auth0.com/docs/clients/client-grant-types) to learn how to enable it.
 
 #### Understanding the mfa_required Error Payload
