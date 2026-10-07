@@ -11,6 +11,7 @@ Each topic lives in its own file under [`examples/`](examples).
 - [Ephemeral Browsing](examples/ephemeral-browsing.md)
 - [Auth Tab](examples/auth-tab.md)
 - [DPoP](examples/dpop.md)
+- [Experiment Center](examples/experiment-center.md)
 - [Handling Configuration Changes During Authentication](examples/configuration-changes.md)
 
 ## Authentication API
