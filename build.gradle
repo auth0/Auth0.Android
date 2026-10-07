@@ -42,4 +42,18 @@ allprojects {
         google()
         mavenCentral()
     }
+
+    // Patch vulnerable transitive deps to clear the reported CVEs. Pulled in by test
+    // tooling (netty-codec-http via AGP/grpc-netty, bcprov-jdk18on via Robolectric);
+    // not included in the published AAR.
+    configurations.configureEach {
+        resolutionStrategy.eachDependency { details ->
+            if (details.requested.group == 'io.netty' && details.requested.name == 'netty-codec-http') {
+                details.useVersion '4.1.137.Final'
+            }
+            if (details.requested.group == 'org.bouncycastle' && details.requested.name == 'bcprov-jdk18on') {
+                details.useVersion '1.85'
+            }
+        }
+    }
 }
