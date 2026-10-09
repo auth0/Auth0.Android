@@ -3,6 +3,10 @@
 > [!IMPORTANT]
 > Embedded Authorization is currently in [Beta](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#beta). Please reach out to Auth0 support to get it enabled for your tenant.
 
+
+> [!NOTE]
+> The Embedded Authorization flow is supported only for **existing users** who have already signed up. It does not work for fresh / new user sign-ups.
+
 The embedded authorization flow (`/e/authorize`) lets your app authenticate users without leaving the app for a browser. The server drives the flow step-by-step: each call completes through an `EmbeddedAuthException` whose typed `error` property (an `EmbeddedAuthError`) tells you whether the flow can continue — and, when it can, carries the next action to take — until the terminal call succeeds and returns `Credentials`.
 
 `EmbeddedAuthError` is a sealed interface. Branch on it with a `when`. The recoverable case, `EmbeddedAuthError.InsufficientAuthorization`, carries the `nextActions` list; the terminal cases do not. `Network` signals the request never reached the server, so the same step is safe to retry.
@@ -93,9 +97,6 @@ client.identify("+15550001234", IdentifierType.PHONE).await()
 ```
 
 #### Request an email challenge
-
-> [!NOTE]
-> The Email OTP flow is supported only for **existing users** who have already signed up. It does not work for fresh / new user sign-ups.
 
 When `NextAction.ChallengeEmail` is present, ask the server to send a one-time code:
 
