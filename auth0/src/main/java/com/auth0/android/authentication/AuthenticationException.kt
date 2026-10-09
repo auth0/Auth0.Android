@@ -200,6 +200,42 @@ public class AuthenticationException : Auth0Exception {
     public val isVerificationRequired: Boolean
         get() = "requires_verification" == code
 
+    /**
+     * Whether a failed passkey signup identifier verification can be retried without restarting
+     * the registration. `true` only when the error body contains an `auth_session`.
+     *
+     * When retryable, re-collect the OTP codes for [passkeyVerificationRequired] and call
+     * [com.auth0.android.authentication.AuthenticationAPIClient.signinWithPasskey] again with the
+     * same credential and auth session. When `false`, restart the registration.
+     *
+     * Use this property instead of the status code or [getDescription], which are identical for
+     * retryable and terminal errors by design.
+     */
+    public val isPasskeyVerificationRetryable: Boolean
+        get() = getValue(AUTH_SESSION_KEY) != null
+
+    /**
+     * The auth session returned in a retryable passkey verification error, to be reused on the
+     * retry so the same passkey credential and session are kept. `null` when the error is terminal.
+     *
+     * @see isPasskeyVerificationRetryable
+     */
+    public val passkeyAuthSession: String?
+        get() = getValue(AUTH_SESSION_KEY) as? String
+
+    /**
+     * The identifiers (e.g. `["email"]`) whose OTP codes failed and must be re-collected before
+     * retrying. Non-null only when [isPasskeyVerificationRetryable] is `true`.
+     *
+     * @see isPasskeyVerificationRetryable
+     */
+    @Suppress("UNCHECKED_CAST")
+    public val passkeyVerificationRequired: List<String>?
+        get() {
+            if (!isPasskeyVerificationRetryable) return null
+            return getValue(VERIFICATION_REQUIRED_KEY) as? List<String>
+        }
+
     /// When the MFA Token used on the login request is malformed or has expired
     public val isMultifactorTokenInvalid: Boolean
         get() = "expired_token" == code && "mfa_token is expired" == description ||
@@ -258,6 +294,15 @@ public class AuthenticationException : Auth0Exception {
     public val isTooManyAttempts: Boolean
         get() = "too_many_attempts" == code
 
+    /**
+     * When the request was rate-limited by the server (HTTP 429).
+     *
+     * The passkey `/passkey/register` endpoint returns a plain-text body (not JSON) on 429, so the
+     * error code and description may not be populated — use this status-based flag to detect it.
+     */
+    public val isTooManyRequests: Boolean
+        get() = statusCode == 429
+
     internal companion object {
         internal const val ERROR_VALUE_AUTHENTICATION_CANCELED = "a0.authentication_canceled"
         internal const val ERROR_KEY_URI_NULL = "a0.auth.authorize_uri"
@@ -267,6 +312,8 @@ public class AuthenticationException : Auth0Exception {
         internal const val ERROR_VALUE_CT_OPTIONS_INVALID =
             "Custom tab options are received as null from the intent"
         private const val ERROR_KEY = "error"
+        private const val AUTH_SESSION_KEY = "auth_session"
+        private const val VERIFICATION_REQUIRED_KEY = "verification_required"
         private const val CODE_KEY = "code"
         private const val DESCRIPTION_KEY = "description"
         private const val ERROR_DESCRIPTION_KEY = "error_description"

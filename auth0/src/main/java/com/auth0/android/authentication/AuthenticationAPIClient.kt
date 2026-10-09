@@ -234,13 +234,18 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param authResponse the [PublicKeyCredentials] authentication response
      * @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
      * @param organization id of the organization to be associated with the user while signing in
+     * @param verification a map of identifier to the OTP code collected from the user, e.g. `mapOf("email" to "123456")`.
+     * The keys must match the identifiers returned in [PasskeyRegistrationChallenge.verificationRequired].
+     * Pass `null` or an empty map when no identifier verification is required; the `verification` object is then omitted from the request.
      * @return a request to configure and start that will yield [Credentials]
      */
+    @JvmOverloads
     public fun signinWithPasskey(
         authSession: String,
         authResponse: PublicKeyCredentials,
         realm: String? = null,
         organization: String? = null,
+        verification: Map<String, String>? = null,
     ): AuthenticationRequest {
         val params = ParameterBuilder.newBuilder().apply {
             setGrantType(ParameterBuilder.GRANT_TYPE_PASSKEY)
@@ -249,11 +254,15 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             organization?.let { set(ORGANIZATION_KEY, organization) }
         }.asDictionary()
 
-        return loginWithToken(params)
+        val request = loginWithToken(params)
             .addParameter(
                 AUTH_RESPONSE_KEY,
                 Gson().toJsonTree(authResponse)
-            ) as AuthenticationRequest
+            )
+        if (!verification.isNullOrEmpty()) {
+            request.addParameter(VERIFICATION_KEY, Gson().toJsonTree(verification))
+        }
+        return request as AuthenticationRequest
     }
 
 
@@ -281,19 +290,24 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param authResponse the public key credential authentication response in JSON string format that follows the standard webauthn json format
      * @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
      * @param organization id of the organization to be associated with the user while signing in
+     * @param verification a map of identifier to the OTP code collected from the user, e.g. `mapOf("email" to "123456")`.
+     * The keys must match the identifiers returned in [PasskeyRegistrationChallenge.verificationRequired].
+     * Pass `null` or an empty map when no identifier verification is required; the `verification` object is then omitted from the request.
      * @return a request to configure and start that will yield [Credentials]
      */
+    @JvmOverloads
     public fun signinWithPasskey(
         authSession: String,
         authResponse: String,
         realm: String? = null,
         organization: String? = null,
+        verification: Map<String, String>? = null,
     ): AuthenticationRequest {
         val publicKeyCredentials = gson.fromJson(
             authResponse,
             PublicKeyCredentials::class.java
         )
-        return signinWithPasskey(authSession, publicKeyCredentials, realm, organization)
+        return signinWithPasskey(authSession, publicKeyCredentials, realm, organization, verification)
     }
 
 
@@ -323,14 +337,19 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * ```
      *
      *  @param userData user information for registration.
-     *  @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
+     *  @param realm the connection to use.x₹ If excluded, the application will use the default connection configured in the tenant
      *  @param organization id of the organization to be associated with the user while signing up
+     *  @param deliveryMethod the channel used to deliver the phone OTP. Only applies when the connection requires phone
+     *  identifier verification. If the requested channel is not enabled on the connection, the server responds with an
+     *  `invalid_request` error. Pass `null` to use the connection default.
      *  @return  a request to configure and start that will yield [PasskeyRegistrationChallenge]
      */
+    @JvmOverloads
     public fun signupWithPasskey(
         userData: UserData,
         realm: String? = null,
-        organization: String? = null
+        organization: String? = null,
+        deliveryMethod: PasskeyDeliveryMethod? = null
     ): Request<PasskeyRegistrationChallenge, AuthenticationException> {
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(PASSKEY_PATH)
@@ -351,6 +370,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             .addParameters(params) as BaseRequest<PasskeyRegistrationChallenge, AuthenticationException>
         post.addParameter(USER_PROFILE_KEY, gson.toJsonTree(userData.toUserProfile()))
         userData.userMetadata?.let { post.addParameter(USER_METADATA_KEY, it) }
+        deliveryMethod?.let { post.addParameter(DELIVERY_METHOD_KEY, it.value) }
         return post
     }
 
@@ -1042,6 +1062,8 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val USER_METADATA_KEY = "user_metadata"
         private const val AUTH_SESSION_KEY = "auth_session"
         private const val AUTH_RESPONSE_KEY = "authn_response"
+        private const val VERIFICATION_KEY = "verification"
+        private const val DELIVERY_METHOD_KEY = "delivery_method"
         private const val USER_PROFILE_KEY = "user_profile"
         private const val SIGN_UP_PATH = "signup"
         private const val DB_CONNECTIONS_PATH = "dbconnections"

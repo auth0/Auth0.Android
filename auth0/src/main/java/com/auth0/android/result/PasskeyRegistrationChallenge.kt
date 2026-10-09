@@ -6,11 +6,20 @@ import com.google.gson.annotations.SerializedName
 /**
  * Represents a challenge when user tries to register via passkeys.
  */
-public data class PasskeyRegistrationChallenge(
+public data class PasskeyRegistrationChallenge @JvmOverloads constructor(
     @SerializedName("auth_session")
     val authSession: String,
     @SerializedName("authn_params_public_key")
-    val authParamsPublicKey: AuthnParamsPublicKey
+    val authParamsPublicKey: AuthnParamsPublicKey,
+    /**
+     * The identifiers (e.g. `["email"]` or `["email", "phone"]`) that require OTP verification
+     * before a credential can be created and tokens issued. `null` when the server did not
+     * request any identifier verification. The OTP codes collected for these identifiers must
+     * be passed to [com.auth0.android.authentication.AuthenticationAPIClient.signinWithPasskey]
+     * via the `verification` parameter.
+     */
+    @SerializedName("verification_required")
+    val verificationRequired: List<String>? = null
 )
 
 public data class AuthnParamsPublicKey(

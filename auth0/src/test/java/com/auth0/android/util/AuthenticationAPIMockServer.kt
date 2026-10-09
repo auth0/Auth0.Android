@@ -201,6 +201,92 @@ internal class AuthenticationAPIMockServer : APIMockServer() {
         return this
     }
 
+    fun willReturnSuccessfulPasskeyRegistrationWithVerificationRequired(
+        vararg identifiers: String
+    ): AuthenticationAPIMockServer {
+        val verificationRequired = identifiers.joinToString(prefix = "[", postfix = "]") { "\"$it\"" }
+        val json = """{
+            "authn_params_public_key":{
+                "challenge": "$CHALLENGE",
+                "timeout": 900000,
+                "rp": {
+                    "id": "auth0.passkey.com",
+                    "name": "Passkey Test"
+                },
+                "pubKeyCredParams": [
+                    {
+                        "type": "public-key",
+                        "alg": -7
+                    }
+                ],
+                "authenticatorSelection": {
+                    "authenticatorAttachment": "platform",
+                    "residentKey": "required"
+                },
+                "user": {
+                       "id": "53b995f8bce68d9fc900099c",
+                       "name": "p",
+                       "displayName": "d"
+                   }
+                },
+                 "auth_session": "$SESSION_ID",
+                 "verification_required": $verificationRequired
+            }"""
+        server.enqueue(responseWithJSON(json, 200))
+        return this
+    }
+
+    fun willReturnPasskeyVerificationRetryableError(
+        vararg identifiers: String
+    ): AuthenticationAPIMockServer {
+        val verificationRequired = identifiers.joinToString(prefix = "[", postfix = "]") { "\"$it\"" }
+        val json = """{
+          "error": "invalid_grant",
+          "error_description": "Invalid or expired session",
+          "auth_session": "$SESSION_ID",
+          "verification_required": $verificationRequired
+        }"""
+        server.enqueue(responseWithJSON(json, 400))
+        return this
+    }
+
+    fun willReturnPasskeyVerificationTerminalError(): AuthenticationAPIMockServer {
+        val json = """{
+          "error": "invalid_grant",
+          "error_description": "Invalid or expired session"
+        }"""
+        server.enqueue(responseWithJSON(json, 400))
+        return this
+    }
+
+    fun willReturnPasskeyVerificationMissingCodeError(
+        vararg identifiers: String
+    ): AuthenticationAPIMockServer {
+        val verificationRequired = identifiers.joinToString(prefix = "[", postfix = "]") { "\"$it\"" }
+        val json = """{
+          "error": "invalid_request",
+          "error_description": "A required verification code is missing",
+          "auth_session": "$SESSION_ID",
+          "verification_required": $verificationRequired
+        }"""
+        server.enqueue(responseWithJSON(json, 400))
+        return this
+    }
+
+    fun willReturnPasskeyVerificationConsumedSessionError(): AuthenticationAPIMockServer {
+        val json = """{
+          "error": "invalid_grant",
+          "error_description": "Invalid or expired session"
+        }"""
+        server.enqueue(responseWithJSON(json, 403))
+        return this
+    }
+
+    fun willReturnTooManyRequestsPlainText(): AuthenticationAPIMockServer {
+        server.enqueue(responseWithPlainText("Too Many Requests", 429))
+        return this
+    }
+
     private fun responseEmpty(statusCode: Int): MockResponse {
         return MockResponse()
             .setResponseCode(statusCode)
