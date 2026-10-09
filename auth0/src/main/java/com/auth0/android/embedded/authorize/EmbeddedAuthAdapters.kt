@@ -33,6 +33,11 @@ private const val INVALID_IDENTIFIER_OR_CODE = "invalid_identifier_or_code"
 private const val INVALID_GRANT = "invalid_grant"
 private const val INVALID_REQUEST = "invalid_request"
 private const val TOO_MANY_REQUESTS_STATUS = 429
+private const val AUTHORIZATION_REJECTED = "authorization_rejected"
+private const val NO_ELIGIBLE_FACTORS = "no_eligible_factors"
+private const val CONSENT_REQUIRED = "consent_required"
+private const val AUTHORIZATION_PENDING = "authorization_pending"
+private const val SLOW_DOWN = "slow_down"
 
 /** Parses the `200` body of `/e/authorize` into the code to exchange for tokens. */
 internal fun authorizeCodeAdapter(gson: Gson): JsonAdapter<AuthorizeCode> =
@@ -85,6 +90,12 @@ internal fun embeddedAuthErrorAdapter(): ErrorAdapter<EmbeddedAuthException> {
                     EmbeddedAuthError.TooManyWrongOtpAttempts
                 code == ACCESS_DENIED && description == CHALLENGE_EXPIRED ->
                     EmbeddedAuthError.ChallengeExpired
+                code == ACCESS_DENIED && description == AUTHORIZATION_REJECTED ->
+                    EmbeddedAuthError.AuthorizationRejected
+                code == ACCESS_DENIED && description == NO_ELIGIBLE_FACTORS ->
+                    EmbeddedAuthError.NoEligibleFactors
+                code == ACCESS_DENIED && description == CONSENT_REQUIRED ->
+                    EmbeddedAuthError.ConsentRequired
                 code == ACCESS_DENIED ->
                     EmbeddedAuthError.AccessDenied
                 statusCode == TOO_MANY_REQUESTS_STATUS && code == TOO_MANY_REQUESTS && description == TOO_MANY_ATTEMPTS ->
@@ -113,6 +124,9 @@ internal fun embeddedAuthErrorAdapter(): ErrorAdapter<EmbeddedAuthException> {
             INVALID_CODE -> EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_CODE
             INVALID_IDENTIFIER_OR_CODE ->
                 EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_CODE
+            AUTHORIZATION_PENDING ->
+                EmbeddedAuthError.InsufficientAuthorization.Reason.AUTHORIZATION_PENDING
+            SLOW_DOWN -> EmbeddedAuthError.InsufficientAuthorization.Reason.SLOW_DOWN
             else -> EmbeddedAuthError.InsufficientAuthorization.Reason.NONE
         }
 

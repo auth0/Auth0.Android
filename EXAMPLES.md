@@ -31,7 +31,11 @@ Each topic lives in its own file under [`examples/`](examples).
 
 ## Embedded Authentication (Beta)
 
-- [Authorize (email OTP flow)](examples/embedded-auth/authorize.md)
+- [Email OTP — first-factor & MFA second-factor](examples/embedded-auth/authorize.md)
+- [Phone OTP (SMS/Voice) — first-factor & MFA second-factor](examples/embedded-auth/phone-authorize.md)
+- [Push Notification Polling (OOB)](examples/embedded-auth/push-oob-polling.md)
+- [Recovery Code](examples/embedded-auth/recovery-code.md)
+- [TOTP (Authenticator App)](examples/embedded-auth/totp.md)
 
 ## Other APIs and features
 
