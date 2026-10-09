@@ -32,6 +32,7 @@ Each topic lives in its own file under [`examples/`](examples).
 ## Embedded Authentication (Beta)
 
 - [Email OTP — first-factor & MFA second-factor](examples/embedded-auth/authorize.md)
+- [Username & Password — first-factor](examples/embedded-auth/password-authorize.md)
 - [Phone OTP (SMS/Voice) — first-factor & MFA second-factor](examples/embedded-auth/phone-authorize.md)
 - [Push Notification Polling (OOB)](examples/embedded-auth/push-oob-polling.md)
 - [Recovery Code](examples/embedded-auth/recovery-code.md)

@@ -8,4 +8,6 @@ public enum class IdentifierType {
     EMAIL,
     /** A phone number. */
     PHONE,
+    /** A username. */
+    USERNAME,
 }

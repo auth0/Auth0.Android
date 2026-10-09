@@ -18,6 +18,16 @@ public sealed interface NextAction {
         override val capability: EmbeddedCapability = EmbeddedCapability.IDENTIFY_PHONE
     }
 
+    /** Continue by submitting a username. Act on it with [EmbeddedAuthClient.identify]. */
+    public data object IdentifyUsername : NextAction {
+        override val capability: EmbeddedCapability = EmbeddedCapability.IDENTIFY_USERNAME
+    }
+
+    /** Continue by verifying the user's password. Act on it with [EmbeddedAuthClient.verifyPassword]. */
+    public data object VerifyPassword : NextAction {
+        override val capability: EmbeddedCapability = EmbeddedCapability.VERIFY_PASSWORD
+    }
+
     /** Continue by requesting an email challenge. Act on it with [EmbeddedAuthClient.challengeEmail]. */
     @ConsistentCopyVisibility
     public data class ChallengeEmail internal constructor(

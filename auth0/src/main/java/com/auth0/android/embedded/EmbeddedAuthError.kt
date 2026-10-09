@@ -28,6 +28,9 @@ public sealed interface EmbeddedAuthError {
             /** The identifier or the code was invalid; the server does not say which. */
             INVALID_IDENTIFIER_OR_CODE,
 
+            /** The username or the password was invalid; the server does not say which. */
+            INVALID_IDENTIFIER_OR_PASSWORD,
+
             /** Authorization is pending (e.g., push notification awaiting user approval). Retry after a delay. */
             AUTHORIZATION_PENDING,
 

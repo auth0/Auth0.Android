@@ -30,6 +30,7 @@ private const val TOO_MANY_ATTEMPTS = "too_many_attempts"
 private const val TOO_MANY_LOGINS = "too_many_logins"
 private const val INVALID_CODE = "invalid_code"
 private const val INVALID_IDENTIFIER_OR_CODE = "invalid_identifier_or_code"
+private const val INVALID_IDENTIFIER_OR_PASSWORD = "invalid_identifier_or_password"
 private const val INVALID_GRANT = "invalid_grant"
 private const val INVALID_REQUEST = "invalid_request"
 private const val TOO_MANY_REQUESTS_STATUS = 429
@@ -124,6 +125,8 @@ internal fun embeddedAuthErrorAdapter(): ErrorAdapter<EmbeddedAuthException> {
             INVALID_CODE -> EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_CODE
             INVALID_IDENTIFIER_OR_CODE ->
                 EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_CODE
+            INVALID_IDENTIFIER_OR_PASSWORD ->
+                EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_PASSWORD
             AUTHORIZATION_PENDING ->
                 EmbeddedAuthError.InsufficientAuthorization.Reason.AUTHORIZATION_PENDING
             SLOW_DOWN -> EmbeddedAuthError.InsufficientAuthorization.Reason.SLOW_DOWN

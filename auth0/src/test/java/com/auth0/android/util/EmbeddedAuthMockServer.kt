@@ -74,6 +74,16 @@ $actionsJson
         return this
     }
 
+    fun willReturnInvalidPassword(): EmbeddedAuthMockServer {
+        server.enqueue(
+            responseWithJSON(
+                """{ "error": "insufficient_authorization", "error_description": "invalid_identifier_or_password", "auth_session": "$ROTATED_AUTH_SESSION", "next": [ $NEXT_VERIFY_PASSWORD ] }""",
+                403
+            )
+        )
+        return this
+    }
+
     fun willReturnTooManyWrongOtpAttempts(): EmbeddedAuthMockServer {
         server.enqueue(responseWithJSON("""{ "error": "access_denied", "error_description": "too_many_wrong_otp_attempts" }""", 403))
         return this
@@ -146,6 +156,8 @@ $actionsJson
         // Prebuilt action JSON fragments for willReturnContinuationWith().
         const val NEXT_IDENTIFY_EMAIL = """{ "action": "action:identify:email:v1" }"""
         const val NEXT_IDENTIFY_PHONE = """{ "action": "action:identify:phone:v1" }"""
+        const val NEXT_IDENTIFY_USERNAME = """{ "action": "action:identify:username:v1" }"""
+        const val NEXT_VERIFY_PASSWORD = """{ "action": "action:verify:password:v1" }"""
         const val NEXT_CHALLENGE_EMAIL = """{ "action": "action:challenge:email:v1", "index": 1, "identifier": "jane@example.com" }"""
         const val NEXT_CHALLENGE_PHONE = """{ "action": "action:challenge:phone:v1", "index": 0, "identifier": "+1234567890", "delivery_methods": ["text", "voice"] }"""
         const val NEXT_CHALLENGE_PUSH = """{ "action": "action:challenge:push:v1", "index": 0, "name": "My Phone" }"""
