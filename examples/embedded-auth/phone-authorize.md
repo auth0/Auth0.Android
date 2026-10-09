@@ -21,7 +21,9 @@ try {
     embedded.identify("+15550123456", IdentifierType.PHONE).await()
 } catch (e: EmbeddedAuthException) { /* continuation → ChallengePhone */ }
 
-// 3. Send the code by SMS (TEXT) or voice (VOICE). Continues with VerifyOtp(channel = SMS).
+// 3. Send the code by SMS (TEXT) or voice (VOICE). index defaults to the first authenticator (0),
+//    which is correct for phone as a first factor; as an MFA step-up, pass the
+//    NextAction.ChallengePhone.index the server offered. Continues with VerifyOtp(channel = SMS).
 try {
     embedded.challengePhone(deliveryMethod = PhoneDeliveryMethod.TEXT).await()
 } catch (e: EmbeddedAuthException) { /* continuation → VerifyOtp */ }

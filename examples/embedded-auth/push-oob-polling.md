@@ -5,7 +5,7 @@ performs exactly one poll per call, and the app owns the loop.
 
 The pattern is always the same:
 
-1. `challengePush()` sends the notification and continues with a `NextAction.VerifyOob`
+1. `challengePush(index)` sends the notification and continues with a `NextAction.VerifyOob`
    carrying `pollInMs` — how long to wait before the first poll.
 2. Wait that long, then call `verifyOob()`.
 3. Each `verifyOob()` either:
@@ -30,10 +30,11 @@ private fun EmbeddedAuthException.nextPushDelayMs(): Long? =
         ?.firstOrNull()?.pollInMs?.toLong()
 
 // Assumes the flow has already reached the push factor (see authorize.md / identify).
-suspend fun verifyPush(): Credentials {
+// Pass the index from the NextAction.ChallengePush the server offered.
+suspend fun verifyPush(pushIndex: Int): Credentials {
     // challengePush always continues with a VerifyOob carrying the first poll delay.
     var delayMs = try {
-        embedded.challengePush().await()
+        embedded.challengePush(pushIndex).await()
         error("challengePush always continues")
     } catch (e: EmbeddedAuthException) {
         e.nextPushDelayMs() ?: throw e

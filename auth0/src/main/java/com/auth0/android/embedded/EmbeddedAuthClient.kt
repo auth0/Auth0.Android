@@ -137,6 +137,10 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
     /**
      * Continues the flow by requesting a phone challenge for the authenticator at [index].
      *
+     * [index] defaults to the first enrolled authenticator (`0`) — the right value when phone is
+     * the first factor. As an MFA step-up, echo the [NextAction.ChallengePhone.index] the server
+     * offered, since a user may have several phone authenticators enrolled.
+     *
      * This call never resolves successfully; it completes through [EmbeddedAuthException] whose
      * [EmbeddedAuthError.InsufficientAuthorization.nextActions] carry the next step to call.
      */
@@ -158,9 +162,11 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
      * entry. After receiving that continuation, call [verifyOob] repeatedly, waiting
      * [NextAction.VerifyOob.pollInMs] milliseconds between each call, until the push is approved,
      * rejected, or expires.
+     *
+     * [index] must be echoed from the [NextAction.ChallengePush.index] the server offered — a user
+     * may have several push authenticators enrolled.
      */
-    @JvmOverloads
-    public fun challengePush(index: Int = 0): Request<Void?, EmbeddedAuthException> =
+    public fun challengePush(index: Int): Request<Void?, EmbeddedAuthException> =
         continueStep(EmbeddedCapability.CHALLENGE_PUSH) {
             addParameter(INDEX_KEY, index)
         }

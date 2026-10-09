@@ -91,11 +91,32 @@ public class NextActionMapperTest {
     }
 
     @Test
+    public fun testChallengePhoneDroppedIfNoDeliveryMethods() {
+        val raw = mapOf(
+            ACTION_KEY to "action:challenge:phone:v1",
+            INDEX_KEY to 0,
+            IDENTIFIER_KEY to "+1234567890"
+            // no delivery_methods — protocol violation (server contract requires it)
+        )
+        assertThat(listOf(raw).toNextActions().isEmpty(), `is`(true))
+    }
+
+    @Test
     public fun testChallengePushDroppedIfNoIndex() {
         val raw = mapOf(
             ACTION_KEY to "action:challenge:push:v1",
             NAME_KEY to "My Phone"
             // no index — protocol violation
+        )
+        assertThat(listOf(raw).toNextActions().isEmpty(), `is`(true))
+    }
+
+    @Test
+    public fun testChallengePushDroppedIfNoName() {
+        val raw = mapOf(
+            ACTION_KEY to "action:challenge:push:v1",
+            INDEX_KEY to 0
+            // no name — protocol violation (server contract requires it)
         )
         assertThat(listOf(raw).toNextActions().isEmpty(), `is`(true))
     }

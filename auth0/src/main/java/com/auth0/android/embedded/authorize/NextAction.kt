@@ -50,7 +50,7 @@ public sealed interface NextAction {
     @ConsistentCopyVisibility
     public data class ChallengePush internal constructor(
         public val index: Int,
-        public val name: String?,
+        public val name: String,
     ) : NextAction {
         override val capability: EmbeddedCapability = EmbeddedCapability.CHALLENGE_PUSH
     }

@@ -338,6 +338,22 @@ public class EmbeddedAuthClientTest {
     }
 
     @Test
+    public fun `continuation can offer an MFA fork of phone, push, and recovery-code at once`() {
+        mockAPI.willReturnContinuationWith(
+            EmbeddedAuthMockServer.NEXT_CHALLENGE_PHONE,
+            EmbeddedAuthMockServer.NEXT_CHALLENGE_PUSH,
+            EmbeddedAuthMockServer.NEXT_VERIFY_RECOVERY_CODE,
+        )
+
+        val error = assertEmbeddedError { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).execute() }
+
+        assertThat(error.nextActions, hasSize(3))
+        assertThat(error.nextActions[0], instanceOf(NextAction.ChallengePhone::class.java))
+        assertThat(error.nextActions[1], instanceOf(NextAction.ChallengePush::class.java))
+        assertThat(error.nextActions[2], instanceOf(NextAction.VerifyRecoveryCode::class.java))
+    }
+
+    @Test
     public fun `authorize surfaces AccessDenied as a terminal error with no next actions`() {
         mockAPI.willReturnAccessDenied()
 
@@ -912,7 +928,7 @@ public class EmbeddedAuthClientTest {
 
     @Test
     public fun `challengePush should fail with no_active_session when no flow is in progress`() {
-        val error = assertEmbeddedError { client.challengePush().execute() }
+        val error = assertEmbeddedError { client.challengePush(index = 0).execute() }
         assertThat(error.code, `is`("no_active_session"))
         assertThat(error.error, `is`(EmbeddedAuthError.NoActiveSession))
     }
@@ -1110,6 +1126,32 @@ public class EmbeddedAuthClientTest {
         val secondRequest = mockAPI.takeRequest()
         val secondBody = bodyOf(secondRequest)
         assertThat(secondBody.getString("auth_session"), `is`(EmbeddedAuthMockServer.AUTH_SESSION))
+    }
+
+    @Test
+    public fun `session is rotated across push polls`() {
+        // A pending push can rotate auth_session; the next verifyOob must send the new value.
+        establishSession()
+        mockAPI.server.enqueue(mockAPI.responseWithJSON(
+            """{"error":"insufficient_authorization","error_description":"authorization_pending","auth_session":"${EmbeddedAuthMockServer.ROTATED_AUTH_SESSION}","next":[${EmbeddedAuthMockServer.NEXT_VERIFY_OOB}]}""",
+            403
+        ))
+
+        try {
+            client.verifyOob().execute()
+        } catch (_: EmbeddedAuthException) {
+        }
+        // First poll still carries the original session.
+        assertThat(bodyOf(mockAPI.takeRequest()).getString("auth_session"), `is`(EmbeddedAuthMockServer.AUTH_SESSION))
+
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+
+        val credentials = client.verifyOob().execute()
+        assertThat(credentials.accessToken, `is`(EmbeddedAuthMockServer.ACCESS_TOKEN))
+
+        // The second poll must use the rotated session returned by the pending continuation.
+        assertThat(bodyOf(mockAPI.takeRequest()).getString("auth_session"), `is`(EmbeddedAuthMockServer.ROTATED_AUTH_SESSION))
     }
 
     @Test

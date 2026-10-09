@@ -37,7 +37,8 @@ private fun Map<String, Any>.toNextAction(): NextAction? {
             val index = (this[INDEX_KEY] as? Number)?.toInt() ?: return dropped(raw, INDEX_KEY)
             val identifier = this[IDENTIFIER_KEY] as? String ?: return dropped(raw, IDENTIFIER_KEY)
             @Suppress("UNCHECKED_CAST")
-            val rawDeliveryMethods = this[DELIVERY_METHODS_KEY] as? List<String> ?: emptyList()
+            val rawDeliveryMethods = this[DELIVERY_METHODS_KEY] as? List<String>
+                ?: return dropped(raw, DELIVERY_METHODS_KEY)
             val deliveryMethods = rawDeliveryMethods.mapNotNull {
                 when (it) {
                     PhoneDeliveryMethod.TEXT.value -> PhoneDeliveryMethod.TEXT
@@ -49,7 +50,7 @@ private fun Map<String, Any>.toNextAction(): NextAction? {
         }
         EmbeddedCapability.CHALLENGE_PUSH -> {
             val index = (this[INDEX_KEY] as? Number)?.toInt() ?: return dropped(raw, INDEX_KEY)
-            val name = this[NAME_KEY] as? String
+            val name = this[NAME_KEY] as? String ?: return dropped(raw, NAME_KEY)
             NextAction.ChallengePush(index, name)
         }
         EmbeddedCapability.VERIFY_OOB -> {
