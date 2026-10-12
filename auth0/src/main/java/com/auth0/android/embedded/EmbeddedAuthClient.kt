@@ -94,6 +94,9 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
 
         IdentifierType.PHONE ->
             continueStep(EmbeddedCapability.IDENTIFY_PHONE) { addParameter(PHONE_KEY, identifier) }
+
+        IdentifierType.USERNAME ->
+            continueStep(EmbeddedCapability.IDENTIFY_USERNAME) { addParameter(USERNAME_KEY, identifier) }
     }
 
     /**
@@ -131,6 +134,29 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
             )
             .addParameter(OTP_KEY, code)
             .addParameter(TYPE_KEY, type.value)
+        return advancing(request)
+    }
+
+    /**
+     * Verifies the user's [password]. This is the terminal step of a username/password flow.
+     *
+     * On success, it yields the [Credentials]. If the server requires further steps (for example
+     * a second factor) or rejects the password, the request completes through
+     * [EmbeddedAuthException] instead, with
+     * [EmbeddedAuthError.InsufficientAuthorization.nextActions] on [EmbeddedAuthException.error]; a
+     * wrong password reports [EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_PASSWORD].
+     */
+    public fun verifyPassword(password: String): Request<Credentials, EmbeddedAuthException> {
+        val session = transactionState?.authSession ?: return noActiveSession()
+        val request = factory.post(authorizeUrl, authorizeCodeAdapter(gson))
+            .addParameters(
+                mapOf(
+                    AUTH_SESSION_KEY to session,
+                    ACTION_KEY to EmbeddedCapability.VERIFY_PASSWORD.value,
+                    CLIENT_ID_KEY to clientId
+                )
+            )
+            .addParameter(PASSWORD_KEY, password)
         return advancing(request)
     }
 
@@ -325,6 +351,8 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
         private const val ACTION_KEY = "action"
         private const val EMAIL_KEY = "email"
         private const val PHONE_KEY = "phone"
+        private const val USERNAME_KEY = "username"
+        private const val PASSWORD_KEY = "password"
         private const val DELIVERY_METHOD_KEY = "delivery_method"
         private const val OTP_KEY = "otp"
         private const val INDEX_KEY = "index"
@@ -339,10 +367,12 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
         private val DEFAULT_CAPABILITIES: Set<EmbeddedCapability> = setOf(
             EmbeddedCapability.IDENTIFY_EMAIL,
             EmbeddedCapability.IDENTIFY_PHONE,
+            EmbeddedCapability.IDENTIFY_USERNAME,
             EmbeddedCapability.CHALLENGE_EMAIL,
             EmbeddedCapability.CHALLENGE_PHONE,
             EmbeddedCapability.CHALLENGE_PUSH,
             EmbeddedCapability.VERIFY_OTP,
+            EmbeddedCapability.VERIFY_PASSWORD,
             EmbeddedCapability.VERIFY_OOB,
             EmbeddedCapability.VERIFY_RECOVERY_CODE,
             EmbeddedCapability.CONFIRM_RECOVERY_CODE

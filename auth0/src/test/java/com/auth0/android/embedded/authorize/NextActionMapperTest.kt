@@ -24,6 +24,22 @@ public class NextActionMapperTest {
     }
 
     @Test
+    public fun testIdentifyUsernameMapped() {
+        val raw = mapOf(ACTION_KEY to "action:identify:username:v1")
+        val action = listOf(raw).toNextActions().first()
+
+        assertThat(action, `is`(NextAction.IdentifyUsername))
+    }
+
+    @Test
+    public fun testVerifyPasswordMapped() {
+        val raw = mapOf(ACTION_KEY to "action:verify:password:v1")
+        val action = listOf(raw).toNextActions().first()
+
+        assertThat(action, `is`(NextAction.VerifyPassword))
+    }
+
+    @Test
     public fun testChallengePhoneMapped() {
         val raw = mapOf(
             ACTION_KEY to "action:challenge:phone:v1",
