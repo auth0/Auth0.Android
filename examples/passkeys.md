@@ -100,7 +100,7 @@ try {
 
 ### Passkey signup with identifier verification
 
-When the database connection has OTP identifier verification enabled, the `signupWithPasskey`
+When the database connection has verification enabled for email and phone, the `signupWithPasskey`
 response includes a non-empty `verificationRequired` list naming the identifiers
 (`PasskeyVerificationMethod.EMAIL`, `PasskeyVerificationMethod.PHONE`) that must be verified before tokens
 can be issued. You must:
@@ -154,6 +154,7 @@ try {
     )
 
     var authSession = challenge.authSession
+    val maxAttempts = 3 // retry limit; adjust it to suit your app
     var attempts = 0
     while (true) {
         try {
@@ -166,7 +167,7 @@ try {
             ).validateClaims().await()
             break // success
         } catch (exception: AuthenticationException) {
-            if (!exception.isPasskeyVerificationRetryable || ++attempts >= MAX_ATTEMPTS) {
+            if (!exception.isPasskeyVerificationRetryable || ++attempts >= maxAttempts) {
                 throw exception // terminal (or too many attempts) - restart registration
             }
             // Re-collect the failed identifiers and retry with the SAME credential. When the error does not
