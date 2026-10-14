@@ -6,6 +6,7 @@ import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
 import com.auth0.android.authentication.mfa.MfaApiClient
+import com.auth0.android.authentication.passwordless.DeliveryMethod
 import com.auth0.android.authentication.passwordless.PasswordlessClient
 import com.auth0.android.authentication.request.ActorToken
 import com.auth0.android.dpop.DPoP
@@ -17,6 +18,8 @@ import com.auth0.android.request.JsonAdapter
 import com.auth0.android.request.ProfileRequest
 import com.auth0.android.request.PublicKeyCredentials
 import com.auth0.android.request.Request
+import com.auth0.android.request.RequestOptions
+import com.auth0.android.request.RequestValidator
 import com.auth0.android.request.SignUpRequest
 import com.auth0.android.request.UserData
 import com.auth0.android.request.internal.BaseAuthenticationRequest
@@ -31,6 +34,7 @@ import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
 import com.auth0.android.result.PasskeyChallenge
 import com.auth0.android.result.PasskeyRegistrationChallenge
+import com.auth0.android.result.PasskeyVerificationMethod
 import com.auth0.android.result.SSOCredentials
 import com.auth0.android.result.UserProfile
 import com.google.gson.Gson
@@ -234,9 +238,11 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param authResponse the [PublicKeyCredentials] authentication response
      * @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
      * @param organization id of the organization to be associated with the user while signing in
-     * @param verification a map of identifier to the OTP code collected from the user, e.g. `mapOf("email" to "123456")`.
-     * The keys must match the identifiers returned in [PasskeyRegistrationChallenge.verificationRequired].
-     * Pass `null` or an empty map when no identifier verification is required; the `verification` object is then omitted from the request.
+     * @param verification a map of identifier to the OTP code collected from the user, e.g.
+     * `mapOf(PasskeyVerificationMethod.EMAIL to "123456")`. The keys must match the identifiers returned in
+     * [PasskeyRegistrationChallenge.verificationRequired]. Defaults to an empty map when no identifier verification is
+     * required; the `verification` object is then omitted from the request. A blank code fails the request with an
+     * [AuthenticationException] before any network call is made.
      * @return a request to configure and start that will yield [Credentials]
      */
     @JvmOverloads
@@ -245,7 +251,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         authResponse: PublicKeyCredentials,
         realm: String? = null,
         organization: String? = null,
-        verification: Map<String, String>? = null,
+        verification: Map<PasskeyVerificationMethod, String> = emptyMap(),
     ): AuthenticationRequest {
         val params = ParameterBuilder.newBuilder().apply {
             setGrantType(ParameterBuilder.GRANT_TYPE_PASSKEY)
@@ -259,8 +265,22 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
                 AUTH_RESPONSE_KEY,
                 Gson().toJsonTree(authResponse)
             )
-        if (!verification.isNullOrEmpty()) {
-            request.addParameter(VERIFICATION_KEY, Gson().toJsonTree(verification))
+        if (verification.isNotEmpty()) {
+            request.addParameter(
+                VERIFICATION_KEY,
+                Gson().toJsonTree(verification.mapKeys { it.key.value })
+            )
+            request.addValidator(object : RequestValidator {
+                override fun validate(options: RequestOptions) {
+                    val blank = verification.filterValues { it.isBlank() }.keys
+                    if (blank.isNotEmpty()) {
+                        throw AuthenticationException(
+                            AuthenticationException.ERROR_KEY_VERIFICATION_CODE_EMPTY,
+                            "The verification code for ${blank.joinToString { it.value }} must not be empty."
+                        )
+                    }
+                }
+            })
         }
         return request as AuthenticationRequest
     }
@@ -290,9 +310,11 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param authResponse the public key credential authentication response in JSON string format that follows the standard webauthn json format
      * @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
      * @param organization id of the organization to be associated with the user while signing in
-     * @param verification a map of identifier to the OTP code collected from the user, e.g. `mapOf("email" to "123456")`.
-     * The keys must match the identifiers returned in [PasskeyRegistrationChallenge.verificationRequired].
-     * Pass `null` or an empty map when no identifier verification is required; the `verification` object is then omitted from the request.
+     * @param verification a map of identifier to the OTP code collected from the user, e.g.
+     * `mapOf(PasskeyVerificationMethod.EMAIL to "123456")`. The keys must match the identifiers returned in
+     * [PasskeyRegistrationChallenge.verificationRequired]. Defaults to an empty map when no identifier verification is
+     * required; the `verification` object is then omitted from the request. A blank code fails the request with an
+     * [AuthenticationException] before any network call is made.
      * @return a request to configure and start that will yield [Credentials]
      */
     @JvmOverloads
@@ -301,7 +323,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         authResponse: String,
         realm: String? = null,
         organization: String? = null,
-        verification: Map<String, String>? = null,
+        verification: Map<PasskeyVerificationMethod, String> = emptyMap(),
     ): AuthenticationRequest {
         val publicKeyCredentials = gson.fromJson(
             authResponse,
@@ -337,7 +359,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * ```
      *
      *  @param userData user information for registration.
-     *  @param realm the connection to use.x₹ If excluded, the application will use the default connection configured in the tenant
+     *  @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
      *  @param organization id of the organization to be associated with the user while signing up
      *  @param deliveryMethod the channel used to deliver the phone OTP. Only applies when the connection requires phone
      *  identifier verification. If the requested channel is not enabled on the connection, the server responds with an
@@ -349,7 +371,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         userData: UserData,
         realm: String? = null,
         organization: String? = null,
-        deliveryMethod: PasskeyDeliveryMethod? = null
+        deliveryMethod: DeliveryMethod? = null
     ): Request<PasskeyRegistrationChallenge, AuthenticationException> {
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(PASSKEY_PATH)

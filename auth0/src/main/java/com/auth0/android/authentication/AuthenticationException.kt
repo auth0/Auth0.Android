@@ -8,6 +8,7 @@ import com.auth0.android.provider.TokenValidationException
 import com.auth0.android.result.MfaFactor
 import com.auth0.android.result.MfaRequiredErrorPayload
 import com.auth0.android.result.MfaRequirements
+import com.auth0.android.result.PasskeyVerificationMethod
 
 public class AuthenticationException : Auth0Exception {
     private var code: String? = null
@@ -202,21 +203,26 @@ public class AuthenticationException : Auth0Exception {
 
     /**
      * Whether a failed passkey signup identifier verification can be retried without restarting
-     * the registration. `true` only when the error body contains an `auth_session`.
+     * the registration. `true` when:
+     * - the error is `invalid_grant` and contains an `auth_session` (a code was wrong and the
+     * session still has attempts left), or
+     * - the error is `invalid_request` because a verification code was missing or empty.
      *
-     * When retryable, re-collect the OTP codes for [passkeyVerificationRequired] and call
+     * When retryable, re-collect the OTP codes and call
      * [com.auth0.android.authentication.AuthenticationAPIClient.signinWithPasskey] again with the
-     * same credential and auth session. When `false`, restart the registration.
+     * same credential. Use [passkeyAuthSession] when it is present; otherwise reuse the auth session
+     * of the original challenge. When `false`, restart the registration.
      *
-     * Use this property instead of the status code or [getDescription], which are identical for
-     * retryable and terminal errors by design.
+     * @see passkeyAuthSession
+     * @see passkeyVerificationRequired
      */
     public val isPasskeyVerificationRetryable: Boolean
-        get() = getValue(AUTH_SESSION_KEY) != null
+        get() = isPasskeyVerificationCodeInvalid || isPasskeyVerificationCodeMissing
 
     /**
-     * The auth session returned in a retryable passkey verification error, to be reused on the
-     * retry so the same passkey credential and session are kept. `null` when the error is terminal.
+     * The auth session returned with a failed passkey verification, if any. `null` does not mean
+     * the session is lost: a missing or empty code is reported without a session, and the auth
+     * session of the original challenge can still be used.
      *
      * @see isPasskeyVerificationRetryable
      */
@@ -224,16 +230,31 @@ public class AuthenticationException : Auth0Exception {
         get() = getValue(AUTH_SESSION_KEY) as? String
 
     /**
-     * The identifiers (e.g. `["email"]`) whose OTP codes failed and must be re-collected before
-     * retrying. Non-null only when [isPasskeyVerificationRetryable] is `true`.
+     * The identifiers whose OTP codes must be re-collected before retrying. Only set when the
+     * error is an `invalid_grant` with an `auth_session`; otherwise `null` and the identifiers of
+     * the original challenge apply.
      *
      * @see isPasskeyVerificationRetryable
      */
     @Suppress("UNCHECKED_CAST")
-    public val passkeyVerificationRequired: List<String>?
+    public val passkeyVerificationRequired: List<PasskeyVerificationMethod>?
         get() {
-            if (!isPasskeyVerificationRetryable) return null
-            return getValue(VERIFICATION_REQUIRED_KEY) as? List<String>
+            if (!isPasskeyVerificationCodeInvalid) return null
+            return (getValue(VERIFICATION_REQUIRED_KEY) as? List<*>)
+                ?.filterIsInstance<String>()
+                ?.map { PasskeyVerificationMethod.fromValue(it) }
+        }
+
+    private val isPasskeyVerificationCodeInvalid: Boolean
+        get() = "invalid_grant" == code && passkeyAuthSession != null
+
+    private val isPasskeyVerificationCodeMissing: Boolean
+        get() {
+            if ("invalid_request" != code) return false
+            val description = description ?: return false
+            return description.startsWith(MISSING_VERIFICATION_PREFIX)
+                    || (description.startsWith(EMPTY_VERIFICATION_PREFIX)
+                    && description.endsWith(EMPTY_VERIFICATION_SUFFIX))
         }
 
     /// When the MFA Token used on the login request is malformed or has expired
@@ -290,22 +311,20 @@ public class AuthenticationException : Auth0Exception {
     public val isIdTokenValidationError: Boolean
         get() = cause is TokenValidationException
 
-    /// When the user is blocked due to too many attempts to log in
-    public val isTooManyAttempts: Boolean
-        get() = "too_many_attempts" == code
-
     /**
-     * When the request was rate-limited by the server (HTTP 429).
+     * When the user is blocked due to too many attempts to log in, or the request was rate-limited
+     * by the server (HTTP 429).
      *
-     * The passkey `/passkey/register` endpoint returns a plain-text body (not JSON) on 429, so the
-     * error code and description may not be populated — use this status-based flag to detect it.
+     * Some endpoints, like `/passkey/register`, return a plain-text body (not JSON) on 429, so the
+     * error code may not be populated — the status code is checked as well.
      */
-    public val isTooManyRequests: Boolean
-        get() = statusCode == 429
+    public val isTooManyAttempts: Boolean
+        get() = "too_many_attempts" == code || statusCode == 429
 
     internal companion object {
         internal const val ERROR_VALUE_AUTHENTICATION_CANCELED = "a0.authentication_canceled"
         internal const val ERROR_KEY_URI_NULL = "a0.auth.authorize_uri"
+        internal const val ERROR_KEY_VERIFICATION_CODE_EMPTY = "a0.auth.verification_code_empty"
         internal const val ERROR_VALUE_AUTHORIZE_URI_INVALID =
             "Authorization URI is received as null from the intent"
         internal const val ERROR_KEY_CT_OPTIONS_NULL = "a0.auth.ct_options"
@@ -314,6 +333,9 @@ public class AuthenticationException : Auth0Exception {
         private const val ERROR_KEY = "error"
         private const val AUTH_SESSION_KEY = "auth_session"
         private const val VERIFICATION_REQUIRED_KEY = "verification_required"
+        private const val MISSING_VERIFICATION_PREFIX = "Missing required parameter: verification"
+        private const val EMPTY_VERIFICATION_PREFIX = "\"verification."
+        private const val EMPTY_VERIFICATION_SUFFIX = "is not allowed to be empty"
         private const val CODE_KEY = "code"
         private const val DESCRIPTION_KEY = "description"
         private const val ERROR_DESCRIPTION_KEY = "error_description"
