@@ -13,13 +13,13 @@ public data class PasskeyRegistrationChallenge @JvmOverloads constructor(
     val authParamsPublicKey: AuthnParamsPublicKey,
     /**
      * The identifiers (e.g. `[EMAIL]` or `[EMAIL, PHONE]`) that require OTP verification
-     * before a credential can be created and tokens issued. Empty when the server did not
+     * before a credential can be created and tokens issued. `null` when the server did not
      * request any identifier verification. The OTP codes collected for these identifiers must
      * be passed to [com.auth0.android.authentication.AuthenticationAPIClient.signinWithPasskey]
      * via the `verification` parameter.
      */
     @SerializedName("verification_required")
-    val verificationRequired: List<PasskeyVerificationMethod> = emptyList()
+    val verificationRequired: List<PasskeyVerificationMethod>? = null
 )
 
 public data class AuthnParamsPublicKey(

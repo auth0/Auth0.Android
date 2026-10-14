@@ -305,7 +305,7 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public fun shouldSignupWithPasskeyWithEmptyVerificationRequiredWhenAbsent() {
+    public fun shouldSignupWithPasskeyWithNullVerificationRequiredWhenAbsent() {
         mockAPI.willReturnSuccessfulPasskeyRegistration()
         val client = AuthenticationAPIClient(auth0)
         val registrationResponse = client.signupWithPasskey(
@@ -313,7 +313,7 @@ public class AuthenticationAPIClientTest {
             MY_CONNECTION
         ).execute()
         mockAPI.takeRequest()
-        assertThat(registrationResponse.verificationRequired, Matchers.empty())
+        assertThat(registrationResponse.verificationRequired, Matchers.nullValue())
     }
 
     @Test
@@ -343,30 +343,6 @@ public class AuthenticationAPIClientTest {
         assertThat(
             registrationResponse.verificationRequired,
             Matchers.contains(PasskeyVerificationMethod.EMAIL, PasskeyVerificationMethod.PHONE)
-        )
-    }
-
-    @Test
-    public fun shouldKeepUnknownVerificationIdentifiers() {
-        mockAPI.willReturnSuccessfulPasskeyRegistrationWithVerificationRequired("username")
-        val client = AuthenticationAPIClient(auth0)
-        val registrationResponse = client.signupWithPasskey(
-            UserData(email = "test@example.com"),
-            MY_CONNECTION
-        ).execute()
-        mockAPI.takeRequest()
-        assertThat(registrationResponse.verificationRequired.map { it.value }, Matchers.contains("username"))
-    }
-
-    @Test
-    public fun shouldCompareVerificationMethodsByValue() {
-        assertThat(
-            PasskeyVerificationMethod.fromValue("email"),
-            Matchers.`is`(PasskeyVerificationMethod.EMAIL)
-        )
-        assertThat(
-            PasskeyVerificationMethod.fromValue("phone"),
-            Matchers.`is`(PasskeyVerificationMethod.PHONE)
         )
     }
 
@@ -512,8 +488,8 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public fun shouldClassifyMissingCodePasskeyVerificationErrorAsRetryable() {
-        mockAPI.willReturnPasskeyVerificationMissingCodeError("Missing required parameter: verification.email")
+    public fun shouldClassifyInvalidRequestWithSessionAsRetryable() {
+        mockAPI.willReturnPasskeyVerificationInvalidRequestError("email")
         val client = AuthenticationAPIClient(auth0)
         val exception = assertThrows(AuthenticationException::class.java) {
             client.signinWithPasskey(
@@ -524,28 +500,16 @@ public class AuthenticationAPIClientTest {
         }
         assertThat(exception.getCode(), Matchers.`is`("invalid_request"))
         assertThat(exception.isPasskeyVerificationRetryable, Matchers.`is`(true))
-        assertThat(exception.passkeyAuthSession, Matchers.nullValue())
-        assertThat(exception.passkeyVerificationRequired, Matchers.nullValue())
+        assertThat(exception.passkeyAuthSession, Matchers.`is`(SESSION_ID))
+        assertThat(
+            exception.passkeyVerificationRequired,
+            Matchers.contains(PasskeyVerificationMethod.EMAIL)
+        )
     }
 
     @Test
-    public fun shouldClassifyEmptyCodePasskeyVerificationErrorAsRetryable() {
-        mockAPI.willReturnPasskeyVerificationMissingCodeError("\"verification.email\" is not allowed to be empty")
-        val client = AuthenticationAPIClient(auth0)
-        val exception = assertThrows(AuthenticationException::class.java) {
-            client.signinWithPasskey(
-                "auth-session",
-                mock<PublicKeyCredentials>(),
-                MY_CONNECTION
-            ).execute()
-        }
-        assertThat(exception.getCode(), Matchers.`is`("invalid_request"))
-        assertThat(exception.isPasskeyVerificationRetryable, Matchers.`is`(true))
-    }
-
-    @Test
-    public fun shouldNotClassifyUnrelatedInvalidRequestAsRetryable() {
-        mockAPI.willReturnPasskeyVerificationMissingCodeError("Invalid realm")
+    public fun shouldNotClassifyInvalidRequestWithoutSessionAsRetryable() {
+        mockAPI.willReturnInvalidRequestWithoutSessionError()
         val client = AuthenticationAPIClient(auth0)
         val exception = assertThrows(AuthenticationException::class.java) {
             client.signinWithPasskey(
@@ -556,6 +520,26 @@ public class AuthenticationAPIClientTest {
         }
         assertThat(exception.getCode(), Matchers.`is`("invalid_request"))
         assertThat(exception.isPasskeyVerificationRetryable, Matchers.`is`(false))
+        assertThat(exception.passkeyAuthSession, Matchers.nullValue())
+        assertThat(exception.passkeyVerificationRequired, Matchers.nullValue())
+    }
+
+    @Test
+    public fun shouldSkipUnknownIdentifiersInPasskeyVerificationRequired() {
+        mockAPI.willReturnPasskeyVerificationRetryableError("email", "username")
+        val client = AuthenticationAPIClient(auth0)
+        val exception = assertThrows(AuthenticationException::class.java) {
+            client.signinWithPasskey(
+                "auth-session",
+                mock<PublicKeyCredentials>(),
+                MY_CONNECTION,
+                verification = mapOf(PasskeyVerificationMethod.EMAIL to "000000")
+            ).execute()
+        }
+        assertThat(
+            exception.passkeyVerificationRequired,
+            Matchers.contains(PasskeyVerificationMethod.EMAIL)
+        )
     }
 
     @Test
@@ -602,6 +586,7 @@ public class AuthenticationAPIClientTest {
             ).execute()
         }
         assertThat(exception.isTooManyAttempts, Matchers.`is`(true))
+        assertThat(exception.getCode(), Matchers.`is`("too_many_attempts"))
         assertThat(exception.statusCode, Matchers.`is`(429))
     }
 

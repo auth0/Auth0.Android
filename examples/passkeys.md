@@ -101,9 +101,9 @@ try {
 ### Passkey signup with identifier verification
 
 When the database connection has verification enabled for email and phone, the `signupWithPasskey`
-response includes a non-empty `verificationRequired` list naming the identifiers
+response includes a `verificationRequired` list naming the identifiers
 (`PasskeyVerificationMethod.EMAIL`, `PasskeyVerificationMethod.PHONE`) that must be verified before tokens
-can be issued. You must:
+can be issued. It is `null` when no verification is required. You must:
 
 1. Collect the OTP code for every identifier in `verificationRequired` **before** creating the
    platform credential with `CredentialManager.createCredential(...)`. Creating the credential first
@@ -115,14 +115,10 @@ can be issued. You must:
    the codes and call `signinWithPasskey` again **reusing the same `PublicKeyCredentials`** — the
    biometric prompt will not reappear.
 
-An error is retryable when it is either:
-
-- an `invalid_grant` error that carries an `auth_session` (a code was wrong and attempts remain). The identifiers to
-  re-collect are in `passkeyVerificationRequired` and the session in `passkeyAuthSession`; or
-- an `invalid_request` error because a code was missing or empty. This error has no `auth_session` and no identifier
-  list, so reuse the auth session and `verificationRequired` of the original challenge.
-
-Any other error is terminal and the registration must be restarted from `signupWithPasskey`.
+An error is retryable (`isPasskeyVerificationRetryable`) when it is an `invalid_grant` or `invalid_request` error
+that carries an `auth_session`, meaning the session is still alive (for example a code was wrong or missing and
+attempts remain). The identifiers to re-collect are in `passkeyVerificationRequired` and the session in
+`passkeyAuthSession`. Any other error is terminal and the registration must be restarted from `signupWithPasskey`.
 
 Optionally pass `deliveryMethod` (`DeliveryMethod.TEXT` or `DeliveryMethod.VOICE`) to
 `signupWithPasskey` to choose the phone OTP channel.
@@ -140,7 +136,7 @@ try {
     ).await()
 
     // Collect OTP codes BEFORE creating the credential.
-    var codes: Map<PasskeyVerificationMethod, String> = challenge.verificationRequired
+    var codes: Map<PasskeyVerificationMethod, String> = challenge.verificationRequired.orEmpty()
         .associateWith { identifier -> promptUserForOtp(identifier) } // app-defined
 
     // Now create the platform credential.
@@ -170,15 +166,17 @@ try {
             if (!exception.isPasskeyVerificationRetryable || ++attempts >= maxAttempts) {
                 throw exception // terminal (or too many attempts) - restart registration
             }
-            // Re-collect the failed identifiers and retry with the SAME credential. When the error does not
-            // list them (missing/empty code), fall back to the identifiers of the original challenge.
+            // Re-collect the failed identifiers and retry with the SAME credential. If the error does not
+            // list them, fall back to the identifiers of the original challenge.
             authSession = exception.passkeyAuthSession ?: authSession
-            val failed = exception.passkeyVerificationRequired ?: challenge.verificationRequired
+            val failed = exception.passkeyVerificationRequired ?: challenge.verificationRequired.orEmpty()
             codes = codes + failed.associateWith { identifier -> promptUserForOtp(identifier) }
         }
     }
 } catch (e: CreateCredentialException) {
+    // The passkey could not be created or the user cancelled: show an error and let the user try again.
 } catch (exception: AuthenticationException) {
+    // Verification failed for good or the retries ran out: show the error and restart the registration.
 }
 ```
 <details>

@@ -1,6 +1,5 @@
 package com.auth0.android.util
 
-import com.google.gson.Gson
 import okhttp3.mockwebserver.MockResponse
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -260,12 +259,24 @@ internal class AuthenticationAPIMockServer : APIMockServer() {
         return this
     }
 
-    fun willReturnPasskeyVerificationMissingCodeError(
-        description: String = "Missing required parameter: verification.email"
+    fun willReturnPasskeyVerificationInvalidRequestError(
+        vararg identifiers: String
     ): AuthenticationAPIMockServer {
+        val verificationRequired = identifiers.joinToString(prefix = "[", postfix = "]") { "\"$it\"" }
         val json = """{
           "error": "invalid_request",
-          "error_description": ${Gson().toJson(description)}
+          "error_description": "Missing required parameter: verification.email",
+          "auth_session": "$SESSION_ID",
+          "verification_required": $verificationRequired
+        }"""
+        server.enqueue(responseWithJSON(json, 400))
+        return this
+    }
+
+    fun willReturnInvalidRequestWithoutSessionError(): AuthenticationAPIMockServer {
+        val json = """{
+          "error": "invalid_request",
+          "error_description": "Invalid realm"
         }"""
         server.enqueue(responseWithJSON(json, 400))
         return this

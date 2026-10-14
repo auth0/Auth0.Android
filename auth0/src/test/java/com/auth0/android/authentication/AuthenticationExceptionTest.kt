@@ -3,6 +3,7 @@ package com.auth0.android.authentication
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
 import com.auth0.android.request.internal.GsonProvider
+import com.auth0.android.result.PasskeyVerificationMethod
 import com.google.gson.reflect.TypeToken
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
@@ -530,6 +531,67 @@ public class AuthenticationExceptionTest {
             values
         )
         MatcherAssert.assertThat(ex.isTooManyAttempts, CoreMatchers.`is`(true))
+    }
+
+    @Test
+    public fun shouldHaveTooManyAttemptsForPlainTextRateLimit() {
+        val ex = AuthenticationException("Too Many Requests", 429)
+        MatcherAssert.assertThat(ex.isTooManyAttempts, CoreMatchers.`is`(true))
+        MatcherAssert.assertThat(ex.getCode(), CoreMatchers.`is`("too_many_attempts"))
+        MatcherAssert.assertThat(ex.getDescription(), CoreMatchers.`is`("Too Many Requests"))
+        MatcherAssert.assertThat(ex.statusCode, CoreMatchers.`is`(429))
+    }
+
+    @Test
+    public fun shouldHaveTooManyAttemptsForEmptyRateLimitBody() {
+        val ex = AuthenticationException(null, 429)
+        MatcherAssert.assertThat(ex.isTooManyAttempts, CoreMatchers.`is`(true))
+    }
+
+    @Test
+    public fun shouldKeepPlainTextCodeForOtherStatuses() {
+        val ex = AuthenticationException("Bad Gateway", 502)
+        MatcherAssert.assertThat(ex.isTooManyAttempts, CoreMatchers.`is`(false))
+        MatcherAssert.assertThat(ex.getCode(), CoreMatchers.`is`(Auth0Exception.NON_JSON_ERROR))
+    }
+
+    @Test
+    public fun shouldBeRetryablePasskeyVerificationForInvalidGrantWithSession() {
+        values[ERROR_KEY] = "invalid_grant"
+        values["auth_session"] = "session"
+        values["verification_required"] = listOf("email", "phone")
+        val ex = AuthenticationException(values, 400)
+        MatcherAssert.assertThat(ex.isPasskeyVerificationRetryable, CoreMatchers.`is`(true))
+        MatcherAssert.assertThat(ex.passkeyAuthSession, CoreMatchers.`is`("session"))
+        MatcherAssert.assertThat(
+            ex.passkeyVerificationRequired,
+            CoreMatchers.`is`(listOf(PasskeyVerificationMethod.EMAIL, PasskeyVerificationMethod.PHONE))
+        )
+    }
+
+    @Test
+    public fun shouldBeRetryablePasskeyVerificationForInvalidRequestWithSession() {
+        values[ERROR_KEY] = "invalid_request"
+        values["auth_session"] = "session"
+        val ex = AuthenticationException(values, 400)
+        MatcherAssert.assertThat(ex.isPasskeyVerificationRetryable, CoreMatchers.`is`(true))
+        MatcherAssert.assertThat(ex.passkeyVerificationRequired, CoreMatchers.nullValue())
+    }
+
+    @Test
+    public fun shouldNotBeRetryablePasskeyVerificationWithoutSession() {
+        values[ERROR_KEY] = "invalid_grant"
+        val ex = AuthenticationException(values, 400)
+        MatcherAssert.assertThat(ex.isPasskeyVerificationRetryable, CoreMatchers.`is`(false))
+        MatcherAssert.assertThat(ex.passkeyAuthSession, CoreMatchers.nullValue())
+    }
+
+    @Test
+    public fun shouldNotBeRetryablePasskeyVerificationForOtherErrorsWithSession() {
+        values[ERROR_KEY] = "server_error"
+        values["auth_session"] = "session"
+        val ex = AuthenticationException(values, 500)
+        MatcherAssert.assertThat(ex.isPasskeyVerificationRetryable, CoreMatchers.`is`(false))
     }
 
     private companion object {

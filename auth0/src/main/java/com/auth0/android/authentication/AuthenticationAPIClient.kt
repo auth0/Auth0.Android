@@ -266,21 +266,22 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
                 Gson().toJsonTree(authResponse)
             )
         if (verification.isNotEmpty()) {
-            request.addParameter(
-                VERIFICATION_KEY,
-                Gson().toJsonTree(verification.mapKeys { it.key.value })
-            )
-            request.addValidator(object : RequestValidator {
-                override fun validate(options: RequestOptions) {
-                    val blank = verification.filterValues { it.isBlank() }.keys
-                    if (blank.isNotEmpty()) {
+            val blankCodes = verification.filterValues { it.isBlank() }.keys
+            if (blankCodes.isNotEmpty()) {
+                request.addValidator(object : RequestValidator {
+                    override fun validate(options: RequestOptions) {
                         throw AuthenticationException(
                             AuthenticationException.ERROR_KEY_VERIFICATION_CODE_EMPTY,
-                            "The verification code for ${blank.joinToString { it.value }} must not be empty."
+                            "The verification code for ${blankCodes.joinToString { it.value }} must not be empty."
                         )
                     }
-                }
-            })
+                })
+            } else {
+                request.addParameter(
+                    VERIFICATION_KEY,
+                    gson.toJsonTree(verification.mapKeys { it.key.value })
+                )
+            }
         }
         return request as AuthenticationRequest
     }

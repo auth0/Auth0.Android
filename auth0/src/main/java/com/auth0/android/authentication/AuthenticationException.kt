@@ -39,7 +39,11 @@ public class AuthenticationException : Auth0Exception {
     }
 
     public constructor(payload: String?, statusCode: Int) : this(DEFAULT_MESSAGE) {
-        code = if (payload != null) NON_JSON_ERROR else EMPTY_BODY_ERROR
+        code = when {
+            statusCode == 429 -> TOO_MANY_ATTEMPTS_CODE
+            payload != null -> NON_JSON_ERROR
+            else -> EMPTY_BODY_ERROR
+        }
         description = payload ?: EMPTY_RESPONSE_BODY_DESCRIPTION
         this.statusCode = statusCode
     }
@@ -203,26 +207,23 @@ public class AuthenticationException : Auth0Exception {
 
     /**
      * Whether a failed passkey signup identifier verification can be retried without restarting
-     * the registration. `true` when:
-     * - the error is `invalid_grant` and contains an `auth_session` (a code was wrong and the
-     * session still has attempts left), or
-     * - the error is `invalid_request` because a verification code was missing or empty.
+     * the registration. `true` when the error is an `invalid_grant` or `invalid_request` and
+     * contains an `auth_session`, meaning the session is still alive (for example a code was wrong
+     * or missing and attempts remain).
      *
-     * When retryable, re-collect the OTP codes and call
+     * When retryable, re-collect the OTP codes for [passkeyVerificationRequired] and call
      * [com.auth0.android.authentication.AuthenticationAPIClient.signinWithPasskey] again with the
-     * same credential. Use [passkeyAuthSession] when it is present; otherwise reuse the auth session
-     * of the original challenge. When `false`, restart the registration.
+     * same credential and [passkeyAuthSession]. When `false`, restart the registration.
      *
      * @see passkeyAuthSession
      * @see passkeyVerificationRequired
      */
     public val isPasskeyVerificationRetryable: Boolean
-        get() = isPasskeyVerificationCodeInvalid || isPasskeyVerificationCodeMissing
+        get() = ("invalid_grant" == code || "invalid_request" == code) && passkeyAuthSession != null
 
     /**
-     * The auth session returned with a failed passkey verification, if any. `null` does not mean
-     * the session is lost: a missing or empty code is reported without a session, and the auth
-     * session of the original challenge can still be used.
+     * The auth session returned with a failed passkey verification, to be reused on the retry so
+     * the same passkey credential and session are kept. `null` when the error carries none.
      *
      * @see isPasskeyVerificationRetryable
      */
@@ -230,31 +231,18 @@ public class AuthenticationException : Auth0Exception {
         get() = getValue(AUTH_SESSION_KEY) as? String
 
     /**
-     * The identifiers whose OTP codes must be re-collected before retrying. Only set when the
-     * error is an `invalid_grant` with an `auth_session`; otherwise `null` and the identifiers of
-     * the original challenge apply.
+     * The identifiers whose OTP codes must be re-collected before retrying. `null` unless
+     * [isPasskeyVerificationRetryable] is `true`. Identifiers this version of the SDK does not
+     * know are skipped.
      *
      * @see isPasskeyVerificationRetryable
      */
-    @Suppress("UNCHECKED_CAST")
     public val passkeyVerificationRequired: List<PasskeyVerificationMethod>?
         get() {
-            if (!isPasskeyVerificationCodeInvalid) return null
+            if (!isPasskeyVerificationRetryable) return null
             return (getValue(VERIFICATION_REQUIRED_KEY) as? List<*>)
                 ?.filterIsInstance<String>()
-                ?.map { PasskeyVerificationMethod.fromValue(it) }
-        }
-
-    private val isPasskeyVerificationCodeInvalid: Boolean
-        get() = "invalid_grant" == code && passkeyAuthSession != null
-
-    private val isPasskeyVerificationCodeMissing: Boolean
-        get() {
-            if ("invalid_request" != code) return false
-            val description = description ?: return false
-            return description.startsWith(MISSING_VERIFICATION_PREFIX)
-                    || (description.startsWith(EMPTY_VERIFICATION_PREFIX)
-                    && description.endsWith(EMPTY_VERIFICATION_SUFFIX))
+                ?.mapNotNull { value -> PasskeyVerificationMethod.values().firstOrNull { it.value == value } }
         }
 
     /// When the MFA Token used on the login request is malformed or has expired
@@ -312,14 +300,11 @@ public class AuthenticationException : Auth0Exception {
         get() = cause is TokenValidationException
 
     /**
-     * When the user is blocked due to too many attempts to log in, or the request was rate-limited
-     * by the server (HTTP 429).
-     *
-     * Some endpoints, like `/passkey/register`, return a plain-text body (not JSON) on 429, so the
-     * error code may not be populated — the status code is checked as well.
+     * When the user is blocked due to too many attempts to log in, or the server rate-limited the
+     * request (HTTP 429) with a plain-text body.
      */
     public val isTooManyAttempts: Boolean
-        get() = "too_many_attempts" == code || statusCode == 429
+        get() = TOO_MANY_ATTEMPTS_CODE == code
 
     internal companion object {
         internal const val ERROR_VALUE_AUTHENTICATION_CANCELED = "a0.authentication_canceled"
@@ -333,9 +318,7 @@ public class AuthenticationException : Auth0Exception {
         private const val ERROR_KEY = "error"
         private const val AUTH_SESSION_KEY = "auth_session"
         private const val VERIFICATION_REQUIRED_KEY = "verification_required"
-        private const val MISSING_VERIFICATION_PREFIX = "Missing required parameter: verification"
-        private const val EMPTY_VERIFICATION_PREFIX = "\"verification."
-        private const val EMPTY_VERIFICATION_SUFFIX = "is not allowed to be empty"
+        private const val TOO_MANY_ATTEMPTS_CODE = "too_many_attempts"
         private const val CODE_KEY = "code"
         private const val DESCRIPTION_KEY = "description"
         private const val ERROR_DESCRIPTION_KEY = "error_description"
