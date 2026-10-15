@@ -8,6 +8,7 @@ import com.auth0.android.provider.TokenValidationException
 import com.auth0.android.result.MfaFactor
 import com.auth0.android.result.MfaRequiredErrorPayload
 import com.auth0.android.result.MfaRequirements
+import com.auth0.android.result.PasskeyVerificationMethod
 
 public class AuthenticationException : Auth0Exception {
     private var code: String? = null
@@ -200,6 +201,48 @@ public class AuthenticationException : Auth0Exception {
     public val isVerificationRequired: Boolean
         get() = "requires_verification" == code
 
+    /**
+     * Whether a failed passkey signup identifier verification can be retried without restarting
+     * the registration. `true` when the error contains an `auth_session` and is either:
+     * - an `invalid_request`, because the `verification` codes were missing or empty. Re-collect
+     * the codes for the challenge's `verificationRequired`; or
+     * - an `invalid_grant`, because a code was wrong. Re-collect the codes for
+     * [passkeyVerificationRequired].
+     *
+     * Then call [com.auth0.android.authentication.AuthenticationAPIClient.signinWithPasskey] again
+     * with the same credential and [passkeyAuthSession]. When `false`, restart the registration.
+     *
+     * @see passkeyAuthSession
+     * @see passkeyVerificationRequired
+     */
+    public val isPasskeyVerificationRetryable: Boolean
+        get() = ("invalid_grant" == code || "invalid_request" == code) && passkeyAuthSession != null
+
+    /**
+     * The auth session returned with a failed passkey verification, to be reused on the retry so
+     * the same passkey credential and session are kept. `null` when the error carries none.
+     *
+     * @see isPasskeyVerificationRetryable
+     */
+    public val passkeyAuthSession: String?
+        get() = getValue(AUTH_SESSION_KEY) as? String
+
+    /**
+     * The identifiers whose OTP code was wrong and must be re-collected before retrying. Only set
+     * for a retryable `invalid_grant`; `null` otherwise, including for a retryable
+     * `invalid_request`, where the challenge's `verificationRequired` applies. Identifiers this
+     * version of the SDK does not know are skipped.
+     *
+     * @see isPasskeyVerificationRetryable
+     */
+    public val passkeyVerificationRequired: List<PasskeyVerificationMethod>?
+        get() {
+            if (!isPasskeyVerificationRetryable || "invalid_grant" != code) return null
+            return (getValue(VERIFICATION_REQUIRED_KEY) as? List<*>)
+                ?.filterIsInstance<String>()
+                ?.mapNotNull { value -> PasskeyVerificationMethod.values().firstOrNull { it.value == value } }
+        }
+
     /// When the MFA Token used on the login request is malformed or has expired
     public val isMultifactorTokenInvalid: Boolean
         get() = "expired_token" == code && "mfa_token is expired" == description ||
@@ -267,6 +310,8 @@ public class AuthenticationException : Auth0Exception {
         internal const val ERROR_VALUE_CT_OPTIONS_INVALID =
             "Custom tab options are received as null from the intent"
         private const val ERROR_KEY = "error"
+        private const val AUTH_SESSION_KEY = "auth_session"
+        private const val VERIFICATION_REQUIRED_KEY = "verification_required"
         private const val CODE_KEY = "code"
         private const val DESCRIPTION_KEY = "description"
         private const val ERROR_DESCRIPTION_KEY = "error_description"
