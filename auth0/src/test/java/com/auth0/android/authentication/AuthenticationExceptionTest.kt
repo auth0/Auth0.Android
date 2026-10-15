@@ -557,6 +557,16 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
+    public fun shouldNotExposeVerificationRequiredForInvalidRequest() {
+        values[ERROR_KEY] = "invalid_request"
+        values["auth_session"] = "session"
+        values["verification_required"] = listOf("email")
+        val ex = AuthenticationException(values, 400)
+        MatcherAssert.assertThat(ex.isPasskeyVerificationRetryable, CoreMatchers.`is`(true))
+        MatcherAssert.assertThat(ex.passkeyVerificationRequired, CoreMatchers.nullValue())
+    }
+
+    @Test
     public fun shouldNotBeRetryablePasskeyVerificationWithoutSession() {
         values[ERROR_KEY] = "invalid_grant"
         val ex = AuthenticationException(values, 400)

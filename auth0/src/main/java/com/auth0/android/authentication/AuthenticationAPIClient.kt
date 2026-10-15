@@ -18,8 +18,6 @@ import com.auth0.android.request.JsonAdapter
 import com.auth0.android.request.ProfileRequest
 import com.auth0.android.request.PublicKeyCredentials
 import com.auth0.android.request.Request
-import com.auth0.android.request.RequestOptions
-import com.auth0.android.request.RequestValidator
 import com.auth0.android.request.SignUpRequest
 import com.auth0.android.request.UserData
 import com.auth0.android.request.internal.BaseAuthenticationRequest
@@ -241,8 +239,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param verification a map of identifier to the OTP code collected from the user, e.g.
      * `mapOf(PasskeyVerificationMethod.EMAIL to "123456")`. The keys must match the identifiers returned in
      * [PasskeyRegistrationChallenge.verificationRequired]. Defaults to an empty map when no identifier verification is
-     * required; the `verification` object is then omitted from the request. A blank code fails the request with an
-     * [AuthenticationException] before any network call is made.
+     * required; the `verification` object is then omitted from the request.
      * @return a request to configure and start that will yield [Credentials]
      */
     @JvmOverloads
@@ -266,22 +263,10 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
                 Gson().toJsonTree(authResponse)
             )
         if (verification.isNotEmpty()) {
-            val blankCodes = verification.filterValues { it.isBlank() }.keys
-            if (blankCodes.isNotEmpty()) {
-                request.addValidator(object : RequestValidator {
-                    override fun validate(options: RequestOptions) {
-                        throw AuthenticationException(
-                            AuthenticationException.ERROR_KEY_VERIFICATION_CODE_EMPTY,
-                            "The verification code for ${blankCodes.joinToString { it.value }} must not be empty."
-                        )
-                    }
-                })
-            } else {
-                request.addParameter(
-                    VERIFICATION_KEY,
-                    gson.toJsonTree(verification.mapKeys { it.key.value })
-                )
-            }
+            request.addParameter(
+                VERIFICATION_KEY,
+                gson.toJsonTree(verification.mapKeys { it.key.value })
+            )
         }
         return request as AuthenticationRequest
     }
@@ -314,8 +299,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param verification a map of identifier to the OTP code collected from the user, e.g.
      * `mapOf(PasskeyVerificationMethod.EMAIL to "123456")`. The keys must match the identifiers returned in
      * [PasskeyRegistrationChallenge.verificationRequired]. Defaults to an empty map when no identifier verification is
-     * required; the `verification` object is then omitted from the request. A blank code fails the request with an
-     * [AuthenticationException] before any network call is made.
+     * required; the `verification` object is then omitted from the request.
      * @return a request to configure and start that will yield [Credentials]
      */
     @JvmOverloads

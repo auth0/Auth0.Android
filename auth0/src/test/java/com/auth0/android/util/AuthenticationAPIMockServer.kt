@@ -259,15 +259,11 @@ internal class AuthenticationAPIMockServer : APIMockServer() {
         return this
     }
 
-    fun willReturnPasskeyVerificationInvalidRequestError(
-        vararg identifiers: String
-    ): AuthenticationAPIMockServer {
-        val verificationRequired = identifiers.joinToString(prefix = "[", postfix = "]") { "\"$it\"" }
+    fun willReturnPasskeyVerificationInvalidRequestError(): AuthenticationAPIMockServer {
         val json = """{
           "error": "invalid_request",
           "error_description": "Missing required parameter: verification.email",
-          "auth_session": "$SESSION_ID",
-          "verification_required": $verificationRequired
+          "auth_session": "$SESSION_ID"
         }"""
         server.enqueue(responseWithJSON(json, 400))
         return this

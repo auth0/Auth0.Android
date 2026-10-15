@@ -203,13 +203,14 @@ public class AuthenticationException : Auth0Exception {
 
     /**
      * Whether a failed passkey signup identifier verification can be retried without restarting
-     * the registration. `true` when the error is an `invalid_grant` or `invalid_request` and
-     * contains an `auth_session`, meaning the session is still alive (for example a code was wrong
-     * or missing and attempts remain).
+     * the registration. `true` when the error contains an `auth_session` and is either:
+     * - an `invalid_request`, because the `verification` codes were missing or empty. Re-collect
+     * the codes for the challenge's `verificationRequired`; or
+     * - an `invalid_grant`, because a code was wrong. Re-collect the codes for
+     * [passkeyVerificationRequired].
      *
-     * When retryable, re-collect the OTP codes for [passkeyVerificationRequired] and call
-     * [com.auth0.android.authentication.AuthenticationAPIClient.signinWithPasskey] again with the
-     * same credential and [passkeyAuthSession]. When `false`, restart the registration.
+     * Then call [com.auth0.android.authentication.AuthenticationAPIClient.signinWithPasskey] again
+     * with the same credential and [passkeyAuthSession]. When `false`, restart the registration.
      *
      * @see passkeyAuthSession
      * @see passkeyVerificationRequired
@@ -227,15 +228,16 @@ public class AuthenticationException : Auth0Exception {
         get() = getValue(AUTH_SESSION_KEY) as? String
 
     /**
-     * The identifiers whose OTP codes must be re-collected before retrying. `null` unless
-     * [isPasskeyVerificationRetryable] is `true`. Identifiers this version of the SDK does not
-     * know are skipped.
+     * The identifiers whose OTP code was wrong and must be re-collected before retrying. Only set
+     * for a retryable `invalid_grant`; `null` otherwise, including for a retryable
+     * `invalid_request`, where the challenge's `verificationRequired` applies. Identifiers this
+     * version of the SDK does not know are skipped.
      *
      * @see isPasskeyVerificationRetryable
      */
     public val passkeyVerificationRequired: List<PasskeyVerificationMethod>?
         get() {
-            if (!isPasskeyVerificationRetryable) return null
+            if (!isPasskeyVerificationRetryable || "invalid_grant" != code) return null
             return (getValue(VERIFICATION_REQUIRED_KEY) as? List<*>)
                 ?.filterIsInstance<String>()
                 ?.mapNotNull { value -> PasskeyVerificationMethod.values().firstOrNull { it.value == value } }
@@ -302,7 +304,6 @@ public class AuthenticationException : Auth0Exception {
     internal companion object {
         internal const val ERROR_VALUE_AUTHENTICATION_CANCELED = "a0.authentication_canceled"
         internal const val ERROR_KEY_URI_NULL = "a0.auth.authorize_uri"
-        internal const val ERROR_KEY_VERIFICATION_CODE_EMPTY = "a0.auth.verification_code_empty"
         internal const val ERROR_VALUE_AUTHORIZE_URI_INVALID =
             "Authorization URI is received as null from the intent"
         internal const val ERROR_KEY_CT_OPTIONS_NULL = "a0.auth.ct_options"

@@ -109,22 +109,23 @@ can be issued. It is `null` when no verification is required. You must:
    platform credential with `CredentialManager.createCredential(...)`. Creating the credential first
    and then failing verification leaves an orphaned local passkey and shows a second biometric prompt
    on retry.
-2. Pass the collected codes to `signinWithPasskey` via the `verification` map (identifier -> code). A blank
-   code fails the request with an `AuthenticationException` before any network call is made.
+2. Pass the collected codes to `signinWithPasskey` via the `verification` map (identifier -> code).
 3. On a retryable error (`AuthenticationException.isPasskeyVerificationRetryable == true`), re-collect
    the codes and call `signinWithPasskey` again **reusing the same `PublicKeyCredentials`** — the
    biometric prompt will not reappear.
 
-An error is retryable (`isPasskeyVerificationRetryable`) when it is an `invalid_grant` or `invalid_request` error
-that carries an `auth_session`, meaning the session is still alive (for example a code was wrong or missing and
-attempts remain). The identifiers to re-collect are in `passkeyVerificationRequired` and the session in
-`passkeyAuthSession`. Any other error is terminal and the registration must be restarted from `signupWithPasskey`.
+A failed `signinWithPasskey` can be retried with the same credential when `isPasskeyVerificationRetryable` is
+`true`. There are two cases:
+
+- **A code is missing or empty** (the `verification` map is empty, or the email or phone code is blank). The error is
+  `invalid_request` with an `auth_session`. Collect the codes for `challenge.verificationRequired` and retry.
+- **A code is wrong.** The error is `invalid_grant` with an `auth_session`, and `passkeyVerificationRequired` lists
+  the identifiers whose code was wrong. Collect new codes for those identifiers and retry.
+
+Any other error is terminal, so restart the registration from `signupWithPasskey`.
 
 Optionally pass `deliveryMethod` (`DeliveryMethod.TEXT` or `DeliveryMethod.VOICE`) to
 `signupWithPasskey` to choose the phone OTP channel.
-
-`signupWithPasskey` is rate-limited. When the limit is hit, the request fails with an `AuthenticationException`
-whose `statusCode` is `429`.
 
 ```kotlin
 // Using Coroutines
