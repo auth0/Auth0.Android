@@ -39,11 +39,7 @@ public class AuthenticationException : Auth0Exception {
     }
 
     public constructor(payload: String?, statusCode: Int) : this(DEFAULT_MESSAGE) {
-        code = when {
-            statusCode == 429 -> TOO_MANY_ATTEMPTS_CODE
-            payload != null -> NON_JSON_ERROR
-            else -> EMPTY_BODY_ERROR
-        }
+        code = if (payload != null) NON_JSON_ERROR else EMPTY_BODY_ERROR
         description = payload ?: EMPTY_RESPONSE_BODY_DESCRIPTION
         this.statusCode = statusCode
     }
@@ -299,12 +295,9 @@ public class AuthenticationException : Auth0Exception {
     public val isIdTokenValidationError: Boolean
         get() = cause is TokenValidationException
 
-    /**
-     * When the user is blocked due to too many attempts to log in, or the server rate-limited the
-     * request (HTTP 429) with a plain-text body.
-     */
+    /// When the user is blocked due to too many attempts to log in
     public val isTooManyAttempts: Boolean
-        get() = TOO_MANY_ATTEMPTS_CODE == code
+        get() = "too_many_attempts" == code
 
     internal companion object {
         internal const val ERROR_VALUE_AUTHENTICATION_CANCELED = "a0.authentication_canceled"
@@ -318,7 +311,6 @@ public class AuthenticationException : Auth0Exception {
         private const val ERROR_KEY = "error"
         private const val AUTH_SESSION_KEY = "auth_session"
         private const val VERIFICATION_REQUIRED_KEY = "verification_required"
-        private const val TOO_MANY_ATTEMPTS_CODE = "too_many_attempts"
         private const val CODE_KEY = "code"
         private const val DESCRIPTION_KEY = "description"
         private const val ERROR_DESCRIPTION_KEY = "error_description"

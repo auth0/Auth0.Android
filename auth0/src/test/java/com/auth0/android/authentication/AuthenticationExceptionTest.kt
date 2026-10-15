@@ -534,28 +534,6 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
-    public fun shouldHaveTooManyAttemptsForPlainTextRateLimit() {
-        val ex = AuthenticationException("Too Many Requests", 429)
-        MatcherAssert.assertThat(ex.isTooManyAttempts, CoreMatchers.`is`(true))
-        MatcherAssert.assertThat(ex.getCode(), CoreMatchers.`is`("too_many_attempts"))
-        MatcherAssert.assertThat(ex.getDescription(), CoreMatchers.`is`("Too Many Requests"))
-        MatcherAssert.assertThat(ex.statusCode, CoreMatchers.`is`(429))
-    }
-
-    @Test
-    public fun shouldHaveTooManyAttemptsForEmptyRateLimitBody() {
-        val ex = AuthenticationException(null, 429)
-        MatcherAssert.assertThat(ex.isTooManyAttempts, CoreMatchers.`is`(true))
-    }
-
-    @Test
-    public fun shouldKeepPlainTextCodeForOtherStatuses() {
-        val ex = AuthenticationException("Bad Gateway", 502)
-        MatcherAssert.assertThat(ex.isTooManyAttempts, CoreMatchers.`is`(false))
-        MatcherAssert.assertThat(ex.getCode(), CoreMatchers.`is`(Auth0Exception.NON_JSON_ERROR))
-    }
-
-    @Test
     public fun shouldBeRetryablePasskeyVerificationForInvalidGrantWithSession() {
         values[ERROR_KEY] = "invalid_grant"
         values["auth_session"] = "session"

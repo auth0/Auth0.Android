@@ -576,7 +576,7 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public fun shouldSurface429PlainTextAsTooManyAttemptsOnPasskeyRegister() {
+    public fun shouldSurface429PlainTextRateLimitOnPasskeyRegister() {
         mockAPI.willReturnTooManyRequestsPlainText()
         val client = AuthenticationAPIClient(auth0)
         val exception = assertThrows(AuthenticationException::class.java) {
@@ -585,9 +585,9 @@ public class AuthenticationAPIClientTest {
                 MY_CONNECTION
             ).execute()
         }
-        assertThat(exception.isTooManyAttempts, Matchers.`is`(true))
-        assertThat(exception.getCode(), Matchers.`is`("too_many_attempts"))
         assertThat(exception.statusCode, Matchers.`is`(429))
+        assertThat(exception.getDescription(), Matchers.`is`("Too Many Requests"))
+        assertThat(exception.isTooManyAttempts, Matchers.`is`(false))
     }
 
     @Test

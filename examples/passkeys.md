@@ -123,6 +123,9 @@ attempts remain). The identifiers to re-collect are in `passkeyVerificationRequi
 Optionally pass `deliveryMethod` (`DeliveryMethod.TEXT` or `DeliveryMethod.VOICE`) to
 `signupWithPasskey` to choose the phone OTP channel.
 
+`signupWithPasskey` is rate-limited. When the limit is hit, the request fails with an `AuthenticationException`
+whose `statusCode` is `429`.
+
 ```kotlin
 // Using Coroutines
 try {
