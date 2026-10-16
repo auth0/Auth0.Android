@@ -1,7 +1,7 @@
 package com.auth0.android.embedded.authorize
 
 /** How a phone one-time code is delivered. */
-internal enum class PhoneDeliveryMethod(val value: String) {
+public enum class PhoneDeliveryMethod(public val value: String) {
     /** Deliver the code as an SMS text message. */
     TEXT("text"),
 

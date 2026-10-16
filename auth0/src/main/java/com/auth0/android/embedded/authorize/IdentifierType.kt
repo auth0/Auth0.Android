@@ -6,4 +6,6 @@ import com.auth0.android.embedded.EmbeddedAuthClient
 public enum class IdentifierType {
     /** An email address. */
     EMAIL,
+    /** A phone number. */
+    PHONE,
 }
