@@ -13,6 +13,9 @@ sealed interface AuthorizeUiState {
     /** A call is in flight. */
     data object Loading : AuthorizeUiState
 
+    /** Waiting for the user to approve a push notification; the ViewModel is polling. */
+    data object Polling : AuthorizeUiState
+
     /** The server returned a continuation: these are the steps the user can take next. */
     data class ActionsAvailable(val actions: List<NextAction>) : AuthorizeUiState
 
