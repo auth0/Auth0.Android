@@ -74,6 +74,8 @@ public sealed interface NextAction {
         public val newCode: String,
     ) : NextAction {
         override val capability: EmbeddedCapability = EmbeddedCapability.CONFIRM_RECOVERY_CODE
+
+        override fun toString(): String = "ConfirmRecoveryCode(newCode='xxxxx')"
     }
 
     /** An action the server offered that this version of the SDK does not model. */

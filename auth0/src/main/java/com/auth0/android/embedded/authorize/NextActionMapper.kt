@@ -36,16 +36,10 @@ private fun Map<String, Any>.toNextAction(): NextAction? {
         EmbeddedCapability.CHALLENGE_PHONE -> {
             val index = (this[INDEX_KEY] as? Number)?.toInt() ?: return dropped(raw, INDEX_KEY)
             val identifier = this[IDENTIFIER_KEY] as? String ?: return dropped(raw, IDENTIFIER_KEY)
-            @Suppress("UNCHECKED_CAST")
-            val rawDeliveryMethods = this[DELIVERY_METHODS_KEY] as? List<String>
+            val deliveryMethods = (this[DELIVERY_METHODS_KEY] as? List<*>)
+                ?.filterIsInstance<String>()
+                ?.mapNotNull(PhoneDeliveryMethod::fromValue)
                 ?: return dropped(raw, DELIVERY_METHODS_KEY)
-            val deliveryMethods = rawDeliveryMethods.mapNotNull {
-                when (it) {
-                    PhoneDeliveryMethod.TEXT.value -> PhoneDeliveryMethod.TEXT
-                    PhoneDeliveryMethod.VOICE.value -> PhoneDeliveryMethod.VOICE
-                    else -> null
-                }
-            }
             NextAction.ChallengePhone(index, identifier, deliveryMethods)
         }
         EmbeddedCapability.CHALLENGE_PUSH -> {
@@ -55,7 +49,8 @@ private fun Map<String, Any>.toNextAction(): NextAction? {
         }
         EmbeddedCapability.VERIFY_OOB -> {
             val pollInMs = (this[POLL_IN_MS_KEY] as? Number)?.toInt()
-            if (pollInMs == null) null else NextAction.VerifyOob(pollInMs)
+                ?: return dropped(raw, POLL_IN_MS_KEY)
+            NextAction.VerifyOob(pollInMs)
         }
         EmbeddedCapability.VERIFY_RECOVERY_CODE -> NextAction.VerifyRecoveryCode
         EmbeddedCapability.CONFIRM_RECOVERY_CODE -> {

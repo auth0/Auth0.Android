@@ -16,16 +16,20 @@ try {
     embedded.authorize("Username-Password-Authentication").await()
 } catch (e: EmbeddedAuthException) { /* inspect (e.error as InsufficientAuthorization).nextActions */ }
 
-// 2. Identify by phone. The server continues with a ChallengePhone action.
+// 2. Identify by phone. The server continues with a ChallengePhone action carrying the
+//    authenticator index and the delivery methods it will accept.
 try {
     embedded.identify("+15550123456", IdentifierType.PHONE).await()
-} catch (e: EmbeddedAuthException) { /* continuation → ChallengePhone */ }
+} catch (e: EmbeddedAuthException) {
+    (e.error as? EmbeddedAuthError.InsufficientAuthorization)
+        ?.nextActions?.filterIsInstance<NextAction.ChallengePhone>()?.firstOrNull()
+}
 
-// 3. Send the code by SMS (TEXT) or voice (VOICE). index defaults to the first authenticator (0),
-//    which is correct for phone as a first factor; as an MFA step-up, pass the
-//    NextAction.ChallengePhone.index the server offered. Continues with VerifyOtp(channel = SMS).
+// 3. Send the code using the index and a delivery method the server offered. Pick VOICE for a
+//    voice call; the first offered method is used here. Continues with VerifyOtp.
 try {
-    embedded.challengePhone(deliveryMethod = PhoneDeliveryMethod.TEXT).await()
+    val method = challenge.deliveryMethods.firstOrNull() ?: PhoneDeliveryMethod.TEXT
+    embedded.challengePhone(index = challenge.index , deliveryMethod = method).await()
 } catch (e: EmbeddedAuthException) { /* continuation → VerifyOtp */ }
 
 // 4. Verify the code the user received. Terminal — returns Credentials on success.
@@ -56,7 +60,16 @@ embedded.identify("+15550123456", IdentifierType.PHONE)
     .start(new Callback<Void, EmbeddedAuthException>() {
         @Override public void onSuccess(Void result) { }
         @Override public void onFailure(@NonNull EmbeddedAuthException e) {
-            // continuation → challengePhone(...)
+            // continuation → read NextAction.ChallengePhone for its index and deliveryMethods
+        }
+    });
+
+// Send the code using the index and a delivery method the server offered.
+embedded.challengePhone(0, PhoneDeliveryMethod.TEXT)
+    .start(new Callback<Void, EmbeddedAuthException>() {
+        @Override public void onSuccess(Void result) { }
+        @Override public void onFailure(@NonNull EmbeddedAuthException e) {
+            // continuation → verifyOtp(...)
         }
     });
 

@@ -15,6 +15,11 @@ The pattern is always the same:
    - **fails terminally** (`AuthorizationRejected`, `ChallengeExpired`, `SessionExpired`)
      → stop.
 
+The flow is sequential. To switch to another factor the server offered, or to start a new flow
+with `authorize()`, stop polling first — between polls, while waiting out the interval, not while a
+`verifyOob()` call is in flight. Let an in-flight poll complete first; a poll that completes after
+another step has started can overwrite that step's session.
+
 Both pending states arrive as `EmbeddedAuthError.InsufficientAuthorization` carrying a new
 `VerifyOob` delay, so one helper covers them: it returns the next delay to wait, or `null`
 when the outcome is terminal.
@@ -23,7 +28,6 @@ when the outcome is terminal.
 val embedded = EmbeddedAuthClient(Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN"))
 
 // Next poll delay from a pending-push continuation, or null when the push is terminal.
-// The server always includes poll_in_ms on a pending VerifyOob.
 private fun EmbeddedAuthException.nextPushDelayMs(): Long? =
     (error as? EmbeddedAuthError.InsufficientAuthorization)
         ?.nextActions?.filterIsInstance<NextAction.VerifyOob>()

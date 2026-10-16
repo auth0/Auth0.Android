@@ -29,5 +29,14 @@
     <string name="action_verify_otp">Verify code</string>
     <string name="action_submit">Submit</string>
     <string name="action_verify">Verify</string>
+    <string name="hint_recovery_code">Recovery code</string>
+    <string name="action_challenge_phone">Send me a code</string>
+    <string name="action_challenge_push">Send a push notification</string>
+    <string name="action_check_push">Check approval</string>
+    <string name="action_verify_recovery_code">Use a recovery code</string>
+    <string name="action_confirm_recovery_code">I saved my new code</string>
+    <string name="label_push_sent">Approve the push notification on your device</string>
+    <string name="label_new_recovery_code">Your new recovery code — save it now</string>
+    <string name="status_waiting_for_push">Waiting for you to approve the push notification…</string>
     <string name="label_unsupported_action">Unsupported action: %1$s</string>
 </resources>

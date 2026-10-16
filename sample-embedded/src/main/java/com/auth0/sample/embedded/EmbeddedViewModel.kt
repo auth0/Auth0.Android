@@ -71,12 +71,12 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
 
     /**
      * Polls for push approval. The SDK performs one poll per call, so the app owns the loop: wait the
-     * server-advertised `pollInMs` between polls (the server returns a longer value on `SLOW_DOWN`), and
-     * give up on a terminal error.
+     * server-advertised `pollInMs` between polls, and give up on a terminal error. The flow is sequential, so every other step cancels [pollJob] first.
      */
     fun verifyPush(initialPollInMs: Int) {
         pollJob?.cancel()
-        _authorizeState.value = AuthorizeUiState.Polling
+        val offered = (_authorizeState.value as? AuthorizeUiState.ActionsAvailable)?.actions.orEmpty()
+        _authorizeState.value = AuthorizeUiState.Polling(offered.filterNot { it is NextAction.VerifyOob })
         pollJob = viewModelScope.launch {
             var delayMs = initialPollInMs.toLong()
             while (true) {
@@ -93,10 +93,10 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
                         _authorizeState.value = error.toAuthorizeState()
                         return@launch
                     }
-                    // Honor the server-advertised interval; on SLOW_DOWN the server returns the longer
-                    // delay to wait. Without a refreshed value, keep the current delay.
                     delayMs = pending.nextActions.filterIsInstance<NextAction.VerifyOob>()
                         .firstOrNull()?.pollInMs?.toLong() ?: delayMs
+                    _authorizeState.value =
+                        AuthorizeUiState.Polling(pending.nextActions.filterNot { it is NextAction.VerifyOob })
                 }
             }
         }
@@ -110,6 +110,7 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
     private var pollJob: Job? = null
 
     private fun runTerminalStep(step: suspend () -> Credentials) {
+        pollJob?.cancel()
         _authorizeState.value = AuthorizeUiState.Loading
         viewModelScope.launch {
             _authorizeState.value = try {
@@ -126,6 +127,7 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
      * which the SDK surfaces as an [EmbeddedAuthException]. A plain success here is unexpected.
      */
     private fun runStep(step: suspend () -> Unit) {
+        pollJob?.cancel()
         _authorizeState.value = AuthorizeUiState.Loading
         viewModelScope.launch {
             _authorizeState.value = try {

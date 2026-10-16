@@ -181,7 +181,12 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
      * [EmbeddedAuthError.InsufficientAuthorization.Reason.AUTHORIZATION_PENDING] or
      * [EmbeddedAuthError.InsufficientAuthorization.Reason.SLOW_DOWN], read the updated
      * [NextAction.VerifyOob.pollInMs] from [EmbeddedAuthError.InsufficientAuthorization.nextActions],
-     * wait that interval (back off on SLOW_DOWN), and call this method again.
+     * wait that interval, and call this method again.
+     *
+     * The flow is sequential. Stop polling before calling any other step or starting a new flow
+     * with [authorize], and do so between polls — while waiting out the interval — not while a call
+     * to this method is in flight. Let an in-flight poll complete first; a poll that completes after
+     * another step has started can overwrite that step's session.
      *
      * On approval the server returns an authorization code and this call yields [Credentials].
      * On rejection or expiry the request completes with a terminal [EmbeddedAuthError] such as

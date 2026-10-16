@@ -120,7 +120,13 @@ public fun AuthorizeScreen(
             when (val current = state) {
                 AuthorizeUiState.Idle -> InfoCard(stringResource(R.string.status_idle_authorize))
                 AuthorizeUiState.Loading -> InfoCard(stringResource(R.string.status_authorizing))
-                AuthorizeUiState.Polling -> InfoCard(stringResource(R.string.status_waiting_for_push))
+                is AuthorizeUiState.Polling -> {
+                    InfoCard(stringResource(R.string.status_waiting_for_push))
+                    if (current.otherActions.isNotEmpty()) {
+                        Spacer(Modifier.height(20.dp))
+                        ActionsSection(current.otherActions, viewModel)
+                    }
+                }
                 is AuthorizeUiState.ActionsAvailable -> ActionsSection(current.actions, viewModel)
                 is AuthorizeUiState.Authenticated -> InfoCard(formatCredentials(current.credentials))
                 is AuthorizeUiState.Failed -> InfoCard(formatError(current.error))

@@ -902,14 +902,28 @@ public class EmbeddedAuthClientTest {
         mockAPI.willReturnInsufficientAuthorization()
 
         try {
-            client.challengePhone(index = 0, deliveryMethod = PhoneDeliveryMethod.VOICE).execute()
+            client.challengePhone(index = 2, deliveryMethod = PhoneDeliveryMethod.VOICE).execute()
         } catch (_: EmbeddedAuthException) {
         }
 
         val body = bodyOf(mockAPI.takeRequest())
         assertThat(body.getString("action"), `is`("action:challenge:phone:v1"))
-        assertThat(body.getInt("index"), `is`(0))
+        assertThat(body.getInt("index"), `is`(2))
         assertThat(body.getString("delivery_method"), `is`("voice"))
+    }
+
+    @Test
+    public fun `challengePhone defaults the delivery method to text`() {
+        establishSession()
+        mockAPI.willReturnInsufficientAuthorization()
+
+        try {
+            client.challengePhone(index = 1).execute()
+        } catch (_: EmbeddedAuthException) {
+        }
+
+        val body = bodyOf(mockAPI.takeRequest())
+        assertThat(body.getString("delivery_method"), `is`("text"))
     }
 
     @Test
@@ -993,6 +1007,17 @@ public class EmbeddedAuthClientTest {
 
         assertThat(credentials.idToken, `is`(EmbeddedAuthMockServer.ID_TOKEN))
         assertThat(credentials.accessToken, `is`(EmbeddedAuthMockServer.ACCESS_TOKEN))
+    }
+
+    @Test
+    public fun `the session is cleared after a successful verifyOob exchange`() {
+        establishSession()
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+        client.verifyOob().execute()
+
+        val error = assertEmbeddedError { client.verifyOob().execute() }
+        assertThat(error.code, `is`("no_active_session"))
     }
 
     @Test
@@ -1095,6 +1120,17 @@ public class EmbeddedAuthClientTest {
 
         assertThat(credentials.idToken, `is`(EmbeddedAuthMockServer.ID_TOKEN))
         assertThat(credentials.accessToken, `is`(EmbeddedAuthMockServer.ACCESS_TOKEN))
+    }
+
+    @Test
+    public fun `the session is cleared after a successful confirmRecoveryCode exchange`() {
+        establishSession()
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+        client.confirmRecoveryCode().execute()
+
+        val error = assertEmbeddedError { client.confirmRecoveryCode().execute() }
+        assertThat(error.code, `is`("no_active_session"))
     }
 
     // ── Session preservation on MFA errors ───────────────────────────────────────

@@ -31,7 +31,7 @@ public sealed interface EmbeddedAuthError {
             /** Authorization is pending (e.g., push notification awaiting user approval). Retry after a delay. */
             AUTHORIZATION_PENDING,
 
-            /** The app is polling too fast. Back off and retry with a longer delay. */
+            /** The app polled too fast. Retry after the interval the server returns. */
             SLOW_DOWN
         }
     }
