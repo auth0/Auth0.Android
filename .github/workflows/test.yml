@@ -9,6 +9,8 @@ on:
   push:
     branches:
       - main
+      - release/3.x
+      - 'v3.*'
 
 permissions:
   contents: read
