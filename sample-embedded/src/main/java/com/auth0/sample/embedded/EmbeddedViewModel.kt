@@ -14,11 +14,14 @@ import com.auth0.android.embedded.authorize.PhoneDeliveryMethod
 import com.auth0.android.request.DefaultClient
 import com.auth0.android.result.Credentials
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class EmbeddedViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -71,7 +74,8 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
 
     /**
      * Polls for push approval. The SDK performs one poll per call, so the app owns the loop: wait the
-     * server-advertised `pollInMs` between polls, and give up on a terminal error. The flow is sequential, so every other step cancels [pollJob] first.
+     * server-advertised `pollInMs` between polls, and give up on a terminal error. The flow is
+     * sequential, so every other step stops polling first via [stopPolling].
      */
     fun verifyPush(initialPollInMs: Int) {
         pollJob?.cancel()
@@ -82,7 +86,9 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
             while (true) {
                 delay(delayMs)
                 try {
-                    _authorizeState.value = AuthorizeUiState.Authenticated(client.verifyOob().await())
+                    _authorizeState.value = AuthorizeUiState.Authenticated(
+                        withContext(NonCancellable) { client.verifyOob().await() }
+                    )
                     return@launch
                 } catch (error: EmbeddedAuthException) {
                     val pending = error.error as? EmbeddedAuthError.InsufficientAuthorization
@@ -103,16 +109,28 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun resetAuthorize() {
-        pollJob?.cancel()
-        _authorizeState.value = AuthorizeUiState.Idle
+        viewModelScope.launch {
+            stopPolling()
+            _authorizeState.value = AuthorizeUiState.Idle
+        }
     }
 
     private var pollJob: Job? = null
 
+    /**
+     * Stops the push-polling loop between polls. A cancel during the wait takes effect immediately;
+     * a poll already in flight completes first, so the SDK keeps the session it returned.
+     */
+    private suspend fun stopPolling() {
+        pollJob?.cancelAndJoin()
+        pollJob = null
+    }
+
     private fun runTerminalStep(step: suspend () -> Credentials) {
-        pollJob?.cancel()
-        _authorizeState.value = AuthorizeUiState.Loading
         viewModelScope.launch {
+            stopPolling()
+            if (_authorizeState.value is AuthorizeUiState.Authenticated) return@launch
+            _authorizeState.value = AuthorizeUiState.Loading
             _authorizeState.value = try {
                 AuthorizeUiState.Authenticated(step())
             } catch (error: EmbeddedAuthException) {
@@ -127,9 +145,10 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
      * which the SDK surfaces as an [EmbeddedAuthException]. A plain success here is unexpected.
      */
     private fun runStep(step: suspend () -> Unit) {
-        pollJob?.cancel()
-        _authorizeState.value = AuthorizeUiState.Loading
         viewModelScope.launch {
+            stopPolling()
+            if (_authorizeState.value is AuthorizeUiState.Authenticated) return@launch
+            _authorizeState.value = AuthorizeUiState.Loading
             _authorizeState.value = try {
                 step()
                 AuthorizeUiState.Message("Step completed without a continuation.")

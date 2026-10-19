@@ -18,18 +18,20 @@ try {
 
 // 2. Identify by phone. The server continues with a ChallengePhone action carrying the
 //    authenticator index and the delivery methods it will accept.
-try {
+val challenge = try {
     embedded.identify("+15550123456", IdentifierType.PHONE).await()
+    return
 } catch (e: EmbeddedAuthException) {
     (e.error as? EmbeddedAuthError.InsufficientAuthorization)
         ?.nextActions?.filterIsInstance<NextAction.ChallengePhone>()?.firstOrNull()
+        ?: throw e
 }
 
 // 3. Send the code using the index and a delivery method the server offered. Pick VOICE for a
 //    voice call; the first offered method is used here. Continues with VerifyOtp.
 try {
     val method = challenge.deliveryMethods.firstOrNull() ?: PhoneDeliveryMethod.TEXT
-    embedded.challengePhone(index = challenge.index , deliveryMethod = method).await()
+    embedded.challengePhone(index = challenge.index, deliveryMethod = method).await()
 } catch (e: EmbeddedAuthException) { /* continuation → VerifyOtp */ }
 
 // 4. Verify the code the user received. Terminal — returns Credentials on success.

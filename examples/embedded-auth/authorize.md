@@ -130,6 +130,9 @@ if (error is EmbeddedAuthError.InsufficientAuthorization) {
             "That identifier or code was incorrect. Try again."
         EmbeddedAuthError.InsufficientAuthorization.Reason.NONE ->
             null // plain step-forward — no rejection to report
+        EmbeddedAuthError.InsufficientAuthorization.Reason.AUTHORIZATION_PENDING,
+        EmbeddedAuthError.InsufficientAuthorization.Reason.SLOW_DOWN ->
+            null // push polling only — see push-oob-polling.md
     }
     // Re-prompt using error.nextActions, optionally surfacing `message`.
 }
