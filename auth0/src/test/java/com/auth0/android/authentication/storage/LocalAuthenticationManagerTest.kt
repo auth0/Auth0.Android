@@ -7,7 +7,9 @@ import com.auth0.android.callback.Callback
 import com.nhaarman.mockitokotlin2.KArgumentCaptor
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argumentCaptor
+import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import org.hamcrest.MatcherAssert
 import org.hamcrest.Matchers
 import org.hamcrest.core.Is
@@ -360,7 +362,9 @@ public class LocalAuthenticationManagerTest {
     }
 
     @Test
-    public fun testInvalidAuthenticationScenario() {
+    public fun testUnrecognizedBiometricDoesNotDeliverAResult() {
+        Mockito.`when`(biometricManager.canAuthenticate(any()))
+            .thenReturn(BiometricManager.BIOMETRIC_SUCCESS)
         val localAuthenticationManager = LocalAuthenticationManager(
             fragmentActivity,
             getAuthenticationOptions(),
@@ -369,10 +373,48 @@ public class LocalAuthenticationManagerTest {
         )
 
         localAuthenticationManager.authenticate()
+        localAuthenticationManager.onAuthenticationFailed()
+        verifyNoMoreInteractions(callback)
+    }
+
+    @Test
+    public fun testUnrecognizedBiometricFollowedBySuccessDeliversOnlySuccess() {
         Mockito.`when`(biometricManager.canAuthenticate(any()))
             .thenReturn(BiometricManager.BIOMETRIC_SUCCESS)
+        val localAuthenticationManager = LocalAuthenticationManager(
+            fragmentActivity,
+            getAuthenticationOptions(),
+            biometricManager,
+            callback
+        )
+
+        localAuthenticationManager.authenticate()
         localAuthenticationManager.onAuthenticationFailed()
-        verify(callback).onFailure(CredentialsManagerException.BIOMETRICS_INVALID_USER)
+        localAuthenticationManager.onAuthenticationSucceeded(
+            Mockito.mock(BiometricPrompt.AuthenticationResult::class.java)
+        )
+        verify(callback).onSuccess(true)
+        verify(callback, never()).onFailure(any())
+    }
+
+    @Test
+    public fun testUnrecognizedBiometricFollowedByErrorDeliversOnlyThatError() {
+        Mockito.`when`(biometricManager.canAuthenticate(any()))
+            .thenReturn(BiometricManager.BIOMETRIC_SUCCESS)
+        val localAuthenticationManager = LocalAuthenticationManager(
+            fragmentActivity,
+            getAuthenticationOptions(),
+            biometricManager,
+            callback
+        )
+
+        localAuthenticationManager.authenticate()
+        localAuthenticationManager.onAuthenticationFailed()
+        localAuthenticationManager.onAuthenticationError(
+            BiometricPrompt.ERROR_LOCKOUT, "Too many attempts"
+        )
+        verify(callback).onFailure(CredentialsManagerException.BIOMETRIC_ERROR_LOCKOUT)
+        verifyNoMoreInteractions(callback)
     }
 
     @Test
