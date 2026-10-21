@@ -327,9 +327,9 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * credential from it. The default scope used is 'openid profile email'.
      *
      * When [PasskeyRegistrationChallenge.verificationRequired] lists identifiers, [verification] must contain a
-     * non-blank code for each of them; codes for other identifiers are not sent. Otherwise the request fails before any
-     * network call with an `invalid_request` [AuthenticationException] whose description names the first identifier
-     * without a valid code. When no verification is required, no `verification` object is sent.
+     * non-empty code for each of them. Otherwise the request fails before any network call with an `invalid_request`
+     * [AuthenticationException] whose description names the first identifier without a code. Codes for other
+     * identifiers are sent to the server as given, and are not validated.
      *
      * Requires the client to have the **Passkey** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types)
      * to learn how to enable it.
@@ -363,12 +363,11 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         verification: Map<PasskeyVerificationMethod, String> = emptyMap(),
     ): AuthenticationRequest {
         val required = challenge.verificationRequired.orEmpty()
-        val codes = verification.filterKeys { it in required }
-        val request = signinWithPasskey(challenge.authSession, authResponse, realm, organization, codes)
+        val request = signinWithPasskey(challenge.authSession, authResponse, realm, organization, verification)
         if (required.isNotEmpty()) {
             request.addValidator(object : RequestValidator {
                 override fun validate(options: RequestOptions) {
-                    passkeyVerificationError(challenge.authSession, required, codes)?.let { throw it }
+                    passkeyVerificationError(required, verification)?.let { throw it }
                 }
             })
         }
@@ -376,37 +375,25 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     }
 
     /**
-     * Returns the error the server would report when [codes] don't cover the [required] identifiers, or `null` when
-     * they do. The error carries the [authSession] and the identifiers to collect codes for, in the same shape as the
-     * server's error.
+     * Returns the error the server would report for the first identifier in [required] that has no code, or an empty
+     * code, in [verification]; `null` when all of them have a code.
      */
     private fun passkeyVerificationError(
-        authSession: String,
         required: List<PasskeyVerificationMethod>,
-        codes: Map<PasskeyVerificationMethod, String>
+        verification: Map<PasskeyVerificationMethod, String>
     ): AuthenticationException? {
-        val failed: List<PasskeyVerificationMethod>
-        val description: String
-        if (codes.isEmpty()) {
-            failed = required
-            description = MISSING_VERIFICATION_DESCRIPTION
-        } else {
-            failed = required.filter { codes[it].isNullOrBlank() }
-            val first = failed.firstOrNull() ?: return null
-            description = if (codes[first] == null) {
-                "Missing required parameter: verification.${first.value}"
-            } else {
-                "\"verification.${first.value}\" is not allowed to be empty"
+        for (identifier in required) {
+            val code = verification[identifier]
+            val description = when {
+                code == null -> "Missing required parameter: verification.${identifier.value}"
+                code.isEmpty() -> "\"verification.${identifier.value}\" is not allowed to be empty"
+                else -> continue
             }
-        }
-        return AuthenticationException(
-            mapOf(
-                ERROR_KEY to INVALID_REQUEST,
-                ERROR_DESCRIPTION_KEY to description,
-                AUTH_SESSION_KEY to authSession,
-                VERIFICATION_REQUIRED_KEY to failed.map { it.value }
+            return AuthenticationException(
+                mapOf(ERROR_KEY to INVALID_REQUEST, ERROR_DESCRIPTION_KEY to description)
             )
-        )
+        }
+        return null
     }
 
 
@@ -1162,12 +1149,9 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val AUTH_SESSION_KEY = "auth_session"
         private const val AUTH_RESPONSE_KEY = "authn_response"
         private const val VERIFICATION_KEY = "verification"
-        private const val VERIFICATION_REQUIRED_KEY = "verification_required"
         private const val ERROR_KEY = "error"
         private const val ERROR_DESCRIPTION_KEY = "error_description"
         private const val INVALID_REQUEST = "invalid_request"
-        private const val MISSING_VERIFICATION_DESCRIPTION =
-            "Missing required parameter: verification must have atleast one identifier otp code"
         private const val DELIVERY_METHOD_KEY = "delivery_method"
         private const val USER_PROFILE_KEY = "user_profile"
         private const val SIGN_UP_PATH = "signup"
