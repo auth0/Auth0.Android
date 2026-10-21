@@ -38,6 +38,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -169,6 +170,18 @@ private fun ActionsSection(actions: List<NextAction>, viewModel: EmbeddedViewMod
                 keyboardType = KeyboardType.Phone,
                 submitRes = R.string.action_submit,
                 onSubmit = { viewModel.identifyPhone(it) },
+            )
+
+            NextAction.IdentifyUsername -> IdentifyCard(
+                labelRes = R.string.action_identify_username,
+                hintRes = R.string.hint_username,
+                keyboardType = KeyboardType.Text,
+                submitRes = R.string.action_submit,
+                onSubmit = { viewModel.identifyUsername(it) },
+            )
+
+            NextAction.VerifyPassword -> VerifyPasswordCard(
+                onVerify = { viewModel.verifyPassword(it) },
             )
 
             is NextAction.ChallengeEmail -> ChallengeEmailCard(
@@ -324,6 +337,44 @@ private fun ActionCard(titleRes: Int, detail: String?, buttonRes: Int, onClick: 
             Spacer(Modifier.height(12.dp))
             Button(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(buttonRes))
+            }
+        }
+    }
+}
+
+/** The password is submitted as typed — never trimmed — and masked on screen. */
+@Composable
+private fun VerifyPasswordCard(onVerify: (String) -> Unit) {
+    var password by rememberSaveable { mutableStateOf("") }
+    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                stringResource(R.string.action_verify_password),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text(stringResource(R.string.hint_password)) },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done,
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = { if (password.isNotEmpty()) onVerify(password) },
+                ),
+            )
+            Spacer(Modifier.height(12.dp))
+            Button(
+                onClick = { onVerify(password) },
+                enabled = password.isNotEmpty(),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.action_verify))
             }
         }
     }
