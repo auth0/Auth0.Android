@@ -1,5 +1,11 @@
 # Change Log
 
+## [3.21.2](https://github.com/auth0/Auth0.Android/tree/3.21.2) (2026-10-21)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.21.1...3.21.2)
+
+**Fixed**
+- fix: stop reporting an unrecognized biometric as a final failure [\#1098](https://github.com/auth0/Auth0.Android/pull/1098) ([pmathew92](https://github.com/pmathew92))
+
 ## [3.21.1](https://github.com/auth0/Auth0.Android/tree/3.21.1) (2026-10-13)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.21.0...3.21.1)
 
