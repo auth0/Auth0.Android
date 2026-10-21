@@ -18,6 +18,8 @@ import com.auth0.android.request.JsonAdapter
 import com.auth0.android.request.ProfileRequest
 import com.auth0.android.request.PublicKeyCredentials
 import com.auth0.android.request.Request
+import com.auth0.android.request.RequestOptions
+import com.auth0.android.request.RequestValidator
 import com.auth0.android.request.SignUpRequest
 import com.auth0.android.request.UserData
 import com.auth0.android.request.internal.BaseAuthenticationRequest
@@ -315,6 +317,96 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             PublicKeyCredentials::class.java
         )
         return signinWithPasskey(authSession, publicKeyCredentials, realm, organization, verification)
+    }
+
+
+    /**
+     * Sign-in a new user after a passkey signup, completing identifier verification when the
+     * signup challenge requires it.
+     * This should be called after [signupWithPasskey] returned the [challenge] and the client generated the public key
+     * credential from it. The default scope used is 'openid profile email'.
+     *
+     * When [PasskeyRegistrationChallenge.verificationRequired] lists identifiers, [verification] must contain a
+     * non-blank code for each of them; codes for other identifiers are not sent. Otherwise the request fails before any
+     * network call with an `invalid_request` [AuthenticationException] whose description names the first identifier
+     * without a valid code. When no verification is required, no `verification` object is sent.
+     *
+     * Requires the client to have the **Passkey** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types)
+     * to learn how to enable it.
+     *
+     * Example usage:
+     *
+     * ```
+     * client.signinWithPasskey(challenge, authResponse, "{realm}", "{organization}",
+     *       mapOf(PasskeyVerificationMethod.EMAIL to "{code}"))
+     *       .validateClaims() //mandatory
+     *       .start(object: Callback<Credentials, AuthenticationException> {
+     *           override fun onFailure(error: AuthenticationException) { }
+     *           override fun onSuccess(result: Credentials) { }
+     * })
+     * ```
+     *
+     * @param challenge the [PasskeyRegistrationChallenge] returned by [signupWithPasskey].
+     * @param authResponse the [PublicKeyCredentials] created from the challenge
+     * @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
+     * @param organization id of the organization to be associated with the user while signing in
+     * @param verification a map of identifier to the OTP code collected from the user, e.g.
+     * `mapOf(PasskeyVerificationMethod.EMAIL to "123456")`.
+     * @return a request to configure and start that will yield [Credentials]
+     */
+    @JvmOverloads
+    public fun signinWithPasskey(
+        challenge: PasskeyRegistrationChallenge,
+        authResponse: PublicKeyCredentials,
+        realm: String? = null,
+        organization: String? = null,
+        verification: Map<PasskeyVerificationMethod, String> = emptyMap(),
+    ): AuthenticationRequest {
+        val required = challenge.verificationRequired.orEmpty()
+        val codes = verification.filterKeys { it in required }
+        val request = signinWithPasskey(challenge.authSession, authResponse, realm, organization, codes)
+        if (required.isNotEmpty()) {
+            request.addValidator(object : RequestValidator {
+                override fun validate(options: RequestOptions) {
+                    passkeyVerificationError(challenge.authSession, required, codes)?.let { throw it }
+                }
+            })
+        }
+        return request
+    }
+
+    /**
+     * Returns the error the server would report when [codes] don't cover the [required] identifiers, or `null` when
+     * they do. The error carries the [authSession] and the identifiers to collect codes for, in the same shape as the
+     * server's error.
+     */
+    private fun passkeyVerificationError(
+        authSession: String,
+        required: List<PasskeyVerificationMethod>,
+        codes: Map<PasskeyVerificationMethod, String>
+    ): AuthenticationException? {
+        val failed: List<PasskeyVerificationMethod>
+        val description: String
+        if (codes.isEmpty()) {
+            failed = required
+            description = MISSING_VERIFICATION_DESCRIPTION
+        } else {
+            failed = required.filter { codes[it].isNullOrBlank() }
+            val first = failed.firstOrNull() ?: return null
+            description = if (codes[first] == null) {
+                "Missing required parameter: verification.${first.value}"
+            } else {
+                "\"verification.${first.value}\" is not allowed to be empty"
+            }
+        }
+        return AuthenticationException(
+            mapOf(
+                ERROR_KEY to INVALID_REQUEST,
+                ERROR_DESCRIPTION_KEY to description,
+                AUTH_SESSION_KEY to authSession,
+                VERIFICATION_REQUIRED_KEY to failed.map { it.value }
+            )
+        )
     }
 
 
@@ -1070,6 +1162,12 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val AUTH_SESSION_KEY = "auth_session"
         private const val AUTH_RESPONSE_KEY = "authn_response"
         private const val VERIFICATION_KEY = "verification"
+        private const val VERIFICATION_REQUIRED_KEY = "verification_required"
+        private const val ERROR_KEY = "error"
+        private const val ERROR_DESCRIPTION_KEY = "error_description"
+        private const val INVALID_REQUEST = "invalid_request"
+        private const val MISSING_VERIFICATION_DESCRIPTION =
+            "Missing required parameter: verification must have atleast one identifier otp code"
         private const val DELIVERY_METHOD_KEY = "delivery_method"
         private const val USER_PROFILE_KEY = "user_profile"
         private const val SIGN_UP_PATH = "signup"

@@ -23,7 +23,13 @@ import com.auth0.android.request.internal.ThreadSwitcherShadow
 import com.auth0.android.result.Authentication
 import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
+import com.auth0.android.result.AuthenticatorSelection
+import com.auth0.android.result.AuthnParamsPublicKey
+import com.auth0.android.result.PasskeyRegistrationChallenge
+import com.auth0.android.result.PasskeyUser
 import com.auth0.android.result.PasskeyVerificationMethod
+import com.auth0.android.result.PubKeyCredParam
+import com.auth0.android.result.RelyingParty
 import com.auth0.android.result.SSOCredentials
 import com.auth0.android.result.UserProfile
 import com.auth0.android.util.Auth0UserAgent
@@ -491,7 +497,7 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public fun shouldClassifyInvalidRequestWithSessionAsRetryable() {
+    public fun shouldNotClassifyInvalidRequestWithSessionAsRetryable() {
         mockAPI.willReturnPasskeyVerificationInvalidRequestError()
         val client = AuthenticationAPIClient(auth0)
         val exception = assertThrows(AuthenticationException::class.java) {
@@ -502,7 +508,7 @@ public class AuthenticationAPIClientTest {
             ).execute()
         }
         assertThat(exception.getCode(), Matchers.`is`("invalid_request"))
-        assertThat(exception.isPasskeyVerificationRetryable, Matchers.`is`(true))
+        assertThat(exception.isPasskeyVerificationRetryable, Matchers.`is`(false))
         assertThat(exception.passkeyAuthSession, Matchers.`is`(SESSION_ID))
         assertThat(exception.passkeyVerificationRequired, Matchers.nullValue())
     }
@@ -573,6 +579,174 @@ public class AuthenticationAPIClientTest {
         assertThat(exception.isMultifactorRequired, Matchers.`is`(true))
         assertThat(exception.isPasskeyVerificationRetryable, Matchers.`is`(false))
         assertThat(exception.mfaRequiredErrorPayload?.mfaToken, Matchers.`is`("MFA_TOKEN"))
+    }
+
+    private fun signupChallenge(
+        vararg required: PasskeyVerificationMethod
+    ): PasskeyRegistrationChallenge = PasskeyRegistrationChallenge(
+        "challenge-session",
+        AuthnParamsPublicKey(
+            AuthenticatorSelection("required", "preferred"),
+            "challenge",
+            listOf(PubKeyCredParam(-7, "public-key")),
+            RelyingParty("example.com", "example.com"),
+            60000,
+            PasskeyUser("name", "id", "name")
+        ),
+        if (required.isEmpty()) null else required.toList()
+    )
+
+    private fun assertClientVerificationError(
+        exception: AuthenticationException,
+        description: String,
+        vararg failed: PasskeyVerificationMethod
+    ) {
+        assertThat(exception.getCode(), Matchers.`is`("invalid_request"))
+        assertThat(exception.getDescription(), Matchers.`is`(description))
+        assertThat(exception.statusCode, Matchers.`is`(0))
+        assertThat(exception.isPasskeyVerificationRetryable, Matchers.`is`(false))
+        assertThat(exception.passkeyAuthSession, Matchers.`is`("challenge-session"))
+        assertThat(
+            exception.getValue("verification_required"),
+            Matchers.`is`<Any>(failed.map { it.value })
+        )
+        assertThat(mockAPI.server.requestCount, Matchers.`is`(0))
+    }
+
+    @Test
+    public fun shouldSigninWithPasskeyChallengeSendingRequiredCodes() {
+        mockAPI.willReturnSuccessfulLogin()
+        val callback = MockAuthenticationCallback<Credentials>()
+        val client = AuthenticationAPIClient(auth0)
+        client.signinWithPasskey(
+            signupChallenge(PasskeyVerificationMethod.EMAIL, PasskeyVerificationMethod.PHONE),
+            mock<PublicKeyCredentials>(),
+            MY_CONNECTION,
+            verification = mapOf(
+                PasskeyVerificationMethod.EMAIL to "123456",
+                PasskeyVerificationMethod.PHONE to "654321"
+            )
+        ).start(callback)
+        ShadowLooper.idleMainLooper()
+        val body = bodyFromRequest<Any>(mockAPI.takeRequest())
+        assertThat(body, Matchers.hasEntry("auth_session", "challenge-session"))
+        @Suppress("UNCHECKED_CAST")
+        val verification = body["verification"] as Map<String, Any>
+        assertThat(verification, Matchers.hasEntry("email", "123456"))
+        assertThat(verification, Matchers.hasEntry("phone", "654321"))
+    }
+
+    @Test
+    public fun shouldSigninWithPasskeyChallengeDroppingCodesThatAreNotRequired() {
+        mockAPI.willReturnSuccessfulLogin()
+        val callback = MockAuthenticationCallback<Credentials>()
+        val client = AuthenticationAPIClient(auth0)
+        client.signinWithPasskey(
+            signupChallenge(PasskeyVerificationMethod.EMAIL),
+            mock<PublicKeyCredentials>(),
+            MY_CONNECTION,
+            verification = mapOf(
+                PasskeyVerificationMethod.EMAIL to "123456",
+                PasskeyVerificationMethod.PHONE to "654321"
+            )
+        ).start(callback)
+        ShadowLooper.idleMainLooper()
+        val body = bodyFromRequest<Any>(mockAPI.takeRequest())
+        @Suppress("UNCHECKED_CAST")
+        val verification = body["verification"] as Map<String, Any>
+        assertThat(verification, Matchers.hasEntry("email", "123456"))
+        assertThat(verification, Matchers.not(Matchers.hasKey("phone")))
+    }
+
+    @Test
+    public fun shouldSigninWithPasskeyChallengeWithoutVerificationWhenNoneIsRequired() {
+        mockAPI.willReturnSuccessfulLogin()
+        val callback = MockAuthenticationCallback<Credentials>()
+        val client = AuthenticationAPIClient(auth0)
+        client.signinWithPasskey(
+            signupChallenge(),
+            mock<PublicKeyCredentials>(),
+            MY_CONNECTION,
+            verification = mapOf(PasskeyVerificationMethod.EMAIL to "123456")
+        ).start(callback)
+        ShadowLooper.idleMainLooper()
+        val body = bodyFromRequest<Any>(mockAPI.takeRequest())
+        assertThat(body, Matchers.hasEntry("auth_session", "challenge-session"))
+        assertThat(body, Matchers.not(Matchers.hasKey("verification")))
+    }
+
+    @Test
+    public fun shouldFailSigninWithPasskeyChallengeWhenNoCodesAreGiven() {
+        val client = AuthenticationAPIClient(auth0)
+        val exception = assertThrows(AuthenticationException::class.java) {
+            client.signinWithPasskey(
+                signupChallenge(PasskeyVerificationMethod.EMAIL, PasskeyVerificationMethod.PHONE),
+                mock<PublicKeyCredentials>(),
+                MY_CONNECTION
+            ).execute()
+        }
+        assertClientVerificationError(
+            exception,
+            "Missing required parameter: verification must have atleast one identifier otp code",
+            PasskeyVerificationMethod.EMAIL, PasskeyVerificationMethod.PHONE
+        )
+    }
+
+    @Test
+    public fun shouldFailSigninWithPasskeyChallengeWhenARequiredCodeIsMissing() {
+        val client = AuthenticationAPIClient(auth0)
+        val exception = assertThrows(AuthenticationException::class.java) {
+            client.signinWithPasskey(
+                signupChallenge(PasskeyVerificationMethod.EMAIL, PasskeyVerificationMethod.PHONE),
+                mock<PublicKeyCredentials>(),
+                MY_CONNECTION,
+                verification = mapOf(PasskeyVerificationMethod.EMAIL to "3545")
+            ).execute()
+        }
+        assertClientVerificationError(
+            exception,
+            "Missing required parameter: verification.phone",
+            PasskeyVerificationMethod.PHONE
+        )
+    }
+
+    @Test
+    public fun shouldFailSigninWithPasskeyChallengeWhenACodeIsWhitespace() {
+        val client = AuthenticationAPIClient(auth0)
+        val exception = assertThrows(AuthenticationException::class.java) {
+            client.signinWithPasskey(
+                signupChallenge(PasskeyVerificationMethod.EMAIL),
+                mock<PublicKeyCredentials>(),
+                MY_CONNECTION,
+                verification = mapOf(PasskeyVerificationMethod.EMAIL to "   ")
+            ).execute()
+        }
+        assertClientVerificationError(
+            exception,
+            "\"verification.email\" is not allowed to be empty",
+            PasskeyVerificationMethod.EMAIL
+        )
+    }
+
+    @Test
+    public fun shouldFailSigninWithPasskeyChallengeReportingTheFirstFailedIdentifier() {
+        val client = AuthenticationAPIClient(auth0)
+        val exception = assertThrows(AuthenticationException::class.java) {
+            client.signinWithPasskey(
+                signupChallenge(PasskeyVerificationMethod.EMAIL, PasskeyVerificationMethod.PHONE),
+                mock<PublicKeyCredentials>(),
+                MY_CONNECTION,
+                verification = mapOf(
+                    PasskeyVerificationMethod.EMAIL to "",
+                    PasskeyVerificationMethod.PHONE to ""
+                )
+            ).execute()
+        }
+        assertClientVerificationError(
+            exception,
+            "\"verification.email\" is not allowed to be empty",
+            PasskeyVerificationMethod.EMAIL, PasskeyVerificationMethod.PHONE
+        )
     }
 
     @Test

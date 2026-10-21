@@ -203,20 +203,18 @@ public class AuthenticationException : Auth0Exception {
 
     /**
      * Whether a failed passkey signup identifier verification can be retried without restarting
-     * the registration. `true` when the error contains an `auth_session` and is either:
-     * - an `invalid_request`, because the `verification` codes were missing or empty. Re-collect
-     * the codes for the challenge's `verificationRequired`; or
-     * - an `invalid_grant`, because a code was wrong. Re-collect the codes for
-     * [passkeyVerificationRequired].
+     * the registration. `true` when the error is an `invalid_grant` that contains an
+     * `auth_session`, meaning a code was wrong and the session still has attempts left.
      *
-     * Then call [com.auth0.android.authentication.AuthenticationAPIClient.signinWithPasskey] again
-     * with the same credential and [passkeyAuthSession]. When `false`, restart the registration.
+     * When retryable, re-collect the codes for [passkeyVerificationRequired] and call
+     * [com.auth0.android.authentication.AuthenticationAPIClient.signinWithPasskey] again with the
+     * same credential and challenge. When `false`, restart the registration.
      *
      * @see passkeyAuthSession
      * @see passkeyVerificationRequired
      */
     public val isPasskeyVerificationRetryable: Boolean
-        get() = ("invalid_grant" == code || "invalid_request" == code) && passkeyAuthSession != null
+        get() = "invalid_grant" == code && passkeyAuthSession != null
 
     /**
      * The auth session returned with a failed passkey verification, to be reused on the retry so
@@ -228,16 +226,15 @@ public class AuthenticationException : Auth0Exception {
         get() = getValue(AUTH_SESSION_KEY) as? String
 
     /**
-     * The identifiers whose OTP code was wrong and must be re-collected before retrying. Only set
-     * for a retryable `invalid_grant`; `null` otherwise, including for a retryable
-     * `invalid_request`, where the challenge's `verificationRequired` applies. Identifiers this
-     * version of the SDK does not know are skipped.
+     * The identifiers whose OTP code was wrong and must be re-collected before retrying. `null`
+     * unless [isPasskeyVerificationRetryable] is `true`. Identifiers this version of the SDK does
+     * not know are skipped.
      *
      * @see isPasskeyVerificationRetryable
      */
     public val passkeyVerificationRequired: List<PasskeyVerificationMethod>?
         get() {
-            if (!isPasskeyVerificationRetryable || "invalid_grant" != code) return null
+            if (!isPasskeyVerificationRetryable) return null
             return (getValue(VERIFICATION_REQUIRED_KEY) as? List<*>)
                 ?.filterIsInstance<String>()
                 ?.mapNotNull { value -> PasskeyVerificationMethod.values().firstOrNull { it.value == value } }

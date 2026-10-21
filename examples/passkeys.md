@@ -109,18 +109,21 @@ can be issued. It is `null` when no verification is required. You must:
    platform credential with `CredentialManager.createCredential(...)`. Creating the credential first
    and then failing verification leaves an orphaned local passkey and shows a second biometric prompt
    on retry.
-2. Pass the collected codes to `signinWithPasskey` via the `verification` map (identifier -> code).
+2. Pass the signup challenge and the collected codes to `signinWithPasskey(challenge, ...)` via the
+   `verification` map (identifier -> code). The SDK checks that every identifier in `verificationRequired`
+   has a non-blank code before sending the request, and only sends the codes for those identifiers.
 3. On a retryable error (`AuthenticationException.isPasskeyVerificationRetryable == true`), re-collect
-   the codes and call `signinWithPasskey` again **reusing the same `PublicKeyCredentials`** — the
-   biometric prompt will not reappear.
+   the codes and call `signinWithPasskey` again **reusing the same challenge and `PublicKeyCredentials`** —
+   the biometric prompt will not reappear.
 
 A failed `signinWithPasskey` can be retried with the same credential when `isPasskeyVerificationRetryable` is
-`true`. There are two cases:
+`true`. This is the case when a code is wrong: the error is `invalid_grant` with an `auth_session`, and
+`passkeyVerificationRequired` lists the identifiers whose code was wrong. Collect new codes for those identifiers
+and retry.
 
-- **A code is missing or empty** (the `verification` map is empty, or the email or phone code is blank). The error is
-  `invalid_request` with an `auth_session`. Collect the codes for `challenge.verificationRequired` and retry.
-- **A code is wrong.** The error is `invalid_grant` with an `auth_session`, and `passkeyVerificationRequired` lists
-  the identifiers whose code was wrong. Collect new codes for those identifiers and retry.
+If a code is missing or empty (the `verification` map is empty, or the email or phone code is blank), the SDK fails
+the request before sending it, with an `invalid_request` error and a `statusCode` of `0`. This error is not
+retryable.
 
 Any other error is terminal, so restart the registration from `signupWithPasskey`.
 
@@ -153,13 +156,12 @@ try {
         PublicKeyCredentials::class.java
     )
 
-    var authSession = challenge.authSession
     val maxAttempts = 3 // retry limit; adjust it to suit your app
     var attempts = 0
     while (true) {
         try {
             val userCredential = authenticationApiClient.signinWithPasskey(
-                authSession,
+                challenge,
                 authRequest,
                 "{realm}",
                 "{organization-id}",
@@ -170,9 +172,7 @@ try {
             if (!exception.isPasskeyVerificationRetryable || ++attempts >= maxAttempts) {
                 throw exception // terminal (or too many attempts) - restart registration
             }
-            // Re-collect the failed identifiers and retry with the SAME credential. If the error does not
-            // list them, fall back to the identifiers of the original challenge.
-            authSession = exception.passkeyAuthSession ?: authSession
+            // Re-collect the failed identifiers and retry with the SAME challenge and credential.
             val failed = exception.passkeyVerificationRequired ?: challenge.verificationRequired.orEmpty()
             codes = codes + failed.associateWith { identifier -> promptUserForOtp(identifier) }
         }
@@ -206,7 +206,7 @@ authenticationAPIClient.signupWithPasskey(userData, "{realm}", "{organization-id
                                 ((CreatePublicKeyCredentialResponse) createCredentialResponse).getRegistrationResponseJson(),
                                 PublicKeyCredentials.class);
 
-                        authenticationAPIClient.signinWithPasskey(result.getAuthSession(),
+                        authenticationAPIClient.signinWithPasskey(result,
                                         credentials, "{realm}", "{organization-id}", verification)
                                 .start(new Callback<Credentials, AuthenticationException>() {
                                     @Override
@@ -215,10 +215,8 @@ authenticationAPIClient.signupWithPasskey(userData, "{realm}", "{organization-id
                                     @Override
                                     public void onFailure(@NonNull AuthenticationException error) {
                                         if (error.isPasskeyVerificationRetryable()) {
-                                            // Re-collect the codes for error.getPasskeyVerificationRequired(), or for
-                                            // result.getVerificationRequired() when it is null, and retry
-                                            // signinWithPasskey with the SAME credentials. Use
-                                            // error.getPasskeyAuthSession() when present, else result.getAuthSession().
+                                            // Re-collect the codes for error.getPasskeyVerificationRequired() and retry
+                                            // signinWithPasskey with the SAME challenge (result) and credentials.
                                         } else {
                                             // Terminal — restart registration.
                                         }

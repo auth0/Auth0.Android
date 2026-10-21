@@ -263,7 +263,8 @@ internal class AuthenticationAPIMockServer : APIMockServer() {
         val json = """{
           "error": "invalid_request",
           "error_description": "Missing required parameter: verification.email",
-          "auth_session": "$SESSION_ID"
+          "auth_session": "$SESSION_ID",
+          "verification_required": ["email"]
         }"""
         server.enqueue(responseWithJSON(json, 400))
         return this

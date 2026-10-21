@@ -548,11 +548,11 @@ public class AuthenticationExceptionTest {
     }
 
     @Test
-    public fun shouldBeRetryablePasskeyVerificationForInvalidRequestWithSession() {
+    public fun shouldNotBeRetryablePasskeyVerificationForInvalidRequestWithSession() {
         values[ERROR_KEY] = "invalid_request"
         values["auth_session"] = "session"
         val ex = AuthenticationException(values, 400)
-        MatcherAssert.assertThat(ex.isPasskeyVerificationRetryable, CoreMatchers.`is`(true))
+        MatcherAssert.assertThat(ex.isPasskeyVerificationRetryable, CoreMatchers.`is`(false))
         MatcherAssert.assertThat(ex.passkeyVerificationRequired, CoreMatchers.nullValue())
     }
 
@@ -562,7 +562,7 @@ public class AuthenticationExceptionTest {
         values["auth_session"] = "session"
         values["verification_required"] = listOf("email")
         val ex = AuthenticationException(values, 400)
-        MatcherAssert.assertThat(ex.isPasskeyVerificationRetryable, CoreMatchers.`is`(true))
+        MatcherAssert.assertThat(ex.isPasskeyVerificationRetryable, CoreMatchers.`is`(false))
         MatcherAssert.assertThat(ex.passkeyVerificationRequired, CoreMatchers.nullValue())
     }
 
