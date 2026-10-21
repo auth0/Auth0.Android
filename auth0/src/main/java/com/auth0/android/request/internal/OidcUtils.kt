@@ -19,8 +19,7 @@ internal object OidcUtils {
      */
     fun includeRequiredScope(scope: String): String {
         val existingScopes = scope.split(" ")
-            .map { it.toLowerCase(Locale.ROOT) }
-        return if (!existingScopes.contains(REQUIRED_SCOPE)) {
+        return if (existingScopes.none { it.toLowerCase(Locale.ROOT) == REQUIRED_SCOPE }) {
             (existingScopes + REQUIRED_SCOPE).joinToString(separator = " ").trim()
         } else {
             scope
