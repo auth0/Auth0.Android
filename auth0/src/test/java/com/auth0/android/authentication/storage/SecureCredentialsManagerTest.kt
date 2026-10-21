@@ -1247,6 +1247,42 @@ public class SecureCredentialsManagerTest {
         }
 
     @Test
+    public fun shouldDeliverOnlySuccessAndStartBiometricSessionWhenUnrecognizedBiometricIsFollowedBySuccess() {
+        simulatePromptWithUnrecognizedBiometric { prompt ->
+            prompt.onAuthenticationSucceeded(mock())
+        }
+        val sessionOptions = LocalAuthenticationOptions.Builder()
+            .setTitle("title")
+            .setAuthenticationLevel(AuthenticationLevel.STRONG)
+            .setNegativeButtonText("negativeButtonText")
+            .setPolicy(BiometricPolicy.Session(300))
+            .build()
+        val sessionManager = Mockito.spy(
+            SecureCredentialsManager(
+                client,
+                storage,
+                crypto,
+                jwtDecoder,
+                serialExecutor,
+                weakFragmentActivity,
+                sessionOptions,
+                factory
+            )
+        )
+        Mockito.doReturn(CredentialsMock.CURRENT_TIME_MS).`when`(sessionManager).currentTimeInMillis
+        verifyNoMoreInteractions(client)
+        val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + ONE_HOUR_SECONDS * 1000)
+        insertTestCredentials(true, true, true, expiresAt, "scope")
+
+        sessionManager.getCredentials(callback)
+
+        verify(callback, times(1)).onSuccess(credentialsCaptor.capture())
+        verify(callback, never()).onFailure(any())
+        MatcherAssert.assertThat(credentialsCaptor.firstValue.accessToken, Is.`is`("accessToken"))
+        MatcherAssert.assertThat(sessionManager.isBiometricSessionValid(), Is.`is`(true))
+    }
+
+    @Test
     public fun shouldGetNonExpiredCredentialsFromStorageWhenOnlyIdTokenIsAvailable() {
         Mockito.`when`(localAuthenticationManager.authenticate()).then {
             localAuthenticationManager.resultCallback.onSuccess(true)
