@@ -7,10 +7,12 @@ on:
     branches:
       - main
       - release/3.x
+      - v3.21.2
   push:
     branches:
       - main
       - release/3.x
+      - v3.21.2
 
 permissions:
   contents: read

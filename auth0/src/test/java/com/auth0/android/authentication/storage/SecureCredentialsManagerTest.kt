@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.KeyguardManager
 import android.content.Context
 import android.util.Base64
+import androidx.biometric.BiometricPrompt
 import androidx.fragment.app.FragmentActivity
 import com.auth0.android.Auth0
 import com.auth0.android.NetworkErrorException
@@ -1179,6 +1180,91 @@ public class SecureCredentialsManagerTest {
             exception.message,
             Is.`is`("Credentials need to be renewed but no Refresh Token is available to renew them.")
         )
+    }
+
+    @Test
+    @ExperimentalCoroutinesApi
+    public fun shouldAwaitCredentialsOnceWhenUnrecognizedBiometricIsFollowedBySuccess(): Unit =
+        runTest {
+            simulatePromptWithUnrecognizedBiometric { prompt ->
+                prompt.onAuthenticationSucceeded(mock())
+            }
+            verifyNoMoreInteractions(client)
+            val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + ONE_HOUR_SECONDS * 1000)
+            insertTestCredentials(true, true, true, expiresAt, "scope")
+            val retrievedCredentials = manager.awaitCredentials()
+            MatcherAssert.assertThat(retrievedCredentials.accessToken, Is.`is`("accessToken"))
+            MatcherAssert.assertThat(retrievedCredentials.idToken, Is.`is`("idToken"))
+        }
+
+    @Test
+    @ExperimentalCoroutinesApi
+    public fun shouldThrowOnlyTheFinalErrorOnAwaitCredentialsWhenUnrecognizedBiometricIsFollowedByError(): Unit =
+        runTest {
+            simulatePromptWithUnrecognizedBiometric { prompt ->
+                prompt.onAuthenticationError(BiometricPrompt.ERROR_LOCKOUT, "Too many attempts")
+            }
+            verifyNoMoreInteractions(client)
+            val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + ONE_HOUR_SECONDS * 1000)
+            insertTestCredentials(true, true, true, expiresAt, "scope")
+            val exception = assertThrows(CredentialsManagerException::class.java) {
+                runBlocking { manager.awaitCredentials() }
+            }
+            MatcherAssert.assertThat(
+                exception,
+                Is.`is`(CredentialsManagerException.BIOMETRIC_ERROR_LOCKOUT)
+            )
+        }
+
+    @Test
+    @ExperimentalCoroutinesApi
+    public fun shouldAwaitApiCredentialsOnceWhenUnrecognizedBiometricIsFollowedBySuccess(): Unit =
+        runTest {
+            simulatePromptWithUnrecognizedBiometric { prompt ->
+                prompt.onAuthenticationSucceeded(mock())
+            }
+            verifyNoMoreInteractions(client)
+            insertTestApiCredentials(
+                "audience1", true, Date(CredentialsMock.ONE_HOUR_AHEAD_MS), "scope"
+            )
+            val retrievedCredentials = manager.awaitApiCredentials("audience1")
+            Assert.assertEquals("accessToken", retrievedCredentials.accessToken)
+        }
+
+    @Test
+    public fun shouldDeliverOnlySuccessAndStartBiometricSessionWhenUnrecognizedBiometricIsFollowedBySuccess() {
+        simulatePromptWithUnrecognizedBiometric { prompt ->
+            prompt.onAuthenticationSucceeded(mock())
+        }
+        val sessionOptions = LocalAuthenticationOptions.Builder()
+            .setTitle("title")
+            .setAuthenticationLevel(AuthenticationLevel.STRONG)
+            .setNegativeButtonText("negativeButtonText")
+            .setPolicy(BiometricPolicy.Session(300))
+            .build()
+        val sessionManager = Mockito.spy(
+            SecureCredentialsManager(
+                client,
+                storage,
+                crypto,
+                jwtDecoder,
+                serialExecutor,
+                weakFragmentActivity,
+                sessionOptions,
+                factory
+            )
+        )
+        Mockito.doReturn(CredentialsMock.CURRENT_TIME_MS).`when`(sessionManager).currentTimeInMillis
+        verifyNoMoreInteractions(client)
+        val expiresAt = Date(CredentialsMock.CURRENT_TIME_MS + ONE_HOUR_SECONDS * 1000)
+        insertTestCredentials(true, true, true, expiresAt, "scope")
+
+        sessionManager.getCredentials(callback)
+
+        verify(callback, times(1)).onSuccess(credentialsCaptor.capture())
+        verify(callback, never()).onFailure(any())
+        MatcherAssert.assertThat(credentialsCaptor.firstValue.accessToken, Is.`is`("accessToken"))
+        MatcherAssert.assertThat(sessionManager.isBiometricSessionValid(), Is.`is`(true))
     }
 
     @Test
@@ -4142,6 +4228,31 @@ public class SecureCredentialsManagerTest {
     private companion object {
         private const val ONE_HOUR_SECONDS = (60 * 60).toLong()
         private const val KEY_ALIAS = "com.auth0.key"
+    }
+
+    /**
+     * Makes [factory] return a real [LocalAuthenticationManager] whose prompt reports an
+     * unrecognized biometric before delivering [finalResult], mirroring how BiometricPrompt
+     * keeps the prompt open after a failed attempt.
+     */
+    private fun simulatePromptWithUnrecognizedBiometric(
+        finalResult: (LocalAuthenticationManager) -> Unit
+    ) {
+        Mockito.`when`(factory.create(any(), any(), any())).thenAnswer { invocation ->
+            val prompt = Mockito.spy(
+                LocalAuthenticationManager(
+                    activity = invocation.arguments[0] as FragmentActivity,
+                    authenticationOptions = invocation.arguments[1] as LocalAuthenticationOptions,
+                    biometricManager = mock(),
+                    resultCallback = invocation.arguments[2] as Callback<Boolean, CredentialsManagerException>
+                )
+            )
+            Mockito.doAnswer {
+                prompt.onAuthenticationFailed()
+                finalResult(prompt)
+            }.`when`(prompt).authenticate()
+            return@thenAnswer prompt
+        }
     }
 
     private fun getAuthenticationOptions(
