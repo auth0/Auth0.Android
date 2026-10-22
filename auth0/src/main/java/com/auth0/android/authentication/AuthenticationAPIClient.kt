@@ -268,7 +268,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         val request = loginWithToken(params)
             .addParameter(
                 AUTH_RESPONSE_KEY,
-                Gson().toJsonTree(authResponse)
+                gson.toJsonTree(authResponse)
             )
         if (verification.isNotEmpty()) {
             request.addParameter(
@@ -343,29 +343,6 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             verification,
             verificationRequired
         )
-    }
-
-
-    /**
-     * Returns the error the server would report for the first identifier in [required] that has no code, or an empty
-     * code, in [verification]; `null` when all of them have a code.
-     */
-    private fun passkeyVerificationError(
-        required: List<PasskeyVerificationMethod>,
-        verification: Map<PasskeyVerificationMethod, String>
-    ): AuthenticationException? {
-        for (identifier in required) {
-            val code = verification[identifier]
-            val description = when {
-                code == null -> "Missing required parameter: verification.${identifier.value}"
-                code.isEmpty() -> "\"verification.${identifier.value}\" is not allowed to be empty"
-                else -> continue
-            }
-            return AuthenticationException(
-                mapOf(ERROR_KEY to INVALID_REQUEST, ERROR_DESCRIPTION_KEY to description)
-            )
-        }
-        return null
     }
 
 
@@ -1099,6 +1076,28 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             UserProfile::class.java, gson
         )
         return factory.get(url.toString(), userProfileAdapter, dPoP)
+    }
+
+    /**
+     * Returns the error the server would report for the first identifier in [required] that has no code, or an empty
+     * code, in [verification]; `null` when all of them have a code.
+     */
+    private fun passkeyVerificationError(
+        required: List<PasskeyVerificationMethod>,
+        verification: Map<PasskeyVerificationMethod, String>
+    ): AuthenticationException? {
+        for (identifier in required) {
+            val code = verification[identifier]
+            val description = when {
+                code == null -> "Missing required parameter: verification.${identifier.value}"
+                code.isEmpty() -> "\"verification.${identifier.value}\" is not allowed to be empty"
+                else -> continue
+            }
+            return AuthenticationException(
+                mapOf(ERROR_KEY to INVALID_REQUEST, ERROR_DESCRIPTION_KEY to description)
+            )
+        }
+        return null
     }
 
     internal companion object {
