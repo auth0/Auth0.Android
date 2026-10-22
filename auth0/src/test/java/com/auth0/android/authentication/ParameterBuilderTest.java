@@ -75,6 +75,12 @@ public class ParameterBuilderTest {
     }
 
     @Test
+    public void shouldAddRequiredScopeWhenOnlyAnotherCaseIsPresent() {
+        Map<String, String> parameters = builder.setScope("OpenID profile").asDictionary();
+        assertThat(parameters, hasEntry("scope", "OpenID profile openid"));
+    }
+
+    @Test
     public void shouldSetScopeWithOfflineAccess() {
         Map<String, String> parameters = builder.setScope(ParameterBuilder.SCOPE_OFFLINE_ACCESS).asDictionary();
         assertThat(parameters, hasEntry("scope", ParameterBuilder.SCOPE_OFFLINE_ACCESS));
