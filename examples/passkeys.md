@@ -111,7 +111,7 @@ can be issued. It is `null` when no verification is required. You must:
    on retry.
 2. Pass the collected codes to `signinWithPasskey` via the `verification` map (identifier -> code), and the
    challenge's `verificationRequired` list via `verificationRequired`. The SDK checks that every identifier in
-   `verificationRequired` has a non-empty code before sending the request.
+   `verificationRequired` has a non-blank code before sending the request.
 3. On a retryable error (`AuthenticationException.isPasskeyVerificationRetryable == true`), re-collect
    the codes and call `signinWithPasskey` again **reusing the same auth session and `PublicKeyCredentials`** —
    the biometric prompt will not reappear.
@@ -121,7 +121,7 @@ A failed `signinWithPasskey` can be retried with the same credential when `isPas
 `passkeyVerificationRequired` lists the identifiers whose code was wrong. Collect new codes for those identifiers
 and retry.
 
-If the code for an identifier in `verificationRequired` is missing or empty, the SDK fails the request before
+If the code for an identifier in `verificationRequired` is missing, empty or only whitespace, the SDK fails the request before
 sending it, with an `invalid_request` error and a `statusCode` of `0`. This error is not retryable.
 
 Any other error is terminal, so restart the registration from `signupWithPasskey`.

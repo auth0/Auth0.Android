@@ -714,22 +714,18 @@ public class AuthenticationAPIClientTest {
     }
 
     @Test
-    public fun shouldSigninWithPasskeyVerificationRequiredSendingWhitespaceCodeToTheServer() {
-        mockAPI.willReturnSuccessfulLogin()
-        val callback = MockAuthenticationCallback<Credentials>()
+    public fun shouldFailSigninWithPasskeyVerificationRequiredWhenACodeIsWhitespace() {
         val client = AuthenticationAPIClient(auth0)
-        client.signinWithPasskey(
-            "challenge-session",
-            mock<PublicKeyCredentials>(),
-            MY_CONNECTION,
-            verification = mapOf(PasskeyVerificationMethod.EMAIL to "   "),
-            verificationRequired = listOf(PasskeyVerificationMethod.EMAIL)
-        ).start(callback)
-        ShadowLooper.idleMainLooper()
-        val body = bodyFromRequest<Any>(mockAPI.takeRequest())
-        @Suppress("UNCHECKED_CAST")
-        val verification = body["verification"] as Map<String, Any>
-        assertThat(verification, Matchers.hasEntry("email", "   "))
+        val exception = assertThrows(AuthenticationException::class.java) {
+            client.signinWithPasskey(
+                "challenge-session",
+                mock<PublicKeyCredentials>(),
+                MY_CONNECTION,
+                verification = mapOf(PasskeyVerificationMethod.EMAIL to "   "),
+                verificationRequired = listOf(PasskeyVerificationMethod.EMAIL)
+            ).execute()
+        }
+        assertClientVerificationError(exception, "\"verification.email\" is not allowed to be empty")
     }
 
     @Test

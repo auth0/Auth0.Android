@@ -243,7 +243,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * [PasskeyRegistrationChallenge.verificationRequired]. Defaults to an empty map when no identifier verification is
      * required; the `verification` object is then omitted from the request.
      * @param verificationRequired the identifiers that need a code, from
-     * [PasskeyRegistrationChallenge.verificationRequired]. When not empty, [verification] must contain a non-empty
+     * [PasskeyRegistrationChallenge.verificationRequired]. When not empty, [verification] must contain a non-blank
      * code for each of them; otherwise the request fails before any network call with an `invalid_request`
      * [AuthenticationException] whose description names the first identifier without a code. It is not sent to the
      * server. Defaults to an empty list, in which case nothing is validated.
@@ -316,7 +316,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * [PasskeyRegistrationChallenge.verificationRequired]. Defaults to an empty map when no identifier verification is
      * required; the `verification` object is then omitted from the request.
      * @param verificationRequired the identifiers that need a code, from
-     * [PasskeyRegistrationChallenge.verificationRequired]. When not empty, [verification] must contain a non-empty
+     * [PasskeyRegistrationChallenge.verificationRequired]. When not empty, [verification] must contain a non-blank
      * code for each of them; otherwise the request fails before any network call with an `invalid_request`
      * [AuthenticationException] whose description names the first identifier without a code. It is not sent to the
      * server. Defaults to an empty list, in which case nothing is validated.
@@ -1079,7 +1079,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
     }
 
     /**
-     * Returns the error the server would report for the first identifier in [required] that has no code, or an empty
+     * Returns the error the server would report for the first identifier in [required] that has no code, or a blank
      * code, in [verification]; `null` when all of them have a code.
      */
     private fun passkeyVerificationError(
@@ -1090,7 +1090,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             val code = verification[identifier]
             val description = when {
                 code == null -> "Missing required parameter: verification.${identifier.value}"
-                code.isEmpty() -> "\"verification.${identifier.value}\" is not allowed to be empty"
+                code.isBlank() -> "\"verification.${identifier.value}\" is not allowed to be empty"
                 else -> continue
             }
             return AuthenticationException(
