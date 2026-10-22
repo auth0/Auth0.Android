@@ -109,11 +109,11 @@ can be issued. It is `null` when no verification is required. You must:
    platform credential with `CredentialManager.createCredential(...)`. Creating the credential first
    and then failing verification leaves an orphaned local passkey and shows a second biometric prompt
    on retry.
-2. Pass the signup challenge and the collected codes to `signinWithPasskey(challenge, ...)` via the
-   `verification` map (identifier -> code). The SDK checks that every identifier in `verificationRequired`
-   has a non-empty code before sending the request.
+2. Pass the collected codes to `signinWithPasskey` via the `verification` map (identifier -> code), and the
+   challenge's `verificationRequired` list via `verificationRequired`. The SDK checks that every identifier in
+   `verificationRequired` has a non-empty code before sending the request.
 3. On a retryable error (`AuthenticationException.isPasskeyVerificationRetryable == true`), re-collect
-   the codes and call `signinWithPasskey` again **reusing the same challenge and `PublicKeyCredentials`** —
+   the codes and call `signinWithPasskey` again **reusing the same auth session and `PublicKeyCredentials`** —
    the biometric prompt will not reappear.
 
 A failed `signinWithPasskey` can be retried with the same credential when `isPasskeyVerificationRetryable` is
@@ -160,18 +160,19 @@ try {
     while (true) {
         try {
             val userCredential = authenticationApiClient.signinWithPasskey(
-                challenge,
+                challenge.authSession,
                 authRequest,
                 "{realm}",
                 "{organization-id}",
-                verification = codes
+                verification = codes,
+                verificationRequired = challenge.verificationRequired.orEmpty()
             ).validateClaims().await()
             break // success
         } catch (exception: AuthenticationException) {
             if (!exception.isPasskeyVerificationRetryable || ++attempts >= maxAttempts) {
                 throw exception // terminal (or too many attempts) - restart registration
             }
-            // Re-collect the failed identifiers and retry with the SAME challenge and credential.
+            // Re-collect the failed identifiers and retry with the SAME auth session and credential.
             val failed = exception.passkeyVerificationRequired ?: challenge.verificationRequired.orEmpty()
             codes = codes + failed.associateWith { identifier -> promptUserForOtp(identifier) }
         }
@@ -205,8 +206,10 @@ authenticationAPIClient.signupWithPasskey(userData, "{realm}", "{organization-id
                                 ((CreatePublicKeyCredentialResponse) createCredentialResponse).getRegistrationResponseJson(),
                                 PublicKeyCredentials.class);
 
-                        authenticationAPIClient.signinWithPasskey(result,
-                                        credentials, "{realm}", "{organization-id}", verification)
+                        List<PasskeyVerificationMethod> required = result.getVerificationRequired() != null
+                                ? result.getVerificationRequired() : Collections.emptyList();
+                        authenticationAPIClient.signinWithPasskey(result.getAuthSession(),
+                                        credentials, "{realm}", "{organization-id}", verification, required)
                                 .start(new Callback<Credentials, AuthenticationException>() {
                                     @Override
                                     public void onSuccess(Credentials result) {}
@@ -215,7 +218,7 @@ authenticationAPIClient.signupWithPasskey(userData, "{realm}", "{organization-id
                                     public void onFailure(@NonNull AuthenticationException error) {
                                         if (error.isPasskeyVerificationRetryable()) {
                                             // Re-collect the codes for error.getPasskeyVerificationRequired() and retry
-                                            // signinWithPasskey with the SAME challenge (result) and credentials.
+                                            // signinWithPasskey with the SAME auth session and credentials.
                                         } else {
                                             // Terminal — restart registration.
                                         }

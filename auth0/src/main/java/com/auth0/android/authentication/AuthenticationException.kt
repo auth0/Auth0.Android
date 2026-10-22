@@ -208,7 +208,7 @@ public class AuthenticationException : Auth0Exception {
      *
      * When retryable, re-collect the codes for [passkeyVerificationRequired] and call
      * [com.auth0.android.authentication.AuthenticationAPIClient.signinWithPasskey] again with the
-     * same credential and challenge. When `false`, restart the registration.
+     * same credential and [passkeyAuthSession]. When `false`, restart the registration.
      *
      * @see passkeyAuthSession
      * @see passkeyVerificationRequired

@@ -242,6 +242,11 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * `mapOf(PasskeyVerificationMethod.EMAIL to "123456")`. The keys must match the identifiers returned in
      * [PasskeyRegistrationChallenge.verificationRequired]. Defaults to an empty map when no identifier verification is
      * required; the `verification` object is then omitted from the request.
+     * @param verificationRequired the identifiers that need a code, from
+     * [PasskeyRegistrationChallenge.verificationRequired]. When not empty, [verification] must contain a non-empty
+     * code for each of them; otherwise the request fails before any network call with an `invalid_request`
+     * [AuthenticationException] whose description names the first identifier without a code. It is not sent to the
+     * server. Defaults to an empty list, in which case nothing is validated.
      * @return a request to configure and start that will yield [Credentials]
      */
     @JvmOverloads
@@ -251,6 +256,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         realm: String? = null,
         organization: String? = null,
         verification: Map<PasskeyVerificationMethod, String> = emptyMap(),
+        verificationRequired: List<PasskeyVerificationMethod> = emptyList(),
     ): AuthenticationRequest {
         val params = ParameterBuilder.newBuilder().apply {
             setGrantType(ParameterBuilder.GRANT_TYPE_PASSKEY)
@@ -269,6 +275,13 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
                 VERIFICATION_KEY,
                 gson.toJsonTree(verification.mapKeys { it.key.value })
             )
+        }
+        if (verificationRequired.isNotEmpty()) {
+            request.addValidator(object : RequestValidator {
+                override fun validate(options: RequestOptions) {
+                    passkeyVerificationError(verificationRequired, verification)?.let { throw it }
+                }
+            })
         }
         return request as AuthenticationRequest
     }
@@ -302,6 +315,11 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * `mapOf(PasskeyVerificationMethod.EMAIL to "123456")`. The keys must match the identifiers returned in
      * [PasskeyRegistrationChallenge.verificationRequired]. Defaults to an empty map when no identifier verification is
      * required; the `verification` object is then omitted from the request.
+     * @param verificationRequired the identifiers that need a code, from
+     * [PasskeyRegistrationChallenge.verificationRequired]. When not empty, [verification] must contain a non-empty
+     * code for each of them; otherwise the request fails before any network call with an `invalid_request`
+     * [AuthenticationException] whose description names the first identifier without a code. It is not sent to the
+     * server. Defaults to an empty list, in which case nothing is validated.
      * @return a request to configure and start that will yield [Credentials]
      */
     @JvmOverloads
@@ -311,68 +329,22 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         realm: String? = null,
         organization: String? = null,
         verification: Map<PasskeyVerificationMethod, String> = emptyMap(),
+        verificationRequired: List<PasskeyVerificationMethod> = emptyList(),
     ): AuthenticationRequest {
         val publicKeyCredentials = gson.fromJson(
             authResponse,
             PublicKeyCredentials::class.java
         )
-        return signinWithPasskey(authSession, publicKeyCredentials, realm, organization, verification)
+        return signinWithPasskey(
+            authSession,
+            publicKeyCredentials,
+            realm,
+            organization,
+            verification,
+            verificationRequired
+        )
     }
 
-
-    /**
-     * Sign-in a new user after a passkey signup, completing identifier verification when the
-     * signup challenge requires it.
-     * This should be called after [signupWithPasskey] returned the [challenge] and the client generated the public key
-     * credential from it. The default scope used is 'openid profile email'.
-     *
-     * When [PasskeyRegistrationChallenge.verificationRequired] lists identifiers, [verification] must contain a
-     * non-empty code for each of them. Otherwise the request fails before any network call with an `invalid_request`
-     * [AuthenticationException] whose description names the first identifier without a code. Codes for other
-     * identifiers are sent to the server as given, and are not validated.
-     *
-     * Requires the client to have the **Passkey** Grant Type enabled. See [Client Grant Types](https://auth0.com/docs/clients/client-grant-types)
-     * to learn how to enable it.
-     *
-     * Example usage:
-     *
-     * ```
-     * client.signinWithPasskey(challenge, authResponse, "{realm}", "{organization}",
-     *       mapOf(PasskeyVerificationMethod.EMAIL to "{code}"))
-     *       .validateClaims() //mandatory
-     *       .start(object: Callback<Credentials, AuthenticationException> {
-     *           override fun onFailure(error: AuthenticationException) { }
-     *           override fun onSuccess(result: Credentials) { }
-     * })
-     * ```
-     *
-     * @param challenge the [PasskeyRegistrationChallenge] returned by [signupWithPasskey].
-     * @param authResponse the [PublicKeyCredentials] created from the challenge
-     * @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
-     * @param organization id of the organization to be associated with the user while signing in
-     * @param verification a map of identifier to the OTP code collected from the user, e.g.
-     * `mapOf(PasskeyVerificationMethod.EMAIL to "123456")`.
-     * @return a request to configure and start that will yield [Credentials]
-     */
-    @JvmOverloads
-    public fun signinWithPasskey(
-        challenge: PasskeyRegistrationChallenge,
-        authResponse: PublicKeyCredentials,
-        realm: String? = null,
-        organization: String? = null,
-        verification: Map<PasskeyVerificationMethod, String> = emptyMap(),
-    ): AuthenticationRequest {
-        val required = challenge.verificationRequired.orEmpty()
-        val request = signinWithPasskey(challenge.authSession, authResponse, realm, organization, verification)
-        if (required.isNotEmpty()) {
-            request.addValidator(object : RequestValidator {
-                override fun validate(options: RequestOptions) {
-                    passkeyVerificationError(required, verification)?.let { throw it }
-                }
-            })
-        }
-        return request
-    }
 
     /**
      * Returns the error the server would report for the first identifier in [required] that has no code, or an empty
