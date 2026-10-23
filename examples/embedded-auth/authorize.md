@@ -153,6 +153,7 @@ when (e.error) {
     EmbeddedAuthError.ConsentRequired         -> { /* additional consent required before continuing */ }
     EmbeddedAuthError.TooManyAttempts         -> { /* rate-limited by attack protection */ }
     EmbeddedAuthError.TooManyLogins           -> { /* too many login attempts */ }
+    EmbeddedAuthError.IpBlocked               -> { /* suspicious-IP throttling blocked this IP */ }
     EmbeddedAuthError.SessionExpired          -> { /* the grant expired — restart via authorize() */ }
     EmbeddedAuthError.InvalidRequest          -> { /* malformed request — integration fault, fix and restart */ }
     EmbeddedAuthError.Network                 -> { /* transient — safe to retry the same step */ }

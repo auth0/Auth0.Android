@@ -383,6 +383,16 @@ public class EmbeddedAuthClientTest {
     }
 
     @Test
+    public fun `authorize surfaces IpBlocked as a terminal error`() {
+        mockAPI.willReturnIpBlocked()
+
+        val error = assertEmbeddedError { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).execute() }
+
+        assertThat(error.error, `is`(EmbeddedAuthError.IpBlocked))
+        assertThat(error.statusCode, `is`(429))
+    }
+
+    @Test
     public fun `verifyOtp flags a wrong code as recoverable with retry actions`() {
         establishSession()
         mockAPI.willReturnInvalidCode()
@@ -755,6 +765,13 @@ public class EmbeddedAuthClientTest {
         val json = """{"error":"too_many_requests","error_description":"too_many_logins"}"""
         val ex = embeddedAuthErrorAdapter().fromJsonResponse(429, StringReader(json))
         assertThat(ex.error, `is`(EmbeddedAuthError.TooManyLogins))
+    }
+
+    @Test
+    public fun `adapter maps 429 too_many_requests + ip_blocked to IpBlocked`() {
+        val json = """{"error":"too_many_requests","error_description":"ip_blocked"}"""
+        val ex = embeddedAuthErrorAdapter().fromJsonResponse(429, StringReader(json))
+        assertThat(ex.error, `is`(EmbeddedAuthError.IpBlocked))
     }
 
     @Test

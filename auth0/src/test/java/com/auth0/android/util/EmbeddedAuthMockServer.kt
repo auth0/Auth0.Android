@@ -94,6 +94,11 @@ $actionsJson
         return this
     }
 
+    fun willReturnIpBlocked(): EmbeddedAuthMockServer {
+        server.enqueue(responseWithJSON("""{ "error": "too_many_requests", "error_description": "ip_blocked" }""", 429))
+        return this
+    }
+
     /** An `invalid_grant` returned by `/e/authorize` continuation (expired `auth_session`). */
     fun willReturnInvalidGrant(description: String = "The auth_session has expired."): EmbeddedAuthMockServer {
         server.enqueue(responseWithJSON("""{ "error": "invalid_grant", "error_description": "$description" }""", 400))

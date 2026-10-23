@@ -54,6 +54,9 @@ public sealed interface EmbeddedAuthError {
     /** Terminal: rate-limited by same-user-login protection. */
     public data object TooManyLogins : EmbeddedAuthError
 
+    /** Terminal: rate-limited by suspicious-IP throttling for the device's IP address. */
+    public data object IpBlocked : EmbeddedAuthError
+
     /**
      * Terminal: the grant being redeemed is no longer valid. Start a new flow with
      * [EmbeddedAuthClient.authorize].

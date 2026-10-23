@@ -28,6 +28,7 @@ private const val CHALLENGE_EXPIRED = "challenge_expired"
 private const val TOO_MANY_REQUESTS = "too_many_requests"
 private const val TOO_MANY_ATTEMPTS = "too_many_attempts"
 private const val TOO_MANY_LOGINS = "too_many_logins"
+private const val IP_BLOCKED = "ip_blocked"
 private const val INVALID_CODE = "invalid_code"
 private const val INVALID_IDENTIFIER_OR_CODE = "invalid_identifier_or_code"
 private const val INVALID_GRANT = "invalid_grant"
@@ -102,6 +103,8 @@ internal fun embeddedAuthErrorAdapter(): ErrorAdapter<EmbeddedAuthException> {
                     EmbeddedAuthError.TooManyAttempts
                 statusCode == TOO_MANY_REQUESTS_STATUS && code == TOO_MANY_REQUESTS && description == TOO_MANY_LOGINS ->
                     EmbeddedAuthError.TooManyLogins
+                statusCode == TOO_MANY_REQUESTS_STATUS && code == TOO_MANY_REQUESTS && description == IP_BLOCKED ->
+                    EmbeddedAuthError.IpBlocked
                 code == INVALID_GRANT ->
                     EmbeddedAuthError.SessionExpired
                 code == INVALID_REQUEST ->
