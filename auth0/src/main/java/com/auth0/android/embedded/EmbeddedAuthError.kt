@@ -87,6 +87,9 @@ public sealed interface EmbeddedAuthError {
      */
     public data object PasswordLeaked : EmbeddedAuthError
 
+    /** Terminal: no further action is available to continue authorization. Restart the flow. */
+    public data object NoNextSteps : EmbeddedAuthError
+
     /** The request never reached the server (`cause` is a network error). Retry the step. */
     public data object Network : EmbeddedAuthError
 

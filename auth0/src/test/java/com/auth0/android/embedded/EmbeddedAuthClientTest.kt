@@ -323,6 +323,17 @@ public class EmbeddedAuthClientTest {
     }
 
     @Test
+    public fun `verifyPassword await surfaces NoNextSteps as a terminal error`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnNoNextSteps()
+
+        val error = assertEmbeddedErrorSuspending { client.verifyPassword("secret").await() }
+
+        assertThat(error.error, `is`(EmbeddedAuthError.NoNextSteps))
+        assertThat(error.statusCode, `is`(403))
+    }
+
+    @Test
     public fun `verifyPassword await should return credentials`(): Unit = runTest {
         establishSession()
         mockAPI.willReturnAuthorizeCode()
@@ -967,6 +978,13 @@ public class EmbeddedAuthClientTest {
         val json = """{"error":"access_denied","error_description":"password_leaked"}"""
         val ex = embeddedAuthErrorAdapter().fromJsonResponse(403, StringReader(json))
         assertThat(ex.error, `is`(EmbeddedAuthError.PasswordLeaked))
+    }
+
+    @Test
+    public fun `adapter maps no_next_steps to NoNextSteps`() {
+        val json = """{"error":"access_denied","error_description":"no_next_steps"}"""
+        val ex = embeddedAuthErrorAdapter().fromJsonResponse(403, StringReader(json))
+        assertThat(ex.error, `is`(EmbeddedAuthError.NoNextSteps))
     }
 
 

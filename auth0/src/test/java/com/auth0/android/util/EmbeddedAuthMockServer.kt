@@ -99,6 +99,11 @@ $actionsJson
         return this
     }
 
+    fun willReturnNoNextSteps(): EmbeddedAuthMockServer {
+        server.enqueue(responseWithJSON("""{ "error": "access_denied", "error_description": "no_next_steps" }""", 403))
+        return this
+    }
+
     fun willReturnTooManyAttempts(): EmbeddedAuthMockServer {
         server.enqueue(responseWithJSON("""{ "error": "too_many_requests", "error_description": "too_many_attempts" }""", 429))
         return this

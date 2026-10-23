@@ -523,6 +523,7 @@ private fun explain(error: EmbeddedAuthError): String = when (error) {
     EmbeddedAuthError.NoEligibleFactors -> "No enrolled factor can satisfy this login."
     EmbeddedAuthError.ConsentRequired -> "Consent is required, which this flow can't collect."
     EmbeddedAuthError.PasswordLeaked -> "This password appeared in a data breach — reset it and try again."
+    EmbeddedAuthError.NoNextSteps -> "No further steps are available to continue — start over."
     EmbeddedAuthError.TooManyAttempts,
     EmbeddedAuthError.TooManyLogins,
     EmbeddedAuthError.IpBlocked -> "Rate limited — try again later."

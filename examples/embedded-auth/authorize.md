@@ -156,6 +156,7 @@ when (e.error) {
     EmbeddedAuthError.NoEligibleFactors       -> { /* no eligible factors — send the user to enroll one, then restart */ }
     EmbeddedAuthError.ConsentRequired         -> { /* additional consent required before continuing */ }
     EmbeddedAuthError.PasswordLeaked          -> { /* breached password — user must reset it, then restart */ }
+    EmbeddedAuthError.NoNextSteps             -> { /* no further action available — restart the flow */ }
     EmbeddedAuthError.TooManyAttempts         -> { /* rate-limited by attack protection */ }
     EmbeddedAuthError.TooManyLogins           -> { /* too many login attempts */ }
     EmbeddedAuthError.IpBlocked               -> { /* suspicious-IP throttling blocked this IP */ }
