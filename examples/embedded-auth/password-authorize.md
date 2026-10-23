@@ -37,6 +37,9 @@ try {
                 /* more MFA required — act on error.nextActions */
             }
         }
+        EmbeddedAuthError.PasswordLeaked -> {
+            /* breached password detected — send the user to reset their password, then restart */
+        }
         else -> { /* other terminal error */ }
     }
 }

@@ -522,6 +522,7 @@ private fun explain(error: EmbeddedAuthError): String = when (error) {
     EmbeddedAuthError.AuthorizationRejected -> "The push notification was denied."
     EmbeddedAuthError.NoEligibleFactors -> "No enrolled factor can satisfy this login."
     EmbeddedAuthError.ConsentRequired -> "Consent is required, which this flow can't collect."
+    EmbeddedAuthError.PasswordLeaked -> "This password appeared in a data breach — reset it and try again."
     EmbeddedAuthError.TooManyAttempts,
     EmbeddedAuthError.TooManyLogins,
     EmbeddedAuthError.IpBlocked -> "Rate limited — try again later."

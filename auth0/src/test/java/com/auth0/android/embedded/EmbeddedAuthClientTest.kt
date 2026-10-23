@@ -312,6 +312,17 @@ public class EmbeddedAuthClientTest {
     }
 
     @Test
+    public fun `verifyPassword await surfaces a breached password as PasswordLeaked`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnPasswordLeaked()
+
+        val error = assertEmbeddedErrorSuspending { client.verifyPassword("leaked").await() }
+
+        assertThat(error.error, `is`(EmbeddedAuthError.PasswordLeaked))
+        assertThat(error.statusCode, `is`(403))
+    }
+
+    @Test
     public fun `verifyPassword await should return credentials`(): Unit = runTest {
         establishSession()
         mockAPI.willReturnAuthorizeCode()
@@ -949,6 +960,13 @@ public class EmbeddedAuthClientTest {
         val json = """{"error":"access_denied","error_description":"consent_required"}"""
         val ex = embeddedAuthErrorAdapter().fromJsonResponse(403, StringReader(json))
         assertThat(ex.error, `is`(EmbeddedAuthError.ConsentRequired))
+    }
+
+    @Test
+    public fun `adapter maps password_leaked to PasswordLeaked`() {
+        val json = """{"error":"access_denied","error_description":"password_leaked"}"""
+        val ex = embeddedAuthErrorAdapter().fromJsonResponse(403, StringReader(json))
+        assertThat(ex.error, `is`(EmbeddedAuthError.PasswordLeaked))
     }
 
 

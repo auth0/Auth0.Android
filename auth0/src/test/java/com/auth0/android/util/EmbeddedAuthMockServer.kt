@@ -94,6 +94,11 @@ $actionsJson
         return this
     }
 
+    fun willReturnPasswordLeaked(): EmbeddedAuthMockServer {
+        server.enqueue(responseWithJSON("""{ "error": "access_denied", "error_description": "password_leaked" }""", 403))
+        return this
+    }
+
     fun willReturnTooManyAttempts(): EmbeddedAuthMockServer {
         server.enqueue(responseWithJSON("""{ "error": "too_many_requests", "error_description": "too_many_attempts" }""", 429))
         return this

@@ -155,6 +155,7 @@ when (e.error) {
     EmbeddedAuthError.AuthorizationRejected   -> { /* user rejected or canceled (e.g. denied the push) */ }
     EmbeddedAuthError.NoEligibleFactors       -> { /* no eligible factors — send the user to enroll one, then restart */ }
     EmbeddedAuthError.ConsentRequired         -> { /* additional consent required before continuing */ }
+    EmbeddedAuthError.PasswordLeaked          -> { /* breached password — user must reset it, then restart */ }
     EmbeddedAuthError.TooManyAttempts         -> { /* rate-limited by attack protection */ }
     EmbeddedAuthError.TooManyLogins           -> { /* too many login attempts */ }
     EmbeddedAuthError.IpBlocked               -> { /* suspicious-IP throttling blocked this IP */ }

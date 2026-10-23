@@ -38,6 +38,7 @@ private const val TOO_MANY_REQUESTS_STATUS = 429
 private const val AUTHORIZATION_REJECTED = "authorization_rejected"
 private const val NO_ELIGIBLE_FACTORS = "no_eligible_factors"
 private const val CONSENT_REQUIRED = "consent_required"
+private const val PASSWORD_LEAKED = "password_leaked"
 private const val AUTHORIZATION_PENDING = "authorization_pending"
 private const val SLOW_DOWN = "slow_down"
 
@@ -98,6 +99,8 @@ internal fun embeddedAuthErrorAdapter(): ErrorAdapter<EmbeddedAuthException> {
                     EmbeddedAuthError.NoEligibleFactors
                 code == ACCESS_DENIED && description == CONSENT_REQUIRED ->
                     EmbeddedAuthError.ConsentRequired
+                code == ACCESS_DENIED && description == PASSWORD_LEAKED ->
+                    EmbeddedAuthError.PasswordLeaked
                 code == ACCESS_DENIED ->
                     EmbeddedAuthError.AccessDenied
                 statusCode == TOO_MANY_REQUESTS_STATUS && code == TOO_MANY_REQUESTS && description == TOO_MANY_ATTEMPTS ->

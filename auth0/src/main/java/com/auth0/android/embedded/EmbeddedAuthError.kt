@@ -81,6 +81,12 @@ public sealed interface EmbeddedAuthError {
     /** Terminal: additional consent is required before the flow can proceed. */
     public data object ConsentRequired : EmbeddedAuthError
 
+    /**
+     * Terminal: breached password detection blocked the login because the password appears in a
+     * data breach. The user must reset their password before starting a new flow.
+     */
+    public data object PasswordLeaked : EmbeddedAuthError
+
     /** The request never reached the server (`cause` is a network error). Retry the step. */
     public data object Network : EmbeddedAuthError
 
