@@ -58,6 +58,9 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
 
     fun identifyPhone(phone: String): Unit = runStep { client.identify(phone, IdentifierType.PHONE).await() }
 
+    fun identifyUsername(username: String): Unit =
+        runStep { client.identify(username, IdentifierType.USERNAME).await() }
+
     fun challengePhone(index: Int, deliveryMethod: PhoneDeliveryMethod): Unit =
         runStep { client.challengePhone(index, deliveryMethod).await() }
 
@@ -68,6 +71,9 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
 
     /** Terminal step: on success this yields [Credentials][com.auth0.android.result.Credentials]. */
     fun verifyOtp(code: String, type: OtpType): Unit = runTerminalStep { client.verifyOtp(code, type).await() }
+
+    /** Terminal step: yields credentials, or continues if the server requires a second factor. */
+    fun verifyPassword(password: String): Unit = runTerminalStep { client.verifyPassword(password).await() }
 
     /** Terminal step: acknowledges the rotated recovery code. */
     fun confirmRecoveryCode(): Unit = runTerminalStep { client.confirmRecoveryCode().await() }

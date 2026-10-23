@@ -60,6 +60,8 @@ if (error is EmbeddedAuthError.InsufficientAuthorization) {
         when (action) {
             is NextAction.IdentifyEmail       -> { /* show email field, call identify(..., EMAIL) */ }
             is NextAction.IdentifyPhone       -> { /* show phone field, call identify(..., PHONE) */ }
+            is NextAction.IdentifyUsername    -> { /* show username field, call identify(..., USERNAME) */ }
+            is NextAction.VerifyPassword      -> { /* show password field, call verifyPassword() */ }
             is NextAction.ChallengeEmail      -> { /* send email code, call challengeEmail(action.index) */ }
             is NextAction.ChallengePhone      -> { /* send SMS/voice code, call challengePhone(action.index, ...) */ }
             is NextAction.ChallengePush       -> { /* trigger push, call challengePush(action.index) */ }
@@ -73,7 +75,7 @@ if (error is EmbeddedAuthError.InsufficientAuthorization) {
 }
 ```
 
-See the dedicated examples for each factor: [Phone OTP (SMS/Voice)](phone-authorize.md), [Push (OOB)](push-oob-polling.md), [TOTP](totp.md), and [Recovery Code](recovery-code.md).
+See the dedicated examples for each factor: [Username & Password](password-authorize.md), [Phone OTP (SMS/Voice)](phone-authorize.md), [Push (OOB)](push-oob-polling.md), [TOTP](totp.md), and [Recovery Code](recovery-code.md).
 
 #### Identify the user
 
@@ -128,6 +130,8 @@ if (error is EmbeddedAuthError.InsufficientAuthorization) {
             "That code was incorrect. Try again."
         EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_CODE ->
             "That identifier or code was incorrect. Try again."
+        EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_PASSWORD ->
+            "That username or password was incorrect. Try again."
         EmbeddedAuthError.InsufficientAuthorization.Reason.NONE ->
             null // plain step-forward — no rejection to report
         EmbeddedAuthError.InsufficientAuthorization.Reason.AUTHORIZATION_PENDING,
@@ -151,6 +155,8 @@ when (e.error) {
     EmbeddedAuthError.AuthorizationRejected   -> { /* user rejected or canceled (e.g. denied the push) */ }
     EmbeddedAuthError.NoEligibleFactors       -> { /* no eligible factors — send the user to enroll one, then restart */ }
     EmbeddedAuthError.ConsentRequired         -> { /* additional consent required before continuing */ }
+    EmbeddedAuthError.PasswordLeaked          -> { /* breached password — user must reset it, then restart */ }
+    EmbeddedAuthError.NoNextSteps             -> { /* no further action available — restart the flow */ }
     EmbeddedAuthError.TooManyAttempts         -> { /* rate-limited by attack protection */ }
     EmbeddedAuthError.TooManyLogins           -> { /* too many login attempts */ }
     EmbeddedAuthError.IpBlocked               -> { /* suspicious-IP throttling blocked this IP */ }

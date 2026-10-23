@@ -25,6 +25,10 @@
     <string name="hint_otp">One-time code</string>
     <string name="action_identify_email">Identify with email</string>
     <string name="action_identify_phone">Identify with phone</string>
+    <string name="hint_username">Username</string>
+    <string name="action_identify_username">Identify with username</string>
+    <string name="hint_password">Password</string>
+    <string name="action_verify_password">Enter your password</string>
     <string name="action_challenge_email">Email me a code</string>
     <string name="action_verify_otp">Verify code</string>
     <string name="action_submit">Submit</string>
