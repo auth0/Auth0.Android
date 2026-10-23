@@ -17,7 +17,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -45,7 +44,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.auth0.android.embedded.EmbeddedAuthError
 import com.auth0.android.embedded.EmbeddedAuthException
 import com.auth0.android.embedded.authorize.NextAction
+import com.auth0.android.embedded.authorize.OtpChannel
 import com.auth0.android.embedded.authorize.OtpType
+import com.auth0.android.embedded.authorize.PhoneDeliveryMethod
 import com.auth0.android.result.Credentials
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,7 +54,6 @@ import com.auth0.android.result.Credentials
 public fun AuthorizeScreen(
     viewModel: EmbeddedViewModel = viewModel(),
     initialConnection: String,
-    onBack: () -> Unit = {},
 ) {
     val state by viewModel.authorizeState.collectAsStateWithLifecycle()
     var connection by rememberSaveable { mutableStateOf(initialConnection) }
@@ -67,14 +67,6 @@ public fun AuthorizeScreen(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.title_screen)) },
-                navigationIcon = {
-                    TextButton(onClick = onBack) {
-                        Text(
-                            text = "← Back",
-                            color = MaterialTheme.colorScheme.onPrimary,
-                        )
-                    }
-                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
@@ -128,6 +120,13 @@ public fun AuthorizeScreen(
             when (val current = state) {
                 AuthorizeUiState.Idle -> InfoCard(stringResource(R.string.status_idle_authorize))
                 AuthorizeUiState.Loading -> InfoCard(stringResource(R.string.status_authorizing))
+                is AuthorizeUiState.Polling -> {
+                    InfoCard(stringResource(R.string.status_waiting_for_push))
+                    if (current.otherActions.isNotEmpty()) {
+                        Spacer(Modifier.height(20.dp))
+                        ActionsSection(current.otherActions, viewModel)
+                    }
+                }
                 is AuthorizeUiState.ActionsAvailable -> ActionsSection(current.actions, viewModel)
                 is AuthorizeUiState.Authenticated -> InfoCard(formatCredentials(current.credentials))
                 is AuthorizeUiState.Failed -> InfoCard(formatError(current.error))
@@ -164,8 +163,12 @@ private fun ActionsSection(actions: List<NextAction>, viewModel: EmbeddedViewMod
                 onSubmit = { viewModel.identifyEmail(it) },
             )
 
-            NextAction.IdentifyPhone -> InfoCard(
-                stringResource(R.string.label_unsupported_action, "identify:phone"),
+            NextAction.IdentifyPhone -> IdentifyCard(
+                labelRes = R.string.action_identify_phone,
+                hintRes = R.string.hint_phone,
+                keyboardType = KeyboardType.Phone,
+                submitRes = R.string.action_submit,
+                onSubmit = { viewModel.identifyPhone(it) },
             )
 
             is NextAction.ChallengeEmail -> ChallengeEmailCard(
@@ -174,8 +177,40 @@ private fun ActionsSection(actions: List<NextAction>, viewModel: EmbeddedViewMod
             )
 
             is NextAction.VerifyOtp -> VerifyOtpCard(
+                channel = action.channel,
                 identifier = action.identifier,
                 onVerify = { code, type -> viewModel.verifyOtp(code, type) },
+            )
+
+            is NextAction.ChallengePhone -> ChallengePhoneCard(
+                identifier = action.identifier,
+                deliveryMethods = action.deliveryMethods,
+                onChallenge = { method -> viewModel.challengePhone(action.index, method) },
+            )
+
+            is NextAction.ChallengePush -> ActionCard(
+                titleRes = R.string.action_challenge_push,
+                detail = action.name,
+                buttonRes = R.string.action_challenge_push,
+                onClick = { viewModel.challengePush(action.index) },
+            )
+
+            is NextAction.VerifyOob -> ActionCard(
+                titleRes = R.string.label_push_sent,
+                detail = null,
+                buttonRes = R.string.action_check_push,
+                onClick = { viewModel.verifyPush(action.pollInMs) },
+            )
+
+            NextAction.VerifyRecoveryCode -> VerifyRecoveryCodeCard(
+                onVerify = { viewModel.verifyRecoveryCode(it) },
+            )
+
+            is NextAction.ConfirmRecoveryCode -> ActionCard(
+                titleRes = R.string.label_new_recovery_code,
+                detail = action.newCode,
+                buttonRes = R.string.action_confirm_recovery_code,
+                onClick = { viewModel.confirmRecoveryCode() },
             )
 
             is NextAction.Unknown -> InfoCard(
@@ -244,9 +279,95 @@ private fun ChallengeEmailCard(identifier: String, onChallenge: () -> Unit) {
 }
 
 @Composable
-private fun VerifyOtpCard(identifier: String?, onVerify: (String, OtpType) -> Unit) {
+private fun ChallengePhoneCard(
+    identifier: String,
+    deliveryMethods: List<PhoneDeliveryMethod>,
+    onChallenge: (PhoneDeliveryMethod) -> Unit,
+) {
+    var method by remember { mutableStateOf(deliveryMethods.firstOrNull() ?: PhoneDeliveryMethod.TEXT) }
+    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                stringResource(R.string.action_challenge_phone),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(identifier, style = MaterialTheme.typography.bodySmall)
+            Spacer(Modifier.height(12.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                deliveryMethods.forEach { option ->
+                    FilterChip(
+                        selected = method == option,
+                        onClick = { method = option },
+                        label = { Text(option.name) },
+                    )
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            Button(onClick = { onChallenge(method) }, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.action_challenge_phone))
+            }
+        }
+    }
+}
+
+/** A titled card with optional detail text and a single action button. */
+@Composable
+private fun ActionCard(titleRes: Int, detail: String?, buttonRes: Int, onClick: () -> Unit) {
+    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(stringResource(titleRes), style = MaterialTheme.typography.titleSmall)
+            if (detail != null) {
+                Spacer(Modifier.height(4.dp))
+                Text(detail, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
+            }
+            Spacer(Modifier.height(12.dp))
+            Button(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(buttonRes))
+            }
+        }
+    }
+}
+
+@Composable
+private fun VerifyRecoveryCodeCard(onVerify: (String) -> Unit) {
     var code by rememberSaveable { mutableStateOf("") }
-    var type by remember { mutableStateOf(OtpType.OOB) }
+    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                stringResource(R.string.action_verify_recovery_code),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(
+                value = code,
+                onValueChange = { code = it },
+                label = { Text(stringResource(R.string.hint_recovery_code)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(
+                    onDone = { if (code.isNotBlank()) onVerify(code.trim()) },
+                ),
+            )
+            Spacer(Modifier.height(12.dp))
+            Button(
+                onClick = { onVerify(code.trim()) },
+                enabled = code.isNotBlank(),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.action_verify))
+            }
+        }
+    }
+}
+
+@Composable
+private fun VerifyOtpCard(channel: OtpChannel, identifier: String?, onVerify: (String, OtpType) -> Unit) {
+    var code by rememberSaveable { mutableStateOf("") }
+    var type by remember(channel) {
+        mutableStateOf(if (channel == OtpChannel.TOTP) OtpType.TOTP else OtpType.OOB)
+    }
     OutlinedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
@@ -347,8 +468,12 @@ private fun explain(error: EmbeddedAuthError): String = when (error) {
     EmbeddedAuthError.TooManyWrongOtpAttempts,
     EmbeddedAuthError.ChallengeExpired,
     EmbeddedAuthError.SessionExpired -> "This flow can't continue — start over."
+    EmbeddedAuthError.AuthorizationRejected -> "The push notification was denied."
+    EmbeddedAuthError.NoEligibleFactors -> "No enrolled factor can satisfy this login."
+    EmbeddedAuthError.ConsentRequired -> "Consent is required, which this flow can't collect."
     EmbeddedAuthError.TooManyAttempts,
-    EmbeddedAuthError.TooManyLogins -> "Rate limited — try again later."
+    EmbeddedAuthError.TooManyLogins,
+    EmbeddedAuthError.IpBlocked -> "Rate limited — try again later."
     EmbeddedAuthError.Network -> "The request didn't reach the server — check your connection and retry."
     else -> "Authorize step failed."
 }

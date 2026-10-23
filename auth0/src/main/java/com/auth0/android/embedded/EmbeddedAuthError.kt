@@ -26,7 +26,13 @@ public sealed interface EmbeddedAuthError {
             INVALID_CODE,
 
             /** The identifier or the code was invalid; the server does not say which. */
-            INVALID_IDENTIFIER_OR_CODE
+            INVALID_IDENTIFIER_OR_CODE,
+
+            /** Authorization is pending (e.g., push notification awaiting user approval). Retry after a delay. */
+            AUTHORIZATION_PENDING,
+
+            /** The app polled too fast. Retry after the interval the server returns. */
+            SLOW_DOWN
         }
     }
 
@@ -48,6 +54,9 @@ public sealed interface EmbeddedAuthError {
     /** Terminal: rate-limited by same-user-login protection. */
     public data object TooManyLogins : EmbeddedAuthError
 
+    /** Terminal: rate-limited by suspicious-IP throttling for the device's IP address. */
+    public data object IpBlocked : EmbeddedAuthError
+
     /**
      * Terminal: the grant being redeemed is no longer valid. Start a new flow with
      * [EmbeddedAuthClient.authorize].
@@ -59,6 +68,15 @@ public sealed interface EmbeddedAuthError {
      * specifics, fix the request, and start a new flow with [EmbeddedAuthClient.authorize].
      */
     public data object InvalidRequest : EmbeddedAuthError
+
+    /** Terminal: the user rejected or canceled the authorization (e.g., denied a push notification). */
+    public data object AuthorizationRejected : EmbeddedAuthError
+
+    /** Terminal: no eligible factors are available for the user. Enroll factors and retry the flow. */
+    public data object NoEligibleFactors : EmbeddedAuthError
+
+    /** Terminal: additional consent is required before the flow can proceed. */
+    public data object ConsentRequired : EmbeddedAuthError
 
     /** The request never reached the server (`cause` is a network error). Retry the step. */
     public data object Network : EmbeddedAuthError

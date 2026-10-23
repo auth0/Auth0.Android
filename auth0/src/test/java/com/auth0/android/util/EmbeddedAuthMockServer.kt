@@ -94,6 +94,11 @@ $actionsJson
         return this
     }
 
+    fun willReturnIpBlocked(): EmbeddedAuthMockServer {
+        server.enqueue(responseWithJSON("""{ "error": "too_many_requests", "error_description": "ip_blocked" }""", 429))
+        return this
+    }
+
     /** An `invalid_grant` returned by `/e/authorize` continuation (expired `auth_session`). */
     fun willReturnInvalidGrant(description: String = "The auth_session has expired."): EmbeddedAuthMockServer {
         server.enqueue(responseWithJSON("""{ "error": "invalid_grant", "error_description": "$description" }""", 400))
@@ -147,7 +152,13 @@ $actionsJson
         const val NEXT_IDENTIFY_EMAIL = """{ "action": "action:identify:email:v1" }"""
         const val NEXT_IDENTIFY_PHONE = """{ "action": "action:identify:phone:v1" }"""
         const val NEXT_CHALLENGE_EMAIL = """{ "action": "action:challenge:email:v1", "index": 1, "identifier": "jane@example.com" }"""
+        const val NEXT_CHALLENGE_PHONE = """{ "action": "action:challenge:phone:v1", "index": 0, "identifier": "+1234567890", "delivery_methods": ["text", "voice"] }"""
+        const val NEXT_CHALLENGE_PUSH = """{ "action": "action:challenge:push:v1", "index": 0, "name": "My Phone" }"""
         const val NEXT_VERIFY_OTP = """{ "action": "action:verify:otp:v1", "channel": "email", "identifier": "jane@example.com" }"""
+        const val NEXT_VERIFY_OTP_SMS = """{ "action": "action:verify:otp:v1", "channel": "sms", "identifier": "+1234567890" }"""
+        const val NEXT_VERIFY_OOB = """{ "action": "action:verify:oob:v1", "poll_in_ms": 5000 }"""
+        const val NEXT_VERIFY_RECOVERY_CODE = """{ "action": "action:verify:recovery-code:v1" }"""
+        const val NEXT_CONFIRM_RECOVERY_CODE = """{ "action": "action:confirm:recovery-code:v1", "new_code": "NEW-CODE-XYZ" }"""
         const val NEXT_VERIFY_OTP_UNKNOWN_CHANNEL = """{ "action": "action:verify:otp:v1", "channel": "carrier-pigeon", "identifier": "jane@example.com" }"""
         const val NEXT_VERIFY_OTP_NO_CHANNEL = """{ "action": "action:verify:otp:v1", "identifier": "jane@example.com" }"""
         const val NEXT_VERIFY_OTP_MIXED_CASE_CHANNEL = """{ "action": "action:verify:otp:v1", "channel": "SmS", "identifier": "jane@example.com" }"""
