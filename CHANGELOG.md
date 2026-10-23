@@ -6,12 +6,40 @@
 **Added**
 - feat(embedded): add /e/authorize email OTP flow  [\#1075](https://github.com/auth0/Auth0.Android/pull/1075) ([pmathew92](https://github.com/pmathew92))
 
+## [4.2.0](https://github.com/auth0/Auth0.Android/tree/4.2.0) (2026-10-22)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/4.1.0...4.2.0)
+
+**Added**
+- feat: add passkey identifier verification support [\#1087](https://github.com/auth0/Auth0.Android/pull/1087) ([utkrishtsahu](https://github.com/utkrishtsahu))
+
+**Fixed**
+- fix: stop reporting an unrecognized biometric as a final failure [\#1100](https://github.com/auth0/Auth0.Android/pull/1100) ([pmathew92](https://github.com/pmathew92))
+- fix(storage): authorize MGF1 digest to prevent INCOMPATIBLE_DEVICE on Keystore2 [\#1092](https://github.com/auth0/Auth0.Android/pull/1092) ([utkrishtsahu](https://github.com/utkrishtsahu))
+
+## [3.21.2](https://github.com/auth0/Auth0.Android/tree/3.21.2) (2026-10-21)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.21.1...3.21.2)
+
+**Fixed**
+- fix: stop reporting an unrecognized biometric as a final failure [\#1098](https://github.com/auth0/Auth0.Android/pull/1098) ([pmathew92](https://github.com/pmathew92))
+
+## [3.21.1](https://github.com/auth0/Auth0.Android/tree/3.21.1) (2026-10-13)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.21.0...3.21.1)
+
+**Fixed**
+- fix(storage): authorize MGF1 digest to prevent INCOMPATIBLE_DEVICE on Keystore2 [\#1048](https://github.com/auth0/Auth0.Android/pull/1048) ([utkrishtsahu](https://github.com/utkrishtsahu))
+
 ## [4.1.0](https://github.com/auth0/Auth0.Android/tree/4.1.0) (2026-08-27)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/4.0.1...4.1.0)
 
 **Added**
 - feat: enable ephemeral browsing for Auth Tab [\#1059](https://github.com/auth0/Auth0.Android/pull/1059) ([pmathew92](https://github.com/pmathew92))
 - feat(authentication): add organization parameter to resetPassword [\#1038](https://github.com/auth0/Auth0.Android/pull/1038) ([NandanPrabhu](https://github.com/NandanPrabhu))
+
+## [3.21.1-beta.0](https://github.com/auth0/Auth0.Android/tree/3.21.1-beta.0) (2026-08-18)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.21.0...3.21.1-beta.0)
+
+**Fixed**
+- fix(storage): authorize MGF1 digest to prevent INCOMPATIBLE_DEVICE on Keystore2 [\#1048](https://github.com/auth0/Auth0.Android/pull/1048) ([utkrishtsahu](https://github.com/utkrishtsahu))
 
 ## [4.0.1](https://github.com/auth0/Auth0.Android/tree/4.0.1) (2026-07-24)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/4.0.0...4.0.1)

@@ -1,7 +1,5 @@
 package com.auth0.android.request.internal
 
-import java.util.*
-
 /**
  * Small utility class to handle OpenID Connect conformance
  */
@@ -19,8 +17,7 @@ internal object OidcUtils {
      */
     fun includeRequiredScope(scope: String): String {
         val existingScopes = scope.split(" ")
-            .map { it.toLowerCase(Locale.ROOT) }
-        return if (!existingScopes.contains(REQUIRED_SCOPE)) {
+        return if (existingScopes.none { it == REQUIRED_SCOPE }) {
             (existingScopes + REQUIRED_SCOPE).joinToString(separator = " ").trim()
         } else {
             scope
