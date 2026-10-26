@@ -1,5 +1,11 @@
 # Change Log
 
+## [5.0.0-beta.1](https://github.com/auth0/Auth0.Android/tree/5.0.0-beta.1) (2026-10-26)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/5.0.0-beta.0...5.0.0-beta.1)
+
+**Added**
+- feat : Add support for MFA in embedded authorize flow [\#1086](https://github.com/auth0/Auth0.Android/pull/1086) ([pmathew92](https://github.com/pmathew92))
+
 ## [5.0.0-beta.0](https://github.com/auth0/Auth0.Android/tree/5.0.0-beta.0) (2026-10-05)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/4.1.0...5.0.0-beta.0)
 
