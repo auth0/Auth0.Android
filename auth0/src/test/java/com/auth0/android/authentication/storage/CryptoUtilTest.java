@@ -898,8 +898,8 @@ public class CryptoUtilTest {
     }
 
     @Test
-    public void shouldRecreateKeysAndThrowCryptoExceptionOnInvalidKeyExceptionWhenTryingToRSADecrypt() throws Exception {
-        Assert.assertThrows("The RSA key's authorized parameters are incompatible with the current cipher. The keys have been recreated; please retry.", CryptoException.class, () -> {
+    public void shouldKeepKeysAndThrowCryptoExceptionOnInvalidKeyExceptionWhenTryingToRSADecrypt() throws Exception {
+        Assert.assertThrows("The RSA key's authorized parameters are incompatible with the current cipher.", CryptoException.class, () -> {
             byte[] sampleBytes = new byte[0];
             PrivateKey privateKey = PowerMockito.mock(PrivateKey.class);
             KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
@@ -912,17 +912,14 @@ public class CryptoUtilTest {
             cryptoUtil.RSADecrypt(sampleBytes);
         });
 
-        Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
-        Mockito.verify(keyStore).deleteEntry(OLD_KEY_ALIAS);
-        Mockito.verify(storage).remove(KEY_ALIAS);
-        Mockito.verify(storage).remove(KEY_ALIAS + "_iv");
-        Mockito.verify(storage).remove(OLD_KEY_ALIAS);
-        Mockito.verify(storage).remove(OLD_KEY_ALIAS + "_iv");
+        // Keys are kept so that tryRecoverCurrentAESKey can attempt the PKCS1 migration first
+        Mockito.verify(keyStore, never()).deleteEntry(anyString());
+        Mockito.verify(storage, never()).remove(anyString());
     }
 
     @Test
-    public void shouldRecreateKeysAndThrowCryptoExceptionOnInvalidAlgorithmParameterExceptionWhenTryingToRSADecrypt() throws Exception {
-        Assert.assertThrows("The RSA key's authorized parameters are incompatible with the current cipher. The keys have been recreated; please retry.", CryptoException.class, () -> {
+    public void shouldKeepKeysAndThrowCryptoExceptionOnInvalidAlgorithmParameterExceptionWhenTryingToRSADecrypt() throws Exception {
+        Assert.assertThrows("The RSA key's authorized parameters are incompatible with the current cipher.", CryptoException.class, () -> {
             byte[] sampleBytes = new byte[0];
             PrivateKey privateKey = PowerMockito.mock(PrivateKey.class);
             KeyStore.PrivateKeyEntry privateKeyEntry = PowerMockito.mock(KeyStore.PrivateKeyEntry.class);
@@ -935,10 +932,8 @@ public class CryptoUtilTest {
             cryptoUtil.RSADecrypt(sampleBytes);
         });
 
-        Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
-        Mockito.verify(keyStore).deleteEntry(OLD_KEY_ALIAS);
-        Mockito.verify(storage).remove(KEY_ALIAS);
-        Mockito.verify(storage).remove(OLD_KEY_ALIAS);
+        Mockito.verify(keyStore, never()).deleteEntry(anyString());
+        Mockito.verify(storage, never()).remove(anyString());
     }
 
     @Test
@@ -1738,6 +1733,26 @@ public class CryptoUtilTest {
         return cryptoUtil;
     }
 
+    /**
+     * Stores an RSA key at KEY_ALIAS that stays in the KeyStore until deleteEntry(KEY_ALIAS) is
+     * called, as on a real device. Lets the real RSADecrypt run before the PKCS1 migration.
+     */
+    private PrivateKey givenStatefulRSAKey(CryptoUtil cryptoUtil) throws Exception {
+        PrivateKey privateKey = mock(PrivateKey.class);
+        KeyStore.PrivateKeyEntry entry = mock(KeyStore.PrivateKeyEntry.class);
+        when(entry.getPrivateKey()).thenReturn(privateKey);
+        final boolean[] present = {true};
+        when(keyStore.containsAlias(KEY_ALIAS)).thenAnswer(invocation -> present[0]);
+        Mockito.doAnswer(invocation -> {
+            present[0] = false;
+            return null;
+        }).when(keyStore).deleteEntry(KEY_ALIAS);
+        when(keyStore.getEntry(eq(KEY_ALIAS), nullable(KeyStore.ProtectionParameter.class)))
+                .thenAnswer(invocation -> present[0] ? entry : null);
+        doReturn(entry).when(cryptoUtil).getRSAKeyEntry();
+        return privateKey;
+    }
+
     @Test
     public void shouldDetectAndMigratePKCS1KeyToOAEP() throws Exception {
         CryptoUtil cryptoUtil = newCryptoUtilSpy();
@@ -1987,6 +2002,9 @@ public class CryptoUtilTest {
 
                     cryptoUtil.RSADecrypt(new byte[]{1, 2, 3});
                 });
+
+        // The stored AES key and legacy IV are kept for the PKCS1 migration
+        Mockito.verify(storage, never()).remove(anyString());
     }
 
     @Test
@@ -2044,6 +2062,145 @@ public class CryptoUtilTest {
         assertThat(result, is(aesKeyBytes));
         Mockito.verify(storage).store(KEY_ALIAS, encodedOAEP);
         Mockito.verify(keyStore).deleteEntry(KEY_ALIAS);
+    }
+
+    /*
+     * The tests below run the real RSADecrypt (no stub) before the PKCS1 migration, as on a device:
+     * a PKCS1-only RSA key from an older SDK version rejects the OAEP cipher.
+     */
+
+    @Test
+    public void shouldMigratePKCS1KeyWhenRealRSADecryptThrowsInvalidKeyException() throws Exception {
+        CryptoUtil cryptoUtil = newCryptoUtilSpy();
+
+        byte[] aesKeyBytes = new byte[32];
+        Arrays.fill(aesKeyBytes, (byte) 0xCD);
+        byte[] encryptedAESPKCS1 = new byte[]{10, 11, 12, 13};
+        byte[] reEncryptedOAEP = new byte[]{20, 21, 22, 23};
+        String encodedPKCS1 = "pkcs1_encoded";
+        String encodedOAEP = "oaep_encoded";
+
+        when(storage.retrieveString(KEY_ALIAS)).thenReturn(encodedPKCS1);
+        PowerMockito.mockStatic(Base64.class);
+        PowerMockito.when(Base64.decode(encodedPKCS1, Base64.DEFAULT)).thenReturn(encryptedAESPKCS1);
+        PowerMockito.when(Base64.encode(reEncryptedOAEP, Base64.DEFAULT))
+                .thenReturn(encodedOAEP.getBytes(StandardCharsets.UTF_8));
+
+        PrivateKey privateKey = givenStatefulRSAKey(cryptoUtil);
+        doThrow(new InvalidKeyException("Incompatible padding mode"))
+                .when(rsaOaepCipher).init(eq(Cipher.DECRYPT_MODE), eq(privateKey), any(AlgorithmParameterSpec.class));
+        when(rsaPkcs1Cipher.doFinal(encryptedAESPKCS1)).thenReturn(aesKeyBytes);
+        doReturn(reEncryptedOAEP).when(cryptoUtil).RSAEncrypt(aesKeyBytes);
+
+        byte[] result = cryptoUtil.getAESKey();
+
+        assertThat(result, is(aesKeyBytes));
+        Mockito.verify(rsaPkcs1Cipher).init(Cipher.DECRYPT_MODE, privateKey);
+        Mockito.verify(storage).store(KEY_ALIAS, encodedOAEP);
+        Mockito.verify(keyGenerator, never()).generateKey();
+    }
+
+    @Test
+    public void shouldMigratePKCS1KeyAndKeepLegacyIVWhenRealRSADecryptThrowsProviderException() throws Exception {
+        CryptoUtil cryptoUtil = newCryptoUtilSpy();
+
+        byte[] aesKeyBytes = new byte[32];
+        Arrays.fill(aesKeyBytes, (byte) 0xCD);
+        byte[] encryptedAESPKCS1 = new byte[]{10, 11, 12, 13};
+        byte[] reEncryptedOAEP = new byte[]{20, 21, 22, 23};
+        String encodedPKCS1 = "pkcs1_encoded";
+        String encodedOAEP = "oaep_encoded";
+
+        when(storage.retrieveString(KEY_ALIAS)).thenReturn(encodedPKCS1);
+        // Credentials saved by SDK 2.x use the legacy format, whose IV is stored separately
+        when(storage.retrieveString(KEY_ALIAS + "_iv")).thenReturn("legacy_iv");
+        PowerMockito.mockStatic(Base64.class);
+        PowerMockito.when(Base64.decode(encodedPKCS1, Base64.DEFAULT)).thenReturn(encryptedAESPKCS1);
+        PowerMockito.when(Base64.encode(reEncryptedOAEP, Base64.DEFAULT))
+                .thenReturn(encodedOAEP.getBytes(StandardCharsets.UTF_8));
+
+        PrivateKey privateKey = givenStatefulRSAKey(cryptoUtil);
+        doThrow(new ProviderException(new KeyStoreException("Incompatible padding mode")))
+                .when(rsaOaepCipher).init(eq(Cipher.DECRYPT_MODE), eq(privateKey), any(AlgorithmParameterSpec.class));
+        when(rsaPkcs1Cipher.doFinal(encryptedAESPKCS1)).thenReturn(aesKeyBytes);
+        doReturn(reEncryptedOAEP).when(cryptoUtil).RSAEncrypt(aesKeyBytes);
+
+        byte[] result = cryptoUtil.getAESKey();
+
+        assertThat(result, is(aesKeyBytes));
+        Mockito.verify(storage).store(KEY_ALIAS, encodedOAEP);
+        Mockito.verify(storage, never()).remove(KEY_ALIAS + "_iv");
+        Mockito.verify(storage, never()).remove(OLD_KEY_ALIAS + "_iv");
+    }
+
+    @Test
+    public void shouldRegenerateKeysWithoutIncompatibleDeviceWhenMgf1DigestIsRejected() throws Exception {
+        CryptoUtil cryptoUtil = newCryptoUtilSpy();
+
+        // AES key wrapped by an OAEP RSA key whose authorized MGF1 digests exclude SHA-1:
+        // both the OAEP and the PKCS1 cipher are rejected, so the key can't be recovered
+        byte[] encryptedAESOAEP = new byte[]{10, 11, 12, 13};
+        String encodedOAEP = "oaep_encoded";
+        when(storage.retrieveString(KEY_ALIAS)).thenReturn(encodedOAEP);
+        when(storage.retrieveString(OLD_KEY_ALIAS)).thenReturn(null);
+        PowerMockito.mockStatic(Base64.class);
+        PowerMockito.when(Base64.decode(encodedOAEP, Base64.DEFAULT)).thenReturn(encryptedAESOAEP);
+
+        PrivateKey privateKey = givenStatefulRSAKey(cryptoUtil);
+        doThrow(new InvalidKeyException("Incompatible MGF digest"))
+                .when(rsaOaepCipher).init(eq(Cipher.DECRYPT_MODE), eq(privateKey), any(AlgorithmParameterSpec.class));
+        doThrow(new InvalidKeyException("Incompatible padding mode"))
+                .when(rsaPkcs1Cipher).init(Cipher.DECRYPT_MODE, privateKey);
+
+        byte[] newAESKey = new byte[32];
+        Arrays.fill(newAESKey, (byte) 0xEE);
+        SecretKey newSecretKey = mock(SecretKey.class);
+        when(newSecretKey.getEncoded()).thenReturn(newAESKey);
+        when(keyGenerator.generateKey()).thenReturn(newSecretKey);
+        byte[] encryptedNewAES = new byte[]{40, 41, 42};
+        doReturn(encryptedNewAES).when(cryptoUtil).RSAEncrypt(newAESKey);
+        PowerMockito.when(Base64.encode(encryptedNewAES, Base64.DEFAULT))
+                .thenReturn("fresh_key".getBytes(StandardCharsets.UTF_8));
+
+        // Must not throw IncompatibleDeviceException
+        byte[] result = cryptoUtil.getAESKey();
+
+        assertThat(result, is(newAESKey));
+        Mockito.verify(keyStore, Mockito.atLeastOnce()).deleteEntry(KEY_ALIAS);
+        Mockito.verify(storage).store(KEY_ALIAS, "fresh_key");
+    }
+
+    @Test
+    public void shouldMigratePKCS1KeyWhenEncryptIsTheFirstOperationAfterUpgrade() throws Exception {
+        CryptoUtil cryptoUtil = newCryptoUtilSpy();
+
+        byte[] aesKeyBytes = new byte[32];
+        Arrays.fill(aesKeyBytes, (byte) 0xCD);
+        byte[] encryptedAESPKCS1 = new byte[]{10, 11, 12, 13};
+        byte[] reEncryptedOAEP = new byte[]{20, 21, 22, 23};
+        String encodedPKCS1 = "pkcs1_encoded";
+
+        when(storage.retrieveString(KEY_ALIAS)).thenReturn(encodedPKCS1);
+        PowerMockito.mockStatic(Base64.class);
+        PowerMockito.when(Base64.decode(encodedPKCS1, Base64.DEFAULT)).thenReturn(encryptedAESPKCS1);
+        PowerMockito.when(Base64.encode(reEncryptedOAEP, Base64.DEFAULT))
+                .thenReturn("oaep_encoded".getBytes(StandardCharsets.UTF_8));
+
+        PrivateKey privateKey = givenStatefulRSAKey(cryptoUtil);
+        doThrow(new InvalidKeyException("Incompatible padding mode"))
+                .when(rsaOaepCipher).init(eq(Cipher.DECRYPT_MODE), eq(privateKey), any(AlgorithmParameterSpec.class));
+        when(rsaPkcs1Cipher.doFinal(encryptedAESPKCS1)).thenReturn(aesKeyBytes);
+        doReturn(reEncryptedOAEP).when(cryptoUtil).RSAEncrypt(aesKeyBytes);
+
+        when(aesCipher.doFinal(any(byte[].class))).thenReturn(new byte[]{50, 51, 52});
+        when(aesCipher.getIV()).thenReturn(new byte[12]);
+
+        cryptoUtil.encrypt(new byte[]{1, 2, 3});
+
+        ArgumentCaptor<SecretKey> keyCaptor = ArgumentCaptor.forClass(SecretKey.class);
+        Mockito.verify(aesCipher).init(eq(Cipher.ENCRYPT_MODE), keyCaptor.capture());
+        assertThat(keyCaptor.getValue().getEncoded(), is(aesKeyBytes));
+        Mockito.verify(keyGenerator, never()).generateKey();
     }
 
     @Test
