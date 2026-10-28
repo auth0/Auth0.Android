@@ -5,9 +5,11 @@ Authenticate with a username and password. The sequence is `authorize` → `iden
 [authorize.md](authorize.md) for the next-action pattern).
 
 Each non-terminal step completes by throwing an `EmbeddedAuthException` whose `error` is
-`EmbeddedAuthError.InsufficientAuthorization`. `verifyPassword` is terminal when no further factor is
-required and returns `Credentials`; if the tenant requires MFA it instead throws an
-`InsufficientAuthorization` continuation carrying the MFA next actions (see
+`EmbeddedAuthError.InsufficientAuthorization`. `verifyPassword` completes the flow and returns
+`Credentials` when no further factor is required; otherwise it throws an `InsufficientAuthorization`
+continuation. Always act on that continuation's `nextActions`: after a wrong password they offer
+`VerifyPassword` again (possibly alongside other first-factor options), and when the tenant requires
+MFA they carry the MFA actions (see
 [phone-authorize.md](phone-authorize.md), [push-oob-polling.md](push-oob-polling.md),
 [totp.md](totp.md), [recovery-code.md](recovery-code.md)).
 
@@ -22,9 +24,18 @@ try {
 // 2. Identify by username. The server continues with a VerifyPassword action.
 try {
     embedded.identify("jane", IdentifierType.USERNAME).await()
-} catch (e: EmbeddedAuthException) { /* continuation → VerifyPassword */ }
+} catch (e: EmbeddedAuthException) {
+    when (e.error) {
+        is EmbeddedAuthError.InsufficientAuthorization -> { /* continuation → VerifyPassword */ }
+        EmbeddedAuthError.InvalidRequest -> {
+            /* the username was rejected (e.g. "Invalid username format.") — fix the input and identify again */
+        }
+        EmbeddedAuthError.NoNextSteps -> { /* no step can continue for this user — restart the flow */ }
+        else -> { /* other terminal error */ }
+    }
+}
 
-// 3. Verify the password. Terminal — returns Credentials on success.
+// 3. Verify the password. Returns Credentials when no further factor is required.
 try {
     val credentials = embedded.verifyPassword("the-password").await()
     // credentials.accessToken, credentials.idToken, ...
@@ -32,14 +43,14 @@ try {
     when (val error = e.error) {
         is EmbeddedAuthError.InsufficientAuthorization -> {
             if (error.reason == EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_PASSWORD) {
-                /* wrong username or password — re-prompt and call verifyPassword again */
-            } else {
-                /* more MFA required — act on error.nextActions */
+                /* wrong username or password — tell the user before re-prompting */
             }
+            /* build the next screen from error.nextActions: VerifyPassword to retry, or MFA actions */
         }
         EmbeddedAuthError.PasswordLeaked -> {
             /* breached password detected — send the user to reset their password, then restart */
         }
+        EmbeddedAuthError.NoNextSteps -> { /* no step can continue the flow — restart */ }
         else -> { /* other terminal error */ }
     }
 }
@@ -58,7 +69,7 @@ embedded.identify("jane", IdentifierType.USERNAME)
 embedded.verifyPassword("the-password")
     .start(object : Callback<Credentials, EmbeddedAuthException> {
         override fun onSuccess(result: Credentials) { /* signed in */ }
-        override fun onFailure(error: EmbeddedAuthException) { /* wrong password or MFA required */ }
+        override fun onFailure(error: EmbeddedAuthException) { /* branch on error.error as in the coroutine sample */ }
     })
 ```
 </details>
@@ -84,7 +95,7 @@ embedded.verifyPassword("the-password")
             // credentials.getAccessToken()
         }
         @Override public void onFailure(@NonNull EmbeddedAuthException e) {
-            // wrong password, or MFA required
+            // branch on e.getError() as in the coroutine sample
         }
     });
 ```

@@ -99,6 +99,11 @@ $actionsJson
         return this
     }
 
+    fun willReturnInvalidUsernameFormat(): EmbeddedAuthMockServer {
+        server.enqueue(responseWithJSON("""{ "error": "invalid_request", "error_description": "Invalid username format." }""", 400))
+        return this
+    }
+
     fun willReturnNoNextSteps(): EmbeddedAuthMockServer {
         server.enqueue(responseWithJSON("""{ "error": "access_denied", "error_description": "no_next_steps" }""", 403))
         return this

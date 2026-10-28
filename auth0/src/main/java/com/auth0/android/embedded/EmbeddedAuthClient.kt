@@ -122,43 +122,28 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
     public fun verifyOtp(
         code: String,
         type: OtpType = OtpType.OOB
-    ): Request<Credentials, EmbeddedAuthException> {
-        val session = transactionState?.authSession ?: return noActiveSession()
-        val request = factory.post(authorizeUrl, authorizeCodeAdapter(gson))
-            .addParameters(
-                mapOf(
-                    AUTH_SESSION_KEY to session,
-                    ACTION_KEY to EmbeddedCapability.VERIFY_OTP.value,
-                    CLIENT_ID_KEY to clientId
-                )
-            )
-            .addParameter(OTP_KEY, code)
-            .addParameter(TYPE_KEY, type.value)
-        return advancing(request)
-    }
+    ): Request<Credentials, EmbeddedAuthException> =
+        terminalStep(EmbeddedCapability.VERIFY_OTP) {
+            addParameter(OTP_KEY, code)
+            addParameter(TYPE_KEY, type.value)
+        }
 
     /**
-     * Verifies the user's [password]. This is the terminal step of a username/password flow.
+     * Verifies the user's [password]. Completes the flow when no further factor is required.
      *
      * On success, it yields the [Credentials]. If the server requires further steps (for example
      * a second factor) or rejects the password, the request completes through
      * [EmbeddedAuthException] instead, with
      * [EmbeddedAuthError.InsufficientAuthorization.nextActions] on [EmbeddedAuthException.error]; a
      * wrong password reports [EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_PASSWORD].
+     *
+     * A password found in a data breach completes with the terminal
+     * [EmbeddedAuthError.PasswordLeaked]
      */
-    public fun verifyPassword(password: String): Request<Credentials, EmbeddedAuthException> {
-        val session = transactionState?.authSession ?: return noActiveSession()
-        val request = factory.post(authorizeUrl, authorizeCodeAdapter(gson))
-            .addParameters(
-                mapOf(
-                    AUTH_SESSION_KEY to session,
-                    ACTION_KEY to EmbeddedCapability.VERIFY_PASSWORD.value,
-                    CLIENT_ID_KEY to clientId
-                )
-            )
-            .addParameter(PASSWORD_KEY, password)
-        return advancing(request)
-    }
+    public fun verifyPassword(password: String): Request<Credentials, EmbeddedAuthException> =
+        terminalStep(EmbeddedCapability.VERIFY_PASSWORD) {
+            addParameter(PASSWORD_KEY, password)
+        }
 
     /**
      * Continues the flow by requesting a phone challenge for the authenticator at [index].
@@ -218,18 +203,8 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
      * On rejection or expiry the request completes with a terminal [EmbeddedAuthError] such as
      * [EmbeddedAuthError.AuthorizationRejected] or [EmbeddedAuthError.ChallengeExpired].
      */
-    public fun verifyOob(): Request<Credentials, EmbeddedAuthException> {
-        val session = transactionState?.authSession ?: return noActiveSession()
-        val request = factory.post(authorizeUrl, authorizeCodeAdapter(gson))
-            .addParameters(
-                mapOf(
-                    AUTH_SESSION_KEY to session,
-                    ACTION_KEY to EmbeddedCapability.VERIFY_OOB.value,
-                    CLIENT_ID_KEY to clientId
-                )
-            )
-        return advancing(request)
-    }
+    public fun verifyOob(): Request<Credentials, EmbeddedAuthException> =
+        terminalStep(EmbeddedCapability.VERIFY_OOB)
 
     /**
      * Verifies a recovery [code].
@@ -255,18 +230,8 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
      *
      * On success, it yields the [Credentials].
      */
-    public fun confirmRecoveryCode(): Request<Credentials, EmbeddedAuthException> {
-        val session = transactionState?.authSession ?: return noActiveSession()
-        val request = factory.post(authorizeUrl, authorizeCodeAdapter(gson))
-            .addParameters(
-                mapOf(
-                    AUTH_SESSION_KEY to session,
-                    ACTION_KEY to EmbeddedCapability.CONFIRM_RECOVERY_CODE.value,
-                    CLIENT_ID_KEY to clientId
-                )
-            )
-        return advancing(request)
-    }
+    public fun confirmRecoveryCode(): Request<Credentials, EmbeddedAuthException> =
+        terminalStep(EmbeddedCapability.CONFIRM_RECOVERY_CODE)
 
     private fun continueStep(
         action: EmbeddedCapability,
@@ -283,6 +248,23 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
             )
         request.addPayload()
         return stepping(request)
+    }
+
+    private fun terminalStep(
+        action: EmbeddedCapability,
+        addPayload: Request<AuthorizeCode, EmbeddedAuthException>.() -> Unit = {}
+    ): Request<Credentials, EmbeddedAuthException> {
+        val session = transactionState?.authSession ?: return noActiveSession()
+        val request = factory.post(authorizeUrl, authorizeCodeAdapter(gson))
+            .addParameters(
+                mapOf(
+                    AUTH_SESSION_KEY to session,
+                    ACTION_KEY to action.value,
+                    CLIENT_ID_KEY to clientId
+                )
+            )
+        request.addPayload()
+        return advancing(request)
     }
 
     private fun <T> noActiveSession(): Request<T, EmbeddedAuthException> = FailedRequest<T>(
