@@ -48,11 +48,11 @@ public data class MyAccountProfile(
     /**
      * Describes, per field, whether it can be edited by the user and why. Keyed by a JSON
      * Pointer to the field, e.g. `/given_name`.
-     * Absent when `profile_policy` is not part of the response, see
+     * Empty when `profile_policy` is not part of the response, see
      * [com.auth0.android.myaccount.request.GetUserProfileOptions].
      */
     @SerializedName("profile_policy")
-    public val profilePolicy: Map<String, ProfileFieldPolicy>? = null
+    public val profilePolicy: Map<String, ProfileFieldPolicy> = emptyMap()
 )
 
 /**

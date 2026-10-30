@@ -145,7 +145,7 @@ public class MyAccountAPIClientProfileTest {
     public fun `getUserProfile should parse profile_policy`() {
         mockAPI.willReturnUserProfile()
 
-        val policy = client.getUserProfile().execute().profilePolicy!!
+        val policy = client.getUserProfile().execute().profilePolicy
 
         val givenName = policy["/given_name"]!!
         assertThat(givenName.access, Matchers.`is`(ProfileFieldAccess.READ_ONLY))
@@ -164,7 +164,7 @@ public class MyAccountAPIClientProfileTest {
     public fun `getUserProfile should map unknown policy values to null without failing`() {
         mockAPI.willReturnUserProfileWithUnknownPolicyValues()
 
-        val policy = client.getUserProfile().execute().profilePolicy!!["/given_name"]!!
+        val policy = client.getUserProfile().execute().profilePolicy["/given_name"]!!
 
         assertThat(policy.access, Matchers.nullValue())
         assertThat(policy.source, Matchers.nullValue())
@@ -172,14 +172,14 @@ public class MyAccountAPIClientProfileTest {
     }
 
     @Test
-    public fun `getUserProfile should return null profilePolicy when it is not in the response`() {
+    public fun `getUserProfile should return an empty profilePolicy when it is not in the response`() {
         mockAPI.willReturnUserProfileWithoutPolicy()
 
         val profile = client.getUserProfile(GetUserProfileOptions(listOf("given_name", "picture")))
             .execute()
 
         assertThat(profile.givenName, Matchers.`is`("Jane"))
-        assertThat(profile.profilePolicy, Matchers.nullValue())
+        assertThat(profile.profilePolicy.isEmpty(), Matchers.`is`(true))
     }
 
     @Test
@@ -292,7 +292,7 @@ public class MyAccountAPIClientProfileTest {
             .execute()
 
         assertThat(profile.email, Matchers.`is`("jane@example.com"))
-        assertThat(profile.profilePolicy!!.size, Matchers.`is`(3))
+        assertThat(profile.profilePolicy.size, Matchers.`is`(3))
     }
 
     @Test

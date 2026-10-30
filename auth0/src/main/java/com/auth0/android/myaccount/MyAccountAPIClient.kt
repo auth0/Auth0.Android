@@ -850,6 +850,12 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * Retrieves the current user's profile, including a `profile_policy` descriptor for each
      * field that tells whether it can be edited by the user and why.
      *
+     * ## Availability
+     *
+     * This feature is currently available in
+     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
+     * Please reach out to Auth0 support to get it enabled for your tenant.
+     *
      * ## Scopes Required
      * `read:me:profile`
      *
@@ -863,15 +869,15 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      *      .start(object : Callback<MyAccountProfile, MyAccountException> {
      *              override fun onSuccess(result: MyAccountProfile) {
      *                  val canEditGivenName =
-     *                      result.profilePolicy?.get("/given_name")?.access == ProfileFieldAccess.READ_WRITE
+     *                      result.profilePolicy["/given_name"]?.access == ProfileFieldAccess.READ_WRITE
      *              }
      *              override fun onFailure(error: MyAccountException) {
      *                  Log.e("MyApp", "Failed with: ${error.message}")
      *              }
      *       })
      * ```
-     * The keys of `profilePolicy` are JSON Pointers to the fields, e.g. `/given_name`. It is only
-     * present when `profile_policy` is part of the response: with [GetUserProfileOptions.fields]
+     * The keys of `profilePolicy` are JSON Pointers to the fields, e.g. `/given_name`. It is empty
+     * unless `profile_policy` is part of the response: with [GetUserProfileOptions.fields]
      * set and [GetUserProfileOptions.includeFields] `true`, only if `profile_policy` is listed;
      * with `includeFields` `false`, unless `profile_policy` is listed.
      *
@@ -903,6 +909,12 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
     /**
      * Updates the current user's editable profile fields.
      * Fields left as `null` in the [request] remain unchanged.
+     *
+     * ## Availability
+     *
+     * This feature is currently available in
+     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
+     * Please reach out to Auth0 support to get it enabled for your tenant.
      *
      * ## Scopes Required
      * `update:me:profile`

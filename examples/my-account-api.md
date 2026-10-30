@@ -713,9 +713,12 @@ myAccountClient.updateAuthenticationMethodById("{Authentication_Id}", "{Name}")
 
 Retrieves the current user's profile. Each entry in `profilePolicy` describes whether the user can edit a field (`access`), where its value comes from (`source`), and why it is read-only (`reason`), so you can render an editable or read-only UI without checking the connection type. Entries are keyed by a JSON Pointer to the field, e.g. `/given_name`. `GetUserProfileOptions` and `UpdateUserProfileRequest` are in the `com.auth0.android.myaccount.request` package.
 
+> [!NOTE]
+> The My Account profile endpoints are currently in [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access). To request access to this feature, contact your Auth0 representative.
+
 **Prerequisites:**
 
-- The My Account profile endpoints must be enabled for your tenant. Until they are, requests fail with a `MyAccountException` with status code `403`: usually `A0E-403-0002` (Insufficient Scope), because the profile scopes can't be granted, or `A0E-403-0003` (Not Entitled) for a token issued before the feature was disabled.
+- The profile feature must be enabled for your tenant. Until it is, requests fail with a `MyAccountException` with status code `403`: usually `A0E-403-0002` (Insufficient Scope), because the profile scopes can't be granted, or `A0E-403-0003` (Not Entitled) for a token issued before the feature was disabled.
 - Grant the `read:me:profile` scope to your application under Auth0 Dashboard > Applications > APIs > Auth0 My Account API > Application Access.
 
 ```kotlin
@@ -723,18 +726,18 @@ myAccountClient.getUserProfile()
     .start(object : Callback<MyAccountProfile, MyAccountException> {
         override fun onSuccess(result: MyAccountProfile) {
             val canEditGivenName =
-                result.profilePolicy?.get("/given_name")?.access == ProfileFieldAccess.READ_WRITE
+                result.profilePolicy["/given_name"]?.access == ProfileFieldAccess.READ_WRITE
         }
         override fun onFailure(error: MyAccountException) {
             print("Error: ${error.message}")
         }
     })
 
-// Only return the listed fields. profilePolicy is only present if "profile_policy" is listed.
+// Only return the listed fields. profilePolicy is empty unless "profile_policy" is listed.
 myAccountClient.getUserProfile(GetUserProfileOptions(fields = listOf("given_name", "picture", "profile_policy")))
     .start(callback)
 
-// Return every field except the listed ones. profilePolicy is present unless it is listed.
+// Return every field except the listed ones. profilePolicy is empty if it is listed.
 myAccountClient.getUserProfile(GetUserProfileOptions(fields = listOf("profile_policy"), includeFields = false))
     .start(callback)
 ```
@@ -774,6 +777,9 @@ myAccountClient.getUserProfile(options).start(callback);
 **Scopes required:** `update:me:profile`
 
 Updates the user's editable profile fields, and returns the full updated profile.
+
+> [!NOTE]
+> The My Account profile endpoints are currently in [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access). To request access to this feature, contact your Auth0 representative.
 
 - Properties left as `null` in `UpdateUserProfileRequest` are not sent and remain unchanged.
 - An empty `UpdateUserProfileRequest()` is valid and returns the current profile.

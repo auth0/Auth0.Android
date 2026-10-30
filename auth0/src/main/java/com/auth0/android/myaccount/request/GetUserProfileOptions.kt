@@ -10,7 +10,7 @@ package com.auth0.android.myaccount.request
  * @param includeFields whether [fields] are included (`true`, the default) or excluded (`false`)
  * from the response. Ignored when [fields] is empty.
  *
- * The returned profile's `profilePolicy` is only present when `profile_policy` is part of the
+ * The returned profile's `profilePolicy` is empty unless `profile_policy` is part of the
  * response:
  * - when [includeFields] is `true` and [fields] is not empty, only if [fields] contains `profile_policy`
  * - when [includeFields] is `false`, unless [fields] contains `profile_policy`
