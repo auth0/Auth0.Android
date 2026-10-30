@@ -9,9 +9,10 @@ import com.auth0.android.result.Credentials
 
 /**
  * Runs one step of the embedded flow as a single [Request]. On a step failure the session is rotated
- * or cleared via [onStepFailure]; on the `200` that ends `/e/authorize` the authorization code is
- * exchanged for [Credentials] and the flow is completed via [onFlowComplete] only once that succeeds,
- * so a failed token exchange leaves the session intact for the caller to retry.
+ * or cleared via [onStepFailure]; on the `200` that ends `/e/authorize` the flow is completed via
+ * [onFlowComplete] before the authorization code is exchanged for [Credentials], because the server
+ * has consumed the session once it issues the code. A failed token exchange therefore ends the flow,
+ * and the caller must restart it.
  */
 internal class AdvancingRequest(
     private val authorize: Request<AuthorizeCode, EmbeddedAuthException>,
@@ -23,14 +24,8 @@ internal class AdvancingRequest(
     override fun start(callback: Callback<Credentials, EmbeddedAuthException>) {
         authorize.start(object : Callback<AuthorizeCode, EmbeddedAuthException> {
             override fun onSuccess(result: AuthorizeCode) {
-                exchange(result.authorizationCode).start(object : Callback<Credentials, EmbeddedAuthException> {
-                    override fun onSuccess(result: Credentials) {
-                        onFlowComplete()
-                        callback.onSuccess(result)
-                    }
-
-                    override fun onFailure(error: EmbeddedAuthException) = callback.onFailure(error)
-                })
+                onFlowComplete()
+                exchange(result.authorizationCode).start(callback)
             }
 
             override fun onFailure(error: EmbeddedAuthException) {
@@ -48,7 +43,8 @@ internal class AdvancingRequest(
             onStepFailure(error)
             throw error
         }
-        return exchange(code.authorizationCode).await().also { onFlowComplete() }
+        onFlowComplete()
+        return exchange(code.authorizationCode).await()
     }
 
     @Throws(Auth0Exception::class)
@@ -59,7 +55,8 @@ internal class AdvancingRequest(
             onStepFailure(error)
             throw error
         }
-        return exchange(code.authorizationCode).execute().also { onFlowComplete() }
+        onFlowComplete()
+        return exchange(code.authorizationCode).execute()
     }
 
     override fun addParameters(parameters: Map<String, String>): Request<Credentials, EmbeddedAuthException> {

@@ -90,7 +90,11 @@ public sealed interface EmbeddedAuthError {
     /** Terminal: no further action is available to continue authorization. Restart the flow. */
     public data object NoNextSteps : EmbeddedAuthError
 
-    /** The request never reached the server (`cause` is a network error). Retry the step. */
+    /**
+     * The request never reached the server (`cause` is a network error). Retry the step; if the retry
+     * fails with [NoActiveSession], the flow had already ended, so start a new one with
+     * [EmbeddedAuthClient.authorize].
+     */
     public data object Network : EmbeddedAuthError
 
     /** Client-side guard: no flow is in progress. Call [EmbeddedAuthClient.authorize] first. */

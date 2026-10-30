@@ -167,7 +167,7 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
     private fun EmbeddedAuthException.toAuthorizeState(): AuthorizeUiState =
         when (val e = error) {
             is EmbeddedAuthError.InsufficientAuthorization ->
-                if (e.nextActions.isNotEmpty()) AuthorizeUiState.ActionsAvailable(e.nextActions)
+                if (e.nextActions.isNotEmpty()) AuthorizeUiState.ActionsAvailable(e.nextActions, e.reason)
                 else AuthorizeUiState.Failed(this)
             else -> AuthorizeUiState.Failed(this)
         }

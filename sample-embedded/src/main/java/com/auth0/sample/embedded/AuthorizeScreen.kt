@@ -128,7 +128,7 @@ public fun AuthorizeScreen(
                         ActionsSection(current.otherActions, viewModel)
                     }
                 }
-                is AuthorizeUiState.ActionsAvailable -> ActionsSection(current.actions, viewModel)
+                is AuthorizeUiState.ActionsAvailable -> ActionsSection(current.actions, viewModel, current.reason)
                 is AuthorizeUiState.Authenticated -> InfoCard(formatCredentials(current.credentials))
                 is AuthorizeUiState.Failed -> InfoCard(formatError(current.error))
                 is AuthorizeUiState.Message -> InfoCard(current.text)
@@ -148,7 +148,19 @@ public fun AuthorizeScreen(
 }
 
 @Composable
-private fun ActionsSection(actions: List<NextAction>, viewModel: EmbeddedViewModel) {
+private fun ActionsSection(
+    actions: List<NextAction>,
+    viewModel: EmbeddedViewModel,
+    reason: EmbeddedAuthError.InsufficientAuthorization.Reason = EmbeddedAuthError.InsufficientAuthorization.Reason.NONE,
+) {
+    reason.messageRes()?.let {
+        Text(
+            text = stringResource(it),
+            color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Spacer(Modifier.height(12.dp))
+    }
     Text(
         text = stringResource(R.string.label_choose_action),
         style = MaterialTheme.typography.titleMedium,
@@ -345,7 +357,7 @@ private fun ActionCard(titleRes: Int, detail: String?, buttonRes: Int, onClick: 
 /** The password is submitted as typed — never trimmed — and masked on screen. */
 @Composable
 private fun VerifyPasswordCard(onVerify: (String) -> Unit) {
-    var password by rememberSaveable { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     OutlinedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
@@ -382,7 +394,7 @@ private fun VerifyPasswordCard(onVerify: (String) -> Unit) {
 
 @Composable
 private fun VerifyRecoveryCodeCard(onVerify: (String) -> Unit) {
-    var code by rememberSaveable { mutableStateOf("") }
+    var code by remember { mutableStateOf("") }
     OutlinedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
@@ -529,4 +541,11 @@ private fun explain(error: EmbeddedAuthError): String = when (error) {
     EmbeddedAuthError.IpBlocked -> "Rate limited — try again later."
     EmbeddedAuthError.Network -> "The request didn't reach the server — check your connection and retry."
     else -> "Authorize step failed."
+}
+
+private fun EmbeddedAuthError.InsufficientAuthorization.Reason.messageRes(): Int? = when (this) {
+    EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_PASSWORD -> R.string.error_invalid_identifier_or_password
+    EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_CODE -> R.string.error_invalid_code
+    EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_CODE -> R.string.error_invalid_identifier_or_code
+    else -> null
 }

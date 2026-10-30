@@ -28,7 +28,7 @@ try {
     when (e.error) {
         is EmbeddedAuthError.InsufficientAuthorization -> { /* continuation → VerifyPassword */ }
         EmbeddedAuthError.InvalidRequest -> {
-            /* the username was rejected (e.g. "Invalid username format.") — fix the input and identify again */
+            /* the username was rejected (e.g. "Invalid username format.") — fix the input and restart with authorize() */
         }
         EmbeddedAuthError.NoNextSteps -> { /* no step can continue for this user — restart the flow */ }
         else -> { /* other terminal error */ }

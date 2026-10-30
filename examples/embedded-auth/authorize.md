@@ -9,7 +9,7 @@
 
 The embedded authorization flow (`/e/authorize`) lets your app authenticate users without leaving the app for a browser. The server drives the flow step-by-step: each call completes through an `EmbeddedAuthException` whose typed `error` property (an `EmbeddedAuthError`) tells you whether the flow can continue — and, when it can, carries the next action to take — until the terminal call succeeds and returns `Credentials`.
 
-`EmbeddedAuthError` is a sealed interface. Branch on it with a `when`. The recoverable case, `EmbeddedAuthError.InsufficientAuthorization`, carries the `nextActions` list; the terminal cases do not. `Network` signals the request never reached the server, so the same step is safe to retry.
+`EmbeddedAuthError` is a sealed interface. Branch on it with a `when`. The recoverable case, `EmbeddedAuthError.InsufficientAuthorization`, carries the `nextActions` list; the terminal cases do not. `Network` signals the request never reached the server, so the same step is safe to retry; if the retry fails with `NoActiveSession`, the flow had already ended, so restart with `authorize()`.
 
 The flow is served by `EmbeddedAuthClient`, created from an `Auth0` instance:
 
@@ -162,7 +162,7 @@ when (e.error) {
     EmbeddedAuthError.IpBlocked               -> { /* suspicious-IP throttling blocked this IP */ }
     EmbeddedAuthError.SessionExpired          -> { /* the grant expired — restart via authorize() */ }
     EmbeddedAuthError.InvalidRequest          -> { /* malformed request — integration fault, fix and restart */ }
-    EmbeddedAuthError.Network                 -> { /* transient — safe to retry the same step */ }
+    EmbeddedAuthError.Network                 -> { /* transient — retry the same step; on NoActiveSession restart with authorize() */ }
     else                                      -> { /* Unknown/unclassified — inspect e.code and e.description */ }
 }
 ```

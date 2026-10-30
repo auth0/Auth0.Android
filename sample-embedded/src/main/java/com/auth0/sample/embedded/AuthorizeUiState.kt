@@ -1,5 +1,6 @@
 package com.auth0.sample.embedded
 
+import com.auth0.android.embedded.EmbeddedAuthError
 import com.auth0.android.embedded.EmbeddedAuthException
 import com.auth0.android.embedded.authorize.NextAction
 import com.auth0.android.result.Credentials
@@ -19,8 +20,14 @@ sealed interface AuthorizeUiState {
      */
     data class Polling(val otherActions: List<NextAction>) : AuthorizeUiState
 
-    /** The server returned a continuation: these are the steps the user can take next. */
-    data class ActionsAvailable(val actions: List<NextAction>) : AuthorizeUiState
+    /**
+     * The server returned a continuation: these are the steps the user can take next. [reason] says why
+     * the previous step did not complete, e.g. a wrong password or code.
+     */
+    data class ActionsAvailable(
+        val actions: List<NextAction>,
+        val reason: EmbeddedAuthError.InsufficientAuthorization.Reason = EmbeddedAuthError.InsufficientAuthorization.Reason.NONE,
+    ) : AuthorizeUiState
 
     /** Terminal success: [verifyOtp][EmbeddedAuthClient.verifyOtp] yielded credentials. */
     data class Authenticated(val credentials: Credentials) : AuthorizeUiState

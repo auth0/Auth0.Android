@@ -19,6 +19,9 @@
     <string name="status_authorizing">Working…</string>
     <string name="status_idle_authorize">Enter a connection and tap Start Authorize.</string>
     <string name="label_choose_action">Choose how to continue</string>
+    <string name="error_invalid_identifier_or_password">Wrong username or password. Try again.</string>
+    <string name="error_invalid_code">That code is incorrect. Try again.</string>
+    <string name="error_invalid_identifier_or_code">The identifier or code is incorrect. Try again.</string>
     <string name="action_start_over">Start over</string>
     <string name="hint_email">Email</string>
     <string name="hint_phone">Phone number</string>

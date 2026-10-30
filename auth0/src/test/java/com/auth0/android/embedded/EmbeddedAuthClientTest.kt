@@ -287,6 +287,21 @@ public class EmbeddedAuthClientTest {
     }
 
     @Test
+    public fun `identify await with USERNAME surfaces an invalid username as InvalidRequest and clears the session`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnInvalidUsernameFormat()
+
+        val error = assertEmbeddedErrorSuspending { client.identify("jane", IdentifierType.USERNAME).await() }
+
+        assertThat(error.error, `is`(EmbeddedAuthError.InvalidRequest))
+        assertThat(error.statusCode, `is`(400))
+        mockAPI.takeRequest()
+
+        val followOn = assertEmbeddedErrorSuspending { client.identify("jane", IdentifierType.USERNAME).await() }
+        assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
+    }
+
+    @Test
     public fun `authorize await surfaces NoNextSteps as a terminal error and leaves no session`(): Unit = runTest {
         mockAPI.willReturnNoNextSteps()
 
@@ -405,7 +420,7 @@ public class EmbeddedAuthClientTest {
     }
 
     @Test
-    public fun `verifyPassword await keeps the session for retry when the token exchange fails`(): Unit = runTest {
+    public fun `verifyPassword await clears the session when the token exchange fails`(): Unit = runTest {
         establishSession()
         mockAPI.willReturnAuthorizeCode()
         mockAPI.willReturnTokensWithoutIdToken()
@@ -413,12 +428,8 @@ public class EmbeddedAuthClientTest {
         mockAPI.takeRequest()
         mockAPI.takeRequest()
 
-        mockAPI.willReturnAuthorizeCode()
-        mockAPI.willReturnTokens()
-        val credentials = client.verifyPassword("secret").await()
-
-        assertThat(credentials.accessToken, `is`(EmbeddedAuthMockServer.ACCESS_TOKEN))
-        assertThat(bodyOf(mockAPI.takeRequest()).getString("auth_session"), `is`(EmbeddedAuthMockServer.AUTH_SESSION))
+        val followOn = assertEmbeddedErrorSuspending { client.verifyPassword("secret").await() }
+        assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
     }
 
     @Test
@@ -749,18 +760,16 @@ public class EmbeddedAuthClientTest {
     }
 
     @Test
-    public fun `a failed token exchange leaves the session intact for retry`() {
+    public fun `a failed token exchange clears the session`() {
         establishSession()
         mockAPI.willReturnAuthorizeCode()
         mockAPI.willReturnTokensWithoutIdToken()
-        try { client.verifyOtp("123456").execute() } catch (_: EmbeddedAuthException) {}
+        assertEmbeddedError { client.verifyOtp("123456").execute() }
         mockAPI.takeRequest()
         mockAPI.takeRequest()
 
-        mockAPI.willReturnAuthorizeCode()
-        mockAPI.willReturnTokens()
-        val credentials = client.verifyOtp("123456").execute()
-        assertThat(credentials.accessToken, `is`(EmbeddedAuthMockServer.ACCESS_TOKEN))
+        val followOn = assertEmbeddedError { client.verifyOtp("123456").execute() }
+        assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
     }
 
     @Test
@@ -898,7 +907,7 @@ public class EmbeddedAuthClientTest {
     }
 
     @Test
-    public fun `verifyOtp await leaves the session intact when the token exchange fails`(): Unit = runTest {
+    public fun `verifyOtp await clears the session when the token exchange fails`(): Unit = runTest {
         establishSession()
         mockAPI.willReturnAuthorizeCode()
         mockAPI.willReturnTokensWithoutIdToken()
@@ -907,10 +916,8 @@ public class EmbeddedAuthClientTest {
         mockAPI.takeRequest()
         mockAPI.takeRequest()
 
-        mockAPI.willReturnAuthorizeCode()
-        mockAPI.willReturnTokens()
-        val credentials = client.verifyOtp("123456").await()
-        assertThat(credentials.accessToken, `is`(EmbeddedAuthMockServer.ACCESS_TOKEN))
+        val followOn = assertEmbeddedErrorSuspending { client.verifyOtp("123456").await() }
+        assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
     }
 
     // ── Adapter mapping unit tests (§5 of EmbeddedAuthError spec) ─────────────
