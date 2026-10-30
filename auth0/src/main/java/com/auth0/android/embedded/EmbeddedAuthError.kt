@@ -28,6 +28,9 @@ public sealed interface EmbeddedAuthError {
             /** The identifier or the code was invalid; the server does not say which. */
             INVALID_IDENTIFIER_OR_CODE,
 
+            /** The username or the password was invalid; the server does not say which. */
+            INVALID_IDENTIFIER_OR_PASSWORD,
+
             /** Authorization is pending (e.g., push notification awaiting user approval). Retry after a delay. */
             AUTHORIZATION_PENDING,
 
@@ -78,7 +81,20 @@ public sealed interface EmbeddedAuthError {
     /** Terminal: additional consent is required before the flow can proceed. */
     public data object ConsentRequired : EmbeddedAuthError
 
-    /** The request never reached the server (`cause` is a network error). Retry the step. */
+    /**
+     * Terminal: breached password detection blocked the login because the password appears in a
+     * data breach. The user must reset their password before starting a new flow.
+     */
+    public data object PasswordLeaked : EmbeddedAuthError
+
+    /** Terminal: no further action is available to continue authorization. Restart the flow. */
+    public data object NoNextSteps : EmbeddedAuthError
+
+    /**
+     * The request never reached the server (`cause` is a network error). Retry the step; if the retry
+     * fails with [NoActiveSession], the flow had already ended, so start a new one with
+     * [EmbeddedAuthClient.authorize].
+     */
     public data object Network : EmbeddedAuthError
 
     /** Client-side guard: no flow is in progress. Call [EmbeddedAuthClient.authorize] first. */

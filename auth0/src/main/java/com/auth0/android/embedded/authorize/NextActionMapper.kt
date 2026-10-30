@@ -20,6 +20,8 @@ private fun Map<String, Any>.toNextAction(): NextAction? {
     return when (EmbeddedCapability.fromValue(raw)) {
         EmbeddedCapability.IDENTIFY_EMAIL -> NextAction.IdentifyEmail
         EmbeddedCapability.IDENTIFY_PHONE -> NextAction.IdentifyPhone
+        EmbeddedCapability.IDENTIFY_USERNAME -> NextAction.IdentifyUsername
+        EmbeddedCapability.VERIFY_PASSWORD -> NextAction.VerifyPassword
         EmbeddedCapability.CHALLENGE_EMAIL -> {
             val index = (this[INDEX_KEY] as? Number)?.toInt() ?: return dropped(raw, INDEX_KEY)
             val identifier = this[IDENTIFIER_KEY] as? String ?: return dropped(raw, IDENTIFIER_KEY)

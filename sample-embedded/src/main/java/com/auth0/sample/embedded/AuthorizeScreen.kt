@@ -38,6 +38,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -127,7 +128,7 @@ public fun AuthorizeScreen(
                         ActionsSection(current.otherActions, viewModel)
                     }
                 }
-                is AuthorizeUiState.ActionsAvailable -> ActionsSection(current.actions, viewModel)
+                is AuthorizeUiState.ActionsAvailable -> ActionsSection(current.actions, viewModel, current.reason)
                 is AuthorizeUiState.Authenticated -> InfoCard(formatCredentials(current.credentials))
                 is AuthorizeUiState.Failed -> InfoCard(formatError(current.error))
                 is AuthorizeUiState.Message -> InfoCard(current.text)
@@ -147,7 +148,19 @@ public fun AuthorizeScreen(
 }
 
 @Composable
-private fun ActionsSection(actions: List<NextAction>, viewModel: EmbeddedViewModel) {
+private fun ActionsSection(
+    actions: List<NextAction>,
+    viewModel: EmbeddedViewModel,
+    reason: EmbeddedAuthError.InsufficientAuthorization.Reason = EmbeddedAuthError.InsufficientAuthorization.Reason.NONE,
+) {
+    reason.messageRes()?.let {
+        Text(
+            text = stringResource(it),
+            color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Spacer(Modifier.height(12.dp))
+    }
     Text(
         text = stringResource(R.string.label_choose_action),
         style = MaterialTheme.typography.titleMedium,
@@ -169,6 +182,18 @@ private fun ActionsSection(actions: List<NextAction>, viewModel: EmbeddedViewMod
                 keyboardType = KeyboardType.Phone,
                 submitRes = R.string.action_submit,
                 onSubmit = { viewModel.identifyPhone(it) },
+            )
+
+            NextAction.IdentifyUsername -> IdentifyCard(
+                labelRes = R.string.action_identify_username,
+                hintRes = R.string.hint_username,
+                keyboardType = KeyboardType.Text,
+                submitRes = R.string.action_submit,
+                onSubmit = { viewModel.identifyUsername(it) },
+            )
+
+            NextAction.VerifyPassword -> VerifyPasswordCard(
+                onVerify = { viewModel.verifyPassword(it) },
             )
 
             is NextAction.ChallengeEmail -> ChallengeEmailCard(
@@ -329,9 +354,47 @@ private fun ActionCard(titleRes: Int, detail: String?, buttonRes: Int, onClick: 
     }
 }
 
+/** The password is submitted as typed — never trimmed — and masked on screen. */
+@Composable
+private fun VerifyPasswordCard(onVerify: (String) -> Unit) {
+    var password by remember { mutableStateOf("") }
+    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                stringResource(R.string.action_verify_password),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text(stringResource(R.string.hint_password)) },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done,
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = { if (password.isNotEmpty()) onVerify(password) },
+                ),
+            )
+            Spacer(Modifier.height(12.dp))
+            Button(
+                onClick = { onVerify(password) },
+                enabled = password.isNotEmpty(),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.action_verify))
+            }
+        }
+    }
+}
+
 @Composable
 private fun VerifyRecoveryCodeCard(onVerify: (String) -> Unit) {
-    var code by rememberSaveable { mutableStateOf("") }
+    var code by remember { mutableStateOf("") }
     OutlinedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
@@ -471,9 +534,18 @@ private fun explain(error: EmbeddedAuthError): String = when (error) {
     EmbeddedAuthError.AuthorizationRejected -> "The push notification was denied."
     EmbeddedAuthError.NoEligibleFactors -> "No enrolled factor can satisfy this login."
     EmbeddedAuthError.ConsentRequired -> "Consent is required, which this flow can't collect."
+    EmbeddedAuthError.PasswordLeaked -> "This password appeared in a data breach — reset it and try again."
+    EmbeddedAuthError.NoNextSteps -> "No further steps are available to continue — start over."
     EmbeddedAuthError.TooManyAttempts,
     EmbeddedAuthError.TooManyLogins,
     EmbeddedAuthError.IpBlocked -> "Rate limited — try again later."
     EmbeddedAuthError.Network -> "The request didn't reach the server — check your connection and retry."
     else -> "Authorize step failed."
+}
+
+private fun EmbeddedAuthError.InsufficientAuthorization.Reason.messageRes(): Int? = when (this) {
+    EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_PASSWORD -> R.string.error_invalid_identifier_or_password
+    EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_CODE -> R.string.error_invalid_code
+    EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_CODE -> R.string.error_invalid_identifier_or_code
+    else -> null
 }

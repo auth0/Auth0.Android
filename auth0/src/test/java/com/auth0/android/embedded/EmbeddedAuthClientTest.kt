@@ -2,6 +2,7 @@ package com.auth0.android.embedded
 
 import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
+import com.auth0.android.embedded.authorize.EmbeddedCapability
 import com.auth0.android.embedded.authorize.IdentifierType
 import com.auth0.android.embedded.authorize.NextAction
 import com.auth0.android.embedded.authorize.OtpChannel
@@ -90,6 +91,52 @@ public class EmbeddedAuthClientTest {
         val body = bodyOf(mockAPI.takeRequest())
         assertThat(body.getString("scope"), `is`("openid offline_access"))
         assertThat(body.getString("audience"), `is`("https://api.example.com"))
+    }
+
+    @Test
+    public fun `authorize should send the default capabilities`() {
+        mockAPI.willReturnJsonError()
+
+        try {
+            client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).execute()
+        } catch (_: EmbeddedAuthException) {
+        }
+
+        val capabilities = capabilitiesOf(bodyOf(mockAPI.takeRequest()))
+        assertThat(
+            capabilities,
+            `is`(
+                listOf(
+                    "action:identify:email:v1",
+                    "action:identify:phone:v1",
+                    "action:identify:username:v1",
+                    "action:challenge:email:v1",
+                    "action:challenge:phone:v1",
+                    "action:challenge:push:v1",
+                    "action:verify:otp:v1",
+                    "action:verify:password:v1",
+                    "action:verify:oob:v1",
+                    "action:verify:recovery-code:v1",
+                    "action:confirm:recovery-code:v1"
+                )
+            )
+        )
+    }
+
+    @Test
+    public fun `authorize should send only the given capabilities`() {
+        mockAPI.willReturnJsonError()
+
+        try {
+            client.authorize(
+                connection = EmbeddedAuthMockServer.AUTHORIZE_CONNECTION,
+                capabilities = setOf(EmbeddedCapability.IDENTIFY_EMAIL, EmbeddedCapability.VERIFY_OTP)
+            ).execute()
+        } catch (_: EmbeddedAuthException) {
+        }
+
+        val capabilities = capabilitiesOf(bodyOf(mockAPI.takeRequest()))
+        assertThat(capabilities, `is`(listOf("action:identify:email:v1", "action:verify:otp:v1")))
     }
 
     // ── verifyOtp — token exchange ──────────────────────────────────────────────
@@ -221,6 +268,187 @@ public class EmbeddedAuthClientTest {
         assertThat(body.getString("action"), `is`("action:verify:otp:v1"))
         assertThat(body.getString("otp"), `is`("654321"))
         assertThat(body.getString("type"), `is`("totp"))
+    }
+
+    // ── identify(USERNAME) / verifyPassword ─────────────────────────────────────
+
+    @Test
+    public fun `identify with USERNAME should POST the correct action and username`() {
+        establishSession()
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_VERIFY_PASSWORD)
+
+        val error = assertEmbeddedError { client.identify("jane", IdentifierType.USERNAME).execute() }
+
+        val body = bodyOf(mockAPI.takeRequest())
+        assertThat(body.getString("action"), `is`("action:identify:username:v1"))
+        assertThat(body.getString("username"), `is`("jane"))
+        assertThat(body.getString("auth_session"), `is`(EmbeddedAuthMockServer.AUTH_SESSION))
+        assertThat(error.nextActions[0], `is`(NextAction.VerifyPassword))
+    }
+
+    @Test
+    public fun `identify await with USERNAME surfaces an invalid username as InvalidRequest and clears the session`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnInvalidUsernameFormat()
+
+        val error = assertEmbeddedErrorSuspending { client.identify("jane", IdentifierType.USERNAME).await() }
+
+        assertThat(error.error, `is`(EmbeddedAuthError.InvalidRequest))
+        assertThat(error.statusCode, `is`(400))
+        mockAPI.takeRequest()
+
+        val followOn = assertEmbeddedErrorSuspending { client.identify("jane", IdentifierType.USERNAME).await() }
+        assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
+    }
+
+    @Test
+    public fun `authorize await surfaces NoNextSteps as a terminal error and leaves no session`(): Unit = runTest {
+        mockAPI.willReturnNoNextSteps()
+
+        val error = assertEmbeddedErrorSuspending {
+            client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await()
+        }
+
+        assertThat(error.error, `is`(EmbeddedAuthError.NoNextSteps))
+        assertThat(error.statusCode, `is`(403))
+        mockAPI.takeRequest()
+
+        val followOn = assertEmbeddedErrorSuspending { client.identify("jane", IdentifierType.USERNAME).await() }
+        assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
+    }
+
+    @Test
+    public fun `authorize continuation surfaces IdentifyUsername next action`() {
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_IDENTIFY_USERNAME)
+
+        val error = assertEmbeddedError { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).execute() }
+
+        assertThat(error.nextActions[0], `is`(NextAction.IdentifyUsername))
+    }
+
+    @Test
+    public fun `verifyPassword should fail with no_active_session when no flow is in progress`() {
+        val error = assertEmbeddedError { client.verifyPassword("secret").execute() }
+        assertThat(error.code, `is`("no_active_session"))
+        assertThat(error.error, `is`(EmbeddedAuthError.NoActiveSession))
+    }
+
+    @Test
+    public fun `verifyPassword should POST the correct action and password and return credentials`() {
+        establishSession()
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+
+        val credentials = client.verifyPassword("secret").execute()
+
+        val body = bodyOf(mockAPI.takeRequest())
+        assertThat(body.getString("action"), `is`("action:verify:password:v1"))
+        assertThat(body.getString("password"), `is`("secret"))
+        assertThat(body.getString("auth_session"), `is`(EmbeddedAuthMockServer.AUTH_SESSION))
+        assertThat(body.getString("client_id"), `is`(CLIENT_ID))
+        assertThat(credentials.accessToken, `is`(EmbeddedAuthMockServer.ACCESS_TOKEN))
+        assertThat(bodyOf(mockAPI.takeRequest()).getString("code"), `is`(EmbeddedAuthMockServer.AUTHORIZATION_CODE))
+    }
+
+    @Test
+    public fun `verifyPassword surfaces an MFA continuation and rotates the session`() {
+        establishSession()
+        mockAPI.willReturnContinuationWith(
+            EmbeddedAuthMockServer.NEXT_CHALLENGE_PHONE,
+            authSession = EmbeddedAuthMockServer.ROTATED_AUTH_SESSION
+        )
+
+        val error = assertEmbeddedError { client.verifyPassword("secret").execute() }
+        mockAPI.takeRequest()
+
+        assertThat(error.error, instanceOf(EmbeddedAuthError.InsufficientAuthorization::class.java))
+        assertThat(error.nextActions[0], instanceOf(NextAction.ChallengePhone::class.java))
+
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_VERIFY_OTP_SMS)
+        assertEmbeddedError { client.challengePhone().execute() }
+        val body = bodyOf(mockAPI.takeRequest())
+        assertThat(body.getString("auth_session"), `is`(EmbeddedAuthMockServer.ROTATED_AUTH_SESSION))
+    }
+
+    @Test
+    public fun `verifyPassword flags a wrong password as recoverable and keeps the session`() {
+        establishSession()
+        mockAPI.willReturnInvalidPassword()
+
+        val error = assertEmbeddedError { client.verifyPassword("wrong").execute() }
+        mockAPI.takeRequest()
+
+        val reason = error.error as EmbeddedAuthError.InsufficientAuthorization
+        assertThat(reason.reason, `is`(EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_PASSWORD))
+        assertThat(error.nextActions[0], `is`(NextAction.VerifyPassword))
+
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+        client.verifyPassword("right").execute()
+        val retry = bodyOf(mockAPI.takeRequest())
+        assertThat(retry.getString("auth_session"), `is`(EmbeddedAuthMockServer.ROTATED_AUTH_SESSION))
+    }
+
+    @Test
+    public fun `verifyPassword await surfaces a breached password as PasswordLeaked and clears the session`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnPasswordLeaked()
+
+        val error = assertEmbeddedErrorSuspending { client.verifyPassword("leaked").await() }
+
+        assertThat(error.error, `is`(EmbeddedAuthError.PasswordLeaked))
+        assertThat(error.statusCode, `is`(403))
+        mockAPI.takeRequest()
+
+        val followOn = assertEmbeddedErrorSuspending { client.verifyPassword("secret").await() }
+        assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
+    }
+
+    @Test
+    public fun `verifyPassword await surfaces NoNextSteps as a terminal error and clears the session`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnNoNextSteps()
+
+        val error = assertEmbeddedErrorSuspending { client.verifyPassword("secret").await() }
+
+        assertThat(error.error, `is`(EmbeddedAuthError.NoNextSteps))
+        assertThat(error.statusCode, `is`(403))
+        mockAPI.takeRequest()
+
+        val followOn = assertEmbeddedErrorSuspending { client.verifyPassword("secret").await() }
+        assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
+    }
+
+    @Test
+    public fun `verifyPassword await clears the session when the token exchange fails`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokensWithoutIdToken()
+        assertEmbeddedErrorSuspending { client.verifyPassword("secret").await() }
+        mockAPI.takeRequest()
+        mockAPI.takeRequest()
+
+        val followOn = assertEmbeddedErrorSuspending { client.verifyPassword("secret").await() }
+        assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
+    }
+
+    @Test
+    public fun `verifyPassword await should return credentials`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+
+        val credentials = client.verifyPassword("secret").await()
+
+        assertThat(credentials.accessToken, `is`(EmbeddedAuthMockServer.ACCESS_TOKEN))
+    }
+
+    @Test
+    public fun `adapter maps insufficient_authorization + invalid_identifier_or_password to reason INVALID_IDENTIFIER_OR_PASSWORD`() {
+        val json = """{"error":"insufficient_authorization","error_description":"invalid_identifier_or_password","auth_session":"s","next":[${EmbeddedAuthMockServer.NEXT_VERIFY_PASSWORD}]}"""
+        val ex = embeddedAuthErrorAdapter().fromJsonResponse(403, StringReader(json))
+        val error = ex.error as EmbeddedAuthError.InsufficientAuthorization
+        assertThat(error.reason, `is`(EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_PASSWORD))
     }
 
     // ── Continuation / typed-error mapping ──────────────────────────────────────
@@ -532,18 +760,16 @@ public class EmbeddedAuthClientTest {
     }
 
     @Test
-    public fun `a failed token exchange leaves the session intact for retry`() {
+    public fun `a failed token exchange clears the session`() {
         establishSession()
         mockAPI.willReturnAuthorizeCode()
         mockAPI.willReturnTokensWithoutIdToken()
-        try { client.verifyOtp("123456").execute() } catch (_: EmbeddedAuthException) {}
+        assertEmbeddedError { client.verifyOtp("123456").execute() }
         mockAPI.takeRequest()
         mockAPI.takeRequest()
 
-        mockAPI.willReturnAuthorizeCode()
-        mockAPI.willReturnTokens()
-        val credentials = client.verifyOtp("123456").execute()
-        assertThat(credentials.accessToken, `is`(EmbeddedAuthMockServer.ACCESS_TOKEN))
+        val followOn = assertEmbeddedError { client.verifyOtp("123456").execute() }
+        assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
     }
 
     @Test
@@ -681,7 +907,7 @@ public class EmbeddedAuthClientTest {
     }
 
     @Test
-    public fun `verifyOtp await leaves the session intact when the token exchange fails`(): Unit = runTest {
+    public fun `verifyOtp await clears the session when the token exchange fails`(): Unit = runTest {
         establishSession()
         mockAPI.willReturnAuthorizeCode()
         mockAPI.willReturnTokensWithoutIdToken()
@@ -690,10 +916,8 @@ public class EmbeddedAuthClientTest {
         mockAPI.takeRequest()
         mockAPI.takeRequest()
 
-        mockAPI.willReturnAuthorizeCode()
-        mockAPI.willReturnTokens()
-        val credentials = client.verifyOtp("123456").await()
-        assertThat(credentials.accessToken, `is`(EmbeddedAuthMockServer.ACCESS_TOKEN))
+        val followOn = assertEmbeddedErrorSuspending { client.verifyOtp("123456").await() }
+        assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
     }
 
     // ── Adapter mapping unit tests (§5 of EmbeddedAuthError spec) ─────────────
@@ -842,6 +1066,20 @@ public class EmbeddedAuthClientTest {
         val json = """{"error":"access_denied","error_description":"consent_required"}"""
         val ex = embeddedAuthErrorAdapter().fromJsonResponse(403, StringReader(json))
         assertThat(ex.error, `is`(EmbeddedAuthError.ConsentRequired))
+    }
+
+    @Test
+    public fun `adapter maps password_leaked to PasswordLeaked`() {
+        val json = """{"error":"access_denied","error_description":"password_leaked"}"""
+        val ex = embeddedAuthErrorAdapter().fromJsonResponse(403, StringReader(json))
+        assertThat(ex.error, `is`(EmbeddedAuthError.PasswordLeaked))
+    }
+
+    @Test
+    public fun `adapter maps no_next_steps to NoNextSteps`() {
+        val json = """{"error":"access_denied","error_description":"no_next_steps"}"""
+        val ex = embeddedAuthErrorAdapter().fromJsonResponse(403, StringReader(json))
+        assertThat(ex.error, `is`(EmbeddedAuthError.NoNextSteps))
     }
 
 
@@ -1266,6 +1504,11 @@ public class EmbeddedAuthClientTest {
 
     private fun bodyOf(request: RecordedRequest): JSONObject =
         JSONObject(request.body.readUtf8())
+
+    private fun capabilitiesOf(body: JSONObject): List<String> {
+        val array = body.getJSONArray("capabilities")
+        return List(array.length()) { array.getString(it) }
+    }
 
     private companion object {
         private const val CLIENT_ID = "CLIENT_ID"
