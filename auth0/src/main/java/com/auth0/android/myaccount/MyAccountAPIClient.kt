@@ -8,6 +8,8 @@ import com.auth0.android.NetworkErrorException
 import com.auth0.android.authentication.ParameterBuilder
 import com.auth0.android.dpop.DPoP
 import com.auth0.android.dpop.SenderConstraining
+import com.auth0.android.myaccount.request.GetUserProfileOptions
+import com.auth0.android.myaccount.request.UpdateUserProfileRequest
 import com.auth0.android.request.ErrorAdapter
 import com.auth0.android.request.JsonAdapter
 import com.auth0.android.request.PublicKeyCredentials
@@ -22,6 +24,7 @@ import com.auth0.android.result.AuthenticationMethods
 import com.auth0.android.result.EnrollmentChallenge
 import com.auth0.android.result.Factor
 import com.auth0.android.result.Factors
+import com.auth0.android.result.MyAccountProfile
 import com.auth0.android.result.PasskeyAuthenticationMethod
 import com.auth0.android.result.PasskeyEnrollmentChallenge
 import com.auth0.android.result.PasskeyRegistrationChallenge
@@ -843,6 +846,119 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
             .addHeader(AUTHORIZATION_KEY, authorizationHeader)
     }
 
+    /**
+     * Retrieves the current user's profile, including a `profile_policy` descriptor for each
+     * field that tells whether it can be edited by the user and why.
+     *
+     * ## Availability
+     *
+     * This feature is currently available in
+     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
+     * Please reach out to Auth0 support to get it enabled for your tenant.
+     *
+     * ## Scopes Required
+     * `read:me:profile`
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
+     * apiClient.getUserProfile()
+     *      .start(object : Callback<MyAccountProfile, MyAccountException> {
+     *              override fun onSuccess(result: MyAccountProfile) {
+     *                  val canEditGivenName =
+     *                      result.profilePolicy["/given_name"]?.access == ProfileFieldAccess.READ_WRITE
+     *              }
+     *              override fun onFailure(error: MyAccountException) {
+     *                  Log.e("MyApp", "Failed with: ${error.message}")
+     *              }
+     *       })
+     * ```
+     * The keys of `profilePolicy` are JSON Pointers to the fields, e.g. `/given_name`. It is empty
+     * unless `profile_policy` is part of the response: with [GetUserProfileOptions.fields]
+     * set and [GetUserProfileOptions.includeFields] `true`, only if `profile_policy` is listed;
+     * with `includeFields` `false`, unless `profile_policy` is listed.
+     *
+     * @param options optional selection of the fields to return.
+     * @return a request that will yield the user's profile.
+     */
+    @JvmOverloads
+    public fun getUserProfile(
+        options: GetUserProfileOptions = GetUserProfileOptions()
+    ): Request<MyAccountProfile, MyAccountException> {
+        val url = getDomainUrlBuilder().apply {
+            addPathSegment(PROFILE)
+            if (options.fields.isNotEmpty()) {
+                addQueryParameter(FIELDS_KEY, options.fields.joinToString(","))
+                // The server includes the listed fields by default, so only send the exclusion.
+                if (!options.includeFields) {
+                    addQueryParameter(INCLUDE_FIELDS_KEY, "false")
+                }
+            }
+        }.build()
+        return factory.get(
+            url.toString(),
+            GsonAdapter(MyAccountProfile::class.java, gson),
+            dPoP
+        )
+            .addHeader(AUTHORIZATION_KEY, authorizationHeader)
+    }
+
+    /**
+     * Updates the current user's editable profile fields.
+     * Fields left as `null` in the [request] remain unchanged.
+     *
+     * ## Availability
+     *
+     * This feature is currently available in
+     * [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access).
+     * Please reach out to Auth0 support to get it enabled for your tenant.
+     *
+     * ## Scopes Required
+     * `update:me:profile`
+     *
+     * ## Usage
+     *
+     * ```kotlin
+     * val auth0 = Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN")
+     * val apiClient = MyAccountAPIClient(auth0, accessToken)
+     *
+     * val request = UpdateUserProfileRequest(givenName = "Jane", nickname = "jane")
+     * apiClient.updateUserProfile(request)
+     *      .start(object : Callback<MyAccountProfile, MyAccountException> {
+     *              override fun onSuccess(result: MyAccountProfile) {
+     *                  Log.d("MyApp", "Profile updated")
+     *              }
+     *              override fun onFailure(error: MyAccountException) {
+     *                  // On 400, error.validationErrors describes each rejected field
+     *              }
+     *       })
+     * ```
+     * @param request the changes to apply.
+     * @return a request that will yield the full, updated profile.
+     */
+    public fun updateUserProfile(
+        request: UpdateUserProfileRequest
+    ): Request<MyAccountProfile, MyAccountException> {
+        val url = getDomainUrlBuilder().addPathSegment(PROFILE).build()
+        val params = ParameterBuilder.newBuilder().apply {
+            request.givenName?.let { set(GIVEN_NAME_KEY, it) }
+            request.familyName?.let { set(FAMILY_NAME_KEY, it) }
+            request.name?.let { set(NAME_KEY, it) }
+            request.nickname?.let { set(NICKNAME_KEY, it) }
+            request.picture?.let { set(PICTURE_KEY, it) }
+        }.asDictionary()
+        return factory.patch(
+            url.toString(),
+            GsonAdapter(MyAccountProfile::class.java, gson),
+            dPoP
+        )
+            .addParameters(params)
+            .addHeader(AUTHORIZATION_KEY, authorizationHeader)
+    }
+
     // WebAuthn methods are private.
     /**
      * Starts the enrollment of a WebAuthn Platform (e.g., biometrics) authenticator.
@@ -931,6 +1047,14 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
         private const val FACTORS = "factors"
         private const val PHONE_NUMBER_KEY = "phone_number"
         private const val EMAIL_KEY = "email"
+        private const val PROFILE = "profile"
+        private const val FIELDS_KEY = "fields"
+        private const val INCLUDE_FIELDS_KEY = "include_fields"
+        private const val GIVEN_NAME_KEY = "given_name"
+        private const val FAMILY_NAME_KEY = "family_name"
+        private const val NAME_KEY = "name"
+        private const val NICKNAME_KEY = "nickname"
+        private const val PICTURE_KEY = "picture"
 
         private fun createErrorAdapter(): ErrorAdapter<MyAccountException> {
             val mapAdapter = forMap(GsonProvider.gson)

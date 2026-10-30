@@ -335,6 +335,24 @@ WebAuthProvider.login(account)
 
 See the [full usage example](examples/experiment-center.md) for coroutine and Java samples.
 
+### My Account API: user profile
+
+> [!NOTE]
+> The My Account profile API is currently in Early Access. To request access to this feature, contact your Auth0 representative.
+
+After obtaining an access token for the My Account API, use `MyAccountAPIClient` to read the signed-in user's profile and update the fields they are allowed to edit. Each field in `profilePolicy` tells you whether it is editable and why:
+
+```kotlin
+val client = MyAccountAPIClient(account, accessToken)
+
+val profile = client.getUserProfile().await()
+val canEditGivenName = profile.profilePolicy["/given_name"]?.access == ProfileFieldAccess.READ_WRITE
+
+client.updateUserProfile(UpdateUserProfileRequest(givenName = "Jane")).await()
+```
+
+See the [full usage example](examples/my-account-api.md#get-the-user-profile) for callback, coroutine and Java samples.
+
 ## Credentials Manager
 
 This library ships with two additional classes that help you manage the Credentials received during authentication.

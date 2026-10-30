@@ -707,3 +707,128 @@ myAccountClient.updateAuthenticationMethodById("{Authentication_Id}", "{Name}")
     });
 ```
 </details>
+
+### Get the User Profile
+**Scopes required:** `read:me:profile`
+
+Retrieves the current user's profile. Each entry in `profilePolicy` describes whether the user can edit a field (`access`), where its value comes from (`source`), and why it is read-only (`reason`), so you can render an editable or read-only UI without checking the connection type. Entries are keyed by a JSON Pointer to the field, e.g. `/given_name`. `GetUserProfileOptions` and `UpdateUserProfileRequest` are in the `com.auth0.android.myaccount.request` package.
+
+> [!NOTE]
+> The My Account profile endpoints are currently in [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access). To request access to this feature, contact your Auth0 representative.
+
+**Prerequisites:**
+
+- The profile feature must be enabled for your tenant. Until it is, requests fail with a `MyAccountException` with status code `403`: usually `A0E-403-0002` (Insufficient Scope), because the profile scopes can't be granted, or `A0E-403-0003` (Not Entitled) for a token issued before the feature was disabled.
+- Grant the `read:me:profile` scope to your application under Auth0 Dashboard > Applications > APIs > Auth0 My Account API > Application Access.
+
+```kotlin
+myAccountClient.getUserProfile()
+    .start(object : Callback<MyAccountProfile, MyAccountException> {
+        override fun onSuccess(result: MyAccountProfile) {
+            val canEditGivenName =
+                result.profilePolicy["/given_name"]?.access == ProfileFieldAccess.READ_WRITE
+        }
+        override fun onFailure(error: MyAccountException) {
+            print("Error: ${error.message}")
+        }
+    })
+
+// Only return the listed fields. profilePolicy is empty unless "profile_policy" is listed.
+myAccountClient.getUserProfile(GetUserProfileOptions(fields = listOf("given_name", "picture", "profile_policy")))
+    .start(callback)
+
+// Return every field except the listed ones. profilePolicy is empty if it is listed.
+myAccountClient.getUserProfile(GetUserProfileOptions(fields = listOf("profile_policy"), includeFields = false))
+    .start(callback)
+```
+<details>
+    <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    val profile = myAccountClient.getUserProfile().await()
+    val givenName = profile.givenName
+} catch (exception: MyAccountException) {
+    print("Error: ${exception.message}")
+}
+```
+</details>
+<details>
+    <summary>Using Java</summary>
+
+```java
+myAccountClient.getUserProfile()
+    .start(new Callback<MyAccountProfile, MyAccountException>() {
+        @Override
+        public void onSuccess(MyAccountProfile result) {
+            // The user's profile
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+
+// Only return some fields
+GetUserProfileOptions options = new GetUserProfileOptions(Arrays.asList("given_name", "picture"));
+myAccountClient.getUserProfile(options).start(callback);
+```
+</details>
+
+### Update the User Profile
+**Scopes required:** `update:me:profile`
+
+Updates the user's editable profile fields, and returns the full updated profile.
+
+> [!NOTE]
+> The My Account profile endpoints are currently in [Early Access](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#early-access). To request access to this feature, contact your Auth0 representative.
+
+- Properties left as `null` in `UpdateUserProfileRequest` are not sent and remain unchanged.
+- An empty `UpdateUserProfileRequest()` is valid and returns the current profile.
+- If a field can't be updated (for example, it is managed by the identity provider), the request fails with status code `400`, and `MyAccountException.validationErrors` describes each rejected field: `pointer` (e.g. `/given_name`), `detail`, and `source`.
+
+**Prerequisites:**
+
+The same as [Get the User Profile](#get-the-user-profile), with the `update:me:profile` scope.
+
+```kotlin
+val request = UpdateUserProfileRequest(givenName = "Jane", nickname = "jane")
+myAccountClient.updateUserProfile(request)
+    .start(object : Callback<MyAccountProfile, MyAccountException> {
+        override fun onSuccess(result: MyAccountProfile) {
+            // The updated profile
+        }
+        override fun onFailure(error: MyAccountException) {
+            error.validationErrors?.forEach {
+                Log.e("MyApp", "${it.pointer}: ${it.detail} (${it.source})")
+            }
+        }
+    })
+```
+<details>
+    <summary>Using coroutines</summary>
+
+```kotlin
+try {
+    val updated = myAccountClient.updateUserProfile(UpdateUserProfileRequest(givenName = "Jane"))
+        .await()
+    val givenName = updated.givenName
+} catch (exception: MyAccountException) {
+    print("Error: ${exception.message}")
+}
+```
+</details>
+<details>
+    <summary>Using Java</summary>
+
+```java
+UpdateUserProfileRequest request = new UpdateUserProfileRequest("Jane");
+myAccountClient.updateUserProfile(request)
+    .start(new Callback<MyAccountProfile, MyAccountException>() {
+        @Override
+        public void onSuccess(MyAccountProfile result) {
+            // The updated profile
+        }
+        @Override
+        public void onFailure(@NonNull MyAccountException error) { }
+    });
+```
+</details>
