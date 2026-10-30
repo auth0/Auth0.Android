@@ -1,5 +1,11 @@
 # Change Log
 
+## [4.3.0](https://github.com/auth0/Auth0.Android/tree/4.3.0) (2026-10-30)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/4.2.1...4.3.0)
+
+**Added**
+- feat(myaccount): Add getUserProfile and updateUserProfile methods [\#1115](https://github.com/auth0/Auth0.Android/pull/1115) ([utkrishtsahu](https://github.com/utkrishtsahu))
+
 ## [4.2.1](https://github.com/auth0/Auth0.Android/tree/4.2.1) (2026-10-26)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/4.2.0...4.2.1)
 
