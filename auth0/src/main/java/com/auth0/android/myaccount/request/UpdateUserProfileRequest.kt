@@ -1,7 +1,7 @@
-package com.auth0.android.myaccount
+package com.auth0.android.myaccount.request
 
 /**
- * The changes to apply with [MyAccountAPIClient.updateUserProfile].
+ * The changes to apply with [com.auth0.android.myaccount.MyAccountAPIClient.updateUserProfile].
  *
  * Properties left as `null` are not sent and remain unchanged. A request with every property
  * `null` is valid and returns the current profile.

@@ -6,6 +6,8 @@ import com.auth0.android.dpop.DPoPKeyStore
 import com.auth0.android.dpop.DPoPUtil
 import com.auth0.android.dpop.FakeECPrivateKey
 import com.auth0.android.dpop.FakeECPublicKey
+import com.auth0.android.myaccount.request.GetUserProfileOptions
+import com.auth0.android.myaccount.request.UpdateUserProfileRequest
 import com.auth0.android.result.MyAccountProfile
 import com.auth0.android.result.ProfileFieldAccess
 import com.auth0.android.result.ProfileFieldSource
@@ -76,7 +78,7 @@ public class MyAccountAPIClientProfileTest {
     }
 
     @Test
-    public fun `getUserProfile should send comma-joined fields without include_fields when not set`() {
+    public fun `getUserProfile should send comma-joined fields without include_fields by default`() {
         mockAPI.willReturnUserProfile()
 
         client.getUserProfile(GetUserProfileOptions(fields = listOf("given_name", "picture")))
@@ -88,14 +90,23 @@ public class MyAccountAPIClientProfileTest {
     }
 
     @Test
-    public fun `getUserProfile should send include_fields true`() {
+    public fun `getUserProfile should not send include_fields when it is true, the server default`() {
         mockAPI.willReturnUserProfile()
 
         client.getUserProfile(GetUserProfileOptions(listOf("given_name"), true)).execute()
 
         val url = mockAPI.takeRequest().requestUrl!!
         assertThat(url.queryParameter("fields"), Matchers.`is`("given_name"))
-        assertThat(url.queryParameter("include_fields"), Matchers.`is`("true"))
+        assertThat(url.queryParameterNames.contains("include_fields"), Matchers.`is`(false))
+    }
+
+    @Test
+    public fun `getUserProfile should not send include_fields false when fields is empty`() {
+        mockAPI.willReturnUserProfile()
+
+        client.getUserProfile(GetUserProfileOptions(includeFields = false)).execute()
+
+        assertThat(mockAPI.takeRequest().path, Matchers.`is`("/me/v1/profile"))
     }
 
     @Test

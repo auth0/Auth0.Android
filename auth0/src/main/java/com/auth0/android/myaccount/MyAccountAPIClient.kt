@@ -8,6 +8,8 @@ import com.auth0.android.NetworkErrorException
 import com.auth0.android.authentication.ParameterBuilder
 import com.auth0.android.dpop.DPoP
 import com.auth0.android.dpop.SenderConstraining
+import com.auth0.android.myaccount.request.GetUserProfileOptions
+import com.auth0.android.myaccount.request.UpdateUserProfileRequest
 import com.auth0.android.request.ErrorAdapter
 import com.auth0.android.request.JsonAdapter
 import com.auth0.android.request.PublicKeyCredentials
@@ -860,30 +862,34 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * apiClient.getUserProfile()
      *      .start(object : Callback<MyAccountProfile, MyAccountException> {
      *              override fun onSuccess(result: MyAccountProfile) {
-     *                  Log.d("MyApp", "Profile: $result")
+     *                  val canEditGivenName =
+     *                      result.profilePolicy?.get("/given_name")?.access == ProfileFieldAccess.READ_WRITE
      *              }
      *              override fun onFailure(error: MyAccountException) {
      *                  Log.e("MyApp", "Failed with: ${error.message}")
      *              }
      *       })
      * ```
-     * When [GetUserProfileOptions.fields] is set and does not include `profile_policy`,
-     * the returned profile's `profilePolicy` will be null. The keys of `profilePolicy` are
-     * JSON Pointers to the fields, e.g. `/given_name`.
+     * The keys of `profilePolicy` are JSON Pointers to the fields, e.g. `/given_name`. It is only
+     * present when `profile_policy` is part of the response: with [GetUserProfileOptions.fields]
+     * set and [GetUserProfileOptions.includeFields] `true`, only if `profile_policy` is listed;
+     * with `includeFields` `false`, unless `profile_policy` is listed.
      *
      * @param options optional selection of the fields to return.
      * @return a request that will yield the user's profile.
      */
     @JvmOverloads
     public fun getUserProfile(
-        options: GetUserProfileOptions? = null
+        options: GetUserProfileOptions = GetUserProfileOptions()
     ): Request<MyAccountProfile, MyAccountException> {
         val url = getDomainUrlBuilder().apply {
             addPathSegment(PROFILE)
-            val fields = options?.fields
-            if (!fields.isNullOrEmpty()) {
-                addQueryParameter(FIELDS_KEY, fields.joinToString(","))
-                options.includeFields?.let { addQueryParameter(INCLUDE_FIELDS_KEY, it.toString()) }
+            if (options.fields.isNotEmpty()) {
+                addQueryParameter(FIELDS_KEY, options.fields.joinToString(","))
+                // The server includes the listed fields by default, so only send the exclusion.
+                if (!options.includeFields) {
+                    addQueryParameter(INCLUDE_FIELDS_KEY, "false")
+                }
             }
         }.build()
         return factory.get(
@@ -911,7 +917,7 @@ public class MyAccountAPIClient @VisibleForTesting(otherwise = VisibleForTesting
      * apiClient.updateUserProfile(request)
      *      .start(object : Callback<MyAccountProfile, MyAccountException> {
      *              override fun onSuccess(result: MyAccountProfile) {
-     *                  Log.d("MyApp", "Updated profile: $result")
+     *                  Log.d("MyApp", "Profile updated")
      *              }
      *              override fun onFailure(error: MyAccountException) {
      *                  // On 400, error.validationErrors describes each rejected field

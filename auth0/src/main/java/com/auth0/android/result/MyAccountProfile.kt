@@ -13,10 +13,10 @@ import java.lang.reflect.Type
  *
  * Every property is nullable: the server omits fields that are not set for the user, and
  * any field can be trimmed from the response by using
- * [com.auth0.android.myaccount.GetUserProfileOptions.fields].
+ * [com.auth0.android.myaccount.request.GetUserProfileOptions.fields].
  *
  * [userId], [emailVerified] and [phoneVerified] are read-only: they can't be changed with
- * [com.auth0.android.myaccount.UpdateUserProfileRequest].
+ * [com.auth0.android.myaccount.request.UpdateUserProfileRequest].
  */
 public data class MyAccountProfile(
     @SerializedName("user_id")
@@ -48,7 +48,8 @@ public data class MyAccountProfile(
     /**
      * Describes, per field, whether it can be edited by the user and why. Keyed by a JSON
      * Pointer to the field, e.g. `/given_name`.
-     * Absent when `profile_policy` is excluded from the requested fields.
+     * Absent when `profile_policy` is not part of the response, see
+     * [com.auth0.android.myaccount.request.GetUserProfileOptions].
      */
     @SerializedName("profile_policy")
     public val profilePolicy: Map<String, ProfileFieldPolicy>? = null

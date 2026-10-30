@@ -711,7 +711,7 @@ myAccountClient.updateAuthenticationMethodById("{Authentication_Id}", "{Name}")
 ### Get the User Profile
 **Scopes required:** `read:me:profile`
 
-Retrieves the current user's profile. Each entry in `profilePolicy` describes whether the user can edit a field (`access`), where its value comes from (`source`), and why it is read-only (`reason`), so you can render an editable or read-only UI without checking the connection type. Entries are keyed by a JSON Pointer to the field, e.g. `/given_name`.
+Retrieves the current user's profile. Each entry in `profilePolicy` describes whether the user can edit a field (`access`), where its value comes from (`source`), and why it is read-only (`reason`), so you can render an editable or read-only UI without checking the connection type. Entries are keyed by a JSON Pointer to the field, e.g. `/given_name`. `GetUserProfileOptions` and `UpdateUserProfileRequest` are in the `com.auth0.android.myaccount.request` package.
 
 **Prerequisites:**
 
@@ -730,11 +730,11 @@ myAccountClient.getUserProfile()
         }
     })
 
-// Only return some fields. profilePolicy is null unless "profile_policy" is requested.
+// Only return the listed fields. profilePolicy is only present if "profile_policy" is listed.
 myAccountClient.getUserProfile(GetUserProfileOptions(fields = listOf("given_name", "picture", "profile_policy")))
     .start(callback)
 
-// Return every field except the listed ones
+// Return every field except the listed ones. profilePolicy is present unless it is listed.
 myAccountClient.getUserProfile(GetUserProfileOptions(fields = listOf("profile_policy"), includeFields = false))
     .start(callback)
 ```
@@ -744,7 +744,7 @@ myAccountClient.getUserProfile(GetUserProfileOptions(fields = listOf("profile_po
 ```kotlin
 try {
     val profile = myAccountClient.getUserProfile().await()
-    println("Profile: $profile")
+    val givenName = profile.givenName
 } catch (exception: MyAccountException) {
     print("Error: ${exception.message}")
 }
@@ -802,9 +802,9 @@ myAccountClient.updateUserProfile(request)
 
 ```kotlin
 try {
-    val profile = myAccountClient.updateUserProfile(UpdateUserProfileRequest(givenName = "Jane"))
+    val updated = myAccountClient.updateUserProfile(UpdateUserProfileRequest(givenName = "Jane"))
         .await()
-    println("Updated profile: $profile")
+    val givenName = updated.givenName
 } catch (exception: MyAccountException) {
     print("Error: ${exception.message}")
 }
