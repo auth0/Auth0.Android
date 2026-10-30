@@ -1,5 +1,34 @@
 # Change Log
 
+## [4.2.1](https://github.com/auth0/Auth0.Android/tree/4.2.1) (2026-10-26)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/4.2.0...4.2.1)
+
+**Fixed**
+- fix(storage): keep RSA key for PKCS1 migration on padding mismatch [\#1110](https://github.com/auth0/Auth0.Android/pull/1110) ([utkrishtsahu](https://github.com/utkrishtsahu))
+- fix: keep scope case when appending the openid scope [\#1102](https://github.com/auth0/Auth0.Android/pull/1102) ([RaphaelFakhri](https://github.com/RaphaelFakhri))
+
+## [3.21.3](https://github.com/auth0/Auth0.Android/tree/3.21.3) (2026-10-26)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.21.2...3.21.3)
+
+**Fixed**
+- fix: keep RSA key for PKCS1 migration on padding mismatch [\#1107](https://github.com/auth0/Auth0.Android/pull/1107) ([utkrishtsahu](https://github.com/utkrishtsahu))
+
+## [4.2.0](https://github.com/auth0/Auth0.Android/tree/4.2.0) (2026-10-22)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/4.1.0...4.2.0)
+
+**Added**
+- feat: add passkey identifier verification support [\#1087](https://github.com/auth0/Auth0.Android/pull/1087) ([utkrishtsahu](https://github.com/utkrishtsahu))
+
+**Fixed**
+- fix: stop reporting an unrecognized biometric as a final failure [\#1100](https://github.com/auth0/Auth0.Android/pull/1100) ([pmathew92](https://github.com/pmathew92))
+- fix(storage): authorize MGF1 digest to prevent INCOMPATIBLE_DEVICE on Keystore2 [\#1092](https://github.com/auth0/Auth0.Android/pull/1092) ([utkrishtsahu](https://github.com/utkrishtsahu))
+
+## [3.21.2](https://github.com/auth0/Auth0.Android/tree/3.21.2) (2026-10-21)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.21.1...3.21.2)
+
+**Fixed**
+- fix: stop reporting an unrecognized biometric as a final failure [\#1098](https://github.com/auth0/Auth0.Android/pull/1098) ([pmathew92](https://github.com/pmathew92))
+
 ## [3.21.1](https://github.com/auth0/Auth0.Android/tree/3.21.1) (2026-10-13)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.21.0...3.21.1)
 
