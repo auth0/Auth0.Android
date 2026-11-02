@@ -193,6 +193,105 @@ internal class MyAccountAPIMockServer : APIMockServer() {
         return this
     }
 
+    fun willReturnUserProfile(): MyAccountAPIMockServer {
+        val json = """
+            {
+              "user_id": "auth0|123",
+              "given_name": "Jane",
+              "family_name": "Doe",
+              "name": "Jane Doe",
+              "nickname": "jane",
+              "picture": "https://example.com/jane.png",
+              "email": "jane@example.com",
+              "email_verified": true,
+              "phone_number": "+15555550100",
+              "phone_verified": false,
+              "username": "janedoe",
+              "created_at": "2026-01-01T00:00:00.000Z",
+              "updated_at": "2026-02-01T00:00:00.000Z",
+              "profile_policy": {
+                "/given_name": {
+                  "access": "read_only",
+                  "source": "idp",
+                  "reason": "managed_by_identity_provider"
+                },
+                "/nickname": {
+                  "access": "read_write",
+                  "source": "user"
+                },
+                "/created_at": {
+                  "access": "read_only",
+                  "source": "system",
+                  "reason": "system_managed"
+                }
+              }
+            }
+        """.trimIndent()
+        server.enqueue(responseWithJSON(json, 200))
+        return this
+    }
+
+    fun willReturnUserProfileWithoutPolicy(): MyAccountAPIMockServer {
+        val json = """
+            {
+              "given_name": "Jane",
+              "picture": "https://example.com/jane.png"
+            }
+        """.trimIndent()
+        server.enqueue(responseWithJSON(json, 200))
+        return this
+    }
+
+    fun willReturnUserProfileWithUnknownPolicyValues(): MyAccountAPIMockServer {
+        val json = """
+            {
+              "given_name": "Jane",
+              "profile_policy": {
+                "/given_name": {
+                  "access": "write_only",
+                  "source": "partner",
+                  "reason": "some_new_reason"
+                }
+              }
+            }
+        """.trimIndent()
+        server.enqueue(responseWithJSON(json, 200))
+        return this
+    }
+
+    fun willReturnFeatureNotEnabledError(): MyAccountAPIMockServer {
+        val responseBody = """
+            {
+              "type": "https://auth0.com/api-errors/A0E-403-0003",
+              "status": 403,
+              "title": "Not Entitled",
+              "detail": "This feature is currently not enabled"
+            }
+        """.trimIndent()
+        server.enqueue(responseWithJSON(responseBody, 403))
+        return this
+    }
+
+    fun willReturnProfileValidationError(): MyAccountAPIMockServer {
+        val responseBody = """
+            {
+              "type": "https://auth0.com/api-errors/A0E-400-0008",
+              "status": 400,
+              "title": "read_only_field",
+              "detail": "The field '/given_name' is read-only because it is managed by the identity provider.",
+              "validation_errors": [
+                {
+                  "detail": "given_name is managed by the identity provider",
+                  "pointer": "/given_name",
+                  "source": "managed_by_identity_provider"
+                }
+              ]
+            }
+        """.trimIndent()
+        server.enqueue(responseWithJSON(responseBody, 400))
+        return this
+    }
+
     private companion object {
         private const val SESSION_ID = "SESSION_ID"
         private const val CHALLENGE = "CHALLENGE"
