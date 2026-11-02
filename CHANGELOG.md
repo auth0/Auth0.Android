@@ -14,6 +14,24 @@
 
 **Added**
 - feat(embedded): add /e/authorize email OTP flow  [\#1075](https://github.com/auth0/Auth0.Android/pull/1075) ([pmathew92](https://github.com/pmathew92))
+## [4.3.0](https://github.com/auth0/Auth0.Android/tree/4.3.0) (2026-10-30)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/4.2.1...4.3.0)
+
+**Added**
+- feat(myaccount): Add getUserProfile and updateUserProfile methods [\#1115](https://github.com/auth0/Auth0.Android/pull/1115) ([utkrishtsahu](https://github.com/utkrishtsahu))
+
+## [4.2.1](https://github.com/auth0/Auth0.Android/tree/4.2.1) (2026-10-26)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/4.2.0...4.2.1)
+
+**Fixed**
+- fix(storage): keep RSA key for PKCS1 migration on padding mismatch [\#1110](https://github.com/auth0/Auth0.Android/pull/1110) ([utkrishtsahu](https://github.com/utkrishtsahu))
+- fix: keep scope case when appending the openid scope [\#1102](https://github.com/auth0/Auth0.Android/pull/1102) ([RaphaelFakhri](https://github.com/RaphaelFakhri))
+
+## [3.21.3](https://github.com/auth0/Auth0.Android/tree/3.21.3) (2026-10-26)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/3.21.2...3.21.3)
+
+**Fixed**
+- fix: keep RSA key for PKCS1 migration on padding mismatch [\#1107](https://github.com/auth0/Auth0.Android/pull/1107) ([utkrishtsahu](https://github.com/utkrishtsahu))
 
 ## [4.2.0](https://github.com/auth0/Auth0.Android/tree/4.2.0) (2026-10-22)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/4.1.0...4.2.0)
