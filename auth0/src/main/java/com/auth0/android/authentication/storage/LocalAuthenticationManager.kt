@@ -76,11 +76,6 @@ internal class LocalAuthenticationManager(
         biometricPrompt.authenticate(biometricPromptInfo)
     }
 
-    override fun onAuthenticationFailed() {
-        super.onAuthenticationFailed()
-        resultCallback.onFailure(CredentialsManagerException.BIOMETRICS_INVALID_USER)
-    }
-
     override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
         super.onAuthenticationSucceeded(result)
         resultCallback.onSuccess(true)

@@ -6,6 +6,7 @@ import com.auth0.android.Auth0
 import com.auth0.android.Auth0Exception
 import com.auth0.android.NetworkErrorException
 import com.auth0.android.authentication.mfa.MfaApiClient
+import com.auth0.android.authentication.passwordless.DeliveryMethod
 import com.auth0.android.authentication.passwordless.PasswordlessClient
 import com.auth0.android.authentication.request.ActorToken
 import com.auth0.android.dpop.DPoP
@@ -17,6 +18,8 @@ import com.auth0.android.request.JsonAdapter
 import com.auth0.android.request.ProfileRequest
 import com.auth0.android.request.PublicKeyCredentials
 import com.auth0.android.request.Request
+import com.auth0.android.request.RequestOptions
+import com.auth0.android.request.RequestValidator
 import com.auth0.android.request.SignUpRequest
 import com.auth0.android.request.UserData
 import com.auth0.android.request.internal.BaseAuthenticationRequest
@@ -31,6 +34,7 @@ import com.auth0.android.result.Credentials
 import com.auth0.android.result.DatabaseUser
 import com.auth0.android.result.PasskeyChallenge
 import com.auth0.android.result.PasskeyRegistrationChallenge
+import com.auth0.android.result.PasskeyVerificationMethod
 import com.auth0.android.result.SSOCredentials
 import com.auth0.android.result.UserProfile
 import com.google.gson.Gson
@@ -234,13 +238,25 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param authResponse the [PublicKeyCredentials] authentication response
      * @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
      * @param organization id of the organization to be associated with the user while signing in
+     * @param verification a map of identifier to the OTP code collected from the user, e.g.
+     * `mapOf(PasskeyVerificationMethod.EMAIL to "123456")`. The keys must match the identifiers returned in
+     * [PasskeyRegistrationChallenge.verificationRequired]. Defaults to an empty map when no identifier verification is
+     * required; the `verification` object is then omitted from the request.
+     * @param verificationRequired the identifiers that need a code, from
+     * [PasskeyRegistrationChallenge.verificationRequired]. When not empty, [verification] must contain a non-blank
+     * code for each of them; otherwise the request fails before any network call with an `invalid_request`
+     * [AuthenticationException] whose description names the first identifier without a code. It is not sent to the
+     * server. Defaults to an empty list, in which case nothing is validated.
      * @return a request to configure and start that will yield [Credentials]
      */
+    @JvmOverloads
     public fun signinWithPasskey(
         authSession: String,
         authResponse: PublicKeyCredentials,
         realm: String? = null,
         organization: String? = null,
+        verification: Map<PasskeyVerificationMethod, String> = emptyMap(),
+        verificationRequired: List<PasskeyVerificationMethod> = emptyList(),
     ): AuthenticationRequest {
         val params = ParameterBuilder.newBuilder().apply {
             setGrantType(ParameterBuilder.GRANT_TYPE_PASSKEY)
@@ -249,11 +265,25 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             organization?.let { set(ORGANIZATION_KEY, organization) }
         }.asDictionary()
 
-        return loginWithToken(params)
+        val request = loginWithToken(params)
             .addParameter(
                 AUTH_RESPONSE_KEY,
-                Gson().toJsonTree(authResponse)
-            ) as AuthenticationRequest
+                gson.toJsonTree(authResponse)
+            )
+        if (verification.isNotEmpty()) {
+            request.addParameter(
+                VERIFICATION_KEY,
+                gson.toJsonTree(verification.mapKeys { it.key.value })
+            )
+        }
+        if (verificationRequired.isNotEmpty()) {
+            request.addValidator(object : RequestValidator {
+                override fun validate(options: RequestOptions) {
+                    passkeyVerificationError(verificationRequired, verification)?.let { throw it }
+                }
+            })
+        }
+        return request as AuthenticationRequest
     }
 
 
@@ -281,19 +311,38 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      * @param authResponse the public key credential authentication response in JSON string format that follows the standard webauthn json format
      * @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
      * @param organization id of the organization to be associated with the user while signing in
+     * @param verification a map of identifier to the OTP code collected from the user, e.g.
+     * `mapOf(PasskeyVerificationMethod.EMAIL to "123456")`. The keys must match the identifiers returned in
+     * [PasskeyRegistrationChallenge.verificationRequired]. Defaults to an empty map when no identifier verification is
+     * required; the `verification` object is then omitted from the request.
+     * @param verificationRequired the identifiers that need a code, from
+     * [PasskeyRegistrationChallenge.verificationRequired]. When not empty, [verification] must contain a non-blank
+     * code for each of them; otherwise the request fails before any network call with an `invalid_request`
+     * [AuthenticationException] whose description names the first identifier without a code. It is not sent to the
+     * server. Defaults to an empty list, in which case nothing is validated.
      * @return a request to configure and start that will yield [Credentials]
      */
+    @JvmOverloads
     public fun signinWithPasskey(
         authSession: String,
         authResponse: String,
         realm: String? = null,
         organization: String? = null,
+        verification: Map<PasskeyVerificationMethod, String> = emptyMap(),
+        verificationRequired: List<PasskeyVerificationMethod> = emptyList(),
     ): AuthenticationRequest {
         val publicKeyCredentials = gson.fromJson(
             authResponse,
             PublicKeyCredentials::class.java
         )
-        return signinWithPasskey(authSession, publicKeyCredentials, realm, organization)
+        return signinWithPasskey(
+            authSession,
+            publicKeyCredentials,
+            realm,
+            organization,
+            verification,
+            verificationRequired
+        )
     }
 
 
@@ -325,12 +374,17 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
      *  @param userData user information for registration.
      *  @param realm the connection to use. If excluded, the application will use the default connection configured in the tenant
      *  @param organization id of the organization to be associated with the user while signing up
+     *  @param deliveryMethod the channel used to deliver the phone OTP. Only applies when the connection requires phone
+     *  identifier verification. If the requested channel is not enabled on the connection, the server responds with an
+     *  `invalid_request` error. Pass `null` to use the connection default.
      *  @return  a request to configure and start that will yield [PasskeyRegistrationChallenge]
      */
+    @JvmOverloads
     public fun signupWithPasskey(
         userData: UserData,
         realm: String? = null,
-        organization: String? = null
+        organization: String? = null,
+        deliveryMethod: DeliveryMethod? = null
     ): Request<PasskeyRegistrationChallenge, AuthenticationException> {
         val url = auth0.getDomainUrl().toHttpUrl().newBuilder()
             .addPathSegment(PASSKEY_PATH)
@@ -351,6 +405,7 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
             .addParameters(params) as BaseRequest<PasskeyRegistrationChallenge, AuthenticationException>
         post.addParameter(USER_PROFILE_KEY, gson.toJsonTree(userData.toUserProfile()))
         userData.userMetadata?.let { post.addParameter(USER_METADATA_KEY, it) }
+        deliveryMethod?.let { post.addParameter(DELIVERY_METHOD_KEY, it.value) }
         return post
     }
 
@@ -1023,6 +1078,28 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         return factory.get(url.toString(), userProfileAdapter, dPoP)
     }
 
+    /**
+     * Returns the error the server would report for the first identifier in [required] that has no code, or a blank
+     * code, in [verification]; `null` when all of them have a code.
+     */
+    private fun passkeyVerificationError(
+        required: List<PasskeyVerificationMethod>,
+        verification: Map<PasskeyVerificationMethod, String>
+    ): AuthenticationException? {
+        for (identifier in required) {
+            val code = verification[identifier]
+            val description = when {
+                code == null -> "Missing required parameter: verification.${identifier.value}"
+                code.isBlank() -> "\"verification.${identifier.value}\" is not allowed to be empty"
+                else -> continue
+            }
+            return AuthenticationException(
+                mapOf(ERROR_KEY to INVALID_REQUEST, ERROR_DESCRIPTION_KEY to description)
+            )
+        }
+        return null
+    }
+
     internal companion object {
         private const val SMS_CONNECTION = "sms"
         private const val EMAIL_CONNECTION = "email"
@@ -1042,6 +1119,11 @@ public class AuthenticationAPIClient @VisibleForTesting(otherwise = VisibleForTe
         private const val USER_METADATA_KEY = "user_metadata"
         private const val AUTH_SESSION_KEY = "auth_session"
         private const val AUTH_RESPONSE_KEY = "authn_response"
+        private const val VERIFICATION_KEY = "verification"
+        private const val ERROR_KEY = "error"
+        private const val ERROR_DESCRIPTION_KEY = "error_description"
+        private const val INVALID_REQUEST = "invalid_request"
+        private const val DELIVERY_METHOD_KEY = "delivery_method"
         private const val USER_PROFILE_KEY = "user_profile"
         private const val SIGN_UP_PATH = "signup"
         private const val DB_CONNECTIONS_PATH = "dbconnections"
