@@ -8,6 +8,7 @@ import com.auth0.android.embedded.authorize.NextAction
 import com.auth0.android.embedded.authorize.OtpChannel
 import com.auth0.android.embedded.authorize.OtpType
 import com.auth0.android.embedded.authorize.PhoneDeliveryMethod
+import com.auth0.android.embedded.authorize.SignupIdentifier
 import com.auth0.android.embedded.authorize.embeddedAuthErrorAdapter
 import com.auth0.android.util.EmbeddedAuthMockServer
 import com.auth0.android.util.SSLTestUtils.testClient
@@ -117,7 +118,9 @@ public class EmbeddedAuthClientTest {
                     "action:verify:password:v1",
                     "action:verify:oob:v1",
                     "action:verify:recovery-code:v1",
-                    "action:confirm:recovery-code:v1"
+                    "action:confirm:recovery-code:v1",
+                    "action:signup:v1",
+                    "action:signup:confirm:v1"
                 )
             )
         )
@@ -1386,6 +1389,233 @@ public class EmbeddedAuthClientTest {
 
         val error = assertEmbeddedError { client.confirmRecoveryCode().execute() }
         assertThat(error.code, `is`("no_active_session"))
+    }
+
+    // ── signup / confirmSignup ──────────────────────────────────────────────────
+
+    @Test
+    public fun `authorize continuation surfaces Signup with a required email identifier`(): Unit = runTest {
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_IDENTIFY_EMAIL, EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_REQUIRED)
+
+        val error = assertEmbeddedErrorSuspending { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await() }
+
+        assertThat(error.nextActions, hasSize(2))
+        val signup = error.nextActions[1] as NextAction.Signup
+        assertThat(signup.capability, `is`(EmbeddedCapability.SIGNUP))
+        assertThat(signup.identifiers, `is`(listOf(SignupIdentifier(IdentifierType.EMAIL, required = true))))
+    }
+
+    @Test
+    public fun `authorize continuation surfaces Signup with an optional phone identifier`(): Unit = runTest {
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_SIGNUP_PHONE_OPTIONAL)
+
+        val error = assertEmbeddedErrorSuspending { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await() }
+
+        val signup = error.nextActions[0] as NextAction.Signup
+        assertThat(signup.identifiers, `is`(listOf(SignupIdentifier(IdentifierType.PHONE, required = false))))
+    }
+
+    @Test
+    public fun `authorize continuation surfaces Signup with both email and phone identifiers`(): Unit = runTest {
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_AND_PHONE)
+
+        val error = assertEmbeddedErrorSuspending { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await() }
+
+        val signup = error.nextActions[0] as NextAction.Signup
+        assertThat(
+            signup.identifiers,
+            `is`(
+                listOf(
+                    SignupIdentifier(IdentifierType.EMAIL, required = true),
+                    SignupIdentifier(IdentifierType.PHONE, required = false)
+                )
+            )
+        )
+    }
+
+    @Test
+    public fun `authorize continuation ignores signup identifiers the SDK does not model`(): Unit = runTest {
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_SIGNUP_UNKNOWN_IDENTIFIER)
+
+        val error = assertEmbeddedErrorSuspending { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await() }
+
+        val signup = error.nextActions[0] as NextAction.Signup
+        assertThat(signup.identifiers, `is`(listOf(SignupIdentifier(IdentifierType.EMAIL, required = true))))
+    }
+
+    @Test
+    public fun `authorize continuation drops a Signup action without identifiers`(): Unit = runTest {
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_IDENTIFY_EMAIL, EmbeddedAuthMockServer.NEXT_SIGNUP_NO_IDENTIFIERS)
+
+        val error = assertEmbeddedErrorSuspending { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await() }
+
+        assertThat(error.nextActions, `is`(listOf<NextAction>(NextAction.IdentifyEmail)))
+    }
+
+    @Test
+    public fun `authorize continuation drops a Signup action with empty identifiers`(): Unit = runTest {
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_SIGNUP_EMPTY_IDENTIFIERS)
+
+        val error = assertEmbeddedErrorSuspending { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await() }
+
+        assertThat(error.nextActions, `is`(empty()))
+    }
+
+    @Test
+    public fun `authorize continuation drops a Signup action whose identifier has no required flag`(): Unit = runTest {
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_SIGNUP_NO_REQUIRED)
+
+        val error = assertEmbeddedErrorSuspending { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await() }
+
+        assertThat(error.nextActions, `is`(empty()))
+    }
+
+    @Test
+    public fun `signup await POSTs the signup action and rotates the session`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnContinuationWith(
+            EmbeddedAuthMockServer.NEXT_IDENTIFY_EMAIL,
+            authSession = EmbeddedAuthMockServer.ROTATED_AUTH_SESSION
+        )
+
+        val error = assertEmbeddedErrorSuspending { client.signup().await() }
+
+        assertThat(error.nextActions, `is`(listOf<NextAction>(NextAction.IdentifyEmail)))
+        val body = bodyOf(mockAPI.takeRequest())
+        assertThat(body.keys().asSequence().toSet(), `is`(setOf("auth_session", "action", "client_id")))
+        assertThat(body.getString("action"), `is`("action:signup:v1"))
+        assertThat(body.getString("auth_session"), `is`(EmbeddedAuthMockServer.AUTH_SESSION))
+        assertThat(body.getString("client_id"), `is`(CLIENT_ID))
+
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CHALLENGE_EMAIL)
+        assertEmbeddedErrorSuspending { client.identify("jane@example.com", IdentifierType.EMAIL).await() }
+        assertThat(bodyOf(mockAPI.takeRequest()).getString("auth_session"), `is`(EmbeddedAuthMockServer.ROTATED_AUTH_SESSION))
+    }
+
+    @Test
+    public fun `signup await surfaces NoNextSteps as a terminal error and clears the session`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnNoNextSteps()
+
+        val error = assertEmbeddedErrorSuspending { client.signup().await() }
+
+        assertThat(error.error, `is`(EmbeddedAuthError.NoNextSteps))
+        mockAPI.takeRequest()
+
+        val followOn = assertEmbeddedErrorSuspending { client.signup().await() }
+        assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
+    }
+
+    @Test
+    public fun `verifyOtp await surfaces ConfirmSignup once the signup identifier is verified`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_CONFIRM_SIGNUP)
+
+        val error = assertEmbeddedErrorSuspending { client.verifyOtp("123456", OtpType.OOB).await() }
+
+        assertThat(error.nextActions, `is`(listOf<NextAction>(NextAction.ConfirmSignup)))
+        assertThat(error.nextActions[0].capability, `is`(EmbeddedCapability.CONFIRM_SIGNUP))
+    }
+
+    @Test
+    public fun `confirmSignup await POSTs the confirm action, returns credentials and clears the session`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+
+        val credentials = client.confirmSignup().await()
+
+        assertThat(credentials.idToken, `is`(EmbeddedAuthMockServer.ID_TOKEN))
+        assertThat(credentials.accessToken, `is`(EmbeddedAuthMockServer.ACCESS_TOKEN))
+        val body = bodyOf(mockAPI.takeRequest())
+        assertThat(body.keys().asSequence().toSet(), `is`(setOf("auth_session", "action", "client_id")))
+        assertThat(body.getString("action"), `is`("action:signup:confirm:v1"))
+        assertThat(body.getString("auth_session"), `is`(EmbeddedAuthMockServer.AUTH_SESSION))
+        assertThat(bodyOf(mockAPI.takeRequest()).getString("code"), `is`(EmbeddedAuthMockServer.AUTHORIZATION_CODE))
+
+        val followOn = assertEmbeddedErrorSuspending { client.confirmSignup().await() }
+        assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
+    }
+
+    @Test
+    public fun `confirmSignup await surfaces an account that could not be created as InvalidRequest and clears the session`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnAccountNotCreated()
+
+        val error = assertEmbeddedErrorSuspending { client.confirmSignup().await() }
+
+        assertThat(error.error, `is`(EmbeddedAuthError.InvalidRequest))
+        assertThat(error.statusCode, `is`(400))
+        mockAPI.takeRequest()
+
+        val followOn = assertEmbeddedErrorSuspending { client.confirmSignup().await() }
+        assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
+    }
+
+    @Test
+    public fun `confirmSignup await keeps the session on a 5xx so it can be retried`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnPlainTextError()
+
+        assertEmbeddedErrorSuspending { client.confirmSignup().await() }
+        mockAPI.takeRequest()
+
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokens()
+        val credentials = client.confirmSignup().await()
+
+        assertThat(credentials.accessToken, `is`(EmbeddedAuthMockServer.ACCESS_TOKEN))
+        assertThat(bodyOf(mockAPI.takeRequest()).getString("auth_session"), `is`(EmbeddedAuthMockServer.AUTH_SESSION))
+    }
+
+    @Test
+    public fun `confirmSignup await clears the session when the token exchange fails`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnAuthorizeCode()
+        mockAPI.willReturnTokensWithoutIdToken()
+
+        assertEmbeddedErrorSuspending { client.confirmSignup().await() }
+        mockAPI.takeRequest()
+        mockAPI.takeRequest()
+
+        val followOn = assertEmbeddedErrorSuspending { client.confirmSignup().await() }
+        assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
+    }
+
+    @Test
+    public fun `confirmSignup await surfaces an MFA continuation and rotates the session`(): Unit = runTest {
+        establishSession()
+        mockAPI.willReturnContinuationWith(
+            EmbeddedAuthMockServer.NEXT_CHALLENGE_PHONE,
+            authSession = EmbeddedAuthMockServer.ROTATED_AUTH_SESSION
+        )
+
+        val error = assertEmbeddedErrorSuspending { client.confirmSignup().await() }
+        mockAPI.takeRequest()
+
+        assertThat(error.error, instanceOf(EmbeddedAuthError.InsufficientAuthorization::class.java))
+        assertThat(error.nextActions[0], instanceOf(NextAction.ChallengePhone::class.java))
+
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_VERIFY_OTP_SMS)
+        assertEmbeddedErrorSuspending { client.challengePhone().await() }
+        assertThat(bodyOf(mockAPI.takeRequest()).getString("auth_session"), `is`(EmbeddedAuthMockServer.ROTATED_AUTH_SESSION))
+    }
+
+    @Test
+    public fun `confirmSignup await surfaces NoEligibleFactors and clears the session`(): Unit = runTest {
+        establishSession()
+        mockAPI.server.enqueue(mockAPI.responseWithJSON(
+            """{"error":"access_denied","error_description":"no_eligible_factors"}""",
+            403
+        ))
+
+        val error = assertEmbeddedErrorSuspending { client.confirmSignup().await() }
+
+        assertThat(error.error, `is`(EmbeddedAuthError.NoEligibleFactors))
+        mockAPI.takeRequest()
+
+        val followOn = assertEmbeddedErrorSuspending { client.confirmSignup().await() }
+        assertThat(followOn.error, `is`(EmbeddedAuthError.NoActiveSession))
     }
 
     // ── Session preservation on MFA errors ───────────────────────────────────────

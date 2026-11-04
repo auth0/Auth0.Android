@@ -45,5 +45,9 @@
     <string name="label_push_sent">Approve the push notification on your device</string>
     <string name="label_new_recovery_code">Your new recovery code — save it now</string>
     <string name="status_waiting_for_push">Waiting for you to approve the push notification…</string>
+    <string name="label_signup">New here? Create an account</string>
+    <string name="action_signup">Sign up</string>
+    <string name="label_confirm_signup">Your details are verified</string>
+    <string name="action_confirm_signup">Create account</string>
     <string name="label_unsupported_action">Unsupported action: %1$s</string>
 </resources>

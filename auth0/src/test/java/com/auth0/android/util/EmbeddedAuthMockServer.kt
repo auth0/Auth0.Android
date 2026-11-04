@@ -109,6 +109,12 @@ $actionsJson
         return this
     }
 
+    /** The `400` the signup confirm step returns when the server can't create the account. */
+    fun willReturnAccountNotCreated(): EmbeddedAuthMockServer {
+        server.enqueue(responseWithJSON("""{ "error": "invalid_request", "error_description": "The account could not be created." }""", 400))
+        return this
+    }
+
     fun willReturnTooManyAttempts(): EmbeddedAuthMockServer {
         server.enqueue(responseWithJSON("""{ "error": "too_many_requests", "error_description": "too_many_attempts" }""", 429))
         return this
@@ -191,6 +197,14 @@ $actionsJson
         const val NEXT_VERIFY_OTP_MIXED_CASE_CHANNEL = """{ "action": "action:verify:otp:v1", "channel": "SmS", "identifier": "jane@example.com" }"""
         const val NEXT_CHALLENGE_EMAIL_NO_IDENTIFIER = """{ "action": "action:challenge:email:v1", "index": 1 }"""
         const val NEXT_CHALLENGE_EMAIL_NO_INDEX = """{ "action": "action:challenge:email:v1", "identifier": "jane@example.com" }"""
+        const val NEXT_SIGNUP_EMAIL_REQUIRED = """{ "action": "action:signup:v1", "identifiers": { "email": { "required": true } } }"""
+        const val NEXT_SIGNUP_PHONE_OPTIONAL = """{ "action": "action:signup:v1", "identifiers": { "phone_number": { "required": false } } }"""
+        const val NEXT_SIGNUP_EMAIL_AND_PHONE = """{ "action": "action:signup:v1", "identifiers": { "email": { "required": true }, "phone_number": { "required": false } } }"""
+        const val NEXT_SIGNUP_UNKNOWN_IDENTIFIER = """{ "action": "action:signup:v1", "identifiers": { "email": { "required": true }, "username": { "required": true } } }"""
+        const val NEXT_SIGNUP_NO_IDENTIFIERS = """{ "action": "action:signup:v1" }"""
+        const val NEXT_SIGNUP_EMPTY_IDENTIFIERS = """{ "action": "action:signup:v1", "identifiers": {} }"""
+        const val NEXT_SIGNUP_NO_REQUIRED = """{ "action": "action:signup:v1", "identifiers": { "email": {} } }"""
+        const val NEXT_CONFIRM_SIGNUP = """{ "action": "action:signup:confirm:v1" }"""
         const val NEXT_UNKNOWN = """{ "action": "action:future:unknown:v1" }"""
         const val IDENTIFIER = "jane@example.com"
         const val AUTHORIZATION_CODE = "the-authorization-code"
