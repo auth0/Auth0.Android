@@ -13,6 +13,8 @@ public enum class EmbeddedCapability(public val value: String) {
     VERIFY_OOB("action:verify:oob:v1"),
     VERIFY_RECOVERY_CODE("action:verify:recovery-code:v1"),
     CONFIRM_RECOVERY_CODE("action:confirm:recovery-code:v1"),
+    SIGNUP("action:signup:v1"),
+    CONFIRM_SIGNUP("action:signup:confirm:v1"),
     UNKNOWN("Unknown");
 
     internal companion object {
