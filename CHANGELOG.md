@@ -1,5 +1,11 @@
 # Change Log
 
+## [5.0.0-beta.2](https://github.com/auth0/Auth0.Android/tree/5.0.0-beta.2) (2026-11-02)
+[Full Changelog](https://github.com/auth0/Auth0.Android/compare/5.0.0-beta.1...5.0.0-beta.2)
+
+**Added**
+- feat: Password support for /e/authorize endpoint [\#1088](https://github.com/auth0/Auth0.Android/pull/1088) ([pmathew92](https://github.com/pmathew92))
+
 ## [5.0.0-beta.1](https://github.com/auth0/Auth0.Android/tree/5.0.0-beta.1) (2026-10-26)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/5.0.0-beta.0...5.0.0-beta.1)
 
