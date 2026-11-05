@@ -74,13 +74,17 @@ private fun Map<String, Any>.toNextAction(): NextAction? {
 }
 
 /**
- * Reads the signup `identifiers` object, ignoring keys this SDK doesn't model. Returns `null` when it
- * offers no identifier, or when an offered identifier is missing its boolean `required` flag.
+ * Reads the signup `identifiers` object, ignoring keys this SDK doesn't model and skipping any offered
+ * identifier that is missing its boolean `required` flag. Returns `null` when no valid identifier remains.
  */
 private fun Map<*, *>.toSignupIdentifiers(): List<SignupIdentifier>? {
     val identifiers = SIGNUP_IDENTIFIER_TYPES.mapNotNull { (key, type) ->
         if (!containsKey(key)) return@mapNotNull null
-        val required = (this[key] as? Map<*, *>)?.get(REQUIRED_KEY) as? Boolean ?: return null
+        val required = (this[key] as? Map<*, *>)?.get(REQUIRED_KEY) as? Boolean
+        if (required == null) {
+            Log.w(TAG, "Skipping signup identifier \"$key\": required field \"$REQUIRED_KEY\" was missing or invalid.")
+            return@mapNotNull null
+        }
         SignupIdentifier(type, required)
     }
     return identifiers.ifEmpty { null }

@@ -1462,7 +1462,27 @@ public class EmbeddedAuthClientTest {
     }
 
     @Test
-    public fun `authorize continuation drops a Signup action whose identifier has no required flag`(): Unit = runTest {
+    public fun `authorize continuation skips a signup identifier without a required flag and keeps the valid ones`(): Unit = runTest {
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_SIGNUP_PHONE_NO_REQUIRED)
+
+        val error = assertEmbeddedErrorSuspending { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await() }
+
+        val signup = error.nextActions[0] as NextAction.Signup
+        assertThat(signup.identifiers, `is`(listOf(SignupIdentifier(IdentifierType.EMAIL, required = true))))
+    }
+
+    @Test
+    public fun `authorize continuation skips a signup identifier whose required flag is not a boolean`(): Unit = runTest {
+        mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_SIGNUP_EMAIL_NON_BOOLEAN_REQUIRED)
+
+        val error = assertEmbeddedErrorSuspending { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await() }
+
+        val signup = error.nextActions[0] as NextAction.Signup
+        assertThat(signup.identifiers, `is`(listOf(SignupIdentifier(IdentifierType.PHONE, required = false))))
+    }
+
+    @Test
+    public fun `authorize continuation drops a Signup action whose only identifier has no required flag`(): Unit = runTest {
         mockAPI.willReturnContinuationWith(EmbeddedAuthMockServer.NEXT_SIGNUP_NO_REQUIRED)
 
         val error = assertEmbeddedErrorSuspending { client.authorize(EmbeddedAuthMockServer.AUTHORIZE_CONNECTION).await() }

@@ -56,7 +56,9 @@ try {
 } catch (e: EmbeddedAuthException) {
     when (val error = e.error) {
         is EmbeddedAuthError.InsufficientAuthorization -> {
-            if (error.reason == EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_CODE) {
+            if (error.reason == EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_CODE
+                || error.reason == EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_CODE ) {
+                
                 /* wrong or expired code — re-enter it, resend with challengeEmail, or change the email with identify */
             }
             /* error.nextActions contains NextAction.ConfirmSignup once the email is verified */

@@ -204,6 +204,8 @@ $actionsJson
         const val NEXT_SIGNUP_NO_IDENTIFIERS = """{ "action": "action:signup:v1" }"""
         const val NEXT_SIGNUP_EMPTY_IDENTIFIERS = """{ "action": "action:signup:v1", "identifiers": {} }"""
         const val NEXT_SIGNUP_NO_REQUIRED = """{ "action": "action:signup:v1", "identifiers": { "email": {} } }"""
+        const val NEXT_SIGNUP_PHONE_NO_REQUIRED = """{ "action": "action:signup:v1", "identifiers": { "email": { "required": true }, "phone_number": {} } }"""
+        const val NEXT_SIGNUP_EMAIL_NON_BOOLEAN_REQUIRED = """{ "action": "action:signup:v1", "identifiers": { "email": { "required": "true" }, "phone_number": { "required": false } } }"""
         const val NEXT_CONFIRM_SIGNUP = """{ "action": "action:signup:confirm:v1" }"""
         const val NEXT_UNKNOWN = """{ "action": "action:future:unknown:v1" }"""
         const val IDENTIFIER = "jane@example.com"
