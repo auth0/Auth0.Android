@@ -78,6 +78,12 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
     /** Terminal step: acknowledges the rotated recovery code. */
     fun confirmRecoveryCode(): Unit = runTerminalStep { client.confirmRecoveryCode().await() }
 
+    /** Continuation: the server answers with the identify step for the new user's identifier. */
+    fun signup(): Unit = runStep { client.signup().await() }
+
+    /** Terminal step: creates the account and yields credentials, or continues if MFA is required. */
+    fun confirmSignup(): Unit = runTerminalStep { client.confirmSignup().await() }
+
     /**
      * Polls for push approval. The SDK performs one poll per call, so the app owns the loop: wait the
      * server-advertised `pollInMs` between polls, and give up on a terminal error. The flow is

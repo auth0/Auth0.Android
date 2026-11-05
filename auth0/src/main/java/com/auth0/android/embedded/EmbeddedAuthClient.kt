@@ -233,6 +233,33 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
     public fun confirmRecoveryCode(): Request<Credentials, EmbeddedAuthException> =
         terminalStep(EmbeddedCapability.CONFIRM_RECOVERY_CODE)
 
+    /**
+     * Starts signing up a new user. Call it when [authorize] offered a [NextAction.Signup].
+     *
+     * This call never resolves successfully; it completes through [EmbeddedAuthException] whose
+     * [EmbeddedAuthError.InsufficientAuthorization.nextActions] carry the identify step to call next.
+     * Verify the identifiers listed in [NextAction.Signup.identifiers] with [identify], the matching
+     * challenge, and [verifyOtp], then call [confirmSignup] once a [NextAction.ConfirmSignup] is offered.
+     *
+     * When signup isn't available for the connection, the request completes with the terminal
+     * [EmbeddedAuthError.NoNextSteps].
+     */
+    public fun signup(): Request<Void?, EmbeddedAuthException> =
+        continueStep(EmbeddedCapability.SIGNUP)
+
+    /**
+     * Creates the new user's account and completes the flow. Call it when a
+     * [NextAction.ConfirmSignup] is offered.
+     *
+     * On success, it yields the [Credentials]. If the server requires further steps the request
+     * completes through [EmbeddedAuthException] instead, with
+     * [EmbeddedAuthError.InsufficientAuthorization.nextActions] on [EmbeddedAuthException.error].
+     * If the account can't be created, the request completes with the terminal
+     * [EmbeddedAuthError.InvalidRequest]; start a new flow with [authorize].
+     */
+    public fun confirmSignup(): Request<Credentials, EmbeddedAuthException> =
+        terminalStep(EmbeddedCapability.CONFIRM_SIGNUP)
+
     private fun continueStep(
         action: EmbeddedCapability,
         addPayload: Request<Void?, EmbeddedAuthException>.() -> Unit = {}
@@ -362,7 +389,9 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
             EmbeddedCapability.VERIFY_PASSWORD,
             EmbeddedCapability.VERIFY_OOB,
             EmbeddedCapability.VERIFY_RECOVERY_CODE,
-            EmbeddedCapability.CONFIRM_RECOVERY_CODE
+            EmbeddedCapability.CONFIRM_RECOVERY_CODE,
+            EmbeddedCapability.SIGNUP,
+            EmbeddedCapability.CONFIRM_SIGNUP
         )
     }
 

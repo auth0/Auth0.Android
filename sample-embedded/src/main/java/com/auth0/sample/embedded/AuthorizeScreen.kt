@@ -48,6 +48,7 @@ import com.auth0.android.embedded.authorize.NextAction
 import com.auth0.android.embedded.authorize.OtpChannel
 import com.auth0.android.embedded.authorize.OtpType
 import com.auth0.android.embedded.authorize.PhoneDeliveryMethod
+import com.auth0.android.embedded.authorize.SignupIdentifier
 import com.auth0.android.result.Credentials
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -236,6 +237,20 @@ private fun ActionsSection(
                 detail = action.newCode,
                 buttonRes = R.string.action_confirm_recovery_code,
                 onClick = { viewModel.confirmRecoveryCode() },
+            )
+
+            is NextAction.Signup -> ActionCard(
+                titleRes = R.string.label_signup,
+                detail = signupIdentifiersDetail(action.identifiers),
+                buttonRes = R.string.action_signup,
+                onClick = { viewModel.signup() },
+            )
+
+            NextAction.ConfirmSignup -> ActionCard(
+                titleRes = R.string.label_confirm_signup,
+                detail = null,
+                buttonRes = R.string.action_confirm_signup,
+                onClick = { viewModel.confirmSignup() },
             )
 
             is NextAction.Unknown -> InfoCard(
@@ -521,6 +536,12 @@ private fun formatError(error: EmbeddedAuthException): String = buildString {
         }
     }
 }
+
+private fun signupIdentifiersDetail(identifiers: List<SignupIdentifier>): String =
+    identifiers.joinToString { identifier ->
+        val name = identifier.type.name.lowercase()
+        if (identifier.required) "$name (required)" else "$name (optional)"
+    }
 
 /**
  * Turns the typed [EmbeddedAuthError] into a user-facing headline. Note the trailing `else`:

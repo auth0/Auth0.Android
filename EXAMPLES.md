@@ -37,6 +37,7 @@ Each topic lives in its own file under [`examples/`](examples).
 - [Push Notification Polling (OOB)](examples/embedded-auth/push-oob-polling.md)
 - [Recovery Code](examples/embedded-auth/recovery-code.md)
 - [TOTP (Authenticator App)](examples/embedded-auth/totp.md)
+- [Signup with Email or Phone OTP](examples/embedded-auth/signup.md)
 
 ## Other APIs and features
 

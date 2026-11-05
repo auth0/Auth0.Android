@@ -88,6 +88,26 @@ public sealed interface NextAction {
         override fun toString(): String = "ConfirmRecoveryCode(newCode='xxxxx')"
     }
 
+    /**
+     * Continue by signing up a new user. Act on it with [EmbeddedAuthClient.signup].
+     *
+     * [identifiers] lists the identifiers the connection collects at signup.
+     */
+    @ConsistentCopyVisibility
+    public data class Signup internal constructor(
+        public val identifiers: List<SignupIdentifier>
+    ) : NextAction {
+        override val capability: EmbeddedCapability = EmbeddedCapability.SIGNUP
+    }
+
+    /**
+     * Continue by creating the new user's account once the required identifiers are verified. Act on
+     * it with [EmbeddedAuthClient.confirmSignup].
+     */
+    public data object ConfirmSignup : NextAction {
+        override val capability: EmbeddedCapability = EmbeddedCapability.CONFIRM_SIGNUP
+    }
+
     /** An action the server offered that this version of the SDK does not model. */
     @ConsistentCopyVisibility
     public data class Unknown internal constructor(
