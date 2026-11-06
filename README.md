@@ -335,10 +335,10 @@ WebAuthProvider.login(account)
 
 See the [full usage example](examples/experiment-center.md) for coroutine and Java samples.
 
-### My Account API: user profile
+### My Account API: user profile [Beta]
 
 > [!NOTE]
-> The My Account profile API is currently in Early Access. To request access to this feature, contact your Auth0 representative.
+> The My Account profile API is currently in [Beta](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#beta). It might change before General Availability, and Auth0 does not support beta functionality for production use. The feature must be enabled for your tenant.
 
 After obtaining an access token for the My Account API, use `MyAccountAPIClient` to read the signed-in user's profile and update the fields they are allowed to edit. Each field in `profilePolicy` tells you whether it is editable and why:
 
@@ -351,7 +351,7 @@ val canEditGivenName = profile.profilePolicy["/given_name"]?.access == ProfileFi
 client.updateUserProfile(UpdateUserProfileRequest(givenName = "Jane")).await()
 ```
 
-See the [full usage example](examples/my-account-api.md#get-the-user-profile) for callback, coroutine and Java samples.
+See the [full usage example](examples/my-account-api.md#get-the-user-profile-beta) for callback, coroutine and Java samples.
 
 ## Credentials Manager
 

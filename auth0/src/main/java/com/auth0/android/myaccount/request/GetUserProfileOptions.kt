@@ -4,6 +4,8 @@ package com.auth0.android.myaccount.request
  * Options to control which fields are returned by
  * [com.auth0.android.myaccount.MyAccountAPIClient.getUserProfile].
  *
+ * This API is currently in [Beta](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#beta) and might change before General Availability.
+ *
  * @param fields the fields to include in, or exclude from, the response, e.g.
  * `listOf("given_name", "picture", "profile_policy")`. When empty, the default set of fields is
  * returned.
