@@ -1067,6 +1067,44 @@ public class WebAuthProviderTest {
     }
 
     @Test
+    public fun shouldUseDefaultTokenExchangeRetryOnResume() {
+        val pkce = Mockito.mock(PKCE::class.java)
+        `when`(pkce.codeChallenge).thenReturn("challenge")
+        login(account)
+            .withPKCE(pkce)
+            .withState("1234567890")
+            .start(activity, callback)
+        Assert.assertTrue(resume(createAuthIntent(createHash(null, null, null, null, null, "1234567890", null, null, "1234"))))
+        verify(pkce).setNetworkRetry(3, 1000L)
+        verify(pkce).getToken(eq("1234"), any())
+    }
+
+    @Test
+    public fun shouldUseCustomTokenExchangeRetryOnResume() {
+        val pkce = Mockito.mock(PKCE::class.java)
+        `when`(pkce.codeChallenge).thenReturn("challenge")
+        login(account)
+            .withPKCE(pkce)
+            .withState("1234567890")
+            .withTokenExchangeMaxRetries(5)
+            .withTokenExchangeRetryDelay(200)
+            .start(activity, callback)
+        Assert.assertTrue(resume(createAuthIntent(createHash(null, null, null, null, null, "1234567890", null, null, "1234"))))
+        verify(pkce).setNetworkRetry(5, 200L)
+        verify(pkce).getToken(eq("1234"), any())
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    public fun shouldRejectNegativeTokenExchangeMaxRetries() {
+        login(account).withTokenExchangeMaxRetries(-1)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    public fun shouldRejectNegativeTokenExchangeRetryDelay() {
+        login(account).withTokenExchangeRetryDelay(-1)
+    }
+
+    @Test
     public fun shouldStartLoginWithValidRequestCode() {
         val credentials = Mockito.mock(
             Credentials::class.java

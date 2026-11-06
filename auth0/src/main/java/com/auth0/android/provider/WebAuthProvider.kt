@@ -526,6 +526,8 @@ public object WebAuthProvider {
         private var dPoP: DPoP? = null
         private var ctOptions: CustomTabsOptions = CustomTabsOptions.newBuilder().build()
         private var leeway: Int? = null
+        private var tokenExchangeMaxRetries: Int? = null
+        private var tokenExchangeRetryDelayMillis: Long? = null
         private var launchAsTwa: Boolean = false
         private var ephemeralBrowsing: Boolean = false
         private var authTab: Boolean = false
@@ -577,6 +579,34 @@ public object WebAuthProvider {
          */
         public fun withIdTokenVerificationLeeway(leeway: Int): Builder {
             this.leeway = leeway
+            return this
+        }
+
+        /**
+         * Set how many times the code exchange that follows the browser redirect is retried when
+         * it fails before reaching Auth0, for example because the OS hasn't restored the app's
+         * network access yet after it was in the background. Requests that may have reached Auth0
+         * are never retried. Defaults to 3. Pass 0 to disable retries.
+         *
+         * @param maxRetries the maximum number of retries, must not be negative.
+         * @return the current builder instance
+         */
+        public fun withTokenExchangeMaxRetries(maxRetries: Int): Builder {
+            require(maxRetries >= 0) { "maxRetries must not be negative" }
+            this.tokenExchangeMaxRetries = maxRetries
+            return this
+        }
+
+        /**
+         * Set the delay between code exchange retries. See [withTokenExchangeMaxRetries].
+         * Defaults to 1000 milliseconds.
+         *
+         * @param delayMillis the delay between retries, in milliseconds, must not be negative.
+         * @return the current builder instance
+         */
+        public fun withTokenExchangeRetryDelay(delayMillis: Long): Builder {
+            require(delayMillis >= 0) { "delayMillis must not be negative" }
+            this.tokenExchangeRetryDelayMillis = delayMillis
             return this
         }
 
@@ -898,6 +928,8 @@ public object WebAuthProvider {
             manager.setPKCE(pkce)
             manager.setIdTokenVerificationLeeway(leeway)
             manager.setIdTokenVerificationIssuer(issuer)
+            manager.setTokenExchangeMaxRetries(tokenExchangeMaxRetries)
+            manager.setTokenExchangeRetryDelay(tokenExchangeRetryDelayMillis)
             managerInstance = manager
             if (redirectUri == null) {
                 redirectUri = CallbackHelper.getCallbackUri(
