@@ -5,7 +5,7 @@ Each topic lives in its own file under [`examples/`](examples).
 ## Web Auth
 
 - [Authenticate with any Auth0 connection](examples/authenticate-with-connection.md)
-- [Web Auth configuration](examples/web-auth-configuration.md) — audience, scope, connection scope, parameters, custom authorize URL, return-to URL scheme, custom logout URL
+- [Web Auth configuration](examples/web-auth-configuration.md) — audience, scope, connection scope, parameters, custom authorize URL, token exchange retry, return-to URL scheme, custom logout URL
 - [Customize the Custom Tabs UI](examples/custom-tabs-ui.md)
 - [Trusted Web Activity](examples/trusted-web-activity.md)
 - [Ephemeral Browsing](examples/ephemeral-browsing.md)

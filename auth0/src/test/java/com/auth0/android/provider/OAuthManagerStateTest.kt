@@ -46,6 +46,49 @@ internal class OAuthManagerStateTest {
     }
 
     @Test
+    fun `serialize should persist token exchange retry settings`() {
+        val state = OAuthManagerState(
+            auth0 = Auth0.getInstance("clientId", "domain"),
+            parameters = emptyMap(),
+            headers = emptyMap(),
+            ctOptions = CustomTabsOptions.newBuilder().build(),
+            pkce = PKCE(mock(), "redirectUri", emptyMap()),
+            idTokenVerificationLeeway = null,
+            idTokenVerificationIssuer = null,
+            tokenExchangeMaxRetries = 5,
+            tokenExchangeRetryDelayMillis = 200
+        )
+
+        val deserializedState = OAuthManagerState.deserializeState(state.serializeToJson())
+
+        Assert.assertEquals(5, deserializedState.tokenExchangeMaxRetries)
+        Assert.assertEquals(200L, deserializedState.tokenExchangeRetryDelayMillis)
+    }
+
+    @Test
+    fun `deserialize should leave token exchange retry settings unset for state saved without them`() {
+        val state = OAuthManagerState(
+            auth0 = Auth0.getInstance("clientId", "domain"),
+            parameters = emptyMap(),
+            headers = emptyMap(),
+            ctOptions = CustomTabsOptions.newBuilder().build(),
+            pkce = PKCE(mock(), "redirectUri", emptyMap()),
+            idTokenVerificationLeeway = null,
+            idTokenVerificationIssuer = null,
+            tokenExchangeMaxRetries = 5,
+            tokenExchangeRetryDelayMillis = 200
+        )
+        val json = org.json.JSONObject(state.serializeToJson())
+        json.remove("tokenExchangeMaxRetries")
+        json.remove("tokenExchangeRetryDelayMillis")
+
+        val deserializedState = OAuthManagerState.deserializeState(json.toString())
+
+        Assert.assertNull(deserializedState.tokenExchangeMaxRetries)
+        Assert.assertNull(deserializedState.tokenExchangeRetryDelayMillis)
+    }
+
+    @Test
     fun `serialize should persist dPoPEnabled flag as true`() {
         val auth0 = Auth0.getInstance("clientId", "domain")
         val state = OAuthManagerState(
