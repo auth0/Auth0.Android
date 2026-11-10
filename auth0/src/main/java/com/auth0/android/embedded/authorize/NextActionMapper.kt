@@ -1,6 +1,9 @@
 package com.auth0.android.embedded.authorize
 
 import android.util.Log
+import com.auth0.android.embedded.passkey.PasskeyRequestOptions
+import com.auth0.android.embedded.passkey.UserVerification
+import com.auth0.android.request.internal.GsonProvider
 
 private const val TAG = "NextActionMapper"
 
@@ -16,6 +19,13 @@ private const val IDENTIFIERS_KEY = "identifiers"
 private const val EMAIL_KEY = "email"
 private const val PHONE_NUMBER_KEY = "phone_number"
 private const val REQUIRED_KEY = "required"
+private const val AUTHN_PARAMS_PUBLIC_KEY_KEY = "authn_params_public_key"
+private const val CHALLENGE_KEY = "challenge"
+private const val TIMEOUT_KEY = "timeout"
+private const val RP_ID_KEY = "rpId"
+private const val USER_VERIFICATION_KEY = "userVerification"
+private const val HINTS_KEY = "hints"
+private const val ALLOW_CREDENTIALS_KEY = "allowCredentials"
 
 internal fun List<Map<String, Any>>.toNextActions(): List<NextAction> = mapNotNull { it.toNextAction() }
 
@@ -26,6 +36,27 @@ private fun Map<String, Any>.toNextAction(): NextAction? {
         EmbeddedCapability.IDENTIFY_PHONE -> NextAction.IdentifyPhone
         EmbeddedCapability.IDENTIFY_USERNAME -> NextAction.IdentifyUsername
         EmbeddedCapability.VERIFY_PASSWORD -> NextAction.VerifyPassword
+        EmbeddedCapability.VERIFY_PASSKEY -> {
+            val params = this[AUTHN_PARAMS_PUBLIC_KEY_KEY] as? Map<*, *>
+                ?: return dropped(raw, AUTHN_PARAMS_PUBLIC_KEY_KEY)
+            val challenge = params[CHALLENGE_KEY] as? String
+                ?: return dropped(raw, "$AUTHN_PARAMS_PUBLIC_KEY_KEY.$CHALLENGE_KEY")
+            val timeout = params[TIMEOUT_KEY] as? Long
+                ?: return dropped(raw, "$AUTHN_PARAMS_PUBLIC_KEY_KEY.$TIMEOUT_KEY")
+            val rpId = params[RP_ID_KEY] as? String
+                ?: return dropped(raw, "$AUTHN_PARAMS_PUBLIC_KEY_KEY.$RP_ID_KEY")
+            val userVerification = UserVerification.fromValue(params[USER_VERIFICATION_KEY] as? String)
+                ?: return dropped(raw, "$AUTHN_PARAMS_PUBLIC_KEY_KEY.$USER_VERIFICATION_KEY")
+            val hints = (params[HINTS_KEY] as? List<*>)?.filterIsInstance<String>().orEmpty()
+            val allowCredentials = (params[ALLOW_CREDENTIALS_KEY] as? List<*>)
+                ?.filterIsInstance<Map<*, *>>()
+                ?.map { it.toStringKeyedMap() }
+                .orEmpty()
+            NextAction.VerifyPasskey(
+                options = PasskeyRequestOptions(challenge, timeout, rpId, userVerification, hints, allowCredentials),
+                requestJson = GsonProvider.gson.toJson(params)
+            )
+        }
         EmbeddedCapability.CHALLENGE_EMAIL -> {
             val index = (this[INDEX_KEY] as? Number)?.toInt() ?: return dropped(raw, INDEX_KEY)
             val identifier = this[IDENTIFIER_KEY] as? String ?: return dropped(raw, IDENTIFIER_KEY)
@@ -94,6 +125,9 @@ private val SIGNUP_IDENTIFIER_TYPES: List<Pair<String, IdentifierType>> = listOf
     EMAIL_KEY to IdentifierType.EMAIL,
     PHONE_NUMBER_KEY to IdentifierType.PHONE
 )
+
+private fun Map<*, *>.toStringKeyedMap(): Map<String, Any> =
+    entries.mapNotNull { (key, value) -> if (key is String && value != null) key to value else null }.toMap()
 
 /**
  * Logs and drops a recognized next action whose required [field] the server omitted or sent

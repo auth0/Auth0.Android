@@ -75,6 +75,13 @@ class EmbeddedViewModel(application: Application) : AndroidViewModel(application
     /** Terminal step: yields credentials, or continues if the server requires a second factor. */
     fun verifyPassword(password: String): Unit = runTerminalStep { client.verifyPassword(password).await() }
 
+    /**
+     * Terminal step: submits the passkey assertion. Yields credentials, or continues with a fresh
+     * [NextAction.VerifyPasskey] if the passkey was rejected, or with MFA if the tenant requires it.
+     */
+    fun verifyPasskey(authenticationResponseJson: String): Unit =
+        runTerminalStep { client.verifyPasskey(authenticationResponseJson).await() }
+
     /** Terminal step: acknowledges the rotated recovery code. */
     fun confirmRecoveryCode(): Unit = runTerminalStep { client.confirmRecoveryCode().await() }
 

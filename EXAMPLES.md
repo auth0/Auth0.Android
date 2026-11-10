@@ -33,6 +33,7 @@ Each topic lives in its own file under [`examples/`](examples).
 
 - [Email OTP — first-factor & MFA second-factor](examples/embedded-auth/authorize.md)
 - [Username & Password — first-factor](examples/embedded-auth/password-authorize.md)
+- [Passkey — first-factor](examples/embedded-auth/passkey.md)
 - [Phone OTP (SMS/Voice) — first-factor & MFA second-factor](examples/embedded-auth/phone-authorize.md)
 - [Push Notification Polling (OOB)](examples/embedded-auth/push-oob-polling.md)
 - [Recovery Code](examples/embedded-auth/recovery-code.md)
