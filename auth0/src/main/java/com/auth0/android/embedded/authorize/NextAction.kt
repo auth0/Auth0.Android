@@ -2,6 +2,7 @@ package com.auth0.android.embedded.authorize
 
 import com.auth0.android.embedded.EmbeddedAuthClient
 import com.auth0.android.embedded.EmbeddedAuthException
+import com.auth0.android.embedded.passkey.PasskeyRequestOptions
 
 /** One way to continue the embedded authentication flow, as reported on [EmbeddedAuthException.nextActions]. */
 public sealed interface NextAction {
@@ -26,6 +27,25 @@ public sealed interface NextAction {
     /** Continue by verifying the user's password. Act on it with [EmbeddedAuthClient.verifyPassword]. */
     public data object VerifyPassword : NextAction {
         override val capability: EmbeddedCapability = EmbeddedCapability.VERIFY_PASSWORD
+    }
+
+    /**
+     * Continue by signing in with a passkey. Run the platform's passkey ceremony with [requestJson], then
+     * submit the result with [EmbeddedAuthClient.verifyPasskey].
+     *
+     * [options] exposes the main WebAuthn options. [requestJson] is the complete options object the
+     * server sent, ready to use as the request JSON of a Credential Manager `GetPublicKeyCredentialOption`.
+     * The challenge is single-use: after a failed attempt the server offers a new [VerifyPasskey] with a
+     * fresh one.
+     */
+    @ConsistentCopyVisibility
+    public data class VerifyPasskey internal constructor(
+        public val options: PasskeyRequestOptions,
+        public val requestJson: String
+    ) : NextAction {
+        override val capability: EmbeddedCapability = EmbeddedCapability.VERIFY_PASSKEY
+
+        override fun toString(): String = "VerifyPasskey(options=$options)"
     }
 
     /** Continue by requesting an email challenge. Act on it with [EmbeddedAuthClient.challengeEmail]. */

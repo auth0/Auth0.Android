@@ -197,6 +197,12 @@ private fun ActionsSection(
                 onVerify = { viewModel.verifyPassword(it) },
             )
 
+            is NextAction.VerifyPasskey -> PasskeyCard(
+                rpId = action.options.rpId,
+                requestJson = action.requestJson,
+                onAssertion = { viewModel.verifyPasskey(it) },
+            )
+
             is NextAction.ChallengeEmail -> ChallengeEmailCard(
                 identifier = action.identifier,
                 onChallenge = { viewModel.challengeEmail(action.index) },
@@ -561,6 +567,7 @@ private fun explain(error: EmbeddedAuthError): String = when (error) {
     EmbeddedAuthError.TooManyLogins,
     EmbeddedAuthError.IpBlocked -> "Rate limited — try again later."
     EmbeddedAuthError.Network -> "The request didn't reach the server — check your connection and retry."
+    EmbeddedAuthError.InvalidInput -> "The input was rejected before it was sent — start over."
     else -> "Authorize step failed."
 }
 
@@ -568,5 +575,6 @@ private fun EmbeddedAuthError.InsufficientAuthorization.Reason.messageRes(): Int
     EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_PASSWORD -> R.string.error_invalid_identifier_or_password
     EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_CODE -> R.string.error_invalid_code
     EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_CODE -> R.string.error_invalid_identifier_or_code
+    EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_PASSKEY -> R.string.error_invalid_passkey
     else -> null
 }
