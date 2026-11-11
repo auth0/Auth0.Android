@@ -1,11 +1,5 @@
 # Change Log
 
-## [5.0.0-beta.3](https://github.com/auth0/Auth0.Android/tree/5.0.0-beta.3) (2026-11-11)
-[Full Changelog](https://github.com/auth0/Auth0.Android/compare/5.0.0-beta.2...5.0.0-beta.3)
-
-**Added**
-- feat(embedded): add signup support for email and phone identifer [\#1123](https://github.com/auth0/Auth0.Android/pull/1123) ([pmathew92](https://github.com/pmathew92))
-
 ## [5.0.0-beta.2](https://github.com/auth0/Auth0.Android/tree/5.0.0-beta.2) (2026-11-02)
 [Full Changelog](https://github.com/auth0/Auth0.Android/compare/5.0.0-beta.1...5.0.0-beta.2)
 
