@@ -47,7 +47,9 @@ import com.auth0.android.embedded.EmbeddedAuthException
 import com.auth0.android.embedded.authorize.NextAction
 import com.auth0.android.embedded.authorize.OtpChannel
 import com.auth0.android.embedded.authorize.OtpType
+import com.auth0.android.embedded.authorize.PasswordComplexity
 import com.auth0.android.embedded.authorize.PhoneDeliveryMethod
+import com.auth0.android.embedded.authorize.SignupPassword
 import com.auth0.android.embedded.authorize.SignupIdentifier
 import com.auth0.android.result.Credentials
 
@@ -246,11 +248,9 @@ private fun ActionsSection(
                 onClick = { viewModel.signup() },
             )
 
-            NextAction.ConfirmSignup -> ActionCard(
-                titleRes = R.string.label_confirm_signup,
-                detail = null,
-                buttonRes = R.string.action_confirm_signup,
-                onClick = { viewModel.confirmSignup() },
+            is NextAction.ConfirmSignup -> ConfirmSignupCard(
+                password = action.password,
+                onConfirm = { viewModel.confirmSignup(it) },
             )
 
             is NextAction.Unknown -> InfoCard(
@@ -408,6 +408,57 @@ private fun VerifyPasswordCard(onVerify: (String) -> Unit) {
 }
 
 @Composable
+private fun ConfirmSignupCard(password: SignupPassword?, onConfirm: (String?) -> Unit) {
+    var value by remember { mutableStateOf("") }
+    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                stringResource(R.string.label_confirm_signup),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            if (password != null) {
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = value,
+                    onValueChange = { value = it },
+                    label = {
+                        Text(
+                            stringResource(
+                                if (password.required) R.string.hint_new_password else R.string.hint_new_password_optional
+                            )
+                        )
+                    },
+                    supportingText = { Text(passwordRules(password.complexity)) },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done,
+                    ),
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            Button(
+                onClick = { onConfirm(value.takeIf { password != null }) },
+                enabled = password == null || !password.required || value.isNotEmpty(),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.action_confirm_signup))
+            }
+        }
+    }
+}
+
+private fun passwordRules(complexity: PasswordComplexity): String = buildString {
+    append("At least ${complexity.minLength} characters")
+    if (complexity.characterTypes.isNotEmpty()) {
+        append(", with ")
+        append(complexity.characterTypes.joinToString(", ") { it.name.lowercase() })
+    }
+}
+
+@Composable
 private fun VerifyRecoveryCodeCard(onVerify: (String) -> Unit) {
     var code by remember { mutableStateOf("") }
     OutlinedCard(modifier = Modifier.fillMaxWidth()) {
@@ -557,6 +608,7 @@ private fun explain(error: EmbeddedAuthError): String = when (error) {
     EmbeddedAuthError.ConsentRequired -> "Consent is required, which this flow can't collect."
     EmbeddedAuthError.PasswordLeaked -> "This password appeared in a data breach — reset it and try again."
     EmbeddedAuthError.NoNextSteps -> "No further steps are available to continue — start over."
+    EmbeddedAuthError.TooManyResendAttempts -> "Too many codes were sent to this identifier — start over later."
     EmbeddedAuthError.TooManyAttempts,
     EmbeddedAuthError.TooManyLogins,
     EmbeddedAuthError.IpBlocked -> "Rate limited — try again later."
@@ -567,6 +619,9 @@ private fun explain(error: EmbeddedAuthError): String = when (error) {
 private fun EmbeddedAuthError.InsufficientAuthorization.Reason.messageRes(): Int? = when (this) {
     EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_PASSWORD -> R.string.error_invalid_identifier_or_password
     EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_CODE -> R.string.error_invalid_code
+    EmbeddedAuthError.InsufficientAuthorization.Reason.PASSWORD_REQUIRED -> R.string.error_password_required
+    EmbeddedAuthError.InsufficientAuthorization.Reason.PASSWORD_NOT_ACCEPTED -> R.string.error_password_not_accepted
+    EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_PASSWORD -> R.string.error_invalid_password
     EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_IDENTIFIER_OR_CODE -> R.string.error_invalid_identifier_or_code
     else -> null
 }

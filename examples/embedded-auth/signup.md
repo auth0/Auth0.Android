@@ -15,6 +15,7 @@ a `capabilities` set to `authorize` that leaves them out.
 val embedded = EmbeddedAuthClient(Auth0.getInstance("YOUR_CLIENT_ID", "YOUR_DOMAIN"))
 
 // 1. Start the flow. When the connection allows sign-ups, the next actions include NextAction.Signup.
+//    signup.passwordRequirement says whether the connection collects a password (NONE, OPTIONAL or REQUIRED).
 try {
     embedded.authorize("Username-Password-Authentication").await()
 } catch (e: EmbeddedAuthException) {
@@ -86,6 +87,42 @@ For phone, call `identify("+15551234567", IdentifierType.PHONE)`, then
 `challengePhone(index, deliveryMethod)` with the values from `NextAction.ChallengePhone`. The other
 steps are the same.
 
+## Signup with a password
+
+When the connection collects a password, the account is created with it in the last step. The server offers
+`NextAction.ConfirmSignup` with its `password` set:
+
+- `password == null`: the connection doesn't collect a password. Don't ask for one.
+- `password != null`: show a password field. When `password.required` is `true` the user must enter one.
+  `password.complexity` has the advisory rules to show: `minLength` and the `characterTypes` that are all required.
+
+`NextAction.Signup.passwordRequirement` (`NONE`, `OPTIONAL` or `REQUIRED`) announces this earlier, so the first
+screen can tell the user a password is coming. The SDK keeps it for the flow, so you don't have to carry it to
+the confirm step.
+
+```kotlin
+try {
+    val credentials = embedded.confirmSignup(password).await()
+} catch (e: EmbeddedAuthException) {
+    val error = e.error as? EmbeddedAuthError.InsufficientAuthorization ?: throw e
+    when (error.reason) {
+        EmbeddedAuthError.InsufficientAuthorization.Reason.PASSWORD_REQUIRED -> { /* ask for a password and call confirmSignup(password) again */ }
+        EmbeddedAuthError.InsufficientAuthorization.Reason.PASSWORD_NOT_ACCEPTED -> { /* the connection has no password: call confirmSignup() */ }
+        EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_PASSWORD -> { /* the password policy rejected it: ask for another one */ }
+        else -> { /* other error cases */ }
+    }
+}
+```
+
+- An empty password counts as none.
+- The SDK sends the password as it is and the server decides. A missing required password completes with
+  `PASSWORD_REQUIRED`, and a password sent to a connection that doesn't collect one with `PASSWORD_NOT_ACCEPTED`.
+  Each keeps the flow open, so call `confirmSignup` again. To avoid the round trip, check `ConfirmSignup.password`
+  in your UI: `null` means no password field, and `required` means the field is mandatory.
+- The SDK doesn't check the password against `complexity`. The server applies the connection's full password policy,
+  which can include rules the complexity doesn't list, so a password that meets it can still be rejected with
+  `INVALID_PASSWORD`. A rejected password keeps the flow open: `nextActions` offer `ConfirmSignup` again.
+
 <details>
   <summary>Using callbacks</summary>
 
@@ -96,7 +133,7 @@ embedded.signup()
         override fun onFailure(error: EmbeddedAuthException) { /* continuation → identify */ }
     })
 
-embedded.confirmSignup()
+embedded.confirmSignup(password)
     .start(object : Callback<Credentials, EmbeddedAuthException> {
         override fun onSuccess(result: Credentials) { /* account created and signed in */ }
         override fun onFailure(error: EmbeddedAuthException) { /* branch on error.error as in the coroutine sample */ }
@@ -119,7 +156,7 @@ embedded.signup()
         }
     });
 
-embedded.confirmSignup()
+embedded.confirmSignup(password) // or embedded.confirmSignup() without a password
     .start(new Callback<Credentials, EmbeddedAuthException>() {
         @Override public void onSuccess(Credentials credentials) {
             // credentials.getAccessToken()

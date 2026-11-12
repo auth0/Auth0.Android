@@ -84,6 +84,22 @@ $actionsJson
         return this
     }
 
+    /** The recoverable `403` for a signup password problem: rotated session and the confirm action again. */
+    fun willReturnSignupPasswordError(description: String, confirm: String = NEXT_CONFIRM_SIGNUP_PASSWORD): EmbeddedAuthMockServer {
+        server.enqueue(
+            responseWithJSON(
+                """{ "error": "insufficient_authorization", "error_description": "$description", "auth_session": "$ROTATED_AUTH_SESSION", "next": [ $confirm ] }""",
+                403
+            )
+        )
+        return this
+    }
+
+    fun willReturnTooManyResendAttempts(): EmbeddedAuthMockServer {
+        server.enqueue(responseWithJSON("""{ "error": "access_denied", "error_description": "too_many_resend_attempts" }""", 403))
+        return this
+    }
+
     fun willReturnTooManyWrongOtpAttempts(): EmbeddedAuthMockServer {
         server.enqueue(responseWithJSON("""{ "error": "access_denied", "error_description": "too_many_wrong_otp_attempts" }""", 403))
         return this
@@ -206,6 +222,10 @@ $actionsJson
         const val NEXT_SIGNUP_NO_REQUIRED = """{ "action": "action:signup:v1", "identifiers": { "email": {} } }"""
         const val NEXT_SIGNUP_PHONE_NO_REQUIRED = """{ "action": "action:signup:v1", "identifiers": { "email": { "required": true }, "phone_number": {} } }"""
         const val NEXT_SIGNUP_EMAIL_NON_BOOLEAN_REQUIRED = """{ "action": "action:signup:v1", "identifiers": { "email": { "required": "true" }, "phone_number": { "required": false } } }"""
+        const val NEXT_SIGNUP_EMAIL_PASSWORD_REQUIRED = """{ "action": "action:signup:v1", "identifiers": { "email": { "required": true } }, "authentication_methods": { "password": { "required": true } } }"""
+        const val NEXT_SIGNUP_EMAIL_PASSWORD_OPTIONAL = """{ "action": "action:signup:v1", "identifiers": { "email": { "required": true } }, "authentication_methods": { "password": { "required": false } } }"""
+        const val NEXT_SIGNUP_EMAIL_PASSWORD_NO_REQUIRED = """{ "action": "action:signup:v1", "identifiers": { "email": { "required": true } }, "authentication_methods": { "password": {} } }"""
+        const val NEXT_CONFIRM_SIGNUP_PASSWORD = """{ "action": "action:signup:confirm:v1", "password_complexity_options": { "min_length": 8, "character_types": ["lowercase", "number"] } }"""
         const val NEXT_CONFIRM_SIGNUP = """{ "action": "action:signup:confirm:v1" }"""
         const val NEXT_UNKNOWN = """{ "action": "action:future:unknown:v1" }"""
         const val IDENTIFIER = "jane@example.com"

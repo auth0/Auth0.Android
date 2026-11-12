@@ -3,6 +3,7 @@ package com.auth0.android.embedded
 import com.auth0.android.Auth0
 import com.auth0.android.embedded.authorize.AdvancingRequest
 import com.auth0.android.embedded.authorize.AuthorizeCode
+import com.auth0.android.embedded.authorize.CredentialRequirement
 import com.auth0.android.embedded.authorize.EmbeddedAuthState
 import com.auth0.android.embedded.authorize.EmbeddedCapability
 import com.auth0.android.embedded.authorize.FailedRequest
@@ -10,6 +11,7 @@ import com.auth0.android.embedded.authorize.IdentifierType
 import com.auth0.android.embedded.authorize.NextAction
 import com.auth0.android.embedded.authorize.OtpType
 import com.auth0.android.embedded.authorize.PhoneDeliveryMethod
+import com.auth0.android.embedded.authorize.SignupPassword
 import com.auth0.android.embedded.authorize.StepRequest
 import com.auth0.android.embedded.authorize.authorizeCodeAdapter
 import com.auth0.android.embedded.authorize.embeddedAuthErrorAdapter
@@ -251,14 +253,30 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
      * Creates the new user's account and completes the flow. Call it when a
      * [NextAction.ConfirmSignup] is offered.
      *
+     * Pass a [password] when [NextAction.ConfirmSignup.password] is not `null`; it must be passed when
+     * [SignupPassword.required] is `true`. An empty [password] counts as none. It is sent as it is, and the
+     * SDK doesn't check it against [SignupPassword.complexity], which is advisory.
+     *
      * On success, it yields the [Credentials]. If the server requires further steps the request
      * completes through [EmbeddedAuthException] instead, with
      * [EmbeddedAuthError.InsufficientAuthorization.nextActions] on [EmbeddedAuthException.error].
+     *
+     * The server decides whether the passed password is right or not. A missing
+     * required password completes with [EmbeddedAuthError.InsufficientAuthorization.Reason.PASSWORD_REQUIRED],
+     * a password the connection doesn't collect with
+     * [EmbeddedAuthError.InsufficientAuthorization.Reason.PASSWORD_NOT_ACCEPTED], and a password the
+     * connection's policy rejects with [EmbeddedAuthError.InsufficientAuthorization.Reason.INVALID_PASSWORD].
+     * Each keeps the flow open, so call again with the right input.
      * If the account can't be created, the request completes with the terminal
      * [EmbeddedAuthError.InvalidRequest]; start a new flow with [authorize].
      */
-    public fun confirmSignup(): Request<Credentials, EmbeddedAuthException> =
-        terminalStep(EmbeddedCapability.CONFIRM_SIGNUP)
+    @JvmOverloads
+    public fun confirmSignup(password: String? = null): Request<Credentials, EmbeddedAuthException> {
+        val sentPassword = password?.takeIf { it.isNotEmpty() }
+        return terminalStep(EmbeddedCapability.CONFIRM_SIGNUP) {
+            if (sentPassword != null) addParameter(PASSWORD_KEY, sentPassword)
+        }
+    }
 
     private fun continueStep(
         action: EmbeddedCapability,
@@ -338,17 +356,48 @@ public class EmbeddedAuthClient(private val auth0: Auth0) {
             .toString()
     }
 
-    private fun updateSessionFromFailure(error: EmbeddedAuthException) {
-        if (error.statusCode in 500..599) return
+    private fun updateSessionFromFailure(error: EmbeddedAuthException): EmbeddedAuthException {
+        if (error.statusCode in 500..599) return error
 
-        when (error.error) {
-            is EmbeddedAuthError.InsufficientAuthorization ->
-                error.authSession?.let { transactionState = EmbeddedAuthState(it) }
+        return when (val failure = error.error) {
+            is EmbeddedAuthError.InsufficientAuthorization -> {
+                val session = error.authSession ?: return error
+                val announced = failure.nextActions.filterIsInstance<NextAction.Signup>().firstOrNull()?.passwordRequirement
+                val requirement = when {
+                    failure.reason == EmbeddedAuthError.InsufficientAuthorization.Reason.PASSWORD_REQUIRED ->
+                        CredentialRequirement.REQUIRED
 
-            is EmbeddedAuthError.Network -> Unit
-            else -> transactionState = null
+                    else -> announced ?: transactionState?.passwordRequirement
+                }
+                val actions = failure.nextActions.map { action ->
+                    if (action is NextAction.ConfirmSignup) action.withRequired(requirement == CredentialRequirement.REQUIRED) else action
+                }
+                transactionState = EmbeddedAuthState(session, requirement)
+                if (actions == failure.nextActions) error else error.withNextActions(actions, failure.reason)
+            }
+
+            is EmbeddedAuthError.Network -> error
+            else -> {
+                transactionState = null
+                error
+            }
         }
     }
+
+    private fun NextAction.ConfirmSignup.withRequired(required: Boolean): NextAction.ConfirmSignup =
+        NextAction.ConfirmSignup(password?.let { SignupPassword(required, it.complexity) })
+
+    private fun EmbeddedAuthException.withNextActions(
+        nextActions: List<NextAction>,
+        reason: EmbeddedAuthError.InsufficientAuthorization.Reason
+    ): EmbeddedAuthException = EmbeddedAuthException(
+        code,
+        description,
+        statusCode,
+        error = EmbeddedAuthError.InsufficientAuthorization(nextActions, reason),
+        authSession = authSession,
+        cause = cause
+    )
 
     private companion object {
         private const val EMBEDDED_PATH = "e"

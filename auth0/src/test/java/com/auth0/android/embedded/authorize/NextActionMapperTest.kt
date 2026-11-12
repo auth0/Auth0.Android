@@ -4,6 +4,7 @@ import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.`is`
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.instanceOf
+import org.hamcrest.Matchers.nullValue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -178,5 +179,104 @@ public class NextActionMapperTest {
         assertThat(action, instanceOf(NextAction.ConfirmRecoveryCode::class.java))
         action as NextAction.ConfirmRecoveryCode
         assertThat(action.newCode, `is`("NEW-CODE-123"))
+    }
+
+    @Test
+    public fun testSignupPasswordRequirementMapped() {
+        val identifiers = mapOf("email" to mapOf("required" to true))
+        val cases: List<Pair<Map<String, Any>?, CredentialRequirement>> = listOf(
+            mapOf("password" to mapOf("required" to true)) to CredentialRequirement.REQUIRED,
+            mapOf("password" to mapOf("required" to false)) to CredentialRequirement.OPTIONAL,
+            mapOf("password" to mapOf<String, Any>()) to CredentialRequirement.NONE,
+            mapOf("password" to mapOf("required" to "yes")) to CredentialRequirement.NONE,
+            mapOf<String, Any>() to CredentialRequirement.NONE,
+            null to CredentialRequirement.NONE
+        )
+        for ((methods, expected) in cases) {
+            val raw = buildMap<String, Any> {
+                put(ACTION_KEY, "action:signup:v1")
+                put("identifiers", identifiers)
+                if (methods != null) put("authentication_methods", methods)
+            }
+            val action = listOf(raw).toNextActions().first() as NextAction.Signup
+            assertThat("authentication_methods=$methods", action.passwordRequirement, `is`(expected))
+        }
+    }
+
+    @Test
+    public fun testConfirmSignupWithoutPasswordOptionsHasNoPassword() {
+        val action = listOf(mapOf(ACTION_KEY to "action:signup:confirm:v1")).toNextActions().first()
+
+        assertThat(action, `is`(NextAction.ConfirmSignup(null) as NextAction))
+    }
+
+    @Test
+    public fun testConfirmSignupPasswordComplexityMapped() {
+        val raw = mapOf(
+            ACTION_KEY to "action:signup:confirm:v1",
+            "password_complexity_options" to mapOf(
+                "min_length" to 8L,
+                "character_types" to listOf("lowercase", "uppercase", "number", "special")
+            )
+        )
+        val action = listOf(raw).toNextActions().first() as NextAction.ConfirmSignup
+
+        val password = action.password!!
+        assertThat(password.required, `is`(false))
+        assertThat(password.complexity.minLength, `is`(8))
+        assertThat(
+            password.complexity.characterTypes,
+            `is`(
+                listOf(
+                    PasswordComplexity.CharacterType.LOWERCASE,
+                    PasswordComplexity.CharacterType.UPPERCASE,
+                    PasswordComplexity.CharacterType.NUMBER,
+                    PasswordComplexity.CharacterType.SPECIAL
+                )
+            )
+        )
+    }
+
+    @Test
+    public fun testConfirmSignupAcceptsAWholeMinLengthOfAnyNumberType() {
+        for (minLength in listOf<Number>(8, 8L, 8.0)) {
+            val raw = mapOf(
+                ACTION_KEY to "action:signup:confirm:v1",
+                "password_complexity_options" to mapOf("min_length" to minLength)
+            )
+            val action = listOf(raw).toNextActions().first() as NextAction.ConfirmSignup
+
+            assertThat(action.password!!.complexity.minLength, `is`(8))
+            assertThat(action.password!!.complexity.characterTypes, `is`(emptyList()))
+        }
+    }
+
+    @Test
+    public fun testConfirmSignupSkipsUnknownAndRepeatedCharacterTypes() {
+        val raw = mapOf(
+            ACTION_KEY to "action:signup:confirm:v1",
+            "password_complexity_options" to mapOf(
+                "min_length" to 8L,
+                "character_types" to listOf("number", "emoji", "number", 3, "special")
+            )
+        )
+        val action = listOf(raw).toNextActions().first() as NextAction.ConfirmSignup
+
+        assertThat(
+            action.password!!.complexity.characterTypes,
+            `is`(listOf(PasswordComplexity.CharacterType.NUMBER, PasswordComplexity.CharacterType.SPECIAL))
+        )
+    }
+
+    @Test
+    public fun testConfirmSignupWithoutAValidMinLengthHasNoPassword() {
+        val invalid = listOf<Any?>(null, 0L, -1L, 8.5, "8", 3_000_000_000L)
+        for (minLength in invalid) {
+            val options = if (minLength == null) mapOf("character_types" to listOf("number")) else mapOf("min_length" to minLength)
+            val raw = mapOf(ACTION_KEY to "action:signup:confirm:v1", "password_complexity_options" to options)
+            val action = listOf(raw).toNextActions().first() as NextAction.ConfirmSignup
+
+            assertThat("min_length=$minLength", action.password, `is`(nullValue()))
+        }
     }
 }

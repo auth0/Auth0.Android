@@ -16,6 +16,11 @@ private const val IDENTIFIERS_KEY = "identifiers"
 private const val EMAIL_KEY = "email"
 private const val PHONE_NUMBER_KEY = "phone_number"
 private const val REQUIRED_KEY = "required"
+private const val AUTHENTICATION_METHODS_KEY = "authentication_methods"
+private const val PASSWORD_KEY = "password"
+private const val PASSWORD_COMPLEXITY_OPTIONS_KEY = "password_complexity_options"
+private const val MIN_LENGTH_KEY = "min_length"
+private const val CHARACTER_TYPES_KEY = "character_types"
 
 internal fun List<Map<String, Any>>.toNextActions(): List<NextAction> = mapNotNull { it.toNextAction() }
 
@@ -66,9 +71,9 @@ private fun Map<String, Any>.toNextAction(): NextAction? {
         EmbeddedCapability.SIGNUP -> {
             val identifiers = (this[IDENTIFIERS_KEY] as? Map<*, *>)?.toSignupIdentifiers()
                 ?: return dropped(raw, IDENTIFIERS_KEY)
-            NextAction.Signup(identifiers)
+            NextAction.Signup(identifiers, toPasswordRequirement())
         }
-        EmbeddedCapability.CONFIRM_SIGNUP -> NextAction.ConfirmSignup
+        EmbeddedCapability.CONFIRM_SIGNUP -> NextAction.ConfirmSignup(toSignupPassword())
         EmbeddedCapability.UNKNOWN -> NextAction.Unknown(raw)
     }
 }
@@ -88,6 +93,55 @@ private fun Map<*, *>.toSignupIdentifiers(): List<SignupIdentifier>? {
         SignupIdentifier(type, required)
     }
     return identifiers.ifEmpty { null }
+}
+
+/**
+ * Reads whether the signup action announces a password: `required: true` is [CredentialRequirement.REQUIRED],
+ * `required: false` is [CredentialRequirement.OPTIONAL], and no password entry is [CredentialRequirement.NONE].
+ * A password entry without a boolean `required` is logged and treated as [CredentialRequirement.NONE].
+ */
+private fun Map<String, Any>.toPasswordRequirement(): CredentialRequirement {
+    val password = (this[AUTHENTICATION_METHODS_KEY] as? Map<*, *>)?.get(PASSWORD_KEY) ?: return CredentialRequirement.NONE
+    return when ((password as? Map<*, *>)?.get(REQUIRED_KEY) as? Boolean) {
+        true -> CredentialRequirement.REQUIRED
+        false -> CredentialRequirement.OPTIONAL
+        null -> {
+            Log.w(TAG, "Ignoring signup password: required field \"$REQUIRED_KEY\" was missing or invalid.")
+            CredentialRequirement.NONE
+        }
+    }
+}
+
+/**
+ * Reads the confirm action's `password_complexity_options`, which the server sends exactly when the
+ * connection collects a password. The result is `null` when they are absent, or when `min_length` is missing
+ * or not a positive integer. Unknown `character_types` are skipped. [SignupPassword.required] is `false`
+ * here; the client sets it from the requirement announced on the signup action.
+ */
+private fun Map<String, Any>.toSignupPassword(): SignupPassword? {
+    val options = this[PASSWORD_COMPLEXITY_OPTIONS_KEY] as? Map<*, *> ?: return null
+    val minLength = (options[MIN_LENGTH_KEY] as? Number)?.toWholeInt()?.takeIf { it >= 1 }
+    if (minLength == null) {
+        Log.w(TAG, "Ignoring signup password: required field \"$MIN_LENGTH_KEY\" was missing or invalid.")
+        return null
+    }
+    val characterTypes = (options[CHARACTER_TYPES_KEY] as? List<*>)
+        ?.filterIsInstance<String>()
+        ?.mapNotNull(::passwordCharacterType)
+        ?.distinct()
+        .orEmpty()
+    return SignupPassword(required = false, complexity = PasswordComplexity(minLength, characterTypes))
+}
+
+private fun Number.toWholeInt(): Int? =
+    toDouble().takeIf { it % 1.0 == 0.0 && it in Int.MIN_VALUE.toDouble()..Int.MAX_VALUE.toDouble() }?.toInt()
+
+private fun passwordCharacterType(value: String): PasswordComplexity.CharacterType? = when (value) {
+    "lowercase" -> PasswordComplexity.CharacterType.LOWERCASE
+    "uppercase" -> PasswordComplexity.CharacterType.UPPERCASE
+    "number" -> PasswordComplexity.CharacterType.NUMBER
+    "special" -> PasswordComplexity.CharacterType.SPECIAL
+    else -> null
 }
 
 private val SIGNUP_IDENTIFIER_TYPES: List<Pair<String, IdentifierType>> = listOf(
